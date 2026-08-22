@@ -66,3 +66,28 @@ test.describe('Baseline AKINE-00.01', () => {
     expect(cuerpo.toLowerCase()).not.toContain('stacktrace');
   });
 });
+
+test.describe('Estructura de rutas (AKINE-00.02)', () => {
+  test('una ruta inexistente muestra la pagina 404 con salida', async ({ page }) => {
+    await page.goto('/no-existe-esta-ruta');
+
+    await expect(page.getByRole('heading', { name: 'Pagina no encontrada' })).toBeVisible();
+    // El error se anuncia por lector de pantalla, no solo visualmente (ADR-0005).
+    await expect(page.getByRole('alert')).toBeVisible();
+
+    // Y ofrece una salida: un cartel sin accion deja al usuario sin nada que hacer.
+    await page.getByRole('link', { name: 'Volver al inicio' }).click();
+    await expect(page.getByRole('heading', { name: 'Baseline tecnico', level: 1 })).toBeVisible();
+  });
+
+  test('el layout persiste al cambiar de ruta', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.getByRole('banner')).toBeVisible();
+
+    await page.goto('/no-existe-esta-ruta');
+    // La cabecera y el skip link viven en el layout, no en la pagina: sobreviven a la
+    // navegacion sin que cada pagina tenga que reimplementarlos.
+    await expect(page.getByRole('banner')).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Saltar al contenido principal' })).toBeAttached();
+  });
+});

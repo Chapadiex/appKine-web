@@ -1,27 +1,15 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
-import { catchError, of } from 'rxjs';
-
-import { PlatformService } from './api/generated/api/platform.service';
-import { VersionResponse } from './api/generated/model/version-response';
-import { environment } from '../environments/environment';
-
-/** Estado de la comprobacion de conectividad con el backend. */
-type EstadoBackend =
-  | { readonly tipo: 'cargando' }
-  | { readonly tipo: 'conectado'; readonly version: VersionResponse }
-  | { readonly tipo: 'sin-conexion' };
 
 /**
- * Shell de la aplicacion (AKINE-00.01).
+ * Layout raiz de AKINE (AKINE-00.02).
  *
- * <p>Deliberadamente NO contiene pantallas funcionales: las features de M01-M29 se crean en
- * sus etapas correspondientes. Lo unico que hace es probar de punta a punta que el arranque
- * funciona: Angular monta, el cliente generado se inyecta, el proxy resuelve `/api` y el
- * backend responde.
+ * <p>Solo estructura: skip link, cabecera y el landmark `main` donde el router monta cada
+ * pagina. <b>No contiene logica de pantalla</b> —eso vive en las paginas de cada feature—,
+ * asi que no necesita cambiar cuando se agregue una.
  *
- * <p>Cubre los tres estados que toda pantalla de AKINE debe manejar —cargando, exito y
- * error— para que la convencion quede fijada desde la primera.
+ * <p>Aca viven las garantias de accesibilidad que toda pantalla hereda: el skip link como
+ * primer elemento enfocable y los landmarks semanticos (ADR-0005).
  */
 @Component({
   selector: 'app-root',
@@ -29,35 +17,4 @@ type EstadoBackend =
   templateUrl: './app.html',
   styleUrl: './app.css',
 })
-export class App {
-  private readonly platformService = inject(PlatformService);
-
-  protected readonly estado = signal<EstadoBackend>({ tipo: 'cargando' });
-  protected readonly versionContrato = environment.contractVersion;
-
-  /**
-   * Version del backend, o `null` si todavia no se conocio.
-   *
-   * Existe para que la plantilla no tenga que estrechar el tipo de la union con `$any`:
-   * el estrechamiento se hace aca, en TypeScript, donde el compilador lo verifica.
-   */
-  protected readonly version = computed(() => {
-    const estado = this.estado();
-    return estado.tipo === 'conectado' ? estado.version : null;
-  });
-
-  constructor() {
-    this.comprobarBackend();
-  }
-
-  protected comprobarBackend(): void {
-    this.estado.set({ tipo: 'cargando' });
-
-    this.platformService
-      .version()
-      .pipe(catchError(() => of(null)))
-      .subscribe((version) => {
-        this.estado.set(version ? { tipo: 'conectado', version } : { tipo: 'sin-conexion' });
-      });
-  }
-}
+export class App {}

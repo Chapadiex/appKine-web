@@ -270,6 +270,12 @@ script, nunca `ng serve` pelado: sin el proxy, `/api` no resuelve.
 ```bash
 npm run test:ci
 ```
+Unitarios + **gate de cobertura** (falla bajo 80 %).
+
+```bash
+npm run lint
+```
+Incluye las reglas propias de AKINE y las de accesibilidad de plantilla.
 
 ```bash
 npm run build
@@ -303,13 +309,37 @@ Requiere backend levantado. Playwright arranca el frontend solo.
 > `.prettierignore` a propósito: si Prettier lo reformatea, el gate de drift de CI falla
 > en cada corrida porque el generador produce otro formato.
 
-### Próximo paso — etapa AKINE-00.02
+### AKINE-00.02 — completada
 
-- [ ] Commit inicial, remote de GitHub y protección de rama en `main`
+- [x] Commit inicial del baseline en `main`
+- [x] **ESLint + `angular-eslint`**, con reglas propias de AKINE
+- [x] **Umbral de cobertura al 80 %** (`scripts/check-coverage.mjs`). Medido: **98,7 %**
+- [x] **Estructura de rutas y layout**: `App` es layout puro, páginas en `features/`, ruta 404
+- [x] Tests de `core/`: stores de token y contexto tenant, ambos interceptores
+- [x] **ADRs** en `docs/adr/` — 5 decisiones
+- [x] Reporte reproducible: `../docs/baseline-report.md`
+
+**37 pruebas** (30 unitarias + 7 E2E). Cobertura 98,7 % statements, 92,3 % branches.
+
+Reglas de lint propias:
+
+| Regla | Qué previene |
+|---|---|
+| `no-restricted-globals` sobre `localStorage`/`sessionStorage` | Que el token de historia clínica quede legible para un XSS (ADR-0001) |
+| `no-console` (salvo `warn`/`error`) | Un dato clínico en la consola del navegador |
+| `templateAccessibility` | Incumplir WCAG 2.1 AA |
+
+> El cliente generado está excluido de ESLint **y** de Prettier. Lintearlo o formatearlo
+> rompe el gate de drift del pipeline en cada corrida.
+
+### Próximo paso — etapa AKINE-00.03
+
+Pendientes que arrastra el frontend:
+
+- [ ] Remote de GitHub y protección de rama en `main`
 - [ ] Activar el job E2E del pipeline (listo y comentado — espera la imagen Docker del backend)
-- [ ] ESLint + `angular-eslint` (hoy solo hay Prettier)
-- [ ] Umbral de cobertura al 80 %
-- [ ] Completar los `PENDIENTE` de `.claude/qa-config.md`
+- [ ] Regla de ESLint que prohíba imports entre features (ADR-0004, hoy depende de revisión)
+- [ ] Completar los `PENDIENTE(F1)` de `.claude/qa-config.md`
 
 ## 8. Checklist de cierre de tarea
 

@@ -1,0 +1,46 @@
+<h1>Baseline tecnico</h1>
+
+<p class="descripcion">
+  Etapa AKINE-00.01. La aplicacion todavia no tiene pantallas funcionales: se construyen en las
+  etapas M01&ndash;M29.
+</p>
+
+<section class="tarjeta" aria-labelledby="titulo-estado">
+  <h2 id="titulo-estado">Conexion con el backend</h2>
+
+  <!-- aria-live: el cambio de estado se anuncia sin que el usuario tenga que buscarlo. -->
+  <div aria-live="polite">
+    @switch (estado().tipo) {
+      @case ('cargando') {
+        <p class="estado estado--cargando">Comprobando conexion&hellip;</p>
+      }
+
+      @case ('conectado') {
+        <p class="estado estado--ok">Conectado</p>
+
+        <dl class="detalle">
+          <dt>Aplicacion</dt>
+          <dd>{{ version()?.application }}</dd>
+
+          <dt>Version del backend</dt>
+          <dd>{{ version()?.version }}</dd>
+
+          <dt>Contrato publicado</dt>
+          <dd>{{ version()?.contract }}</dd>
+
+          <dt>Contrato consumido</dt>
+          <dd>{{ versionContrato }}</dd>
+        </dl>
+      }
+
+      @case ('sin-conexion') {
+        <p class="estado estado--error" role="alert">No se pudo contactar al backend.</p>
+        <p class="ayuda">
+          Verifica que la base este levantada (<code>docker compose up -d</code>) y que el backend
+          este corriendo en <code>http://localhost:8080</code>.
+        </p>
+        <button type="button" class="boton" (click)="comprobarBackend()">Reintentar</button>
+      }
+    }
+  </div>
+</section>

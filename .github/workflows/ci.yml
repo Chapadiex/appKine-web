@@ -40,11 +40,27 @@ jobs:
       - name: Verificar formato
         run: npm run format:check
 
+      # ESLint incluye las reglas propias de AKINE: prohibicion de localStorage y
+      # sessionStorage (ADR-0001) y las reglas de accesibilidad de plantilla, que son
+      # requisito WCAG 2.1 AA del proyecto.
+      - name: Lint
+        run: npm run lint
+
       - name: Build
         run: npm run build
 
-      - name: Tests unitarios
+      # Incluye el gate de cobertura: falla por debajo del 80 % en cualquier contador.
+      - name: Tests unitarios y cobertura
         run: npm run test:ci
+
+      - name: Publicar reporte de cobertura
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage/
+          if-no-files-found: ignore
+          retention-days: 14
 
       # El cliente de src/app/api/generated NO se edita a mano. Si el commiteado difiere
       # del que produce el contrato, alguien lo toco o quedo desactualizado.
