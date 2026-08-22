@@ -1,0 +1,11 @@
+# Cliente generado desde openapi/akine-api.yaml. NO se edita ni se formatea a mano:
+# el pipeline lo regenera y compara contra lo commiteado. Si prettier lo reformatea,
+# el gate de drift falla en cada corrida.
+src/app/api/generated/
+
+# Artefactos de build
+dist/
+.angular/
+coverage/
+playwright-report/
+test-results/

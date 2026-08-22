@@ -1,0 +1,13 @@
+{
+  "$schema": "node_modules/@openapitools/openapi-generator-cli/config.schema.json",
+  "npmName": "@akine/api-client",
+  "supportsES6": true,
+  "withInterfaces": true,
+  "useSingleRequestParameter": true,
+  "providedInRoot": true,
+  "enumPropertyNaming": "UPPERCASE",
+  "modelPropertyNaming": "original",
+  "fileNaming": "kebab-case",
+  "stringEnums": true,
+  "taggedUnions": false
+}

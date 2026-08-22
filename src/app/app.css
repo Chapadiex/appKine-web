@@ -1,0 +1,156 @@
+/*
+  Estilos del shell (AKINE-00.01).
+
+  Minimos y deliberadamente sin sistema de diseno: elegir libreria de componentes y tokens
+  visuales es una decision de producto que no corresponde a la etapa de baseline.
+
+  Lo que si queda fijado son las garantias de accesibilidad WCAG 2.1 AA: foco visible,
+  skip link operativo y contraste suficiente.
+*/
+
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  padding: 0.75rem 1rem;
+  background: #10263f;
+  color: #fff;
+  z-index: 100;
+}
+
+/* El skip link debe ser alcanzable por teclado: aparece al recibir foco. */
+.skip-link:focus {
+  left: 0;
+}
+
+/* Foco visible en todo elemento interactivo. Nunca usar outline: none sin reemplazo. */
+:focus-visible {
+  outline: 3px solid #2f6fb2;
+  outline-offset: 2px;
+}
+
+.cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  background: #10263f;
+  color: #fff;
+}
+
+.marca {
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.subtitulo {
+  font-size: 0.875rem;
+  color: #c8d8ea;
+}
+
+.contenido {
+  max-width: 46rem;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+}
+
+.contenido:focus {
+  outline: none;
+}
+
+h1 {
+  margin: 0 0 0.5rem;
+  font-size: 1.5rem;
+}
+
+.descripcion {
+  margin: 0 0 2rem;
+  color: #4a5a6a;
+}
+
+.tarjeta {
+  border: 1px solid #d5dee7;
+  border-radius: 8px;
+  padding: 1.25rem 1.5rem;
+}
+
+.tarjeta h2 {
+  margin: 0 0 1rem;
+  font-size: 1.125rem;
+}
+
+.estado {
+  margin: 0 0 0.75rem;
+  font-weight: 600;
+}
+
+/* Contraste verificado contra fondo blanco: todos superan 4.5:1 (WCAG AA). */
+.estado--cargando {
+  color: #4a5a6a;
+}
+
+.estado--ok {
+  color: #1d6b3f;
+}
+
+.estado--error {
+  color: #a32020;
+}
+
+.ayuda {
+  margin: 0 0 1rem;
+  font-size: 0.9375rem;
+  color: #4a5a6a;
+}
+
+code {
+  padding: 0.125rem 0.375rem;
+  background: #eef2f6;
+  border-radius: 4px;
+  font-size: 0.875em;
+}
+
+.detalle {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.375rem 1rem;
+  margin: 0;
+  font-size: 0.9375rem;
+}
+
+.detalle dt {
+  color: #4a5a6a;
+}
+
+.detalle dd {
+  margin: 0;
+  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+}
+
+.boton {
+  padding: 0.5rem 1rem;
+  border: 1px solid #10263f;
+  border-radius: 6px;
+  background: #10263f;
+  color: #fff;
+  font: inherit;
+  cursor: pointer;
+}
+
+.boton:hover {
+  background: #1b3a5c;
+}
+
+/* El layout es fluido por defecto: recepcion usa desktop, profesionales usan tablet. */
+@media (max-width: 30rem) {
+  .detalle {
+    grid-template-columns: 1fr;
+    gap: 0 0;
+  }
+
+  .detalle dd {
+    margin-bottom: 0.5rem;
+  }
+}

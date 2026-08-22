@@ -1,0 +1,47 @@
+# --- Entorno de IA (local, personal de cada máquina) ---
+.claude/qa-config.md
+.claude/settings.local.json
+
+# --- Node / npm ---
+node_modules/
+npm-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# --- Angular build ---
+dist/
+tmp/
+out-tsc/
+bazel-out/
+.angular/
+
+# --- Tests ---
+coverage/
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+
+# --- Secretos y entorno ---
+.env
+.env.*
+!.env.example
+
+# --- IDE ---
+.idea/
+*.iml
+.vscode/*
+!.vscode/extensions.json
+.project
+.classpath
+.c9/
+.history/
+
+# --- SO ---
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- Logs ---
+*.log
+logs/
