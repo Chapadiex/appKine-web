@@ -1,4 +1,16 @@
+export * from './mi-cuenta.service';
+import { MiCuentaService } from './mi-cuenta.service';
+export * from './mi-cuenta.serviceInterface';
+export * from './organizaciones.service';
+import { OrganizacionesService } from './organizaciones.service';
+export * from './organizaciones.serviceInterface';
+export * from './planes.service';
+import { PlanesService } from './planes.service';
+export * from './planes.serviceInterface';
 export * from './platform.service';
 import { PlatformService } from './platform.service';
 export * from './platform.serviceInterface';
-export const APIS = [PlatformService];
+export * from './suscripciones.service';
+import { SuscripcionesService } from './suscripciones.service';
+export * from './suscripciones.serviceInterface';
+export const APIS = [MiCuentaService, OrganizacionesService, PlanesService, PlatformService, SuscripcionesService];

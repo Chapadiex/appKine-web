@@ -25,6 +25,28 @@ export const routes: Routes = [
     title: 'AKINE - Baseline tecnico',
   },
 
+  // Seleccion del contexto de trabajo (M01). Va suelta y no bajo `organizacion` porque
+  // logicamente precede a tener una: es la pantalla con la que se averigua cual.
+  {
+    path: 'seleccionar-contexto',
+    loadComponent: () =>
+      import('./features/organization/pages/context-selector/context-selector-page').then(
+        (m) => m.ContextSelectorPage,
+      ),
+    title: 'AKINE - Elegir contexto',
+  },
+
+  // Feature `organization` (M01). Lazy loaded segun ADR-0004.
+  //
+  // Sin `canActivate`: los guards de sesion y contexto llegan en AKINE-01.02 junto con el
+  // login. Un guard de contexto hoy redirigiria toda la aplicacion a una pantalla que sin
+  // sesion no puede resolverse, y romperia la ruta baseline de `/`, que tiene E2E pasando.
+  {
+    path: 'organizacion',
+    loadChildren: () =>
+      import('./features/organization/organization.routes').then((m) => m.routes),
+  },
+
   // Comodin al final: cualquier ruta desconocida cae aca.
   {
     path: '**',

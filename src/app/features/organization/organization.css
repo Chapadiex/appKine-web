@@ -1,0 +1,215 @@
+/*
+ * Estilos compartidos por las pantallas de la feature `organization`.
+ *
+ * Un solo archivo para las tres paginas: son variaciones del mismo layout de tarjeta que
+ * estrena `features/platform/pages/estado`. Cuando haya una cuarta o quinta pantalla que lo
+ * justifique se evalua extraer los estados a un componente comun (PENDIENTE de ADR-0005).
+ *
+ * Todos los colores de texto verificados contra fondo blanco: superan 4.5:1 (WCAG 2.1 AA).
+ */
+
+h1 {
+  margin: 0 0 0.5rem;
+  font-size: 1.5rem;
+}
+
+.descripcion {
+  margin: 0 0 2rem;
+  color: #4a5a6a;
+}
+
+.tarjeta {
+  border: 1px solid #d5dee7;
+  border-radius: 8px;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.tarjeta h2 {
+  margin: 0 0 1rem;
+  font-size: 1.125rem;
+}
+
+.estado {
+  margin: 0 0 0.75rem;
+  font-weight: 600;
+}
+
+.estado--cargando {
+  color: #4a5a6a;
+}
+
+.estado--ok {
+  color: #1d6b3f;
+}
+
+.estado--vacio {
+  color: #4a5a6a;
+}
+
+.estado--error {
+  color: #a32020;
+}
+
+.ayuda {
+  margin: 0 0 1rem;
+  font-size: 0.9375rem;
+  color: #4a5a6a;
+}
+
+.detalle {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.375rem 1rem;
+  margin: 0;
+  font-size: 0.9375rem;
+}
+
+.detalle dt {
+  color: #4a5a6a;
+}
+
+.detalle dd {
+  margin: 0;
+  font-weight: 500;
+}
+
+.boton {
+  padding: 0.5rem 1rem;
+  border: 1px solid #10263f;
+  border-radius: 6px;
+  background: #10263f;
+  color: #fff;
+  font: inherit;
+  cursor: pointer;
+}
+
+.boton:hover {
+  background: #1b3a5c;
+}
+
+/* Foco visible: nunca se quita el outline sin reemplazo (ADR-0005). */
+.boton:focus-visible,
+.opcion:focus-visible,
+.enlace:focus-visible {
+  outline: 3px solid #1b3a5c;
+  outline-offset: 2px;
+}
+
+.enlace {
+  color: #10263f;
+}
+
+/* --- Selector de contexto --------------------------------------------------------- */
+
+.lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.opcion {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid #d5dee7;
+  border-radius: 6px;
+  background: #fff;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.opcion:hover {
+  border-color: #10263f;
+  background: #f4f7fa;
+}
+
+.opcion__organizacion {
+  font-weight: 600;
+}
+
+.opcion__consultorio {
+  font-size: 0.875rem;
+  color: #4a5a6a;
+}
+
+/* --- Suscripcion ------------------------------------------------------------------ */
+
+.banner {
+  margin: 0 0 1rem;
+  padding: 0.875rem 1rem;
+  border-left: 4px solid;
+  border-radius: 4px;
+  font-size: 0.9375rem;
+}
+
+.banner h3 {
+  margin: 0 0 0.375rem;
+  font-size: 1rem;
+}
+
+.banner p {
+  margin: 0 0 0.375rem;
+}
+
+.banner p:last-child {
+  margin-bottom: 0;
+}
+
+.banner--activa {
+  border-color: #1d6b3f;
+  background: #eef7f1;
+  color: #14532b;
+}
+
+.banner--suspendida {
+  border-color: #8a5300;
+  background: #fdf5e6;
+  color: #6b4000;
+}
+
+.banner--cancelada {
+  border-color: #a32020;
+  background: #fdeded;
+  color: #7d1717;
+}
+
+.limites {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9375rem;
+}
+
+.limites th,
+.limites td {
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid #e3e9ef;
+  text-align: left;
+}
+
+.limites th {
+  color: #4a5a6a;
+  font-weight: 600;
+}
+
+.limites .excedido {
+  color: #a32020;
+  font-weight: 600;
+}
+
+/* Layout fluido: recepcion usa desktop, profesionales usan tablet. */
+@media (max-width: 30rem) {
+  .detalle {
+    grid-template-columns: 1fr;
+    gap: 0 0;
+  }
+
+  .detalle dd {
+    margin-bottom: 0.5rem;
+  }
+}

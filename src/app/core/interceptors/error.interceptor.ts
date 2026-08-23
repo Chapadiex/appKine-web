@@ -20,6 +20,42 @@ export interface ProblemDetail {
   readonly errors?: Readonly<Record<string, string>>;
 }
 
+/**
+ * Tipos de problema que el backend publica bajo `https://akine.app/problems/`.
+ *
+ * <p>Existen para que las pantallas <b>ramifiquen por un identificador estable</b> y no
+ * parseando el texto de `detail`, que es prosa para humanos y cambia sin avisar. Un
+ * `if (error.message.includes('suspendida'))` se rompe el dia que alguien corrige una
+ * tilde.
+ *
+ * <p><b>Nota honesta:</b> el contrato OpenAPI 0.2.0 declara `ProblemDetail.type` como un
+ * `string`/`uri` libre y <b>no enumera estos valores</b>. La lista se derivo de las
+ * descripciones del contrato y de `OrganizationProblemHandler` / `TenantContextFilter` en
+ * appKine-api. Si el backend agrega uno nuevo, aca no se entera nada: `problemType`
+ * devuelve `null` y la pantalla cae en su rama generica, que es el comportamiento seguro.
+ */
+export const AKINE_PROBLEM_TYPES = [
+  /** 409: el alta supera el tope del plan contratado. */
+  'plan-limit-exceeded',
+  /** 403: el plan contratado no incluye la funcionalidad. */
+  'feature-not-available',
+  /** 409: la suscripcion no esta ACTIVA; solo lectura y administracion. */
+  'subscription-suspended',
+  /** 409: la maquina de estados de la suscripcion no admite ese salto. */
+  'invalid-subscription-transition',
+  /** 409: misma Idempotency-Key con un payload distinto al original. */
+  'idempotency-key-conflict',
+  /** 409: bloqueo optimista. Hay que releer y reintentar. */
+  'conflict',
+  /** 403: hay sesion pero no se eligio contexto de tenant todavia. */
+  'missing-tenant-context',
+] as const;
+
+/** Uno de los problemas conocidos del contrato, o `null` si es otro. */
+export type AkineProblemType = (typeof AKINE_PROBLEM_TYPES)[number];
+
+const PROBLEMAS_CONOCIDOS: ReadonlySet<string> = new Set(AKINE_PROBLEM_TYPES);
+
 /** Error de dominio del frontend, ya traducido a algo mostrable. */
 export class AkineHttpError extends Error {
   constructor(
@@ -34,6 +70,34 @@ export class AkineHttpError extends Error {
   /** Errores de validacion por campo, para pintar el formulario. */
   get erroresPorCampo(): Readonly<Record<string, string>> {
     return this.problem?.errors ?? {};
+  }
+
+  /**
+   * Identificador estable del problema, o `null` si no es uno de los conocidos.
+   *
+   * <p>Es el ultimo segmento de `ProblemDetail.type`
+   * (`https://akine.app/problems/conflict` -> `'conflict'`). Se devuelve `null` -y no el
+   * segmento crudo- ante un tipo desconocido para que el `switch` de la pantalla no pueda
+   * quedar creyendo que reconocio algo que no reconoce.
+   */
+  get problemType(): AkineProblemType | null {
+    const type = this.problem?.type;
+    if (typeof type !== 'string') {
+      return null;
+    }
+
+    const segmento = type.split('/').pop() ?? '';
+    return PROBLEMAS_CONOCIDOS.has(segmento) ? (segmento as AkineProblemType) : null;
+  }
+
+  /** `true` cuando la operacion se rechazo porque la suscripcion no esta ACTIVA. */
+  get esSuscripcionSuspendida(): boolean {
+    return this.problemType === 'subscription-suspended';
+  }
+
+  /** `true` cuando falta elegir contexto de tenant: la salida es /seleccionar-contexto. */
+  get faltaContexto(): boolean {
+    return this.problemType === 'missing-tenant-context';
   }
 }
 

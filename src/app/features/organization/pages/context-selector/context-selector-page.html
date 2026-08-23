@@ -1,0 +1,56 @@
+<h1>Elegi donde vas a trabajar</h1>
+
+<p class="descripcion">
+  Tu cuenta puede tener acceso a mas de un centro o sede. Lo que elijas define que datos ves y
+  sobre cuales podes operar.
+</p>
+
+<section class="tarjeta" aria-labelledby="titulo-contextos">
+  <h2 id="titulo-contextos">Contextos habilitados</h2>
+
+  <!-- aria-live: el cambio de estado se anuncia sin que el usuario tenga que buscarlo. -->
+  <div aria-live="polite">
+    @switch (estado().tipo) {
+      @case ('cargando') {
+        <p class="estado estado--cargando">Buscando tus contextos&hellip;</p>
+      }
+
+      @case ('entrando') {
+        <p class="estado estado--ok">
+          Entrando a {{ contextoEnCurso()?.organizationName }}&hellip;
+        </p>
+        <p class="ayuda">
+          Tenes un solo contexto habilitado, asi que no hace falta elegir.
+        </p>
+      }
+
+      @case ('eligiendo') {
+        <ul class="lista">
+          @for (contexto of contextos(); track $index) {
+            <li>
+              <button type="button" class="opcion" (click)="seleccionar(contexto)">
+                <span class="opcion__organizacion">{{ contexto.organizationName }}</span>
+                @if (contexto.consultorioName) {
+                  <span class="opcion__consultorio">{{ contexto.consultorioName }}</span>
+                }
+              </button>
+            </li>
+          }
+        </ul>
+      }
+
+      @case ('vacio') {
+        <p class="estado estado--vacio">No tenes organizaciones asignadas.</p>
+        <p class="ayuda">
+          Contacta a tu administrador para que te de acceso a un centro. No es un error: tu
+          cuenta existe, todavia no tiene donde trabajar.
+        </p>
+      }
+
+      @case ('error') {
+        <p class="estado estado--error" role="alert">{{ mensajeError() }}</p>
+        <button type="button" class="boton" (click)="cargar()">Reintentar</button>
+      }
+    }
+  </div>
+</section>

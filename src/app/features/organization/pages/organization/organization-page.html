@@ -1,0 +1,60 @@
+<h1>Organizacion</h1>
+
+<p class="descripcion">Datos del centro sobre el que estas trabajando.</p>
+
+<section class="tarjeta" aria-labelledby="titulo-organizacion">
+  <h2 id="titulo-organizacion">Datos del centro</h2>
+
+  <div aria-live="polite">
+    @switch (estado().tipo) {
+      @case ('cargando') {
+        <p class="estado estado--cargando">Cargando los datos del centro&hellip;</p>
+      }
+
+      @case ('sin-contexto') {
+        <p class="estado estado--vacio">Todavia no elegiste un contexto de trabajo.</p>
+        <p class="ayuda">
+          Para ver los datos de un centro hay que indicar cual. Los datos de una organizacion
+          no se muestran nunca fuera de su contexto.
+        </p>
+        <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto</a>
+      }
+
+      @case ('listo') {
+        <dl class="detalle">
+          <dt>Nombre</dt>
+          <dd>{{ organizacion()?.name }}</dd>
+
+          <dt>Estado operativo</dt>
+          <dd>{{ organizacion()?.operationalStatus }}</dd>
+
+          <dt>Zona horaria</dt>
+          <dd>{{ organizacion()?.timezone }}</dd>
+
+          <dt>Identificador de soporte</dt>
+          <dd>{{ organizacion()?.slug }}</dd>
+        </dl>
+
+        @if (organizacion()?.active === false) {
+          <p class="estado estado--error" role="alert">
+            Esta organizacion esta dada de baja. Solo podes consultarla.
+          </p>
+        }
+
+        <p class="ayuda">
+          <a class="enlace" routerLink="/organizacion/suscripcion">Ver plan y suscripcion</a>
+        </p>
+      }
+
+      @case ('error') {
+        <p class="estado estado--error" role="alert">{{ mensajeError() }}</p>
+
+        @if (faltaContexto()) {
+          <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto</a>
+        } @else {
+          <button type="button" class="boton" (click)="cargar()">Reintentar</button>
+        }
+      }
+    }
+  </div>
+</section>

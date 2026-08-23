@@ -1,0 +1,110 @@
+<h1>Suscripcion</h1>
+
+<p class="descripcion">Plan contratado, estado de la suscripcion y consumo de cada limite.</p>
+
+<section class="tarjeta" aria-labelledby="titulo-suscripcion">
+  <h2 id="titulo-suscripcion">Estado y plan</h2>
+
+  <div aria-live="polite">
+    @switch (estado().tipo) {
+      @case ('cargando') {
+        <p class="estado estado--cargando">Cargando la suscripcion&hellip;</p>
+      }
+
+      @case ('sin-contexto') {
+        <p class="estado estado--vacio">Todavia no elegiste un contexto de trabajo.</p>
+        <p class="ayuda">La suscripcion pertenece a un centro concreto: primero hay que elegirlo.</p>
+        <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto</a>
+      }
+
+      @case ('listo') {
+        @switch (estadoSuscripcion()) {
+          @case ('ACTIVA') {
+            <div class="banner banner--activa">
+              <h3>Suscripcion activa</h3>
+              <p>El centro opera con normalidad.</p>
+            </div>
+          }
+
+          @case ('SUSPENDIDA') {
+            <div class="banner banner--suspendida" role="alert">
+              <h3>Suscripcion suspendida</h3>
+              @if (motivo()) {
+                <p>Motivo: {{ motivo() }}</p>
+              } @else {
+                <p>No pudimos recuperar el motivo declarado. Consultalo con administracion.</p>
+              }
+              <p>
+                El centro queda en <strong>solo lectura</strong>: podes consultar todo, pero las
+                altas y modificaciones se rechazan hasta que se reactive. Nada se borro.
+              </p>
+            </div>
+          }
+
+          @case ('CANCELADA') {
+            <div class="banner banner--cancelada" role="alert">
+              <h3>Suscripcion cancelada</h3>
+              <p>Es un estado final. Para volver a operar hay que contratar de nuevo.</p>
+            </div>
+          }
+        }
+
+        <dl class="detalle">
+          <dt>Plan contratado</dt>
+          <dd>{{ suscripcion()?.planName }}</dd>
+
+          <dt>Estado</dt>
+          <dd>{{ suscripcion()?.status }}</dd>
+
+          <dt>Alta de la suscripcion</dt>
+          <dd>{{ suscripcion()?.startedAt }}</dd>
+        </dl>
+      }
+
+      @case ('error') {
+        <p class="estado estado--error" role="alert">{{ mensajeError() }}</p>
+
+        @if (faltaContexto()) {
+          <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto</a>
+        } @else {
+          <button type="button" class="boton" (click)="cargar()">Reintentar</button>
+        }
+      }
+    }
+  </div>
+</section>
+
+@if (estado().tipo === 'listo') {
+  <section class="tarjeta" aria-labelledby="titulo-limites">
+    <h2 id="titulo-limites">Limites del plan</h2>
+
+    @if (limites().length === 0) {
+      <p class="estado estado--vacio">Este plan no declara limites.</p>
+    } @else {
+      <table class="limites">
+        <caption class="ayuda">Consumo actual de cada limite frente al tope del plan.</caption>
+        <thead>
+          <tr>
+            <th scope="col">Limite</th>
+            <th scope="col">En uso</th>
+            <th scope="col">Tope del plan</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (limite of limites(); track limite.code) {
+            <tr>
+              <th scope="row">{{ nombreDelLimite(limite) }}</th>
+              <td [class.excedido]="limite.exceeded">{{ limite.currentUsage }}</td>
+              <td>{{ topeDelLimite(limite) }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+
+      <p class="ayuda">
+        Un limite excedido no borra nada: lo que ya existe sigue operativo y solo se rechazan
+        las altas nuevas.
+      </p>
+    }
+  </section>
+}
