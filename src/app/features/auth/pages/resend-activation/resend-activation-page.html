@@ -1,0 +1,55 @@
+<h1>Reenviar el correo de activacion</h1>
+
+<p class="descripcion">
+  Si no te llego el enlace o ya vencio, pedimos uno nuevo. El anterior deja de servir.
+</p>
+
+<section class="tarjeta" aria-labelledby="titulo-reenvio">
+  <h2 id="titulo-reenvio">Tu email</h2>
+
+  <form [formGroup]="formulario" (ngSubmit)="enviar()" novalidate>
+    <div class="campo">
+      <label for="reenvio-email">Email</label>
+      <input
+        id="reenvio-email"
+        type="email"
+        formControlName="email"
+        autocomplete="email"
+        [attr.aria-invalid]="mostrarError()"
+        [attr.aria-describedby]="mostrarError() ? 'reenvio-email-error' : null"
+      />
+      @if (mostrarError()) {
+        <p class="campo__error" id="reenvio-email-error">Escribi un email valido.</p>
+      }
+    </div>
+
+    <div class="acciones">
+      <button type="submit" class="boton" [disabled]="bloqueado()">Enviar el enlace</button>
+
+      @if (espera.activa()) {
+        <span class="ayuda">Volve a intentar en {{ espera.segundos() }} segundos.</span>
+      }
+    </div>
+  </form>
+
+  <div aria-live="polite">
+    @switch (estado().tipo) {
+      @case ('enviando') {
+        <p class="estado estado--cargando">Enviando&hellip;</p>
+      }
+
+      @case ('ok') {
+        <p class="estado estado--ok">Solicitud recibida.</p>
+        <p class="ayuda">{{ mensajeExito() }}</p>
+      }
+
+      @case ('error') {
+        <p class="estado estado--error" role="alert">{{ mensajeError() }}</p>
+      }
+    }
+  </div>
+
+  <ul class="enlaces">
+    <li><a class="enlace" routerLink="/auth/ingresar">Volver a iniciar sesion</a></li>
+  </ul>
+</section>

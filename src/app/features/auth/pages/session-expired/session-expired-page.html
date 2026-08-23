@@ -1,0 +1,22 @@
+<h1>Tu sesion se cerro</h1>
+
+<p class="descripcion">
+  Por seguridad, las sesiones de AKINE no duran para siempre. Nada de lo que ya guardaste se perdio.
+</p>
+
+<section class="tarjeta" aria-labelledby="titulo-expirada">
+  <h2 id="titulo-expirada">Que paso</h2>
+
+  <p class="estado estado--error" role="alert">
+    No pudimos renovar tu sesion, asi que la cerramos.
+  </p>
+
+  <p class="ayuda">
+    Puede ser porque paso demasiado tiempo, porque cerraste sesion en otro dispositivo o porque
+    alguien pidio cerrar todas las sesiones de tu cuenta. Volve a entrar y seguis donde estabas.
+  </p>
+
+  <a class="boton" routerLink="/auth/ingresar" [queryParams]="parametrosDeVuelta()">
+    Volver a iniciar sesion
+  </a>
+</section>

@@ -1,0 +1,148 @@
+<h1>Crear una cuenta</h1>
+
+<p class="descripcion">
+  Se crean en un solo paso tu cuenta, el centro y su primer consultorio. Vas a recibir un correo
+  para activar la cuenta antes de poder entrar.
+</p>
+
+<section class="tarjeta" aria-labelledby="titulo-registro">
+  <h2 id="titulo-registro">Datos del alta</h2>
+
+  <form [formGroup]="formulario" (ngSubmit)="enviar()" novalidate>
+    <fieldset class="grupo">
+      <legend>Tu cuenta</legend>
+
+      <div class="campo">
+        <label for="registro-firstName">Nombre</label>
+        <input
+          id="registro-firstName"
+          type="text"
+          formControlName="firstName"
+          autocomplete="given-name"
+          [attr.aria-invalid]="mostrarError('firstName')"
+          [attr.aria-describedby]="mostrarError('firstName') ? 'registro-firstName-error' : null"
+        />
+        @if (mostrarError('firstName')) {
+          <p class="campo__error" id="registro-firstName-error">Escribi tu nombre.</p>
+        }
+      </div>
+
+      <div class="campo">
+        <label for="registro-lastName">Apellido</label>
+        <input
+          id="registro-lastName"
+          type="text"
+          formControlName="lastName"
+          autocomplete="family-name"
+          [attr.aria-invalid]="mostrarError('lastName')"
+          [attr.aria-describedby]="mostrarError('lastName') ? 'registro-lastName-error' : null"
+        />
+        @if (mostrarError('lastName')) {
+          <p class="campo__error" id="registro-lastName-error">Escribi tu apellido.</p>
+        }
+      </div>
+
+      <div class="campo">
+        <label for="registro-email">Email</label>
+        <input
+          id="registro-email"
+          type="email"
+          formControlName="email"
+          autocomplete="email"
+          [attr.aria-invalid]="mostrarError('email')"
+          [attr.aria-describedby]="mostrarError('email') ? 'registro-email-error' : null"
+        />
+        @if (mostrarError('email')) {
+          <p class="campo__error" id="registro-email-error">Escribi un email valido.</p>
+        }
+      </div>
+
+      <div class="campo">
+        <label for="registro-password">Contrasena</label>
+        <input
+          id="registro-password"
+          type="password"
+          formControlName="password"
+          autocomplete="new-password"
+          aria-describedby="registro-password-ayuda"
+          [attr.aria-invalid]="mostrarError('password')"
+        />
+        <p class="ayuda" id="registro-password-ayuda">
+          Si no cumple la politica del sistema, el servidor te va a decir exactamente que le falta.
+        </p>
+        @if (mostrarError('password')) {
+          <p class="campo__error" id="registro-password-error">Escribi una contrasena.</p>
+        }
+      </div>
+    </fieldset>
+
+    <fieldset class="grupo">
+      <legend>El centro</legend>
+
+      <div class="campo">
+        <label for="registro-organizationName">Nombre del centro</label>
+        <input
+          id="registro-organizationName"
+          type="text"
+          formControlName="organizationName"
+          [attr.aria-invalid]="mostrarError('organizationName')"
+          [attr.aria-describedby]="
+            mostrarError('organizationName') ? 'registro-organizationName-error' : null
+          "
+        />
+        @if (mostrarError('organizationName')) {
+          <p class="campo__error" id="registro-organizationName-error">
+            Escribi el nombre del centro.
+          </p>
+        }
+      </div>
+
+      <div class="campo">
+        <label for="registro-organizationSlug">
+          Identificador de soporte <span class="campo__opcional">(opcional)</span>
+        </label>
+        <input id="registro-organizationSlug" type="text" formControlName="organizationSlug" />
+      </div>
+
+      <div class="campo">
+        <label for="registro-consultorioName">
+          Nombre del primer consultorio <span class="campo__opcional">(opcional)</span>
+        </label>
+        <input id="registro-consultorioName" type="text" formControlName="consultorioName" />
+      </div>
+
+      <div class="campo">
+        <label for="registro-planCode">
+          Codigo de plan <span class="campo__opcional">(opcional)</span>
+        </label>
+        <input id="registro-planCode" type="text" formControlName="planCode" />
+      </div>
+    </fieldset>
+
+    <div class="acciones">
+      <button type="submit" class="boton" [disabled]="bloqueado()">Crear la cuenta</button>
+
+      @if (espera.activa()) {
+        <span class="ayuda">Volve a intentar en {{ espera.segundos() }} segundos.</span>
+      }
+    </div>
+  </form>
+
+  <div aria-live="polite">
+    @switch (estado().tipo) {
+      @case ('enviando') {
+        <p class="estado estado--cargando">Creando la cuenta&hellip;</p>
+      }
+
+      @case ('ok') {
+        <p class="estado estado--ok">Listo, ya lo estamos procesando.</p>
+        <p class="ayuda">{{ mensajeExito() }}</p>
+        <a class="enlace" routerLink="/auth/ingresar">Volver a iniciar sesion</a>
+      }
+
+      @case ('error') {
+        <p class="estado estado--error" role="alert">{{ mensajeError() }}</p>
+      }
+    }
+  </div>
+</section>

@@ -224,7 +224,11 @@ Reglas innegociables del QA:
 
 ## 7. Estado actual
 
-**AKINE-00.01 completada y verificada.**
+**Rama `akine-01.02-identidad`, 3 commits, 64 rutas sin commitear.** 00.01, 00.02 y 01.01
+cerradas; **01.02 construida y sin commitear**. Los bloques de abajo son el registro por etapa,
+en orden cronológico. Mapa verificado del proyecto: `../docs/PROJECT_MAP.md`.
+
+### AKINE-00.01 — completada y verificada
 
 Stack fijado: Angular **21.2.6** · Node 24.13 · npm 11.6 · Vitest 4 · Playwright ·
 cliente generado con openapi-generator **7.24.0** (`typescript-angular`).
@@ -253,12 +257,15 @@ appKine-web/
         ├── app.ts · app.html · app.css · app.config.ts · app.routes.ts · app.spec.ts
         ├── api/generated/             # NO SE EDITA
         ├── core/
-        │   ├── services/     auth-token.store.ts · tenant-context.store.ts
+        │   ├── services/     auth-token.store.ts · tenant-context.store.ts · session.service.ts
         │   ├── interceptors/ auth.interceptor.ts · error.interceptor.ts
-        │   ├── guards/       (vacío hasta F1)
-        │   └── models/       (vacío hasta F1)
-        ├── shared/{components,pipes,directives}/
-        └── features/                  # una carpeta por dominio, desde M01
+        │   ├── guards/       auth.guard.ts · context.guard.ts
+        │   └── models/       rutas.ts
+        ├── shared/{components,pipes,directives}/ · shared/pages/not-found/
+        └── features/
+            ├── auth/          # M02 — 7 pantallas (01.02)
+            ├── organization/  # M01 — 3 pantallas (01.01)
+            └── platform/      # pantalla de estado del baseline
 ```
 
 ```bash
@@ -332,10 +339,54 @@ Reglas de lint propias:
 > El cliente generado está excluido de ESLint **y** de Prettier. Lintearlo o formatearlo
 > rompe el gate de drift del pipeline en cada corrida.
 
-### Próximo paso — etapa AKINE-00.03
+### AKINE-01.01 — completada
 
-Pendientes que arrastra el frontend:
+Commit `9c3697c`. Primera feature de negocio: `features/organization` con tres pantallas
+(`context-selector`, `organization`, `subscription`), cliente regenerado desde el contrato
+**0.2.0** y 9 specs unitarias más la E2E.
 
+> Ninguna de las tres pantallas era ejercitable de punta a punta al cerrar la etapa: sin login
+> no había forma de obtener un contexto. Eso lo destraba 01.02.
+
+### AKINE-01.02 — construida, sin commitear
+
+Feature `auth` (M02) con **7 pantallas**: `ingresar`, `registro`, `activar`,
+`reenviar-activacion`, `olvide-mi-contrasena`, `restablecer`, `sesion-expirada`. Se monta bajo
+`/auth` con `loadChildren` y **sin guards**: son las únicas rutas que un usuario anónimo tiene
+que poder abrir, y los enlaces de correo entran por `auth/activar` y `auth/restablecer`.
+
+`core/services/session.service.ts` concentra la sesión: canje del refresh con **cola
+single-flight** (`refreshEnVuelo`, línea 79) y rotación estricta del lado del backend
+(documentada en la línea 137). `core/guards/auth.guard.ts` y `context.guard.ts` quedan
+cableados en `app.routes.ts`: `authGuard` en `/seleccionar-contexto`, los dos en
+`/organizacion`.
+
+Cliente regenerado desde el contrato **0.3.0** (5 servicios y 12 modelos nuevos),
+`contractVersion` subido en ambos `environment*.ts`.
+
+**20 specs · 169 `it()`.** Cobertura del reporte en `coverage/akine-web/coverage-summary.json`:
+**97,14 % statements · 97,45 % líneas · 97,85 % funciones · 88,98 % ramas**. Los E2E siguen
+siendo 7 `test()` en `e2e/smoke.spec.ts`: **ningún flujo de auth está cubierto por E2E**.
+
+> **El repo no tiene ningún commit de 01.02**: 64 rutas sin commitear en la rama
+> `akine-01.02-identidad`. El cliente generado apunta a un contrato 0.3.0 que el backend
+> tampoco commiteó todavía; la regla de coordinación §4 del workspace pide publicar primero
+> del lado del backend.
+
+Reglas que esta etapa dejó fijadas y que las siguientes heredan:
+
+| Regla | Por qué |
+|---|---|
+| Las rutas de `auth` van **sin guards** | Un `authGuard` ahí deja la aplicación sin ninguna ruta alcanzable sin sesión |
+| El token de la URL (`?token=...`) **no se persiste** en ninguna de las dos pantallas de correo | Es lo único que un correo puede abrir; guardarlo lo deja sobreviviendo a la navegación |
+| Un solo canje de refresh en vuelo: **cola single-flight** en `SessionService` | La rotación del backend invalida el refresh presentado; dos canjes en paralelo se pisan y cierran la sesión |
+| Los guards son **UX, no seguridad** | La autoridad de permisos es el backend, que rechaza igual si se llega por URL directa |
+| Falta de contexto se resuelve mandando a `/seleccionar-contexto`, no mostrando un 403 | Sin eso la pantalla se abre vacía y el usuario no tiene cómo salir |
+
+### Próximo paso — cerrar 01.02
+
+- [ ] Commitear la etapa después de que el backend publique el contrato 0.3.0
+- [ ] E2E de los flujos de auth: hoy `smoke.spec.ts` no toca ninguno
 - [ ] Remote de GitHub y protección de rama en `main`
 - [ ] Activar el job E2E del pipeline (listo y comentado — espera la imagen Docker del backend)
 - [ ] Regla de ESLint que prohíba imports entre features (ADR-0004, hoy depende de revisión)

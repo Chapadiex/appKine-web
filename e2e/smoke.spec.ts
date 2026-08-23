@@ -35,6 +35,17 @@ test.describe('Baseline AKINE-00.01', () => {
   test('el skip link lleva al contenido principal con el teclado', async ({ page }) => {
     await page.goto('/');
 
+    // Anclar el foco al inicio del documento ANTES de tabular.
+    //
+    // Sin esto el test dependia de cuantos Tab hacen falta para entrar al documento, que no es
+    // una propiedad de la aplicacion sino del entorno: si la ventana no tiene el foco del
+    // sistema operativo los primeros Tab se los come el chrome del navegador y el skip link
+    // recibe el foco recien en el tercero. Poniendo `document.body` como elemento activo, la
+    // navegacion secuencial arranca siempre desde el principio del documento y un unico Tab
+    // tiene que caer en el primer elemento enfocable.
+    await page.locator('body').focus();
+    await expect(page.locator('body')).toBeFocused();
+
     // Primer Tab desde el inicio del documento: debe caer en el skip link.
     await page.keyboard.press('Tab');
 

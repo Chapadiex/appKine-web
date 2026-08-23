@@ -1,0 +1,55 @@
+<h1>Activar la cuenta</h1>
+
+<p class="descripcion">
+  Estamos confirmando el enlace del correo. Activar la cuenta no abre sesion: despues vas a poder
+  entrar con tu email y contrasena.
+</p>
+
+<section class="tarjeta" aria-labelledby="titulo-activacion">
+  <h2 id="titulo-activacion">Estado del enlace</h2>
+
+  <div aria-live="polite">
+    @switch (estado().tipo) {
+      @case ('activando') {
+        <p class="estado estado--cargando">Activando tu cuenta&hellip;</p>
+      }
+
+      @case ('ok') {
+        <p class="estado estado--ok">Tu cuenta quedo activa.</p>
+        <p class="ayuda">Los demas enlaces de activacion que hubiera vivos dejaron de servir.</p>
+        <a class="boton" routerLink="/auth/ingresar">Iniciar sesion</a>
+      }
+
+      @case ('sin-token') {
+        <p class="estado estado--error" role="alert">El enlace vino incompleto.</p>
+        <p class="ayuda">
+          Falta el token en la direccion. Suele pasar cuando el correo corta el enlace en dos
+          lineas. Pedi uno nuevo y abrilo de una sola vez.
+        </p>
+        <a class="boton" routerLink="/auth/reenviar-activacion">Pedir un enlace nuevo</a>
+      }
+
+      @case ('error') {
+        <p class="estado estado--error" role="alert">{{ mensajeError() }}</p>
+
+        @if (enlaceInservible()) {
+          <a class="boton" routerLink="/auth/reenviar-activacion">Pedir un enlace nuevo</a>
+        } @else {
+          <div class="acciones">
+            <button type="button" class="boton" [disabled]="!puedeReintentar()" (click)="activar()">
+              Reintentar
+            </button>
+
+            @if (espera.activa()) {
+              <span class="ayuda">Volve a intentar en {{ espera.segundos() }} segundos.</span>
+            }
+          </div>
+        }
+      }
+    }
+  </div>
+
+  <ul class="enlaces">
+    <li><a class="enlace" routerLink="/auth/ingresar">Ir a iniciar sesion</a></li>
+  </ul>
+</section>

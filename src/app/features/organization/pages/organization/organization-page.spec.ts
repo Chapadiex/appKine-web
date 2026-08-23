@@ -4,6 +4,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 
 import { OrganizationPage } from './organization-page';
+import { TIMEOUT_AXE, esperarSinViolaciones } from '../../../../core/testing/axe';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { errorInterceptor } from '../../../../core/interceptors/error.interceptor';
 import { provideApi } from '../../../../api/generated/provide-api';
@@ -164,7 +165,10 @@ describe('OrganizationPage', () => {
 
     httpMock
       .expectOne('/api/v1/organizations/9')
-      .flush({ type: 'https://akine.app/problems/not-found' }, { status: 404, statusText: 'Not Found' });
+      .flush(
+        { type: 'https://akine.app/problems/not-found' },
+        { status: 404, statusText: 'Not Found' },
+      );
     await fixture.whenStable();
     fixture.detectChanges();
 
@@ -176,15 +180,49 @@ describe('OrganizationPage', () => {
     const fixture = TestBed.createComponent(OrganizationPage);
     fixture.detectChanges();
 
-    httpMock.expectOne('/api/v1/organizations/1').flush(
-      { type: 'https://akine.app/problems/internal-error', detail: 'Fallo interno del servidor' },
-      { status: 500, statusText: 'Internal Server Error' },
-    );
+    httpMock
+      .expectOne('/api/v1/organizations/1')
+      .flush(
+        { type: 'https://akine.app/problems/internal-error', detail: 'Fallo interno del servidor' },
+        { status: 500, statusText: 'Internal Server Error' },
+      );
     await fixture.whenStable();
     fixture.detectChanges();
 
     expect(texto(fixture)).toContain('Fallo interno del servidor');
   });
+
+  // --- Accesibilidad ---------------------------------------------------------------
+
+  it(
+    'no tiene violaciones de axe con los datos del centro cargados',
+    async () => {
+      tenantContext.select({ organizationId: 1, organizationName: 'Belgrano' });
+      const fixture = TestBed.createComponent(OrganizationPage);
+      fixture.detectChanges();
+
+      httpMock.expectOne('/api/v1/organizations/1').flush(ORGANIZACION);
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      // La lista de definicion `dl`/`dt`/`dd` es la estructura que axe revisa aca: un `dd`
+      // fuera de su `dl` rompe la relacion etiqueta-valor sin verse en pantalla.
+      await esperarSinViolaciones(fixture.nativeElement);
+    },
+    TIMEOUT_AXE,
+  );
+
+  it(
+    'no tiene violaciones de axe sin contexto elegido',
+    async () => {
+      const fixture = TestBed.createComponent(OrganizationPage);
+      fixture.detectChanges();
+
+      await esperarSinViolaciones(fixture.nativeElement);
+      httpMock.expectNone(() => true);
+    },
+    TIMEOUT_AXE,
+  );
 });
 
 function texto(fixture: { nativeElement: HTMLElement }): string {

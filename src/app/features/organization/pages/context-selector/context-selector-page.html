@@ -1,12 +1,20 @@
 <h1>Elegi donde vas a trabajar</h1>
 
 <p class="descripcion">
-  Tu cuenta puede tener acceso a mas de un centro o sede. Lo que elijas define que datos ves y
-  sobre cuales podes operar.
+  Tu cuenta puede tener acceso a mas de un centro o sede. Lo que elijas define que datos ves y sobre
+  cuales podes operar.
 </p>
 
 <section class="tarjeta" aria-labelledby="titulo-contextos">
   <h2 id="titulo-contextos">Contextos habilitados</h2>
+
+  <!--
+    Vive fuera del @switch porque tiene que sobrevivir al cambio de estado: se escribe cuando
+    el canje falla con 404 y sigue en pantalla mientras la lista se recarga.
+  -->
+  @if (aviso(); as texto) {
+    <p class="estado estado--error" role="alert">{{ texto }}</p>
+  }
 
   <!-- aria-live: el cambio de estado se anuncia sin que el usuario tenga que buscarlo. -->
   <div aria-live="polite">
@@ -19,9 +27,15 @@
         <p class="estado estado--ok">
           Entrando a {{ contextoEnCurso()?.organizationName }}&hellip;
         </p>
-        <p class="ayuda">
-          Tenes un solo contexto habilitado, asi que no hace falta elegir.
-        </p>
+        <!--
+          Solo cuando la pantalla eligio sola. Decirselo a quien acaba de elegir entre varios
+          seria afirmarle en falso que su cuenta tiene un unico contexto.
+        -->
+        @if (entradaAutomatica()) {
+          <p class="ayuda">Tenes un solo contexto habilitado, asi que no hace falta elegir.</p>
+        } @else {
+          <p class="ayuda">Estamos preparando tu sesion para ese centro.</p>
+        }
       }
 
       @case ('eligiendo') {
@@ -42,8 +56,8 @@
       @case ('vacio') {
         <p class="estado estado--vacio">No tenes organizaciones asignadas.</p>
         <p class="ayuda">
-          Contacta a tu administrador para que te de acceso a un centro. No es un error: tu
-          cuenta existe, todavia no tiene donde trabajar.
+          Contacta a tu administrador para que te de acceso a un centro. No es un error: tu cuenta
+          existe, todavia no tiene donde trabajar.
         </p>
       }
 

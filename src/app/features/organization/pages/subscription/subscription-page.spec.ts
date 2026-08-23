@@ -4,6 +4,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 
 import { SubscriptionPage } from './subscription-page';
+import { TIMEOUT_AXE, esperarSinViolaciones } from '../../../../core/testing/axe';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { errorInterceptor } from '../../../../core/interceptors/error.interceptor';
 import { provideApi } from '../../../../api/generated/provide-api';
@@ -141,7 +142,10 @@ describe('SubscriptionPage', () => {
 
     httpMock
       .expectOne(URL_HISTORICO)
-      .flush({ type: 'https://akine.app/problems/forbidden' }, { status: 403, statusText: 'Forbidden' });
+      .flush(
+        { type: 'https://akine.app/problems/forbidden' },
+        { status: 403, statusText: 'Forbidden' },
+      );
     await fixture.whenStable();
     fixture.detectChanges();
 
@@ -189,7 +193,10 @@ describe('SubscriptionPage', () => {
 
     httpMock
       .expectOne(URL_SUSCRIPCION)
-      .flush({ type: 'https://akine.app/problems/forbidden' }, { status: 403, statusText: 'Forbidden' });
+      .flush(
+        { type: 'https://akine.app/problems/forbidden' },
+        { status: 403, statusText: 'Forbidden' },
+      );
     await fixture.whenStable();
     fixture.detectChanges();
 
@@ -201,10 +208,12 @@ describe('SubscriptionPage', () => {
     const fixture = TestBed.createComponent(SubscriptionPage);
     fixture.detectChanges();
 
-    httpMock.expectOne(URL_SUSCRIPCION).flush(
-      { type: 'https://akine.app/problems/missing-tenant-context' },
-      { status: 403, statusText: 'Forbidden' },
-    );
+    httpMock
+      .expectOne(URL_SUSCRIPCION)
+      .flush(
+        { type: 'https://akine.app/problems/missing-tenant-context' },
+        { status: 403, statusText: 'Forbidden' },
+      );
     await fixture.whenStable();
     fixture.detectChanges();
 
@@ -219,7 +228,10 @@ describe('SubscriptionPage', () => {
 
     httpMock
       .expectOne(URL_SUSCRIPCION)
-      .flush({ type: 'https://akine.app/problems/not-found' }, { status: 404, statusText: 'Not Found' });
+      .flush(
+        { type: 'https://akine.app/problems/not-found' },
+        { status: 404, statusText: 'Not Found' },
+      );
     await fixture.whenStable();
     fixture.detectChanges();
 
@@ -232,7 +244,10 @@ describe('SubscriptionPage', () => {
     fixture.detectChanges();
 
     httpMock.expectOne(URL_SUSCRIPCION).flush(
-      { type: 'https://akine.app/problems/internal-error', detail: 'Fallo al leer la suscripcion' },
+      {
+        type: 'https://akine.app/problems/internal-error',
+        detail: 'Fallo al leer la suscripcion',
+      },
       { status: 500, statusText: 'Internal Server Error' },
     );
     await fixture.whenStable();
@@ -240,6 +255,42 @@ describe('SubscriptionPage', () => {
 
     expect(texto(fixture)).toContain('Fallo al leer la suscripcion');
   });
+
+  // --- Accesibilidad ---------------------------------------------------------------
+
+  it(
+    'no tiene violaciones de axe con la tabla de limites en pantalla',
+    async () => {
+      seleccionar();
+      const fixture = await cargarCon(SUSCRIPCION_ACTIVA);
+
+      // La tabla de limites es lo mas denso de la feature: `caption`, `th scope="col"` y
+      // `th scope="row"`. Un scope mal puesto deja la tabla ilegible por lector de pantalla
+      // sin que se note mirandola.
+      await esperarSinViolaciones(fixture.nativeElement);
+    },
+    TIMEOUT_AXE,
+  );
+
+  it(
+    'no tiene violaciones de axe con el banner de suscripcion suspendida',
+    async () => {
+      seleccionar();
+      const fixture = TestBed.createComponent(SubscriptionPage);
+      fixture.detectChanges();
+
+      httpMock.expectOne(URL_SUSCRIPCION).flush({ ...SUSCRIPCION_ACTIVA, status: 'SUSPENDIDA' });
+      await fixture.whenStable();
+      httpMock.expectOne(URL_HISTORICO).flush({
+        content: [{ id: 3, toStatus: 'SUSPENDIDA', reason: 'Falta de pago de tres periodos' }],
+      });
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      await esperarSinViolaciones(fixture.nativeElement);
+    },
+    TIMEOUT_AXE,
+  );
 
   function seleccionar(): void {
     tenantContext.select({ organizationId: 1, organizationName: 'Centro Kinesico Belgrano' });

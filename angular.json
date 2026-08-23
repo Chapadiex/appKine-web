@@ -70,6 +70,7 @@
         "test": {
           "builder": "@angular/build:unit-test",
           "options": {
+            "runnerConfig": "vitest.config.ts",
             "coverage": true,
             "coverageExclude": [
               "src/app/api/generated/**",

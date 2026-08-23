@@ -1,5 +1,8 @@
 import { Routes } from '@angular/router';
 
+import { authGuard } from './core/guards/auth.guard';
+import { contextGuard } from './core/guards/context.guard';
+
 /**
  * Rutas raiz de AKINE (estructura fijada en AKINE-00.02).
  *
@@ -25,10 +28,23 @@ export const routes: Routes = [
     title: 'AKINE - Baseline tecnico',
   },
 
+  // Feature `auth` (M02). Lazy loaded segun ADR-0004.
+  //
+  // Sin `canActivate`: son las unicas pantallas que un usuario anonimo tiene que poder
+  // abrir. Los enlaces de los correos entran por `auth/activar` y `auth/restablecer`.
+  {
+    path: 'auth',
+    loadChildren: () => import('./features/auth/auth.routes').then((m) => m.routes),
+  },
+
   // Seleccion del contexto de trabajo (M01). Va suelta y no bajo `organizacion` porque
   // logicamente precede a tener una: es la pantalla con la que se averigua cual.
+  //
+  // Lleva `authGuard` pero NO `contextGuard`: es justamente la pantalla donde se elige el
+  // contexto, y exigirle tener uno la volveria inalcanzable.
   {
     path: 'seleccionar-contexto',
+    canActivate: [authGuard],
     loadComponent: () =>
       import('./features/organization/pages/context-selector/context-selector-page').then(
         (m) => m.ContextSelectorPage,
@@ -38,13 +54,13 @@ export const routes: Routes = [
 
   // Feature `organization` (M01). Lazy loaded segun ADR-0004.
   //
-  // Sin `canActivate`: los guards de sesion y contexto llegan en AKINE-01.02 junto con el
-  // login. Un guard de contexto hoy redirigiria toda la aplicacion a una pantalla que sin
-  // sesion no puede resolverse, y romperia la ruta baseline de `/`, que tiene E2E pasando.
+  // Los dos guards, en este orden: sin sesion no tiene sentido preguntar por el contexto.
+  // Son UX y no seguridad —el backend rechaza igual si se llega por URL directa—, pero sin
+  // ellos estas pantallas se abren vacias y muestran un 403 en vez de mandar a resolverlo.
   {
     path: 'organizacion',
-    loadChildren: () =>
-      import('./features/organization/organization.routes').then((m) => m.routes),
+    canActivate: [authGuard, contextGuard],
+    loadChildren: () => import('./features/organization/organization.routes').then((m) => m.routes),
   },
 
   // Comodin al final: cualquier ruta desconocida cae aca.

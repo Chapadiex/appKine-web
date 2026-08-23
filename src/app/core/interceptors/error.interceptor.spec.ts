@@ -53,7 +53,7 @@ describe('errorInterceptor', () => {
     expect(error.esDeRed).toBe(false);
   });
 
-  it('un 401 limpia el token en memoria', async () => {
+  it('un 401 NO toca el token: el ciclo de vida de la sesion es del authInterceptor', async () => {
     tokenStore.set('jwt-vencido');
     const capturado = esperarError(http.get('/api/v1/pacientes'));
 
@@ -62,8 +62,120 @@ describe('errorInterceptor', () => {
       .flush({ status: 401 }, { status: 401, statusText: 'Unauthorized' });
 
     await capturado;
-    // Dejar el token puesto solo produce una cascada de reintentos fallidos.
-    expect(tokenStore.token()).toBeNull();
+    // Cuando el borrado vivia aca, un 401 recuperable dejaba el token en null durante todo
+    // el refresh y la aplicacion parpadeaba al login antes de volver sola. Quien sabe si
+    // ese 401 termino en sesion recuperada o perdida es el authInterceptor, que es el que
+    // corre el refresh: el borrado vive alla.
+    expect(tokenStore.token()).toBe('jwt-vencido');
+  });
+
+  it('propaga los segundos de Retry-After de un 429', async () => {
+    const capturado = esperarError(http.post('/api/v1/auth/login', {}));
+
+    httpMock
+      .expectOne('/api/v1/auth/login')
+      .flush(
+        { type: 'https://akine.app/problems/rate-limited', detail: 'Demasiados intentos' },
+        { status: 429, statusText: 'Too Many Requests', headers: { 'Retry-After': '45' } },
+      );
+
+    const error = await capturado;
+    // Sin esto la UI solo puede decir "demasiados intentos", que no dice cuanto esperar.
+    expect(error.reintentarEnSegundos).toBe(45);
+    expect(error.esRateLimited).toBe(true);
+  });
+
+  it('un 429 sin Retry-After visible no rompe: queda en null', async () => {
+    const capturado = esperarError(http.post('/api/v1/auth/login', {}));
+
+    httpMock
+      .expectOne('/api/v1/auth/login')
+      .flush(
+        { type: 'https://akine.app/problems/rate-limited' },
+        { status: 429, statusText: 'Too Many Requests' },
+      );
+
+    const error = await capturado;
+    // El header solo es legible entre origenes si el backend lo expone en
+    // Access-Control-Expose-Headers. Que no este no puede romper la pantalla.
+    expect(error.reintentarEnSegundos).toBeNull();
+    expect(error.esRateLimited).toBe(true);
+  });
+
+  it('reconoce los tipos de problema de identidad del contrato 0.3.0', async () => {
+    const casos = [
+      ['invalid-credentials', 401],
+      ['invalid-refresh', 401],
+      ['invalid-token', 401],
+      ['unauthorized', 401],
+      ['forbidden', 403],
+      ['csrf-rejected', 403],
+      ['not-found', 404],
+      ['rate-limited', 429],
+      ['validation-error', 400],
+      ['internal-error', 500],
+    ] as const;
+
+    for (const [slug, status] of casos) {
+      const capturado = esperarError(http.post('/api/v1/auth/login', {}));
+
+      httpMock
+        .expectOne('/api/v1/auth/login')
+        .flush(
+          { type: `https://akine.app/problems/${slug}`, status },
+          { status, statusText: 'Error' },
+        );
+
+      expect((await capturado).problemType).toBe(slug);
+    }
+  });
+
+  it('los tres rechazos de login son indistinguibles y la UI los trata igual', async () => {
+    const capturado = esperarError(http.post('/api/v1/auth/login', {}));
+
+    httpMock.expectOne('/api/v1/auth/login').flush(
+      {
+        type: 'https://akine.app/problems/invalid-credentials',
+        detail: 'Email o contrasena incorrectos',
+      },
+      { status: 401, statusText: 'Unauthorized' },
+    );
+
+    const error = await capturado;
+    // ADR-0018: email inexistente, contrasena incorrecta y cuenta bloqueada devuelven los
+    // tres esto mismo. Un solo mensaje, sin adivinar cual fue.
+    expect(error.esCredencialesInvalidas).toBe(true);
+    expect(error.mensaje).toBe('Email o contrasena incorrectos');
+  });
+
+  it('marca como sesion expirada los tres problemas que obligan a volver al login', async () => {
+    for (const slug of ['invalid-refresh', 'invalid-token', 'unauthorized'] as const) {
+      const capturado = esperarError(http.get('/api/v1/pacientes'));
+
+      httpMock
+        .expectOne('/api/v1/pacientes')
+        .flush({ type: `https://akine.app/problems/${slug}` }, { status: 401, statusText: 'x' });
+
+      expect((await capturado).esSesionExpirada).toBe(true);
+    }
+  });
+
+  it('lee los errores de validacion tambien cuando vienen anidados en properties', async () => {
+    const capturado = esperarError(http.post('/api/v1/auth/register', {}));
+
+    // Hueco de contrato: ProblemDetail 0.3.0 declara `properties` pero no `errors`. Spring
+    // los serializa en la raiz; se aceptan las dos formas para que un cambio de forma del
+    // backend no deje el formulario sin marcar campos.
+    httpMock.expectOne('/api/v1/auth/register').flush(
+      {
+        type: 'https://akine.app/problems/validation-error',
+        properties: { errors: { password: 'debe tener al menos 12 caracteres' } },
+      },
+      { status: 400, statusText: 'Bad Request' },
+    );
+
+    const error = await capturado;
+    expect(error.erroresPorCampo['password']).toBe('debe tener al menos 12 caracteres');
   });
 
   it('distingue un fallo de red de un error del servidor', async () => {
@@ -107,10 +219,12 @@ describe('errorInterceptor', () => {
     for (const [slug, status] of casos) {
       const capturado = esperarError(http.post('/api/v1/organizations/1/consultorios', {}));
 
-      httpMock.expectOne('/api/v1/organizations/1/consultorios').flush(
-        { type: `https://akine.app/problems/${slug}`, status, detail: 'irrelevante' },
-        { status, statusText: 'Error' },
-      );
+      httpMock
+        .expectOne('/api/v1/organizations/1/consultorios')
+        .flush(
+          { type: `https://akine.app/problems/${slug}`, status, detail: 'irrelevante' },
+          { status, statusText: 'Error' },
+        );
 
       const error = await capturado;
       // La pantalla ramifica por este identificador y no parseando `detail`, que es prosa

@@ -170,9 +170,7 @@ export class SubscriptionPage {
  * El historico llega del hecho mas nuevo al mas viejo, asi que el primer hecho que llevo a
  * SUSPENDIDA es el vigente.
  */
-function motivoDeLaSuspension(
-  hechos: readonly SubscriptionTransitionResponse[],
-): string | null {
+function motivoDeLaSuspension(hechos: readonly SubscriptionTransitionResponse[]): string | null {
   const hecho = hechos.find((candidato) => candidato.toStatus === 'SUSPENDIDA');
   return hecho?.reason ?? null;
 }

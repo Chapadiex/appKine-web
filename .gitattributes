@@ -1,0 +1,25 @@
+# Política de fin de línea del repositorio.
+#
+# Por qué existe: sin esto el árbol de trabajo quedaba con EOL mezclado. Git ya normalizaba
+# a LF al commitear (`core.autocrlf=true`), así que el contenido versionado siempre estuvo
+# bien, pero Prettier ve el árbol de trabajo y no el repositorio: cualquier herramienta de
+# Windows que reintroduzca CRLF vuelve a poner `npm run format:check` en rojo por un motivo
+# que no tiene nada que ver con el código. Un gate que se ensucia solo deja de significar
+# algo, y la próxima diferencia real se pierde entre el ruido.
+#
+# `eol=lf` tiene prioridad sobre `core.autocrlf`, así que fija la política en el repo y no
+# en la configuración de cada máquina.
+
+* text=auto eol=lf
+
+# Binarios: nunca tocar. Si git "normalizara" uno, lo corrompe.
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.ico   binary
+*.pdf   binary
+*.woff  binary
+*.woff2 binary
+*.ttf   binary
+*.eot   binary

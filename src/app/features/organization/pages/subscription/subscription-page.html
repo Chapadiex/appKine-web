@@ -13,7 +13,9 @@
 
       @case ('sin-contexto') {
         <p class="estado estado--vacio">Todavia no elegiste un contexto de trabajo.</p>
-        <p class="ayuda">La suscripcion pertenece a un centro concreto: primero hay que elegirlo.</p>
+        <p class="ayuda">
+          La suscripcion pertenece a un centro concreto: primero hay que elegirlo.
+        </p>
         <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto</a>
       }
 
@@ -82,7 +84,9 @@
       <p class="estado estado--vacio">Este plan no declara limites.</p>
     } @else {
       <table class="limites">
-        <caption class="ayuda">Consumo actual de cada limite frente al tope del plan.</caption>
+        <caption class="ayuda">
+          Consumo actual de cada limite frente al tope del plan.
+        </caption>
         <thead>
           <tr>
             <th scope="col">Limite</th>
@@ -102,8 +106,8 @@
       </table>
 
       <p class="ayuda">
-        Un limite excedido no borra nada: lo que ya existe sigue operativo y solo se rechazan
-        las altas nuevas.
+        Un limite excedido no borra nada: lo que ya existe sigue operativo y solo se rechazan las
+        altas nuevas.
       </p>
     }
   </section>
