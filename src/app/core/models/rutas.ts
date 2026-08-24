@@ -55,3 +55,20 @@ export function destinoInterno(valor: string | null | undefined): string | null 
   }
   return valor;
 }
+
+/**
+ * Pantalla de "no tenes permiso para esto".
+ *
+ * <p>Es el destino de {@link permissionGuard}, y <b>no</b> es el login: a quien ya tiene
+ * sesion y contexto validos no se le piden credenciales de nuevo. Volver a autenticarse no
+ * le va a dar el permiso que le falta -el rol vive en la membership, no en la contrasena-
+ * y ademas lo dejaria en un bucle: entra, vuelve a la misma URL, vuelve a faltarle el
+ * permiso. Lo que necesita es entender que le falta y a quien pedirselo.
+ *
+ * <p>Esta constante es la mitad de `core/` del acuerdo con `features/` -igual que
+ * {@link RUTA_LOGIN}, que tampoco vive aca-. La pantalla la monta `app.routes.ts` en
+ * `shared/pages/sin-permiso` desde AKINE-01.03: hasta esa etapa la URL caia en el comodin
+ * `**` y el usuario veia el 404, que le decia que la pagina no existe cuando existe y lo
+ * que le faltaba era autorizacion.
+ */
+export const RUTA_SIN_PERMISO = '/sin-permiso';

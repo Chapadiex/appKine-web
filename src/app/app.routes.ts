@@ -63,6 +63,19 @@ export const routes: Routes = [
     loadChildren: () => import('./features/organization/organization.routes').then((m) => m.routes),
   },
 
+  // Pantalla de permiso insuficiente (AKINE-01.03). Es el destino de `permissionGuard`.
+  //
+  // Sin guards, y no por descuido: quien llega aca YA paso por `authGuard` y `contextGuard`
+  // en la ruta que se le nego, asi que tiene sesion y contexto. Ponerle un `authGuard` seria
+  // ademas peligroso el dia que algo redirija aca sin sesion: el usuario rebotaria al login,
+  // volveria a la URL original y giraria en el mismo bucle que esta pantalla existe para
+  // cortar. La constante que la nombra vive en `core/models/rutas.ts` (RUTA_SIN_PERMISO).
+  {
+    path: 'sin-permiso',
+    loadComponent: () => import('./shared/pages/sin-permiso/sin-permiso').then((m) => m.SinPermiso),
+    title: 'AKINE - Sin permiso',
+  },
+
   // Comodin al final: cualquier ruta desconocida cae aca.
   {
     path: '**',

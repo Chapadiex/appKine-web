@@ -3,7 +3,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import { CausaError, traducirYEsperar } from '../../models/auth-errors';
 import { RegistroYActivacionService } from '../../../../api/generated/api/registro-y-activacion.service';
-import { crearEsperaPorLimite } from '../../models/espera-por-limite';
+import { crearEsperaPorLimite } from '../../../../shared/utils/espera-por-limite';
 
 /** Estado de la activacion. `sin-token` no es un error del servidor: el enlace vino roto. */
 type EstadoActivacion =

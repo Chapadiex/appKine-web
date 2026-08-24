@@ -32,6 +32,7 @@ export interface GetOrganizationRequestParams {
 
 export interface ListOrganizationConsultoriosRequestParams {
     orgId: number;
+    estado?: 'ACTIVO' | 'INACTIVO' | 'TODOS';
     page?: number;
     size?: number;
 }
@@ -63,8 +64,8 @@ export interface OrganizacionesServiceInterface {
     getOrganization(requestParameters: GetOrganizationRequestParams, extraHttpRequestParams?: any): Observable<OrganizationResponse>;
 
     /**
-     * Sedes activas de la organizacion
-     * Listado paginado de los consultorios vigentes del tenant. Requiere ser miembro vigente de esa organizacion. Es la lectura minima que necesita el selector de contexto de trabajo; la administracion completa de consultorios llega en 02.01. El tamano de pagina se acota a 100: pedir mas devuelve ese maximo, no un error.
+     * Sedes de la organizacion
+     * Listado paginado de las sedes del tenant. Requiere ser miembro vigente de esa organizacion, y NO consultorio:manage: es la lectura que necesita el selector de contexto de trabajo, asi que restringirla dejaria a un profesional sin poder elegir sede. El parametro estado es opcional y su valor por defecto, ACTIVO, conserva el comportamiento historico del endpoint: un cliente que no lo manda ve exactamente lo mismo que antes. El tamano de pagina se acota a 100: pedir mas devuelve ese maximo, no un error.
      * @endpoint get /api/v1/organizations/{orgId}/consultorios
 * @param requestParameters
      */

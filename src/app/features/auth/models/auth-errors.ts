@@ -1,5 +1,5 @@
 import { AkineHttpError } from '../../../core/interceptors/error.interceptor';
-import { EsperaPorLimite } from './espera-por-limite';
+import { EsperaPorLimite } from '../../../shared/utils/espera-por-limite';
 
 /**
  * Motivo por el que fallo un envio de las pantallas de identidad (M02).

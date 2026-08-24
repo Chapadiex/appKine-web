@@ -1,0 +1,468 @@
+<h1>Sedes</h1>
+
+<p class="descripcion">
+  Los consultorios de esta organizacion. Cada sede tiene su propia zona horaria, que es la que rige
+  su dia operativo y su agenda: no la de la organizacion.
+</p>
+
+<!--
+  La sede del contexto activo dejo de estar vigente. Va arriba de todo y fuera del @switch
+  del listado porque no depende de que la tabla haya cargado: es una condicion de la sesion,
+  no de esta pantalla, y la salida es cambiar de contexto.
+-->
+@if (sedesDelContexto.sedeDelContextoInactiva()) {
+  <section class="banner banner--suspendida" role="alert">
+    <h3>La sede en la que estas trabajando ya no esta activa</h3>
+    <p>
+      Una sede dada de baja no admite operaciones nuevas: no se pueden agendar turnos ni registrar
+      sesiones en ella. Lo que ya quedo registrado se conserva.
+    </p>
+    <p>
+      <a class="boton" routerLink="/seleccionar-contexto">Elegir otra sede</a>
+    </p>
+  </section>
+}
+
+<p class="acciones" *akinePermiso="permisoManage">
+  <a class="boton" routerLink="/organizacion/sedes/nueva">Abrir una sede nueva</a>
+</p>
+
+<div aria-live="polite">
+  @if (exito(); as mensaje) {
+    <p class="estado estado--ok">{{ mensaje }}</p>
+  }
+</div>
+
+<section class="tarjeta" aria-labelledby="titulo-sedes">
+  <h2 id="titulo-sedes">Sedes de la organizacion</h2>
+
+  <div class="campo">
+    <label for="filtro-estado">Mostrar</label>
+    <select
+      id="filtro-estado"
+      [value]="filtro()"
+      (change)="cambiarFiltro($any($event.target).value)"
+      aria-describedby="filtro-estado-ayuda"
+    >
+      <option value="ACTIVO">Solo las sedes activas</option>
+      <option value="INACTIVO">Solo las dadas de baja</option>
+      <option value="TODOS">Todas</option>
+    </select>
+    <p class="ayuda" id="filtro-estado-ayuda">
+      Las sedes dadas de baja no se borran: siguen disponibles con su motivo y su fecha, porque los
+      turnos, sesiones y cobros historicos las siguen referenciando.
+    </p>
+  </div>
+
+  <div aria-live="polite">
+    @switch (estado().tipo) {
+      @case ('cargando') {
+        <p class="estado estado--cargando">Cargando las sedes&hellip;</p>
+      }
+
+      @case ('sin-contexto') {
+        <p class="estado estado--vacio">Todavia no elegiste un contexto de trabajo.</p>
+        <p class="ayuda">
+          Las sedes son de una organizacion concreta, asi que hay que indicar cual.
+        </p>
+        <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto</a>
+      }
+
+      @case ('error') {
+        <p class="estado estado--error" role="alert">{{ mensajeError() }}</p>
+
+        @if (faltaContexto()) {
+          <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto</a>
+        } @else {
+          <button type="button" class="boton" (click)="cargar()">Reintentar</button>
+        }
+      }
+
+      @case ('listo') {
+        @if (sedesDeLaPagina().length === 0) {
+          @if (filtro() === 'INACTIVO') {
+            <p class="estado estado--vacio">No hay sedes dadas de baja.</p>
+          } @else {
+            <p class="estado estado--vacio">No hay sedes que mostrar con este filtro.</p>
+          }
+        } @else {
+          <p class="ayuda">{{ totalSedes() }} sedes con el filtro elegido.</p>
+
+          <div class="tabla-scroll">
+            <table class="tabla">
+              <caption class="visualmente-oculto">
+                Sedes de la organizacion, con su zona horaria, agenda y estado
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col">Sede</th>
+                  <th scope="col">Zona horaria</th>
+                  <th scope="col">Agenda</th>
+                  <th scope="col">Datos institucionales</th>
+                  <th scope="col">Estado</th>
+                  <th scope="col">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (sede of sedesDeLaPagina(); track sede.id) {
+                  <tr [class.fila--revocada]="sede.estado === 'INACTIVO'">
+                    <th scope="row">
+                      {{ sede.name }}
+                      @if (esLaDelContexto(sede.id)) {
+                        <span class="marca">Estas trabajando aca</span>
+                      }
+                    </th>
+                    <td>{{ sede.timezone ?? '-' }}</td>
+                    <td>
+                      @if (sede.slotMinutes) {
+                        Turnos de {{ sede.slotMinutes }} minutos
+                      } @else {
+                        -
+                      }
+                    </td>
+                    <td>
+                      @if (
+                        sede.legalName ||
+                        sede.taxId ||
+                        sede.addressLine ||
+                        sede.phone ||
+                        sede.contactEmail
+                      ) {
+                        <ul class="lista-datos">
+                          @if (sede.legalName) {
+                            <li>{{ sede.legalName }}</li>
+                          }
+                          @if (sede.taxId) {
+                            <li>{{ sede.taxId }}</li>
+                          }
+                          @if (sede.addressLine) {
+                            <li>{{ sede.addressLine }}</li>
+                          }
+                          @if (sede.phone) {
+                            <li>{{ sede.phone }}</li>
+                          }
+                          @if (sede.contactEmail) {
+                            <li>{{ sede.contactEmail }}</li>
+                          }
+                        </ul>
+                      } @else {
+                        <span class="ayuda">Sin cargar</span>
+                      }
+                    </td>
+                    <td>
+                      <span
+                        class="marca-estado"
+                        [class.marca-estado--activa]="sede.estado === 'ACTIVO'"
+                        [class.marca-estado--revocada]="sede.estado === 'INACTIVO'"
+                      >
+                        {{ sede.estado === 'INACTIVO' ? 'Dada de baja' : 'Activa' }}
+                      </span>
+
+                      <!--
+                        El motivo y la fecha de la baja son la razon por la que la baja es
+                        logica: sin ellos la fila no explicaria nada que la ausencia no
+                        explicara igual de mal.
+                      -->
+                      @if (sede.estado === 'INACTIVO') {
+                        <p class="ayuda">
+                          @if (sede.deletedAt) {
+                            Baja del {{ sede.deletedAt }}.
+                          }
+                          @if (sede.deactivationReason) {
+                            Motivo: {{ sede.deactivationReason }}
+                          }
+                        </p>
+                      }
+                    </td>
+                    <td>
+                      <div class="acciones-fila" *akinePermiso="permisoManage">
+                        @if (sede.estado !== 'INACTIVO') {
+                          <button
+                            type="button"
+                            class="boton boton--secundario"
+                            (click)="abrirPanel(sede, 'editar')"
+                          >
+                            Editar
+                          </button>
+                          <button
+                            type="button"
+                            class="boton boton--secundario"
+                            (click)="abrirPanel(sede, 'baja')"
+                          >
+                            Dar de baja
+                          </button>
+                        } @else {
+                          <span class="ayuda">Una sede dada de baja no se edita.</span>
+                        }
+                      </div>
+                    </td>
+                  </tr>
+
+                  <!--
+                    El panel vive en una fila propia y no en un dialogo: la edicion necesita
+                    seguir viendo a que sede se aplica, y un modal sobre una tabla obliga a
+                    recordar de memoria cual era la fila.
+                  -->
+                  @if (panelAbierto(sede.id, 'editar')) {
+                    <tr class="fila-panel">
+                      <td colspan="6">
+                        <form
+                          [formGroup]="formularioEdicion"
+                          (ngSubmit)="enviarEdicion()"
+                          novalidate
+                        >
+                          <h3 class="panel__titulo">Editar {{ sede.name }}</h3>
+
+                          <p class="ayuda" id="editar-ayuda-patch">
+                            Se envia solo lo que cambies.
+                            <b>Vaciar un dato institucional lo borra</b>; los campos que dejes como
+                            estan no se tocan, asi que un cambio de telefono no pisa la direccion
+                            que cargo otra persona.
+                          </p>
+
+                          <div class="campo">
+                            <label for="editar-name">Nombre de la sede</label>
+                            <input
+                              id="editar-name"
+                              type="text"
+                              formControlName="name"
+                              autocomplete="off"
+                              [attr.aria-invalid]="mostrarErrorEdicion('name')"
+                              [attr.aria-describedby]="
+                                mostrarErrorEdicion('name') ? 'editar-name-error' : null
+                              "
+                            />
+                            @if (mostrarErrorEdicion('name')) {
+                              <p class="campo__error" id="editar-name-error">
+                                La sede necesita un nombre, y tiene que ser distinto del de las
+                                otras sedes vigentes.
+                              </p>
+                            }
+                          </div>
+
+                          <div class="campo">
+                            <label for="editar-timezone">Zona horaria</label>
+                            <select
+                              id="editar-timezone"
+                              formControlName="timezone"
+                              aria-describedby="editar-timezone-ayuda"
+                            >
+                              <option value="">Dejar la que tiene</option>
+                              <optgroup label="Argentina">
+                                @for (zona of zonas.argentinas; track zona) {
+                                  <option [value]="zona">{{ etiquetaDeZona(zona) }}</option>
+                                }
+                              </optgroup>
+                              @if (zonas.resto.length > 0) {
+                                <optgroup label="Resto del mundo">
+                                  @for (zona of zonas.resto; track zona) {
+                                    <option [value]="zona">{{ zona }}</option>
+                                  }
+                                </optgroup>
+                              }
+                            </select>
+                            <p class="ayuda" id="editar-timezone-ayuda">
+                              Cambiar la zona horaria mueve el dia operativo de esta sede y como se
+                              leen los horarios de su agenda.
+                            </p>
+                          </div>
+
+                          <div class="campo">
+                            <label for="editar-slotMinutes">Duracion del turno, en minutos</label>
+                            <input
+                              id="editar-slotMinutes"
+                              type="number"
+                              min="1"
+                              formControlName="slotMinutes"
+                              aria-describedby="editar-slotMinutes-ayuda"
+                            />
+                            <p class="ayuda" id="editar-slotMinutes-ayuda">
+                              Es el intervalo por defecto de la agenda de esta sede.
+                            </p>
+                          </div>
+
+                          <div class="campo">
+                            <label for="editar-legalName">
+                              Razon social <span class="campo__opcional">(opcional)</span>
+                            </label>
+                            <input
+                              id="editar-legalName"
+                              type="text"
+                              formControlName="legalName"
+                              aria-describedby="editar-ayuda-patch"
+                            />
+                          </div>
+
+                          <div class="campo">
+                            <label for="editar-taxId">
+                              CUIT o identificacion fiscal
+                              <span class="campo__opcional">(opcional)</span>
+                            </label>
+                            <input
+                              id="editar-taxId"
+                              type="text"
+                              formControlName="taxId"
+                              aria-describedby="editar-ayuda-patch"
+                            />
+                          </div>
+
+                          <div class="campo">
+                            <label for="editar-addressLine">
+                              Direccion <span class="campo__opcional">(opcional)</span>
+                            </label>
+                            <input
+                              id="editar-addressLine"
+                              type="text"
+                              formControlName="addressLine"
+                              aria-describedby="editar-ayuda-patch"
+                            />
+                          </div>
+
+                          <div class="campo">
+                            <label for="editar-phone">
+                              Telefono <span class="campo__opcional">(opcional)</span>
+                            </label>
+                            <input
+                              id="editar-phone"
+                              type="tel"
+                              formControlName="phone"
+                              aria-describedby="editar-ayuda-patch"
+                            />
+                          </div>
+
+                          <div class="campo">
+                            <label for="editar-email">
+                              Email de contacto <span class="campo__opcional">(opcional)</span>
+                            </label>
+                            <input
+                              id="editar-email"
+                              type="email"
+                              formControlName="contactEmail"
+                              aria-describedby="editar-ayuda-patch"
+                              [attr.aria-invalid]="mostrarErrorEdicion('contactEmail')"
+                            />
+                            @if (mostrarErrorEdicion('contactEmail')) {
+                              <p class="campo__error" id="editar-email-error">
+                                Ese email no tiene una forma valida. Vacialo si queres borrarlo.
+                              </p>
+                            }
+                          </div>
+
+                          <div class="acciones">
+                            <button type="submit" class="boton" [disabled]="enviando()">
+                              Guardar los cambios
+                            </button>
+                            <button
+                              type="button"
+                              class="boton boton--secundario"
+                              (click)="cerrarPanel()"
+                            >
+                              Cancelar
+                            </button>
+                          </div>
+                        </form>
+
+                        <div aria-live="polite">
+                          @if (errorAccion(); as mensaje) {
+                            <p class="estado estado--error" role="alert">{{ mensaje }}</p>
+                          }
+                        </div>
+                      </td>
+                    </tr>
+                  }
+
+                  @if (panelAbierto(sede.id, 'baja')) {
+                    <tr class="fila-panel">
+                      <td colspan="6">
+                        <form [formGroup]="formularioBaja" (ngSubmit)="enviarBaja()" novalidate>
+                          <h3 class="panel__titulo">Dar de baja {{ sede.name }}</h3>
+
+                          <p class="ayuda">
+                            La sede deja de admitir operaciones nuevas, pero no se borra: sigue en
+                            este listado con el motivo y la fecha, porque los turnos, sesiones y
+                            cobros historicos la siguen referenciando.
+                          </p>
+
+                          @if (esLaDelContexto(sede.id)) {
+                            <p class="ayuda">
+                              <b>Es la sede en la que estas trabajando ahora.</b> Al darla de baja
+                              vas a tener que elegir otra para seguir.
+                            </p>
+                          }
+
+                          <div class="campo">
+                            <label for="baja-reason">Motivo de la baja</label>
+                            <input
+                              id="baja-reason"
+                              type="text"
+                              formControlName="reason"
+                              autocomplete="off"
+                              [attr.aria-invalid]="mostrarErrorBaja()"
+                              [attr.aria-describedby]="
+                                mostrarErrorBaja() ? 'baja-reason-error' : 'baja-reason-ayuda'
+                              "
+                            />
+                            <p class="ayuda" id="baja-reason-ayuda">
+                              Queda en la auditoria y en la propia fila: es lo que explica esta
+                              decision dentro de seis meses.
+                            </p>
+                            @if (mostrarErrorBaja()) {
+                              <p class="campo__error" id="baja-reason-error">
+                                El motivo es obligatorio.
+                              </p>
+                            }
+                          </div>
+
+                          <div class="acciones">
+                            <button type="submit" class="boton" [disabled]="enviando()">
+                              Confirmar la baja
+                            </button>
+                            <button
+                              type="button"
+                              class="boton boton--secundario"
+                              (click)="cerrarPanel()"
+                            >
+                              Cancelar
+                            </button>
+                          </div>
+                        </form>
+
+                        <div aria-live="polite">
+                          @if (errorAccion(); as mensaje) {
+                            <p class="estado estado--error" role="alert">{{ mensaje }}</p>
+                          }
+                        </div>
+                      </td>
+                    </tr>
+                  }
+                }
+              </tbody>
+            </table>
+          </div>
+
+          @if (totalPaginas() > 1) {
+            <nav class="paginacion" aria-label="Paginas de sedes">
+              <button
+                type="button"
+                class="boton boton--secundario"
+                [disabled]="paginaActual() === 0"
+                (click)="irAPagina(paginaActual() - 1)"
+              >
+                Anterior
+              </button>
+              <span class="ayuda">Pagina {{ paginaActual() + 1 }} de {{ totalPaginas() }}</span>
+              <button
+                type="button"
+                class="boton boton--secundario"
+                [disabled]="paginaActual() + 1 >= totalPaginas()"
+                (click)="irAPagina(paginaActual() + 1)"
+              >
+                Siguiente
+              </button>
+            </nav>
+          }
+        }
+      }
+    }
+  </div>
+</section>

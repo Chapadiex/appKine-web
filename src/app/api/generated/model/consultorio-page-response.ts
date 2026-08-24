@@ -11,7 +11,7 @@ import { ConsultorioResponse } from './consultorio-response';
 
 
 /**
- * Pagina de sedes activas de la organizacion
+ * Pagina de sedes de la organizacion, segun el filtro de estado pedido
  */
 export interface ConsultorioPageResponse { 
     /**
@@ -27,7 +27,7 @@ export interface ConsultorioPageResponse {
      */
     size?: number;
     /**
-     * Cantidad total de sedes activas
+     * Cantidad total de sedes que cumplen el filtro
      */
     totalElements?: number;
     /**

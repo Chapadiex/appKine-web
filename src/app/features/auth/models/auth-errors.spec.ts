@@ -1,5 +1,5 @@
 import { AkineHttpError } from '../../../core/interceptors/error.interceptor';
-import { EsperaPorLimite } from './espera-por-limite';
+import { EsperaPorLimite } from '../../../shared/utils/espera-por-limite';
 import { traducirError, traducirYEsperar } from './auth-errors';
 
 function problema(

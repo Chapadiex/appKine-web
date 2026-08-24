@@ -1,0 +1,207 @@
+<h1>Abrir una sede nueva</h1>
+
+<p class="descripcion">
+  Una sede es un consultorio de esta organizacion: tiene su propia zona horaria, su propia agenda y
+  sus propios turnos. Lo unico obligatorio es el nombre.
+</p>
+
+<section class="tarjeta" aria-labelledby="titulo-alta-sede">
+  <h2 id="titulo-alta-sede">
+    @if (hecho()) {
+      Sede creada
+    } @else {
+      Paso {{ paso() }} de 2 &mdash;
+      @if (paso() === 1) {
+        Datos de la sede
+      } @else {
+        Datos institucionales y confirmacion
+      }
+    }
+  </h2>
+
+  <div aria-live="polite">
+    @if (hecho()) {
+      <p class="estado estado--ok">La sede "{{ sedeCreada() }}" quedo creada.</p>
+      <p class="ayuda">
+        Todavia no tiene boxes ni horario general: eso se configura mas adelante, cuando esten los
+        espacios y la disponibilidad profesional.
+      </p>
+      <p class="acciones">
+        <a class="boton" routerLink="/organizacion/sedes">Volver al listado de sedes</a>
+      </p>
+    }
+  </div>
+
+  @if (!hecho()) {
+    <form [formGroup]="formulario" (ngSubmit)="paso() === 1 ? avanzar() : enviar()" novalidate>
+      @if (paso() === 1) {
+        <div class="campo">
+          <label for="sede-name">Nombre de la sede</label>
+          <input
+            id="sede-name"
+            type="text"
+            formControlName="name"
+            autocomplete="off"
+            aria-describedby="sede-name-ayuda"
+            [attr.aria-invalid]="mostrarError('name')"
+          />
+          <p class="ayuda" id="sede-name-ayuda">
+            Como la llaman en el centro: "Sede Norte", "Consultorio Centro". Tiene que ser distinto
+            del de las otras sedes vigentes.
+          </p>
+          @if (mostrarError('name')) {
+            <p class="campo__error" id="sede-name-error">La sede necesita un nombre.</p>
+          }
+        </div>
+
+        <div class="campo">
+          <label for="sede-timezone">Zona horaria</label>
+          <select
+            id="sede-timezone"
+            formControlName="timezone"
+            aria-describedby="sede-timezone-ayuda"
+          >
+            <option value="">La misma que la organizacion</option>
+            <optgroup label="Argentina">
+              @for (zona of zonas.argentinas; track zona) {
+                <option [value]="zona">{{ etiquetaDeZona(zona) }}</option>
+              }
+            </optgroup>
+            @if (zonas.resto.length > 0) {
+              <optgroup label="Resto del mundo">
+                @for (zona of zonas.resto; track zona) {
+                  <option [value]="zona">{{ zona }}</option>
+                }
+              </optgroup>
+            }
+          </select>
+          <!--
+            Es un selector y no un campo de texto a proposito: el backend solo acepta
+            identificadores IANA. Un offset como -03:00 lo rechaza, y con razon: no conoce el
+            horario de verano, asi que la agenda se correria una hora al cambiar la regla.
+          -->
+          <p class="ayuda" id="sede-timezone-ayuda">
+            Es la que rige el dia operativo y la agenda de esta sede. Si la sede esta en otra
+            provincia con horario distinto, elegila aca.
+          </p>
+        </div>
+
+        <div class="campo">
+          <label for="sede-slotMinutes">
+            Duracion del turno, en minutos <span class="campo__opcional">(opcional)</span>
+          </label>
+          <input
+            id="sede-slotMinutes"
+            type="number"
+            min="1"
+            formControlName="slotMinutes"
+            aria-describedby="sede-slotMinutes-ayuda"
+            [attr.aria-invalid]="mostrarError('slotMinutes')"
+          />
+          <p class="ayuda" id="sede-slotMinutes-ayuda">
+            Es el intervalo por defecto de la agenda. Si lo dejas vacio, 30 minutos.
+          </p>
+          @if (mostrarError('slotMinutes')) {
+            <p class="campo__error" id="sede-slotMinutes-error">
+              Tiene que ser un numero de minutos mayor que cero.
+            </p>
+          }
+        </div>
+
+        <div class="acciones">
+          <button type="submit" class="boton">Continuar</button>
+          <a class="boton boton--secundario" routerLink="/organizacion/sedes">Cancelar</a>
+        </div>
+      } @else {
+        <p class="ayuda">
+          Estos datos son administrativos y podes dejarlos para despues: se cargan y se corrigen
+          desde la edicion de la sede en cualquier momento.
+        </p>
+
+        <div class="campo">
+          <label for="sede-legalName">
+            Razon social <span class="campo__opcional">(opcional)</span>
+          </label>
+          <input id="sede-legalName" type="text" formControlName="legalName" />
+        </div>
+
+        <div class="campo">
+          <label for="sede-taxId">
+            CUIT o identificacion fiscal <span class="campo__opcional">(opcional)</span>
+          </label>
+          <input id="sede-taxId" type="text" formControlName="taxId" />
+        </div>
+
+        <div class="campo">
+          <label for="sede-addressLine">
+            Direccion <span class="campo__opcional">(opcional)</span>
+          </label>
+          <input id="sede-addressLine" type="text" formControlName="addressLine" />
+        </div>
+
+        <div class="campo">
+          <label for="sede-phone">Telefono <span class="campo__opcional">(opcional)</span></label>
+          <input id="sede-phone" type="tel" formControlName="phone" />
+        </div>
+
+        <div class="campo">
+          <label for="sede-contactEmail">
+            Email de contacto <span class="campo__opcional">(opcional)</span>
+          </label>
+          <input
+            id="sede-contactEmail"
+            type="email"
+            formControlName="contactEmail"
+            [attr.aria-invalid]="mostrarError('contactEmail')"
+            [attr.aria-describedby]="
+              mostrarError('contactEmail') ? 'sede-contactEmail-error' : null
+            "
+          />
+          @if (mostrarError('contactEmail')) {
+            <p class="campo__error" id="sede-contactEmail-error">
+              Ese email no tiene una forma valida.
+            </p>
+          }
+        </div>
+
+        <dl class="detalle">
+          <dt>Nombre</dt>
+          <dd>{{ resumen().nombre }}</dd>
+          <dt>Zona horaria</dt>
+          <dd>{{ resumen().zona }}</dd>
+          <dt>Duracion del turno</dt>
+          <dd>{{ resumen().turno }}</dd>
+        </dl>
+
+        <div class="acciones">
+          <button type="submit" class="boton" [disabled]="bloqueado()">
+            @if (espera.activa()) {
+              Espera {{ espera.segundos() }} s
+            } @else {
+              Crear la sede
+            }
+          </button>
+          <button type="button" class="boton boton--secundario" (click)="volver()">
+            Volver a los datos de la sede
+          </button>
+        </div>
+      }
+    </form>
+  }
+
+  <div aria-live="polite">
+    @if (mensajeError(); as mensaje) {
+      <p class="estado estado--error" role="alert">{{ mensaje }}</p>
+
+      <!--
+        El tope del plan no se resuelve reintentando: hay que cambiar de plan. Ofrecer solo
+        "reintentar" ahi seria mandar al usuario a chocar contra la misma pared.
+      -->
+      @if (esTopeDelPlan()) {
+        <p class="acciones">
+          <a class="boton" routerLink="/organizacion/suscripcion">Ver mi plan y cambiarlo</a>
+        </p>
+      }
+    }
+  </div>
+</section>

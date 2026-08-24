@@ -1,0 +1,144 @@
+<h1>Vincular a un colaborador</h1>
+
+<p class="descripcion">
+  Le da acceso a esta organizacion a una cuenta que ya existe en AKINE. No se crea la cuenta ni se
+  manda ningun correo: la persona tiene que haberse registrado antes.
+</p>
+
+<section class="tarjeta" aria-labelledby="titulo-alta">
+  <h2 id="titulo-alta">Datos del vinculo</h2>
+
+  <form [formGroup]="formulario" (ngSubmit)="enviar()" novalidate>
+    <div class="campo">
+      <label for="alta-email">Email de la cuenta</label>
+      <input
+        id="alta-email"
+        type="email"
+        formControlName="email"
+        autocomplete="off"
+        aria-describedby="alta-email-ayuda"
+        [attr.aria-invalid]="mostrarError('email')"
+      />
+      <p class="ayuda" id="alta-email-ayuda">
+        Tiene que ser el email exacto con el que esa persona se registro.
+      </p>
+      @if (mostrarError('email')) {
+        <p class="campo__error" id="alta-email-error">Escribi un email valido.</p>
+      }
+    </div>
+
+    <div class="campo">
+      <label for="alta-roleCode">Rol</label>
+      <select
+        id="alta-roleCode"
+        formControlName="roleCode"
+        [attr.aria-invalid]="mostrarError('roleCode')"
+        [attr.aria-describedby]="mostrarError('roleCode') ? 'alta-roleCode-error' : null"
+      >
+        <option value="">Elegi un rol</option>
+        @for (rol of roles; track rol.codigo) {
+          <option [value]="rol.codigo">{{ rol.etiqueta }}</option>
+        }
+      </select>
+      @if (mostrarError('roleCode')) {
+        <p class="campo__error" id="alta-roleCode-error">Elegi el rol que va a tener.</p>
+      }
+    </div>
+
+    <fieldset class="grupo">
+      <legend>Alcance</legend>
+      <p class="ayuda" id="alta-alcance-ayuda">
+        Sobre que puede trabajar. "Toda la organizacion" es un alcance explicito, no la ausencia de
+        una sede.
+      </p>
+
+      <div class="opcion-radio">
+        <input
+          id="alta-alcance-organizacion"
+          type="radio"
+          formControlName="alcance"
+          value="organizacion"
+          aria-describedby="alta-alcance-ayuda"
+        />
+        <label for="alta-alcance-organizacion">Toda la organizacion</label>
+      </div>
+
+      <div class="opcion-radio">
+        <input id="alta-alcance-sede" type="radio" formControlName="alcance" value="sede" />
+        <label for="alta-alcance-sede">Una sede en particular</label>
+      </div>
+
+      @if (formulario.controls.alcance.value === 'sede') {
+        <div class="campo">
+          <label for="alta-consultorioId">Sede</label>
+          <select id="alta-consultorioId" formControlName="consultorioId">
+            <option value="">Elegi una sede</option>
+            @for (sede of sedes.sedes(); track sede.id) {
+              <option [value]="sede.id">{{ sede.name }}</option>
+            }
+          </select>
+        </div>
+      }
+    </fieldset>
+
+    <div class="campo">
+      <label for="alta-reason">Motivo</label>
+      <input
+        id="alta-reason"
+        type="text"
+        formControlName="reason"
+        aria-describedby="alta-reason-ayuda"
+        [attr.aria-invalid]="mostrarError('reason')"
+      />
+      <p class="ayuda" id="alta-reason-ayuda">
+        Es lo que va a responder, meses despues, por que esta persona tiene acceso a los datos del
+        centro.
+      </p>
+      @if (mostrarError('reason')) {
+        <p class="campo__error" id="alta-reason-error">Escribi el motivo del alta.</p>
+      }
+    </div>
+
+    <div class="acciones">
+      <button type="submit" class="boton" [disabled]="bloqueado()">Vincular</button>
+      <a class="boton boton--secundario" routerLink="/organizacion/colaboradores">Cancelar</a>
+
+      @if (espera.activa()) {
+        <span class="ayuda">Volve a intentar en {{ espera.segundos() }} segundos.</span>
+      }
+    </div>
+  </form>
+
+  <div aria-live="polite">
+    @switch (estado().tipo) {
+      @case ('enviando') {
+        <p class="estado estado--cargando">Creando el vinculo&hellip;</p>
+      }
+
+      @case ('ok') {
+        <p class="estado estado--ok">Vinculo creado (numero {{ membershipCreado() }}).</p>
+        <p class="ayuda">
+          La persona ya puede elegir esta organizacion como contexto de trabajo la proxima vez que
+          entre. No recibe ningun aviso de AKINE.
+        </p>
+        <a class="boton" routerLink="/organizacion/colaboradores">Volver al listado</a>
+      }
+
+      @case ('error') {
+        <p class="estado estado--error" role="alert">{{ mensajeError() }}</p>
+
+        @if (causaError() === 'sin-contexto') {
+          <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto</a>
+        }
+
+        @if (causaError() === 'conflicto') {
+          <p class="ayuda">
+            Si el vinculo existe pero esta suspendido o revocado, se gestiona desde el listado y no
+            creando uno nuevo.
+          </p>
+          <a class="enlace" routerLink="/organizacion/colaboradores">Ver el listado</a>
+        }
+      }
+    }
+  </div>
+</section>

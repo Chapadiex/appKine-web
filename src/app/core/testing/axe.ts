@@ -42,8 +42,15 @@ const OPCIONES: RunOptions = {
  * cada archivo de test paga el armado del motor sobre jsdom y tarda ~6 s medidos; las
  * siguientes bajan a ~0,5 s. Sin este margen el primer `it` de cada spec falla por timeout
  * y el segundo revienta con "Axe is already running", que es el mismo problema disfrazado.
+ *
+ * <p><b>Subido de 20 s a 35 s en AKINE-02.01.</b> El costo no es del `it` que falla sino de
+ * la contencion entre workers: al sumar los specs de sedes, la suite completa paso de 31 a
+ * 33 archivos y `register-page` —que no cambio en nada— empezo a superar los 20 s de forma
+ * reproducible, mientras seguia pasando en ~16 s corrido solo. El numero tiene que cubrir el
+ * arranque de axe multiplicado por la maquina mas cargada que corra la suite, no por la
+ * medicion en frio de una sola.
  */
-export const TIMEOUT_AXE = 20_000;
+export const TIMEOUT_AXE = 35_000;
 
 /** Resultado crudo de axe, por si un test necesita mirar algo puntual. */
 export function auditar(elemento: ElementContext): Promise<AxeResults> {

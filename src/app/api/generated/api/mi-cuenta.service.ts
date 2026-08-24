@@ -19,6 +19,8 @@ import { OpenApiHttpParams, QueryParamStyle } from '../query.params';
 // @ts-ignore
 import { AuthorizedContextResponse } from '../model/authorized-context-response';
 // @ts-ignore
+import { EffectivePermissionsResponse } from '../model/effective-permissions-response';
+// @ts-ignore
 import { ProblemDetail } from '../model/problem-detail';
 
 // @ts-ignore
@@ -38,6 +40,60 @@ export class MiCuentaService extends BaseService implements MiCuentaServiceInter
 
     constructor(protected httpClient: HttpClient, @Optional() @Inject(BASE_PATH) basePath: string|string[], @Optional() configuration?: Configuration) {
         super(basePath, configuration);
+    }
+
+    /**
+     * Permisos efectivos en el contexto activo
+     * Devuelve los codigos del catalogo que la cuenta tiene vigentes en la organizacion y la sede de su contexto activo, ya resueltos: rol base, permisos adicionales vigentes y acceso de soporte, todo aplanado en un array. El cliente no compone nada.  Se resuelve CONTRA LA BASE en cada llamada, no contra lo que porta el token. Un permiso revocado hace un minuto ya no aparece aca, aunque el access token siga siendo valido: leer del token daria una respuesta correcta al momento del login y falsa despues.  Es insumo de UX, no un mecanismo de seguridad. Cada pantalla que el frontend oculte con esto esta igualmente protegida en el backend; si esta lista mintiera, lo unico que pasaria es que se veria un boton que despues responde 403.  Exige contexto de trabajo. Sin el la respuesta es 403 missing-tenant-context, NUNCA 401: el interceptor del frontend borra el token ante cualquier 401 y arranca un bucle de login.
+     * @endpoint get /api/v1/me/permissions
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public getMyPermissions(observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<EffectivePermissionsResponse>;
+    public getMyPermissions(observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<EffectivePermissionsResponse>>;
+    public getMyPermissions(observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<EffectivePermissionsResponse>>;
+    public getMyPermissions(observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+
+        let localVarHeaders = this.defaultHeaders;
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/me/permissions`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<EffectivePermissionsResponse>('get', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
     }
 
     /**

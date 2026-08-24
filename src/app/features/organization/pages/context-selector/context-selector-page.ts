@@ -9,6 +9,7 @@ import {
   RUTA_SELECTOR_CONTEXTO,
   destinoInterno,
 } from '../../../../core/models/rutas';
+import { PARAM_MOTIVO, avisoDelMotivo } from '../../models/motivo-de-seleccion';
 import { SessionService } from '../../../../core/services/session.service';
 import { TenantContext } from '../../../../core/services/tenant-context.store';
 
@@ -76,6 +77,17 @@ export class ContextSelectorPage {
   protected readonly aviso = signal<string | null>(null);
 
   /**
+   * `true` cuando se llego aca por un motivo declarado en la URL y no por el flujo normal.
+   *
+   * <p><b>Con motivo NO se auto-selecciona</b>, ni siquiera habiendo un solo contexto. La
+   * auto-seleccion existe para ahorrarle un clic de tramite a quien tiene una sola sede,
+   * pero aca el usuario no venia a elegir: lo trajo la aplicacion porque la sede en la que
+   * estaba trabajando se dio de baja. Entrar solo y volver a la pantalla anterior lo dejaria
+   * sin enterarse de por que cambio su contexto, que es exactamente lo que hay que evitar.
+   */
+  private readonly hayMotivo = signal(false);
+
+  /**
    * Contextos a elegir, o `null` en cualquier otro estado.
    *
    * El estrechamiento se hace aca, en TypeScript, no en la plantilla con `$any` (ADR-0005).
@@ -104,6 +116,15 @@ export class ContextSelectorPage {
   });
 
   constructor() {
+    // El motivo se lee del snapshot: se entra a esta pantalla, no se navega dentro de ella.
+    // `avisoDelMotivo` devuelve `null` ante cualquier valor que no reconozca, asi que un
+    // query param escrito a mano no puede pintar texto propio con la firma de AKINE.
+    const explicacion = avisoDelMotivo(this.ruta.snapshot.queryParamMap.get(PARAM_MOTIVO));
+    if (explicacion !== null) {
+      this.hayMotivo.set(true);
+      this.aviso.set(explicacion);
+    }
+
     this.cargar();
   }
 
@@ -242,7 +263,7 @@ export class ContextSelectorPage {
       return;
     }
 
-    if (utilizables.length === 1) {
+    if (utilizables.length === 1 && !this.hayMotivo()) {
       this.seleccionar(utilizables[0], true);
       return;
     }

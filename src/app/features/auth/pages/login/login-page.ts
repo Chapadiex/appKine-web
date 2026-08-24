@@ -9,7 +9,7 @@ import {
   destinoInterno,
 } from '../../../../core/models/rutas';
 import { SessionService } from '../../../../core/services/session.service';
-import { crearEsperaPorLimite } from '../../models/espera-por-limite';
+import { crearEsperaPorLimite } from '../../../../shared/utils/espera-por-limite';
 
 /** Destino por defecto cuando la sesion ya quedo con contexto. */
 const DESTINO_POR_DEFECTO = '/organizacion';

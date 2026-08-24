@@ -5,8 +5,8 @@ import { RouterLink } from '@angular/router';
 import { EstadoFormulario, traducirYEsperar } from '../../models/auth-errors';
 import { RegisterAccountRequest } from '../../../../api/generated/model/register-account-request';
 import { RegistroYActivacionService } from '../../../../api/generated/api/registro-y-activacion.service';
-import { crearEsperaPorLimite } from '../../models/espera-por-limite';
-import { nuevaClaveDeIntento } from '../../models/clave-de-intento';
+import { crearEsperaPorLimite } from '../../../../shared/utils/espera-por-limite';
+import { nuevaClaveDeIntento } from '../../../../shared/utils/clave-de-intento';
 
 /** Campos obligatorios, en el orden en que se enfoca el primero invalido. */
 const CAMPOS = [

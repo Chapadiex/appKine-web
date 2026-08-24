@@ -1,6 +1,8 @@
 import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
 import { catchError, throwError } from 'rxjs';
 
+import { ProblemType } from '../../api/generated/model/problem-type';
+
 /**
  * Formato de error del backend: RFC 7807 Problem Details.
  *
@@ -8,7 +10,7 @@ import { catchError, throwError } from 'rxjs';
  * expone detalles internos, asi que lo que llega aca ya es apto para mostrar.
  *
  * <p><b>Hueco de contrato conocido.</b> El `ProblemDetail` generado desde
- * `akine-api.yaml` 0.3.0 declara `detail`, `instance`, `status`, `title`, `type` y un
+ * `akine-api.yaml` 0.6.0 declara `detail`, `instance`, `status`, `title`, `type` y un
  * `properties` generico, pero <b>no declara `errors`</b>. En el cable, Spring serializa
  * las extensiones de `setProperty(...)` como claves de primer nivel, asi que el mapa de
  * errores de validacion llega como `errors` al lado de `detail`. Se aceptan las dos formas
@@ -28,75 +30,51 @@ export interface ProblemDetail {
 }
 
 /**
- * Tipos de problema que el backend publica bajo `https://akine.app/problems/`.
+ * Ultimo segmento de una URI, a nivel de tipo.
  *
- * <p>Existen para que las pantallas <b>ramifiquen por un identificador estable</b> y no
- * parseando el texto de `detail`, que es prosa para humanos y cambia sin avisar. Un
- * `if (error.message.includes('suspendida'))` se rompe el dia que alguien corrige una
- * tilde.
- *
- * <p><b>Nota honesta:</b> el contrato OpenAPI 0.3.0 sigue declarando `ProblemDetail.type`
- * como un `string`/`uri` libre y <b>no enumera estos valores</b>. La lista se derivo de
- * `GlobalExceptionHandler`, `IdentityProblemHandler`, `OrganizationProblemHandler`,
- * `ProblemResponses` y `SecurityConfig` en appKine-api. Si el backend agrega uno nuevo,
- * aca no se entera nada: `problemType` devuelve `null` y la pantalla cae en su rama
- * generica, que es el comportamiento seguro.
+ * <p>`'https://akine.app/problems/conflict'` -&gt; `'conflict'`. Es recursivo a proposito y no
+ * un match contra `/problems/`: si el backend publicara alguna vez una URI con otra base,
+ * esto sigue dando el ultimo segmento en vez de colapsar a `never` sin que nadie se entere.
  */
-export const AKINE_PROBLEM_TYPES = [
-  // --- Organizacion y planes (contrato 0.2.0) ---
-  /** 409: el alta supera el tope del plan contratado. */
-  'plan-limit-exceeded',
-  /** 403: el plan contratado no incluye la funcionalidad. */
-  'feature-not-available',
-  /** 409: la suscripcion no esta ACTIVA; solo lectura y administracion. */
-  'subscription-suspended',
-  /** 409: la maquina de estados de la suscripcion no admite ese salto. */
-  'invalid-subscription-transition',
-  /** 409: misma Idempotency-Key con un payload distinto al original. */
-  'idempotency-key-conflict',
-  /** 409: bloqueo optimista. Hay que releer y reintentar. */
-  'conflict',
-  /** 403: hay sesion pero no se eligio contexto de tenant todavia. */
-  'missing-tenant-context',
+type UltimoSegmento<T extends string> = T extends `${string}/${infer Resto}`
+  ? UltimoSegmento<Resto>
+  : T;
 
-  // --- Identidad y sesion (contrato 0.3.0) ---
-  /**
-   * 401: credenciales rechazadas.
-   *
-   * Email inexistente, contrasena incorrecta y cuenta bloqueada / desactivada / pendiente
-   * de activacion devuelven los TRES este mismo problema con el mismo cuerpo (ADR-0018).
-   * Es anti-enumeracion deliberada: la UI muestra un unico mensaje y no intenta adivinar.
-   */
-  'invalid-credentials',
-  /**
-   * 401: el refresh no sirve -vencido, inexistente o ya canjeado-.
-   *
-   * El caso "ya canjeado" revoca la familia de sesion completa, pero responde IGUAL que
-   * los otros dos: el cliente no puede distinguir "te detectamos" de "no servia".
-   */
-  'invalid-refresh',
-  /** 401: el access token presentado es invalido o esta vencido. */
-  'invalid-token',
-  /** 401: no hay credencial donde hacia falta una. */
-  'unauthorized',
-  /** 403: hay sesion y contexto, pero el rol no alcanza. NO se borra el token. */
-  'forbidden',
-  /** 403: el Origin del refresh no esta en la lista permitida. Es un error de configuracion. */
-  'csrf-rejected',
-  /** 404: el recurso no existe o no es accesible para esta cuenta. */
-  'not-found',
-  /** 429: demasiados intentos. Ver `reintentarEnSegundos`. */
-  'rate-limited',
-  /** 400: campos invalidos. Ver `erroresPorCampo`. */
-  'validation-error',
-  /** 500: falla no prevista. El detalle real quedo en el log del servidor. */
-  'internal-error',
-] as const;
+/**
+ * Uno de los problemas del catalogo del contrato, o `null` si es otro.
+ *
+ * <p>Se deriva del enum `ProblemType` del cliente generado -el catalogo cerrado que el
+ * contrato publica desde 0.6.0-, no de una copia a mano. Esa copia se mantenia
+ * transcribiendo los handlers del backend y ya se habia desincronizado: tenia 27 entradas
+ * contra las 29 del catalogo real, sin `organization-slug-taken` ni
+ * `consultorio-has-active-references`.
+ *
+ * <p>Al ser una union cerrada de literales, comparar `problemType` contra un valor que no
+ * esta en el catalogo <b>no compila</b>. Ese es todo el punto: un codigo inventado o mal
+ * escrito se cae en el build y no en produccion.
+ *
+ * <p><b>Hueco de contrato.</b> `ProblemDetail.type` sigue declarado como `string`/`uri` y
+ * <b>no referencia</b> a `ProblemType`, que en 0.6.0 queda como un schema suelto que ningun
+ * otro schema usa. Por eso el reconocimiento se hace aca a mano contra el enum en vez de
+ * salir tipado del cuerpo de la respuesta.
+ */
+export type AkineProblemType = UltimoSegmento<`${ProblemType}`>;
 
-/** Uno de los problemas conocidos del contrato, o `null` si es otro. */
-export type AkineProblemType = (typeof AKINE_PROBLEM_TYPES)[number];
+/**
+ * Los mismos valores, en runtime.
+ *
+ * <p>El catalogo es cerrado <b>en compilacion</b>, no en el cable: un backend mas nuevo
+ * puede mandar un `type` que este cliente no conoce. Ante eso
+ * {@link AkineHttpError.problemType} devuelve `null` y la pantalla cae en su rama generica,
+ * que es el comportamiento seguro.
+ */
+const PROBLEMAS_CONOCIDOS: ReadonlySet<string> = new Set(
+  Object.values(ProblemType).map(ultimoSegmento),
+);
 
-const PROBLEMAS_CONOCIDOS: ReadonlySet<string> = new Set(AKINE_PROBLEM_TYPES);
+function ultimoSegmento(uri: string): string {
+  return uri.split('/').pop() ?? '';
+}
 
 /** Error de dominio del frontend, ya traducido a algo mostrable. */
 export class AkineHttpError extends Error {
@@ -128,6 +106,33 @@ export class AkineHttpError extends Error {
   }
 
   /**
+   * Extension RFC 7807 del cuerpo, o `undefined` si no vino.
+   *
+   * <p>Algunos problemas traen datos que la pantalla necesita para redactar un mensaje util
+   * en vez de uno generico: `plan-limit-exceeded` manda `limitCode`, `limitValue` y
+   * `currentUsage`, y sin ellos lo unico que se puede decir es "conflicto".
+   *
+   * <p>Se busca en la raiz y despues bajo `properties` por la misma razon que
+   * {@link erroresPorCampo}: Spring serializa las extensiones de `setProperty(...)` como
+   * claves de primer nivel, mientras que el `ProblemDetail` del contrato las declararia
+   * anidadas. Una de las dos formas es lo que hay hoy y la otra es lo que dice el contrato.
+   *
+   * <p>Devuelve `unknown` a proposito: el contrato no tipa estas claves, asi que quien la
+   * usa tiene que verificar la forma antes de confiar en ella.
+   */
+  extension(clave: string): unknown {
+    const problem = this.problem as Readonly<Record<string, unknown>> | null;
+    const enRaiz = problem?.[clave];
+    return enRaiz === undefined ? this.problem?.properties?.[clave] : enRaiz;
+  }
+
+  /** Extension numerica, o `null` si no vino o no es un numero. */
+  numeroDeExtension(clave: string): number | null {
+    const valor = this.extension(clave);
+    return typeof valor === 'number' && Number.isFinite(valor) ? valor : null;
+  }
+
+  /**
    * Identificador estable del problema, o `null` si no es uno de los conocidos.
    *
    * <p>Es el ultimo segmento de `ProblemDetail.type`
@@ -141,7 +146,7 @@ export class AkineHttpError extends Error {
       return null;
     }
 
-    const segmento = type.split('/').pop() ?? '';
+    const segmento = ultimoSegmento(type);
     return PROBLEMAS_CONOCIDOS.has(segmento) ? (segmento as AkineProblemType) : null;
   }
 

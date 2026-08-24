@@ -116,6 +116,23 @@ describe('ContextSelectorPage', () => {
     expect(navegar).toHaveBeenCalledWith('/organizacion');
   });
 
+  it('si la sede quedo inactiva lo explica y NO auto-selecciona, aunque haya un solo contexto', async () => {
+    // Llegar aca es una consecuencia de haber dado de baja la sede en la que se estaba
+    // trabajando: una sede inactiva no admite operaciones nuevas.
+    TestBed.resetTestingModule();
+    await montar({ motivo: 'sede-inactiva' });
+    const navegar = vi.spyOn(router, 'navigateByUrl').mockResolvedValue(true);
+
+    const fixture = await pintar([CONTEXTO_BELGRANO]);
+
+    expect(texto(fixture)).toContain('quedo dada de baja');
+    // El atajo de la auto-seleccion se apaga a proposito: entrar solo y volver a la pantalla
+    // anterior dejaria al usuario sin enterarse de por que le cambio el contexto.
+    expect(fixture.nativeElement.querySelectorAll('.opcion').length).toBe(1);
+    expect(navegar).not.toHaveBeenCalled();
+    httpMock.expectNone(URL_CANJE);
+  });
+
   it('con un solo contexto si dice que no hacia falta elegir', async () => {
     vi.spyOn(router, 'navigateByUrl').mockResolvedValue(true);
 

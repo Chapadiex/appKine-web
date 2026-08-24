@@ -4,7 +4,7 @@ import { RouterLink } from '@angular/router';
 
 import { EstadoFormulario, traducirYEsperar } from '../../models/auth-errors';
 import { RecuperacionService } from '../../../../api/generated/api/recuperacion.service';
-import { crearEsperaPorLimite } from '../../models/espera-por-limite';
+import { crearEsperaPorLimite } from '../../../../shared/utils/espera-por-limite';
 
 /**
  * Mensaje unico del `202`.

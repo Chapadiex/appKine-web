@@ -1,0 +1,505 @@
+<h1>Colaboradores</h1>
+
+<p class="descripcion">
+  Quienes tienen acceso a esta organizacion, con que rol y sobre que alcance. Los vinculos
+  suspendidos y revocados siguen en la lista: la baja es logica y su historia sigue siendo
+  relevante.
+</p>
+
+<p class="acciones" *akinePermiso="permisoManage">
+  <a class="boton" routerLink="/organizacion/colaboradores/nuevo">Vincular a alguien</a>
+</p>
+
+<div aria-live="polite">
+  @if (exito(); as mensaje) {
+    <p class="estado estado--ok">{{ mensaje }}</p>
+  }
+</div>
+
+<section class="tarjeta" aria-labelledby="titulo-colaboradores">
+  <h2 id="titulo-colaboradores">Vinculos de la organizacion</h2>
+
+  <div aria-live="polite">
+    @switch (estado().tipo) {
+      @case ('cargando') {
+        <p class="estado estado--cargando">Cargando los colaboradores&hellip;</p>
+      }
+
+      @case ('sin-contexto') {
+        <p class="estado estado--vacio">Todavia no elegiste un contexto de trabajo.</p>
+        <p class="ayuda">
+          Los colaboradores son de una organizacion concreta, asi que hay que indicar cual.
+        </p>
+        <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto</a>
+      }
+
+      @case ('error') {
+        <p class="estado estado--error" role="alert">{{ mensajeError() }}</p>
+
+        @if (faltaContexto()) {
+          <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto</a>
+        } @else {
+          <button type="button" class="boton" (click)="cargar()">Reintentar</button>
+        }
+      }
+
+      @case ('listo') {
+        @if (colaboradoresDeLaPagina().length === 0) {
+          <p class="estado estado--vacio">Esta organizacion todavia no tiene colaboradores.</p>
+          <p class="ayuda">
+            Podes vincular a alguien que ya tenga cuenta en AKINE desde el boton de arriba.
+          </p>
+        } @else {
+          <p class="ayuda">
+            {{ totalColaboradores() }} vinculos en total, incluidos los suspendidos y revocados.
+          </p>
+
+          <div class="tabla-scroll">
+            <table class="tabla">
+              <caption class="visualmente-oculto">
+                Colaboradores de la organizacion, con su rol, alcance y estado
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col">Cuenta</th>
+                  <th scope="col">Rol</th>
+                  <th scope="col">Alcance</th>
+                  <th scope="col">Estado</th>
+                  <th scope="col">Vigencia</th>
+                  <th scope="col">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (colaborador of colaboradoresDeLaPagina(); track colaborador.id) {
+                  <tr [class.fila--revocada]="colaborador.estado === 'REVOCADA'">
+                    <th scope="row">
+                      <span class="colaborador__nombre">{{ nombreDe(colaborador) }}</span>
+                      @if (colaborador.accountEmail) {
+                        <span class="colaborador__email">{{ colaborador.accountEmail }}</span>
+                      }
+                      @if (colaborador.founder) {
+                        <span class="marca">Fundador</span>
+                      }
+                    </th>
+                    <td>{{ etiquetaDeRol(colaborador.roleCode) }}</td>
+                    <td>{{ alcanceLegible(colaborador.consultorioId) }}</td>
+                    <td>
+                      <span
+                        class="marca-estado"
+                        [class.marca-estado--activa]="colaborador.estado === 'ACTIVA'"
+                        [class.marca-estado--suspendida]="colaborador.estado === 'SUSPENDIDA'"
+                        [class.marca-estado--revocada]="colaborador.estado === 'REVOCADA'"
+                      >
+                        {{ estadoLegible(colaborador.estado) }}
+                      </span>
+
+                      @if (colaborador.estado === 'REVOCADA') {
+                        <p class="ayuda">
+                          Revocado por la cuenta {{ colaborador.revokedByAccountId }}.
+                          @if (colaborador.revokedReason) {
+                            Motivo: {{ colaborador.revokedReason }}
+                          }
+                        </p>
+                      }
+                    </td>
+                    <td>
+                      {{ colaborador.validFrom }}
+                      @if (colaborador.validUntil) {
+                        <span class="ayuda">hasta {{ colaborador.validUntil }}</span>
+                      }
+                    </td>
+                    <td>
+                      <div class="acciones-fila" *akinePermiso="permisoManage">
+                        @if (colaborador.estado === 'ACTIVA') {
+                          <button
+                            type="button"
+                            class="boton boton--secundario"
+                            (click)="abrirPanel(colaborador, 'editar')"
+                          >
+                            Cambiar rol o alcance
+                          </button>
+                          <button
+                            type="button"
+                            class="boton boton--secundario"
+                            (click)="abrirPanel(colaborador, 'suspender')"
+                          >
+                            Suspender
+                          </button>
+                        }
+
+                        @if (colaborador.estado === 'SUSPENDIDA') {
+                          <button
+                            type="button"
+                            class="boton boton--secundario"
+                            (click)="abrirPanel(colaborador, 'reactivar')"
+                          >
+                            Reactivar
+                          </button>
+                        }
+
+                        @if (colaborador.estado !== 'REVOCADA') {
+                          <button
+                            type="button"
+                            class="boton boton--secundario"
+                            (click)="abrirPanel(colaborador, 'revocar')"
+                          >
+                            Revocar
+                          </button>
+                          <button
+                            type="button"
+                            class="boton boton--secundario"
+                            (click)="abrirPanel(colaborador, 'permisos')"
+                          >
+                            Permisos adicionales
+                          </button>
+                        }
+                      </div>
+                    </td>
+                  </tr>
+
+                  <!--
+                    El panel vive en una fila propia y no en un dialogo: la operacion necesita
+                    seguir viendo a quien se le esta aplicando, y un modal sobre una tabla
+                    obliga a recordar de memoria cual era la fila.
+                  -->
+                  @if (panelAbierto(colaborador.id, 'editar')) {
+                    <tr class="fila-panel">
+                      <td colspan="6">
+                        <form
+                          [formGroup]="formularioEdicion"
+                          (ngSubmit)="enviarEdicion()"
+                          novalidate
+                        >
+                          <h3 class="panel__titulo">
+                            Cambiar rol o alcance de la cuenta {{ colaborador.accountId }}
+                          </h3>
+
+                          <div class="campo">
+                            <label for="edicion-roleCode">Rol</label>
+                            <select id="edicion-roleCode" formControlName="roleCode">
+                              <option value="">No cambiar el rol</option>
+                              @for (rol of roles; track rol.codigo) {
+                                <option [value]="rol.codigo">{{ rol.etiqueta }}</option>
+                              }
+                            </select>
+                          </div>
+
+                          <fieldset class="grupo">
+                            <legend>Alcance</legend>
+                            <p class="ayuda" id="edicion-alcance-ayuda">
+                              "Toda la organizacion" es un alcance, no la ausencia de uno: por eso
+                              se elige explicitamente y no dejando la sede vacia.
+                            </p>
+
+                            <div class="opcion-radio">
+                              <input
+                                id="edicion-alcance-sin-cambio"
+                                type="radio"
+                                formControlName="alcance"
+                                value="sin-cambio"
+                                aria-describedby="edicion-alcance-ayuda"
+                              />
+                              <label for="edicion-alcance-sin-cambio">No cambiar el alcance</label>
+                            </div>
+
+                            <div class="opcion-radio">
+                              <input
+                                id="edicion-alcance-organizacion"
+                                type="radio"
+                                formControlName="alcance"
+                                value="organizacion"
+                              />
+                              <label for="edicion-alcance-organizacion">
+                                Toda la organizacion
+                              </label>
+                            </div>
+
+                            <div class="opcion-radio">
+                              <input
+                                id="edicion-alcance-sede"
+                                type="radio"
+                                formControlName="alcance"
+                                value="sede"
+                              />
+                              <label for="edicion-alcance-sede">Una sede en particular</label>
+                            </div>
+
+                            @if (formularioEdicion.controls.alcance.value === 'sede') {
+                              <div class="campo">
+                                <label for="edicion-consultorioId">Sede</label>
+                                <select id="edicion-consultorioId" formControlName="consultorioId">
+                                  <option value="">Elegi una sede</option>
+                                  @for (sede of sedes.sedes(); track sede.id) {
+                                    <option [value]="sede.id">{{ sede.name }}</option>
+                                  }
+                                </select>
+                              </div>
+                            }
+                          </fieldset>
+
+                          <div class="campo">
+                            <label for="edicion-reason">Motivo</label>
+                            <input
+                              id="edicion-reason"
+                              type="text"
+                              formControlName="reason"
+                              [attr.aria-invalid]="mostrarErrorEdicion()"
+                              [attr.aria-describedby]="
+                                mostrarErrorEdicion() ? 'edicion-reason-error' : null
+                              "
+                            />
+                            @if (mostrarErrorEdicion()) {
+                              <p class="campo__error" id="edicion-reason-error">
+                                Escribi por que se hace este cambio. Queda en la auditoria.
+                              </p>
+                            }
+                          </div>
+
+                          <div class="acciones">
+                            <button type="submit" class="boton" [disabled]="enviando()">
+                              Aplicar el cambio
+                            </button>
+                            <button
+                              type="button"
+                              class="boton boton--secundario"
+                              (click)="cerrarPanel()"
+                            >
+                              Cancelar
+                            </button>
+                          </div>
+                        </form>
+
+                        <div aria-live="polite">
+                          @if (errorAccion(); as mensaje) {
+                            <p class="estado estado--error" role="alert">{{ mensaje }}</p>
+                          }
+                        </div>
+                      </td>
+                    </tr>
+                  }
+
+                  @if (
+                    panelAbierto(colaborador.id, 'suspender') ||
+                    panelAbierto(colaborador.id, 'reactivar') ||
+                    panelAbierto(colaborador.id, 'revocar')
+                  ) {
+                    <tr class="fila-panel">
+                      <td colspan="6">
+                        <form [formGroup]="formularioMotivo" (ngSubmit)="enviarMotivo()" novalidate>
+                          <h3 class="panel__titulo">
+                            @if (panelAbierto(colaborador.id, 'suspender')) {
+                              Suspender a la cuenta {{ colaborador.accountId }}
+                            }
+                            @if (panelAbierto(colaborador.id, 'reactivar')) {
+                              Reactivar a la cuenta {{ colaborador.accountId }}
+                            }
+                            @if (panelAbierto(colaborador.id, 'revocar')) {
+                              Revocar el vinculo de la cuenta {{ colaborador.accountId }}
+                            }
+                          </h3>
+
+                          @if (panelAbierto(colaborador.id, 'revocar')) {
+                            <p class="ayuda">
+                              Revocar es terminal y no se deshace. El vinculo no se borra: queda en
+                              este listado con quien lo revoco y por que, porque los historicos que
+                              lo referencian tienen que seguir siendo legibles.
+                            </p>
+                          }
+
+                          <div class="campo">
+                            <label for="panel-motivo">Motivo</label>
+                            <input
+                              id="panel-motivo"
+                              type="text"
+                              formControlName="reason"
+                              [attr.aria-invalid]="mostrarErrorMotivo()"
+                              [attr.aria-describedby]="
+                                mostrarErrorMotivo() ? 'panel-motivo-error' : null
+                              "
+                            />
+                            @if (mostrarErrorMotivo()) {
+                              <p class="campo__error" id="panel-motivo-error">
+                                El motivo es obligatorio: es lo que explica esta decision mas
+                                adelante.
+                              </p>
+                            }
+                          </div>
+
+                          <div class="acciones">
+                            <button type="submit" class="boton" [disabled]="enviando()">
+                              Confirmar
+                            </button>
+                            <button
+                              type="button"
+                              class="boton boton--secundario"
+                              (click)="cerrarPanel()"
+                            >
+                              Cancelar
+                            </button>
+                          </div>
+                        </form>
+
+                        <div aria-live="polite">
+                          @if (errorAccion(); as mensaje) {
+                            <p class="estado estado--error" role="alert">{{ mensaje }}</p>
+                          }
+                        </div>
+                      </td>
+                    </tr>
+                  }
+
+                  @if (panelAbierto(colaborador.id, 'permisos')) {
+                    <tr class="fila-panel">
+                      <td colspan="6">
+                        <h3 class="panel__titulo">
+                          Permisos adicionales de la cuenta {{ colaborador.accountId }}
+                        </h3>
+                        <p class="ayuda">
+                          Se suman a los que ya trae el rol. Solo se listan los vigentes: los dados
+                          de baja quedan en la auditoria.
+                        </p>
+
+                        <div aria-live="polite">
+                          @if (grants() === null) {
+                            <p class="estado estado--cargando">Cargando los permisos&hellip;</p>
+                          } @else if (grants()?.length === 0) {
+                            <p class="estado estado--vacio">
+                              Este colaborador no tiene permisos adicionales.
+                            </p>
+                          } @else {
+                            <ul class="lista-grants">
+                              @for (grant of grants(); track grant.id) {
+                                <li>
+                                  <span class="grant__codigo">{{ grant.permissionCode }}</span>
+                                  @if (grant.validUntil) {
+                                    <span class="ayuda">vence {{ grant.validUntil }}</span>
+                                  }
+                                  <button
+                                    type="button"
+                                    class="boton boton--secundario"
+                                    [disabled]="enviando()"
+                                    (click)="revocarGrant(grant.permissionCode)"
+                                  >
+                                    Dar de baja
+                                  </button>
+                                </li>
+                              }
+                            </ul>
+                          }
+                        </div>
+
+                        <form [formGroup]="formularioGrant" (ngSubmit)="asignarGrant()" novalidate>
+                          <div class="campo">
+                            <label for="grant-permissionCode">Permiso a otorgar</label>
+                            <select
+                              id="grant-permissionCode"
+                              formControlName="permissionCode"
+                              [attr.aria-invalid]="mostrarErrorGrant('permissionCode')"
+                              [attr.aria-describedby]="
+                                mostrarErrorGrant('permissionCode')
+                                  ? 'grant-permissionCode-error'
+                                  : null
+                              "
+                            >
+                              <option value="">Elegi un permiso</option>
+                              @for (permiso of permisosOtorgables; track permiso) {
+                                <option [value]="permiso">{{ permiso }}</option>
+                              }
+                            </select>
+                            @if (mostrarErrorGrant('permissionCode')) {
+                              <p class="campo__error" id="grant-permissionCode-error">
+                                Elegi el permiso que queres otorgar.
+                              </p>
+                            }
+                          </div>
+
+                          <div class="campo">
+                            <label for="grant-reason">Motivo</label>
+                            <input
+                              id="grant-reason"
+                              type="text"
+                              formControlName="reason"
+                              aria-describedby="grant-reason-ayuda"
+                              [attr.aria-invalid]="mostrarErrorGrant('reason')"
+                            />
+                            <p class="ayuda" id="grant-reason-ayuda">
+                              Se usa tanto al otorgar como al dar de baja: las dos operaciones
+                              quedan auditadas.
+                            </p>
+                            @if (mostrarErrorGrant('reason')) {
+                              <p class="campo__error" id="grant-reason-error">Escribi el motivo.</p>
+                            }
+                          </div>
+
+                          <div class="campo">
+                            <label for="grant-validUntil">
+                              Vence el <span class="campo__opcional">(opcional)</span>
+                            </label>
+                            <input
+                              id="grant-validUntil"
+                              type="date"
+                              formControlName="validUntil"
+                              aria-describedby="grant-validUntil-ayuda"
+                            />
+                            <p class="ayuda" id="grant-validUntil-ayuda">
+                              Sin fecha, el permiso rige hasta que se de de baja.
+                            </p>
+                          </div>
+
+                          <div class="acciones">
+                            <button type="submit" class="boton" [disabled]="enviando()">
+                              Otorgar
+                            </button>
+                            <button
+                              type="button"
+                              class="boton boton--secundario"
+                              (click)="cerrarPanel()"
+                            >
+                              Cerrar
+                            </button>
+                          </div>
+                        </form>
+
+                        <div aria-live="polite">
+                          @if (errorAccion(); as mensaje) {
+                            <p class="estado estado--error" role="alert">{{ mensaje }}</p>
+                          }
+                        </div>
+                      </td>
+                    </tr>
+                  }
+                }
+              </tbody>
+            </table>
+          </div>
+
+          @if (totalPaginas() > 1) {
+            <nav class="paginacion" aria-label="Paginas de colaboradores">
+              <button
+                type="button"
+                class="boton boton--secundario"
+                [disabled]="paginaActual() === 0"
+                (click)="irAPagina(paginaActual() - 1)"
+              >
+                Anterior
+              </button>
+              <span class="ayuda">Pagina {{ paginaActual() + 1 }} de {{ totalPaginas() }}</span>
+              <button
+                type="button"
+                class="boton boton--secundario"
+                [disabled]="paginaActual() + 1 >= totalPaginas()"
+                (click)="irAPagina(paginaActual() + 1)"
+              >
+                Siguiente
+              </button>
+            </nav>
+          }
+        }
+      }
+    }
+  </div>
+</section>
+
+<p class="ayuda">
+  <a class="enlace" routerLink="/organizacion/auditoria">Ver la auditoria de la organizacion</a>
+</p>

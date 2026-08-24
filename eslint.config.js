@@ -29,9 +29,13 @@ module.exports = defineConfig([
     ],
     processor: angular.processInlineTemplates,
     rules: {
+      // Dos prefijos: `app` para las directivas de atributo comunes y `akine` para las que
+      // se usan como directiva estructural (`*akinePermiso`). En la microsintaxis el
+      // prefijo queda a la vista en cada plantilla, y `*appPermiso` se lee como si fuera de
+      // Angular; `*akinePermiso` deja claro de quien es la regla que oculta el boton.
       '@angular-eslint/directive-selector': [
         'error',
-        { type: 'attribute', prefix: 'app', style: 'camelCase' },
+        { type: 'attribute', prefix: ['app', 'akine'], style: 'camelCase' },
       ],
       '@angular-eslint/component-selector': [
         'error',

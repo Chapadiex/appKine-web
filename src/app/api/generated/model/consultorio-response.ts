@@ -18,16 +18,60 @@ export interface ConsultorioResponse {
      */
     active?: boolean;
     /**
+     * Direccion, si se cargo
+     */
+    addressLine?: string;
+    /**
+     * Email de contacto, si se cargo
+     */
+    contactEmail?: string;
+    /**
+     * Motivo declarado de la baja. null si la sede esta activa
+     */
+    deactivationReason?: string;
+    /**
+     * Instante UTC de la baja logica. null si la sede esta activa
+     */
+    deletedAt?: string;
+    /**
+     * Estado derivado de la sede: ACTIVO o INACTIVO
+     */
+    estado?: string;
+    /**
      * Identificador del consultorio
      */
     id?: number;
     /**
-     * Nombre de la sede
+     * Razon social, si se cargo
+     */
+    legalName?: string;
+    /**
+     * Nombre de la sede. Unico entre las sedes vigentes del tenant
      */
     name?: string;
     /**
      * Organizacion a la que pertenece
      */
     organizationId?: number;
+    /**
+     * Telefono de contacto, si se cargo
+     */
+    phone?: string;
+    /**
+     * Intervalo por defecto de la agenda, en minutos
+     */
+    slotMinutes?: number;
+    /**
+     * Identificacion fiscal, si se cargo
+     */
+    taxId?: string;
+    /**
+     * Zona horaria IANA efectiva de la sede. Es la que rige el dia operativo y la agenda, no la de la organizacion
+     */
+    timezone?: string;
+    /**
+     * Version para el control de concurrencia optimista. Hay que reenviarla al editar: sin ella dos ediciones simultaneas se pisan
+     */
+    version?: number;
 }
 

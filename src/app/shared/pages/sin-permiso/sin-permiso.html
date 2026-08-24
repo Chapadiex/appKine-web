@@ -1,0 +1,23 @@
+<h1>No tenes permiso para esta pantalla</h1>
+
+<p class="descripcion" role="alert">
+  Tu sesion es valida, pero el rol que tenes en este contexto de trabajo no incluye esta seccion.
+</p>
+
+@if (contexto(); as organizacion) {
+  <p class="ayuda">
+    Estas trabajando en <strong>{{ organizacion }}</strong
+    >. Los permisos son de cada contexto: es posible que en otra organizacion o en otra sede si
+    tengas acceso.
+  </p>
+}
+
+<p class="ayuda">
+  Si necesitas entrar, pediselo a quien administra la organizacion: es quien puede cambiarte el rol
+  o darte el permiso puntual.
+</p>
+
+<ul class="salidas">
+  <li><a routerLink="/seleccionar-contexto" class="enlace">Cambiar de contexto de trabajo</a></li>
+  <li><a routerLink="/" class="enlace">Volver al inicio</a></li>
+</ul>

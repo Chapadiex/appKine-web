@@ -186,8 +186,8 @@ export class OrganizacionesService extends BaseService implements Organizaciones
     }
 
     /**
-     * Sedes activas de la organizacion
-     * Listado paginado de los consultorios vigentes del tenant. Requiere ser miembro vigente de esa organizacion. Es la lectura minima que necesita el selector de contexto de trabajo; la administracion completa de consultorios llega en 02.01. El tamano de pagina se acota a 100: pedir mas devuelve ese maximo, no un error.
+     * Sedes de la organizacion
+     * Listado paginado de las sedes del tenant. Requiere ser miembro vigente de esa organizacion, y NO consultorio:manage: es la lectura que necesita el selector de contexto de trabajo, asi que restringirla dejaria a un profesional sin poder elegir sede. El parametro estado es opcional y su valor por defecto, ACTIVO, conserva el comportamiento historico del endpoint: un cliente que no lo manda ve exactamente lo mismo que antes. El tamano de pagina se acota a 100: pedir mas devuelve ese maximo, no un error.
      * @endpoint get /api/v1/organizations/{orgId}/consultorios
      * @param requestParameters
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
@@ -202,10 +202,20 @@ export class OrganizacionesService extends BaseService implements Organizaciones
         if (orgId === null || orgId === undefined) {
             throw new Error('Required parameter orgId was null or undefined when calling listOrganizationConsultorios.');
         }
+        const estado = requestParameters?.estado;
         const page = requestParameters?.page;
         const size = requestParameters?.size;
 
         let localVarQueryParameters = new OpenApiHttpParams(this.encoder);
+
+        localVarQueryParameters = this.addToHttpParams(
+            localVarQueryParameters,
+            'estado',
+            <any>estado,
+            QueryParamStyle.Form,
+            true,
+        );
+
 
         localVarQueryParameters = this.addToHttpParams(
             localVarQueryParameters,

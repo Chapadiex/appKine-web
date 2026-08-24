@@ -1,0 +1,255 @@
+<h1>Auditoria</h1>
+
+<p class="descripcion">
+  Hechos registrados sobre esta organizacion: quien hizo que, sobre que entidad, cuando y con que
+  motivo. Si tu permiso esta acotado a una sede, solo vas a ver los hechos de esa sede.
+</p>
+
+<section class="tarjeta" aria-labelledby="titulo-filtros">
+  <h2 id="titulo-filtros">Que queres consultar</h2>
+
+  <form [formGroup]="formulario" (ngSubmit)="buscar()" novalidate>
+    <fieldset class="grupo">
+      <legend>Filtro</legend>
+      <p class="ayuda" id="auditoria-filtro-ayuda">
+        Se consulta por uno solo de los tres criterios. No se pueden combinar.
+      </p>
+
+      <div class="opcion-radio">
+        <input
+          id="auditoria-filtro-entidad"
+          type="radio"
+          formControlName="filtro"
+          value="entidad"
+          aria-describedby="auditoria-filtro-ayuda"
+          (change)="cambiarFiltro()"
+        />
+        <label for="auditoria-filtro-entidad">Historial de una entidad</label>
+      </div>
+
+      <div class="opcion-radio">
+        <input
+          id="auditoria-filtro-actor"
+          type="radio"
+          formControlName="filtro"
+          value="actor"
+          (change)="cambiarFiltro()"
+        />
+        <label for="auditoria-filtro-actor">Actividad de una persona</label>
+      </div>
+
+      <div class="opcion-radio">
+        <input
+          id="auditoria-filtro-ventana"
+          type="radio"
+          formControlName="filtro"
+          value="ventana"
+          (change)="cambiarFiltro()"
+        />
+        <label for="auditoria-filtro-ventana">Ventana temporal</label>
+      </div>
+    </fieldset>
+
+    <!--
+      Solo se renderizan los campos del filtro elegido. No es un adorno: es lo que hace que
+      la combinacion invalida (dos filtros a la vez) no se pueda construir desde la pantalla.
+    -->
+    @switch (formulario.controls.filtro.value) {
+      @case ('entidad') {
+        <div class="campo">
+          <label for="auditoria-entityType">Tipo de entidad</label>
+          <input
+            id="auditoria-entityType"
+            type="text"
+            formControlName="entityType"
+            aria-describedby="auditoria-entityType-ayuda"
+            [attr.aria-invalid]="mostrarError('entityType')"
+          />
+          <p class="ayuda" id="auditoria-entityType-ayuda">Por ejemplo: MEMBERSHIP.</p>
+          @if (mostrarError('entityType')) {
+            <p class="campo__error" id="auditoria-entityType-error">Indica el tipo de entidad.</p>
+          }
+        </div>
+
+        <div class="campo">
+          <label for="auditoria-entityId">Numero de la entidad</label>
+          <input
+            id="auditoria-entityId"
+            type="number"
+            min="1"
+            formControlName="entityId"
+            [attr.aria-invalid]="mostrarError('entityId')"
+            [attr.aria-describedby]="mostrarError('entityId') ? 'auditoria-entityId-error' : null"
+          />
+          @if (mostrarError('entityId')) {
+            <p class="campo__error" id="auditoria-entityId-error">
+              Indica el numero de la entidad.
+            </p>
+          }
+        </div>
+      }
+
+      @case ('actor') {
+        <div class="campo">
+          <label for="auditoria-actorAccountId">Numero de cuenta</label>
+          <input
+            id="auditoria-actorAccountId"
+            type="number"
+            min="1"
+            formControlName="actorAccountId"
+            aria-describedby="auditoria-actorAccountId-ayuda"
+            [attr.aria-invalid]="mostrarError('actorAccountId')"
+          />
+          <p class="ayuda" id="auditoria-actorAccountId-ayuda">
+            Es el identificador de cuenta que aparece en el listado de colaboradores.
+          </p>
+          @if (mostrarError('actorAccountId')) {
+            <p class="campo__error" id="auditoria-actorAccountId-error">
+              Indica la cuenta cuya actividad queres ver.
+            </p>
+          }
+        </div>
+      }
+
+      @case ('ventana') {
+        <div class="campo">
+          <label for="auditoria-desde">Desde</label>
+          <input
+            id="auditoria-desde"
+            type="date"
+            formControlName="desde"
+            aria-describedby="auditoria-ventana-ayuda"
+            [attr.aria-invalid]="errorVentana() !== null"
+          />
+        </div>
+
+        <div class="campo">
+          <label for="auditoria-hasta">Hasta</label>
+          <input
+            id="auditoria-hasta"
+            type="date"
+            formControlName="hasta"
+            aria-describedby="auditoria-ventana-ayuda"
+            [attr.aria-invalid]="errorVentana() !== null"
+          />
+        </div>
+
+        <p class="ayuda" id="auditoria-ventana-ayuda">
+          La ventana no puede superar los 90 dias. El dia final se incluye entero.
+        </p>
+
+        <div aria-live="polite">
+          @if (errorVentana(); as mensaje) {
+            <p class="campo__error" role="alert">{{ mensaje }}</p>
+          }
+        </div>
+      }
+    }
+
+    <div class="acciones">
+      <button type="submit" class="boton">Buscar</button>
+      <a class="boton boton--secundario" routerLink="/organizacion/colaboradores">
+        Volver a colaboradores
+      </a>
+    </div>
+  </form>
+</section>
+
+<section class="tarjeta" aria-labelledby="titulo-resultados">
+  <h2 id="titulo-resultados">Resultados</h2>
+
+  <div aria-live="polite">
+    @switch (estado().tipo) {
+      @case ('inicial') {
+        <p class="estado estado--vacio">Elegi un filtro y presiona Buscar.</p>
+        <p class="ayuda">
+          No se consulta nada al entrar: sin un filtro la consulta no es valida, asi que no habria
+          nada util que mostrar.
+        </p>
+      }
+
+      @case ('cargando') {
+        <p class="estado estado--cargando">Buscando en la auditoria&hellip;</p>
+      }
+
+      @case ('sin-contexto') {
+        <p class="estado estado--vacio">Todavia no elegiste un contexto de trabajo.</p>
+        <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto</a>
+      }
+
+      @case ('error') {
+        <p class="estado estado--error" role="alert">{{ mensajeError() }}</p>
+
+        @if (faltaContexto()) {
+          <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto</a>
+        }
+      }
+
+      @case ('listo') {
+        @if (eventos().length === 0) {
+          <p class="estado estado--vacio">No hay hechos registrados para ese filtro.</p>
+        } @else {
+          <p class="ayuda">{{ totalEventos() }} hechos encontrados.</p>
+
+          <div class="tabla-scroll">
+            <table class="tabla">
+              <caption class="visualmente-oculto">
+                Hechos auditados que coinciden con el filtro elegido
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col">Cuando</th>
+                  <th scope="col">Hecho</th>
+                  <th scope="col">Entidad</th>
+                  <th scope="col">Actor</th>
+                  <th scope="col">Cambio</th>
+                  <th scope="col">Motivo</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (evento of eventos(); track evento.id) {
+                  <tr>
+                    <th scope="row">{{ evento.occurredAt }}</th>
+                    <td>{{ evento.eventType }}</td>
+                    <td>{{ evento.entityType }} {{ evento.entityId }}</td>
+                    <td>Cuenta {{ evento.actorAccountId }}</td>
+                    <td>
+                      @if (evento.previousState || evento.newState) {
+                        {{ evento.previousState ?? '-' }} &rarr; {{ evento.newState ?? '-' }}
+                      } @else {
+                        -
+                      }
+                    </td>
+                    <td>{{ evento.reason ?? '-' }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+
+          @if (totalPaginas() > 1) {
+            <nav class="paginacion" aria-label="Paginas de resultados de auditoria">
+              <button
+                type="button"
+                class="boton boton--secundario"
+                [disabled]="paginaActual() === 0"
+                (click)="irAPagina(paginaActual() - 1)"
+              >
+                Anterior
+              </button>
+              <span class="ayuda">Pagina {{ paginaActual() + 1 }} de {{ totalPaginas() }}</span>
+              <button
+                type="button"
+                class="boton boton--secundario"
+                [disabled]="paginaActual() + 1 >= totalPaginas()"
+                (click)="irAPagina(paginaActual() + 1)"
+              >
+                Siguiente
+              </button>
+            </nav>
+          }
+        }
+      }
+    }
+  </div>
+</section>
