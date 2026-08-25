@@ -1,0 +1,194 @@
+<h1>Espacios en servicio</h1>
+
+<p class="descripcion">
+  Que espacios de <b>{{ nombreDeLaSede() }}</b> se pueden ofrecer durante un periodo: los que estan
+  activos y con su vigencia cubriendo la ventana entera. Los dados de baja y los que quedan fuera de
+  su ventana operativa no aparecen.
+</p>
+
+<p class="acciones">
+  <a class="enlace" routerLink="/espacios">Volver al listado de espacios</a>
+</p>
+
+<!--
+  El aviso que el propio contrato pide poner ANTES de escribir esta pantalla. No es una
+  aclaracion legal al pie: es la diferencia entre leer bien la tabla y planificar sobre un dato
+  que no existe todavia.
+-->
+<section class="tarjeta nota-servicio" aria-labelledby="titulo-nota-ocupacion">
+  <h2 id="titulo-nota-ocupacion">Esto dice si el espacio esta en servicio, no si esta libre</h2>
+  <p>
+    La agenda de turnos todavia no existe en AKINE, asi que
+    <b>aca no hay ninguna reserva que contar</b>. Que un espacio figure en esta lista quiere decir
+    que esta habilitado para ofrecerse en esa ventana, no que nadie lo este usando.
+  </p>
+  <p>
+    Por eso la tabla muestra la <b>capacidad</b> configurada de cada espacio -cuantas personas
+    admite a la vez- y no cuantos lugares quedan. Cuando exista la agenda, la ocupacion real va a
+    poder consultarse desde ahi.
+  </p>
+</section>
+
+@if (sinSede()) {
+  <section class="tarjeta" aria-labelledby="titulo-sin-sede-disp">
+    <h2 id="titulo-sin-sede-disp">Falta elegir un consultorio</h2>
+    <p>
+      Los espacios son de una sede concreta y todavia no elegiste ninguna. Tu sesion sigue abierta:
+      solo falta indicar donde estas trabajando.
+    </p>
+    <p>
+      <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
+    </p>
+  </section>
+} @else {
+  <section class="tarjeta" aria-labelledby="titulo-ventana">
+    <h2 id="titulo-ventana">Periodo a consultar</h2>
+
+    <form [formGroup]="formulario" (ngSubmit)="consultar()" novalidate>
+      <div class="ventana">
+        <div class="campo">
+          <label for="ventana-desde">Desde</label>
+          <input
+            id="ventana-desde"
+            type="datetime-local"
+            formControlName="desde"
+            [attr.aria-invalid]="mostrarError('desde')"
+            [attr.aria-describedby]="mostrarError('desde') ? 'ventana-desde-error' : null"
+          />
+          @if (mostrarError('desde')) {
+            <p class="campo__error" id="ventana-desde-error">Indica desde cuando.</p>
+          }
+        </div>
+
+        <div class="campo">
+          <label for="ventana-hasta">Hasta</label>
+          <input
+            id="ventana-hasta"
+            type="datetime-local"
+            formControlName="hasta"
+            [attr.aria-invalid]="mostrarError('hasta')"
+            [attr.aria-describedby]="
+              mostrarError('hasta') ? 'ventana-hasta-error' : 'ventana-hasta-ayuda'
+            "
+          />
+          @if (mostrarError('hasta')) {
+            <p class="campo__error" id="ventana-hasta-error">Indica hasta cuando.</p>
+          }
+          <p class="ayuda" id="ventana-hasta-ayuda">
+            El fin es <b>exclusivo</b>: no se incluye a si mismo. Como maximo
+            {{ maximoDeDias }} dias por consulta.
+          </p>
+        </div>
+      </div>
+
+      <div class="acciones">
+        <button type="submit" class="boton">Ver que espacios hay</button>
+      </div>
+    </form>
+
+    <div aria-live="assertive">
+      @if (errorVentana(); as mensaje) {
+        <p class="estado estado--error" role="alert">{{ mensaje }}</p>
+      }
+    </div>
+  </section>
+
+  <section class="tarjeta" aria-labelledby="titulo-resultado">
+    <h2 id="titulo-resultado">Espacios en servicio en ese periodo</h2>
+
+    <div aria-live="polite">
+      @switch (estado().tipo) {
+        @case ('inicial') {
+          <p class="estado estado--vacio">
+            Elegi un periodo y toca "Ver que espacios hay" para consultarlo.
+          </p>
+        }
+
+        @case ('cargando') {
+          <p class="estado estado--cargando">Consultando&hellip;</p>
+        }
+
+        @case ('sin-contexto') {
+          <p class="estado estado--vacio">Todavia no elegiste un consultorio.</p>
+          <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
+        }
+
+        @case ('error') {
+          <p class="estado estado--error" role="alert">{{ mensajeError() }}</p>
+
+          @if (faltaContexto()) {
+            <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
+          } @else {
+            <button type="button" class="boton" (click)="consultar()">Reintentar</button>
+          }
+        }
+
+        @case ('listo') {
+          @if (ventanaConsultada(); as ventana) {
+            <p class="ayuda">
+              Del {{ formatearInstante(ventana.desde) }} al {{ formatearInstante(ventana.hasta) }},
+              sin incluir el final.
+            </p>
+          }
+
+          @if (enServicio().length === 0) {
+            <p class="estado estado--vacio">
+              Ningun espacio de esta sede esta en servicio durante todo ese periodo.
+            </p>
+            <p class="ayuda">
+              Puede ser que los espacios existan pero su ventana de vigencia no cubra el periodo
+              entero, o que esten dados de baja. El listado de espacios lo muestra fila por fila,
+              con el motivo.
+            </p>
+            <a class="boton boton--secundario" routerLink="/espacios">Revisar los espacios</a>
+          } @else {
+            <p class="ayuda">
+              {{ enServicio().length }} espacios se pueden ofrecer durante todo ese periodo.
+            </p>
+
+            <div
+              class="tabla-scroll"
+              tabindex="0"
+              role="region"
+              aria-label="Espacios en servicio en el periodo consultado"
+            >
+              <table class="tabla">
+                <caption class="visualmente-oculto">
+                  Espacios en servicio durante el periodo consultado, con su tipo y su capacidad
+                  configurada
+                </caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Espacio</th>
+                    <th scope="col">Tipo</th>
+                    <th scope="col">Capacidad</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (espacio of enServicio(); track espacio.espacioId) {
+                    <tr>
+                      <th scope="row">{{ espacio.name }}</th>
+                      <td>{{ etiquetaDeTipo(espacio.tipo) }}</td>
+                      <!--
+                        Capacidad configurada, NO lugares libres. `lugaresComprometidos` viene
+                        siempre en 0 porque no hay ningun modulo que reserve: mostrarlo como
+                        "libres" seria un numero correcto hoy y falso el dia que exista la agenda.
+                      -->
+                      <td>
+                        @if (espacio.capacidad === 1) {
+                          1 persona a la vez
+                        } @else {
+                          {{ espacio.capacidad }} personas a la vez
+                        }
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        }
+      }
+    </div>
+  </section>
+}

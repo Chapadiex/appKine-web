@@ -320,6 +320,91 @@ h1 {
   font-weight: 600;
 }
 
+/* --- Filas y marcas de estado de una tabla --------------------------------------------- */
+
+/*
+ * Fila de un registro dado de baja: atenuada, pero PRESENTE.
+ *
+ * Nada se borra en AKINE (AGENT.md 7.7). El estado ademas se dice con texto -la marca de
+ * estado de la celda-, no solo con el fondo, porque el color solo no comunica (WCAG 1.4.1).
+ *
+ * Subio aca desde `organization.css` cuando la segunda feature -espacios, AKINE-02.02- la
+ * necesito identica: cualquier tabla de baja logica pinta igual sus filas inactivas, y una
+ * copia por feature diverge el dia que alguien retoca un gris.
+ */
+.fila--revocada {
+  background: #f7f8fa;
+}
+
+/* Fila que aloja un panel de edicion o de confirmacion desplegado bajo su registro. */
+.fila-panel > td {
+  background: #f4f7fa;
+  padding: 1rem;
+}
+
+/*
+ * Pastilla neutra al lado de un dato: "Estas trabajando aca", "Fundador", "Sin fin previsto".
+ *
+ * `nowrap` no es cosmetica: una pastilla es una pastilla porque es una linea. Con el texto
+ * envuelto en tres renglones dentro de una celda angosta, el `border-radius: 999px` la
+ * dibuja como un circulo con el texto desbordado. Prefiere ensanchar la columna -o
+ * desplazarse con la tabla- antes que deformarse.
+ */
+.etiqueta {
+  display: inline-block;
+  margin-left: 0.375rem;
+  padding: 0.0625rem 0.375rem;
+  border: 1px solid #7b8a99;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  color: #4a5a6a;
+  white-space: nowrap;
+}
+
+/*
+ * Marca del estado de un registro. Los tres modificadores son niveles de severidad y no
+ * estados de un dominio concreto: `activa` es vigente, `suspendida` es reversible y
+ * `revocada` es terminal. Vinculos, sedes y espacios usan los mismos tres.
+ */
+.marca-estado {
+  display: inline-block;
+  padding: 0.125rem 0.5rem;
+  border: 1px solid #7b8a99;
+  border-radius: 999px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.marca-estado--activa {
+  border-color: #1c6b3a;
+  background: #eaf6ee;
+  color: #135029;
+}
+
+.marca-estado--suspendida {
+  border-color: #8a5a00;
+  background: #fdf3e2;
+  color: #6b4600;
+}
+
+.marca-estado--revocada {
+  border-color: #a32020;
+  background: #fdeded;
+  color: #7d1717;
+}
+
+/* Botones de la celda de acciones: mas chicos que un boton de formulario, y envuelven. */
+.acciones-fila {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.acciones-fila .boton {
+  font-size: 0.8125rem;
+  padding: 0.25rem 0.5rem;
+}
+
 /* --- Paginacion ----------------------------------------------------------------------- */
 
 .paginacion {

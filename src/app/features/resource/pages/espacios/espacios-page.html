@@ -1,0 +1,448 @@
+<h1>Espacios y boxes</h1>
+
+<p class="descripcion">
+  Los recursos fisicos de <b>{{ nombreDeLaSede() }}</b> donde se atiende: boxes, gimnasios,
+  gabinetes, salas grupales y piletas. Un espacio pertenece a una sola sede y no se puede mudar: el
+  que se muda es uno que se da de baja y otro que se crea.
+</p>
+
+<p class="acciones">
+  <a class="boton" routerLink="/espacios/nuevo" *akinePermiso="permisoManage">
+    Dar de alta un espacio
+  </a>
+  <a class="boton boton--secundario" routerLink="/espacios/disponibilidad">
+    Ver que espacios estan en servicio
+  </a>
+</p>
+
+<!--
+  La distincion que esta pantalla no puede aplanar. Va arriba y no escondida en un tooltip:
+  es la causa del reporte de bug mas probable del modulo -"el box existe y no me aparece en
+  la agenda"- y quien lee la tabla tiene que llegar a la columna Estado ya sabiendo que son
+  dos cosas distintas.
+-->
+<section class="tarjeta nota-servicio" aria-labelledby="titulo-nota-servicio">
+  <h2 id="titulo-nota-servicio">Activo no es lo mismo que en servicio</h2>
+  <p>
+    <b>Activo</b> es el estado administrativo: quiere decir que el espacio no fue dado de baja.
+    <b>En servicio</b> quiere decir que ademas hoy esta dentro de su ventana de vigencia y por eso
+    se puede reservar.
+  </p>
+  <p>
+    Un box que ya cargaste pero que abre el mes que viene figura
+    <b>activo y todavia sin servicio</b>: es correcto que no aparezca en los selectores de reserva
+    hasta esa fecha. La columna Estado lo dice fila por fila, con el motivo.
+  </p>
+</section>
+
+<div aria-live="polite">
+  @if (exito(); as mensaje) {
+    <p class="estado estado--ok">{{ mensaje }}</p>
+  }
+</div>
+
+<section class="tarjeta" aria-labelledby="titulo-espacios">
+  <h2 id="titulo-espacios">Espacios de la sede</h2>
+
+  <div class="campo">
+    <label for="filtro-estado-espacio">Mostrar</label>
+    <select
+      id="filtro-estado-espacio"
+      [value]="filtro()"
+      (change)="cambiarFiltro($any($event.target).value)"
+      aria-describedby="filtro-estado-espacio-ayuda"
+    >
+      <option value="ACTIVO">Solo los espacios activos</option>
+      <option value="INACTIVO">Solo los dados de baja</option>
+      <option value="TODOS">Todos</option>
+    </select>
+    <p class="ayuda" id="filtro-estado-espacio-ayuda">
+      Los espacios dados de baja no se borran: siguen aca con su motivo y su fecha, porque las
+      sesiones y los turnos historicos los siguen referenciando. Su nombre, en cambio, queda libre
+      para un espacio nuevo.
+    </p>
+  </div>
+
+  <div aria-live="polite">
+    @switch (estado().tipo) {
+      @case ('cargando') {
+        <p class="estado estado--cargando">Cargando los espacios&hellip;</p>
+      }
+
+      @case ('sin-contexto') {
+        <p class="estado estado--vacio">Todavia no elegiste un consultorio.</p>
+        <p class="ayuda">
+          Los espacios son de una sede concreta, asi que hay que indicar cual. Tu sesion sigue
+          abierta: solo falta elegir donde estas trabajando.
+        </p>
+        <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
+      }
+
+      @case ('error') {
+        <p class="estado estado--error" role="alert">{{ mensajeError() }}</p>
+
+        @if (faltaContexto()) {
+          <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
+        } @else {
+          <button type="button" class="boton" (click)="cargar()">Reintentar</button>
+        }
+      }
+
+      @case ('listo') {
+        @if (espaciosDeLaPagina().length === 0) {
+          @if (filtro() === 'INACTIVO') {
+            <p class="estado estado--vacio">No hay espacios dados de baja en esta sede.</p>
+          } @else {
+            <p class="estado estado--vacio">No hay espacios que mostrar con este filtro.</p>
+          }
+        } @else {
+          <p class="ayuda">{{ totalEspacios() }} espacios con el filtro elegido.</p>
+
+          <div class="tabla-scroll" tabindex="0" role="region" aria-label="Espacios de la sede">
+            <table class="tabla">
+              <caption class="visualmente-oculto">
+                Espacios de la sede, con su tipo, capacidad, ventana de vigencia y estado
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col">Espacio</th>
+                  <th scope="col">Capacidad</th>
+                  <th scope="col">Vigencia</th>
+                  <th scope="col">Estado</th>
+                  <th scope="col">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (espacio of espaciosDeLaPagina(); track espacio.id) {
+                  <tr [class.fila--revocada]="situacion(espacio).atenuada">
+                    <th scope="row">
+                      {{ espacio.name }}
+                      <span class="etiqueta">{{ etiquetaDeTipo(espacio.tipo) }}</span>
+                      @if (espacio.notes) {
+                        <p class="ayuda">{{ espacio.notes }}</p>
+                      }
+                    </th>
+
+                    <!--
+                      Capacidad, NO ocupacion. No dice "libre" ni "disponible" a proposito: hoy
+                      no existe ningun modulo que reserve, asi que cualquier numero de ocupacion
+                      seria cero y ese cartel pasaria a mentir solo en cuanto exista la agenda.
+                    -->
+                    <td>
+                      @if (espacio.capacidad === 1) {
+                        1 persona a la vez
+                      } @else {
+                        {{ espacio.capacidad }} personas a la vez
+                      }
+                    </td>
+
+                    <td>
+                      <ul class="lista-datos">
+                        <li>Desde el {{ formatearInstante(espacio.validFrom) ?? '-' }}</li>
+                        <li>
+                          @if (formatearInstante(espacio.validUntil); as fin) {
+                            Hasta el {{ fin }}
+                          } @else {
+                            <span class="etiqueta">Sin fin previsto</span>
+                          }
+                        </li>
+                      </ul>
+                    </td>
+
+                    <td>
+                      @if (situacion(espacio); as servicio) {
+                        <span
+                          class="marca-estado"
+                          [class.marca-estado--activa]="servicio.clave === 'en-servicio'"
+                          [class.marca-estado--suspendida]="
+                            servicio.clave === 'aun-no' ||
+                            servicio.clave === 'ya-no' ||
+                            servicio.clave === 'fuera-de-ventana'
+                          "
+                          [class.marca-estado--revocada]="servicio.clave === 'dado-de-baja'"
+                        >
+                          {{ servicio.resumen }}
+                        </span>
+
+                        <!--
+                          El motivo de por que un espacio ACTIVO no esta en servicio. Sin esto,
+                          la fila es indistinguible de un box operativo y el usuario reporta un
+                          bug de la agenda que no existe.
+                        -->
+                        @if (servicio.explicacion; as explicacion) {
+                          <p class="ayuda">{{ explicacion }}</p>
+                        }
+                      }
+
+                      @if (espacio.estado === 'INACTIVO') {
+                        <p class="ayuda">
+                          @if (formatearInstante(espacio.deletedAt); as cuando) {
+                            Baja del {{ cuando }}.
+                          }
+                          @if (espacio.deactivationReason) {
+                            Motivo: {{ espacio.deactivationReason }}
+                          }
+                        </p>
+                      }
+                    </td>
+
+                    <td>
+                      <div class="acciones-fila" *akinePermiso="permisoManage">
+                        @if (espacio.estado !== 'INACTIVO') {
+                          <button
+                            type="button"
+                            class="boton boton--secundario"
+                            (click)="abrirPanel(espacio, 'editar')"
+                          >
+                            Editar
+                          </button>
+                          <button
+                            type="button"
+                            class="boton boton--secundario"
+                            (click)="abrirPanel(espacio, 'baja')"
+                          >
+                            Dar de baja
+                          </button>
+                        } @else {
+                          <span class="ayuda">Un espacio dado de baja no se edita.</span>
+                        }
+                      </div>
+                    </td>
+                  </tr>
+
+                  <!--
+                    El panel vive en una fila propia y no en un dialogo: la edicion necesita
+                    seguir viendo a que espacio se aplica, y un modal sobre una tabla obliga a
+                    recordar de memoria cual era la fila.
+                  -->
+                  @if (panelAbierto(espacio.id, 'editar')) {
+                    <tr class="fila-panel">
+                      <td colspan="5">
+                        <form
+                          [formGroup]="formularioEdicion"
+                          (ngSubmit)="enviarEdicion()"
+                          novalidate
+                        >
+                          <h3 class="panel__titulo">Editar {{ espacio.name }}</h3>
+
+                          <p class="ayuda" id="editar-espacio-ayuda-patch">
+                            Se envia solo lo que cambies. <b>Vaciar la observacion la borra</b>; los
+                            campos que dejes como estan no se tocan, asi que cambiar la capacidad no
+                            pisa la nota que cargo otra persona.
+                          </p>
+
+                          <div class="campo">
+                            <label for="editar-espacio-name">Nombre del espacio</label>
+                            <input
+                              id="editar-espacio-name"
+                              type="text"
+                              formControlName="name"
+                              autocomplete="off"
+                              [attr.aria-invalid]="mostrarErrorEdicion('name') || errorEnElNombre()"
+                              [attr.aria-describedby]="descritoNombre()"
+                            />
+                            @if (mostrarErrorEdicion('name')) {
+                              <p class="campo__error" id="editar-espacio-name-error">
+                                El espacio necesita un nombre.
+                              </p>
+                            }
+                            @if (errorEnElNombre()) {
+                              <p class="campo__error" id="editar-espacio-name-conflicto">
+                                {{ errorAccion() }}
+                              </p>
+                            }
+                          </div>
+
+                          <div class="campo">
+                            <label for="editar-espacio-tipo">Tipo de espacio</label>
+                            <select
+                              id="editar-espacio-tipo"
+                              formControlName="tipo"
+                              aria-describedby="editar-espacio-tipo-ayuda"
+                            >
+                              @for (opcion of tipos; track opcion.valor) {
+                                <option [value]="opcion.valor">{{ opcion.etiqueta }}</option>
+                              }
+                            </select>
+                            <p class="ayuda" id="editar-espacio-tipo-ayuda">
+                              Es la clasificacion fisica del recurso. No habilita ningun servicio ni
+                              define quien puede usarlo: eso se resuelve por Oferta de Servicio.
+                            </p>
+                          </div>
+
+                          <div class="campo">
+                            <label for="editar-espacio-capacidad">
+                              Personas simultaneas que admite
+                            </label>
+                            <input
+                              id="editar-espacio-capacidad"
+                              type="number"
+                              min="1"
+                              formControlName="capacidad"
+                              aria-describedby="editar-espacio-capacidad-ayuda"
+                            />
+                            <p class="ayuda" id="editar-espacio-capacidad-ayuda">
+                              Cuantas personas caben a la vez. Es la capacidad configurada del
+                              recurso, no cuantos lugares quedan libres hoy.
+                            </p>
+                          </div>
+
+                          <div class="campo">
+                            <label for="editar-espacio-notes">
+                              Observacion <span class="campo__opcional">(opcional)</span>
+                            </label>
+                            <input
+                              id="editar-espacio-notes"
+                              type="text"
+                              formControlName="notes"
+                              aria-describedby="editar-espacio-notes-ayuda"
+                            />
+                            <p class="ayuda" id="editar-espacio-notes-ayuda">
+                              Nota operativa: "tiene camilla electrica", "sin ventana". Nunca
+                              informacion clinica de un paciente. Vaciala para borrarla.
+                            </p>
+                          </div>
+
+                          <div class="campo">
+                            <label for="editar-espacio-validFrom">En servicio desde</label>
+                            <input
+                              id="editar-espacio-validFrom"
+                              type="datetime-local"
+                              formControlName="validFrom"
+                              aria-describedby="editar-espacio-vigencia-ayuda"
+                            />
+                          </div>
+
+                          <div class="campo">
+                            <label for="editar-espacio-validUntil">En servicio hasta</label>
+                            <input
+                              id="editar-espacio-validUntil"
+                              type="datetime-local"
+                              formControlName="validUntil"
+                              [attr.disabled]="formularioEdicion.value.clearValidUntil ? '' : null"
+                              aria-describedby="editar-espacio-vigencia-ayuda"
+                            />
+                            <p class="ayuda" id="editar-espacio-vigencia-ayuda">
+                              Es la ventana en la que el espacio se ofrece para reservar, distinta
+                              de la baja. El fin es exclusivo: un espacio que termina el 30 se
+                              ofrece hasta el 29 inclusive.
+                            </p>
+                          </div>
+
+                          <div class="campo">
+                            <label class="opcion-casilla" for="editar-espacio-clear">
+                              <input
+                                id="editar-espacio-clear"
+                                type="checkbox"
+                                formControlName="clearValidUntil"
+                                aria-describedby="editar-espacio-clear-ayuda"
+                              />
+                              Dejarlo sin fin de vigencia
+                            </label>
+                            <p class="ayuda" id="editar-espacio-clear-ayuda">
+                              Marcalo para <b>quitar</b> el fin de vigencia que tenga. Es distinto
+                              de dejar el campo como esta: eso significa "no lo toques". Con la
+                              casilla marcada, lo que haya en "En servicio hasta" se ignora.
+                            </p>
+                          </div>
+
+                          <div class="acciones">
+                            <button
+                              type="submit"
+                              class="boton"
+                              [disabled]="enviando() || edicionBloqueada()"
+                            >
+                              Guardar los cambios
+                            </button>
+                            <button
+                              type="button"
+                              class="boton boton--secundario"
+                              (click)="cerrarPanel()"
+                            >
+                              Cancelar
+                            </button>
+                          </div>
+                        </form>
+
+                        <div aria-live="polite">
+                          @if (errorAccion(); as mensaje) {
+                            @if (!errorEnElNombre()) {
+                              <p class="estado estado--error" role="alert">{{ mensaje }}</p>
+                            }
+                          }
+
+                          @if (hayQueRecargar()) {
+                            <button type="button" class="boton" (click)="cargar()">
+                              Recargar el listado
+                            </button>
+                          }
+                        </div>
+                      </td>
+                    </tr>
+                  }
+
+                  @if (panelAbierto(espacio.id, 'baja')) {
+                    <tr class="fila-panel">
+                      <td colspan="5">
+                        <akine-confirmacion-con-motivo
+                          idCampo="baja-espacio-reason"
+                          etiqueta="Motivo de la baja"
+                          textoConfirmar="Confirmar la baja"
+                          ayuda="Queda en la auditoria y en la propia fila: es lo que explica esta decision dentro de seis meses."
+                          [titulo]="'Dar de baja ' + (espacio.name ?? '')"
+                          [enviando]="enviando()"
+                          (confirmado)="enviarBaja($event)"
+                          (cancelado)="cerrarPanel()"
+                        >
+                          <!--
+                            La irreversibilidad se dice ANTES de confirmar, no despues. El
+                            contrato no publica ninguna operacion de reactivacion: desde la
+                            interfaz esto no se deshace.
+                          -->
+                          <p class="estado estado--error">
+                            <b>Esto no se puede deshacer desde la aplicacion.</b> No hay
+                            reactivacion: si el espacio vuelve a estar disponible mas adelante, hay
+                            que darlo de alta como uno nuevo.
+                          </p>
+                          <p class="ayuda">
+                            Si lo que queres es sacarlo de servicio un tiempo -una refaccion, por
+                            ejemplo- <b>no lo des de baja</b>: edita su fin de vigencia. Eso lo saca
+                            de los selectores de reserva y despues se puede volver a extender.
+                          </p>
+                          <p class="ayuda">
+                            El espacio no se borra: sigue en este listado con su motivo y su fecha,
+                            porque las sesiones y los turnos historicos lo siguen referenciando. Su
+                            nombre queda libre para un espacio nuevo de esta sede.
+                          </p>
+                        </akine-confirmacion-con-motivo>
+
+                        <div aria-live="polite">
+                          @if (errorAccion(); as mensaje) {
+                            <p class="estado estado--error" role="alert">{{ mensaje }}</p>
+                          }
+
+                          @if (hayQueRecargar()) {
+                            <button type="button" class="boton" (click)="cargar()">
+                              Recargar el listado
+                            </button>
+                          }
+                        </div>
+                      </td>
+                    </tr>
+                  }
+                }
+              </tbody>
+            </table>
+          </div>
+
+          <akine-paginacion
+            etiqueta="Paginas de espacios"
+            [paginaActual]="paginaActual()"
+            [totalPaginas]="totalPaginas()"
+            (cambioDePagina)="irAPagina($event)"
+          />
+        }
+      }
+    }
+  </div>
+</section>

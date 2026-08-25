@@ -125,6 +125,36 @@ export class PermissionsStore {
   }
 
   /**
+   * Carga los permisos si no estan cargados para el contexto actual. Idempotente.
+   *
+   * <p><b>Existe porque hasta AKINE-02.02 el unico que llamaba a {@link cargar} era
+   * `permissionGuard`.</b> Eso deja un agujero en toda pantalla que <b>no</b> lleva ese guard
+   * y aun asi usa `*akinePermiso` para mostrar sus acciones —el listado de sedes y el de
+   * espacios, que se abren con solo ser miembro—: si el usuario entra directo por esa URL,
+   * nadie pidio los permisos, `cargados()` es `false`, y la directiva esconde <b>todos</b>
+   * los botones. Un administrador ve la tabla completa y ninguna accion, sin ningun error en
+   * consola que lo explique.
+   *
+   * <p>Se detecto mirando la pantalla en el navegador: ningun test lo veia porque todos los
+   * specs siembran el store a mano antes de montar el componente.
+   *
+   * <p><b>No devuelve nada y se suscribe sola.</b> Quien la llama no tiene nada que hacer con
+   * el resultado: si la carga falla, `cargados()` sigue en `false` y las acciones siguen
+   * ocultas, que es la degradacion correcta —la autoridad es el backend, que rechazaria igual—.
+   */
+  asegurarCargados(): void {
+    if (this.cargados()) {
+      return;
+    }
+    this.cargar().subscribe({
+      error: () => {
+        // Silencio deliberado: el store queda como estaba y la pantalla muestra la tabla sin
+        // acciones. Ensuciar la consola aca escondaria los errores de verdad.
+      },
+    });
+  }
+
+  /**
    * Descarta los permisos cargados. Lo llama el logout, junto al resto de la limpieza.
    *
    * <p>El cambio de contexto <b>no</b> necesita llamarlo -la comparacion de epoca ya lo

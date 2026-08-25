@@ -1,0 +1,95 @@
+/*
+ * Hoja de la feature `resource` (espacios y boxes, M04).
+ *
+ * <b>Deliberadamente corta.</b> `.boton`, `.campo`, `.tabla`, `.tabla-scroll`, `.estado`,
+ * `.tarjeta`, `.etiqueta`, `.marca-estado`, `.fila--revocada`, `.fila-panel`, `.acciones-fila`
+ * y `.paginacion` los aporta `src/design-system.css`, que es global. Volver a declararlos aca
+ * no seria "aislar el feature": seria una copia que se despega del original el dia que alguien
+ * retoque un gris en la hoja global y estas pantallas se queden con el viejo.
+ *
+ * Solo entra lo que existe unicamente en estas pantallas.
+ */
+
+/*
+ * La nota que separa "activo" de "en servicio".
+ *
+ * Va con borde de acento y no como un parrafo mas: es la aclaracion que evita el reporte de
+ * bug mas probable del modulo, y en el medio de la prosa de la pantalla nadie la lee. El color
+ * no es lo unico que la distingue -tiene su propio encabezado-, asi que sigue comunicando en
+ * escala de grises (WCAG 1.4.1).
+ */
+.nota-servicio {
+  border-left: 4px solid #1b3a5c;
+  background: #f4f7fa;
+}
+
+.nota-servicio p {
+  margin: 0 0 0.5rem;
+}
+
+.nota-servicio p:last-child {
+  margin-bottom: 0;
+}
+
+/*
+ * La observacion del espacio vive dentro del `<th scope="row">` de la fila.
+ *
+ * El `th` es negrita —es el encabezado de la fila— y el parrafo lo hereda, asi que la nota
+ * "Camilla electrica" se dibujaba con el mismo peso que el nombre del box y se leia como parte
+ * del nombre. Se ve en la primera captura del navegador; ningun test lo detecta porque el texto
+ * esta igual de presente en el DOM.
+ *
+ * El `th` sigue siendo `th`: lo que cambia es el peso del contenido secundario, no la semantica.
+ */
+.tabla th .ayuda {
+  font-weight: 400;
+  margin: 0.25rem 0 0;
+}
+
+/* Datos apilados dentro de una celda: la vigencia son dos renglones, no un parrafo. */
+.lista-datos {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 0.875rem;
+  color: #4a5a6a;
+}
+
+/*
+ * La casilla y su texto en la misma linea.
+ *
+ * `.campo label` es `display: block` en la hoja global, que es lo correcto para un `input` de
+ * texto y lo equivocado para una casilla: deja el cuadradito arriba y la etiqueta abajo, como
+ * si fueran dos cosas. El `label` envuelve al `input`, asi que el area de click incluye al
+ * texto -objetivo mas grande, WCAG 2.5.5-.
+ */
+.opcion-casilla {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 500;
+}
+
+.opcion-casilla input {
+  width: auto;
+  margin: 0;
+}
+
+/*
+ * Ventana consultada en la pantalla de disponibilidad.
+ *
+ * Los dos campos van uno al lado del otro porque son un solo dato -un intervalo- y separarlos
+ * en dos filas invita a completar uno y mandar. Envuelven en pantallas angostas: los
+ * profesionales usan tablet.
+ */
+.ventana {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.ventana .campo {
+  flex: 1 1 14rem;
+  margin-bottom: 0;
+}

@@ -48,6 +48,15 @@
         <p class="ayuda">
           <a class="enlace" routerLink="/organizacion/sedes">Ver las sedes de la organizacion</a>
         </p>
+
+        <!--
+          Los espacios cuelgan de la SEDE del contexto activo, no de la organizacion, y por eso
+          su ruta no vive bajo `/organizacion`. El enlace esta igual: sin el, la pantalla no
+          tiene ninguna entrada desde la aplicacion y solo se llega escribiendo la URL.
+        -->
+        <p class="ayuda">
+          <a class="enlace" routerLink="/espacios">Ver los espacios y boxes de la sede activa</a>
+        </p>
       }
 
       @case ('error') {

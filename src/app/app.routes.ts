@@ -63,6 +63,20 @@ export const routes: Routes = [
     loadChildren: () => import('./features/organization/organization.routes').then((m) => m.routes),
   },
 
+  // Feature `resource` (M04, espacios y boxes). Lazy loaded segun ADR-0004.
+  //
+  // Va suelta y no bajo `organizacion` porque no es una pantalla de la Organizacion: los
+  // espacios son de la SEDE del contexto de trabajo activo, y su publico -recepcion y
+  // profesionales, que consultan en que box atienden- no es el que administra el tenant.
+  //
+  // Los dos guards, en este orden: sin sesion no tiene sentido preguntar por el contexto. Sin
+  // contexto no hay sede, y sin sede no hay espacios que listar.
+  {
+    path: 'espacios',
+    canActivate: [authGuard, contextGuard],
+    loadChildren: () => import('./features/resource/resource.routes').then((m) => m.routes),
+  },
+
   // Pantalla de permiso insuficiente (AKINE-01.03). Es el destino de `permissionGuard`.
   //
   // Sin guards, y no por descuido: quien llega aca YA paso por `authGuard` y `contextGuard`

@@ -70,6 +70,16 @@ export enum ProblemType {
 
     HTTPS___AKINE_APP_PROBLEMS_LAST_CONSULTORIO_REQUIRED = 'https://akine.app/problems/last-consultorio-required',
 
-    HTTPS___AKINE_APP_PROBLEMS_CONSULTORIO_HAS_ACTIVE_REFERENCES = 'https://akine.app/problems/consultorio-has-active-references'
+    HTTPS___AKINE_APP_PROBLEMS_CONSULTORIO_HAS_ACTIVE_REFERENCES = 'https://akine.app/problems/consultorio-has-active-references',
+
+    HTTPS___AKINE_APP_PROBLEMS_ESPACIO_NAME_TAKEN = 'https://akine.app/problems/espacio-name-taken',
+
+    HTTPS___AKINE_APP_PROBLEMS_ESPACIO_INACTIVE = 'https://akine.app/problems/espacio-inactive',
+
+    HTTPS___AKINE_APP_PROBLEMS_ESPACIO_ALREADY_INACTIVE = 'https://akine.app/problems/espacio-already-inactive',
+
+    HTTPS___AKINE_APP_PROBLEMS_ESPACIO_CAPACITY_BELOW_OCCUPANCY = 'https://akine.app/problems/espacio-capacity-below-occupancy',
+
+    HTTPS___AKINE_APP_PROBLEMS_ESPACIO_HAS_ACTIVE_REFERENCES = 'https://akine.app/problems/espacio-has-active-references'
 }
 
