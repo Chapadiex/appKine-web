@@ -77,6 +77,21 @@ export const routes: Routes = [
     loadChildren: () => import('./features/resource/resource.routes').then((m) => m.routes),
   },
 
+  // Catalogo clinico: especialidades, practicas, nomencladores y los pedidos al catalogo comun
+  // (M06, AKINE-02.05).
+  //
+  // Los mismos dos guards, en el mismo orden, y por el mismo motivo que espacios: el listado
+  // mezcla los conceptos de la plataforma con los del centro, y cual es "el centro" sale del
+  // contexto de trabajo. Sin el, la peticion no se puede ni armar.
+  //
+  // Sin `permissionGuard`: consultar que practicas existen es lo que necesita cualquiera que
+  // registre una sesion, no solo quien administra. Las acciones si van detras de permiso.
+  {
+    path: 'catalogo',
+    canActivate: [authGuard, contextGuard],
+    loadChildren: () => import('./features/catalog/catalog.routes').then((m) => m.routes),
+  },
+
   // Pantalla de permiso insuficiente (AKINE-01.03). Es el destino de `permissionGuard`.
   //
   // Sin guards, y no por descuido: quien llega aca YA paso por `authGuard` y `contextGuard`

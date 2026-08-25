@@ -1,0 +1,248 @@
+<h1>Pedidos al catalogo de la plataforma</h1>
+
+<p class="descripcion">
+  El catalogo comun -el que ven todos los centros- lo mantiene AKINE. Si falta algo que deberia
+  estar ahi, se pide desde aca.
+</p>
+
+<nav class="acciones" aria-label="Tipos del catalogo clinico">
+  @for (tipo of tipos; track tipo.slug) {
+    <a class="boton boton--secundario" [routerLink]="['/catalogo', tipo.slug]">{{ tipo.plural }}</a>
+  }
+</nav>
+
+<!--
+  La aclaracion que evita el pedido innecesario. Va arriba, antes del boton: quien necesita una
+  practica HOY no tiene por que esperar a que la plataforma resuelva nada, y si nadie se lo
+  dice, espera.
+-->
+<section class="tarjeta nota-alcance" aria-labelledby="titulo-nota-solicitud">
+  <h2 id="titulo-nota-solicitud">Si lo necesitas hoy, no hace falta pedirlo</h2>
+  <p>
+    Un concepto <b>de tu centro</b> lo das de alta vos, ahora mismo, desde el catalogo. Sirve para
+    todo: registrar sesiones, armar convenios, presentar a un financiador. Lo unico que no hace es
+    aparecerles a los demas centros.
+  </p>
+  <p>
+    Pedirlo a la plataforma tiene sentido cuando el concepto es <b>de todos</b>: una especialidad
+    reconocida, un nomenclador nacional. Eso lo revisa AKINE, y por eso tarda.
+  </p>
+</section>
+
+<div aria-live="polite">
+  @if (exito(); as mensaje) {
+    <p class="estado estado--ok">{{ mensaje }}</p>
+  }
+</div>
+
+<p class="acciones">
+  <button type="button" class="boton" (click)="abrirAlta()" *akinePermiso="permisoManage">
+    Pedir un concepto a la plataforma
+  </button>
+</p>
+
+@if (altaAbierta()) {
+  <section class="tarjeta" aria-labelledby="titulo-alta-solicitud">
+    <h2 id="titulo-alta-solicitud">Nuevo pedido</h2>
+
+    <form [formGroup]="formularioAlta" (ngSubmit)="enviar()" novalidate>
+      <div class="campo">
+        <label for="solicitud-tipo">Que tipo de concepto</label>
+        <select
+          id="solicitud-tipo"
+          formControlName="tipo"
+          [attr.aria-invalid]="mostrarError('tipo') ? 'true' : null"
+        >
+          <option value="">Elegi el tipo</option>
+          <option value="ESPECIALIDAD">Especialidad</option>
+          <option value="PRACTICA">Practica</option>
+          <option value="NOMENCLADOR">Nomenclador</option>
+        </select>
+        @if (mostrarError('tipo')) {
+          <p class="campo__error" role="alert">Elegi que tipo de concepto estas pidiendo.</p>
+        }
+      </div>
+
+      <div class="campo">
+        <label for="solicitud-nombre">Nombre propuesto</label>
+        <input
+          id="solicitud-nombre"
+          type="text"
+          formControlName="nombrePropuesto"
+          autocomplete="off"
+          [attr.aria-invalid]="mostrarError('nombrePropuesto') || errorEnElNombre() ? 'true' : null"
+        />
+        @if (errorEnElNombre()) {
+          <p class="campo__error" role="alert">{{ errorAccion() }}</p>
+        } @else if (mostrarError('nombrePropuesto')) {
+          <p class="campo__error">El nombre propuesto es obligatorio.</p>
+        } @else {
+          <p class="ayuda">
+            Es una <b>propuesta</b>: la plataforma puede aprobarla con otro nombre si ya usa una
+            convencion distinta para lo mismo.
+          </p>
+        }
+      </div>
+
+      <div class="campo">
+        <label for="solicitud-codigo">Codigo propuesto (opcional)</label>
+        <input
+          id="solicitud-codigo"
+          type="text"
+          formControlName="codigoPropuesto"
+          autocomplete="off"
+        />
+        <p class="ayuda">
+          Si el concepto ya tiene un codigo oficial -el de un nomenclador nacional, por ejemplo-,
+          ponelo: es lo que hace que el pedido se resuelva sin idas y vueltas.
+        </p>
+      </div>
+
+      <div class="campo">
+        <label for="solicitud-justificacion">Por que deberia estar en el catalogo comun</label>
+        <textarea
+          id="solicitud-justificacion"
+          rows="4"
+          formControlName="justificacion"
+          [attr.aria-invalid]="mostrarError('justificacion') ? 'true' : null"
+          aria-describedby="solicitud-justificacion-ayuda"
+        ></textarea>
+        @if (mostrarError('justificacion')) {
+          <p class="campo__error" role="alert">La justificacion es obligatoria.</p>
+        }
+        <p class="ayuda" id="solicitud-justificacion-ayuda">
+          Es lo unico con lo que la plataforma decide. Un pedido que dice "hace falta" se rechaza;
+          uno que nombra la resolucion, el financiador o la practica concreta, no.
+        </p>
+      </div>
+
+      @if (errorAccion() && !errorEnElNombre()) {
+        <p class="estado estado--error" role="alert">{{ errorAccion() }}</p>
+      }
+
+      <p class="acciones">
+        <button type="submit" class="boton" [disabled]="enviando()">
+          {{ enviando() ? 'Enviando...' : 'Enviar el pedido' }}
+        </button>
+        <button
+          type="button"
+          class="boton boton--secundario"
+          (click)="cerrarAlta()"
+          [disabled]="enviando()"
+        >
+          Cancelar
+        </button>
+      </p>
+    </form>
+  </section>
+}
+
+<section class="tarjeta" aria-labelledby="titulo-listado-solicitudes">
+  <h2 id="titulo-listado-solicitudes">Pedidos de este centro</h2>
+
+  <div class="campo">
+    <label for="filtro-estado-solicitud">Mostrar</label>
+    <select
+      id="filtro-estado-solicitud"
+      [value]="filtroEstado()"
+      (change)="cambiarFiltro($any($event.target).value)"
+    >
+      <option value="TODAS">Todos</option>
+      <option value="PENDIENTE">Solo los pendientes</option>
+      <option value="APROBADA">Solo los aprobados</option>
+      <option value="RECHAZADA">Solo los rechazados</option>
+    </select>
+  </div>
+
+  <div aria-live="polite">
+    @switch (estado().tipo) {
+      @case ('cargando') {
+        <p class="estado estado--cargando">Cargando los pedidos&hellip;</p>
+      }
+
+      @case ('sin-contexto') {
+        <p class="estado estado--vacio">Todavia no elegiste un consultorio.</p>
+        <p class="ayuda">
+          Un pedido lo hace un centro concreto, asi que hay que indicar cual. Tu sesion sigue
+          abierta.
+        </p>
+        <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
+      }
+
+      @case ('error') {
+        <p class="estado estado--error" role="alert">{{ mensajeError() }}</p>
+
+        @if (faltaContexto()) {
+          <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
+        } @else {
+          <button type="button" class="boton" (click)="cargar()">Reintentar</button>
+        }
+      }
+
+      @case ('listo') {
+        @if (solicitudes().length === 0) {
+          <p class="estado estado--vacio">
+            Este centro todavia no hizo ningun pedido con el filtro elegido.
+          </p>
+        } @else {
+          <div
+            class="tabla-scroll"
+            tabindex="0"
+            role="region"
+            aria-label="Pedidos al catalogo de la plataforma"
+          >
+            <table class="tabla">
+              <caption class="visualmente-oculto">
+                Pedidos de este centro al catalogo de la plataforma, con su tipo, su justificacion,
+                su estado y como los resolvio la plataforma.
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col">Concepto pedido</th>
+                  <th scope="col">Tipo</th>
+                  <th scope="col">Pedido el</th>
+                  <th scope="col">Estado</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (solicitud of solicitudes(); track solicitud.id) {
+                  <tr [class.fila--revocada]="solicitud.estado === 'RECHAZADA'">
+                    <th scope="row">
+                      {{ solicitud.nombrePropuesto }}
+                      @if (solicitud.codigoPropuesto) {
+                        <p class="ayuda">Codigo propuesto: {{ solicitud.codigoPropuesto }}</p>
+                      }
+                      <p class="ayuda">{{ solicitud.justificacion }}</p>
+                    </th>
+                    <td>{{ etiquetaDeTipo(solicitud) }}</td>
+                    <td>
+                      {{ formatearInstante(solicitud.createdAt) ?? 'Sin fecha' }}
+                    </td>
+                    <td>
+                      <span class="marca-estado">{{ etiquetaDeEstado(solicitud) }}</span>
+                      @if (solicitud.resolucionNota) {
+                        <p class="ayuda">{{ solicitud.resolucionNota }}</p>
+                      }
+                      @if (solicitud.estado === 'APROBADA' && solicitud.conceptoId) {
+                        <p class="ayuda">
+                          Ya esta en el catalogo comun: buscalo con el filtro
+                          <b>Solo los de la plataforma</b>.
+                        </p>
+                      }
+                      @if (solicitud.estado === 'PENDIENTE') {
+                        <p class="ayuda">
+                          Mientras tanto podes darlo de alta como un concepto de tu centro: sirve
+                          para todo, salvo para que lo vean los demas centros.
+                        </p>
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      }
+    }
+  </div>
+</section>

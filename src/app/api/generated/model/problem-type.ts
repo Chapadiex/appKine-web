@@ -80,6 +80,26 @@ export enum ProblemType {
 
     HTTPS___AKINE_APP_PROBLEMS_ESPACIO_CAPACITY_BELOW_OCCUPANCY = 'https://akine.app/problems/espacio-capacity-below-occupancy',
 
-    HTTPS___AKINE_APP_PROBLEMS_ESPACIO_HAS_ACTIVE_REFERENCES = 'https://akine.app/problems/espacio-has-active-references'
+    HTTPS___AKINE_APP_PROBLEMS_ESPACIO_HAS_ACTIVE_REFERENCES = 'https://akine.app/problems/espacio-has-active-references',
+
+    HTTPS___AKINE_APP_PROBLEMS_CATALOGO_CODE_TAKEN = 'https://akine.app/problems/catalogo-code-taken',
+
+    HTTPS___AKINE_APP_PROBLEMS_CATALOGO_NAME_TAKEN = 'https://akine.app/problems/catalogo-name-taken',
+
+    HTTPS___AKINE_APP_PROBLEMS_CATALOGO_INACTIVE = 'https://akine.app/problems/catalogo-inactive',
+
+    HTTPS___AKINE_APP_PROBLEMS_CATALOGO_ALREADY_INACTIVE = 'https://akine.app/problems/catalogo-already-inactive',
+
+    HTTPS___AKINE_APP_PROBLEMS_CATALOGO_REFERENCE_INACTIVE = 'https://akine.app/problems/catalogo-reference-inactive',
+
+    HTTPS___AKINE_APP_PROBLEMS_CATALOGO_HAS_ACTIVE_REFERENCES = 'https://akine.app/problems/catalogo-has-active-references',
+
+    HTTPS___AKINE_APP_PROBLEMS_CATALOGO_SCOPE_MISMATCH = 'https://akine.app/problems/catalogo-scope-mismatch',
+
+    HTTPS___AKINE_APP_PROBLEMS_NOMENCLADOR_VIGENCIA_OVERLAP = 'https://akine.app/problems/nomenclador-vigencia-overlap',
+
+    HTTPS___AKINE_APP_PROBLEMS_CATALOGO_SOLICITUD_DUPLICADA = 'https://akine.app/problems/catalogo-solicitud-duplicada',
+
+    HTTPS___AKINE_APP_PROBLEMS_CATALOGO_SOLICITUD_YA_RESUELTA = 'https://akine.app/problems/catalogo-solicitud-ya-resuelta'
 }
 

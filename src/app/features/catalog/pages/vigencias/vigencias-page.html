@@ -1,0 +1,381 @@
+<h1>Vigencias del nomenclador</h1>
+
+<p class="acciones">
+  <a class="boton boton--secundario" routerLink="/catalogo/nomencladores">
+    Volver a los nomencladores
+  </a>
+</p>
+
+<!--
+  La distincion que sostiene RN-M06-002 y que explica por que esta pantalla no tiene "Editar".
+  Va arriba: quien viene a "corregir un codigo mal cargado" tiene que enterarse antes de
+  buscar el boton que no existe.
+-->
+<section class="tarjeta nota-alcance" aria-labelledby="titulo-nota-vigencias">
+  <h2 id="titulo-nota-vigencias">Una vigencia no se corrige: se cierra y se abre otra</h2>
+  <p>
+    Cada vigencia dice que <b>codigo</b> codificaba a que <b>practica</b>, con que valor y entre que
+    fechas. Lo que se presento a un financiador mientras esa vigencia regia tiene que seguir
+    resolviendo con ese codigo y ese valor, aunque hoy sean otros.
+  </p>
+  <p>
+    Por eso aca solo se puede <b>cargar</b> una vigencia nueva y <b>dar de baja</b> una que ya no
+    rige. No hay edicion: reescribirla cambiaria el significado de presentaciones que ya se
+    hicieron.
+  </p>
+</section>
+
+<div aria-live="polite">
+  @if (exito(); as mensaje) {
+    <p class="estado estado--ok">{{ mensaje }}</p>
+  }
+</div>
+
+<div aria-live="polite">
+  @switch (estado().tipo) {
+    @case ('cargando') {
+      <p class="estado estado--cargando">Cargando las vigencias&hellip;</p>
+    }
+
+    @case ('sin-contexto') {
+      <p class="estado estado--vacio">Todavia no elegiste un consultorio.</p>
+      <p class="ayuda">
+        El catalogo mezcla los conceptos de la plataforma con los de tu centro, asi que hay que
+        saber en cual estas trabajando. Tu sesion sigue abierta.
+      </p>
+      <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
+    }
+
+    @case ('error') {
+      <p class="estado estado--error" role="alert">{{ mensajeError() }}</p>
+
+      @if (faltaContexto()) {
+        <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
+      } @else {
+        <button type="button" class="boton" (click)="cargar()">Reintentar</button>
+      }
+    }
+
+    @case ('listo') {
+      @if (nomenclador(); as actual) {
+        <section class="tarjeta" aria-labelledby="titulo-nomenclador">
+          <h2 id="titulo-nomenclador">{{ actual.name }}</h2>
+          <p class="ayuda">
+            Codigo <b>{{ actual.codigo }}</b> &middot;
+            <span class="etiqueta">{{ etiquetaDeAlcance(actual) }}</span>
+            @if (actual.estado === 'INACTIVO') {
+              &middot; <span class="marca-estado">Dado de baja</span>
+            }
+          </p>
+          @if (actual.descripcion) {
+            <p>{{ actual.descripcion }}</p>
+          }
+        </section>
+      }
+
+      @if (esDeLaPlataforma()) {
+        <p class="estado estado--vacio">
+          Este nomenclador lo mantiene AKINE: podes consultar sus vigencias, pero no cargarlas ni
+          darlas de baja desde aca.
+          <a routerLink="/catalogo/solicitudes">Pedile un cambio a la plataforma</a>.
+        </p>
+      } @else {
+        <p class="acciones">
+          <button type="button" class="boton" (click)="abrirAlta()" *akinePermiso="permisoManage">
+            Cargar una vigencia
+          </button>
+        </p>
+      }
+
+      @if (altaAbierta()) {
+        <section class="tarjeta" aria-labelledby="titulo-alta-vigencia">
+          <h2 id="titulo-alta-vigencia">Nueva vigencia</h2>
+
+          <form [formGroup]="formularioAlta" (ngSubmit)="enviarAlta()" novalidate>
+            <div class="campo">
+              <label for="alta-vigencia-codigo">Codigo</label>
+              <input
+                id="alta-vigencia-codigo"
+                type="text"
+                formControlName="codigo"
+                autocomplete="off"
+                [attr.aria-invalid]="
+                  mostrarErrorAlta('codigo') || errorEnElCodigo() ? 'true' : null
+                "
+              />
+              @if (errorEnElCodigo()) {
+                <p class="campo__error" role="alert">{{ errorAccion() }}</p>
+              } @else if (mostrarErrorAlta('codigo')) {
+                <p class="campo__error">El codigo es obligatorio.</p>
+              } @else {
+                <p class="ayuda">
+                  El codigo con el que el financiador identifica la practica. Se puede repetir a lo
+                  largo del tiempo, pero <b>dos vigencias del mismo codigo no pueden pisarse</b>:
+                  cerra la anterior antes de que empiece esta.
+                </p>
+              }
+            </div>
+
+            <div class="campo">
+              <label for="alta-vigencia-practica">Practica que codifica</label>
+              <select
+                id="alta-vigencia-practica"
+                formControlName="practicaId"
+                [attr.aria-invalid]="mostrarErrorAlta('practicaId') ? 'true' : null"
+                aria-describedby="alta-vigencia-practica-ayuda"
+              >
+                <option value="">Elegi una practica</option>
+                @for (practica of practicas(); track practica.id) {
+                  <option [value]="practica.id">
+                    {{ practica.name }} ({{ etiquetaDeAlcance(practica) }})
+                  </option>
+                }
+              </select>
+              @if (mostrarErrorAlta('practicaId')) {
+                <p class="campo__error" role="alert">
+                  Una vigencia siempre codifica una practica: elegi cual.
+                </p>
+              }
+              <p class="ayuda" id="alta-vigencia-practica-ayuda">
+                Solo aparecen las practicas <b>activas</b>: una vigencia no puede codificar una dada
+                de baja.
+                @if (practicas().length === 0) {
+                  <b>
+                    No pudimos traer las practicas. Recarga la pantalla; si sigue vacio, dalas de
+                    alta primero desde el catalogo.
+                  </b>
+                }
+              </p>
+            </div>
+
+            <div class="campo">
+              <label for="alta-vigencia-name">Nombre</label>
+              <input
+                id="alta-vigencia-name"
+                type="text"
+                formControlName="name"
+                autocomplete="off"
+                [attr.aria-invalid]="mostrarErrorAlta('name') ? 'true' : null"
+              />
+              @if (mostrarErrorAlta('name')) {
+                <p class="campo__error">El nombre es obligatorio.</p>
+              } @else {
+                <p class="ayuda">
+                  Como nombra el financiador a este codigo. Puede no coincidir con el nombre de la
+                  practica, y es a proposito: en la presentacion se usa el suyo.
+                </p>
+              }
+            </div>
+
+            <div class="campo">
+              <label for="alta-vigencia-descripcion">Descripcion (opcional)</label>
+              <input
+                id="alta-vigencia-descripcion"
+                type="text"
+                formControlName="descripcion"
+                autocomplete="off"
+              />
+            </div>
+
+            <div class="campo">
+              <label for="alta-vigencia-valor">Valor de referencia (opcional)</label>
+              <input
+                id="alta-vigencia-valor"
+                type="number"
+                inputmode="decimal"
+                step="0.01"
+                min="0"
+                formControlName="valorReferencia"
+                aria-describedby="alta-vigencia-valor-ayuda"
+              />
+              <p class="ayuda" id="alta-vigencia-valor-ayuda">
+                Es de <b>referencia</b>: lo que el nomenclador dice que vale esta practica. No es lo
+                que se le cobra al paciente ni lo que el financiador termina pagando.
+              </p>
+            </div>
+
+            <div class="campo">
+              <label for="alta-vigencia-desde">Vigente desde (opcional)</label>
+              <input id="alta-vigencia-desde" type="datetime-local" formControlName="validFrom" />
+              <p class="ayuda">Sin fecha, rige desde ya.</p>
+            </div>
+
+            <div class="campo">
+              <label for="alta-vigencia-hasta">Vigente hasta (opcional)</label>
+              <input id="alta-vigencia-hasta" type="datetime-local" formControlName="validUntil" />
+            </div>
+
+            @if (errorAccion() && !errorEnElCodigo()) {
+              <p class="estado estado--error" role="alert">{{ errorAccion() }}</p>
+            }
+
+            <p class="acciones">
+              <button type="submit" class="boton" [disabled]="enviando()">
+                {{ enviando() ? 'Guardando...' : 'Cargar la vigencia' }}
+              </button>
+              <button
+                type="button"
+                class="boton boton--secundario"
+                (click)="cerrarPaneles()"
+                [disabled]="enviando()"
+              >
+                Cancelar
+              </button>
+            </p>
+          </form>
+        </section>
+      }
+
+      <section class="tarjeta" aria-labelledby="titulo-listado-vigencias">
+        <h2 id="titulo-listado-vigencias">Vigencias cargadas</h2>
+
+        <div class="campo">
+          <label for="filtro-codigo-vigencia">Filtrar por codigo</label>
+          <input
+            id="filtro-codigo-vigencia"
+            type="search"
+            [value]="filtroCodigo()"
+            (change)="filtrarPorCodigo($any($event.target).value)"
+            autocomplete="off"
+            aria-describedby="filtro-codigo-vigencia-ayuda"
+          />
+          <p class="ayuda" id="filtro-codigo-vigencia-ayuda">
+            Un codigo suele tener varias vigencias a lo largo del tiempo: filtrarlo es la forma de
+            ver su historia completa.
+          </p>
+        </div>
+
+        <div class="campo">
+          <label for="filtro-estado-vigencia">Mostrar</label>
+          <select
+            id="filtro-estado-vigencia"
+            [value]="filtroEstado()"
+            (change)="cambiarFiltroEstado($any($event.target).value)"
+          >
+            <option value="ACTIVO">Solo las activas</option>
+            <option value="INACTIVO">Solo las dadas de baja</option>
+            <option value="TODOS">Todas</option>
+          </select>
+        </div>
+
+        @if (vigencias().length === 0) {
+          <p class="estado estado--vacio">
+            Este nomenclador todavia no tiene vigencias con el filtro elegido.
+          </p>
+        } @else {
+          <div
+            class="tabla-scroll"
+            tabindex="0"
+            role="region"
+            aria-label="Vigencias del nomenclador"
+          >
+            <table class="tabla">
+              <caption class="visualmente-oculto">
+                Vigencias del nomenclador, con su codigo, la practica que codifican, su valor de
+                referencia, su ventana y su estado.
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col">Codigo</th>
+                  <th scope="col">Nombre</th>
+                  <th scope="col">Practica</th>
+                  <th scope="col">Valor de referencia</th>
+                  <th scope="col">Ventana</th>
+                  <th scope="col">Estado</th>
+                  <th scope="col">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (vigencia of vigencias(); track vigencia.id) {
+                  <tr [class.fila--revocada]="vigencia.estado === 'INACTIVO'">
+                    <th scope="row">
+                      {{ vigencia.codigo }}
+                      @if (vigencia.descripcion) {
+                        <p class="ayuda">{{ vigencia.descripcion }}</p>
+                      }
+                    </th>
+                    <td>{{ vigencia.name }}</td>
+                    <td>
+                      @if (nombreDePractica(vigencia); as nombre) {
+                        {{ nombre }}
+                      } @else {
+                        <span class="ayuda">Practica #{{ vigencia.practicaId }}</span>
+                      }
+                    </td>
+                    <td>
+                      @if (vigencia.valorReferencia === undefined) {
+                        <span class="ayuda">Sin valor</span>
+                      } @else {
+                        {{ vigencia.valorReferencia }}
+                      }
+                    </td>
+                    <td>
+                      @if (formatearInstante(vigencia.validFrom); as desde) {
+                        Desde {{ desde }}.
+                      } @else {
+                        Desde siempre.
+                      }
+                      @if (formatearInstante(vigencia.validUntil); as hasta) {
+                        Hasta {{ hasta }}.
+                      }
+                    </td>
+                    <td>
+                      @if (vigencia.estado === 'INACTIVO') {
+                        <span class="marca-estado">Dada de baja</span>
+                        @if (vigencia.deactivationReason) {
+                          <p class="ayuda">{{ vigencia.deactivationReason }}</p>
+                        }
+                      } @else if (vigencia.vigente) {
+                        <span class="marca-estado">Rige hoy</span>
+                      } @else {
+                        <span class="marca-estado">Activa, fuera de ventana</span>
+                      }
+                    </td>
+                    <td class="acciones-fila">
+                      @if (!esDeLaPlataforma() && vigencia.estado === 'ACTIVO') {
+                        <button
+                          type="button"
+                          class="boton boton--secundario"
+                          (click)="abrirBaja(vigencia)"
+                          *akinePermiso="permisoManage"
+                        >
+                          Dar de baja
+                        </button>
+                      }
+                    </td>
+                  </tr>
+
+                  @if (bajaAbierta() === vigencia.id) {
+                    <tr class="fila-panel">
+                      <td colspan="7">
+                        <app-confirmacion-con-motivo
+                          idCampo="baja-vigencia-motivo"
+                          [titulo]="'Dar de baja la vigencia ' + vigencia.codigo"
+                          etiqueta="Motivo de la baja"
+                          ayuda="Queda registrado junto a la vigencia. Dar de baja no corrige nada: lo que ya se presento mientras esta vigencia regia conserva su codigo y su valor. Solo deja de ofrecerse de ahora en mas."
+                          textoConfirmar="Dar de baja"
+                          [enviando]="enviando()"
+                          (confirmado)="enviarBaja($event)"
+                          (cancelado)="cerrarPaneles()"
+                        />
+
+                        @if (errorAccion()) {
+                          <p class="estado estado--error" role="alert">{{ errorAccion() }}</p>
+                        }
+                        @if (hayQueRecargar()) {
+                          <button type="button" class="boton" (click)="cargar()">
+                            Recargar el listado
+                          </button>
+                        }
+                      </td>
+                    </tr>
+                  }
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </section>
+    }
+  }
+</div>

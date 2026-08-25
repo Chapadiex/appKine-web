@@ -1,0 +1,58 @@
+/*
+ * Hoja de la feature `catalog` (catalogo clinico, M06, AKINE-02.05).
+ *
+ * <b>Deliberadamente corta</b>, igual que la de `resource`. `.boton`, `.campo`, `.tabla`,
+ * `.tabla-scroll`, `.estado`, `.tarjeta`, `.etiqueta`, `.marca-estado`, `.fila--revocada`,
+ * `.fila-panel`, `.acciones-fila`, `.campo__error`, `.opcion-casilla` y `.paginacion` los
+ * aporta `src/design-system.css`, que es global. Copiarlos aca no seria aislar el feature:
+ * seria una copia que se despega del original el dia que alguien retoque un gris.
+ *
+ * Solo entra lo que existe unicamente en estas pantallas.
+ */
+
+/*
+ * La nota que separa el catalogo de la plataforma del del centro (ADR-0021).
+ *
+ * Va con borde de acento y no como un parrafo mas: es la aclaracion que evita el reporte de
+ * bug mas probable del modulo -"lo veo en la lista y no lo puedo editar"- y en el medio de la
+ * prosa nadie la lee. El color no es lo unico que la distingue -tiene su propio encabezado-,
+ * asi que sigue comunicando en escala de grises (WCAG 1.4.1).
+ */
+.nota-alcance {
+  border-left: 4px solid #1b3a5c;
+  background: #f4f7fa;
+}
+
+.nota-alcance p {
+  margin: 0 0 0.5rem;
+}
+
+.nota-alcance p:last-child {
+  margin-bottom: 0;
+}
+
+/*
+ * La descripcion del concepto y el motivo de baja viven dentro del `<th scope="row">`.
+ *
+ * El `th` es negrita —es el encabezado de la fila— y el parrafo lo hereda, asi que la
+ * descripcion se dibujaba con el mismo peso que el nombre y se leia como parte del nombre.
+ * Mismo caso que la observacion de un espacio en `resource.css`.
+ */
+.tabla th[scope='row'] .ayuda {
+  font-weight: 400;
+  margin: 0.25rem 0 0;
+}
+
+/*
+ * La barra de tipos es navegacion, no acciones.
+ *
+ * El tipo abierto se marca con `aria-current="page"`, que es lo que lee un lector de
+ * pantalla. El subrayado es su equivalente visual: sin el, la unica pista de en cual de los
+ * tres catalogos esta parado el usuario seria el titulo, que queda fuera de la vista apenas
+ * scrollea la tabla.
+ */
+.acciones .boton[aria-current='page'] {
+  text-decoration: underline;
+  text-underline-offset: 0.25rem;
+  font-weight: 600;
+}
