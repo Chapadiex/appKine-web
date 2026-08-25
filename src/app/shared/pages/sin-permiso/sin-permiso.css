@@ -1,39 +1,20 @@
 /*
- * Estilos de la pantalla de permiso insuficiente.
+ * Estilos propios de la pantalla de permiso insuficiente.
  *
- * Colores verificados contra fondo blanco: superan 4.5:1 (WCAG 2.1 AA).
+ * El sistema de diseno -descripcion, ayuda, enlace y su foco- vive en
+ * `src/design-system.css`, que es global.
  */
-
-h1 {
-  margin: 0 0 0.5rem;
-  font-size: 1.5rem;
-}
 
 .descripcion {
   margin: 0 0 1.5rem;
-  color: #4a5a6a;
 }
 
-.ayuda {
-  margin: 0 0 1rem;
-  color: #4a5a6a;
-  font-size: 0.9375rem;
-}
-
+/* Las salidas son alternativas equivalentes -volver, elegir otro contexto, pedir el
+   permiso-, no una secuencia de pasos. */
 .salidas {
   list-style: none;
   margin: 1.5rem 0 0;
   padding: 0;
   display: grid;
   gap: 0.5rem;
-}
-
-.enlace {
-  color: #10263f;
-}
-
-/* Foco visible: nunca se quita el outline sin reemplazo (ADR-0005). */
-.enlace:focus-visible {
-  outline: 3px solid #1b3a5c;
-  outline-offset: 2px;
 }

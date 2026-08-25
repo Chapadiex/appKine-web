@@ -50,10 +50,28 @@
   color: #c8d8ea;
 }
 
+/*
+ * Ancho de lectura: unos 90 caracteres por renglon. Es el defecto de toda pantalla, porque
+ * la mayoria son prosa y formularios.
+ */
 .contenido {
   max-width: 46rem;
   margin: 0 auto;
   padding: 2rem 1.5rem;
+}
+
+/*
+ * Ancho de tabla, que la ruta pide con `data: { ancho: 'amplio' }`.
+ *
+ * 76rem esta medido, no elegido de gusto: es el punto exacto donde la tabla de colaboradores
+ * deja de desbordar Y sus botones de accion dejan de envolverse. Por debajo, la fila mide
+ * 209 px de alto porque las cuatro acciones se apilan; a 76rem mide 81 px y no baja mas por
+ * ensancharla, asi que ir a 90rem no compra nada y solo aleja las columnas entre si.
+ *
+ * Es `max-width`, no `width`: en tablet el viewport manda y el layout sigue siendo fluido.
+ */
+.contenido--amplio {
+  max-width: 76rem;
 }
 
 .contenido:focus {

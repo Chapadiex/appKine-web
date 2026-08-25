@@ -36,6 +36,29 @@ describe('traducirError', () => {
     ].map((error) => traducirError(error));
 
     expect(new Set(causas.map((c) => c.mensaje)).size).toBe(1);
+    expect(new Set(causas.map((c) => c.causa))).toEqual(new Set(['credenciales']));
+  });
+
+  it('un 401 unauthorized NO manda a revisar la contrasena: dice que la sesion se cayo', () => {
+    // El defecto que arregla: `unauthorized` caia en la rama de credenciales y mostraba
+    // "Email o contrasena incorrectos" para un token que dejo de servir. El usuario reescribe
+    // una contrasena que esta bien, dos veces, antes de sospechar de la sesion.
+    const traducido = traducirError(
+      problema(401, 'https://akine.app/problems/unauthorized', 'No autorizado'),
+    );
+
+    expect(traducido.causa).toBe('sesion');
+    expect(traducido.mensaje).not.toContain('contrasena');
+  });
+
+  it('un 400 invalid-token sigue siendo el enlace de correo vencido, no la sesion', () => {
+    // `invalid-token` esta tambien en `esSesionExpirada`. La rama de sesion se guarda con
+    // `status === 401` justamente para no robarle este caso a las pantallas de activacion y
+    // de restablecimiento, donde el mismo tipo significa "el enlace vencio".
+    expect(
+      traducirError(problema(400, 'https://akine.app/problems/invalid-token', 'Token invalido'))
+        .causa,
+    ).toBe('token');
   });
 
   it('muestra el detail literal del backend ante un 400 de politica de contrasena', () => {

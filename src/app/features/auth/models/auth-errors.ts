@@ -11,6 +11,8 @@ import { EsperaPorLimite } from '../../../shared/utils/espera-por-limite';
 export type CausaError =
   /** 401 del login. Cubre credenciales malas, cuenta sin activar y cuenta bloqueada. */
   | 'credenciales'
+  /** 401 de sesion: el token no sirve mas. NO es un problema de contrasena. */
+  | 'sesion'
   /** 400 invalid-token: enlace inexistente, usado, invalidado, vencido o del tipo equivocado. */
   | 'token'
   /** 400 validation-error: politica de contrasena o campos ausentes. */
@@ -46,9 +48,20 @@ export interface ErrorTraducido {
 /** Textos que cada pantalla puede sobreescribir sin reimplementar el mapeo. */
 export interface TextosDeError {
   readonly credenciales?: string;
+  readonly sesion?: string;
   readonly token?: string;
   readonly generico?: string;
 }
+
+/**
+ * Texto del 401 que NO es del login.
+ *
+ * <p>Un `unauthorized` sobre un endpoint de negocio significa que el token dejo de servir,
+ * no que la contrasena este mal. Mandar a revisar la contrasena ante eso es la respuesta
+ * equivocada: la contrasena esta bien y el usuario la va a reescribir igual, dos veces,
+ * antes de sospechar de la sesion.
+ */
+const MENSAJE_SESION = 'Tu sesion ya no es valida. Volve a iniciar sesion para continuar.';
 
 const MENSAJE_GENERICO = 'No pudimos completar la operacion. Volve a intentar en un momento.';
 const MENSAJE_DE_RED = 'No se pudo contactar al servidor. Revisa tu conexion y volve a intentar.';
@@ -77,6 +90,18 @@ export function traducirError(error: unknown, textos: TextosDeError = {}): Error
       causa: 'limite',
       segundosDeEspera: segundos,
     };
+  }
+
+  // Un 401 que NO es `invalid-credentials`: la sesion se cayo. Se distingue por el
+  // `problemType` -`unauthorized`, `invalid-token`, `invalid-refresh`-, que es OTRO tipo de
+  // problema, y nunca por el status ni por el texto. `esSesionExpirada` es false para
+  // `invalid-credentials`, asi que esta rama no puede robarle ninguno de los tres casos que
+  // el ADR-0018 exige indistinguibles: la rama de abajo los sigue recibiendo a los tres.
+  //
+  // El guardia de status 401 importa: `invalid-token` tambien viaja en los 400 de los
+  // enlaces de correo, y ahi significa "el enlace vencio", no "se cayo la sesion".
+  if (error.status === 401 && error.esSesionExpirada) {
+    return { mensaje: textos.sesion ?? MENSAJE_SESION, causa: 'sesion', segundosDeEspera: 0 };
   }
 
   // 401 uniforme (ADR-0018): credenciales incorrectas, cuenta pendiente de activacion y

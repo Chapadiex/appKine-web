@@ -1,11 +1,14 @@
-import { Component, ElementRef, computed, effect, inject, signal, untracked } from '@angular/core';
+import { Component, ElementRef, effect, inject, signal, untracked } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { catchError, of } from 'rxjs';
 
 import { AuditEventPageResponse } from '../../../../api/generated/model/audit-event-page-response';
 import { AuditoriaService } from '../../../../api/generated/api/auditoria.service';
+import { AuditEventResponse } from '../../../../api/generated/model/audit-event-response';
+import { EstadoDeListado, vistaDeListado } from '../../../../shared/utils/estado-de-listado';
 import { ListAuditEventsRequestParams } from '../../../../api/generated/api/auditoria.serviceInterface';
+import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { traducirErrorColaborador } from '../../models/colaborador-errors';
 
@@ -19,13 +22,6 @@ import { traducirErrorColaborador } from '../../models/colaborador-errors';
  * que la regla era de exclusion.
  */
 type FiltroElegido = 'entidad' | 'actor' | 'ventana';
-
-type EstadoAuditoria =
-  | { readonly tipo: 'sin-contexto' }
-  | { readonly tipo: 'inicial' }
-  | { readonly tipo: 'cargando' }
-  | { readonly tipo: 'listo'; readonly pagina: AuditEventPageResponse }
-  | { readonly tipo: 'error'; readonly mensaje: string; readonly faltaContexto: boolean };
 
 /** Tope del contrato para la ventana temporal. Mas que esto es `400`. */
 const DIAS_MAXIMOS = 90;
@@ -61,7 +57,7 @@ const POR_PAGINA = 20;
  */
 @Component({
   selector: 'app-audit-page',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, Paginacion],
   templateUrl: './audit-page.html',
   styleUrl: '../../organization.css',
 })
@@ -70,7 +66,16 @@ export class AuditPage {
   private readonly tenantContext = inject(TenantContextStore);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
 
-  protected readonly estado = signal<EstadoAuditoria>({ tipo: 'inicial' });
+  /**
+   * Arranca en `inicial`, que es el quinto caso de {@link EstadoDeListado}: sin ninguno de
+   * los tres filtros la consulta no es valida, asi que no hay nada que cargar al entrar.
+   */
+  protected readonly estado = signal<EstadoDeListado<AuditEventPageResponse>>({
+    tipo: 'inicial',
+  });
+
+  /** Los cinco valores derivados del estado, con los nombres que la plantilla ya usaba. */
+  private readonly vista = vistaDeListado<AuditEventResponse>(this.estado);
   protected readonly paginaActual = signal(0);
   protected readonly intentos = signal(0);
 
@@ -86,30 +91,11 @@ export class AuditPage {
     hasta: [''],
   });
 
-  protected readonly eventos = computed(() => {
-    const estado = this.estado();
-    return estado.tipo === 'listo' ? (estado.pagina.content ?? []) : [];
-  });
-
-  protected readonly totalPaginas = computed(() => {
-    const estado = this.estado();
-    return estado.tipo === 'listo' ? (estado.pagina.totalPages ?? 0) : 0;
-  });
-
-  protected readonly totalEventos = computed(() => {
-    const estado = this.estado();
-    return estado.tipo === 'listo' ? (estado.pagina.totalElements ?? 0) : 0;
-  });
-
-  protected readonly mensajeError = computed(() => {
-    const estado = this.estado();
-    return estado.tipo === 'error' ? estado.mensaje : null;
-  });
-
-  protected readonly faltaContexto = computed(() => {
-    const estado = this.estado();
-    return estado.tipo === 'error' && estado.faltaContexto;
-  });
+  protected readonly eventos = this.vista.filas;
+  protected readonly totalPaginas = this.vista.totalPaginas;
+  protected readonly totalEventos = this.vista.totalElementos;
+  protected readonly mensajeError = this.vista.mensajeError;
+  protected readonly faltaContexto = this.vista.faltaContexto;
 
   constructor() {
     effect(() => {

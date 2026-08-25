@@ -54,7 +54,12 @@
             {{ totalColaboradores() }} vinculos en total, incluidos los suspendidos y revocados.
           </p>
 
-          <div class="tabla-scroll">
+          <div
+            class="tabla-scroll"
+            tabindex="0"
+            role="region"
+            aria-label="Colaboradores de la organizacion"
+          >
             <table class="tabla">
               <caption class="visualmente-oculto">
                 Colaboradores de la organizacion, con su rol, alcance y estado
@@ -78,7 +83,7 @@
                         <span class="colaborador__email">{{ colaborador.accountEmail }}</span>
                       }
                       @if (colaborador.founder) {
-                        <span class="marca">Fundador</span>
+                        <span class="etiqueta">Fundador</span>
                       }
                     </th>
                     <td>{{ etiquetaDeRol(colaborador.roleCode) }}</td>
@@ -285,19 +290,14 @@
                   ) {
                     <tr class="fila-panel">
                       <td colspan="6">
-                        <form [formGroup]="formularioMotivo" (ngSubmit)="enviarMotivo()" novalidate>
-                          <h3 class="panel__titulo">
-                            @if (panelAbierto(colaborador.id, 'suspender')) {
-                              Suspender a la cuenta {{ colaborador.accountId }}
-                            }
-                            @if (panelAbierto(colaborador.id, 'reactivar')) {
-                              Reactivar a la cuenta {{ colaborador.accountId }}
-                            }
-                            @if (panelAbierto(colaborador.id, 'revocar')) {
-                              Revocar el vinculo de la cuenta {{ colaborador.accountId }}
-                            }
-                          </h3>
-
+                        <akine-confirmacion-con-motivo
+                          idCampo="panel-motivo"
+                          textoError="El motivo es obligatorio: es lo que explica esta decision mas adelante."
+                          [titulo]="tituloDelPanel(colaborador)"
+                          [enviando]="enviando()"
+                          (confirmado)="enviarMotivo($event)"
+                          (cancelado)="cerrarPanel()"
+                        >
                           @if (panelAbierto(colaborador.id, 'revocar')) {
                             <p class="ayuda">
                               Revocar es terminal y no se deshace. El vinculo no se borra: queda en
@@ -305,39 +305,7 @@
                               lo referencian tienen que seguir siendo legibles.
                             </p>
                           }
-
-                          <div class="campo">
-                            <label for="panel-motivo">Motivo</label>
-                            <input
-                              id="panel-motivo"
-                              type="text"
-                              formControlName="reason"
-                              [attr.aria-invalid]="mostrarErrorMotivo()"
-                              [attr.aria-describedby]="
-                                mostrarErrorMotivo() ? 'panel-motivo-error' : null
-                              "
-                            />
-                            @if (mostrarErrorMotivo()) {
-                              <p class="campo__error" id="panel-motivo-error">
-                                El motivo es obligatorio: es lo que explica esta decision mas
-                                adelante.
-                              </p>
-                            }
-                          </div>
-
-                          <div class="acciones">
-                            <button type="submit" class="boton" [disabled]="enviando()">
-                              Confirmar
-                            </button>
-                            <button
-                              type="button"
-                              class="boton boton--secundario"
-                              (click)="cerrarPanel()"
-                            >
-                              Cancelar
-                            </button>
-                          </div>
-                        </form>
+                        </akine-confirmacion-con-motivo>
 
                         <div aria-live="polite">
                           @if (errorAccion(); as mensaje) {
@@ -473,27 +441,12 @@
             </table>
           </div>
 
-          @if (totalPaginas() > 1) {
-            <nav class="paginacion" aria-label="Paginas de colaboradores">
-              <button
-                type="button"
-                class="boton boton--secundario"
-                [disabled]="paginaActual() === 0"
-                (click)="irAPagina(paginaActual() - 1)"
-              >
-                Anterior
-              </button>
-              <span class="ayuda">Pagina {{ paginaActual() + 1 }} de {{ totalPaginas() }}</span>
-              <button
-                type="button"
-                class="boton boton--secundario"
-                [disabled]="paginaActual() + 1 >= totalPaginas()"
-                (click)="irAPagina(paginaActual() + 1)"
-              >
-                Siguiente
-              </button>
-            </nav>
-          }
+          <akine-paginacion
+            etiqueta="Paginas de colaboradores"
+            [paginaActual]="paginaActual()"
+            [totalPaginas]="totalPaginas()"
+            (cambioDePagina)="irAPagina($event)"
+          />
         }
       }
     }

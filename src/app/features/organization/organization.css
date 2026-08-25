@@ -1,103 +1,27 @@
 /*
- * Estilos compartidos por las pantallas de la feature `organization`.
+ * Estilos propios de las pantallas de la feature `organization`.
  *
- * Un solo archivo para las tres paginas: son variaciones del mismo layout de tarjeta que
- * estrena `features/platform/pages/estado`. Cuando haya una cuarta o quinta pantalla que lo
- * justifique se evalua extraer los estados a un componente comun (PENDIENTE de ADR-0005).
+ * El sistema de diseno -tarjeta, boton, campo, tabla, estados, paginacion- vive en
+ * `src/design-system.css`, que es global. Aca queda unicamente lo que sabe de dominio
+ * (vinculos revocados, estados de suscripcion, permisos adicionales, sedes) y los dos
+ * ajustes de medida que estas pantallas necesitan sobre la base comun.
  *
  * Todos los colores de texto verificados contra fondo blanco: superan 4.5:1 (WCAG 2.1 AA).
  */
 
-h1 {
-  margin: 0 0 0.5rem;
-  font-size: 1.5rem;
+/* --- Ajustes sobre la base global ------------------------------------------------------ */
+
+/* Un campo dentro de un panel desplegado ocupa el ancho de la fila de una tabla de seis
+   columnas si no se lo acota: un input de motivo de 1000 px no se lee mejor, se lee peor.
+   La regla encapsulada le gana a la global sin necesidad de `!important`. */
+.campo,
+.grupo {
+  max-width: 28rem;
 }
 
-.descripcion {
-  margin: 0 0 2rem;
-  color: #4a5a6a;
-}
-
-.tarjeta {
-  border: 1px solid #d5dee7;
-  border-radius: 8px;
-  padding: 1.25rem 1.5rem;
-  margin-bottom: 1.5rem;
-}
-
-.tarjeta h2 {
-  margin: 0 0 1rem;
-  font-size: 1.125rem;
-}
-
-.estado {
-  margin: 0 0 0.75rem;
-  font-weight: 600;
-}
-
-.estado--cargando {
-  color: #4a5a6a;
-}
-
-.estado--ok {
-  color: #1d6b3f;
-}
-
-.estado--vacio {
-  color: #4a5a6a;
-}
-
-.estado--error {
-  color: #a32020;
-}
-
-.ayuda {
-  margin: 0 0 1rem;
-  font-size: 0.9375rem;
-  color: #4a5a6a;
-}
-
-.detalle {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 0.375rem 1rem;
-  margin: 0;
-  font-size: 0.9375rem;
-}
-
-.detalle dt {
-  color: #4a5a6a;
-}
-
+/* El detalle de la organizacion resalta el valor sobre la etiqueta. */
 .detalle dd {
-  margin: 0;
   font-weight: 500;
-}
-
-.boton {
-  padding: 0.5rem 1rem;
-  border: 1px solid #10263f;
-  border-radius: 6px;
-  background: #10263f;
-  color: #fff;
-  font: inherit;
-  cursor: pointer;
-}
-
-.boton:hover {
-  background: #1b3a5c;
-}
-
-/* Foco visible: nunca se quita el outline sin reemplazo (ADR-0005). */
-.boton:focus-visible,
-.opcion:focus-visible,
-.enlace:focus-visible {
-  outline: 3px solid #1b3a5c;
-  outline-offset: 2px;
-}
-
-.enlace {
-  color: #10263f;
 }
 
 /* --- Selector de contexto --------------------------------------------------------- */
@@ -127,6 +51,12 @@ h1 {
 .opcion:hover {
   border-color: #10263f;
   background: #f4f7fa;
+}
+
+/* Foco visible: nunca se quita el outline sin reemplazo (ADR-0005). */
+.opcion:focus-visible {
+  outline: 3px solid #1b3a5c;
+  outline-offset: 2px;
 }
 
 .opcion__organizacion {
@@ -179,6 +109,8 @@ h1 {
   color: #7d1717;
 }
 
+/* Los limites del plan no son una tabla de datos navegable como `.tabla`: son cuatro filas
+   fijas de limite contra uso, y el uso excedido se marca en rojo Y con negrita. */
 .limites {
   width: 100%;
   border-collapse: collapse;
@@ -202,143 +134,7 @@ h1 {
   font-weight: 600;
 }
 
-/* Layout fluido: recepcion usa desktop, profesionales usan tablet. */
-@media (max-width: 30rem) {
-  .detalle {
-    grid-template-columns: 1fr;
-    gap: 0 0;
-  }
-
-  .detalle dd {
-    margin-bottom: 0.5rem;
-  }
-}
-
-/* --- Formulario (paneles de colaboradores y filtros de auditoria) ---------------------- */
-
-.campo {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  margin-bottom: 1rem;
-  max-width: 28rem;
-}
-
-.campo label {
-  font-size: 0.9375rem;
-  font-weight: 600;
-}
-
-.campo input,
-.campo select {
-  padding: 0.5rem 0.625rem;
-  border: 1px solid #7b8a99;
-  border-radius: 6px;
-  background: #fff;
-  color: #10263f;
-  font: inherit;
-}
-
-.campo input:focus-visible,
-.campo select:focus-visible {
-  outline: 3px solid #1b3a5c;
-  outline-offset: 1px;
-}
-
-.campo input[aria-invalid='true'],
-.campo select[aria-invalid='true'] {
-  border-color: #a32020;
-  border-width: 2px;
-}
-
-.campo__opcional {
-  font-weight: 400;
-  color: #4a5a6a;
-}
-
-.campo__error {
-  font-size: 0.875rem;
-  color: #a32020;
-}
-
-.grupo {
-  border: 1px solid #d5dee7;
-  border-radius: 6px;
-  padding: 1rem 1rem 0.25rem;
-  margin: 0 0 1.25rem;
-  max-width: 28rem;
-}
-
-.grupo legend {
-  padding: 0 0.375rem;
-  font-size: 0.9375rem;
-  font-weight: 600;
-}
-
-/* El radio y su label en una linea, con el label clickeable: el area de acierto de un
-   radio suelto es demasiado chica para una tablet. */
-.opcion-radio {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 0.5rem;
-}
-
-.opcion-radio input:focus-visible {
-  outline: 3px solid #1b3a5c;
-  outline-offset: 2px;
-}
-
-.acciones {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.75rem;
-  margin-top: 1.25rem;
-}
-
-.boton:disabled {
-  border-color: #6a7684;
-  background: #6a7684;
-  cursor: not-allowed;
-}
-
-.boton--secundario {
-  border-color: #10263f;
-  background: #fff;
-  color: #10263f;
-}
-
-.boton--secundario:hover:not(:disabled) {
-  background: #f4f7fa;
-}
-
-/* --- Tabla de colaboradores y de auditoria -------------------------------------------- */
-
-/* La tabla scrollea dentro de su contenedor y nunca el body: en tablet, seis columnas con
-   acciones no entran, y un scroll horizontal de pagina esconde la navegacion. */
-.tabla-scroll {
-  overflow-x: auto;
-}
-
-.tabla {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.9375rem;
-}
-
-.tabla th,
-.tabla td {
-  padding: 0.5rem 0.75rem;
-  border-bottom: 1px solid #e3e9ef;
-  text-align: left;
-  vertical-align: top;
-}
-
-.tabla thead th {
-  color: #4a5a6a;
-  font-weight: 600;
-}
+/* --- Filas de las tablas de colaboradores y de sedes ---------------------------------- */
 
 /* La fila revocada se atenua PERO no se oculta ni se borra: la baja es logica y su historia
    sigue siendo relevante. El estado ademas se dice con texto, no solo con color (WCAG 1.4.1). */
@@ -351,12 +147,20 @@ h1 {
   padding: 1rem;
 }
 
-.panel__titulo {
-  margin: 0 0 0.75rem;
-  font-size: 1rem;
-}
-
-.marca {
+/*
+ * Pastilla neutra al lado de un dato: "Estas trabajando aca", "Fundador".
+ *
+ * Se llamaba `.marca`, que es como `app.css` llama a la marca AKINE de la cabecera. No eran
+ * la misma cosa con dos hojas: eran dos cosas distintas con el mismo nombre, y convivian solo
+ * porque las dos hojas estan encapsuladas y ninguna alcanza a la otra. Con el nombre libre,
+ * subir cualquiera de las dos a la hoja global deja de romper a la otra.
+ *
+ * <b>`nowrap` no es cosmetica.</b> Una pastilla es una pastilla porque es una linea: con el
+ * texto envuelto en tres renglones dentro de una celda angosta, el `border-radius: 999px` la
+ * dibujaba como un circulo con el texto desbordado. Prefiere ensanchar la columna -o, si no
+ * hay lugar, desplazarse con la tabla- antes que deformarse.
+ */
+.etiqueta {
   display: inline-block;
   margin-left: 0.375rem;
   padding: 0.0625rem 0.375rem;
@@ -364,6 +168,7 @@ h1 {
   border-radius: 999px;
   font-size: 0.75rem;
   color: #4a5a6a;
+  white-space: nowrap;
 }
 
 .marca-estado {
@@ -404,6 +209,8 @@ h1 {
   padding: 0.25rem 0.5rem;
 }
 
+/* --- Permisos adicionales de un vinculo ------------------------------------------------ */
+
 .lista-grants {
   list-style: none;
   margin: 0 0 1rem;
@@ -421,28 +228,6 @@ h1 {
 
 .grant__codigo {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-}
-
-.paginacion {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.75rem;
-  margin-top: 1rem;
-}
-
-/* Texto solo para lectores de pantalla: los `caption` de las tablas explican que se lista
-   sin duplicar visualmente el `h2` que ya esta arriba. */
-.visualmente-oculto {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  margin: -1px;
-  padding: 0;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
 }
 
 /* Datos institucionales de una sede dentro de su celda: son varios renglones cortos y

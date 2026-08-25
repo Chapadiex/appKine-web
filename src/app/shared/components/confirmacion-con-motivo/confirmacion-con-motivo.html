@@ -1,0 +1,31 @@
+<form [formGroup]="formulario" (ngSubmit)="confirmar()" novalidate>
+  <h3 class="panel__titulo">{{ titulo() }}</h3>
+
+  <ng-content />
+
+  <div class="campo">
+    <label [attr.for]="idCampo()">{{ etiqueta() }}</label>
+    <input
+      #campoMotivo
+      type="text"
+      autocomplete="off"
+      [id]="idCampo()"
+      formControlName="reason"
+      [attr.aria-invalid]="mostrarError()"
+      [attr.aria-describedby]="descrito"
+    />
+    @if (ayuda() !== '') {
+      <p class="ayuda" [id]="idAyuda">{{ ayuda() }}</p>
+    }
+    @if (mostrarError()) {
+      <p class="campo__error" [id]="idError">{{ textoError() }}</p>
+    }
+  </div>
+
+  <div class="acciones">
+    <button type="submit" class="boton" [disabled]="enviando()">{{ textoConfirmar() }}</button>
+    <button type="button" class="boton boton--secundario" (click)="cancelado.emit()">
+      Cancelar
+    </button>
+  </div>
+</form>

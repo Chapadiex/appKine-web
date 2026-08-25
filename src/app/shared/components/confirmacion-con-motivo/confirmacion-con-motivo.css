@@ -1,0 +1,14 @@
+/*
+ * Unico estilo propio: todo lo demas lo aporta `src/design-system.css`, que es global.
+ *
+ * Antes este archivo llevaba una copia completa de `.boton`, `.campo`, `.acciones` y
+ * `.panel__titulo`, porque un componente de `shared/` no puede depender de la hoja de un
+ * feature y la encapsulacion no la dejaria aplicar igual. Con la hoja global esa dependencia
+ * dejo de existir y la copia se fue.
+ */
+
+/* El panel se despliega dentro de la fila de una tabla ancha: sin tope, el input de motivo
+   se estira a todo el ancho de la tabla y se lee peor, no mejor. */
+.campo {
+  max-width: 28rem;
+}

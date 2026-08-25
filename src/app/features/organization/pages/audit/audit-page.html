@@ -191,7 +191,12 @@
         } @else {
           <p class="ayuda">{{ totalEventos() }} hechos encontrados.</p>
 
-          <div class="tabla-scroll">
+          <div
+            class="tabla-scroll"
+            tabindex="0"
+            role="region"
+            aria-label="Hechos auditados de la organizacion"
+          >
             <table class="tabla">
               <caption class="visualmente-oculto">
                 Hechos auditados que coinciden con el filtro elegido
@@ -227,27 +232,12 @@
             </table>
           </div>
 
-          @if (totalPaginas() > 1) {
-            <nav class="paginacion" aria-label="Paginas de resultados de auditoria">
-              <button
-                type="button"
-                class="boton boton--secundario"
-                [disabled]="paginaActual() === 0"
-                (click)="irAPagina(paginaActual() - 1)"
-              >
-                Anterior
-              </button>
-              <span class="ayuda">Pagina {{ paginaActual() + 1 }} de {{ totalPaginas() }}</span>
-              <button
-                type="button"
-                class="boton boton--secundario"
-                [disabled]="paginaActual() + 1 >= totalPaginas()"
-                (click)="irAPagina(paginaActual() + 1)"
-              >
-                Siguiente
-              </button>
-            </nav>
-          }
+          <akine-paginacion
+            etiqueta="Paginas de resultados de auditoria"
+            [paginaActual]="paginaActual()"
+            [totalPaginas]="totalPaginas()"
+            (cambioDePagina)="irAPagina($event)"
+          />
         }
       }
     }

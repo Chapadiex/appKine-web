@@ -5,9 +5,12 @@ import { catchError, of } from 'rxjs';
 
 import { ConsultorioPageResponse } from '../../../../api/generated/model/consultorio-page-response';
 import { ConsultorioResponse } from '../../../../api/generated/model/consultorio-response';
+import { ConfirmacionConMotivo } from '../../../../shared/components/confirmacion-con-motivo/confirmacion-con-motivo';
 import { ConsultoriosService } from '../../../../api/generated/api/consultorios.service';
+import { EstadoDeListado, vistaDeListado } from '../../../../shared/utils/estado-de-listado';
 import { OrganizacionesService } from '../../../../api/generated/api/organizaciones.service';
 import { PERMISO_CONSULTORIO_MANAGE } from '../../../../core/models/permisos';
+import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
 import { PermisoDirective } from '../../../../shared/directives/permiso.directive';
 import { RUTA_SELECTOR_CONTEXTO } from '../../../../core/models/rutas';
 import { SedesDelContexto } from '../../services/sedes-del-contexto';
@@ -19,13 +22,6 @@ import { etiquetaDeZona, zonasHorarias } from '../../models/zonas-horarias';
 
 /** Filtro de estado del listado. Los tres valores son los del contrato. */
 type FiltroEstado = 'ACTIVO' | 'INACTIVO' | 'TODOS';
-
-/** Estado del listado (ADR-0005: los cuatro casos son pantallas distintas). */
-type EstadoListado =
-  | { readonly tipo: 'sin-contexto' }
-  | { readonly tipo: 'cargando' }
-  | { readonly tipo: 'listo'; readonly pagina: ConsultorioPageResponse }
-  | { readonly tipo: 'error'; readonly mensaje: string; readonly faltaContexto: boolean };
 
 /** Operacion abierta sobre una fila. Solo una a la vez. */
 type TipoAccion = 'editar' | 'baja';
@@ -80,7 +76,7 @@ const POR_PAGINA = 20;
  */
 @Component({
   selector: 'app-consultorios-page',
-  imports: [ReactiveFormsModule, RouterLink, PermisoDirective],
+  imports: [ReactiveFormsModule, RouterLink, PermisoDirective, Paginacion, ConfirmacionConMotivo],
   templateUrl: './consultorios-page.html',
   styleUrl: '../../organization.css',
 })
@@ -98,7 +94,12 @@ export class ConsultoriosPage {
   protected readonly zonas = zonasHorarias();
   protected readonly etiquetaDeZona = etiquetaDeZona;
 
-  protected readonly estado = signal<EstadoListado>({ tipo: 'cargando' });
+  protected readonly estado = signal<EstadoDeListado<ConsultorioPageResponse>>({
+    tipo: 'cargando',
+  });
+
+  /** Los cinco valores derivados del estado, con los nombres que la plantilla ya usaba. */
+  private readonly vista = vistaDeListado<ConsultorioResponse>(this.estado);
   protected readonly filtro = signal<FiltroEstado>('ACTIVO');
   protected readonly paginaActual = signal(0);
 
@@ -135,35 +136,11 @@ export class ConsultoriosPage {
     contactEmail: ['', [Validators.email]],
   });
 
-  /** El motivo de la baja es obligatorio: es lo que explica la decision seis meses despues. */
-  protected readonly formularioBaja = this.formBuilder.nonNullable.group({
-    reason: ['', [Validators.required]],
-  });
-
-  protected readonly sedesDeLaPagina = computed(() => {
-    const estado = this.estado();
-    return estado.tipo === 'listo' ? (estado.pagina.content ?? []) : [];
-  });
-
-  protected readonly totalPaginas = computed(() => {
-    const estado = this.estado();
-    return estado.tipo === 'listo' ? (estado.pagina.totalPages ?? 0) : 0;
-  });
-
-  protected readonly totalSedes = computed(() => {
-    const estado = this.estado();
-    return estado.tipo === 'listo' ? (estado.pagina.totalElements ?? 0) : 0;
-  });
-
-  protected readonly mensajeError = computed(() => {
-    const estado = this.estado();
-    return estado.tipo === 'error' ? estado.mensaje : null;
-  });
-
-  protected readonly faltaContexto = computed(() => {
-    const estado = this.estado();
-    return estado.tipo === 'error' && estado.faltaContexto;
-  });
+  protected readonly sedesDeLaPagina = this.vista.filas;
+  protected readonly totalPaginas = this.vista.totalPaginas;
+  protected readonly totalSedes = this.vista.totalElementos;
+  protected readonly mensajeError = this.vista.mensajeError;
+  protected readonly faltaContexto = this.vista.faltaContexto;
 
   /**
    * `true` cuando el error abierto es el tope del plan.
@@ -272,16 +249,10 @@ export class ConsultoriosPage {
     this.errorAccion.set(null);
     this.causaAccion.set(null);
     this.intentos.set(0);
-    this.formularioBaja.reset({ reason: '' });
   }
 
   protected mostrarErrorEdicion(campo: 'name' | 'contactEmail'): boolean {
     const control = this.formularioEdicion.controls[campo];
-    return control.invalid && (control.touched || this.intentos() > 0);
-  }
-
-  protected mostrarErrorBaja(): boolean {
-    const control = this.formularioBaja.controls.reason;
     return control.invalid && (control.touched || this.intentos() > 0);
   }
 
@@ -336,17 +307,17 @@ export class ConsultoriosPage {
       });
   }
 
-  protected enviarBaja(): void {
+  /**
+   * Da de baja la sede del panel abierto.
+   *
+   * <p>El motivo llega ya validado y recortado desde {@link ConfirmacionConMotivo}: que el
+   * campo sea obligatorio, el foco al abrir y el `aria-describedby` del error son de la
+   * primitiva, porque no dependen de que lo que se da de baja sea una sede.
+   */
+  protected enviarBaja(motivo: string): void {
     const panel = this.panel();
     const orgId = this.tenantContext.organizationId();
     if (panel === null || orgId === null || this.enviando()) {
-      return;
-    }
-
-    this.intentos.update((valor) => valor + 1);
-    if (this.formularioBaja.invalid) {
-      this.formularioBaja.markAllAsTouched();
-      this.enfocar('#baja-reason');
       return;
     }
 
@@ -361,9 +332,7 @@ export class ConsultoriosPage {
       .deactivateConsultorio({
         orgId,
         consultorioId: panel.id,
-        deactivateConsultorioRequest: {
-          reason: this.formularioBaja.getRawValue().reason.trim(),
-        },
+        deactivateConsultorioRequest: { reason: motivo },
       })
       .subscribe({
         next: () => {

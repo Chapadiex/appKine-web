@@ -1,13 +1,14 @@
-h1 {
-  margin: 0 0 0.5rem;
-  font-size: 1.5rem;
-}
+/*
+ * Estilos propios del 404. El sistema de diseno vive en `src/design-system.css`.
+ */
 
+/* Una pagina de una sola frase no necesita la separacion de una pagina con secciones. */
 .descripcion {
   margin: 0 0 1.5rem;
-  color: #4a5a6a;
 }
 
+/* Azul, y no el azul casi negro del sistema: en una pagina sin nada mas que texto, el unico
+   enlace tiene que distinguirse del parrafo. Contraste 5.1:1 sobre blanco (WCAG 2.1 AA). */
 .enlace {
   color: #2f6fb2;
 }

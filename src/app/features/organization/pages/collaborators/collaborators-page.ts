@@ -1,4 +1,4 @@
-import { Component, ElementRef, computed, effect, inject, signal, untracked } from '@angular/core';
+import { Component, ElementRef, effect, inject, signal, untracked } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Observable } from 'rxjs';
 import { RouterLink } from '@angular/router';
@@ -7,22 +7,18 @@ import { catchError, of } from 'rxjs';
 import { AssignGrantRequest } from '../../../../api/generated/model/assign-grant-request';
 import { ChangeMembershipRequest } from '../../../../api/generated/model/change-membership-request';
 import { ColaboradoresService } from '../../../../api/generated/api/colaboradores.service';
+import { EstadoDeListado, vistaDeListado } from '../../../../shared/utils/estado-de-listado';
+import { ConfirmacionConMotivo } from '../../../../shared/components/confirmacion-con-motivo/confirmacion-con-motivo';
 import { MembershipGrantResponse } from '../../../../api/generated/model/membership-grant-response';
 import { MembershipPageResponse } from '../../../../api/generated/model/membership-page-response';
 import { MembershipResponse } from '../../../../api/generated/model/membership-response';
 import { PERMISOS_F1, PERMISO_COLABORADOR_MANAGE } from '../../../../core/models/permisos';
+import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
 import { PermisoDirective } from '../../../../shared/directives/permiso.directive';
 import { ETIQUETA_DE_ESTADO, ROLES_DE_VINCULO, etiquetaDeRol } from '../../models/roles';
 import { SedesDelContexto } from '../../services/sedes-del-contexto';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { traducirErrorColaborador } from '../../models/colaborador-errors';
-
-/** Estado del listado (ADR-0005: los cuatro casos son pantallas distintas). */
-type EstadoListado =
-  | { readonly tipo: 'sin-contexto' }
-  | { readonly tipo: 'cargando' }
-  | { readonly tipo: 'listo'; readonly pagina: MembershipPageResponse }
-  | { readonly tipo: 'error'; readonly mensaje: string; readonly faltaContexto: boolean };
 
 /** Operacion abierta sobre una fila. Solo una a la vez. */
 type TipoAccion = 'editar' | 'suspender' | 'reactivar' | 'revocar' | 'permisos';
@@ -65,7 +61,7 @@ const POR_PAGINA = 20;
  */
 @Component({
   selector: 'app-collaborators-page',
-  imports: [ReactiveFormsModule, RouterLink, PermisoDirective],
+  imports: [ReactiveFormsModule, RouterLink, PermisoDirective, Paginacion, ConfirmacionConMotivo],
   templateUrl: './collaborators-page.html',
   styleUrl: '../../organization.css',
 })
@@ -82,7 +78,17 @@ export class CollaboratorsPage {
   protected readonly permisosOtorgables = PERMISOS_F1;
   protected readonly etiquetaDeRol = etiquetaDeRol;
 
-  protected readonly estado = signal<EstadoListado>({ tipo: 'cargando' });
+  protected readonly estado = signal<EstadoDeListado<MembershipPageResponse>>({
+    tipo: 'cargando',
+  });
+
+  /**
+   * Los cinco valores derivados del estado, que antes eran cinco `computed` copiados aca.
+   *
+   * <p>Se reexponen con los nombres que la plantilla ya usaba: el cambio es de donde sale el
+   * valor, no de que muestra la pantalla.
+   */
+  private readonly vista = vistaDeListado<MembershipResponse>(this.estado);
   protected readonly paginaActual = signal(0);
 
   /** Fila y operacion abiertas, o `null` si no hay ninguna. Solo una a la vez. */
@@ -96,11 +102,6 @@ export class CollaboratorsPage {
 
   /** Permisos adicionales de la fila abierta en el panel `permisos`. `null` mientras carga. */
   protected readonly grants = signal<readonly MembershipGrantResponse[] | null>(null);
-
-  /** Motivo solo. Sirve a suspender, reactivar y revocar: las tres piden lo mismo. */
-  protected readonly formularioMotivo = this.formBuilder.nonNullable.group({
-    reason: ['', [Validators.required]],
-  });
 
   /**
    * Cambio de rol y/o de alcance.
@@ -134,30 +135,11 @@ export class CollaboratorsPage {
     validUntil: [''],
   });
 
-  protected readonly colaboradoresDeLaPagina = computed(() => {
-    const estado = this.estado();
-    return estado.tipo === 'listo' ? (estado.pagina.content ?? []) : [];
-  });
-
-  protected readonly totalPaginas = computed(() => {
-    const estado = this.estado();
-    return estado.tipo === 'listo' ? (estado.pagina.totalPages ?? 0) : 0;
-  });
-
-  protected readonly totalColaboradores = computed(() => {
-    const estado = this.estado();
-    return estado.tipo === 'listo' ? (estado.pagina.totalElements ?? 0) : 0;
-  });
-
-  protected readonly mensajeError = computed(() => {
-    const estado = this.estado();
-    return estado.tipo === 'error' ? estado.mensaje : null;
-  });
-
-  protected readonly faltaContexto = computed(() => {
-    const estado = this.estado();
-    return estado.tipo === 'error' && estado.faltaContexto;
-  });
+  protected readonly colaboradoresDeLaPagina = this.vista.filas;
+  protected readonly totalPaginas = this.vista.totalPaginas;
+  protected readonly totalColaboradores = this.vista.totalElementos;
+  protected readonly mensajeError = this.vista.mensajeError;
+  protected readonly faltaContexto = this.vista.faltaContexto;
 
   constructor() {
     effect(() => {
@@ -276,13 +258,7 @@ export class CollaboratorsPage {
     this.enviando.set(false);
     this.errorAccion.set(null);
     this.intentos.set(0);
-    this.formularioMotivo.reset({ reason: '' });
     this.formularioGrant.reset({ permissionCode: '', reason: '', validUntil: '' });
-  }
-
-  protected mostrarErrorMotivo(): boolean {
-    const control = this.formularioMotivo.controls.reason;
-    return control.invalid && (control.touched || this.intentos() > 0);
   }
 
   protected mostrarErrorEdicion(): boolean {
@@ -295,25 +271,40 @@ export class CollaboratorsPage {
     return control.invalid && (control.touched || this.intentos() > 0);
   }
 
-  /** Suspender, reactivar o revocar: las tres mandan `MembershipReasonRequest`. */
-  protected enviarMotivo(): void {
+  /**
+   * Encabezado del panel de motivo, segun cual de las tres acciones se abrio.
+   *
+   * <p>Lo redacta la pantalla y no la primitiva: {@link ConfirmacionConMotivo} no sabe -ni
+   * tiene que saber- que lo que se suspende es el vinculo de una cuenta.
+   */
+  protected tituloDelPanel(colaborador: MembershipResponse): string {
+    const panel = this.panel();
+    const cuenta = `la cuenta ${colaborador.accountId}`;
+    if (panel?.tipo === 'suspender') {
+      return `Suspender a ${cuenta}`;
+    }
+    if (panel?.tipo === 'reactivar') {
+      return `Reactivar a ${cuenta}`;
+    }
+    return `Revocar el vinculo de ${cuenta}`;
+  }
+
+  /**
+   * Suspender, reactivar o revocar: las tres mandan `MembershipReasonRequest`.
+   *
+   * <p>El motivo llega ya validado y recortado desde {@link ConfirmacionConMotivo}.
+   */
+  protected enviarMotivo(motivo: string): void {
     const panel = this.panel();
     const orgId = this.tenantContext.organizationId();
     if (panel === null || orgId === null || this.enviando()) {
       return;
     }
 
-    this.intentos.update((valor) => valor + 1);
-    if (this.formularioMotivo.invalid) {
-      this.formularioMotivo.markAllAsTouched();
-      this.enfocar('#panel-motivo');
-      return;
-    }
-
     const parametros = {
       orgId,
       membershipId: panel.id,
-      membershipReasonRequest: { reason: this.formularioMotivo.getRawValue().reason.trim() },
+      membershipReasonRequest: { reason: motivo },
     };
 
     if (panel.tipo === 'suspender') {

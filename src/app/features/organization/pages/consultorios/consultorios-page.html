@@ -88,7 +88,12 @@
         } @else {
           <p class="ayuda">{{ totalSedes() }} sedes con el filtro elegido.</p>
 
-          <div class="tabla-scroll">
+          <div
+            class="tabla-scroll"
+            tabindex="0"
+            role="region"
+            aria-label="Sedes de la organizacion"
+          >
             <table class="tabla">
               <caption class="visualmente-oculto">
                 Sedes de la organizacion, con su zona horaria, agenda y estado
@@ -109,7 +114,7 @@
                     <th scope="row">
                       {{ sede.name }}
                       @if (esLaDelContexto(sede.id)) {
-                        <span class="marca">Estas trabajando aca</span>
+                        <span class="etiqueta">Estas trabajando aca</span>
                       }
                     </th>
                     <td>{{ sede.timezone ?? '-' }}</td>
@@ -374,9 +379,16 @@
                   @if (panelAbierto(sede.id, 'baja')) {
                     <tr class="fila-panel">
                       <td colspan="6">
-                        <form [formGroup]="formularioBaja" (ngSubmit)="enviarBaja()" novalidate>
-                          <h3 class="panel__titulo">Dar de baja {{ sede.name }}</h3>
-
+                        <akine-confirmacion-con-motivo
+                          idCampo="baja-reason"
+                          etiqueta="Motivo de la baja"
+                          textoConfirmar="Confirmar la baja"
+                          ayuda="Queda en la auditoria y en la propia fila: es lo que explica esta decision dentro de seis meses."
+                          [titulo]="'Dar de baja ' + (sede.name ?? '')"
+                          [enviando]="enviando()"
+                          (confirmado)="enviarBaja($event)"
+                          (cancelado)="cerrarPanel()"
+                        >
                           <p class="ayuda">
                             La sede deja de admitir operaciones nuevas, pero no se borra: sigue en
                             este listado con el motivo y la fecha, porque los turnos, sesiones y
@@ -389,43 +401,7 @@
                               vas a tener que elegir otra para seguir.
                             </p>
                           }
-
-                          <div class="campo">
-                            <label for="baja-reason">Motivo de la baja</label>
-                            <input
-                              id="baja-reason"
-                              type="text"
-                              formControlName="reason"
-                              autocomplete="off"
-                              [attr.aria-invalid]="mostrarErrorBaja()"
-                              [attr.aria-describedby]="
-                                mostrarErrorBaja() ? 'baja-reason-error' : 'baja-reason-ayuda'
-                              "
-                            />
-                            <p class="ayuda" id="baja-reason-ayuda">
-                              Queda en la auditoria y en la propia fila: es lo que explica esta
-                              decision dentro de seis meses.
-                            </p>
-                            @if (mostrarErrorBaja()) {
-                              <p class="campo__error" id="baja-reason-error">
-                                El motivo es obligatorio.
-                              </p>
-                            }
-                          </div>
-
-                          <div class="acciones">
-                            <button type="submit" class="boton" [disabled]="enviando()">
-                              Confirmar la baja
-                            </button>
-                            <button
-                              type="button"
-                              class="boton boton--secundario"
-                              (click)="cerrarPanel()"
-                            >
-                              Cancelar
-                            </button>
-                          </div>
-                        </form>
+                        </akine-confirmacion-con-motivo>
 
                         <div aria-live="polite">
                           @if (errorAccion(); as mensaje) {
@@ -440,27 +416,12 @@
             </table>
           </div>
 
-          @if (totalPaginas() > 1) {
-            <nav class="paginacion" aria-label="Paginas de sedes">
-              <button
-                type="button"
-                class="boton boton--secundario"
-                [disabled]="paginaActual() === 0"
-                (click)="irAPagina(paginaActual() - 1)"
-              >
-                Anterior
-              </button>
-              <span class="ayuda">Pagina {{ paginaActual() + 1 }} de {{ totalPaginas() }}</span>
-              <button
-                type="button"
-                class="boton boton--secundario"
-                [disabled]="paginaActual() + 1 >= totalPaginas()"
-                (click)="irAPagina(paginaActual() + 1)"
-              >
-                Siguiente
-              </button>
-            </nav>
-          }
+          <akine-paginacion
+            etiqueta="Paginas de sedes"
+            [paginaActual]="paginaActual()"
+            [totalPaginas]="totalPaginas()"
+            (cambioDePagina)="irAPagina($event)"
+          />
         }
       }
     }

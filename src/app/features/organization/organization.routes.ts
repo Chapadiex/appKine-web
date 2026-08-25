@@ -7,6 +7,16 @@ import {
   PERMISO_CONSULTORIO_MANAGE,
 } from '../../core/models/permisos';
 import { permissionGuard } from '../../core/guards/permission.guard';
+import { ANCHO_AMPLIO, DATA_ANCHO } from '../../core/models/ancho-de-contenido';
+
+/**
+ * Las tres pantallas de tabla piden `ancho: 'amplio'` al layout raiz.
+ *
+ * <p>Con los 46rem de lectura la tabla de colaboradores desborda 101 px y esconde la
+ * columna de acciones detras del scroll horizontal: los botones existen, pero para el
+ * usuario no. El `max-width` vive en el `main` del shell, que es un ancestro, asi que la
+ * pagina no puede ensancharse sola — tiene que pedirlo por la ruta.
+ */
 
 /**
  * Rutas de la feature `organization` (M01 y M05/M24, etapas AKINE-01.01 y 01.03).
@@ -63,6 +73,7 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./pages/collaborators/collaborators-page').then((m) => m.CollaboratorsPage),
     title: 'AKINE - Colaboradores',
+    data: { [DATA_ANCHO]: ANCHO_AMPLIO },
   },
   // Sedes (AKINE-02.01). Mismo orden que colaboradores: el alta antes que el listado.
   //
@@ -84,11 +95,13 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./pages/consultorios/consultorios-page').then((m) => m.ConsultoriosPage),
     title: 'AKINE - Sedes',
+    data: { [DATA_ANCHO]: ANCHO_AMPLIO },
   },
   {
     path: 'auditoria',
     canActivate: [permissionGuard(PERMISO_AUDITORIA_READ)],
     loadComponent: () => import('./pages/audit/audit-page').then((m) => m.AuditPage),
     title: 'AKINE - Auditoria',
+    data: { [DATA_ANCHO]: ANCHO_AMPLIO },
   },
 ];
