@@ -12,5 +12,5 @@ export const environment = {
   production: false,
   apiBaseUrl: '',
   /** Version del contrato OpenAPI desde la que se genero `src/app/api/generated`. */
-  contractVersion: '0.7.0',
+  contractVersion: '0.8.0',
 } as const;
