@@ -55,6 +55,15 @@ export const routes: Routes = [
       import('./pages/reset-password/reset-password-page').then((m) => m.ResetPasswordPage),
     title: 'AKINE - Poner una contrasena nueva',
   },
+  // Invitacion a colaborar (M05, AKINE-02.03). Va con las de auth y no bajo `/organizacion`
+  // porque quien la abre NO tiene sesion y muchas veces ni cuenta: lo que lo autoriza es el
+  // token del enlace. Pedirle que inicie sesion antes seria pedirle que use una cuenta que
+  // todavia no existe.
+  {
+    path: 'invitacion',
+    loadComponent: () => import('./pages/invitacion/invitacion-page').then((m) => m.InvitacionPage),
+    title: 'AKINE - Invitacion a colaborar',
+  },
   {
     path: 'sesion-expirada',
     loadComponent: () =>

@@ -100,6 +100,14 @@ export enum ProblemType {
 
     HTTPS___AKINE_APP_PROBLEMS_CATALOGO_SOLICITUD_DUPLICADA = 'https://akine.app/problems/catalogo-solicitud-duplicada',
 
-    HTTPS___AKINE_APP_PROBLEMS_CATALOGO_SOLICITUD_YA_RESUELTA = 'https://akine.app/problems/catalogo-solicitud-ya-resuelta'
+    HTTPS___AKINE_APP_PROBLEMS_CATALOGO_SOLICITUD_YA_RESUELTA = 'https://akine.app/problems/catalogo-solicitud-ya-resuelta',
+
+    HTTPS___AKINE_APP_PROBLEMS_INVITACION_PENDIENTE_DUPLICADA = 'https://akine.app/problems/invitacion-pendiente-duplicada',
+
+    HTTPS___AKINE_APP_PROBLEMS_INVITACION_VENCIDA = 'https://akine.app/problems/invitacion-vencida',
+
+    HTTPS___AKINE_APP_PROBLEMS_INVITACION_YA_RESUELTA = 'https://akine.app/problems/invitacion-ya-resuelta',
+
+    HTTPS___AKINE_APP_PROBLEMS_COLABORADOR_YA_VINCULADO = 'https://akine.app/problems/colaborador-ya-vinculado'
 }
 

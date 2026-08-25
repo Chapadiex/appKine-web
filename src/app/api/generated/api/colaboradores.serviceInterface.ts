@@ -15,6 +15,7 @@ import { AssignGrantRequest } from '../model/models';
 import { ChangeMembershipRequest } from '../model/models';
 import { CreateMembershipRequest } from '../model/models';
 import { CreatedMembershipResponse } from '../model/models';
+import { DesvinculacionImpactoResponse } from '../model/models';
 import { MembershipGrantResponse } from '../model/models';
 import { MembershipPageResponse } from '../model/models';
 import { MembershipReasonRequest } from '../model/models';
@@ -39,6 +40,11 @@ export interface ChangeMembershipRequestParams {
 
 export interface CreateDirectMembershipRequestParams {
     createMembershipRequest: CreateMembershipRequest;
+}
+
+export interface GetDesvinculacionImpactoRequestParams {
+    orgId: number;
+    membershipId: number;
 }
 
 export interface GetMembershipRequestParams {
@@ -110,6 +116,14 @@ export interface ColaboradoresServiceInterface {
 * @param requestParameters
      */
     createDirectMembership(requestParameters: CreateDirectMembershipRequestParams, extraHttpRequestParams?: any): Observable<CreatedMembershipResponse>;
+
+    /**
+     * Que quedaria pendiente si se desvincula a este colaborador
+     * Requiere colaborador:read, y no colaborador:manage: sirve para DECIDIR, y quien decide suele mirar antes de tener el permiso de ejecutar.  ESTO NO BLOQUEA NADA. RN-M05-004 pide que los turnos futuros queden visibles para resolucion, no que impidan la desvinculacion: cuando alguien renuncia, renuncio. Es la diferencia con la baja de una sede, donde las operaciones vigentes si la impiden.  Hoy responde siempre count&#x3D;0: M12 (agenda) no existe todavia y no hay ninguna sonda enchufada. La operacion se publica igual para que la pantalla de desvinculacion se escriba una sola vez y el numero aparezca el dia que la agenda exista, sin cambiar el contrato.
+     * @endpoint get /api/v1/organizations/{orgId}/memberships/{membershipId}/desvinculacion-impacto
+* @param requestParameters
+     */
+    getDesvinculacionImpacto(requestParameters: GetDesvinculacionImpactoRequestParams, extraHttpRequestParams?: any): Observable<DesvinculacionImpactoResponse>;
 
     /**
      * Un colaborador de la organizacion

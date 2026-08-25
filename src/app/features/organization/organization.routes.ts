@@ -67,6 +67,19 @@ export const routes: Routes = [
       import('./pages/new-collaborator/new-collaborator-page').then((m) => m.NewCollaboratorPage),
     title: 'AKINE - Vincular colaborador',
   },
+  // Invitaciones (M05, AKINE-02.03). Antes que `colaboradores` por lo mismo que el alta.
+  //
+  // Exige `colaborador:manage` y no `colaborador:read`: lo que se ve aca son direcciones de
+  // correo de personas que todavia no aceptaron nada. No es la lista de colaboradores, es la
+  // lista de a quien se le escribio, y el backend pide el mismo permiso.
+  {
+    path: 'colaboradores/invitaciones',
+    canActivate: [permissionGuard(PERMISO_COLABORADOR_MANAGE)],
+    loadComponent: () =>
+      import('./pages/invitaciones/invitaciones-page').then((m) => m.InvitacionesPage),
+    title: 'AKINE - Invitaciones',
+    data: { [DATA_ANCHO]: ANCHO_AMPLIO },
+  },
   {
     path: 'colaboradores',
     canActivate: [permissionGuard(PERMISO_COLABORADOR_READ)],

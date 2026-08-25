@@ -25,6 +25,8 @@ import { CreateMembershipRequest } from '../model/create-membership-request';
 // @ts-ignore
 import { CreatedMembershipResponse } from '../model/created-membership-response';
 // @ts-ignore
+import { DesvinculacionImpactoResponse } from '../model/desvinculacion-impacto-response';
+// @ts-ignore
 import { MembershipGrantResponse } from '../model/membership-grant-response';
 // @ts-ignore
 import { MembershipPageResponse } from '../model/membership-page-response';
@@ -44,6 +46,7 @@ import {
     AssignMembershipGrantRequestParams,
     ChangeMembershipRequestParams,
     CreateDirectMembershipRequestParams,
+    GetDesvinculacionImpactoRequestParams,
     GetMembershipRequestParams,
     ListMembershipGrantsRequestParams,
     ListMembershipsRequestParams,
@@ -277,6 +280,69 @@ export class ColaboradoresService extends BaseService implements ColaboradoresSe
             {
                 context: localVarHttpContext,
                 body: createMembershipRequest,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * Que quedaria pendiente si se desvincula a este colaborador
+     * Requiere colaborador:read, y no colaborador:manage: sirve para DECIDIR, y quien decide suele mirar antes de tener el permiso de ejecutar.  ESTO NO BLOQUEA NADA. RN-M05-004 pide que los turnos futuros queden visibles para resolucion, no que impidan la desvinculacion: cuando alguien renuncia, renuncio. Es la diferencia con la baja de una sede, donde las operaciones vigentes si la impiden.  Hoy responde siempre count&#x3D;0: M12 (agenda) no existe todavia y no hay ninguna sonda enchufada. La operacion se publica igual para que la pantalla de desvinculacion se escriba una sola vez y el numero aparezca el dia que la agenda exista, sin cambiar el contrato.
+     * @endpoint get /api/v1/organizations/{orgId}/memberships/{membershipId}/desvinculacion-impacto
+     * @param requestParameters
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public getDesvinculacionImpacto(requestParameters: GetDesvinculacionImpactoRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<DesvinculacionImpactoResponse>;
+    public getDesvinculacionImpacto(requestParameters: GetDesvinculacionImpactoRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<DesvinculacionImpactoResponse>>;
+    public getDesvinculacionImpacto(requestParameters: GetDesvinculacionImpactoRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<DesvinculacionImpactoResponse>>;
+    public getDesvinculacionImpacto(requestParameters: GetDesvinculacionImpactoRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        const orgId = requestParameters?.orgId;
+        if (orgId === null || orgId === undefined) {
+            throw new Error('Required parameter orgId was null or undefined when calling getDesvinculacionImpacto.');
+        }
+        const membershipId = requestParameters?.membershipId;
+        if (membershipId === null || membershipId === undefined) {
+            throw new Error('Required parameter membershipId was null or undefined when calling getDesvinculacionImpacto.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/organizations/${this.configuration.encodeParam({name: "orgId", value: orgId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/memberships/${this.configuration.encodeParam({name: "membershipId", value: membershipId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/desvinculacion-impacto`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<DesvinculacionImpactoResponse>('get', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
                 responseType: <any>responseType_,
                 ...(withCredentials ? { withCredentials } : {}),
                 headers: localVarHeaders,

@@ -1,0 +1,176 @@
+<h1>Te invitaron a AKINE</h1>
+
+<div aria-live="polite">
+  @switch (estado().tipo) {
+    @case ('cargando') {
+      <p class="estado estado--cargando">Buscando la invitacion&hellip;</p>
+    }
+
+    @case ('sin-token') {
+      <p class="estado estado--error" role="alert">
+        Este enlace esta incompleto: le falta el codigo de la invitacion.
+      </p>
+      <p class="ayuda">
+        Suele pasar cuando el correo se copia y pega a mano y se corta a la mitad. Abri el enlace
+        directamente desde el correo, o pedile a quien te invito que te lo reenvie.
+      </p>
+      <a class="boton boton--secundario" routerLink="/auth/ingresar">Ir a iniciar sesion</a>
+    }
+
+    @case ('error') {
+      <p class="estado estado--error" role="alert">{{ mensajeError() }}</p>
+
+      @if (vencida()) {
+        <!--
+          El unico error del modulo con una salida propia, y por eso se distingue del resto: el
+          backend responde 409 y no 404 justamente para que se pueda decir esto.
+        -->
+        <p class="ayuda">
+          La invitacion sigue en pie: lo unico que caduco es el enlace. Quien te invito la ve en su
+          listado y puede mandarte uno nuevo sin volver a empezar.
+        </p>
+        <button type="button" class="boton boton--secundario" (click)="consultar()">
+          Volver a intentar
+        </button>
+      } @else {
+        <a class="boton boton--secundario" routerLink="/auth/ingresar">Ir a iniciar sesion</a>
+      }
+    }
+
+    @case ('listo') {
+      @if (invitacion(); as datos) {
+        <section class="tarjeta" aria-labelledby="titulo-invitacion">
+          <h2 id="titulo-invitacion">{{ datos.organizacionNombre }} te quiere en su equipo</h2>
+
+          <p>
+            Te invitaron a trabajar
+            @if (datos.consultorioNombre) {
+              en <b>{{ datos.consultorioNombre }}</b>
+            } @else {
+              en toda la organizacion
+            }
+            como <b>{{ datos.roleCode }}</b
+            >.
+          </p>
+
+          <p class="ayuda">
+            La invitacion se envio a <b>{{ datos.email }}</b
+            >. Si esa no es tu direccion, no aceptes: avisale a quien te invito.
+          </p>
+        </section>
+
+        <form [formGroup]="formularioAlta" (ngSubmit)="aceptar()" novalidate>
+          @if (requiereRegistro()) {
+            <!--
+              Solo cuando hace falta. A quien ya tiene cuenta pedirle una contrasena nueva seria
+              pedirle que la cambie sin querer: el backend ignora estos campos en ese caso, y
+              mostrarlos igual seria mentirle sobre lo que esta haciendo.
+            -->
+            <section class="tarjeta" aria-labelledby="titulo-alta-invitado">
+              <h2 id="titulo-alta-invitado">Crea tu cuenta para aceptar</h2>
+              <p class="ayuda">
+                Todavia no tenes cuenta en AKINE. La creamos ahora, en este mismo paso: no vas a
+                recibir ningun correo de activacion, porque abrir este enlace ya confirmo tu
+                direccion.
+              </p>
+
+              <div class="campo">
+                <label for="invitacion-nombre">Nombre</label>
+                <input
+                  id="invitacion-nombre"
+                  type="text"
+                  formControlName="nombre"
+                  autocomplete="given-name"
+                  [attr.aria-invalid]="mostrarErrorDe('nombre') ? 'true' : null"
+                />
+                @if (mostrarErrorDe('nombre')) {
+                  <p class="campo__error">El nombre es obligatorio.</p>
+                }
+              </div>
+
+              <div class="campo">
+                <label for="invitacion-apellido">Apellido (opcional)</label>
+                <input
+                  id="invitacion-apellido"
+                  type="text"
+                  formControlName="apellido"
+                  autocomplete="family-name"
+                />
+              </div>
+
+              <div class="campo">
+                <label for="invitacion-password">Contrasena</label>
+                <input
+                  id="invitacion-password"
+                  type="password"
+                  formControlName="password"
+                  autocomplete="new-password"
+                  [attr.aria-invalid]="mostrarErrorDe('password') ? 'true' : null"
+                  aria-describedby="invitacion-password-ayuda"
+                />
+                @if (mostrarErrorDe('password')) {
+                  <p class="campo__error">La contrasena tiene que tener al menos 10 caracteres.</p>
+                }
+                <p class="ayuda" id="invitacion-password-ayuda">
+                  Al menos 10 caracteres. Es con la que vas a entrar a AKINE de ahora en mas.
+                </p>
+              </div>
+            </section>
+          } @else {
+            <p class="ayuda">
+              Ya tenes una cuenta en AKINE con esa direccion, asi que no hace falta que crees nada:
+              al aceptar vas a poder entrar con la contrasena de siempre.
+            </p>
+          }
+
+          @if (errorAccion(); as mensaje) {
+            <p class="estado estado--error" role="alert">{{ mensaje }}</p>
+          }
+
+          <p class="acciones">
+            <button type="submit" class="boton" [disabled]="enviando()">
+              {{ enviando() ? 'Guardando...' : 'Aceptar la invitacion' }}
+            </button>
+            <button
+              type="button"
+              class="boton boton--secundario"
+              (click)="rechazar()"
+              [disabled]="enviando()"
+            >
+              No, gracias
+            </button>
+          </p>
+          <p class="ayuda">
+            Rechazarla no te crea ninguna cuenta ni te compromete a nada, y no hace falta que
+            expliques por que.
+          </p>
+        </form>
+      }
+    }
+
+    @case ('aceptada') {
+      <p class="estado estado--ok">Listo: ya sos parte del equipo.</p>
+
+      @if (cuentaReciencreada()) {
+        <p>
+          Tu cuenta quedo creada y activa. Entra con tu email y la contrasena que acabas de elegir.
+        </p>
+      } @else {
+        <p>
+          Quedaste vinculado con tu cuenta de siempre. Entra con tu email y tu contrasena habitual,
+          y vas a ver la organizacion nueva al elegir el contexto de trabajo.
+        </p>
+      }
+
+      <a class="boton" routerLink="/auth/ingresar">Iniciar sesion</a>
+    }
+
+    @case ('rechazada') {
+      <p class="estado estado--ok">Rechazaste la invitacion.</p>
+      <p class="ayuda">
+        No creamos ninguna cuenta y no queda nada tuyo en AKINE mas alla del registro de que
+        respondiste. Si cambias de opinion, pedile a quien te invito que te invite de nuevo.
+      </p>
+    }
+  }
+</div>

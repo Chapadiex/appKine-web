@@ -15,6 +15,10 @@ api/consultorios.service.ts
 api/consultorios.serviceInterface.ts
 api/espacios.service.ts
 api/espacios.serviceInterface.ts
+api/invitaciones-recibidas.service.ts
+api/invitaciones-recibidas.serviceInterface.ts
+api/invitaciones.service.ts
+api/invitaciones.serviceInterface.ts
 api/mi-cuenta.service.ts
 api/mi-cuenta.serviceInterface.ts
 api/organizaciones.service.ts
@@ -37,6 +41,8 @@ configuration.ts
 encoder.ts
 git_push.sh
 index.ts
+model/accept-invitacion-request.ts
+model/accepted-invitacion-response.ts
 model/accepted-response.ts
 model/access-token-response.ts
 model/account-response.ts
@@ -46,6 +52,7 @@ model/assign-grant-request.ts
 model/audit-event-page-response.ts
 model/audit-event-response.ts
 model/authorized-context-response.ts
+model/cancel-invitacion-request.ts
 model/catalogo-concepto-page-response.ts
 model/catalogo-concepto-response.ts
 model/catalogo-solicitud-response.ts
@@ -57,6 +64,7 @@ model/create-catalogo-concepto-request.ts
 model/create-catalogo-solicitud-request.ts
 model/create-consultorio-request.ts
 model/create-espacio-request.ts
+model/create-invitacion-request.ts
 model/create-membership-request.ts
 model/create-organization-request.ts
 model/create-vigencia-request.ts
@@ -64,12 +72,17 @@ model/created-membership-response.ts
 model/deactivate-catalogo-request.ts
 model/deactivate-consultorio-request.ts
 model/deactivate-espacio-request.ts
+model/decline-invitacion-request.ts
+model/desvinculacion-impacto-response.ts
 model/effective-permissions-response.ts
 model/espacio-availability-response.ts
 model/espacio-page-response.ts
 model/espacio-response.ts
 model/grant-platform-role-request.ts
 model/grant-support-access-request.ts
+model/invitacion-preview-response.ts
+model/invitacion-response.ts
+model/invitacion-token-request.ts
 model/limit-usage-response.ts
 model/login-request.ts
 model/membership-grant-response.ts

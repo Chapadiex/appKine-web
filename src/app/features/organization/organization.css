@@ -183,3 +183,25 @@
   font-weight: 400;
   color: #4a5568;
 }
+
+/*
+ * La nota que explica como funciona una invitacion (M05, AKINE-02.03).
+ *
+ * Mismo tratamiento que `.nota-servicio` en `resource.css` y `.nota-alcance` en `catalog.css`:
+ * borde de acento y encabezado propio, porque es la aclaracion que evita los dos malentendidos
+ * del modulo -"la invite y no puede entrar" y "invite a cinco con un lugar libre"- y en el medio
+ * de la prosa de la pantalla nadie la lee. El color no es lo unico que la distingue, asi que
+ * sigue comunicando en escala de grises (WCAG 1.4.1).
+ */
+.nota-invitaciones {
+  border-left: 4px solid #1b3a5c;
+  background: #f4f7fa;
+}
+
+.nota-invitaciones p {
+  margin: 0 0 0.5rem;
+}
+
+.nota-invitaciones p:last-child {
+  margin-bottom: 0;
+}
