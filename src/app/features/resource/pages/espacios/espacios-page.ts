@@ -19,7 +19,6 @@ import { EspacioResponse } from '../../../../api/generated/model/espacio-respons
 import { EspaciosService } from '../../../../api/generated/api/espacios.service';
 import { EstadoDeListado, vistaDeListado } from '../../../../shared/utils/estado-de-listado';
 import { PERMISO_CONSULTORIO_MANAGE } from '../../../../core/models/permisos';
-import { PermissionsStore } from '../../../../core/services/permissions.store';
 import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
 import { PermisoDirective } from '../../../../shared/directives/permiso.directive';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
@@ -93,7 +92,6 @@ export class EspaciosPage {
   private readonly tenantContext = inject(TenantContextStore);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly formBuilder = inject(FormBuilder);
-  private readonly permisos = inject(PermissionsStore);
   private readonly injector = inject(Injector);
 
   protected readonly permisoManage = PERMISO_CONSULTORIO_MANAGE;
@@ -196,10 +194,6 @@ export class EspaciosPage {
         this.exito.set(null);
         this.paginaActual.set(0);
         this.filtro.set('ACTIVO');
-        // Esta ruta NO lleva `permissionGuard` -el listado se abre con solo ser miembro-, asi
-        // que nadie mas pide los permisos. Sin esto, `*akinePermiso` esconde todas las
-        // acciones y un administrador ve la tabla sin un solo boton.
-        this.permisos.asegurarCargados();
         this.cargar();
       });
     });

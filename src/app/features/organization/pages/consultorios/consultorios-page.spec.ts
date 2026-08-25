@@ -183,6 +183,51 @@ describe('ConsultoriosPage', () => {
     });
   });
 
+  /**
+   * El unico test que ejercita el camino REAL de esta pantalla.
+   *
+   * <p>Todos los demas —y los de las otras dos pantallas con acciones— siembran el store de
+   * permisos a mano antes de montar el componente, asi que la <b>carga</b> nunca se ejercitaba:
+   * el defecto era invisible para la suite entera. `/organizacion/sedes` no lleva
+   * `permissionGuard` a proposito, porque el `GET` solo exige ser miembro vigente, y hasta
+   * AKINE-02.02 ese guard era el unico que pedia los permisos. Resultado: nadie los pedia,
+   * `cargados()` quedaba en `false` y `*akinePermiso` escondia el alta y las acciones de cada
+   * fila. Un administrador veia la tabla completa y ni un boton.
+   *
+   * <p>Por eso aca <b>no se siembra nada</b>: se monta con el contexto puesto y se afirma que
+   * la pantalla misma sale a pedir los permisos y despues dibuja las acciones.
+   */
+  it('sin permissionGuard y sin sembrar el store, la pantalla pide los permisos y dibuja las acciones', async () => {
+    tenantContext.select({
+      organizationId: 1,
+      organizationName: 'Belgrano',
+      consultorioId: 3,
+      consultorioName: 'Sede Centro',
+    });
+
+    const fixture = TestBed.createComponent(ConsultoriosPage);
+    fixture.detectChanges();
+
+    // Nadie llamo a `cargar()`: si esta peticion no existe, la pantalla nunca va a saber que
+    // el usuario puede gestionar sedes y las acciones no aparecen jamas.
+    httpMock
+      .expectOne('/api/v1/me/permissions')
+      .flush({ permissions: [PERMISO_CONSULTORIO_MANAGE] });
+
+    httpMock.expectOne(esListado(1)).flush(PAGINA);
+    responderSedes(1);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    // Y una sola peticion, no una por cada elemento con la directiva: el alta mas una fila
+    // activa mas una inactiva son tres instancias de `*akinePermiso`.
+    httpMock.expectNone('/api/v1/me/permissions');
+
+    expect(texto(fixture)).toContain('Abrir una sede nueva');
+    expect(botones(fixture)).toContain('Editar');
+    expect(botones(fixture)).toContain('Dar de baja');
+  });
+
   /** Monta la pantalla con contexto sobre la sede 3, permiso de gestion y las dos sedes. */
   async function montar() {
     tenantContext.select({
@@ -235,6 +280,13 @@ describe('ConsultoriosPage', () => {
 
 function texto(fixture: { nativeElement: HTMLElement }): string {
   return fixture.nativeElement.textContent ?? '';
+}
+
+/** Etiquetas de los botones dibujados. Sirve para afirmar que una accion existe de verdad. */
+function botones(fixture: { nativeElement: HTMLElement }): string[] {
+  return [...fixture.nativeElement.querySelectorAll('button')].map((boton) =>
+    (boton.textContent ?? '').trim(),
+  );
 }
 
 function abrir(fixture: { nativeElement: HTMLElement; detectChanges(): void }, etiqueta: string) {

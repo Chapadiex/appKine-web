@@ -49,8 +49,23 @@ import { PermissionsStore } from '../../core/services/permissions.store';
  * historia clinica ofrece de menos y no de mas. Ademas es coherente con el resto del
  * arranque: `provideAppInitializer` ya espera a `restaurarSesion()` antes de activar la
  * primera ruta, y {@link permissionGuard} carga los permisos antes de dejar entrar, asi que
- * en la navegacion normal la ventana ni siquiera se llega a ver — el caso real que queda es
- * el de una pantalla que se monta sin guard de permiso.
+ * en la navegacion normal la ventana ni siquiera se llega a ver.
+ *
+ * <h2>La directiva PIDE los permisos, no solo los lee</h2>
+ *
+ * <p>Hasta AKINE-02.02 el unico que llamaba a `PermissionsStore.cargar()` era
+ * {@link permissionGuard}. Una ruta que no lleva ese guard —el listado de sedes y el de
+ * espacios, que se abren con solo ser miembro porque el `GET` no exige mas que eso— no lo
+ * llamaba nadie: `cargados()` se quedaba en `false` y esta directiva escondia <b>todas</b>
+ * las acciones. Un administrador veia la tabla completa y ni un boton, sin ningun error que
+ * lo explicara.
+ *
+ * <p>Por eso el `effect` llama a `PermissionsStore.asegurarCargados()` mientras el contenido
+ * este oculto. <b>Va aca y no en cada pantalla</b>: dejarselo a la pantalla es como nacio el
+ * defecto —la proxima que se olvide vuelve a tenerlo, en silencio—, mientras que esto no se
+ * puede olvidar, porque pedir los permisos pasa a ser parte de usar la directiva. La
+ * idempotencia, la carga en vuelo compartida y el corte sin contexto viven en el store: veinte
+ * filas son una sola peticion, y una pantalla sin sesion no dispara ninguna.
  *
  * <p><b>Lo que NO resuelve, y hay que resolver en la pantalla.</b> Un contenedor entero
  * dentro de `*akinePermiso` deja la pantalla vacia durante la ventana, y "vacio" y "no
@@ -100,6 +115,20 @@ export class PermisoDirective {
 
     effect(() => {
       const debeVerse = this.visible();
+
+      // Los permisos no se piden solos. Esta directiva es el unico consumidor que existe en
+      // TODA pantalla que muestre acciones condicionadas, con guard de permiso o sin el, asi
+      // que es el unico lugar donde pedirlos no se puede olvidar. `asegurarCargados` no hace
+      // nada si ya estan, si hay una carga en vuelo o si no hay contexto: veinte filas con la
+      // directiva siguen siendo una sola peticion, y una pantalla publica, ninguna.
+      //
+      // Va DENTRO del `effect` y no en el constructor a proposito: `cargados()` vuelve a
+      // `false` en cada cambio de contexto -por comparacion de epoca, en el mismo tick-, y eso
+      // reejecuta esto. Un `asegurarCargados()` suelto en el constructor cargaria los permisos
+      // de la primera organizacion y no los de la segunda.
+      if (!debeVerse) {
+        this.permisos.asegurarCargados();
+      }
 
       if (debeVerse && !creada) {
         this.contenedor.createEmbeddedView(this.template);

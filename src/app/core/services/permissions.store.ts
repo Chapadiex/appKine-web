@@ -1,5 +1,5 @@
 import { Injectable, Signal, computed, inject, signal } from '@angular/core';
-import { Observable, map, tap } from 'rxjs';
+import { Observable, finalize, map, tap } from 'rxjs';
 
 import { MiCuentaService } from '../../api/generated/api/mi-cuenta.service';
 import { TenantContextStore } from './tenant-context.store';
@@ -41,6 +41,15 @@ export class PermissionsStore {
     readonly epoca: number;
     readonly permisos: ReadonlySet<string>;
   } | null>(null);
+
+  /**
+   * `true` mientras hay un `GET /me/permissions` viajando. Ver {@link asegurarCargados}.
+   *
+   * <p>Campo plano y no signal a proposito: nadie lo lee para renderizar. Un signal escrito
+   * desde el `effect` de la directiva agregaria una dependencia que ese `effect` tendria que
+   * ignorar a mano, y no habilita nada que aca haga falta.
+   */
+  private cargaEnVuelo = false;
 
   /** El cache, pero solo si sigue perteneciendo al contexto activo. */
   private readonly vigente = computed(() => {
@@ -125,33 +134,64 @@ export class PermissionsStore {
   }
 
   /**
-   * Carga los permisos si no estan cargados para el contexto actual. Idempotente.
+   * Carga los permisos del contexto activo si hacen falta. <b>Idempotente: llamarla de mas
+   * no cuesta una peticion de mas.</b>
    *
    * <p><b>Existe porque hasta AKINE-02.02 el unico que llamaba a {@link cargar} era
-   * `permissionGuard`.</b> Eso deja un agujero en toda pantalla que <b>no</b> lleva ese guard
-   * y aun asi usa `*akinePermiso` para mostrar sus acciones —el listado de sedes y el de
-   * espacios, que se abren con solo ser miembro—: si el usuario entra directo por esa URL,
-   * nadie pidio los permisos, `cargados()` es `false`, y la directiva esconde <b>todos</b>
-   * los botones. Un administrador ve la tabla completa y ninguna accion, sin ningun error en
-   * consola que lo explique.
+   * `permissionGuard`.</b> Eso dejaba un agujero en toda pantalla que <b>no</b> lleva ese
+   * guard y aun asi usa `*akinePermiso` para mostrar sus acciones —el listado de sedes y el
+   * de espacios, que se abren con solo ser miembro—: nadie pedia los permisos, `cargados()`
+   * quedaba en `false`, y la directiva escondia <b>todos</b> los botones. Un administrador
+   * veia la tabla completa y ni una accion, sin ningun error en consola que lo explicara.
    *
    * <p>Se detecto mirando la pantalla en el navegador: ningun test lo veia porque todos los
    * specs siembran el store a mano antes de montar el componente.
+   *
+   * <p><b>Quien la llama es {@link PermisoDirective}, no las pantallas.</b> Dejarsela a cada
+   * pantalla es exactamente como nacio el defecto: la que se olvide manana vuelve a tenerlo,
+   * y no hay nada que falle para avisarlo. La directiva no se puede olvidar, porque pedir los
+   * permisos es parte de usarla.
+   *
+   * <h2>Las tres cosas que este metodo no puede hacer</h2>
+   *
+   * <p><b>1. Una peticion por cada elemento con la directiva.</b> Una tabla de veinte filas
+   * instancia veinte directivas que llaman aca en el mismo tick, antes de que ninguna
+   * respuesta llegue: `cargados()` sigue en `false` para las veinte. Por eso ademas del cache
+   * hay una bandera de <b>carga en vuelo</b>: la primera sale a la red y las otras diecinueve
+   * no hacen nada. Sin ella serian veinte `GET /me/permissions` identicos.
+   *
+   * <p><b>2. Salir a pedir permisos sin contexto.</b> Sin contexto el backend responde
+   * `403 missing-tenant-context`, y sin sesion `403` a secas: la peticion no puede terminar
+   * bien, y saldria en <b>cada</b> pantalla publica —login, activacion, restablecer— que algun
+   * dia use la directiva, dejando un error rojo en consola que no significa nada. Los permisos
+   * son <b>de un contexto</b>: sin contexto la pregunta ni siquiera existe.
+   *
+   * <p><b>3. Interferir con la invalidacion por epoca.</b> No toca el cache: delega en
+   * {@link cargar}, que sella la epoca al salir y descarta la respuesta que llega tarde. El
+   * cambio de contexto sigue invalidando en el mismo tick, sin `effect` de por medio.
    *
    * <p><b>No devuelve nada y se suscribe sola.</b> Quien la llama no tiene nada que hacer con
    * el resultado: si la carga falla, `cargados()` sigue en `false` y las acciones siguen
    * ocultas, que es la degradacion correcta —la autoridad es el backend, que rechazaria igual—.
    */
   asegurarCargados(): void {
-    if (this.cargados()) {
+    if (this.cargados() || this.cargaEnVuelo || !this.tenant.hasContext()) {
       return;
     }
-    this.cargar().subscribe({
-      error: () => {
-        // Silencio deliberado: el store queda como estaba y la pantalla muestra la tabla sin
-        // acciones. Ensuciar la consola aca escondaria los errores de verdad.
-      },
-    });
+
+    this.cargaEnVuelo = true;
+    this.cargar()
+      .pipe(
+        finalize(() => {
+          this.cargaEnVuelo = false;
+        }),
+      )
+      .subscribe({
+        error: () => {
+          // Silencio deliberado: el store queda como estaba y la pantalla muestra la tabla sin
+          // acciones. Ensuciar la consola aca escondaria los errores de verdad.
+        },
+      });
   }
 
   /**

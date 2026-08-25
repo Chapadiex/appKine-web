@@ -168,6 +168,51 @@ describe('PermissionsStore', () => {
     escribir.mockRestore();
   });
 
+  it('asegurarCargados no sale a la red sin contexto', () => {
+    // Sin contexto el backend responde 403 missing-tenant-context, y sin sesion 403 a secas.
+    // La directiva llama a esto en toda pantalla que muestre acciones: si no cortara aca,
+    // cada pantalla publica dejaria un error rojo en consola que no significa nada.
+    store.asegurarCargados();
+
+    httpMock.expectNone(RUTA_PERMISOS_EFECTIVOS);
+    expect(store.cargados()).toBe(false);
+  });
+
+  it('asegurarCargados es una sola peticion, la llamen una vez o veinte', () => {
+    tenant.select(ORG_A);
+
+    // Una tabla de veinte filas instancia veinte directivas que llaman en el mismo tick,
+    // antes de que ninguna respuesta llegue: sin la bandera de carga en vuelo serian veinte
+    // GET identicos.
+    store.asegurarCargados();
+    store.asegurarCargados();
+    store.asegurarCargados();
+
+    httpMock.expectOne(RUTA_PERMISOS_EFECTIVOS).flush({ permissions: [PERMISO_COLABORADOR_READ] });
+    expect(store.tiene(PERMISO_COLABORADOR_READ)).toBe(true);
+
+    // Y ya cargados, tampoco: el cache corta antes que la bandera.
+    store.asegurarCargados();
+    httpMock.expectNone(RUTA_PERMISOS_EFECTIVOS);
+  });
+
+  it('si la carga de asegurarCargados falla, no rompe y deja reintentar', () => {
+    tenant.select(ORG_A);
+
+    store.asegurarCargados();
+    httpMock
+      .expectOne(RUTA_PERMISOS_EFECTIVOS)
+      .flush({}, { status: 503, statusText: 'Service Unavailable' });
+
+    // Degradacion correcta: la pantalla muestra la tabla sin acciones, y el backend habria
+    // rechazado igual. Pero la bandera se libera, asi que el proximo intento sale.
+    expect(store.cargados()).toBe(false);
+
+    store.asegurarCargados();
+    httpMock.expectOne(RUTA_PERMISOS_EFECTIVOS).flush({ permissions: [PERMISO_COLABORADOR_READ] });
+    expect(store.tiene(PERMISO_COLABORADOR_READ)).toBe(true);
+  });
+
   // --- Ayudas ----------------------------------------------------------------------
 
   function cargar(permissions: string[]): void {

@@ -57,6 +57,10 @@ describe('PermisoDirective', () => {
     // GET /me/permissions se elige ocultar. Mostrar y despues ocultar deja clickear una
     // accion cuyo dano ya no se deshace; ocultar y despues mostrar solo agrega contenido.
     expect(hayBoton()).toBe(false);
+
+    // Y la ventana se cierra sola: la directiva pide los permisos que nadie mas pidio. Sin
+    // esto, una ruta sin `permissionGuard` esconde sus acciones para siempre.
+    httpMock.expectOne(RUTA_PERMISOS_EFECTIVOS).flush({ permissions: [] });
   });
 
   it('con el permiso, muestra', () => {
@@ -112,6 +116,10 @@ describe('PermisoDirective', () => {
     // Los permisos de la Org A no sobreviven ni un render bajo la Org B: la accion se
     // esconde con el cambio de contexto, no cuando llegue la respuesta de la nueva carga.
     expect(hayBoton()).toBe(false);
+
+    // Ese mismo render dispara la carga del contexto nuevo: la directiva no se queda
+    // esperando a que alguien mas la pida.
+    httpMock.expectOne(RUTA_PERMISOS_EFECTIVOS).flush({ permissions: [] });
   });
 
   it('los permisos del contexto nuevo vuelven a mostrarlo', () => {

@@ -125,6 +125,12 @@ describe('CollaboratorsPage', () => {
     // apuntaba a un membershipId del tenant anterior- ya no esta.
     httpMock.expectOne(esListado(2)).flush({ ...PAGINA, content: [], totalElements: 0 });
     responderSedes(2);
+
+    // Los permisos de la organizacion anterior quedaron invalidados por epoca, asi que la
+    // directiva pide los de la nueva. La pantalla no tiene que acordarse de nada.
+    httpMock
+      .expectOne('/api/v1/me/permissions')
+      .flush({ permissions: [PERMISO_COLABORADOR_MANAGE] });
     await fixture.whenStable();
     fixture.detectChanges();
 
