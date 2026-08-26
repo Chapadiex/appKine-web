@@ -93,3 +93,63 @@
   flex: 1 1 14rem;
   margin-bottom: 0;
 }
+
+/*
+ * Grilla de la semana del horario del profesional (M05, AKINE-02.04).
+ *
+ * `auto-fit` con un minimo de 13rem: en escritorio entran los siete dias uno al lado del otro
+ * -que es como se lee un horario- y en tablet vertical envuelven solos. No hay `overflow-x`
+ * porque no es una tabla: cada dia es una tarjeta y envolver no pierde ninguna columna.
+ */
+.semana {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  gap: 1rem;
+}
+
+.dia {
+  border: 1px solid #d5dde5;
+  border-radius: 6px;
+  padding: 0.75rem;
+}
+
+.dia__titulo {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+}
+
+/* "No atiende" es informacion, no ausencia: se muestra, no se esconde. */
+.dia--vacio {
+  margin: 0;
+}
+
+.bloque {
+  border-top: 1px solid #e6ebf0;
+  padding-top: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.bloque:first-child {
+  border-top: none;
+  padding-top: 0;
+  margin-top: 0;
+}
+
+.bloque__horario {
+  margin: 0;
+  font-weight: 600;
+  color: #1b2733;
+}
+
+/*
+ * El bloque con el que se choca en un 409 de solapamiento.
+ *
+ * El borde de acento NO es lo unico que lo distingue: dentro de la fila hay un parrafo que lo
+ * dice con palabras, porque el color solo no comunica (WCAG 1.4.1) y porque la marca tiene que
+ * seguir sirviendo en una captura en escala de grises.
+ */
+.bloque--conflicto {
+  border-left: 4px solid #9b2226;
+  padding-left: 0.5rem;
+  background: #fdf3f3;
+}

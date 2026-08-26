@@ -16,3 +16,21 @@
  * seccion 9): las peticiones son relativas y el proxy de dev las resuelve.
  */
 export const RUTA_PERMISOS_EFECTIVOS = '/api/v1/me/permissions';
+
+/**
+ * Vinculos de una organizacion. Alimenta el selector de profesional de los horarios.
+ */
+export function rutaMemberships(orgId: number): string {
+  return `/api/v1/organizations/${orgId}/memberships`;
+}
+
+/**
+ * Bloques de disponibilidad de un profesional en una sede (M05, AKINE-02.04).
+ *
+ * <p>Ojo: <b>no</b> cuelga de `/organizations/{orgId}`. La organizacion sale del token, y la
+ * ruta empieza en la sede. Escribirla de memoria siguiendo el patron de espacios da una URL
+ * que no existe y un test que falla sin decir por que.
+ */
+export function rutaBloquesDisponibilidad(consultorioId: number, membershipId: number): string {
+  return `/api/v1/consultorios/${consultorioId}/profesionales/${membershipId}/disponibilidad`;
+}

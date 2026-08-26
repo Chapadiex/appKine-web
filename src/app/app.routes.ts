@@ -77,6 +77,21 @@ export const routes: Routes = [
     loadChildren: () => import('./features/resource/resource.routes').then((m) => m.routes),
   },
 
+  // Horarios de profesional (M05, AKINE-02.04). Lazy loaded segun ADR-0004.
+  //
+  // Raiz propia y NO bajo `espacios`: los espacios son recursos fisicos y esto es cuando
+  // trabaja una persona. Ademas `/espacios/disponibilidad` ya existe y responde otra cosa —si
+  // un box esta en servicio—, asi que colgar el horario del profesional del mismo prefijo
+  // garantizaba que alguien terminara en la pantalla equivocada.
+  //
+  // Los dos guards, en este orden y por el mismo motivo que en espacios: sin sesion no tiene
+  // sentido preguntar por el contexto, y sin sede no hay horario que consultar.
+  {
+    path: 'horarios',
+    canActivate: [authGuard, contextGuard],
+    loadChildren: () => import('./features/resource/horarios.routes').then((m) => m.routes),
+  },
+
   // Catalogo clinico: especialidades, practicas, nomencladores y los pedidos al catalogo comun
   // (M06, AKINE-02.05).
   //
