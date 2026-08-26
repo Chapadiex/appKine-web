@@ -108,6 +108,18 @@ export enum ProblemType {
 
     HTTPS___AKINE_APP_PROBLEMS_INVITACION_YA_RESUELTA = 'https://akine.app/problems/invitacion-ya-resuelta',
 
-    HTTPS___AKINE_APP_PROBLEMS_COLABORADOR_YA_VINCULADO = 'https://akine.app/problems/colaborador-ya-vinculado'
+    HTTPS___AKINE_APP_PROBLEMS_COLABORADOR_YA_VINCULADO = 'https://akine.app/problems/colaborador-ya-vinculado',
+
+    HTTPS___AKINE_APP_PROBLEMS_BLOQUE_SOLAPADO = 'https://akine.app/problems/bloque-solapado',
+
+    HTTPS___AKINE_APP_PROBLEMS_BLOQUE_INACTIVO = 'https://akine.app/problems/bloque-inactivo',
+
+    HTTPS___AKINE_APP_PROBLEMS_BLOQUE_ALREADY_INACTIVE = 'https://akine.app/problems/bloque-already-inactive',
+
+    HTTPS___AKINE_APP_PROBLEMS_PROFESIONAL_NO_VINCULADO = 'https://akine.app/problems/profesional-no-vinculado',
+
+    HTTPS___AKINE_APP_PROBLEMS_VENTANA_DEMASIADO_AMPLIA = 'https://akine.app/problems/ventana-demasiado-amplia',
+
+    HTTPS___AKINE_APP_PROBLEMS_EXCEPCION_ALREADY_INACTIVE = 'https://akine.app/problems/excepcion-already-inactive'
 }
 
