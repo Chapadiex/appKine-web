@@ -154,14 +154,35 @@ export class ExcepcionesPage {
   protected readonly errorProfesionales = signal<string | null>(null);
 
   /**
-   * Cuantos profesionales quedan afectados por una excepcion de sede.
+   * Si la lista de profesionales de la sede es <b>conocida</b>.
    *
-   * <p>Es el numero del aviso. Sale de la misma lista que alimenta el selector de alcance
-   * justamente para que el cartel no pueda decir un numero distinto del que muestra el campo
-   * de al lado.
+   * <p>Arranca en `false`: mientras la consulta no volvio, no sabemos a cuantos alcanza una
+   * excepcion de sede. Un fallo de `GET /memberships` la deja en `false` con la lista vacia,
+   * que <b>no</b> es lo mismo que una sede sin profesionales.
    */
-  protected readonly cantidadAfectada = computed(() => this.profesionales().length);
-  protected readonly textoAfectados = computed(() => textoDeProfesionales(this.cantidadAfectada()));
+  private readonly profesionalesConocidos = signal(false);
+
+  /**
+   * Cuantos profesionales quedan afectados por una excepcion de sede, o `null` si no se sabe.
+   *
+   * <p>Es el numero del aviso, y sale de la misma lista que alimenta el selector de alcance
+   * para que el cartel no pueda decir un numero distinto del que muestra el campo de al lado.
+   *
+   * <p><b>`null` no se degrada a cero.</b> Si el listado de vinculos fallo, imprimir "ningun
+   * profesional" convierte la advertencia en una tranquilidad falsa —el admin lee "esto no
+   * afecta a nadie" y confirma— sobre el unico caso que este aviso existe para frenar. Un dato
+   * que no se pudo obtener se dice en voz alta; nunca se rellena con un valor que suena
+   * tranquilizador. Es la misma disciplina que ya se aplica cuando falla la consulta del
+   * calendario.
+   */
+  protected readonly cantidadAfectada = computed<number | null>(() =>
+    this.profesionalesConocidos() ? this.profesionales().length : null,
+  );
+
+  /** El numero redactado. Solo se lee cuando {@link cantidadAfectada} es mayor que cero. */
+  protected readonly textoAfectados = computed(() =>
+    textoDeProfesionales(this.cantidadAfectada() ?? 0),
+  );
 
   /** Filtro del listado. `''` = alcance sede; un id = ese profesional MAS las de la sede. */
   protected readonly filtroMembership = signal<number | null>(null);
@@ -263,6 +284,7 @@ export class ExcepcionesPage {
 
     if (orgId === null || consultorioId === null) {
       this.profesionales.set([]);
+      this.profesionalesConocidos.set(false);
       return;
     }
 
@@ -273,13 +295,16 @@ export class ExcepcionesPage {
       .pipe(catchError((error: unknown) => of(error instanceof Error ? error : new Error(''))))
       .subscribe((respuesta) => {
         if (respuesta instanceof Error) {
+          // Vacia y DESCONOCIDA: sin esta distincion el aviso diria "ningun profesional".
           this.profesionales.set([]);
+          this.profesionalesConocidos.set(false);
           this.errorProfesionales.set(traducirErrorExcepcion(respuesta).mensaje);
           return;
         }
         this.profesionales.set(
           (respuesta.content ?? []).filter((vinculo) => atiendeEn(vinculo, consultorioId)),
         );
+        this.profesionalesConocidos.set(true);
       });
   }
 
@@ -459,15 +484,38 @@ export class ExcepcionesPage {
     this.crear(consultorioId, cuerpo);
   }
 
-  /** Confirmacion explicita del aviso: recien aca sale el alta a la red. */
+  /**
+   * Confirmacion explicita del aviso: recien aca sale el alta a la red.
+   *
+   * <p><b>Se vuelve a leer el formulario.</b> El aviso se muestra con el formulario vivo
+   * debajo, y lo primero que hace quien lo lee es corregir lo que el aviso le acaba de
+   * senalar: acota el alcance a una persona, o corre las fechas. Postear el cuerpo capturado
+   * al enviar crearia una apertura de <b>sede</b> mientras la pantalla muestra una de un
+   * profesional —el peor final posible para el cartel que existe justamente para evitarlo—.
+   *
+   * <p>Se eligio releer y revalidar en vez de deshabilitar los controles mientras el aviso
+   * esta abierto: corregir el alcance <b>es</b> la reaccion correcta al aviso, y apagar los
+   * campos obligaria a cancelar y volver a escribir todo para hacer exactamente lo que el
+   * aviso pide. Si lo que dice el formulario ya no es lo confirmado, no se guarda: se vuelve a
+   * pasar por {@link enviarAlta}, que revalida y —si sigue siendo una apertura de sede— vuelve
+   * a consultar los feriados de la <b>nueva</b> ventana y avisa de nuevo.
+   */
   protected confirmarApertura(): void {
     const consultorioId = this.tenantContext.consultorioId();
-    const cuerpo = this.pendiente();
-    if (consultorioId === null || cuerpo === null || this.enviando()) {
+    const confirmado = this.pendiente();
+    if (consultorioId === null || confirmado === null || this.enviando()) {
       return;
     }
+
+    if (this.formularioAlta.invalid || !mismoCuerpo(this.armarCuerpo(), confirmado)) {
+      this.avisoDeApertura.set(null);
+      this.pendiente.set(null);
+      this.enviarAlta();
+      return;
+    }
+
     this.avisoDeApertura.set(null);
-    this.crear(consultorioId, cuerpo);
+    this.crear(consultorioId, confirmado);
   }
 
   protected descartarAviso(): void {
@@ -635,6 +683,20 @@ export class ExcepcionesPage {
   private enfocar(selector: string): void {
     this.host.nativeElement.querySelector<HTMLElement>(selector)?.focus();
   }
+}
+
+/**
+ * `true` si los dos cuerpos piden exactamente la misma excepcion.
+ *
+ * <p>Compara <b>todas</b> las claves de los dos, no solo las del primero: una clave que
+ * <i>desaparece</i> —`membershipId`, que al omitirse cambia el alcance a toda la sede— es el
+ * cambio mas grave que puede sufrir este cuerpo, y una comparacion en un solo sentido no lo ve.
+ */
+function mismoCuerpo(uno: CreateExcepcionRequest, otro: CreateExcepcionRequest): boolean {
+  const claves = new Set([...Object.keys(uno), ...Object.keys(otro)]);
+  const izquierda = uno as unknown as Record<string, unknown>;
+  const derecha = otro as unknown as Record<string, unknown>;
+  return [...claves].every((clave) => izquierda[clave] === derecha[clave]);
 }
 
 /** Mismo criterio que en el horario semanal: el patron admite `24:00`. */

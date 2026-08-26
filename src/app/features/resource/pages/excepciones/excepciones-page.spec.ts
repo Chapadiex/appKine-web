@@ -150,7 +150,11 @@ describe('ExcepcionesPage', () => {
     expect(contenido).toContain('20:00 a medianoche (24:00)');
 
     // Y la apertura de sede avisa, en su propia fila, que puede reemplazar el horario de todos.
-    expect(contenido).toContain('reemplaza el horario habitual de 2 profesionales');
+    // La fila NO cuenta gente: el numero solo aparece donde decide algo -el aviso previo al
+    // guardado- y solo cuando se lo pudo medir.
+    expect(contenido).toContain(
+      'reemplaza el horario habitual de todos los profesionales que atienden aca',
+    );
 
     // Nada de solapamientos: el backend no los emite para excepciones y la pantalla no los inventa.
     expect(contenido).not.toContain('se pisa');
@@ -221,6 +225,146 @@ describe('ExcepcionesPage', () => {
     await estabilizar(fixture);
 
     expect(texto(fixture)).toContain('La apertura quedo cargada');
+  });
+
+  /**
+   * Lo que se confirma es lo que el formulario dice AL CONFIRMAR.
+   *
+   * <p>El aviso se muestra con el formulario vivo debajo, y lo primero que hace quien lo lee es
+   * corregir lo que el aviso le acaba de senalar: acotar el alcance a una persona. Si el alta
+   * posteara el cuerpo capturado al enviar, se crearia una apertura de <b>sede</b> —todos los
+   * profesionales pierden su horario base ese feriado— mientras la pantalla muestra una de un
+   * solo profesional. El cartel terminaria causando exactamente el destrozo que existe para
+   * evitar.
+   */
+  it('acotar el alcance con el aviso abierto cambia lo que se guarda', async () => {
+    const fixture = await montar();
+
+    abrir(fixture, 'Cargar un cierre o una apertura');
+    seleccionar(fixture, '#alta-excepcion-tipo', 'APERTURA');
+    seleccionar(fixture, '#alta-excepcion-motivo', 'AMPLIACION');
+    escribir(fixture, '#alta-excepcion-desde', '2026-09-10');
+    escribir(fixture, '#alta-excepcion-hasta', '2026-09-11');
+    enviar(fixture, '#form-alta-excepcion');
+
+    httpMock
+      .expectOne(
+        (peticion: HttpRequest<unknown>) =>
+          peticion.method === 'GET' && peticion.url === CALENDARIO,
+      )
+      .flush({ consultorioId: SEDE, pais: 'AR', cierraPorFeriado: true, feriados: [FERIADO] });
+    await estabilizar(fixture);
+
+    expect(texto(fixture)).toContain('el horario habitual de 2 profesionales no va a aplicar');
+
+    // El admin hace lo sensato: acota la apertura a una sola persona, con el select que esta
+    // ahi mismo, y recien despues confirma.
+    seleccionar(fixture, '#alta-excepcion-alcance', String(ANA_ID));
+    abrir(fixture, 'Entiendo: cargar igual');
+
+    // Una apertura de UN profesional no descarta el horario de nadie mas: no se vuelve a
+    // consultar el calendario.
+    httpMock.expectNone(
+      (peticion: HttpRequest<unknown>) => peticion.method === 'GET' && peticion.url === CALENDARIO,
+    );
+
+    const alta = httpMock.expectOne(
+      (peticion: HttpRequest<unknown>) =>
+        peticion.method === 'POST' && peticion.url === EXCEPCIONES,
+    );
+    // Lo que viaja es lo que el formulario dice AHORA, con membershipId. El cuerpo viejo
+    // —sin membershipId, es decir de sede— no se guarda.
+    expect(alta.request.body).toEqual({
+      tipo: 'APERTURA',
+      motivo: 'AMPLIACION',
+      fechaDesde: '2026-09-10',
+      fechaHasta: '2026-09-11',
+      membershipId: ANA_ID,
+    });
+
+    alta.flush({ ...APERTURA_DE_SEDE, id: 504, membershipId: ANA_ID });
+    listado().flush(VIGENTES);
+    await estabilizar(fixture);
+
+    expect(texto(fixture)).toContain('La apertura quedo cargada');
+  });
+
+  /** Mover las fechas con el aviso abierto obliga a verificar de nuevo: son otros feriados. */
+  it('mover las fechas con el aviso abierto vuelve a verificar antes de guardar', async () => {
+    const fixture = await montar();
+
+    abrir(fixture, 'Cargar un cierre o una apertura');
+    seleccionar(fixture, '#alta-excepcion-tipo', 'APERTURA');
+    escribir(fixture, '#alta-excepcion-desde', '2026-09-10');
+    escribir(fixture, '#alta-excepcion-hasta', '2026-09-11');
+    enviar(fixture, '#form-alta-excepcion');
+
+    httpMock
+      .expectOne(
+        (peticion: HttpRequest<unknown>) =>
+          peticion.method === 'GET' && peticion.url === CALENDARIO,
+      )
+      .flush({ consultorioId: SEDE, pais: 'AR', cierraPorFeriado: true, feriados: [FERIADO] });
+    await estabilizar(fixture);
+
+    escribir(fixture, '#alta-excepcion-desde', '2026-09-20');
+    escribir(fixture, '#alta-excepcion-hasta', '2026-09-21');
+    abrir(fixture, 'Entiendo: cargar igual');
+
+    // Nada se guarda con la ventana vieja: se vuelve a preguntar por los feriados de la nueva.
+    httpMock.expectNone((peticion: HttpRequest<unknown>) => peticion.method === 'POST');
+    const revision = httpMock.expectOne(
+      (peticion: HttpRequest<unknown>) => peticion.method === 'GET' && peticion.url === CALENDARIO,
+    );
+    expect(revision.request.params.get('desde')).toBe('2026-09-20');
+
+    revision.flush({ consultorioId: SEDE, pais: 'AR', cierraPorFeriado: true, feriados: [] });
+    await estabilizar(fixture);
+
+    const alta = httpMock.expectOne(
+      (peticion: HttpRequest<unknown>) =>
+        peticion.method === 'POST' && peticion.url === EXCEPCIONES,
+    );
+    expect(alta.request.body).toMatchObject({ fechaDesde: '2026-09-20', fechaHasta: '2026-09-21' });
+
+    alta.flush(APERTURA_DE_SEDE, { status: 201, statusText: 'Created' });
+    listado().flush(VIGENTES);
+    await estabilizar(fixture);
+  });
+
+  /**
+   * Un numero que no se pudo medir nunca se imprime como cero.
+   *
+   * <p>Si el listado de vinculos falla, la lista queda vacia. Contarla daria "ningun profesional
+   * vinculado hoy a la sede", que el admin lee como "esto no afecta a nadie" y confirma —
+   * mientras en la sede real todos pierden su horario base ese feriado—. Es la misma disciplina
+   * que ya se aplica cuando falla la consulta del calendario: lo que no se pudo obtener se
+   * dice, no se rellena.
+   */
+  it('si no se pudieron leer los profesionales, el aviso dice que no sabe a cuantos afecta', async () => {
+    const fixture = await montarSinProfesionales();
+
+    abrir(fixture, 'Cargar un cierre o una apertura');
+    seleccionar(fixture, '#alta-excepcion-tipo', 'APERTURA');
+    enviar(fixture, '#form-alta-excepcion');
+
+    httpMock
+      .expectOne(
+        (peticion: HttpRequest<unknown>) =>
+          peticion.method === 'GET' && peticion.url === CALENDARIO,
+      )
+      .flush({ consultorioId: SEDE, pais: 'AR', cierraPorFeriado: true, feriados: [FERIADO] });
+    await estabilizar(fixture);
+
+    const aviso = texto(fixture);
+
+    expect(aviso).toContain('No pudimos leer los profesionales de la sede');
+    expect(aviso).toContain('No es cero');
+    // Ni el cero ni la doble negacion que lo acompanaba.
+    expect(aviso).not.toContain('ningun profesional vinculado hoy a la sede');
+    expect(aviso).not.toContain('de 0 profesionales');
+
+    abrir(fixture, 'Volver y cambiar el alcance');
   });
 
   it('sin feriados en el periodo la apertura de sede se guarda derecho, sin aviso', async () => {
@@ -534,6 +678,33 @@ describe('ExcepcionesPage', () => {
     return fixture;
   }
 
+  /** Igual que {@link montar}, pero con el listado de vinculos caido: la cantidad es DESCONOCIDA. */
+  async function montarSinProfesionales(): Promise<ComponentFixture<ExcepcionesPage>> {
+    tenantContext.select({
+      organizationId: ORG,
+      organizationName: 'Belgrano',
+      consultorioId: SEDE,
+      consultorioName: 'Sede Centro',
+    });
+
+    permisos.cargar().subscribe();
+    httpMock
+      .expectOne(RUTA_PERMISOS_EFECTIVOS)
+      .flush({ permissions: [PERMISO_CONSULTORIO_MANAGE] });
+
+    const fixture = TestBed.createComponent(ExcepcionesPage);
+    fixture.detectChanges();
+
+    httpMock
+      .expectOne((peticion: HttpRequest<unknown>) => peticion.url === rutaMemberships(ORG))
+      .flush({ type: 'https://akine.app/problems/server-error' }, { status: 500, statusText: 'X' });
+
+    listado().flush(VIGENTES);
+    await estabilizar(fixture);
+
+    return fixture;
+  }
+
   /** El `GET` del listado de excepciones, que siempre lleva la ventana en la query string. */
   function listado() {
     return httpMock.expectOne(
@@ -604,8 +775,19 @@ function seleccionar(
   fixture.detectChanges();
 }
 
+/**
+ * Envia un formulario, y <b>falla si no existe</b>.
+ *
+ * <p>Con el `?.` que tenia antes, un id renombrado convertia a este helper en un no-op: cada
+ * `expectNone(POST)` seguia pasando porque nunca se enviaba nada, y el spec quedaba verde
+ * afirmando que la pantalla no sale a la red. Falla cerrado, como `abrir`, `escribir` y
+ * `seleccionar`.
+ */
 function enviar(fixture: { nativeElement: HTMLElement; detectChanges(): void }, selector: string) {
   const formulario = fixture.nativeElement.querySelector<HTMLFormElement>(selector);
-  formulario?.dispatchEvent(new Event('submit'));
+  if (formulario === null) {
+    throw new Error(`No existe el formulario ${selector}`);
+  }
+  formulario.dispatchEvent(new Event('submit'));
   fixture.detectChanges();
 }

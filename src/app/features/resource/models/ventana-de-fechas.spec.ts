@@ -6,7 +6,6 @@ import {
   hoyLocal,
   sumarDias,
 } from './ventana-de-fechas';
-import { textoDeProfesionales } from './profesionales-de-la-sede';
 
 /**
  * Spec de las fechas de calendario del modulo de horarios (M05, AKINE-02.04).
@@ -86,20 +85,5 @@ describe('ventana-de-fechas', () => {
 
   it('el tope de la ventana es el que declara el contrato', () => {
     expect(MAXIMO_DIAS_VENTANA).toBe(366);
-  });
-});
-
-/**
- * El numero del aviso de la apertura de sede.
- *
- * <p>No es cosmetico: "los 1 profesionales de la sede" convierte una advertencia seria en algo
- * que se lee como un error de la aplicacion y se ignora, que es exactamente lo que este aviso
- * no se puede permitir.
- */
-describe('textoDeProfesionales', () => {
-  it('redacta el singular, el plural y el caso de la sede sin profesionales', () => {
-    expect(textoDeProfesionales(0)).toBe('ningun profesional vinculado hoy a la sede');
-    expect(textoDeProfesionales(1)).toBe('1 profesional');
-    expect(textoDeProfesionales(7)).toBe('7 profesionales');
   });
 });

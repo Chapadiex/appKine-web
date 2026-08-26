@@ -25,7 +25,7 @@
   </p>
   <p>
     <b>Sin profesional significa toda la sede</b>, no un dato faltante. Una excepcion de sede
-    alcanza a {{ textoAfectados() }} y se ve en la agenda de todos.
+    alcanza a todos los profesionales que atienden aca y se ve en la agenda de todos.
   </p>
 </section>
 
@@ -175,7 +175,7 @@
                 formControlName="alcance"
                 aria-describedby="alta-excepcion-alcance-ayuda"
               >
-                <option value="">Toda la sede ({{ textoAfectados() }})</option>
+                <option value="">Toda la sede — todos los profesionales</option>
                 @for (profesional of profesionales(); track profesional.id) {
                   <option [value]="profesional.id">
                     {{ profesional.accountName || profesional.accountEmail }}
@@ -337,20 +337,41 @@
                         <li>{{ etiquetaDeFecha(feriado.fecha) }} — {{ feriado.nombre }}</li>
                       }
                     </ul>
-                    <p>
-                      <b>Ese dia el horario habitual de {{ textoAfectados() }} no va a aplicar.</b>
-                      Solo se va a atender en la franja de esta apertura: la apertura de sede
-                      <b>reemplaza</b> el horario base de cada profesional, no se suma a el.
-                    </p>
+                    @if (cantidadAfectada() === null) {
+                      <p>
+                        <b>No pudimos leer los profesionales de la sede</b>, asi que no sabemos a
+                        cuantos alcanza. <b>No es cero:</b> una apertura de sede reemplaza el
+                        horario base de todos los que atiendan ese dia.
+                      </p>
+                    } @else if (cantidadAfectada() === 0) {
+                      <p>
+                        Hoy no figura ningun profesional vinculado a esta sede,
+                        <b>pero la apertura igual reemplaza</b> el horario base de quien lo este ese
+                        dia.
+                      </p>
+                    } @else {
+                      <p>
+                        <b
+                          >Ese dia el horario habitual de {{ textoAfectados() }} no va a aplicar.</b
+                        >
+                        Solo se va a atender en la franja de esta apertura: la apertura de sede
+                        <b>reemplaza</b> el horario base de cada profesional, no se suma a el.
+                      </p>
+                    }
                   } @else {
                     <p>
                       <b>No pudimos consultar el calendario de feriados</b>, asi que no sabemos si
                       este periodo pisa alguno.
                     </p>
                     <p>
-                      Si lo pisa y la sede cierra por feriado, ese dia el horario habitual de
-                      {{ textoAfectados() }} no va a aplicar y solo se va a atender en la franja de
-                      esta apertura.
+                      Si lo pisa y la sede cierra por feriado, ese dia
+                      <b>no va a aplicar el horario habitual</b> de
+                      @if (cantidadAfectada()) {
+                        {{ textoAfectados() }}
+                      } @else {
+                        todos los profesionales que atiendan en la sede
+                      }
+                      , y solo se va a atender en la franja de esta apertura.
                     </p>
                   }
 
@@ -428,7 +449,8 @@
                 @if (esAperturaDeSede(excepcion)) {
                   <p class="ayuda excepcion__alerta">
                     Es una apertura de <b>toda la sede</b>: en un feriado que la sede cierre,
-                    reemplaza el horario habitual de {{ textoAfectados() }} ese dia.
+                    reemplaza el horario habitual de todos los profesionales que atienden aca ese
+                    dia.
                   </p>
                 }
 
