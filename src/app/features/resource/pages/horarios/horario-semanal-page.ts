@@ -25,17 +25,18 @@ import { ConfirmacionConMotivo } from '../../../../shared/components/confirmacio
 import { CreateBloqueRequest } from '../../../../api/generated/model/create-bloque-request';
 import { DisponibilidadProfesionalService } from '../../../../api/generated/api/disponibilidad-profesional.service';
 import { EstadoDeListado, vistaDeListado } from '../../../../shared/utils/estado-de-listado';
-import {
-  MembershipResponse,
-  MembershipResponseEstadoEnum,
-  MembershipResponseRoleCodeEnum,
-} from '../../../../api/generated/model/membership-response';
+import { MembershipResponse } from '../../../../api/generated/model/membership-response';
 import { PERMISO_CONSULTORIO_MANAGE } from '../../../../core/models/permisos';
 import { PermisoDirective } from '../../../../shared/directives/permiso.directive';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { UpdateBloqueRequest } from '../../../../api/generated/model/update-bloque-request';
 import { BloqueEnConflicto, CausaBloque, traducirErrorBloque } from '../../models/bloque-errors';
 import { DIAS_DE_LA_SEMANA, etiquetaDeDia } from '../../models/dias-de-la-semana';
+import {
+  TOPE_DE_VINCULOS,
+  atiendeEn,
+  nombreDeVinculo,
+} from '../../models/profesionales-de-la-sede';
 import {
   HORA_MEDIANOCHE,
   PATRON_HORA,
@@ -53,16 +54,6 @@ interface DiaConBloques {
   readonly etiqueta: string;
   readonly bloques: readonly BloqueResponse[];
 }
-
-/**
- * Cuantos vinculos se piden para armar el selector de profesionales.
- *
- * <p>Es el tope que el backend recorta. El selector no se pagina a proposito: un desplegable
- * con "pagina siguiente" es una interfaz que nadie entiende, y un centro con mas de cien
- * vinculos vigentes necesita un buscador, no una pagina 2. Si eso llega a pasar, la pantalla
- * lo dice en vez de mostrar una lista incompleta en silencio.
- */
-const TOPE_DE_VINCULOS = 100;
 
 /**
  * Horario semanal de un profesional en la sede activa (M05, AKINE-02.04).
@@ -133,10 +124,9 @@ export class HorarioSemanalPage {
     this.profesionales().find((candidato) => candidato.id === this.membershipElegido()),
   );
 
-  protected readonly nombreDelProfesional = computed(() => {
-    const elegido = this.profesionalElegido();
-    return elegido?.accountName ?? elegido?.accountEmail ?? 'el profesional';
-  });
+  protected readonly nombreDelProfesional = computed(() =>
+    nombreDeVinculo(this.profesionalElegido()),
+  );
 
   // --- Horario del profesional elegido -----------------------------------------------
 
@@ -653,23 +643,6 @@ export class HorarioSemanalPage {
 /** Ordena por hora de inicio. `24:00` compara como 1440, sin ningun caso especial. */
 function porHoraDeInicio(uno: BloqueResponse, otro: BloqueResponse): number {
   return (minutosDeHora(uno.horaDesde ?? '') ?? 0) - (minutosDeHora(otro.horaDesde ?? '') ?? 0);
-}
-
-/**
- * Un vinculo que habilita a atender en esta sede.
- *
- * <p>`consultorioId` nulo significa alcance de toda la organizacion, no "sin sede": ese
- * vinculo si habilita. Confundirlo dejaria fuera del selector justamente a los profesionales
- * que atienden en todas las sedes.
- */
-function atiendeEn(vinculo: MembershipResponse, consultorioId: number): boolean {
-  const esProfesional = vinculo.roleCode === MembershipResponseRoleCodeEnum.PROFESIONAL;
-  const vigente = vinculo.estado === MembershipResponseEstadoEnum.ACTIVA;
-  const alcanza =
-    vinculo.consultorioId === undefined ||
-    vinculo.consultorioId === null ||
-    vinculo.consultorioId === consultorioId;
-  return esProfesional && vigente && alcanza;
 }
 
 /** `Validators.pattern` no serviria: el patron admite `24:00`, que ningun regex de hora tiene. */

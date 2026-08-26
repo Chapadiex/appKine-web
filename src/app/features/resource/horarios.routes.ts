@@ -39,6 +39,23 @@ export const routes: Routes = [
   // ruta parametrica: el dia que exista un `horarios/:membershipId` se comeria a todas sin que
   // nadie lo note.
   {
+    path: 'excepciones',
+    canActivate: [permissionGuard(PERMISO_COLABORADOR_READ)],
+    loadComponent: () =>
+      import('./pages/excepciones/excepciones-page').then((m) => m.ExcepcionesPage),
+    title: 'AKINE - Cierres y aperturas',
+    // Cada excepcion son fechas, franja, alcance y motivo: en el ancho de lectura cada fila
+    // se parte en cinco renglones y el listado deja de leerse como una lista.
+    data: { [DATA_ANCHO]: ANCHO_AMPLIO },
+  },
+  {
+    path: 'calendario',
+    canActivate: [permissionGuard(PERMISO_COLABORADOR_READ)],
+    loadComponent: () =>
+      import('./pages/calendario/calendario-sede-page').then((m) => m.CalendarioSedePage),
+    title: 'AKINE - Feriados de la sede',
+  },
+  {
     path: '',
     canActivate: [permissionGuard(PERMISO_COLABORADOR_READ)],
     loadComponent: () =>

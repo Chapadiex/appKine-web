@@ -34,3 +34,23 @@ export function rutaMemberships(orgId: number): string {
 export function rutaBloquesDisponibilidad(consultorioId: number, membershipId: number): string {
   return `/api/v1/consultorios/${consultorioId}/profesionales/${membershipId}/disponibilidad`;
 }
+
+/**
+ * Excepciones de disponibilidad de una sede (M05, AKINE-02.04).
+ *
+ * <p>La baja cuelga de aca con el id de la excepcion, y viaja como `DELETE` <b>con cuerpo</b>:
+ * el motivo va en el body para no quedar en los logs de acceso de cualquier proxy.
+ */
+export function rutaExcepciones(consultorioId: number): string {
+  return `/api/v1/consultorios/${consultorioId}/excepciones`;
+}
+
+/**
+ * Politica de calendario de una sede y feriados de la ventana (M05, AKINE-02.04).
+ *
+ * <p>La misma URL sirve el `GET` con ventana y el `PUT` de la politica, que no la lleva: los
+ * matchers de los specs filtran por metodo, no por query string.
+ */
+export function rutaCalendarioSede(consultorioId: number): string {
+  return `/api/v1/consultorios/${consultorioId}/calendario`;
+}
