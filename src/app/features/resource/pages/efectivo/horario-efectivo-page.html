@@ -8,9 +8,9 @@
 </p>
 
 <p class="acciones">
-  <a class="enlace" routerLink="/horarios">Horario semanal del profesional</a>
-  <a class="enlace" routerLink="/horarios/excepciones">Cierres y aperturas</a>
-  <a class="enlace" routerLink="/horarios/calendario">Feriados de la sede</a>
+  <a class="enlace" [routerLink]="rutas.semanal">Horario semanal del profesional</a>
+  <a class="enlace" [routerLink]="rutas.excepciones">Cierres y aperturas</a>
+  <a class="enlace" [routerLink]="rutas.calendario">Feriados de la sede</a>
 </p>
 
 <section class="tarjeta" aria-labelledby="titulo-consulta">
@@ -24,7 +24,7 @@
       aria-describedby="efectivo-profesional-ayuda"
     >
       <option value="">Elegi un profesional</option>
-      @for (profesional of profesionales(); track profesional.id) {
+      @for (profesional of profesionales(); track profesional.id ?? $index) {
         <option [value]="profesional.id">
           {{ profesional.accountName || profesional.accountEmail }}
         </option>
@@ -132,7 +132,7 @@
         }
 
         <ul class="lista-excepciones">
-          @for (dia of dias(); track dia.fecha) {
+          @for (dia of dias(); track dia.fecha ?? $index) {
             <li class="dia-efectivo" [class.dia-efectivo--vacio]="!atiende(dia)">
               <p class="excepcion__titulo">
                 {{ etiquetaDeFecha(dia.fecha) }}

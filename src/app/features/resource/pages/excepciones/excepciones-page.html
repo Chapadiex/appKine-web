@@ -8,9 +8,9 @@
 </p>
 
 <p class="acciones">
-  <a class="enlace" routerLink="/horarios">Horario semanal del profesional</a>
-  <a class="enlace" routerLink="/horarios/calendario">Feriados de la sede</a>
-  <a class="enlace" routerLink="/horarios/efectivo">Horario efectivo del profesional</a>
+  <a class="enlace" [routerLink]="rutas.semanal">Horario semanal del profesional</a>
+  <a class="enlace" [routerLink]="rutas.calendario">Feriados de la sede</a>
+  <a class="enlace" [routerLink]="rutas.efectivo">Horario efectivo del profesional</a>
 </p>
 
 <!--
@@ -62,7 +62,7 @@
         aria-describedby="filtro-alcance-ayuda"
       >
         <option value="">Solo las de toda la sede</option>
-        @for (profesional of profesionales(); track profesional.id) {
+        @for (profesional of profesionales(); track profesional.id ?? $index) {
           <option [value]="profesional.id">
             {{ profesional.accountName || profesional.accountEmail }}
           </option>
@@ -142,6 +142,15 @@
           </button>
         </p>
 
+        <!--
+          Modo lectura: los cierres y las aperturas se siguen listando enteros, con su alcance y
+          su motivo. Un profesional necesita ver que su martes esta cerrado; lo que no puede es
+          cargar ni dar de baja ninguno.
+        -->
+        @if (modoLectura()) {
+          <p class="ayuda">{{ textoModoLectura }}</p>
+        }
+
         @if (altaAbierta()) {
           <form
             id="form-alta-excepcion"
@@ -176,7 +185,7 @@
                 aria-describedby="alta-excepcion-alcance-ayuda"
               >
                 <option value="">Toda la sede — todos los profesionales</option>
-                @for (profesional of profesionales(); track profesional.id) {
+                @for (profesional of profesionales(); track profesional.id ?? $index) {
                   <option [value]="profesional.id">
                     {{ profesional.accountName || profesional.accountEmail }}
                   </option>
@@ -333,7 +342,7 @@
                       {{ aviso.feriados.length === 1 ? 'un feriado' : 'mas de un feriado' }}:
                     </p>
                     <ul class="lista-datos">
-                      @for (feriado of aviso.feriados; track feriado.id) {
+                      @for (feriado of aviso.feriados; track feriado.id ?? $index) {
                         <li>{{ etiquetaDeFecha(feriado.fecha) }} — {{ feriado.nombre }}</li>
                       }
                     </ul>
@@ -419,7 +428,7 @@
           </p>
 
           <ul class="lista-excepciones">
-            @for (excepcion of vigentes(); track excepcion.id) {
+            @for (excepcion of vigentes(); track excepcion.id ?? $index) {
               <li class="excepcion" [class.excepcion--apertura]="excepcion.tipo === 'APERTURA'">
                 <p class="excepcion__titulo">
                   {{ excepcion.tipo === 'APERTURA' ? 'Apertura' : 'Cierre' }} —

@@ -9,6 +9,9 @@ import { EstadoDeListado, vistaDeListado } from '../../../../shared/utils/estado
 import { FeriadoResponse } from '../../../../api/generated/model/feriado-response';
 import { PERMISO_CONSULTORIO_MANAGE } from '../../../../core/models/permisos';
 import { PermisoDirective } from '../../../../shared/directives/permiso.directive';
+import { PermissionsStore } from '../../../../core/services/permissions.store';
+import { RUTAS_HORARIOS } from '../../models/rutas-de-horarios';
+import { TEXTO_MODO_LECTURA, modoLectura, puedeGestionar } from '../../models/modo-lectura';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { traducirErrorExcepcion } from '../../models/excepcion-errors';
 import {
@@ -61,8 +64,26 @@ export class CalendarioSedePage {
   private readonly calendario = inject(CalendarioDeSedeService);
   private readonly tenantContext = inject(TenantContextStore);
   private readonly formBuilder = inject(FormBuilder);
+  private readonly permisos = inject(PermissionsStore);
 
   protected readonly permisoManage = PERMISO_CONSULTORIO_MANAGE;
+  protected readonly rutas = RUTAS_HORARIOS;
+  protected readonly textoModoLectura = TEXTO_MODO_LECTURA;
+
+  /**
+   * Modo lectura: consta que falta `consultorio:manage`.
+   *
+   * <p>Esta pantalla es la unica de las cuatro donde ocultar el boton <b>no alcanza</b>. La
+   * casilla `cierraPorFeriado` no es una accion: es el <b>dato</b>, y por eso tiene que seguir
+   * viendose. Pero si queda viva, quien no puede guardar la marca, lee "La sede pasa a atender
+   * los feriados" y "Hay un cambio sin guardar" —dos afirmaciones falsas— y no tiene ningun
+   * boton con el que resolverlo. Por eso la casilla se <b>deshabilita</b> y el cartel explica
+   * que falta.
+   */
+  protected readonly modoLectura = modoLectura(this.permisos);
+
+  /** `true` solo cuando consta que el permiso esta. Con permisos desconocidos, `false`. */
+  private readonly puedeGestionar = puedeGestionar(this.permisos);
   protected readonly maximoDias = MAXIMO_DIAS_VENTANA;
   protected readonly etiquetaDeFecha = etiquetaDeFecha;
 
@@ -97,8 +118,13 @@ export class CalendarioSedePage {
     hasta: ['', [Validators.required]],
   });
 
+  /**
+   * Arranca <b>deshabilitada</b> y la habilita el `effect` del constructor cuando consta el
+   * permiso. Al reves —viva y deshabilitandose despues— existiria una ventana, corta pero real,
+   * en la que un profesional puede marcarla antes de que lleguen los permisos.
+   */
   protected readonly formularioPolitica = this.formBuilder.nonNullable.group({
-    cierraPorFeriado: [true],
+    cierraPorFeriado: [{ value: true, disabled: true }],
   });
 
   /**
@@ -122,6 +148,18 @@ export class CalendarioSedePage {
   }
 
   constructor() {
+    // La casilla sigue al permiso, en los dos sentidos: un cambio de contexto puede quitarlo
+    // tanto como darlo. `emitEvent: false` porque esto no es una edicion del usuario y no tiene
+    // por que ensuciar el estado del formulario.
+    effect(() => {
+      const control = this.formularioPolitica.controls.cierraPorFeriado;
+      if (this.puedeGestionar()) {
+        control.enable({ emitEvent: false });
+      } else {
+        control.disable({ emitEvent: false });
+      }
+    });
+
     effect(() => {
       this.tenantContext.contextEpoch();
       untracked(() => {
@@ -204,6 +242,13 @@ export class CalendarioSedePage {
    * vacia porque el `PUT` no tiene ventana.
    */
   protected guardar(): void {
+    // El boton vive detras de `*akinePermiso`, pero un formulario tambien se envia con Enter y
+    // el `submit` no pasa por ningun boton. Sin esta guarda, el modo lectura dependeria de que
+    // el usuario use el mouse.
+    if (!this.puedeGestionar()) {
+      return;
+    }
+
     const consultorioId = this.tenantContext.consultorioId();
     if (consultorioId === null || this.guardando()) {
       return;

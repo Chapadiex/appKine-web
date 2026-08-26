@@ -325,7 +325,11 @@ describe('HorarioEfectivoPage', () => {
 
     enviar(fixture, '#form-ventana');
 
-    expect(texto(fixture)).toContain('Eligi un profesional');
+    // La frase COMPLETA, y no el prefijo: "Eligi un profesional" tambien es la etiqueta de la
+    // opcion vacia del selector y parte del parrafo inicial, asi que esta en el DOM pase lo que
+    // pase. Afirmando solo eso, borrar el `errorVentana.set(...)` de `consultar()` dejaba el
+    // test igual de verde.
+    expect(texto(fixture)).toContain('Eligi un profesional para resolver su horario.');
     httpMock.expectNone((peticion: HttpRequest<unknown>) => peticion.url === EFECTIVA);
   });
 
@@ -544,6 +548,12 @@ function escribir(
 
 function enviar(fixture: { nativeElement: HTMLElement; detectChanges(): void }, selector: string) {
   const formulario = fixture.nativeElement.querySelector<HTMLFormElement>(selector);
-  formulario?.dispatchEvent(new Event('submit'));
+  // Falla cerrado. Con `?.` este helper se volvia un no-op silencioso ante un selector que
+  // no casa, y TODOS los `expectNone` del spec pasaban sin que se enviara nada: el spec
+  // quedaba verde afirmando que la pantalla no sale a la red.
+  if (formulario === null) {
+    throw new Error(`No existe el formulario ${selector}`);
+  }
+  formulario.dispatchEvent(new Event('submit'));
   fixture.detectChanges();
 }

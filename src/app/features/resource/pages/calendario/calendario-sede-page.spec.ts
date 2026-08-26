@@ -361,6 +361,12 @@ function escribir(
 
 function enviar(fixture: { nativeElement: HTMLElement; detectChanges(): void }, selector: string) {
   const formulario = fixture.nativeElement.querySelector<HTMLFormElement>(selector);
-  formulario?.dispatchEvent(new Event('submit'));
+  // Falla cerrado. Con `?.` este helper se volvia un no-op silencioso ante un selector que
+  // no casa, y TODOS los `expectNone` del spec pasaban sin que se enviara nada: el spec
+  // quedaba verde afirmando que la pantalla no sale a la red.
+  if (formulario === null) {
+    throw new Error(`No existe el formulario ${selector}`);
+  }
+  formulario.dispatchEvent(new Event('submit'));
   fixture.detectChanges();
 }

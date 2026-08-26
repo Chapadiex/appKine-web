@@ -28,6 +28,9 @@ import { EstadoDeListado, vistaDeListado } from '../../../../shared/utils/estado
 import { MembershipResponse } from '../../../../api/generated/model/membership-response';
 import { PERMISO_CONSULTORIO_MANAGE } from '../../../../core/models/permisos';
 import { PermisoDirective } from '../../../../shared/directives/permiso.directive';
+import { PermissionsStore } from '../../../../core/services/permissions.store';
+import { RUTAS_HORARIOS } from '../../models/rutas-de-horarios';
+import { TEXTO_MODO_LECTURA, modoLectura } from '../../models/modo-lectura';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { UpdateBloqueRequest } from '../../../../api/generated/model/update-bloque-request';
 import { BloqueEnConflicto, CausaBloque, traducirErrorBloque } from '../../models/bloque-errors';
@@ -103,6 +106,9 @@ export class HorarioSemanalPage {
   private readonly injector = inject(Injector);
 
   protected readonly permisoManage = PERMISO_CONSULTORIO_MANAGE;
+  protected readonly rutas = RUTAS_HORARIOS;
+  protected readonly textoModoLectura = TEXTO_MODO_LECTURA;
+  protected readonly modoLectura = modoLectura(inject(PermissionsStore));
   protected readonly patronHora = PATRON_HORA;
   protected readonly horaMedianoche = HORA_MEDIANOCHE;
   protected readonly dias = DIAS_DE_LA_SEMANA;

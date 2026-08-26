@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 
+import { SEGMENTO_HORARIOS } from './features/resource/models/rutas-de-horarios';
 import { authGuard } from './core/guards/auth.guard';
 import { contextGuard } from './core/guards/context.guard';
 
@@ -86,8 +87,12 @@ export const routes: Routes = [
   //
   // Los dos guards, en este orden y por el mismo motivo que en espacios: sin sesion no tiene
   // sentido preguntar por el contexto, y sin sede no hay horario que consultar.
+  //
+  // El segmento sale de `features/resource/models/rutas-de-horarios.ts`, que es el mismo lugar
+  // del que salen los `routerLink` de las cuatro pantallas y los segmentos hijos. Importar una
+  // constante de strings no rompe el lazy loading: no arrastra ningun componente.
   {
-    path: 'horarios',
+    path: SEGMENTO_HORARIOS,
     canActivate: [authGuard, contextGuard],
     loadChildren: () => import('./features/resource/horarios.routes').then((m) => m.routes),
   },

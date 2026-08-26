@@ -3,6 +3,11 @@ import { Routes } from '@angular/router';
 import { ANCHO_AMPLIO, DATA_ANCHO } from '../../core/models/ancho-de-contenido';
 import { PERMISO_COLABORADOR_READ } from '../../core/models/permisos';
 import { permissionGuard } from '../../core/guards/permission.guard';
+import {
+  SEGMENTO_CALENDARIO,
+  SEGMENTO_EFECTIVO,
+  SEGMENTO_EXCEPCIONES,
+} from './models/rutas-de-horarios';
 
 /**
  * Rutas de horarios de profesional (M05, etapa AKINE-02.04).
@@ -31,7 +36,16 @@ import { permissionGuard } from '../../core/guards/permission.guard';
  * autoridad sigue siendo el backend, que reevalua en cada request.
  *
  * <p><b>Las mutaciones exigen `consultorio:manage`</b> y van detras de `*akinePermiso` dentro
- * de la pantalla, no de un guard: la lectura del horario tiene sentido por si sola.
+ * de la pantalla, no de un guard: la lectura del horario tiene sentido por si sola. Quien tiene
+ * `colaborador:read` y no `consultorio:manage` —el rol `PROFESIONAL`— entra igual y ve las
+ * mismas pantallas con los mismos datos y ninguna accion (ver `models/modo-lectura.ts`).
+ *
+ * <p><b>Los segmentos salen de `models/rutas-de-horarios.ts`</b>, que es de donde tambien salen
+ * los `routerLink` de las cuatro plantillas y la raiz que monta `app.routes.ts`. Escribirlos a
+ * mano en los dos lados es la forma exacta en la que este proyecto dejo los enlaces de correo
+ * de AKINE-01.02 cayendo en el comodin `**` durante meses. `horarios.routes.spec.ts` verifica
+ * ademas que las cuatro URLs resuelvan de verdad contra la configuracion montada: una constante
+ * garantiza que los dos lados digan lo mismo, no que la ruta exista.
  */
 export const routes: Routes = [
   // Las rutas fijas de las pantallas hermanas de esta etapa —excepciones, horario efectivo y
@@ -39,7 +53,7 @@ export const routes: Routes = [
   // ruta parametrica: el dia que exista un `horarios/:membershipId` se comeria a todas sin que
   // nadie lo note.
   {
-    path: 'excepciones',
+    path: SEGMENTO_EXCEPCIONES,
     canActivate: [permissionGuard(PERMISO_COLABORADOR_READ)],
     loadComponent: () =>
       import('./pages/excepciones/excepciones-page').then((m) => m.ExcepcionesPage),
@@ -49,7 +63,7 @@ export const routes: Routes = [
     data: { [DATA_ANCHO]: ANCHO_AMPLIO },
   },
   {
-    path: 'efectivo',
+    path: SEGMENTO_EFECTIVO,
     canActivate: [permissionGuard(PERMISO_COLABORADOR_READ)],
     loadComponent: () =>
       import('./pages/efectivo/horario-efectivo-page').then((m) => m.HorarioEfectivoPage),
@@ -59,7 +73,7 @@ export const routes: Routes = [
     data: { [DATA_ANCHO]: ANCHO_AMPLIO },
   },
   {
-    path: 'calendario',
+    path: SEGMENTO_CALENDARIO,
     canActivate: [permissionGuard(PERMISO_COLABORADOR_READ)],
     loadComponent: () =>
       import('./pages/calendario/calendario-sede-page').then((m) => m.CalendarioSedePage),

@@ -8,9 +8,9 @@
 </p>
 
 <p class="acciones">
-  <a class="enlace" routerLink="/horarios/excepciones">Cierres y aperturas</a>
-  <a class="enlace" routerLink="/horarios/calendario">Feriados de la sede</a>
-  <a class="enlace" routerLink="/horarios/efectivo">Horario efectivo del profesional</a>
+  <a class="enlace" [routerLink]="rutas.excepciones">Cierres y aperturas</a>
+  <a class="enlace" [routerLink]="rutas.calendario">Feriados de la sede</a>
+  <a class="enlace" [routerLink]="rutas.efectivo">Horario efectivo del profesional</a>
 </p>
 
 <!--
@@ -66,7 +66,7 @@
           aria-describedby="selector-profesional-ayuda"
         >
           <option value="">Sin elegir</option>
-          @for (profesional of profesionales(); track profesional.id) {
+          @for (profesional of profesionales(); track profesional.id ?? $index) {
             <option [value]="profesional.id">
               {{ profesional.accountName || profesional.accountEmail }}
             </option>
@@ -131,6 +131,15 @@
             Agregar un bloque
           </button>
         </p>
+
+        <!--
+          Modo lectura: el horario entero se sigue viendo -un profesional tiene que poder mirar
+          su semana- y lo unico que falta son las acciones. El cartel existe porque una pantalla
+          sin un solo boton, sin explicacion, se lee como una pantalla que no termino de cargar.
+        -->
+        @if (modoLectura()) {
+          <p class="ayuda">{{ textoModoLectura }}</p>
+        }
 
         @if (altaAbierta()) {
           <form [formGroup]="formularioAlta" (ngSubmit)="enviarAlta()" novalidate>
@@ -263,7 +272,7 @@
                 <p class="ayuda dia--vacio">No atiende</p>
               } @else {
                 <ul class="lista-datos">
-                  @for (bloque of dia.bloques; track bloque.id) {
+                  @for (bloque of dia.bloques; track bloque.id ?? $index) {
                     <li class="bloque" [class.bloque--conflicto]="esBloqueEnConflicto(bloque)">
                       <p class="bloque__horario">
                         {{ rangoHorario(bloque.horaDesde, bloque.horaHasta) }}

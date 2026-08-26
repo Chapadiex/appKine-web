@@ -7,9 +7,9 @@
 </p>
 
 <p class="acciones">
-  <a class="enlace" routerLink="/horarios">Horario semanal del profesional</a>
-  <a class="enlace" routerLink="/horarios/excepciones">Cierres y aperturas</a>
-  <a class="enlace" routerLink="/horarios/efectivo">Horario efectivo del profesional</a>
+  <a class="enlace" [routerLink]="rutas.semanal">Horario semanal del profesional</a>
+  <a class="enlace" [routerLink]="rutas.excepciones">Cierres y aperturas</a>
+  <a class="enlace" [routerLink]="rutas.efectivo">Horario efectivo del profesional</a>
 </p>
 
 <section class="tarjeta" aria-labelledby="titulo-ventana">
@@ -154,6 +154,15 @@
             </button>
           </div>
 
+          <!--
+            Modo lectura. La casilla de arriba queda deshabilitada -sigue mostrando la politica,
+            que es el dato- y aca se dice por que no se puede tocar. Sin este parrafo, una
+            casilla gris sin boton al lado se lee como una pantalla rota.
+          -->
+          @if (modoLectura()) {
+            <p class="ayuda">{{ textoModoLectura }}</p>
+          }
+
           <div aria-live="polite">
             @if (errorPolitica(); as mensaje) {
               <p class="estado estado--error" role="alert">{{ mensaje }}</p>
@@ -194,7 +203,7 @@
                 </tr>
               </thead>
               <tbody>
-                @for (feriado of feriados(); track feriado.id) {
+                @for (feriado of feriados(); track feriado.id ?? $index) {
                   <tr>
                     <th scope="row">{{ etiquetaDeFecha(feriado.fecha) }}</th>
                     <td>{{ feriado.nombre }}</td>

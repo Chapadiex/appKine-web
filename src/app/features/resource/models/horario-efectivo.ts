@@ -4,6 +4,11 @@ import {
   FranjaResueltaResponseOrigenEnum,
 } from '../../../api/generated/model/franja-resuelta-response';
 import { HORA_MEDIANOCHE } from './horas-de-pared';
+import {
+  RUTA_HORARIOS,
+  RUTA_HORARIOS_CALENDARIO,
+  RUTA_HORARIOS_EXCEPCIONES,
+} from './rutas-de-horarios';
 
 /**
  * Vocabulario de la <b>disponibilidad efectiva</b> de un profesional (M05, AKINE-02.04).
@@ -73,7 +78,7 @@ export function explicacionDeVacio(
         detalle:
           'La sede cierra los feriados de su calendario, asi que el horario habitual no se ' +
           'aplica. Si este feriado en particular se atiende, se carga una apertura para ese dia.',
-        enlace: { ruta: '/horarios/calendario', texto: 'Ver los feriados de la sede' },
+        enlace: { ruta: RUTA_HORARIOS_CALENDARIO, texto: 'Ver los feriados de la sede' },
       };
 
     case RAZON_VACIO_CIERRE:
@@ -82,7 +87,7 @@ export function explicacionDeVacio(
         detalle:
           detalleDelCierre(dia) +
           ' Un cierre tapa el horario habitual mientras esta vigente; se deshace dandolo de baja.',
-        enlace: { ruta: '/horarios/excepciones', texto: 'Ver los cierres y las aperturas' },
+        enlace: { ruta: RUTA_HORARIOS_EXCEPCIONES, texto: 'Ver los cierres y las aperturas' },
       };
 
     case RAZON_VACIO_VINCULO:
@@ -103,7 +108,7 @@ export function explicacionDeVacio(
         detalle:
           'Ninguna regla abre ese dia: no hay bloque del horario semanal que lo cubra ni ' +
           'apertura que lo habilite. No hay ningun cierre ni feriado de por medio.',
-        enlace: { ruta: '/horarios', texto: 'Ver el horario semanal' },
+        enlace: { ruta: RUTA_HORARIOS, texto: 'Ver el horario semanal' },
       };
   }
 }

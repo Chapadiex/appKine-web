@@ -9,6 +9,7 @@ import { DisponibilidadProfesionalService } from '../../../../api/generated/api/
 import { EstadoDeListado, vistaDeListado } from '../../../../shared/utils/estado-de-listado';
 import { FranjaResueltaResponse } from '../../../../api/generated/model/franja-resuelta-response';
 import { MembershipResponse } from '../../../../api/generated/model/membership-response';
+import { RUTAS_HORARIOS } from '../../models/rutas-de-horarios';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { traducirErrorHorarioEfectivo } from '../../models/horario-efectivo-errors';
 import {
@@ -87,6 +88,7 @@ export class HorarioEfectivoPage {
   private readonly formBuilder = inject(FormBuilder);
 
   protected readonly maximoDias = MAXIMO_DIAS_VENTANA;
+  protected readonly rutas = RUTAS_HORARIOS;
   protected readonly etiquetaDeFecha = etiquetaDeFecha;
   protected readonly etiquetaDeOrigen = etiquetaDeOrigen;
   protected readonly textoDeRecorte = textoDeRecorte;
