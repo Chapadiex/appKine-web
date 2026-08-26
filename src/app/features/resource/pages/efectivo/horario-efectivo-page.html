@@ -1,0 +1,181 @@
+<h1>Horario efectivo del profesional</h1>
+
+<p class="descripcion">
+  Que dias y horas <b>concretas</b> atiende un profesional en <b>{{ nombreDeLaSede() }}</b
+  >, una vez aplicadas todas las reglas juntas: su horario semanal, los cierres y aperturas de la
+  sede y los suyos, la vigencia de su vinculo y la politica de feriados. Cada franja dice
+  <b>que regla la produjo</b>, y cada dia vacio dice <b>por que</b> quedo vacio.
+</p>
+
+<p class="acciones">
+  <a class="enlace" routerLink="/horarios">Horario semanal del profesional</a>
+  <a class="enlace" routerLink="/horarios/excepciones">Cierres y aperturas</a>
+  <a class="enlace" routerLink="/horarios/calendario">Feriados de la sede</a>
+</p>
+
+<section class="tarjeta" aria-labelledby="titulo-consulta">
+  <h2 id="titulo-consulta">Que resolver</h2>
+
+  <div class="campo">
+    <label for="efectivo-profesional">Profesional</label>
+    <select
+      id="efectivo-profesional"
+      (change)="elegirProfesional($any($event.target).value)"
+      aria-describedby="efectivo-profesional-ayuda"
+    >
+      <option value="">Elegi un profesional</option>
+      @for (profesional of profesionales(); track profesional.id) {
+        <option [value]="profesional.id">
+          {{ profesional.accountName || profesional.accountEmail }}
+        </option>
+      }
+    </select>
+    <p class="ayuda" id="efectivo-profesional-ayuda">
+      Solo aparecen los vinculos vigentes que habilitan a atender en esta sede.
+    </p>
+
+    @if (errorProfesionales(); as mensaje) {
+      <p class="campo__error" role="alert">{{ mensaje }}</p>
+      <button type="button" class="boton" (click)="cargarProfesionales()">
+        Reintentar la lista de profesionales
+      </button>
+    }
+  </div>
+
+  <form id="form-ventana" [formGroup]="formularioVentana" (ngSubmit)="consultar()" novalidate>
+    <div class="ventana">
+      <div class="campo">
+        <label for="efectivo-desde">Desde</label>
+        <input id="efectivo-desde" type="date" formControlName="desde" />
+      </div>
+
+      <div class="campo">
+        <label for="efectivo-hasta">Hasta (exclusivo)</label>
+        <input
+          id="efectivo-hasta"
+          type="date"
+          formControlName="hasta"
+          aria-describedby="efectivo-hasta-ayuda"
+        />
+        <p class="ayuda" id="efectivo-hasta-ayuda">
+          El dia que escribas aca <b>no</b> se resuelve. El maximo es de {{ maximoDias }} dias.
+        </p>
+      </div>
+    </div>
+
+    <div class="acciones">
+      <button type="submit" class="boton">Resolver el horario</button>
+    </div>
+
+    <div aria-live="polite">
+      @if (errorVentana(); as mensaje) {
+        <p class="campo__error" role="alert">{{ mensaje }}</p>
+      }
+    </div>
+  </form>
+</section>
+
+<div aria-live="polite">
+  @switch (estado().tipo) {
+    @case ('inicial') {
+      <p class="estado estado--vacio">
+        Eligi un profesional y un periodo para resolver su horario.
+      </p>
+    }
+
+    @case ('cargando') {
+      <p class="estado estado--cargando">Resolviendo el horario&hellip;</p>
+    }
+
+    @case ('sin-contexto') {
+      <section class="tarjeta">
+        <p class="estado estado--vacio">Todavia no elegiste un consultorio.</p>
+        <p class="ayuda">
+          El horario efectivo se resuelve en una sede concreta. Tu sesion sigue abierta: solo falta
+          elegir donde estas trabajando.
+        </p>
+        <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
+      </section>
+    }
+
+    @case ('error') {
+      <section class="tarjeta">
+        <p class="estado estado--error" role="alert">{{ mensajeError() }}</p>
+        @if (faltaContexto()) {
+          <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
+        } @else {
+          <button type="button" class="boton" (click)="consultar()">Reintentar</button>
+        }
+      </section>
+    }
+
+    @case ('listo') {
+      <section class="tarjeta" aria-labelledby="titulo-resultado">
+        <h2 id="titulo-resultado">
+          Horario de {{ nombreDelProfesional() }} entre
+          {{ etiquetaDeFecha(ventanaConsultada()?.desde) }} y
+          {{ etiquetaDeFecha(ventanaConsultada()?.hasta) }} (exclusivo)
+        </h2>
+
+        <p class="ayuda">
+          {{ diasConAtencion() }} de {{ dias().length }} dias con atencion.
+          @if (timezone(); as zona) {
+            Las horas estan en la zona de la sede: <b>{{ zona }}</b
+            >. La respuesta la declara para que un error de huso se vea aca y no haya que deducirlo.
+          }
+        </p>
+
+        @if (dias().length === 0) {
+          <p class="estado estado--vacio">
+            La ventana consultada no devolvio ningun dia. Revisa el periodo y volve a consultar.
+          </p>
+        }
+
+        <ul class="lista-excepciones">
+          @for (dia of dias(); track dia.fecha) {
+            <li class="dia-efectivo" [class.dia-efectivo--vacio]="!atiende(dia)">
+              <p class="excepcion__titulo">
+                {{ etiquetaDeFecha(dia.fecha) }}
+                @if (dia.esFeriado) {
+                  <span class="marca-feriado">Feriado</span>
+                }
+              </p>
+
+              @if (atiende(dia)) {
+                @if (dia.esFeriado) {
+                  <p class="ayuda">
+                    Es feriado
+                    @if (dia.feriadoNombre) {
+                      (<b>{{ dia.feriadoNombre }}</b
+                      >)
+                    }
+                    y aun asi se atiende: o la sede no cierra los feriados, o hay una apertura
+                    cargada para ese dia.
+                  </p>
+                }
+
+                <ul class="franjas">
+                  @for (franja of dia.franjas; track $index) {
+                    <li class="franja">
+                      <p class="bloque__horario">{{ rango(dia, franja) }}</p>
+                      <p class="ayuda">{{ etiquetaDeOrigen(franja) }}</p>
+                      @if (textoDeRecorte(franja); as recorte) {
+                        <p class="excepcion__alerta">{{ recorte }}</p>
+                      }
+                    </li>
+                  }
+                </ul>
+              } @else {
+                @if (porQueVacio(dia); as motivo) {
+                  <p class="dia-efectivo__motivo">{{ motivo.titulo }}</p>
+                  <p class="ayuda">{{ motivo.detalle }}</p>
+                  <a class="enlace" [routerLink]="motivo.enlace.ruta">{{ motivo.enlace.texto }}</a>
+                }
+              }
+            </li>
+          }
+        </ul>
+      </section>
+    }
+  }
+</div>

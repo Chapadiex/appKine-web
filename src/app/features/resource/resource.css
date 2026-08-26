@@ -222,3 +222,68 @@
 .aviso-apertura p:last-child {
   margin-bottom: 0;
 }
+
+/*
+ * Horario efectivo de un profesional (M05, AKINE-02.04).
+ *
+ * Una lista vertical de dias y no una grilla de siete columnas: la ventana no es una semana
+ * fija -se puede pedir un mes o un ano- y cada dia lleva ademas la explicacion de que regla lo
+ * afecto, que es un parrafo, no una celda.
+ */
+.dia-efectivo {
+  border: 1px solid #d5dde5;
+  border-left: 4px solid #1f6f43;
+  border-radius: 6px;
+  padding: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+/*
+ * El dia sin atencion. El color NO es lo unico que lo distingue: adentro hay un parrafo que
+ * dice por que quedo vacio con todas las letras (WCAG 1.4.1), asi que la fila sigue
+ * comunicando en escala de grises.
+ */
+.dia-efectivo--vacio {
+  border-left-color: #7a4b00;
+  background: #fdf8f0;
+}
+
+.dia-efectivo__motivo {
+  margin: 0;
+  font-weight: 600;
+  color: #7a4b00;
+}
+
+/* El feriado se marca en el titulo del dia, atienda la sede o no: es el HECHO del calendario. */
+.marca-feriado {
+  display: inline-block;
+  margin-left: 0.5rem;
+  padding: 0.05rem 0.4rem;
+  border: 1px solid #7a4b00;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #7a4b00;
+}
+
+.franjas {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+}
+
+.franja {
+  border-top: 1px solid #e6ebf0;
+  padding-top: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.franja:first-child {
+  border-top: none;
+  padding-top: 0;
+  margin-top: 0;
+}
+
+.franja .ayuda {
+  margin: 0.25rem 0 0;
+}

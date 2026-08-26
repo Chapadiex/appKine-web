@@ -54,3 +54,15 @@ export function rutaExcepciones(consultorioId: number): string {
 export function rutaCalendarioSede(consultorioId: number): string {
   return `/api/v1/consultorios/${consultorioId}/calendario`;
 }
+
+/**
+ * Disponibilidad efectiva de un profesional en una sede (M05, AKINE-02.04).
+ *
+ * <p>Es la lectura del RESULTADO, no de las reglas: cuelga del mismo prefijo que los bloques y
+ * agrega `/efectiva`. Como toda lectura de este modulo lleva query string, los specs casan con
+ * un predicado sobre `request.url` y no con `expectOne(url)`, que compara contra
+ * `urlWithParams` y no casaria nunca.
+ */
+export function rutaDisponibilidadEfectiva(consultorioId: number, membershipId: number): string {
+  return `${rutaBloquesDisponibilidad(consultorioId, membershipId)}/efectiva`;
+}

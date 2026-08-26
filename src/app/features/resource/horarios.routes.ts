@@ -49,6 +49,16 @@ export const routes: Routes = [
     data: { [DATA_ANCHO]: ANCHO_AMPLIO },
   },
   {
+    path: 'efectivo',
+    canActivate: [permissionGuard(PERMISO_COLABORADOR_READ)],
+    loadComponent: () =>
+      import('./pages/efectivo/horario-efectivo-page').then((m) => m.HorarioEfectivoPage),
+    title: 'AKINE - Horario efectivo del profesional',
+    // Cada dia lleva sus franjas y, si quedo vacio, el parrafo que lo explica: en el ancho de
+    // lectura la explicacion se parte en cinco renglones y deja de leerse como una lista.
+    data: { [DATA_ANCHO]: ANCHO_AMPLIO },
+  },
+  {
     path: 'calendario',
     canActivate: [permissionGuard(PERMISO_COLABORADOR_READ)],
     loadComponent: () =>
