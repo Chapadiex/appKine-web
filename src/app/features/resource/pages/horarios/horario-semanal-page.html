@@ -45,7 +45,7 @@
   </div>
 
   @if (!cargandoProfesionales() && errorProfesionales() === null) {
-    @if (profesionales().length === 0) {
+    @if (profesionales().length === 0 && listaCompleta()) {
       <p class="estado estado--vacio">
         No hay profesionales con un vinculo vigente que los habilite a atender en esta sede.
       </p>
@@ -81,6 +81,13 @@
           Solo aparecen los profesionales con vinculo vigente que los habilite en esta sede. Un
           vinculo acotado a otra sede no puede tener horario aca.
         </p>
+        <!--
+          Con la lista recortada, un desplegable al que le falta gente se lee como "esa persona
+          no esta vinculada" y manda a Colaboradores a arreglar un vinculo que esta perfecto.
+        -->
+        @if (!listaCompleta()) {
+          <p class="ayuda">{{ textoListaIncompleta }}</p>
+        }
       </div>
     }
   }

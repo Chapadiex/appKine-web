@@ -78,6 +78,9 @@
         Elegir un profesional muestra <b>las suyas y ademas las de toda la sede</b>, porque un
         cierre del centro tambien le aplica a el. Sin elegir a nadie se ven solo las de la sede.
       </p>
+      @if (profesionalesConocidos() && !listaCompleta()) {
+        <p class="ayuda">{{ textoListaIncompleta }}</p>
+      }
     </div>
 
     <div class="acciones">
@@ -209,6 +212,14 @@
                   "Toda la sede" no es dejar el campo vacio: es una decision, y alcanza a todos los
                   profesionales que atienden aca.
                 </p>
+                <!--
+                  Una lista recortada SI sirve para elegir —los que estan, estan de verdad— y por
+                  eso el campo sigue en pie. Lo que hay que decir es que puede faltar gente: sin
+                  esto, no encontrar a alguien se lee como "no esta vinculado a esta sede".
+                -->
+                @if (!listaCompleta()) {
+                  <p class="ayuda">{{ textoListaIncompleta }}</p>
+                }
               } @else {
                 <p class="estado estado--error" role="alert">
                   No pudimos leer los profesionales de la sede, asi que no sabemos a quien podes
@@ -378,11 +389,17 @@
                         <li>{{ etiquetaDeFecha(feriado.fecha) }} — {{ feriado.nombre }}</li>
                       }
                     </ul>
+                    <!--
+                      Dos maneras de no saber, un solo cartel: la consulta de vinculos fallo, o
+                      respondio bien pero recortada en la primera pagina. Desde donde esta parado
+                      quien lee, son lo mismo: el numero no se pudo medir. El texto dice "no pudo
+                      leerse completa" justamente para ser cierto en los dos casos.
+                    -->
                     @if (cantidadAfectada() === null) {
                       <p>
-                        <b>No pudimos leer los profesionales de la sede</b>, asi que no sabemos a
-                        cuantos alcanza. <b>No es cero:</b> una apertura de sede reemplaza el
-                        horario base de todos los que atiendan ese dia.
+                        <b>No sabemos a cuantos profesionales alcanza</b>: la lista de vinculos de
+                        la sede no pudo leerse completa. <b>No es cero:</b> una apertura de sede
+                        reemplaza el horario base de todos los que atiendan ese dia.
                       </p>
                     } @else if (cantidadAfectada() === 0) {
                       <p>

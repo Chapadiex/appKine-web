@@ -13,8 +13,10 @@ import { RUTAS_HORARIOS } from '../../models/rutas-de-horarios';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { traducirErrorHorarioEfectivo } from '../../models/horario-efectivo-errors';
 import {
+  TEXTO_LISTA_INCOMPLETA,
   TOPE_DE_VINCULOS,
   atiendeEn,
+  esListaCompleta,
   nombreDeVinculo,
 } from '../../models/profesionales-de-la-sede';
 import {
@@ -89,6 +91,7 @@ export class HorarioEfectivoPage {
 
   protected readonly maximoDias = MAXIMO_DIAS_VENTANA;
   protected readonly rutas = RUTAS_HORARIOS;
+  protected readonly textoListaIncompleta = TEXTO_LISTA_INCOMPLETA;
   protected readonly etiquetaDeFecha = etiquetaDeFecha;
   protected readonly etiquetaDeOrigen = etiquetaDeOrigen;
   protected readonly textoDeRecorte = textoDeRecorte;
@@ -112,6 +115,17 @@ export class HorarioEfectivoPage {
    * tiene a nadie o si la consulta se cayo, y son dos problemas con dos salidas opuestas.
    */
   protected readonly profesionalesConocidos = signal(false);
+
+  /**
+   * Si la lista recibida cubre <b>toda</b> la organizacion, o solo su primera pagina.
+   *
+   * <p>`listMemberships` no filtra por sede y el backend recorta la pagina en
+   * {@link TOPE_DE_VINCULOS}: en una organizacion grande el selector muestra un recorte por id
+   * que puede dejar afuera a profesionales que si atienden aca. Esta pantalla no cuenta a nadie
+   * —no tiene aviso que sostener—, pero un desplegable al que le falta gente se lee como "esa
+   * persona no esta vinculada", que manda a arreglar un vinculo que esta perfecto.
+   */
+  protected readonly listaCompleta = signal(false);
 
   protected readonly nombreDelProfesional = computed(() =>
     nombreDeVinculo(
@@ -196,6 +210,7 @@ export class HorarioEfectivoPage {
     if (orgId === null || consultorioId === null) {
       this.profesionales.set([]);
       this.profesionalesConocidos.set(false);
+      this.listaCompleta.set(false);
       this.estado.set({ tipo: 'sin-contexto' });
       return;
     }
@@ -209,6 +224,7 @@ export class HorarioEfectivoPage {
         if (respuesta instanceof Error) {
           this.profesionales.set([]);
           this.profesionalesConocidos.set(false);
+          this.listaCompleta.set(false);
           this.errorProfesionales.set(traducirErrorHorarioEfectivo(respuesta).mensaje);
           return;
         }
@@ -216,6 +232,8 @@ export class HorarioEfectivoPage {
           (respuesta.content ?? []).filter((vinculo) => atiendeEn(vinculo, consultorioId)),
         );
         this.profesionalesConocidos.set(true);
+        // Una pagina llena no es una nomina completa: ver `esListaCompleta`.
+        this.listaCompleta.set(esListaCompleta(respuesta));
       });
   }
 

@@ -38,8 +38,10 @@ import { UpdateBloqueRequest } from '../../../../api/generated/model/update-bloq
 import { BloqueEnConflicto, CausaBloque, traducirErrorBloque } from '../../models/bloque-errors';
 import { DIAS_DE_LA_SEMANA, etiquetaDeDia } from '../../models/dias-de-la-semana';
 import {
+  TEXTO_LISTA_INCOMPLETA,
   TOPE_DE_VINCULOS,
   atiendeEn,
+  esListaCompleta,
   nombreDeVinculo,
 } from '../../models/profesionales-de-la-sede';
 import {
@@ -124,6 +126,7 @@ export class HorarioSemanalPage {
   protected readonly permisoManage = PERMISO_CONSULTORIO_MANAGE;
   protected readonly rutas = RUTAS_HORARIOS;
   protected readonly textoModoLectura = TEXTO_MODO_LECTURA;
+  protected readonly textoListaIncompleta = TEXTO_LISTA_INCOMPLETA;
   protected readonly modoLectura = modoLectura(inject(PermissionsStore));
   protected readonly patronHora = PATRON_HORA;
   protected readonly horaMedianoche = HORA_MEDIANOCHE;
@@ -139,6 +142,17 @@ export class HorarioSemanalPage {
 
   protected readonly profesionales = signal<readonly MembershipResponse[]>([]);
   protected readonly cargandoProfesionales = signal(false);
+
+  /**
+   * Si la lista recibida cubre <b>toda</b> la organizacion, o solo su primera pagina.
+   *
+   * <p>`listMemberships` no filtra por sede y el backend recorta la pagina en
+   * {@link TOPE_DE_VINCULOS}: en una organizacion grande el selector muestra un recorte por id.
+   * Aca importa por dos cosas: que "no hay profesionales con vinculo vigente" no se afirme sobre
+   * una lista cortada, y que quien no encuentre a alguien sepa que puede estar faltando en vez
+   * de irse a Colaboradores a arreglar un vinculo que esta perfecto.
+   */
+  protected readonly listaCompleta = signal(false);
   protected readonly errorProfesionales = signal<string | null>(null);
   protected readonly membershipElegido = signal<number | null>(null);
 
@@ -274,6 +288,7 @@ export class HorarioSemanalPage {
     if (orgId === null || consultorioId === null) {
       this.profesionales.set([]);
       this.cargandoProfesionales.set(false);
+      this.listaCompleta.set(false);
       this.estado.set({ tipo: 'sin-contexto' });
       return;
     }
@@ -289,6 +304,7 @@ export class HorarioSemanalPage {
 
         if (respuesta instanceof Error) {
           this.profesionales.set([]);
+          this.listaCompleta.set(false);
           // Lo que fallo es una LECTURA de colaboradores, no una mutacion del horario:
           // `traducirErrorBloque` diria "no tenes permiso para administrar el horario" sobre un
           // 403 que en realidad pide `colaborador:read`, y quien administre el centro terminaria
@@ -301,6 +317,8 @@ export class HorarioSemanalPage {
         this.profesionales.set(
           (respuesta.content ?? []).filter((vinculo) => atiendeEn(vinculo, consultorioId)),
         );
+        // Una pagina llena no es una nomina completa: ver `esListaCompleta`.
+        this.listaCompleta.set(esListaCompleta(respuesta));
       });
   }
 

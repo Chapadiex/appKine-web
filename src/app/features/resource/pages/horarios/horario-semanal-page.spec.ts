@@ -468,6 +468,46 @@ describe('HorarioSemanalPage', () => {
     ).toBe(String(PROFESIONAL));
   });
 
+  /**
+   * "No hay profesionales" no se afirma sobre una nomina recortada.
+   *
+   * <p>`listMemberships` no filtra por sede y el backend recorta la pagina en cien. Si los cien
+   * primeros vinculos de una organizacion grande no incluyen a ninguno de esta sede, la pantalla
+   * decia "no hay profesionales con un vinculo vigente", que es falso y manda a Colaboradores a
+   * arreglar vinculos que estan perfectos.
+   */
+  it('con la nomina recortada no afirma que no haya profesionales: dice que la lista puede faltar', async () => {
+    tenantContext.select({
+      organizationId: ORG,
+      organizationName: 'Belgrano',
+      consultorioId: SEDE,
+      consultorioName: 'Sede Centro',
+    });
+
+    permisos.cargar().subscribe();
+    httpMock.expectOne(RUTA_PERMISOS_EFECTIVOS).flush({ permissions: [] });
+
+    const fixture = TestBed.createComponent(HorarioSemanalPage);
+    fixture.detectChanges();
+
+    // Cien vinculos que llegaron, ninguno profesional de esta sede, y 250 en total.
+    const relleno = Array.from({ length: 100 }, (_, indice) => ({
+      ...RECEPCION,
+      id: 1000 + indice,
+    }));
+
+    httpMock
+      .expectOne((peticion: HttpRequest<unknown>) => peticion.url === rutaMemberships(ORG))
+      .flush({ content: relleno, page: 0, size: 100, totalElements: 250, totalPages: 3 });
+    await estabilizar(fixture);
+
+    const contenido = texto(fixture);
+    expect(contenido).not.toContain('No hay profesionales con un vinculo vigente');
+    expect(contenido).toContain('la lista puede estar incompleta');
+    // El selector sigue en pie: los que llegaron se pueden elegir igual.
+    expect(fixture.nativeElement.querySelector('#selector-profesional')).not.toBeNull();
+  });
+
   it('sin sede elegida no consulta ningun horario y ofrece elegir consultorio', async () => {
     // Contexto con organizacion pero SIN sede: el horario cuelga de una sede concreta.
     tenantContext.select({ organizationId: ORG, organizationName: 'Belgrano' });

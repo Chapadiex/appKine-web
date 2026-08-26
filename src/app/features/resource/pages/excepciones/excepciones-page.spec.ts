@@ -444,6 +444,49 @@ describe('ExcepcionesPage', () => {
     expect(texto(fixture)).toContain('"toda la sede"');
   });
 
+  /**
+   * Una nomina recortada no puede sostener el numero del aviso.
+   *
+   * <p>Es el mismo error que el de la consulta caida, entrando por otra puerta.
+   * `listMemberships` no filtra por sede y el backend recorta la pagina en cien: una
+   * organizacion de 250 vinculos cuyos primeros cien traen 2 profesionales de esta sede haria
+   * que el cartel prometiera "el horario habitual de 2 profesionales no va a aplicar" sobre una
+   * apertura que se lo cambia a todos los que la sede tenga de verdad. Un numero mas chico que
+   * el real es peor que ningun numero: el admin lo lee y confirma.
+   */
+  it('con la nomina recortada por el tope, el aviso no afirma un numero', async () => {
+    const fixture = await montarConNominaRecortada();
+
+    // La lista sirve para elegir —los que llegaron, llegaron— pero avisa que puede faltar gente.
+    expect(texto(fixture)).toContain('la lista puede estar incompleta');
+
+    abrir(fixture, 'Cargar un cierre o una apertura');
+    seleccionar(fixture, '#alta-excepcion-tipo', 'APERTURA');
+    escribir(fixture, '#alta-excepcion-desde', '2026-09-10');
+    escribir(fixture, '#alta-excepcion-hasta', '2026-09-11');
+    enviar(fixture, '#form-alta-excepcion');
+
+    httpMock
+      .expectOne(
+        (peticion: HttpRequest<unknown>) =>
+          peticion.method === 'GET' && peticion.url === CALENDARIO,
+      )
+      .flush({ consultorioId: SEDE, pais: 'AR', cierraPorFeriado: true, feriados: [FERIADO] });
+    await estabilizar(fixture);
+
+    const aviso = texto(fixture);
+
+    expect(aviso).toContain('Esta apertura le cambia el dia a toda la sede');
+    expect(aviso).toContain('No sabemos a cuantos profesionales alcanza');
+    expect(aviso).toContain('No es cero');
+
+    // Y sobre todo: NINGUN numero. Los dos que llegaron no son los de la sede.
+    expect(aviso).not.toContain('de 2 profesionales');
+    expect(aviso).not.toContain('ningun profesional vinculado hoy a la sede');
+
+    abrir(fixture, 'Volver y cambiar el alcance');
+  });
+
   it('sin feriados en el periodo la apertura de sede se guarda derecho, sin aviso', async () => {
     const fixture = await montar();
 
@@ -756,6 +799,49 @@ describe('ExcepcionesPage', () => {
   }
 
   /** Igual que {@link montar}, pero con el listado de vinculos caido: la cantidad es DESCONOCIDA. */
+  /**
+   * Igual que {@link montar}, pero con la nomina RECORTADA por el tope de pagina.
+   *
+   * <p>La consulta responde bien: cien vinculos, y `totalElements` diciendo que hay 250. Ana y
+   * Beto estan entre los que llegaron; los profesionales de la sede que quedaron afuera, no.
+   */
+  async function montarConNominaRecortada(): Promise<ComponentFixture<ExcepcionesPage>> {
+    tenantContext.select({
+      organizationId: ORG,
+      organizationName: 'Belgrano',
+      consultorioId: SEDE,
+      consultorioName: 'Sede Centro',
+    });
+
+    permisos.cargar().subscribe();
+    httpMock
+      .expectOne(RUTA_PERMISOS_EFECTIVOS)
+      .flush({ permissions: [PERMISO_CONSULTORIO_MANAGE] });
+
+    const fixture = TestBed.createComponent(ExcepcionesPage);
+    fixture.detectChanges();
+
+    const relleno = Array.from({ length: 98 }, (_, indice) => ({
+      ...RECEPCION,
+      id: 1000 + indice,
+    }));
+
+    httpMock
+      .expectOne((peticion: HttpRequest<unknown>) => peticion.url === rutaMemberships(ORG))
+      .flush({
+        content: [ANA, BETO, ...relleno],
+        page: 0,
+        size: 100,
+        totalElements: 250,
+        totalPages: 3,
+      });
+
+    listado().flush(VIGENTES);
+    await estabilizar(fixture);
+
+    return fixture;
+  }
+
   async function montarSinProfesionales(): Promise<ComponentFixture<ExcepcionesPage>> {
     tenantContext.select({
       organizationId: ORG,

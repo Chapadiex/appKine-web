@@ -31,7 +31,7 @@
       <button type="button" class="boton" (click)="cargarProfesionales()">
         Reintentar la lista de profesionales
       </button>
-    } @else if (profesionalesConocidos() && profesionales().length === 0) {
+    } @else if (profesionalesConocidos() && listaCompleta() && profesionales().length === 0) {
       <p class="estado estado--vacio">
         No hay profesionales con un vinculo vigente que los habilite a atender en esta sede.
       </p>
@@ -60,6 +60,13 @@
       <p class="ayuda" id="efectivo-profesional-ayuda">
         Solo aparecen los vinculos vigentes que habilitan a atender en esta sede.
       </p>
+      <!--
+        Con la lista recortada, "No hay profesionales" seria falso y no encontrar a alguien se
+        leeria como "no esta vinculado". Se dice que puede faltar gente, y por que.
+      -->
+      @if (profesionalesConocidos() && !listaCompleta()) {
+        <p class="ayuda">{{ textoListaIncompleta }}</p>
+      }
     }
   </div>
 

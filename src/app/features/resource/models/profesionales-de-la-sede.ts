@@ -61,3 +61,51 @@ export function textoDeProfesionales(cantidad: number): string {
   }
   return `${cantidad} profesionales`;
 }
+
+/**
+ * Si la respuesta trae <b>todos</b> los vinculos de la organizacion, o solo los primeros.
+ *
+ * <p><b>Por que hace falta preguntarlo.</b> `listMemberships` solo acepta `page` y `size`: no
+ * filtra por sede ni por rol, y el backend recorta el tamaño de pagina en
+ * {@link TOPE_DE_VINCULOS}. Las tres pantallas piden la pagina 0 y nada mas —el selector no se
+ * pagina a proposito—, asi que en una organizacion con mas vinculos que el tope <b>se ve un
+ * recorte de la nomina, ordenado por id</b>. Los profesionales de esta sede pueden estar casi
+ * todos afuera.
+ *
+ * <p><b>Lo que esto NO puede hacer es corregir el numero.</b> `totalElements` cuenta los
+ * vinculos de la organizacion entera —administrativos, otras sedes, vencidos— y no se parece al
+ * numero de profesionales de esta sede. Sirve para una sola cosa, que es justamente la que hace
+ * falta: <b>detectar que la lista puede estar incompleta</b>. Con eso, el aviso de la apertura
+ * de sede vuelve a decir que no pudo medir, en vez de afirmar un numero mas chico que el real.
+ *
+ * <p>Se considera incompleta tambien cuando llego <b>exactamente</b> llena sin `totalElements`:
+ * una pagina que raspa el tope es indistinguible de una que quedo cortada, y ante la duda esta
+ * funcion elige dudar. El precio de equivocarse hacia este lado es un cartel que dice "no
+ * sabemos"; hacia el otro, un cierre de sede confirmado sobre un numero falso.
+ */
+export function esListaCompleta(respuesta: {
+  readonly content?: readonly unknown[];
+  readonly totalElements?: number;
+}): boolean {
+  const recibidos = respuesta.content?.length ?? 0;
+
+  if (recibidos >= TOPE_DE_VINCULOS) {
+    return false;
+  }
+
+  const total = respuesta.totalElements;
+  return typeof total !== 'number' || total <= recibidos;
+}
+
+/**
+ * Lo que se dice al lado de un selector armado con una lista que puede estar recortada.
+ *
+ * <p>Un desplegable al que le falta gente se lee como "esa persona no esta vinculada", que es
+ * una conclusion falsa y ademas accionable: manda a Colaboradores a arreglar un vinculo que
+ * esta perfecto. El texto nombra el tope porque es lo unico que le permite a quien lo lee
+ * entender por que pasa y que no es un error de sus datos.
+ */
+export const TEXTO_LISTA_INCOMPLETA =
+  `Esta organizacion tiene mas de ${TOPE_DE_VINCULOS} vinculos y aca se muestran solo los ` +
+  'primeros, asi que la lista puede estar incompleta. Si no encontras a alguien, no significa ' +
+  'que no este vinculado a esta sede.';

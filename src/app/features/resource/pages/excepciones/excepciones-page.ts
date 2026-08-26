@@ -54,8 +54,10 @@ import {
   rangoHorario,
 } from '../../models/horas-de-pared';
 import {
+  TEXTO_LISTA_INCOMPLETA,
   TOPE_DE_VINCULOS,
   atiendeEn,
+  esListaCompleta,
   nombreDeVinculo,
   textoDeProfesionales,
 } from '../../models/profesionales-de-la-sede';
@@ -172,6 +174,7 @@ export class ExcepcionesPage {
   protected readonly permisoManage = PERMISO_CONSULTORIO_MANAGE;
   protected readonly rutas = RUTAS_HORARIOS;
   protected readonly textoModoLectura = TEXTO_MODO_LECTURA;
+  protected readonly textoListaIncompleta = TEXTO_LISTA_INCOMPLETA;
   protected readonly modoLectura = modoLectura(inject(PermissionsStore));
   protected readonly patronHora = PATRON_HORA;
   protected readonly motivos = MOTIVOS;
@@ -198,6 +201,23 @@ export class ExcepcionesPage {
   protected readonly profesionalesConocidos = signal(false);
 
   /**
+   * Si la lista recibida cubre <b>toda</b> la organizacion, o solo su primera pagina.
+   *
+   * <p>Es la otra manera de no saber a cuanta gente alcanza una excepcion de sede, y llega por
+   * una puerta distinta de la del fallo: aca la consulta <b>respondio bien</b>, y aun asi el
+   * dato esta incompleto. `listMemberships` no filtra por sede y el backend recorta la pagina
+   * en {@link TOPE_DE_VINCULOS}; en una organizacion grande, la nomina que se ve es un recorte
+   * por id que puede dejar afuera a casi todos los profesionales de esta sede.
+   *
+   * <p><b>Se separa de {@link profesionalesConocidos} a proposito.</b> Una lista recortada
+   * sigue siendo utilizable para <b>elegir</b> —los que estan, estan de verdad—, asi que apagar
+   * el selector de alcance dejaria a cualquier centro con mas de cien vinculos sin poder cargar
+   * ni una excepcion. Lo que una lista recortada <b>no</b> puede es sostener un numero: eso es
+   * lo unico que se apaga.
+   */
+  protected readonly listaCompleta = signal(false);
+
+  /**
    * Cuantos profesionales quedan afectados por una excepcion de sede, o `null` si no se sabe.
    *
    * <p>Es el numero del aviso, y sale de la misma lista que alimenta el selector de alcance
@@ -209,9 +229,15 @@ export class ExcepcionesPage {
    * que no se pudo obtener se dice en voz alta; nunca se rellena con un valor que suena
    * tranquilizador. Es la misma disciplina que ya se aplica cuando falla la consulta del
    * calendario.
+   *
+   * <p><b>Una lista recortada cuenta como no saber.</b> Es el mismo error entrando por otra
+   * puerta: con 250 vinculos en la organizacion y 40 profesionales en la sede, la primera
+   * pagina puede traer 3 y el aviso diria "el horario habitual de 3 profesionales no va a
+   * aplicar" sobre un cambio que se lo cambia a 40. Un numero mas chico que el real es peor que
+   * ningun numero, porque el admin lo lee y confirma.
    */
   protected readonly cantidadAfectada = computed<number | null>(() =>
-    this.profesionalesConocidos() ? this.profesionales().length : null,
+    this.profesionalesConocidos() && this.listaCompleta() ? this.profesionales().length : null,
   );
 
   /** El numero redactado. Solo se lee cuando {@link cantidadAfectada} es mayor que cero. */
@@ -332,6 +358,7 @@ export class ExcepcionesPage {
     if (orgId === null || consultorioId === null) {
       this.profesionales.set([]);
       this.profesionalesConocidos.set(false);
+      this.listaCompleta.set(false);
       return;
     }
 
@@ -345,6 +372,7 @@ export class ExcepcionesPage {
           // Vacia y DESCONOCIDA: sin esta distincion el aviso diria "ningun profesional".
           this.profesionales.set([]);
           this.profesionalesConocidos.set(false);
+          this.listaCompleta.set(false);
           this.errorProfesionales.set(traducirErrorExcepcion(respuesta).mensaje);
           return;
         }
@@ -352,6 +380,8 @@ export class ExcepcionesPage {
           (respuesta.content ?? []).filter((vinculo) => atiendeEn(vinculo, consultorioId)),
         );
         this.profesionalesConocidos.set(true);
+        // Una pagina llena no es una nomina completa: ver `esListaCompleta`.
+        this.listaCompleta.set(esListaCompleta(respuesta));
       });
   }
 

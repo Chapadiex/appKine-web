@@ -6,6 +6,7 @@ import {
 import {
   TOPE_DE_VINCULOS,
   atiendeEn,
+  esListaCompleta,
   nombreDeVinculo,
   textoDeProfesionales,
 } from './profesionales-de-la-sede';
@@ -111,5 +112,41 @@ describe('textoDeProfesionales', () => {
     expect(textoDeProfesionales(0)).toBe('ningun profesional vinculado hoy a la sede');
     expect(textoDeProfesionales(1)).toBe('1 profesional');
     expect(textoDeProfesionales(7)).toBe('7 profesionales');
+  });
+});
+
+/**
+ * Detectar que la nomina llego cortada.
+ *
+ * <p>Es la segunda puerta al mismo error: el aviso de la apertura de sede contando sobre una
+ * lista incompleta dice un numero <b>mas chico que el real</b>, que el admin lee y confirma.
+ * Una organizacion de 250 vinculos cuyos primeros 100 traen 3 profesionales de esta sede haria
+ * que el cartel prometiera 3 afectados sobre un cambio que le cambia el dia a 40.
+ */
+describe('esListaCompleta', () => {
+  const vinculos = (cuantos: number) => Array.from({ length: cuantos }, () => ({}));
+
+  it('una pagina que no llega al tope y agota el total esta completa', () => {
+    expect(esListaCompleta({ content: vinculos(12), totalElements: 12 })).toBe(true);
+  });
+
+  it('sin totalElements, una pagina corta sigue estando completa', () => {
+    // Es lo que responde una organizacion chica: no hay nada que indique un corte.
+    expect(esListaCompleta({ content: vinculos(3) })).toBe(true);
+  });
+
+  it('una pagina llena se considera incompleta aunque no venga totalElements', () => {
+    // Raspar el tope es indistinguible de quedar cortado. Ante la duda, se duda: el precio de
+    // equivocarse hacia este lado es un cartel que dice "no sabemos".
+    expect(esListaCompleta({ content: vinculos(TOPE_DE_VINCULOS) })).toBe(false);
+  });
+
+  it('un total mayor que lo recibido es un corte declarado por el backend', () => {
+    expect(esListaCompleta({ content: vinculos(50), totalElements: 250 })).toBe(false);
+  });
+
+  it('una respuesta sin content no se toma por completa cuando el total dice otra cosa', () => {
+    expect(esListaCompleta({ totalElements: 7 })).toBe(false);
+    expect(esListaCompleta({})).toBe(true);
   });
 });
