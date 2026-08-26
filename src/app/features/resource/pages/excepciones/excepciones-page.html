@@ -62,8 +62,14 @@
         aria-describedby="filtro-alcance-ayuda"
       >
         <option value="">Solo las de toda la sede</option>
+        <!--
+          `[selected]` ademas del `[value]` del select: cuando el filtro viene en la URL, el
+          valor esta puesto ANTES de que lleguen los profesionales, y asignarle a un `<select>`
+          un valor que todavia no existe como opcion no hace nada. El binding de la opcion se
+          evalua cuando la opcion se crea, que es el momento en que si puede quedar elegida.
+        -->
         @for (profesional of profesionales(); track profesional.id ?? $index) {
-          <option [value]="profesional.id">
+          <option [value]="profesional.id" [selected]="profesional.id === filtroMembership()">
             {{ profesional.accountName || profesional.accountEmail }}
           </option>
         }
@@ -177,24 +183,46 @@
               </select>
             </div>
 
+            <!--
+              El alcance es el campo mas peligroso del formulario, y el unico cuya opcion por
+              defecto significa "todos". Si la lista de vinculos no cargo, el desplegable
+              colapsa a esa unica opcion: quien vino a cerrarle la semana a UNA persona no
+              encuentra su nombre y termina cerrando el centro entero. Por eso, con la lista
+              desconocida, no se ofrece ninguna eleccion de alcance.
+            -->
             <div class="campo">
-              <label for="alta-excepcion-alcance">A quien alcanza</label>
-              <select
-                id="alta-excepcion-alcance"
-                formControlName="alcance"
-                aria-describedby="alta-excepcion-alcance-ayuda"
-              >
-                <option value="">Toda la sede — todos los profesionales</option>
-                @for (profesional of profesionales(); track profesional.id ?? $index) {
-                  <option [value]="profesional.id">
-                    {{ profesional.accountName || profesional.accountEmail }}
-                  </option>
-                }
-              </select>
-              <p class="ayuda" id="alta-excepcion-alcance-ayuda">
-                "Toda la sede" no es dejar el campo vacio: es una decision, y alcanza a todos los
-                profesionales que atienden aca.
-              </p>
+              @if (profesionalesConocidos()) {
+                <label for="alta-excepcion-alcance">A quien alcanza</label>
+                <select
+                  id="alta-excepcion-alcance"
+                  formControlName="alcance"
+                  aria-describedby="alta-excepcion-alcance-ayuda"
+                >
+                  <option value="">Toda la sede — todos los profesionales</option>
+                  @for (profesional of profesionales(); track profesional.id ?? $index) {
+                    <option [value]="profesional.id">
+                      {{ profesional.accountName || profesional.accountEmail }}
+                    </option>
+                  }
+                </select>
+                <p class="ayuda" id="alta-excepcion-alcance-ayuda">
+                  "Toda la sede" no es dejar el campo vacio: es una decision, y alcanza a todos los
+                  profesionales que atienden aca.
+                </p>
+              } @else {
+                <p class="estado estado--error" role="alert">
+                  No pudimos leer los profesionales de la sede, asi que no sabemos a quien podes
+                  alcanzar. La unica opcion que quedaria es <b>toda la sede</b>, que alcanza a
+                  todos: no la ofrecemos a ciegas.
+                </p>
+                <button
+                  type="button"
+                  class="boton boton--secundario"
+                  (click)="cargarProfesionales()"
+                >
+                  Reintentar los profesionales
+                </button>
+              }
             </div>
 
             <div class="ventana">
@@ -318,7 +346,11 @@
             }
 
             <div class="acciones">
-              <button type="submit" class="boton" [disabled]="enviando()">
+              <button
+                type="submit"
+                class="boton"
+                [disabled]="enviando() || !profesionalesConocidos()"
+              >
                 Cargar la excepcion
               </button>
               <button type="button" class="boton boton--secundario" (click)="cerrarAlta()">
@@ -430,8 +462,15 @@
           <ul class="lista-excepciones">
             @for (excepcion of vigentes(); track excepcion.id ?? $index) {
               <li class="excepcion" [class.excepcion--apertura]="excepcion.tipo === 'APERTURA'">
+                <!--
+                  El numero de la fila se muestra porque hay una pantalla que lo NOMBRA: el
+                  horario efectivo explica un dia vacio diciendo "la excepcion de cierre numero
+                  42 cubre el dia entero". Sin el numero visible aca, esa frase manda a buscar
+                  una fila que no se puede identificar entre varias parecidas.
+                -->
                 <p class="excepcion__titulo">
-                  {{ excepcion.tipo === 'APERTURA' ? 'Apertura' : 'Cierre' }} —
+                  {{ excepcion.tipo === 'APERTURA' ? 'Apertura' : 'Cierre' }}
+                  <span class="excepcion__numero">numero {{ excepcion.id }}</span> —
                   {{ alcanceDe(excepcion) }}
                 </p>
 
@@ -449,7 +488,7 @@
                   </p>
                 }
 
-                <p class="ayuda">Motivo declarado: {{ excepcion.motivo }}</p>
+                <p class="ayuda">Motivo declarado: {{ etiquetaDeMotivo(excepcion.motivo) }}</p>
 
                 @if (excepcion.notes) {
                   <p class="ayuda">{{ excepcion.notes }}</p>

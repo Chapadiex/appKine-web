@@ -200,6 +200,18 @@ describe('HorarioEfectivoPage', () => {
     expect(contenido).toContain('Ver los cierres y las aperturas');
     // Es la unica de las cuatro razones que se resuelve dando de baja algo.
     expect(contenido).toContain('se deshace dandolo de baja');
+
+    // El salto lleva consigo de quien y de que dia se hablaba. Sin esto aterriza en la vista
+    // por defecto -solo las de toda la sede, noventa dias desde hoy- donde un cierre de Ana no
+    // figura, y el numero 77 que se acaba de leer no lleva a ninguna parte.
+    // Dentro del dia, no en la barra de navegacion de arriba: ese enlace tambien apunta a
+    // excepciones y es el que aparece primero en el documento.
+    const enlace = (fixture.nativeElement as HTMLElement).querySelector<HTMLAnchorElement>(
+      '.dia-efectivo a[href^="/horarios/excepciones"]',
+    );
+    expect(enlace?.getAttribute('href')).toBe(
+      `/horarios/excepciones?membershipId=${PROFESIONAL}&desde=2026-09-02&hasta=2026-09-03`,
+    );
   });
 
   it('un dia sin vinculo vigente dice que no trabajaba ahi todavia, no que no atiende ese dia', async () => {
@@ -424,6 +436,76 @@ describe('HorarioEfectivoPage', () => {
     expect(texto(fixture)).toContain('Ana Diaz');
   });
 
+  /**
+   * Una sede sin profesionales lo dice; no se confunde con una consulta caida.
+   *
+   * <p>Antes esta pantalla respondia a las dos cosas con el mismo desplegable de una sola
+   * opcion. El horario semanal ya distinguia los dos casos y ofrecia la salida —el horario
+   * cuelga del vinculo, asi que se arregla en Colaboradores—; aca faltaba.
+   */
+  it('sin profesionales vinculados lo dice y manda a Colaboradores, no a un desplegable vacio', async () => {
+    tenantContext.select({
+      organizationId: ORG,
+      organizationName: 'Belgrano',
+      consultorioId: SEDE,
+      consultorioName: 'Sede Centro',
+    });
+
+    const fixture = TestBed.createComponent(HorarioEfectivoPage);
+    fixture.detectChanges();
+
+    httpMock
+      .expectOne((peticion: HttpRequest<unknown>) => peticion.url === MEMBERSHIPS)
+      .flush({ content: [] });
+    await estabilizar(fixture);
+
+    expect(texto(fixture)).toContain('No hay profesionales con un vinculo vigente');
+    expect(fixture.nativeElement.querySelector('#efectivo-profesional')).toBeNull();
+    expect(
+      fixture.nativeElement.querySelector('a[href="/organizacion/colaboradores"]'),
+    ).not.toBeNull();
+  });
+
+  /**
+   * El desplegable no puede seguir mostrando a alguien que ya no esta elegido.
+   *
+   * <p>Al cambiar de sede el signal vuelve a `null`, pero un `<select>` sin `[value]` conserva
+   * lo que el navegador dibujo: la pantalla queda diciendo "Ana Diaz" mientras el estado dice
+   * que no hay nadie, y "Resolver" contesta "Eligi un profesional" con un nombre a la vista.
+   */
+  it('al cambiar de sede el desplegable vuelve a "Elegi un profesional" y no queda con el anterior', async () => {
+    const fixture = await elegir(await montar());
+
+    responder(fixture, { timezone: ZONA, dias: [MARTES] });
+    await estabilizar(fixture);
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector<HTMLSelectElement>(
+        '#efectivo-profesional',
+      )?.value,
+    ).toBe(String(PROFESIONAL));
+
+    tenantContext.select({
+      organizationId: ORG,
+      organizationName: 'Belgrano',
+      consultorioId: 9,
+      consultorioName: 'Sede Norte',
+    });
+    fixture.detectChanges();
+
+    // Alcance de organizacion: el mismo vinculo habilita tambien en la sede nueva, asi que el
+    // desplegable existe y lo que se mira es que NO haya quedado con el valor anterior.
+    httpMock
+      .expectOne((peticion: HttpRequest<unknown>) => peticion.url === MEMBERSHIPS)
+      .flush({ content: [{ ...VINCULOS.content[0], consultorioId: null }] });
+    await estabilizar(fixture);
+
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector<HTMLSelectElement>(
+        '#efectivo-profesional',
+      )?.value,
+    ).toBe('');
+  });
+
   it('sin consultorio elegido no consulta nada y explica que falta', async () => {
     tenantContext.select({ organizationId: ORG, organizationName: 'Belgrano' });
 
@@ -537,7 +619,7 @@ function escribir(
   selector: string,
   valor: string,
 ) {
-  const campo = fixture.nativeElement.querySelector<HTMLInputElement>(selector);
+  const campo = (fixture.nativeElement as HTMLElement).querySelector<HTMLInputElement>(selector);
   if (campo === null) {
     throw new Error(`No existe el campo ${selector}`);
   }
@@ -547,7 +629,9 @@ function escribir(
 }
 
 function enviar(fixture: { nativeElement: HTMLElement; detectChanges(): void }, selector: string) {
-  const formulario = fixture.nativeElement.querySelector<HTMLFormElement>(selector);
+  const formulario = (fixture.nativeElement as HTMLElement).querySelector<HTMLFormElement>(
+    selector,
+  );
   // Falla cerrado. Con `?.` este helper se volvia un no-op silencioso ante un selector que
   // no casa, y TODOS los `expectNone` del spec pasaban sin que se enviara nada: el spec
   // quedaba verde afirmando que la pantalla no sale a la red.

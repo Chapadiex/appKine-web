@@ -16,7 +16,7 @@ import {
   ValidationErrors,
   Validators,
 } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { catchError, of } from 'rxjs';
 
 import { CalendarioDeSedeService } from '../../../../api/generated/api/calendario-de-sede.service';
@@ -39,6 +39,11 @@ import { PERMISO_CONSULTORIO_MANAGE } from '../../../../core/models/permisos';
 import { PermisoDirective } from '../../../../shared/directives/permiso.directive';
 import { PermissionsStore } from '../../../../core/services/permissions.store';
 import { RUTAS_HORARIOS } from '../../models/rutas-de-horarios';
+import {
+  ParametrosDeHorarios,
+  SIN_PARAMETROS,
+  leerParametrosDeHorarios,
+} from '../../models/parametros-de-horarios';
 import { TEXTO_MODO_LECTURA, modoLectura } from '../../models/modo-lectura';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { CausaExcepcion, traducirErrorExcepcion } from '../../models/excepcion-errors';
@@ -65,6 +70,18 @@ import {
 
 /** Cuantos dias de ventana se proponen al entrar. Un trimestre es lo que se planifica. */
 const DIAS_PROPUESTOS = 90;
+
+/**
+ * Lo que se dice cuando no se sabe quienes son los profesionales de la sede.
+ *
+ * <p>No es un "reintenta": nombra <b>que se iba a guardar</b>. La opcion que queda viva cuando
+ * la lista de vinculos no llega es la de mayor alcance que existe en esta pantalla, y la unica
+ * que no se puede acotar despues sin dar de baja lo cargado.
+ */
+const MENSAJE_ALCANCE_DESCONOCIDO =
+  'No pudimos leer los profesionales de la sede, asi que no podemos ofrecerte a quien alcanza ' +
+  'la excepcion. Lo unico que quedaria elegible es "toda la sede", que alcanza a todos: no se ' +
+  'guarda nada hasta que la lista cargue. Volve a intentar con el boton de arriba.';
 
 /**
  * El aviso que frena una apertura de sede antes de guardarla.
@@ -140,6 +157,18 @@ export class ExcepcionesPage {
   private readonly formBuilder = inject(FormBuilder);
   private readonly injector = inject(Injector);
 
+  /**
+   * De quien y de que dia hablaba el enlace que trajo hasta aca, si vino de uno.
+   *
+   * <p>Se lee del snapshot y se consume <b>una sola vez</b>: son las condiciones iniciales de
+   * esta visita, no un filtro pegado a la URL. Despues de aplicarlos, cambiar de sede o volver a
+   * consultar tiene que partir de lo que el usuario ve en los campos, no de lo que decia una
+   * query string que ya nadie mira.
+   */
+  private parametros: ParametrosDeHorarios = leerParametrosDeHorarios(
+    inject(ActivatedRoute).snapshot.queryParamMap,
+  );
+
   protected readonly permisoManage = PERMISO_CONSULTORIO_MANAGE;
   protected readonly rutas = RUTAS_HORARIOS;
   protected readonly textoModoLectura = TEXTO_MODO_LECTURA;
@@ -166,7 +195,7 @@ export class ExcepcionesPage {
    * excepcion de sede. Un fallo de `GET /memberships` la deja en `false` con la lista vacia,
    * que <b>no</b> es lo mismo que una sede sin profesionales.
    */
-  private readonly profesionalesConocidos = signal(false);
+  protected readonly profesionalesConocidos = signal(false);
 
   /**
    * Cuantos profesionales quedan afectados por una excepcion de sede, o `null` si no se sabe.
@@ -263,11 +292,17 @@ export class ExcepcionesPage {
       // abierto apuntando a una fila que en la sede nueva no existe.
       this.tenantContext.contextEpoch();
       untracked(() => {
+        // Los parametros del enlace valen para la PRIMERA carga y se consumen ahi: si despues
+        // el usuario cambia de sede, lo que corresponde es la ventana por defecto y todas las
+        // excepciones de la sede nueva, no el dia de una explicacion de la sede anterior.
+        const inicial = this.parametros;
+        this.parametros = SIN_PARAMETROS;
+
         this.cerrarAlta();
         this.bajaAbierta.set(null);
         this.exito.set(null);
-        this.filtroMembership.set(null);
-        this.proponerVentana();
+        this.filtroMembership.set(inicial.membershipId);
+        this.proponerVentana(inicial);
         this.cargarProfesionales();
         this.consultar();
       });
@@ -278,7 +313,13 @@ export class ExcepcionesPage {
   // Carga
   // =====================================================================================
 
-  private proponerVentana(): void {
+  /** La ventana del enlace si vino una, y si no un trimestre desde hoy. */
+  private proponerVentana(inicial: ParametrosDeHorarios = SIN_PARAMETROS): void {
+    if (inicial.desde !== null && inicial.hasta !== null) {
+      this.formularioVentana.reset({ desde: inicial.desde, hasta: inicial.hasta });
+      this.errorVentana.set(null);
+      return;
+    }
     const desde = hoyLocal();
     this.formularioVentana.reset({ desde, hasta: sumarDias(desde, DIAS_PROPUESTOS) });
     this.errorVentana.set(null);
@@ -312,6 +353,22 @@ export class ExcepcionesPage {
         );
         this.profesionalesConocidos.set(true);
       });
+  }
+
+  /**
+   * El rotulo del motivo, nunca su codigo.
+   *
+   * <p>`AUSENCIA` es un valor del contrato, no una palabra de la aplicacion: la misma tabla que
+   * arma el selector del alta es la que rotula la fila del listado, para que las dos no se
+   * puedan despegar.
+   */
+  protected etiquetaDeMotivo(motivo: string | undefined): string {
+    if (motivo === undefined || motivo === null) {
+      return '-';
+    }
+    // Un motivo que el backend agregue antes de que este repo regenere el cliente se muestra
+    // crudo: feo, pero visible. Un guion escondería que la excepcion tiene un motivo declarado.
+    return MOTIVOS.find((candidato) => candidato.valor === motivo)?.etiqueta ?? motivo;
   }
 
   /** Nombre del profesional de una excepcion, o el rotulo del alcance de sede. */
@@ -463,6 +520,16 @@ export class ExcepcionesPage {
   protected enviarAlta(): void {
     const consultorioId = this.tenantContext.consultorioId();
     if (consultorioId === null || this.enviando()) {
+      return;
+    }
+
+    if (!this.profesionalesConocidos()) {
+      // Sin la lista de vinculos, el selector de alcance colapsa a su unica opcion fija: "toda
+      // la sede". Quien abrio el alta para cerrarle la semana a UNA persona no encuentra su
+      // nombre, no necesariamente registra por que, y confirma un cierre de TODO el centro por
+      // todo el rango. El aviso de apertura no lo frena: solo cubre APERTURA + sede.
+      this.errorAccion.set(MENSAJE_ALCANCE_DESCONOCIDO);
+      this.causaAccion.set(null);
       return;
     }
 

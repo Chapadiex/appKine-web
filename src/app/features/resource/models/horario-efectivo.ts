@@ -9,6 +9,7 @@ import {
   RUTA_HORARIOS_CALENDARIO,
   RUTA_HORARIOS_EXCEPCIONES,
 } from './rutas-de-horarios';
+import { sumarDias } from './ventana-de-fechas';
 
 /**
  * Vocabulario de la <b>disponibilidad efectiva</b> de un profesional (M05, AKINE-02.04).
@@ -50,14 +51,50 @@ export const RAZON_VACIO_VINCULO = 'VINCULO';
 /** Unico valor de `recortadoPor`: un cierre le comio un pedazo a la franja. */
 export const RECORTE_POR_CIERRE = 'CIERRE';
 
+/**
+ * Adonde ir a mirar la regla que dejo el dia vacio.
+ *
+ * <p><b>`params` no es un adorno.</b> Las dos pantallas de destino tienen filtros propios con
+ * valores por defecto que <b>no</b> son los del dia que se estaba mirando: excepciones abre en
+ * "solo las de toda la sede" sobre noventa dias desde hoy. Un enlace pelado desde "la excepcion
+ * de cierre numero 42 cubre el dia entero" aterriza en una lista donde el cierre 42 —si es de
+ * Ana, que es el caso corriente de una ausencia— <b>no aparece</b>, sin ninguna senal de que un
+ * filtro lo esta tapando. El salto tiene que llevar consigo de quien y de que dia se hablaba.
+ */
+export interface EnlaceDeRegla {
+  readonly ruta: string;
+  readonly texto: string;
+  /** Query params que la pantalla de destino lee al abrir. `null` si no hace falta ninguno. */
+  readonly params: Readonly<Record<string, string>> | null;
+}
+
 /** Un dia vacio, explicado. `enlace` es la pantalla donde se mira la regla, si la hay. */
 export interface ExplicacionDeVacio {
   /** La frase corta que encabeza el dia. Nunca "cerrado" a secas. */
   readonly titulo: string;
   /** Por que quedo asi, y que hacer. */
   readonly detalle: string;
-  /** Adonde ir a mirar la regla. */
-  readonly enlace: { readonly ruta: string; readonly texto: string };
+  /** Adonde ir a mirar la regla, ya filtrado por lo que la explicacion nombra. */
+  readonly enlace: EnlaceDeRegla;
+}
+
+/**
+ * La ventana de un solo dia, escrita con el fin exclusivo que usan las cuatro pantallas.
+ *
+ * <p>Sin fecha —que el contrato admite, porque todo campo del cliente generado es opcional— no
+ * se inventa ninguna: el destino abre con su ventana por defecto, que es peor que la exacta pero
+ * mucho mejor que una ventana equivocada.
+ */
+function ventanaDelDia(fecha: string | undefined): Record<string, string> {
+  if (fecha === undefined || fecha === null || fecha === '') {
+    return {};
+  }
+  return { desde: fecha, hasta: sumarDias(fecha, 1) };
+}
+
+/** El profesional del que se esta hablando, como query param. Vacio si no se sabe cual. */
+function delProfesional(membershipId: number | null): Record<string, string> {
+  return membershipId === null ? {} : { membershipId: String(membershipId) };
 }
 
 /**
@@ -70,6 +107,7 @@ export interface ExplicacionDeVacio {
 export function explicacionDeVacio(
   dia: DiaEfectivoResponse,
   nombreDelProfesional: string,
+  membershipId: number | null = null,
 ): ExplicacionDeVacio {
   switch (dia.razonVacio) {
     case RAZON_VACIO_FERIADO:
@@ -78,7 +116,11 @@ export function explicacionDeVacio(
         detalle:
           'La sede cierra los feriados de su calendario, asi que el horario habitual no se ' +
           'aplica. Si este feriado en particular se atiende, se carga una apertura para ese dia.',
-        enlace: { ruta: RUTA_HORARIOS_CALENDARIO, texto: 'Ver los feriados de la sede' },
+        enlace: {
+          ruta: RUTA_HORARIOS_CALENDARIO,
+          texto: 'Ver los feriados de la sede',
+          params: ventanaDelDia(dia.fecha),
+        },
       };
 
     case RAZON_VACIO_CIERRE:
@@ -87,7 +129,14 @@ export function explicacionDeVacio(
         detalle:
           detalleDelCierre(dia) +
           ' Un cierre tapa el horario habitual mientras esta vigente; se deshace dandolo de baja.',
-        enlace: { ruta: RUTA_HORARIOS_EXCEPCIONES, texto: 'Ver los cierres y las aperturas' },
+        enlace: {
+          ruta: RUTA_HORARIOS_EXCEPCIONES,
+          texto: 'Ver los cierres y las aperturas',
+          // El cierre puede ser de la sede o de esta persona, y el filtro por profesional trae
+          // las DOS poblaciones. Sin `membershipId` el destino muestra solo las de sede y el
+          // cierre que acaba de nombrarse por su numero no esta en la lista.
+          params: { ...delProfesional(membershipId), ...ventanaDelDia(dia.fecha) },
+        },
       };
 
     case RAZON_VACIO_VINCULO:
@@ -97,7 +146,11 @@ export function explicacionDeVacio(
           'No es que no atienda ese dia de la semana: ese dia todavia no se habia incorporado, ' +
           'o ya se habia desvinculado. Su horario semanal puede estar cargado igual, y no ' +
           'aplica fuera de la vigencia del vinculo.',
-        enlace: { ruta: '/organizacion/colaboradores', texto: 'Ver el vinculo en Colaboradores' },
+        enlace: {
+          ruta: '/organizacion/colaboradores',
+          texto: 'Ver el vinculo en Colaboradores',
+          params: null,
+        },
       };
 
     default:
@@ -108,7 +161,11 @@ export function explicacionDeVacio(
         detalle:
           'Ninguna regla abre ese dia: no hay bloque del horario semanal que lo cubra ni ' +
           'apertura que lo habilite. No hay ningun cierre ni feriado de por medio.',
-        enlace: { ruta: RUTA_HORARIOS, texto: 'Ver el horario semanal' },
+        enlace: {
+          ruta: RUTA_HORARIOS,
+          texto: 'Ver el horario semanal',
+          params: delProfesional(membershipId),
+        },
       };
   }
 }

@@ -1,4 +1,10 @@
 import { AkineHttpError } from '../../../core/interceptors/error.interceptor';
+import {
+  MensajeTraducido,
+  conDetalle,
+  mensajeTraducido,
+  segundosDeEspera,
+} from './errores-comunes';
 import { etiquetaDeDia } from './dias-de-la-semana';
 import { rangoHorario } from './horas-de-pared';
 
@@ -42,8 +48,6 @@ export type CausaBloque =
   | 'profesional-no-vinculado'
   /** 409 consultorio-inactive: la sede esta dada de baja y no origina hechos nuevos. */
   | 'sede-inactiva'
-  /** 400 ventana-demasiado-amplia: solo la consulta de disponibilidad efectiva la emite. */
-  | 'ventana-amplia'
   /** 409 subscription-suspended: lo emite el filtro, antes del controller. */
   | 'suscripcion-suspendida'
   /** 429: hay que esperar. Ver `segundosDeEspera`. */
@@ -70,16 +74,19 @@ export interface BloqueEnConflicto {
   readonly horaHasta: string | null;
 }
 
-/** Error ya traducido a algo mostrable. */
-export interface ErrorBloque {
-  readonly mensaje: string;
-  readonly causa: CausaBloque;
+/**
+ * Error ya traducido a algo mostrable.
+ *
+ * <p><b>No lleva `maximoDias`, y no es un olvido.</b> Ninguna de las cuatro operaciones sobre
+ * bloques recibe una ventana de fechas, asi que ninguna puede responder
+ * `ventana-demasiado-amplia`: la rama que lo manejaba era inalcanzable y ademas <b>peor</b> que
+ * la generica, porque devolvia el `detail` crudo del backend justo donde los otros dos
+ * traductores redactan el tope en palabras. El tope se traduce donde el endpoint si tiene
+ * ventana: `excepcion-errors.ts` y `horario-efectivo-errors.ts`.
+ */
+export interface ErrorBloque extends MensajeTraducido<CausaBloque> {
   /** Solo en `solapado`. `null` en cualquier otra causa. */
   readonly conflicto: BloqueEnConflicto | null;
-  /** Segundos a esperar antes de reintentar. 0 fuera de `limite`. */
-  readonly segundosDeEspera: number;
-  /** Tope de dias que el backend acepta. Solo en `ventana-amplia`; 0 en el resto. */
-  readonly maximoDias: number;
 }
 
 const MENSAJE_GENERICO = 'No pudimos completar la operacion. Volve a intentar en un momento.';
@@ -217,10 +224,6 @@ export function traducirErrorBloque(error: unknown): ErrorBloque {
       return base(MENSAJE_SEDE_INACTIVA, 'sede-inactiva');
     case 'subscription-suspended':
       return base(MENSAJE_SUSCRIPCION_SUSPENDIDA, 'suscripcion-suspendida');
-    case 'ventana-demasiado-amplia': {
-      const maximo = error.numeroDeExtension('maximoDias') ?? 0;
-      return { ...base(conDetalle(error, MENSAJE_GENERICO), 'ventana-amplia'), maximoDias: maximo };
-    }
     default:
       break;
   }
@@ -244,19 +247,5 @@ export function traducirErrorBloque(error: unknown): ErrorBloque {
 }
 
 function base(mensaje: string, causa: CausaBloque): ErrorBloque {
-  return { mensaje, causa, conflicto: null, segundosDeEspera: 0, maximoDias: 0 };
-}
-
-/** El mensaje del backend, o el de respaldo si el cuerpo no traia `ProblemDetail`. */
-function conDetalle(error: AkineHttpError, respaldo: string): string {
-  return error.problem === null ? respaldo : error.message;
-}
-
-/** Espera declarada en `Retry-After`, o `0`. Sin header no se inventa un numero. */
-function segundosDeEspera(error: AkineHttpError): number {
-  const segundos = error.reintentarEnSegundos;
-  if (segundos === null || !Number.isFinite(segundos) || segundos <= 0) {
-    return 0;
-  }
-  return Math.ceil(segundos);
+  return { ...mensajeTraducido(mensaje, causa), conflicto: null };
 }

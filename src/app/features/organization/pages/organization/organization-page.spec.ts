@@ -78,6 +78,29 @@ describe('OrganizationPage', () => {
     expect(texto(fixture)).toContain('America/Argentina/Buenos_Aires');
   });
 
+  /**
+   * La puerta de entrada de las features que no cuelgan de `/organizacion`.
+   *
+   * <p>Espacios y horarios son de la SEDE del contexto activo, asi que sus rutas viven fuera de
+   * `/organizacion` y esta pantalla es el unico lugar de la aplicacion desde el que se llega a
+   * ellas. Sin estos enlaces las dos features quedan alcanzables solo escribiendo la URL: la de
+   * horarios estuvo asi toda la etapa AKINE-02.04, con cuatro pantallas que se enlazan entre si
+   * y ninguna entrada desde afuera.
+   */
+  it('ofrece la entrada a los espacios y a los horarios de la sede activa', async () => {
+    tenantContext.select({ organizationId: 1, organizationName: 'Belgrano' });
+    const fixture = TestBed.createComponent(OrganizationPage);
+    fixture.detectChanges();
+
+    httpMock.expectOne('/api/v1/organizations/1').flush(ORGANIZACION);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('a[href="/espacios"]')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('a[href="/horarios"]')).toBeTruthy();
+    expect(texto(fixture)).toContain('horarios de los profesionales');
+  });
+
   it('avisa cuando la organizacion esta dada de baja', async () => {
     tenantContext.select({ organizationId: 1, organizationName: 'Belgrano' });
     const fixture = TestBed.createComponent(OrganizationPage);

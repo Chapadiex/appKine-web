@@ -1,7 +1,7 @@
 import { HttpRequest, provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 
 import { ExcepcionesPage } from './excepciones-page';
 import { PERMISO_CONSULTORIO_MANAGE } from '../../../../core/models/permisos';
@@ -115,7 +115,17 @@ describe('ExcepcionesPage', () => {
   let tenantContext: TenantContextStore;
   let permisos: PermissionsStore;
 
+  /**
+   * La query string con la que se abre la pantalla.
+   *
+   * <p>Se lee en el momento en que el componente se crea —de ahi el getter— para que cada test
+   * pueda escribirla antes de montar sin volver a configurar el `TestBed`.
+   */
+  let queryParams: Record<string, string> = {};
+
   beforeEach(async () => {
+    queryParams = {};
+
     await TestBed.configureTestingModule({
       imports: [ExcepcionesPage],
       providers: [
@@ -123,6 +133,16 @@ describe('ExcepcionesPage', () => {
         provideHttpClientTesting(),
         provideRouter([]),
         provideApi(''),
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            snapshot: {
+              get queryParamMap() {
+                return convertToParamMap(queryParams);
+              },
+            },
+          },
+        },
       ],
     }).compileComponents();
 
@@ -139,8 +159,8 @@ describe('ExcepcionesPage', () => {
 
     // El alcance se nombra. Una celda vacia se lee como "falta cargar el profesional", que es
     // justo lo contrario de lo que significa.
-    expect(contenido).toContain('Cierre — Toda la sede');
-    expect(contenido).toContain('Apertura — Toda la sede');
+    expect(contenido).toContain('Cierre numero 500 — Toda la sede');
+    expect(contenido).toContain('Apertura numero 501 — Toda la sede');
 
     // El fin es exclusivo: se muestra el ultimo dia REALMENTE cubierto, no el que se cargo.
     expect(contenido).toContain('Del 1 de septiembre de 2026 al 2 de septiembre de 2026 inclusive');
@@ -156,8 +176,61 @@ describe('ExcepcionesPage', () => {
       'reemplaza el horario habitual de todos los profesionales que atienden aca',
     );
 
+    // El motivo se rotula con la misma tabla que arma el selector del alta: `BLOQUEO` es un
+    // valor del contrato, no una palabra de la aplicacion.
+    expect(contenido).toContain('Motivo declarado: Bloqueo');
+    expect(contenido).not.toContain('BLOQUEO');
+    expect(contenido).not.toContain('AMPLIACION');
+
     // Nada de solapamientos: el backend no los emite para excepciones y la pantalla no los inventa.
     expect(contenido).not.toContain('se pisa');
+  });
+
+  /**
+   * El salto desde el horario efectivo tiene que aterrizar filtrado.
+   *
+   * <p>La explicacion de un dia vacio dice "la excepcion de cierre numero 42 cubre el dia
+   * entero" y ofrece venir a mirarla. Con los valores por defecto de esta pantalla —solo las de
+   * toda la sede, noventa dias desde hoy— un cierre de Ana, que es el caso corriente de una
+   * ausencia, <b>no esta en la lista</b>, y nada indica que un filtro lo esta tapando. El enlace
+   * carga el profesional y el dia; aca se verifica que la pantalla los use de verdad.
+   */
+  it('un enlace con profesional y dia abre la lista filtrada por eso y no por los valores por defecto', async () => {
+    queryParams = { membershipId: String(ANA_ID), desde: '2026-09-02', hasta: '2026-09-03' };
+
+    tenantContext.select({
+      organizationId: ORG,
+      organizationName: 'Belgrano',
+      consultorioId: SEDE,
+      consultorioName: 'Sede Centro',
+    });
+    permisos.cargar().subscribe();
+    httpMock.expectOne(RUTA_PERMISOS_EFECTIVOS).flush({ permissions: [] });
+
+    const fixture = TestBed.createComponent(ExcepcionesPage);
+    fixture.detectChanges();
+
+    httpMock
+      .expectOne((peticion: HttpRequest<unknown>) => peticion.url === rutaMemberships(ORG))
+      .flush({ content: [ANA, BETO], page: 0, size: 100, totalElements: 2, totalPages: 1 });
+
+    const consulta = listado();
+    expect(consulta.request.params.get('desde')).toBe('2026-09-02');
+    expect(consulta.request.params.get('hasta')).toBe('2026-09-03');
+    expect(consulta.request.params.get('membershipId')).toBe(String(ANA_ID));
+
+    consulta.flush(VIGENTES);
+    await estabilizar(fixture);
+
+    // Y los campos muestran lo consultado: el usuario ve por que esta viendo lo que ve.
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector<HTMLSelectElement>('#filtro-alcance')
+        ?.value,
+    ).toBe(String(ANA_ID));
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector<HTMLInputElement>('#ventana-desde')
+        ?.value,
+    ).toBe('2026-09-02');
   });
 
   it('una apertura de sede sobre un feriado no se guarda sin decir a cuantos afecta', async () => {
@@ -333,38 +406,42 @@ describe('ExcepcionesPage', () => {
   });
 
   /**
-   * Un numero que no se pudo medir nunca se imprime como cero.
+   * Con la lista de vinculos caida, el alta NO puede guardar un alcance de sede.
    *
-   * <p>Si el listado de vinculos falla, la lista queda vacia. Contarla daria "ningun profesional
-   * vinculado hoy a la sede", que el admin lee como "esto no afecta a nadie" y confirma —
-   * mientras en la sede real todos pierden su horario base ese feriado—. Es la misma disciplina
-   * que ya se aplica cuando falla la consulta del calendario: lo que no se pudo obtener se
-   * dice, no se rellena.
+   * <p>Es el escenario mas caro de esta pantalla y el que ningun cartel cubria. El desplegable
+   * "A quien alcanza" tiene una opcion fija —"Toda la sede — todos los profesionales"— y todas
+   * las demas salen de `listMemberships`. Si esa consulta falla, el desplegable colapsa a la
+   * unica opcion fija: quien abrio el alta para cerrarle la semana a UNA persona no encuentra su
+   * nombre, no necesariamente registra por que, y envia. El resultado es un cierre de todo el
+   * centro por todo el rango, y el aviso de apertura no lo frena porque solo cubre APERTURA
+   * sobre sede.
+   *
+   * <p>El test mira las dos mitades: que no salga <b>ningun</b> POST, y que la pantalla diga por
+   * que en vez de quedarse muda.
    */
-  it('si no se pudieron leer los profesionales, el aviso dice que no sabe a cuantos afecta', async () => {
+  it('con los profesionales desconocidos, el alta no puede guardar un alcance de sede', async () => {
     const fixture = await montarSinProfesionales();
 
     abrir(fixture, 'Cargar un cierre o una apertura');
-    seleccionar(fixture, '#alta-excepcion-tipo', 'APERTURA');
-    enviar(fixture, '#form-alta-excepcion');
 
-    httpMock
-      .expectOne(
-        (peticion: HttpRequest<unknown>) =>
-          peticion.method === 'GET' && peticion.url === CALENDARIO,
-      )
-      .flush({ consultorioId: SEDE, pais: 'AR', cierraPorFeriado: true, feriados: [FERIADO] });
+    // El desplegable de alcance no existe: la unica opcion que quedaria significa "todos".
+    expect(fixture.nativeElement.querySelector('#alta-excepcion-alcance')).toBeNull();
+    expect(texto(fixture)).toContain('no sabemos a quien podes alcanzar');
+
+    escribir(fixture, '#alta-excepcion-desde', '2026-09-10');
+    escribir(fixture, '#alta-excepcion-hasta', '2026-09-30');
+    enviar(fixture, '#form-alta-excepcion');
     await estabilizar(fixture);
 
-    const aviso = texto(fixture);
+    // Ni el alta ni la verificacion de feriados: no hay nada que verificar de algo que no se va
+    // a guardar.
+    httpMock.expectNone((peticion: HttpRequest<unknown>) => peticion.method === 'POST');
+    httpMock.expectNone(
+      (peticion: HttpRequest<unknown>) => peticion.method === 'GET' && peticion.url === CALENDARIO,
+    );
 
-    expect(aviso).toContain('No pudimos leer los profesionales de la sede');
-    expect(aviso).toContain('No es cero');
-    // Ni el cero ni la doble negacion que lo acompanaba.
-    expect(aviso).not.toContain('ningun profesional vinculado hoy a la sede');
-    expect(aviso).not.toContain('de 0 profesionales');
-
-    abrir(fixture, 'Volver y cambiar el alcance');
+    expect(texto(fixture)).toContain('No pudimos leer los profesionales de la sede');
+    expect(texto(fixture)).toContain('"toda la sede"');
   });
 
   it('sin feriados en el periodo la apertura de sede se guarda derecho, sin aviso', async () => {
@@ -608,7 +685,7 @@ describe('ExcepcionesPage', () => {
 
     // Sin `consultorio:manage` no se ofrece ninguna accion que termine en 403.
     expect(texto(fixture)).not.toContain('Cargar un cierre o una apertura');
-    expect(texto(fixture)).toContain('Apertura — Toda la sede');
+    expect(texto(fixture)).toContain('Apertura numero 501 — Toda la sede');
   });
 
   it('sin sede elegida no consulta nada y ofrece elegir consultorio', async () => {
@@ -738,7 +815,7 @@ function escribir(
   selector: string,
   valor: string,
 ) {
-  const campo = fixture.nativeElement.querySelector<HTMLInputElement>(selector);
+  const campo = (fixture.nativeElement as HTMLElement).querySelector<HTMLInputElement>(selector);
   if (campo === null) {
     throw new Error(`No existe el campo ${selector}`);
   }
@@ -752,7 +829,7 @@ function marcar(
   selector: string,
   valor: boolean,
 ) {
-  const casilla = fixture.nativeElement.querySelector<HTMLInputElement>(selector);
+  const casilla = (fixture.nativeElement as HTMLElement).querySelector<HTMLInputElement>(selector);
   if (casilla === null) {
     throw new Error(`No existe la casilla ${selector}`);
   }
@@ -766,7 +843,9 @@ function seleccionar(
   selector: string,
   valor: string,
 ) {
-  const desplegable = fixture.nativeElement.querySelector<HTMLSelectElement>(selector);
+  const desplegable = (fixture.nativeElement as HTMLElement).querySelector<HTMLSelectElement>(
+    selector,
+  );
   if (desplegable === null) {
     throw new Error(`No existe el desplegable ${selector}`);
   }
@@ -784,7 +863,9 @@ function seleccionar(
  * `seleccionar`.
  */
 function enviar(fixture: { nativeElement: HTMLElement; detectChanges(): void }, selector: string) {
-  const formulario = fixture.nativeElement.querySelector<HTMLFormElement>(selector);
+  const formulario = (fixture.nativeElement as HTMLElement).querySelector<HTMLFormElement>(
+    selector,
+  );
   if (formulario === null) {
     throw new Error(`No existe el formulario ${selector}`);
   }

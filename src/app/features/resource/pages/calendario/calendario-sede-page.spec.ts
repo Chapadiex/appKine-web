@@ -1,7 +1,7 @@
 import { HttpRequest, provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 
 import { CalendarioSedePage } from './calendario-sede-page';
 import { PERMISO_CONSULTORIO_MANAGE } from '../../../../core/models/permisos';
@@ -50,7 +50,12 @@ describe('CalendarioSedePage', () => {
   let tenantContext: TenantContextStore;
   let permisos: PermissionsStore;
 
+  /** La query string con la que se abre la pantalla. Se lee al crear el componente. */
+  let queryParams: Record<string, string> = {};
+
   beforeEach(async () => {
+    queryParams = {};
+
     await TestBed.configureTestingModule({
       imports: [CalendarioSedePage],
       providers: [
@@ -58,6 +63,16 @@ describe('CalendarioSedePage', () => {
         provideHttpClientTesting(),
         provideRouter([]),
         provideApi(''),
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            snapshot: {
+              get queryParamMap() {
+                return convertToParamMap(queryParams);
+              },
+            },
+          },
+        },
       ],
     }).compileComponents();
 
@@ -78,9 +93,49 @@ describe('CalendarioSedePage', () => {
     expect(contenido).toContain('Dia del maestro');
     expect(contenido).toContain('Navidad');
 
+    // El tipo se rotula: `INAMOVIBLE` es un valor del `CHECK` de la migracion, no una palabra
+    // que un administrador tenga que leer en una tabla.
+    expect(contenido).toContain('Inamovible');
+    expect(contenido).not.toContain('INAMOVIBLE');
+
     // Con la politica de cerrar puesta, la consecuencia de apagarla NO se muestra todavia.
     expect(casilla(fixture).checked).toBe(true);
     expect(contenido).not.toContain('La sede pasa a atender los feriados');
+  });
+
+  /**
+   * Venir desde la explicacion de un dia cerrado por feriado tiene que mostrar ESE feriado.
+   *
+   * <p>La ventana por defecto es un año hacia adelante: un dia ya pasado —que es lo que se mira
+   * cuando alguien reconstruye por que una agenda quedo vacia— no cae adentro, y la pantalla se
+   * abre sin el feriado del que hablaba el enlace.
+   */
+  it('un enlace con un dia concreto consulta ese dia y no el año por defecto', async () => {
+    queryParams = { desde: '2026-09-10', hasta: '2026-09-11' };
+
+    tenantContext.select({
+      organizationId: ORG,
+      organizationName: 'Belgrano',
+      consultorioId: SEDE,
+      consultorioName: 'Sede Centro',
+    });
+
+    permisos.cargar().subscribe();
+    httpMock.expectOne(RUTA_PERMISOS_EFECTIVOS).flush({ permissions: [] });
+
+    const fixture = TestBed.createComponent(CalendarioSedePage);
+    fixture.detectChanges();
+
+    const consulta = httpMock.expectOne(
+      (peticion: HttpRequest<unknown>) => peticion.method === 'GET' && peticion.url === CALENDARIO,
+    );
+    expect(consulta.request.params.get('desde')).toBe('2026-09-10');
+    expect(consulta.request.params.get('hasta')).toBe('2026-09-11');
+
+    consulta.flush({ ...POLITICA, feriados: [FERIADOS[0]] });
+    await estabilizar(fixture);
+
+    expect(texto(fixture)).toContain('Dia del maestro');
   });
 
   it('apagar el interruptor dice que la sede pasa a atender los feriados', async () => {

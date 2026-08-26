@@ -1,7 +1,7 @@
 import { HttpRequest, provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 
 import { HorarioSemanalPage } from './horario-semanal-page';
 import { PERMISO_CONSULTORIO_MANAGE } from '../../../../core/models/permisos';
@@ -122,7 +122,12 @@ describe('HorarioSemanalPage', () => {
   let tenantContext: TenantContextStore;
   let permisos: PermissionsStore;
 
+  /** La query string con la que se abre la pantalla. Se lee al crear el componente. */
+  let queryParams: Record<string, string> = {};
+
   beforeEach(async () => {
+    queryParams = {};
+
     await TestBed.configureTestingModule({
       imports: [HorarioSemanalPage],
       providers: [
@@ -130,6 +135,16 @@ describe('HorarioSemanalPage', () => {
         provideHttpClientTesting(),
         provideRouter([]),
         provideApi(''),
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            snapshot: {
+              get queryParamMap() {
+                return convertToParamMap(queryParams);
+              },
+            },
+          },
+        },
       ],
     }).compileComponents();
 
@@ -370,6 +385,89 @@ describe('HorarioSemanalPage', () => {
     expect(texto(fixture)).not.toContain('Agregar un bloque');
   });
 
+  /**
+   * Lo que fallo es una LECTURA de colaboradores, no una mutacion del horario.
+   *
+   * <p>El traductor de bloques redacta su 403 desde la mutacion —"no tenes permiso para
+   * administrar el horario"— y este endpoint pide `colaborador:read`. Quien administre el centro
+   * lee ese cartel y otorga `consultorio:manage`, que no destraba nada. Es el mismo arreglo que
+   * el horario efectivo ya tenia.
+   */
+  it('un 403 al leer los colaboradores nombra colaborador:read, no "administrar el horario"', async () => {
+    tenantContext.select({
+      organizationId: ORG,
+      organizationName: 'Belgrano',
+      consultorioId: SEDE,
+      consultorioName: 'Sede Centro',
+    });
+
+    permisos.cargar().subscribe();
+    httpMock.expectOne(RUTA_PERMISOS_EFECTIVOS).flush({ permissions: [] });
+
+    const fixture = TestBed.createComponent(HorarioSemanalPage);
+    fixture.detectChanges();
+
+    httpMock
+      .expectOne((peticion: HttpRequest<unknown>) => peticion.url === rutaMemberships(ORG))
+      .flush(
+        { type: 'https://akine.app/problems/forbidden', detail: 'Sin permiso' },
+        { status: 403, statusText: 'Forbidden' },
+      );
+    await estabilizar(fixture);
+
+    const contenido = texto(fixture);
+    expect(contenido).toContain('colaborador:read');
+    expect(contenido).not.toContain('administrar el horario');
+  });
+
+  /**
+   * El numero del bloque tiene que verse, porque otra pantalla lo NOMBRA.
+   *
+   * <p>El horario efectivo explica cada franja con "la produjo el horario semanal, bloque numero
+   * 100". Con dos bloques parecidos en el mismo dia, esa frase no identifica ninguno si la
+   * grilla no muestra el numero.
+   */
+  it('cada bloque muestra su numero: es la referencia que usa el horario efectivo', async () => {
+    const fixture = await montar();
+    const contenido = texto(fixture);
+
+    expect(contenido).toContain('bloque numero 100');
+    expect(contenido).toContain('bloque numero 101');
+    expect(contenido).toContain('bloque numero 102');
+  });
+
+  /** Venir desde una explicacion del horario efectivo abre la semana de esa persona. */
+  it('un enlace con profesional abre su horario sin volver a elegirlo en la lista', async () => {
+    queryParams = { membershipId: String(PROFESIONAL) };
+
+    tenantContext.select({
+      organizationId: ORG,
+      organizationName: 'Belgrano',
+      consultorioId: SEDE,
+      consultorioName: 'Sede Centro',
+    });
+
+    permisos.cargar().subscribe();
+    httpMock.expectOne(RUTA_PERMISOS_EFECTIVOS).flush({ permissions: [] });
+
+    const fixture = TestBed.createComponent(HorarioSemanalPage);
+    fixture.detectChanges();
+
+    // El horario sale sin esperar a la lista de vinculos: son dos peticiones independientes.
+    httpMock.expectOne(BLOQUES).flush(HORARIO);
+    httpMock
+      .expectOne((peticion: HttpRequest<unknown>) => peticion.url === rutaMemberships(ORG))
+      .flush({ content: [ANA], page: 0, size: 100, totalElements: 1, totalPages: 1 });
+    await estabilizar(fixture);
+
+    expect(texto(fixture)).toContain('09:00 a 12:00');
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector<HTMLSelectElement>(
+        '#selector-profesional',
+      )?.value,
+    ).toBe(String(PROFESIONAL));
+  });
+
   it('sin sede elegida no consulta ningun horario y ofrece elegir consultorio', async () => {
     // Contexto con organizacion pero SIN sede: el horario cuelga de una sede concreta.
     tenantContext.select({ organizationId: ORG, organizationName: 'Belgrano' });
@@ -461,7 +559,7 @@ function escribir(
   selector: string,
   valor: string,
 ) {
-  const campo = fixture.nativeElement.querySelector<HTMLInputElement>(selector);
+  const campo = (fixture.nativeElement as HTMLElement).querySelector<HTMLInputElement>(selector);
   if (campo === null) {
     throw new Error(`No existe el campo ${selector}`);
   }
@@ -475,7 +573,9 @@ function seleccionar(
   selector: string,
   valor: string,
 ) {
-  const desplegable = fixture.nativeElement.querySelector<HTMLSelectElement>(selector);
+  const desplegable = (fixture.nativeElement as HTMLElement).querySelector<HTMLSelectElement>(
+    selector,
+  );
   if (desplegable === null) {
     throw new Error(`No existe el desplegable ${selector}`);
   }
@@ -485,7 +585,9 @@ function seleccionar(
 }
 
 function enviar(fixture: { nativeElement: HTMLElement; detectChanges(): void }, selector: string) {
-  const formulario = fixture.nativeElement.querySelector<HTMLFormElement>(selector);
+  const formulario = (fixture.nativeElement as HTMLElement).querySelector<HTMLFormElement>(
+    selector,
+  );
   // Falla cerrado. Con `?.` este helper se volvia un no-op silencioso ante un selector que
   // no casa, y TODOS los `expectNone` del spec pasaban sin que se enviara nada: el spec
   // quedaba verde afirmando que la pantalla no sale a la red.
@@ -497,5 +599,7 @@ function enviar(fixture: { nativeElement: HTMLElement; detectChanges(): void }, 
 }
 
 function campo(fixture: { nativeElement: HTMLElement }, selector: string): string {
-  return fixture.nativeElement.querySelector<HTMLInputElement>(selector)?.value ?? '';
+  return (
+    (fixture.nativeElement as HTMLElement).querySelector<HTMLInputElement>(selector)?.value ?? ''
+  );
 }

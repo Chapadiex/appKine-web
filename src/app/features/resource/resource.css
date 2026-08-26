@@ -287,3 +287,38 @@
 .franja .ayuda {
   margin: 0.25rem 0 0;
 }
+
+/*
+ * El unico control deshabilitado de la feature que ADEMAS es un dato.
+ *
+ * La casilla "La sede cierra los feriados" se deshabilita en modo lectura y sigue mostrando la
+ * politica: es la respuesta a la pregunta de la pantalla, no un boton. Con el estilo por defecto
+ * del navegador —que en varias plataformas es casi indistinguible del habilitado— un profesional
+ * lee la frase al lado de un control que parece vivo, lo intenta marcar y no pasa nada.
+ *
+ * Los tres canales juntos: opacidad, cursor y borde. Ninguno solo alcanza —la opacidad no se ve
+ * en una casilla chica, el cursor no existe en tactil— y el color no es el unico portador de la
+ * informacion, porque el cartel de modo lectura ya la dice con palabras (WCAG 1.4.1).
+ */
+input:disabled,
+select:disabled,
+textarea:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  border: 1px solid #6b7a8a;
+}
+
+/*
+ * El numero de la fila: la referencia que otra pantalla NOMBRA.
+ *
+ * El horario efectivo explica un dia vacio con "la excepcion de cierre numero 42" y cada franja
+ * con "bloque numero 17". Sin el numero a la vista, esas frases mandan a buscar una fila que no
+ * se puede identificar entre dos parecidas. Va en tono secundario porque no es lo que se lee
+ * primero: lo primero sigue siendo el horario o el alcance.
+ */
+.excepcion__numero,
+.bloque__numero {
+  font-weight: 400;
+  font-size: 0.8125rem;
+  color: #4a5a6a;
+}

@@ -51,6 +51,62 @@ describe('explicacionDeVacio', () => {
     expect(explicacion.enlace.ruta).toBe('/horarios/excepciones');
   });
 
+  /**
+   * El salto tiene que llegar filtrado por lo que la explicacion nombra.
+   *
+   * <p>La pantalla de excepciones abre en "solo las de toda la sede" sobre noventa dias desde
+   * hoy. Un enlace sin params desde "la excepcion de cierre numero 77 cubre el dia entero"
+   * aterriza en una lista donde ese cierre —si es de Ana, que es el caso corriente de una
+   * ausencia— no aparece, y nada indica que un filtro lo esta tapando.
+   */
+  it('el enlace del cierre lleva al profesional y al dia del que hablaba la explicacion', () => {
+    const explicacion = explicacionDeVacio(
+      { fecha: '2026-09-02', razonVacio: RAZON_VACIO_CIERRE, reglaVacio: 77 },
+      'Ana Diaz',
+      42,
+    );
+
+    expect(explicacion.enlace.params).toEqual({
+      membershipId: '42',
+      desde: '2026-09-02',
+      // El fin es exclusivo en las cuatro pantallas: un solo dia es [D, D+1).
+      hasta: '2026-09-03',
+    });
+  });
+
+  it('sin profesional elegido el enlace lleva solo el dia, y nunca un id inventado', () => {
+    const explicacion = explicacionDeVacio(
+      { fecha: '2026-09-02', razonVacio: RAZON_VACIO_CIERRE, reglaVacio: 77 },
+      'Ana Diaz',
+    );
+
+    expect(explicacion.enlace.params).toEqual({ desde: '2026-09-02', hasta: '2026-09-03' });
+  });
+
+  it('el feriado tambien viaja con su dia: la ventana por defecto del calendario es un año', () => {
+    const explicacion = explicacionDeVacio(
+      { fecha: '2026-12-25', razonVacio: RAZON_VACIO_FERIADO, feriadoNombre: 'Navidad' },
+      'Ana Diaz',
+      42,
+    );
+
+    // Sin `membershipId`: la politica de feriados es de la sede y no se filtra por persona.
+    expect(explicacion.enlace.params).toEqual({ desde: '2026-12-25', hasta: '2026-12-26' });
+  });
+
+  it('el dia sin ninguna regla manda al horario semanal ya abierto en esa persona', () => {
+    const explicacion = explicacionDeVacio({ fecha: '2026-09-05', razonVacio: null }, 'Ana', 42);
+
+    expect(explicacion.enlace.ruta).toBe('/horarios');
+    expect(explicacion.enlace.params).toEqual({ membershipId: '42' });
+  });
+
+  it('un dia sin fecha no inventa ventana: el destino abre con la suya', () => {
+    const explicacion = explicacionDeVacio({ razonVacio: RAZON_VACIO_CIERRE }, 'Ana', 42);
+
+    expect(explicacion.enlace.params).toEqual({ membershipId: '42' });
+  });
+
   it('un cierre sin id explica igual y no inventa un numero', () => {
     const explicacion = explicacionDeVacio(
       { fecha: '2026-09-02', razonVacio: RAZON_VACIO_CIERRE },

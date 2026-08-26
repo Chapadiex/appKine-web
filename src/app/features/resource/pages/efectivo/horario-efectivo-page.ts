@@ -103,6 +103,16 @@ export class HorarioEfectivoPage {
   protected readonly errorProfesionales = signal<string | null>(null);
   protected readonly membershipElegido = signal<number | null>(null);
 
+  /**
+   * Si la lista de profesionales de la sede es <b>conocida</b>.
+   *
+   * <p>Arranca en `false` y un fallo del `GET /memberships` la devuelve a `false` con la lista
+   * vacia. La distincion existe porque las tres pantallas de horarios respondian de tres maneras
+   * distintas a "no hay profesionales": un desplegable con una sola opcion no dice si la sede no
+   * tiene a nadie o si la consulta se cayo, y son dos problemas con dos salidas opuestas.
+   */
+  protected readonly profesionalesConocidos = signal(false);
+
   protected readonly nombreDelProfesional = computed(() =>
     nombreDeVinculo(
       this.profesionales().find((candidato) => candidato.id === this.membershipElegido()),
@@ -185,6 +195,7 @@ export class HorarioEfectivoPage {
 
     if (orgId === null || consultorioId === null) {
       this.profesionales.set([]);
+      this.profesionalesConocidos.set(false);
       this.estado.set({ tipo: 'sin-contexto' });
       return;
     }
@@ -197,12 +208,14 @@ export class HorarioEfectivoPage {
       .subscribe((respuesta) => {
         if (respuesta instanceof Error) {
           this.profesionales.set([]);
+          this.profesionalesConocidos.set(false);
           this.errorProfesionales.set(traducirErrorHorarioEfectivo(respuesta).mensaje);
           return;
         }
         this.profesionales.set(
           (respuesta.content ?? []).filter((vinculo) => atiendeEn(vinculo, consultorioId)),
         );
+        this.profesionalesConocidos.set(true);
       });
   }
 
@@ -303,7 +316,9 @@ export class HorarioEfectivoPage {
    * que la plantilla lo reevalua cuando cambia.
    */
   protected porQueVacio(dia: DiaEfectivoResponse): ExplicacionDeVacio {
-    return explicacionDeVacio(dia, this.nombreDelProfesional());
+    // El id del profesional viaja con la explicacion: es lo que permite que el enlace abra la
+    // pantalla de destino filtrada por la persona de la que se estaba hablando.
+    return explicacionDeVacio(dia, this.nombreDelProfesional(), this.membershipElegido());
   }
 
   /** La franja en hora de pared de la sede, con `24:00` cuando llega al fin del dia. */

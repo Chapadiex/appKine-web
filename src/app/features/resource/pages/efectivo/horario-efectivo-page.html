@@ -16,29 +16,50 @@
 <section class="tarjeta" aria-labelledby="titulo-consulta">
   <h2 id="titulo-consulta">Que resolver</h2>
 
+  <!--
+    Los tres estados de la lista de profesionales, dichos por separado. Un desplegable con
+    "Elegi un profesional" y nada mas se lee igual esten los tres casos: la sede sin nadie
+    vinculado, la consulta caida y la lista todavia en vuelo.
+  -->
   <div class="campo">
-    <label for="efectivo-profesional">Profesional</label>
-    <select
-      id="efectivo-profesional"
-      (change)="elegirProfesional($any($event.target).value)"
-      aria-describedby="efectivo-profesional-ayuda"
-    >
-      <option value="">Elegi un profesional</option>
-      @for (profesional of profesionales(); track profesional.id ?? $index) {
-        <option [value]="profesional.id">
-          {{ profesional.accountName || profesional.accountEmail }}
-        </option>
-      }
-    </select>
-    <p class="ayuda" id="efectivo-profesional-ayuda">
-      Solo aparecen los vinculos vigentes que habilitan a atender en esta sede.
-    </p>
-
     @if (errorProfesionales(); as mensaje) {
-      <p class="campo__error" role="alert">{{ mensaje }}</p>
+      <p class="estado estado--error" role="alert">{{ mensaje }}</p>
+      <p class="ayuda">
+        Mientras no se pueda leer la lista no se ofrece el desplegable: uno con una sola opcion
+        vacia se lee como una sede sin profesionales, que es otra cosa.
+      </p>
       <button type="button" class="boton" (click)="cargarProfesionales()">
         Reintentar la lista de profesionales
       </button>
+    } @else if (profesionalesConocidos() && profesionales().length === 0) {
+      <p class="estado estado--vacio">
+        No hay profesionales con un vinculo vigente que los habilite a atender en esta sede.
+      </p>
+      <p class="ayuda">
+        El horario se resuelve sobre el vinculo del profesional con la sede. Si falta alguien,
+        revisalo en Colaboradores: puede estar acotado a otra sede, suspendido o vencido.
+      </p>
+      <a class="boton boton--secundario" routerLink="/organizacion/colaboradores">
+        Ir a Colaboradores
+      </a>
+    } @else {
+      <label for="efectivo-profesional">Profesional</label>
+      <select
+        id="efectivo-profesional"
+        [value]="membershipElegido() ?? ''"
+        (change)="elegirProfesional($any($event.target).value)"
+        aria-describedby="efectivo-profesional-ayuda"
+      >
+        <option value="">Elegi un profesional</option>
+        @for (profesional of profesionales(); track profesional.id ?? $index) {
+          <option [value]="profesional.id">
+            {{ profesional.accountName || profesional.accountEmail }}
+          </option>
+        }
+      </select>
+      <p class="ayuda" id="efectivo-profesional-ayuda">
+        Solo aparecen los vinculos vigentes que habilitan a atender en esta sede.
+      </p>
     }
   </div>
 
@@ -169,7 +190,19 @@
                 @if (porQueVacio(dia); as motivo) {
                   <p class="dia-efectivo__motivo">{{ motivo.titulo }}</p>
                   <p class="ayuda">{{ motivo.detalle }}</p>
-                  <a class="enlace" [routerLink]="motivo.enlace.ruta">{{ motivo.enlace.texto }}</a>
+                  <!--
+                    El salto lleva consigo de quien y de que dia se hablaba. Sin los params el
+                    destino abre con SUS filtros por defecto -toda la sede, noventa dias desde
+                    hoy- y la regla que la explicacion acaba de nombrar por su numero puede no
+                    estar ni en la lista.
+                  -->
+                  <a
+                    class="enlace"
+                    [routerLink]="motivo.enlace.ruta"
+                    [queryParams]="motivo.enlace.params"
+                  >
+                    {{ motivo.enlace.texto }}
+                  </a>
                 }
               }
             </li>

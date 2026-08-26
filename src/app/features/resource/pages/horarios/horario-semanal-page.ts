@@ -16,7 +16,7 @@ import {
   ValidationErrors,
   Validators,
 } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { catchError, of } from 'rxjs';
 
 import { BloqueResponse } from '../../../../api/generated/model/bloque-response';
@@ -30,6 +30,8 @@ import { PERMISO_CONSULTORIO_MANAGE } from '../../../../core/models/permisos';
 import { PermisoDirective } from '../../../../shared/directives/permiso.directive';
 import { PermissionsStore } from '../../../../core/services/permissions.store';
 import { RUTAS_HORARIOS } from '../../models/rutas-de-horarios';
+import { leerParametrosDeHorarios } from '../../models/parametros-de-horarios';
+import { traducirErrorHorarioEfectivo } from '../../models/horario-efectivo-errors';
 import { TEXTO_MODO_LECTURA, modoLectura } from '../../models/modo-lectura';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { UpdateBloqueRequest } from '../../../../api/generated/model/update-bloque-request';
@@ -104,6 +106,20 @@ export class HorarioSemanalPage {
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly formBuilder = inject(FormBuilder);
   private readonly injector = inject(Injector);
+
+  /**
+   * El profesional del que hablaba el enlace que trajo hasta aca, si vino de uno.
+   *
+   * <p>El horario efectivo explica un dia sin atencion con "ninguna regla abre ese dia" y ofrece
+   * venir a mirar el horario semanal. Sin este parametro el salto aterriza en "Elegi un
+   * profesional" y hay que volver a buscar en la lista a la persona que se venia mirando.
+   *
+   * <p>Se consume una sola vez: un cambio de sede despues vuelve a dejar la pantalla sin nadie
+   * elegido, porque el vinculo elegido puede no existir en la sede nueva.
+   */
+  private membershipInicial: number | null = leerParametrosDeHorarios(
+    inject(ActivatedRoute).snapshot.queryParamMap,
+  ).membershipId;
 
   protected readonly permisoManage = PERMISO_CONSULTORIO_MANAGE;
   protected readonly rutas = RUTAS_HORARIOS;
@@ -221,12 +237,20 @@ export class HorarioSemanalPage {
       // Dependencia explicita: cualquier cambio de contexto invalida todo lo que hay abierto.
       this.tenantContext.contextEpoch();
       untracked(() => {
+        const inicial = this.membershipInicial;
+        this.membershipInicial = null;
+
         this.cerrarPanel();
         this.altaAbierta.set(false);
         this.exito.set(null);
-        this.membershipElegido.set(null);
+        this.membershipElegido.set(inicial);
         this.estado.set({ tipo: 'inicial' });
         this.cargarProfesionales();
+        if (inicial !== null) {
+          // El horario no espera a la lista de vinculos: son dos peticiones independientes y
+          // hacer una en serie despues de la otra solo agregaria una pantalla vacia intermedia.
+          this.cargar();
+        }
       });
     });
   }
@@ -265,7 +289,12 @@ export class HorarioSemanalPage {
 
         if (respuesta instanceof Error) {
           this.profesionales.set([]);
-          this.errorProfesionales.set(traducirErrorBloque(respuesta).mensaje);
+          // Lo que fallo es una LECTURA de colaboradores, no una mutacion del horario:
+          // `traducirErrorBloque` diria "no tenes permiso para administrar el horario" sobre un
+          // 403 que en realidad pide `colaborador:read`, y quien administre el centro terminaria
+          // otorgando el permiso equivocado. Es el mismo arreglo que ya tiene el horario
+          // efectivo, que consulta exactamente este endpoint.
+          this.errorProfesionales.set(traducirErrorHorarioEfectivo(respuesta).mensaje);
           return;
         }
 

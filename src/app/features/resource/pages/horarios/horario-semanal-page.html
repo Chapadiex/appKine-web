@@ -66,8 +66,13 @@
           aria-describedby="selector-profesional-ayuda"
         >
           <option value="">Sin elegir</option>
+          <!--
+            `[selected]` ademas del `[value]` del select: cuando el profesional viene en la URL,
+            esta elegido ANTES de que llegue la lista de vinculos, y asignarle a un `<select>` un
+            valor que todavia no existe como opcion no hace nada.
+          -->
           @for (profesional of profesionales(); track profesional.id ?? $index) {
-            <option [value]="profesional.id">
+            <option [value]="profesional.id" [selected]="profesional.id === membershipElegido()">
               {{ profesional.accountName || profesional.accountEmail }}
             </option>
           }
@@ -274,8 +279,15 @@
                 <ul class="lista-datos">
                   @for (bloque of dia.bloques; track bloque.id ?? $index) {
                     <li class="bloque" [class.bloque--conflicto]="esBloqueEnConflicto(bloque)">
+                      <!--
+                        El numero del bloque se muestra porque hay una pantalla que lo NOMBRA:
+                        el horario efectivo explica cada franja con "la produjo el horario
+                        semanal, bloque numero 17". Sin el numero visible aca, esa frase manda a
+                        buscar una fila que no se puede identificar entre dos parecidas.
+                      -->
                       <p class="bloque__horario">
                         {{ rangoHorario(bloque.horaDesde, bloque.horaHasta) }}
+                        <span class="bloque__numero">bloque numero {{ bloque.id }}</span>
                       </p>
 
                       @if (bloque.vigenciaHasta) {

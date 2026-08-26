@@ -57,6 +57,18 @@
         <p class="ayuda">
           <a class="enlace" routerLink="/espacios">Ver los espacios y boxes de la sede activa</a>
         </p>
+
+        <!--
+          Mismo caso que los espacios, y por el mismo motivo: el horario cuelga del vinculo de
+          cada profesional con la SEDE del contexto activo, asi que su ruta tampoco vive bajo
+          `/organizacion`. Sin este enlace la feature entera de horarios no tiene ninguna
+          entrada desde la aplicacion y solo se llega escribiendo la URL a mano.
+        -->
+        <p class="ayuda">
+          <a class="enlace" [routerLink]="rutaHorarios">
+            Ver los horarios de los profesionales de la sede activa
+          </a>
+        </p>
       }
 
       @case ('error') {

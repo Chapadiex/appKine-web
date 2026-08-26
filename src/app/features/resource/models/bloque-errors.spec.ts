@@ -36,7 +36,6 @@ describe('traducirErrorBloque', () => {
       [409, 'profesional-no-vinculado', 'profesional-no-vinculado'],
       [409, 'consultorio-inactive', 'sede-inactiva'],
       [409, 'subscription-suspended', 'suscripcion-suspendida'],
-      [400, 'ventana-demasiado-amplia', 'ventana-amplia'],
     ];
 
     for (const [status, tipo, causa] of casos) {
@@ -110,13 +109,17 @@ describe('traducirErrorBloque', () => {
     expect(traducido.mensaje).toContain('20:00 a medianoche (24:00)');
   });
 
-  it('la ventana demasiado amplia trae el tope para que la pantalla recorte sola', () => {
+  /**
+   * Ningun endpoint de bloques recibe una ventana, asi que este problem type no lo puede emitir
+   * ninguno de los cuatro. Cae en la rama de `400`, que muestra el `detail` del backend: si
+   * alguna vez llegara de verdad, el usuario lee lo que el backend escribio y no un generico.
+   */
+  it('la ventana demasiado amplia ya no tiene rama propia: es un 400 mas', () => {
     const traducido = traducirErrorBloque(
       problema(400, 'ventana-demasiado-amplia', { maximoDias: 366 }),
     );
 
-    expect(traducido.causa).toBe('ventana-amplia');
-    expect(traducido.maximoDias).toBe(366);
+    expect(traducido.causa).toBe('validacion');
   });
 
   it('falta de contexto no es falta de permiso: manda a elegir sede, nunca al login', () => {

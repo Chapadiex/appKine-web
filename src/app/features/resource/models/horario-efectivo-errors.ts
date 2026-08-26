@@ -1,4 +1,10 @@
 import { AkineHttpError } from '../../../core/interceptors/error.interceptor';
+import {
+  MensajeTraducido,
+  conDetalle,
+  mensajeTraducido,
+  segundosDeEspera,
+} from './errores-comunes';
 
 /**
  * Motivo por el que fallo la consulta de la <b>disponibilidad efectiva</b> (M05, AKINE-02.04).
@@ -38,11 +44,7 @@ export type CausaHorarioEfectivo =
   | 'otro';
 
 /** Error ya traducido a algo mostrable. */
-export interface ErrorHorarioEfectivo {
-  readonly mensaje: string;
-  readonly causa: CausaHorarioEfectivo;
-  /** Segundos a esperar antes de reintentar. 0 fuera de `limite`. */
-  readonly segundosDeEspera: number;
+export interface ErrorHorarioEfectivo extends MensajeTraducido<CausaHorarioEfectivo> {
   /** Tope de dias que el backend acepta. Solo en `ventana-amplia`; 0 en el resto. */
   readonly maximoDias: number;
 }
@@ -133,19 +135,5 @@ function mensajeDeVentana(maximoDias: number): string {
 }
 
 function base(mensaje: string, causa: CausaHorarioEfectivo): ErrorHorarioEfectivo {
-  return { mensaje, causa, segundosDeEspera: 0, maximoDias: 0 };
-}
-
-/** El mensaje del backend, o el de respaldo si el cuerpo no traia `ProblemDetail`. */
-function conDetalle(error: AkineHttpError, respaldo: string): string {
-  return error.problem === null ? respaldo : error.message;
-}
-
-/** Espera declarada en `Retry-After`, o `0`. Sin header no se inventa un numero. */
-function segundosDeEspera(error: AkineHttpError): number {
-  const segundos = error.reintentarEnSegundos;
-  if (segundos === null || !Number.isFinite(segundos) || segundos <= 0) {
-    return 0;
-  }
-  return Math.ceil(segundos);
+  return { ...mensajeTraducido(mensaje, causa), maximoDias: 0 };
 }

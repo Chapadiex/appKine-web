@@ -1,6 +1,6 @@
 import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { catchError, of } from 'rxjs';
 
 import { CalendarioDeSedeService } from '../../../../api/generated/api/calendario-de-sede.service';
@@ -11,8 +11,14 @@ import { PERMISO_CONSULTORIO_MANAGE } from '../../../../core/models/permisos';
 import { PermisoDirective } from '../../../../shared/directives/permiso.directive';
 import { PermissionsStore } from '../../../../core/services/permissions.store';
 import { RUTAS_HORARIOS } from '../../models/rutas-de-horarios';
+import {
+  ParametrosDeHorarios,
+  SIN_PARAMETROS,
+  leerParametrosDeHorarios,
+} from '../../models/parametros-de-horarios';
 import { TEXTO_MODO_LECTURA, modoLectura, puedeGestionar } from '../../models/modo-lectura';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
+import { etiquetaDeTipoDeFeriado } from '../../models/tipos-de-feriado';
 import { traducirErrorExcepcion } from '../../models/excepcion-errors';
 import {
   MAXIMO_DIAS_VENTANA,
@@ -66,9 +72,15 @@ export class CalendarioSedePage {
   private readonly formBuilder = inject(FormBuilder);
   private readonly permisos = inject(PermissionsStore);
 
+  /** La ventana del enlace que trajo hasta aca, si vino de uno. Se consume una sola vez. */
+  private parametros: ParametrosDeHorarios = leerParametrosDeHorarios(
+    inject(ActivatedRoute).snapshot.queryParamMap,
+  );
+
   protected readonly permisoManage = PERMISO_CONSULTORIO_MANAGE;
   protected readonly rutas = RUTAS_HORARIOS;
   protected readonly textoModoLectura = TEXTO_MODO_LECTURA;
+  protected readonly etiquetaDeTipoDeFeriado = etiquetaDeTipoDeFeriado;
 
   /**
    * Modo lectura: consta que falta `consultorio:manage`.
@@ -163,16 +175,28 @@ export class CalendarioSedePage {
     effect(() => {
       this.tenantContext.contextEpoch();
       untracked(() => {
+        // La ventana del enlace vale para la primera carga y se consume ahi. Ver
+        // `parametros-de-horarios.ts`: el horario efectivo explica un dia cerrado por feriado y
+        // ofrece venir a mirarlo, y con la ventana por defecto —un año desde hoy— un feriado ya
+        // pasado no aparece en la lista a la que acaba de mandar.
+        const inicial = this.parametros;
+        this.parametros = SIN_PARAMETROS;
+
         this.politica.set(null);
         this.exito.set(null);
         this.errorPolitica.set(null);
-        this.proponerVentana();
+        this.proponerVentana(inicial);
         this.consultar();
       });
     });
   }
 
-  private proponerVentana(): void {
+  private proponerVentana(inicial: ParametrosDeHorarios = SIN_PARAMETROS): void {
+    if (inicial.desde !== null && inicial.hasta !== null) {
+      this.formularioVentana.reset({ desde: inicial.desde, hasta: inicial.hasta });
+      this.errorVentana.set(null);
+      return;
+    }
     const desde = hoyLocal();
     this.formularioVentana.reset({ desde, hasta: sumarDias(desde, DIAS_PROPUESTOS) });
     this.errorVentana.set(null);
