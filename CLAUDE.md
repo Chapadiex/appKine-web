@@ -224,9 +224,25 @@ Reglas innegociables del QA:
 
 ## 7. Estado actual
 
-**Rama `akine-01.02-identidad`, 3 commits, 64 rutas sin commitear.** 00.01, 00.02 y 01.01
-cerradas; **01.02 construida y sin commitear**. Los bloques de abajo son el registro por etapa,
-en orden cronológico. Mapa verificado del proyecto: `../docs/PROJECT_MAP.md`.
+**Rama `akine-01.02-identidad`, 22 commits, working tree limpio** (27/08/2026). Cerradas 00.01,
+00.02, 01.01, 01.02, 01.03, 02.01, 02.02, 02.03, 02.04, 02.05 y 02.06. Cliente generado y fijado
+en el contrato **0.12.0**. **602 tests en 70 archivos**, lint limpio y los cuatro pisos de
+cobertura sobre 80 % (rama en 80,04 %, que es el más ajustado).
+
+Features: `auth`, `organization`, `platform`, `resource`, `catalog`, `offering`.
+
+> **Los bloques de abajo son el registro por etapa y quedaron congelados en su fecha.** Los
+> números de 01.02 —"3 commits", "sin commitear", cobertura del momento— describen ese cierre y
+> no el estado de hoy: el de hoy es el párrafo de arriba. Mapa verificado del proyecto:
+> `../docs/PROJECT_MAP.md`.
+
+> **Sin E2E desde 01.02.** `e2e/` sigue teniendo los mismos cuatro archivos —`auth-flujo`,
+> `contexto-sin-fuga`, `errores-sin-internals` y `smoke`— y ninguna de las pantallas de espacios,
+> catálogo, horarios ni servicios está cubierta. No es que no se corrieron: no existen.
+
+> **El contraste de color no está verificado en ninguna parte.** La regla `color-contrast` de axe
+> vuelve siempre `incomplete` bajo jsdom, que no calcula layout. Vale para todas las auditorías de
+> accesibilidad del repositorio.
 
 ### AKINE-00.01 — completada y verificada
 
@@ -383,14 +399,17 @@ Reglas que esta etapa dejó fijadas y que las siguientes heredan:
 | Los guards son **UX, no seguridad** | La autoridad de permisos es el backend, que rechaza igual si se llega por URL directa |
 | Falta de contexto se resuelve mandando a `/seleccionar-contexto`, no mostrando un 403 | Sin eso la pantalla se abre vacía y el usuario no tiene cómo salir |
 
-### Próximo paso — cerrar 01.02
+### Próximo paso — AKINE-02.07
 
-- [ ] Commitear la etapa después de que el backend publique el contrato 0.3.0
-- [ ] E2E de los flujos de auth: hoy `smoke.spec.ts` no toca ninguno
+Pendientes que arrastra el frontend:
+
+- [ ] E2E de todo lo posterior a 01.03: espacios, catálogo, horarios y servicios. **Ninguno existe**
 - [ ] Remote de GitHub y protección de rama en `main`
 - [ ] Activar el job E2E del pipeline (listo y comentado — espera la imagen Docker del backend)
 - [ ] Regla de ESLint que prohíba imports entre features (ADR-0004, hoy depende de revisión)
 - [ ] Completar los `PENDIENTE(F1)` de `.claude/qa-config.md`
+- [ ] `src/app/features/organization/organization.routes.spec.ts` no pasa `format:check`. Preexistente, sin relación con ninguna etapa reciente
+- [ ] Endpoint que diga si el usuario tiene rol de plataforma: sin él, la pantalla de servicios muestra las acciones y deja que el 403 del servidor sea la respuesta
 
 ## 8. Checklist de cierre de tarea
 
