@@ -39,6 +39,8 @@ api/recuperacion.service.ts
 api/recuperacion.serviceInterface.ts
 api/registro-y-activacion.service.ts
 api/registro-y-activacion.serviceInterface.ts
+api/servicios-y-ofertas.service.ts
+api/servicios-y-ofertas.serviceInterface.ts
 api/sesion.service.ts
 api/sesion.serviceInterface.ts
 api/suscripciones.service.ts
@@ -76,7 +78,9 @@ model/create-espacio-request.ts
 model/create-excepcion-request.ts
 model/create-invitacion-request.ts
 model/create-membership-request.ts
+model/create-oferta-request.ts
 model/create-organization-request.ts
+model/create-servicio-request.ts
 model/create-vigencia-request.ts
 model/created-membership-response.ts
 model/deactivate-bloque-request.ts
@@ -84,6 +88,7 @@ model/deactivate-catalogo-request.ts
 model/deactivate-consultorio-request.ts
 model/deactivate-espacio-request.ts
 model/deactivate-excepcion-request.ts
+model/deactivate-offering-request.ts
 model/decline-invitacion-request.ts
 model/desvinculacion-impacto-response.ts
 model/dia-efectivo-response.ts
@@ -107,6 +112,7 @@ model/membership-page-response.ts
 model/membership-reason-request.ts
 model/membership-response.ts
 model/models.ts
+model/oferta-response.ts
 model/organization-response.ts
 model/password-reset-confirm-request.ts
 model/password-reset-request.ts
@@ -121,6 +127,7 @@ model/register-account-request.ts
 model/resend-activation-request.ts
 model/resolve-catalogo-solicitud-request.ts
 model/select-context-request.ts
+model/servicio-response.ts
 model/subscription-response.ts
 model/subscription-transition-page-response.ts
 model/subscription-transition-request.ts
@@ -131,7 +138,9 @@ model/update-calendario-request.ts
 model/update-catalogo-concepto-request.ts
 model/update-consultorio-request.ts
 model/update-espacio-request.ts
+model/update-oferta-request.ts
 model/update-organization-request.ts
+model/update-servicio-request.ts
 model/version-response.ts
 ng-package.json
 package.json

@@ -120,6 +120,22 @@ export enum ProblemType {
 
     HTTPS___AKINE_APP_PROBLEMS_VENTANA_DEMASIADO_AMPLIA = 'https://akine.app/problems/ventana-demasiado-amplia',
 
-    HTTPS___AKINE_APP_PROBLEMS_EXCEPCION_ALREADY_INACTIVE = 'https://akine.app/problems/excepcion-already-inactive'
+    HTTPS___AKINE_APP_PROBLEMS_EXCEPCION_ALREADY_INACTIVE = 'https://akine.app/problems/excepcion-already-inactive',
+
+    HTTPS___AKINE_APP_PROBLEMS_SERVICIO_CODIGO_TAKEN = 'https://akine.app/problems/servicio-codigo-taken',
+
+    HTTPS___AKINE_APP_PROBLEMS_SERVICIO_NOMBRE_TAKEN = 'https://akine.app/problems/servicio-nombre-taken',
+
+    HTTPS___AKINE_APP_PROBLEMS_SERVICIO_INACTIVO = 'https://akine.app/problems/servicio-inactivo',
+
+    HTTPS___AKINE_APP_PROBLEMS_SERVICIO_ALREADY_INACTIVE = 'https://akine.app/problems/servicio-already-inactive',
+
+    HTTPS___AKINE_APP_PROBLEMS_OFERTA_NOMBRE_COMERCIAL_TAKEN = 'https://akine.app/problems/oferta-nombre-comercial-taken',
+
+    HTTPS___AKINE_APP_PROBLEMS_OFERTA_INACTIVA = 'https://akine.app/problems/oferta-inactiva',
+
+    HTTPS___AKINE_APP_PROBLEMS_OFERTA_ALREADY_INACTIVE = 'https://akine.app/problems/oferta-already-inactive',
+
+    HTTPS___AKINE_APP_PROBLEMS_CONSULTORIO_NO_OPERABLE = 'https://akine.app/problems/consultorio-no-operable'
 }
 
