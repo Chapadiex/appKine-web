@@ -1,0 +1,763 @@
+<h1>Ofertas de la sede</h1>
+
+<p class="descripcion">
+  Como esta sede presta cada servicio del catalogo: con que nombre comercial, cuanto dura, para
+  cuanta gente, a que precio y desde cuando. El servicio dice <b>que existe</b>; la oferta dice
+  <b>como lo hacemos aca</b>.
+</p>
+
+<nav class="acciones" aria-label="Servicios y ofertas">
+  <a class="boton boton--secundario" routerLink="/servicios/catalogo">Catalogo de servicios</a>
+  <a class="boton boton--secundario" routerLink="/servicios/ofertas" aria-current="page">
+    Ofertas de la sede
+  </a>
+</nav>
+
+<!--
+  La distincion que esta pantalla no puede aplanar. Va arriba y no en un tooltip: es la causa del
+  reporte de bug mas probable del modulo -"la cargue y no aparece en la agenda"- y quien lee la
+  tabla tiene que llegar a la columna Estado ya sabiendo que hay dos cosas distintas mezcladas.
+  El detalle por fila lo redacta `models/situacion-de-vigencia.ts`.
+-->
+<section class="tarjeta nota-clave" aria-labelledby="titulo-nota-vigencia">
+  <h2 id="titulo-nota-vigencia">Activa y vigente hoy no son lo mismo</h2>
+  <p>
+    <b>Activa</b> quiere decir que la oferta no fue dada de baja. Es su estado administrativo, y no
+    depende de la fecha.
+  </p>
+  <p>
+    <b>Vigente hoy</b> quiere decir que ademas hoy cae dentro de su ventana de vigencia, y por eso
+    se ofrece para reservar. Una oferta activa que arranca el mes que viene figura como
+    <b>activa pero todavia sin vigencia</b>: no es un error, y va a empezar a ofrecerse sola ese
+    dia. Lo mismo pasa con los espacios entre <i>activo</i> y <i>en servicio</i>.
+  </p>
+  <p>
+    La vigencia se calcula en la <b>zona horaria de la sede</b>, no en la de tu computadora: si
+    estas viajando, lo que ves sigue siendo lo que ve el centro.
+  </p>
+</section>
+
+<div aria-live="polite">
+  @if (exito(); as mensaje) {
+    <p class="estado estado--ok">{{ mensaje }}</p>
+  }
+</div>
+
+<p class="acciones">
+  <button type="button" class="boton" (click)="abrirAlta()" *akinePermiso="permisoManage">
+    Dar de alta una oferta
+  </button>
+</p>
+
+@if (altaAbierta()) {
+  <section class="tarjeta" aria-labelledby="titulo-alta-oferta">
+    <h2 id="titulo-alta-oferta">Nueva oferta de esta sede</h2>
+
+    <form [formGroup]="formularioAlta" (ngSubmit)="enviarAlta()" novalidate>
+      <div class="campo">
+        <label for="alta-oferta-servicio">Servicio del catalogo</label>
+        <select
+          id="alta-oferta-servicio"
+          formControlName="servicioId"
+          [attr.aria-invalid]="mostrarErrorAlta('servicioId') ? 'true' : null"
+          aria-describedby="alta-oferta-servicio-ayuda"
+        >
+          <option value="">Elegi un servicio</option>
+          @for (servicio of serviciosOfertables(); track servicio.id) {
+            <option [value]="servicio.id">{{ servicioEnUnaLinea(servicio) }}</option>
+          }
+        </select>
+        @if (mostrarErrorAlta('servicioId')) {
+          <p class="campo__error" role="alert">
+            Toda oferta cuelga de un servicio del catalogo: elegi cual.
+          </p>
+        }
+        <p class="ayuda" id="alta-oferta-servicio-ayuda">
+          Solo aparecen los servicios <b>activos</b>: sobre uno dado de baja no se pueden crear
+          ofertas nuevas. El servicio no se puede cambiar despues —cambiar de servicio no es editar
+          esta oferta, es crear otra—.
+          @if (serviciosOfertables().length === 0) {
+            <b>
+              No pudimos traer el catalogo de servicios. Recarga la pantalla; si sigue vacio, revisa
+              el <a routerLink="/servicios/catalogo">catalogo</a>.
+            </b>
+          }
+        </p>
+      </div>
+
+      <div class="campo">
+        <label for="alta-oferta-nombre">Nombre comercial</label>
+        <input
+          id="alta-oferta-nombre"
+          type="text"
+          formControlName="nombreComercial"
+          autocomplete="off"
+          [attr.aria-invalid]="mostrarErrorAlta('nombreComercial') ? 'true' : null"
+          aria-describedby="alta-oferta-nombre-ayuda"
+        />
+        @if (mostrarErrorAlta('nombreComercial')) {
+          <p class="campo__error" role="alert">El nombre comercial es obligatorio.</p>
+        }
+        <p class="ayuda" id="alta-oferta-nombre-ayuda">
+          Con este nombre la ve el paciente. Puede diferir del nombre del servicio: "Kinesiologia
+          respiratoria" en el catalogo y "Rehabilitacion respiratoria adultos" aca.
+        </p>
+      </div>
+
+      <div class="campo">
+        <label for="alta-oferta-descripcion">Descripcion (opcional)</label>
+        <input
+          id="alta-oferta-descripcion"
+          type="text"
+          formControlName="descripcion"
+          autocomplete="off"
+        />
+      </div>
+
+      <div class="campo">
+        <label for="alta-oferta-modalidad">Modalidad</label>
+        <select
+          id="alta-oferta-modalidad"
+          formControlName="modalidad"
+          (change)="marcarModalidadDelAlta($any($event.target).value)"
+          aria-describedby="alta-oferta-modalidad-ayuda"
+        >
+          <option value="">Heredar del servicio</option>
+          @for (opcion of modalidades; track opcion.valor) {
+            <option [value]="opcion.valor">{{ opcion.etiqueta }} — {{ opcion.ayuda }}</option>
+          }
+        </select>
+        <p class="ayuda" id="alta-oferta-modalidad-ayuda">
+          <b>Heredar</b> no es apagar: si dejas esta opcion, la oferta toma la modalidad por defecto
+          del servicio elegido. Solo eligi una si esta sede la presta distinto.
+        </p>
+      </div>
+
+      <div class="par-de-campos">
+        <div class="campo">
+          <label for="alta-oferta-duracion">Duracion (minutos)</label>
+          <input
+            id="alta-oferta-duracion"
+            type="number"
+            min="1"
+            formControlName="duracionMinutos"
+            [attr.aria-invalid]="mostrarErrorAlta('duracionMinutos') ? 'true' : null"
+          />
+          @if (mostrarErrorAlta('duracionMinutos')) {
+            <p class="campo__error" role="alert">
+              La duracion es obligatoria y tiene que ser mayor a cero.
+            </p>
+          }
+        </div>
+
+        <div class="campo">
+          <label for="alta-oferta-capacidad">Capacidad</label>
+          <input id="alta-oferta-capacidad" type="number" min="1" formControlName="capacidad" />
+          <p class="ayuda">
+            @if (altaEsGrupal()) {
+              Una oferta <b>grupal</b> necesita capacidad mayor a 1: una grupal de a uno es una
+              individual mal rotulada, y el motor de inscripciones la tratara como grupo de una
+              persona.
+            } @else {
+              Cuantas personas entran en el mismo turno. Para una oferta individual es 1.
+            }
+          </p>
+        </div>
+      </div>
+
+      <div class="par-de-campos">
+        <div class="campo">
+          <label for="alta-oferta-precio">Precio base (opcional)</label>
+          <input id="alta-oferta-precio" type="number" min="0" formControlName="precioBase" />
+        </div>
+
+        <div class="campo">
+          <label for="alta-oferta-moneda">Moneda</label>
+          <input
+            id="alta-oferta-moneda"
+            type="text"
+            maxlength="3"
+            formControlName="moneda"
+            autocomplete="off"
+            aria-describedby="alta-oferta-precio-ayuda"
+          />
+        </div>
+      </div>
+      <p class="ayuda" id="alta-oferta-precio-ayuda">
+        Precio y moneda <b>van juntos o no van ninguno</b>: un precio sin moneda no es un precio.
+        Tres letras, como ARS o USD. Una oferta sin precio no esta mal cargada.
+      </p>
+
+      <div class="campo">
+        <label for="alta-oferta-esquema">Esquema de cobro (opcional)</label>
+        <input
+          id="alta-oferta-esquema"
+          type="text"
+          formControlName="esquemaCobro"
+          autocomplete="off"
+          aria-describedby="alta-oferta-esquema-ayuda"
+        />
+        <p class="ayuda" id="alta-oferta-esquema-ayuda">
+          Se <b>guarda y se muestra</b>, pero todavia nadie lo interpreta: las reglas economicas
+          dependen de convenios y aranceles que se construyen mas adelante. Anota aca lo que el
+          centro necesite recordar.
+        </p>
+      </div>
+
+      <div class="campo">
+        <label class="opcion-casilla" for="alta-oferta-obra-social">
+          <input id="alta-oferta-obra-social" type="checkbox" formControlName="admiteObraSocial" />
+          Admite obra social
+        </label>
+      </div>
+
+      <div class="campo">
+        <label for="alta-oferta-caso">Requiere caso clinico</label>
+        <select
+          id="alta-oferta-caso"
+          formControlName="requiereCasoClinico"
+          aria-describedby="alta-oferta-caso-ayuda"
+        >
+          <option value="">Heredar del servicio</option>
+          <option value="true">Si, lo requiere</option>
+          <option value="false">No lo requiere</option>
+        </select>
+        <p class="ayuda" id="alta-oferta-caso-ayuda">
+          Otra vez: <b>heredar no es decir que no</b>. Dejando esta opcion, la oferta toma lo que el
+          servicio propone; eligiendo "No lo requiere" lo estas apagando explicitamente para esta
+          sede.
+        </p>
+      </div>
+
+      <div class="campo">
+        <label for="alta-oferta-registro">Genera registro clinico</label>
+        <select
+          id="alta-oferta-registro"
+          formControlName="generaRegistroClinico"
+          aria-describedby="alta-oferta-registro-ayuda"
+        >
+          <option value="">Heredar del servicio</option>
+          <option value="true">Si, genera</option>
+          <option value="false">No genera</option>
+        </select>
+        <p class="ayuda" id="alta-oferta-registro-ayuda">
+          Requerir un caso y generar registro son cosas distintas: se puede exigir el caso sin que
+          cada atencion escriba en la historia clinica.
+        </p>
+      </div>
+
+      <div class="campo">
+        <label class="opcion-casilla" for="alta-oferta-profesional">
+          <input
+            id="alta-oferta-profesional"
+            type="checkbox"
+            formControlName="requiereProfesional"
+          />
+          Requiere profesional asignado
+        </label>
+      </div>
+
+      <div class="campo">
+        <label class="opcion-casilla" for="alta-oferta-espacio">
+          <input id="alta-oferta-espacio" type="checkbox" formControlName="requiereEspacio" />
+          Requiere espacio o box
+        </label>
+        <p class="ayuda">
+          Estos dos <b>no heredan</b> del servicio: el catalogo no propone ningun valor para ellos,
+          porque dependen de como trabaja cada sede.
+        </p>
+      </div>
+
+      <div class="par-de-campos">
+        <div class="campo">
+          <label for="alta-oferta-desde">Vigente desde (opcional)</label>
+          <input id="alta-oferta-desde" type="date" formControlName="vigenciaDesde" />
+        </div>
+
+        <div class="campo">
+          <label for="alta-oferta-hasta">Vigente hasta (opcional)</label>
+          <input
+            id="alta-oferta-hasta"
+            type="date"
+            formControlName="vigenciaHasta"
+            aria-describedby="alta-oferta-vigencia-ayuda"
+          />
+        </div>
+      </div>
+      <p class="ayuda" id="alta-oferta-vigencia-ayuda">
+        Sin fecha de inicio rige desde ya. Con una fecha futura la oferta queda
+        <b>activa pero todavia sin vigencia</b> hasta ese dia. El fin es <b>exclusivo</b>: el dia
+        que pongas es el primero en que ya no se ofrece. Sin fin, no vence nunca.
+      </p>
+
+      @if (errorAccion(); as mensaje) {
+        <p class="estado estado--error" role="alert">{{ mensaje }}</p>
+      }
+
+      <p class="acciones">
+        <button type="submit" class="boton" [disabled]="enviando()">
+          {{ enviando() ? 'Guardando...' : 'Dar de alta' }}
+        </button>
+        <button
+          type="button"
+          class="boton boton--secundario"
+          (click)="cerrarPanel()"
+          [disabled]="enviando()"
+        >
+          Cancelar
+        </button>
+      </p>
+    </form>
+  </section>
+}
+
+<section class="tarjeta" aria-labelledby="titulo-listado-ofertas">
+  <h2 id="titulo-listado-ofertas">Ofertas cargadas en esta sede</h2>
+
+  <div class="campo">
+    <label for="filtro-estado-oferta">Mostrar</label>
+    <select
+      id="filtro-estado-oferta"
+      [value]="filtroEstado()"
+      (change)="cambiarFiltroEstado($any($event.target).value)"
+      aria-describedby="filtro-estado-oferta-ayuda"
+    >
+      <option value="ACTIVO">Solo las activas</option>
+      <option value="INACTIVO">Solo las dadas de baja</option>
+      <option value="TODOS">Todas</option>
+    </select>
+    <p class="ayuda" id="filtro-estado-oferta-ayuda">
+      Este filtro es por <b>estado administrativo</b>, no por vigencia: "solo las activas" incluye
+      las que todavia no arrancaron y las que ya terminaron su ventana. La columna Estado dice cual
+      es cual.
+    </p>
+  </div>
+
+  <div class="campo">
+    <label for="filtro-servicio-oferta">Servicio</label>
+    <select
+      id="filtro-servicio-oferta"
+      [value]="filtroServicio() ?? ''"
+      (change)="cambiarFiltroServicio($any($event.target).value)"
+    >
+      <option value="">Todos</option>
+      @for (servicio of serviciosOfertables(); track servicio.id) {
+        <option [value]="servicio.id">{{ servicioEnUnaLinea(servicio) }}</option>
+      }
+    </select>
+  </div>
+
+  <div aria-live="polite">
+    @switch (estado().tipo) {
+      @case ('cargando') {
+        <p class="estado estado--cargando">Cargando las ofertas de la sede&hellip;</p>
+      }
+
+      @case ('sin-contexto') {
+        <p class="estado estado--vacio">Todavia no elegiste un consultorio.</p>
+        <p class="ayuda">
+          Las ofertas son de una sede concreta, asi que hay que saber en cual estas trabajando. Tu
+          sesion sigue abierta: solo falta elegir donde estas.
+        </p>
+        <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
+      }
+
+      @case ('error') {
+        <p class="estado estado--error" role="alert">{{ mensajeError() }}</p>
+
+        @if (faltaContexto()) {
+          <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
+        } @else {
+          <button type="button" class="boton" (click)="cargar()">Reintentar</button>
+        }
+      }
+
+      @case ('listo') {
+        @if (ofertas().length === 0) {
+          <p class="estado estado--vacio">
+            Esta sede todavia no tiene ofertas que coincidan con el filtro.
+          </p>
+          <p class="ayuda">
+            Una oferta es lo que conecta un servicio del catalogo con esta sede. Sin ninguna, esta
+            sede no ofrece nada para reservar.
+          </p>
+        } @else {
+          <p class="ayuda">{{ ofertas().length }} en total.</p>
+
+          <div class="tabla-scroll" tabindex="0" role="region" aria-label="Ofertas de la sede">
+            <table class="tabla">
+              <caption class="visualmente-oculto">
+                Ofertas de la sede activa, con su servicio, modalidad, duracion, precio, ventana de
+                vigencia, estado y acciones.
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col">Oferta</th>
+                  <th scope="col">Servicio</th>
+                  <th scope="col">Modalidad</th>
+                  <th scope="col">Duracion</th>
+                  <th scope="col">Precio</th>
+                  <th scope="col">Vigencia</th>
+                  <th scope="col">Estado</th>
+                  <th scope="col">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (oferta of ofertas(); track oferta.id) {
+                  <!--
+                    Una sola evaluacion por fila: `situacion()` construye un objeto, y llamarla
+                    tres veces desde la plantilla lo construiria tres veces en cada ciclo de
+                    deteccion de cambios.
+                  -->
+                  @let situacionDeLaFila = situacion(oferta);
+
+                  <tr
+                    [class.fila--revocada]="oferta.estado === 'INACTIVO'"
+                    [class.fila--atenuada]="situacionDeLaFila.atenuada"
+                  >
+                    <th scope="row">
+                      {{ oferta.nombreComercial }}
+                      @if (oferta.descripcion) {
+                        <p class="ayuda">{{ oferta.descripcion }}</p>
+                      }
+                    </th>
+                    <td>{{ nombreDelServicio(oferta) }}</td>
+                    <td>{{ modalidadConCapacidad(oferta) }}</td>
+                    <td>{{ oferta.duracionMinutos }} min</td>
+                    <td>{{ precioEnPalabras(oferta) }}</td>
+                    <td>
+                      Desde {{ enPalabras(oferta.vigenciaDesde ?? '') }}
+                      @if (oferta.vigenciaHasta) {
+                        <p class="ayuda">
+                          Hasta {{ enPalabras(oferta.vigenciaHasta) }} (exclusivo).
+                        </p>
+                      } @else {
+                        <p class="ayuda">Sin fecha de fin.</p>
+                      }
+                    </td>
+                    <td>
+                      <span class="marca-estado">{{ situacionDeLaFila.resumen }}</span>
+                      @if (situacionDeLaFila.explicacion; as explicacion) {
+                        <p class="ayuda">{{ explicacion }}</p>
+                      }
+                      @if (oferta.estado === 'INACTIVO' && oferta.deactivationReason) {
+                        <p class="ayuda">{{ oferta.deactivationReason }}</p>
+                      }
+                    </td>
+                    <td class="acciones-fila">
+                      @if (oferta.estado === 'ACTIVO') {
+                        <ng-container *akinePermiso="permisoManage">
+                          <button
+                            type="button"
+                            class="boton boton--secundario"
+                            (click)="abrirPanel(oferta, 'editar')"
+                          >
+                            Editar
+                          </button>
+                          <button
+                            type="button"
+                            class="boton boton--secundario"
+                            (click)="abrirPanel(oferta, 'baja')"
+                          >
+                            Dar de baja
+                          </button>
+                        </ng-container>
+                      }
+                    </td>
+                  </tr>
+
+                  @if (panelAbierto(oferta.id, 'editar')) {
+                    <tr class="fila-panel">
+                      <td colspan="8">
+                        <form
+                          [formGroup]="formularioEdicion"
+                          (ngSubmit)="enviarEdicion()"
+                          novalidate
+                        >
+                          <h3>Editar {{ oferta.nombreComercial }}</h3>
+
+                          <p class="ayuda">
+                            Se manda <b>solo lo que cambies</b>. Un campo que no toques queda como
+                            esta. Para <b>sacarle</b> un valor —no cambiarlo, quitarlo— usa la
+                            casilla que esta debajo de ese campo: vaciarlo a mano no alcanza, porque
+                            un campo vacio significa "no lo toques".
+                          </p>
+
+                          <div class="campo">
+                            <label for="editar-oferta-nombre">Nombre comercial</label>
+                            <input
+                              id="editar-oferta-nombre"
+                              type="text"
+                              formControlName="nombreComercial"
+                              autocomplete="off"
+                              [attr.aria-invalid]="
+                                mostrarErrorEdicion('nombreComercial') ? 'true' : null
+                              "
+                            />
+                            @if (mostrarErrorEdicion('nombreComercial')) {
+                              <p class="campo__error" role="alert">
+                                El nombre comercial es obligatorio.
+                              </p>
+                            }
+                          </div>
+
+                          <div class="campo">
+                            <label for="editar-oferta-descripcion">Descripcion</label>
+                            <input
+                              id="editar-oferta-descripcion"
+                              type="text"
+                              formControlName="descripcion"
+                              autocomplete="off"
+                            />
+                          </div>
+
+                          <div class="campo">
+                            <label for="editar-oferta-modalidad">Modalidad</label>
+                            <select id="editar-oferta-modalidad" formControlName="modalidad">
+                              @for (opcion of modalidades; track opcion.valor) {
+                                <option [value]="opcion.valor">{{ opcion.etiqueta }}</option>
+                              }
+                            </select>
+                            <p class="ayuda">
+                              Aca no hay "heredar": la oferta ya tiene su modalidad resuelta. La
+                              herencia del servicio ocurre una sola vez, al darla de alta.
+                            </p>
+                          </div>
+
+                          <div class="par-de-campos">
+                            <div class="campo">
+                              <label for="editar-oferta-duracion">Duracion (minutos)</label>
+                              <input
+                                id="editar-oferta-duracion"
+                                type="number"
+                                min="1"
+                                formControlName="duracionMinutos"
+                              />
+                            </div>
+
+                            <div class="campo">
+                              <label for="editar-oferta-capacidad">Capacidad</label>
+                              <input
+                                id="editar-oferta-capacidad"
+                                type="number"
+                                min="1"
+                                formControlName="capacidad"
+                              />
+                            </div>
+                          </div>
+
+                          <div class="par-de-campos">
+                            <div class="campo">
+                              <label for="editar-oferta-precio">Precio base</label>
+                              <input
+                                id="editar-oferta-precio"
+                                type="number"
+                                min="0"
+                                formControlName="precioBase"
+                              />
+                            </div>
+
+                            <div class="campo">
+                              <label for="editar-oferta-moneda">Moneda</label>
+                              <input
+                                id="editar-oferta-moneda"
+                                type="text"
+                                maxlength="3"
+                                formControlName="moneda"
+                                autocomplete="off"
+                              />
+                            </div>
+                          </div>
+
+                          <div class="campo limpiar">
+                            <label class="opcion-casilla" for="editar-oferta-limpiar-precio">
+                              <input
+                                id="editar-oferta-limpiar-precio"
+                                type="checkbox"
+                                formControlName="limpiarPrecio"
+                                (change)="sincronizarLimpiar('precio')"
+                                aria-describedby="editar-oferta-limpiar-precio-ayuda"
+                              />
+                              Dejar esta oferta sin precio
+                            </label>
+                            <p class="ayuda" id="editar-oferta-limpiar-precio-ayuda">
+                              Marcalo para <b>quitarle</b> el precio, no para cambiarlo. Saca precio
+                              y moneda juntos, porque son un solo dato.
+                            </p>
+                          </div>
+
+                          <div class="campo">
+                            <label for="editar-oferta-esquema">Esquema de cobro</label>
+                            <input
+                              id="editar-oferta-esquema"
+                              type="text"
+                              formControlName="esquemaCobro"
+                              autocomplete="off"
+                            />
+                          </div>
+
+                          <div class="campo limpiar">
+                            <label class="opcion-casilla" for="editar-oferta-limpiar-esquema">
+                              <input
+                                id="editar-oferta-limpiar-esquema"
+                                type="checkbox"
+                                formControlName="limpiarEsquemaCobro"
+                                (change)="sincronizarLimpiar('esquema')"
+                              />
+                              Dejar esta oferta sin esquema de cobro
+                            </label>
+                          </div>
+
+                          <div class="campo">
+                            <label class="opcion-casilla" for="editar-oferta-obra-social">
+                              <input
+                                id="editar-oferta-obra-social"
+                                type="checkbox"
+                                formControlName="admiteObraSocial"
+                              />
+                              Admite obra social
+                            </label>
+                          </div>
+
+                          <div class="campo">
+                            <label class="opcion-casilla" for="editar-oferta-caso">
+                              <input
+                                id="editar-oferta-caso"
+                                type="checkbox"
+                                formControlName="requiereCasoClinico"
+                              />
+                              Requiere caso clinico
+                            </label>
+                          </div>
+
+                          <div class="campo">
+                            <label class="opcion-casilla" for="editar-oferta-registro">
+                              <input
+                                id="editar-oferta-registro"
+                                type="checkbox"
+                                formControlName="generaRegistroClinico"
+                              />
+                              Genera registro clinico
+                            </label>
+                          </div>
+
+                          <div class="campo">
+                            <label class="opcion-casilla" for="editar-oferta-profesional">
+                              <input
+                                id="editar-oferta-profesional"
+                                type="checkbox"
+                                formControlName="requiereProfesional"
+                              />
+                              Requiere profesional asignado
+                            </label>
+                          </div>
+
+                          <div class="campo">
+                            <label class="opcion-casilla" for="editar-oferta-espacio">
+                              <input
+                                id="editar-oferta-espacio"
+                                type="checkbox"
+                                formControlName="requiereEspacio"
+                              />
+                              Requiere espacio o box
+                            </label>
+                          </div>
+
+                          <div class="par-de-campos">
+                            <div class="campo">
+                              <label for="editar-oferta-desde">Vigente desde</label>
+                              <input
+                                id="editar-oferta-desde"
+                                type="date"
+                                formControlName="vigenciaDesde"
+                              />
+                            </div>
+
+                            <div class="campo">
+                              <label for="editar-oferta-hasta">Vigente hasta</label>
+                              <input
+                                id="editar-oferta-hasta"
+                                type="date"
+                                formControlName="vigenciaHasta"
+                              />
+                            </div>
+                          </div>
+
+                          <div class="campo limpiar">
+                            <label class="opcion-casilla" for="editar-oferta-limpiar-vigencia">
+                              <input
+                                id="editar-oferta-limpiar-vigencia"
+                                type="checkbox"
+                                formControlName="limpiarVigenciaHasta"
+                                (change)="sincronizarLimpiar('vigencia')"
+                                aria-describedby="editar-oferta-limpiar-vigencia-ayuda"
+                              />
+                              Que esta oferta no venza nunca
+                            </label>
+                            <p class="ayuda" id="editar-oferta-limpiar-vigencia-ayuda">
+                              Marcalo para <b>sacarle</b> la fecha de fin. Borrar el campo de arriba
+                              no hace eso: un campo vacio significa "no lo toques".
+                            </p>
+                          </div>
+
+                          @if (errorAccion(); as mensaje) {
+                            <p class="estado estado--error" role="alert">{{ mensaje }}</p>
+                          }
+
+                          <p class="acciones">
+                            <button type="submit" class="boton" [disabled]="enviando()">
+                              {{ enviando() ? 'Guardando...' : 'Guardar cambios' }}
+                            </button>
+                            <button
+                              type="button"
+                              class="boton boton--secundario"
+                              (click)="cerrarPanel()"
+                              [disabled]="enviando()"
+                            >
+                              Cancelar
+                            </button>
+                            @if (hayQueRecargar()) {
+                              <button type="button" class="boton" (click)="cargar()">
+                                Recargar el listado
+                              </button>
+                            }
+                          </p>
+                        </form>
+                      </td>
+                    </tr>
+                  }
+
+                  @if (panelAbierto(oferta.id, 'baja')) {
+                    <tr class="fila-panel">
+                      <td colspan="8">
+                        <app-confirmacion-con-motivo
+                          idCampo="baja-oferta-motivo"
+                          [titulo]="'Dar de baja ' + oferta.nombreComercial"
+                          etiqueta="Motivo de la baja"
+                          ayuda="Queda registrado junto a la oferta y se muestra en el listado. La oferta deja de admitir reservas nuevas, pero conserva sus historicos: lo que ya se reservo con ella sigue siendo valido. Su nombre comercial queda libre para otra oferta."
+                          textoConfirmar="Dar de baja"
+                          [enviando]="enviando()"
+                          (confirmado)="enviarBaja($event)"
+                          (cancelado)="cerrarPanel()"
+                        />
+
+                        @if (errorAccion(); as mensaje) {
+                          <p class="estado estado--error" role="alert">{{ mensaje }}</p>
+                        }
+                        @if (hayQueRecargar()) {
+                          <button type="button" class="boton" (click)="cargar()">
+                            Recargar el listado
+                          </button>
+                        }
+                      </td>
+                    </tr>
+                  }
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      }
+    }
+  </div>
+</section>

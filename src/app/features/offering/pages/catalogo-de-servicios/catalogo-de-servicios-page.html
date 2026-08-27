@@ -1,0 +1,479 @@
+<h1>Catalogo de servicios</h1>
+
+<p class="descripcion">
+  Que existe como concepto: kinesiologia respiratoria, pilates terapeutico, evaluacion postural. Es
+  el catalogo comun de AKINE y lo ven todos los centros. Como lo presta tu sede —con que nombre,
+  duracion, precio y desde cuando— se define en las ofertas.
+</p>
+
+<nav class="acciones" aria-label="Servicios y ofertas">
+  <a class="boton boton--secundario" routerLink="/servicios/catalogo" aria-current="page">
+    Catalogo de servicios
+  </a>
+  <a class="boton boton--secundario" routerLink="/servicios/ofertas">Ofertas de la sede</a>
+</nav>
+
+<!--
+  La aclaracion que sostiene la decision de esta pantalla: las acciones se muestran para todos y
+  el rechazo lo da el servidor, porque hoy ningun endpoint declara el rol de plataforma. Ver el
+  javadoc del componente. Va ARRIBA de las acciones y no en un tooltip: quien va a apretar el
+  boton tiene que llegar sabiendo que puede recibir un rechazo, y por que.
+-->
+<section class="tarjeta nota-clave" aria-labelledby="titulo-nota-quien-administra">
+  <h2 id="titulo-nota-quien-administra">Este catalogo lo administra AKINE, no tu centro</h2>
+  <p>
+    Cualquiera puede <b>consultarlo</b>: es la lista de la que se elige al crear una oferta. Dar de
+    alta, editar o dar de baja un servicio, en cambio, exige <b>rol de plataforma</b>, y el servidor
+    lo verifica en cada intento. Si no lo tenes, la accion va a ser rechazada con una explicacion.
+  </p>
+  <p>
+    Lo que si administra tu centro son las
+    <a routerLink="/servicios/ofertas">ofertas de la sede</a>: ahi se define el nombre comercial, la
+    duracion, el precio y la vigencia con la que cada servicio se presta aca.
+  </p>
+</section>
+
+<div aria-live="polite">
+  @if (exito(); as mensaje) {
+    <p class="estado estado--ok">{{ mensaje }}</p>
+  }
+</div>
+
+<p class="acciones">
+  <button type="button" class="boton" (click)="abrirAlta()">Dar de alta un servicio</button>
+</p>
+
+@if (altaAbierta()) {
+  <section class="tarjeta" aria-labelledby="titulo-alta-servicio">
+    <h2 id="titulo-alta-servicio">Nuevo servicio del catalogo global</h2>
+
+    <form [formGroup]="formularioAlta" (ngSubmit)="enviarAlta()" novalidate>
+      <div class="campo">
+        <label for="alta-servicio-codigo">Codigo</label>
+        <input
+          id="alta-servicio-codigo"
+          type="text"
+          formControlName="codigo"
+          autocomplete="off"
+          [attr.aria-invalid]="mostrarErrorAlta('codigo') ? 'true' : null"
+          [attr.aria-describedby]="
+            mostrarErrorAlta('codigo') ? 'alta-servicio-codigo-error' : 'alta-servicio-codigo-ayuda'
+          "
+        />
+        @if (mostrarErrorAlta('codigo')) {
+          <p class="campo__error" id="alta-servicio-codigo-error" role="alert">
+            El codigo es obligatorio.
+          </p>
+        } @else {
+          <p class="ayuda" id="alta-servicio-codigo-ayuda">
+            La clave estable con la que este servicio se referencia. Elegila pensando que
+            <b>no se renombra</b>: la edicion no la acepta, porque lo que ya quedo registrado con
+            ella la conserva para siempre.
+          </p>
+        }
+      </div>
+
+      <div class="campo">
+        <label for="alta-servicio-nombre">Nombre</label>
+        <input
+          id="alta-servicio-nombre"
+          type="text"
+          formControlName="nombre"
+          autocomplete="off"
+          [attr.aria-invalid]="mostrarErrorAlta('nombre') ? 'true' : null"
+          [attr.aria-describedby]="mostrarErrorAlta('nombre') ? 'alta-servicio-nombre-error' : null"
+        />
+        @if (mostrarErrorAlta('nombre')) {
+          <p class="campo__error" id="alta-servicio-nombre-error" role="alert">
+            El nombre es obligatorio.
+          </p>
+        }
+      </div>
+
+      <div class="campo">
+        <label for="alta-servicio-descripcion">Descripcion (opcional)</label>
+        <input
+          id="alta-servicio-descripcion"
+          type="text"
+          formControlName="descripcion"
+          autocomplete="off"
+        />
+      </div>
+
+      <div class="campo">
+        <label for="alta-servicio-naturaleza">Naturaleza</label>
+        <select
+          id="alta-servicio-naturaleza"
+          formControlName="naturaleza"
+          [attr.aria-invalid]="mostrarErrorAlta('naturaleza') ? 'true' : null"
+          aria-describedby="alta-servicio-naturaleza-ayuda"
+        >
+          <option value="">Elegi una naturaleza</option>
+          @for (opcion of naturalezas; track opcion.valor) {
+            <option [value]="opcion.valor">{{ opcion.etiqueta }} — {{ opcion.ayuda }}</option>
+          }
+        </select>
+        @if (mostrarErrorAlta('naturaleza')) {
+          <p class="campo__error" role="alert">La naturaleza es obligatoria.</p>
+        }
+        <p class="ayuda" id="alta-servicio-naturaleza-ayuda">
+          Sirve para <b>clasificar</b> y nada mas: por si sola no impone ningun comportamiento
+          clinico (RN-M06-005). Que haga falta un caso clinico o que se genere registro lo deciden
+          los dos campos de abajo, y cada oferta los puede cambiar.
+        </p>
+      </div>
+
+      <div class="campo">
+        <label for="alta-servicio-modalidad">Modalidad por defecto</label>
+        <select
+          id="alta-servicio-modalidad"
+          formControlName="modalidadDefault"
+          [attr.aria-invalid]="mostrarErrorAlta('modalidadDefault') ? 'true' : null"
+          aria-describedby="alta-servicio-modalidad-ayuda"
+        >
+          <option value="">Elegi una modalidad</option>
+          @for (opcion of modalidades; track opcion.valor) {
+            <option [value]="opcion.valor">{{ opcion.etiqueta }} — {{ opcion.ayuda }}</option>
+          }
+        </select>
+        @if (mostrarErrorAlta('modalidadDefault')) {
+          <p class="campo__error" role="alert">La modalidad por defecto es obligatoria.</p>
+        }
+        <p class="ayuda" id="alta-servicio-modalidad-ayuda">
+          Es la <b>propuesta</b> que va a aparecer cargada al crear una oferta de este servicio. La
+          oferta la puede cambiar.
+        </p>
+      </div>
+
+      <div class="campo">
+        <label class="opcion-casilla" for="alta-servicio-caso">
+          <input
+            id="alta-servicio-caso"
+            type="checkbox"
+            formControlName="requiereCasoClinicoDefault"
+          />
+          Por defecto, requiere caso clinico
+        </label>
+        <p class="ayuda">
+          Propuesta para las ofertas nuevas: cada centro decide en la suya. Un servicio de bienestar
+          normalmente no lo requiere; uno de rehabilitacion, si.
+        </p>
+      </div>
+
+      <div class="campo">
+        <label class="opcion-casilla" for="alta-servicio-registro">
+          <input
+            id="alta-servicio-registro"
+            type="checkbox"
+            formControlName="generaRegistroClinicoDefault"
+          />
+          Por defecto, genera registro clinico
+        </label>
+        <p class="ayuda">
+          Tambien es propuesta. Requerir un caso y generar registro son cosas distintas: se puede
+          exigir el caso sin que cada atencion escriba en la historia.
+        </p>
+      </div>
+
+      @if (errorAccion(); as mensaje) {
+        <p class="estado estado--error" role="alert">{{ mensaje }}</p>
+      }
+
+      <p class="acciones">
+        <button type="submit" class="boton" [disabled]="enviando()">
+          {{ enviando() ? 'Guardando...' : 'Dar de alta' }}
+        </button>
+        <button
+          type="button"
+          class="boton boton--secundario"
+          (click)="cerrarPanel()"
+          [disabled]="enviando()"
+        >
+          Cancelar
+        </button>
+      </p>
+    </form>
+  </section>
+}
+
+<section class="tarjeta" aria-labelledby="titulo-listado-servicios">
+  <h2 id="titulo-listado-servicios">Servicios del catalogo</h2>
+
+  <div class="campo">
+    <label for="busqueda-servicio">Buscar</label>
+    <input
+      id="busqueda-servicio"
+      type="search"
+      [value]="busqueda()"
+      (input)="teclear($any($event.target).value)"
+      autocomplete="off"
+      aria-describedby="busqueda-servicio-ayuda"
+    />
+    <p class="ayuda" id="busqueda-servicio-ayuda">
+      Busca por nombre y por codigo mientras escribis. No distingue mayusculas ni acentos.
+    </p>
+  </div>
+
+  <div class="campo">
+    <label for="filtro-estado-servicio">Mostrar</label>
+    <select
+      id="filtro-estado-servicio"
+      [value]="filtroEstado()"
+      (change)="cambiarFiltroEstado($any($event.target).value)"
+      aria-describedby="filtro-estado-servicio-ayuda"
+    >
+      <option value="ACTIVO">Solo los activos</option>
+      <option value="INACTIVO">Solo los dados de baja</option>
+      <option value="TODOS">Todos</option>
+    </select>
+    <p class="ayuda" id="filtro-estado-servicio-ayuda">
+      Un servicio dado de baja no se borra: las ofertas que ya lo usan siguen funcionando. Lo que no
+      se puede es crear ofertas nuevas sobre el.
+    </p>
+  </div>
+
+  <div aria-live="polite">
+    @switch (estado().tipo) {
+      @case ('cargando') {
+        <p class="estado estado--cargando">Cargando el catalogo de servicios&hellip;</p>
+      }
+
+      @case ('error') {
+        <p class="estado estado--error" role="alert">{{ mensajeError() }}</p>
+        <button type="button" class="boton" (click)="cargar()">Reintentar</button>
+      }
+
+      @case ('listo') {
+        @if (servicios().length === 0) {
+          <p class="estado estado--vacio">No hay servicios que coincidan con lo que buscaste.</p>
+        } @else {
+          <p class="ayuda">{{ servicios().length }} en total.</p>
+
+          <div class="tabla-scroll" tabindex="0" role="region" aria-label="Catalogo de servicios">
+            <table class="tabla">
+              <caption class="visualmente-oculto">
+                Servicios del catalogo global, con su codigo, naturaleza, modalidad por defecto,
+                valores clinicos por defecto, estado y acciones.
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col">Nombre</th>
+                  <th scope="col">Codigo</th>
+                  <th scope="col">Naturaleza</th>
+                  <th scope="col">Modalidad por defecto</th>
+                  <th scope="col">Valores clinicos por defecto</th>
+                  <th scope="col">Estado</th>
+                  <th scope="col">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (servicio of servicios(); track servicio.id) {
+                  <tr [class.fila--revocada]="servicio.estado === 'INACTIVO'">
+                    <th scope="row">
+                      {{ servicio.nombre }}
+                      @if (servicio.descripcion) {
+                        <p class="ayuda">{{ servicio.descripcion }}</p>
+                      }
+                    </th>
+                    <td>{{ servicio.codigo }}</td>
+                    <td>{{ etiquetaDeNaturaleza(servicio.naturaleza) }}</td>
+                    <td>{{ etiquetaDeModalidad(servicio.modalidadDefault) }}</td>
+                    <td>
+                      <span class="etiqueta">
+                        {{ servicio.requiereCasoClinicoDefault ? 'Requiere caso' : 'Sin caso' }}
+                      </span>
+                      <span class="etiqueta">
+                        {{
+                          servicio.generaRegistroClinicoDefault ? 'Genera registro' : 'Sin registro'
+                        }}
+                      </span>
+                    </td>
+                    <td>
+                      @if (servicio.estado === 'INACTIVO') {
+                        <span class="marca-estado">Dado de baja</span>
+                        @if (servicio.deactivationReason) {
+                          <p class="ayuda">{{ servicio.deactivationReason }}</p>
+                        }
+                      } @else {
+                        <span class="marca-estado">Activo</span>
+                      }
+                    </td>
+                    <td class="acciones-fila">
+                      @if (servicio.estado === 'ACTIVO') {
+                        <button
+                          type="button"
+                          class="boton boton--secundario"
+                          (click)="abrirPanel(servicio, 'editar')"
+                        >
+                          Editar
+                        </button>
+                        <button
+                          type="button"
+                          class="boton boton--secundario"
+                          (click)="abrirPanel(servicio, 'baja')"
+                        >
+                          Dar de baja
+                        </button>
+                      }
+                    </td>
+                  </tr>
+
+                  @if (panelAbierto(servicio.id, 'editar')) {
+                    <tr class="fila-panel">
+                      <td colspan="7">
+                        <form
+                          [formGroup]="formularioEdicion"
+                          (ngSubmit)="enviarEdicion()"
+                          novalidate
+                        >
+                          <h3>Editar {{ servicio.nombre }}</h3>
+
+                          <div class="campo">
+                            <label for="editar-servicio-nombre">Nombre</label>
+                            <input
+                              id="editar-servicio-nombre"
+                              type="text"
+                              formControlName="nombre"
+                              autocomplete="off"
+                              [attr.aria-invalid]="mostrarErrorEdicion('nombre') ? 'true' : null"
+                            />
+                            @if (mostrarErrorEdicion('nombre')) {
+                              <p class="campo__error" role="alert">El nombre es obligatorio.</p>
+                            } @else {
+                              <p class="ayuda">
+                                Renombrar no cambia lo que ya quedo registrado: el codigo
+                                <b>{{ servicio.codigo }}</b> es la clave estable y no se edita.
+                              </p>
+                            }
+                          </div>
+
+                          <div class="campo">
+                            <label for="editar-servicio-descripcion">Descripcion</label>
+                            <input
+                              id="editar-servicio-descripcion"
+                              type="text"
+                              formControlName="descripcion"
+                              autocomplete="off"
+                            />
+                            <p class="ayuda">Vaciar el campo deja el servicio sin descripcion.</p>
+                          </div>
+
+                          <div class="campo">
+                            <label for="editar-servicio-naturaleza">Naturaleza</label>
+                            <select id="editar-servicio-naturaleza" formControlName="naturaleza">
+                              @for (opcion of naturalezas; track opcion.valor) {
+                                <option [value]="opcion.valor">{{ opcion.etiqueta }}</option>
+                              }
+                            </select>
+                          </div>
+
+                          <div class="campo">
+                            <label for="editar-servicio-modalidad">Modalidad por defecto</label>
+                            <select
+                              id="editar-servicio-modalidad"
+                              formControlName="modalidadDefault"
+                              aria-describedby="editar-servicio-modalidad-ayuda"
+                            >
+                              @for (opcion of modalidades; track opcion.valor) {
+                                <option [value]="opcion.valor">{{ opcion.etiqueta }}</option>
+                              }
+                            </select>
+                            <p class="ayuda" id="editar-servicio-modalidad-ayuda">
+                              Cambiarla <b>no toca ninguna oferta ya creada</b>: es la propuesta
+                              para las proximas.
+                            </p>
+                          </div>
+
+                          <div class="campo">
+                            <label class="opcion-casilla" for="editar-servicio-caso">
+                              <input
+                                id="editar-servicio-caso"
+                                type="checkbox"
+                                formControlName="requiereCasoClinicoDefault"
+                              />
+                              Por defecto, requiere caso clinico
+                            </label>
+                          </div>
+
+                          <div class="campo">
+                            <label class="opcion-casilla" for="editar-servicio-registro">
+                              <input
+                                id="editar-servicio-registro"
+                                type="checkbox"
+                                formControlName="generaRegistroClinicoDefault"
+                              />
+                              Por defecto, genera registro clinico
+                            </label>
+                          </div>
+
+                          @if (errorAccion(); as mensaje) {
+                            <p class="estado estado--error" role="alert">{{ mensaje }}</p>
+                          }
+
+                          <p class="acciones">
+                            <button type="submit" class="boton" [disabled]="enviando()">
+                              {{ enviando() ? 'Guardando...' : 'Guardar cambios' }}
+                            </button>
+                            <button
+                              type="button"
+                              class="boton boton--secundario"
+                              (click)="cerrarPanel()"
+                              [disabled]="enviando()"
+                            >
+                              Cancelar
+                            </button>
+                            @if (hayQueRecargar()) {
+                              <button type="button" class="boton" (click)="cargar()">
+                                Recargar el listado
+                              </button>
+                            }
+                            @if (rechazadoPorRol()) {
+                              <a class="boton" routerLink="/servicios/ofertas">
+                                Ir a las ofertas de la sede
+                              </a>
+                            }
+                          </p>
+                        </form>
+                      </td>
+                    </tr>
+                  }
+
+                  @if (panelAbierto(servicio.id, 'baja')) {
+                    <tr class="fila-panel">
+                      <td colspan="7">
+                        <app-confirmacion-con-motivo
+                          idCampo="baja-servicio-motivo"
+                          [titulo]="'Dar de baja ' + servicio.nombre"
+                          etiqueta="Motivo de la baja"
+                          ayuda="Queda registrado junto al servicio y se muestra en el listado. La baja NO cascadea: las ofertas de los centros que ya lo usan siguen funcionando y conservan sus historicos. Lo que se impide es crear ofertas nuevas sobre el."
+                          textoConfirmar="Dar de baja"
+                          [enviando]="enviando()"
+                          (confirmado)="enviarBaja($event)"
+                          (cancelado)="cerrarPanel()"
+                        />
+
+                        @if (errorAccion(); as mensaje) {
+                          <p class="estado estado--error" role="alert">{{ mensaje }}</p>
+                        }
+                        @if (hayQueRecargar()) {
+                          <button type="button" class="boton" (click)="cargar()">
+                            Recargar el listado
+                          </button>
+                        }
+                        @if (rechazadoPorRol()) {
+                          <a class="boton" routerLink="/servicios/ofertas">
+                            Ir a las ofertas de la sede
+                          </a>
+                        }
+                      </td>
+                    </tr>
+                  }
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      }
+    }
+  </div>
+</section>

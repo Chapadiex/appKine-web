@@ -51,6 +51,19 @@ export function rutaExcepciones(consultorioId: number): string {
  * <p>La misma URL sirve el `GET` con ventana y el `PUT` de la politica, que no la lleva: los
  * matchers de los specs filtran por metodo, no por query string.
  */
+/**
+ * Catalogo global de Servicios (M27, AKINE-02.06).
+ *
+ * <p>No cuelga de `/organizations` ni de `/consultorios`: el `Servicio` es puramente global y no
+ * lleva tenant. Escribirla siguiendo el patron de las ofertas da una URL que no existe.
+ */
+export const RUTA_SERVICIOS = '/api/v1/servicios';
+
+/** Ofertas de una sede (M27, AKINE-02.06). La organizacion sale del token, no de la ruta. */
+export function rutaOfertas(consultorioId: number): string {
+  return `/api/v1/consultorios/${consultorioId}/ofertas`;
+}
+
 export function rutaCalendarioSede(consultorioId: number): string {
   return `/api/v1/consultorios/${consultorioId}/calendario`;
 }

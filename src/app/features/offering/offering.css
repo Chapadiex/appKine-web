@@ -1,0 +1,130 @@
+/*
+ * Hoja de la feature `offering` (servicios y ofertas, M27, AKINE-02.06).
+ *
+ * <b>Deliberadamente corta</b>, igual que las de `resource` y `catalog`. `.boton`, `.campo`,
+ * `.tabla`, `.tabla-scroll`, `.estado`, `.tarjeta`, `.etiqueta`, `.marca-estado`,
+ * `.fila--revocada`, `.fila-panel`, `.acciones-fila` y `.campo__error` los aporta
+ * `src/design-system.css`, que es global. Copiarlos aca no seria aislar el feature: seria una
+ * copia que se despega del original el dia que alguien retoque un gris.
+ *
+ * Solo entra lo que existe unicamente en estas pantallas.
+ */
+
+/*
+ * La nota que separa el estado administrativo de la vigencia de hoy.
+ *
+ * Va con borde de acento y encabezado propio, no como un parrafo mas: es la aclaracion que
+ * evita el reporte de bug mas probable del modulo -"la cargue y no aparece en la agenda"- y en
+ * el medio de la prosa nadie la lee. El color no es lo unico que la distingue -tiene su propio
+ * encabezado-, asi que sigue comunicando en escala de grises (WCAG 1.4.1).
+ */
+.nota-clave {
+  border-left: 4px solid #1b3a5c;
+  background: #f4f7fa;
+}
+
+.nota-clave p {
+  margin: 0 0 0.5rem;
+}
+
+.nota-clave p:last-child {
+  margin-bottom: 0;
+}
+
+/*
+ * La casilla y su texto en la misma linea.
+ *
+ * `.campo label` es `display: block` en la hoja global, que es lo correcto para un `input` de
+ * texto y lo equivocado para una casilla: deja el cuadradito arriba y la etiqueta abajo, como
+ * si fueran dos cosas. El `label` envuelve al `input`, asi que el area de click incluye al
+ * texto -objetivo mas grande, WCAG 2.5.5-.
+ *
+ * Esta duplicado en `resource.css` a proposito: son dos hojas de feature y no hay import entre
+ * features (AGENT.md 4.4). Sube a `design-system.css` cuando una tercera pantalla lo necesite.
+ */
+.opcion-casilla {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 500;
+}
+
+.opcion-casilla input {
+  width: auto;
+  margin: 0;
+}
+
+/*
+ * El bloque "sacarle el valor" de la edicion de una oferta.
+ *
+ * Los tres `limpiar*` del contrato existen porque omitir un campo significa "no lo toques" y no
+ * "sacaselo". La casilla vive PEGADA a su campo -indentada bajo el, no en una seccion aparte-
+ * porque la relacion entre las dos cosas es lo unico que hace entendible la distincion: una
+ * lista de tres casillas al pie del formulario obliga a recordar a cual campo corresponde cada
+ * una.
+ */
+.limpiar {
+  margin: -0.25rem 0 0 1rem;
+  padding-left: 0.75rem;
+  border-left: 2px solid #d6dee6;
+}
+
+.limpiar .ayuda {
+  margin-top: 0.25rem;
+}
+
+/*
+ * El nombre comercial y su descripcion viven dentro del `<th scope="row">`.
+ *
+ * El `th` es negrita —es el encabezado de la fila— y el parrafo lo hereda, asi que la
+ * descripcion se dibujaba con el mismo peso que el nombre y se leia como parte del nombre.
+ * Mismo caso que la observacion de un espacio en `resource.css`.
+ */
+.tabla th[scope='row'] .ayuda {
+  font-weight: 400;
+  margin: 0.25rem 0 0;
+}
+
+/*
+ * La barra de navegacion entre las dos pantallas de la feature.
+ *
+ * La pantalla abierta se marca con `aria-current="page"`, que es lo que lee un lector de
+ * pantalla. El subrayado es su equivalente visual: sin el, la unica pista de en cual de las dos
+ * esta parado el usuario seria el titulo, que se va de la vista apenas scrollea la tabla.
+ */
+.acciones .boton[aria-current='page'] {
+  text-decoration: underline;
+  text-underline-offset: 0.25rem;
+  font-weight: 600;
+}
+
+/*
+ * Filas que no se ofrecen para reservar hoy.
+ *
+ * Atenuadas, pero NO solo atenuadas: cada una lleva su marca de estado con texto. El color no
+ * puede ser el unico portador de la informacion (WCAG 1.4.1), y ademas "gris" no distingue una
+ * oferta dada de baja de una que arranca el mes que viene, que es exactamente la distincion que
+ * esta pantalla existe para no aplanar.
+ */
+.fila--atenuada {
+  background: #fafbfc;
+}
+
+/*
+ * Dos campos que son un solo dato: precio y moneda, vigencia desde y hasta.
+ *
+ * Separarlos en dos filas invita a completar uno y mandar, que en precio/moneda es directamente
+ * un rechazo del backend -viajan juntos o no viajan-. Envuelven en pantallas angostas: los
+ * profesionales usan tablet.
+ */
+.par-de-campos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.par-de-campos .campo {
+  flex: 1 1 12rem;
+  margin-bottom: 0;
+}

@@ -112,6 +112,24 @@ export const routes: Routes = [
     loadChildren: () => import('./features/catalog/catalog.routes').then((m) => m.routes),
   },
 
+  // Servicios del catalogo global y ofertas de la sede (M27, AKINE-02.06).
+  //
+  // Raiz propia y NO bajo `catalogo`: el catalogo clinico es vocabulario de lo que se HACE
+  // durante una atencion —especialidades, practicas, nomencladores—, y esto es vocabulario
+  // COMERCIAL: lo que el centro le ofrece a una persona. Es la separacion que RN-M06-004 hace
+  // explicita y la que la regla maestra 14 protege; colgarlas del mismo prefijo garantizaba
+  // que alguien terminara en la pantalla equivocada.
+  //
+  // Aca va solo `authGuard`. `contextGuard` lo pone la ruta hija de ofertas, que es la unica
+  // que necesita una sede: el catalogo de servicios es global y su lectura se autoriza con
+  // estar autenticado, asi que exigirle contexto dejaria afuera al rol de plataforma, que es
+  // justamente quien lo administra. El detalle esta en `offering.routes.ts`.
+  {
+    path: 'servicios',
+    canActivate: [authGuard],
+    loadChildren: () => import('./features/offering/offering.routes').then((m) => m.routes),
+  },
+
   // Pantalla de permiso insuficiente (AKINE-01.03). Es el destino de `permissionGuard`.
   //
   // Sin guards, y no por descuido: quien llega aca YA paso por `authGuard` y `contextGuard`
