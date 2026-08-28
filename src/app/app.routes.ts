@@ -130,6 +130,21 @@ export const routes: Routes = [
     loadChildren: () => import('./features/offering/offering.routes').then((m) => m.routes),
   },
 
+  // Padron de personas (M07, AKINE-03.01).
+  //
+  // La URL dice `pacientes` porque es como se llama esta pantalla en cualquier centro, y es la
+  // unica concesion al vocabulario: adentro, Persona y Paciente se distinguen en todo momento y
+  // el alta nunca crea un perfil clinico. El detalle esta en `person.routes.ts`.
+  //
+  // `contextGuard` lo pone la ruta hija: el padron es de la ORGANIZACION, pero sus dos acciones
+  // evaluan el permiso con la sede del contexto, asi que sin sede la pantalla quedaria en
+  // solo-lectura sin poder explicar por que.
+  {
+    path: 'pacientes',
+    canActivate: [authGuard],
+    loadChildren: () => import('./features/person/person.routes').then((m) => m.routes),
+  },
+
   // Pantalla de permiso insuficiente (AKINE-01.03). Es el destino de `permissionGuard`.
   //
   // Sin guards, y no por descuido: quien llega aca YA paso por `authGuard` y `contextGuard`

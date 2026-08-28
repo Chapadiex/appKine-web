@@ -78,6 +78,51 @@ function json(cuerpo, status = 200) {
   return { status, contentType: 'application/json', body: JSON.stringify(cuerpo) };
 }
 
+
+/**
+ * Padron sintetico para mirar el padron de personas (AKINE-03.01).
+ *
+ * Los tres casos que la pantalla existe para distinguir: alguien que NO es paciente, alguien que
+ * si lo es, y alguien SIN documento -que es un estado legitimo y no un dato faltante-.
+ */
+const PERSONAS = [
+  {
+    id: 40,
+    tipoDocumento: 'DNI',
+    numeroDocumento: '30.111.222',
+    apellido: 'Perez',
+    nombre: 'Ana Maria',
+    fechaNacimiento: '1985-03-14',
+    email: 'ana.perez@example.com',
+    telefono: '+54 11 5555-0000',
+    esPaciente: false,
+    estado: 'ACTIVO',
+    version: 0,
+  },
+  {
+    id: 41,
+    tipoDocumento: 'DNI',
+    numeroDocumento: '28444555',
+    apellido: 'Gomez Iriarte',
+    nombre: 'Luis Alberto',
+    telefono: '3514445566',
+    esPaciente: true,
+    perfilPacienteId: 7,
+    perfilActivadoEn: '2026-08-20T13:00:00Z',
+    estado: 'ACTIVO',
+    version: 3,
+  },
+  {
+    id: 42,
+    apellido: 'Ruiz',
+    nombre: 'Tomas',
+    notas: 'Viene con la madre. Todavia sin DNI.',
+    esPaciente: false,
+    estado: 'ACTIVO',
+    version: 0,
+  },
+];
+
 export async function instalarApiSimulada(contexto) {
   await contexto.route('**/api/v1/**', async (ruta) => {
   const url = new URL(ruta.request().url());
@@ -119,7 +164,9 @@ export async function instalarApiSimulada(contexto) {
   }
 
   if (camino === '/api/v1/me/permissions') {
-    return ruta.fulfill(json({ permissions: ['consultorio:manage', 'tenant:read'] }));
+    return ruta.fulfill(
+      json({ permissions: ['consultorio:manage', 'tenant:read', 'paciente:manage'] }),
+    );
   }
 
   if (camino.endsWith('/espacios/availability')) {
@@ -152,6 +199,20 @@ export async function instalarApiSimulada(contexto) {
         page: 0,
         size: 20,
         totalElements: contenido.length,
+        totalPages: 1,
+      }),
+    );
+  }
+
+  if (camino === '/api/v1/personas') {
+    // Sin filtrar por estado ni por perfil: alcanza para mirar el layout, que es lo unico que
+    // este archivo existe para permitir. El comportamiento de los filtros lo cubren los specs.
+    return ruta.fulfill(
+      json({
+        content: PERSONAS,
+        page: 0,
+        size: 20,
+        totalElements: PERSONAS.length,
         totalPages: 1,
       }),
     );

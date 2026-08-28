@@ -1,0 +1,70 @@
+/*
+ * Hoja de la feature `person` (padron de personas, M07, AKINE-03.01).
+ *
+ * <b>Deliberadamente corta</b>, igual que las de `resource`, `catalog` y `offering`. `.boton`,
+ * `.campo`, `.tabla`, `.estado`, `.tarjeta`, `.etiqueta`, `.acciones`, `.ayuda` y `.descripcion`
+ * los aporta `src/design-system.css`, que es global. Copiarlos aca no seria aislar la feature:
+ * seria una copia que se despega del original el dia que alguien retoque un gris.
+ *
+ * Solo entra lo que existe unicamente en estas pantallas.
+ */
+
+/*
+ * La nota que separa Persona de Paciente.
+ *
+ * Misma forma que `.nota-clave` de `offering`, y por el mismo motivo: es la aclaracion que evita
+ * el malentendido mas probable del modulo -"la cargue y no aparece como paciente"- y en el medio
+ * de la prosa nadie la lee. El color no es lo unico que la distingue -tiene encabezado propio-,
+ * asi que sigue comunicando en escala de grises (WCAG 1.4.1).
+ */
+.nota-clave {
+  border-left: 4px solid #1b3a5c;
+  background: #f4f7fa;
+}
+
+.nota-clave p {
+  margin: 0 0 0.5rem;
+}
+
+.nota-clave p:last-child {
+  margin-bottom: 0;
+}
+
+/*
+ * Los dos filtros del buscador, uno al lado del otro cuando entran.
+ *
+ * `wrap` y no un grid de dos columnas fijas: en un ancho angosto, dos selectores apretados con
+ * sus etiquetas cortadas se leen peor que dos apilados.
+ */
+.filtros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.filtros .campo {
+  flex: 1 1 14rem;
+}
+
+/*
+ * La lista de fichas que coinciden con un alta rechazada.
+ *
+ * Sin viñetas y con separacion entre items: cada linea es una ficha completa -nombre, documento,
+ * telefono y si ya es paciente- y tiene que poder leerse de un vistazo para decidir si es la
+ * misma persona. Es el unico momento de la pantalla donde el operador compara datos personales
+ * entre si.
+ */
+.lista-candidatos {
+  list-style: none;
+  margin: 0 0 1rem;
+  padding: 0;
+}
+
+.lista-candidatos li {
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #d8dee5;
+}
+
+.lista-candidatos li:last-child {
+  border-bottom: none;
+}

@@ -29,6 +29,19 @@ export const PERMISO_AUDITORIA_READ = 'auditoria:read';
 export const PERMISO_AUDITORIA_READ_CLINICA = 'auditoria:read-clinica';
 
 /**
+ * Gestionar paciente (F3, etapa AKINE-03.01).
+ *
+ * <p>Gobierna las MUTACIONES del padron: dar de alta una persona, editarla y activarle el perfil
+ * clinico. <b>No hay permiso de lectura</b>: consultar el padron se autoriza por pertenencia, y
+ * por eso ninguna pantalla pregunta por un `paciente:read` que la matriz no declara.
+ *
+ * <p>Esta fuera de {@link PERMISOS_F1} a proposito: esa lista es la de la Fase 1 y este codigo es
+ * de F3. Que no este ahi no cambia nada para la directiva `*akinePermiso`, que recibe un string
+ * cualquiera; la lista es documental.
+ */
+export const PERMISO_PACIENTE_MANAGE = 'paciente:manage';
+
+/**
  * Permisos que el frontend conoce hoy.
  *
  * <p>El backend puede devolver codigos que no esten aca -de una fase posterior, o de un
