@@ -29,6 +29,8 @@ api/mi-cuenta.service.ts
 api/mi-cuenta.serviceInterface.ts
 api/organizaciones.service.ts
 api/organizaciones.serviceInterface.ts
+api/personas.service.ts
+api/personas.serviceInterface.ts
 api/planes.service.ts
 api/planes.serviceInterface.ts
 api/plataforma.service.ts
@@ -55,6 +57,7 @@ model/accepted-response.ts
 model/access-token-response.ts
 model/account-response.ts
 model/account-state-change-request.ts
+model/activar-perfil-paciente-request.ts
 model/activate-account-request.ts
 model/assign-grant-request.ts
 model/audit-event-page-response.ts
@@ -80,6 +83,7 @@ model/create-invitacion-request.ts
 model/create-membership-request.ts
 model/create-oferta-request.ts
 model/create-organization-request.ts
+model/create-persona-request.ts
 model/create-servicio-request.ts
 model/create-vigencia-request.ts
 model/created-membership-response.ts
@@ -95,6 +99,7 @@ model/dia-efectivo-response.ts
 model/disponibilidad-efectiva-response.ts
 model/effective-permissions-response.ts
 model/espacio-availability-response.ts
+model/espacio-habilitado.ts
 model/espacio-page-response.ts
 model/espacio-response.ts
 model/excepcion-response.ts
@@ -102,6 +107,7 @@ model/feriado-response.ts
 model/franja-resuelta-response.ts
 model/grant-platform-role-request.ts
 model/grant-support-access-request.ts
+model/habilitaciones-response.ts
 model/invitacion-preview-response.ts
 model/invitacion-response.ts
 model/invitacion-token-request.ts
@@ -112,10 +118,13 @@ model/membership-page-response.ts
 model/membership-reason-request.ts
 model/membership-response.ts
 model/models.ts
+model/motivo-de-rechazo.ts
 model/oferta-response.ts
 model/organization-response.ts
 model/password-reset-confirm-request.ts
 model/password-reset-request.ts
+model/persona-page-response.ts
+model/persona-response.ts
 model/plan-change-request.ts
 model/plan-change-response.ts
 model/plan-limit-response.ts
@@ -123,6 +132,8 @@ model/plan-response.ts
 model/platform-role-response.ts
 model/problem-detail.ts
 model/problem-type.ts
+model/profesional-habilitado.ts
+model/reemplazar-habilitaciones-request.ts
 model/register-account-request.ts
 model/resend-activation-request.ts
 model/resolve-catalogo-solicitud-request.ts
@@ -140,7 +151,9 @@ model/update-consultorio-request.ts
 model/update-espacio-request.ts
 model/update-oferta-request.ts
 model/update-organization-request.ts
+model/update-persona-request.ts
 model/update-servicio-request.ts
+model/validacion-de-oferta-response.ts
 model/version-response.ts
 ng-package.json
 package.json

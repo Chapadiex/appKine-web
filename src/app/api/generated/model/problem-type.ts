@@ -136,6 +136,12 @@ export enum ProblemType {
 
     HTTPS___AKINE_APP_PROBLEMS_OFERTA_ALREADY_INACTIVE = 'https://akine.app/problems/oferta-already-inactive',
 
-    HTTPS___AKINE_APP_PROBLEMS_CONSULTORIO_NO_OPERABLE = 'https://akine.app/problems/consultorio-no-operable'
+    HTTPS___AKINE_APP_PROBLEMS_CONSULTORIO_NO_OPERABLE = 'https://akine.app/problems/consultorio-no-operable',
+
+    HTTPS___AKINE_APP_PROBLEMS_PERSONA_DOCUMENTO_TAKEN = 'https://akine.app/problems/persona-documento-taken',
+
+    HTTPS___AKINE_APP_PROBLEMS_PERSONA_POSIBLE_DUPLICADO = 'https://akine.app/problems/persona-posible-duplicado',
+
+    HTTPS___AKINE_APP_PROBLEMS_PERSONA_INACTIVA = 'https://akine.app/problems/persona-inactiva'
 }
 

@@ -23,15 +23,21 @@ import { CreateServicioRequest } from '../model/create-servicio-request';
 // @ts-ignore
 import { DeactivateOfferingRequest } from '../model/deactivate-offering-request';
 // @ts-ignore
+import { HabilitacionesResponse } from '../model/habilitaciones-response';
+// @ts-ignore
 import { OfertaResponse } from '../model/oferta-response';
 // @ts-ignore
 import { ProblemDetail } from '../model/problem-detail';
+// @ts-ignore
+import { ReemplazarHabilitacionesRequest } from '../model/reemplazar-habilitaciones-request';
 // @ts-ignore
 import { ServicioResponse } from '../model/servicio-response';
 // @ts-ignore
 import { UpdateOfertaRequest } from '../model/update-oferta-request';
 // @ts-ignore
 import { UpdateServicioRequest } from '../model/update-servicio-request';
+// @ts-ignore
+import { ValidacionDeOfertaResponse } from '../model/validacion-de-oferta-response';
 
 // @ts-ignore
 import { BASE_PATH, COLLECTION_FORMATS }                     from '../variables';
@@ -43,10 +49,14 @@ import {
     CreateServicioRequestParams,
     DeactivateOfertaRequestParams,
     DeactivateServicioRequestParams,
+    GetHabilitacionesRequestParams,
     ListOfertasRequestParams,
     ListServiciosRequestParams,
+    ReemplazarEspaciosHabilitadosRequestParams,
+    ReemplazarProfesionalesHabilitadosRequestParams,
     UpdateOfertaRequestParams,
-    UpdateServicioRequestParams
+    UpdateServicioRequestParams,
+    ValidarOfertaRequestParams
 } from './servicios-y-ofertas.serviceInterface';
 
 
@@ -351,6 +361,69 @@ export class ServiciosYOfertasService extends BaseService implements ServiciosYO
     }
 
     /**
+     * Ver quien puede prestar la oferta y donde
+     * Devuelve las habilitaciones de profesional y de espacio, ACTIVAS E INACTIVAS, mas la capacidad efectiva.  LEER ESTO ANTES DE ESCRIBIR LA PANTALLA. Una lista vacia significa que la oferta NO esta restringida: cualquier profesional con vinculo vigente puede prestarla y puede prestarse en cualquier espacio de la sede. NO significa que no pueda nadie. Para eso estan restringidaPorProfesional y restringidaPorEspacio, que lo dicen explicito.  Las habilitaciones dadas de baja vienen igual, con su motivo. No se esconden: esconderlas dejaria al administrador sin entender por que la capacidad efectiva cambio sola.  Lo mismo con las que apuntan a un recurso que ya no sirve. vinculoVigente en false es un colaborador que se desvinculo; enServicio en false es un espacio que se dio de baja en su propio modulo. La habilitacion sigue existiendo y la fila lo dice.  capacidadEfectiva es el minimo entre la capacidad de la oferta y la de los espacios habilitados que estan en servicio. Sin espacios habilitados es igual a la comercial: no hay ningun espacio concreto contra el cual acotarla. espacioQueLimita nombra cual la acota, y mostrar un numero mas chico sin ese nombre es un defecto de la pantalla.
+     * @endpoint get /api/v1/consultorios/{consultorioId}/ofertas/{ofertaId}/habilitaciones
+     * @param requestParameters
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public getHabilitaciones(requestParameters: GetHabilitacionesRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HabilitacionesResponse>;
+    public getHabilitaciones(requestParameters: GetHabilitacionesRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<HabilitacionesResponse>>;
+    public getHabilitaciones(requestParameters: GetHabilitacionesRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<HabilitacionesResponse>>;
+    public getHabilitaciones(requestParameters: GetHabilitacionesRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        const consultorioId = requestParameters?.consultorioId;
+        if (consultorioId === null || consultorioId === undefined) {
+            throw new Error('Required parameter consultorioId was null or undefined when calling getHabilitaciones.');
+        }
+        const ofertaId = requestParameters?.ofertaId;
+        if (ofertaId === null || ofertaId === undefined) {
+            throw new Error('Required parameter ofertaId was null or undefined when calling getHabilitaciones.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/consultorios/${this.configuration.encodeParam({name: "consultorioId", value: consultorioId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/ofertas/${this.configuration.encodeParam({name: "ofertaId", value: ofertaId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/habilitaciones`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<HabilitacionesResponse>('get', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
      * Listar las ofertas de la sede
      * Devuelve las ofertas de esa sede ordenadas por nombre comercial. Exige pertenencia a la sede.  estado filtra por ciclo de vida y por defecto trae solo las ACTIVAS. servicioId, si viene, acota a las ofertas de ese servicio.  OJO CON ESTADO Y VIGENTEHOY: son dos cosas distintas. estado dice si la oferta fue dada de baja; vigenteHoy dice si ADEMAS hoy cae dentro de su ventana de vigencia, calculado en la zona horaria DE LA SEDE y no en la del servidor ni en la del navegador. Una oferta ACTIVA que arranca el mes que viene tiene estado&#x3D;ACTIVO y vigenteHoy&#x3D;false, y es correcto que no aparezca todavia en un selector de reserva. Es la misma distincion que espacio hace entre activo y en servicio.
      * @endpoint get /api/v1/consultorios/{consultorioId}/ofertas
@@ -511,6 +584,160 @@ export class ServiciosYOfertasService extends BaseService implements ServiciosYO
     }
 
     /**
+     * Fijar en que espacios puede prestarse la oferta
+     * REEMPLAZA EL CONJUNTO COMPLETO, con el mismo criterio que el de profesionales.  Mandar una lista VACIA quita la restriccion y deja que la oferta pueda prestarse en cualquier espacio de la sede.  Que un espacio sirva para una oferta NO se infiere de su tipo ni de su nombre (RF-M04-008): elegir \&quot;Pileta\&quot; al dar de alta un espacio no autoriza hidroterapia ahi, lo autoriza estar en esta lista.  Solo se aceptan espacios de ESTA sede. Un espacio no se muda entre sedes, asi que habilitar el de otra seria configurar algo que no se puede usar nunca: responde 404.  OJO CON LA CAPACIDAD: habilitar un espacio mas chico que la capacidad comercial de la oferta BAJA la capacidad efectiva, porque es el minimo entre las dos. No es un error y la respuesta lo explica en espacioQueLimita.
+     * @endpoint put /api/v1/consultorios/{consultorioId}/ofertas/{ofertaId}/habilitaciones/espacios
+     * @param requestParameters
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public reemplazarEspaciosHabilitados(requestParameters: ReemplazarEspaciosHabilitadosRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HabilitacionesResponse>;
+    public reemplazarEspaciosHabilitados(requestParameters: ReemplazarEspaciosHabilitadosRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<HabilitacionesResponse>>;
+    public reemplazarEspaciosHabilitados(requestParameters: ReemplazarEspaciosHabilitadosRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<HabilitacionesResponse>>;
+    public reemplazarEspaciosHabilitados(requestParameters: ReemplazarEspaciosHabilitadosRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        const consultorioId = requestParameters?.consultorioId;
+        if (consultorioId === null || consultorioId === undefined) {
+            throw new Error('Required parameter consultorioId was null or undefined when calling reemplazarEspaciosHabilitados.');
+        }
+        const ofertaId = requestParameters?.ofertaId;
+        if (ofertaId === null || ofertaId === undefined) {
+            throw new Error('Required parameter ofertaId was null or undefined when calling reemplazarEspaciosHabilitados.');
+        }
+        const reemplazarHabilitacionesRequest = requestParameters?.reemplazarHabilitacionesRequest;
+        if (reemplazarHabilitacionesRequest === null || reemplazarHabilitacionesRequest === undefined) {
+            throw new Error('Required parameter reemplazarHabilitacionesRequest was null or undefined when calling reemplazarEspaciosHabilitados.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        // to determine the Content-Type header
+        const consumes: string[] = [
+            'application/json'
+        ];
+        const httpContentTypeSelected: string | undefined = this.configuration.selectHeaderContentType(consumes);
+        if (httpContentTypeSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Content-Type', httpContentTypeSelected);
+        }
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/consultorios/${this.configuration.encodeParam({name: "consultorioId", value: consultorioId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/ofertas/${this.configuration.encodeParam({name: "ofertaId", value: ofertaId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/habilitaciones/espacios`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<HabilitacionesResponse>('put', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                body: reemplazarHabilitacionesRequest,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * Fijar que profesionales pueden prestar la oferta
+     * REEMPLAZA EL CONJUNTO COMPLETO. Lo que entra y no estaba se crea, lo que estaba y no entra se da de baja con motivo automatico, y lo que sigue no se toca: conserva su id, su vigencia y su version.  Mandar una lista VACIA es la operacion legitima de quitar la restriccion, y deja la oferta disponible para cualquier profesional con vinculo vigente. No es un error y no se rechaza. La respuesta devuelve restringidaPorProfesional en false para que la pantalla lo pueda decir con palabras: quien borra la ultima habilitacion creyendo que restringe, abre la oferta a todos.  Cada id es una MEMBERSHIP, no una cuenta: la misma persona puede ser profesional en un centro y administrativa en otro, y habilitar la cuenta habilitaria a alguien que en esta organizacion no atiende. Se aceptan las memberships de toda la organizacion y las acotadas a ESTA sede; una acotada a otra sede responde 404, porque esa persona no atiende aca.  expectedVersion es la de la OFERTA. Es lo que impide que el segundo administrador en guardar borre en silencio lo que agrego el primero.
+     * @endpoint put /api/v1/consultorios/{consultorioId}/ofertas/{ofertaId}/habilitaciones/profesionales
+     * @param requestParameters
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public reemplazarProfesionalesHabilitados(requestParameters: ReemplazarProfesionalesHabilitadosRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HabilitacionesResponse>;
+    public reemplazarProfesionalesHabilitados(requestParameters: ReemplazarProfesionalesHabilitadosRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<HabilitacionesResponse>>;
+    public reemplazarProfesionalesHabilitados(requestParameters: ReemplazarProfesionalesHabilitadosRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<HabilitacionesResponse>>;
+    public reemplazarProfesionalesHabilitados(requestParameters: ReemplazarProfesionalesHabilitadosRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        const consultorioId = requestParameters?.consultorioId;
+        if (consultorioId === null || consultorioId === undefined) {
+            throw new Error('Required parameter consultorioId was null or undefined when calling reemplazarProfesionalesHabilitados.');
+        }
+        const ofertaId = requestParameters?.ofertaId;
+        if (ofertaId === null || ofertaId === undefined) {
+            throw new Error('Required parameter ofertaId was null or undefined when calling reemplazarProfesionalesHabilitados.');
+        }
+        const reemplazarHabilitacionesRequest = requestParameters?.reemplazarHabilitacionesRequest;
+        if (reemplazarHabilitacionesRequest === null || reemplazarHabilitacionesRequest === undefined) {
+            throw new Error('Required parameter reemplazarHabilitacionesRequest was null or undefined when calling reemplazarProfesionalesHabilitados.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        // to determine the Content-Type header
+        const consumes: string[] = [
+            'application/json'
+        ];
+        const httpContentTypeSelected: string | undefined = this.configuration.selectHeaderContentType(consumes);
+        if (httpContentTypeSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Content-Type', httpContentTypeSelected);
+        }
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/consultorios/${this.configuration.encodeParam({name: "consultorioId", value: consultorioId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/ofertas/${this.configuration.encodeParam({name: "ofertaId", value: ofertaId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/habilitaciones/profesionales`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<HabilitacionesResponse>('put', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                body: reemplazarHabilitacionesRequest,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
      * Editar una oferta de la sede
      * Exige consultorio:manage sobre esa sede.  El servicio NO se puede cambiar y por eso no esta en el cuerpo: cambiarlo convertiria esta oferta en otra cosa mientras conserva su id y sus historicos. Lo que corresponde es dar de baja esta y crear la que si presta el otro servicio.  Los campos en null NO se tocan. Por eso existen limpiarPrecio, limpiarEsquemaCobro y limpiarVigenciaHasta: sin ellos no habria forma de expresar \&quot;sacale el precio\&quot;, porque mandar precioBase: null es indistinguible de no mandarlo. Cuando un limpiar viene en true, el valor correspondiente se ignora.  Una oferta dada de baja no admite ediciones: 409 oferta-inactiva.
      * @endpoint put /api/v1/consultorios/{consultorioId}/ofertas/{ofertaId}
@@ -650,6 +877,92 @@ export class ServiciosYOfertasService extends BaseService implements ServiciosYO
             {
                 context: localVarHttpContext,
                 body: updateServicioRequest,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * Saber si esa combinacion puede prestarse, y por que no
+     * Responde la mitad calculable de RF-M05-008 y RF-M04-009. La otra mitad —reservar de verdad— es de la etapa de agenda, que va a consumir exactamente este endpoint.  Los dos parametros son opcionales: se puede preguntar solo por el profesional, solo por el espacio, o por los dos. Sin ninguno valida la oferta sola, que sigue siendo una pregunta util: ¿esta oferta se puede usar hoy?  DEVUELVE TODOS LOS MOTIVOS QUE FALLAN, NO EL PRIMERO. Si al profesional le falta habilitacion y ademas el espacio esta fuera de servicio, arreglar uno solo no alcanza, y decirlo de a uno obliga al usuario a dos vueltas.  Cada motivo trae un codigo estable para ramificar sin leer prosa. Los ocho posibles son: oferta-inactiva, oferta-fuera-de-vigencia, profesional-no-habilitado, habilitacion-fuera-de-vigencia, vinculo-no-vigente, espacio-no-habilitado, espacio-fuera-de-servicio y capacidad-insuficiente.  capacidad-insuficiente NO es un rechazo duro: la oferta se puede prestar igual con menos gente. Es informacion para que la agenda decida, y por eso viaja como motivo y no como error.
+     * @endpoint get /api/v1/consultorios/{consultorioId}/ofertas/{ofertaId}/validacion
+     * @param requestParameters
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public validarOferta(requestParameters: ValidarOfertaRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<ValidacionDeOfertaResponse>;
+    public validarOferta(requestParameters: ValidarOfertaRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<ValidacionDeOfertaResponse>>;
+    public validarOferta(requestParameters: ValidarOfertaRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<ValidacionDeOfertaResponse>>;
+    public validarOferta(requestParameters: ValidarOfertaRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        const consultorioId = requestParameters?.consultorioId;
+        if (consultorioId === null || consultorioId === undefined) {
+            throw new Error('Required parameter consultorioId was null or undefined when calling validarOferta.');
+        }
+        const ofertaId = requestParameters?.ofertaId;
+        if (ofertaId === null || ofertaId === undefined) {
+            throw new Error('Required parameter ofertaId was null or undefined when calling validarOferta.');
+        }
+        const membershipId = requestParameters?.membershipId;
+        const espacioId = requestParameters?.espacioId;
+
+        let localVarQueryParameters = new OpenApiHttpParams(this.encoder);
+
+        localVarQueryParameters = this.addToHttpParams(
+            localVarQueryParameters,
+            'membershipId',
+            <any>membershipId,
+            QueryParamStyle.Form,
+            true,
+        );
+
+
+        localVarQueryParameters = this.addToHttpParams(
+            localVarQueryParameters,
+            'espacioId',
+            <any>espacioId,
+            QueryParamStyle.Form,
+            true,
+        );
+
+
+        let localVarHeaders = this.defaultHeaders;
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/consultorios/${this.configuration.encodeParam({name: "consultorioId", value: consultorioId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/ofertas/${this.configuration.encodeParam({name: "ofertaId", value: ofertaId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/validacion`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<ValidacionDeOfertaResponse>('get', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                params: localVarQueryParameters.toHttpParams(),
                 responseType: <any>responseType_,
                 ...(withCredentials ? { withCredentials } : {}),
                 headers: localVarHeaders,
