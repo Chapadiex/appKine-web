@@ -224,12 +224,32 @@ Reglas innegociables del QA:
 
 ## 7. Estado actual
 
-**Rama `akine-01.02-identidad`, 22 commits, working tree limpio** (27/08/2026). Cerradas 00.01,
-00.02, 01.01, 01.02, 01.03, 02.01, 02.02, 02.03, 02.04, 02.05 y 02.06. Cliente generado y fijado
-en el contrato **0.12.0**. **602 tests en 70 archivos**, lint limpio y los cuatro pisos de
-cobertura sobre 80 % (rama en 80,04 %, que es el más ajustado).
+**Rama `akine-01.02-identidad`, 24 commits, working tree CON cambios sin commitear** (30/08/2026).
+Cerradas 00.01, 00.02, 01.01, 01.02, 01.03, 02.01, 02.02, 02.03, 02.04, 02.05 y 02.06; 03.01 está
+commiteada pero **no declarada cerrada**. Cliente generado y fijado en el contrato **0.13.0**.
+**640 tests en 74 archivos**, lint limpio y los cuatro pisos de cobertura sobre 80 % (rama en
+80,39 %, que es el más ajustado).
 
-Features: `auth`, `organization`, `platform`, `resource`, `catalog`, `offering`.
+Features: `auth`, `organization`, `platform`, `resource`, `catalog`, `offering`, `person`.
+
+> **Hay dos cosas distintas sin commitear en el árbol de trabajo.** Una es el frontend de **02.07**
+> —la pantalla de habilitaciones de la oferta y los cambios de `offering`—, que quedó a medio hacer
+> cuando esa etapa se escribió en paralelo con 03.01. La otra es la corrección del motivo opcional
+> del 30/08 que describe el bloque de abajo. **No las mezcles en un commit.**
+
+> **El motivo de la confirmación era obligatorio siempre, y eso dejaba una acción inejecutable.**
+> `shared/components/confirmacion-con-motivo` tenía `Validators.required` fijo en el control. Las
+> cuatro pantallas de baja que lo usan lo querían así, pero el padrón de personas rotula su campo
+> "Motivo (opcional)" —el contrato lo declara `NOT_REQUIRED`— y con el campo vacío el botón no
+> emitía nada: sin petición, sin error en consola, sin síntoma. RF-M07-008 no se podía ejecutar
+> desde la pantalla. Ahora hay un input `motivoObligatorio` que **por defecto vale `true`**, y el
+> validador se aplica en un `effect`: el valor de un signal input no está disponible en el
+> inicializador del `FormControl`.
+>
+> **La lección es de dónde salió el hueco.** El spec del padrón verificaba el *texto* del panel y
+> nunca enviaba el formulario; y ninguna de las cuatro pantallas de baja afirmaba que el motivo
+> vacío **bloquea** el envío. Un test que mira lo que la pantalla dice no prueba lo que la pantalla
+> hace.
 
 > **Los bloques de abajo son el registro por etapa y quedaron congelados en su fecha.** Los
 > números de 01.02 —"3 commits", "sin commitear", cobertura del momento— describen ese cierre y
@@ -399,11 +419,19 @@ Reglas que esta etapa dejó fijadas y que las siguientes heredan:
 | Los guards son **UX, no seguridad** | La autoridad de permisos es el backend, que rechaza igual si se llega por URL directa |
 | Falta de contexto se resuelve mandando a `/seleccionar-contexto`, no mostrando un 403 | Sin eso la pantalla se abre vacía y el usuario no tiene cómo salir |
 
-### Próximo paso — AKINE-02.07
+### Próximo paso — cerrar 03.01, o el frontend de 02.07
+
+Para cerrar **03.01** falta una sola cosa y es de entorno: el quinto escenario del QA manual
+—activar el perfil de paciente— **contra MySQL**. El defecto de código que lo bloqueaba ya está
+corregido y verificado en un navegador real contra la API simulada; lo que no arranca es el motor
+de Docker de esta máquina (`com.docker.service` detenido y la distro WSL `docker-desktop` también,
+y levantar ese servicio **exige elevación**).
+
+El frontend de **02.07** sigue a medio hacer y sin commitear.
 
 Pendientes que arrastra el frontend:
 
-- [ ] E2E de todo lo posterior a 01.03: espacios, catálogo, horarios y servicios. **Ninguno existe**
+- [ ] E2E de todo lo posterior a 01.03: espacios, catálogo, horarios, servicios y padrón. **Ninguno existe**
 - [ ] Remote de GitHub y protección de rama en `main`
 - [ ] Activar el job E2E del pipeline (listo y comentado — espera la imagen Docker del backend)
 - [ ] Regla de ESLint que prohíba imports entre features (ADR-0004, hoy depende de revisión)
