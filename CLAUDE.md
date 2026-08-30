@@ -224,7 +224,9 @@ Reglas innegociables del QA:
 
 ## 7. Estado actual
 
-**Rama `akine-01.02-identidad`, 24 commits, working tree CON cambios sin commitear** (30/08/2026).
+**Rama `akine-01.02-identidad`, working tree CON cambios sin commitear** (30/08/2026). Nada
+pusheado todavía: el remote `Chapadiex/appKine-web` existe, pero la rama es local. El conteo de
+commits sale de `git log` y este archivo no lo repite: se desactualiza con su propio commit.
 Cerradas 00.01, 00.02, 01.01, 01.02, 01.03, 02.01, 02.02, 02.03, 02.04, 02.05 y 02.06; 03.01 está
 commiteada pero **no declarada cerrada**. Cliente generado y fijado en el contrato **0.13.0**.
 **640 tests en 74 archivos**, lint limpio y los cuatro pisos de cobertura sobre 80 % (rama en
@@ -432,7 +434,7 @@ El frontend de **02.07** sigue a medio hacer y sin commitear.
 Pendientes que arrastra el frontend:
 
 - [ ] E2E de todo lo posterior a 01.03: espacios, catálogo, horarios, servicios y padrón. **Ninguno existe**
-- [ ] Remote de GitHub y protección de rama en `main`
+- [ ] Protección de rama en `main`. El remote ya existe (`Chapadiex/appKine-web`); lo que falta es pushear y protegerla
 - [ ] Activar el job E2E del pipeline (listo y comentado — espera la imagen Docker del backend)
 - [ ] Regla de ESLint que prohíba imports entre features (ADR-0004, hoy depende de revisión)
 - [ ] Completar los `PENDIENTE(F1)` de `.claude/qa-config.md`
