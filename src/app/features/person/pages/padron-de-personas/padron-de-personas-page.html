@@ -453,6 +453,7 @@
                 idCampo="activar-perfil-{{ persona.id }}"
                 titulo="Activar el perfil de paciente de {{ nombreCompleto(persona) }}"
                 etiqueta="Motivo (opcional)"
+                [motivoObligatorio]="false"
                 ayuda="Esto la habilita como paciente reutilizando su ficha: no se vuelve a cargar ningun dato. NO le crea historia clinica. Si ya tenia perfil, la accion no cambia nada."
                 textoConfirmar="Activar perfil"
                 [enviando]="enviando()"

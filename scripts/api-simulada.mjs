@@ -218,6 +218,16 @@ export async function instalarApiSimulada(contexto) {
     );
   }
 
+  // La activacion del perfil clinico. Responde 200 y no 201 porque es idempotente: activar dos
+  // veces devuelve el perfil que ya estaba.
+  const activacion = camino.match(/^\/api\/v1\/personas\/(\d+)\/perfil-paciente$/);
+  if (activacion !== null && ruta.request().method() === 'POST') {
+    const persona = PERSONAS.find((ficha) => ficha.id === Number(activacion[1])) ?? PERSONAS[0];
+    return ruta.fulfill(
+      json({ ...persona, esPaciente: true, perfilPacienteId: 99, version: persona.version + 1 }),
+    );
+  }
+
   console.log(`  [sin stub] ${ruta.request().method()} ${camino}`);
   return ruta.fulfill(json({ type: 'https://akine.app/problems/not-found' }, 404));
 });

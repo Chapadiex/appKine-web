@@ -418,6 +418,30 @@ describe('PadronDePersonasPage', () => {
     expect(texto).toContain('Si ya tenia perfil, la accion no cambia nada');
   });
 
+  it('activa el perfil con el motivo vacio, porque el panel lo declara opcional', async () => {
+    const fixture = await montar();
+
+    abrir(fixture, 'Activar perfil de paciente');
+    enviar(fixture);
+
+    // El motivo es opcional en el contrato y la pantalla lo rotula asi. Si el envio no sale,
+    // el operador queda mirando un panel que no hace nada y RF-M07-008 no se puede ejecutar.
+    const peticion = httpMock.expectOne(
+      (candidata: HttpRequest<unknown>) =>
+        candidata.method === 'POST' && candidata.url === `${PERSONAS}/10/perfil-paciente`,
+    );
+    expect((peticion.request.body as { motivo?: string }).motivo).toBeUndefined();
+
+    peticion.flush({ ...SIN_PERFIL, esPaciente: true, perfilPacienteId: 9 });
+    await fixture.whenStable();
+    fixture.detectChanges();
+    httpMock.expectOne(esListado()).flush(PAGINA);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('ya es paciente');
+  });
+
   it(
     'no tiene violaciones de accesibilidad',
     async () => {

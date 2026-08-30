@@ -3,6 +3,7 @@ import {
   Component,
   ElementRef,
   afterNextRender,
+  effect,
   input,
   output,
   signal,
@@ -66,6 +67,17 @@ export class ConfirmacionConMotivo {
   /** Mientras hay un envio en vuelo el boton de confirmar queda deshabilitado. */
   readonly enviando = input(false);
 
+  /**
+   * Si el motivo es obligatorio. Por defecto lo es.
+   *
+   * <p>No todas las acciones que se confirman con un motivo lo exigen: una baja necesita
+   * justificacion escrita, pero activar un perfil de paciente no —RF-M07-008 no la pide, y el
+   * contrato declara el campo opcional—. Cuando esto vale `false` el panel <b>envia con el campo
+   * vacio</b>; si no fuera configurable, una pantalla que rotule el motivo como opcional se
+   * quedaria trabada: el boton no hace nada y la accion es imposible de ejecutar.
+   */
+  readonly motivoObligatorio = input(true);
+
   /** Motivo ya recortado. Solo se emite cuando paso la validacion. */
   readonly confirmado = output<string>();
 
@@ -80,7 +92,7 @@ export class ConfirmacionConMotivo {
    * deja de hacer absolutamente nada, sin error en consola ni en compilacion.
    */
   protected readonly formulario = new FormGroup({
-    reason: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
+    reason: new FormControl('', { nonNullable: true }),
   });
 
   private get motivo(): FormControl<string> {
@@ -99,6 +111,13 @@ export class ConfirmacionConMotivo {
   private readonly campo = viewChild<ElementRef<HTMLInputElement>>('campoMotivo');
 
   constructor() {
+    // El validador se aplica aca y no al construir el control: `motivoObligatorio` es un input
+    // y su valor no esta disponible todavia en el inicializador del campo.
+    effect(() => {
+      this.motivo.setValidators(this.motivoObligatorio() ? [Validators.required] : []);
+      this.motivo.updateValueAndValidity({ emitEvent: false });
+    });
+
     // El panel se abre por un click en otra parte de la pantalla: el foco tiene que venirse
     // con el, o el usuario de teclado queda parado fuera del formulario que acaba de abrir.
     afterNextRender(() => this.enfocar());

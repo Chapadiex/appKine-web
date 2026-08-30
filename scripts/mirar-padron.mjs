@@ -68,4 +68,30 @@ await pagina.waitForTimeout(300);
 await pagina.screenshot({ path: `${SALIDA}/padron-alta.png`, fullPage: true });
 console.log(`padron-alta -> ${SALIDA}/padron-alta.png`);
 
+// El panel de activacion, confirmado CON EL MOTIVO VACIO. Aca esto si afirma algo, y es lo unico
+// del archivo que lo hace: el motivo es opcional -el contrato lo declara asi y la etiqueta lo
+// dice-, y hasta el 30/08/2026 el componente compartido lo validaba como obligatorio, con lo cual
+// el boton no emitia nada y RF-M07-008 era inejecutable desde la pantalla. Es la clase de fallo
+// que jsdom no delata: no hay error, no hay peticion, no pasa nada.
+await pagina.setViewportSize({ width: 1280, height: 900 });
+await pagina.goto(`${BASE}/pacientes`, { waitUntil: 'networkidle' });
+await pagina.getByRole('button', { name: 'Activar perfil de paciente' }).first().click();
+await pagina.waitForTimeout(300);
+await pagina.screenshot({ path: `${SALIDA}/padron-activar.png`, fullPage: true });
+
+const activaciones = [];
+pagina.on('request', (peticion) => {
+  if (peticion.method() === 'POST' && peticion.url().includes('/perfil-paciente')) {
+    activaciones.push({ url: peticion.url(), cuerpo: peticion.postData() });
+  }
+});
+
+await pagina.getByRole('button', { name: 'Activar perfil', exact: true }).click();
+await pagina.waitForTimeout(600);
+await pagina.screenshot({ path: `${SALIDA}/padron-activado.png`, fullPage: true });
+
+const textoFinal = await pagina.evaluate(() => document.body.textContent ?? '');
+console.log(`padron-activar -> POST emitidos: ${JSON.stringify(activaciones)}`);
+console.log(`  confirmacion en pantalla: ${textoFinal.includes('ya es paciente')}`);
+
 await navegador.close();
