@@ -3,8 +3,12 @@ import { Observable } from 'rxjs';
 
 import { CreateOfertaRequest } from '../../../api/generated/model/create-oferta-request';
 import { CreateServicioRequest } from '../../../api/generated/model/create-servicio-request';
+import { ColaboradoresService } from '../../../api/generated/api/colaboradores.service';
+import { EspaciosService } from '../../../api/generated/api/espacios.service';
+import { HabilitacionesResponse } from '../../../api/generated/model/habilitaciones-response';
 import { OfertaResponse } from '../../../api/generated/model/oferta-response';
 import { ServicioResponse } from '../../../api/generated/model/servicio-response';
+import { ValidacionDeOfertaResponse } from '../../../api/generated/model/validacion-de-oferta-response';
 import { ServiciosYOfertasService } from '../../../api/generated/api/servicios-y-ofertas.service';
 import { UpdateOfertaRequest } from '../../../api/generated/model/update-oferta-request';
 import { UpdateServicioRequest } from '../../../api/generated/model/update-servicio-request';
@@ -49,6 +53,13 @@ export type FiltroEstado = 'ACTIVO' | 'INACTIVO' | 'TODOS';
 @Injectable({ providedIn: 'root' })
 export class OfferingApi {
   private readonly api = inject(ServiciosYOfertasService);
+
+  // Los candidatos a habilitar NO salen del endpoint de habilitaciones: ese devuelve las filas
+  // que YA existen, que es lo correcto. Quienes podrian habilitarse son los colaboradores de la
+  // organizacion y los espacios de la sede, y para eso ya hay endpoints. Pedirle al backend un
+  // "listame los candidatos" habria duplicado dos listados que existen.
+  private readonly colaboradores = inject(ColaboradoresService);
+  private readonly espaciosApi = inject(EspaciosService);
 
   // ---------------------------------------------------------------------------------------
   // Catalogo global de Servicios. Autenticado para leer; rol de plataforma para mutar.
@@ -147,6 +158,109 @@ export class OfferingApi {
       consultorioId,
       ofertaId,
       deactivateOfferingRequest: { reason: motivo },
+    });
+  }
+
+  // ---------------------------------------------------------------------------------------
+  // Habilitaciones de una oferta (AKINE-02.07). Lectura por pertenencia; mutaciones con
+  // `consultorio:manage`, igual que el resto de la sede.
+  // ---------------------------------------------------------------------------------------
+
+  /**
+   * Quien puede prestar la oferta, donde, y con que capacidad real.
+   *
+   * <p><b>Devuelve las habilitaciones activas E INACTIVAS.</b> La pantalla muestra las dadas
+   * de baja con su motivo en vez de esconderlas: esconderlas dejaria al administrador sin
+   * entender por que la capacidad efectiva cambio sola.
+   *
+   * <p>Lo que NUNCA hay que deducir de la lista es si la oferta esta restringida. Una lista
+   * vacia significa <b>sin restringir</b> —cualquier profesional con vinculo vigente, en
+   * cualquier espacio de la sede—, y por eso la respuesta trae `restringidaPorProfesional` y
+   * `restringidaPorEspacio` como campos propios.
+   */
+  verHabilitaciones(consultorioId: number, ofertaId: number): Observable<HabilitacionesResponse> {
+    return this.api.getHabilitaciones({ consultorioId, ofertaId });
+  }
+
+  /**
+   * Fija el conjunto COMPLETO de profesionales habilitados.
+   *
+   * <p>Reemplaza, no agrega: el servidor hace el diff. Una lista vacia es la operacion
+   * legitima de quitar la restriccion y no un error.
+   *
+   * <p>`expectedVersion` es la de la OFERTA y no la de ninguna habilitacion: es lo que
+   * serializa a dos administradores configurando la misma oferta.
+   */
+  fijarProfesionalesHabilitados(
+    consultorioId: number,
+    ofertaId: number,
+    membershipIds: readonly number[],
+    expectedVersion: number,
+  ): Observable<HabilitacionesResponse> {
+    return this.api.reemplazarProfesionalesHabilitados({
+      consultorioId,
+      ofertaId,
+      reemplazarHabilitacionesRequest: { ids: [...membershipIds], expectedVersion },
+    });
+  }
+
+  /** Fija el conjunto completo de espacios habilitados. Mismo criterio que el anterior. */
+  fijarEspaciosHabilitados(
+    consultorioId: number,
+    ofertaId: number,
+    espacioIds: readonly number[],
+    expectedVersion: number,
+  ): Observable<HabilitacionesResponse> {
+    return this.api.reemplazarEspaciosHabilitados({
+      consultorioId,
+      ofertaId,
+      reemplazarHabilitacionesRequest: { ids: [...espacioIds], expectedVersion },
+    });
+  }
+
+  /**
+   * Si esa combinacion puede prestarse, y TODOS los motivos por los que no.
+   *
+   * <p>Los dos parametros son opcionales. Sin ninguno valida la oferta sola, que sigue siendo
+   * una pregunta util: ¿esta oferta se puede usar hoy?
+   */
+  validar(
+    consultorioId: number,
+    ofertaId: number,
+    contra: { readonly membershipId?: number; readonly espacioId?: number } = {},
+  ): Observable<ValidacionDeOfertaResponse> {
+    return this.api.validarOferta({
+      consultorioId,
+      ofertaId,
+      membershipId: contra.membershipId,
+      espacioId: contra.espacioId,
+    });
+  }
+
+  /**
+   * Quienes PODRIAN prestar la oferta: los colaboradores vigentes de la organizacion.
+   *
+   * <p>Se filtra por vigencia del lado del cliente y no se pide al backend, porque el listado de
+   * colaboradores no tiene ese filtro y agregarlo seria cambiar un contrato de otra etapa para
+   * una comodidad de esta pantalla.
+   */
+  candidatosAHabilitar(organizationId: number) {
+    return this.colaboradores.listMemberships({ orgId: organizationId, size: 200 });
+  }
+
+  /**
+   * En que espacios PODRIA prestarse: los activos de la sede.
+   *
+   * <p>Solo los activos: ofrecer para habilitar un espacio dado de baja seria proponer una
+   * configuracion que no se puede usar. Los que ya estan habilitados y despues se dieron de baja
+   * si aparecen, porque vienen por el otro lado —la lista de habilitaciones— con su advertencia.
+   */
+  espaciosDeLaSede(organizationId: number, consultorioId: number) {
+    return this.espaciosApi.listEspacios({
+      orgId: organizationId,
+      consultorioId,
+      estado: 'ACTIVO',
+      size: 200,
     });
   }
 }

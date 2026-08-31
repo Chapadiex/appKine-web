@@ -1,0 +1,193 @@
+<h1>Habilitaciones de la oferta</h1>
+
+@if (oferta(); as detalle) {
+  <p class="descripcion">
+    Quien puede prestar <b>{{ detalle.nombreComercial }}</b> y en que espacios de esta sede.
+  </p>
+} @else {
+  <p class="descripcion">Quien puede prestar esta oferta y en que espacios de esta sede.</p>
+}
+
+<nav class="acciones" aria-label="Servicios y ofertas">
+  <a class="boton boton--secundario" routerLink="/servicios/catalogo">Catalogo de servicios</a>
+  <a class="boton boton--secundario" routerLink="/servicios/ofertas">Ofertas de la sede</a>
+</nav>
+
+<section class="tarjeta nota-clave" aria-labelledby="nota-habilitacion">
+  <h2 id="nota-habilitacion">Habilitar no es dar permiso</h2>
+  <p>
+    Habilitar dice <b>quien puede prestar</b> esta oferta y <b>donde</b>. No le da a nadie acceso al
+    sistema ni le cambia lo que puede administrar: eso lo decide su rol. Un administrador sin
+    habilitacion sigue configurando esta oferta aunque no la preste.
+  </p>
+</section>
+
+@switch (estado().tipo) {
+  @case ('cargando') {
+    <p class="estado" role="status">Cargando la configuracion de la oferta…</p>
+  }
+
+  @case ('sin-contexto') {
+    <section class="estado estado--vacio">
+      <h2>Elegi una sede</h2>
+      <p>
+        Las ofertas son de una sede concreta, asi que hay que saber en cual estas trabajando. Tu
+        sesion sigue abierta.
+      </p>
+      <a class="boton" routerLink="/seleccionar-contexto">Elegir consultorio</a>
+    </section>
+  }
+
+  @case ('error') {
+    <p class="estado estado--error" role="alert">{{ mensajeDeCarga() }}</p>
+    <button type="button" class="boton" (click)="cargar()">Reintentar</button>
+  }
+
+  @case ('listo') {
+    @if (configuracion(); as configuracion) {
+      <section class="tarjeta" aria-labelledby="capacidad-titulo">
+        <h2 id="capacidad-titulo">Capacidad</h2>
+        <dl>
+          <dt>Capacidad cargada en la oferta</dt>
+          <dd>{{ configuracion.capacidadComercial }} personas</dd>
+
+          <dt>Capacidad real</dt>
+          <dd>
+            {{ configuracion.capacidadEfectiva }} personas
+            @if (configuracion.espacioQueLimita) {
+              <span class="ayuda">
+                La limita <b>{{ configuracion.espacioQueLimita }}</b
+                >, que admite menos gente que la oferta. Mientras ese espacio este habilitado, no se
+                puede atender a mas.
+              </span>
+            }
+          </dd>
+        </dl>
+      </section>
+
+      @if (exito(); as mensaje) {
+        <p class="estado estado--ok" role="status">{{ mensaje }}</p>
+      }
+      @if (errorAccion(); as mensaje) {
+        <p class="estado estado--error" role="alert">{{ mensaje }}</p>
+        @if (hayQueRecargar()) {
+          <button type="button" class="boton" (click)="cargar()">Recargar la configuracion</button>
+        }
+      }
+
+      <!-- Profesionales -->
+      <section class="tarjeta" aria-labelledby="profesionales-titulo">
+        <h2 id="profesionales-titulo">Profesionales</h2>
+
+        @if (quedaraSinRestringirProfesional()) {
+          <p class="ayuda" role="status">
+            <b>Sin ninguno marcado, la oferta queda sin restringir:</b> cualquier profesional con
+            vinculo vigente en esta sede va a poder prestarla. No marcar a nadie NO significa que no
+            pueda ninguno.
+          </p>
+        } @else {
+          <p class="ayuda">
+            Solo los marcados van a poder prestar esta oferta. Si desmarcas a todos, la oferta
+            vuelve a quedar disponible para cualquiera.
+          </p>
+        }
+
+        @if (candidatosProfesional().length === 0) {
+          <p class="estado estado--vacio">
+            Todavia no hay ningun profesional configurado para esta oferta, asi que hoy la puede
+            prestar cualquiera. Los profesionales de la sede se administran en
+            <a routerLink="/organizacion/colaboradores">Colaboradores</a>.
+          </p>
+        } @else {
+          <ul class="grupo">
+            @for (candidato of candidatosProfesional(); track candidato.id) {
+              <li>
+                <label>
+                  <input
+                    type="checkbox"
+                    [checked]="estaMarcadoProfesional(candidato.id)"
+                    [disabled]="guardando()"
+                    (change)="alternarProfesional(candidato.id)"
+                  />
+                  <span class="etiqueta">{{ candidato.etiqueta }}</span>
+                  @if (candidato.detalle) {
+                    <span class="detalle">{{ candidato.detalle }}</span>
+                  }
+                </label>
+                @if (candidato.advertencia) {
+                  <p class="ayuda">{{ candidato.advertencia }}</p>
+                }
+              </li>
+            }
+          </ul>
+        }
+
+        <button
+          type="button"
+          class="boton"
+          *akinePermiso="PERMISO_CONSULTORIO_MANAGE"
+          [disabled]="guardando()"
+          (click)="guardarProfesionales()"
+        >
+          {{ guardando() ? 'Guardando…' : 'Guardar los profesionales' }}
+        </button>
+      </section>
+
+      <!-- Espacios -->
+      <section class="tarjeta" aria-labelledby="espacios-titulo">
+        <h2 id="espacios-titulo">Espacios</h2>
+
+        @if (quedaraSinRestringirEspacio()) {
+          <p class="ayuda" role="status">
+            <b>Sin ninguno marcado, la oferta se puede prestar en cualquier espacio de la sede.</b>
+            No marcar ninguno NO significa que no se pueda en ninguno.
+          </p>
+        } @else {
+          <p class="ayuda">
+            Solo los marcados se van a poder usar para esta oferta. Que un espacio sirva no se
+            deduce de su tipo: elegir "Pileta" al darlo de alta no habilita hidroterapia ahi, lo
+            habilita esta lista.
+          </p>
+        }
+
+        @if (candidatosEspacio().length === 0) {
+          <p class="estado estado--vacio">
+            Todavia no hay ningun espacio configurado, asi que la oferta se puede prestar en
+            cualquiera. Los espacios de la sede se administran en
+            <a routerLink="/espacios">Espacios y boxes</a>.
+          </p>
+        } @else {
+          <ul class="grupo">
+            @for (candidato of candidatosEspacio(); track candidato.id) {
+              <li>
+                <label>
+                  <input
+                    type="checkbox"
+                    [checked]="estaMarcadoEspacio(candidato.id)"
+                    [disabled]="guardando()"
+                    (change)="alternarEspacio(candidato.id)"
+                  />
+                  <span class="etiqueta">{{ candidato.etiqueta }}</span>
+                  <span class="detalle">{{ candidato.detalle }}</span>
+                </label>
+                @if (candidato.advertencia) {
+                  <p class="ayuda">{{ candidato.advertencia }}</p>
+                }
+              </li>
+            }
+          </ul>
+        }
+
+        <button
+          type="button"
+          class="boton"
+          *akinePermiso="PERMISO_CONSULTORIO_MANAGE"
+          [disabled]="guardando()"
+          (click)="guardarEspacios()"
+        >
+          {{ guardando() ? 'Guardando…' : 'Guardar los espacios' }}
+        </button>
+      </section>
+    }
+  }
+}

@@ -446,6 +446,18 @@
                     </td>
                     <td class="acciones-fila">
                       @if (oferta.estado === 'ACTIVO') {
+                        <!--
+                          Habilitaciones va como enlace y para CUALQUIERA que vea la fila: la
+                          pantalla se puede consultar por pertenencia y solo el guardado exige
+                          consultorio:manage. Esconderla detras del permiso dejaria a un
+                          profesional sin poder ver donde puede atender.
+                        -->
+                        <a
+                          class="boton boton--secundario"
+                          [routerLink]="['/servicios/ofertas', oferta.id, 'habilitaciones']"
+                        >
+                          Habilitaciones
+                        </a>
                         <ng-container *akinePermiso="permisoManage">
                           <button
                             type="button"

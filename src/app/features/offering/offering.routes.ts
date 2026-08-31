@@ -62,6 +62,18 @@ export const routes: Routes = [
     data: { [DATA_ANCHO]: ANCHO_AMPLIO },
   },
   {
+    // Cuelga de la oferta y no de un `/habilitaciones` suelto: configurar quien presta QUE no
+    // tiene sentido sin la oferta delante, y la URL tiene que poder compartirse.
+    path: 'ofertas/:ofertaId/habilitaciones',
+    canActivate: [contextGuard],
+    loadComponent: () =>
+      import('./pages/habilitaciones-de-la-oferta/habilitaciones-de-la-oferta-page').then(
+        (m) => m.HabilitacionesDeLaOfertaPage,
+      ),
+    title: 'AKINE - Habilitaciones de la oferta',
+    data: { [DATA_ANCHO]: ANCHO_AMPLIO },
+  },
+  {
     // Entrar a `/servicios` a secas cae en las ofertas, no en el catalogo: el diseno (6) dice
     // que la de ofertas "es la que usa un administrador todos los dias", y el catalogo global
     // es sobre todo una referencia que se consulta cuando hay que dar de alta una oferta.
