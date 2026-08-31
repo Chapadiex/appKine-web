@@ -4,6 +4,8 @@ api.base.service.ts
 api.module.ts
 api/administracion-de-cuentas.service.ts
 api/administracion-de-cuentas.serviceInterface.ts
+api/agenda.service.ts
+api/agenda.serviceInterface.ts
 api/api.ts
 api/auditoria.service.ts
 api/auditoria.serviceInterface.ts
@@ -47,6 +49,8 @@ api/sesion.service.ts
 api/sesion.serviceInterface.ts
 api/suscripciones.service.ts
 api/suscripciones.serviceInterface.ts
+api/turnos.service.ts
+api/turnos.serviceInterface.ts
 configuration.ts
 encoder.ts
 git_push.sh
@@ -59,6 +63,7 @@ model/account-response.ts
 model/account-state-change-request.ts
 model/activar-perfil-paciente-request.ts
 model/activate-account-request.ts
+model/agenda.ts
 model/assign-grant-request.ts
 model/audit-event-page-response.ts
 model/audit-event-response.ts
@@ -95,6 +100,7 @@ model/deactivate-excepcion-request.ts
 model/deactivate-offering-request.ts
 model/decline-invitacion-request.ts
 model/desvinculacion-impacto-response.ts
+model/dia-de-agenda.ts
 model/dia-efectivo-response.ts
 model/disponibilidad-efectiva-response.ts
 model/effective-permissions-response.ts
@@ -136,14 +142,17 @@ model/profesional-habilitado.ts
 model/reemplazar-habilitaciones-request.ts
 model/register-account-request.ts
 model/resend-activation-request.ts
+model/reservar-turno.ts
 model/resolve-catalogo-solicitud-request.ts
 model/select-context-request.ts
 model/servicio-response.ts
+model/slot-disponible.ts
 model/subscription-response.ts
 model/subscription-transition-page-response.ts
 model/subscription-transition-request.ts
 model/subscription-transition-response.ts
 model/support-access-response.ts
+model/turno.ts
 model/update-bloque-request.ts
 model/update-calendario-request.ts
 model/update-catalogo-concepto-request.ts

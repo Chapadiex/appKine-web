@@ -1,0 +1,204 @@
+<h1>Reservar un turno</h1>
+
+<p class="descripcion">
+  Un turno es una <b>reserva</b> de agenda. No dice que la atencion haya ocurrido: eso lo registra
+  la sesion clinica, que es otra pantalla.
+</p>
+
+<p><a class="enlace" routerLink="/agenda">Volver al buscador de agenda</a></p>
+
+<section class="tarjeta" aria-labelledby="titulo-resumen">
+  <h2 id="titulo-resumen">Resumen</h2>
+
+  @if (cargando()) {
+    <p class="estado estado--cargando">Releyendo la agenda de este dia…</p>
+  }
+
+  @if (slot(); as elegido) {
+    <dl class="detalle">
+      <dt>Oferta</dt>
+      <dd>{{ nombreComercial() }}</dd>
+
+      <dt>Dia</dt>
+      <dd>{{ fechaEnPalabras(fecha()) }}</dd>
+
+      <dt>Horario</dt>
+      <dd>
+        {{ horario() }} <span class="ayuda">({{ duracion() }} min · zona {{ timezone() }})</span>
+      </dd>
+
+      @if (nombreDelProfesional(); as profesional) {
+        <dt>Profesional</dt>
+        <dd>{{ profesional }}</dd>
+      }
+
+      @if (textoDeCupo(elegido); as cupo) {
+        <dt>Cupo</dt>
+        <dd>{{ cupo }}</dd>
+      }
+
+      <dt>Paciente</dt>
+      <dd>
+        @if (persona(); as elegida) {
+          {{ elegida.apellido }}, {{ elegida.nombre }}
+        } @else {
+          Todavia no elegiste a quien se le reserva.
+        }
+      </dd>
+    </dl>
+  } @else if (!cargando()) {
+    <p class="estado estado--vacio">
+      Ese horario ya no figura en la agenda de este dia. Volve al buscador y elegi otro.
+    </p>
+  }
+</section>
+
+@if (!reservado()) {
+  <section class="tarjeta" aria-labelledby="titulo-persona">
+    <h2 id="titulo-persona">A quien se le reserva</h2>
+
+    <div class="campo">
+      <label for="reserva-persona">Documento, apellido, nombre o telefono</label>
+      <input
+        id="reserva-persona"
+        name="reserva-persona"
+        type="search"
+        (change)="buscarPersona($any($event.target).value)"
+      />
+    </div>
+
+    @if (candidatas().length > 0) {
+      <ul class="lista-personas">
+        @for (candidata of candidatas(); track candidata.id) {
+          <li>
+            <button
+              type="button"
+              class="boton boton--secundario"
+              (click)="elegirPersona(candidata)"
+            >
+              {{ candidata.apellido }}, {{ candidata.nombre }}
+              @if (candidata.numeroDocumento) {
+                — {{ candidata.tipoDocumento }} {{ candidata.numeroDocumento }}
+              }
+            </button>
+          </li>
+        }
+      </ul>
+    } @else if (buscoPersonas()) {
+      <p class="estado estado--vacio">
+        Ninguna persona del padron coincide con esa busqueda. Si es alguien nuevo, cargala primero
+        en el padron.
+      </p>
+    }
+  </section>
+}
+
+<div aria-live="polite">
+  @if (exito(); as mensaje) {
+    <p class="estado estado--ok">{{ mensaje }}</p>
+  }
+
+  @if (error(); as fallo) {
+    <section class="tarjeta conflicto" aria-labelledby="titulo-conflicto">
+      <h2 id="titulo-conflicto">No se pudo reservar</h2>
+      <p class="estado estado--error">{{ fallo.mensaje }}</p>
+
+      <!--
+        Cada uno de los cinco conflictos lleva a UNA accion distinta. Es la razon por la que el
+        backend los publica como tipos separados y no como un `conflict` generico: con un solo
+        tipo, todo esto seria un cartel sin salida.
+      -->
+      @switch (accion()) {
+        @case ('recargar-agenda') {
+          @if (fallo.motivo) {
+            <p class="ayuda">Lo que cambio: {{ fallo.motivo }}</p>
+          }
+          <div class="acciones">
+            <button type="button" class="boton" (click)="recargar()">Recargar la agenda</button>
+          </div>
+        }
+        @case ('ofrecer-siguiente') {
+          <p class="ayuda">
+            Ese horario admite {{ fallo.cupoTotal }} reservas y ya no queda ninguna.
+          </p>
+          @if (siguienteConCupo(); as siguiente) {
+            <div class="acciones">
+              <button type="button" class="boton" (click)="tomarElSiguiente()">
+                Tomar el siguiente: {{ hora(siguiente.desde) }}
+              </button>
+            </div>
+          } @else {
+            <p class="ayuda">
+              No queda ningun horario posterior con cupo este dia. Volve al buscador y proba otra
+              fecha.
+            </p>
+          }
+        }
+        @case ('elegir-otro') {
+          <p class="ayuda">
+            El recurso ocupado es el <b>{{ fallo.recurso }}</b
+            >. Elegi otro horario, o el mismo horario con otro profesional.
+          </p>
+          <div class="acciones">
+            <a class="boton" routerLink="/agenda">Elegir otro horario o profesional</a>
+          </div>
+        }
+        @case ('activar-perfil') {
+          <div class="acciones">
+            <a class="boton" routerLink="/pacientes">Activar el perfil de paciente</a>
+          </div>
+        }
+        @case ('reintentar-con-clave-nueva') {
+          <div class="acciones">
+            <button type="button" class="boton" [disabled]="enviando()" (click)="reintentar()">
+              Volver a intentar la reserva
+            </button>
+          </div>
+        }
+        @case ('elegir-contexto') {
+          <div class="acciones">
+            <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto de trabajo</a>
+          </div>
+        }
+      }
+    </section>
+  }
+</div>
+
+<div class="acciones">
+  @if (!reservado()) {
+    <button
+      type="button"
+      class="boton"
+      [disabled]="persona() === null || slot() === null || enviando()"
+      (click)="reservar()"
+    >
+      Reservar el turno
+    </button>
+  } @else if (!confirmado()) {
+    <button type="button" class="boton" [disabled]="enviando()" (click)="confirmar()">
+      Confirmar el turno
+    </button>
+  }
+</div>
+
+@if (turno(); as reserva) {
+  <section class="tarjeta" aria-labelledby="titulo-turno">
+    <h2 id="titulo-turno">Turno {{ reserva.estado }}</h2>
+    <dl class="detalle">
+      <dt>Numero</dt>
+      <dd>{{ reserva.id }}</dd>
+      <dt>Horario</dt>
+      <dd>{{ hora(reserva.inicio) }} a {{ hora(reserva.fin) }} ({{ timezone() }})</dd>
+      @if (reserva.espacioId) {
+        <dt>Box</dt>
+        <dd>#{{ reserva.espacioId }} — lo elige el servidor al reservar</dd>
+      }
+    </dl>
+    <!--
+      No hay boton de cancelar y no es un olvido: AKINE-05.03 quedo fuera de alcance por DP-10 y
+      el endpoint no existe. Un boton que termina en 404 promete algo que el producto no tiene.
+    -->
+    <p class="ayuda">Cancelar o reprogramar todavia no esta disponible en esta version.</p>
+  </section>
+}

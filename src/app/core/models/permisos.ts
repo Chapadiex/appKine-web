@@ -61,3 +61,19 @@ export const PERMISOS_F1 = [
 
 /** Union de los permisos conocidos. No restringe lo que el store puede almacenar. */
 export type PermisoF1 = (typeof PERMISOS_F1)[number];
+
+/**
+ * Consultar la agenda (F5, etapa AKINE-05.01).
+ *
+ * <p>Gobierna la LECTURA de slots de una oferta. Es de la sede del contexto: la agenda es de un
+ * consultorio, no de la organizacion.
+ */
+export const PERMISO_TURNO_READ = 'turno:read';
+
+/**
+ * Reservar y confirmar turnos (F5, etapa AKINE-05.02).
+ *
+ * <p>Gobierna las MUTACIONES de la agenda. <b>No hay cancelar ni reprogramar</b>: AKINE-05.03
+ * quedo fuera de alcance por DP-10 y esos endpoints no existen todavia.
+ */
+export const PERMISO_TURNO_MANAGE = 'turno:manage';

@@ -145,6 +145,21 @@ export const routes: Routes = [
     loadChildren: () => import('./features/person/person.routes').then((m) => m.routes),
   },
 
+  // Agenda de turnos y reserva (M12, AKINE-05.01 y 05.02).
+  //
+  // Raiz propia y no bajo `servicios/ofertas`: la oferta es lo que el centro ofrece y la agenda es
+  // cuando se puede prestar. Su publico tampoco es el mismo -recepcion agenda todo el dia, y no
+  // administra el catalogo comercial-, y colgarlas del mismo prefijo garantizaba que alguien
+  // terminara en la pantalla equivocada.
+  //
+  // `contextGuard` lo ponen las rutas hijas: la agenda es de una SEDE, y sin ella no hay ni URL
+  // que armar. El detalle esta en `scheduling.routes.ts`.
+  {
+    path: 'agenda',
+    canActivate: [authGuard],
+    loadChildren: () => import('./features/scheduling/scheduling.routes').then((m) => m.routes),
+  },
+
   // Pantalla de permiso insuficiente (AKINE-01.03). Es el destino de `permissionGuard`.
   //
   // Sin guards, y no por descuido: quien llega aca YA paso por `authGuard` y `contextGuard`

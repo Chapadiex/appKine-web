@@ -1,6 +1,9 @@
 export * from './administracion-de-cuentas.service';
 import { AdministracionDeCuentasService } from './administracion-de-cuentas.service';
 export * from './administracion-de-cuentas.serviceInterface';
+export * from './agenda.service';
+import { AgendaService } from './agenda.service';
+export * from './agenda.serviceInterface';
 export * from './auditoria.service';
 import { AuditoriaService } from './auditoria.service';
 export * from './auditoria.serviceInterface';
@@ -64,4 +67,7 @@ export * from './sesion.serviceInterface';
 export * from './suscripciones.service';
 import { SuscripcionesService } from './suscripciones.service';
 export * from './suscripciones.serviceInterface';
-export const APIS = [AdministracionDeCuentasService, AuditoriaService, CalendarioDeSedeService, CatalogoClinicoService, ColaboradoresService, ConsultoriosService, DisponibilidadProfesionalService, EspaciosService, ExcepcionesDeDisponibilidadService, InvitacionesService, InvitacionesRecibidasService, MiCuentaService, OrganizacionesService, PersonasService, PlanesService, PlataformaService, PlatformService, RecuperacionService, RegistroYActivacionService, ServiciosYOfertasService, SesionService, SuscripcionesService];
+export * from './turnos.service';
+import { TurnosService } from './turnos.service';
+export * from './turnos.serviceInterface';
+export const APIS = [AdministracionDeCuentasService, AgendaService, AuditoriaService, CalendarioDeSedeService, CatalogoClinicoService, ColaboradoresService, ConsultoriosService, DisponibilidadProfesionalService, EspaciosService, ExcepcionesDeDisponibilidadService, InvitacionesService, InvitacionesRecibidasService, MiCuentaService, OrganizacionesService, PersonasService, PlanesService, PlataformaService, PlatformService, RecuperacionService, RegistroYActivacionService, ServiciosYOfertasService, SesionService, SuscripcionesService, TurnosService];

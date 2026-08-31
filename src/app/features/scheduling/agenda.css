@@ -1,0 +1,157 @@
+/*
+ * Hoja de la feature `scheduling` (agenda y reserva, M12, AKINE-05.01 y 05.02).
+ *
+ * Deliberadamente corta, igual que las de `person`, `resource`, `catalog` y `offering`. `.boton`,
+ * `.campo`, `.tarjeta`, `.estado`, `.detalle`, `.acciones`, `.ayuda` y `.descripcion` los aporta
+ * `src/design-system.css`, que es global. Copiarlos aca seria una copia que se despega del
+ * original el dia que alguien retoque un gris.
+ *
+ * Ni un color literal: todo sale de los tokens de `:root`, que ya traen su equivalente en modo
+ * oscuro. Un `#rrggbb` suelto aca seria un color que no se adapta y que nadie vuelve a revisar.
+ */
+
+/* Los cuatro filtros del buscador, uno al lado del otro cuando entran. */
+.filtros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp-6);
+}
+
+.filtros .campo {
+  flex: 1 1 14rem;
+}
+
+/*
+ * La grilla: un bloque por dia, TODOS los dias de la ventana.
+ *
+ * Sin viñetas y con separador entre dias: la lectura es vertical -que dia me sirve- y despues
+ * horizontal -que hora dentro de ese dia-.
+ */
+.dias {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.dia {
+  padding: var(--esp-6) 0;
+  border-bottom: var(--borde-fino) solid var(--color-borde-sutil);
+}
+
+.dia:last-child {
+  border-bottom: none;
+}
+
+.dia__fecha {
+  font-size: var(--tipo-md);
+  font-weight: var(--peso-semi);
+  margin: 0 0 var(--esp-4);
+  text-transform: capitalize;
+}
+
+/*
+ * El motivo del dia sin turnos.
+ *
+ * Con barra lateral y no en gris claro: es informacion, no un descarte. El dia vacio es
+ * justamente el que necesita leerse, porque dice si hay algo que configurar.
+ */
+.dia__motivo {
+  margin: 0;
+  padding: var(--esp-4) var(--esp-5);
+  border-left: var(--borde-acento) solid var(--color-acento);
+  background: var(--color-superficie-sutil);
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-sm);
+}
+
+.slots {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp-4);
+  margin: 0;
+  padding: 0;
+}
+
+/*
+ * Un hueco de la grilla.
+ *
+ * Mismo tamaño libre o completo: el completo no se achica ni se desvanece, porque tiene que
+ * seguir leyendose como "a esta hora se atiende". Lo que cambia es el fondo y el rotulo.
+ */
+.slot {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--esp-1);
+  min-width: 8.5rem;
+  padding: var(--esp-4) var(--esp-5);
+  border: var(--borde-fino) solid var(--color-borde);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie);
+  color: var(--color-texto);
+  font: inherit;
+  text-align: left;
+}
+
+.slot__hora {
+  font-weight: var(--peso-semi);
+  font-size: var(--tipo-sm);
+}
+
+.slot__nota {
+  font-size: var(--tipo-2xs);
+  color: var(--color-texto-suave);
+}
+
+button.slot--libre {
+  cursor: pointer;
+}
+
+button.slot--libre:hover {
+  border-color: var(--color-acento);
+  background: var(--color-superficie-sutil);
+}
+
+button.slot--libre:focus-visible {
+  outline: var(--foco-grosor) solid var(--color-foco);
+  outline-offset: var(--foco-offset);
+}
+
+/*
+ * El slot lleno.
+ *
+ * El color no es lo unico que lo distingue: dice "Completo" con todas las letras, asi que sigue
+ * comunicando en escala de grises y para quien no distingue colores (WCAG 1.4.1).
+ */
+.slot--completo {
+  background: var(--color-superficie-atenuada);
+  border-style: dashed;
+  color: var(--color-texto-suave);
+}
+
+/* Sin permiso de reserva el hueco se ve, pero no invita a clickear. */
+.slot--solo-lectura {
+  background: var(--color-superficie-atenuada);
+}
+
+/* Las fichas candidatas del buscador de personas de la reserva. */
+.lista-personas {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--esp-4);
+  margin: var(--esp-5) 0 0;
+  padding: 0;
+}
+
+/*
+ * El bloque de conflicto de la reserva.
+ *
+ * Se destaca con borde propio porque es donde vive la accion que resuelve el problema, y esa
+ * accion es lo que separa un rechazo util de un callejon.
+ */
+.conflicto {
+  border-left: var(--borde-acento) solid var(--color-peligro);
+}

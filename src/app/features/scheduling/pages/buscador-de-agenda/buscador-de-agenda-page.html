@@ -1,0 +1,162 @@
+<h1>Agenda de turnos</h1>
+
+<p class="descripcion">
+  Los turnos disponibles de una oferta, dia por dia. Un turno es una <b>reserva</b> de agenda: no
+  dice que la atencion haya ocurrido, eso lo registra la sesion clinica.
+</p>
+
+<section class="tarjeta" aria-labelledby="titulo-busqueda-agenda">
+  <h2 id="titulo-busqueda-agenda">Que buscar</h2>
+
+  <div class="filtros">
+    <div class="campo">
+      <label for="agenda-oferta">Oferta</label>
+      <select
+        id="agenda-oferta"
+        name="agenda-oferta"
+        (change)="elegirOferta($any($event.target).value)"
+      >
+        <option value="">Elegi una oferta</option>
+        @for (oferta of ofertas(); track oferta.id) {
+          <option [value]="oferta.id">{{ oferta.nombreComercial }}</option>
+        }
+      </select>
+      <p class="ayuda">Solo las ofertas activas de esta sede se pueden agendar.</p>
+    </div>
+
+    <div class="campo">
+      <label for="agenda-profesional">Profesional</label>
+      <select
+        id="agenda-profesional"
+        name="agenda-profesional"
+        [disabled]="profesionales().length === 0"
+        (change)="elegirProfesional($any($event.target).value)"
+      >
+        <option value="">Todos los habilitados</option>
+        @for (profesional of profesionales(); track profesional.membershipId) {
+          <option [value]="profesional.membershipId">{{ profesional.nombre }}</option>
+        }
+      </select>
+    </div>
+
+    <div class="campo">
+      <label for="agenda-desde">Desde</label>
+      <input
+        id="agenda-desde"
+        name="agenda-desde"
+        type="date"
+        [value]="desde()"
+        (change)="cambiarDesde($any($event.target).value)"
+      />
+    </div>
+
+    <div class="campo">
+      <label for="agenda-hasta">Hasta (sin incluir)</label>
+      <input
+        id="agenda-hasta"
+        name="agenda-hasta"
+        type="date"
+        [value]="hasta()"
+        (change)="cambiarHasta($any($event.target).value)"
+        aria-describedby="agenda-hasta-ayuda"
+      />
+      <p class="ayuda" id="agenda-hasta-ayuda">
+        El ultimo dia no se incluye. La ventana se consulta de a 62 dias como maximo; si pedis mas,
+        la recortamos y te avisamos.
+      </p>
+    </div>
+  </div>
+</section>
+
+<div aria-live="polite">
+  @if (avisoDeRecorte(); as aviso) {
+    <p class="estado estado--vacio">{{ aviso }}</p>
+  }
+
+  @if (error(); as mensaje) {
+    <p class="estado estado--error">{{ mensaje }}</p>
+    @if (faltaContexto()) {
+      <p><a class="enlace" routerLink="/seleccionar-contexto">Elegir contexto de trabajo</a></p>
+    }
+  }
+
+  @if (cargando()) {
+    <p class="estado estado--cargando">Buscando turnos disponibles…</p>
+  }
+</div>
+
+@if (agenda(); as resultado) {
+  <section class="tarjeta" aria-labelledby="titulo-resultado-agenda">
+    <h2 id="titulo-resultado-agenda">{{ resultado.nombreComercial }}</h2>
+
+    <!--
+      La zona horaria se rotula y no se asume. Los instantes viajan en UTC y la sede puede estar
+      en otro huso que quien mira la pantalla: sin este rotulo, un error de huso se leeria como
+      horarios corridos y no como un error.
+    -->
+    <p class="ayuda">
+      Turnos de {{ duracion() }} minutos. Horarios en la zona de la sede:
+      <b>{{ timezone() }}</b>
+    </p>
+
+    @if (ventanaVacia()) {
+      <p class="estado estado--vacio">
+        Ningun dia de este rango tiene turnos disponibles. Abajo esta el motivo de cada dia.
+      </p>
+    }
+
+    <ol class="dias">
+      @for (dia of dias(); track dia.fecha) {
+        <li class="dia">
+          <h3 class="dia__fecha">{{ fechaEnPalabras(dia.fecha) }}</h3>
+
+          @if (diaSinSlots(dia)) {
+            <!--
+              El dia vacio NUNCA queda en blanco: viaja con su motivo y se muestra. Un salto de
+              fechas es indistinguible de un error del sistema, y un "no hay turnos" generico no
+              dice si hay algo que configurar.
+            -->
+            <p class="dia__motivo">{{ textoSinSlots(dia) }}</p>
+          } @else {
+            <ul class="slots">
+              @for (slot of dia.slots; track slot.desde) {
+                <li>
+                  @if (slotCompleto(slot)) {
+                    <!--
+                      El slot lleno se muestra igual, marcado. Esconderlo dejaria un hueco en la
+                      grilla, que el usuario lee como "no atiende a esa hora": otra afirmacion, y
+                      falsa.
+                    -->
+                    <span class="slot slot--completo">
+                      <span class="slot__hora">{{ rango(slot) }}</span>
+                      <span class="slot__nota">Completo</span>
+                    </span>
+                  } @else if (puedeReservar()) {
+                    <button type="button" class="slot slot--libre" (click)="reservar(dia, slot)">
+                      <span class="slot__hora">{{ rango(slot) }}</span>
+                      @if (textoDeCupo(slot); as cupo) {
+                        <span class="slot__nota">{{ cupo }}</span>
+                      }
+                    </button>
+                  } @else {
+                    <!--
+                      Sin `turno:manage` el hueco se muestra igual, sin ser accionable. Ocultarlo
+                      dejaria la grilla llena de agujeros para quien solo puede consultarla, que es
+                      el mismo malentendido que esconder el slot completo.
+                    -->
+                    <span class="slot slot--libre slot--solo-lectura">
+                      <span class="slot__hora">{{ rango(slot) }}</span>
+                      @if (textoDeCupo(slot); as cupo) {
+                        <span class="slot__nota">{{ cupo }}</span>
+                      }
+                    </span>
+                  }
+                </li>
+              }
+            </ul>
+          }
+        </li>
+      }
+    </ol>
+  </section>
+}
