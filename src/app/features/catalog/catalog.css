@@ -19,12 +19,12 @@
  * asi que sigue comunicando en escala de grises (WCAG 1.4.1).
  */
 .nota-alcance {
-  border-left: 4px solid #1b3a5c;
-  background: #f4f7fa;
+  border-left: var(--borde-acento) solid var(--color-acento);
+  background: var(--color-superficie-sutil);
 }
 
 .nota-alcance p {
-  margin: 0 0 0.5rem;
+  margin: 0 0 var(--esp-4);
 }
 
 .nota-alcance p:last-child {
@@ -39,8 +39,8 @@
  * Mismo caso que la observacion de un espacio en `resource.css`.
  */
 .tabla th[scope='row'] .ayuda {
-  font-weight: 400;
-  margin: 0.25rem 0 0;
+  font-weight: var(--peso-normal);
+  margin: var(--esp-2) 0 0;
 }
 
 /*
@@ -54,5 +54,5 @@
 .acciones .boton[aria-current='page'] {
   text-decoration: underline;
   text-underline-offset: 0.25rem;
-  font-weight: 600;
+  font-weight: var(--peso-semi);
 }

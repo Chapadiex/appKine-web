@@ -4,11 +4,12 @@
 
 /* Una pagina de una sola frase no necesita la separacion de una pagina con secciones. */
 .descripcion {
-  margin: 0 0 1.5rem;
+  margin: 0 0 var(--esp-8);
 }
 
 /* Azul, y no el azul casi negro del sistema: en una pagina sin nada mas que texto, el unico
-   enlace tiene que distinguirse del parrafo. Contraste 5.1:1 sobre blanco (WCAG 2.1 AA). */
+   enlace tiene que distinguirse del parrafo. `--color-acento-claro` da 5.2:1 en modo claro y
+   8.18:1 en oscuro (WCAG 2.1 AA). */
 .enlace {
-  color: #2f6fb2;
+  color: var(--color-acento-claro);
 }

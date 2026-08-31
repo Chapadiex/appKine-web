@@ -19,12 +19,12 @@
  * encabezado-, asi que sigue comunicando en escala de grises (WCAG 1.4.1).
  */
 .nota-clave {
-  border-left: 4px solid #1b3a5c;
-  background: #f4f7fa;
+  border-left: var(--borde-acento) solid var(--color-acento);
+  background: var(--color-superficie-sutil);
 }
 
 .nota-clave p {
-  margin: 0 0 0.5rem;
+  margin: 0 0 var(--esp-4);
 }
 
 .nota-clave p:last-child {
@@ -45,8 +45,8 @@
 .opcion-casilla {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  font-weight: 500;
+  gap: var(--esp-4);
+  font-weight: var(--peso-medio);
 }
 
 .opcion-casilla input {
@@ -64,13 +64,13 @@
  * una.
  */
 .limpiar {
-  margin: -0.25rem 0 0 1rem;
-  padding-left: 0.75rem;
-  border-left: 2px solid #d6dee6;
+  margin: -0.25rem 0 0 var(--esp-6);
+  padding-left: var(--esp-5);
+  border-left: var(--borde-medio) solid var(--color-borde);
 }
 
 .limpiar .ayuda {
-  margin-top: 0.25rem;
+  margin-top: var(--esp-2);
 }
 
 /*
@@ -81,8 +81,8 @@
  * Mismo caso que la observacion de un espacio en `resource.css`.
  */
 .tabla th[scope='row'] .ayuda {
-  font-weight: 400;
-  margin: 0.25rem 0 0;
+  font-weight: var(--peso-normal);
+  margin: var(--esp-2) 0 0;
 }
 
 /*
@@ -95,7 +95,7 @@
 .acciones .boton[aria-current='page'] {
   text-decoration: underline;
   text-underline-offset: 0.25rem;
-  font-weight: 600;
+  font-weight: var(--peso-semi);
 }
 
 /*
@@ -107,7 +107,7 @@
  * esta pantalla existe para no aplanar.
  */
 .fila--atenuada {
-  background: #fafbfc;
+  background: var(--color-superficie-atenuada);
 }
 
 /*
@@ -120,7 +120,7 @@
 .par-de-campos {
   display: flex;
   flex-wrap: wrap;
-  gap: 1rem;
+  gap: var(--esp-6);
   align-items: flex-start;
 }
 

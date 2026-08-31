@@ -19,12 +19,12 @@
  * escala de grises (WCAG 1.4.1).
  */
 .nota-servicio {
-  border-left: 4px solid #1b3a5c;
-  background: #f4f7fa;
+  border-left: var(--borde-acento) solid var(--color-acento);
+  background: var(--color-superficie-sutil);
 }
 
 .nota-servicio p {
-  margin: 0 0 0.5rem;
+  margin: 0 0 var(--esp-4);
 }
 
 .nota-servicio p:last-child {
@@ -42,8 +42,8 @@
  * El `th` sigue siendo `th`: lo que cambia es el peso del contenido secundario, no la semantica.
  */
 .tabla th .ayuda {
-  font-weight: 400;
-  margin: 0.25rem 0 0;
+  font-weight: var(--peso-normal);
+  margin: var(--esp-2) 0 0;
 }
 
 /* Datos apilados dentro de una celda: la vigencia son dos renglones, no un parrafo. */
@@ -51,8 +51,8 @@
   list-style: none;
   margin: 0;
   padding: 0;
-  font-size: 0.875rem;
-  color: #4a5a6a;
+  font-size: var(--tipo-sm);
+  color: var(--color-texto-suave);
 }
 
 /*
@@ -66,8 +66,8 @@
 .opcion-casilla {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  font-weight: 500;
+  gap: var(--esp-4);
+  font-weight: var(--peso-medio);
 }
 
 .opcion-casilla input {
@@ -85,7 +85,7 @@
 .ventana {
   display: flex;
   flex-wrap: wrap;
-  gap: 1rem;
+  gap: var(--esp-6);
   align-items: flex-start;
 }
 
@@ -104,18 +104,18 @@
 .semana {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
-  gap: 1rem;
+  gap: var(--esp-6);
 }
 
 .dia {
-  border: 1px solid #d5dde5;
-  border-radius: 6px;
-  padding: 0.75rem;
+  border: var(--borde-fino) solid var(--color-borde);
+  border-radius: var(--radio-md);
+  padding: var(--esp-5);
 }
 
 .dia__titulo {
-  margin: 0 0 0.5rem;
-  font-size: 1rem;
+  margin: 0 0 var(--esp-4);
+  font-size: var(--tipo-base);
 }
 
 /* "No atiende" es informacion, no ausencia: se muestra, no se esconde. */
@@ -124,9 +124,9 @@
 }
 
 .bloque {
-  border-top: 1px solid #e6ebf0;
-  padding-top: 0.5rem;
-  margin-top: 0.5rem;
+  border-top: var(--borde-fino) solid var(--color-borde-sutil);
+  padding-top: var(--esp-4);
+  margin-top: var(--esp-4);
 }
 
 .bloque:first-child {
@@ -137,8 +137,8 @@
 
 .bloque__horario {
   margin: 0;
-  font-weight: 600;
-  color: #1b2733;
+  font-weight: var(--peso-semi);
+  color: var(--color-texto-fuerte);
 }
 
 /*
@@ -149,9 +149,9 @@
  * seguir sirviendo en una captura en escala de grises.
  */
 .bloque--conflicto {
-  border-left: 4px solid #9b2226;
-  padding-left: 0.5rem;
-  background: #fdf3f3;
+  border-left: var(--borde-acento) solid var(--color-peligro);
+  padding-left: var(--esp-4);
+  background: var(--color-peligro-fondo);
 }
 
 /*
@@ -168,11 +168,11 @@
 }
 
 .excepcion {
-  border: 1px solid #d5dde5;
-  border-left: 4px solid #1b3a5c;
-  border-radius: 6px;
-  padding: 0.75rem;
-  margin-bottom: 0.75rem;
+  border: var(--borde-fino) solid var(--color-borde);
+  border-left: var(--borde-acento) solid var(--color-acento);
+  border-radius: var(--radio-md);
+  padding: var(--esp-5);
+  margin-bottom: var(--esp-5);
 }
 
 /*
@@ -180,22 +180,22 @@
  * cada fila dice "Apertura" o "Cierre" con todas las letras (WCAG 1.4.1).
  */
 .excepcion--apertura {
-  border-left-color: #1f6f43;
+  border-left-color: var(--color-exito);
 }
 
 .excepcion__titulo {
-  margin: 0 0 0.25rem;
-  font-weight: 600;
-  color: #1b2733;
+  margin: 0 0 var(--esp-2);
+  font-weight: var(--peso-semi);
+  color: var(--color-texto-fuerte);
 }
 
 .excepcion .ayuda {
-  margin: 0.25rem 0 0;
+  margin: var(--esp-2) 0 0;
 }
 
 /* La consecuencia de una apertura de sede: se lee dentro de la fila, no en un cartel aparte. */
 .excepcion__alerta {
-  color: #7a4b00;
+  color: var(--color-aviso);
 }
 
 /*
@@ -208,15 +208,15 @@
  * escala de grises.
  */
 .aviso-apertura {
-  border-left: 4px solid #7a4b00;
-  background: #fdf8f0;
-  padding: 0.75rem;
-  border-radius: 6px;
-  margin: 0.75rem 0;
+  border-left: var(--borde-acento) solid var(--color-aviso);
+  background: var(--color-aviso-fondo);
+  padding: var(--esp-5);
+  border-radius: var(--radio-md);
+  margin: var(--esp-5) 0;
 }
 
 .aviso-apertura p {
-  margin: 0 0 0.5rem;
+  margin: 0 0 var(--esp-4);
 }
 
 .aviso-apertura p:last-child {
@@ -231,11 +231,11 @@
  * afecto, que es un parrafo, no una celda.
  */
 .dia-efectivo {
-  border: 1px solid #d5dde5;
-  border-left: 4px solid #1f6f43;
-  border-radius: 6px;
-  padding: 0.75rem;
-  margin-bottom: 0.75rem;
+  border: var(--borde-fino) solid var(--color-borde);
+  border-left: var(--borde-acento) solid var(--color-exito);
+  border-radius: var(--radio-md);
+  padding: var(--esp-5);
+  margin-bottom: var(--esp-5);
 }
 
 /*
@@ -244,38 +244,38 @@
  * comunicando en escala de grises.
  */
 .dia-efectivo--vacio {
-  border-left-color: #7a4b00;
-  background: #fdf8f0;
+  border-left-color: var(--color-aviso);
+  background: var(--color-aviso-fondo);
 }
 
 .dia-efectivo__motivo {
   margin: 0;
-  font-weight: 600;
-  color: #7a4b00;
+  font-weight: var(--peso-semi);
+  color: var(--color-aviso);
 }
 
 /* El feriado se marca en el titulo del dia, atienda la sede o no: es el HECHO del calendario. */
 .marca-feriado {
   display: inline-block;
-  margin-left: 0.5rem;
+  margin-left: var(--esp-4);
   padding: 0.05rem 0.4rem;
-  border: 1px solid #7a4b00;
-  border-radius: 999px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: #7a4b00;
+  border: var(--borde-fino) solid var(--color-aviso);
+  border-radius: var(--radio-pastilla);
+  font-size: var(--tipo-2xs);
+  font-weight: var(--peso-semi);
+  color: var(--color-aviso);
 }
 
 .franjas {
   list-style: none;
-  margin: 0.5rem 0 0;
+  margin: var(--esp-4) 0 0;
   padding: 0;
 }
 
 .franja {
-  border-top: 1px solid #e6ebf0;
-  padding-top: 0.5rem;
-  margin-top: 0.5rem;
+  border-top: var(--borde-fino) solid var(--color-borde-sutil);
+  padding-top: var(--esp-4);
+  margin-top: var(--esp-4);
 }
 
 .franja:first-child {
@@ -285,7 +285,7 @@
 }
 
 .franja .ayuda {
-  margin: 0.25rem 0 0;
+  margin: var(--esp-2) 0 0;
 }
 
 /*
@@ -305,7 +305,7 @@ select:disabled,
 textarea:disabled {
   opacity: 0.6;
   cursor: not-allowed;
-  border: 1px solid #6b7a8a;
+  border: var(--borde-fino) solid var(--color-deshabilitado);
 }
 
 /*
@@ -318,7 +318,7 @@ textarea:disabled {
  */
 .excepcion__numero,
 .bloque__numero {
-  font-weight: 400;
-  font-size: 0.8125rem;
-  color: #4a5a6a;
+  font-weight: var(--peso-normal);
+  font-size: var(--tipo-xs);
+  color: var(--color-texto-suave);
 }

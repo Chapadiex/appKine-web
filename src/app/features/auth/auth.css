@@ -15,9 +15,9 @@
    Van en lista porque son alternativas equivalentes, no una secuencia. */
 .enlaces {
   list-style: none;
-  margin: 1.5rem 0 0;
+  margin: var(--esp-8) 0 0;
   padding: 0;
   display: grid;
-  gap: 0.5rem;
-  font-size: 0.9375rem;
+  gap: var(--esp-4);
+  font-size: var(--tipo-md);
 }

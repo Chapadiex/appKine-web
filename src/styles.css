@@ -1,7 +1,16 @@
-/* Estilos globales minimos. El sistema de diseno se define en su etapa. */
+/*
+ * Estilos globales minimos. El sistema de diseno -y su capa de tokens- vive en
+ * `src/design-system.css`, que se carga despues (ver `angular.json`). Que este archivo use
+ * `var()` de tokens declarados mas adelante no es un problema: las propiedades
+ * personalizadas se resuelven al calcular el valor, no al parsear.
+ *
+ * `color-scheme: light dark` es lo que hace que los controles nativos -selects, scrollbars,
+ * el calendario de un `input[type=date]`- sigan al modo oscuro. Sin esto la pagina se
+ * oscurece y los controles del navegador siguen blancos.
+ */
 
 :root {
-  color-scheme: light;
+  color-scheme: light dark;
 }
 
 * {
@@ -15,13 +24,8 @@ body {
 }
 
 body {
-  font-family:
-    system-ui,
-    -apple-system,
-    'Segoe UI',
-    Roboto,
-    sans-serif;
-  line-height: 1.5;
-  color: #10263f;
-  background: #fff;
+  font-family: var(--fuente-base);
+  line-height: var(--linea-base);
+  color: var(--color-texto);
+  background: var(--color-superficie);
 }

@@ -1,8 +1,9 @@
 /*
   Estilos del shell (AKINE-00.01).
 
-  Minimos y deliberadamente sin sistema de diseno: elegir libreria de componentes y tokens
-  visuales es una decision de producto que no corresponde a la etapa de baseline.
+  Los colores salen de la capa de tokens de `src/design-system.css`: la cabecera usa
+  `--color-marca-fondo`, que en modo oscuro NO se aclara -una barra celeste sobre una pagina
+  oscura es un faro-, a diferencia del fondo de los botones.
 
   Lo que si queda fijado son las garantias de accesibilidad WCAG 2.1 AA: foco visible,
   skip link operativo y contraste suficiente.
@@ -12,9 +13,9 @@
   position: absolute;
   left: -9999px;
   top: 0;
-  padding: 0.75rem 1rem;
-  background: #10263f;
-  color: #fff;
+  padding: var(--esp-5) var(--esp-6);
+  background: var(--color-marca-fondo);
+  color: var(--color-marca-texto);
   z-index: 100;
 }
 
@@ -25,29 +26,29 @@
 
 /* Foco visible en todo elemento interactivo. Nunca usar outline: none sin reemplazo. */
 :focus-visible {
-  outline: 3px solid #2f6fb2;
-  outline-offset: 2px;
+  outline: var(--foco-grosor) solid var(--color-acento-claro);
+  outline-offset: var(--foco-offset);
 }
 
 .cabecera {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
-  gap: 0.75rem;
-  padding: 1rem 1.5rem;
-  background: #10263f;
-  color: #fff;
+  gap: var(--esp-5);
+  padding: var(--esp-6) var(--esp-8);
+  background: var(--color-marca-fondo);
+  color: var(--color-marca-texto);
 }
 
 .marca {
-  font-size: 1.25rem;
-  font-weight: 700;
+  font-size: var(--tipo-xl);
+  font-weight: var(--peso-fuerte);
   letter-spacing: 0.08em;
 }
 
 .subtitulo {
-  font-size: 0.875rem;
-  color: #c8d8ea;
+  font-size: var(--tipo-sm);
+  color: var(--color-marca-texto-suave);
 }
 
 /*
@@ -57,7 +58,7 @@
 .contenido {
   max-width: 46rem;
   margin: 0 auto;
-  padding: 2rem 1.5rem;
+  padding: var(--esp-9) var(--esp-8);
 }
 
 /*

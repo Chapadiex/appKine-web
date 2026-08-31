@@ -8,12 +8,12 @@
 /* Los valores del diagnostico son identificadores y versiones: en monoespaciada se comparan
    de un vistazo contra lo que devuelve el backend. */
 .detalle dd {
-  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+  font-family: var(--fuente-mono);
 }
 
 code {
-  padding: 0.125rem 0.375rem;
-  background: #eef2f6;
-  border-radius: 4px;
+  padding: var(--esp-1) var(--esp-3);
+  background: var(--color-superficie-codigo);
+  border-radius: var(--radio-sm);
   font-size: 0.875em;
 }
