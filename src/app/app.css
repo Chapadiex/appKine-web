@@ -30,14 +30,26 @@
   outline-offset: var(--foco-offset);
 }
 
+/*
+ * La cabecera apila marca y navegacion en columna. Antes eran dos `span` en fila; con el menu
+ * adentro, una sola fila obliga a elegir entre comprimir los enlaces o empujar la marca fuera
+ * de pantalla en cuanto el viewport se angosta.
+ */
 .cabecera {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-4);
+  padding: var(--esp-6) var(--esp-8);
+  background: var(--color-marca-fondo);
+  color: var(--color-marca-texto);
+}
+
+/* La marca y su subtitulo siguen en fila, y envuelven cuando no entran. */
+.cabecera__marca {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
   gap: var(--esp-5);
-  padding: var(--esp-6) var(--esp-8);
-  background: var(--color-marca-fondo);
-  color: var(--color-marca-texto);
 }
 
 .marca {

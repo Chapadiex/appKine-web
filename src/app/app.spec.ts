@@ -1,9 +1,24 @@
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
+import { provideHttpClient } from '@angular/common/http';
 import { Router, provideRouter } from '@angular/router';
 import { Component } from '@angular/core';
 
 import { ANCHO_AMPLIO, DATA_ANCHO } from './core/models/ancho-de-contenido';
+import { SessionService } from './core/services/session.service';
+import { TenantContextStore } from './core/services/tenant-context.store';
 import { App } from './app';
+import { provideApi } from './api/generated/provide-api';
+
+/**
+ * El shell monta la navegacion principal, que lee la sesion y los permisos efectivos. Sin
+ * estos proveedores el layout no se puede instanciar.
+ *
+ * <p>No hace falta stubear la sesion: sin token, `estado()` es `anonimo` y la navegacion no
+ * dibuja nada, que es exactamente el escenario donde estas pruebas del skip link tienen que
+ * seguir valiendo.
+ */
+const PROVIDERS = [provideHttpClient(), provideHttpClientTesting(), provideApi('')];
 
 @Component({ template: 'pagina de prueba' })
 class PaginaDePrueba {}
@@ -18,7 +33,7 @@ describe('App (layout)', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [App],
-      providers: [provideRouter([])],
+      providers: [...PROVIDERS, provideRouter([])],
     }).compileComponents();
   });
 
@@ -43,6 +58,7 @@ describe('App (layout)', () => {
     await TestBed.configureTestingModule({
       imports: [App],
       providers: [
+        ...PROVIDERS,
         provideRouter([
           { path: 'tabla', component: PaginaDePrueba, data: { [DATA_ANCHO]: ANCHO_AMPLIO } },
           { path: 'prosa', component: PaginaDePrueba },
@@ -90,13 +106,36 @@ describe('App (layout)', () => {
     expect(main?.getAttribute('tabindex')).toBe('-1');
   });
 
-  it('el skip link es el primer elemento enfocable del documento', () => {
+  /**
+   * Se monta CON contexto a proposito: la navegacion principal agrega siete enlaces a la
+   * cabecera, y es justo el caso donde el skip link podria dejar de ser el primero. Sin
+   * contexto el menu no dibuja nada y esta prueba no probaria lo que dice.
+   */
+  it('el skip link sigue siendo el primer elemento enfocable con la navegacion montada', async () => {
+    TestBed.resetTestingModule();
+    await TestBed.configureTestingModule({
+      imports: [App],
+      providers: [
+        ...PROVIDERS,
+        provideRouter([]),
+        { provide: SessionService, useValue: { estado: () => 'activa' } },
+      ],
+    }).compileComponents();
+
+    TestBed.inject(TenantContextStore).select({
+      organizationId: 1,
+      organizationName: 'Centro Kine',
+      consultorioId: 2,
+      consultorioName: 'Sede Centro',
+    });
+
     const fixture = TestBed.createComponent(App);
     fixture.detectChanges();
 
     const html = fixture.nativeElement as HTMLElement;
     const enfocables = html.querySelectorAll('a[href], button, input, select, textarea');
 
+    expect(enfocables.length).toBeGreaterThan(1);
     expect(enfocables.item(0)?.classList.contains('skip-link')).toBe(true);
   });
 });

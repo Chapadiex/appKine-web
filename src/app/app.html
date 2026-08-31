@@ -7,8 +7,18 @@
 <a class="skip-link" href="#contenido">Saltar al contenido principal</a>
 
 <header class="cabecera">
-  <span class="marca">AKINE</span>
-  <span class="subtitulo">Gestion de centros de kinesiologia y rehabilitacion</span>
+  <div class="cabecera__marca">
+    <span class="marca">AKINE</span>
+    <span class="subtitulo">Gestion de centros de kinesiologia y rehabilitacion</span>
+  </div>
+
+  <!--
+    La navegacion va DESPUES del skip link y dentro de la cabecera: el skip link tiene que
+    seguir siendo el primer elemento enfocable del documento (ADR-0005), y el salto al
+    contenido existe justamente para que el teclado no tenga que recorrer el menu entero en
+    cada pantalla.
+  -->
+  <app-navegacion-principal />
 </header>
 
 <main

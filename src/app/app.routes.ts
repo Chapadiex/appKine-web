@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 
+import { RUTA_INICIO } from './layout/navegacion-principal/secciones';
 import { SEGMENTO_HORARIOS } from './features/resource/models/rutas-de-horarios';
 import { authGuard } from './core/guards/auth.guard';
 import { contextGuard } from './core/guards/context.guard';
@@ -23,8 +24,29 @@ import { contextGuard } from './core/guards/context.guard';
  * el backend, que rechaza igual si se llega por URL directa.
  */
 export const routes: Routes = [
+  // La raiz manda a la Agenda, que es la pantalla del dia.
+  //
+  // Hasta esta tarea `''` montaba el baseline tecnico —version del backend y del contrato—,
+  // que es una pantalla de diagnostico y no un inicio: quien abria AKINE aterrizaba en un
+  // informe de conectividad y desde ahi no habia enlace a ningun lado.
+  //
+  // Se redirige en vez de construir un tablero: un inicio de verdad -turnos de hoy, pendientes-
+  // es una pantalla con datos propios y endpoints propios, y esta tarea es de navegacion. La
+  // agenda ya es esa pantalla para recepcion, que es quien mas abre el producto.
+  //
+  // Los guards del destino resuelven los dos casos borde sin que esta ruta sepa nada: un
+  // anonimo cae en el login y una sesion sin contexto, en el selector.
   {
     path: '',
+    pathMatch: 'full',
+    redirectTo: RUTA_INICIO,
+  },
+
+  // El baseline tecnico no se borra, se muda a su propia URL. Sigue siendo la unica pantalla
+  // que prueba de punta a punta que el cliente generado, el proxy y el backend se hablan, y el
+  // smoke E2E la usa para eso.
+  {
+    path: 'estado',
     loadComponent: () => import('./features/platform/pages/estado/estado').then((m) => m.Estado),
     title: 'AKINE - Baseline tecnico',
   },

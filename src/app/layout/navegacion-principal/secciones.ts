@@ -1,0 +1,80 @@
+import { RUTA_HORARIOS } from '../../features/resource/models/rutas-de-horarios';
+import { PERMISO_COLABORADOR_READ } from '../../core/models/permisos';
+
+/** Una entrada de la navegacion principal. */
+export interface Seccion {
+  /** Texto del enlace. Es el nombre accesible: tiene que decir a donde lleva. */
+  readonly etiqueta: string;
+
+  /** URL absoluta, tal como la monta `app.routes.ts`. */
+  readonly ruta: string;
+
+  /**
+   * Permisos que habilitan la seccion. Con varios alcanza tener <b>alguno</b> (OR).
+   *
+   * <p>`undefined` significa "la autoriza la pertenencia": el backend deja entrar a
+   * cualquier miembro vigente del contexto y no hay permiso que preguntar. <b>No</b>
+   * significa "todavia no lo averigue".
+   */
+  readonly permisos?: readonly string[];
+}
+
+/**
+ * Las secciones de AKINE, en el orden en que se muestran (AKINE-navegacion).
+ *
+ * <h2>De donde sale el permiso de cada una</h2>
+ *
+ * <p>De ningun lado que no sea el archivo de rutas de la propia feature. Para cada seccion se
+ * miro que `canActivate` lleva la ruta <b>que este enlace abre</b> —no una hermana ni una
+ * hija—, y el permiso es el que ese `permissionGuard` exige. Adivinarlo tiene las dos formas
+ * de estar mal: de mas, y el enlace lleva a un `403`; de menos, y la seccion desaparece para
+ * quien si podia entrar.
+ *
+ * <ul>
+ *   <li><b>Agenda</b> — `scheduling.routes.ts`: solo `contextGuard`. Consultar la agenda lo
+ *       hace cualquiera que atienda; `turno:manage` gobierna el boton de reservar y eso lo
+ *       resuelve la pantalla, no este menu.</li>
+ *   <li><b>Pacientes</b> — `person.routes.ts`: solo `contextGuard`. La lectura del padron se
+ *       autoriza por pertenencia y `paciente:read` no existe; `paciente:manage` gobierna el
+ *       alta, que tambien es de la pantalla.</li>
+ *   <li><b>Espacios</b> — `resource.routes.ts`: el listado NO lleva `permissionGuard`
+ *       (`GET .../espacios` exige solo ser miembro). El alta si, con
+ *       `consultorio:manage`.</li>
+ *   <li><b>Horarios</b> — `horarios.routes.ts`: las <b>cuatro</b> rutas llevan
+ *       `permissionGuard(PERMISO_COLABORADOR_READ)`, la ruta vacia incluida. Es la unica
+ *       seccion de esta lista con permiso, y por eso es la unica con `permisos`.</li>
+ *   <li><b>Catalogo</b> — `catalog.routes.ts`: ninguna lleva `permissionGuard`; consultar que
+ *       practicas existen es lo que necesita cualquiera que registre una sesion.</li>
+ *   <li><b>Servicios</b> — `offering.routes.ts`: ninguna lleva `permissionGuard`.</li>
+ *   <li><b>Organizacion</b> — `organization.routes.ts`: la ruta vacia no lleva
+ *       `permissionGuard`. Las hijas si —`colaborador:read`, `colaborador:manage`,
+ *       `consultorio:manage`, `auditoria:read`—, pero este enlace no abre ninguna de ellas.
+ *       Esconder la seccion entera por un permiso que solo hace falta tres clicks mas
+ *       adelante le sacaria a un profesional la pantalla de su propia organizacion, que si
+ *       puede ver.</li>
+ * </ul>
+ *
+ * <p><b>Esconder no es autorizar.</b> Esta lista es exclusivamente UX: evita ofrecer un enlace
+ * que iba a terminar en la pantalla de "no tenes permiso". Quien decide es el backend, que
+ * rechaza igual a quien llegue por URL directa.
+ *
+ * <p>Vive en `layout/` y no en `shared/`: sabe que es un Turno y que es un Paciente, que es
+ * justamente lo que `shared/` no puede saber (AGENT.md 4).
+ */
+export const SECCIONES: readonly Seccion[] = [
+  { etiqueta: 'Agenda', ruta: '/agenda' },
+  { etiqueta: 'Pacientes', ruta: '/pacientes' },
+  { etiqueta: 'Espacios', ruta: '/espacios' },
+  { etiqueta: 'Horarios', ruta: RUTA_HORARIOS, permisos: [PERMISO_COLABORADOR_READ] },
+  { etiqueta: 'Catalogo', ruta: '/catalogo' },
+  { etiqueta: 'Servicios', ruta: '/servicios' },
+  { etiqueta: 'Organizacion', ruta: '/organizacion' },
+];
+
+/**
+ * Seccion a la que apunta la ruta vacia.
+ *
+ * <p>La usa `app.routes.ts` para redirigir `/` y esta escrita una sola vez para que el dia que
+ * la home cambie, el `redirectTo` y esta lista no puedan discrepar.
+ */
+export const RUTA_INICIO = '/agenda';

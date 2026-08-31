@@ -78,6 +78,14 @@
   --color-marca-fondo: #10263f;
   --color-marca-texto: #fff;
   --color-marca-texto-suave: #c8d8ea;
+  /*
+   * Superficie de un item sobre la barra de marca -hover y seccion actual de la navegacion-.
+   * Es un tono de la propia barra y NO `--color-superficie`: esa es la de la pagina, y usarla
+   * aca pintaria un recuadro blanco sobre la barra oscura.
+   */
+  --color-marca-superficie-activa: #1b3a5c;
+  /* Marcador de la seccion actual. Claro a proposito: tiene que verse sobre la barra oscura. */
+  --color-marca-borde: #7fb6ea;
   --color-acento: #1b3a5c;
   --color-acento-claro: #2f6fb2;
   --color-accion-fondo: #10263f;
@@ -177,6 +185,9 @@
     --color-marca-fondo: #17242f;
     --color-marca-texto: #e6edf3;
     --color-marca-texto-suave: #b9cde0;
+    /* La barra ya es oscura: el item activo se separa ACLARANDO, no oscureciendo. */
+    --color-marca-superficie-activa: #22313f;
+    --color-marca-borde: #7fb6ea;
     --color-acento: #4f9ae0;
     --color-acento-claro: #7fb6ea;
     --color-accion-fondo: #4f9ae0;

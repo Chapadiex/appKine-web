@@ -1,0 +1,100 @@
+/*
+  Estilos de la navegacion principal.
+
+  Vive sobre la barra de marca, asi que todos los colores salen de los tokens `--color-marca-*`
+  de `src/design-system.css`. Ni un literal: la barra NO se aclara en modo oscuro -una franja
+  celeste sobre una pagina oscura es un faro- y un `#rrggbb` suelto se quedaria en el modo en
+  el que se escribio.
+*/
+
+/* Sin esto el host es `inline` y su hijo `flex` no llega al ancho de la cabecera. */
+:host {
+  display: block;
+}
+
+/*
+  La barra ocupa el ancho completo de la cabecera y separa navegacion de contexto.
+  `wrap` a proposito: en pantalla angosta el indicador de contexto baja debajo de los enlaces
+  en lugar de comprimirlos.
+*/
+.barra {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--esp-4) var(--esp-6);
+  width: 100%;
+}
+
+.nav__lista {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--esp-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/*
+  Area de toque de 44 px de alto contando el padding: los profesionales usan tablet y un
+  enlace de 20 px no se acierta con el dedo.
+*/
+.nav__enlace {
+  display: inline-block;
+  padding: var(--esp-4) var(--esp-5);
+  border-bottom: var(--borde-medio) solid transparent;
+  border-radius: var(--radio-sm) var(--radio-sm) 0 0;
+  color: var(--color-marca-texto-suave);
+  font-size: var(--tipo-sm);
+  font-weight: var(--peso-medio);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.nav__enlace:hover {
+  background: var(--color-marca-superficie-activa);
+  color: var(--color-marca-texto);
+}
+
+/*
+  La seccion actual se marca de DOS formas ademas del color: subrayado grueso y peso de
+  fuente. Solo con color, un usuario con vision de color reducida no distingue donde esta
+  (WCAG 1.4.1). El `aria-current` de la plantilla cubre al lector de pantalla.
+*/
+.nav__enlace--actual {
+  background: var(--color-marca-superficie-activa);
+  border-bottom-color: var(--color-marca-borde);
+  color: var(--color-marca-texto);
+  font-weight: var(--peso-semi);
+}
+
+/* Indicador del contexto activo. */
+.contexto {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--esp-2) var(--esp-4);
+  margin: 0;
+  font-size: var(--tipo-xs);
+  color: var(--color-marca-texto-suave);
+}
+
+.contexto__valor {
+  color: var(--color-marca-texto);
+  font-weight: var(--peso-medio);
+}
+
+.contexto__sede {
+  color: var(--color-marca-texto-suave);
+  font-weight: var(--peso-normal);
+}
+
+/*
+  Subrayado permanente y no solo en hover: es el unico enlace de la barra que no esta en la
+  lista de secciones, y sin subrayado se lee como texto muerto.
+*/
+.contexto__cambiar {
+  color: var(--color-marca-texto);
+  text-decoration: underline;
+}

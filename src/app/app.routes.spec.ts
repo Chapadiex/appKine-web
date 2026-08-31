@@ -6,6 +6,7 @@ import { ContextSelectorPage } from './features/organization/pages/context-selec
 import { Estado } from './features/platform/pages/estado/estado';
 import { NotFound } from './shared/pages/not-found/not-found';
 import { SinPermiso } from './shared/pages/sin-permiso/sin-permiso';
+import { RUTA_INICIO } from './layout/navegacion-principal/secciones';
 import { RUTA_SELECTOR_CONTEXTO, RUTA_SIN_PERMISO } from './core/models/rutas';
 import { SessionService } from './core/services/session.service';
 import { routes } from './app.routes';
@@ -39,8 +40,19 @@ describe('Rutas de la raiz de la app', () => {
     router = TestBed.inject(Router);
   });
 
-  it('la raiz resuelve al baseline tecnico', async () => {
-    expect(await componenteDe('/')).toBe(Estado);
+  /**
+   * La raiz ya no es el baseline tecnico: redirige al inicio del producto. Se comprueba la
+   * URL final y no el componente, porque lo que este test pinea es el destino de la
+   * redireccion —el componente lo pinea el spec de la feature que lo monta—.
+   */
+  it('la raiz redirige al inicio del producto', async () => {
+    await router.navigateByUrl('/');
+
+    expect(router.url).toBe(RUTA_INICIO);
+  });
+
+  it('el baseline tecnico sigue alcanzable en su propia URL', async () => {
+    expect(await componenteDe('/estado')).toBe(Estado);
   });
 
   it('el selector de contexto resuelve a su pantalla', async () => {
@@ -52,7 +64,7 @@ describe('Rutas de la raiz de la app', () => {
   });
 
   it('ninguna de las tres cae en el comodin', async () => {
-    for (const url of ['/', RUTA_SELECTOR_CONTEXTO, RUTA_SIN_PERMISO]) {
+    for (const url of ['/estado', RUTA_SELECTOR_CONTEXTO, RUTA_SIN_PERMISO]) {
       expect(await componenteDe(url)).not.toBe(NotFound);
     }
   });

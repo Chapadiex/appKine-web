@@ -1,0 +1,53 @@
+<!--
+  Navegacion principal. Va dentro del `header` del layout raiz, que ya es el landmark
+  `banner`: un `nav` anidado ahi sigue siendo un landmark propio y axe lo exige nombrado.
+-->
+@if (hayContexto()) {
+  <div class="barra">
+    <nav class="nav" aria-label="Secciones de AKINE">
+      <ul class="nav__lista">
+        @for (seccion of secciones(); track seccion.ruta) {
+          <li>
+            <!--
+              `aria-current="page"` y no solo la clase: el color del subrayado no existe para
+              un lector de pantalla. `routerLinkActive` marca por prefijo -su defecto-, asi que
+              "Agenda" sigue marcada dentro de `/agenda/ofertas/1/reservar`.
+            -->
+            <a
+              class="nav__enlace"
+              [routerLink]="seccion.ruta"
+              routerLinkActive="nav__enlace--actual"
+              #activo="routerLinkActive"
+              [attr.aria-current]="activo.isActive ? 'page' : null"
+              >{{ seccion.etiqueta }}</a
+            >
+          </li>
+        }
+      </ul>
+    </nav>
+
+    <!--
+      Indicador del contexto activo. `p` y no `nav`: es un dato, no un grupo de enlaces, y el
+      unico enlace que tiene ya es el de cambiarlo.
+    -->
+    @if (contexto(); as activo) {
+      <p class="contexto">
+        <span class="contexto__valor">
+          {{ activo.organizationName }}
+          @if (activo.consultorioName) {
+            <span class="contexto__sede">· {{ activo.consultorioName }}</span>
+          }
+        </span>
+        <a class="contexto__cambiar" [routerLink]="rutaSelector">Cambiar</a>
+      </p>
+    }
+  </div>
+} @else if (faltaContexto()) {
+  <!--
+    Autenticado sin contexto: con un token `pre_context` ninguna seccion responde, asi que el
+    unico enlace util es el que resuelve eso.
+  -->
+  <p class="contexto">
+    <a class="contexto__cambiar" [routerLink]="rutaSelector">Elegi donde vas a trabajar</a>
+  </p>
+}

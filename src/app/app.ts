@@ -10,12 +10,18 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { filter, map, startWith } from 'rxjs';
 
 import { AnchoDeContenido, DATA_ANCHO } from './core/models/ancho-de-contenido';
+import { NavegacionPrincipal } from './layout/navegacion-principal/navegacion-principal';
 
 /**
  * Layout raiz de AKINE (AKINE-00.02).
  *
- * <p>Solo estructura: skip link, cabecera y el landmark `main` donde el router monta cada
- * pagina. <b>No contiene logica de pantalla</b> —eso vive en las paginas de cada feature—.
+ * <p>Solo estructura: skip link, cabecera con la navegacion principal y el landmark `main`
+ * donde el router monta cada pagina. <b>No contiene logica de pantalla</b> —eso vive en las
+ * paginas de cada feature—.
+ *
+ * <p>La navegacion es un componente aparte ({@link NavegacionPrincipal}) y no plantilla suelta
+ * aca: decide que mostrar leyendo la sesion, el contexto y los permisos efectivos, y meter esa
+ * logica en el shell lo convertiria en la pantalla que este comentario dice que no es.
  *
  * <p>Aca viven las garantias de accesibilidad que toda pantalla hereda: el skip link como
  * primer elemento enfocable y los landmarks semanticos (ADR-0005).
@@ -30,7 +36,7 @@ import { AnchoDeContenido, DATA_ANCHO } from './core/models/ancho-de-contenido';
  */
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet],
+  imports: [NavegacionPrincipal, RouterOutlet],
   templateUrl: './app.html',
   styleUrl: './app.css',
 })

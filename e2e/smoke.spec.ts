@@ -6,12 +6,16 @@ import { expect, test } from '@playwright/test';
  * Prueba lo unico que existe en esta etapa: que el stack completo se comunica de punta a
  * punta. No hay pantallas funcionales que ejercitar todavia.
  *
+ * <p>Apunta a `/estado` y no a `/`: desde la etapa de navegacion la raiz redirige a la Agenda,
+ * que exige sesion y contexto. El baseline tecnico se mudo a su propia URL y sigue siendo la
+ * unica pantalla anonima que ejerce la cadena completa hasta MySQL.
+ *
  * <p><b>Requiere el backend levantado</b> en http://localhost:8080 con su base.
  * Ver `playwright.config.ts`.
  */
 test.describe('Baseline AKINE-00.01', () => {
   test('el shell carga y se conecta al backend a traves del proxy', async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/estado');
 
     await expect(page.getByRole('heading', { name: 'Baseline tecnico', level: 1 })).toBeVisible();
 
@@ -23,7 +27,7 @@ test.describe('Baseline AKINE-00.01', () => {
   test('el frontend consume la misma version de contrato que publica el backend', async ({
     page,
   }) => {
-    await page.goto('/');
+    await page.goto('/estado');
     await expect(page.getByText('Conectado')).toBeVisible();
 
     const publicado = await page.getByRole('definition').nth(2).textContent();
@@ -33,7 +37,7 @@ test.describe('Baseline AKINE-00.01', () => {
   });
 
   test('el skip link lleva al contenido principal con el teclado', async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/estado');
 
     // Anclar el foco al inicio del documento ANTES de tabular.
     //
@@ -87,12 +91,15 @@ test.describe('Estructura de rutas (AKINE-00.02)', () => {
     await expect(page.getByRole('alert')).toBeVisible();
 
     // Y ofrece una salida: un cartel sin accion deja al usuario sin nada que hacer.
+    // 'Volver al inicio' apunta a `/`, que ahora redirige a la Agenda; sin sesion eso termina
+    // en el login. Lo que este test pinea es que la salida EXISTE y lleva a algun lado, no a
+    // cual: el destino de la raiz lo pinea `app.routes.spec.ts`.
     await page.getByRole('link', { name: 'Volver al inicio' }).click();
-    await expect(page.getByRole('heading', { name: 'Baseline tecnico', level: 1 })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1 })).not.toHaveText('Pagina no encontrada');
   });
 
   test('el layout persiste al cambiar de ruta', async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/estado');
     await expect(page.getByRole('banner')).toBeVisible();
 
     await page.goto('/no-existe-esta-ruta');
