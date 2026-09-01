@@ -53,9 +53,17 @@ export class BillingApi {
     return this.personas.verPersona({ personaId });
   }
 
-  /** La cuenta corriente del paciente, de la mas reciente a la mas vieja. */
+  /**
+   * La cuenta corriente del paciente, de la mas reciente a la mas vieja.
+   *
+   * <p><b>`deLaPersona1` con el `1` pegado es el nombre que genera el cliente</b>, no un typo. El
+   * contrato 0.21.0 tiene dos operaciones distintas llamadas `deLaPersona` —una en Obligaciones y
+   * otra en otro tag— y el generador desambigua sufijando la segunda. Es fragil: si el backend
+   * agrega, saca o renombra la otra, este numero se mueve y esta linea deja de compilar. La
+   * solucion real es un `operationId` unico del lado del contrato.
+   */
   deLaPersona(consultorioId: number, personaId: number): Observable<readonly Obligacion[]> {
-    return this.api.deLaPersona({ consultorioId, personaId });
+    return this.api.deLaPersona1({ consultorioId, personaId });
   }
 
   /**
