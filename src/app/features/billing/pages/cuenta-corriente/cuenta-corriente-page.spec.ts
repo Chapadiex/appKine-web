@@ -8,6 +8,9 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 
 import { CuentaCorrientePage } from './cuenta-corriente-page';
+import { PERMISO_COBRO_REGISTER } from '../../../../core/models/permisos';
+import { PermissionsStore } from '../../../../core/services/permissions.store';
+import { RUTA_PERMISOS_EFECTIVOS } from '../../../../core/testing/rutas-api';
 import { TIMEOUT_AXE, esperarSinViolaciones } from '../../../../core/testing/axe';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { errorInterceptor } from '../../../../core/interceptors/error.interceptor';
@@ -54,6 +57,7 @@ const PENDIENTE = {
 describe('CuentaCorrientePage', () => {
   let httpMock: HttpTestingController;
   let tenantContext: TenantContextStore;
+  let permisos: PermissionsStore;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
@@ -68,6 +72,7 @@ describe('CuentaCorrientePage', () => {
 
     httpMock = TestBed.inject(HttpTestingController);
     tenantContext = TestBed.inject(TenantContextStore);
+    permisos = TestBed.inject(PermissionsStore);
   });
 
   afterEach(() => {
@@ -125,6 +130,11 @@ describe('CuentaCorrientePage', () => {
       consultorioId: CONSULTORIO,
       consultorioName: 'Sede Centro',
     });
+
+    // Sin `cobro:register` la directiva esconde el enlace de cobrar: quien no puede cobrar no ve
+    // el boton, y el 403 de la lectura se explica igual.
+    permisos.cargar().subscribe();
+    httpMock.expectOne(RUTA_PERMISOS_EFECTIVOS).flush({ permissions: [] });
 
     const fixture = TestBed.createComponent(CuentaCorrientePage);
     fixture.componentRef.setInput('personaId', String(PERSONA));
@@ -275,6 +285,11 @@ describe('CuentaCorrientePage', () => {
       consultorioId: CONSULTORIO,
       consultorioName: 'Sede Centro',
     });
+
+    // El enlace a "Registrar un cobro" va detras de `*akinePermiso`. Se siembra el store antes de
+    // montar para que la directiva no salga a pedir los permisos por su cuenta.
+    permisos.cargar().subscribe();
+    httpMock.expectOne(RUTA_PERMISOS_EFECTIVOS).flush({ permissions: [PERMISO_COBRO_REGISTER] });
 
     const fixture = TestBed.createComponent(CuentaCorrientePage);
     fixture.componentRef.setInput('personaId', String(PERSONA));

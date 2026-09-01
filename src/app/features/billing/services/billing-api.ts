@@ -1,10 +1,13 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
+import { Cobro } from '../../../api/generated/model/cobro';
+import { CobrosService } from '../../../api/generated/api/cobros.service';
 import { Obligacion } from '../../../api/generated/model/obligacion';
 import { ObligacionesService } from '../../../api/generated/api/obligaciones.service';
 import { PersonaResponse } from '../../../api/generated/model/persona-response';
 import { PersonasService } from '../../../api/generated/api/personas.service';
+import { RegistrarCobro } from '../../../api/generated/model/registrar-cobro';
 
 /**
  * Unico punto de la feature `billing` que toca el cliente generado (M18, AKINE-07.01).
@@ -20,13 +23,21 @@ import { PersonasService } from '../../../api/generated/api/personas.service';
  * obligaria al administrativo a sumar de memoria. La pantalla no puede presentarla como "la deuda
  * de esta sede" — seria falso.
  *
+ * <h2>Obligacion, Cobro y Caja siguen siendo tres cosas (regla maestra 5)</h2>
+ *
+ * <p>Desde AKINE-07.02 esta fachada cubre las dos primeras, y <b>los metodos no se mezclan</b>:
+ * `deLaPersona` devuelve deuda y `cobrosDeLaPersona` devuelve dinero recibido. No hay ningun
+ * metodo que devuelva "el estado de cuenta" fusionando las dos, porque no es una fusion: una
+ * deuda y un cobro no son el mismo hecho ni se anulan entre si en una lista.
+ *
+ * <p><b>La Caja no esta y no puede estarla.</b> Es M20 / AKINE-07.03. Sin ella tampoco hay
+ * anticipos ni anulacion de cobro: un anticipo sin caja es plata que entro y que ningun arqueo
+ * puede encontrar, y un reintegro saca dinero de una caja que no existe. El contrato no publica
+ * esos endpoints y esta clase no los inventa.
+ *
  * <h2>Lo que esta fachada NO tiene</h2>
  *
- * <p><b>No hay cobrar.</b> AKINE-07.02 es otra etapa y el contrato todavia no publica el
- * endpoint. Obligacion, Cobro y Caja son tres cosas distintas (regla maestra 5) y esta capa cubre
- * la primera.
- *
- * <p><b>Tampoco hay crear una obligacion.</b> No es una omision: la deuda se <b>deriva</b> del
+ * <p><b>No hay crear una obligacion.</b> No es una omision: la deuda se <b>deriva</b> del
  * cierre de la sesion, del lado del backend, y no se carga a mano. Un metodo de alta aca abriria
  * la puerta a una cuenta corriente sin prestacion que la justifique.
  *
@@ -36,6 +47,7 @@ import { PersonasService } from '../../../api/generated/api/personas.service';
 @Injectable({ providedIn: 'root' })
 export class BillingApi {
   private readonly api = inject(ObligacionesService);
+  private readonly cobros = inject(CobrosService);
   private readonly personas = inject(PersonasService);
 
   /**
@@ -56,11 +68,16 @@ export class BillingApi {
   /**
    * La cuenta corriente del paciente, de la mas reciente a la mas vieja.
    *
-   * <p><b>`deLaPersona1` con el `1` pegado es el nombre que genera el cliente</b>, no un typo. El
-   * contrato 0.21.0 tiene dos operaciones distintas llamadas `deLaPersona` —una en Obligaciones y
-   * otra en otro tag— y el generador desambigua sufijando la segunda. Es fragil: si el backend
-   * agrega, saca o renombra la otra, este numero se mueve y esta linea deja de compilar. La
-   * solucion real es un `operationId` unico del lado del contrato.
+   * <p><b>El metodo generado se llama `deLaPersona1` y ese `1` no es un capricho del cliente.</b>
+   * `GET /obligaciones` y `GET /cobros` declaran el <b>mismo</b> `operationId` —`deLaPersona`— en
+   * el contrato, y el generador desambigua sufijando el segundo que encuentra. Lo mismo pasa con
+   * `ver`/`ver1`/`ver_2`. Es un defecto del YAML, no del generador: los `operationId` son
+   * identificadores unicos por documento y estos no lo son.
+   *
+   * <p>Se consume tal cual sale del generador porque el cliente no se edita a mano. Lo que hay que
+   * saber es la consecuencia: <b>el numero se mueve solo</b> cuando el backend agrega otra
+   * operacion homonima, y ese dia esta linea deja de compilar en un lugar que no tiene nada que
+   * ver con el cambio. Arreglarlo de verdad es renombrar los `operationId` en el backend.
    */
   deLaPersona(consultorioId: number, personaId: number): Observable<readonly Obligacion[]> {
     return this.api.deLaPersona1({ consultorioId, personaId });
@@ -88,5 +105,51 @@ export class BillingApi {
       obligacionId,
       anularObligacion: { motivo, version },
     });
+  }
+
+  // -------------------------------------------------------------------------------------
+  // Cobros — M19, AKINE-07.02
+  // -------------------------------------------------------------------------------------
+
+  /**
+   * Registra un cobro y lo imputa a las deudas indicadas.
+   *
+   * <p><b>`idempotencyKey` no es opcional en la practica.</b> El contrato la declara opcional
+   * porque el backend acepta un cuerpo sin ella, pero sin clave un doble click cobra dos veces y
+   * emite dos comprobantes correlativos. Por eso esta fachada la exige en el tipo: dejarla
+   * opcional aca seria dejar abierta la unica puerta por la que este circuito duplica dinero.
+   *
+   * <p>Reintentar con la <b>misma</b> clave y el mismo contenido devuelve el mismo cobro con el
+   * mismo comprobante; con otro contenido devuelve 409 `idempotency-key-conflict`.
+   *
+   * <p>El cuerpo se arma afuera, y afuera se garantiza que las dos sumas den el total: el servidor
+   * lo revalida y responde 400 `cobro-no-cuadra`. Los importes llegan aca ya convertidos desde
+   * centavos enteros —ver `models/dinero.ts`—: esta clase no hace ninguna cuenta.
+   */
+  registrarCobro(
+    consultorioId: number,
+    cobro: RegistrarCobro & { readonly idempotencyKey: string },
+  ): Observable<Cobro> {
+    return this.cobros.registrar({ consultorioId, registrarCobro: cobro });
+  }
+
+  /** Los cobros del paciente en toda la organizacion, del mas reciente al mas viejo. */
+  cobrosDeLaPersona(consultorioId: number, personaId: number): Observable<readonly Cobro[]> {
+    return this.cobros.deLaPersona({ consultorioId, personaId });
+  }
+
+  /**
+   * Un cobro con su comprobante, sus medios y sus imputaciones.
+   *
+   * <p><b>Es la reimpresion, y por eso existe.</b> Sin esta lectura, un operador que necesita el
+   * comprobante otra vez tendria como unica salida volver a registrar el cobro, que es
+   * exactamente lo que la clave de idempotencia trata de evitar.
+   *
+   * <p>El listado ya trae medios e imputaciones, asi que releer no agrega campos: agrega
+   * <b>frescura</b>. El comprobante que se reimprime es el que esta guardado ahora, no el que se
+   * cargo en memoria hace veinte minutos.
+   */
+  verCobro(consultorioId: number, cobroId: number): Observable<Cobro> {
+    return this.cobros.ver2({ consultorioId, cobroId });
   }
 }

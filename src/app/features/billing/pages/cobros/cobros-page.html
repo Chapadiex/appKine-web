@@ -1,0 +1,154 @@
+<h1>Cobros registrados</h1>
+
+<p class="descripcion">
+  Dinero recibido de esta persona en <b>todo el centro</b>. Es la otra mitad de la cuenta corriente:
+  aca esta lo que se cobro, no lo que se debe. <b>No es la caja</b>: el arqueo del dia es otro
+  circuito y todavia no existe en el sistema.
+</p>
+
+<p>
+  <a class="enlace" [routerLink]="rutaCuenta()">Ver la cuenta corriente</a>
+</p>
+
+@if (cargando()) {
+  <p class="estado estado--cargando">Cargando los cobros…</p>
+}
+
+@if (mensajeError(); as mensaje) {
+  <section class="tarjeta" role="alert" aria-labelledby="titulo-error-cobros">
+    <h2 id="titulo-error-cobros">No se pudieron cargar los cobros</h2>
+    <p class="estado estado--error">{{ mensaje }}</p>
+    @if (faltaContexto()) {
+      <div class="acciones">
+        <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto</a>
+      </div>
+    } @else {
+      <div class="acciones">
+        <button type="button" class="boton boton--secundario" (click)="cargar()">Reintentar</button>
+      </div>
+    }
+  </section>
+}
+
+@if (vacia()) {
+  <p class="estado estado--vacio">
+    Esta persona no tiene ningun cobro registrado.
+    <a class="enlace" [routerLink]="rutaCobrar()">Registrar un cobro</a>.
+  </p>
+}
+
+@if (cobros().length > 0) {
+  <div class="tabla-scroll" tabindex="0" role="region" aria-labelledby="titulo-tabla-cobros">
+    <h2 id="titulo-tabla-cobros" class="visualmente-oculto">Cobros de la persona</h2>
+    <table class="tabla">
+      <thead>
+        <tr>
+          <th scope="col">Comprobante</th>
+          <th scope="col">Fecha y hora</th>
+          <th scope="col">Total</th>
+          <th scope="col">Medios</th>
+          <th scope="col">Deudas imputadas</th>
+          <th scope="col">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (cobro of cobros(); track cobro.id) {
+          <tr>
+            <td>N.º {{ cobro.comprobanteNumero }}</td>
+            <td>{{ instanteEnPalabras(cobro.cobradoEn) }}</td>
+            <td class="importe">{{ importe(cobro, cobro.total) }}</td>
+            <td>{{ cobro.medios?.length }}</td>
+            <td>{{ cobro.imputaciones?.length }}</td>
+            <td>
+              <div class="acciones-fila">
+                @if (esElAbierto(cobro)) {
+                  <button type="button" class="boton boton--secundario" (click)="cerrar()">
+                    Cerrar el comprobante
+                  </button>
+                } @else {
+                  <button
+                    type="button"
+                    class="boton boton--secundario"
+                    [disabled]="abriendo() === cobro.id"
+                    (click)="abrir(cobro)"
+                  >
+                    Ver el comprobante
+                  </button>
+                }
+              </div>
+            </td>
+          </tr>
+
+          @if (esElAbierto(cobro)) {
+            <tr class="fila-panel">
+              <td colspan="6">
+                @if (comprobante(); as detalle) {
+                  <h3>Comprobante N.º {{ detalle.comprobanteNumero }}</h3>
+                  <p class="ayuda">
+                    Releido del servidor recien. El numero es correlativo por sede: es lo que el
+                    paciente se lleva.
+                  </p>
+
+                  <dl class="detalle">
+                    <dt>Cobrado</dt>
+                    <dd>{{ instanteEnPalabras(detalle.cobradoEn) }}</dd>
+
+                    <dt>Total</dt>
+                    <dd class="importe">{{ importe(detalle, detalle.total) }}</dd>
+                  </dl>
+
+                  <h4>Como entro la plata</h4>
+                  <ul class="lista-comprobante">
+                    @for (medio of detalle.medios; track $index) {
+                      <li>
+                        {{ medioEnPalabras(medio.medio) }} —
+                        <span class="importe">{{ importe(detalle, medio.importe) }}</span>
+                        @if (medio.referencia) {
+                          <span class="ayuda">(ref. {{ medio.referencia }})</span>
+                        }
+                      </li>
+                    }
+                  </ul>
+
+                  <h4>Contra que deudas se aplico</h4>
+                  <ul class="lista-comprobante">
+                    @for (imputacion of detalle.imputaciones; track $index) {
+                      <li>
+                        Deuda #{{ imputacion.obligacionId }} —
+                        <span class="importe">{{ importe(detalle, imputacion.importe) }}</span>
+                      </li>
+                    }
+                  </ul>
+
+                  <p class="ayuda">
+                    El saldo que quedo en cada deuda vive en la obligacion, no aca: esto dice cuanto
+                    aplico <b>este</b> cobro.
+                  </p>
+                }
+              </td>
+            </tr>
+          }
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <p class="ayuda">
+    <b>No se muestra un total de lo cobrado.</b> El backend no lo devuelve y sumarlo en la pantalla
+    produciria centavos que no cuadran contra lo que hay guardado.
+  </p>
+}
+
+<div aria-live="polite">
+  @if (errorDetalle(); as fallo) {
+    <section class="tarjeta" aria-labelledby="titulo-error-detalle">
+      <h2 id="titulo-error-detalle">No se pudo abrir el comprobante</h2>
+      <p class="estado estado--error">{{ fallo.mensaje }}</p>
+      <div class="acciones">
+        <button type="button" class="boton boton--secundario" (click)="cargar()">
+          Recargar los cobros
+        </button>
+      </div>
+    </section>
+  }
+</div>
