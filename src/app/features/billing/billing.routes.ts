@@ -1,7 +1,9 @@
 import { Routes } from '@angular/router';
 
 import { ANCHO_AMPLIO, DATA_ANCHO } from '../../core/models/ancho-de-contenido';
+import { PERMISO_COBRO_REGISTER } from '../../core/models/permisos';
 import { contextGuard } from '../../core/guards/context.guard';
+import { permissionGuard } from '../../core/guards/permission.guard';
 
 /**
  * Rutas de la feature `billing` (cuenta corriente del paciente, M18, AKINE-07.01).
@@ -36,6 +38,25 @@ import { contextGuard } from '../../core/guards/context.guard';
  * <p>Pide <b>ancho amplio</b>: la tabla tiene seis columnas de datos —tres de ellas de plata— mas
  * la de acciones, y a 46rem los importes quedan detras del scroll horizontal, que para quien tiene
  * que compararlos es lo mismo que no existir.
+ *
+ * <h2>AKINE-07.02 agrega dos rutas, y `cobrar` SI lleva `permissionGuard`</h2>
+ *
+ * <p>Las tres rutas evaluan el mismo codigo —`cobro:register` cubre ver deuda, anularla y cobrar—
+ * pero no se protegen igual, y la diferencia no es un descuido:
+ *
+ * <ul>
+ *   <li><b>Las dos lecturas van sin `permissionGuard`.</b> Es la decision de 07.01 y sigue valiendo:
+ *       el enlace que trae hasta aca ya va detras de `*akinePermiso`, y un guard encima solo
+ *       cambiaria un `403` explicado por una redireccion a "sin permiso" para quien pegue la URL a
+ *       mano.</li>
+ *   <li><b>`cobrar` lo lleva.</b> Es una pantalla cuyo unico proposito es una mutacion de dinero:
+ *       sin el permiso no hay nada que leer ahi, solo un formulario que el operador puede llenar
+ *       entero —elegir deudas, cargar medios, tipear importes— para recibir un `403` al confirmar.
+ *       Ese es el caso que el guard evita, y por eso vale la redireccion.</li>
+ * </ul>
+ *
+ * <p><b>Sigue sin ser seguridad.</b> La autoridad es el backend, que reevalua el permiso contra la
+ * sede del contexto en cada request. Esto es UX: no ofrecer trabajo que va a terminar tirado.
  */
 export const routes: Routes = [
   {
@@ -44,6 +65,28 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./pages/cuenta-corriente/cuenta-corriente-page').then((m) => m.CuentaCorrientePage),
     title: 'AKINE - Cuenta corriente',
+    data: { [DATA_ANCHO]: ANCHO_AMPLIO },
+  },
+
+  // Registro de un cobro (M19, AKINE-07.02).
+  //
+  // Ancho amplio: son tres bloques de formulario —deudas, medios y totales— y los importes se
+  // leen comparando, igual que en la cuenta corriente.
+  {
+    path: 'cobrar',
+    canActivate: [contextGuard, permissionGuard(PERMISO_COBRO_REGISTER)],
+    loadComponent: () =>
+      import('./pages/registro-de-cobro/registro-de-cobro-page').then((m) => m.RegistroDeCobroPage),
+    title: 'AKINE - Registrar un cobro',
+    data: { [DATA_ANCHO]: ANCHO_AMPLIO },
+  },
+
+  // Cobros ya registrados y reimpresion del comprobante (M19, AKINE-07.02).
+  {
+    path: 'cobros',
+    canActivate: [contextGuard],
+    loadComponent: () => import('./pages/cobros/cobros-page').then((m) => m.CobrosPage),
+    title: 'AKINE - Cobros registrados',
     data: { [DATA_ANCHO]: ANCHO_AMPLIO },
   },
 ];

@@ -5,6 +5,8 @@ import { catchError, of } from 'rxjs';
 import { BillingApi } from '../../services/billing-api';
 import { ConfirmacionConMotivo } from '../../../../shared/components/confirmacion-con-motivo/confirmacion-con-motivo';
 import { Obligacion } from '../../../../api/generated/model/obligacion';
+import { PERMISO_COBRO_REGISTER } from '../../../../core/models/permisos';
+import { PermisoDirective } from '../../../../shared/directives/permiso.directive';
 import { PersonaResponse } from '../../../../api/generated/model/persona-response';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import {
@@ -74,7 +76,7 @@ type EstadoCuenta =
  */
 @Component({
   selector: 'app-cuenta-corriente-page',
-  imports: [RouterLink, ConfirmacionConMotivo],
+  imports: [RouterLink, ConfirmacionConMotivo, PermisoDirective],
   templateUrl: './cuenta-corriente-page.html',
   styleUrl: '../../billing.css',
 })
@@ -84,6 +86,21 @@ export class CuentaCorrientePage {
 
   /** De la ruta. `withComponentInputBinding` lo liga solo. */
   readonly personaId = input.required<string>();
+
+  protected readonly PERMISO_COBRO_REGISTER = PERMISO_COBRO_REGISTER;
+
+  /**
+   * Las dos rutas hermanas de esta pantalla, absolutas.
+   *
+   * <p>Absolutas y no `..`: el enlace relativo depende de la ruta activa y se rompe en silencio el
+   * dia que esta pantalla se monte en otro lado.
+   */
+  protected readonly rutaCobrar = computed(
+    () => `/pacientes/${this.personaId()}/cuenta-corriente/cobrar`,
+  );
+  protected readonly rutaCobros = computed(
+    () => `/pacientes/${this.personaId()}/cuenta-corriente/cobros`,
+  );
 
   protected readonly estadoEnPalabras = estadoEnPalabras;
   protected readonly claseDeEstado = claseDeEstado;

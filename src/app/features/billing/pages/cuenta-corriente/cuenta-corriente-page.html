@@ -14,6 +14,21 @@
 
 <p><a class="enlace" routerLink="/pacientes">Volver al padron</a></p>
 
+<!--
+  Cobrar es una MUTACION de dinero y el enlace va detras del permiso: ofrecerlo a quien no lo tiene
+  seria mandarlo a llenar un formulario entero para recibir un 403 al confirmar. La lista de cobros
+  es lectura y se ofrece siempre, igual que esta pantalla.
+
+  Deuda, cobro y caja son tres cosas (regla maestra 5) y por eso son tres pantallas y no pestañas
+  de una sola: fusionarlas es como se termina leyendo un cobro como si fuera una deuda negativa.
+-->
+<div class="acciones">
+  <a *akinePermiso="PERMISO_COBRO_REGISTER" class="boton" [routerLink]="rutaCobrar()">
+    Registrar un cobro
+  </a>
+  <a class="boton boton--secundario" [routerLink]="rutaCobros()">Ver los cobros registrados</a>
+</div>
+
 @if (cargando()) {
   <p class="estado estado--cargando">Cargando la cuenta corriente…</p>
 }

@@ -1,0 +1,290 @@
+<h1>Registrar un cobro</h1>
+
+<p class="descripcion">
+  Esto registra <b>dinero recibido</b> y lo imputa a deuda. <b>No es la caja</b>: el arqueo y el
+  turno de caja son otro circuito (M20) y todavia no existen en el sistema.
+</p>
+
+@if (nombreDeLaPersona(); as quien) {
+  <p class="ayuda">
+    Cobro a <b>{{ quien }}</b
+    >.
+  </p>
+}
+
+<p>
+  <a class="enlace" [routerLink]="rutaCuenta()">Volver a la cuenta corriente</a>
+</p>
+
+@if (cargando()) {
+  <p class="estado estado--cargando">Cargando las deudas de la persona…</p>
+}
+
+@if (mensajeDeCarga(); as mensaje) {
+  <section class="tarjeta" role="alert" aria-labelledby="titulo-error-carga">
+    <h2 id="titulo-error-carga">No se pudieron cargar las deudas</h2>
+    <p class="estado estado--error">{{ mensaje }}</p>
+    @if (faltaContexto()) {
+      <div class="acciones">
+        <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto</a>
+      </div>
+    } @else {
+      <div class="acciones">
+        <button type="button" class="boton boton--secundario" (click)="cargar()">Reintentar</button>
+      </div>
+    }
+  </section>
+}
+
+@if (sinDeudaCobrable()) {
+  <p class="estado estado--vacio">
+    Esta persona no tiene ninguna deuda con saldo pendiente, asi que no hay nada que cobrar. Las
+    deudas se generan al cerrar una atencion: no se cargan a mano. Los anticipos —cobrar sin deuda—
+    necesitan la Caja y todavia no existen.
+  </p>
+}
+
+<!-- ============================ Comprobante, una vez registrado ======================= -->
+
+@if (cobro(); as registrado) {
+  <section class="tarjeta" aria-labelledby="titulo-comprobante">
+    <h2 id="titulo-comprobante">Cobro registrado</h2>
+    <p class="estado estado--ok" role="status">
+      Se registro el cobro por {{ totalDelCobro(registrado) }} con el comprobante
+      <b>N.º {{ registrado.comprobanteNumero }}</b
+      >. El numero es correlativo por sede y es lo que se lleva el paciente.
+    </p>
+
+    <dl class="detalle">
+      <dt>Total</dt>
+      <dd>{{ totalDelCobro(registrado) }}</dd>
+
+      <dt>Medios</dt>
+      <dd>{{ mensajeDeMedios(registrado) }}</dd>
+
+      <dt>Deudas imputadas</dt>
+      <dd>{{ registrado.imputaciones?.length }}</dd>
+    </dl>
+
+    <div class="acciones">
+      <a class="boton" [routerLink]="rutaCuenta()">Ver la cuenta corriente</a>
+      <a class="boton boton--secundario" [routerLink]="rutaCobros()">
+        Ver los cobros y comprobantes
+      </a>
+      <button type="button" class="boton boton--secundario" (click)="recargar()">
+        Registrar otro cobro
+      </button>
+    </div>
+  </section>
+}
+
+<!-- ============================ Formulario ========================================== -->
+
+@if (deudas().length > 0 && !registrado()) {
+  <fieldset class="grupo">
+    <legend>Deudas a las que se imputa</legend>
+
+    <p class="ayuda">
+      Se propone el saldo completo de cada deuda elegida. Es editable: un pago parcial deja la deuda
+      en «pagada en parte» y no la cierra.
+    </p>
+
+    @for (deuda of deudas(); track deuda.id) {
+      <div class="linea-deuda">
+        <div class="opcion-radio">
+          <input
+            type="checkbox"
+            [id]="'deuda-' + deuda.id"
+            [checked]="estaElegida(deuda)"
+            (change)="alternar(deuda)"
+          />
+          <label [for]="'deuda-' + deuda.id">
+            {{ deuda.snapshotNombre }} — {{ fechaEnPalabras(deuda.devengadaEn) }} — saldo
+            <b>{{ saldoEnPalabras(deuda) }}</b>
+            <span class="ayuda">(de {{ importeOriginalEnPalabras(deuda) }})</span>
+          </label>
+        </div>
+
+        @if (estaElegida(deuda)) {
+          <div class="campo campo--sangrado">
+            <label [for]="'imputacion-' + deuda.id">Importe a imputar a esta deuda</label>
+            <input
+              [id]="'imputacion-' + deuda.id"
+              type="text"
+              inputmode="decimal"
+              autocomplete="off"
+              [value]="importeDe(deuda)"
+              [attr.aria-invalid]="excede(deuda)"
+              [attr.aria-describedby]="'ayuda-imputacion-' + deuda.id"
+              (input)="cambiarImporte(deuda, $any($event.target).value)"
+            />
+            <p class="ayuda" [id]="'ayuda-imputacion-' + deuda.id">
+              Hasta {{ saldoEnPalabras(deuda) }}. Un saldo no puede quedar negativo: el servidor
+              descuenta solo si alcanza.
+            </p>
+          </div>
+        }
+      </div>
+    }
+  </fieldset>
+
+  <fieldset class="grupo">
+    <legend>Como entro la plata</legend>
+
+    <p class="ayuda">
+      Puede ser mas de un medio: mitad efectivo y mitad tarjeta es normal. La suma tiene que dar lo
+      mismo que las imputaciones.
+    </p>
+
+    @for (linea of medios(); track linea.id) {
+      <div class="linea-medio">
+        <div class="campo">
+          <label [for]="'medio-' + $index">Medio de pago</label>
+          <select
+            [id]="'medio-' + $index"
+            [value]="linea.medio"
+            (change)="cambiarMedio(linea, $any($event.target).value)"
+          >
+            @for (opcion of mediosDisponibles; track opcion) {
+              <option [value]="opcion">{{ medioEnPalabras(opcion) }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="campo">
+          <label [for]="'importe-medio-' + $index">Importe recibido</label>
+          <input
+            [id]="'importe-medio-' + $index"
+            type="text"
+            inputmode="decimal"
+            autocomplete="off"
+            [value]="linea.importe"
+            [attr.aria-invalid]="medioInvalido(linea)"
+            (input)="cambiarImporteDeMedio(linea, $any($event.target).value)"
+          />
+        </div>
+
+        <div class="campo">
+          <label [for]="'referencia-' + $index">
+            Referencia <span class="campo__opcional">(opcional)</span>
+          </label>
+          <input
+            [id]="'referencia-' + $index"
+            type="text"
+            autocomplete="off"
+            maxlength="120"
+            [value]="linea.referencia"
+            (input)="cambiarReferencia(linea, $any($event.target).value)"
+          />
+        </div>
+
+        <div class="acciones">
+          @if (puedeCompletar()) {
+            <button
+              type="button"
+              class="boton boton--secundario"
+              (click)="completarConElTotal(linea)"
+            >
+              Completar con el total imputado
+            </button>
+          }
+          @if (medios().length > 1) {
+            <button type="button" class="boton boton--secundario" (click)="quitarMedio(linea)">
+              Quitar este medio
+            </button>
+          }
+        </div>
+      </div>
+    }
+
+    <div class="acciones">
+      <button type="button" class="boton boton--secundario" (click)="agregarMedio()">
+        Agregar otro medio de pago
+      </button>
+    </div>
+  </fieldset>
+
+  <!--
+    Los dos totales se muestran siempre y uno al lado del otro. Es la unica forma de que el
+    operador vea la diferencia antes de que el servidor la rechace, y la comparacion se hace en
+    centavos enteros: con flotantes, dos importes que se ven iguales pueden no serlo.
+  -->
+  <section class="tarjeta" aria-labelledby="titulo-totales">
+    <h2 id="titulo-totales">Totales</h2>
+    <dl class="detalle">
+      <dt>Imputado a deuda</dt>
+      <dd class="importe">{{ totalImputadoEnPalabras() || '—' }}</dd>
+
+      <dt>Recibido por medios</dt>
+      <dd class="importe">{{ totalDeMediosEnPalabras() || '—' }}</dd>
+    </dl>
+  </section>
+
+  <div aria-live="polite">
+    @if (problemas().length > 0) {
+      <section class="tarjeta" aria-labelledby="titulo-faltantes">
+        <h2 id="titulo-faltantes">Falta esto para poder cobrar</h2>
+        <ul class="lista-faltantes">
+          @for (problema of problemas(); track problema) {
+            <li>{{ problema }}</li>
+          }
+        </ul>
+      </section>
+    }
+  </div>
+
+  <div class="acciones">
+    <button type="button" class="boton" [disabled]="!puedeConfirmar()" (click)="confirmar()">
+      Registrar el cobro
+    </button>
+  </div>
+}
+
+<!-- ============================ Rechazos ============================================ -->
+
+<div aria-live="polite">
+  @if (error(); as fallo) {
+    <section class="tarjeta" aria-labelledby="titulo-rechazo">
+      <h2 id="titulo-rechazo">No se registro el cobro</h2>
+      <p class="estado estado--error">{{ fallo.mensaje }}</p>
+
+      @if (fallo.motivo) {
+        <p class="ayuda">Lo que dijo el servidor: {{ fallo.motivo }}</p>
+      }
+
+      @if (fallo.causa === 'no-cuadra' && fallo.esperado !== null && fallo.recibido !== null) {
+        <p class="ayuda">
+          El total declarado era {{ importeDelRechazo(fallo.esperado) }} y el servidor sumo
+          {{ importeDelRechazo(fallo.recibido) }}.
+        </p>
+      }
+
+      <!--
+        `saldo-insuficiente` NO se muestra como una falla. Es la garantia del backend funcionando:
+        descuenta con `UPDATE ... WHERE saldo >= :importe` justamente para que ningun saldo quede
+        negativo. Lo unico util es releer los saldos reales.
+      -->
+      @switch (fallo.accion) {
+        @case ('recargar-cuenta') {
+          <div class="acciones">
+            <button type="button" class="boton" (click)="recargar()">
+              Recargar los saldos y volver a armar el cobro
+            </button>
+          </div>
+        }
+        @case ('reintentar-con-clave-nueva') {
+          <div class="acciones">
+            <button type="button" class="boton" [disabled]="enviando()" (click)="reintentar()">
+              Volver a intentar el cobro
+            </button>
+          </div>
+        }
+        @case ('elegir-contexto') {
+          <div class="acciones">
+            <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto de trabajo</a>
+          </div>
+        }
+      }
+    </section>
+  }
+</div>

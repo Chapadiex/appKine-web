@@ -29,3 +29,63 @@
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
+
+/*
+ * Una deuda del formulario de cobro: el checkbox y, cuando esta elegida, su importe.
+ *
+ * El separador es lo que hace legible una lista de cinco deudas con campos que aparecen y
+ * desaparecen: sin el, el importe de una fila se lee como si perteneciera a la siguiente, que en
+ * una pantalla de dinero es el error mas caro posible.
+ */
+.linea-deuda {
+  padding: var(--esp-4) 0;
+  border-bottom: var(--borde-fino) solid var(--color-borde);
+}
+
+.linea-deuda:last-child {
+  border-bottom: none;
+}
+
+/* El importe de la imputacion cuelga de su deuda, y la sangria lo dice sin depender del color. */
+.campo--sangrado {
+  margin-left: var(--esp-7);
+  max-width: 18rem;
+}
+
+/*
+ * Un medio de pago. En pantalla ancha los tres campos van en fila porque se cargan de corrido
+ * —medio, importe, referencia— y apilarlos obliga a recorrer la pantalla entera por cada medio.
+ */
+.linea-medio {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp-5);
+  align-items: flex-start;
+  padding: var(--esp-4) 0;
+  border-bottom: var(--borde-fino) solid var(--color-borde);
+}
+
+.linea-medio:last-of-type {
+  border-bottom: none;
+}
+
+.linea-medio .campo {
+  margin-bottom: 0;
+  min-width: 12rem;
+}
+
+.linea-medio .acciones {
+  margin-top: var(--esp-6);
+}
+
+/* Listas de texto: las vinetas quedan porque son enumeraciones reales, no navegacion. */
+.lista-faltantes,
+.lista-comprobante {
+  margin: 0 0 var(--esp-5);
+  padding-left: var(--esp-7);
+}
+
+.lista-faltantes li,
+.lista-comprobante li {
+  margin-bottom: var(--esp-3);
+}
