@@ -193,12 +193,22 @@ export class BuscadorDeAgendaPage {
     this.buscar();
   }
 
+  /**
+   * Cambiar el rango descarta el aviso de recorte antes de volver a consultar.
+   *
+   * <p>El aviso habla de <b>una</b> ventana: la que el backend rechazo por ancha. Dejarlo dibujado
+   * sobre la consulta siguiente afirma que esa tambien se recorto, y el usuario no tiene como
+   * saber cual de las dos describe. No se limpia dentro de {@link buscar} porque el reintento
+   * automatico pasa por ahi <b>despues</b> de poner el aviso, y lo borraria en el acto.
+   */
   protected cambiarDesde(valor: string): void {
+    this.avisoDeRecorte.set(null);
     this.desde.set(valor);
     this.buscar();
   }
 
   protected cambiarHasta(valor: string): void {
+    this.avisoDeRecorte.set(null);
     this.hasta.set(valor);
     this.buscar();
   }
