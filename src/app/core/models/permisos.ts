@@ -77,3 +77,16 @@ export const PERMISO_TURNO_READ = 'turno:read';
  * quedo fuera de alcance por DP-10 y esos endpoints no existen todavia.
  */
 export const PERMISO_TURNO_MANAGE = 'turno:manage';
+
+/**
+ * Cuenta corriente y cobros (F7, etapa AKINE-07.01).
+ *
+ * <p>Gobierna la lectura de la deuda de un paciente <b>y</b> su anulacion. No hay un
+ * `obligacion:read` aparte: el contrato autoriza las dos con el mismo codigo, y declarar uno que
+ * el backend nunca emite solo esconderia la pantalla para todos.
+ *
+ * <p><b>Se evalua con la sede del contexto aunque la deuda sea de la organizacion.</b> Es la misma
+ * asimetria que `paciente:manage`: la deuda de un paciente es una sola aunque se haya generado en
+ * dos sedes, pero quien la mira lo hace parado en un mostrador.
+ */
+export const PERMISO_COBRO_REGISTER = 'cobro:register';

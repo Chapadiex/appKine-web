@@ -6,7 +6,7 @@ import { AkineHttpError } from '../../../core/interceptors/error.interceptor';
  * <p>Se ramifica por `problemType` y <b>nunca</b> por el texto de `detail`, igual que en el resto
  * de las features: `detail` es prosa y cambia cuando alguien corrige una redaccion.
  *
- * <h2>Los cuatro errores propios llevan a cuatro salidas distintas</h2>
+ * <h2>Los cinco errores propios llevan a cinco salidas distintas</h2>
  *
  * <ul>
  *   <li><b>`sesion-ajena`</b> (409): la atencion la esta llevando <b>otro profesional</b>. No es
@@ -19,6 +19,11 @@ import { AkineHttpError } from '../../../core/interceptors/error.interceptor';
  *       no tiene perfil de paciente, etc.—.</li>
  *   <li><b>`concurrent-modification`</b> (409): otra pestaña guardo antes. <b>No se pierde nada</b>
  *       de lo escrito: la accion es releer la sesion y comparar.</li>
+ *   <li><b>`sesion-cerrada`</b> (409): la atencion ya se cerro y el borrador y la evaluacion no la
+ *       admiten mas. <b>No es un conflicto que se resuelva reintentando</b>, que es lo que lo
+ *       separa del anterior: no hay ninguna version con la que el guardado vaya a pasar. La unica
+ *       salida es pasar a modo lectura, y por eso la pantalla lo trata como un estado nuevo y no
+ *       como una falla.</li>
  *   <li><b>`validation-error`</b> (400): dolor fuera de la escala 0-10, o lateralidad sin zona.
  *       Ninguno depende de nada que pueda cambiar entre dos peticiones, asi que reintentar no los
  *       arregla: hay que corregir el campo.</li>
@@ -39,6 +44,8 @@ export type CausaAtencion =
   | 'turno-no-atendible'
   /** 409 `concurrent-modification`: otra pestaña guardo antes. Releer y comparar. */
   | 'version-vieja'
+  /** 409 `sesion-cerrada`: la atencion ya se cerro. No hay nada que reintentar. */
+  | 'sesion-cerrada'
   /** 409 subscription-suspended: lo emite el filtro, antes del controller. */
   | 'suscripcion-suspendida'
   /** Cualquier otro 409. Gana el `detail` del backend. */
@@ -88,6 +95,20 @@ const MENSAJE_VERSION_VIEJA =
   'Otra pestaña guardo esta atencion despues de que vos la abriste. No pisamos nada y no perdimos ' +
   'lo que escribiste.';
 
+/**
+ * `sesion-cerrada` no es un fallo que se reintente: es un estado nuevo.
+ *
+ * <p>El texto tiene que decir las dos cosas que le importan a quien lo lee. Que <b>lo cerrado
+ * quedo guardado</b> —el 409 llega al intentar seguir editando, y sin decirlo parece que se
+ * perdio algo—, y que corregir una sesion cerrada <b>no existe todavia</b>: es una enmienda con su
+ * propio actor y su propio motivo (AKINE-06.06), y prometer un camino que no hay es peor que
+ * decir que no lo hay.
+ */
+const MENSAJE_SESION_CERRADA =
+  'Esta atencion ya esta cerrada, asi que no admite mas cambios. Lo que estaba guardado al ' +
+  'cerrarla quedo registrado. Corregir una sesion cerrada es una enmienda y todavia no se puede ' +
+  'hacer desde el sistema.';
+
 const MENSAJE_SUSCRIPCION_SUSPENDIDA =
   'La suscripcion de la organizacion esta suspendida, asi que no se pueden registrar atenciones.';
 
@@ -132,6 +153,8 @@ export function traducirErrorAtencion(error: unknown): ErrorAtencion {
       };
     case 'concurrent-modification':
       return { mensaje: MENSAJE_VERSION_VIEJA, causa: 'version-vieja', motivo: '' };
+    case 'sesion-cerrada':
+      return { mensaje: MENSAJE_SESION_CERRADA, causa: 'sesion-cerrada', motivo: '' };
     case 'validation-error':
       return { mensaje: conDetalle(error, MENSAJE_VALIDACION), causa: 'validacion', motivo: '' };
     default:

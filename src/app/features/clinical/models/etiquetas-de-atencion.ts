@@ -1,3 +1,8 @@
+import {
+  CerrarSesionAsistenciaEnum,
+  CerrarSesionProximaConductaEnum,
+  CerrarSesionToleranciaEnum,
+} from '../../../api/generated/model/cerrar-sesion';
 import { EvaluacionPrevia } from '../../../api/generated/model/evaluacion-previa';
 import {
   GuardarEvaluacionDolorLateralidadEnum,
@@ -71,6 +76,55 @@ export const ZONAS_SUGERIDAS: readonly string[] = [
 
 /** La escala visual analogica completa, 0 a 10. */
 export const ESCALA_EVA: readonly number[] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+
+/**
+ * Las dos asistencias del cierre (AKINE-06.05).
+ *
+ * <p><b>`AUSENTE` es un cierre legitimo</b> y el rotulo lo dice sin rodeos: la ausencia tambien es
+ * un hecho clinico, y es lo que evita que el turno quede abierto para siempre. Ofrecer solo
+ * "presente" obligaria a dejar la atencion sin cerrar o a mentir.
+ */
+export const ASISTENCIAS: readonly Opcion<CerrarSesionAsistenciaEnum>[] = [
+  { valor: CerrarSesionAsistenciaEnum.PRESENTE, etiqueta: 'Vino a la sesion' },
+  { valor: CerrarSesionAsistenciaEnum.AUSENTE, etiqueta: 'No vino' },
+];
+
+/**
+ * Como tolero el paciente lo que se le hizo.
+ *
+ * <p>Es <b>distinto del resultado</b>, y por eso es un campo aparte: se puede tolerar mal algo que
+ * funciona. Fundirlo con la respuesta al tratamiento perderia justamente el dato que hace cambiar
+ * la dosificacion de la sesion siguiente.
+ */
+export const TOLERANCIAS: readonly Opcion<CerrarSesionToleranciaEnum>[] = [
+  { valor: CerrarSesionToleranciaEnum.BUENA, etiqueta: 'Buena' },
+  { valor: CerrarSesionToleranciaEnum.REGULAR, etiqueta: 'Regular' },
+  { valor: CerrarSesionToleranciaEnum.MALA, etiqueta: 'Mala' },
+];
+
+/**
+ * Que sigue despues de esta sesion.
+ *
+ * <p>Es lo que convierte una sesion suelta en un tratamiento. Sigue siendo <b>opcional</b>: un
+ * profesional que todavia no lo decidio no tiene por que inventarlo para poder cerrar.
+ */
+export const CONDUCTAS: readonly Opcion<CerrarSesionProximaConductaEnum>[] = [
+  { valor: CerrarSesionProximaConductaEnum.CONTINUA, etiqueta: 'Continua el tratamiento' },
+  { valor: CerrarSesionProximaConductaEnum.ALTA, etiqueta: 'Alta' },
+  { valor: CerrarSesionProximaConductaEnum.DERIVA, etiqueta: 'Deriva' },
+  { valor: CerrarSesionProximaConductaEnum.REEVALUA, etiqueta: 'Reevalua' },
+];
+
+/** Rotulo visible de un valor de catalogo, o el valor crudo si este cliente no lo conoce. */
+export function etiquetaDe<T extends string>(
+  catalogo: readonly Opcion<T>[],
+  valor: string | undefined,
+): string {
+  if (valor === undefined || valor === '') {
+    return '';
+  }
+  return catalogo.find((opcion) => opcion.valor === valor)?.etiqueta ?? valor;
+}
 
 /**
  * Convierte lo que vino en la sesion a la evolucion que se manda al guardar.

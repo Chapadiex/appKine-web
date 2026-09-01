@@ -12,6 +12,12 @@ import { RouterLink } from '@angular/router';
 
 import { ClinicalApi } from '../../services/clinical-api';
 import { ErrorAtencion, traducirErrorAtencion } from '../../models/atencion-errors';
+import {
+  CerrarSesion,
+  CerrarSesionAsistenciaEnum,
+  CerrarSesionProximaConductaEnum,
+  CerrarSesionToleranciaEnum,
+} from '../../../../api/generated/model/cerrar-sesion';
 import { GuardarEvaluacion } from '../../../../api/generated/model/guardar-evaluacion';
 import {
   GuardarEvaluacionDolorLateralidadEnum,
@@ -21,13 +27,17 @@ import {
 import { Sesion } from '../../../../api/generated/model/sesion';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import {
+  ASISTENCIAS,
+  CONDUCTAS,
   ESCALA_EVA,
   EVOLUCIONES,
   LATERALIDADES,
+  TOLERANCIAS,
   ZONAS_SUGERIDAS,
   comoEvolucion,
   comoLateralidad,
   comoModo,
+  etiquetaDe,
   instanteEnPalabras,
   resumenDePrevia,
 } from '../../models/etiquetas-de-atencion';
@@ -77,11 +87,39 @@ const ESPERA_AUTOSAVE = 1_500;
  * profesional que empieza en rapida y necesita anotar una cosa mas cambia de modo en medio de la
  * atencion sin perder nada de lo cargado.
  *
+ * <h2>5. El cierre pide dos campos, y no cinco (AKINE-06.05)</h2>
+ *
+ * <p>Obligatorios son <b>la asistencia</b> y, <b>solo si el paciente vino</b>, la nota de cierre.
+ * Nada mas. Tolerancia, respuesta, indicaciones y proxima conducta se ofrecen y se rotulan como
+ * opcionales: exigirlas obligaria a completar campos para poder cerrar una sesion que ya termino,
+ * y lo que se completa por obligacion es exactamente lo que despues no se puede leer como dato
+ * clinico. Con `AUSENTE` no se pide absolutamente nada mas: pedir el resultado de una atencion que
+ * no ocurrio seria pedir que se invente.
+ *
+ * <p><b>Cerrar dos veces es el caso normal y la pantalla no lo estorba.</b> El backend es
+ * idempotente —mismo `numeroSesion`, sin renumerar— asi que aca no hay ninguna guarda contra el
+ * segundo click ni ninguna rama de error para "ya estaba cerrada". El unico bloqueo es el del
+ * envio en vuelo, que es otra cosa.
+ *
+ * <p><b>Una sesion cerrada no se edita, y la pantalla lo hace cierto.</b> Al cerrar —o al recibir
+ * un 409 `sesion-cerrada` porque la cerraron desde otra pestaña— los campos <b>desaparecen</b> y
+ * queda una vista de solo lectura. Dejarlos editables seria ofrecer un guardado que el backend
+ * rechaza siempre: el usuario escribe, aprieta y recibe un error por hacer lo que la pantalla le
+ * mostraba como posible. Corregir una sesion cerrada es una enmienda (AKINE-06.06) y no existe.
+ *
+ * <p><b>El `numeroSesion` se muestra</b> porque es lo que el profesional cuenta: "la sesion numero
+ * 8 de este paciente". Es un correlativo por historia clinica, no un id de base.
+ *
  * <h2>Lo que esta pantalla NO tiene</h2>
  *
- * <p><b>No hay boton de cerrar la atencion</b>: AKINE-06.05 no existe todavia y el contrato no
- * publica el endpoint. Tampoco hay Historia Clinica: la sesion trae su `historiaClinicaId`, pero
- * no hay ninguna operacion HTTP que la lea.
+ * <p><b>Nada de plata.</b> Cerrar no cobra (DP-06): el cierre clinico no depende del pago y no
+ * crea ninguna obligacion. Un importe en esta pantalla —aunque fuera informativo— sugeriria que
+ * una atencion no se puede cerrar hasta que alguien pague, y ese es el ruido administrativo que
+ * `plan_sesiones.txt` pide mantener fuera de la pantalla clinica. La deuda se mira en la cuenta
+ * corriente del paciente.
+ *
+ * <p>Tampoco hay Historia Clinica: la sesion trae su `historiaClinicaId`, pero no hay ninguna
+ * operacion HTTP que la lea.
  */
 @Component({
   selector: 'app-atencion-page',
@@ -101,6 +139,9 @@ export class AtencionPage {
   protected readonly evoluciones = EVOLUCIONES;
   protected readonly lateralidades = LATERALIDADES;
   protected readonly zonas = ZONAS_SUGERIDAS;
+  protected readonly asistencias = ASISTENCIAS;
+  protected readonly tolerancias = TOLERANCIAS;
+  protected readonly conductas = CONDUCTAS;
   protected readonly instanteEnPalabras = instanteEnPalabras;
 
   protected readonly sesion = signal<Sesion | null>(null);
@@ -130,6 +171,48 @@ export class AtencionPage {
    * descartar lo tipeado.
    */
   protected readonly notasDelServidor = signal<string | null>(null);
+
+  // --- Cierre de la atencion (AKINE-06.05) ------------------------------------------------
+  protected readonly asistencia = signal<CerrarSesionAsistenciaEnum | null>(null);
+  protected readonly notaDeCierre = signal('');
+  protected readonly indicaciones = signal('');
+  protected readonly respuestaTratamiento = signal('');
+  protected readonly tolerancia = signal<CerrarSesionToleranciaEnum | null>(null);
+  protected readonly proximaConducta = signal<CerrarSesionProximaConductaEnum | null>(null);
+  protected readonly cerrando = signal(false);
+
+  /**
+   * Por que el cierre no salio, cuando el motivo es de esta pantalla y no del servidor.
+   *
+   * <p>Es el unico requerido que se valida aca, y se valida para poder senalar el campo exacto en
+   * vez de gastar un 400 para decir algo que ya se sabe. La autoridad sigue siendo el backend.
+   */
+  protected readonly avisoCierre = signal<string | null>(null);
+
+  /**
+   * `true` cuando la atencion ya se cerro.
+   *
+   * <p>Se decide por `numeroSesion` y no por una bandera propia: el contrato dice que el
+   * correlativo esta <b>ausente mientras la sesion siga abierta</b> y que es lo que la marca como
+   * cerrada. Derivarlo del dato del servidor —y no de "aprete cerrar hace un rato"— hace que la
+   * pantalla tambien entre en modo lectura cuando la cerraron desde otra pestaña.
+   */
+  protected readonly cerrada = computed(() => this.sesion()?.numeroSesion !== undefined);
+
+  protected readonly presente = computed(
+    () => this.asistencia() === CerrarSesionAsistenciaEnum.PRESENTE,
+  );
+
+  /**
+   * `true` cuando el paciente vino y todavia no hay nota.
+   *
+   * <p>Es el unico campo condicionalmente obligatorio del cierre: sin el detalle estructurado de
+   * tratamientos —que es AKINE-06.04 y no existe— esta nota es <b>lo unico que registra que se
+   * hizo</b>. Con `AUSENTE` no aplica, y por eso se calcula contra {@link presente}.
+   */
+  protected readonly faltaNota = computed(
+    () => this.presente() && this.notaDeCierre().trim() === '',
+  );
 
   protected readonly completa = computed(() => this.modo() === GuardarEvaluacionModoEnum.COMPLETA);
   protected readonly previa = computed(() => resumenDePrevia(this.sesion()?.previa));
@@ -184,6 +267,15 @@ export class AtencionPage {
     this.abriendo.set(true);
     this.error.set(null);
     this.notasDelServidor.set(null);
+    this.avisoCierre.set(null);
+    // El cierre arranca vacio en cada apertura. Arrastrar la asistencia de la atencion anterior
+    // -otro turno, otro paciente- seria proponer un hecho clinico que nadie afirmo.
+    this.asistencia.set(null);
+    this.notaDeCierre.set('');
+    this.indicaciones.set('');
+    this.respuestaTratamiento.set('');
+    this.tolerancia.set(null);
+    this.proximaConducta.set(null);
 
     this.api.iniciar(consultorioId, turnoId).subscribe({
       next: (sesion) => {
@@ -321,6 +413,117 @@ export class AtencionPage {
   }
 
   // -------------------------------------------------------------------------------------
+  // Cierre de la atencion (AKINE-06.05)
+  // -------------------------------------------------------------------------------------
+
+  /** Rotulo visible de lo que quedo registrado en el cierre. Vacio si el campo no se cargo. */
+  protected etiquetaDeTolerancia(valor: string | undefined): string {
+    return etiquetaDe(TOLERANCIAS, valor);
+  }
+
+  protected etiquetaDeConducta(valor: string | undefined): string {
+    return etiquetaDe(CONDUCTAS, valor);
+  }
+
+  protected etiquetaDeAsistencia(valor: string | undefined): string {
+    return etiquetaDe(ASISTENCIAS, valor);
+  }
+
+  protected elegirAsistencia(valor: string): void {
+    this.asistencia.set(
+      valor === CerrarSesionAsistenciaEnum.AUSENTE
+        ? CerrarSesionAsistenciaEnum.AUSENTE
+        : CerrarSesionAsistenciaEnum.PRESENTE,
+    );
+    this.avisoCierre.set(null);
+  }
+
+  protected elegirTolerancia(valor: string): void {
+    this.tolerancia.set(TOLERANCIAS.find((opcion) => opcion.valor === valor)?.valor ?? null);
+  }
+
+  protected elegirConducta(valor: string): void {
+    this.proximaConducta.set(CONDUCTAS.find((opcion) => opcion.valor === valor)?.valor ?? null);
+  }
+
+  /**
+   * Cierra la atencion.
+   *
+   * <p>Solo se frena por lo que el contrato declara obligatorio: la asistencia siempre, y la nota
+   * cuando el paciente vino. Todo lo demas viaja si esta y se omite si no —{@link textoOAusente}
+   * otra vez—, porque una cadena vacia guardada es indistinguible de un campo cargado en blanco.
+   *
+   * <p><b>No hay ninguna guarda contra cerrar dos veces</b>: el backend es idempotente y devuelve
+   * el mismo `numeroSesion`, asi que un segundo cierre no es un error que la pantalla tenga que
+   * interceptar. Lo unico que se bloquea es el envio mientras hay uno en vuelo.
+   */
+  protected cerrar(): void {
+    const consultorioId = this.tenantContext.consultorioId();
+    const sesionId = this.sesion()?.id;
+    const asistencia = this.asistencia();
+    if (consultorioId === null || sesionId === undefined) {
+      return;
+    }
+
+    if (asistencia === null) {
+      this.avisoCierre.set(
+        'Falta decir si el paciente vino. Sin eso no se sabe si hubo prestacion, y es lo unico ' +
+          'que el cierre siempre necesita.',
+      );
+      return;
+    }
+
+    if (this.faltaNota()) {
+      this.avisoCierre.set(
+        'El paciente vino, asi que hace falta la nota de cierre: es lo unico que registra que se ' +
+          'hizo en la sesion.',
+      );
+      return;
+    }
+
+    const cuerpo: CerrarSesion = {
+      version: this.version(),
+      asistencia,
+      notaDeCierre: textoOAusente(this.notaDeCierre()),
+      indicaciones: textoOAusente(this.indicaciones()),
+      respuestaTratamiento: textoOAusente(this.respuestaTratamiento()),
+      tolerancia: this.tolerancia() ?? undefined,
+      proximaConducta: this.proximaConducta() ?? undefined,
+    };
+
+    this.cancelarAutosave();
+    this.cerrando.set(true);
+    this.avisoCierre.set(null);
+    this.error.set(null);
+
+    this.api.cerrar(consultorioId, sesionId, cuerpo).subscribe({
+      next: (sesion) => {
+        this.cerrando.set(false);
+        this.adoptarCerrada(sesion);
+      },
+      error: (error: unknown) => {
+        this.cerrando.set(false);
+        this.fallo(error);
+      },
+    });
+  }
+
+  /**
+   * Pasa la pantalla a modo lectura con lo que devolvio el servidor.
+   *
+   * <p>Aca si se adopta la respuesta entera —a diferencia de {@link adoptarSoloVersion}— y es
+   * correcto: una sesion cerrada no admite mas escritura, asi que no hay nada tipeado que
+   * proteger. Lo que la respuesta trae es justamente lo que hay que mostrar: el `numeroSesion`, el
+   * cierre y el momento.
+   */
+  private adoptarCerrada(sesion: Sesion): void {
+    this.cancelarAutosave();
+    this.sesion.set(sesion);
+    this.version.set(sesion.version ?? 0);
+    this.notasDelServidor.set(null);
+  }
+
+  // -------------------------------------------------------------------------------------
   // Conflicto de version
   // -------------------------------------------------------------------------------------
 
@@ -382,10 +585,38 @@ export class AtencionPage {
   // Interno
   // -------------------------------------------------------------------------------------
 
+  /**
+   * Traduce el error y, si la atencion resulto estar cerrada, pasa a modo lectura.
+   *
+   * <p>El 409 `sesion-cerrada` llega cuando la cerraron desde otra pestaña: no es un conflicto que
+   * se resuelva reintentando, porque no hay ninguna version con la que el guardado vaya a pasar.
+   * Se relee para que la pantalla muestre lo que efectivamente quedo registrado —con su
+   * `numeroSesion`— en vez de dejar campos que ya no admiten nada. El cartel del error se
+   * mantiene: el modo lectura solo se explica si se dice por que aparecio.
+   *
+   * <p>Si la relectura falla no se toca nada. Quedarse con el cartel y la pantalla como estaba es
+   * peor que nada, pero es honesto; borrarla seria afirmar un estado que no se pudo confirmar.
+   */
   private fallo(error: unknown): void {
     this.guardando.set(false);
     this.cancelarAutosave();
-    this.error.set(traducirErrorAtencion(error));
+    const traducido = traducirErrorAtencion(error);
+    this.error.set(traducido);
+
+    if (traducido.causa !== 'sesion-cerrada') {
+      return;
+    }
+
+    const consultorioId = this.tenantContext.consultorioId();
+    const sesionId = this.sesion()?.id;
+    if (consultorioId === null || sesionId === undefined) {
+      return;
+    }
+
+    this.api.ver(consultorioId, sesionId).subscribe({
+      next: (sesion) => this.adoptarCerrada(sesion),
+      error: () => undefined,
+    });
   }
 
   private cancelarAutosave(): void {

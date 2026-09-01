@@ -27,9 +27,15 @@ import { contextGuard } from '../../core/guards/context.guard';
  * `sesion-ajena` aunque tenga el permiso. Un guard de permiso daria la impresion contraria —que
  * quien pasa puede escribir— y dejaria afuera igual a nadie util. La autoridad es el backend.
  *
- * <h2>Sin ruta de cierre y sin Historia Clinica</h2>
+ * <h2>El cierre no tiene ruta propia, y eso es deliberado</h2>
  *
- * <p>AKINE-06.05 no existe todavia y la HC no tiene endpoints. Montar rutas para ellas seria
+ * <p>Cerrar (AKINE-06.05) es el ultimo paso de la <b>misma</b> pantalla y no una pantalla aparte:
+ * lo que se cierra es lo que se acaba de cargar, y mandarlo a otra URL obligaria a releer la
+ * sesion para volver a mostrar lo mismo. Despues del cierre esa URL sigue siendo la correcta:
+ * abrirla devuelve la atencion cerrada, en modo lectura.
+ *
+ * <p><b>Y no hay ruta de enmienda.</b> Corregir una sesion cerrada es AKINE-06.06, fuera de
+ * alcance por DP-10. La Historia Clinica tampoco tiene endpoints. Montar rutas para ellas seria
  * prometer pantallas que terminan en un 404.
  */
 export const routes: Routes = [

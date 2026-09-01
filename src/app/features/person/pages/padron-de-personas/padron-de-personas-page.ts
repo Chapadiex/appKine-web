@@ -6,8 +6,9 @@ import { ConfirmacionConMotivo } from '../../../../shared/components/confirmacio
 import { CreatePersonaRequest } from '../../../../api/generated/model/create-persona-request';
 import { EstadoDeListado } from '../../../../shared/utils/estado-de-listado';
 import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
-import { PERMISO_PACIENTE_MANAGE } from '../../../../core/models/permisos';
+import { PERMISO_COBRO_REGISTER, PERMISO_PACIENTE_MANAGE } from '../../../../core/models/permisos';
 import { PermisoDirective } from '../../../../shared/directives/permiso.directive';
+import { RouterLink } from '@angular/router';
 import { PersonaPageResponse } from '../../../../api/generated/model/persona-page-response';
 import { PersonaResponse } from '../../../../api/generated/model/persona-response';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
@@ -87,7 +88,7 @@ const TAMANO_DE_PAGINA = 20;
  */
 @Component({
   selector: 'app-padron-de-personas-page',
-  imports: [ReactiveFormsModule, PermisoDirective, ConfirmacionConMotivo, Paginacion],
+  imports: [ReactiveFormsModule, PermisoDirective, ConfirmacionConMotivo, Paginacion, RouterLink],
   templateUrl: './padron-de-personas-page.html',
   styleUrl: '../../person.css',
 })
@@ -97,6 +98,14 @@ export class PadronDePersonasPage {
   private readonly formBuilder = inject(FormBuilder);
 
   protected readonly permisoManage = PERMISO_PACIENTE_MANAGE;
+
+  /**
+   * Permiso que gobierna el enlace a la cuenta corriente (AKINE-07.01).
+   *
+   * <p>Es OTRO permiso que el del padron a proposito: mirar la deuda de alguien no es lo mismo
+   * que corregirle el telefono, y quien hace una cosa no necesariamente hace la otra.
+   */
+  protected readonly permisoCobro = PERMISO_COBRO_REGISTER;
   protected readonly tiposDeDocumento = TIPOS_DE_DOCUMENTO;
   protected readonly documentoEnUnaLinea = documentoEnUnaLinea;
   protected readonly etiquetaDePerfil = etiquetaDePerfil;

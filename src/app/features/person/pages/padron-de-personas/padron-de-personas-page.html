@@ -335,6 +335,20 @@
                 </button>
               }
             }
+
+            <!--
+              Entrada a la cuenta corriente (AKINE-07.01). Es un enlace y no un boton porque
+              navega, y va detras de `cobro:register` porque es lo que el backend exige para
+              leerla: ofrecerlo a quien no lo tiene termina en un 403 que no explica nada.
+              La ruta vive en `billing`, pero esto es solo una URL —no hay import entre features—.
+            -->
+            <a
+              class="enlace"
+              [routerLink]="['/pacientes', persona.id, 'cuenta-corriente']"
+              *akinePermiso="permisoCobro"
+            >
+              Cuenta corriente
+            </a>
           </td>
         </tr>
 

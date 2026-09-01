@@ -150,6 +150,12 @@ export enum ProblemType {
 
     HTTPS___AKINE_APP_PROBLEMS_SESION_AJENA = 'https://akine.app/problems/sesion-ajena',
 
+    HTTPS___AKINE_APP_PROBLEMS_SESION_CERRADA = 'https://akine.app/problems/sesion-cerrada',
+
+    HTTPS___AKINE_APP_PROBLEMS_OBLIGACION_ALREADY_ANULADA = 'https://akine.app/problems/obligacion-already-anulada',
+
+    HTTPS___AKINE_APP_PROBLEMS_OBLIGACION_CON_COBROS = 'https://akine.app/problems/obligacion-con-cobros',
+
     HTTPS___AKINE_APP_PROBLEMS_CONSULTORIO_NO_OPERABLE = 'https://akine.app/problems/consultorio-no-operable',
 
     HTTPS___AKINE_APP_PROBLEMS_PERSONA_DOCUMENTO_TAKEN = 'https://akine.app/problems/persona-documento-taken',

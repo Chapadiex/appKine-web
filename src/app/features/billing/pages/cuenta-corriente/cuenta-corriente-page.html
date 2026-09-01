@@ -1,0 +1,162 @@
+<h1>Cuenta corriente</h1>
+
+<p class="descripcion">
+  Lo que esta persona debe en <b>todo el centro</b>, no solo en esta sede: una deuda es una sola
+  aunque se haya generado atendiendose en dos consultorios de la misma organizacion.
+</p>
+
+@if (nombreDeLaPersona(); as quien) {
+  <p class="ayuda">
+    Deuda de <b>{{ quien }}</b
+    >.
+  </p>
+}
+
+<p><a class="enlace" routerLink="/pacientes">Volver al padron</a></p>
+
+@if (cargando()) {
+  <p class="estado estado--cargando">Cargando la cuenta corriente…</p>
+}
+
+@if (mensajeError(); as mensaje) {
+  <section class="tarjeta" role="alert" aria-labelledby="titulo-error-cuenta">
+    <h2 id="titulo-error-cuenta">No se pudo cargar la cuenta corriente</h2>
+    <p class="estado estado--error">{{ mensaje }}</p>
+    @if (faltaContexto()) {
+      <div class="acciones">
+        <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto</a>
+      </div>
+    } @else {
+      <div class="acciones">
+        <button type="button" class="boton boton--secundario" (click)="cargar()">Reintentar</button>
+      </div>
+    }
+  </section>
+}
+
+@if (exito(); as mensaje) {
+  <p class="estado estado--ok" role="status">{{ mensaje }}</p>
+}
+
+@if (vacia()) {
+  <p class="estado estado--vacio">
+    Esta persona no tiene ninguna deuda registrada. Las obligaciones se generan al cerrar una
+    atencion: no se cargan a mano.
+  </p>
+}
+
+@if (obligaciones().length > 0) {
+  <div class="tabla-scroll" tabindex="0" role="region" aria-labelledby="titulo-tabla-cuenta">
+    <h2 id="titulo-tabla-cuenta" class="visualmente-oculto">Deudas de la persona</h2>
+    <table class="tabla">
+      <thead>
+        <tr>
+          <th scope="col">Devengada</th>
+          <th scope="col">Prestacion</th>
+          <th scope="col">Precio al devengar</th>
+          <th scope="col">Importe</th>
+          <th scope="col">Saldo</th>
+          <th scope="col">Estado</th>
+          <th scope="col">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (obligacion of obligaciones(); track obligacion.id) {
+          <tr [class.fila--revocada]="!sePuedeAnular(obligacion)">
+            <td>{{ fechaEnPalabras(obligacion.devengadaEn) }}</td>
+            <td>{{ obligacion.snapshotNombre }}</td>
+
+            <!--
+              El precio congelado al momento de devengar, y el encabezado lo dice: editar la oferta
+              manana no cambia una cuenta corriente ya emitida. Rotularlo "precio" a secas haria
+              que alguien "corrija" una deuda vieja que esta bien.
+            -->
+            <td class="importe">{{ importe(obligacion, obligacion.snapshotPrecio) }}</td>
+            <td class="importe">{{ importe(obligacion, obligacion.importeOriginal) }}</td>
+            <td class="importe">{{ importe(obligacion, obligacion.saldo) }}</td>
+            <td>
+              <span [class]="claseDeEstado(obligacion.estado)">
+                {{ estadoEnPalabras(obligacion.estado) }}
+              </span>
+            </td>
+            <td>
+              @if (sePuedeAnular(obligacion)) {
+                <div class="acciones-fila">
+                  <button
+                    type="button"
+                    class="boton boton--secundario"
+                    (click)="abrirAnulacion(obligacion)"
+                  >
+                    Anular
+                  </button>
+                </div>
+              } @else if (obligacion.motivoAnulacion) {
+                <span class="ayuda">Motivo: {{ obligacion.motivoAnulacion }}</span>
+              }
+            </td>
+          </tr>
+
+          @if (esObjetivo(obligacion)) {
+            <tr class="fila-panel">
+              <td colspan="7">
+                <!--
+                  `motivoObligatorio` se deja en su default (`true`). Aca el motivo no se puede
+                  omitir: una deuda que se borra sin explicacion es exactamente lo que una
+                  auditoria busca, y la baja logica sin motivo no seria auditable.
+                -->
+                <akine-confirmacion-con-motivo
+                  [idCampo]="'anular-' + obligacion.id"
+                  [titulo]="'Anular la deuda de ' + importe(obligacion, obligacion.importeOriginal)"
+                  etiqueta="Motivo de la anulacion"
+                  ayuda="Queda registrado junto con la deuda. No se borra nada: la obligacion sigue
+                    existiendo, anulada y con este motivo."
+                  textoError="El motivo es obligatorio para anular una deuda."
+                  textoConfirmar="Anular la deuda"
+                  [enviando]="enviando()"
+                  (confirmado)="confirmarAnulacion($event)"
+                  (cancelado)="cerrarPanel()"
+                >
+                  <p class="ayuda">
+                    Corresponde a <b>{{ obligacion.snapshotNombre }}</b> del
+                    {{ fechaEnPalabras(obligacion.devengadaEn) }}.
+                  </p>
+                </akine-confirmacion-con-motivo>
+
+                @if (errorAccion(); as problema) {
+                  <p class="estado estado--error" role="alert">{{ mensajeDelRechazo() }}</p>
+
+                  @if (problema.causa === 'con-cobros') {
+                    <!--
+                      Explicitamente NO se dice "no se puede". Hay algo que hacer y es otra cosa:
+                      una devolucion, que es su propio circuito (M19) y todavia no tiene pantalla.
+                      Un "no se puede" pelado manda a pedir un permiso que no existe.
+                    -->
+                    <p class="ayuda">
+                      Lo que corresponde en este caso es registrar una <b>devolucion</b>, que tiene
+                      su propio circuito y su propio registro. Todavia no se hace desde el sistema:
+                      hay que resolverlo por caja.
+                    </p>
+                  }
+
+                  @if (recargable()) {
+                    <div class="acciones">
+                      <button type="button" class="boton boton--secundario" (click)="cargar()">
+                        Recargar la cuenta corriente
+                      </button>
+                    </div>
+                  }
+                }
+              </td>
+            </tr>
+          }
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <p class="ayuda">
+    <b>No se muestra un total.</b> El backend no lo devuelve y sumarlo en la pantalla produciria
+    centavos que no cuadran contra lo que hay guardado, que es peor que no tenerlo: el total es un
+    numero que despues alguien le dice a un paciente.
+  </p>
+}

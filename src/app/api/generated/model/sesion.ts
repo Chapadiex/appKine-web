@@ -7,6 +7,7 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { CierreDeSesion } from './cierre-de-sesion';
 import { EvaluacionPrevia } from './evaluacion-previa';
 import { EvaluacionBase } from './evaluacion-base';
 
@@ -20,6 +21,11 @@ export interface Sesion {
      */
     borrador?: string;
     borradorGuardadoEn?: string;
+    cerradaEn?: string;
+    /**
+     * Cierre clinico. Ausente si la sesion sigue abierta.
+     */
+    cierre?: CierreDeSesion;
     consultorioId?: number;
     /**
      * Estado de la ATENCION, no del turno ni del cobro
@@ -36,6 +42,10 @@ export interface Sesion {
     historiaClinicaId?: number;
     id?: number;
     iniciadaEn?: string;
+    /**
+     * Correlativo por historia clinica: \"la sesion numero 8 de este paciente\". **Ausente mientras la sesion este abierta**, y es lo que la marca como cerrada.
+     */
+    numeroSesion?: number;
     ofertaId?: number;
     /**
      * Evaluacion de la sesion ANTERIOR del mismo paciente. Ausente si es la primera o si ninguna anterior llego a evaluarse. Viaja con la sesion y no en un endpoint aparte porque la pantalla la necesita en el mismo momento: mostrar \"la vez pasada tenia 7\" al lado del campo de dolor es lo que hace que se cargue una evolucion real y no la que se recuerda.

@@ -1,8 +1,8 @@
-# @akine/api-client@0.17.0
+# @akine/api-client@0.19.0
 
 Contrato REST canonico de AKINE: SaaS multi-tenant para centros de kinesiologia, fisioterapia, rehabilitacion y actividades de salud.  Este artefacto es propiedad del repositorio backend. El frontend genera su cliente TypeScript desde una version fijada de este contrato y no define DTO manuales.
 
-The version of the OpenAPI document: 0.17.0
+The version of the OpenAPI document: 0.19.0
 
 ## Building
 
@@ -24,7 +24,7 @@ Navigate to the folder of your consuming project and run one of next commands.
 _published:_
 
 ```console
-npm install @akine/api-client@0.17.0 --save
+npm install @akine/api-client@0.19.0 --save
 ```
 
 _without publishing (not recommended):_

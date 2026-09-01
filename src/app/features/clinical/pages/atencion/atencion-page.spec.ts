@@ -21,6 +21,7 @@ const INICIAR = `/api/v1/consultorios/${CONSULTORIO}/sesiones/turnos/${TURNO}`;
 const VER = `/api/v1/consultorios/${CONSULTORIO}/sesiones/${SESION}`;
 const BORRADOR = `${VER}/borrador`;
 const EVALUACION = `${VER}/evaluacion`;
+const CIERRE = `${VER}/cierre`;
 
 const ABIERTA = {
   id: SESION,
@@ -34,6 +35,21 @@ const ABIERTA = {
 };
 
 const PRIMERA_SESION = { ...ABIERTA, previa: undefined };
+
+/**
+ * La misma sesion, ya cerrada.
+ *
+ * <p><b>`numeroSesion` es lo que la marca como cerrada</b>, no una bandera aparte: el contrato lo
+ * declara ausente mientras la sesion siga abierta. Por eso el fixture lo trae y por eso la
+ * pantalla lo usa para decidir el modo lectura.
+ */
+const CERRADA = {
+  ...ABIERTA,
+  version: 4,
+  numeroSesion: 8,
+  cerradaEn: '2026-09-15T12:48:00Z',
+  cierre: { asistencia: 'AUSENTE' },
+};
 
 /**
  * Spec de la atencion clinica (M14, AKINE-06.01 y 06.02).
@@ -345,8 +361,154 @@ describe('AtencionPage', () => {
   });
 
   // -------------------------------------------------------------------------------------
+  // Cierre de la atencion (AKINE-06.05)
+  // -------------------------------------------------------------------------------------
+
+  it('con AUSENTE cierra sin pedir nota: no se inventa el resultado de algo que no ocurrio', async () => {
+    const fixture = await montar();
+
+    apretarRadio(fixture, 'AUSENTE');
+    apretar(fixture, 'Cerrar la atencion');
+
+    // Sale igual, con el campo de nota ni siquiera renderizado. Si la pantalla lo exigiera, el
+    // profesional tendria que escribir algo sobre una sesion que no existio para poder cerrar.
+    const pedido = httpMock.expectOne(esCierre());
+    const cuerpo = pedido.request.body as Record<string, unknown>;
+    expect(cuerpo['asistencia']).toBe('AUSENTE');
+    expect(cuerpo['notaDeCierre']).toBeUndefined();
+    expect(cuerpo['version']).toBe(3);
+
+    pedido.flush(CERRADA);
+    await estabilizar(fixture);
+  });
+
+  it('con el paciente presente y sin nota no manda nada, y dice por que', async () => {
+    const fixture = await montar();
+
+    apretarRadio(fixture, 'PRESENTE');
+    apretar(fixture, 'Cerrar la atencion');
+
+    // La nota es el UNICO campo condicionalmente obligatorio: sin ella no queda registrado que se
+    // hizo. Y el rechazo tiene que ser visible: un boton que no hace nada es el defecto que ya
+    // dejo inejecutable una accion del padron.
+    httpMock.expectNone(esCierre());
+    expect(texto(fixture)).toContain('hace falta la nota de cierre');
+  });
+
+  it('cerrar no exige tolerancia, indicaciones ni proxima conducta', async () => {
+    const fixture = await montar();
+
+    apretarRadio(fixture, 'PRESENTE');
+    escribirEn(fixture, '#cierre-nota', 'Terapia manual lumbar, 30 minutos.');
+    fixture.detectChanges();
+    apretar(fixture, 'Cerrar la atencion');
+
+    const pedido = httpMock.expectOne(esCierre());
+    const cuerpo = pedido.request.body as Record<string, unknown>;
+    expect(cuerpo['notaDeCierre']).toBe('Terapia manual lumbar, 30 minutos.');
+    expect(cuerpo['tolerancia']).toBeUndefined();
+    expect(cuerpo['indicaciones']).toBeUndefined();
+    expect(cuerpo['proximaConducta']).toBeUndefined();
+
+    pedido.flush(CERRADA);
+    await estabilizar(fixture);
+  });
+
+  it('despues de cerrar la pantalla queda en LECTURA y muestra el numero de sesion', async () => {
+    const fixture = await montar();
+
+    apretarRadio(fixture, 'AUSENTE');
+    apretar(fixture, 'Cerrar la atencion');
+    httpMock.expectOne(esCierre()).flush(CERRADA);
+    await estabilizar(fixture);
+
+    // Nada editable: dejar los campos seria ofrecer un guardado que el backend rechaza siempre
+    // con 409 `sesion-cerrada`.
+    expect(fixture.nativeElement.querySelector('#atencion-notas')).toBeNull();
+    expect(fixture.nativeElement.querySelector('#cierre-nota')).toBeNull();
+    expect(rotulosDeBoton(fixture)).not.toContain('Guardar evaluacion');
+    expect(rotulosDeBoton(fixture)).not.toContain('Cerrar la atencion');
+
+    // El correlativo por historia clinica es lo que el profesional cuenta.
+    expect(texto(fixture)).toContain('Sesion numero 8');
+  });
+
+  it('los campos opcionales del cierre viajan si se cargan, y se leen con su rotulo', async () => {
+    const fixture = await montar();
+
+    apretarRadio(fixture, 'PRESENTE');
+    escribirEn(fixture, '#cierre-nota', 'Terapia manual.');
+    elegir(fixture, '#cierre-tolerancia', 'REGULAR');
+    elegir(fixture, '#cierre-conducta', 'ALTA');
+    fixture.detectChanges();
+    apretar(fixture, 'Cerrar la atencion');
+
+    const pedido = httpMock.expectOne(esCierre());
+    const cuerpo = pedido.request.body as Record<string, unknown>;
+    expect(cuerpo['tolerancia']).toBe('REGULAR');
+    expect(cuerpo['proximaConducta']).toBe('ALTA');
+
+    pedido.flush({
+      ...CERRADA,
+      cierre: {
+        asistencia: 'PRESENTE',
+        notaDeCierre: 'Terapia manual.',
+        tolerancia: 'REGULAR',
+        proximaConducta: 'ALTA',
+      },
+    });
+    await estabilizar(fixture);
+
+    // En lectura se muestra el rotulo y no el valor crudo del enum: "ALTA" a secas no dice nada.
+    expect(texto(fixture)).toContain('Regular');
+    expect(texto(fixture)).toContain('Alta');
+  });
+
+  it('una sesion que ya venia cerrada se abre directamente en lectura', async () => {
+    const fixture = await montar(CERRADA);
+
+    expect(fixture.nativeElement.querySelector('#atencion-notas')).toBeNull();
+    expect(texto(fixture)).toContain('Sesion numero 8');
+  });
+
+  it('un 409 sesion-cerrada al guardar relee y pasa a lectura, sin ofrecer reintentar', async () => {
+    const fixture = await montar();
+
+    escribirNotas(fixture, 'Sigo escribiendo sin saber que la cerraron.');
+    guardarAhora(fixture);
+
+    httpMock.expectOne(esBorrador()).flush(
+      {
+        type: 'https://akine.app/problems/sesion-cerrada',
+        status: 409,
+        detail: 'La sesion ya esta cerrada.',
+      },
+      { status: 409, statusText: 'Conflict' },
+    );
+    await estabilizar(fixture);
+
+    // La relectura es lo que convierte el error en un estado: sin ella la pantalla se quedaria
+    // con los campos abiertos y cada guardado volveria a fallar igual.
+    httpMock.expectOne(esVer()).flush(CERRADA);
+    await estabilizar(fixture);
+
+    expect(fixture.nativeElement.querySelector('#atencion-notas')).toBeNull();
+    expect(texto(fixture)).toContain('Sesion numero 8');
+    expect(rotulosDeBoton(fixture)).not.toContain('Reintentar');
+  });
+
+  // -------------------------------------------------------------------------------------
   // Accesibilidad
   // -------------------------------------------------------------------------------------
+
+  it(
+    'la vista de lectura de una sesion cerrada no tiene violaciones de accesibilidad',
+    async () => {
+      const fixture = await montar(CERRADA);
+      await esperarSinViolaciones(fixture.nativeElement as HTMLElement);
+    },
+    TIMEOUT_AXE,
+  );
 
   it(
     'no tiene violaciones de accesibilidad',
@@ -469,5 +631,23 @@ describe('AtencionPage', () => {
 
   function esEvaluacion() {
     return (p: HttpRequest<unknown>) => p.method === 'PUT' && p.url === EVALUACION;
+  }
+
+  /** Elige un valor en un `select` y dispara el `change` que la pantalla escucha. */
+  function elegir(fixture: ComponentFixture<AtencionPage>, selector: string, valor: string): void {
+    const campo = fixture.nativeElement.querySelector(selector) as HTMLSelectElement;
+    campo.value = valor;
+    campo.dispatchEvent(new Event('change'));
+  }
+
+  function esCierre() {
+    return (p: HttpRequest<unknown>) => p.method === 'POST' && p.url === CIERRE;
+  }
+
+  /** Rotulos de todos los botones renderizados. Sirve para afirmar que uno YA NO esta. */
+  function rotulosDeBoton(fixture: ComponentFixture<AtencionPage>): string[] {
+    return Array.from(
+      fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>,
+    ).map((boton) => (boton.textContent ?? '').trim());
   }
 });

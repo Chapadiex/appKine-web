@@ -29,6 +29,8 @@ api/invitaciones.service.ts
 api/invitaciones.serviceInterface.ts
 api/mi-cuenta.service.ts
 api/mi-cuenta.serviceInterface.ts
+api/obligaciones.service.ts
+api/obligaciones.serviceInterface.ts
 api/organizaciones.service.ts
 api/organizaciones.serviceInterface.ts
 api/personas.service.ts
@@ -66,6 +68,7 @@ model/account-state-change-request.ts
 model/activar-perfil-paciente-request.ts
 model/activate-account-request.ts
 model/agenda.ts
+model/anular-obligacion.ts
 model/assign-grant-request.ts
 model/audit-event-page-response.ts
 model/audit-event-response.ts
@@ -76,7 +79,9 @@ model/cancel-invitacion-request.ts
 model/catalogo-concepto-page-response.ts
 model/catalogo-concepto-response.ts
 model/catalogo-solicitud-response.ts
+model/cerrar-sesion.ts
 model/change-membership-request.ts
+model/cierre-de-sesion.ts
 model/closed-sessions-response.ts
 model/consultorio-page-response.ts
 model/consultorio-response.ts
@@ -131,6 +136,7 @@ model/membership-reason-request.ts
 model/membership-response.ts
 model/models.ts
 model/motivo-de-rechazo.ts
+model/obligacion.ts
 model/oferta-response.ts
 model/organization-response.ts
 model/password-reset-confirm-request.ts

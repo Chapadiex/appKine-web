@@ -16,6 +16,8 @@
     <h2 id="titulo-problema">
       @if (hayConflicto()) {
         Otra pestaña guardo antes que vos
+      } @else if (problema.causa === 'sesion-cerrada') {
+        La atencion ya estaba cerrada
       } @else {
         No se pudo completar
       }
@@ -63,45 +65,118 @@
 
 @if (sesion(); as atencion) {
   <section class="tarjeta" aria-labelledby="titulo-atencion">
-    <h2 id="titulo-atencion">Atencion en curso</h2>
+    <h2 id="titulo-atencion">
+      @if (cerrada()) {
+        Atencion cerrada
+      } @else {
+        Atencion en curso
+      }
+    </h2>
 
     <dl class="detalle">
       <dt>Iniciada</dt>
       <dd>{{ instanteEnPalabras(atencion.iniciadaEn) }}</dd>
 
-      <dt>Estado</dt>
-      <dd>{{ atencion.estado }}</dd>
+      @if (cerrada()) {
+        <dt>Cerrada</dt>
+        <dd>{{ instanteEnPalabras(atencion.cerradaEn) }}</dd>
+
+        <!--
+          El correlativo es por historia clinica, no un id de base: es "la sesion numero 8 de este
+          paciente", que es como el profesional la cuenta.
+        -->
+        <dt>Numero de sesion</dt>
+        <dd>
+          <b>Sesion numero {{ atencion.numeroSesion }}</b> de este paciente
+        </dd>
+      } @else {
+        <dt>Estado</dt>
+        <dd>{{ atencion.estado }}</dd>
+      }
     </dl>
 
-    <fieldset class="grupo">
-      <legend>Cuanto mostrar</legend>
-      <p class="ayuda">
-        Es una decision de esta pantalla sobre cuanto ves, no sobre que hace falta: cambiar de modo
-        no borra nada de lo que ya cargaste, y ningun campo se vuelve obligatorio.
-      </p>
-      <label class="opcion-radio">
-        <input
-          type="radio"
-          name="modo"
-          value="RAPIDA"
-          [checked]="!completa()"
-          (change)="cambiarModo(false)"
-        />
-        Sesion rapida
-      </label>
-      <label class="opcion-radio">
-        <input
-          type="radio"
-          name="modo"
-          value="COMPLETA"
-          [checked]="completa()"
-          (change)="cambiarModo(true)"
-        />
-        Evaluacion completa
-      </label>
-    </fieldset>
+    @if (!cerrada()) {
+      <fieldset class="grupo">
+        <legend>Cuanto mostrar</legend>
+        <p class="ayuda">
+          Es una decision de esta pantalla sobre cuanto ves, no sobre que hace falta: cambiar de
+          modo no borra nada de lo que ya cargaste, y ningun campo se vuelve obligatorio.
+        </p>
+        <label class="opcion-radio">
+          <input
+            type="radio"
+            name="modo"
+            value="RAPIDA"
+            [checked]="!completa()"
+            (change)="cambiarModo(false)"
+          />
+          Sesion rapida
+        </label>
+        <label class="opcion-radio">
+          <input
+            type="radio"
+            name="modo"
+            value="COMPLETA"
+            [checked]="completa()"
+            (change)="cambiarModo(true)"
+          />
+          Evaluacion completa
+        </label>
+      </fieldset>
+    }
   </section>
+}
 
+<!--
+  Modo lectura. Una sesion cerrada NO se edita: el borrador y la evaluacion devuelven 409
+  `sesion-cerrada`, asi que dejar los campos en pantalla seria ofrecer un guardado que el
+  servidor rechaza siempre. Lo que queda es lo que se registro.
+-->
+@if (cerrada() && sesion(); as atencion) {
+  <section class="tarjeta" aria-labelledby="titulo-cerrada">
+    <h2 id="titulo-cerrada">Lo que quedo registrado</h2>
+
+    <p class="ayuda">
+      Esta atencion ya no admite cambios. Corregir una sesion cerrada es una enmienda, con su propio
+      actor y su propio motivo, y todavia no se puede hacer desde el sistema.
+    </p>
+
+    @if (atencion.cierre; as cierre) {
+      <dl class="detalle">
+        <dt>Asistencia</dt>
+        <dd>{{ etiquetaDeAsistencia(cierre.asistencia) }}</dd>
+
+        @if (cierre.notaDeCierre) {
+          <dt>Nota de cierre</dt>
+          <dd>{{ cierre.notaDeCierre }}</dd>
+        }
+        @if (cierre.respuestaTratamiento) {
+          <dt>Respuesta al tratamiento</dt>
+          <dd>{{ cierre.respuestaTratamiento }}</dd>
+        }
+        @if (cierre.tolerancia) {
+          <dt>Tolerancia</dt>
+          <dd>{{ etiquetaDeTolerancia(cierre.tolerancia) }}</dd>
+        }
+        @if (cierre.indicaciones) {
+          <dt>Indicaciones</dt>
+          <dd>{{ cierre.indicaciones }}</dd>
+        }
+        @if (cierre.proximaConducta) {
+          <dt>Proxima conducta</dt>
+          <dd>{{ etiquetaDeConducta(cierre.proximaConducta) }}</dd>
+        }
+      </dl>
+    }
+
+    @if (atencion.borrador) {
+      <h3 class="panel__titulo">Notas de la atencion</h3>
+      <pre class="comparacion">{{ atencion.borrador }}</pre>
+    }
+  </section>
+}
+
+@if (!cerrada() && sesion()) {
   <section class="tarjeta" aria-labelledby="titulo-evaluacion">
     <h2 id="titulo-evaluacion">Evaluacion</h2>
 
@@ -296,6 +371,153 @@
       @if (guardadoEn(); as cuando) {
         <p class="ayuda" aria-live="polite">Ultimo guardado: {{ cuando }}</p>
       }
+    </div>
+  </section>
+
+  <!--
+    Cierre de la atencion (AKINE-06.05). Dos obligatorios y nada mas: la asistencia siempre, y la
+    nota SOLO si el paciente vino. Todo lo demas se rotula "(opcional)" porque lo es: obligar a
+    completarlo para poder cerrar una sesion que ya termino produce campos rellenados por tramite,
+    que despues no se pueden leer como dato clinico.
+  -->
+  <section class="tarjeta" aria-labelledby="titulo-cierre">
+    <h2 id="titulo-cierre">Cerrar la atencion</h2>
+
+    <p class="ayuda">
+      Cerrar le asigna a esta sesion su numero dentro de la historia clinica del paciente, y la deja
+      sin poder editarse. <b>No cobra nada</b>: lo economico se maneja aparte.
+    </p>
+
+    <fieldset class="grupo">
+      <legend>Asistencia</legend>
+      <p class="ayuda">
+        Es lo unico que el cierre siempre necesita: sin esto no se sabe si hubo prestacion.
+        <b>Que no haya venido tambien es un cierre valido</b>, y es lo que evita que el turno quede
+        abierto para siempre.
+      </p>
+      @for (opcion of asistencias; track opcion.valor) {
+        <label class="opcion-radio">
+          <input
+            type="radio"
+            name="asistencia"
+            [value]="opcion.valor"
+            [checked]="asistencia() === opcion.valor"
+            (change)="elegirAsistencia(opcion.valor)"
+          />
+          {{ opcion.etiqueta }}
+        </label>
+      }
+    </fieldset>
+
+    @if (presente()) {
+      <div class="campo">
+        <label for="cierre-nota">Nota de cierre</label>
+        <textarea
+          id="cierre-nota"
+          name="cierre-nota"
+          rows="4"
+          maxlength="2000"
+          aria-describedby="ayuda-cierre-nota"
+          [attr.aria-invalid]="faltaNota() && avisoCierre() !== null"
+          [value]="notaDeCierre()"
+          (input)="notaDeCierre.set($any($event.target).value)"
+        ></textarea>
+        <p id="ayuda-cierre-nota" class="ayuda">
+          Que se hizo en la sesion. Hace falta porque el paciente vino: es lo unico que registra la
+          prestacion.
+        </p>
+      </div>
+
+      <div class="campo">
+        <label for="cierre-respuesta">
+          Respuesta al tratamiento <span class="campo__opcional">(opcional)</span>
+        </label>
+        <input
+          id="cierre-respuesta"
+          name="cierre-respuesta"
+          type="text"
+          maxlength="500"
+          [value]="respuestaTratamiento()"
+          (input)="respuestaTratamiento.set($any($event.target).value)"
+        />
+      </div>
+
+      <div class="campo">
+        <label for="cierre-tolerancia">
+          Tolerancia <span class="campo__opcional">(opcional)</span>
+        </label>
+        <select
+          id="cierre-tolerancia"
+          name="cierre-tolerancia"
+          aria-describedby="ayuda-cierre-tolerancia"
+          (change)="elegirTolerancia($any($event.target).value)"
+        >
+          <option value="" [selected]="tolerancia() === null">Sin cargar</option>
+          @for (opcion of tolerancias; track opcion.valor) {
+            <option [value]="opcion.valor" [selected]="tolerancia() === opcion.valor">
+              {{ opcion.etiqueta }}
+            </option>
+          }
+        </select>
+        <p id="ayuda-cierre-tolerancia" class="ayuda">
+          Como tolero lo que se le hizo. <b>Es distinto del resultado</b>: se puede tolerar mal algo
+          que funciona.
+        </p>
+      </div>
+
+      <div class="campo">
+        <label for="cierre-indicaciones">
+          Indicaciones <span class="campo__opcional">(opcional)</span>
+        </label>
+        <textarea
+          id="cierre-indicaciones"
+          name="cierre-indicaciones"
+          rows="3"
+          maxlength="1000"
+          aria-describedby="ayuda-cierre-indicaciones"
+          [value]="indicaciones()"
+          (input)="indicaciones.set($any($event.target).value)"
+        ></textarea>
+        <p id="ayuda-cierre-indicaciones" class="ayuda">Lo que el paciente se lleva.</p>
+      </div>
+
+      <div class="campo">
+        <label for="cierre-conducta">
+          Proxima conducta <span class="campo__opcional">(opcional)</span>
+        </label>
+        <select
+          id="cierre-conducta"
+          name="cierre-conducta"
+          aria-describedby="ayuda-cierre-conducta"
+          (change)="elegirConducta($any($event.target).value)"
+        >
+          <option value="" [selected]="proximaConducta() === null">Sin cargar</option>
+          @for (opcion of conductas; track opcion.valor) {
+            <option [value]="opcion.valor" [selected]="proximaConducta() === opcion.valor">
+              {{ opcion.etiqueta }}
+            </option>
+          }
+        </select>
+        <p id="ayuda-cierre-conducta" class="ayuda">
+          Que sigue. Es lo que convierte una sesion suelta en un tratamiento, y se puede dejar sin
+          cargar si todavia no se decidio.
+        </p>
+      </div>
+    } @else if (asistencia() !== null) {
+      <p class="ayuda">
+        No vino, asi que no hay nada mas que completar: pedir el resultado de una atencion que no
+        ocurrio seria pedir que se invente.
+      </p>
+    }
+
+    @if (avisoCierre(); as aviso) {
+      <p class="estado estado--error" role="alert">{{ aviso }}</p>
+    }
+
+    <div class="acciones">
+      <button type="button" class="boton" [disabled]="cerrando()" (click)="cerrar()">
+        Cerrar la atencion
+      </button>
     </div>
   </section>
 }

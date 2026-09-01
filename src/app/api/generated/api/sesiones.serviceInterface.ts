@@ -11,6 +11,7 @@ import { HttpHeaders }                                       from '@angular/comm
 
 import { Observable }                                        from 'rxjs';
 
+import { CerrarSesion } from '../model/models';
 import { GuardarBorrador } from '../model/models';
 import { GuardarEvaluacion } from '../model/models';
 import { ProblemDetail } from '../model/models';
@@ -19,6 +20,12 @@ import { Sesion } from '../model/models';
 
 import { Configuration }                                     from '../configuration';
 
+
+export interface CerrarRequestParams {
+    consultorioId: number;
+    sesionId: number;
+    cerrarSesion: CerrarSesion;
+}
 
 export interface EvaluarRequestParams {
     consultorioId: number;
@@ -46,6 +53,14 @@ export interface VerRequestParams {
 export interface SesionesServiceInterface {
     defaultHeaders: HttpHeaders;
     configuration: Configuration;
+
+    /**
+     * Cerrar la atencion
+     * Cierra la sesion y le asigna su **correlativo por historia clinica** — \&quot;la sesion numero 8 de este paciente\&quot;.  **Es idempotente.** Cerrar dos veces devuelve el mismo resultado con el mismo numero y no renumera: apretar dos veces \&quot;cerrar\&quot; es el caso normal, y renumerar una sesion cerrada seria reescribir historia clinica. La idempotencia se evalua ANTES de pedir un numero, para que un reintento no consuma un correlativo que despues nadie usa y deje huecos que parecen sesiones borradas.  **Cerrar no cobra.** DP-06: el cierre clinico no depende del pago y no crea ninguna obligacion economica. La obligacion se deriva despues, en AKINE-07.01, leyendo las sesiones cerradas.  **Una sesion cerrada no se edita.** Corregirla es una enmienda con su actor y su motivo, y eso es AKINE-06.06, fuera de alcance. Hasta entonces esto es fail-closed: es preferible no poder corregir a corregir sin dejar rastro.
+     * @endpoint post /api/v1/consultorios/{consultorioId}/sesiones/{sesionId}/cierre
+* @param requestParameters
+     */
+    cerrar(requestParameters: CerrarRequestParams, extraHttpRequestParams?: any): Observable<Sesion>;
 
     /**
      * Guardar la evaluacion base

@@ -1,0 +1,31 @@
+/*
+ * Hoja de la feature `billing` (cuenta corriente, M18, AKINE-07.01).
+ *
+ * <b>Deliberadamente corta</b>, igual que las de `person`, `resource` y `offering`. `.boton`,
+ * `.campo`, `.tabla`, `.tabla-scroll`, `.estado`, `.tarjeta`, `.marca-estado`, `.acciones`,
+ * `.acciones-fila`, `.fila-panel`, `.fila--revocada`, `.ayuda` y `.descripcion` los aporta
+ * `src/design-system.css`, que es global. Copiarlos aca no seria aislar la feature: seria una
+ * copia que se despega del original el dia que alguien retoque un gris.
+ *
+ * <b>Cero colores literales.</b> Todo sale de los tokens de `:root`, que ya tiene definido cada
+ * rol que esta pantalla necesita. No hizo falta agregar ninguno.
+ *
+ * Solo entra lo que existe unicamente en esta pantalla.
+ */
+
+/*
+ * Las columnas de plata.
+ *
+ * Van alineadas a la derecha y en tabulares porque se leen COMPARANDO: tres importes de la misma
+ * fila y veinte de la misma columna. Con cifras de ancho variable las unidades no quedan una
+ * debajo de la otra y hay que leer cada numero entero para saber cual es mayor, que es
+ * exactamente lo que una cuenta corriente no puede pedir.
+ *
+ * `font-variant-numeric` no cambia el valor ni la accesibilidad: son los mismos caracteres, con
+ * el ancho parejo que la fuente ya trae.
+ */
+.importe {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}

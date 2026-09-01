@@ -161,6 +161,25 @@ export const routes: Routes = [
   // `contextGuard` lo pone la ruta hija: el padron es de la ORGANIZACION, pero sus dos acciones
   // evaluan el permiso con la sede del contexto, asi que sin sede la pantalla quedaria en
   // solo-lectura sin poder explicar por que.
+  // Cuenta corriente de un paciente (M18, AKINE-07.01).
+  //
+  // VA ANTES QUE `pacientes` A PROPOSITO. Angular resuelve por orden, y `pacientes` con
+  // `loadChildren` se queda con todo `pacientes/**`: declarada despues, esta ruta seria
+  // inalcanzable y el usuario caeria en el 404 del comodin de `person`.
+  //
+  // La URL cuelga del padron porque asi es como se llega -primero se busca a la persona, despues
+  // se mira que debe-, pero la FEATURE es propia: la deuda no es un dato del padron y `person` no
+  // puede importar de `billing` (AGENT.md 4.4). Declararla aca es lo que deja convivir las dos
+  // cosas. El detalle esta en `billing.routes.ts`.
+  //
+  // `contextGuard` lo pone la ruta hija: la consulta se arma con una sede, aunque la deuda que
+  // devuelve sea de toda la ORGANIZACION.
+  {
+    path: 'pacientes/:personaId/cuenta-corriente',
+    canActivate: [authGuard],
+    loadChildren: () => import('./features/billing/billing.routes').then((m) => m.routes),
+  },
+
   {
     path: 'pacientes',
     canActivate: [authGuard],
