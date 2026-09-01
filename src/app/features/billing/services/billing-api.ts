@@ -68,19 +68,18 @@ export class BillingApi {
   /**
    * La cuenta corriente del paciente, de la mas reciente a la mas vieja.
    *
-   * <p><b>El metodo generado se llama `deLaPersona1` y ese `1` no es un capricho del cliente.</b>
-   * `GET /obligaciones` y `GET /cobros` declaran el <b>mismo</b> `operationId` —`deLaPersona`— en
-   * el contrato, y el generador desambigua sufijando el segundo que encuentra. Lo mismo pasa con
-   * `ver`/`ver1`/`ver_2`. Es un defecto del YAML, no del generador: los `operationId` son
-   * identificadores unicos por documento y estos no lo son.
+   * <p>Hasta el contrato 0.21.0 este metodo se llamaba `deLaPersona1`, con un `1` que no era un
+   * typo: `GET /obligaciones` y `GET /cobros` declaraban el <b>mismo</b> `operationId` y el
+   * generador desambiguaba sufijando el segundo. El numero se asignaba por orden de aparicion, asi
+   * que agregar o renombrar cualquier operacion homonima se lo pasaba a otra y esta linea dejaba de
+   * compilar en un archivo que nadie habia tocado.
    *
-   * <p>Se consume tal cual sale del generador porque el cliente no se edita a mano. Lo que hay que
-   * saber es la consecuencia: <b>el numero se mueve solo</b> cuando el backend agrega otra
-   * operacion homonima, y ese dia esta linea deja de compilar en un lugar que no tiene nada que
-   * ver con el cambio. Arreglarlo de verdad es renombrar los `operationId` en el backend.
+   * <p>Corregido en el backend en 0.22.0 —`operationId` unicos, con un gate del contrato que falla
+   * si alguno vuelve a venir sufijado—. Queda anotado porque explica por que estos nombres son
+   * largos: `obligacionesDeLaPersona` y no `deLaPersona` es lo que los mantiene unicos.
    */
   deLaPersona(consultorioId: number, personaId: number): Observable<readonly Obligacion[]> {
-    return this.api.deLaPersona1({ consultorioId, personaId });
+    return this.api.obligacionesDeLaPersona({ consultorioId, personaId });
   }
 
   /**
@@ -135,7 +134,7 @@ export class BillingApi {
 
   /** Los cobros del paciente en toda la organizacion, del mas reciente al mas viejo. */
   cobrosDeLaPersona(consultorioId: number, personaId: number): Observable<readonly Cobro[]> {
-    return this.cobros.deLaPersona({ consultorioId, personaId });
+    return this.cobros.cobrosDeLaPersona({ consultorioId, personaId });
   }
 
   /**
@@ -150,6 +149,6 @@ export class BillingApi {
    * cargo en memoria hace veinte minutos.
    */
   verCobro(consultorioId: number, cobroId: number): Observable<Cobro> {
-    return this.cobros.ver2({ consultorioId, cobroId });
+    return this.cobros.verCobro({ consultorioId, cobroId });
   }
 }

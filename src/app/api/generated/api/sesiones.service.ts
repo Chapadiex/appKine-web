@@ -37,7 +37,7 @@ import {
     EvaluarRequestParams,
     GuardarBorradorRequestParams,
     IniciarRequestParams,
-    VerRequestParams
+    VerSesionRequestParams
 } from './sesiones.serviceInterface';
 
 
@@ -354,17 +354,17 @@ export class SesionesService extends BaseService implements SesionesServiceInter
      * @param reportProgress flag to report request and response progress.
      * @param options additional options
      */
-    public ver(requestParameters: VerRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<Sesion>;
-    public ver(requestParameters: VerRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<Sesion>>;
-    public ver(requestParameters: VerRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<Sesion>>;
-    public ver(requestParameters: VerRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+    public verSesion(requestParameters: VerSesionRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<Sesion>;
+    public verSesion(requestParameters: VerSesionRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<Sesion>>;
+    public verSesion(requestParameters: VerSesionRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<Sesion>>;
+    public verSesion(requestParameters: VerSesionRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
         const consultorioId = requestParameters?.consultorioId;
         if (consultorioId === null || consultorioId === undefined) {
-            throw new Error('Required parameter consultorioId was null or undefined when calling ver.');
+            throw new Error('Required parameter consultorioId was null or undefined when calling verSesion.');
         }
         const sesionId = requestParameters?.sesionId;
         if (sesionId === null || sesionId === undefined) {
-            throw new Error('Required parameter sesionId was null or undefined when calling ver.');
+            throw new Error('Required parameter sesionId was null or undefined when calling verSesion.');
         }
 
         let localVarHeaders = this.defaultHeaders;

@@ -19,7 +19,7 @@ import { RegistrarCobro } from '../model/models';
 import { Configuration }                                     from '../configuration';
 
 
-export interface DeLaPersonaRequestParams {
+export interface CobrosDeLaPersonaRequestParams {
     consultorioId: number;
     personaId: number;
 }
@@ -29,7 +29,7 @@ export interface RegistrarRequestParams {
     registrarCobro: RegistrarCobro;
 }
 
-export interface Ver2RequestParams {
+export interface VerCobroRequestParams {
     consultorioId: number;
     cobroId: number;
 }
@@ -45,7 +45,7 @@ export interface CobrosServiceInterface {
      * @endpoint get /api/v1/consultorios/{consultorioId}/cobros
 * @param requestParameters
      */
-    deLaPersona(requestParameters: DeLaPersonaRequestParams, extraHttpRequestParams?: any): Observable<Array<Cobro>>;
+    cobrosDeLaPersona(requestParameters: CobrosDeLaPersonaRequestParams, extraHttpRequestParams?: any): Observable<Array<Cobro>>;
 
     /**
      * Registrar un cobro
@@ -61,6 +61,6 @@ export interface CobrosServiceInterface {
      * @endpoint get /api/v1/consultorios/{consultorioId}/cobros/{cobroId}
 * @param requestParameters
      */
-    ver2(requestParameters: Ver2RequestParams, extraHttpRequestParams?: any): Observable<Cobro>;
+    verCobro(requestParameters: VerCobroRequestParams, extraHttpRequestParams?: any): Observable<Cobro>;
 
 }

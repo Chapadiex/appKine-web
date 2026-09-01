@@ -44,7 +44,7 @@ export interface IniciarRequestParams {
     turnoId: number;
 }
 
-export interface VerRequestParams {
+export interface VerSesionRequestParams {
     consultorioId: number;
     sesionId: number;
 }
@@ -92,6 +92,6 @@ export interface SesionesServiceInterface {
      * @endpoint get /api/v1/consultorios/{consultorioId}/sesiones/{sesionId}
 * @param requestParameters
      */
-    ver(requestParameters: VerRequestParams, extraHttpRequestParams?: any): Observable<Sesion>;
+    verSesion(requestParameters: VerSesionRequestParams, extraHttpRequestParams?: any): Observable<Sesion>;
 
 }

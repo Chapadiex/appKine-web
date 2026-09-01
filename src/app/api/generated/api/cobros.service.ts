@@ -29,9 +29,9 @@ import { Configuration }                                     from '../configurat
 import { BaseService } from '../api.base.service';
 import {
     CobrosServiceInterface,
-    DeLaPersonaRequestParams,
+    CobrosDeLaPersonaRequestParams,
     RegistrarRequestParams,
-    Ver2RequestParams
+    VerCobroRequestParams
 } from './cobros.serviceInterface';
 
 
@@ -54,17 +54,17 @@ export class CobrosService extends BaseService implements CobrosServiceInterface
      * @param reportProgress flag to report request and response progress.
      * @param options additional options
      */
-    public deLaPersona(requestParameters: DeLaPersonaRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<Array<Cobro>>;
-    public deLaPersona(requestParameters: DeLaPersonaRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<Array<Cobro>>>;
-    public deLaPersona(requestParameters: DeLaPersonaRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<Array<Cobro>>>;
-    public deLaPersona(requestParameters: DeLaPersonaRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+    public cobrosDeLaPersona(requestParameters: CobrosDeLaPersonaRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<Array<Cobro>>;
+    public cobrosDeLaPersona(requestParameters: CobrosDeLaPersonaRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<Array<Cobro>>>;
+    public cobrosDeLaPersona(requestParameters: CobrosDeLaPersonaRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<Array<Cobro>>>;
+    public cobrosDeLaPersona(requestParameters: CobrosDeLaPersonaRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
         const consultorioId = requestParameters?.consultorioId;
         if (consultorioId === null || consultorioId === undefined) {
-            throw new Error('Required parameter consultorioId was null or undefined when calling deLaPersona.');
+            throw new Error('Required parameter consultorioId was null or undefined when calling cobrosDeLaPersona.');
         }
         const personaId = requestParameters?.personaId;
         if (personaId === null || personaId === undefined) {
-            throw new Error('Required parameter personaId was null or undefined when calling deLaPersona.');
+            throw new Error('Required parameter personaId was null or undefined when calling cobrosDeLaPersona.');
         }
 
         let localVarQueryParameters = new OpenApiHttpParams(this.encoder);
@@ -202,17 +202,17 @@ export class CobrosService extends BaseService implements CobrosServiceInterface
      * @param reportProgress flag to report request and response progress.
      * @param options additional options
      */
-    public ver2(requestParameters: Ver2RequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<Cobro>;
-    public ver2(requestParameters: Ver2RequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<Cobro>>;
-    public ver2(requestParameters: Ver2RequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<Cobro>>;
-    public ver2(requestParameters: Ver2RequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+    public verCobro(requestParameters: VerCobroRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<Cobro>;
+    public verCobro(requestParameters: VerCobroRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<Cobro>>;
+    public verCobro(requestParameters: VerCobroRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<Cobro>>;
+    public verCobro(requestParameters: VerCobroRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
         const consultorioId = requestParameters?.consultorioId;
         if (consultorioId === null || consultorioId === undefined) {
-            throw new Error('Required parameter consultorioId was null or undefined when calling ver2.');
+            throw new Error('Required parameter consultorioId was null or undefined when calling verCobro.');
         }
         const cobroId = requestParameters?.cobroId;
         if (cobroId === null || cobroId === undefined) {
-            throw new Error('Required parameter cobroId was null or undefined when calling ver2.');
+            throw new Error('Required parameter cobroId was null or undefined when calling verCobro.');
         }
 
         let localVarHeaders = this.defaultHeaders;

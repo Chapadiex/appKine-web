@@ -49,7 +49,7 @@ export class ClinicalApi {
    * guardo la otra pestaña, sin tocar nada de lo que hay escrito en pantalla.
    */
   ver(consultorioId: number, sesionId: number): Observable<Sesion> {
-    return this.sesiones.ver({ consultorioId, sesionId });
+    return this.sesiones.verSesion({ consultorioId, sesionId });
   }
 
   /**

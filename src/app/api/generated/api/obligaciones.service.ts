@@ -30,8 +30,8 @@ import { BaseService } from '../api.base.service';
 import {
     ObligacionesServiceInterface,
     AnularRequestParams,
-    DeLaPersona1RequestParams,
-    Ver1RequestParams
+    ObligacionesDeLaPersonaRequestParams,
+    VerObligacionRequestParams
 } from './obligaciones.serviceInterface';
 
 
@@ -131,17 +131,17 @@ export class ObligacionesService extends BaseService implements ObligacionesServ
      * @param reportProgress flag to report request and response progress.
      * @param options additional options
      */
-    public deLaPersona1(requestParameters: DeLaPersona1RequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<Array<Obligacion>>;
-    public deLaPersona1(requestParameters: DeLaPersona1RequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<Array<Obligacion>>>;
-    public deLaPersona1(requestParameters: DeLaPersona1RequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<Array<Obligacion>>>;
-    public deLaPersona1(requestParameters: DeLaPersona1RequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+    public obligacionesDeLaPersona(requestParameters: ObligacionesDeLaPersonaRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<Array<Obligacion>>;
+    public obligacionesDeLaPersona(requestParameters: ObligacionesDeLaPersonaRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<Array<Obligacion>>>;
+    public obligacionesDeLaPersona(requestParameters: ObligacionesDeLaPersonaRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<Array<Obligacion>>>;
+    public obligacionesDeLaPersona(requestParameters: ObligacionesDeLaPersonaRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
         const consultorioId = requestParameters?.consultorioId;
         if (consultorioId === null || consultorioId === undefined) {
-            throw new Error('Required parameter consultorioId was null or undefined when calling deLaPersona1.');
+            throw new Error('Required parameter consultorioId was null or undefined when calling obligacionesDeLaPersona.');
         }
         const personaId = requestParameters?.personaId;
         if (personaId === null || personaId === undefined) {
-            throw new Error('Required parameter personaId was null or undefined when calling deLaPersona1.');
+            throw new Error('Required parameter personaId was null or undefined when calling obligacionesDeLaPersona.');
         }
 
         let localVarQueryParameters = new OpenApiHttpParams(this.encoder);
@@ -205,17 +205,17 @@ export class ObligacionesService extends BaseService implements ObligacionesServ
      * @param reportProgress flag to report request and response progress.
      * @param options additional options
      */
-    public ver1(requestParameters: Ver1RequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<Obligacion>;
-    public ver1(requestParameters: Ver1RequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<Obligacion>>;
-    public ver1(requestParameters: Ver1RequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<Obligacion>>;
-    public ver1(requestParameters: Ver1RequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+    public verObligacion(requestParameters: VerObligacionRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<Obligacion>;
+    public verObligacion(requestParameters: VerObligacionRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<Obligacion>>;
+    public verObligacion(requestParameters: VerObligacionRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<Obligacion>>;
+    public verObligacion(requestParameters: VerObligacionRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
         const consultorioId = requestParameters?.consultorioId;
         if (consultorioId === null || consultorioId === undefined) {
-            throw new Error('Required parameter consultorioId was null or undefined when calling ver1.');
+            throw new Error('Required parameter consultorioId was null or undefined when calling verObligacion.');
         }
         const obligacionId = requestParameters?.obligacionId;
         if (obligacionId === null || obligacionId === undefined) {
-            throw new Error('Required parameter obligacionId was null or undefined when calling ver1.');
+            throw new Error('Required parameter obligacionId was null or undefined when calling verObligacion.');
         }
 
         let localVarHeaders = this.defaultHeaders;
