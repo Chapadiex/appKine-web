@@ -11,7 +11,11 @@ import { HttpHeaders }                                       from '@angular/comm
 
 import { Observable }                                        from 'rxjs';
 
+import { CancelarTurno } from '../model/models';
+import { EventoDeTurno } from '../model/models';
 import { ProblemDetail } from '../model/models';
+import { RegistrarAusencia } from '../model/models';
+import { ReprogramarTurno } from '../model/models';
 import { ReservarTurno } from '../model/models';
 import { Turno } from '../model/models';
 
@@ -19,9 +23,32 @@ import { Turno } from '../model/models';
 import { Configuration }                                     from '../configuration';
 
 
+export interface CancelarRequestParams {
+    consultorioId: number;
+    turnoId: number;
+    cancelarTurno: CancelarTurno;
+}
+
 export interface ConfirmarRequestParams {
     consultorioId: number;
     turnoId: number;
+}
+
+export interface HistorialRequestParams {
+    consultorioId: number;
+    turnoId: number;
+}
+
+export interface RegistrarAusenciaRequestParams {
+    consultorioId: number;
+    turnoId: number;
+    registrarAusencia: RegistrarAusencia;
+}
+
+export interface ReprogramarRequestParams {
+    consultorioId: number;
+    turnoId: number;
+    reprogramarTurno: ReprogramarTurno;
 }
 
 export interface ReservarRequestParams {
@@ -36,6 +63,14 @@ export interface TurnosServiceInterface {
     configuration: Configuration;
 
     /**
+     * Cancelar un turno futuro
+     * **Cancelar no borra** (RN-M12-002): la fila queda con su motivo, su actor y su historial. Lo que si hace es **liberar el lugar**, que vuelve a estar disponible en la agenda.  **El motivo es obligatorio** (DP-04), y la version tambien: si otro operador toco el turno entre medio, la cancelacion se rechaza en vez de pisarlo.  **Solo turnos futuros.** Un turno que ya empezo es inalterable; lo que se registra sobre el es una ausencia.  **No es idempotente**, a diferencia de confirmar: entre dos cancelaciones el lugar pudo haber sido tomado por otro paciente, y contestar 200 en silencio le haria creer al operador que su motivo quedo registrado.
+     * @endpoint post /api/v1/consultorios/{consultorioId}/turnos/{turnoId}/cancelacion
+* @param requestParameters
+     */
+    cancelar(requestParameters: CancelarRequestParams, extraHttpRequestParams?: any): Observable<Turno>;
+
+    /**
      * Confirmar un turno reservado
      * Marca la reserva como confirmada. **Es idempotente**: confirmar dos veces devuelve 200 sin cambiar nada.  Confirmar es un estado de la RESERVA y no del cobro ni de la llegada del paciente: DP-06 deja el prepago como politica configurable y nunca como condicion del dominio clinico.
      * @endpoint post /api/v1/consultorios/{consultorioId}/turnos/{turnoId}/confirmacion
@@ -44,8 +79,32 @@ export interface TurnosServiceInterface {
     confirmar(requestParameters: ConfirmarRequestParams, extraHttpRequestParams?: any): Observable<Turno>;
 
     /**
+     * Historial de estados de un turno
+     * Todas las transiciones del turno, de la mas vieja a la mas nueva, con actor, fecha, motivo y —cuando hubo reprogramacion— el horario del que vino (RF-M12-008).  Exige &#x60;turno:read&#x60; y no &#x60;turno:manage&#x60;: leer quien cancelo y por que es parte de mirar la agenda, no de operarla.  Los turnos anteriores a la migracion &#x60;V38&#x60; tienen su evento de reserva reconstruido desde la propia fila; en esos, el actor de la confirmacion viaja vacio porque nunca se habia guardado.
+     * @endpoint get /api/v1/consultorios/{consultorioId}/turnos/{turnoId}/historial
+* @param requestParameters
+     */
+    historial(requestParameters: HistorialRequestParams, extraHttpRequestParams?: any): Observable<Array<EventoDeTurno>>;
+
+    /**
+     * Registrar que el paciente no vino
+     * **No libera el lugar**: la hora se consumio igual, el profesional estuvo ahi. Es la diferencia con cancelar.  **Nunca elimina nada, ni este turno ni ningun otro** (DP-04). El documento historico de 2019 borraba la serie ante la primera ausencia y esa conducta esta explicitamente derogada.  Solo se registra **despues** de la hora del turno: una ausencia anticipada no es una ausencia, es una cancelacion.  No prueba nada clinico. Que el paciente haya sido atendido lo dice la Sesion (DP-05), y por eso un turno con atencion registrada no admite esta marca.
+     * @endpoint post /api/v1/consultorios/{consultorioId}/turnos/{turnoId}/ausencia
+* @param requestParameters
+     */
+    registrarAusencia(requestParameters: RegistrarAusenciaRequestParams, extraHttpRequestParams?: any): Observable<Turno>;
+
+    /**
+     * Mover un turno a otro horario
+     * **Es el mismo turno**: conserva id, paciente e historial (DP-04). No se cancela uno y se crea otro, entre otras cosas porque la Sesion de M14 cuelga del &#x60;turnoId&#x60; y ese vinculo se cortaria.  El servidor **revalida el destino entero** —vigencia de la oferta, habilitacion y horario del profesional, cupo y solapamiento— bajo el mismo lock de sede que usa una reserva, asi que dos reprogramaciones al mismo hueco no pasan las dos.  Un turno confirmado **vuelve a &#x60;RESERVADO&#x60;**: lo que el paciente confirmo era otro horario.
+     * @endpoint post /api/v1/consultorios/{consultorioId}/turnos/{turnoId}/reprogramacion
+* @param requestParameters
+     */
+    reprogramar(requestParameters: ReprogramarRequestParams, extraHttpRequestParams?: any): Observable<Turno>;
+
+    /**
      * Reservar un turno
-     * Toma un slot de una oferta. **El servidor revalida todo**: que la oferta siga vigente ese dia, que el profesional siga habilitado y atendiendo en ese horario, que quede cupo y que ni el profesional ni el box tengan otro turno que se cruce.  **Una sola reserva gana.** Dos peticiones concurrentes por el mismo hueco se serializan; la segunda recibe un 409 con el tipo que corresponde a su caso.  Los cuatro conflictos son tipos distintos a proposito, porque llevan a la pantalla a acciones distintas: &#x60;slot-no-disponible&#x60; (recargar la agenda),                &#x60;slot-completo&#x60; (ofrecer el siguiente), &#x60;recurso-ocupado&#x60; (elegir otro horario o profesional) y &#x60;persona-sin-perfil-paciente&#x60; (activar el perfil).  **No hay cancelacion todavia**: llega en AKINE-05.03.
+     * Toma un slot de una oferta. **El servidor revalida todo**: que la oferta siga vigente ese dia, que el profesional siga habilitado y atendiendo en ese horario, que quede cupo y que ni el profesional ni el box tengan otro turno que se cruce.  **Una sola reserva gana.** Dos peticiones concurrentes por el mismo hueco se serializan; la segunda recibe un 409 con el tipo que corresponde a su caso.  Los cuatro conflictos son tipos distintos a proposito, porque llevan a la pantalla a acciones distintas: &#x60;slot-no-disponible&#x60; (recargar la agenda),                &#x60;slot-completo&#x60; (ofrecer el siguiente), &#x60;recurso-ocupado&#x60; (elegir otro horario o profesional) y &#x60;persona-sin-perfil-paciente&#x60; (activar el perfil).  Deshacer la reserva es otra operacion: &#x60;POST /{turnoId}/cancelacion&#x60;.
      * @endpoint post /api/v1/consultorios/{consultorioId}/turnos/ofertas/{ofertaId}
 * @param requestParameters
      */

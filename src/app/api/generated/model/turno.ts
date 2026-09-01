@@ -14,7 +14,12 @@
  */
 export interface Turno { 
     /**
-     * Ausente mientras el turno no se confirme
+     * Cuando se registro que el paciente no vino
+     */
+    ausenteEn?: string;
+    canceladoEn?: string;
+    /**
+     * Ausente mientras el turno no se confirme. Una reprogramacion lo vuelve a vaciar: lo confirmado era otro horario.
      */
     confirmadoEn?: string;
     consultorioId?: number;
@@ -23,7 +28,7 @@ export interface Turno {
      */
     espacioId?: number;
     /**
-     * Estado de la RESERVA. Nunca dice que la atencion ocurrio: eso lo dice la Sesion.
+     * Estado de la RESERVA. Nunca dice que la atencion ocurrio: eso lo dice la Sesion. `CANCELADO` libera el lugar; `AUSENTE` **no**, porque la hora se consumio igual.
      */
     estado?: TurnoEstadoEnum;
     /**
@@ -35,6 +40,10 @@ export interface Turno {
      * Inicio, UTC
      */
     inicio?: string;
+    /**
+     * Por que se cancelo. Obligatorio al cancelar (DP-04), ausente en cualquier otro estado.
+     */
+    motivoCancelacion?: string;
     ofertaId?: number;
     /**
      * Persona del padron para la que se reservo
@@ -44,15 +53,21 @@ export interface Turno {
      * Membership del profesional. Ausente si la oferta no lo requiere.
      */
     profesionalId?: number;
+    /**
+     * Ultima vez que el turno se movio de horario. El detalle completo esta en el historial.
+     */
+    reprogramadoEn?: string;
     reservadoEn?: string;
     /**
-     * Version para el control optimista de las mutaciones de 05.03
+     * Version para el control optimista. Se envia al cancelar, mover o marcar ausencia.
      */
     version?: number;
 }
 export enum TurnoEstadoEnum {
     RESERVADO = 'RESERVADO',
-    CONFIRMADO = 'CONFIRMADO'
+    CONFIRMADO = 'CONFIRMADO',
+    CANCELADO = 'CANCELADO',
+    AUSENTE = 'AUSENTE'
 };
 
 

@@ -30,7 +30,7 @@ import { BaseService } from '../api.base.service';
 import {
     ObligacionesServiceInterface,
     AnularRequestParams,
-    DeLaPersonaRequestParams,
+    DeLaPersona1RequestParams,
     Ver1RequestParams
 } from './obligaciones.serviceInterface';
 
@@ -131,17 +131,17 @@ export class ObligacionesService extends BaseService implements ObligacionesServ
      * @param reportProgress flag to report request and response progress.
      * @param options additional options
      */
-    public deLaPersona(requestParameters: DeLaPersonaRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<Array<Obligacion>>;
-    public deLaPersona(requestParameters: DeLaPersonaRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<Array<Obligacion>>>;
-    public deLaPersona(requestParameters: DeLaPersonaRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<Array<Obligacion>>>;
-    public deLaPersona(requestParameters: DeLaPersonaRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+    public deLaPersona1(requestParameters: DeLaPersona1RequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<Array<Obligacion>>;
+    public deLaPersona1(requestParameters: DeLaPersona1RequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<Array<Obligacion>>>;
+    public deLaPersona1(requestParameters: DeLaPersona1RequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<Array<Obligacion>>>;
+    public deLaPersona1(requestParameters: DeLaPersona1RequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
         const consultorioId = requestParameters?.consultorioId;
         if (consultorioId === null || consultorioId === undefined) {
-            throw new Error('Required parameter consultorioId was null or undefined when calling deLaPersona.');
+            throw new Error('Required parameter consultorioId was null or undefined when calling deLaPersona1.');
         }
         const personaId = requestParameters?.personaId;
         if (personaId === null || personaId === undefined) {
-            throw new Error('Required parameter personaId was null or undefined when calling deLaPersona.');
+            throw new Error('Required parameter personaId was null or undefined when calling deLaPersona1.');
         }
 
         let localVarQueryParameters = new OpenApiHttpParams(this.encoder);

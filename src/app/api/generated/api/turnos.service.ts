@@ -17,7 +17,15 @@ import { Observable }                                        from 'rxjs';
 import { OpenApiHttpParams, QueryParamStyle } from '../query.params';
 
 // @ts-ignore
+import { CancelarTurno } from '../model/cancelar-turno';
+// @ts-ignore
+import { EventoDeTurno } from '../model/evento-de-turno';
+// @ts-ignore
 import { ProblemDetail } from '../model/problem-detail';
+// @ts-ignore
+import { RegistrarAusencia } from '../model/registrar-ausencia';
+// @ts-ignore
+import { ReprogramarTurno } from '../model/reprogramar-turno';
 // @ts-ignore
 import { ReservarTurno } from '../model/reservar-turno';
 // @ts-ignore
@@ -29,7 +37,11 @@ import { Configuration }                                     from '../configurat
 import { BaseService } from '../api.base.service';
 import {
     TurnosServiceInterface,
+    CancelarRequestParams,
     ConfirmarRequestParams,
+    HistorialRequestParams,
+    RegistrarAusenciaRequestParams,
+    ReprogramarRequestParams,
     ReservarRequestParams
 } from './turnos.serviceInterface';
 
@@ -42,6 +54,83 @@ export class TurnosService extends BaseService implements TurnosServiceInterface
 
     constructor(protected httpClient: HttpClient, @Optional() @Inject(BASE_PATH) basePath: string|string[], @Optional() configuration?: Configuration) {
         super(basePath, configuration);
+    }
+
+    /**
+     * Cancelar un turno futuro
+     * **Cancelar no borra** (RN-M12-002): la fila queda con su motivo, su actor y su historial. Lo que si hace es **liberar el lugar**, que vuelve a estar disponible en la agenda.  **El motivo es obligatorio** (DP-04), y la version tambien: si otro operador toco el turno entre medio, la cancelacion se rechaza en vez de pisarlo.  **Solo turnos futuros.** Un turno que ya empezo es inalterable; lo que se registra sobre el es una ausencia.  **No es idempotente**, a diferencia de confirmar: entre dos cancelaciones el lugar pudo haber sido tomado por otro paciente, y contestar 200 en silencio le haria creer al operador que su motivo quedo registrado.
+     * @endpoint post /api/v1/consultorios/{consultorioId}/turnos/{turnoId}/cancelacion
+     * @param requestParameters
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public cancelar(requestParameters: CancelarRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<Turno>;
+    public cancelar(requestParameters: CancelarRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<Turno>>;
+    public cancelar(requestParameters: CancelarRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<Turno>>;
+    public cancelar(requestParameters: CancelarRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        const consultorioId = requestParameters?.consultorioId;
+        if (consultorioId === null || consultorioId === undefined) {
+            throw new Error('Required parameter consultorioId was null or undefined when calling cancelar.');
+        }
+        const turnoId = requestParameters?.turnoId;
+        if (turnoId === null || turnoId === undefined) {
+            throw new Error('Required parameter turnoId was null or undefined when calling cancelar.');
+        }
+        const cancelarTurno = requestParameters?.cancelarTurno;
+        if (cancelarTurno === null || cancelarTurno === undefined) {
+            throw new Error('Required parameter cancelarTurno was null or undefined when calling cancelar.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        // to determine the Content-Type header
+        const consumes: string[] = [
+            'application/json'
+        ];
+        const httpContentTypeSelected: string | undefined = this.configuration.selectHeaderContentType(consumes);
+        if (httpContentTypeSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Content-Type', httpContentTypeSelected);
+        }
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/consultorios/${this.configuration.encodeParam({name: "consultorioId", value: consultorioId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/turnos/${this.configuration.encodeParam({name: "turnoId", value: turnoId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/cancelacion`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<Turno>('post', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                body: cancelarTurno,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
     }
 
     /**
@@ -108,8 +197,225 @@ export class TurnosService extends BaseService implements TurnosServiceInterface
     }
 
     /**
+     * Historial de estados de un turno
+     * Todas las transiciones del turno, de la mas vieja a la mas nueva, con actor, fecha, motivo y —cuando hubo reprogramacion— el horario del que vino (RF-M12-008).  Exige &#x60;turno:read&#x60; y no &#x60;turno:manage&#x60;: leer quien cancelo y por que es parte de mirar la agenda, no de operarla.  Los turnos anteriores a la migracion &#x60;V38&#x60; tienen su evento de reserva reconstruido desde la propia fila; en esos, el actor de la confirmacion viaja vacio porque nunca se habia guardado.
+     * @endpoint get /api/v1/consultorios/{consultorioId}/turnos/{turnoId}/historial
+     * @param requestParameters
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public historial(requestParameters: HistorialRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<Array<EventoDeTurno>>;
+    public historial(requestParameters: HistorialRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<Array<EventoDeTurno>>>;
+    public historial(requestParameters: HistorialRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<Array<EventoDeTurno>>>;
+    public historial(requestParameters: HistorialRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        const consultorioId = requestParameters?.consultorioId;
+        if (consultorioId === null || consultorioId === undefined) {
+            throw new Error('Required parameter consultorioId was null or undefined when calling historial.');
+        }
+        const turnoId = requestParameters?.turnoId;
+        if (turnoId === null || turnoId === undefined) {
+            throw new Error('Required parameter turnoId was null or undefined when calling historial.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/consultorios/${this.configuration.encodeParam({name: "consultorioId", value: consultorioId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/turnos/${this.configuration.encodeParam({name: "turnoId", value: turnoId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/historial`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<Array<EventoDeTurno>>('get', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * Registrar que el paciente no vino
+     * **No libera el lugar**: la hora se consumio igual, el profesional estuvo ahi. Es la diferencia con cancelar.  **Nunca elimina nada, ni este turno ni ningun otro** (DP-04). El documento historico de 2019 borraba la serie ante la primera ausencia y esa conducta esta explicitamente derogada.  Solo se registra **despues** de la hora del turno: una ausencia anticipada no es una ausencia, es una cancelacion.  No prueba nada clinico. Que el paciente haya sido atendido lo dice la Sesion (DP-05), y por eso un turno con atencion registrada no admite esta marca.
+     * @endpoint post /api/v1/consultorios/{consultorioId}/turnos/{turnoId}/ausencia
+     * @param requestParameters
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public registrarAusencia(requestParameters: RegistrarAusenciaRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<Turno>;
+    public registrarAusencia(requestParameters: RegistrarAusenciaRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<Turno>>;
+    public registrarAusencia(requestParameters: RegistrarAusenciaRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<Turno>>;
+    public registrarAusencia(requestParameters: RegistrarAusenciaRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        const consultorioId = requestParameters?.consultorioId;
+        if (consultorioId === null || consultorioId === undefined) {
+            throw new Error('Required parameter consultorioId was null or undefined when calling registrarAusencia.');
+        }
+        const turnoId = requestParameters?.turnoId;
+        if (turnoId === null || turnoId === undefined) {
+            throw new Error('Required parameter turnoId was null or undefined when calling registrarAusencia.');
+        }
+        const registrarAusencia = requestParameters?.registrarAusencia;
+        if (registrarAusencia === null || registrarAusencia === undefined) {
+            throw new Error('Required parameter registrarAusencia was null or undefined when calling registrarAusencia.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        // to determine the Content-Type header
+        const consumes: string[] = [
+            'application/json'
+        ];
+        const httpContentTypeSelected: string | undefined = this.configuration.selectHeaderContentType(consumes);
+        if (httpContentTypeSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Content-Type', httpContentTypeSelected);
+        }
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/consultorios/${this.configuration.encodeParam({name: "consultorioId", value: consultorioId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/turnos/${this.configuration.encodeParam({name: "turnoId", value: turnoId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/ausencia`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<Turno>('post', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                body: registrarAusencia,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * Mover un turno a otro horario
+     * **Es el mismo turno**: conserva id, paciente e historial (DP-04). No se cancela uno y se crea otro, entre otras cosas porque la Sesion de M14 cuelga del &#x60;turnoId&#x60; y ese vinculo se cortaria.  El servidor **revalida el destino entero** —vigencia de la oferta, habilitacion y horario del profesional, cupo y solapamiento— bajo el mismo lock de sede que usa una reserva, asi que dos reprogramaciones al mismo hueco no pasan las dos.  Un turno confirmado **vuelve a &#x60;RESERVADO&#x60;**: lo que el paciente confirmo era otro horario.
+     * @endpoint post /api/v1/consultorios/{consultorioId}/turnos/{turnoId}/reprogramacion
+     * @param requestParameters
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public reprogramar(requestParameters: ReprogramarRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<Turno>;
+    public reprogramar(requestParameters: ReprogramarRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<Turno>>;
+    public reprogramar(requestParameters: ReprogramarRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<Turno>>;
+    public reprogramar(requestParameters: ReprogramarRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        const consultorioId = requestParameters?.consultorioId;
+        if (consultorioId === null || consultorioId === undefined) {
+            throw new Error('Required parameter consultorioId was null or undefined when calling reprogramar.');
+        }
+        const turnoId = requestParameters?.turnoId;
+        if (turnoId === null || turnoId === undefined) {
+            throw new Error('Required parameter turnoId was null or undefined when calling reprogramar.');
+        }
+        const reprogramarTurno = requestParameters?.reprogramarTurno;
+        if (reprogramarTurno === null || reprogramarTurno === undefined) {
+            throw new Error('Required parameter reprogramarTurno was null or undefined when calling reprogramar.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        // to determine the Content-Type header
+        const consumes: string[] = [
+            'application/json'
+        ];
+        const httpContentTypeSelected: string | undefined = this.configuration.selectHeaderContentType(consumes);
+        if (httpContentTypeSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Content-Type', httpContentTypeSelected);
+        }
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/consultorios/${this.configuration.encodeParam({name: "consultorioId", value: consultorioId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/turnos/${this.configuration.encodeParam({name: "turnoId", value: turnoId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/reprogramacion`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<Turno>('post', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                body: reprogramarTurno,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
      * Reservar un turno
-     * Toma un slot de una oferta. **El servidor revalida todo**: que la oferta siga vigente ese dia, que el profesional siga habilitado y atendiendo en ese horario, que quede cupo y que ni el profesional ni el box tengan otro turno que se cruce.  **Una sola reserva gana.** Dos peticiones concurrentes por el mismo hueco se serializan; la segunda recibe un 409 con el tipo que corresponde a su caso.  Los cuatro conflictos son tipos distintos a proposito, porque llevan a la pantalla a acciones distintas: &#x60;slot-no-disponible&#x60; (recargar la agenda),                &#x60;slot-completo&#x60; (ofrecer el siguiente), &#x60;recurso-ocupado&#x60; (elegir otro horario o profesional) y &#x60;persona-sin-perfil-paciente&#x60; (activar el perfil).  **No hay cancelacion todavia**: llega en AKINE-05.03.
+     * Toma un slot de una oferta. **El servidor revalida todo**: que la oferta siga vigente ese dia, que el profesional siga habilitado y atendiendo en ese horario, que quede cupo y que ni el profesional ni el box tengan otro turno que se cruce.  **Una sola reserva gana.** Dos peticiones concurrentes por el mismo hueco se serializan; la segunda recibe un 409 con el tipo que corresponde a su caso.  Los cuatro conflictos son tipos distintos a proposito, porque llevan a la pantalla a acciones distintas: &#x60;slot-no-disponible&#x60; (recargar la agenda),                &#x60;slot-completo&#x60; (ofrecer el siguiente), &#x60;recurso-ocupado&#x60; (elegir otro horario o profesional) y &#x60;persona-sin-perfil-paciente&#x60; (activar el perfil).  Deshacer la reserva es otra operacion: &#x60;POST /{turnoId}/cancelacion&#x60;.
      * @endpoint post /api/v1/consultorios/{consultorioId}/turnos/ofertas/{ofertaId}
      * @param requestParameters
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.

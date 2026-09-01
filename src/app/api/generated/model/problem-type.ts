@@ -146,6 +146,10 @@ export enum ProblemType {
 
     HTTPS___AKINE_APP_PROBLEMS_PERSONA_SIN_PERFIL_PACIENTE = 'https://akine.app/problems/persona-sin-perfil-paciente',
 
+    HTTPS___AKINE_APP_PROBLEMS_TURNO_TRANSICION_NO_PERMITIDA = 'https://akine.app/problems/turno-transicion-no-permitida',
+
+    HTTPS___AKINE_APP_PROBLEMS_TURNO_CON_ATENCION = 'https://akine.app/problems/turno-con-atencion',
+
     HTTPS___AKINE_APP_PROBLEMS_TURNO_NO_ATENDIBLE = 'https://akine.app/problems/turno-no-atendible',
 
     HTTPS___AKINE_APP_PROBLEMS_SESION_AJENA = 'https://akine.app/problems/sesion-ajena',
@@ -155,6 +159,12 @@ export enum ProblemType {
     HTTPS___AKINE_APP_PROBLEMS_OBLIGACION_ALREADY_ANULADA = 'https://akine.app/problems/obligacion-already-anulada',
 
     HTTPS___AKINE_APP_PROBLEMS_OBLIGACION_CON_COBROS = 'https://akine.app/problems/obligacion-con-cobros',
+
+    HTTPS___AKINE_APP_PROBLEMS_COBRO_NO_CUADRA = 'https://akine.app/problems/cobro-no-cuadra',
+
+    HTTPS___AKINE_APP_PROBLEMS_SALDO_INSUFICIENTE = 'https://akine.app/problems/saldo-insuficiente',
+
+    HTTPS___AKINE_APP_PROBLEMS_OBLIGACION_NO_COBRABLE = 'https://akine.app/problems/obligacion-no-cobrable',
 
     HTTPS___AKINE_APP_PROBLEMS_CONSULTORIO_NO_OPERABLE = 'https://akine.app/problems/consultorio-no-operable',
 

@@ -25,7 +25,7 @@ export interface AnularRequestParams {
     anularObligacion: AnularObligacion;
 }
 
-export interface DeLaPersonaRequestParams {
+export interface DeLaPersona1RequestParams {
     consultorioId: number;
     personaId: number;
 }
@@ -54,7 +54,7 @@ export interface ObligacionesServiceInterface {
      * @endpoint get /api/v1/consultorios/{consultorioId}/obligaciones
 * @param requestParameters
      */
-    deLaPersona(requestParameters: DeLaPersonaRequestParams, extraHttpRequestParams?: any): Observable<Array<Obligacion>>;
+    deLaPersona1(requestParameters: DeLaPersona1RequestParams, extraHttpRequestParams?: any): Observable<Array<Obligacion>>;
 
     /**
      * Ver una obligacion

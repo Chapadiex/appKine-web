@@ -13,6 +13,8 @@ api/calendario-de-sede.service.ts
 api/calendario-de-sede.serviceInterface.ts
 api/catalogo-clinico.service.ts
 api/catalogo-clinico.serviceInterface.ts
+api/cobros.service.ts
+api/cobros.serviceInterface.ts
 api/colaboradores.service.ts
 api/colaboradores.serviceInterface.ts
 api/consultorios.service.ts
@@ -76,6 +78,7 @@ model/authorized-context-response.ts
 model/bloque-response.ts
 model/calendario-sede-response.ts
 model/cancel-invitacion-request.ts
+model/cancelar-turno.ts
 model/catalogo-concepto-page-response.ts
 model/catalogo-concepto-response.ts
 model/catalogo-solicitud-response.ts
@@ -83,6 +86,7 @@ model/cerrar-sesion.ts
 model/change-membership-request.ts
 model/cierre-de-sesion.ts
 model/closed-sessions-response.ts
+model/cobro.ts
 model/consultorio-page-response.ts
 model/consultorio-response.ts
 model/create-bloque-request.ts
@@ -117,6 +121,7 @@ model/espacio-page-response.ts
 model/espacio-response.ts
 model/evaluacion-base.ts
 model/evaluacion-previa.ts
+model/evento-de-turno.ts
 model/excepcion-response.ts
 model/feriado-response.ts
 model/franja-resuelta-response.ts
@@ -125,11 +130,15 @@ model/grant-support-access-request.ts
 model/guardar-borrador.ts
 model/guardar-evaluacion.ts
 model/habilitaciones-response.ts
+model/imputacion-aplicada.ts
+model/imputacion-de-cobro.ts
 model/invitacion-preview-response.ts
 model/invitacion-response.ts
 model/invitacion-token-request.ts
 model/limit-usage-response.ts
 model/login-request.ts
+model/medio-de-cobro-aplicado.ts
+model/medio-de-cobro.ts
 model/membership-grant-response.ts
 model/membership-page-response.ts
 model/membership-reason-request.ts
@@ -153,6 +162,9 @@ model/problem-type.ts
 model/profesional-habilitado.ts
 model/reemplazar-habilitaciones-request.ts
 model/register-account-request.ts
+model/registrar-ausencia.ts
+model/registrar-cobro.ts
+model/reprogramar-turno.ts
 model/resend-activation-request.ts
 model/reservar-turno.ts
 model/resolve-catalogo-solicitud-request.ts
