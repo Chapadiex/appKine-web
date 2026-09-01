@@ -182,6 +182,24 @@ export const routes: Routes = [
     loadChildren: () => import('./features/scheduling/scheduling.routes').then((m) => m.routes),
   },
 
+  // Atencion clinica (M14, AKINE-06.01 y 06.02).
+  //
+  // Raiz propia y NO bajo `agenda`: Turno es reserva y Sesion es atencion realizada, que es la
+  // regla maestra 4 y la separacion que DP-05 hace explicita. Colgarla de `agenda` sugeriria que
+  // son dos vistas de la misma cosa, que es justamente la confusion que produce pantallas
+  // incorrectas. Su publico tampoco es el mismo: la agenda la abre recepcion todo el dia y esto
+  // lo escribe el profesional que atiende.
+  //
+  // La URL identifica al TURNO -`atencion/turnos/:turnoId`- porque iniciar es idempotente. El
+  // detalle esta en `clinical.routes.ts`.
+  //
+  // `contextGuard` lo pone la ruta hija: la atencion es de una SEDE.
+  {
+    path: 'atencion',
+    canActivate: [authGuard],
+    loadChildren: () => import('./features/clinical/clinical.routes').then((m) => m.routes),
+  },
+
   // Pantalla de permiso insuficiente (AKINE-01.03). Es el destino de `permissionGuard`.
   //
   // Sin guards, y no por descuido: quien llega aca YA paso por `authGuard` y `contextGuard`

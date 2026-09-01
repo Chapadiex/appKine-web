@@ -200,5 +200,24 @@
       el endpoint no existe. Un boton que termina en 404 promete algo que el producto no tiene.
     -->
     <p class="ayuda">Cancelar o reprogramar todavia no esta disponible en esta version.</p>
+
+    <!--
+      Unica puerta de entrada a la atencion clinica, y por eso vive aca: el contrato no publica
+      ningun listado de turnos, asi que sin este enlace la pantalla de atencion solo se alcanza
+      escribiendo la URL a mano.
+
+      Es un `routerLink` con un string, NO un import de `features/clinical`: AGENT.md 4.5 prohibe
+      que un feature importe de otro, y una URL no arrastra nada.
+
+      Turno y Sesion siguen siendo dos cosas distintas -regla maestra 4- y el texto lo dice: esto
+      no "abre el turno", registra la atencion.
+    -->
+    @if (reserva.id) {
+      <p>
+        <a class="enlace" [routerLink]="['/atencion', 'turnos', reserva.id]">
+          Registrar la atencion de este turno
+        </a>
+      </p>
+    }
   </section>
 }

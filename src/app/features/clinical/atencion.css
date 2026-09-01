@@ -1,0 +1,148 @@
+/*
+ * Hoja de la feature `clinical` (atencion clinica, M14, AKINE-06.01 y 06.02).
+ *
+ * Deliberadamente corta, igual que las de `scheduling`, `person`, `resource` y `offering`.
+ * `.boton`, `.campo`, `.tarjeta`, `.estado`, `.detalle`, `.acciones`, `.grupo`, `.ayuda` y
+ * `.descripcion` los aporta `src/design-system.css`, que es global.
+ *
+ * Ni un color literal: todo sale de los tokens de `:root`, que ya traen su equivalente en modo
+ * oscuro. Un `#rrggbb` suelto aca seria un color que no se adapta y que nadie vuelve a revisar.
+ */
+
+/*
+ * El `textarea` de las notas.
+ *
+ * `.campo` del sistema estiliza `input` y `select` y no `textarea`, asi que se hereda lo mismo
+ * en vez de inventar otro control. Redimensionable solo en vertical: horizontal desborda la
+ * tarjeta.
+ */
+.campo textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: var(--esp-4) var(--esp-5);
+  border: var(--borde-fino) solid var(--color-borde-control);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie);
+  color: var(--color-texto);
+  font-family: inherit;
+  font-size: var(--tipo-base);
+  line-height: var(--linea-base);
+  resize: vertical;
+}
+
+.campo textarea:focus-visible {
+  outline: var(--foco-grosor) solid var(--color-foco);
+  outline-offset: var(--foco-offset);
+}
+
+/*
+ * La evaluacion previa, pegada al campo de dolor.
+ *
+ * Es la unica pieza de la pantalla que existe por una razon clinica y no de formulario: se
+ * dibuja como un aviso y no como texto de ayuda para que se lea ANTES de cargar el numero.
+ */
+.previa {
+  margin: 0 0 var(--esp-5);
+  padding: var(--esp-4) var(--esp-5);
+  border-left: var(--borde-acento) solid var(--color-acento);
+  border-radius: var(--radio-sm);
+  background: var(--color-superficie-sutil);
+  color: var(--color-texto);
+  font-size: var(--tipo-md);
+}
+
+/* Sin previa el bloque no grita: no es un problema, es la primera sesion. */
+.previa--vacia {
+  border-left-color: var(--color-borde);
+  color: var(--color-texto-suave);
+}
+
+.previa__rotulo {
+  font-weight: var(--peso-semi);
+}
+
+/* La escala 0-10, en una fila que envuelve en pantallas angostas. */
+.escala {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp-3);
+  margin-bottom: var(--esp-4);
+}
+
+.escala__paso {
+  min-width: 2.5rem;
+  padding: var(--esp-4) var(--esp-3);
+  border: var(--borde-fino) solid var(--color-borde-control);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie);
+  color: var(--color-texto);
+  font-family: inherit;
+  font-size: var(--tipo-base);
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+/* Los chips de evolucion: mismo control que la escala, con otra forma. */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp-4);
+  margin-bottom: var(--esp-4);
+}
+
+.chip {
+  padding: var(--esp-4) var(--esp-6);
+  border: var(--borde-fino) solid var(--color-borde-control);
+  border-radius: var(--radio-pastilla);
+  background: var(--color-superficie);
+  color: var(--color-texto);
+  font-family: inherit;
+  font-size: var(--tipo-md);
+  cursor: pointer;
+}
+
+/*
+ * El elegido.
+ *
+ * `aria-pressed` es el estado real y de ahi sale el estilo: asi no hay una clase que pueda
+ * quedar desincronizada de lo que anuncia el lector de pantalla.
+ */
+.escala__paso[aria-pressed='true'],
+.chip[aria-pressed='true'] {
+  border-color: var(--color-accion-fondo);
+  background: var(--color-accion-fondo);
+  color: var(--color-accion-texto);
+  font-weight: var(--peso-semi);
+}
+
+.escala__paso:hover,
+.chip:hover {
+  border-color: var(--color-acento);
+}
+
+.escala__paso:focus-visible,
+.chip:focus-visible {
+  outline: var(--foco-grosor) solid var(--color-foco);
+  outline-offset: var(--foco-offset);
+}
+
+/*
+ * Lo que guardo la otra pestaña, en solo lectura.
+ *
+ * Monoespaciada y preformateada a proposito: es texto ajeno que hay que poder comparar linea a
+ * linea con lo propio, no prosa que se reflowea.
+ */
+.comparacion {
+  max-height: 18rem;
+  overflow: auto;
+  margin: 0 0 var(--esp-6);
+  padding: var(--esp-5);
+  border: var(--borde-fino) solid var(--color-borde);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie-codigo);
+  color: var(--color-texto);
+  font-family: var(--fuente-mono);
+  font-size: var(--tipo-sm);
+  white-space: pre-wrap;
+  word-break: break-word;
+}

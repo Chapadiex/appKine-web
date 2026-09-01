@@ -47,6 +47,8 @@ api/servicios-y-ofertas.service.ts
 api/servicios-y-ofertas.serviceInterface.ts
 api/sesion.service.ts
 api/sesion.serviceInterface.ts
+api/sesiones.service.ts
+api/sesiones.serviceInterface.ts
 api/suscripciones.service.ts
 api/suscripciones.serviceInterface.ts
 api/turnos.service.ts
@@ -108,11 +110,15 @@ model/espacio-availability-response.ts
 model/espacio-habilitado.ts
 model/espacio-page-response.ts
 model/espacio-response.ts
+model/evaluacion-base.ts
+model/evaluacion-previa.ts
 model/excepcion-response.ts
 model/feriado-response.ts
 model/franja-resuelta-response.ts
 model/grant-platform-role-request.ts
 model/grant-support-access-request.ts
+model/guardar-borrador.ts
+model/guardar-evaluacion.ts
 model/habilitaciones-response.ts
 model/invitacion-preview-response.ts
 model/invitacion-response.ts
@@ -146,6 +152,7 @@ model/reservar-turno.ts
 model/resolve-catalogo-solicitud-request.ts
 model/select-context-request.ts
 model/servicio-response.ts
+model/sesion.ts
 model/slot-disponible.ts
 model/subscription-response.ts
 model/subscription-transition-page-response.ts

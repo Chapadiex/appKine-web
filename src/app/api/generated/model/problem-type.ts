@@ -146,6 +146,10 @@ export enum ProblemType {
 
     HTTPS___AKINE_APP_PROBLEMS_PERSONA_SIN_PERFIL_PACIENTE = 'https://akine.app/problems/persona-sin-perfil-paciente',
 
+    HTTPS___AKINE_APP_PROBLEMS_TURNO_NO_ATENDIBLE = 'https://akine.app/problems/turno-no-atendible',
+
+    HTTPS___AKINE_APP_PROBLEMS_SESION_AJENA = 'https://akine.app/problems/sesion-ajena',
+
     HTTPS___AKINE_APP_PROBLEMS_CONSULTORIO_NO_OPERABLE = 'https://akine.app/problems/consultorio-no-operable',
 
     HTTPS___AKINE_APP_PROBLEMS_PERSONA_DOCUMENTO_TAKEN = 'https://akine.app/problems/persona-documento-taken',

@@ -1,0 +1,301 @@
+<h1>Atencion clinica</h1>
+
+<p class="descripcion">
+  Una sesion es la <b>atencion realizada</b>. El turno era la reserva de agenda: son dos cosas
+  distintas y esta pantalla registra la segunda.
+</p>
+
+<p><a class="enlace" routerLink="/agenda">Volver a la agenda</a></p>
+
+@if (abriendo()) {
+  <p class="estado estado--cargando">Abriendo la atencion de este turno…</p>
+}
+
+@if (error(); as problema) {
+  <section class="tarjeta" role="alert" aria-labelledby="titulo-problema">
+    <h2 id="titulo-problema">
+      @if (hayConflicto()) {
+        Otra pestaña guardo antes que vos
+      } @else {
+        No se pudo completar
+      }
+    </h2>
+
+    <p class="estado estado--error">{{ problema.mensaje }}</p>
+
+    @if (problema.motivo) {
+      <p class="ayuda">Motivo que dio el servidor: {{ problema.motivo }}</p>
+    }
+
+    @if (hayConflicto()) {
+      <p class="ayuda">
+        Lo que escribiste sigue en pantalla y no se mando a ningun lado. Al releer vas a ver lo que
+        guardo la otra pestaña <b>al lado</b> de lo tuyo, para elegir con que quedarte.
+      </p>
+      <div class="acciones">
+        <button type="button" class="boton" [disabled]="guardando()" (click)="releerParaComparar()">
+          Releer y comparar
+        </button>
+      </div>
+    } @else if (problema.causa === 'no-encontrado' || problema.causa === 'otro') {
+      <div class="acciones">
+        <button type="button" class="boton boton--secundario" (click)="abrir()">Reintentar</button>
+      </div>
+    }
+  </section>
+}
+
+@if (notasDelServidor() !== null) {
+  <section class="tarjeta" aria-labelledby="titulo-comparacion">
+    <h2 id="titulo-comparacion">Lo que guardo la otra pestaña</h2>
+    <p class="ayuda">
+      Esto es lo que hay guardado en el servidor. Tu texto quedo intacto mas abajo: copia de aca lo
+      que falte y volve a guardar.
+    </p>
+    <pre class="comparacion">{{ notasDelServidor() }}</pre>
+    <div class="acciones">
+      <button type="button" class="boton boton--secundario" (click)="descartarComparacion()">
+        Ya lo revise
+      </button>
+    </div>
+  </section>
+}
+
+@if (sesion(); as atencion) {
+  <section class="tarjeta" aria-labelledby="titulo-atencion">
+    <h2 id="titulo-atencion">Atencion en curso</h2>
+
+    <dl class="detalle">
+      <dt>Iniciada</dt>
+      <dd>{{ instanteEnPalabras(atencion.iniciadaEn) }}</dd>
+
+      <dt>Estado</dt>
+      <dd>{{ atencion.estado }}</dd>
+    </dl>
+
+    <fieldset class="grupo">
+      <legend>Cuanto mostrar</legend>
+      <p class="ayuda">
+        Es una decision de esta pantalla sobre cuanto ves, no sobre que hace falta: cambiar de modo
+        no borra nada de lo que ya cargaste, y ningun campo se vuelve obligatorio.
+      </p>
+      <label class="opcion-radio">
+        <input
+          type="radio"
+          name="modo"
+          value="RAPIDA"
+          [checked]="!completa()"
+          (change)="cambiarModo(false)"
+        />
+        Sesion rapida
+      </label>
+      <label class="opcion-radio">
+        <input
+          type="radio"
+          name="modo"
+          value="COMPLETA"
+          [checked]="completa()"
+          (change)="cambiarModo(true)"
+        />
+        Evaluacion completa
+      </label>
+    </fieldset>
+  </section>
+
+  <section class="tarjeta" aria-labelledby="titulo-evaluacion">
+    <h2 id="titulo-evaluacion">Evaluacion</h2>
+
+    <p class="ayuda">
+      Ningun campo de esta pantalla es obligatorio. Un seguimiento normal se carga con el dolor y la
+      evolucion, y con eso alcanza.
+    </p>
+
+    <fieldset class="grupo">
+      <legend>Dolor (escala 0 a 10)</legend>
+
+      <p class="previa" [class.previa--vacia]="!hayPrevia()">
+        @if (hayPrevia()) {
+          <span class="previa__rotulo">La vez pasada:</span> {{ previa() }}
+        } @else {
+          Primera sesion evaluada de este paciente: no hay una anterior con que comparar.
+        }
+      </p>
+
+      <div class="escala">
+        @for (valor of escala; track valor) {
+          <button
+            type="button"
+            class="escala__paso"
+            [attr.aria-pressed]="dolorEva() === valor"
+            [attr.aria-label]="'Dolor ' + valor + ' de 10'"
+            (click)="elegirDolor(valor)"
+          >
+            {{ valor }}
+          </button>
+        }
+      </div>
+      <p class="ayuda">Volve a apretar el numero elegido para dejarlo sin cargar.</p>
+    </fieldset>
+
+    <div class="campo">
+      <label for="atencion-zona">Zona <span class="campo__opcional">(opcional)</span></label>
+      <input
+        id="atencion-zona"
+        name="atencion-zona"
+        type="text"
+        list="atencion-zonas"
+        maxlength="120"
+        [value]="dolorZona()"
+        aria-describedby="ayuda-zona"
+        (input)="dolorZona.set($any($event.target).value)"
+      />
+      <datalist id="atencion-zonas">
+        @for (zona of zonas; track zona) {
+          <option [value]="zona"></option>
+        }
+      </datalist>
+      <p id="ayuda-zona" class="ayuda">
+        Escribi la que quieras: la lista es solo una sugerencia.
+        @if (faltaZona()) {
+          <b>Elegiste un lado sin decir de que zona, y el servidor va a rechazarlo.</b>
+        }
+      </p>
+    </div>
+
+    <div class="campo">
+      <label for="atencion-lateralidad">
+        Lateralidad <span class="campo__opcional">(opcional)</span>
+      </label>
+      <select
+        id="atencion-lateralidad"
+        name="atencion-lateralidad"
+        aria-describedby="ayuda-lateralidad"
+        (change)="elegirLateralidad($any($event.target).value)"
+      >
+        <option value="" [selected]="dolorLateralidad() === null">Sin cargar</option>
+        @for (opcion of lateralidades; track opcion.valor) {
+          <option [value]="opcion.valor" [selected]="dolorLateralidad() === opcion.valor">
+            {{ opcion.etiqueta }}
+          </option>
+        }
+      </select>
+      <p id="ayuda-lateralidad" class="ayuda">
+        <b>«No aplica» no es lo mismo que dejarlo sin cargar</b>: una zona central no tiene lado, y
+        decirlo distingue «no corresponde» de «no lo cargue».
+      </p>
+    </div>
+
+    <fieldset class="grupo">
+      <legend>Evolucion respecto de la sesion anterior</legend>
+      <div class="chips">
+        @for (opcion of evoluciones; track opcion.valor) {
+          <button
+            type="button"
+            class="chip"
+            [attr.aria-pressed]="evolucion() === opcion.valor"
+            (click)="elegirEvolucion(opcion.valor)"
+          >
+            {{ opcion.etiqueta }}
+          </button>
+        }
+      </div>
+      <p class="ayuda">
+        «Sin referencia» es el de la primera sesion: decir «igual» cuando no hay contra que comparar
+        seria inventar un dato clinico.
+      </p>
+    </fieldset>
+
+    <div class="campo">
+      <label for="atencion-objetivo">
+        Objetivo de esta sesion <span class="campo__opcional">(opcional)</span>
+      </label>
+      <input
+        id="atencion-objetivo"
+        name="atencion-objetivo"
+        type="text"
+        maxlength="500"
+        [value]="objetivoSesion()"
+        (input)="objetivoSesion.set($any($event.target).value)"
+      />
+    </div>
+
+    @if (completa()) {
+      <div class="campo">
+        <label for="atencion-motivo">
+          Motivo clinico <span class="campo__opcional">(opcional)</span>
+        </label>
+        <input
+          id="atencion-motivo"
+          name="atencion-motivo"
+          type="text"
+          maxlength="500"
+          [value]="motivoClinico()"
+          aria-describedby="ayuda-motivo"
+          (input)="motivoClinico.set($any($event.target).value)"
+        />
+        <p id="ayuda-motivo" class="ayuda">
+          Lo que trae al paciente, en tus palabras. <b>No es un diagnostico</b>: el diagnostico es
+          un acto medico que este sistema no registra.
+        </p>
+      </div>
+
+      <div class="campo">
+        <label for="atencion-limitacion">
+          Limitacion funcional <span class="campo__opcional">(opcional)</span>
+        </label>
+        <input
+          id="atencion-limitacion"
+          name="atencion-limitacion"
+          type="text"
+          maxlength="500"
+          [value]="limitacionFuncional()"
+          (input)="limitacionFuncional.set($any($event.target).value)"
+        />
+      </div>
+    }
+
+    <div class="acciones">
+      <button type="button" class="boton" [disabled]="guardando()" (click)="guardarEvaluacion()">
+        Guardar evaluacion
+      </button>
+    </div>
+  </section>
+
+  <section class="tarjeta" aria-labelledby="titulo-notas">
+    <h2 id="titulo-notas">Notas de la atencion</h2>
+
+    <div class="campo">
+      <label for="atencion-notas">
+        Lo que quieras anotar <span class="campo__opcional">(opcional)</span>
+      </label>
+      <textarea
+        id="atencion-notas"
+        name="atencion-notas"
+        rows="6"
+        maxlength="65000"
+        aria-describedby="ayuda-notas"
+        [value]="notas()"
+        (input)="escribirNotas($any($event.target).value)"
+      ></textarea>
+      <p id="ayuda-notas" class="ayuda">
+        Se guarda solo despues de un momento sin escribir. Si hubo un conflicto con otra pestaña, el
+        guardado automatico se frena hasta que lo resuelvas: lo que escribas mientras tanto no se
+        pierde, pero tampoco se manda.
+      </p>
+    </div>
+
+    <div class="acciones">
+      <button
+        type="button"
+        class="boton boton--secundario"
+        [disabled]="guardando()"
+        (click)="guardarBorrador()"
+      >
+        Guardar ahora
+      </button>
+      @if (guardadoEn(); as cuando) {
+        <p class="ayuda" aria-live="polite">Ultimo guardado: {{ cuando }}</p>
+      }
+    </div>
+  </section>
+}
