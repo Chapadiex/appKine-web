@@ -1,0 +1,321 @@
+<h1>Turno #{{ turnoId() }}</h1>
+
+<p class="descripcion">
+  Un turno es una <b>reserva</b> de agenda. Su estado no dice que la atencion haya ocurrido: eso lo
+  registra la sesion clinica, que es otra pantalla.
+</p>
+
+<p><a class="enlace" routerLink="/agenda">Volver al buscador de agenda</a></p>
+
+<section class="tarjeta" aria-labelledby="titulo-estado">
+  <h2 id="titulo-estado">Estado</h2>
+
+  @if (cargando()) {
+    <p class="estado estado--cargando">Leyendo el historial del turno…</p>
+  }
+
+  <dl class="detalle">
+    <dt>Estado</dt>
+    <dd>{{ textoDeEstado(estado()) }}</dd>
+
+    @if (horario(); as cuando) {
+      <dt>Horario</dt>
+      <dd>
+        {{ cuando }}
+        <span class="ayuda">
+          @if (zonaConocida()) {
+            (zona {{ timezone() }})
+          } @else {
+            (en UTC: sin la oferta no se puede saber la zona de la sede)
+          }
+        </span>
+      </dd>
+    }
+  </dl>
+
+  @if (estado() === '') {
+    <p class="estado estado--vacio">
+      Este turno no tiene ningun evento registrado, o no es de esta sede.
+    </p>
+  }
+</section>
+
+<div aria-live="polite">
+  @if (exito(); as mensaje) {
+    <p class="estado estado--ok">{{ mensaje }}</p>
+  }
+
+  @if (error(); as fallo) {
+    <section class="tarjeta conflicto" aria-labelledby="titulo-conflicto">
+      <h2 id="titulo-conflicto">No se pudo operar sobre el turno</h2>
+      <p class="estado estado--error">{{ fallo.mensaje }}</p>
+
+      @switch (accion()) {
+        @case ('recargar-turno') {
+          @if (fallo.motivo) {
+            <p class="ayuda">Lo que dijo el servidor: {{ fallo.motivo }}</p>
+          }
+          <div class="acciones">
+            <button type="button" class="boton" (click)="recargar()">Releer el turno</button>
+          </div>
+        }
+        @case ('recargar-agenda') {
+          <div class="acciones">
+            <button type="button" class="boton" (click)="recargar()">Releer el turno</button>
+          </div>
+        }
+        @case ('resolver-atencion') {
+          <!--
+            La unica salida real. Reintentar la cancelacion devuelve el mismo 409 para siempre:
+            lo que hay que resolver es la Sesion, y vive en otra pantalla (DP-05).
+          -->
+          <div class="acciones">
+            <a class="boton" [routerLink]="['/atencion', 'turnos', turnoId()]">
+              Ver la atencion clinica de este turno
+            </a>
+          </div>
+        }
+        @case ('elegir-otro') {
+          <p class="ayuda">
+            El recurso ocupado es el <b>{{ fallo.recurso }}</b
+            >. Elegi otro horario del listado.
+          </p>
+        }
+        @case ('elegir-contexto') {
+          <div class="acciones">
+            <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto de trabajo</a>
+          </div>
+        }
+      }
+    </section>
+  }
+</div>
+
+@if (cicloCerrado()) {
+  <p class="estado estado--vacio">
+    Este turno ya cerro su ciclo, asi que no admite mas cambios. Su historial queda igual: nada se
+    borra.
+  </p>
+} @else if (!puedeOperar()) {
+  <p class="estado estado--vacio">
+    Solo podes mirar este turno. Operarlo necesita permiso de gestion de turnos en esta sede.
+  </p>
+} @else {
+  @if (versionConocida() === null) {
+    <!--
+      No es un cartel defensivo: es la limitacion real del contrato 0.21.0, que no publica ninguna
+      lectura de un turno. Sin la version no hay forma honesta de cancelar, mover ni marcar
+      ausente, y ofrecer los botones seria prometer un 409.
+    -->
+    <p class="estado estado--vacio">
+      Este turno se abrio sin sus datos de agenda, asi que solo se puede confirmar. Para cancelarlo,
+      moverlo o marcar la ausencia, abrilo desde la agenda.
+    </p>
+  }
+
+  @if (panel() === 'ninguno') {
+    <div class="acciones">
+      @if (estado() !== 'CONFIRMADO') {
+        <button type="button" class="boton" [disabled]="enviando()" (click)="confirmar()">
+          Confirmar el turno
+        </button>
+      }
+      @if (puedeTransicionar()) {
+        <button
+          type="button"
+          class="boton boton--secundario"
+          [disabled]="enviando()"
+          (click)="abrir('cancelar')"
+        >
+          Cancelar el turno
+        </button>
+        <button
+          type="button"
+          class="boton boton--secundario"
+          [disabled]="enviando()"
+          (click)="abrir('ausencia')"
+        >
+          Marcar que no vino
+        </button>
+      }
+      @if (puedeReprogramar()) {
+        <button
+          type="button"
+          class="boton boton--secundario"
+          [disabled]="enviando()"
+          (click)="abrir('reprogramar')"
+        >
+          Mover a otro horario
+        </button>
+      }
+    </div>
+  }
+
+  @if (panel() === 'cancelar') {
+    <section class="tarjeta">
+      <!--
+        Motivo OBLIGATORIO: es el default del componente y lo pide DP-04. Cancelar libera el lugar
+        y deja la fila con su motivo, su actor y su historial.
+      -->
+      <akine-confirmacion-con-motivo
+        idCampo="turno-cancelar-motivo"
+        titulo="Cancelar el turno"
+        etiqueta="Motivo de la cancelacion"
+        ayuda="Queda registrado en el historial junto a quien lo cancelo."
+        textoConfirmar="Cancelar el turno"
+        [enviando]="enviando()"
+        (confirmado)="cancelar($event)"
+        (cancelado)="cerrar()"
+      >
+        <p class="ayuda">
+          Cancelar <b>libera el lugar</b>, que vuelve a estar disponible en la agenda. No borra
+          nada: el turno queda con su motivo y su historial.
+        </p>
+      </akine-confirmacion-con-motivo>
+    </section>
+  }
+
+  @if (panel() === 'ausencia') {
+    <section class="tarjeta">
+      <!--
+        `motivoObligatorio` en false, y NO es cosmetico: el default del componente compartido es
+        `true` y con el campo vacio el boton no emitiria nada -sin peticion, sin error y sin
+        sintoma-. El contrato declara el motivo opcional en esta operacion.
+      -->
+      <akine-confirmacion-con-motivo
+        idCampo="turno-ausencia-motivo"
+        titulo="Registrar que el paciente no vino"
+        etiqueta="Motivo (opcional)"
+        ayuda="Podes dejarlo vacio."
+        textoConfirmar="Registrar la ausencia"
+        [motivoObligatorio]="false"
+        [enviando]="enviando()"
+        (confirmado)="marcarAusente($event)"
+        (cancelado)="cerrar()"
+      >
+        <p class="ayuda">
+          La ausencia <b>no libera el lugar</b>: la hora se consumio igual y el profesional estuvo
+          ahi. Es la diferencia con cancelar. Solo se registra despues de la hora del turno.
+        </p>
+      </akine-confirmacion-con-motivo>
+    </section>
+  }
+
+  @if (panel() === 'reprogramar') {
+    <section class="tarjeta">
+      <akine-confirmacion-con-motivo
+        idCampo="turno-reprogramar-motivo"
+        titulo="Mover el turno a otro horario"
+        etiqueta="Motivo del cambio"
+        ayuda="Queda en el historial, junto al horario del que vino."
+        textoConfirmar="Mover el turno"
+        [enviando]="enviando()"
+        (confirmado)="reprogramar($event)"
+        (cancelado)="cerrar()"
+      >
+        <p class="ayuda">
+          Es el <b>mismo turno</b>: conserva su numero, su paciente y su historial. Si estaba
+          confirmado vuelve a quedar reservado, porque lo que el paciente confirmo era otro horario.
+        </p>
+
+        <div class="campo">
+          <label for="turno-reprogramar-dia">Dia destino</label>
+          <input
+            id="turno-reprogramar-dia"
+            type="date"
+            [value]="fechaDestino()"
+            (change)="cambiarDiaDestino($any($event.target).value)"
+          />
+        </div>
+
+        <fieldset>
+          <legend>Horario destino — {{ fechaEnPalabras(fechaDestino()) }}</legend>
+          @if (slotsDestino().length === 0) {
+            <p class="estado estado--vacio">
+              Ese dia no tiene ningun horario disponible para esta oferta. Proba otro dia.
+            </p>
+          } @else {
+            <ul class="slots">
+              @for (slot of slotsDestino(); track slot.desde) {
+                <li>
+                  <button
+                    type="button"
+                    class="slot"
+                    [class.slot--completo]="slotCompleto(slot)"
+                    [disabled]="slotCompleto(slot)"
+                    [attr.aria-pressed]="esElDestino(slot)"
+                    (click)="elegirDestino(slot)"
+                  >
+                    <span class="slot__hora">{{ rangoDelSlot(slot) }}</span>
+                    @if (slotCompleto(slot)) {
+                      <span class="slot__nota">completo</span>
+                    } @else if (esElDestino(slot)) {
+                      <span class="slot__nota">elegido</span>
+                    }
+                  </button>
+                </li>
+              }
+            </ul>
+          }
+          @if (faltaHorario()) {
+            <p class="campo__error">Elegi el horario destino antes de mover el turno.</p>
+          }
+        </fieldset>
+      </akine-confirmacion-con-motivo>
+    </section>
+  }
+}
+
+<section class="tarjeta" aria-labelledby="titulo-historial">
+  <h2 id="titulo-historial">Historial</h2>
+  <p class="ayuda">
+    Todas las transiciones, de la mas vieja a la mas nueva. Nada se borra: cancelar y marcar
+    ausencia dejan su rastro.
+  </p>
+
+  @if (eventos().length === 0) {
+    <p class="estado estado--vacio">Todavia no hay eventos para mostrar.</p>
+  } @else {
+    <ol class="dias">
+      @for (evento of eventos(); track evento.id) {
+        <li class="dia">
+          <p class="dia__fecha">
+            {{ textoDeEvento(evento.tipo) }} — {{ instanteEnZona(evento.ocurridoEn) }}
+          </p>
+          <dl class="detalle">
+            @if (evento.estadoAnterior) {
+              <dt>Cambio de estado</dt>
+              <dd>{{ evento.estadoAnterior }} → {{ evento.estadoNuevo }}</dd>
+            } @else {
+              <dt>Estado</dt>
+              <dd>{{ evento.estadoNuevo }}</dd>
+            }
+
+            @if (evento.inicioAnterior) {
+              <!-- Solo en una reprogramacion: de donde vino el turno (RF-M12-008). -->
+              <dt>Venia de</dt>
+              <dd>{{ instanteEnZona(evento.inicioAnterior) }}</dd>
+              <dt>Paso a</dt>
+              <dd>{{ instanteEnZona(evento.inicioNuevo) }}</dd>
+            }
+
+            @if (evento.motivo) {
+              <dt>Motivo</dt>
+              <dd>{{ evento.motivo }}</dd>
+            }
+
+            <dt>Quien</dt>
+            <dd>
+              @if (evento.actorCuentaId) {
+                Cuenta #{{ evento.actorCuentaId }}
+              } @else {
+                <!-- Ausente cuando lo hizo el sistema, o en los eventos reconstruidos por V38. -->
+                Sin registrar
+              }
+            </dd>
+          </dl>
+        </li>
+      }
+    </ol>
+  }
+</section>

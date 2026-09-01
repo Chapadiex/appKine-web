@@ -26,9 +26,9 @@ import {
  *
  * <h2>1. Resumen antes de confirmar</h2>
  *
- * <p>Reservar es crear algo que despues <b>no se puede cancelar</b> —AKINE-05.03 quedo fuera de
- * alcance por DP-10—, asi que el paso de revision no es cortesia: es lo unico que hay entre un
- * click y un turno equivocado en la agenda de un profesional.
+ * <p>El paso de revision no es cortesia: es lo unico que hay entre un click y un turno equivocado
+ * en la agenda de un profesional. Cancelar y mover ya existen —AKINE-05.03— y viven en
+ * `pages/ciclo-de-turno`, a la que esta pantalla enlaza pasandole la version del turno.
  *
  * <h2>2. La clave de idempotencia es lo que hace que el doble click no cree dos turnos</h2>
  *

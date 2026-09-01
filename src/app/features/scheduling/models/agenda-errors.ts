@@ -31,6 +31,22 @@ import { AkineHttpError } from '../../../core/interceptors/error.interceptor';
  * clave se mando con otro pedido. Es un bug del cliente —la clave tiene que ser una por intento y
  * estable entre reintentos de ese intento— y el unico remedio honesto es empezar el intento de
  * nuevo con una clave nueva.
+ *
+ * <h2>Y los dos del ciclo de vida (AKINE-05.03)</h2>
+ *
+ * <ul>
+ *   <li><b>`turno-transicion-no-permitida`</b>: el turno ya cerro su ciclo, o su ventana temporal
+ *       no admite la operacion. Viaja con `motivo`, que es lo que separa "ya esta cancelado" de
+ *       "ya empezo". La accion es <b>releer el turno</b>.</li>
+ *   <li><b>`turno-con-atencion`</b>: hay una Sesion registrada sobre ese turno. La accion es
+ *       <b>ir a la atencion</b>, no reintentar: no hay nada que refrescar.</li>
+ * </ul>
+ *
+ * <p><b>La version vieja NO tiene tipo propio</b>, y conviene saberlo. Las tres transiciones que
+ * llevan `expectedVersion` rechazan con `OptimisticLockingFailureException`, que el handler global
+ * del backend mapea al `conflict` generico —el catalogo tiene `concurrent-modification` y
+ * `scheduling` no lo usa—. Aca cae en la causa `conflicto`, con el `detail` del servidor, que dice
+ * releer y reintentar. Es la deuda transversal que el workspace ya tiene anotada.
  */
 export type CausaAgenda =
   /** 400 `ventana-demasiado-amplia`. Ver `maxDays`: la pantalla recorta sola y reintenta. */
@@ -55,6 +71,22 @@ export type CausaAgenda =
   | 'persona-sin-perfil-paciente'
   /** 409 `idempotency-key-conflict`: la clave se reuso con otro pedido. Bug del cliente. */
   | 'clave-reusada'
+  /**
+   * 409 `turno-transicion-no-permitida`: el ciclo del turno no admite esa operacion (AKINE-05.03).
+   *
+   * <p>Un solo tipo para dos familias —"ya esta cancelado" y "ya empezo"—, con el detalle en
+   * `motivo`. El backend lo publico asi a proposito: para la pantalla el desenlace es el mismo,
+   * releer el turno y explicar por que no se puede.
+   */
+  | 'turno-transicion-no-permitida'
+  /**
+   * 409 `turno-con-atencion`: el turno tiene una Sesion registrada (AKINE-05.03, DP-05).
+   *
+   * <p><b>Tipo propio y no el de transicion</b>, porque lleva a otra parte: no hay nada que
+   * refrescar, hay una atencion que resolver. Ninguna transicion administrativa puede borrar la
+   * prueba de que la atencion ocurrio.
+   */
+  | 'turno-con-atencion'
   /** 409 subscription-suspended: lo emite el filtro, antes del controller. */
   | 'suscripcion-suspendida'
   /** Cualquier otro 409. Gana el `detail` del backend. */
@@ -81,6 +113,20 @@ export type AccionSugerida =
   | 'elegir-otro'
   /** Ir al padron a activar el perfil de paciente. */
   | 'activar-perfil'
+  /**
+   * Volver a leer el historial del turno: lo que la pantalla muestra quedo viejo.
+   *
+   * <p>Distinta de `recargar-agenda` porque recarga <b>otra cosa</b>. La agenda son los huecos de
+   * una oferta; el turno es una fila con su propia version, y es la version la que quedo vieja.
+   */
+  | 'recargar-turno'
+  /**
+   * Ir a la atencion clinica de ese turno. La transicion administrativa no se destraba sola.
+   *
+   * <p>Es la unica accion honesta ante `turno-con-atencion`: la Sesion existe y hay que resolverla
+   * ahi. Reintentar la cancelacion mil veces devuelve el mismo 409.
+   */
+  | 'resolver-atencion'
   /** Reintentar el mismo pedido con una clave de idempotencia nueva. */
   | 'reintentar-con-clave-nueva'
   /** Elegir contexto de trabajo. */
@@ -157,6 +203,30 @@ const MENSAJE_SUSCRIPCION_SUSPENDIDA =
   'La suscripcion de la organizacion esta suspendida, asi que no se pueden reservar turnos. Se ' +
   'resuelve desde la pantalla de suscripcion.';
 
+/**
+ * El ciclo del turno no admite la operacion.
+ *
+ * <p>El texto del backend viaja en `motivo` —"ya esta cancelado", "ya empezo y no se puede
+ * mover"— y la pantalla lo muestra debajo. Sin el, este mensaje seria un "no se puede" sin decir
+ * por que, que es exactamente lo que el tipo propio existe para evitar.
+ */
+const MENSAJE_TRANSICION_NO_PERMITIDA =
+  'Este turno no admite esa operacion en su estado actual. Volve a leer su historial: puede que ' +
+  'otra persona lo haya cambiado, o que ya haya pasado su hora.';
+
+/**
+ * El turno tiene una Sesion registrada.
+ *
+ * <p>Es el mensaje que la etapa pidio explicitamente que no fuera un "error inesperado": el
+ * operador tiene que entender que <b>hay una atencion clinica</b> y que el turno no se toca hasta
+ * resolverla. DP-05 mantiene las dos maquinas de estado separadas y ninguna operacion
+ * administrativa puede borrar la prueba de que la atencion ocurrio.
+ */
+const MENSAJE_TURNO_CON_ATENCION =
+  'Este turno ya tiene una atencion clinica registrada, asi que no se puede cancelar, reprogramar ' +
+  'ni marcar como ausente: eso borraria la prueba de que la atencion ocurrio. Si la atencion se ' +
+  'abrio por error, resolvela desde la pantalla de atencion clinica.';
+
 const MENSAJE_CONFLICTO =
   'El servidor rechazo la operacion por un conflicto con lo que ya hay guardado. Recarga la ' +
   'agenda para ver el estado actual.';
@@ -214,6 +284,13 @@ export function traducirErrorAgenda(error: unknown): ErrorAgenda {
       return base(MENSAJE_SIN_PERFIL_PACIENTE, 'persona-sin-perfil-paciente', 'activar-perfil');
     case 'idempotency-key-conflict':
       return base(MENSAJE_CLAVE_REUSADA, 'clave-reusada', 'reintentar-con-clave-nueva');
+    case 'turno-transicion-no-permitida':
+      return {
+        ...base(MENSAJE_TRANSICION_NO_PERMITIDA, 'turno-transicion-no-permitida', 'recargar-turno'),
+        motivo: textoDeExtension(error, 'motivo'),
+      };
+    case 'turno-con-atencion':
+      return base(MENSAJE_TURNO_CON_ATENCION, 'turno-con-atencion', 'resolver-atencion');
     case 'oferta-inactiva':
     // Las dos dicen lo mismo para quien mira la agenda: esta oferta no se puede agendar.
     // falls through

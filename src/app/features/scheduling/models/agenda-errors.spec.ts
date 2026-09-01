@@ -80,6 +80,68 @@ describe('traducirErrorAgenda', () => {
     expect(traducido.mensaje).toContain('no es un error tuyo');
   });
 
+  /**
+   * Los dos tipos del ciclo de vida (AKINE-05.03).
+   *
+   * <p>Estos nombres son <b>contrato</b>. Si el backend renombra `turno-con-atencion`, este
+   * traductor cae en el `default`, la pantalla muestra el 409 generico y el operador vuelve a
+   * quedar sin entender por que no puede cancelar un turno. El sintoma no es un test rojo ni un
+   * error en consola: es un cartel inutil. Por eso los literales se fijan aca.
+   */
+  it('turno-transicion-no-permitida manda a releer el turno y trae el motivo', () => {
+    const traducido = traducirErrorAgenda(
+      conflicto('turno-transicion-no-permitida', { motivo: 'ya empezo y no se puede mover' }),
+    );
+
+    expect(traducido.causa).toBe('turno-transicion-no-permitida');
+    // Releer el TURNO, no la agenda: lo que quedo viejo es la fila y su version.
+    expect(traducido.accion).toBe('recargar-turno');
+    expect(traducido.motivo).toBe('ya empezo y no se puede mover');
+  });
+
+  it('turno-con-atencion explica por que y manda a la atencion, no a reintentar', () => {
+    const traducido = traducirErrorAgenda(conflicto('turno-con-atencion'));
+
+    expect(traducido.causa).toBe('turno-con-atencion');
+    // Reintentar devuelve el mismo 409 para siempre: lo que hay que resolver es la Sesion.
+    expect(traducido.accion).toBe('resolver-atencion');
+    // El requisito era explicito: esto NO se muestra como "error inesperado".
+    expect(traducido.mensaje).toContain('atencion clinica registrada');
+    expect(traducido.mensaje).toContain('no se puede cancelar, reprogramar ni marcar como ausente');
+  });
+
+  it('los siete conflictos publicados llevan a acciones propias, no a una bolsa comun', () => {
+    const acciones = [
+      'slot-no-disponible',
+      'slot-completo',
+      'recurso-ocupado',
+      'persona-sin-perfil-paciente',
+      'idempotency-key-conflict',
+      'turno-transicion-no-permitida',
+      'turno-con-atencion',
+    ].map((tipo) => traducirErrorAgenda(conflicto(tipo)).accion);
+
+    expect(new Set(acciones).size).toBe(acciones.length);
+  });
+
+  /**
+   * La version vieja NO tiene tipo propio, y el traductor no puede inventarselo.
+   *
+   * <p>El backend la mapea al `conflict` generico. Este test lo fija para que el dia que
+   * `scheduling` empiece a emitir `concurrent-modification` alguien se entere aca y no en
+   * produccion.
+   */
+  it('la version vieja llega como conflicto generico y conserva el mensaje del backend', () => {
+    const traducido = traducirErrorAgenda(
+      conflicto('conflict', {
+        detail: 'El recurso fue modificado por otra operacion. Vuelva a leerlo y reintente.',
+      }),
+    );
+
+    expect(traducido.causa).toBe('conflicto');
+    expect(traducido.mensaje).toContain('Vuelva a leerlo y reintente');
+  });
+
   it('los cinco conflictos son cinco acciones distintas', () => {
     const acciones = [
       'slot-no-disponible',

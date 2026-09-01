@@ -3,6 +3,7 @@ import { Observable } from 'rxjs';
 
 import { Agenda } from '../../../api/generated/model/agenda';
 import { AgendaService } from '../../../api/generated/api/agenda.service';
+import { EventoDeTurno } from '../../../api/generated/model/evento-de-turno';
 import { HabilitacionesResponse } from '../../../api/generated/model/habilitaciones-response';
 import { OfertaResponse } from '../../../api/generated/model/oferta-response';
 import { PersonaPageResponse } from '../../../api/generated/model/persona-page-response';
@@ -28,11 +29,19 @@ import { TurnosService } from '../../../api/generated/api/turnos.service';
  * fachadas llamando al mismo servicio generado no es duplicacion de dominio: es cada feature
  * declarando que parte del contrato consume.
  *
- * <h2>Lo que esta fachada NO tiene</h2>
+ * <h2>El ciclo de vida del turno (AKINE-05.03)</h2>
  *
- * <p><b>No hay cancelar ni reprogramar.</b> No es una omision: no existen en el contrato porque
- * AKINE-05.03 quedo fuera de alcance por DP-10. Un boton sin endpoint es peor que la ausencia del
- * boton, porque promete algo que despues es un 404.
+ * <p>Las cuatro transiciones y el historial entraron con 05.03. Las tres que mutan estado llevan
+ * `expectedVersion`: la version que devolvio la <b>ultima lectura</b> del turno. Si otro operador
+ * lo toco entre medio el backend rechaza con 409 en vez de pisarlo, y quien llama tiene que releer
+ * —de ahi que todas devuelvan el {@link Turno} entero, con su version nueva—.
+ *
+ * <h2>Lo que esta fachada NO tiene, y no es un olvido</h2>
+ *
+ * <p><b>No hay lectura de un turno.</b> El contrato 0.21.0 no publica ningun
+ * `GET /consultorios/{id}/turnos/{turnoId}` ni ningun listado de turnos: lo unico que se puede
+ * leer de un turno existente es su {@link historial}, que no trae la `version`. La consecuencia
+ * practica esta documentada en `pages/ciclo-de-turno`.
  *
  * <p>Tampoco traduce errores —eso es `models/agenda-errors.ts`— ni guarda estado.
  */
@@ -98,9 +107,103 @@ export class SchedulingApi {
     });
   }
 
-  /** Confirma la reserva. Es idempotente: confirmar dos veces devuelve 200 sin cambiar nada. */
+  /**
+   * Confirma la reserva. Es idempotente: confirmar dos veces devuelve 200 sin cambiar nada.
+   *
+   * <p><b>Es la unica transicion sin `expectedVersion`</b>, y por eso es tambien la unica que se
+   * puede ofrecer cuando la pantalla no conoce la version del turno. Confirmar es un estado de la
+   * RESERVA: no dice nada del cobro ni de que el paciente haya llegado.
+   */
   confirmar(consultorioId: number, turnoId: number): Observable<Turno> {
     return this.turnos.confirmar({ consultorioId, turnoId });
+  }
+
+  /**
+   * Cancela un turno futuro. <b>Libera el lugar</b> y no borra nada (RN-M12-002).
+   *
+   * <p>El motivo es <b>obligatorio</b> (DP-04) y la version tambien. No es idempotente: entre dos
+   * cancelaciones el lugar pudo haber sido tomado por otro paciente, asi que la segunda no
+   * contesta 200 en silencio.
+   */
+  cancelar(
+    consultorioId: number,
+    turnoId: number,
+    cuerpo: { readonly motivo: string; readonly expectedVersion: number },
+  ): Observable<Turno> {
+    return this.turnos.cancelar({
+      consultorioId,
+      turnoId,
+      cancelarTurno: { motivo: cuerpo.motivo, expectedVersion: cuerpo.expectedVersion },
+    });
+  }
+
+  /**
+   * Mueve el turno a otro horario. <b>Es el mismo turno</b>: conserva id, paciente e historial.
+   *
+   * <p>No cancela uno y crea otro, entre otras cosas porque la Sesion de M14 cuelga del `turnoId`
+   * y ese vinculo se cortaria. `inicio` tiene que ser un instante que <b>devolvio la agenda</b>:
+   * el servidor revalida el destino entero bajo el mismo lock de sede que usa una reserva.
+   *
+   * <p>`profesionalId` puede ser <b>otro</b>: mover el turno porque el profesional se ausento es
+   * el caso mas frecuente. Un turno confirmado vuelve a `RESERVADO`.
+   */
+  reprogramar(
+    consultorioId: number,
+    turnoId: number,
+    cuerpo: {
+      readonly inicio: string;
+      readonly motivo: string;
+      readonly expectedVersion: number;
+      readonly profesionalId?: number;
+    },
+  ): Observable<Turno> {
+    return this.turnos.reprogramar({
+      consultorioId,
+      turnoId,
+      reprogramarTurno: {
+        inicio: cuerpo.inicio,
+        motivo: cuerpo.motivo,
+        expectedVersion: cuerpo.expectedVersion,
+        profesionalId: cuerpo.profesionalId,
+      },
+    });
+  }
+
+  /**
+   * Registra que el paciente no vino. <b>NO libera el lugar</b>: la hora se consumio igual.
+   *
+   * <p>Es la diferencia con cancelar, y es la razon por la que son dos operaciones distintas.
+   * Solo se registra <b>despues</b> de la hora del turno: una ausencia anticipada es una
+   * cancelacion.
+   *
+   * <p><b>El motivo es opcional aca</b> —el contrato solo exige `expectedVersion`—, asi que el
+   * panel que la confirma tiene que declararlo opcional o el boton no hace nada.
+   */
+  registrarAusencia(
+    consultorioId: number,
+    turnoId: number,
+    cuerpo: { readonly expectedVersion: number; readonly motivo?: string },
+  ): Observable<Turno> {
+    return this.turnos.registrarAusencia({
+      consultorioId,
+      turnoId,
+      registrarAusencia: {
+        expectedVersion: cuerpo.expectedVersion,
+        motivo: cuerpo.motivo === '' ? undefined : cuerpo.motivo,
+      },
+    });
+  }
+
+  /**
+   * Todas las transiciones del turno, de la mas vieja a la mas nueva (RF-M12-008).
+   *
+   * <p>Exige `turno:read` y no `turno:manage`: leer quien cancelo y por que es parte de mirar la
+   * agenda, no de operarla.
+   *
+   * <p><b>Es lo unico que se puede leer de un turno existente</b>, y <b>no trae la version</b>.
+   */
+  historial(consultorioId: number, turnoId: number): Observable<readonly EventoDeTurno[]> {
+    return this.turnos.historial({ consultorioId, turnoId });
   }
 
   /** Ofertas ACTIVAS de la sede: son las unicas que se pueden agendar. */

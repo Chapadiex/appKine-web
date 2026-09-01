@@ -196,10 +196,22 @@
       }
     </dl>
     <!--
-      No hay boton de cancelar y no es un olvido: AKINE-05.03 quedo fuera de alcance por DP-10 y
-      el endpoint no existe. Un boton que termina en 404 promete algo que el producto no tiene.
+      Unica puerta de entrada al ciclo del turno, y por eso lleva `version`, `ofertaId` y `fecha`
+      en la query: el contrato no publica ninguna lectura de un turno, asi que si esos datos no
+      viajan por la URL la pantalla de destino no puede cancelar, mover ni marcar ausencia.
+      El detalle esta en `pages/ciclo-de-turno`.
     -->
-    <p class="ayuda">Cancelar o reprogramar todavia no esta disponible en esta version.</p>
+    @if (reserva.id) {
+      <p>
+        <a
+          class="enlace"
+          [routerLink]="['/agenda', 'turnos', reserva.id]"
+          [queryParams]="{ version: reserva.version, ofertaId: ofertaId(), fecha: fecha() }"
+        >
+          Cancelar, mover o ver el historial de este turno
+        </a>
+      </p>
+    }
 
     <!--
       Unica puerta de entrada a la atencion clinica, y por eso vive aca: el contrato no publica

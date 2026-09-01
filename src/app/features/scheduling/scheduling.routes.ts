@@ -1,7 +1,9 @@
 import { Routes } from '@angular/router';
 
 import { ANCHO_AMPLIO, DATA_ANCHO } from '../../core/models/ancho-de-contenido';
+import { PERMISO_TURNO_READ } from '../../core/models/permisos';
 import { contextGuard } from '../../core/guards/context.guard';
+import { permissionGuard } from '../../core/guards/permission.guard';
 
 /**
  * Rutas de la feature `scheduling` (agenda y reserva de turnos, M12, AKINE-05.01 y 05.02).
@@ -22,10 +24,26 @@ import { contextGuard } from '../../core/guards/context.guard';
  *
  * <h2>La reserva es una ruta propia y no un panel</h2>
  *
- * <p>Podria haber sido un panel dentro de la grilla, y seria peor: reservar crea algo que
- * <b>no se puede cancelar</b> —AKINE-05.03 quedo fuera de alcance por DP-10— y el resumen previo
- * es lo unico que hay entre un click y un turno equivocado. Una URL propia ademas sobrevive a un
- * refresh y se puede compartir con quien tiene que revisarla.
+ * <p>Podria haber sido un panel dentro de la grilla, y seria peor: el resumen previo es lo unico
+ * que hay entre un click y un turno equivocado en la agenda de un profesional. Una URL propia
+ * ademas sobrevive a un refresh y se puede compartir con quien tiene que revisarla.
+ *
+ * <h2>El ciclo del turno es una tercera ruta, y lleva `permissionGuard` (AKINE-05.03)</h2>
+ *
+ * <p><b>Con `turno:read` y no con `turno:manage`</b>, que es lo que exige el historial: leer quien
+ * cancelo y por que es parte de mirar la agenda, no de operarla. Las cuatro transiciones piden
+ * `turno:manage` y esas se esconden <b>dentro</b> de la pantalla, que es donde la distincion es
+ * util: un guard con el permiso de gestion dejaria afuera a quien solo quiere consultar el
+ * historial, que es exactamente lo que el backend si le permite.
+ *
+ * <p>Es la unica de las tres con guard de permiso, y no es una incoherencia: las otras dos se
+ * abren sin el porque consultar la agenda es lo que hace cualquiera que atienda el mostrador.
+ * Sigue siendo UX y no seguridad — la autoridad es el backend, que rechaza igual por URL directa.
+ *
+ * <p><b>La version del turno viaja en la query</b> (`?version=`), junto con `ofertaId` y `fecha`.
+ * No es elegante y es lo unico posible: el contrato 0.21.0 no publica ninguna lectura de un turno,
+ * asi que la pantalla no tiene de donde sacar la version que las transiciones exigen. Sin esos
+ * datos la ruta abre igual y queda en modo lectura; el detalle esta en `pages/ciclo-de-turno`.
  *
  * <p>El slot elegido viaja en la query (`fecha`, `inicio`, `profesionalId`) y no en el estado de
  * navegacion: el estado se pierde al recargar y dejaria la pantalla sin saber que reservar.
@@ -49,5 +67,12 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./pages/reserva-de-turno/reserva-de-turno-page').then((m) => m.ReservaDeTurnoPage),
     title: 'AKINE - Reservar un turno',
+  },
+  {
+    path: 'turnos/:turnoId',
+    canActivate: [contextGuard, permissionGuard(PERMISO_TURNO_READ)],
+    loadComponent: () =>
+      import('./pages/ciclo-de-turno/ciclo-de-turno-page').then((m) => m.CicloDeTurnoPage),
+    title: 'AKINE - Ciclo del turno',
   },
 ];
