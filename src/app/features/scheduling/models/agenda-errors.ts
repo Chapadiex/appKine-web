@@ -107,6 +107,15 @@ export type CausaAgenda =
 export type AccionSugerida =
   /** Volver a pedir la agenda: lo que se ve en pantalla quedo viejo. */
   | 'recargar-agenda'
+  /**
+   * Volver a pedir la lista del dia de la recepcion (AKINE-05.04).
+   *
+   * <p>Tercera variante de "recarga" y no un lujo: son <b>tres lecturas distintas</b>. La agenda
+   * son los huecos de una oferta, el turno es una fila con su version, y el dia es la lista de la
+   * recepcion. Reusar `recargar-agenda` aca haria que el boton dijera "releer la agenda" en una
+   * pantalla que no muestra ninguna.
+   */
+  | 'recargar-dia'
   /** Ofrecer el siguiente slot del mismo dia: el horario existe, lo que falta es cupo. */
   | 'ofrecer-siguiente'
   /** Volver al buscador a elegir otro horario o profesional. */
@@ -319,6 +328,66 @@ export function traducirErrorAgenda(error: unknown): ErrorAgenda {
   }
 
   return base(conDetalle(error, MENSAJE_GENERICO), 'otro', 'ninguna');
+}
+
+/**
+ * El check-in ya no se puede marcar, o ya no se puede deshacer.
+ *
+ * <p>Es el mismo `problemType` para las dos operaciones —`turno-transicion-no-permitida`, con el
+ * detalle en `motivo`—, y en la recepcion cubre exactamente dos escenarios reales:
+ *
+ * <ul>
+ *   <li><b>Marcar la llegada de un turno cancelado o ya ausente.</b> El backend contesta "esta
+ *       cancelado y no admite registrar una llegada".</li>
+ *   <li><b>Deshacer un check-in que ya no existe.</b> Deshacer <b>no es idempotente</b>, al reves
+ *       que marcar: el segundo click responde "no esta en espera: no hay ninguna llegada que
+ *       deshacer". El requisito de la etapa era explicito en que eso no se muestre como un error
+ *       inesperado, asi que el texto <b>explica la asimetria</b> en vez de disculparse.</li>
+ * </ul>
+ *
+ * <p>Las dos terminan igual: la fila que se ve quedo vieja porque otra persona toco ese turno, y
+ * lo que resuelve es releerla.
+ */
+const MENSAJE_LLEGADA_NO_APLICABLE =
+  'Ese turno ya no esta en el estado que esa accion necesita. Marcar la llegada dos veces no es un ' +
+  'problema —es idempotente—, pero deshacerla si: solo se puede deshacer una llegada que este ' +
+  'vigente, y esta ya no lo esta. Puede que otra persona haya tocado el turno desde el mostrador. ' +
+  'Actualizamos la fila con lo que dice el servidor.';
+
+/**
+ * Traduce los errores de la <b>recepcion del dia</b> (M13, AKINE-05.04).
+ *
+ * <p>Delega en {@link traducirErrorAgenda}, que ya cubre los `problemType` que estas cuatro
+ * operaciones pueden devolver, y corrige las <b>dos cosas que en esta pantalla estarian mal</b>:
+ *
+ * <ol>
+ *   <li><b>El texto de `turno-transicion-no-permitida`.</b> El de la agenda manda a "releer el
+ *       historial", que en la recepcion no se ve. Aca el caso concreto es el check-in, y el
+ *       mensaje lo nombra.</li>
+ *   <li><b>La accion.</b> Todo lo que alla resolvia recargando la agenda o el turno, aca se
+ *       resuelve recargando <b>el dia</b>, que es lo unico que esta pantalla sabe pedir. Un boton
+ *       que ofrezca recargar algo que no esta en pantalla es peor que no ofrecer nada.</li>
+ * </ol>
+ *
+ * <p>Todo lo demas —red, 429, sin contexto, sin permiso, 404, suscripcion suspendida— pasa tal
+ * cual: no cambia de significado por estar en otra pantalla, y duplicar esos textos garantizaria
+ * que un dia digan cosas distintas.
+ */
+export function traducirErrorRecepcion(error: unknown): ErrorAgenda {
+  const traducido = traducirErrorAgenda(error);
+
+  if (traducido.causa === 'turno-transicion-no-permitida') {
+    return { ...traducido, mensaje: MENSAJE_LLEGADA_NO_APLICABLE, accion: 'recargar-dia' };
+  }
+
+  // Los dos que llegan aca con `recargar-agenda`: el 404 —el turno se borro, o la sede es de otro
+  // tenant— y cualquier 409 sin tipo propio, que incluye el `conflict` generico al que el handler
+  // global mapea la version vieja.
+  if (traducido.accion === 'recargar-agenda') {
+    return { ...traducido, accion: 'recargar-dia' };
+  }
+
+  return traducido;
 }
 
 /**

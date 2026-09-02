@@ -1,0 +1,218 @@
+<h1>Recepcion del dia</h1>
+
+<!--
+  El parrafo no es decorativo: es lo que impide que "en espera" se lea como "lo estan atendiendo".
+  DP-05 separa Turno, Recepcion y Sesion, y esta pantalla es solo la del medio.
+-->
+<p class="descripcion">
+  Quien viene hoy y quien ya llego al centro. Marcar la llegada deja al paciente
+  <b>en espera</b>: llego y aguarda. La atencion se registra en la pantalla clinica, que es otra.
+</p>
+
+<p><a class="enlace" routerLink="/agenda">Ir al buscador de agenda</a></p>
+
+<section class="tarjeta" aria-labelledby="titulo-dia">
+  <h2 id="titulo-dia">Dia</h2>
+
+  <div class="filtros">
+    <div class="campo">
+      <label for="recepcion-fecha">Fecha</label>
+      <input
+        id="recepcion-fecha"
+        name="recepcion-fecha"
+        type="date"
+        [value]="dia()"
+        (change)="cambiarDia($any($event.target).value)"
+        aria-describedby="recepcion-fecha-ayuda"
+      />
+      <p class="ayuda" id="recepcion-fecha-ayuda">
+        Es la fecha local de la sede. Al abrir la pantalla se muestra el dia de hoy.
+      </p>
+    </div>
+  </div>
+
+  <p class="ayuda">
+    {{ fechaEnPalabras(dia()) }} —
+    @if (zonaConocida()) {
+      horarios en la zona de la sede ({{ timezone() }}).
+    } @else {
+      <!--
+        No es un cartel defensivo: `GET /turnos?fecha=` no publica el `timezone` de la sede, a
+        diferencia de la agenda. Rotularlo es lo unico honesto; usar la zona del navegador correria
+        las horas del mostrador sin que nada falle.
+      -->
+      horarios en <b>UTC</b>: no se pudo averiguar la zona horaria de la sede.
+    }
+  </p>
+
+  <div class="acciones">
+    <button type="button" class="boton boton--secundario" (click)="cargar()">
+      Actualizar la lista
+    </button>
+  </div>
+</section>
+
+<div aria-live="polite">
+  @if (exito(); as mensaje) {
+    <p class="estado estado--ok">{{ mensaje }}</p>
+  }
+
+  @if (error(); as fallo) {
+    <section class="tarjeta conflicto" aria-labelledby="titulo-conflicto">
+      <h2 id="titulo-conflicto">No se pudo completar la operacion</h2>
+      <p class="estado estado--error">{{ fallo.mensaje }}</p>
+
+      @if (fallo.motivo) {
+        <p class="ayuda">Lo que dijo el servidor: {{ fallo.motivo }}</p>
+      }
+
+      @switch (fallo.accion) {
+        @case ('recargar-dia') {
+          <div class="acciones">
+            <button type="button" class="boton" (click)="cargar()">Volver a leer el dia</button>
+          </div>
+        }
+        @case ('elegir-contexto') {
+          <div class="acciones">
+            <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto de trabajo</a>
+          </div>
+        }
+      }
+    </section>
+  }
+</div>
+
+@if (cargando()) {
+  <p class="estado estado--cargando">Leyendo los turnos del dia…</p>
+}
+
+@if (!puedeOperar()) {
+  <p class="estado estado--vacio">
+    Solo podes mirar la lista. Marcar o deshacer una llegada necesita permiso de gestion de turnos
+    en esta sede.
+  </p>
+}
+
+@if (!hayTurnos() && !cargando()) {
+  <p class="estado estado--vacio">
+    Este dia no tiene ningun turno agendado en esta sede. Proba con otra fecha.
+  </p>
+} @else if (hayTurnos()) {
+  <p class="ayuda">
+    {{ turnos().length }} turno(s) en el dia, {{ enEspera() }} en espera. La lista
+    <b>incluye los cancelados</b>: alguien puede presentarse con un turno que se cancelo, y verlo
+    con su motivo es lo que permite explicarselo.
+  </p>
+
+  <!--
+    `tabindex`, `role` y nombre en el contenedor que scrollea: sin ellos, las columnas escondidas
+    tras el desborde quedan fuera del alcance del teclado (WCAG 2.1.1). Ver `design-system.css`.
+  -->
+  <div class="tabla-scroll" tabindex="0" role="region" aria-label="Turnos del dia">
+    <table class="tabla">
+      <caption class="visualmente-oculto">
+        Turnos de la sede en la fecha elegida, con su estado y su hora de llegada
+      </caption>
+      <thead>
+        <tr>
+          <th scope="col">Hora</th>
+          <th scope="col">Paciente</th>
+          <th scope="col">Prestacion</th>
+          <th scope="col">Estado</th>
+          <th scope="col">Llegada</th>
+          <th scope="col">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (turno of turnos(); track turno.id) {
+          <tr [class.fila--revocada]="cancelado(turno)">
+            <td>{{ rango(turno) }}</td>
+
+            <td>
+              {{ turno.personaNombre }}
+              @if (turno.documento) {
+                <span class="etiqueta">{{ turno.documento }}</span>
+              }
+            </td>
+
+            <td>{{ turno.ofertaNombre }}</td>
+
+            <td>
+              <!--
+                El estado se dice con TEXTO y no solo con el color de la fila: el color solo no
+                comunica (WCAG 1.4.1). El texto de `EN_ESPERA` aclara que no es atencion.
+              -->
+              <span
+                class="marca-estado"
+                [class.marca-estado--activa]="esperando(turno)"
+                [class.marca-estado--revocada]="cancelado(turno)"
+              >
+                {{ turno.estado }}
+              </span>
+              <span class="ayuda">{{ textoDeEstado(turno.estado) }}</span>
+
+              @if (cancelado(turno) && turno.motivoCancelacion) {
+                <p class="ayuda">Motivo: {{ turno.motivoCancelacion }}</p>
+              }
+            </td>
+
+            <td>
+              @if (horaDeLlegada(turno); as hora) {
+                {{ hora }}
+              } @else {
+                <span class="ayuda">Todavia no llego</span>
+              }
+            </td>
+
+            <td>
+              <div class="acciones-fila">
+                @if (puedeOperar()) {
+                  @if (admiteLlegada(turno)) {
+                    <!--
+                      Marcar la llegada es IDEMPOTENTE: el doble click del mostrador no es un error.
+                      El `disabled` evita mandar dos veces el mismo pedido, no castiga al operador.
+                    -->
+                    <button
+                      type="button"
+                      class="boton"
+                      [disabled]="enVuelo() === turno.id"
+                      (click)="marcarLlegada(turno)"
+                    >
+                      Marcar la llegada
+                    </button>
+                  } @else if (esperando(turno)) {
+                    <!--
+                      Deshacer NO es idempotente: el segundo click responde 409. Ese conflicto se
+                      explica arriba, no se muestra como "error inesperado".
+                    -->
+                    <button
+                      type="button"
+                      class="boton boton--secundario"
+                      [disabled]="enVuelo() === turno.id"
+                      (click)="deshacerLlegada(turno)"
+                    >
+                      Deshacer la llegada
+                    </button>
+                  }
+                }
+
+                <!--
+                  Cancelar, reprogramar y el historial NO se duplican aca: viven en la pantalla del
+                  ciclo del turno, que es la que sabe manejar la version y los conflictos. Este
+                  enlace le pasa lo que esa pantalla necesita para poder operar.
+                -->
+                <a
+                  class="enlace"
+                  [routerLink]="['/agenda', 'turnos', turno.id]"
+                  [queryParams]="queryDelTurno(turno)"
+                >
+                  Ver el turno
+                </a>
+              </div>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}

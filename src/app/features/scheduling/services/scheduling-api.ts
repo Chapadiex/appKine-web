@@ -10,6 +10,7 @@ import { PersonaPageResponse } from '../../../api/generated/model/persona-page-r
 import { PersonasService } from '../../../api/generated/api/personas.service';
 import { ServiciosYOfertasService } from '../../../api/generated/api/servicios-y-ofertas.service';
 import { Turno } from '../../../api/generated/model/turno';
+import { TurnoDelDia } from '../../../api/generated/model/turno-del-dia';
 import { TurnosService } from '../../../api/generated/api/turnos.service';
 
 /**
@@ -36,14 +37,19 @@ import { TurnosService } from '../../../api/generated/api/turnos.service';
  * lo toco entre medio el backend rechaza con 409 en vez de pisarlo, y quien llama tiene que releer
  * —de ahi que todas devuelvan el {@link Turno} entero, con su version nueva—.
  *
- * <h2>Lo que esta fachada NO tiene, y no es un olvido</h2>
+ * <h2>La recepcion del dia (M13, AKINE-05.04)</h2>
  *
- * <p><b>No hay lectura de un turno.</b> El contrato 0.21.0 no publica ningun
- * `GET /consultorios/{id}/turnos/{turnoId}` ni ningun listado de turnos: lo unico que se puede
- * leer de un turno existente es su {@link historial}, que no trae la `version`. La consecuencia
- * practica esta documentada en `pages/ciclo-de-turno`.
+ * <p>El contrato <b>0.23.0</b> agrego lo que 0.21.0 no tenia: <b>leer turnos</b>.
+ * {@link turnosDelDia} lista los de una sede en un dia con el paciente ya resuelto, y
+ * {@link verTurno} lee uno solo. Las dos devuelven {@link TurnoDelDia}, que <b>si trae la
+ * `version`</b>: la limitacion que `pages/ciclo-de-turno` documenta dejo de existir del lado del
+ * contrato, aunque esa pantalla todavia no la aproveche.
  *
- * <p>Tampoco traduce errores —eso es `models/agenda-errors.ts`— ni guarda estado.
+ * <p>{@link registrarLlegada} y {@link deshacerLlegada} <b>no son simetricas</b>, y escribirlas
+ * como si lo fueran es el error facil: la primera es idempotente y la segunda no. El detalle esta
+ * en el javadoc de cada una.
+ *
+ * <p>Esta fachada no traduce errores —eso es `models/agenda-errors.ts`— ni guarda estado.
  */
 @Injectable({ providedIn: 'root' })
 export class SchedulingApi {
@@ -204,6 +210,74 @@ export class SchedulingApi {
    */
   historial(consultorioId: number, turnoId: number): Observable<readonly EventoDeTurno[]> {
     return this.turnos.historial({ consultorioId, turnoId });
+  }
+
+  // -------------------------------------------------------------------------------------
+  // Recepcion del dia (M13, AKINE-05.04)
+  // -------------------------------------------------------------------------------------
+
+  /**
+   * Los turnos de la sede en un dia, del mas temprano al mas tarde (RF-M13-001).
+   *
+   * <p><b>Incluye los cancelados, con su motivo, y no hay que filtrarlos.</b> Es una decision
+   * deliberada del backend y la razon por la que la respuesta trae `motivoCancelacion`: alguien
+   * se presenta en el mostrador a un turno que se cancelo, y una lista que lo esconda deja a la
+   * recepcion sin nada que decirle.
+   *
+   * <p>Cada fila llega con `personaNombre`, `documento` y `ofertaNombre` <b>ya resueltos</b>: no
+   * hay ninguna consulta por fila que hacer. Y no trae <b>ningun dato clinico</b>, que tampoco hay
+   * que ir a buscar a otro lado: la recepcion no es la pantalla de la atencion (DP-05).
+   *
+   * <p>`fecha` es la fecha <b>local de la sede</b> (`YYYY-MM-DD`); los instantes que vuelven son
+   * UTC. Exige `turno:read` y no `turno:manage`: mirar quien viene hoy es leer la agenda.
+   */
+  turnosDelDia(consultorioId: number, fecha: string): Observable<readonly TurnoDelDia[]> {
+    return this.turnos.delDia({ consultorioId, fecha });
+  }
+
+  /**
+   * Un turno solo, con la misma forma que una fila del dia.
+   *
+   * <p>La pantalla lo usa para <b>corregir una fila sola</b> cuando una operacion choca contra un
+   * 409: releer el dia entero por un turno le mueve la lista bajo el dedo a quien esta atendiendo
+   * a alguien. Devuelve la `version` vigente, que es lo que destraba el conflicto.
+   */
+  verTurno(consultorioId: number, turnoId: number): Observable<TurnoDelDia> {
+    return this.turnos.verTurno({ consultorioId, turnoId });
+  }
+
+  /**
+   * Check-in: el paciente llego y queda <b>en espera</b> (RF-M13-002). <b>Sin cuerpo</b> — la hora
+   * la pone el servidor, que es lo que la hace la hora REAL de llegada y no la que alguien tipeo.
+   *
+   * <p><b>Es idempotente</b>: marcar dos veces devuelve 200 sin mover la hora ni registrar un
+   * segundo evento. El doble click en el mostrador es el caso normal, no un error, y ni esta
+   * fachada ni la pantalla tienen que defenderse de el.
+   *
+   * <p><b>`EN_ESPERA` no significa que lo esten atendiendo.</b> Significa que llego y aguarda:
+   * entre llegar y ser atendido el paciente todavia puede irse. La prestacion la registra la
+   * Sesion, que es otra pantalla y otra maquina de estados (DP-05).
+   *
+   * <p>409 `turno-transicion-no-permitida` si el turno esta cancelado o ya marcado ausente.
+   */
+  registrarLlegada(consultorioId: number, turnoId: number): Observable<Turno> {
+    return this.turnos.registrarLlegada({ consultorioId, turnoId });
+  }
+
+  /**
+   * Revierte un check-in hecho sobre el turno equivocado. El turno vuelve al estado del que vino
+   * y <b>se limpia la hora de llegada</b>: un check-in deshecho no dejo una llegada, dejo un error
+   * corregido. El rastro de que ocurrio queda en el historial, que es append-only.
+   *
+   * <p><b>NO es idempotente, al reves que {@link registrarLlegada}</b>, y la asimetria es
+   * deliberada: deshacer lo ya deshecho responde 409. Aca el segundo click no es un doble click
+   * sino una operacion sobre un turno que entre medio pudo cambiar de estado —lo pudieron marcar
+   * ausente—, y contestar 200 le haria creer al operador que revirtio algo.
+   *
+   * <p>Por eso ese 409 <b>no se muestra como "error inesperado"</b>: ver `traducirErrorRecepcion`.
+   */
+  deshacerLlegada(consultorioId: number, turnoId: number): Observable<Turno> {
+    return this.turnos.deshacerLlegada({ consultorioId, turnoId });
   }
 
   /** Ofertas ACTIVAS de la sede: son las unicas que se pueden agendar. */

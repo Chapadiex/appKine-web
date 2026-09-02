@@ -28,6 +28,25 @@ import { permissionGuard } from '../../core/guards/permission.guard';
  * que hay entre un click y un turno equivocado en la agenda de un profesional. Una URL propia
  * ademas sobrevive a un refresh y se puede compartir con quien tiene que revisarla.
  *
+ * <h2>La recepcion del dia es una cuarta ruta, y lleva `permissionGuard` (AKINE-05.04)</h2>
+ *
+ * <p><b>Con `turno:read`</b>, que es lo que el backend exige para `GET /turnos?fecha=`: mirar quien
+ * viene hoy es leer la agenda, no operarla. Las dos acciones de llegada piden `turno:manage` y se
+ * esconden <b>dentro</b> de la pantalla, igual que en el ciclo del turno — un guard con el permiso
+ * de gestion dejaria afuera a quien solo quiere ver la lista, que es exactamente lo que el backend
+ * si le permite.
+ *
+ * <p>A diferencia de la agenda, esta lleva guard: la agenda se abre sin el porque su ruta vacia no
+ * pide nada al servidor hasta que se elige una oferta, y esta pide la lista del dia al abrirse.
+ * Sigue siendo UX y no seguridad — el backend rechaza igual por URL directa.
+ *
+ * <p><b>Es una pantalla propia y no una pestaña del buscador</b>, y no es cosmetico: el buscador
+ * responde "cuando hay lugar para reservar" y la recepcion responde "quien viene hoy". Son dos
+ * lecturas distintas, con dos endpoints distintos y dos momentos del dia distintos.
+ *
+ * <p>La fecha viaja en la query (`?fecha=`) para que un refresh —o un enlace copiado— vuelva al
+ * mismo dia.
+ *
  * <h2>El ciclo del turno es una tercera ruta, y lleva `permissionGuard` (AKINE-05.03)</h2>
  *
  * <p><b>Con `turno:read` y no con `turno:manage`</b>, que es lo que exige el historial: leer quien
@@ -67,6 +86,16 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./pages/reserva-de-turno/reserva-de-turno-page').then((m) => m.ReservaDeTurnoPage),
     title: 'AKINE - Reservar un turno',
+  },
+  {
+    path: 'recepcion',
+    canActivate: [contextGuard, permissionGuard(PERMISO_TURNO_READ)],
+    loadComponent: () =>
+      import('./pages/recepcion-del-dia/recepcion-del-dia-page').then((m) => m.RecepcionDelDiaPage),
+    title: 'AKINE - Recepcion del dia',
+    // Ancho amplio: la tabla tiene seis columnas y la ultima lleva dos acciones. A 46rem entra
+    // detras del scroll horizontal el mismo dia que un nombre es largo.
+    data: { [DATA_ANCHO]: ANCHO_AMPLIO },
   },
   {
     path: 'turnos/:turnoId',

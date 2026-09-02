@@ -1,6 +1,6 @@
 import { AkineHttpError, ProblemDetail } from '../../../core/interceptors/error.interceptor';
 
-import { recortarVentana, traducirErrorAgenda } from './agenda-errors';
+import { recortarVentana, traducirErrorAgenda, traducirErrorRecepcion } from './agenda-errors';
 
 /**
  * Arma un cuerpo de Problem Details con extensiones.
@@ -287,6 +287,84 @@ describe('traducirErrorAgenda', () => {
     const traducido = traducirErrorAgenda(conflicto('slot-no-disponible', { motivo: 42 }));
 
     expect(traducido.motivo).toBe('');
+  });
+});
+
+/**
+ * Spec del traductor de la recepcion del dia (M13, AKINE-05.04).
+ *
+ * <p><b>Fija los nombres de los `problemType`.</b> Es lo que este archivo tiene que hacer y lo
+ * unico que ningun otro test hace: la traduccion se ramifica por el tipo publicado, no por la
+ * prosa del `detail`, asi que si el backend renombra `turno-transicion-no-permitida` la pantalla
+ * se queda muda y ninguna otra prueba se entera.
+ *
+ * <p>Las cuatro operaciones de esta pantalla publican un solo tipo propio. El resto de sus fallos
+ * —403, 404, 409 sin tipo, red— llega por status, y lo unico que cambia aca es la accion.
+ */
+describe('traducirErrorRecepcion', () => {
+  function conflicto(tipo: string, extras: Record<string, unknown> = {}): AkineHttpError {
+    return new AkineHttpError(
+      409,
+      cuerpo({
+        type: `https://akine.app/problems/${tipo}`,
+        status: 409,
+        detail: 'Rechazado por el servidor.',
+        ...extras,
+      }),
+      false,
+    );
+  }
+
+  it('el 409 de deshacer explica la asimetria y NO es un "error inesperado"', () => {
+    const traducido = traducirErrorRecepcion(
+      conflicto('turno-transicion-no-permitida', {
+        motivo: 'no esta en espera: no hay ninguna llegada que deshacer',
+      }),
+    );
+
+    expect(traducido.causa).toBe('turno-transicion-no-permitida');
+    // Marcar es idempotente y deshacer no: el texto lo dice, que es el requisito de la etapa.
+    expect(traducido.mensaje).toContain('idempotente');
+    expect(traducido.mensaje).toContain('deshacerla si');
+    expect(traducido.mensaje).not.toContain('No pudimos completar la operacion');
+    // El motivo del servidor sobrevive: es lo que separa "esta cancelado" de "no esta en espera".
+    expect(traducido.motivo).toBe('no esta en espera: no hay ninguna llegada que deshacer');
+    expect(traducido.accion).toBe('recargar-dia');
+  });
+
+  it('no manda a releer la agenda, que en esta pantalla no existe', () => {
+    // 404: el turno se borro, o la sede es de otro tenant. En la agenda la accion era
+    // `recargar-agenda`, y ofrecer aca un boton que recarga algo que no esta en pantalla es peor
+    // que no ofrecer ninguno.
+    const noEncontrado = traducirErrorRecepcion(new AkineHttpError(404, null, false));
+    expect(noEncontrado.causa).toBe('no-encontrado');
+    expect(noEncontrado.accion).toBe('recargar-dia');
+
+    // Cualquier 409 sin tipo propio, que incluye el `conflict` generico al que el handler global
+    // mapea la version vieja.
+    const generico = traducirErrorRecepcion(conflicto('otra-cosa'));
+    expect(generico.causa).toBe('conflicto');
+    expect(generico.accion).toBe('recargar-dia');
+  });
+
+  it('lo que no cambia de significado por estar en otra pantalla pasa tal cual', () => {
+    const sinContexto = traducirErrorRecepcion(
+      new AkineHttpError(
+        403,
+        cuerpo({ type: 'https://akine.app/problems/missing-tenant-context', status: 403 }),
+        false,
+      ),
+    );
+    expect(sinContexto.causa).toBe('sin-contexto');
+    expect(sinContexto.accion).toBe('elegir-contexto');
+
+    const sinPermiso = traducirErrorRecepcion(new AkineHttpError(403, null, false));
+    expect(sinPermiso.causa).toBe('sin-permiso');
+    expect(sinPermiso.accion).toBe('ninguna');
+
+    const red = traducirErrorRecepcion(new AkineHttpError(0, null, true));
+    expect(red.causa).toBe('red');
+    expect(red.accion).toBe('ninguna');
   });
 });
 

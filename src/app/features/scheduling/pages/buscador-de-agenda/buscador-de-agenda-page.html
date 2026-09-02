@@ -5,6 +5,14 @@
   dice que la atencion haya ocurrido, eso lo registra la sesion clinica.
 </p>
 
+<!--
+  Unica puerta de entrada a la recepcion del dia (AKINE-05.04), y por eso vive aca: esa pantalla
+  cuelga de `/agenda` y la navegacion principal marca la seccion activa POR PREFIJO, asi que
+  sumarla al menu dejaria dos enlaces con `aria-current="page"` a la vez. Esto responde otra
+  pregunta que el buscador: aca se busca cuando hay lugar, alla se ve quien viene hoy.
+-->
+<p><a class="enlace" routerLink="/agenda/recepcion">Ver la recepcion del dia</a></p>
+
 <section class="tarjeta" aria-labelledby="titulo-busqueda-agenda">
   <h2 id="titulo-busqueda-agenda">Que buscar</h2>
 
