@@ -7,6 +7,7 @@ export * from './account-state-change-request';
 export * from './activar-perfil-paciente-request';
 export * from './activate-account-request';
 export * from './agenda';
+export * from './agenda-del-dia';
 export * from './anular-obligacion';
 export * from './assign-grant-request';
 export * from './audit-event-page-response';

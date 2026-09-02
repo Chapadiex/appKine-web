@@ -10,7 +10,7 @@ import { Turno } from '../../../../api/generated/model/turno';
 import { TurnoDelDia, TurnoDelDiaEstadoEnum } from '../../../../api/generated/model/turno-del-dia';
 import { SchedulingApi } from '../../services/scheduling-api';
 import { ErrorAgenda, traducirErrorRecepcion } from '../../models/agenda-errors';
-import { fechaEnPalabras, horaEnZona, hoy, sumarDias } from '../../models/etiquetas-de-agenda';
+import { fechaEnPalabras, horaEnZona, hoy } from '../../models/etiquetas-de-agenda';
 import { textoDeEstado } from '../../models/etiquetas-de-turno';
 
 /** La ruta que monta esta pantalla. Se reescribe la fecha sobre ella sin navegar. */
@@ -59,17 +59,16 @@ const RUTA = '/agenda/recepcion';
  * mensaje explica que paso. El boton de recargar el dia entero sigue estando, para cuando el
  * problema no es de una fila.
  *
- * <h2>5. La zona horaria sale de la agenda, y cuando no se puede se dice</h2>
+ * <h2>5. La zona horaria viene en la respuesta, y hay que usar esa</h2>
  *
- * <p><b>Los instantes vienen en UTC y `GET /turnos?fecha=` no publica el `timezone` de la sede</b>
- * —`Agenda` si lo hace; esta respuesta no—. Formatear con la del navegador correria las horas del
- * mostrador en silencio, que es la peor falla posible en esta pantalla.
+ * <p>Los instantes vienen en UTC y las horas del mostrador son locales de la sede. Formatear con
+ * la zona del navegador de quien mira <b>correria la agenda entera sin fallar</b>, que es la peor
+ * falla posible en esta pantalla: no hay error que ver, solo horas equivocadas.
  *
- * <p>Asi que la zona se pide aparte: una sola lectura de agenda sobre la oferta del primer turno
- * del dia, que es alcanzable con el mismo `turno:read` que ya hizo falta para la lista. Un dia sin
- * turnos no necesita zona, y si esa lectura falla la pantalla <b>rotula UTC en pantalla</b> en vez
- * de mentir. Es el mismo criterio que `pages/ciclo-de-turno`. La solucion definitiva es que la
- * respuesta del dia traiga su `timezone`, y eso es un pedido al backend.
+ * <p>Desde el contrato 0.24.0 la zona viaja en el cuerpo de la respuesta del dia. La primera
+ * version de esta pantalla tuvo que deducirla con una segunda lectura sobre la agenda de la oferta
+ * del primer turno —fragil, porque un dia vacio no tiene primer turno— y eso motivo el arreglo del
+ * backend. Si aun asi llegara vacia, la pantalla <b>rotula UTC</b> en vez de mentir.
  */
 @Component({
   selector: 'app-recepcion-del-dia-page',
@@ -152,10 +151,12 @@ export class RecepcionDelDiaPage {
 
     this.cargando.set(true);
     this.api.turnosDelDia(consultorioId, this.dia()).subscribe({
-      next: (turnos) => {
-        this.turnos.set(turnos);
+      next: (agenda) => {
+        this.turnos.set(agenda.turnos ?? []);
+        // La zona viene en el cuerpo desde 0.24.0. Se aplica aunque el dia este vacio: es un
+        // dato de la sede y el rotulo tiene que decir la verdad igual.
+        this.timezone.set(agenda.timezone ?? '');
         this.cargando.set(false);
-        this.cargarZona(consultorioId, turnos);
       },
       error: (error: unknown) => {
         this.cargando.set(false);
@@ -314,24 +315,5 @@ export class RecepcionDelDiaPage {
     );
   }
 
-  /**
-   * Averigua la zona de la sede con una lectura de agenda. Ver el punto 5 del encabezado.
-   *
-   * <p>No es un error si falla ni si no hay de donde sacarla: la pantalla rotula UTC y sigue
-   * siendo legible. Levantar un cartel por esto seria decirle a la recepcion que algo se rompio
-   * cuando lo unico que pasa es que el contrato no publica el dato en esta respuesta.
-   */
-  private cargarZona(consultorioId: number, turnos: readonly TurnoDelDia[]): void {
-    const ofertaId = turnos.find((t) => t.ofertaId !== undefined)?.ofertaId;
-    const desde = this.dia();
-    if (ofertaId === undefined) {
-      return;
-    }
-    this.api
-      .buscarAgenda(consultorioId, ofertaId, { desde, hasta: sumarDias(desde, 1) })
-      .subscribe({
-        next: (agenda) => this.timezone.set(agenda.timezone ?? ''),
-        error: () => this.timezone.set(''),
-      });
-  }
+
 }

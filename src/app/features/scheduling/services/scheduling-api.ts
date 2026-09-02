@@ -10,6 +10,7 @@ import { PersonaPageResponse } from '../../../api/generated/model/persona-page-r
 import { PersonasService } from '../../../api/generated/api/personas.service';
 import { ServiciosYOfertasService } from '../../../api/generated/api/servicios-y-ofertas.service';
 import { Turno } from '../../../api/generated/model/turno';
+import { AgendaDelDia } from '../../../api/generated/model/agenda-del-dia';
 import { TurnoDelDia } from '../../../api/generated/model/turno-del-dia';
 import { TurnosService } from '../../../api/generated/api/turnos.service';
 
@@ -230,8 +231,14 @@ export class SchedulingApi {
    *
    * <p>`fecha` es la fecha <b>local de la sede</b> (`YYYY-MM-DD`); los instantes que vuelven son
    * UTC. Exige `turno:read` y no `turno:manage`: mirar quien viene hoy es leer la agenda.
+   *
+   * <p><b>La respuesta trae la zona horaria de la sede</b> y hay que usar esa para mostrar las
+   * horas. Desde 0.24.0 viaja en el cuerpo —antes no, y la pantalla tenia que deducirla de una
+   * segunda lectura sobre la agenda de la oferta del primer turno, que no existe en un dia
+   * vacio—. Convertir con la zona del navegador corre la agenda entera y no falla: muestra otra
+   * cosa.
    */
-  turnosDelDia(consultorioId: number, fecha: string): Observable<readonly TurnoDelDia[]> {
+  turnosDelDia(consultorioId: number, fecha: string): Observable<AgendaDelDia> {
     return this.turnos.delDia({ consultorioId, fecha });
   }
 

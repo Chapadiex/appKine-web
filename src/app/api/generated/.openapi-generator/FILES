@@ -69,6 +69,7 @@ model/account-response.ts
 model/account-state-change-request.ts
 model/activar-perfil-paciente-request.ts
 model/activate-account-request.ts
+model/agenda-del-dia.ts
 model/agenda.ts
 model/anular-obligacion.ts
 model/assign-grant-request.ts

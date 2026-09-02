@@ -11,6 +11,7 @@ import { HttpHeaders }                                       from '@angular/comm
 
 import { Observable }                                        from 'rxjs';
 
+import { AgendaDelDia } from '../model/models';
 import { CancelarTurno } from '../model/models';
 import { EventoDeTurno } from '../model/models';
 import { ProblemDetail } from '../model/models';
@@ -105,7 +106,7 @@ export interface TurnosServiceInterface {
      * @endpoint get /api/v1/consultorios/{consultorioId}/turnos
 * @param requestParameters
      */
-    delDia(requestParameters: DelDiaRequestParams, extraHttpRequestParams?: any): Observable<Array<TurnoDelDia>>;
+    delDia(requestParameters: DelDiaRequestParams, extraHttpRequestParams?: any): Observable<AgendaDelDia>;
 
     /**
      * Deshacer un check-in

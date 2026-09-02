@@ -17,6 +17,8 @@ import { Observable }                                        from 'rxjs';
 import { OpenApiHttpParams, QueryParamStyle } from '../query.params';
 
 // @ts-ignore
+import { AgendaDelDia } from '../model/agenda-del-dia';
+// @ts-ignore
 import { CancelarTurno } from '../model/cancelar-turno';
 // @ts-ignore
 import { EventoDeTurno } from '../model/evento-de-turno';
@@ -211,9 +213,9 @@ export class TurnosService extends BaseService implements TurnosServiceInterface
      * @param reportProgress flag to report request and response progress.
      * @param options additional options
      */
-    public delDia(requestParameters: DelDiaRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<Array<TurnoDelDia>>;
-    public delDia(requestParameters: DelDiaRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<Array<TurnoDelDia>>>;
-    public delDia(requestParameters: DelDiaRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<Array<TurnoDelDia>>>;
+    public delDia(requestParameters: DelDiaRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<AgendaDelDia>;
+    public delDia(requestParameters: DelDiaRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<AgendaDelDia>>;
+    public delDia(requestParameters: DelDiaRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<AgendaDelDia>>;
     public delDia(requestParameters: DelDiaRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
         const consultorioId = requestParameters?.consultorioId;
         if (consultorioId === null || consultorioId === undefined) {
@@ -263,7 +265,7 @@ export class TurnosService extends BaseService implements TurnosServiceInterface
 
         let localVarPath = `/api/v1/consultorios/${this.configuration.encodeParam({name: "consultorioId", value: consultorioId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/turnos`;
         const { basePath, withCredentials } = this.configuration;
-        return this.httpClient.request<Array<TurnoDelDia>>('get', `${basePath}${localVarPath}`,
+        return this.httpClient.request<AgendaDelDia>('get', `${basePath}${localVarPath}`,
             {
                 context: localVarHttpContext,
                 params: localVarQueryParameters.toHttpParams(),

@@ -63,12 +63,7 @@ const DEL_DIA = [
   },
 ];
 
-const AGENDA_DEL_DIA = {
-  consultorioId: CONSULTORIO,
-  ofertaId: OFERTA,
-  timezone: 'America/Argentina/Cordoba',
-  dias: [{ fecha: FECHA, slots: [] }],
-};
+const ZONA = 'America/Argentina/Cordoba';
 
 /**
  * Spec de la recepcion del dia (M13, AKINE-05.04).
@@ -372,18 +367,15 @@ describe('RecepcionDelDiaPage', () => {
     const turnos = opciones.turnos ?? DEL_DIA;
     const delDia = httpMock.expectOne(esDelDia());
     expect(delDia.request.params.get('fecha')).toBe(FECHA);
-    delDia.flush(turnos);
+    // Desde 0.24.0 la respuesta es un objeto y la zona viaja en el cuerpo: ya no hay una
+    // segunda lectura de agenda de la que deducirla. `zona: 'falla'` simula que el backend la
+    // manda vacia, que es lo unico que hoy puede dejar a la pantalla sin ella.
+    delDia.flush({
+      fecha: FECHA,
+      timezone: opciones.zona === 'falla' ? '' : ZONA,
+      turnos,
+    });
     await asentar(fixture);
-
-    if (turnos.length > 0) {
-      const agenda = httpMock.expectOne(esAgenda());
-      if (opciones.zona === 'falla') {
-        agenda.flush(null, { status: 403, statusText: 'Forbidden' });
-      } else {
-        agenda.flush(AGENDA_DEL_DIA);
-      }
-      await asentar(fixture);
-    }
 
     return fixture;
   }
