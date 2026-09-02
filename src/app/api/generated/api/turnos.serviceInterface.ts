@@ -18,6 +18,7 @@ import { RegistrarAusencia } from '../model/models';
 import { ReprogramarTurno } from '../model/models';
 import { ReservarTurno } from '../model/models';
 import { Turno } from '../model/models';
+import { TurnoDelDia } from '../model/models';
 
 
 import { Configuration }                                     from '../configuration';
@@ -34,6 +35,16 @@ export interface ConfirmarRequestParams {
     turnoId: number;
 }
 
+export interface DelDiaRequestParams {
+    consultorioId: number;
+    fecha: string;
+}
+
+export interface DeshacerLlegadaRequestParams {
+    consultorioId: number;
+    turnoId: number;
+}
+
 export interface HistorialRequestParams {
     consultorioId: number;
     turnoId: number;
@@ -43,6 +54,11 @@ export interface RegistrarAusenciaRequestParams {
     consultorioId: number;
     turnoId: number;
     registrarAusencia: RegistrarAusencia;
+}
+
+export interface RegistrarLlegadaRequestParams {
+    consultorioId: number;
+    turnoId: number;
 }
 
 export interface ReprogramarRequestParams {
@@ -55,6 +71,11 @@ export interface ReservarRequestParams {
     consultorioId: number;
     ofertaId: number;
     reservarTurno: ReservarTurno;
+}
+
+export interface VerTurnoRequestParams {
+    consultorioId: number;
+    turnoId: number;
 }
 
 
@@ -79,6 +100,22 @@ export interface TurnosServiceInterface {
     confirmar(requestParameters: ConfirmarRequestParams, extraHttpRequestParams?: any): Observable<Turno>;
 
     /**
+     * Agenda del dia de la sede
+     * Los turnos de la sede en un dia, del mas temprano al mas tarde. Es la pantalla de recepcion: quien viene hoy, quien ya llego y quien falta.  **Incluye los cancelados, con su motivo.** No es un descuido: alguien puede presentarse al mostrador con un turno que se cancelo, y una lista que los esconda deja a la recepcionista sin nada que decirle.  El dia se interpreta en la zona horaria de la sede. Exige &#x60;turno:read&#x60;.
+     * @endpoint get /api/v1/consultorios/{consultorioId}/turnos
+* @param requestParameters
+     */
+    delDia(requestParameters: DelDiaRequestParams, extraHttpRequestParams?: any): Observable<Array<TurnoDelDia>>;
+
+    /**
+     * Deshacer un check-in
+     * Revierte una llegada marcada sobre el turno equivocado. El turno vuelve al estado del que vino —RESERVADO o CONFIRMADO— y **se limpia la hora de llegada**: un check-in deshecho no dejo una llegada, dejo un error corregido.  El rastro de que ocurrio queda en el historial, que es append-only.                 **No es idempotente**: deshacer lo ya deshecho responde 409. A diferencia del                check-in, aca el segundo click no es un doble click sino una operacion sobre                un turno que entre medio pudo haber cambiado de estado.
+     * @endpoint delete /api/v1/consultorios/{consultorioId}/turnos/{turnoId}/llegada
+* @param requestParameters
+     */
+    deshacerLlegada(requestParameters: DeshacerLlegadaRequestParams, extraHttpRequestParams?: any): Observable<Turno>;
+
+    /**
      * Historial de estados de un turno
      * Todas las transiciones del turno, de la mas vieja a la mas nueva, con actor, fecha, motivo y —cuando hubo reprogramacion— el horario del que vino (RF-M12-008).  Exige &#x60;turno:read&#x60; y no &#x60;turno:manage&#x60;: leer quien cancelo y por que es parte de mirar la agenda, no de operarla.  Los turnos anteriores a la migracion &#x60;V38&#x60; tienen su evento de reserva reconstruido desde la propia fila; en esos, el actor de la confirmacion viaja vacio porque nunca se habia guardado.
      * @endpoint get /api/v1/consultorios/{consultorioId}/turnos/{turnoId}/historial
@@ -95,6 +132,14 @@ export interface TurnosServiceInterface {
     registrarAusencia(requestParameters: RegistrarAusenciaRequestParams, extraHttpRequestParams?: any): Observable<Turno>;
 
     /**
+     * Registrar la llegada del paciente
+     * Marca que el paciente llego al centro y lo deja **en espera** (RF-M13-002). La hora la pone el servidor: no se envia ningun cuerpo.  **Es idempotente**: marcar dos veces devuelve 200 sin mover la hora ni registrar un segundo evento. El doble click en el mostrador es el caso normal.  La llegada es un estado de la RESERVA, no de la atencion (DP-05). Que un turno no pase por aca no impide atenderlo; impide saber a que hora llego el paciente.  **No valida cobertura ni autorizaciones**: con cobertura PARTICULAR unica no hay condicion administrativa que validar (recableo DP-10).
+     * @endpoint post /api/v1/consultorios/{consultorioId}/turnos/{turnoId}/llegada
+* @param requestParameters
+     */
+    registrarLlegada(requestParameters: RegistrarLlegadaRequestParams, extraHttpRequestParams?: any): Observable<Turno>;
+
+    /**
      * Mover un turno a otro horario
      * **Es el mismo turno**: conserva id, paciente e historial (DP-04). No se cancela uno y se crea otro, entre otras cosas porque la Sesion de M14 cuelga del &#x60;turnoId&#x60; y ese vinculo se cortaria.  El servidor **revalida el destino entero** —vigencia de la oferta, habilitacion y horario del profesional, cupo y solapamiento— bajo el mismo lock de sede que usa una reserva, asi que dos reprogramaciones al mismo hueco no pasan las dos.  Un turno confirmado **vuelve a &#x60;RESERVADO&#x60;**: lo que el paciente confirmo era otro horario.
      * @endpoint post /api/v1/consultorios/{consultorioId}/turnos/{turnoId}/reprogramacion
@@ -109,5 +154,13 @@ export interface TurnosServiceInterface {
 * @param requestParameters
      */
     reservar(requestParameters: ReservarRequestParams, extraHttpRequestParams?: any): Observable<Turno>;
+
+    /**
+     * Ver un turno
+     * El turno con el paciente y la oferta ya resueltos, que es lo que necesita cualquier pantalla que llegue por un enlace directo.  Exige &#x60;turno:read&#x60;. **No lleva ningun dato clinico**: la atencion es otra cosa y otra pantalla (DP-05).
+     * @endpoint get /api/v1/consultorios/{consultorioId}/turnos/{turnoId}
+* @param requestParameters
+     */
+    verTurno(requestParameters: VerTurnoRequestParams, extraHttpRequestParams?: any): Observable<TurnoDelDia>;
 
 }

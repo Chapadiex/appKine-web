@@ -41,6 +41,10 @@ export interface Turno {
      */
     inicio?: string;
     /**
+     * Hora REAL de llegada del paciente al centro, puesta por el servidor (M13). Ausente mientras no llego, y se vacia si se deshace el check-in: un check-in deshecho no dejo una llegada, dejo un error corregido.
+     */
+    llegadaEn?: string;
+    /**
      * Por que se cancelo. Obligatorio al cancelar (DP-04), ausente en cualquier otro estado.
      */
     motivoCancelacion?: string;
@@ -66,6 +70,7 @@ export interface Turno {
 export enum TurnoEstadoEnum {
     RESERVADO = 'RESERVADO',
     CONFIRMADO = 'CONFIRMADO',
+    EN_ESPERA = 'EN_ESPERA',
     CANCELADO = 'CANCELADO',
     AUSENTE = 'AUSENTE'
 };

@@ -114,6 +114,7 @@ export * from './subscription-transition-request';
 export * from './subscription-transition-response';
 export * from './support-access-response';
 export * from './turno';
+export * from './turno-del-dia';
 export * from './update-bloque-request';
 export * from './update-calendario-request';
 export * from './update-catalogo-concepto-request';

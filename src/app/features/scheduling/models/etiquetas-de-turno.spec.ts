@@ -77,8 +77,13 @@ describe('etiquetas de turno', () => {
 
   it('un estado o un tipo que este cliente no conoce se muestra crudo, nunca en blanco', () => {
     // El contrato puede sumar uno sin romper nada. Una celda vacia se lee como "no tiene estado".
-    expect(textoDeEstado('EN_SALA')).toBe('EN_SALA');
-    expect(textoDeEvento('LLEGADA')).toBe('LLEGADA');
+    //
+    // Los valores de este test son inventados A PROPOSITO y hay que mantenerlos asi: usaba
+    // 'LLEGADA', que en 0.23.0 paso a ser un tipo real y el test empezo a fallar por la razon
+    // correcta —ya tiene rotulo—. Si un valor de aca se vuelve real, se cambia por otro que no
+    // exista; no se borra la asercion.
+    expect(textoDeEstado('EN_SALA_DE_YESO')).toBe('EN_SALA_DE_YESO');
+    expect(textoDeEvento('TELETRANSPORTACION')).toBe('TELETRANSPORTACION');
     expect(textoDeEstado(undefined)).toBe('Estado desconocido');
   });
 

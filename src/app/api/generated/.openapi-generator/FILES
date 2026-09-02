@@ -177,6 +177,7 @@ model/subscription-transition-page-response.ts
 model/subscription-transition-request.ts
 model/subscription-transition-response.ts
 model/support-access-response.ts
+model/turno-del-dia.ts
 model/turno.ts
 model/update-bloque-request.ts
 model/update-calendario-request.ts

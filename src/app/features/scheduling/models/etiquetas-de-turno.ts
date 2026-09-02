@@ -22,13 +22,17 @@ import { TurnoEstadoEnum } from '../../../api/generated/model/turno';
  * la ausencia no, porque la hora se consumio igual y el profesional estuvo ahi. Es la distincion
  * que DP-04 protege y la que un rotulo perezoso —"turno no realizado" para los dos— borraria.
  *
- * <p>Ninguno de los cuatro dice nada sobre la atencion: que el paciente haya sido atendido lo dice
+ * <p><b>`EN_ESPERA` tampoco dice que lo esten atendiendo.</b> Dice que llego y espera: entre
+ * llegar y ser atendido puede irse, y la prestacion la registra la Sesion.
+ *
+ * <p>Ninguno de los cinco dice nada sobre la atencion: que el paciente haya sido atendido lo dice
  * la Sesion (DP-05, regla maestra 4).
  */
 const TEXTOS_DE_ESTADO: Readonly<Record<TurnoEstadoEnum, string>> = {
   [TurnoEstadoEnum.RESERVADO]: 'Reservado — el lugar esta tomado, falta confirmarlo',
   [TurnoEstadoEnum.CONFIRMADO]:
     'Confirmado — la reserva quedo confirmada, no el cobro ni la llegada',
+  [TurnoEstadoEnum.EN_ESPERA]: 'En espera — el paciente llego y aguarda ser atendido',
   [TurnoEstadoEnum.CANCELADO]: 'Cancelado — el lugar se libero y volvio a la agenda',
   [TurnoEstadoEnum.AUSENTE]: 'Ausente — el paciente no vino y la hora se consumio igual',
 };
@@ -39,6 +43,8 @@ const TEXTOS_DE_EVENTO: Readonly<Record<EventoDeTurnoTipoEnum, string>> = {
   [EventoDeTurnoTipoEnum.CANCELACION]: 'Se cancelo el turno',
   [EventoDeTurnoTipoEnum.REPROGRAMACION]: 'Se movio a otro horario',
   [EventoDeTurnoTipoEnum.AUSENCIA]: 'Se registro que el paciente no vino',
+  [EventoDeTurnoTipoEnum.LLEGADA]: 'Llego al centro',
+  [EventoDeTurnoTipoEnum.LLEGADA_DESHECHA]: 'Se deshizo el registro de llegada',
 };
 
 /** Estados desde los que ya no hay ninguna transicion posible. */
