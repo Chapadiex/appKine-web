@@ -18,6 +18,9 @@ import {
   textoDeCupo,
 } from '../../models/etiquetas-de-agenda';
 
+/** Cuanto se espera despues de la ultima tecla antes de consultar el padron. */
+const ESPERA_DE_BUSQUEDA_MS = 300;
+
 /**
  * Reserva y confirmacion de un turno (M12, AKINE-05.02).
  *
@@ -83,6 +86,9 @@ export class ReservaDeTurnoPage {
 
   protected readonly persona = signal<PersonaResponse | null>(null);
   protected readonly candidatas = signal<readonly PersonaResponse[]>([]);
+
+  /** Timer del debounce de la busqueda de personas. Ver buscarPersona. */
+  private busquedaPendiente: ReturnType<typeof setTimeout> | undefined;
   protected readonly buscoPersonas = signal(false);
 
   protected readonly turno = signal<Turno | null>(null);
@@ -198,20 +204,38 @@ export class ReservaDeTurnoPage {
   // A quien se le reserva
   // -------------------------------------------------------------------------------------
 
+  /**
+   * Busca a quien se le reserva, mientras se escribe.
+   *
+   * <p><b>Se dispara con `input` y no con `change`</b>, y eso es lo que hace que la pantalla
+   * funcione. `change` sobre un campo de texto solo ocurre al perder el foco, asi que el
+   * recepcionista escribia el documento y no pasaba nada: sin peticion, sin resultados y sin
+   * ningun sintoma que le dijera por que. Se encontro abriendo la pantalla contra el backend
+   * real; ningun test unitario lo veia, porque los tests invocan el metodo directamente y nunca
+   * pasan por el evento del DOM.
+   *
+   * <p>El debounce es la contrapartida obligada: con `input`, cada tecla seria una consulta al
+   * padron y ocho digitos de documento serian ocho busquedas, siete de ellas de un prefijo que
+   * a nadie le importa. Se espera a que la persona deje de escribir.
+   */
   protected buscarPersona(texto: string): void {
+    clearTimeout(this.busquedaPendiente);
+
     if (texto.trim() === '') {
       this.candidatas.set([]);
       this.buscoPersonas.set(false);
       return;
     }
 
-    this.api.buscarPersonas(texto).subscribe({
-      next: (pagina) => {
-        this.candidatas.set(pagina.content ?? []);
-        this.buscoPersonas.set(true);
-      },
-      error: (error: unknown) => this.error.set(traducirErrorAgenda(error)),
-    });
+    this.busquedaPendiente = setTimeout(() => {
+      this.api.buscarPersonas(texto).subscribe({
+        next: (pagina) => {
+          this.candidatas.set(pagina.content ?? []);
+          this.buscoPersonas.set(true);
+        },
+        error: (error: unknown) => this.error.set(traducirErrorAgenda(error)),
+      });
+    }, ESPERA_DE_BUSQUEDA_MS);
   }
 
   protected elegirPersona(persona: PersonaResponse): void {

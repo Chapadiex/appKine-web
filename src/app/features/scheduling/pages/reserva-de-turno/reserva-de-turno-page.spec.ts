@@ -94,6 +94,58 @@ describe('ReservaDeTurnoPage', () => {
     httpMock.verify();
   });
 
+  /**
+   * Escribir tiene que buscar. Suena obvio y no lo era.
+   *
+   * <p>El template estaba atado a `(change)`, que sobre un campo de texto <b>solo ocurre al
+   * perder el foco</b>. El recepcionista escribia el documento y no pasaba nada: sin peticion,
+   * sin resultados y sin ningun sintoma que explicara por que. Se encontro abriendo la pantalla
+   * contra el backend real.
+   *
+   * <p>El test dispara el evento del DOM a proposito, y no llama al metodo. Llamarlo directo es
+   * exactamente lo que no veia el defecto: el metodo siempre estuvo bien, lo que estaba mal era
+   * quien lo llamaba.
+   */
+  it('escribir en el buscador dispara la busqueda, sin salir del campo', async () => {
+    const fixture = await montar();
+    const campo = (fixture.nativeElement as HTMLElement).querySelector(
+      '#reserva-persona',
+    ) as HTMLInputElement;
+
+    campo.value = '41222333';
+    campo.dispatchEvent(new Event('input'));
+    await esperarElDebounce();
+    fixture.detectChanges();
+
+    const pedido = httpMock.expectOne(
+      (p: HttpRequest<unknown>) => p.method === 'GET' && p.url === PERSONAS,
+    );
+    expect(pedido.request.params.get('q')).toBe('41222333');
+    pedido.flush({ content: [PACIENTE], page: 0, size: 10, totalElements: 1, totalPages: 1 });
+  });
+
+  it('escribir de a poco consulta el padron UNA sola vez', async () => {
+    const fixture = await montar();
+    const campo = (fixture.nativeElement as HTMLElement).querySelector(
+      '#reserva-persona',
+    ) as HTMLInputElement;
+
+    // Con `input` y sin debounce, cada tecla seria una consulta al padron.
+    for (const texto of ['4', '41', '412', '4122']) {
+      campo.value = texto;
+      campo.dispatchEvent(new Event('input'));
+    }
+    await esperarElDebounce();
+    fixture.detectChanges();
+
+    const pedidos = httpMock.match(
+      (p: HttpRequest<unknown>) => p.method === 'GET' && p.url === PERSONAS,
+    );
+    expect(pedidos).toHaveLength(1);
+    expect(pedidos[0].request.params.get('q')).toBe('4122');
+    pedidos[0].flush({ content: [], page: 0, size: 10, totalElements: 0, totalPages: 0 });
+  });
+
   it('muestra el resumen con el horario en la zona de la sede antes de reservar', async () => {
     const fixture = await montar();
     const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
@@ -315,12 +367,21 @@ describe('ReservaDeTurnoPage', () => {
     fixture.detectChanges();
   }
 
+  /** El debounce de la busqueda de personas, mas un margen. */
+  function esperarElDebounce(): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, 400));
+  }
+
   async function elegirPersona(fixture: ComponentFixture<ReservaDeTurnoPage>): Promise<void> {
     const campo = (fixture.nativeElement as HTMLElement).querySelector(
       '#reserva-persona',
     ) as HTMLInputElement;
     campo.value = 'Perez';
-    campo.dispatchEvent(new Event('change'));
+    // `input` y no `change`: es lo que produce escribir. El helper despachaba `change` —el
+    // evento al que el template estaba atado— asi que espejaba el binding en vez de al usuario,
+    // y por eso el spec seguia verde con la pantalla muerta. Ver el test de mas abajo.
+    campo.dispatchEvent(new Event('input'));
+    await esperarElDebounce();
     fixture.detectChanges();
 
     httpMock

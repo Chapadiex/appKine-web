@@ -63,7 +63,8 @@
         id="reserva-persona"
         name="reserva-persona"
         type="search"
-        (change)="buscarPersona($any($event.target).value)"
+        autocomplete="off"
+        (input)="buscarPersona($any($event.target).value)"
       />
     </div>
 
