@@ -263,6 +263,209 @@ describe('ConveniosDeLaSedePage', () => {
     );
   });
 
+  it('el alta manda los opcionales que estan cargados', async () => {
+    const fixture = await montar();
+
+    abrir(fixture, 'Firmar un convenio');
+    elegir(fixture, '#alta-convenio-financiador', '10');
+    httpMock.expectOne(rutaPlanesConEstado(10)).flush([PLAN_210]);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    elegir(fixture, '#alta-convenio-plan', '100');
+    escribir(fixture, '#alta-convenio-codigo', 'CONV-OSDE-210');
+    escribir(fixture, '#alta-convenio-nombre', 'OSDE 210 kinesiologia');
+    elegir(fixture, '#alta-convenio-modalidad', 'POR_SESION');
+    escribir(fixture, '#alta-convenio-moneda', 'ARS');
+    escribir(fixture, '#alta-convenio-desde', '2026-01-01');
+    escribir(fixture, '#alta-convenio-hasta', '2026-12-31');
+    escribir(fixture, '#alta-convenio-tope', '12');
+    escribir(fixture, '#alta-convenio-documentacion', 'Fotocopia del DNI');
+    escribir(fixture, '#alta-convenio-observaciones', 'Renovacion anual');
+    marcar(fixture, '#alta-convenio-orden');
+    marcar(fixture, '#alta-convenio-credencial');
+    enviar(fixture, 'form[novalidate]');
+
+    const alta = httpMock.expectOne(
+      (peticion: HttpRequest<unknown>) => peticion.method === 'POST' && peticion.url === CONVENIOS,
+    );
+    expect(alta.request.body).toEqual({
+      codigo: 'CONV-OSDE-210',
+      nombre: 'OSDE 210 kinesiologia',
+      financiadorId: 10,
+      planId: 100,
+      modalidad: 'POR_SESION',
+      moneda: 'ARS',
+      vigenciaDesde: '2026-01-01',
+      vigenciaHasta: '2026-12-31',
+      limiteSesionesMensual: 12,
+      documentacionRequerida: 'Fotocopia del DNI',
+      observaciones: 'Renovacion anual',
+      requiereOrden: true,
+      requiereAutorizacion: false,
+      requiereCredencial: true,
+    });
+
+    alta.flush({ ...VIGENTE, id: 9 });
+    httpMock.expectOne(esListado()).flush([VIGENTE, VENCIDO]);
+    await fixture.whenStable();
+    fixture.detectChanges();
+  });
+
+  it('el alta sin financiador ni plan no manda nada', async () => {
+    const fixture = await montar();
+
+    abrir(fixture, 'Firmar un convenio');
+    enviar(fixture, 'form[novalidate]');
+
+    httpMock.expectNone((peticion: HttpRequest<unknown>) => peticion.method === 'POST');
+    const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(texto).toContain('Eligi con que financiador se firma');
+    expect(texto).toContain('El plan es obligatorio');
+    expect(texto).toContain('Eligi como se liquida');
+    expect(texto).toContain('La moneda es obligatoria');
+  });
+
+  it('la edicion manda todo lo que cambio', async () => {
+    const fixture = await montar();
+
+    abrir(fixture, 'Editar');
+    escribir(fixture, '#editar-convenio-nombre', 'OSDE 210 rehabilitacion');
+    elegir(fixture, '#editar-convenio-modalidad', 'MODULO');
+    escribir(fixture, '#editar-convenio-desde', '2026-02-01');
+    escribir(fixture, '#editar-convenio-tope', '20');
+    escribir(fixture, '#editar-convenio-documentacion', 'Credencial vigente');
+    escribir(fixture, '#editar-convenio-observaciones', 'Revisado en febrero');
+    marcar(fixture, '#editar-convenio-autorizacion');
+    enviar(fixture, 'tr.fila-panel form');
+
+    const edicion = httpMock.expectOne(
+      (peticion: HttpRequest<unknown>) =>
+        peticion.method === 'PUT' && peticion.url === `${CONVENIOS}/7`,
+    );
+    expect(edicion.request.body).toEqual({
+      expectedVersion: 2,
+      nombre: 'OSDE 210 rehabilitacion',
+      modalidad: 'MODULO',
+      vigenciaDesde: '2026-02-01',
+      limiteSesionesMensual: 20,
+      documentacionRequerida: 'Credencial vigente',
+      observaciones: 'Revisado en febrero',
+      requiereAutorizacion: true,
+    });
+
+    edicion.flush({ ...VIGENTE, version: 3 });
+    httpMock.expectOne(esListado()).flush([VIGENTE, VENCIDO]);
+    await fixture.whenStable();
+    fixture.detectChanges();
+  });
+
+  it('la baja avisa que no cascadea a los aranceles y que libera el periodo', async () => {
+    const fixture = await montar();
+
+    abrir(fixture, 'Dar de baja');
+    const panel = (fixture.nativeElement as HTMLElement).querySelector('tr.fila-panel');
+    expect(panel?.textContent).toContain('la operacion NO es esta');
+    expect(panel?.textContent).toContain('No cascadea a los aranceles');
+
+    escribir(fixture, '#baja-convenio-motivo', 'Se rescindio el contrato');
+    const confirmar = [
+      ...(fixture.nativeElement as HTMLElement).querySelectorAll('tr.fila-panel button'),
+    ].find((boton) => (boton.textContent ?? '').trim() === 'Dar de baja');
+    (confirmar as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    const baja = httpMock.expectOne(
+      (peticion: HttpRequest<unknown>) =>
+        peticion.method === 'DELETE' && peticion.url === `${CONVENIOS}/7`,
+    );
+    expect(baja.request.body).toEqual({ reason: 'Se rescindio el contrato' });
+
+    baja.flush(null, { status: 204, statusText: 'No Content' });
+    httpMock.expectOne(esListado()).flush([VENCIDO]);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain(
+      'El codigo y el periodo quedan libres',
+    );
+  });
+
+  it('el 409 conflict relee y deja el panel abierto', async () => {
+    const fixture = await montar();
+
+    abrir(fixture, 'Editar');
+    escribir(fixture, '#editar-convenio-nombre', 'OSDE 210 rehabilitacion');
+    enviar(fixture, 'tr.fila-panel form');
+
+    httpMock
+      .expectOne(
+        (peticion: HttpRequest<unknown>) =>
+          peticion.method === 'PUT' && peticion.url === `${CONVENIOS}/7`,
+      )
+      .flush(
+        { type: 'https://akine.app/problems/conflict', detail: 'la version quedo vieja' },
+        { status: 409, statusText: 'Conflict' },
+      );
+    fixture.detectChanges();
+
+    httpMock.expectOne(esListado()).flush([{ ...VIGENTE, version: 9 }, VENCIDO]);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const anfitrion = fixture.nativeElement as HTMLElement;
+    expect(anfitrion.textContent).toContain('no guardamos tus cambios para no pisar los suyos');
+    expect(anfitrion.querySelector<HTMLInputElement>('#editar-convenio-nombre')?.value).toBe(
+      'OSDE 210 rehabilitacion',
+    );
+  });
+
+  it('el filtro y la fecha recargan, y el vacio manda al catalogo de financiadores', async () => {
+    const fixture = await montar();
+
+    cambiarSelect(fixture, '#filtro-estado-convenio', 'TODOS');
+    httpMock
+      .expectOne(
+        (peticion: HttpRequest<unknown>) =>
+          peticion.url === CONVENIOS && peticion.params.get('estado') === 'TODOS',
+      )
+      .flush([]);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const anfitrion = fixture.nativeElement as HTMLElement;
+    expect(anfitrion.textContent).toContain('todo lo que se atienda en esta sede se cobra como');
+    expect(anfitrion.querySelector('a[href="/contratacion/financiadores"]')).not.toBeNull();
+
+    cambiarSelect(fixture, '#filtro-fecha-convenio', '2025-06-15');
+    httpMock
+      .expectOne(
+        (peticion: HttpRequest<unknown>) =>
+          peticion.url === CONVENIOS && peticion.params.get('fecha') === '2025-06-15',
+      )
+      .flush([{ ...VENCIDO, vigente: true }]);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    // El convenio que hoy esta vencido, en junio de 2025 si resolvia. Eso es lo que explica por
+    // que una prestacion de entonces se cobro lo que se cobro.
+    expect(anfitrion.textContent).toContain('Activo y vigente');
+  });
+
+  it('sin permiso el listado se ve pero no aparece ninguna accion', async () => {
+    // Las lecturas se autorizan por pertenencia y no existe `convenio:read`: esconder la pantalla
+    // entera dejaria a recepcion sin poder consultar cuanto cobrar.
+    const fixture = await montar([]);
+    const anfitrion = fixture.nativeElement as HTMLElement;
+
+    expect(anfitrion.textContent).toContain('OSDE 210 kinesiologia');
+    expect(
+      [...anfitrion.querySelectorAll('button')].map((boton) => (boton.textContent ?? '').trim()),
+    ).toEqual([]);
+    // El enlace a los aranceles no lleva permiso: es otra lectura.
+    expect(anfitrion.querySelector('a[href="/contratacion/convenios/7/aranceles"]')).not.toBeNull();
+  });
+
   it('sin sede elegida no consulta convenios y manda a elegirla, no al login', async () => {
     tenantContext.select({ organizationId: 1, organizationName: 'Centro Belgrano' });
     permisos.cargar().subscribe();
@@ -294,7 +497,9 @@ describe('ConveniosDeLaSedePage', () => {
     TIMEOUT_AXE,
   );
 
-  async function montar(): Promise<ComponentFixture<ConveniosDeLaSedePage>> {
+  async function montar(
+    concedidos: readonly string[] = [PERMISO_CONVENIO_MANAGE],
+  ): Promise<ComponentFixture<ConveniosDeLaSedePage>> {
     tenantContext.select({
       organizationId: 1,
       organizationName: 'Centro Belgrano',
@@ -303,7 +508,7 @@ describe('ConveniosDeLaSedePage', () => {
     });
 
     permisos.cargar().subscribe();
-    httpMock.expectOne(RUTA_PERMISOS_EFECTIVOS).flush({ permissions: [PERMISO_CONVENIO_MANAGE] });
+    httpMock.expectOne(RUTA_PERMISOS_EFECTIVOS).flush({ permissions: concedidos });
 
     const fixture = TestBed.createComponent(ConveniosDeLaSedePage);
     fixture.detectChanges();
@@ -378,5 +583,31 @@ function enviar(fixture: { nativeElement: HTMLElement; detectChanges(): void }, 
     throw new Error(`No existe el formulario ${selector}`);
   }
   formulario.dispatchEvent(new Event('submit'));
+  fixture.detectChanges();
+}
+
+/** Marca una casilla de un formulario reactivo. */
+function marcar(fixture: { nativeElement: HTMLElement; detectChanges(): void }, selector: string) {
+  const casilla = fixture.nativeElement.querySelector<HTMLInputElement>(selector);
+  if (casilla === null) {
+    throw new Error(`No existe la casilla ${selector}`);
+  }
+  casilla.checked = true;
+  casilla.dispatchEvent(new Event('change'));
+  fixture.detectChanges();
+}
+
+/** Un control de filtro, que vive fuera de todo formulario reactivo y escucha `change`. */
+function cambiarSelect(
+  fixture: { nativeElement: HTMLElement; detectChanges(): void },
+  selector: string,
+  valor: string,
+) {
+  const campo = fixture.nativeElement.querySelector<HTMLSelectElement | HTMLInputElement>(selector);
+  if (campo === null) {
+    throw new Error(`No existe el control ${selector}`);
+  }
+  campo.value = valor;
+  campo.dispatchEvent(new Event('change'));
   fixture.detectChanges();
 }

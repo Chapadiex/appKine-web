@@ -86,6 +86,17 @@ export const routes: Routes = [
     data: { [DATA_ANCHO]: ANCHO_AMPLIO },
   },
   {
+    // Va sin `:convenioId`: la consulta no arranca de un convenio, arranca de la pregunta
+    // "cuanto sale esto para este paciente". Cual convenio resuelve —si es que alguno resuelve—
+    // es justamente lo que la pantalla averigua, y pedirlo en la URL seria pedir la respuesta.
+    path: 'arancel-efectivo',
+    canActivate: [contextGuard],
+    loadComponent: () =>
+      import('./pages/arancel-efectivo/arancel-efectivo-page').then((m) => m.ArancelEfectivoPage),
+    title: 'AKINE - Arancel efectivo',
+    data: { [DATA_ANCHO]: ANCHO_AMPLIO },
+  },
+  {
     // Entrar a `/contratacion` a secas cae en los convenios y no en el catalogo de
     // financiadores. Los dos son configuracion, pero el convenio es lo que se revisa: vence,
     // se renueva y cambia de precio, mientras que un financiador se carga una vez y queda.

@@ -235,6 +235,172 @@ describe('ArancelesDelConvenioPage', () => {
     );
   });
 
+  it('el alta sin practica ni importes no manda nada', async () => {
+    const fixture = await montar();
+
+    abrir(fixture, 'Cargar un arancel');
+    enviar(fixture, 'form[novalidate]');
+
+    httpMock.expectNone((peticion: HttpRequest<unknown>) => peticion.method === 'POST');
+    const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(texto).toContain('Eligi a que practica');
+    expect(texto).toContain('El importe total es obligatorio');
+  });
+
+  it('el alta con fin de vigencia lo manda, y el fin es inclusivo', async () => {
+    const fixture = await montar();
+
+    abrir(fixture, 'Cargar un arancel');
+    elegir(fixture, '#alta-arancel-practica', '55');
+    escribir(fixture, '#alta-arancel-total', '15000');
+    escribir(fixture, '#alta-arancel-financiador', '10000');
+    escribir(fixture, '#alta-arancel-coseguro', '5000');
+    escribir(fixture, '#alta-arancel-desde', '2026-07-01');
+    escribir(fixture, '#alta-arancel-hasta', '2026-12-31');
+    enviar(fixture, 'form[novalidate]');
+
+    const alta = httpMock.expectOne(
+      (peticion: HttpRequest<unknown>) => peticion.method === 'POST' && peticion.url === ARANCELES,
+    );
+    expect(alta.request.body).toEqual({
+      practicaId: 55,
+      importeTotal: 15000,
+      importeFinanciador: 10000,
+      coseguro: 5000,
+      vigenciaDesde: '2026-07-01',
+      vigenciaHasta: '2026-12-31',
+    });
+
+    alta.flush({ ...VIGENTE, id: 904 });
+    httpMock.expectOne(esListado()).flush([VIGENTE, ANTERIOR]);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('la hereda');
+  });
+
+  it('la edicion frena si la terna deja de cuadrar', async () => {
+    const fixture = await montar();
+
+    abrir(fixture, 'Editar');
+    // Se sube el total sin repartir la diferencia: el descuido con el que se rompe la invariante
+    // economica sin que nadie lo note.
+    escribir(fixture, '#editar-arancel-total', '15000');
+    enviar(fixture, 'tr.fila-panel form');
+
+    httpMock.expectNone((peticion: HttpRequest<unknown>) => peticion.method === 'PUT');
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('difiere del total en');
+  });
+
+  it('la edicion que solo mueve la vigencia no toca los importes', async () => {
+    const fixture = await montar();
+
+    abrir(fixture, 'Editar');
+    escribir(fixture, '#editar-arancel-hasta', '2026-08-31');
+    enviar(fixture, 'tr.fila-panel form');
+
+    const edicion = httpMock.expectOne(
+      (peticion: HttpRequest<unknown>) =>
+        peticion.method === 'PUT' && peticion.url === `${ARANCELES}/900`,
+    );
+    // Los importes no viajan porque no se tocaron: mandarlos igual seria pedirle al backend que
+    // revalide una terna que nadie cambio.
+    expect(edicion.request.body).toEqual({ expectedVersion: 1, vigenciaHasta: '2026-08-31' });
+
+    edicion.flush({ ...VIGENTE, vigenciaHasta: '2026-08-31', version: 2 });
+    httpMock.expectOne(esListado()).flush([VIGENTE, ANTERIOR]);
+    await fixture.whenStable();
+    fixture.detectChanges();
+  });
+
+  it('la baja del arancel avisa que libera el periodo', async () => {
+    const fixture = await montar();
+
+    abrir(fixture, 'Dar de baja');
+    const panel = (fixture.nativeElement as HTMLElement).querySelector('tr.fila-panel');
+    expect(panel?.textContent).toContain('Libera el PERIODO');
+
+    escribir(fixture, '#baja-arancel-motivo', 'Se cargo con el precio equivocado');
+    const confirmar = [
+      ...(fixture.nativeElement as HTMLElement).querySelectorAll('tr.fila-panel button'),
+    ].find((boton) => (boton.textContent ?? '').trim() === 'Dar de baja');
+    (confirmar as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    const baja = httpMock.expectOne(
+      (peticion: HttpRequest<unknown>) =>
+        peticion.method === 'DELETE' && peticion.url === `${ARANCELES}/900`,
+    );
+    expect(baja.request.body).toEqual({ reason: 'Se cargo con el precio equivocado' });
+
+    baja.flush(null, { status: 204, statusText: 'No Content' });
+    httpMock.expectOne(esListado()).flush([ANTERIOR]);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('su periodo quedo libre');
+  });
+
+  it('el 409 de solapamiento no ofrece recargar la grilla', async () => {
+    const fixture = await montar();
+
+    abrir(fixture, 'Editar');
+    escribir(fixture, '#editar-arancel-hasta', '2026-12-31');
+    enviar(fixture, 'tr.fila-panel form');
+
+    httpMock
+      .expectOne(
+        (peticion: HttpRequest<unknown>) =>
+          peticion.method === 'PUT' && peticion.url === `${ARANCELES}/900`,
+      )
+      .flush(
+        { type: 'https://akine.app/problems/arancel-solapado', detail: 'choca con el 901' },
+        { status: 409, statusText: 'Conflict' },
+      );
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const anfitrion = fixture.nativeElement as HTMLElement;
+    expect(anfitrion.textContent).toContain('cerra la vigencia del que ya esta');
+    // Recargar no mueve el periodo que choca: ofrecerlo manda a apretar algo que no cambia nada.
+    expect(
+      [...anfitrion.querySelectorAll('button')].some(
+        (boton) => (boton.textContent ?? '').trim() === 'Recargar la grilla',
+      ),
+    ).toBe(false);
+  });
+
+  it('el filtro y la fecha recargan, y el vacio explica que el convenio no resuelve nada', async () => {
+    const fixture = await montar();
+
+    cambiarSelect(fixture, '#filtro-estado-arancel', 'INACTIVO');
+    httpMock
+      .expectOne(
+        (peticion: HttpRequest<unknown>) =>
+          peticion.url === ARANCELES && peticion.params.get('estado') === 'INACTIVO',
+      )
+      .flush([]);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain(
+      'no resuelve ningun precio',
+    );
+
+    cambiarSelect(fixture, '#filtro-fecha-arancel', '2025-09-10');
+    httpMock
+      .expectOne(
+        (peticion: HttpRequest<unknown>) =>
+          peticion.url === ARANCELES && peticion.params.get('fecha') === '2025-09-10',
+      )
+      .flush([{ ...ANTERIOR, vigente: true }]);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    // El arancel que hoy esta vencido, en septiembre de 2025 si regia.
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Activo y vigente');
+  });
+
   it('un convenio dado de baja no ofrece cargar aranceles, pero los sigue mostrando', async () => {
     const fixture = await montar({ ...EL_CONVENIO, estado: 'INACTIVO' });
     const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
@@ -340,5 +506,20 @@ function enviar(fixture: { nativeElement: HTMLElement; detectChanges(): void }, 
     throw new Error(`No existe el formulario ${selector}`);
   }
   formulario.dispatchEvent(new Event('submit'));
+  fixture.detectChanges();
+}
+
+/** Un control de filtro, que vive fuera de todo formulario reactivo y escucha `change`. */
+function cambiarSelect(
+  fixture: { nativeElement: HTMLElement; detectChanges(): void },
+  selector: string,
+  valor: string,
+) {
+  const campo = fixture.nativeElement.querySelector<HTMLSelectElement | HTMLInputElement>(selector);
+  if (campo === null) {
+    throw new Error(`No existe el control ${selector}`);
+  }
+  campo.value = valor;
+  campo.dispatchEvent(new Event('change'));
   fixture.detectChanges();
 }

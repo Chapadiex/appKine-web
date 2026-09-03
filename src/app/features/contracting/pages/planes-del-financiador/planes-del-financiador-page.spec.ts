@@ -218,6 +218,172 @@ describe('PlanesDelFinanciadorPage', () => {
     );
   });
 
+  it('el alta manda todos los campos cuando estan completos', async () => {
+    // La contracara del caso del copago: cada opcional tiene sus dos ramas —viaja o no viaja— y
+    // solo se ejercitaba la de omitir.
+    const fixture = await montar();
+
+    abrir(fixture, 'Dar de alta un plan');
+    escribir(fixture, '#alta-plan-codigo', '450');
+    escribir(fixture, '#alta-plan-nombre', 'Plan 450');
+    escribir(fixture, '#alta-plan-descripcion', 'Plan superior');
+    escribir(fixture, '#alta-plan-desde', '2026-01-01');
+    escribir(fixture, '#alta-plan-hasta', '2026-12-31');
+    escribir(fixture, '#alta-plan-copago', '1200');
+    escribir(fixture, '#alta-plan-moneda', 'ARS');
+    marcar(fixture, '#alta-plan-autorizacion');
+    marcar(fixture, '#alta-plan-credencial');
+    enviar(fixture, 'form[novalidate]');
+
+    const alta = httpMock.expectOne(
+      (peticion: HttpRequest<unknown>) => peticion.method === 'POST' && peticion.url === PLANES,
+    );
+    expect(alta.request.body).toEqual({
+      codigo: '450',
+      nombre: 'Plan 450',
+      descripcion: 'Plan superior',
+      vigenciaDesde: '2026-01-01',
+      vigenciaHasta: '2026-12-31',
+      copago: 1200,
+      moneda: 'ARS',
+      requiereAutorizacion: true,
+      requiereCredencial: true,
+    });
+
+    alta.flush({ ...VIGENTE, id: 102 });
+    httpMock.expectOne(esListado()).flush([VIGENTE, VIGENCIA_CERRADA]);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain(
+      'activo pero todavia sin vigencia',
+    );
+  });
+
+  it('el alta sin los obligatorios no manda nada', async () => {
+    const fixture = await montar();
+
+    abrir(fixture, 'Dar de alta un plan');
+    // `vigenciaDesde` arranca en hoy, asi que lo que falta es codigo y nombre.
+    enviar(fixture, 'form[novalidate]');
+
+    httpMock.expectNone((peticion: HttpRequest<unknown>) => peticion.method === 'POST');
+    const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(texto).toContain('El codigo es obligatorio');
+    expect(texto).toContain('El nombre es obligatorio');
+  });
+
+  it('la edicion manda todo lo que cambio, incluido el par copago y moneda', async () => {
+    const fixture = await montar();
+
+    abrir(fixture, 'Editar');
+    escribir(fixture, '#editar-plan-nombre', 'Plan 210 Plus');
+    escribir(fixture, '#editar-plan-descripcion', 'Con reintegros');
+    escribir(fixture, '#editar-plan-desde', '2026-02-01');
+    escribir(fixture, '#editar-plan-copago', '1800');
+    escribir(fixture, '#editar-plan-moneda', 'ARS');
+    marcar(fixture, '#editar-plan-credencial');
+    enviar(fixture, 'tr.fila-panel form');
+
+    const edicion = httpMock.expectOne(
+      (peticion: HttpRequest<unknown>) =>
+        peticion.method === 'PUT' && peticion.url === `${PLANES}/100`,
+    );
+    expect(edicion.request.body).toEqual({
+      expectedVersion: 3,
+      nombre: 'Plan 210 Plus',
+      descripcion: 'Con reintegros',
+      vigenciaDesde: '2026-02-01',
+      copago: 1800,
+      moneda: 'ARS',
+      requiereCredencial: true,
+    });
+
+    edicion.flush({ ...VIGENTE, version: 4 });
+    httpMock.expectOne(esListado()).flush([VIGENTE, VIGENCIA_CERRADA]);
+    await fixture.whenStable();
+    fixture.detectChanges();
+  });
+
+  it('la baja del plan avisa que cerrar la vigencia era otra operacion', async () => {
+    const fixture = await montar();
+
+    abrir(fixture, 'Dar de baja');
+    const panel = (fixture.nativeElement as HTMLElement).querySelector('tr.fila-panel');
+    // Es la advertencia que evita el error caro: dar de baja no se deshace y cerrar la vigencia si.
+    expect(panel?.textContent).toContain('la operacion NO es esta');
+    expect(panel?.textContent).toContain('no hay reactivacion');
+
+    escribir(fixture, '#baja-plan-motivo', 'El financiador lo discontinuo');
+    const confirmar = [
+      ...(fixture.nativeElement as HTMLElement).querySelectorAll('tr.fila-panel button'),
+    ].find((boton) => (boton.textContent ?? '').trim() === 'Dar de baja');
+    (confirmar as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    const baja = httpMock.expectOne(
+      (peticion: HttpRequest<unknown>) =>
+        peticion.method === 'DELETE' && peticion.url === `${PLANES}/100`,
+    );
+    expect(baja.request.body).toEqual({ reason: 'El financiador lo discontinuo' });
+
+    baja.flush(null, { status: 204, statusText: 'No Content' });
+    httpMock.expectOne(esListado()).flush([VIGENCIA_CERRADA]);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain(
+      'siguen resolviendo con su copia congelada',
+    );
+  });
+
+  it('el 409 conflict relee y deja el panel abierto con lo escrito', async () => {
+    const fixture = await montar();
+
+    abrir(fixture, 'Editar');
+    escribir(fixture, '#editar-plan-nombre', 'Plan 210 Plus');
+    enviar(fixture, 'tr.fila-panel form');
+
+    httpMock
+      .expectOne(
+        (peticion: HttpRequest<unknown>) =>
+          peticion.method === 'PUT' && peticion.url === `${PLANES}/100`,
+      )
+      .flush(
+        { type: 'https://akine.app/problems/conflict', detail: 'la version quedo vieja' },
+        { status: 409, statusText: 'Conflict' },
+      );
+    fixture.detectChanges();
+
+    httpMock.expectOne(esListado()).flush([{ ...VIGENTE, version: 9 }, VIGENCIA_CERRADA]);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const anfitrion = fixture.nativeElement as HTMLElement;
+    expect(anfitrion.textContent).toContain('no guardamos tus cambios para no pisar los suyos');
+    expect(anfitrion.querySelector<HTMLInputElement>('#editar-plan-nombre')?.value).toBe(
+      'Plan 210 Plus',
+    );
+  });
+
+  it('el filtro de estado recarga, y el vacio explica que sin plan no hay convenio', async () => {
+    const fixture = await montar();
+
+    cambiarSelect(fixture, '#filtro-estado-plan', 'TODOS');
+    httpMock
+      .expectOne(
+        (peticion: HttpRequest<unknown>) =>
+          peticion.url === PLANES && peticion.params.get('estado') === 'TODOS',
+      )
+      .flush([]);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain(
+      'no se puede firmar ningun convenio',
+    );
+  });
+
   it('la fecha de vigencia no filtra: cambia contra que dia se calcula, y recarga', async () => {
     const fixture = await montar();
 
@@ -354,5 +520,31 @@ function enviar(fixture: { nativeElement: HTMLElement; detectChanges(): void }, 
     throw new Error(`No existe el formulario ${selector}`);
   }
   formulario.dispatchEvent(new Event('submit'));
+  fixture.detectChanges();
+}
+
+/** Marca una casilla de un formulario reactivo. */
+function marcar(fixture: { nativeElement: HTMLElement; detectChanges(): void }, selector: string) {
+  const casilla = fixture.nativeElement.querySelector<HTMLInputElement>(selector);
+  if (casilla === null) {
+    throw new Error(`No existe la casilla ${selector}`);
+  }
+  casilla.checked = true;
+  casilla.dispatchEvent(new Event('change'));
+  fixture.detectChanges();
+}
+
+/** Un `select` que vive fuera de todo formulario reactivo: la pantalla lo escucha con `change`. */
+function cambiarSelect(
+  fixture: { nativeElement: HTMLElement; detectChanges(): void },
+  selector: string,
+  valor: string,
+) {
+  const campo = fixture.nativeElement.querySelector<HTMLSelectElement>(selector);
+  if (campo === null) {
+    throw new Error(`No existe el selector ${selector}`);
+  }
+  campo.value = valor;
+  campo.dispatchEvent(new Event('change'));
   fixture.detectChanges();
 }
