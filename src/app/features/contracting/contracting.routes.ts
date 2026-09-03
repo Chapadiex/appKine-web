@@ -76,6 +76,16 @@ export const routes: Routes = [
     data: { [DATA_ANCHO]: ANCHO_AMPLIO },
   },
   {
+    path: 'convenios/:convenioId/aranceles',
+    canActivate: [contextGuard],
+    loadComponent: () =>
+      import('./pages/aranceles-del-convenio/aranceles-del-convenio-page').then(
+        (m) => m.ArancelesDelConvenioPage,
+      ),
+    title: 'AKINE - Aranceles del convenio',
+    data: { [DATA_ANCHO]: ANCHO_AMPLIO },
+  },
+  {
     // Entrar a `/contratacion` a secas cae en los convenios y no en el catalogo de
     // financiadores. Los dos son configuracion, pero el convenio es lo que se revisa: vence,
     // se renueva y cambia de precio, mientras que un financiador se carga una vez y queda.
