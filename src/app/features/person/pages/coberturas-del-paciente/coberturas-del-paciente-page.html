@@ -1,0 +1,484 @@
+<p class="acciones">
+  <a class="enlace" [routerLink]="rutaFicha()">Volver a la ficha</a>
+  <a class="enlace" routerLink="/pacientes">Volver al padron</a>
+</p>
+
+<h1>
+  Coberturas
+  @if (persona(); as ficha) {
+    — {{ nombreCompleto(ficha) }}
+  }
+</h1>
+
+<p class="descripcion">
+  Con que cobertura se atiende hoy el paciente, y con cuales se atendio antes. Se muestran todas,
+  incluidas las vencidas y las dadas de baja: es lo que permite explicar despues como se facturo
+  cada atencion.
+</p>
+
+<!--
+  La confusion mas cara del modulo (regla maestra 6). El nombre de un financiador en una lista se
+  lee como "aca le cubren esto", y eso es exactamente lo que esta pantalla NO dice.
+-->
+<section class="tarjeta nota-clave" aria-labelledby="titulo-nota-cobertura">
+  <h2 id="titulo-nota-cobertura">Cobertura del paciente no es convenio del centro</h2>
+  <p>
+    Esto es <b>lo que el paciente tiene</b>: su obra social, su prepaga, o particular. Que la tenga
+    <b>no significa</b> que este centro tenga convenio con ese financiador, ni que la practica sea
+    facturable a ese plan.
+  </p>
+  <p>
+    <b>Particular</b> siempre esta disponible, incluso para alguien con obra social: un paciente
+    puede elegir pagar particular una atencion.
+  </p>
+</section>
+
+<div aria-live="polite">
+  @if (exito(); as mensaje) {
+    <p class="estado estado--ok">{{ mensaje }}</p>
+  }
+</div>
+
+<!-- Con que se atiende hoy. Es la pregunta operativa, y va antes que el historial. -->
+<section class="tarjeta" aria-labelledby="titulo-seleccion">
+  <h2 id="titulo-seleccion">Para atender hoy</h2>
+
+  @if (cargando()) {
+    <p class="estado">Cargando...</p>
+  } @else if (principal(); as preferida) {
+    <p>
+      Principal: <b>{{ coberturaEnUnaLinea(preferida) }}</b>
+      @if (preferida.numeroAfiliado) {
+        — afiliado {{ preferida.numeroAfiliado }}
+      }
+    </p>
+  } @else {
+    <p class="estado">
+      No hay ninguna cobertura marcada como principal. No es un error: se puede atender igual, con
+      cualquiera de las vigentes o como particular.
+    </p>
+  }
+
+  @if (vigentes().length > 0) {
+    <p>
+      Vigentes hoy:
+      @for (vigente of vigentes(); track vigente.id) {
+        <span class="etiqueta">{{ coberturaEnUnaLinea(vigente) }}</span>
+      }
+    </p>
+  }
+
+  <p class="ayuda">
+    Particular siempre esta disponible y no figura como fila: es la ausencia de plan financiado, no
+    una cobertura que haya que cargar.
+  </p>
+</section>
+
+<section class="tarjeta" aria-labelledby="titulo-historial">
+  <h2 id="titulo-historial">Historial de coberturas</h2>
+
+  <div class="campo">
+    <label for="coberturas-filtro">Mostrar</label>
+    <select
+      id="coberturas-filtro"
+      name="coberturas-filtro"
+      [value]="filtro()"
+      (change)="cambiarFiltro($any($event.target).value)"
+      aria-describedby="coberturas-filtro-ayuda"
+    >
+      <option value="TODAS">Todas</option>
+      <option value="ACTIVA">Solo las que no estan dadas de baja</option>
+      <option value="INACTIVA">Solo las dadas de baja</option>
+    </select>
+    <p class="ayuda" id="coberturas-filtro-ayuda">
+      El filtro es por <b>ciclo de vida</b>, no por vigencia: una cobertura activa con la vigencia
+      terminada es el caso normal de quien cambio de obra social, y se sigue mostrando.
+    </p>
+  </div>
+
+  <p class="acciones">
+    <button type="button" class="boton" (click)="abrirAlta()" *akinePermiso="permisoManage">
+      Agregar una cobertura
+    </button>
+  </p>
+</section>
+
+@if (altaAbierta()) {
+  <section class="tarjeta" aria-labelledby="titulo-alta-cobertura">
+    <h2 id="titulo-alta-cobertura">Nueva cobertura</h2>
+
+    <form [formGroup]="formularioAlta" (ngSubmit)="enviarAlta()" novalidate>
+      <div class="campo">
+        <label for="alta-cobertura-tipo">Tipo</label>
+        <select id="alta-cobertura-tipo" formControlName="tipo">
+          <option value="PARTICULAR">Particular</option>
+          <option value="FINANCIADA">Financiada por un plan</option>
+        </select>
+      </div>
+
+      <div class="campo">
+        <label for="alta-cobertura-desde">Vigente desde</label>
+        <input
+          id="alta-cobertura-desde"
+          type="date"
+          formControlName="vigenciaDesde"
+          [attr.aria-invalid]="mostrarErrorAlta('vigenciaDesde') ? 'true' : null"
+          aria-describedby="alta-cobertura-desde-ayuda"
+        />
+        <p class="ayuda" id="alta-cobertura-desde-ayuda">
+          El plan se congela contra <b>esta</b> fecha y no contra hoy: lo que se verifica es si ese
+          plan se podia elegir el dia en que la cobertura empieza a valer.
+        </p>
+        @if (mostrarErrorAlta('vigenciaDesde')) {
+          <p class="estado estado--error">La fecha de inicio es obligatoria.</p>
+        }
+      </div>
+
+      @if (esFinanciada()) {
+        <div class="campo">
+          <label for="alta-cobertura-financiador">Financiador</label>
+          <select
+            id="alta-cobertura-financiador"
+            formControlName="financiadorId"
+            (change)="elegirFinanciador($any($event.target).value)"
+          >
+            <option value="">Elegi un financiador</option>
+            @for (financiador of financiadores(); track financiador.id) {
+              <option [value]="financiador.id">{{ financiador.nombre }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="campo">
+          <label for="alta-cobertura-plan">Plan</label>
+          <select id="alta-cobertura-plan" formControlName="planId">
+            <option value="">Elegi un plan</option>
+            @for (plan of planes(); track plan.id) {
+              <option [value]="plan.id">
+                {{ plan.nombre }}
+                @if (plan.copago) {
+                  — copago {{ importeEnPalabras(plan.copago, plan.moneda) }}
+                }
+              </option>
+            }
+          </select>
+          <p class="ayuda">
+            Los planes que se listan son los que estaban vigentes en la fecha de inicio elegida. Si
+            no aparece el que buscas, revisa esa fecha.
+          </p>
+        </div>
+
+        <div class="campo">
+          <label for="alta-cobertura-afiliado">Numero de afiliado</label>
+          <input id="alta-cobertura-afiliado" type="text" formControlName="numeroAfiliado" />
+        </div>
+
+        <div class="campo">
+          <label for="alta-cobertura-credencial">Credencial vigente hasta</label>
+          <input
+            id="alta-cobertura-credencial"
+            type="date"
+            formControlName="credencialVigenciaHasta"
+            aria-describedby="alta-cobertura-credencial-ayuda"
+          />
+          <p class="ayuda" id="alta-cobertura-credencial-ayuda">
+            Es informativo. Una credencial vencida <b>no da de baja</b> la cobertura ni impide
+            atender: se avisa, y quien atiende decide.
+          </p>
+        </div>
+      } @else {
+        <p class="ayuda">
+          Particular no lleva plan ni credencial: es la ausencia de plan financiado, y siempre esta
+          disponible.
+        </p>
+      }
+
+      <div class="campo">
+        <label for="alta-cobertura-hasta">Vigente hasta</label>
+        <input
+          id="alta-cobertura-hasta"
+          type="date"
+          formControlName="vigenciaHasta"
+          aria-describedby="alta-cobertura-hasta-ayuda"
+        />
+        <p class="ayuda" id="alta-cobertura-hasta-ayuda">
+          Opcional. Sin fecha de fin, la cobertura queda abierta, que es el caso normal de alguien
+          que sigue afiliado.
+        </p>
+      </div>
+
+      <div class="campo">
+        <label for="alta-cobertura-principal">
+          <input id="alta-cobertura-principal" type="checkbox" formControlName="principal" />
+          Marcarla como cobertura principal
+        </label>
+        <p class="ayuda">
+          Si ya hay otra principal vigente en el mismo periodo, la carga se rechaza y hay que
+          finalizar o desmarcar la anterior: no se cambian dos coberturas con un solo click.
+        </p>
+      </div>
+
+      <div class="campo">
+        <label for="alta-cobertura-observaciones">Observaciones</label>
+        <textarea
+          id="alta-cobertura-observaciones"
+          formControlName="observaciones"
+          rows="2"
+        ></textarea>
+      </div>
+
+      <p class="acciones">
+        <button type="submit" class="boton" [disabled]="enviando()">
+          {{ enviando() ? 'Guardando...' : 'Agregar cobertura' }}
+        </button>
+        <button type="button" class="boton boton--secundario" (click)="cerrarPaneles()">
+          Cancelar
+        </button>
+      </p>
+    </form>
+
+    @if (errorAccion(); as mensaje) {
+      <p class="estado estado--error" role="alert">{{ mensaje }}</p>
+      @if (faltaPerfil()) {
+        <p class="acciones">
+          <a class="boton" [routerLink]="rutaFicha()">Ir a la ficha para activar el perfil</a>
+        </p>
+      }
+    }
+  </section>
+}
+
+@if (cargando()) {
+  <p class="estado">Cargando las coberturas...</p>
+} @else if (mensajeError(); as mensaje) {
+  <p class="estado estado--error" role="alert">{{ mensaje }}</p>
+  @if (faltaContexto()) {
+    <p class="acciones">
+      <a class="boton" href="/seleccionar-contexto">Elegir contexto de trabajo</a>
+    </p>
+  } @else {
+    <p class="acciones">
+      <button type="button" class="boton" (click)="cargar()">Reintentar</button>
+    </p>
+  }
+} @else if (coberturas().length === 0) {
+  <p class="estado">
+    Este paciente no tiene ninguna cobertura cargada. No es un error: sin cobertura financiada se
+    atiende como particular, que siempre esta disponible.
+  </p>
+} @else {
+  <table class="tabla">
+    <caption>
+      {{
+        coberturas().length
+      }}
+      cobertura(s) segun el filtro aplicado
+    </caption>
+    <thead>
+      <tr>
+        <th scope="col">Cobertura</th>
+        <th scope="col">Afiliado</th>
+        <th scope="col">Vigencia</th>
+        <th scope="col">Credencial</th>
+        <th scope="col">Situacion</th>
+        <th scope="col">Principal</th>
+        <th scope="col">Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (cobertura of coberturas(); track cobertura.id) {
+        <tr [class.fila-senalada]="estaSenalada(cobertura)">
+          <td>
+            {{ coberturaEnUnaLinea(cobertura) }}
+            @if (estaSenalada(cobertura)) {
+              <span class="etiqueta">Es la que impide el cambio</span>
+            }
+          </td>
+          <td>{{ cobertura.numeroAfiliado || '—' }}</td>
+          <td>{{ vigenciaEnPalabras(cobertura) }}</td>
+          <td>{{ credencialEnPalabras(cobertura) }}</td>
+          <td>
+            {{ situacionEnPalabras(cobertura) }}
+            @if (cobertura.deactivationReason) {
+              — {{ cobertura.deactivationReason }}
+            }
+          </td>
+          <td>{{ cobertura.principal ? 'Si' : 'No' }}</td>
+          <td>
+            @if (coberturaOperable(cobertura)) {
+              <button
+                type="button"
+                class="boton boton--secundario"
+                (click)="abrirEdicion(cobertura)"
+                *akinePermiso="permisoManage"
+              >
+                Editar o finalizar
+              </button>
+
+              @if (cobertura.principal) {
+                <button
+                  type="button"
+                  class="boton boton--secundario"
+                  [disabled]="enviando()"
+                  (click)="cambiarPrincipal(cobertura, false)"
+                  *akinePermiso="permisoManage"
+                >
+                  Quitar principal
+                </button>
+              } @else {
+                <button
+                  type="button"
+                  class="boton boton--secundario"
+                  [disabled]="enviando()"
+                  (click)="cambiarPrincipal(cobertura, true)"
+                  *akinePermiso="permisoManage"
+                >
+                  Marcar principal
+                </button>
+              }
+
+              <button
+                type="button"
+                class="boton boton--secundario"
+                (click)="abrirBaja(cobertura)"
+                *akinePermiso="permisoManage"
+              >
+                Dar de baja
+              </button>
+            }
+          </td>
+        </tr>
+
+        @if (esPanel(cobertura, 'editar')) {
+          <tr>
+            <td colspan="7">
+              <section aria-labelledby="titulo-editar-cobertura-{{ cobertura.id }}">
+                <h2 id="titulo-editar-cobertura-{{ cobertura.id }}" class="panel__titulo">
+                  Editar {{ coberturaEnUnaLinea(cobertura) }}
+                </h2>
+
+                <p class="ayuda">
+                  <b>El plan no se puede cambiar</b>, y no es que falte el campo: cambiar de plan es
+                  otra cobertura. Si el paciente cambio de obra social, ponele fecha de fin a esta y
+                  agrega la nueva — asi queda registrado con que cobertura se lo atendio antes.
+                </p>
+
+                <form [formGroup]="formularioEdicion" (ngSubmit)="enviarEdicion()" novalidate>
+                  <div class="campo">
+                    <label for="editar-afiliado-{{ cobertura.id }}">Numero de afiliado</label>
+                    <input
+                      id="editar-afiliado-{{ cobertura.id }}"
+                      type="text"
+                      formControlName="numeroAfiliado"
+                    />
+                  </div>
+
+                  <div class="campo">
+                    <label for="editar-credencial-{{ cobertura.id }}"
+                      >Credencial vigente hasta</label
+                    >
+                    <input
+                      id="editar-credencial-{{ cobertura.id }}"
+                      type="date"
+                      formControlName="credencialVigenciaHasta"
+                    />
+                  </div>
+
+                  <div class="campo">
+                    <label for="editar-desde-{{ cobertura.id }}">Vigente desde</label>
+                    <input
+                      id="editar-desde-{{ cobertura.id }}"
+                      type="date"
+                      formControlName="vigenciaDesde"
+                    />
+                  </div>
+
+                  <div class="campo">
+                    <label for="editar-hasta-{{ cobertura.id }}">Vigente hasta</label>
+                    <input
+                      id="editar-hasta-{{ cobertura.id }}"
+                      type="date"
+                      formControlName="vigenciaHasta"
+                      aria-describedby="editar-hasta-ayuda-{{ cobertura.id }}"
+                    />
+                    <p class="ayuda" id="editar-hasta-ayuda-{{ cobertura.id }}">
+                      Poner una fecha aca <b>finaliza la vigencia</b>: la cobertura queda activa y
+                      sigue explicando el pasado, y deja de aplicar despues de ese dia.
+                      <b>No es lo mismo que darla de baja</b>, que significa que nunca debio
+                      cargarse.
+                    </p>
+                  </div>
+
+                  <div class="campo">
+                    <label for="editar-observaciones-{{ cobertura.id }}">Observaciones</label>
+                    <textarea
+                      id="editar-observaciones-{{ cobertura.id }}"
+                      formControlName="observaciones"
+                      rows="2"
+                    ></textarea>
+                  </div>
+
+                  <p class="acciones">
+                    <button type="submit" class="boton" [disabled]="enviando()">
+                      {{ enviando() ? 'Guardando...' : 'Guardar' }}
+                    </button>
+                    <button type="button" class="boton boton--secundario" (click)="cerrarPaneles()">
+                      Cancelar
+                    </button>
+                  </p>
+                </form>
+
+                @if (errorAccion(); as mensaje) {
+                  <p class="estado estado--error" role="alert">{{ mensaje }}</p>
+                  @if (hayQueRecargar()) {
+                    <p class="acciones">
+                      <button type="button" class="boton" (click)="cargar()">
+                        Recargar las coberturas
+                      </button>
+                    </p>
+                  }
+                }
+              </section>
+            </td>
+          </tr>
+        }
+
+        @if (esPanel(cobertura, 'baja')) {
+          <tr>
+            <td colspan="7">
+              <akine-confirmacion-con-motivo
+                idCampo="baja-cobertura-{{ cobertura.id }}"
+                titulo="Dar de baja {{ coberturaEnUnaLinea(cobertura) }}"
+                etiqueta="Motivo"
+                ayuda="Dar de baja significa que esta cobertura NUNCA debio cargarse. Si el paciente cambio de obra social, lo que corresponde es finalizar su vigencia desde 'Editar o finalizar': asi sigue explicando con que se lo atendio. La baja no borra nada y no hay reactivacion."
+                textoConfirmar="Confirmar la baja de la cobertura"
+                [enviando]="enviando()"
+                (confirmado)="confirmarBaja($event)"
+                (cancelado)="cerrarPaneles()"
+              />
+
+              @if (errorAccion(); as mensaje) {
+                <p class="estado estado--error" role="alert">{{ mensaje }}</p>
+              }
+            </td>
+          </tr>
+        }
+      }
+    </tbody>
+  </table>
+
+  <!--
+    El error de las acciones de fila -marcar principal, sobre todo- se muestra al pie de la tabla y
+    no dentro de una fila: la fila involucrada es OTRA, y esa ya queda resaltada.
+  -->
+  @if (errorAccion(); as mensaje) {
+    @if (panel() === null && !altaAbierta()) {
+      <p class="estado estado--error" role="alert">{{ mensaje }}</p>
+      @if (hayQueRecargar()) {
+        <p class="acciones">
+          <button type="button" class="boton" (click)="cargar()">Recargar las coberturas</button>
+        </p>
+      }
+    }
+  }
+}

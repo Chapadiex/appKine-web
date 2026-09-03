@@ -1,0 +1,95 @@
+import { CoberturaResponse } from '../../../api/generated/model/cobertura-response';
+import { fechaEnPalabras } from './etiquetas-de-ficha';
+
+/**
+ * Como se redacta una cobertura del paciente en pantalla (M08, AKINE-03.04).
+ *
+ * <p>Todo lo que se muestra sale de la <b>copia congelada</b> que el backend guardo al dar de alta
+ * la cobertura, y nunca del catalogo de hoy. No es una limitacion de esta capa: resolver el nombre
+ * del financiador contra el catalogo vivo haria que renombrar un plan reescriba con que cobertura
+ * se atendio al paciente el mes pasado, que es lo que RN-M08-003 prohibe.
+ */
+
+/**
+ * Financiador y plan, tal como estaban el dia que se firmo.
+ *
+ * <p>PARTICULAR no tiene ninguno de los dos y no es un dato faltante: es la ausencia de plan
+ * financiado, que es una modalidad completa y siempre disponible (RN-M08-001). Por eso se escribe
+ * "Particular" y no un guion.
+ */
+export function coberturaEnUnaLinea(cobertura: CoberturaResponse): string {
+  if (cobertura.tipo === 'PARTICULAR') {
+    return 'Particular';
+  }
+  const financiador = cobertura.financiadorNombre ?? 'Financiador sin nombre';
+  const plan = cobertura.planNombre;
+  return plan === undefined || plan === '' ? financiador : `${financiador} — ${plan}`;
+}
+
+/**
+ * La vigencia en una linea.
+ *
+ * <p>Sin `vigenciaHasta` dice "sin fecha de fin" y no deja el campo vacio: una cobertura abierta es
+ * el caso normal —el paciente sigue afiliado— y un hueco invita a "completarlo" poniendo una fecha
+ * inventada, que despues cierra una cobertura que estaba bien.
+ */
+export function vigenciaEnPalabras(cobertura: CoberturaResponse): string {
+  const desde = fechaEnPalabras(cobertura.vigenciaDesde);
+  const hasta = fechaEnPalabras(cobertura.vigenciaHasta);
+  if (desde === '') {
+    return hasta === '' ? 'Sin vigencia declarada' : `Hasta el ${hasta}`;
+  }
+  return hasta === '' ? `Desde el ${desde}, sin fecha de fin` : `${desde} — ${hasta}`;
+}
+
+/**
+ * En que situacion esta la cobertura, en una sola frase.
+ *
+ * <p>Son <b>tres cosas distintas</b> y la pantalla no las puede fundir en un unico "estado", que es
+ * el error que hace que alguien de de baja una cobertura correcta:
+ *
+ * <ul>
+ *   <li><b>Dada de baja</b> es ciclo de vida: "nunca debio cargarse".</li>
+ *   <li><b>Vigencia terminada</b> es ACTIVA con la vigencia cerrada: es el caso normal de un
+ *       paciente que cambio de obra social, y sigue explicando el pasado.</li>
+ *   <li><b>Vigente</b> es la que aplica hoy.</li>
+ * </ul>
+ */
+export function situacionEnPalabras(cobertura: CoberturaResponse): string {
+  if (coberturaInactiva(cobertura)) {
+    return 'Dada de baja';
+  }
+  return cobertura.vigente === true ? 'Vigente' : 'Vigencia terminada';
+}
+
+/** `true` cuando la cobertura esta dada de baja: se lee, no se edita ni se marca principal. */
+export function coberturaInactiva(cobertura: CoberturaResponse): boolean {
+  return cobertura.estado === 'INACTIVA';
+}
+
+/**
+ * Que decir de la credencial.
+ *
+ * <p><b>Una credencial vencida no invalida la cobertura</b>, y por eso esto informa en vez de
+ * cambiar ningun estado: vencerla automaticamente daria de baja coberturas reales por un dato que
+ * el mostrador copia a mano de un plastico.
+ */
+export function credencialEnPalabras(cobertura: CoberturaResponse): string {
+  const hasta = fechaEnPalabras(cobertura.credencialVigenciaHasta);
+  if (hasta === '') {
+    return cobertura.requeriaCredencial === true
+      ? 'Sin vencimiento cargado (el plan la exigia)'
+      : 'Sin vencimiento cargado';
+  }
+  return cobertura.credencialVencida === true ? `Vencida el ${hasta}` : `Vigente hasta el ${hasta}`;
+}
+
+/**
+ * `true` cuando la cobertura admite las acciones de la pantalla.
+ *
+ * <p>Una dada de baja no se edita, no se marca principal y no se vuelve a dar de baja: las tres
+ * responden 409. Ofrecer los botones seria ofrecer tres rechazos.
+ */
+export function coberturaOperable(cobertura: CoberturaResponse): boolean {
+  return !coberturaInactiva(cobertura);
+}

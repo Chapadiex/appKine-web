@@ -87,4 +87,24 @@ export const routes: Routes = [
     title: 'AKINE - Documentos de la persona',
     data: { [DATA_ANCHO]: ANCHO_AMPLIO },
   },
+
+  // Coberturas del paciente (M08, AKINE-03.04).
+  //
+  // Cuelga de la ficha y no es una seccion del menu, por lo mismo que la cuenta corriente: sin una
+  // persona elegida no hay ninguna consulta que hacer, y una entrada de menu tendria que abrir un
+  // buscador de personas adentro -o sea, el padron otra vez, duplicado-.
+  //
+  // Ancho amplio: la tabla tiene seis columnas de datos mas la de acciones, y a 46rem la vigencia
+  // queda detras del scroll horizontal. Es justamente el dato con el que se decide si la cobertura
+  // aplica hoy.
+  {
+    path: ':personaId/coberturas',
+    canActivate: [contextGuard],
+    loadComponent: () =>
+      import('./pages/coberturas-del-paciente/coberturas-del-paciente-page').then(
+        (m) => m.CoberturasDelPacientePage,
+      ),
+    title: 'AKINE - Coberturas del paciente',
+    data: { [DATA_ANCHO]: ANCHO_AMPLIO },
+  },
 ];

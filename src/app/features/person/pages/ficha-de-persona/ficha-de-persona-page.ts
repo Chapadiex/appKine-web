@@ -162,6 +162,9 @@ export class FichaDePersonaPage {
   protected readonly rutaDocumentos = computed(
     () => `/pacientes/${this.personaId()}/documentos` as const,
   );
+  protected readonly rutaCoberturas = computed(
+    () => `/pacientes/${this.personaId()}/coberturas` as const,
+  );
   protected readonly rutaCuentaCorriente = computed(
     () => `/pacientes/${this.personaId()}/cuenta-corriente` as const,
   );
