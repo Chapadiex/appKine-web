@@ -31,43 +31,47 @@ function problema(status: number, tipo: string | null, reintentarEnSegundos: num
  */
 describe('traducirErrorContracting', () => {
   it('cada respuesta llega a su causa propia y ninguna cae en la generica por error', () => {
-    const casos: readonly (readonly [number, string | null, AmbitoContracting, CausaContracting])[] =
-      [
-        [403, 'missing-tenant-context', 'convenio', 'sin-contexto'],
-        [409, 'subscription-suspended', 'financiador', 'suscripcion-suspendida'],
-        [409, 'conflict', 'financiador', 'concurrencia'],
-        // `concurrent-modification` no lo emite `contracting` hoy —la version vieja sale como
-        // `conflict`—. Se reconoce igual, y esto lo fija: si algun dia se unifican los dos tipos
-        // en todos los modulos, estas pantallas no se enteran.
-        [409, 'concurrent-modification', 'convenio', 'concurrencia'],
-        [400, 'validation-error', 'arancel', 'validacion'],
+    const casos: readonly (readonly [
+      number,
+      string | null,
+      AmbitoContracting,
+      CausaContracting,
+    ])[] = [
+      [403, 'missing-tenant-context', 'convenio', 'sin-contexto'],
+      [409, 'subscription-suspended', 'financiador', 'suscripcion-suspendida'],
+      [409, 'conflict', 'financiador', 'concurrencia'],
+      // `concurrent-modification` no lo emite `contracting` hoy —la version vieja sale como
+      // `conflict`—. Se reconoce igual, y esto lo fija: si algun dia se unifican los dos tipos
+      // en todos los modulos, estas pantallas no se enteran.
+      [409, 'concurrent-modification', 'convenio', 'concurrencia'],
+      [400, 'validation-error', 'arancel', 'validacion'],
 
-        [409, 'financiador-codigo-taken', 'financiador', 'codigo-repetido'],
-        [409, 'plan-cobertura-codigo-taken', 'plan', 'codigo-repetido'],
-        [409, 'convenio-codigo-taken', 'convenio', 'codigo-repetido'],
-        [409, 'financiador-nombre-taken', 'financiador', 'nombre-repetido'],
-        [409, 'plan-cobertura-nombre-taken', 'plan', 'nombre-repetido'],
-        [409, 'financiador-cuit-taken', 'financiador', 'cuit-repetido'],
+      [409, 'financiador-codigo-taken', 'financiador', 'codigo-repetido'],
+      [409, 'plan-cobertura-codigo-taken', 'plan', 'codigo-repetido'],
+      [409, 'convenio-codigo-taken', 'convenio', 'codigo-repetido'],
+      [409, 'financiador-nombre-taken', 'financiador', 'nombre-repetido'],
+      [409, 'plan-cobertura-nombre-taken', 'plan', 'nombre-repetido'],
+      [409, 'financiador-cuit-taken', 'financiador', 'cuit-repetido'],
 
-        // Los dos solapamientos van a la MISMA causa: la salida es la misma —cerrar la vigencia
-        // del que ya esta— y separarlos daria dos mensajes que dicen lo mismo con otras palabras.
-        [409, 'convenio-solapado', 'convenio', 'solapamiento'],
-        [409, 'arancel-solapado', 'arancel', 'solapamiento'],
+      // Los dos solapamientos van a la MISMA causa: la salida es la misma —cerrar la vigencia
+      // del que ya esta— y separarlos daria dos mensajes que dicen lo mismo con otras palabras.
+      [409, 'convenio-solapado', 'convenio', 'solapamiento'],
+      [409, 'arancel-solapado', 'arancel', 'solapamiento'],
 
-        [409, 'financiador-inactivo', 'plan', 'referencia-inactiva'],
-        [409, 'plan-cobertura-inactivo', 'convenio', 'referencia-inactiva'],
-        [409, 'convenio-inactivo', 'arancel', 'referencia-inactiva'],
-        [409, 'arancel-inactivo', 'arancel', 'referencia-inactiva'],
+      [409, 'financiador-inactivo', 'plan', 'referencia-inactiva'],
+      [409, 'plan-cobertura-inactivo', 'convenio', 'referencia-inactiva'],
+      [409, 'convenio-inactivo', 'arancel', 'referencia-inactiva'],
+      [409, 'arancel-inactivo', 'arancel', 'referencia-inactiva'],
 
-        [409, 'financiador-already-inactive', 'financiador', 'ya-dada-de-baja'],
-        [409, 'plan-cobertura-already-inactive', 'plan', 'ya-dada-de-baja'],
-        [409, 'convenio-already-inactive', 'convenio', 'ya-dada-de-baja'],
-        [409, 'arancel-already-inactive', 'arancel', 'ya-dada-de-baja'],
+      [409, 'financiador-already-inactive', 'financiador', 'ya-dada-de-baja'],
+      [409, 'plan-cobertura-already-inactive', 'plan', 'ya-dada-de-baja'],
+      [409, 'convenio-already-inactive', 'convenio', 'ya-dada-de-baja'],
+      [409, 'arancel-already-inactive', 'arancel', 'ya-dada-de-baja'],
 
-        [403, 'forbidden', 'convenio', 'sin-permiso'],
-        [404, 'not-found', 'financiador', 'no-encontrado'],
-        [500, null, 'financiador', 'otro'],
-      ];
+      [403, 'forbidden', 'convenio', 'sin-permiso'],
+      [404, 'not-found', 'financiador', 'no-encontrado'],
+      [500, null, 'financiador', 'otro'],
+    ];
 
     for (const [status, tipo, ambito, esperada] of casos) {
       expect(traducirErrorContracting(problema(status, tipo), ambito).causa).toBe(esperada);

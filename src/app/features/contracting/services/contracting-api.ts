@@ -22,12 +22,7 @@ export type FiltroEstado = 'ACTIVO' | 'INACTIVO' | 'TODOS';
 
 /** Tipos de financiador del contrato, para el filtro del listado. Mismo criterio que arriba. */
 export type FiltroTipo =
-  | 'OBRA_SOCIAL'
-  | 'PREPAGA'
-  | 'ART'
-  | 'MUTUAL'
-  | 'ORGANISMO_PUBLICO'
-  | 'OTRO';
+  'OBRA_SOCIAL' | 'PREPAGA' | 'ART' | 'MUTUAL' | 'ORGANISMO_PUBLICO' | 'OTRO';
 
 /**
  * Unico punto de la feature `contracting` que toca el cliente generado (M15, AKINE-03.03).
@@ -63,7 +58,11 @@ export class ContractingApi {
    * que el backend ya aplica, y las dos copias se desincronizarian en la primera correccion.
    */
   listarFinanciadores(
-    filtros: { readonly q?: string; readonly estado?: FiltroEstado; readonly tipo?: FiltroTipo } = {},
+    filtros: {
+      readonly q?: string;
+      readonly estado?: FiltroEstado;
+      readonly tipo?: FiltroTipo;
+    } = {},
   ): Observable<FinanciadorResponse[]> {
     return this.api.listFinanciadores({
       q: filtros.q,

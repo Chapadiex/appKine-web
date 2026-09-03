@@ -1,0 +1,124 @@
+/*
+ * Hoja de la feature `contracting` (financiadores, planes, convenios y aranceles — M15 y M16).
+ *
+ * <b>Deliberadamente corta</b>, igual que las de `offering`, `resource` y `catalog`. `.boton`,
+ * `.campo`, `.tabla`, `.tabla-scroll`, `.estado`, `.tarjeta`, `.ayuda`, `.marca-estado`,
+ * `.fila--revocada`, `.fila--atenuada`, `.fila-panel`, `.acciones-fila`, `.par-de-campos` y
+ * `.campo__error` los aporta `src/design-system.css`, que es global. Copiarlos aca no seria
+ * aislar el feature: seria una copia que se despega del original el dia que alguien retoque un
+ * gris.
+ *
+ * Solo entra lo que existe unicamente en estas cinco pantallas.
+ */
+
+/*
+ * La nota que separa el ciclo de vida de la vigencia, y la que aclara que PARTICULAR no es una
+ * ficha del catalogo.
+ *
+ * Va con borde de acento y encabezado propio, no como un parrafo mas: son las dos aclaraciones
+ * que evitan los reportes de bug mas probables del modulo —"cerre la vigencia y el convenio
+ * sigue activo", "no encuentro Particular en la lista"— y en el medio de la prosa nadie las lee.
+ * El color no es lo unico que las distingue —tienen encabezado propio—, asi que siguen
+ * comunicando en escala de grises (WCAG 1.4.1).
+ *
+ * Duplicada respecto de `offering.css` a proposito: son dos hojas de feature y no hay import
+ * entre features (AGENT.md 4.4). Sube a `design-system.css` cuando una tercera la necesite.
+ */
+.nota-clave {
+  border-left: var(--borde-acento) solid var(--color-acento);
+  background: var(--color-superficie-sutil);
+}
+
+.nota-clave p {
+  margin: 0 0 var(--esp-4);
+}
+
+.nota-clave p:last-child {
+  margin-bottom: 0;
+}
+
+/*
+ * La casilla y su texto en la misma linea.
+ *
+ * `.campo label` es `display: block` en la hoja global, que es lo correcto para un `input` de
+ * texto y lo equivocado para una casilla: deja el cuadradito arriba y la etiqueta abajo, como si
+ * fueran dos cosas. El `label` envuelve al `input`, asi que el area de click incluye al texto
+ * —objetivo mas grande, WCAG 2.5.5—.
+ */
+.opcion-casilla {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-4);
+  font-weight: var(--peso-medio);
+}
+
+.opcion-casilla input {
+  width: auto;
+  margin: 0;
+}
+
+/*
+ * Los tres importes del arancel, alineados a la derecha.
+ *
+ * Es la unica columna numerica del modulo y la unica que se lee comparando de arriba abajo: con
+ * los importes alineados a la izquierda, `900.00` y `12000.00` no comparten la posicion de las
+ * unidades y la diferencia de magnitud deja de verse de un vistazo. Se usan cifras tabulares por
+ * el mismo motivo — sin ellas, un 1 ocupa menos que un 8 y las columnas se desalinean solas.
+ */
+.importe {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/*
+ * El resultado de la consulta de arancel efectivo.
+ *
+ * Es un bloque y no una fila de tabla porque la respuesta es UNA, con su derivacion: que convenio
+ * la produjo y con que dos vigencias. Sin la derivacion un importe inesperado no se puede
+ * explicar, y una tabla de una fila esconderia justamente eso.
+ */
+.resultado {
+  border: var(--borde-medio) solid var(--color-borde);
+  border-radius: var(--radio-md);
+  padding: var(--esp-5);
+}
+
+/*
+ * El importe grande del resultado. No lleva color propio: lo unico que lo distingue es el tamano,
+ * asi que sigue siendo legible sin percepcion de color.
+ */
+.resultado__importe {
+  font-size: var(--tipo-xl);
+  font-weight: var(--peso-fuerte);
+  font-variant-numeric: tabular-nums;
+}
+
+/*
+ * Las dos partes de la terna, debajo del total.
+ *
+ * Se muestran SIEMPRE y no detras de un "ver detalle": el total no es lo que el mostrador
+ * necesita, es el coseguro —lo que le cobra al paciente—. Esconderlo obligaria a un click en la
+ * pantalla que mas apuro tiene.
+ */
+.resultado__partes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp-4) var(--esp-6);
+  margin: var(--esp-4) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+/*
+ * La derivacion: convenio, codigo y las dos ventanas que intervinieron.
+ *
+ * Va debajo y atenuada, no arriba: quien consulta quiere el numero primero. Pero va en la misma
+ * tarjeta y no detras de un enlace, porque el dia que el numero sorprenda, la explicacion tiene
+ * que estar a la vista y no a un click.
+ */
+.resultado__derivacion {
+  margin-top: var(--esp-5);
+  padding-top: var(--esp-4);
+  border-top: var(--borde-fino) solid var(--color-borde-sutil);
+}

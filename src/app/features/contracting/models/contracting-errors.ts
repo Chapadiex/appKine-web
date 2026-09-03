@@ -125,8 +125,7 @@ const MENSAJE_NO_ENCONTRADO: Readonly<Record<AmbitoContracting, string>> = {
   convenio:
     'Ese convenio ya no existe, o no es de esta sede. Recarga el listado para ver los que hay ' +
     'ahora.',
-  arancel:
-    'Ese arancel ya no existe. Recarga la grilla del convenio para ver los que hay ahora.',
+  arancel: 'Ese arancel ya no existe. Recarga la grilla del convenio para ver los que hay ahora.',
 };
 
 /**
