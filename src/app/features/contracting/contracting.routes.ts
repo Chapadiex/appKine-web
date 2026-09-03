@@ -56,6 +56,16 @@ export const routes: Routes = [
     data: { [DATA_ANCHO]: ANCHO_AMPLIO },
   },
   {
+    path: 'financiadores/:financiadorId/planes',
+    canActivate: [contextGuard],
+    loadComponent: () =>
+      import('./pages/planes-del-financiador/planes-del-financiador-page').then(
+        (m) => m.PlanesDelFinanciadorPage,
+      ),
+    title: 'AKINE - Planes de cobertura',
+    data: { [DATA_ANCHO]: ANCHO_AMPLIO },
+  },
+  {
     path: '',
     pathMatch: 'full',
     redirectTo: 'financiadores',
