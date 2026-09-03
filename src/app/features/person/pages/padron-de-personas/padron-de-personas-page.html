@@ -315,6 +315,17 @@
           </td>
           <td>{{ persona.estado === 'ACTIVO' ? 'Activa' : 'Dada de baja' }}</td>
           <td>
+            <!--
+              Entrada a la ficha 360 (AKINE-03.02). Va PRIMERA y sin permiso detras: la lectura de
+              una ficha se autoriza por pertenencia, igual que la del padron, y es desde ahi que se
+              llega a coberturas, documentos y ordenes. Sin este enlace las cuatro pantallas de F3
+              solo son alcanzables tipeando la URL.
+
+              Se ofrece tambien sobre una ficha dada de baja, a diferencia de editar y de activar
+              el perfil: el 360 de una ficha cerrada es justamente donde se consulta su historico.
+            -->
+            <a class="enlace" [routerLink]="['/pacientes', persona.id]">Ver ficha</a>
+
             @if (!personaInactiva(persona)) {
               <button
                 type="button"

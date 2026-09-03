@@ -404,6 +404,18 @@ describe('PadronDePersonasPage', () => {
     expect((fixture.nativeElement as HTMLElement).textContent).toContain('Perez, Ana Maria');
     expect(botonPorTexto(fixture, 'Editar')).toBeNull();
     expect(botonPorTexto(fixture, 'Activar perfil de paciente')).toBeNull();
+    // La ficha 360 SI se ofrece sobre una dada de baja: es donde se consulta su historico.
+    expect(enlaceAFicha(fixture)).not.toBeNull();
+  });
+
+  it('cada fila enlaza a su ficha 360, que es la entrada a todo lo demas de F3', async () => {
+    const fixture = await montar();
+
+    // Sin este enlace, las cuatro pantallas que cuelgan de la ficha —documentos, coberturas,
+    // ordenes y cuenta corriente— solo son alcanzables tipeando la URL a mano.
+    const enlace = enlaceAFicha(fixture);
+    expect(enlace).not.toBeNull();
+    expect(enlace?.getAttribute('href')).toBe(`/pacientes/${SIN_PERFIL.id}`);
   });
 
   it('activar el perfil avisa que no crea historia clinica', async () => {
@@ -486,6 +498,14 @@ describe('PadronDePersonasPage', () => {
   function esAlta() {
     return (peticion: HttpRequest<unknown>) =>
       peticion.method === 'POST' && peticion.url === PERSONAS;
+  }
+
+  /** El enlace "Ver ficha" de la primera fila, o `null`. */
+  function enlaceAFicha(fixture: ComponentFixture<PadronDePersonasPage>): HTMLAnchorElement | null {
+    const enlaces = Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll('a'),
+    ) as HTMLAnchorElement[];
+    return enlaces.find((enlace) => enlace.textContent?.trim() === 'Ver ficha') ?? null;
   }
 
   function botonPorTexto(
