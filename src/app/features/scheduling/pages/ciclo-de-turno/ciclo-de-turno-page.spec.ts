@@ -19,6 +19,18 @@ const FECHA = '2026-09-15';
 const INICIO = '2026-09-15T12:00:00Z';
 const SIGUIENTE = '2026-09-15T12:45:00Z';
 
+const TURNO_URL = `/api/v1/consultorios/${CONSULTORIO}/turnos/${TURNO}`;
+const TURNO_LEIDO = {
+  id: TURNO,
+  inicio: '2026-09-15T12:00:00Z',
+  fin: '2026-09-15T12:45:00Z',
+  estado: 'RESERVADO',
+  personaId: 128,
+  personaNombre: 'Perez, Ana',
+  ofertaId: OFERTA,
+  ofertaNombre: 'Kinesiologia',
+  version: 0,
+};
 const HISTORIAL = `/api/v1/consultorios/${CONSULTORIO}/turnos/${TURNO}/historial`;
 const CANCELACION = `/api/v1/consultorios/${CONSULTORIO}/turnos/${TURNO}/cancelacion`;
 const AUSENCIA = `/api/v1/consultorios/${CONSULTORIO}/turnos/${TURNO}/ausencia`;
@@ -241,13 +253,45 @@ describe('CicloDeTurnoPage', () => {
     expect(textoDe(fixture)).toContain('ya empezo y no se puede mover');
 
     clickear(fixture, 'Releer el turno');
+    responderLectura(false);
     httpMock.expectOne(HISTORIAL).flush(EVENTOS);
     httpMock.expectOne(esAgenda()).flush(DIA);
     await asentar(fixture);
   });
 
-  it('sin la version en la URL solo ofrece confirmar, y dice por que', async () => {
+  /**
+   * Es el motivo del cambio de 0.23.0. Antes, un enlace sin `?version=` dejaba la pantalla a
+   * medias: historial completo, confirmar, y nada mas. Ahora la version sale de la lectura del
+   * turno y la pantalla opera igual.
+   */
+  it('sin la version en la URL opera igual: la lee del turno', async () => {
     const fixture = await montar({ version: '' });
+
+    expect(textoDe(fixture)).not.toContain('solo se puede confirmar');
+    expect(boton(fixture, 'Cancelar el turno')).not.toBeNull();
+    expect(boton(fixture, 'Mover a otro horario')).not.toBeNull();
+
+    // Y la version que manda es la que trajo la lectura, no una inventada.
+    clickear(fixture, 'Cancelar el turno');
+    escribirMotivo(fixture, 'El paciente aviso');
+    enviarPanel(fixture);
+    const pedido = httpMock.expectOne(CANCELACION);
+    expect((pedido.request.body as { expectedVersion: number }).expectedVersion).toBe(
+      TURNO_LEIDO.version,
+    );
+    pedido.flush({ id: TURNO, estado: 'CANCELADO', version: 1, inicio: INICIO });
+    await asentar(fixture);
+    httpMock.expectOne(HISTORIAL).flush(EVENTOS);
+    await asentar(fixture);
+  });
+
+  /**
+   * El unico camino que hoy deja a la pantalla sin version: la lectura falla Y el enlace no la
+   * trae. La degradacion sigue siendo la correcta —confirmar es idempotente y no lleva version—
+   * y sigue estando explicada.
+   */
+  it('si la lectura del turno falla y no hay version en la URL, solo ofrece confirmar', async () => {
+    const fixture = await montar({ version: '', lecturaFalla: true });
 
     const texto = textoDe(fixture);
     expect(texto).toContain('solo se puede confirmar');
@@ -255,7 +299,6 @@ describe('CicloDeTurnoPage', () => {
     expect(boton(fixture, 'Marcar que no vino')).toBeNull();
     expect(boton(fixture, 'Mover a otro horario')).toBeNull();
 
-    // Confirmar es idempotente y no lleva version: es la unica honesta en este estado.
     clickear(fixture, 'Confirmar el turno');
     httpMock
       .expectOne(CONFIRMACION)
@@ -351,8 +394,26 @@ describe('CicloDeTurnoPage', () => {
     fixture.detectChanges();
   }
 
+  /**
+   * Responde la lectura del turno que la pantalla hace al abrirse (contrato 0.23.0).
+   *
+   * <p>Con `falla`, la pantalla queda sin esa fuente y tiene que arreglarselas con la version
+   * de la query — que es el camino que existia antes de que hubiera lectura, y que sigue
+   * teniendo que funcionar.
+   */
+  function responderLectura(falla: boolean): void {
+    const pedido = httpMock.expectOne(
+      (p: HttpRequest<unknown>) => p.method === 'GET' && p.url === TURNO_URL,
+    );
+    if (falla) {
+      pedido.flush(null, { status: 500, statusText: 'Server Error' });
+    } else {
+      pedido.flush(TURNO_LEIDO);
+    }
+  }
+
   async function montar(
-    opciones: { version?: string; permisos?: string[] } = {},
+    opciones: { version?: string; permisos?: string[]; lecturaFalla?: boolean } = {},
   ): Promise<ComponentFixture<CicloDeTurnoPage>> {
     tenantContext.select({
       organizationId: 1,
@@ -373,6 +434,7 @@ describe('CicloDeTurnoPage', () => {
     fixture.componentRef.setInput('fecha', FECHA);
     fixture.detectChanges();
 
+    responderLectura(opciones.lecturaFalla === true);
     httpMock.expectOne(HISTORIAL).flush(EVENTOS);
     httpMock.expectOne(esAgenda()).flush(DIA);
     await asentar(fixture);

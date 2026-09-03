@@ -9,6 +9,7 @@ import { PERMISO_TURNO_MANAGE } from '../../../../core/models/permisos';
 import { PermissionsStore } from '../../../../core/services/permissions.store';
 import { SlotDisponible } from '../../../../api/generated/model/slot-disponible';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
+import { TurnoDelDia } from '../../../../api/generated/model/turno-del-dia';
 import { Turno } from '../../../../api/generated/model/turno';
 import { ConfirmacionConMotivo } from '../../../../shared/components/confirmacion-con-motivo/confirmacion-con-motivo';
 import { SchedulingApi } from '../../services/scheduling-api';
@@ -59,21 +60,24 @@ type Panel = 'ninguno' | 'cancelar' | 'ausencia' | 'reprogramar';
  * Se muestra como lo que es —hay una Sesion y borrarla no es una opcion— con el enlace a la
  * atencion, que es lo unico que lo resuelve.
  *
- * <h2>3. De donde sale el estado: del historial, porque no hay lectura de un turno</h2>
+ * <h2>3. De donde sale el estado: del turno, y el historial es respaldo</h2>
  *
- * <p><b>El contrato 0.21.0 no publica `GET /turnos/{turnoId}` ni ningun listado de turnos.</b> Lo
- * unico legible de un turno existente es su historial, asi que el estado y el horario vigentes se
- * derivan del ultimo evento. Funciona, y es informacion real del servidor.
+ * <p><b>Desde el contrato 0.23.0 existe `GET /turnos/{turnoId}`</b> y de ahi salen el estado, el
+ * horario y —lo que importa— la `version`. Esta pantalla es autonoma: se abre por un enlace pelado
+ * y funciona.
  *
- * <p>Lo que <b>no</b> sale del historial es la `version`, y las tres transiciones que mutan la
- * exigen. Por eso llega por query (`?version=`), la pone quien enlaza —hoy, la reserva— y la
- * pantalla la <b>reescribe en la URL</b> despues de cada operacion exitosa: sin eso, un refresh
- * dejaria la version vieja pegada al enlace y la siguiente operacion moriria en un 409 del que no
- * se sale.
+ * <p>No siempre fue asi, y conviene saber por que el codigo tiene tres fuentes. Hasta 0.21.0 lo
+ * unico legible de un turno era su historial, asi que el estado se <b>derivaba</b> del ultimo
+ * evento y la `version` —que el historial no trae— tenia que llegar por query (`?version=`). Una
+ * URL pegada a mano dejaba la pantalla a medias: historial completo, confirmar, y nada mas.
  *
- * <p>Abierta sin ese dato —una URL pegada a mano— la pantalla <b>no miente</b>: muestra el
- * historial completo, ofrece confirmar, y explica que el resto necesita abrirse desde la agenda.
- * Botones que van a fallar seguro es peor que botones ausentes.
+ * <p>Las tres fuentes sobreviven en orden de frescura —la ultima transicion, la lectura del turno,
+ * la query— y cada una cubre un hueco de la siguiente: la transicion es lo mas nuevo que existe,
+ * la lectura hace autonoma a la pantalla, y la query permite seguir operando si esa lectura falla.
+ * La derivacion desde el historial queda como ultimo recurso.
+ *
+ * <p>La `version` se sigue <b>reescribiendo en la URL</b> despues de cada operacion. Ya no es
+ * imprescindible, pero mantiene el enlace copiable coherente con lo que la pantalla muestra.
  *
  * <h2>4. Reprogramar elige un slot de la agenda, no una hora escrita a mano</h2>
  *
@@ -113,8 +117,17 @@ export class CicloDeTurnoPage {
   protected readonly exito = signal<string | null>(null);
   protected readonly panel = signal<Panel>('ninguno');
 
-  /** Ultimo turno devuelto por una transicion. Es la unica fuente fresca de `version`. */
+  /** Ultimo turno devuelto por una transicion. Es la fuente mas fresca de `version`. */
   protected readonly turno = signal<Turno | null>(null);
+
+  /**
+   * El turno tal como esta guardado, leido al abrir la pantalla.
+   *
+   * <p>Existe desde el contrato 0.23.0, que publico `GET /turnos/{turnoId}`. Es lo que permite que
+   * la pantalla sea autonoma: antes la `version` solo podia llegar por query y una URL abierta a
+   * mano quedaba a medias.
+   */
+  protected readonly turnoLeido = signal<TurnoDelDia | null>(null);
 
   /** Agenda del dia destino, para el selector de horarios de la reprogramacion. */
   protected readonly agendaDestino = signal<Agenda | null>(null);
@@ -131,14 +144,24 @@ export class CicloDeTurnoPage {
   protected readonly timezone = computed(() => this.agendaDestino()?.timezone ?? '');
   protected readonly zonaConocida = computed(() => this.timezone() !== '');
 
+  /**
+   * Tres fuentes en orden de frescura, y la derivada queda ultima.
+   *
+   * <p>Reconstruir el estado desde los eventos funciona y es informacion real del servidor, pero es
+   * una deduccion: exige leer todo el historial para mostrar una linea y se rompe si algun dia un
+   * evento no lleva estado. Con `GET /turnos/{turnoId}` el estado es un dato, no una inferencia.
+   */
   protected readonly estado = computed(
-    () => this.turno()?.estado ?? estadoSegunHistorial(this.eventos()),
+    () =>
+      this.turno()?.estado ??
+      this.turnoLeido()?.estado ??
+      estadoSegunHistorial(this.eventos()),
   );
 
   protected readonly horario = computed(() => {
-    const actual = this.turno();
+    const actual = this.turno() ?? this.turnoLeido();
     const { inicio, fin } =
-      actual === null
+      actual === null || actual === undefined
         ? horarioSegunHistorial(this.eventos())
         : { inicio: actual.inicio ?? '', fin: actual.fin ?? '' };
     if (inicio === '') {
@@ -150,11 +173,25 @@ export class CicloDeTurnoPage {
     return hasta === '' ? desde : `${desde} a ${hasta}`;
   });
 
-  /** `null` cuando la pantalla no puede saber la version. Ver el punto 3 del encabezado. */
+  /**
+   * `null` solo cuando la pantalla no puede saber la version por ningun camino.
+   *
+   * <p>Tres fuentes, en orden de frescura: <b>la ultima transicion</b> —lo que el servidor acaba
+   * de devolver, siempre lo mas nuevo—, <b>la lectura del turno</b> y, al final, <b>la query</b>.
+   *
+   * <p>La query queda ultima y ya no es imprescindible: existe por compatibilidad con los enlaces
+   * que la reserva sigue armando, y porque si la lectura del turno falla es lo unico que permite
+   * seguir operando. Antes de 0.23.0 era la unica fuente, y por eso una URL pegada a mano dejaba
+   * la pantalla a medias.
+   */
   protected readonly versionConocida = computed<number | null>(() => {
     const deLaTransicion = this.turno()?.version;
     if (deLaTransicion !== undefined) {
       return deLaTransicion;
+    }
+    const deLaLectura = this.turnoLeido()?.version;
+    if (deLaLectura !== undefined) {
+      return deLaLectura;
     }
     const deLaUrl = Number(this.version());
     return this.version() !== '' && Number.isInteger(deLaUrl) && deLaUrl >= 0 ? deLaUrl : null;
@@ -188,13 +225,15 @@ export class CicloDeTurnoPage {
       const fecha = this.fecha();
       untracked(() => {
         this.turno.set(null);
+        this.turnoLeido.set(null);
+        this.agendaDestino.set(null);
         this.eventos.set([]);
         this.error.set(null);
         this.exito.set(null);
         this.panel.set('ninguno');
         this.instanteDestino.set('');
         this.fechaDestino.set(fecha === '' ? hoy() : fecha);
-        this.cargarHistorial();
+        this.cargarTurnoYHistorial();
         this.cargarDestino();
       });
     });
@@ -204,7 +243,49 @@ export class CicloDeTurnoPage {
   // Lectura
   // -------------------------------------------------------------------------------------
 
-  /** Relee el historial. Es tambien la accion de `recargar-turno`. */
+  /**
+   * Relee el turno y su historial. Es tambien la accion de `recargar-turno`.
+   *
+   * <p><b>El turno se lee del servidor desde el contrato 0.23.0</b>, y con el viene la `version`.
+   * Antes no habia forma: lo unico legible era el historial, la version tenia que llegar por query
+   * y una URL pegada a mano dejaba la pantalla a medias. Se pide primero el turno y despues el
+   * historial porque el primero es el que habilita las acciones; si el historial falla, la
+   * pantalla sigue pudiendo operar.
+   */
+  protected cargarTurnoYHistorial(): void {
+    const consultorioId = this.tenantContext.consultorioId();
+    const turnoId = this.numeroDeTurno();
+    if (consultorioId === null || turnoId === null) {
+      return;
+    }
+    // Se captura ANTES del pedido: si el enlace no traia la oferta, la agenda —de donde sale el
+    // timezone— no se pudo pedir todavia, y hay que pedirla cuando la lectura la revele.
+    //
+    // NO sirve preguntar despues por `agendaDestino() === null`: cuando el enlace SI trae la
+    // oferta, ese pedido ya salio y todavia no volvio, asi que la condicion daria verdadero y
+    // dispararia un segundo pedido identico.
+    const sabiaLaOferta = this.numeroDeOferta() !== null;
+    this.api.verTurno(consultorioId, turnoId).subscribe({
+      next: (turno) => {
+        this.turnoLeido.set(turno);
+        if (!sabiaLaOferta && this.numeroDeOferta() !== null) {
+          this.cargarDestino();
+        }
+      },
+      // Un fallo aca no voltea la pantalla: el historial sigue cargando y la version de la query
+      // —si vino— sigue sirviendo. Lo que se pierde es la independencia, no la pantalla.
+      error: () => this.turnoLeido.set(null),
+    });
+    this.cargarHistorial();
+  }
+
+  /**
+   * Relee SOLO el historial.
+   *
+   * <p>Es lo que corresponde despues de una transicion: la respuesta de la transicion ya trajo el
+   * turno con su version nueva, asi que volver a pedirlo seria una vuelta al servidor para
+   * enterarse de algo que ya se sabe. Lo unico que cambio y no se tiene es la fila del historial.
+   */
   protected cargarHistorial(): void {
     const consultorioId = this.tenantContext.consultorioId();
     const turnoId = this.numeroDeTurno();
@@ -354,7 +435,7 @@ export class CicloDeTurnoPage {
   /** Accion de `recargar-turno` y de `recargar-agenda`: lo que hay en pantalla quedo viejo. */
   protected recargar(): void {
     this.error.set(null);
-    this.cargarHistorial();
+    this.cargarTurnoYHistorial();
     this.cargarDestino();
   }
 
@@ -430,8 +511,20 @@ export class CicloDeTurnoPage {
     return Number.isFinite(id) && id > 0 ? id : null;
   }
 
+  /**
+   * La oferta del turno, de la query o —desde 0.23.0— de la lectura del turno.
+   *
+   * <p>Es lo que termina de hacer autonoma a la pantalla. La oferta no se usa solo para
+   * reprogramar: de su agenda sale el <b>timezone</b> con el que se rotula todo el historial, asi
+   * que sin ella un enlace pelado mostraba las horas en UTC. Con la lectura ya no hace falta que
+   * quien enlaza sepa la oferta.
+   */
   private numeroDeOferta(): number | null {
-    const id = Number(this.ofertaId());
-    return Number.isFinite(id) && id > 0 ? id : null;
+    const deLaUrl = Number(this.ofertaId());
+    if (Number.isFinite(deLaUrl) && deLaUrl > 0) {
+      return deLaUrl;
+    }
+    const deLaLectura = this.turnoLeido()?.ofertaId;
+    return deLaLectura !== undefined && deLaLectura > 0 ? deLaLectura : null;
   }
 }
