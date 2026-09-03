@@ -63,6 +63,27 @@ export const PERMISOS_F1 = [
 export type PermisoF1 = (typeof PERMISOS_F1)[number];
 
 /**
+ * Administrar financiadores, planes, convenios y aranceles (F3, etapas AKINE-03.03 y 03.05).
+ *
+ * <p>Gobierna las MUTACIONES de la configuracion economica: el catalogo de financiadores y sus
+ * planes —que son de la ORGANIZACION— y los convenios y aranceles —que son de la SEDE—.
+ * <b>No hay permiso de lectura</b>: consultar el catalogo se autoriza por pertenencia, y por eso
+ * ninguna pantalla pregunta por un `convenio:read` que la matriz no declara.
+ *
+ * <p><b>Se evalua siempre con una sede, aunque el financiador no sea de ninguna.</b> Es la misma
+ * asimetria que `paciente:manage` y `cobro:register`: la ficha vive en la organizacion, pero
+ * quien la administra lo hace parado en un mostrador, y sin sede el evaluador deja afuera al
+ * `CONSULTORIO_ADMIN` —que es el rol al que 03.03 le dio la asignacion base junto con
+ * `ORG_ADMIN`—. Consecuencia para las pantallas: exigen contexto completo, no solo organizacion.
+ *
+ * <p><b>Y para los convenios la sede que manda es la de la RUTA, no la del contexto.</b> El
+ * backend evalua sobre `{consultorioId}` para que nadie con el permiso en la sede A toque los
+ * convenios de la B. Como las pantallas arman la URL con la sede del contexto, las dos coinciden
+ * siempre; la distincion importa el dia que alguien agregue un selector de sede.
+ */
+export const PERMISO_CONVENIO_MANAGE = 'convenio:manage';
+
+/**
  * Consultar la agenda (F5, etapa AKINE-05.01).
  *
  * <p>Gobierna la LECTURA de slots de una oferta. Es de la sede del contexto: la agenda es de un

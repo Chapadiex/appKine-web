@@ -1,0 +1,234 @@
+<h1>Consultar un arancel</h1>
+
+<p class="descripcion">
+  Cuanto sale una practica para un financiador y un plan, en una fecha, en <b>esta sede</b>. La
+  respuesta viene con su derivacion: que convenio la produjo y con que vigencias. Es una sola,
+  porque dos convenios del mismo alcance no pueden solaparse — no porque haya una regla que
+  desempate entre varios.
+</p>
+
+<nav class="acciones" aria-label="Contratacion">
+  <a class="boton boton--secundario" routerLink="/contratacion/convenios">Convenios de la sede</a>
+  <a class="boton boton--secundario" routerLink="/contratacion/financiadores">Financiadores</a>
+  <a
+    class="boton boton--secundario"
+    routerLink="/contratacion/arancel-efectivo"
+    aria-current="page"
+  >
+    Consultar un arancel
+  </a>
+</nav>
+
+<section class="tarjeta nota-clave" aria-labelledby="titulo-nota-consulta">
+  <h2 id="titulo-nota-consulta">Que estas consultando, y que no</h2>
+  <p>
+    Esto es el <b>convenio de este consultorio</b>, que no es lo mismo que la cobertura de un
+    paciente: el financiador y el plan se eligen a mano justamente porque la consulta no sale de una
+    ficha. Cuando exista la cobertura del paciente, va a poder precargarse desde ahi.
+  </p>
+  <p>
+    <b>Que no haya arancel es una respuesta normal, no una falla.</b> La mayoria de las atenciones
+    son particulares, asi que "no hay convenio vigente" es el desenlace mas frecuente y viene con su
+    motivo. Lo unico que cambia entre los dos motivos posibles es que hacer despues.
+  </p>
+</section>
+
+<section class="tarjeta" aria-labelledby="titulo-consulta">
+  <h2 id="titulo-consulta">Datos de la consulta</h2>
+
+  <form [formGroup]="formulario" (ngSubmit)="consultar()" novalidate>
+    <div class="campo">
+      <label for="consulta-financiador">Financiador</label>
+      <select
+        id="consulta-financiador"
+        formControlName="financiadorId"
+        (change)="elegirFinanciador($any($event.target).value)"
+        [attr.aria-invalid]="mostrarError('financiadorId') ? 'true' : null"
+        aria-describedby="consulta-financiador-ayuda"
+      >
+        <option value="">Elegi un financiador</option>
+        @for (ficha of financiadores(); track ficha.id) {
+          <option [value]="ficha.id">{{ enUnaLinea(ficha) }}</option>
+        }
+      </select>
+      @if (mostrarError('financiadorId')) {
+        <p class="campo__error" role="alert">Eligi el financiador del paciente.</p>
+      }
+      <p class="ayuda" id="consulta-financiador-ayuda">{{ notaParticular }}</p>
+    </div>
+
+    <div class="campo">
+      <label for="consulta-plan">Plan</label>
+      <select
+        id="consulta-plan"
+        formControlName="planId"
+        [attr.aria-invalid]="mostrarError('planId') ? 'true' : null"
+        aria-describedby="consulta-plan-ayuda"
+      >
+        <option value="">Elegi un plan</option>
+        @for (plan of planes(); track plan.id) {
+          <option [value]="plan.id">{{ enUnaLinea(plan) }}</option>
+        }
+      </select>
+      @if (mostrarError('planId')) {
+        <p class="campo__error" role="alert">
+          El plan es obligatorio: el convenio se firma contra un plan, no contra el financiador
+          entero.
+        </p>
+      }
+      <p class="ayuda" id="consulta-plan-ayuda">
+        Se puebla al elegir el financiador, y solo con <b>sus</b> planes activos.
+      </p>
+    </div>
+
+    <div class="campo">
+      <label for="consulta-practica">Practica</label>
+      <select
+        id="consulta-practica"
+        formControlName="practicaId"
+        [attr.aria-invalid]="mostrarError('practicaId') ? 'true' : null"
+      >
+        <option value="">Elegi una practica</option>
+        @for (practica of practicas(); track practica.id) {
+          <option [value]="practica.id">{{ practica.name }} ({{ practica.codigo }})</option>
+        }
+      </select>
+      @if (mostrarError('practicaId')) {
+        <p class="campo__error" role="alert">Eligi que practica se presto.</p>
+      }
+    </div>
+
+    <div class="campo">
+      <label for="consulta-fecha">Fecha de la prestacion</label>
+      <input
+        id="consulta-fecha"
+        type="date"
+        formControlName="fecha"
+        aria-describedby="consulta-fecha-ayuda"
+      />
+      <p class="ayuda" id="consulta-fecha-ayuda">
+        Es la fecha de <b>la prestacion</b>, no la de hoy. Poner una fecha pasada devuelve el
+        arancel que regia entonces, que es lo que hace que una atencion retroactiva se cobre bien y
+        que una liquidacion vieja se pueda explicar.
+      </p>
+    </div>
+
+    <p class="acciones">
+      <button type="submit" class="boton" [disabled]="consultando()">
+        {{ consultando() ? 'Consultando...' : 'Consultar' }}
+      </button>
+    </p>
+  </form>
+</section>
+
+<div aria-live="polite">
+  @if (error(); as mensaje) {
+    <!--
+      Un error DE VERDAD: sin sede, sin permiso, servidor caido. "No hay arancel" no llega nunca
+      hasta aca, y ese es todo el punto de la pantalla.
+    -->
+    <p class="estado estado--error" role="alert">{{ mensaje }}</p>
+    @if (faltaContexto()) {
+      <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
+    }
+  }
+
+  @if (resultado(); as respuesta) {
+    @if (resuelto()) {
+      <section class="tarjeta resultado" aria-labelledby="titulo-resultado">
+        <h2 id="titulo-resultado">
+          {{ practicaElegida() }}, el {{ enPalabras(respuesta.fecha ?? '') }}
+        </h2>
+
+        <p class="resultado__importe">
+          {{ importeEnPalabras(respuesta.importeTotal, respuesta.moneda, '-') }}
+        </p>
+
+        <!--
+          Las dos partes se muestran SIEMPRE. El total no es lo que el mostrador necesita: lo que
+          necesita es el coseguro, que es lo que le cobra al paciente.
+        -->
+        <ul class="resultado__partes">
+          <li>
+            Pone el financiador:
+            <b>{{ importeEnPalabras(respuesta.importeFinanciador, respuesta.moneda, '-') }}</b>
+          </li>
+          <li>
+            Paga el paciente:
+            <b>{{ importeEnPalabras(respuesta.coseguro, respuesta.moneda, '-') }}</b>
+          </li>
+        </ul>
+
+        @if (
+          respuesta.requiereOrden ||
+          respuesta.requiereAutorizacion ||
+          respuesta.requiereCredencial ||
+          respuesta.limiteSesionesMensual
+        ) {
+          <p class="ayuda">
+            <b>Requisitos declarados en el convenio:</b>
+            @if (respuesta.requiereOrden) {
+              orden medica.
+            }
+            @if (respuesta.requiereAutorizacion) {
+              autorizacion previa.
+            }
+            @if (respuesta.requiereCredencial) {
+              credencial.
+            }
+            @if (respuesta.limiteSesionesMensual) {
+              Hasta {{ respuesta.limiteSesionesMensual }} sesiones por mes.
+            }
+            El sistema <b>no los hace cumplir todavia</b>: son para que los verifique quien atiende
+            el mostrador.
+          </p>
+        }
+
+        <!--
+          La derivacion va debajo y no arriba: quien consulta quiere el numero primero. Pero va en
+          la misma tarjeta y no detras de un enlace, porque el dia que el numero sorprenda la
+          explicacion tiene que estar a la vista.
+        -->
+        <div class="resultado__derivacion">
+          <h3>De donde sale este precio</h3>
+          <p class="ayuda">
+            Convenio <b>{{ respuesta.convenioNombre }}</b> ({{ respuesta.convenioCodigo }}), vigente
+            del {{ enPalabras(respuesta.convenioVigenciaDesde ?? '') }}
+            @if (respuesta.convenioVigenciaHasta) {
+              al {{ enPalabras(respuesta.convenioVigenciaHasta) }} inclusive.
+            } @else {
+              en adelante, sin fin previsto.
+            }
+          </p>
+          <p class="ayuda">
+            Arancel vigente desde el {{ enPalabras(respuesta.arancelVigenciaDesde ?? '') }}
+            @if (respuesta.arancelVigenciaHasta) {
+              hasta el {{ enPalabras(respuesta.arancelVigenciaHasta) }} inclusive.
+            } @else {
+              en adelante, sin fin previsto.
+            }
+          </p>
+          <p class="ayuda">
+            El resultado es unico porque no puede haber dos candidatos: dos convenios del mismo
+            alcance no se pueden solapar, y dos aranceles de la misma practica en el mismo convenio
+            tampoco.
+          </p>
+        </div>
+      </section>
+    } @else if (sinArancel(); as explicacion) {
+      <!--
+        NO es un cartel de error, y no usa `estado--error` a proposito. El servidor respondio 200:
+        esto es una respuesta con su motivo, y el caso mas frecuente de todos.
+      -->
+      <section class="tarjeta resultado" aria-labelledby="titulo-sin-arancel">
+        <h2 id="titulo-sin-arancel">{{ explicacion.titulo }}</h2>
+        <p>{{ explicacion.detalle }}</p>
+        <p><b>Que hacer:</b> {{ explicacion.queHacer }}</p>
+        <p class="ayuda">
+          Consultado para el {{ enPalabras(respuesta.fecha ?? '') }}. Si la prestacion fue otro dia,
+          cambia la fecha y volve a consultar: el convenio pudo haber estado vigente entonces.
+        </p>
+      </section>
+    }
+  }
+</div>

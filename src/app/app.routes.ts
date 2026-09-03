@@ -152,6 +152,26 @@ export const routes: Routes = [
     loadChildren: () => import('./features/offering/offering.routes').then((m) => m.routes),
   },
 
+  // Financiadores, planes, convenios y aranceles (M15 y M16, AKINE-03.03 y 03.05).
+  //
+  // Raiz propia y NO bajo `servicios`: la oferta dice como esta sede presta un servicio y a que
+  // precio de lista, y esto dice cuanto paga un financiador por una practica bajo un convenio.
+  // Son las dos mitades del dato economico y no la misma: RN-M16-001 pone el convenio en la
+  // SEDE y el financiador en la ORGANIZACION, mientras que la oferta es siempre de la sede.
+  // Colgarlas del mismo prefijo garantizaba que alguien terminara en la pantalla equivocada.
+  //
+  // Tampoco bajo `pacientes`: la Cobertura del paciente y el Convenio del consultorio son cosas
+  // distintas —AGENT.md 7.6 lo declara como regla maestra— y esta feature es la del convenio.
+  //
+  // Aca va solo `authGuard`. `contextGuard` lo ponen las cinco rutas hijas; el detalle de por
+  // que tambien lo llevan las de financiadores, que son de la organizacion, esta en
+  // `contracting.routes.ts`.
+  {
+    path: 'contratacion',
+    canActivate: [authGuard],
+    loadChildren: () => import('./features/contracting/contracting.routes').then((m) => m.routes),
+  },
+
   // Padron de personas (M07, AKINE-03.01).
   //
   // La URL dice `pacientes` porque es como se llama esta pantalla en cualquier centro, y es la

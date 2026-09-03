@@ -64,6 +64,39 @@ export function rutaOfertas(consultorioId: number): string {
   return `/api/v1/consultorios/${consultorioId}/ofertas`;
 }
 
+/**
+ * Catalogo de financiadores de la organizacion (M15, AKINE-03.03).
+ *
+ * <p>No cuelga de `/organizations/{orgId}` ni de `/consultorios/{cid}`: la organizacion sale del
+ * token. Escribirla siguiendo el patron de los convenios da una URL que no existe.
+ */
+export const RUTA_FINANCIADORES = '/api/v1/financiadores';
+
+/** Planes de un financiador (M15). El alcance del codigo es el financiador, no la organizacion. */
+export function rutaPlanes(financiadorId: number): string {
+  return `${RUTA_FINANCIADORES}/${financiadorId}/planes`;
+}
+
+/** Convenios de una sede (M16, AKINE-03.05). El convenio SI es de la sede: RN-M16-001. */
+export function rutaConvenios(consultorioId: number): string {
+  return `/api/v1/consultorios/${consultorioId}/convenios`;
+}
+
+/** Aranceles de un convenio (M16). Cuelgan del convenio porque su vigencia esta contenida en la de el. */
+export function rutaAranceles(consultorioId: number, convenioId: number): string {
+  return `${rutaConvenios(consultorioId)}/${convenioId}/aranceles`;
+}
+
+/**
+ * Resolucion del arancel efectivo (M16).
+ *
+ * <p><b>No cuelga del convenio</b>, y por eso no se escribe siguiendo el patron de arriba: cual
+ * convenio resuelve es justamente lo que la operacion averigua. Cuelga de la sede.
+ */
+export function rutaArancelEfectivo(consultorioId: number): string {
+  return `/api/v1/consultorios/${consultorioId}/aranceles/efectivo`;
+}
+
 export function rutaCalendarioSede(consultorioId: number): string {
   return `/api/v1/consultorios/${consultorioId}/calendario`;
 }
