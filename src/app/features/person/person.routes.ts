@@ -107,4 +107,23 @@ export const routes: Routes = [
     title: 'AKINE - Coberturas del paciente',
     data: { [DATA_ANCHO]: ANCHO_AMPLIO },
   },
+
+  // Ordenes medicas, autorizaciones y elegibilidad administrativa (M17, AKINE-03.06).
+  //
+  // Las tres cosas en una pantalla y no en tres: una autorizacion se pide contra una orden, y la
+  // elegibilidad es la consulta que las junta -"que le falta a este paciente para que le atiendan
+  // esta practica"-. Separarlas obligaria al mostrador a ir y volver entre pantallas para
+  // responder una sola pregunta.
+  //
+  // Ancho amplio: las dos tablas tienen siete y ocho columnas.
+  {
+    path: ':personaId/autorizaciones',
+    canActivate: [contextGuard],
+    loadComponent: () =>
+      import('./pages/ordenes-y-autorizaciones/ordenes-y-autorizaciones-page').then(
+        (m) => m.OrdenesYAutorizacionesPage,
+      ),
+    title: 'AKINE - Ordenes y autorizaciones',
+    data: { [DATA_ANCHO]: ANCHO_AMPLIO },
+  },
 ];
