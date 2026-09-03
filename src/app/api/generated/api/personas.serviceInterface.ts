@@ -12,10 +12,13 @@ import { HttpHeaders }                                       from '@angular/comm
 import { Observable }                                        from 'rxjs';
 
 import { ActivarPerfilPacienteRequest } from '../model/models';
+import { BajaDePerfilPacienteRequest } from '../model/models';
+import { BajaDePersonaRequest } from '../model/models';
 import { CreatePersonaRequest } from '../model/models';
 import { PersonaPageResponse } from '../model/models';
 import { PersonaResponse } from '../model/models';
 import { ProblemDetail } from '../model/models';
+import { ResumenDePersonaResponse } from '../model/models';
 import { UpdatePersonaRequest } from '../model/models';
 
 
@@ -39,12 +42,26 @@ export interface CrearPersonaRequestParams {
     createPersonaRequest: CreatePersonaRequest;
 }
 
+export interface DarDeBajaPerfilPacienteRequestParams {
+    personaId: number;
+    bajaDePerfilPacienteRequest: BajaDePerfilPacienteRequest;
+}
+
+export interface DarDeBajaPersonaRequestParams {
+    personaId: number;
+    bajaDePersonaRequest: BajaDePersonaRequest;
+}
+
 export interface EditarPersonaRequestParams {
     personaId: number;
     updatePersonaRequest: UpdatePersonaRequest;
 }
 
 export interface VerPersonaRequestParams {
+    personaId: number;
+}
+
+export interface VerResumenDePersonaRequestParams {
     personaId: number;
 }
 
@@ -78,6 +95,22 @@ export interface PersonasServiceInterface {
     crearPersona(requestParameters: CrearPersonaRequestParams, extraHttpRequestParams?: any): Observable<PersonaResponse>;
 
     /**
+     * Dar de baja el perfil clinico de una persona
+     * La persona SIGUE VIGENTE en el padron y lo unico que deja de ser es paciente. Es exactamente el estado que RN-M07-006 describe: alguien que consume servicios no clinicos sin perfil clinico.  ES IDEMPOTENTE Y RESPONDE 200. Dar de baja un perfil que ya no esta vigente no es un error del operador: es el boton tocado dos veces.  NO BORRA LA HISTORIA CLINICA. Igual que activar no la crea, esto no la borra: la HC es de M09 y su existencia no depende de que el perfil siga vigente. Reactivar el perfil despues vuelve a encontrar la historia que ya habia.  El motivo es obligatorio, a diferencia de la activacion: la operacion que restringe es la que alguien va a tener que justificar despues.
+     * @endpoint delete /api/v1/personas/{personaId}/perfil-paciente
+* @param requestParameters
+     */
+    darDeBajaPerfilPaciente(requestParameters: DarDeBajaPerfilPacienteRequestParams, extraHttpRequestParams?: any): Observable<PersonaResponse>;
+
+    /**
+     * Dar de baja logica a una persona del padron
+     * Baja LOGICA con motivo obligatorio (RF-M07-005). NO BORRA NADA: la ficha se sigue leyendo con 200, sus turnos siguen existiendo, sus obligaciones siguen debiendose y sus adjuntos se siguen descargando. Lo que deja de admitir son operaciones nuevas: editarla, activarle un perfil, adjuntarle documentos.  DA DE BAJA TAMBIEN EL PERFIL DE PACIENTE vigente, en la misma transaccion. Dejarlo vivo produciria una ficha que los modulos clinicos siguen viendo como paciente vigente mientras el padron la considera cerrada.  LIBERA EL DOCUMENTO: el mismo documento se puede volver a usar en un alta nueva. Es intencional y es lo que permite corregir una ficha creada mal sin borrarla.  Devuelve la ficha como quedo, con su version nueva, en vez de un 204: la pantalla la necesita para refrescar sin pedir otro GET.  No valida si la persona tiene turnos futuros o deuda: dar de baja a alguien que se fue debiendo es un caso legitimo, y bloquearlo obligaria a condonar para poder cerrar la ficha.
+     * @endpoint delete /api/v1/personas/{personaId}
+* @param requestParameters
+     */
+    darDeBajaPersona(requestParameters: DarDeBajaPersonaRequestParams, extraHttpRequestParams?: any): Observable<PersonaResponse>;
+
+    /**
      * Editar los datos administrativos de una persona
      * Edicion parcial: lo que no viene, no se toca. Un campo en null NO vacia el valor guardado.  Una persona INACTIVA responde 409: reabrir una ficha dada de baja para cambiarle el nombre reescribiria el historico que RN-M07-004 protege.  La deteccion de posibles duplicados NO corre en la edicion —pediria confirmacion cada vez que se corrige un telefono—, pero el documento repetido se sigue rechazando: eso lo verifica el unique, no una rama de codigo.
      * @endpoint patch /api/v1/personas/{personaId}
@@ -92,5 +125,13 @@ export interface PersonasServiceInterface {
 * @param requestParameters
      */
     verPersona(requestParameters: VerPersonaRequestParams, extraHttpRequestParams?: any): Observable<PersonaResponse>;
+
+    /**
+     * Ver la ficha 360 de una persona
+     * Consolida la identidad, los adjuntos y lo que aporta cada modulo: turnos y situacion economica hoy; coberturas cuando existan (03.03/03.04).  RECORTA POR PERMISOS Y NO RECHAZA. Una seccion cuyo permiso el actor no tiene no viene, y aparece en seccionesOmitidas con el codigo que falta. Devolver 403 sobre la ficha entera por no poder ver la deuda dejaria al profesional sin poder abrir a ningun paciente; omitir en silencio seria peor, porque la pantalla leeria \&quot;sin turnos\&quot; donde en realidad dice \&quot;no podes ver los turnos\&quot;.  NO TRAE NADA CLINICO, y no es que falte: AKINE-04.01 fijo que todo acceso clinico exige justificacion declarada y queda auditado. Una ficha de mostrador que muestre casos al abrirla convertiria ese control en un formalismo. El dato clinico se pide por M09, con permiso y justificacion.  Una persona INACTIVA responde 200: el 360 de una ficha dada de baja es justamente donde se consulta su historico.
+     * @endpoint get /api/v1/personas/{personaId}/resumen
+* @param requestParameters
+     */
+    verResumenDePersona(requestParameters: VerResumenDePersonaRequestParams, extraHttpRequestParams?: any): Observable<ResumenDePersonaResponse>;
 
 }

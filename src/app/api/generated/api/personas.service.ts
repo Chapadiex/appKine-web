@@ -19,6 +19,10 @@ import { OpenApiHttpParams, QueryParamStyle } from '../query.params';
 // @ts-ignore
 import { ActivarPerfilPacienteRequest } from '../model/activar-perfil-paciente-request';
 // @ts-ignore
+import { BajaDePerfilPacienteRequest } from '../model/baja-de-perfil-paciente-request';
+// @ts-ignore
+import { BajaDePersonaRequest } from '../model/baja-de-persona-request';
+// @ts-ignore
 import { CreatePersonaRequest } from '../model/create-persona-request';
 // @ts-ignore
 import { PersonaPageResponse } from '../model/persona-page-response';
@@ -26,6 +30,8 @@ import { PersonaPageResponse } from '../model/persona-page-response';
 import { PersonaResponse } from '../model/persona-response';
 // @ts-ignore
 import { ProblemDetail } from '../model/problem-detail';
+// @ts-ignore
+import { ResumenDePersonaResponse } from '../model/resumen-de-persona-response';
 // @ts-ignore
 import { UpdatePersonaRequest } from '../model/update-persona-request';
 
@@ -38,8 +44,11 @@ import {
     ActivarPerfilPacienteRequestParams,
     BuscarPersonasRequestParams,
     CrearPersonaRequestParams,
+    DarDeBajaPerfilPacienteRequestParams,
+    DarDeBajaPersonaRequestParams,
     EditarPersonaRequestParams,
-    VerPersonaRequestParams
+    VerPersonaRequestParams,
+    VerResumenDePersonaRequestParams
 } from './personas.serviceInterface';
 
 
@@ -304,6 +313,152 @@ export class PersonasService extends BaseService implements PersonasServiceInter
     }
 
     /**
+     * Dar de baja el perfil clinico de una persona
+     * La persona SIGUE VIGENTE en el padron y lo unico que deja de ser es paciente. Es exactamente el estado que RN-M07-006 describe: alguien que consume servicios no clinicos sin perfil clinico.  ES IDEMPOTENTE Y RESPONDE 200. Dar de baja un perfil que ya no esta vigente no es un error del operador: es el boton tocado dos veces.  NO BORRA LA HISTORIA CLINICA. Igual que activar no la crea, esto no la borra: la HC es de M09 y su existencia no depende de que el perfil siga vigente. Reactivar el perfil despues vuelve a encontrar la historia que ya habia.  El motivo es obligatorio, a diferencia de la activacion: la operacion que restringe es la que alguien va a tener que justificar despues.
+     * @endpoint delete /api/v1/personas/{personaId}/perfil-paciente
+     * @param requestParameters
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public darDeBajaPerfilPaciente(requestParameters: DarDeBajaPerfilPacienteRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<PersonaResponse>;
+    public darDeBajaPerfilPaciente(requestParameters: DarDeBajaPerfilPacienteRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<PersonaResponse>>;
+    public darDeBajaPerfilPaciente(requestParameters: DarDeBajaPerfilPacienteRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<PersonaResponse>>;
+    public darDeBajaPerfilPaciente(requestParameters: DarDeBajaPerfilPacienteRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        const personaId = requestParameters?.personaId;
+        if (personaId === null || personaId === undefined) {
+            throw new Error('Required parameter personaId was null or undefined when calling darDeBajaPerfilPaciente.');
+        }
+        const bajaDePerfilPacienteRequest = requestParameters?.bajaDePerfilPacienteRequest;
+        if (bajaDePerfilPacienteRequest === null || bajaDePerfilPacienteRequest === undefined) {
+            throw new Error('Required parameter bajaDePerfilPacienteRequest was null or undefined when calling darDeBajaPerfilPaciente.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        // to determine the Content-Type header
+        const consumes: string[] = [
+            'application/json'
+        ];
+        const httpContentTypeSelected: string | undefined = this.configuration.selectHeaderContentType(consumes);
+        if (httpContentTypeSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Content-Type', httpContentTypeSelected);
+        }
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/personas/${this.configuration.encodeParam({name: "personaId", value: personaId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/perfil-paciente`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<PersonaResponse>('delete', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                body: bajaDePerfilPacienteRequest,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * Dar de baja logica a una persona del padron
+     * Baja LOGICA con motivo obligatorio (RF-M07-005). NO BORRA NADA: la ficha se sigue leyendo con 200, sus turnos siguen existiendo, sus obligaciones siguen debiendose y sus adjuntos se siguen descargando. Lo que deja de admitir son operaciones nuevas: editarla, activarle un perfil, adjuntarle documentos.  DA DE BAJA TAMBIEN EL PERFIL DE PACIENTE vigente, en la misma transaccion. Dejarlo vivo produciria una ficha que los modulos clinicos siguen viendo como paciente vigente mientras el padron la considera cerrada.  LIBERA EL DOCUMENTO: el mismo documento se puede volver a usar en un alta nueva. Es intencional y es lo que permite corregir una ficha creada mal sin borrarla.  Devuelve la ficha como quedo, con su version nueva, en vez de un 204: la pantalla la necesita para refrescar sin pedir otro GET.  No valida si la persona tiene turnos futuros o deuda: dar de baja a alguien que se fue debiendo es un caso legitimo, y bloquearlo obligaria a condonar para poder cerrar la ficha.
+     * @endpoint delete /api/v1/personas/{personaId}
+     * @param requestParameters
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public darDeBajaPersona(requestParameters: DarDeBajaPersonaRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<PersonaResponse>;
+    public darDeBajaPersona(requestParameters: DarDeBajaPersonaRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<PersonaResponse>>;
+    public darDeBajaPersona(requestParameters: DarDeBajaPersonaRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<PersonaResponse>>;
+    public darDeBajaPersona(requestParameters: DarDeBajaPersonaRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        const personaId = requestParameters?.personaId;
+        if (personaId === null || personaId === undefined) {
+            throw new Error('Required parameter personaId was null or undefined when calling darDeBajaPersona.');
+        }
+        const bajaDePersonaRequest = requestParameters?.bajaDePersonaRequest;
+        if (bajaDePersonaRequest === null || bajaDePersonaRequest === undefined) {
+            throw new Error('Required parameter bajaDePersonaRequest was null or undefined when calling darDeBajaPersona.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        // to determine the Content-Type header
+        const consumes: string[] = [
+            'application/json'
+        ];
+        const httpContentTypeSelected: string | undefined = this.configuration.selectHeaderContentType(consumes);
+        if (httpContentTypeSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Content-Type', httpContentTypeSelected);
+        }
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/personas/${this.configuration.encodeParam({name: "personaId", value: personaId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<PersonaResponse>('delete', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                body: bajaDePersonaRequest,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
      * Editar los datos administrativos de una persona
      * Edicion parcial: lo que no viene, no se toca. Un campo en null NO vacia el valor guardado.  Una persona INACTIVA responde 409: reabrir una ficha dada de baja para cambiarle el nombre reescribiria el historico que RN-M07-004 protege.  La deteccion de posibles duplicados NO corre en la edicion —pediria confirmacion cada vez que se corrige un telefono—, pero el documento repetido se sigue rechazando: eso lo verifica el unique, no una rama de codigo.
      * @endpoint patch /api/v1/personas/{personaId}
@@ -423,6 +578,65 @@ export class PersonasService extends BaseService implements PersonasServiceInter
         let localVarPath = `/api/v1/personas/${this.configuration.encodeParam({name: "personaId", value: personaId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}`;
         const { basePath, withCredentials } = this.configuration;
         return this.httpClient.request<PersonaResponse>('get', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * Ver la ficha 360 de una persona
+     * Consolida la identidad, los adjuntos y lo que aporta cada modulo: turnos y situacion economica hoy; coberturas cuando existan (03.03/03.04).  RECORTA POR PERMISOS Y NO RECHAZA. Una seccion cuyo permiso el actor no tiene no viene, y aparece en seccionesOmitidas con el codigo que falta. Devolver 403 sobre la ficha entera por no poder ver la deuda dejaria al profesional sin poder abrir a ningun paciente; omitir en silencio seria peor, porque la pantalla leeria \&quot;sin turnos\&quot; donde en realidad dice \&quot;no podes ver los turnos\&quot;.  NO TRAE NADA CLINICO, y no es que falte: AKINE-04.01 fijo que todo acceso clinico exige justificacion declarada y queda auditado. Una ficha de mostrador que muestre casos al abrirla convertiria ese control en un formalismo. El dato clinico se pide por M09, con permiso y justificacion.  Una persona INACTIVA responde 200: el 360 de una ficha dada de baja es justamente donde se consulta su historico.
+     * @endpoint get /api/v1/personas/{personaId}/resumen
+     * @param requestParameters
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public verResumenDePersona(requestParameters: VerResumenDePersonaRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<ResumenDePersonaResponse>;
+    public verResumenDePersona(requestParameters: VerResumenDePersonaRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<ResumenDePersonaResponse>>;
+    public verResumenDePersona(requestParameters: VerResumenDePersonaRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<ResumenDePersonaResponse>>;
+    public verResumenDePersona(requestParameters: VerResumenDePersonaRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        const personaId = requestParameters?.personaId;
+        if (personaId === null || personaId === undefined) {
+            throw new Error('Required parameter personaId was null or undefined when calling verResumenDePersona.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/personas/${this.configuration.encodeParam({name: "personaId", value: personaId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/resumen`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<ResumenDePersonaResponse>('get', `${basePath}${localVarPath}`,
             {
                 context: localVarHttpContext,
                 responseType: <any>responseType_,

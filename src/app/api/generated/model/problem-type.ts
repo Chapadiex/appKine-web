@@ -172,6 +172,68 @@ export enum ProblemType {
 
     HTTPS___AKINE_APP_PROBLEMS_PERSONA_POSIBLE_DUPLICADO = 'https://akine.app/problems/persona-posible-duplicado',
 
-    HTTPS___AKINE_APP_PROBLEMS_PERSONA_INACTIVA = 'https://akine.app/problems/persona-inactiva'
+    HTTPS___AKINE_APP_PROBLEMS_PERSONA_INACTIVA = 'https://akine.app/problems/persona-inactiva',
+
+    HTTPS___AKINE_APP_PROBLEMS_ARCHIVO_NO_ACEPTADO = 'https://akine.app/problems/archivo-no-aceptado',
+
+    HTTPS___AKINE_APP_PROBLEMS_ADJUNTO_NO_DISPONIBLE = 'https://akine.app/problems/adjunto-no-disponible',
+
+    HTTPS___AKINE_APP_PROBLEMS_ADJUNTO_INACTIVO = 'https://akine.app/problems/adjunto-inactivo',
+
+    HTTPS___AKINE_APP_PROBLEMS_FINANCIADOR_CODIGO_TAKEN = 'https://akine.app/problems/financiador-codigo-taken',
+
+    HTTPS___AKINE_APP_PROBLEMS_FINANCIADOR_NOMBRE_TAKEN = 'https://akine.app/problems/financiador-nombre-taken',
+
+    HTTPS___AKINE_APP_PROBLEMS_FINANCIADOR_CUIT_TAKEN = 'https://akine.app/problems/financiador-cuit-taken',
+
+    HTTPS___AKINE_APP_PROBLEMS_FINANCIADOR_INACTIVO = 'https://akine.app/problems/financiador-inactivo',
+
+    HTTPS___AKINE_APP_PROBLEMS_FINANCIADOR_ALREADY_INACTIVE = 'https://akine.app/problems/financiador-already-inactive',
+
+    HTTPS___AKINE_APP_PROBLEMS_PLAN_COBERTURA_CODIGO_TAKEN = 'https://akine.app/problems/plan-cobertura-codigo-taken',
+
+    HTTPS___AKINE_APP_PROBLEMS_PLAN_COBERTURA_NOMBRE_TAKEN = 'https://akine.app/problems/plan-cobertura-nombre-taken',
+
+    HTTPS___AKINE_APP_PROBLEMS_PLAN_COBERTURA_INACTIVO = 'https://akine.app/problems/plan-cobertura-inactivo',
+
+    HTTPS___AKINE_APP_PROBLEMS_PLAN_COBERTURA_ALREADY_INACTIVE = 'https://akine.app/problems/plan-cobertura-already-inactive',
+
+    HTTPS___AKINE_APP_PROBLEMS_PLAN_NO_SELECCIONABLE = 'https://akine.app/problems/plan-no-seleccionable',
+
+    HTTPS___AKINE_APP_PROBLEMS_COBERTURA_SUPERPUESTA = 'https://akine.app/problems/cobertura-superpuesta',
+
+    HTTPS___AKINE_APP_PROBLEMS_COBERTURA_PRINCIPAL_SUPERPUESTA = 'https://akine.app/problems/cobertura-principal-superpuesta',
+
+    HTTPS___AKINE_APP_PROBLEMS_COBERTURA_INACTIVA = 'https://akine.app/problems/cobertura-inactiva',
+
+    HTTPS___AKINE_APP_PROBLEMS_COBERTURA_ALREADY_INACTIVE = 'https://akine.app/problems/cobertura-already-inactive',
+
+    HTTPS___AKINE_APP_PROBLEMS_CONVENIO_CODIGO_TAKEN = 'https://akine.app/problems/convenio-codigo-taken',
+
+    HTTPS___AKINE_APP_PROBLEMS_CONVENIO_SOLAPADO = 'https://akine.app/problems/convenio-solapado',
+
+    HTTPS___AKINE_APP_PROBLEMS_CONVENIO_INACTIVO = 'https://akine.app/problems/convenio-inactivo',
+
+    HTTPS___AKINE_APP_PROBLEMS_CONVENIO_ALREADY_INACTIVE = 'https://akine.app/problems/convenio-already-inactive',
+
+    HTTPS___AKINE_APP_PROBLEMS_ARANCEL_SOLAPADO = 'https://akine.app/problems/arancel-solapado',
+
+    HTTPS___AKINE_APP_PROBLEMS_ARANCEL_INACTIVO = 'https://akine.app/problems/arancel-inactivo',
+
+    HTTPS___AKINE_APP_PROBLEMS_ARANCEL_ALREADY_INACTIVE = 'https://akine.app/problems/arancel-already-inactive',
+
+    HTTPS___AKINE_APP_PROBLEMS_ORDEN_INACTIVA = 'https://akine.app/problems/orden-inactiva',
+
+    HTTPS___AKINE_APP_PROBLEMS_ORDEN_ALREADY_INACTIVE = 'https://akine.app/problems/orden-already-inactive',
+
+    HTTPS___AKINE_APP_PROBLEMS_AUTORIZACION_INACTIVA = 'https://akine.app/problems/autorizacion-inactiva',
+
+    HTTPS___AKINE_APP_PROBLEMS_AUTORIZACION_ALREADY_INACTIVE = 'https://akine.app/problems/autorizacion-already-inactive',
+
+    HTTPS___AKINE_APP_PROBLEMS_AUTORIZACION_SUPERPUESTA = 'https://akine.app/problems/autorizacion-superpuesta',
+
+    HTTPS___AKINE_APP_PROBLEMS_AUTORIZACION_TRANSICION_NO_PERMITIDA = 'https://akine.app/problems/autorizacion-transicion-no-permitida',
+
+    HTTPS___AKINE_APP_PROBLEMS_DOCUMENTO_NUMERO_TAKEN = 'https://akine.app/problems/documento-numero-taken'
 }
 
