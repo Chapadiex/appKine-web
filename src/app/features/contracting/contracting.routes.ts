@@ -66,8 +66,24 @@ export const routes: Routes = [
     data: { [DATA_ANCHO]: ANCHO_AMPLIO },
   },
   {
+    path: 'convenios',
+    canActivate: [contextGuard],
+    loadComponent: () =>
+      import('./pages/convenios-de-la-sede/convenios-de-la-sede-page').then(
+        (m) => m.ConveniosDeLaSedePage,
+      ),
+    title: 'AKINE - Convenios de la sede',
+    data: { [DATA_ANCHO]: ANCHO_AMPLIO },
+  },
+  {
+    // Entrar a `/contratacion` a secas cae en los convenios y no en el catalogo de
+    // financiadores. Los dos son configuracion, pero el convenio es lo que se revisa: vence,
+    // se renueva y cambia de precio, mientras que un financiador se carga una vez y queda.
+    // Ademas es la unica de las cinco que es de la SEDE, que es donde esta parado quien abre
+    // el menu. El camino inverso —"todavia no hay financiadores"— lo resuelve el estado vacio
+    // de esta pantalla, que enlaza al catalogo.
     path: '',
     pathMatch: 'full',
-    redirectTo: 'financiadores',
+    redirectTo: 'convenios',
   },
 ];

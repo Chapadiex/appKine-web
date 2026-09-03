@@ -1,0 +1,694 @@
+<h1>Convenios de la sede</h1>
+
+<p class="descripcion">
+  Lo que <b>esta sede</b> acordo con un plan de un financiador: desde cuando, hasta cuando, como se
+  liquida y que requisitos administrativos exige. De cada convenio cuelgan los <b>aranceles</b>, que
+  son los precios por practica. Dos sedes de la misma organizacion pueden tener convenios y precios
+  distintos para el mismo plan, y eso es lo normal.
+</p>
+
+<nav class="acciones" aria-label="Contratacion">
+  <a class="boton boton--secundario" routerLink="/contratacion/convenios" aria-current="page">
+    Convenios de la sede
+  </a>
+  <a class="boton boton--secundario" routerLink="/contratacion/financiadores">Financiadores</a>
+  <a class="boton boton--secundario" routerLink="/contratacion/arancel-efectivo">
+    Consultar un arancel
+  </a>
+</nav>
+
+<section class="tarjeta nota-clave" aria-labelledby="titulo-nota-convenios">
+  <h2 id="titulo-nota-convenios">Renovar es cerrar la vigencia, no dar de baja</h2>
+  <p>
+    Dos convenios de esta sede con el <b>mismo financiador y el mismo plan</b> no pueden pisarse en
+    el tiempo. Si al cargar uno nuevo te rechaza por periodo solapado, la salida no es reintentar:
+    es <b>editar el convenio que ya esta y ponerle fecha de fin</b>, y recien despues cargar el
+    nuevo desde el dia siguiente.
+  </p>
+  <p>
+    <b>Dar de baja es otra cosa</b>: exige motivo, es terminal y no hay reactivacion. No cascadea a
+    los aranceles ni se bloquea por tenerlos — dejan de resolver porque su convenio dejo de
+    resolver—, y lo ya liquidado sigue explicandose con su copia congelada.
+  </p>
+  <p>
+    La fecha de fin es <b>inclusiva</b>: el dia que pongas es el ultimo en que el convenio
+    <b>todavia</b> resuelve.
+  </p>
+</section>
+
+<div aria-live="polite">
+  @if (exito(); as mensaje) {
+    <p class="estado estado--ok">{{ mensaje }}</p>
+  }
+</div>
+
+<p class="acciones">
+  <button type="button" class="boton" (click)="abrirAlta()" *akinePermiso="permisoManage">
+    Firmar un convenio
+  </button>
+</p>
+
+@if (altaAbierta()) {
+  <section class="tarjeta" aria-labelledby="titulo-alta-convenio">
+    <h2 id="titulo-alta-convenio">Nuevo convenio de esta sede</h2>
+
+    <form [formGroup]="formularioAlta" (ngSubmit)="enviarAlta()" novalidate>
+      <div class="campo">
+        <label for="alta-convenio-financiador">Financiador</label>
+        <select
+          id="alta-convenio-financiador"
+          formControlName="financiadorId"
+          (change)="elegirFinanciador($any($event.target).value)"
+          [attr.aria-invalid]="mostrarErrorAlta('financiadorId') ? 'true' : null"
+          aria-describedby="alta-convenio-financiador-ayuda"
+        >
+          <option value="">Elegi un financiador</option>
+          @for (ficha of financiadores(); track ficha.id) {
+            <option [value]="ficha.id">{{ enUnaLinea(ficha) }}</option>
+          }
+        </select>
+        @if (mostrarErrorAlta('financiadorId')) {
+          <p class="campo__error" role="alert">Eligi con que financiador se firma.</p>
+        }
+        <p class="ayuda" id="alta-convenio-financiador-ayuda">
+          Solo aparecen los <b>activos</b>: uno dado de baja no admite convenios nuevos.
+          @if (financiadores().length === 0) {
+            <b>
+              No hay financiadores activos, o no pudimos traerlos. Cargalos primero en el
+              <a routerLink="/contratacion/financiadores">catalogo</a>.
+            </b>
+          }
+        </p>
+      </div>
+
+      <div class="campo">
+        <label for="alta-convenio-plan">Plan</label>
+        <select
+          id="alta-convenio-plan"
+          formControlName="planId"
+          [attr.aria-invalid]="mostrarErrorAlta('planId') ? 'true' : null"
+          aria-describedby="alta-convenio-plan-ayuda"
+        >
+          <option value="">Elegi un plan</option>
+          @for (plan of planes(); track plan.id) {
+            <option [value]="plan.id">{{ enUnaLinea(plan) }}</option>
+          }
+        </select>
+        @if (mostrarErrorAlta('planId')) {
+          <p class="campo__error" role="alert">
+            El plan es obligatorio: el convenio se firma contra un plan, no contra el financiador
+            entero.
+          </p>
+        }
+        <p class="ayuda" id="alta-convenio-plan-ayuda">
+          Se puebla al elegir el financiador, y solo con <b>sus</b> planes activos. Es obligatorio a
+          proposito: con el plan puesto, para una practica y una fecha nunca puede haber dos
+          convenios candidatos, y por eso el precio que resuelve es unico y explicable en vez de
+          depender de una regla de desempate.
+          @if (planes().length === 0) {
+            <b>
+              Este financiador no tiene planes activos. Cargale uno desde su ficha antes de firmar.
+            </b>
+          }
+        </p>
+      </div>
+
+      <div class="par-de-campos">
+        <div class="campo">
+          <label for="alta-convenio-codigo">Codigo</label>
+          <input
+            id="alta-convenio-codigo"
+            type="text"
+            formControlName="codigo"
+            autocomplete="off"
+            [attr.aria-invalid]="mostrarErrorAlta('codigo') ? 'true' : null"
+            aria-describedby="alta-convenio-codigo-ayuda"
+          />
+          @if (mostrarErrorAlta('codigo')) {
+            <p class="campo__error" role="alert">El codigo es obligatorio.</p>
+          }
+          <p class="ayuda" id="alta-convenio-codigo-ayuda">
+            <b>No se puede cambiar despues.</b> Unico entre los convenios vigentes de esta sede; el
+            de uno dado de baja se puede reusar.
+          </p>
+        </div>
+
+        <div class="campo">
+          <label for="alta-convenio-nombre">Nombre</label>
+          <input
+            id="alta-convenio-nombre"
+            type="text"
+            formControlName="nombre"
+            autocomplete="off"
+            [attr.aria-invalid]="mostrarErrorAlta('nombre') ? 'true' : null"
+          />
+          @if (mostrarErrorAlta('nombre')) {
+            <p class="campo__error" role="alert">El nombre es obligatorio.</p>
+          }
+        </div>
+      </div>
+
+      <div class="campo">
+        <label for="alta-convenio-modalidad">Modalidad de liquidacion</label>
+        <select
+          id="alta-convenio-modalidad"
+          formControlName="modalidad"
+          [attr.aria-invalid]="mostrarErrorAlta('modalidad') ? 'true' : null"
+          aria-describedby="alta-convenio-modalidad-ayuda"
+        >
+          <option value="">Elegi una modalidad</option>
+          @for (opcion of modalidades; track opcion.valor) {
+            <option [value]="opcion.valor">{{ opcion.etiqueta }} — {{ opcion.ayuda }}</option>
+          }
+        </select>
+        @if (mostrarErrorAlta('modalidad')) {
+          <p class="campo__error" role="alert">Eligi como se liquida este convenio.</p>
+        }
+        <p class="ayuda" id="alta-convenio-modalidad-ayuda">
+          Se <b>guarda y se muestra</b>, y hoy todavia nadie la interpreta: quien la aplique es la
+          liquidacion a financiadores. Eligi la que figura en el contrato firmado, porque el dia que
+          se aplique cambiarla ya no va a ser inocuo.
+        </p>
+      </div>
+
+      <div class="campo">
+        <label for="alta-convenio-moneda">Moneda</label>
+        <input
+          id="alta-convenio-moneda"
+          type="text"
+          maxlength="3"
+          formControlName="moneda"
+          autocomplete="off"
+          [attr.aria-invalid]="mostrarErrorAlta('moneda') ? 'true' : null"
+          aria-describedby="alta-convenio-moneda-ayuda"
+        />
+        @if (mostrarErrorAlta('moneda')) {
+          <p class="campo__error" role="alert">La moneda es obligatoria.</p>
+        }
+        <p class="ayuda" id="alta-convenio-moneda-ayuda">
+          Tres letras, como ARS o USD. <b>Los aranceles la heredan</b> y no la vuelven a declarar, y
+          por eso <b>no se puede cambiar despues</b>: cambiarla reinterpretaria todos los importes
+          ya cargados sin tocar ni un numero.
+        </p>
+      </div>
+
+      <div class="par-de-campos">
+        <div class="campo">
+          <label for="alta-convenio-desde">Vigente desde</label>
+          <input
+            id="alta-convenio-desde"
+            type="date"
+            formControlName="vigenciaDesde"
+            [attr.aria-invalid]="mostrarErrorAlta('vigenciaDesde') ? 'true' : null"
+          />
+          @if (mostrarErrorAlta('vigenciaDesde')) {
+            <p class="campo__error" role="alert">La fecha de inicio es obligatoria.</p>
+          }
+        </div>
+
+        <div class="campo">
+          <label for="alta-convenio-hasta">Vigente hasta (opcional)</label>
+          <input
+            id="alta-convenio-hasta"
+            type="date"
+            formControlName="vigenciaHasta"
+            aria-describedby="alta-convenio-vigencia-ayuda"
+          />
+        </div>
+      </div>
+      <p class="ayuda" id="alta-convenio-vigencia-ayuda">
+        El fin es <b>inclusivo</b> y puede coincidir con el inicio. Sin fin queda "sin fin
+        previsto". Ojo con el solapamiento: si ya hay un convenio con este mismo plan cubriendo
+        parte de este periodo, el alta se rechaza — hay que cerrarle la vigencia a ese primero.
+      </p>
+
+      <div class="campo">
+        <label for="alta-convenio-tope">Tope de sesiones por mes (opcional)</label>
+        <input
+          id="alta-convenio-tope"
+          type="number"
+          min="1"
+          formControlName="limiteSesionesMensual"
+        />
+      </div>
+
+      <div class="campo">
+        <label for="alta-convenio-documentacion">Documentacion requerida (opcional)</label>
+        <input
+          id="alta-convenio-documentacion"
+          type="text"
+          formControlName="documentacionRequerida"
+          autocomplete="off"
+        />
+      </div>
+
+      <div class="campo">
+        <label class="opcion-casilla" for="alta-convenio-orden">
+          <input id="alta-convenio-orden" type="checkbox" formControlName="requiereOrden" />
+          Requiere orden medica
+        </label>
+      </div>
+
+      <div class="campo">
+        <label class="opcion-casilla" for="alta-convenio-autorizacion">
+          <input
+            id="alta-convenio-autorizacion"
+            type="checkbox"
+            formControlName="requiereAutorizacion"
+          />
+          Requiere autorizacion previa
+        </label>
+      </div>
+
+      <div class="campo">
+        <label class="opcion-casilla" for="alta-convenio-credencial">
+          <input
+            id="alta-convenio-credencial"
+            type="checkbox"
+            formControlName="requiereCredencial"
+          />
+          Requiere credencial
+        </label>
+        <p class="ayuda">
+          Estos tres y el tope mensual se <b>declaran</b> y viajan en la resolucion del arancel,
+          pero hoy <b>no bloquean nada</b>: quien los haga cumplir es el modulo de ordenes y
+          autorizaciones, que todavia no existe. Hoy el control lo hace una persona, y esto es lo
+          que esa persona consulta.
+        </p>
+      </div>
+
+      <div class="campo">
+        <label for="alta-convenio-observaciones">Observaciones (opcional)</label>
+        <input
+          id="alta-convenio-observaciones"
+          type="text"
+          formControlName="observaciones"
+          autocomplete="off"
+        />
+      </div>
+
+      @if (errorAccion(); as mensaje) {
+        <p class="estado estado--error" role="alert">{{ mensaje }}</p>
+      }
+
+      <p class="acciones">
+        <button type="submit" class="boton" [disabled]="enviando()">
+          {{ enviando() ? 'Guardando...' : 'Firmar convenio' }}
+        </button>
+        <button
+          type="button"
+          class="boton boton--secundario"
+          (click)="cerrarPanel()"
+          [disabled]="enviando()"
+        >
+          Cancelar
+        </button>
+      </p>
+    </form>
+  </section>
+}
+
+<section class="tarjeta" aria-labelledby="titulo-listado-convenios">
+  <h2 id="titulo-listado-convenios">Convenios firmados en esta sede</h2>
+
+  <div class="par-de-campos">
+    <div class="campo">
+      <label for="filtro-estado-convenio">Mostrar</label>
+      <select
+        id="filtro-estado-convenio"
+        [value]="filtroEstado()"
+        (change)="cambiarFiltroEstado($any($event.target).value)"
+        aria-describedby="filtro-estado-convenio-ayuda"
+      >
+        <option value="ACTIVO">Solo los activos</option>
+        <option value="INACTIVO">Solo los dados de baja</option>
+        <option value="TODOS">Todos</option>
+      </select>
+      <p class="ayuda" id="filtro-estado-convenio-ayuda">
+        Este filtro es por <b>estado administrativo</b>, no por vigencia: "solo los activos" incluye
+        los que todavia no arrancaron y los que ya vencieron. La columna Situacion dice cual es
+        cual.
+      </p>
+    </div>
+
+    <div class="campo">
+      <label for="filtro-fecha-convenio">Vigencia al dia</label>
+      <input
+        id="filtro-fecha-convenio"
+        type="date"
+        [value]="fecha()"
+        (change)="cambiarFecha($any($event.target).value)"
+        aria-describedby="filtro-fecha-convenio-ayuda"
+      />
+      <p class="ayuda" id="filtro-fecha-convenio-ayuda">
+        No filtra: <b>cambia la fecha contra la que se calcula la vigencia</b>. Ponerle la fecha de
+        una prestacion vieja responde que convenio regia ese dia, que es lo que explica por que se
+        cobro lo que se cobro.
+      </p>
+    </div>
+  </div>
+
+  <div aria-live="polite">
+    @switch (estado().tipo) {
+      @case ('cargando') {
+        <p class="estado estado--cargando">Cargando los convenios de la sede&hellip;</p>
+      }
+
+      @case ('sin-contexto') {
+        <p class="estado estado--vacio">Todavia no elegiste un consultorio.</p>
+        <p class="ayuda">
+          Los convenios son de una sede concreta, asi que hay que saber en cual estas trabajando. Tu
+          sesion sigue abierta: solo falta elegir donde estas.
+        </p>
+        <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
+      }
+
+      @case ('error') {
+        <p class="estado estado--error" role="alert">{{ mensajeError() }}</p>
+
+        @if (faltaContexto()) {
+          <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
+        } @else {
+          <button type="button" class="boton" (click)="cargar()">Reintentar</button>
+        }
+      }
+
+      @case ('listo') {
+        @if (convenios().length === 0) {
+          <p class="estado estado--vacio">
+            Esta sede no tiene convenios que coincidan con el filtro.
+          </p>
+          <p class="ayuda">
+            Sin convenios, todo lo que se atienda en esta sede se cobra como particular: no hay con
+            que resolver un arancel. Para firmar el primero hace falta un financiador con al menos
+            un plan cargado en el
+            <a routerLink="/contratacion/financiadores">catalogo</a>.
+          </p>
+        } @else {
+          <p class="ayuda">{{ convenios().length }} en total.</p>
+
+          <div class="tabla-scroll" tabindex="0" role="region" aria-label="Convenios de la sede">
+            <table class="tabla">
+              <caption class="visualmente-oculto">
+                Convenios de la sede, con su financiador, modalidad, vigencia, requisitos, situacion
+                y acciones.
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col">Convenio</th>
+                  <th scope="col">Financiador</th>
+                  <th scope="col">Modalidad</th>
+                  <th scope="col">Vigencia</th>
+                  <th scope="col">Requisitos</th>
+                  <th scope="col">Situacion</th>
+                  <th scope="col">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (convenio of convenios(); track convenio.id) {
+                  <!--
+                    Una sola evaluacion por fila: `situacion()` construye un objeto, y llamarla
+                    tres veces desde la plantilla lo construiria tres veces en cada ciclo de
+                    deteccion de cambios.
+                  -->
+                  @let situacionDeLaFila = situacion(convenio);
+
+                  <tr
+                    [class.fila--revocada]="convenio.estado === 'INACTIVO'"
+                    [class.fila--atenuada]="situacionDeLaFila.atenuada"
+                  >
+                    <th scope="row">
+                      {{ convenio.nombre }}
+                      <p class="ayuda">Codigo {{ convenio.codigo }} · {{ convenio.moneda }}</p>
+                      @if (convenio.observaciones) {
+                        <p class="ayuda">{{ convenio.observaciones }}</p>
+                      }
+                    </th>
+                    <td>
+                      {{ nombreDelFinanciador(convenio) }}
+                      <p class="ayuda">Plan #{{ convenio.planId }}</p>
+                    </td>
+                    <td>{{ etiquetaDeModalidad(convenio.modalidad) }}</td>
+                    <td>{{ ventanaEnPalabras(convenio) }}</td>
+                    <td>
+                      @if (convenio.requiereOrden) {
+                        <p class="ayuda">Orden medica</p>
+                      }
+                      @if (convenio.requiereAutorizacion) {
+                        <p class="ayuda">Autorizacion previa</p>
+                      }
+                      @if (convenio.requiereCredencial) {
+                        <p class="ayuda">Credencial</p>
+                      }
+                      @if (convenio.limiteSesionesMensual) {
+                        <p class="ayuda">Hasta {{ convenio.limiteSesionesMensual }} sesiones/mes</p>
+                      }
+                      @if (convenio.documentacionRequerida) {
+                        <p class="ayuda">{{ convenio.documentacionRequerida }}</p>
+                      }
+                      @if (
+                        !convenio.requiereOrden &&
+                        !convenio.requiereAutorizacion &&
+                        !convenio.requiereCredencial &&
+                        !convenio.limiteSesionesMensual
+                      ) {
+                        <p class="ayuda">Sin requisitos declarados</p>
+                      }
+                    </td>
+                    <td>
+                      <span class="marca-estado">{{ situacionDeLaFila.resumen }}</span>
+                      @if (situacionDeLaFila.explicacion; as explicacion) {
+                        <p class="ayuda">{{ explicacion }}</p>
+                      }
+                      @if (convenio.estado === 'INACTIVO' && convenio.deactivationReason) {
+                        <p class="ayuda">{{ convenio.deactivationReason }}</p>
+                      }
+                    </td>
+                    <td class="acciones-fila">
+                      <!--
+                        Los aranceles se ven SIEMPRE, tambien los de un convenio dado de baja:
+                        conservan sus filas y hay que poder consultarlos para explicar una
+                        liquidacion vieja. El enlace no lleva permiso, por lo mismo que el listado.
+                      -->
+                      <a
+                        class="boton boton--secundario"
+                        [routerLink]="['/contratacion/convenios', convenio.id, 'aranceles']"
+                      >
+                        Aranceles
+                      </a>
+                      @if (convenio.estado === 'ACTIVO') {
+                        <ng-container *akinePermiso="permisoManage">
+                          <button
+                            type="button"
+                            class="boton boton--secundario"
+                            (click)="abrirPanel(convenio, 'editar')"
+                          >
+                            Editar
+                          </button>
+                          <button
+                            type="button"
+                            class="boton boton--secundario"
+                            (click)="abrirPanel(convenio, 'baja')"
+                          >
+                            Dar de baja
+                          </button>
+                        </ng-container>
+                      }
+                    </td>
+                  </tr>
+
+                  @if (panelAbierto(convenio.id, 'editar')) {
+                    <tr class="fila-panel">
+                      <td colspan="7">
+                        <form
+                          [formGroup]="formularioEdicion"
+                          (ngSubmit)="enviarEdicion()"
+                          novalidate
+                        >
+                          <h3>Editar {{ convenio.nombre }}</h3>
+
+                          <p class="ayuda">
+                            Se manda <b>solo lo que cambies</b>. Poner una fecha en "vigente hasta"
+                            es lo que <b>cierra la vigencia</b>, y el convenio queda activo igual;
+                            borrarla no la saca, porque un campo vacio significa "no lo toques".
+                            <b
+                              >El codigo, el financiador, el plan y la moneda no se pueden
+                              cambiar</b
+                            >: son la identidad del convenio, y lo que ya se liquido bajo el los
+                            referencia.
+                          </p>
+
+                          <div class="campo">
+                            <label for="editar-convenio-nombre">Nombre</label>
+                            <input
+                              id="editar-convenio-nombre"
+                              type="text"
+                              formControlName="nombre"
+                              autocomplete="off"
+                              [attr.aria-invalid]="mostrarErrorEdicion('nombre') ? 'true' : null"
+                            />
+                            @if (mostrarErrorEdicion('nombre')) {
+                              <p class="campo__error" role="alert">El nombre es obligatorio.</p>
+                            }
+                          </div>
+
+                          <div class="campo">
+                            <label for="editar-convenio-modalidad">Modalidad de liquidacion</label>
+                            <select id="editar-convenio-modalidad" formControlName="modalidad">
+                              @for (opcion of modalidades; track opcion.valor) {
+                                <option [value]="opcion.valor">{{ opcion.etiqueta }}</option>
+                              }
+                            </select>
+                          </div>
+
+                          <div class="par-de-campos">
+                            <div class="campo">
+                              <label for="editar-convenio-desde">Vigente desde</label>
+                              <input
+                                id="editar-convenio-desde"
+                                type="date"
+                                formControlName="vigenciaDesde"
+                              />
+                            </div>
+
+                            <div class="campo">
+                              <label for="editar-convenio-hasta">Vigente hasta</label>
+                              <input
+                                id="editar-convenio-hasta"
+                                type="date"
+                                formControlName="vigenciaHasta"
+                                aria-describedby="editar-convenio-hasta-ayuda"
+                              />
+                              <p class="ayuda" id="editar-convenio-hasta-ayuda">
+                                El fin es <b>inclusivo</b>: ese dia el convenio todavia resuelve.
+                                Estirarlo hasta pisar a otro convenio del mismo plan se rechaza.
+                              </p>
+                            </div>
+                          </div>
+
+                          <div class="campo">
+                            <label for="editar-convenio-tope">Tope de sesiones por mes</label>
+                            <input
+                              id="editar-convenio-tope"
+                              type="number"
+                              min="1"
+                              formControlName="limiteSesionesMensual"
+                            />
+                          </div>
+
+                          <div class="campo">
+                            <label for="editar-convenio-documentacion">
+                              Documentacion requerida
+                            </label>
+                            <input
+                              id="editar-convenio-documentacion"
+                              type="text"
+                              formControlName="documentacionRequerida"
+                              autocomplete="off"
+                            />
+                          </div>
+
+                          <div class="campo">
+                            <label class="opcion-casilla" for="editar-convenio-orden">
+                              <input
+                                id="editar-convenio-orden"
+                                type="checkbox"
+                                formControlName="requiereOrden"
+                              />
+                              Requiere orden medica
+                            </label>
+                          </div>
+
+                          <div class="campo">
+                            <label class="opcion-casilla" for="editar-convenio-autorizacion">
+                              <input
+                                id="editar-convenio-autorizacion"
+                                type="checkbox"
+                                formControlName="requiereAutorizacion"
+                              />
+                              Requiere autorizacion previa
+                            </label>
+                          </div>
+
+                          <div class="campo">
+                            <label class="opcion-casilla" for="editar-convenio-credencial">
+                              <input
+                                id="editar-convenio-credencial"
+                                type="checkbox"
+                                formControlName="requiereCredencial"
+                              />
+                              Requiere credencial
+                            </label>
+                          </div>
+
+                          <div class="campo">
+                            <label for="editar-convenio-observaciones">Observaciones</label>
+                            <input
+                              id="editar-convenio-observaciones"
+                              type="text"
+                              formControlName="observaciones"
+                              autocomplete="off"
+                            />
+                          </div>
+
+                          @if (errorAccion(); as mensaje) {
+                            <p class="estado estado--error" role="alert">{{ mensaje }}</p>
+                          }
+
+                          <p class="acciones">
+                            <button type="submit" class="boton" [disabled]="enviando()">
+                              {{ enviando() ? 'Guardando...' : 'Guardar cambios' }}
+                            </button>
+                            <button
+                              type="button"
+                              class="boton boton--secundario"
+                              (click)="cerrarPanel()"
+                              [disabled]="enviando()"
+                            >
+                              Cancelar
+                            </button>
+                            @if (hayQueRecargar()) {
+                              <button type="button" class="boton" (click)="cargar()">
+                                Recargar el listado
+                              </button>
+                            }
+                          </p>
+                        </form>
+                      </td>
+                    </tr>
+                  }
+
+                  @if (panelAbierto(convenio.id, 'baja')) {
+                    <tr class="fila-panel">
+                      <td colspan="7">
+                        <app-confirmacion-con-motivo
+                          idCampo="baja-convenio-motivo"
+                          [titulo]="'Dar de baja ' + convenio.nombre"
+                          etiqueta="Motivo de la baja"
+                          ayuda="Queda registrado junto al convenio y se muestra en el listado. Ojo: si lo que queres es que el convenio deje de aplicarse a partir de una fecha pero siga vigente hasta entonces, la operacion NO es esta — es cerrar la vigencia desde Editar. Dar de baja es terminal y no hay reactivacion. No cascadea a los aranceles: conservan sus filas y dejan de resolver porque su convenio dejo de resolver. Lo ya liquidado sigue explicandose con su copia congelada, y el codigo y el periodo quedan libres."
+                          textoConfirmar="Dar de baja"
+                          [enviando]="enviando()"
+                          (confirmado)="enviarBaja($event)"
+                          (cancelado)="cerrarPanel()"
+                        />
+
+                        @if (errorAccion(); as mensaje) {
+                          <p class="estado estado--error" role="alert">{{ mensaje }}</p>
+                        }
+                        @if (hayQueRecargar()) {
+                          <button type="button" class="boton" (click)="cargar()">
+                            Recargar el listado
+                          </button>
+                        }
+                      </td>
+                    </tr>
+                  }
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      }
+    }
+  </div>
+</section>
