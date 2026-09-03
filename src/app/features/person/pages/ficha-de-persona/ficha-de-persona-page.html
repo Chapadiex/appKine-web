@@ -1,0 +1,250 @@
+<p class="acciones">
+  <a class="enlace" routerLink="/pacientes">Volver al padron</a>
+</p>
+
+@if (cargando()) {
+  <h1>Ficha de la persona</h1>
+  <p class="estado">Cargando la ficha...</p>
+} @else if (errorDeCarga(); as mensaje) {
+  <h1>Ficha de la persona</h1>
+  <p class="estado estado--error" role="alert">{{ mensaje }}</p>
+  @if (faltaContexto()) {
+    <p class="acciones">
+      <a class="boton" href="/seleccionar-contexto">Elegir contexto de trabajo</a>
+    </p>
+  } @else {
+    <p class="acciones">
+      <button type="button" class="boton" (click)="cargar()">Reintentar</button>
+    </p>
+  }
+} @else if (persona(); as ficha) {
+  <h1>{{ nombreCompleto(ficha) }}</h1>
+
+  <div aria-live="polite">
+    @if (exito(); as mensaje) {
+      <p class="estado estado--ok">{{ mensaje }}</p>
+    }
+  </div>
+
+  <!--
+    Identidad. Es lo que el mostrador necesita para confirmar que abrio la ficha correcta antes de
+    hacer cualquier otra cosa, asi que va primero y sin plegar.
+  -->
+  <section class="tarjeta" aria-labelledby="titulo-identidad">
+    <h2 id="titulo-identidad">Datos administrativos</h2>
+
+    <dl class="datos">
+      <div>
+        <dt>Documento</dt>
+        <dd>{{ documentoEnUnaLinea(ficha) }}</dd>
+      </div>
+      <div>
+        <dt>Fecha de nacimiento</dt>
+        <dd>{{ fechaEnPalabras(ficha.fechaNacimiento) || 'Sin cargar' }}</dd>
+      </div>
+      <div>
+        <dt>Telefono</dt>
+        <dd>{{ ficha.telefono || 'Sin cargar' }}</dd>
+      </div>
+      <div>
+        <dt>Correo de contacto</dt>
+        <dd>{{ ficha.email || 'Sin cargar' }}</dd>
+      </div>
+      <div>
+        <dt>Estado de la ficha</dt>
+        <dd>{{ personaInactiva(ficha) ? 'Dada de baja' : 'Activa' }}</dd>
+      </div>
+      <div>
+        <dt>Perfil clinico</dt>
+        <dd>{{ ficha.esPaciente ? 'Paciente' : 'Persona' }}</dd>
+      </div>
+    </dl>
+
+    <p class="ayuda">{{ perfilEnPalabras(ficha) }}</p>
+
+    @if (ficha.notas) {
+      <p class="ayuda">
+        <b>Observaciones administrativas:</b>
+        {{ ficha.notas }}
+      </p>
+    }
+
+    @if (personaInactiva(ficha)) {
+      <p class="estado">
+        Esta ficha esta dada de baja
+        @if (ficha.deletedAt) {
+          desde el {{ fechaEnPalabras(ficha.deletedAt) }}
+        }
+        @if (ficha.deactivationReason) {
+          — motivo: {{ ficha.deactivationReason }}
+        }
+        . No admite operaciones nuevas, y todo lo que ya tenia registrado se sigue consultando.
+      </p>
+    }
+  </section>
+
+  <!--
+    Que NO esta en esta pantalla. Va arriba de las secciones y no al pie: quien busca la historia
+    clinica aca tiene que enterarse antes de recorrer la ficha entera y concluir que el sistema no
+    la tiene.
+  -->
+  <section class="tarjeta nota-clave" aria-labelledby="titulo-sin-clinico">
+    <h2 id="titulo-sin-clinico">Esta ficha no muestra nada clinico</h2>
+    <p>
+      Es administrativa a proposito. El acceso a la historia clinica exige justificarlo y queda
+      auditado: mostrarla al abrir una ficha de mostrador convertiria ese control en un tramite
+      vacio. Lo clinico se consulta desde el modulo clinico, con su permiso.
+    </p>
+  </section>
+
+  <!-- Secciones que aportaron los modulos que el usuario SI puede ver. -->
+  @for (seccion of secciones(); track seccion.seccion) {
+    <section class="tarjeta" aria-labelledby="titulo-seccion-{{ seccion.seccion }}">
+      <h2 id="titulo-seccion-{{ seccion.seccion }}">{{ nombreDeSeccion(seccion.seccion) }}</h2>
+
+      @if (seccion.indicadores?.length) {
+        <dl class="datos">
+          @for (indicador of seccion.indicadores; track indicador.clave) {
+            <div>
+              <dt>{{ etiquetaDeIndicador(indicador) }}</dt>
+              <dd>{{ valorDeIndicador(indicador) }}</dd>
+            </div>
+          }
+        </dl>
+      }
+
+      @if (hitosDe(seccion).length === 0) {
+        <p class="estado">
+          Sin movimientos registrados en esta seccion. Es un dato, no un error: la seccion se
+          consulto y no hay nada.
+        </p>
+      } @else {
+        <ul class="lista-hitos">
+          @for (hito of hitosDe(seccion); track $index) {
+            <li>{{ hitoEnPalabras(hito) }}</li>
+          }
+        </ul>
+      }
+    </section>
+  }
+
+  <!--
+    Secciones OMITIDAS por permisos. Se muestran como secciones de primera clase, con el mismo
+    peso visual que las que si vinieron: la diferencia entre "no hay datos" y "no podes ver los
+    datos" es lo unico que el usuario no puede deducir solo.
+  -->
+  @for (omitida of omitidas(); track omitida.seccion) {
+    <section class="tarjeta seccion-omitida" aria-labelledby="titulo-omitida-{{ omitida.seccion }}">
+      <h2 id="titulo-omitida-{{ omitida.seccion }}">
+        {{ nombreDeSeccion(omitida.seccion) }} — sin permiso
+      </h2>
+      <p>{{ omisionEnPalabras(omitida) }}</p>
+    </section>
+  }
+
+  <!-- Documentacion. El detalle vive en su propia pantalla; aca va el recuento y la entrada. -->
+  <section class="tarjeta" aria-labelledby="titulo-documentacion">
+    <h2 id="titulo-documentacion">Documentacion administrativa</h2>
+
+    @if (totalDeAdjuntos() === 0) {
+      <p class="estado">Esta persona no tiene documentos cargados.</p>
+    } @else {
+      <p>{{ totalDeAdjuntos() }} documento(s) cargado(s):</p>
+      <dl class="datos">
+        @for (conteo of adjuntosPorCategoria(); track conteo.categoria) {
+          <div>
+            <dt>{{ nombreDeCategoria(conteo.categoria) }}</dt>
+            <dd>{{ conteo.cantidad }}</dd>
+          </div>
+        }
+      </dl>
+    }
+
+    <p class="ayuda">
+      Un documento adjunto <b>no reemplaza un dato cargado</b>: la foto de una credencial no carga
+      la cobertura, y el DNI escaneado no completa el documento de la ficha.
+    </p>
+
+    <p class="acciones">
+      <a class="boton" [routerLink]="rutaDocumentos()">Ver y cargar documentos</a>
+    </p>
+  </section>
+
+  <!-- Adonde se sigue. Son pantallas propias porque cada una es un trabajo distinto. -->
+  <section class="tarjeta" aria-labelledby="titulo-navegacion">
+    <h2 id="titulo-navegacion">Seguir en</h2>
+    <p class="acciones">
+      <a class="enlace" [routerLink]="rutaCuentaCorriente()" *akinePermiso="permisoCobro">
+        Cuenta corriente
+      </a>
+    </p>
+  </section>
+
+  <!-- Bajas. Al final: son lo ultimo que alguien hace, y no lo que viene a hacer. -->
+  @if (!personaInactiva(ficha)) {
+    <section class="tarjeta" aria-labelledby="titulo-bajas">
+      <h2 id="titulo-bajas">Dar de baja</h2>
+
+      <p class="ayuda">
+        Ninguna de las dos borra nada. Los turnos, las deudas, los documentos y —si la hubiera— la
+        historia clinica quedan intactos y se siguen consultando.
+      </p>
+
+      <p class="acciones">
+        @if (ficha.esPaciente) {
+          <button
+            type="button"
+            class="boton boton--secundario"
+            (click)="abrirBaja('perfil')"
+            *akinePermiso="permisoManage"
+          >
+            Dar de baja el perfil de paciente
+          </button>
+        }
+        <button
+          type="button"
+          class="boton boton--secundario"
+          (click)="abrirBaja('persona')"
+          *akinePermiso="permisoManage"
+        >
+          Dar de baja la ficha
+        </button>
+      </p>
+
+      @if (baja() === 'perfil') {
+        <akine-confirmacion-con-motivo
+          idCampo="baja-perfil"
+          titulo="Dar de baja el perfil de paciente de {{ nombreCompleto(ficha) }}"
+          etiqueta="Motivo"
+          ayuda="La persona sigue vigente en el padron y deja de ser paciente: puede seguir viniendo a actividades no clinicas. NO se borra la historia clinica; si el perfil se reactiva, la historia que habia sigue estando."
+          textoConfirmar="Confirmar la baja del perfil"
+          [enviando]="enviando()"
+          (confirmado)="confirmarBajaDePerfil($event)"
+          (cancelado)="cerrarPaneles()"
+        />
+      }
+
+      @if (baja() === 'persona') {
+        <akine-confirmacion-con-motivo
+          idCampo="baja-persona"
+          titulo="Dar de baja la ficha de {{ nombreCompleto(ficha) }}"
+          etiqueta="Motivo"
+          ayuda="La ficha deja de admitir operaciones nuevas: no se edita, no se le activan perfiles y no se le suben documentos. Si es paciente, tambien se le da de baja el perfil en el mismo acto. Su documento queda libre para usarse en un alta nueva."
+          textoConfirmar="Confirmar la baja de la ficha"
+          [enviando]="enviando()"
+          (confirmado)="confirmarBajaDePersona($event)"
+          (cancelado)="cerrarPaneles()"
+        />
+      }
+
+      @if (errorAccion(); as mensaje) {
+        <p class="estado estado--error" role="alert">{{ mensaje }}</p>
+        @if (hayQueRecargar()) {
+          <p class="acciones">
+            <button type="button" class="boton" (click)="cargar()">Recargar la ficha</button>
+          </p>
+        }
+      }
+    </section>
+  }
+}

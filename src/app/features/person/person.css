@@ -68,3 +68,77 @@
 .lista-candidatos li:last-child {
   border-bottom: none;
 }
+
+/*
+ * Pares dato/valor de la ficha 360 y de los paneles de detalle.
+ *
+ * Grid autoajustable y no dos columnas fijas: la ficha tiene seis pares y un panel de cobertura
+ * tiene once, y a 46rem dos columnas fijas parten las etiquetas largas -"Fecha de nacimiento"- en
+ * tres renglones. `auto-fit` colapsa a una sola columna cuando no entran dos, que es lo que
+ * corresponde en una tablet en vertical.
+ *
+ * Es un `<dl>` real: cada par va en un `<div>` con su `<dt>` y su `<dd>`, que es la estructura que
+ * un lector de pantalla anuncia como "termino / definicion". Una tabla de dos columnas se leeria
+ * como datos tabulares, que es otra cosa.
+ */
+.datos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: var(--esp-5);
+  margin: 0 0 var(--esp-6);
+}
+
+.datos dt {
+  font-size: var(--tipo-xs);
+  color: var(--color-texto-suave);
+}
+
+.datos dd {
+  margin: 0;
+  font-weight: var(--peso-semi);
+}
+
+/*
+ * Los hitos de una seccion del 360.
+ *
+ * Sin viñetas y con separador: cada linea es un hecho con su fecha, y se leen comparando fechas de
+ * arriba abajo. Una viñeta agrega ruido en una columna de veinte lineas que ya empiezan todas
+ * igual.
+ */
+.lista-hitos {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.lista-hitos li {
+  padding: var(--esp-3) 0;
+  border-bottom: 1px solid var(--color-borde);
+}
+
+.lista-hitos li:last-child {
+  border-bottom: none;
+}
+
+/*
+ * Seccion del 360 que no se pudo consultar por falta de permiso.
+ *
+ * Tiene el mismo peso visual que las secciones que si vinieron -es una tarjeta con su h2- y se
+ * distingue por el borde punteado. El punteado NO es lo unico que la distingue: el titulo dice
+ * "sin permiso" y el cuerpo lo explica, asi que sigue comunicando en escala de grises y para quien
+ * no ve el borde (WCAG 1.4.1).
+ */
+.seccion-omitida {
+  border-style: dashed;
+}
+
+/*
+ * Fila resaltada porque un rechazo del backend la nombro: la cobertura que ya es principal, la que
+ * se solapa, la autorizacion que se pisa.
+ *
+ * El fondo no es la unica marca -la fila lleva ademas un texto que dice por que esta resaltada-,
+ * por lo mismo de siempre: el color solo no comunica.
+ */
+.fila-senalada {
+  background: var(--color-superficie-sutil);
+}

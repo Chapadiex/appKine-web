@@ -5,6 +5,7 @@ import { CreatePersonaRequest } from '../../../api/generated/model/create-person
 import { PersonaPageResponse } from '../../../api/generated/model/persona-page-response';
 import { PersonaResponse } from '../../../api/generated/model/persona-response';
 import { PersonasService } from '../../../api/generated/api/personas.service';
+import { ResumenDePersonaResponse } from '../../../api/generated/model/resumen-de-persona-response';
 import { UpdatePersonaRequest } from '../../../api/generated/model/update-persona-request';
 
 /** Filtro por ciclo de vida de la ficha. Los tres valores son los del contrato. */
@@ -102,6 +103,69 @@ export class PersonApi {
     return this.api.activarPerfilPaciente({
       personaId,
       activarPerfilPacienteRequest: { motivo: motivo === '' ? undefined : motivo },
+    });
+  }
+
+  /**
+   * La ficha 360 (RF-M07-004, AKINE-03.02).
+   *
+   * <p><b>Es una sola peticion y no una por seccion.</b> El backend consolida lo que aporta cada
+   * modulo —turnos, situacion economica, y lo que se agregue despues— y devuelve tambien lo que
+   * <b>no</b> pudo aportar, en `seccionesOmitidas`, con el permiso que faltaba. Armar la ficha
+   * desde la pantalla con N lecturas obligaria a que el frontend supiera con que permiso se lee
+   * cada modulo, que es justamente lo que la etapa decidio no hacer: el permiso lo declara el
+   * modulo que aporta la seccion.
+   *
+   * <p><b>No recorta ni interpreta la respuesta.</b> Distinguir "no hay datos" de "no podes ver
+   * estos datos" es de la pantalla, y es la unica lectura de este metodo que no se puede
+   * equivocar sin mentirle al operador.
+   */
+  resumen(personaId: number): Observable<ResumenDePersonaResponse> {
+    return this.api.verResumenDePersona({ personaId });
+  }
+
+  /**
+   * Baja logica de la ficha (RF-M07-005).
+   *
+   * <p><b>No borra nada</b> y no es reversible desde la interfaz: la persona se sigue leyendo, sus
+   * turnos siguen existiendo, sus obligaciones se siguen debiendo y sus adjuntos se siguen
+   * descargando. Lo que deja de admitir son operaciones nuevas.
+   *
+   * <p><b>Da de baja tambien el perfil de paciente vigente</b>, en la misma transaccion del
+   * backend. El estado "persona cerrada, paciente vigente" no existe, y por eso la pantalla no
+   * ofrece las dos bajas como pasos encadenados.
+   *
+   * <p>Devuelve la ficha como quedo —con su version nueva— y no un 204: quien la llama refresca
+   * sin pedir otro GET.
+   */
+  darDeBaja(
+    personaId: number,
+    motivo: string,
+    expectedVersion: number,
+  ): Observable<PersonaResponse> {
+    return this.api.darDeBajaPersona({
+      personaId,
+      bajaDePersonaRequest: { motivo, expectedVersion },
+    });
+  }
+
+  /**
+   * Baja del perfil clinico, dejando viva a la persona (RF-M07-005).
+   *
+   * <p>Es exactamente el estado que RN-M07-006 describe: alguien que sigue consumiendo servicios
+   * no clinicos sin perfil clinico. <b>Es idempotente</b> y responde 200, asi que la pantalla no
+   * necesita una rama para "ya no era paciente".
+   *
+   * <p><b>El motivo es obligatorio aca y opcional al activar</b>, y esa asimetria no es un
+   * descuido del contrato: la operacion que restringe es la que alguien va a tener que justificar
+   * despues.
+   *
+   * <p><b>No borra la historia clinica.</b> Igual que activar no la crea, esto no la borra.
+   */
+  darDeBajaPerfil(personaId: number, motivo: string): Observable<PersonaResponse> {
+    return this.api.darDeBajaPerfilPaciente({
+      personaId,
+      bajaDePerfilPacienteRequest: { motivo },
     });
   }
 }

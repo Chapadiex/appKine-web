@@ -135,6 +135,130 @@ describe('traducirErrorPersona', () => {
     expect(hayQueRecargar('sin-permiso')).toBe(false);
     expect(hayQueRecargar(null)).toBe(false);
   });
+
+  // -------------------------------------------------------------------------------------
+  // F3: adjuntos, coberturas, ordenes y autorizaciones (03.02, 03.04 y 03.06)
+  // -------------------------------------------------------------------------------------
+
+  it('los dos motivos de rechazo de un archivo dan mensajes distintos', () => {
+    // Con un mensaje unico, quien subio un escaneo de 40 MB lee "solo se aceptan PDF, PNG y JPEG",
+    // vuelve a exportar el mismo archivo a otro formato y falla de nuevo por el mismo motivo.
+    const tamano = traducirErrorPersona(
+      problema('archivo-no-aceptado', 400, { motivo: 'DEMASIADO_GRANDE' }),
+    );
+    expect(tamano.causa).toBe('archivo-no-aceptado');
+    expect(tamano.motivoDelArchivo).toBe('DEMASIADO_GRANDE');
+    expect(tamano.mensaje).toContain('pesa mas');
+
+    const tipo = traducirErrorPersona(
+      problema('archivo-no-aceptado', 400, { motivo: 'TIPO_NO_PERMITIDO' }),
+    );
+    expect(tipo.mensaje).toContain('PDF, PNG y JPEG');
+  });
+
+  it('un motivo de archivo desconocido cae en el mensaje de tipo y no inventa una rama', () => {
+    // Si el backend agregara un tercer motivo, el mensaje mas frecuente es el correcto: no se
+    // castea a ciegas.
+    const traducido = traducirErrorPersona(
+      problema('archivo-no-aceptado', 400, { motivo: 'MOTIVO_QUE_NO_EXISTE' }),
+    );
+    expect(traducido.motivoDelArchivo).toBeNull();
+    expect(traducido.mensaje).toContain('PDF, PNG y JPEG');
+  });
+
+  it('el adjunto sin contenido no es un 404 disfrazado, y el mensaje NO manda a resubirlo', () => {
+    const traducido = traducirErrorPersona(problema('adjunto-no-disponible', 409, {}));
+
+    expect(traducido.causa).toBe('adjunto-no-disponible');
+    // El reflejo ante "no se pudo descargar" es volver a subirlo, y eso deja dos filas para el
+    // mismo documento.
+    expect(traducido.mensaje).toContain('No lo vuelvas a subir sobre esta fila');
+  });
+
+  it('la persona sin perfil de paciente nombra la salida: activarle el perfil', () => {
+    const traducido = traducirErrorPersona(problema('persona-sin-perfil-paciente', 409, {}));
+
+    expect(traducido.causa).toBe('sin-perfil-paciente');
+    expect(traducido.mensaje).toContain('Activale el perfil de paciente');
+  });
+
+  it('los tres rechazos que nombran una fila la traen en referenciaId', () => {
+    // Sin el id, "ya hay una principal" es un callejon: el operador no sabe cual desmarcar.
+    expect(
+      traducirErrorPersona(
+        problema('cobertura-principal-superpuesta', 409, { coberturaPrincipalId: 55 }),
+      ).referenciaId,
+    ).toBe(55);
+    expect(
+      traducirErrorPersona(problema('cobertura-superpuesta', 409, { coberturaExistenteId: 56 }))
+        .referenciaId,
+    ).toBe(56);
+    expect(
+      traducirErrorPersona(
+        problema('autorizacion-superpuesta', 409, { autorizacionExistenteId: 57 }),
+      ).referenciaId,
+    ).toBe(57);
+  });
+
+  it('el plan no seleccionable no revela cual de las cinco causas fue', () => {
+    const traducido = traducirErrorPersona(problema('plan-no-seleccionable', 409, {}));
+
+    expect(traducido.causa).toBe('plan-no-seleccionable');
+    // Distinguir "no existe" de "es de otro tenant" convertiria el alta en un oraculo del catalogo
+    // ajeno. Lo que si dice es contra que se evaluo.
+    expect(traducido.mensaje).toContain('fecha en que la cobertura empieza a valer');
+  });
+
+  it('inactiva y ya-inactiva son causas distintas en las tres entidades', () => {
+    // "No se puede editar algo dado de baja" y "eso ya estaba dado de baja" llevan a pantallas
+    // distintas: la segunda no es una falla y lo unico que falta es ver la fila como quedo.
+    expect(traducirErrorPersona(problema('cobertura-inactiva', 409, {})).causa).toBe(
+      'cobertura-inactiva',
+    );
+    expect(traducirErrorPersona(problema('cobertura-already-inactive', 409, {})).causa).toBe(
+      'cobertura-ya-inactiva',
+    );
+    expect(traducirErrorPersona(problema('orden-inactiva', 409, {})).causa).toBe('orden-inactiva');
+    expect(traducirErrorPersona(problema('orden-already-inactive', 409, {})).causa).toBe(
+      'orden-ya-inactiva',
+    );
+    expect(traducirErrorPersona(problema('autorizacion-inactiva', 409, {})).causa).toBe(
+      'autorizacion-inactiva',
+    );
+    expect(traducirErrorPersona(problema('autorizacion-already-inactive', 409, {})).causa).toBe(
+      'autorizacion-ya-inactiva',
+    );
+    expect(traducirErrorPersona(problema('adjunto-inactivo', 409, {})).causa).toBe(
+      'adjunto-inactivo',
+    );
+    expect(traducirErrorPersona(problema('documento-numero-taken', 409, {})).causa).toBe(
+      'numero-en-uso',
+    );
+  });
+
+  it('la transicion no permitida usa el detalle del backend, que nombra estado y accion', () => {
+    const traducido = traducirErrorPersona(
+      problema('autorizacion-transicion-no-permitida', 409, {
+        estadoActual: 'APROBADA',
+        accion: 'OBSERVAR',
+      }),
+    );
+
+    expect(traducido.causa).toBe('transicion-no-permitida');
+    // Redactarlo del lado del frontend seria repetir en castellano una tabla de transiciones que
+    // vive del otro lado y que puede cambiar.
+    expect(traducido.mensaje).toBe('Detalle del backend.');
+  });
+
+  it('las bajas idempotentes piden recargar, no reintentar', () => {
+    expect(hayQueRecargar('cobertura-ya-inactiva')).toBe(true);
+    expect(hayQueRecargar('orden-ya-inactiva')).toBe(true);
+    expect(hayQueRecargar('autorizacion-ya-inactiva')).toBe(true);
+    expect(hayQueRecargar('transicion-no-permitida')).toBe(true);
+    // En cambio, un archivo rechazado se arregla eligiendo otro: recargar no aporta nada.
+    expect(hayQueRecargar('archivo-no-aceptado')).toBe(false);
+    expect(hayQueRecargar('sin-perfil-paciente')).toBe(false);
+  });
 });
 
 function problema(tipo: string, status: number, extra: Record<string, unknown>): AkineHttpError {

@@ -1,0 +1,343 @@
+<p class="acciones">
+  <a class="enlace" [routerLink]="rutaFicha()">Volver a la ficha</a>
+  <a class="enlace" routerLink="/pacientes">Volver al padron</a>
+</p>
+
+<h1>
+  Documentacion administrativa
+  @if (persona(); as ficha) {
+    — {{ nombreCompleto(ficha) }}
+  }
+</h1>
+
+<p class="descripcion">
+  Los documentos que el paciente presenta en el mostrador: su documento de identidad, la credencial
+  de la cobertura, consentimientos y comprobantes.
+</p>
+
+<!--
+  Va arriba de todo y no en la ayuda del formulario: el reflejo de quien tiene un PDF en la mano es
+  subirlo donde haya un boton de subir, y esta pantalla NO es donde va un estudio.
+-->
+<section class="tarjeta nota-clave" aria-labelledby="titulo-nota-adjuntos">
+  <h2 id="titulo-nota-adjuntos">Aca no va nada clinico</h2>
+  <p>
+    Las categorias son todas administrativas, a proposito. Un estudio, una radiografia o un informe
+    <b>no se cargan aca</b>: viven en el modulo clinico, con sus propios controles de acceso.
+  </p>
+  <p>
+    Y un documento adjunto <b>no reemplaza un dato cargado</b>. La foto de una credencial no carga
+    la cobertura, y el DNI escaneado no completa el documento de la ficha. Si hace falta el dato,
+    hay que cargarlo ademas.
+  </p>
+</section>
+
+<div aria-live="polite">
+  @if (exito(); as mensaje) {
+    <p class="estado estado--ok">{{ mensaje }}</p>
+  }
+</div>
+
+<section class="tarjeta" aria-labelledby="titulo-filtros-documentos">
+  <h2 id="titulo-filtros-documentos">Documentos cargados</h2>
+
+  <div class="filtros">
+    <div class="campo">
+      <label for="documentos-filtro-categoria">Categoria</label>
+      <select
+        id="documentos-filtro-categoria"
+        name="documentos-filtro-categoria"
+        [value]="filtroCategoria()"
+        (change)="cambiarCategoria($any($event.target).value)"
+      >
+        <option value="">Todas las categorias</option>
+        @for (categoria of categorias; track categoria) {
+          <option [value]="categoria">{{ nombreDeCategoria(categoria) }}</option>
+        }
+      </select>
+    </div>
+
+    <div class="campo">
+      <label for="documentos-filtro-estado">Estado</label>
+      <select
+        id="documentos-filtro-estado"
+        name="documentos-filtro-estado"
+        [value]="filtro()"
+        (change)="cambiarFiltro($any($event.target).value)"
+        aria-describedby="documentos-filtro-estado-ayuda"
+      >
+        <option value="VIGENTES">Solo vigentes</option>
+        <option value="TODOS">Tambien los dados de baja</option>
+      </select>
+      <p class="ayuda" id="documentos-filtro-estado-ayuda">
+        Un documento dado de baja no se borra: se sigue descargando y aparece con este filtro.
+      </p>
+    </div>
+  </div>
+
+  @if (fichaCerrada()) {
+    <p class="estado">
+      Esta ficha esta dada de baja, asi que no admite documentos nuevos. Los que ya tiene se siguen
+      consultando y descargando.
+    </p>
+  } @else {
+    <p class="acciones">
+      <button type="button" class="boton" (click)="abrirSubida()" *akinePermiso="permisoManage">
+        Subir un documento
+      </button>
+    </p>
+  }
+</section>
+
+@if (subidaAbierta()) {
+  <section class="tarjeta" aria-labelledby="titulo-subida">
+    <h2 id="titulo-subida">Subir un documento</h2>
+
+    <form [formGroup]="formularioSubida" (ngSubmit)="subir()" novalidate>
+      <div class="campo">
+        <label for="subida-archivo">Archivo</label>
+        <input
+          id="subida-archivo"
+          type="file"
+          accept="application/pdf,image/png,image/jpeg"
+          (change)="elegirArchivo($event.target)"
+          aria-describedby="subida-archivo-ayuda"
+        />
+        <p class="ayuda" id="subida-archivo-ayuda">
+          Se aceptan PDF, PNG y JPEG. El tipo se verifica <b>por el contenido</b> y no por la
+          extension: renombrar un archivo no lo convierte en otra cosa.
+        </p>
+        @if (archivo(); as elegido) {
+          <p class="ayuda">Elegido: {{ elegido.name }} ({{ tamanoEnPalabras(elegido.size) }})</p>
+        }
+      </div>
+
+      <div class="campo">
+        <label for="subida-categoria">Categoria</label>
+        <select
+          id="subida-categoria"
+          formControlName="categoria"
+          [attr.aria-invalid]="mostrarErrorSubida('categoria') ? 'true' : null"
+        >
+          <option value="">Elegi una categoria</option>
+          @for (categoria of categorias; track categoria) {
+            <option [value]="categoria">{{ nombreDeCategoria(categoria) }}</option>
+          }
+        </select>
+        @if (mostrarErrorSubida('categoria')) {
+          <p class="estado estado--error">Elegi la categoria del documento.</p>
+        }
+      </div>
+
+      <div class="campo">
+        <label for="subida-titulo">Titulo</label>
+        <input
+          id="subida-titulo"
+          type="text"
+          formControlName="titulo"
+          aria-describedby="subida-titulo-ayuda"
+        />
+        <p class="ayuda" id="subida-titulo-ayuda">
+          Opcional. Sin titulo, el documento se muestra con el nombre del archivo.
+        </p>
+      </div>
+
+      <p class="acciones">
+        <button type="submit" class="boton" [disabled]="enviando() || archivo() === null">
+          {{ enviando() ? 'Subiendo...' : 'Subir' }}
+        </button>
+        <button type="button" class="boton boton--secundario" (click)="cerrarPaneles()">
+          Cancelar
+        </button>
+      </p>
+    </form>
+
+    @if (errorAccion(); as mensaje) {
+      <p class="estado estado--error" role="alert">{{ mensaje }}</p>
+    }
+  </section>
+}
+
+@if (cargando()) {
+  <p class="estado">Cargando los documentos...</p>
+} @else if (mensajeError(); as mensaje) {
+  <p class="estado estado--error" role="alert">{{ mensaje }}</p>
+  @if (faltaContexto()) {
+    <p class="acciones">
+      <a class="boton" href="/seleccionar-contexto">Elegir contexto de trabajo</a>
+    </p>
+  } @else {
+    <p class="acciones">
+      <button type="button" class="boton" (click)="cargar()">Reintentar</button>
+    </p>
+  }
+} @else if (adjuntos().length === 0) {
+  <p class="estado">
+    No hay documentos cargados con estos filtros. Que no haya ninguno es un caso normal: los
+    documentos se cargan cuando el paciente los trae.
+  </p>
+} @else {
+  <table class="tabla">
+    <caption>
+      {{
+        totalDocumentos()
+      }}
+      documento(s) segun los filtros aplicados
+    </caption>
+    <thead>
+      <tr>
+        <th scope="col">Documento</th>
+        <th scope="col">Categoria</th>
+        <th scope="col">Archivo</th>
+        <th scope="col">Tamano</th>
+        <th scope="col">Cargado</th>
+        <th scope="col">Estado</th>
+        <th scope="col">Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (adjunto of adjuntos(); track adjunto.id) {
+        <tr>
+          <td>{{ nombreDeAdjunto(adjunto) }}</td>
+          <td>{{ nombreDeCategoria(adjunto.categoria) }}</td>
+          <td>{{ adjunto.nombreArchivo }}</td>
+          <td>{{ tamanoEnPalabras(adjunto.tamanoBytes) }}</td>
+          <td>{{ fechaEnPalabras(adjunto.subidoEn) }}</td>
+          <td>
+            @if (adjuntoInactivo(adjunto)) {
+              Dado de baja
+              @if (adjunto.deactivationReason) {
+                — {{ adjunto.deactivationReason }}
+              }
+            } @else if (adjuntoNoDisponible(adjunto)) {
+              <!--
+                Se avisa ANTES de que el operador toque descargar: el listado ya trae el dato, y
+                ofrecer un boton que se sabe que falla es hacerle perder el viaje.
+              -->
+              Contenido no disponible
+            } @else {
+              Vigente
+            }
+          </td>
+          <td>
+            <button
+              type="button"
+              class="boton boton--secundario"
+              (click)="descargar(adjunto)"
+              [disabled]="adjuntoNoDisponible(adjunto)"
+            >
+              Descargar
+            </button>
+
+            @if (!adjuntoInactivo(adjunto)) {
+              <button
+                type="button"
+                class="boton boton--secundario"
+                (click)="abrirReclasificacion(adjunto)"
+                *akinePermiso="permisoManage"
+              >
+                Reclasificar
+              </button>
+              <button
+                type="button"
+                class="boton boton--secundario"
+                (click)="abrirBaja(adjunto)"
+                *akinePermiso="permisoManage"
+              >
+                Dar de baja
+              </button>
+            }
+          </td>
+        </tr>
+
+        @if (esPanel(adjunto, 'reclasificar')) {
+          <tr>
+            <td colspan="7">
+              <section aria-labelledby="titulo-reclasificar-{{ adjunto.id }}">
+                <h2 id="titulo-reclasificar-{{ adjunto.id }}" class="panel__titulo">
+                  Reclasificar {{ nombreDeAdjunto(adjunto) }}
+                </h2>
+                <p class="ayuda">
+                  Lo unico que se puede cambiar es <b>como esta descripto</b>. El archivo, su nombre
+                  y su tipo son inmutables: para reemplazar un documento se da de baja este y se
+                  sube el nuevo, y asi quedan las dos versiones consultables.
+                </p>
+
+                <form [formGroup]="formularioClasificacion" (ngSubmit)="reclasificar()" novalidate>
+                  <div class="campo">
+                    <label for="reclasificar-categoria-{{ adjunto.id }}">Categoria</label>
+                    <select
+                      id="reclasificar-categoria-{{ adjunto.id }}"
+                      formControlName="categoria"
+                    >
+                      @for (categoria of categorias; track categoria) {
+                        <option [value]="categoria">{{ nombreDeCategoria(categoria) }}</option>
+                      }
+                    </select>
+                  </div>
+
+                  <div class="campo">
+                    <label for="reclasificar-titulo-{{ adjunto.id }}">Titulo</label>
+                    <input
+                      id="reclasificar-titulo-{{ adjunto.id }}"
+                      type="text"
+                      formControlName="titulo"
+                    />
+                  </div>
+
+                  <p class="acciones">
+                    <button type="submit" class="boton" [disabled]="enviando()">
+                      {{ enviando() ? 'Guardando...' : 'Guardar' }}
+                    </button>
+                    <button type="button" class="boton boton--secundario" (click)="cerrarPaneles()">
+                      Cancelar
+                    </button>
+                  </p>
+                </form>
+
+                @if (errorAccion(); as mensaje) {
+                  <p class="estado estado--error" role="alert">{{ mensaje }}</p>
+                  @if (hayQueRecargar()) {
+                    <p class="acciones">
+                      <button type="button" class="boton" (click)="cargar()">
+                        Recargar los documentos
+                      </button>
+                    </p>
+                  }
+                }
+              </section>
+            </td>
+          </tr>
+        }
+
+        @if (esPanel(adjunto, 'baja')) {
+          <tr>
+            <td colspan="7">
+              <akine-confirmacion-con-motivo
+                idCampo="baja-adjunto-{{ adjunto.id }}"
+                titulo="Dar de baja {{ nombreDeAdjunto(adjunto) }}"
+                etiqueta="Motivo"
+                ayuda="El archivo NO se borra: se sigue pudiendo descargar y aparece filtrando por 'Tambien los dados de baja'. Lo que deja de admitir es que se lo reclasifique. Si el documento cambio, dalo de baja y subi el nuevo."
+                textoConfirmar="Dar de baja el documento"
+                [enviando]="enviando()"
+                (confirmado)="confirmarBaja($event)"
+                (cancelado)="cerrarPaneles()"
+              />
+
+              @if (errorAccion(); as mensaje) {
+                <p class="estado estado--error" role="alert">{{ mensaje }}</p>
+              }
+            </td>
+          </tr>
+        }
+      }
+    </tbody>
+  </table>
+
+  <akine-paginacion
+    [paginaActual]="pagina()"
+    [totalPaginas]="totalPaginas()"
+    etiqueta="Paginas de documentos"
+    (cambioDePagina)="irAPagina($event)"
+  />
+}

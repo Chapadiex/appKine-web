@@ -49,4 +49,42 @@ export const routes: Routes = [
     title: 'AKINE - Padron de personas',
     data: { [DATA_ANCHO]: ANCHO_AMPLIO },
   },
+
+  // Ficha 360 de una persona (RF-M07-004, AKINE-03.02).
+  //
+  // `:personaId` y no un id en un query param: es un recurso, y una ficha tiene que poder
+  // compartirse por URL. Las tres pantallas de abajo cuelgan de esta por lo mismo.
+  //
+  // OJO CON EL ORDEN. `app.routes.ts` declara `pacientes/:personaId/cuenta-corriente` ANTES que
+  // `pacientes`, porque `loadChildren` se queda con todo `pacientes/**`. Las rutas hermanas de aca
+  // -documentos, coberturas, autorizaciones- no tienen ese problema aunque esten declaradas
+  // DESPUES: `:personaId` consume un solo segmento y no declara hijos, asi que ante
+  // `pacientes/7/documentos` queda un segmento sin consumir, el match falla y el router sigue
+  // probando. Es el backtracking del matcher, no la suerte del orden.
+  {
+    path: ':personaId',
+    canActivate: [contextGuard],
+    loadComponent: () =>
+      import('./pages/ficha-de-persona/ficha-de-persona-page').then((m) => m.FichaDePersonaPage),
+    title: 'AKINE - Ficha de la persona',
+  },
+
+  // Documentacion administrativa (M25, AKINE-03.02).
+  //
+  // Pantalla propia y no una seccion de la ficha: subir, reclasificar y dar de baja documentos es
+  // un trabajo con su propio formulario, sus propios filtros y su propia paginacion. Meterlo
+  // adentro del 360 haria que la pantalla que se abre para mirar sea la misma en la que se carga,
+  // y la ficha dejaria de poder leerse de un vistazo.
+  //
+  // Ancho amplio: la tabla tiene seis columnas de datos mas la de acciones.
+  {
+    path: ':personaId/documentos',
+    canActivate: [contextGuard],
+    loadComponent: () =>
+      import('./pages/documentos-de-persona/documentos-de-persona-page').then(
+        (m) => m.DocumentosDePersonaPage,
+      ),
+    title: 'AKINE - Documentos de la persona',
+    data: { [DATA_ANCHO]: ANCHO_AMPLIO },
+  },
 ];
