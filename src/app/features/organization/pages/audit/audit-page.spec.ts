@@ -81,6 +81,253 @@ describe('AuditPage', () => {
     expect(texto(fixture)).toContain('no puede superar los 90 dias');
   });
 
+  it('un 403 por falta de permiso muestra el rechazo y NO ofrece elegir contexto', async () => {
+    // Un 403 de permiso y uno de contexto se resuelven de formas opuestas: el primero se pide,
+    // el segundo se elige. Ofrecer el selector de contexto aca manda al usuario a dar vueltas
+    // por una pantalla que no le va a cambiar nada.
+    const fixture = montar();
+
+    escribir(fixture, '#auditoria-entityType', 'MEMBERSHIP');
+    escribir(fixture, '#auditoria-entityId', '10');
+    buscar(fixture);
+
+    httpMock
+      .expectOne(esConsulta())
+      .flush(
+        { title: 'Prohibido', detail: 'No tenes auditoria:read sobre esta sede.' },
+        { status: 403, statusText: 'Forbidden' },
+      );
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(texto(fixture)).toContain('No tenes auditoria:read sobre esta sede.');
+    expect(fixture.nativeElement.querySelector('a[href="/seleccionar-contexto"]')).toBeNull();
+  });
+
+  it('un 403 de contexto faltante si ofrece elegir contexto', async () => {
+    // La lectura de auditoria es sensible -incluye los accesos clinicos-, asi que el backend
+    // corta antes de resolver el tenant. La unica salida es elegir contexto, y sin el enlace el
+    // usuario se queda mirando un error que no puede resolver desde ahi.
+    const fixture = montar();
+
+    marcar(fixture, '#auditoria-filtro-actor');
+    escribir(fixture, '#auditoria-actorAccountId', '18');
+    buscar(fixture);
+
+    httpMock
+      .expectOne(esConsulta())
+      .flush(
+        { type: 'https://akine.app/problems/missing-tenant-context' },
+        { status: 403, statusText: 'Forbidden' },
+      );
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(texto(fixture)).toContain('Todavia no elegiste un contexto de trabajo.');
+    expect(fixture.nativeElement.querySelector('a[href="/seleccionar-contexto"]')).not.toBeNull();
+  });
+
+  it('un 429 dice cuantos segundos esperar en vez de un "demasiados intentos" pelado', async () => {
+    // Sin el plazo el usuario reintenta a ciegas y se come otro rechazo, que en auditoria
+    // ademas queda registrado.
+    const fixture = montar();
+
+    escribir(fixture, '#auditoria-entityType', 'MEMBERSHIP');
+    escribir(fixture, '#auditoria-entityId', '10');
+    buscar(fixture);
+
+    httpMock
+      .expectOne(esConsulta())
+      .flush(
+        { type: 'https://akine.app/problems/rate-limited' },
+        { status: 429, statusText: 'Too Many Requests', headers: { 'Retry-After': '45' } },
+      );
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(texto(fixture)).toContain('Espera 45 segundos');
+  });
+
+  it('un error de red se distingue de un rechazo del servidor', async () => {
+    // "Revisa tu conexion" y "no tenes permiso" mandan a hacer cosas distintas: sin la
+    // distincion, un corte de red se reporta como un problema de permisos.
+    const fixture = montar();
+
+    escribir(fixture, '#auditoria-entityType', 'MEMBERSHIP');
+    escribir(fixture, '#auditoria-entityId', '10');
+    buscar(fixture);
+
+    httpMock.expectOne(esConsulta()).error(new ProgressEvent('error'), { status: 0 });
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(texto(fixture)).toContain('Revisa tu conexion');
+  });
+
+  it('el filtro de entidad a medio llenar no sale a la red y marca el campo que falta', () => {
+    // El backend responde 400 igual, pero el rechazo no dice cual de los dos campos faltaba:
+    // gastarlo para averiguarlo deja al usuario adivinando.
+    const fixture = montar();
+
+    buscar(fixture);
+    httpMock.expectNone(esConsulta());
+    expect(texto(fixture)).toContain('Indica el tipo de entidad.');
+
+    escribir(fixture, '#auditoria-entityType', 'MEMBERSHIP');
+    buscar(fixture);
+    httpMock.expectNone(esConsulta());
+    expect(texto(fixture)).toContain('Indica el numero de la entidad.');
+  });
+
+  it('el filtro por actor sin numero de cuenta tampoco sale a la red', () => {
+    const fixture = montar();
+
+    marcar(fixture, '#auditoria-filtro-actor');
+    buscar(fixture);
+
+    httpMock.expectNone(esConsulta());
+    expect(texto(fixture)).toContain('Indica la cuenta cuya actividad queres ver.');
+  });
+
+  it('una ventana con una sola fecha no sale a la red', () => {
+    const fixture = montar();
+
+    marcar(fixture, '#auditoria-filtro-ventana');
+    escribir(fixture, '#auditoria-desde', '2026-01-01');
+    buscar(fixture);
+
+    httpMock.expectNone(esConsulta());
+    expect(texto(fixture)).toContain('Indica las dos fechas de la ventana.');
+  });
+
+  it('una ventana invertida no sale a la red', () => {
+    // Un rango al reves devuelve cero hechos sin decir por que: se lee como "no paso nada",
+    // que es justo la conclusion equivocada en una consulta de auditoria.
+    const fixture = montar();
+
+    marcar(fixture, '#auditoria-filtro-ventana');
+    escribir(fixture, '#auditoria-desde', '2026-06-30');
+    escribir(fixture, '#auditoria-hasta', '2026-01-01');
+    buscar(fixture);
+
+    httpMock.expectNone(esConsulta());
+    expect(texto(fixture)).toContain('posterior a la inicial');
+  });
+
+  it('una ventana de exactamente 90 dias SI sale a la red, con el dia final entero', () => {
+    // El borde del tope. Si la comparacion se pasa de estricta, el usuario no puede pedir la
+    // ventana maxima que la propia pantalla le promete.
+    const fixture = montar();
+
+    marcar(fixture, '#auditoria-filtro-ventana');
+    escribir(fixture, '#auditoria-desde', '2026-01-01');
+    escribir(fixture, '#auditoria-hasta', '2026-03-31');
+    buscar(fixture);
+
+    // Los dos puntos viajan escapados: `HttpParams` los codifica, y el backend los acepta asi.
+    const peticion = httpMock.expectOne(esConsulta());
+    expect(decodeURIComponent(peticion.request.params.get('from') ?? '')).toBe(
+      '2026-01-01T00:00:00.000Z',
+    );
+    // El dia final se incluye entero: quien elige el 31 espera ver lo que paso ese dia.
+    expect(decodeURIComponent(peticion.request.params.get('to') ?? '')).toBe(
+      '2026-03-31T23:59:59.000Z',
+    );
+
+    peticion.flush(VACIA);
+  });
+
+  it('cambiar de filtro borra el error que dejo el anterior', () => {
+    // Un cartel de "la ventana no puede superar los 90 dias" sobre el filtro por actor no
+    // describe nada de lo que hay en pantalla.
+    const fixture = montar();
+
+    marcar(fixture, '#auditoria-filtro-ventana');
+    escribir(fixture, '#auditoria-desde', '2026-01-01');
+    escribir(fixture, '#auditoria-hasta', '2026-06-30');
+    buscar(fixture);
+    expect(texto(fixture)).toContain('no puede superar los 90 dias');
+
+    marcar(fixture, '#auditoria-filtro-actor');
+
+    expect(texto(fixture)).not.toContain('no puede superar los 90 dias');
+    // Y los intentos vuelven a cero: el campo del filtro nuevo no nace en rojo.
+    expect(texto(fixture)).not.toContain('Indica la cuenta cuya actividad queres ver.');
+  });
+
+  it('pasar de pagina conserva el filtro elegido y pide la pagina siguiente', async () => {
+    // Si la paginacion rearmara los parametros desde cero, la pagina 2 vendria de otra
+    // consulta y el usuario estaria leyendo hechos que no pidio.
+    const fixture = montar();
+
+    marcar(fixture, '#auditoria-filtro-actor');
+    escribir(fixture, '#auditoria-actorAccountId', '18');
+    buscar(fixture);
+
+    httpMock.expectOne(esConsulta()).flush({
+      content: [{ id: 1, occurredAt: '2026-09-01T10:00:00Z', eventType: 'MEMBERSHIP_CREATED' }],
+      page: 0,
+      size: 20,
+      totalElements: 30,
+      totalPages: 2,
+    });
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const siguiente = [...fixture.nativeElement.querySelectorAll('button')].find(
+      (boton: HTMLButtonElement) => (boton.textContent ?? '').trim() === 'Siguiente',
+    ) as HTMLButtonElement | undefined;
+    siguiente?.click();
+    fixture.detectChanges();
+
+    const segunda = httpMock.expectOne(esConsulta());
+    expect(segunda.request.params.get('page')).toBe('1');
+    expect(segunda.request.params.get('actorAccountId')).toBe('18');
+
+    segunda.flush(VACIA);
+  });
+
+  it('sin contexto elegido, Buscar no gasta un rechazo del servidor', () => {
+    // La pantalla es alcanzable sin contexto, y la consulta sin organizacion no existe.
+    const fixture = TestBed.createComponent(AuditPage);
+    fixture.detectChanges();
+
+    escribir(fixture, '#auditoria-entityType', 'MEMBERSHIP');
+    escribir(fixture, '#auditoria-entityId', '10');
+    buscar(fixture);
+
+    httpMock.expectNone(() => true);
+    expect(texto(fixture)).toContain('Todavia no elegiste un contexto de trabajo.');
+  });
+
+  it('cambiar de organizacion descarta los hechos de la anterior', async () => {
+    // Son hechos auditados de OTRO tenant: dejarlos en pantalla bajo el nombre de la nueva
+    // organizacion es una fuga de datos entre tenants, aunque nadie vuelva a consultarlos.
+    const fixture = montar();
+
+    marcar(fixture, '#auditoria-filtro-actor');
+    escribir(fixture, '#auditoria-actorAccountId', '18');
+    buscar(fixture);
+
+    httpMock.expectOne(esConsulta()).flush({
+      content: [{ id: 1, occurredAt: '2026-09-01T10:00:00Z', eventType: 'MEMBERSHIP_REVOKED' }],
+      page: 0,
+      size: 20,
+      totalElements: 1,
+      totalPages: 1,
+    });
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(texto(fixture)).toContain('MEMBERSHIP_REVOKED');
+
+    tenantContext.select({ organizationId: 2, organizationName: 'Nueva Cordoba' });
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(texto(fixture)).not.toContain('MEMBERSHIP_REVOKED');
+    expect(texto(fixture)).toContain('Elegi un filtro y presiona Buscar.');
+  });
+
   it(
     'no tiene violaciones de axe con el filtro de ventana temporal abierto',
     async () => {

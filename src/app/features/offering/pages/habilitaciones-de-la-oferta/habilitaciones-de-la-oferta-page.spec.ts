@@ -270,6 +270,211 @@ describe('HabilitacionesDeLaOfertaPage', () => {
     expect(botonPorTexto(fixture, 'Reintentar')).not.toBeNull();
   });
 
+  it('desmarcar al ultimo profesional avisa EN VIVO que la oferta queda abierta a todos', async () => {
+    // El caso peligroso de la pantalla: quien desmarca la ultima casilla cree que restringe y
+    // en realidad abre la oferta al centro entero. El aviso tiene que cambiar ANTES de guardar,
+    // porque despues el cambio ya esta hecho.
+    const fixture = await montar({
+      ...SIN_RESTRINGIR,
+      restringidaPorProfesional: true,
+      profesionales: [
+        {
+          membershipId: 77,
+          nombre: 'Ana Gomez',
+          roleCode: 'PROFESIONAL',
+          estado: 'ACTIVO',
+          vinculoVigente: true,
+        },
+      ],
+    });
+
+    expect(casillas(fixture)[0].checked).toBe(true);
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain(
+      'Solo los marcados van a poder prestar esta oferta',
+    );
+
+    marcar(fixture, 0);
+
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain(
+      'la oferta queda sin restringir',
+    );
+
+    botonPorTexto(fixture, 'Guardar los profesionales')?.click();
+    fixture.detectChanges();
+
+    const guardado = httpMock.expectOne(
+      (peticion: HttpRequest<unknown>) =>
+        peticion.method === 'PUT' && peticion.url === `${HABILITACIONES}/profesionales`,
+    );
+    // Se manda el conjunto completo, que ahora es vacio: el servidor hace el diff.
+    expect((guardado.request.body as { ids: number[] }).ids).toEqual([]);
+
+    guardado.flush(SIN_RESTRINGIR);
+    await fixture.whenStable();
+    fixture.detectChanges();
+    httpMock.expectOne(esListadoDeOfertas()).flush([OFERTA_CARGADA]);
+    await fixture.whenStable();
+    fixture.detectChanges();
+  });
+
+  it('una respuesta sin los campos opcionales no pinta "undefined" en ninguna fila', async () => {
+    // El contrato declara opcionales TODOS los campos de estas filas. Sin los respaldos, una
+    // respuesta parcial deja al administrador eligiendo entre "Profesional #undefined" y
+    // "undefined personas", que es peor que no mostrar la fila.
+    const fixture = await montar(
+      {
+        ...SIN_RESTRINGIR,
+        restringidaPorProfesional: true,
+        restringidaPorEspacio: true,
+        profesionales: [{ membershipId: 88, estado: 'ACTIVO' }],
+        espacios: [{ espacioId: 10, estado: 'ACTIVO' }],
+      },
+      { colaboradores: [{ id: 77, accountEmail: 'ana@centro.test', estado: 'ACTIVA' }] },
+    );
+
+    const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(texto).toContain('Profesional #88');
+    expect(texto).toContain('Espacio #10');
+    // El colaborador sin nombre cargado se identifica por su correo, no por su numero.
+    expect(texto).toContain('ana@centro.test');
+    expect(texto).not.toContain('undefined');
+    expect(texto).not.toContain('NaN');
+  });
+
+  it('si no se pudo releer la oferta, guardar no manda nada a la red', async () => {
+    // Sin la `version` de la oferta el guardado se corta solo: mandar una inventada pisaria el
+    // cambio de otro, que es lo que el control optimista existe para impedir.
+    const fixture = await montar(SIN_RESTRINGIR, { ofertaPerdida: true });
+
+    marcar(fixture, 0);
+    botonPorTexto(fixture, 'Guardar los profesionales')?.click();
+    fixture.detectChanges();
+
+    httpMock.expectNone((peticion: HttpRequest<unknown>) => peticion.method === 'PUT');
+  });
+
+  it('un 403 al guardar explica que falta administrar la sede, y no oculta la lista', async () => {
+    const fixture = await montar();
+
+    marcar(fixture, 0);
+    botonPorTexto(fixture, 'Guardar los profesionales')?.click();
+    fixture.detectChanges();
+
+    const guardado = httpMock.expectOne(
+      (peticion: HttpRequest<unknown>) =>
+        peticion.method === 'PUT' && peticion.url === `${HABILITACIONES}/profesionales`,
+    );
+
+    // Mientras la peticion viaja las casillas quedan apagadas: un segundo envio con el mismo
+    // `expectedVersion` termina en un 409 que le echa la culpa a una edicion ajena inexistente.
+    fixture.detectChanges();
+    expect(casillas(fixture)[0].disabled).toBe(true);
+
+    guardado.flush({ title: 'Prohibido' }, { status: 403, statusText: 'Forbidden' });
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(texto).toContain('hace falta administrarla');
+    // Recargar no consigue el permiso que falta: ofrecerlo manda a dar vueltas.
+    expect(botonPorTexto(fixture, 'Recargar la configuracion')).toBeNull();
+    // Y la configuracion se sigue viendo: consultarla si se puede.
+    expect(casillas(fixture).length).toBeGreaterThan(0);
+  });
+
+  it('un 404 al guardar ofrece recargar la configuracion', async () => {
+    // La oferta ya no existe o no es de esta sede: reintentar el mismo PUT falla igual.
+    const fixture = await montar();
+
+    marcar(fixture, 0);
+    botonPorTexto(fixture, 'Guardar los profesionales')?.click();
+    fixture.detectChanges();
+
+    httpMock
+      .expectOne(
+        (peticion: HttpRequest<unknown>) =>
+          peticion.method === 'PUT' && peticion.url === `${HABILITACIONES}/profesionales`,
+      )
+      .flush({ title: 'No existe' }, { status: 404, statusText: 'Not Found' });
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Esa oferta ya no existe');
+
+    botonPorTexto(fixture, 'Recargar la configuracion')?.click();
+    fixture.detectChanges();
+
+    httpMock.expectOne(HABILITACIONES).flush(SIN_RESTRINGIR);
+    httpMock.expectOne(esListadoDeOfertas()).flush([OFERTA_CARGADA]);
+    httpMock.expectOne(esListado(MEMBERSHIPS)).flush({ content: [] });
+    httpMock.expectOne(esListado(ESPACIOS)).flush({ content: [] });
+    await fixture.whenStable();
+    fixture.detectChanges();
+  });
+
+  it('un 409 sin tipo propio muestra el detalle del backend y ofrece recargar', async () => {
+    // Los conflictos de invariante de esta etapa no tienen `problemType` publicado: el unico
+    // texto que nombra cual fue es el `detail`. Reemplazarlo por un generico lo tira.
+    const fixture = await montar();
+
+    marcar(fixture, 1);
+    botonPorTexto(fixture, 'Guardar los espacios')?.click();
+    fixture.detectChanges();
+
+    httpMock
+      .expectOne(
+        (peticion: HttpRequest<unknown>) =>
+          peticion.method === 'PUT' && peticion.url === `${HABILITACIONES}/espacios`,
+      )
+      .flush(
+        { detail: 'La oferta esta dada de baja y no admite habilitaciones nuevas.' },
+        { status: 409, statusText: 'Conflict' },
+      );
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain(
+      'La oferta esta dada de baja y no admite habilitaciones nuevas.',
+    );
+    expect(botonPorTexto(fixture, 'Recargar la configuracion')).not.toBeNull();
+  });
+
+  it('sin permiso de administrar la sede no se ofrece ningun guardado', async () => {
+    // Ofrecer un boton que termina en 403 es peor que no ofrecerlo: quien lo aprieta cree que
+    // cambio la configuracion. La lectura si se permite, y por eso las casillas se ven.
+    const fixture = await montar(SIN_RESTRINGIR, { otorgados: [] });
+
+    expect(botonPorTexto(fixture, 'Guardar los profesionales')).toBeNull();
+    expect(botonPorTexto(fixture, 'Guardar los espacios')).toBeNull();
+    expect(casillas(fixture).length).toBeGreaterThan(0);
+  });
+
+  it('un vinculo que ya no esta activo no se ofrece como candidato', async () => {
+    // Habilitar a alguien cuyo vinculo se corto crea una habilitacion que nace muerta, y la
+    // lista de candidatos es el unico lugar donde se puede evitar.
+    const fixture = await montar(SIN_RESTRINGIR, {
+      colaboradores: [
+        { id: 77, accountName: 'Ana Gomez', roleCode: 'PROFESIONAL', estado: 'ACTIVA' },
+        { id: 88, accountName: 'Leo Perez', roleCode: 'PROFESIONAL', estado: 'REVOCADA' },
+      ],
+    });
+
+    const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(texto).toContain('Ana Gomez');
+    expect(texto).not.toContain('Leo Perez');
+  });
+
+  it('si fallan los candidatos la pantalla sigue en pie y dice que no hay ninguno', async () => {
+    // Un error al traer candidatos no rompe la pantalla: la configuracion actual es lo que el
+    // usuario vino a ver. Lo que no puede pasar es que una lista corta se lea como "nadie".
+    const fixture = await montar(SIN_RESTRINGIR, { candidatosCaidos: true });
+
+    const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(texto).toContain('Todavia no hay ningun profesional configurado');
+    expect(texto).toContain('asi que hoy la puede prestar cualquiera');
+    expect(texto).toContain('Todavia no hay ningun espacio configurado');
+  });
+
   it(
     'no tiene violaciones de accesibilidad',
     async () => {
@@ -283,8 +488,26 @@ describe('HabilitacionesDeLaOfertaPage', () => {
   // Apoyo
   // -------------------------------------------------------------------------------------
 
+  /** Lo que se puede variar del montaje. Todo lo no dicho toma el camino feliz. */
+  interface Opciones {
+    /** Permisos otorgados. Vacio = solo lectura. */
+    readonly otorgados?: readonly string[];
+    /** Colaboradores que devuelve el listado de vinculos de la organizacion. */
+    readonly colaboradores?: readonly object[];
+    /** `true` para que falle el repedido de la oferta y `oferta()` quede en `null`. */
+    readonly ofertaPerdida?: boolean;
+    /** `true` para que fallen las dos consultas de candidatos. */
+    readonly candidatosCaidos?: boolean;
+  }
+
+  const ERROR_500: [object, { status: number; statusText: string }] = [
+    { title: 'Se rompio' },
+    { status: 500, statusText: 'Server Error' },
+  ];
+
   async function montar(
     configuracion: object = SIN_RESTRINGIR,
+    opciones: Opciones = {},
   ): Promise<ComponentFixture<HabilitacionesDeLaOfertaPage>> {
     contexto.select({
       organizationId: ORG,
@@ -294,21 +517,35 @@ describe('HabilitacionesDeLaOfertaPage', () => {
     });
 
     permisos.cargar().subscribe();
-    httpMock
-      .expectOne(RUTA_PERMISOS_EFECTIVOS)
-      .flush({ permissions: [PERMISO_CONSULTORIO_MANAGE] });
+    httpMock.expectOne(RUTA_PERMISOS_EFECTIVOS).flush({
+      permissions: [...(opciones.otorgados ?? [PERMISO_CONSULTORIO_MANAGE])],
+    });
 
     const fixture = TestBed.createComponent(HabilitacionesDeLaOfertaPage);
     fixture.detectChanges();
 
     httpMock.expectOne(HABILITACIONES).flush(configuracion);
-    httpMock.expectOne(esListadoDeOfertas()).flush([OFERTA_CARGADA]);
-    httpMock.expectOne(esListado(MEMBERSHIPS)).flush({
-      content: [{ id: 77, accountName: 'Ana Gomez', roleCode: 'PROFESIONAL', estado: 'ACTIVA' }],
-    });
-    httpMock.expectOne(esListado(ESPACIOS)).flush({
-      content: [{ id: 10, name: 'Box 1', capacidad: 1 }],
-    });
+
+    const ofertas = httpMock.expectOne(esListadoDeOfertas());
+    if (opciones.ofertaPerdida === true) {
+      ofertas.flush(...ERROR_500);
+    } else {
+      ofertas.flush([OFERTA_CARGADA]);
+    }
+
+    const vinculos = httpMock.expectOne(esListado(MEMBERSHIPS));
+    const espacios = httpMock.expectOne(esListado(ESPACIOS));
+    if (opciones.candidatosCaidos === true) {
+      vinculos.flush(...ERROR_500);
+      espacios.flush(...ERROR_500);
+    } else {
+      vinculos.flush({
+        content: opciones.colaboradores ?? [
+          { id: 77, accountName: 'Ana Gomez', roleCode: 'PROFESIONAL', estado: 'ACTIVA' },
+        ],
+      });
+      espacios.flush({ content: [{ id: 10, name: 'Box 1', capacidad: 1 }] });
+    }
 
     await fixture.whenStable();
     fixture.detectChanges();
@@ -325,11 +562,18 @@ describe('HabilitacionesDeLaOfertaPage', () => {
     return (peticion: HttpRequest<unknown>) => peticion.method === 'GET' && peticion.url === url;
   }
 
+  function casillas(
+    fixture: ComponentFixture<HabilitacionesDeLaOfertaPage>,
+  ): readonly HTMLInputElement[] {
+    return [
+      ...(fixture.nativeElement as HTMLElement).querySelectorAll<HTMLInputElement>(
+        'input[type="checkbox"]',
+      ),
+    ];
+  }
+
   function marcar(fixture: ComponentFixture<HabilitacionesDeLaOfertaPage>, indice: number): void {
-    const casillas = (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLInputElement>(
-      'input[type="checkbox"]',
-    );
-    casillas[indice].click();
+    casillas(fixture)[indice].click();
     fixture.detectChanges();
   }
 

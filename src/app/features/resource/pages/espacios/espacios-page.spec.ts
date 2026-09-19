@@ -53,6 +53,45 @@ const PAGINA = {
   totalPages: 1,
 };
 
+/** Espacio de capacidad multiple y SIN fin de vigencia: la fila que BOX_1 no cubre. */
+const GIMNASIO = {
+  id: 12,
+  organizationId: 1,
+  consultorioId: 3,
+  name: 'Gimnasio',
+  tipo: 'GIMNASIO',
+  capacidad: 8,
+  validFrom: '2026-01-05T09:00:00Z',
+  estado: 'ACTIVO',
+  enServicio: true,
+  version: 5,
+};
+
+/** Un espacio dado de baja: sigue en el listado con su motivo y no se edita. */
+const BOX_DADO_DE_BAJA = {
+  id: 13,
+  organizationId: 1,
+  consultorioId: 3,
+  name: 'Box 9',
+  tipo: 'BOX',
+  capacidad: 1,
+  validFrom: '2026-01-05T09:00:00Z',
+  estado: 'INACTIVO',
+  enServicio: false,
+  deletedAt: '2026-08-30T12:00:00Z',
+  deactivationReason: 'Se desarmo para ampliar el gimnasio',
+  version: 7,
+};
+
+/** Lo que devuelve el filtro "Todos": uno vigente y uno dado de baja. */
+const PAGINA_MIXTA = {
+  content: [GIMNASIO, BOX_DADO_DE_BAJA],
+  page: 0,
+  size: 20,
+  totalElements: 2,
+  totalPages: 1,
+};
+
 const LISTADO = '/api/v1/organizations/1/consultorios/3/espacios';
 
 /**
@@ -291,8 +330,244 @@ describe('EspaciosPage', () => {
     expect(texto(fixture)).toContain('queda libre');
   });
 
+  it('el nombre ya tomado se muestra EN el campo nombre, no al pie del panel', async () => {
+    // Es un error de UN campo. Mostrarlo al pie obliga a adivinar cual de los seis corregir, y
+    // el lector de pantalla nunca lo asocia al input.
+    const fixture = await montar();
+
+    abrir(fixture, 'Editar');
+    escribir(fixture, '#editar-espacio-name', 'Box 4');
+    enviar(fixture, 'form');
+
+    httpMock
+      .expectOne((candidata: HttpRequest<unknown>) => candidata.method === 'PATCH')
+      .flush(
+        { type: 'https://akine.app/problems/espacio-name-taken' },
+        { status: 409, statusText: 'Conflict' },
+      );
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const nombre: HTMLInputElement | null =
+      fixture.nativeElement.querySelector('#editar-espacio-name');
+    expect(nombre?.getAttribute('aria-invalid')).toBe('true');
+    expect(nombre?.getAttribute('aria-describedby')).toBe('editar-espacio-name-conflicto');
+    expect(fixture.nativeElement.querySelector('#editar-espacio-name-conflicto')).not.toBeNull();
+
+    // Y no se repite al pie: el mismo texto dos veces se lee como dos problemas distintos.
+    expect(fixture.nativeElement.querySelectorAll('.estado--error[role="alert"]').length).toBe(0);
+    // El nombre de un espacio dado de baja SI se reusa, y eso solo lo sabe el frontend.
+    expect(texto(fixture)).toContain('revisa el filtro "Todos"');
+  });
+
+  it('un 404 al guardar ofrece recargar el listado, no reintentar', async () => {
+    // El espacio ya no existe: reintentar el mismo PATCH falla igual. Lo unico que sirve es
+    // volver a leer que hay ahora.
+    const fixture = await montar();
+
+    abrir(fixture, 'Editar');
+    escribir(fixture, '#editar-espacio-name', 'Box 1 bis');
+    enviar(fixture, 'form');
+
+    httpMock
+      .expectOne((candidata: HttpRequest<unknown>) => candidata.method === 'PATCH')
+      .flush({ title: 'No existe' }, { status: 404, statusText: 'Not Found' });
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(texto(fixture)).toContain('Ese espacio ya no existe');
+
+    const recargar = botonPorTexto(fixture, 'Recargar el listado');
+    expect(recargar).not.toBeNull();
+    recargar?.click();
+    fixture.detectChanges();
+
+    httpMock.expectOne(esListado()).flush(PAGINA);
+    await fixture.whenStable();
+    fixture.detectChanges();
+  });
+
+  it('la baja rechazada por referencias vigentes dice cuantas son y de que tipo', async () => {
+    // "No se pudo" manda a llamar a soporte; "hay 14 turnos futuros en ese box" se resuelve
+    // solo. La diferencia esta en las dos extensiones del cuerpo.
+    const fixture = await montar();
+
+    abrir(fixture, 'Dar de baja');
+    escribir(fixture, '#baja-espacio-reason', 'Se desarma para ampliar el gimnasio');
+    enviar(fixture, 'form');
+
+    httpMock.expectOne(`${LISTADO}/10/deactivate`).flush(
+      {
+        type: 'https://akine.app/problems/espacio-has-active-references',
+        referenceType: 'turnos futuros',
+        referenceCount: 14,
+      },
+      { status: 409, statusText: 'Conflict' },
+    );
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(texto(fixture)).toContain('14 turnos futuros');
+    // El panel sigue abierto: lo accionable esta en otra pantalla y cerrar el panel obligaria
+    // a rehacer el motivo al volver.
+    expect(fixture.nativeElement.querySelector('#baja-espacio-reason')).not.toBeNull();
+  });
+
+  it('una baja que otra persona ya hizo ofrece recargar el listado', async () => {
+    const fixture = await montar();
+
+    abrir(fixture, 'Dar de baja');
+    escribir(fixture, '#baja-espacio-reason', 'Se desarma para ampliar el gimnasio');
+    enviar(fixture, 'form');
+
+    httpMock
+      .expectOne(`${LISTADO}/10/deactivate`)
+      .flush(
+        { type: 'https://akine.app/problems/espacio-already-inactive' },
+        { status: 409, statusText: 'Conflict' },
+      );
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(texto(fixture)).toContain('ya estaba dado de baja');
+    expect(botonPorTexto(fixture, 'Recargar el listado')).not.toBeNull();
+  });
+
+  it('bajar la capacidad por debajo de lo comprometido explica con los dos numeros', async () => {
+    // Es el unico 409 del modulo donde el usuario necesita DOS cifras para decidir: a cuanto
+    // puede bajar hoy y cuanto hay tomado. Sin ellas solo queda "no pudimos completar".
+    const fixture = await montarCon(PAGINA_MIXTA);
+
+    abrir(fixture, 'Editar');
+    escribir(fixture, '#editar-espacio-capacidad', '2');
+    enviar(fixture, 'form');
+
+    const peticion = httpMock.expectOne(
+      (candidata: HttpRequest<unknown>) => candidata.method === 'PATCH',
+    );
+    expect((peticion.request.body as Record<string, unknown>)['capacidad']).toBe(2);
+
+    peticion.flush(
+      {
+        type: 'https://akine.app/problems/espacio-capacity-below-occupancy',
+        requestedCapacity: 2,
+        currentOccupancy: 6,
+        occupancyType: 'turnos simultaneos',
+      },
+      { status: 409, statusText: 'Conflict' },
+    );
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const contenido = texto(fixture);
+    expect(contenido).toContain('bajar la capacidad a 2');
+    expect(contenido).toContain('6 lugares comprometidos');
+    expect(contenido).toContain('turnos simultaneos');
+  });
+
+  it('un nombre vacio bloquea el guardado: no sale ningun PATCH', async () => {
+    // El backend lo rechaza igual, pero un 400 por un campo obligatorio vacio es un viaje que
+    // no aporta nada y deja el panel sin explicar cual campo era.
+    const fixture = await montar();
+
+    abrir(fixture, 'Editar');
+    escribir(fixture, '#editar-espacio-name', '');
+    enviar(fixture, 'form');
+
+    httpMock.expectNone((candidata: HttpRequest<unknown>) => candidata.method === 'PATCH');
+    expect(texto(fixture)).toContain('El espacio necesita un nombre.');
+  });
+
+  it('un 403 de permiso ofrece reintentar y NO manda a elegir consultorio', async () => {
+    // Elegir otro contexto no consigue el permiso que falta: el enlace mandaria al usuario a
+    // dar vueltas por una pantalla que no cambia nada.
+    const fixture = await montarConError(
+      { title: 'Prohibido' },
+      { status: 403, statusText: 'Forbidden' },
+    );
+
+    expect(texto(fixture)).toContain('No tenes permiso para administrar los espacios');
+    expect(botonPorTexto(fixture, 'Reintentar')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('a[href="/seleccionar-contexto"]')).toBeNull();
+  });
+
+  it('un 403 por contexto faltante manda a elegir consultorio y no ofrece reintentar', async () => {
+    // Reintentar sin contexto vuelve a fallar exactamente igual. Y nunca se cierra la sesion:
+    // las credenciales estan bien, lo que falta es la sede.
+    const fixture = await montarConError(
+      { type: 'https://akine.app/problems/missing-tenant-context' },
+      { status: 403, statusText: 'Forbidden' },
+    );
+
+    expect(texto(fixture)).toContain('todavia no elegiste ninguna');
+    expect(botonPorTexto(fixture, 'Reintentar')).toBeNull();
+    expect(fixture.nativeElement.querySelector('a[href="/seleccionar-contexto"]')).not.toBeNull();
+  });
+
+  it('un espacio dado de baja no ofrece editarlo y muestra su fecha y su motivo', async () => {
+    // Ofrecer "Editar" sobre una fila dada de baja termina en un 409 garantizado, y el motivo
+    // es lo que explica la decision dentro de seis meses.
+    const fixture = await montarCon(PAGINA_MIXTA);
+
+    const contenido = texto(fixture);
+    expect(contenido).toContain('Dado de baja');
+    expect(contenido).toContain('Motivo: Se desarmo para ampliar el gimnasio');
+    expect(contenido).toContain('Un espacio dado de baja no se edita.');
+
+    // Una sola fila es editable: la del gimnasio activo.
+    const editar = [...fixture.nativeElement.querySelectorAll('button')].filter(
+      (boton: HTMLButtonElement) => (boton.textContent ?? '').trim() === 'Editar',
+    );
+    expect(editar.length).toBe(1);
+
+    // Y de paso: capacidad en plural y sin fin de vigencia cargado.
+    expect(contenido).toContain('8 personas a la vez');
+    expect(contenido).toContain('Sin fin previsto');
+  });
+
+  it('sin permiso de gestion el listado se sigue viendo pero sin ninguna accion', async () => {
+    // El listado NO exige `consultorio:manage`: es la lectura que necesita un profesional para
+    // saber en que box atiende. Esconder la tabla entera dejaria a media sede sin consultarla.
+    const fixture = await montarCon(PAGINA, []);
+
+    expect(fixture.nativeElement.querySelectorAll('tbody tr').length).toBe(2);
+    expect(botonPorTexto(fixture, 'Editar')).toBeNull();
+    expect(botonPorTexto(fixture, 'Dar de baja')).toBeNull();
+    expect(fixture.nativeElement.querySelector('a[href="/espacios/nuevo"]')).toBeNull();
+  });
+
   /** Monta la pantalla con contexto sobre la sede 3, permiso de gestion y los dos espacios. */
   async function montar() {
+    return montarCon(PAGINA);
+  }
+
+  /** Igual que {@link montar}, con otra pagina y otro juego de permisos otorgados. */
+  async function montarCon(
+    pagina: object,
+    otorgados: readonly string[] = [PERMISO_CONSULTORIO_MANAGE],
+  ) {
+    const fixture = crear(otorgados);
+
+    httpMock.expectOne(esListado()).flush(pagina);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    return fixture;
+  }
+
+  /** Monta la pantalla y hace fallar el listado con el problema indicado. */
+  async function montarConError(cuerpo: object, opciones: { status: number; statusText: string }) {
+    const fixture = crear([PERMISO_CONSULTORIO_MANAGE]);
+
+    httpMock.expectOne(esListado()).flush(cuerpo, opciones);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    return fixture;
+  }
+
+  /** Contexto, permisos y componente creado, sin resolver todavia el listado. */
+  function crear(otorgados: readonly string[]) {
     tenantContext.select({
       organizationId: 1,
       organizationName: 'Belgrano',
@@ -301,15 +576,9 @@ describe('EspaciosPage', () => {
     });
 
     permisos.cargar().subscribe();
-    httpMock
-      .expectOne('/api/v1/me/permissions')
-      .flush({ permissions: [PERMISO_CONSULTORIO_MANAGE] });
+    httpMock.expectOne('/api/v1/me/permissions').flush({ permissions: [...otorgados] });
 
     const fixture = TestBed.createComponent(EspaciosPage);
-    fixture.detectChanges();
-
-    httpMock.expectOne(esListado()).flush(PAGINA);
-    await fixture.whenStable();
     fixture.detectChanges();
 
     return fixture;
@@ -323,6 +592,18 @@ describe('EspaciosPage', () => {
 
 function texto(fixture: { nativeElement: HTMLElement }): string {
   return fixture.nativeElement.textContent ?? '';
+}
+
+/** El boton cuyo texto contiene `etiqueta`, o `null`. Para afirmar que NO se ofrece una accion. */
+function botonPorTexto(
+  fixture: { nativeElement: HTMLElement },
+  etiqueta: string,
+): HTMLButtonElement | null {
+  return (
+    [...fixture.nativeElement.querySelectorAll('button')].find((candidato) =>
+      (candidato.textContent ?? '').trim().includes(etiqueta),
+    ) ?? null
+  );
 }
 
 function abrir(fixture: { nativeElement: HTMLElement; detectChanges(): void }, etiqueta: string) {

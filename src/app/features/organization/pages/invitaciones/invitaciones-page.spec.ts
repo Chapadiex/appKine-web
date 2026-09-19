@@ -1,5 +1,9 @@
 import { HttpRequest, provideHttpClient, withInterceptors } from '@angular/common/http';
-import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import {
+  HttpTestingController,
+  TestRequest,
+  provideHttpClientTesting,
+} from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 
@@ -219,7 +223,197 @@ describe('InvitacionesPage', () => {
     TIMEOUT_AXE,
   );
 
+  // -------------------------------------------------------------------------------------
+  // Estados de error del listado
+  //
+  // Los dos 403 del modulo se ven iguales en la consola y necesitan salidas OPUESTAS: uno se
+  // arregla eligiendo consultorio y el otro pidiendo el permiso. Ofrecer "Reintentar" al que le
+  // falta contexto lo deja reintentando un pedido que va a fallar siempre.
+  // -------------------------------------------------------------------------------------
+
+  it('un 403 por falta de permiso ofrece reintentar y no manda a elegir consultorio', async () => {
+    const fixture = await montarConListado((pedido) =>
+      pedido.flush(
+        { type: 'https://akine.app/problems/forbidden', detail: 'sin permiso' },
+        { status: 403, statusText: 'Forbidden' },
+      ),
+    );
+    const anfitrion = fixture.nativeElement as HTMLElement;
+
+    expect(anfitrion.textContent).toContain('No tenes permiso para administrar las invitaciones');
+    expect(rotulos(anfitrion)).toContain('Reintentar');
+    expect(anfitrion.querySelector('a[href="/seleccionar-contexto"]')).toBeNull();
+  });
+
+  it('un 403 por falta de contexto manda a elegir consultorio y no ofrece reintentar', async () => {
+    const fixture = await montarConListado((pedido) =>
+      pedido.flush(
+        { type: 'https://akine.app/problems/missing-tenant-context', detail: 'sin contexto' },
+        { status: 403, statusText: 'Forbidden' },
+      ),
+    );
+    const anfitrion = fixture.nativeElement as HTMLElement;
+
+    // Reintentar aca seria mandar el mismo pedido sin lo unico que le falta.
+    expect(rotulos(anfitrion)).not.toContain('Reintentar');
+    expect(anfitrion.querySelector('a[href="/seleccionar-contexto"]')).not.toBeNull();
+  });
+
+  it('un listado vacio dice que no hay nada con ese filtro, y no es un error', async () => {
+    const fixture = await montarConListado((pedido) => pedido.flush([]));
+    const anfitrion = fixture.nativeElement as HTMLElement;
+
+    // Sin este texto, la tabla desaparecida se lee como una pantalla rota.
+    expect(anfitrion.textContent).toContain('No hay invitaciones con el filtro elegido');
+    expect(anfitrion.querySelector('[role="alert"]')).toBeNull();
+  });
+
+  // -------------------------------------------------------------------------------------
+  // Rechazos del dominio al emitir
+  // -------------------------------------------------------------------------------------
+
+  it('un email invalido no sale a la red', async () => {
+    const fixture = await montar();
+    const anfitrion = fixture.nativeElement as HTMLElement;
+
+    abrir(fixture, 'Invitar a alguien');
+    escribir(anfitrion, '#invitacion-email', 'invitada.ejemplo.test');
+    fixture.detectChanges();
+    enviar(fixture);
+
+    // Lo que importa es que NO se emita la peticion: un 400 del backend sobre el mismo campo
+    // llega mas tarde, gasta un intento del rate limit y queda auditado en el tenant.
+    httpMock.expectNone(esAlta());
+    expect(anfitrion.textContent).toContain('Escribi un email valido');
+  });
+
+  it('una persona ya vinculada aterriza en el campo del email y manda al listado de colaboradores', async () => {
+    const fixture = await montar();
+    const anfitrion = fixture.nativeElement as HTMLElement;
+
+    abrir(fixture, 'Invitar a alguien');
+    escribir(anfitrion, '#invitacion-email', 'yatrabaja@ejemplo.test');
+    fixture.detectChanges();
+    enviar(fixture);
+
+    httpMock.expectOne(esAlta()).flush(
+      {
+        type: 'https://akine.app/problems/colaborador-ya-vinculado',
+        detail: 'ya esta vinculada',
+      },
+      { status: 409, statusText: 'Conflict' },
+    );
+    fixture.detectChanges();
+
+    // Es el mismo tratamiento que el duplicado: lo que hay que cambiar es el email, no el rol.
+    expect(anfitrion.querySelector('#invitacion-email')?.getAttribute('aria-invalid')).toBe('true');
+    expect(anfitrion.textContent).toContain('ya trabaja en esta organizacion');
+  });
+
+  it('un 429 dice cuantos segundos hay que esperar y no repite el intento', async () => {
+    const fixture = await montar();
+    const anfitrion = fixture.nativeElement as HTMLElement;
+
+    abrir(fixture, 'Invitar a alguien');
+    escribir(anfitrion, '#invitacion-email', 'nueva@ejemplo.test');
+    fixture.detectChanges();
+    enviar(fixture);
+
+    httpMock
+      .expectOne(esAlta())
+      .flush(
+        { type: 'https://akine.app/problems/rate-limited', detail: 'demasiados' },
+        { status: 429, statusText: 'Too Many Requests', headers: { 'Retry-After': '45' } },
+      );
+    fixture.detectChanges();
+
+    // El plazo sale del header y no de un numero inventado: cada reintento a ciegas se come otro
+    // 429 y queda auditado.
+    expect(anfitrion.textContent).toContain('Espera 45 segundos');
+    httpMock.expectNone(esAlta());
+  });
+
+  // -------------------------------------------------------------------------------------
+  // Rechazos del dominio al reenviar y al cancelar
+  // -------------------------------------------------------------------------------------
+
+  it('reenviar una invitacion que ya fue resuelta lo dice y no relee el listado a ciegas', async () => {
+    const fixture = await montar();
+    const anfitrion = fixture.nativeElement as HTMLElement;
+
+    abrir(fixture, 'Reenviar');
+
+    // La carrera real del modulo: la persona acepto desde su correo mientras el administrador
+    // miraba la fila pendiente.
+    httpMock
+      .expectOne((peticion: HttpRequest<unknown>) => peticion.url === `${LISTADO}/7/resend`)
+      .flush(
+        { type: 'https://akine.app/problems/invitacion-ya-resuelta', detail: 'ya resuelta' },
+        { status: 409, statusText: 'Conflict' },
+      );
+    fixture.detectChanges();
+
+    expect(anfitrion.textContent).toContain('ya fue resuelta');
+    // Y no se dispara la relectura, que solo corre en el camino feliz.
+    httpMock.expectNone(esListado());
+  });
+
+  it('cancelar una invitacion que ya no existe deja el panel abierto con el mensaje', async () => {
+    const fixture = await montar();
+    const anfitrion = fixture.nativeElement as HTMLElement;
+
+    abrir(fixture, 'Cancelar');
+    escribir(anfitrion, '#cancelar-invitacion-motivo', 'Se cubrio el puesto');
+    fixture.detectChanges();
+    confirmar(anfitrion, 'Cancelar la invitacion');
+    fixture.detectChanges();
+
+    httpMock
+      .expectOne((peticion: HttpRequest<unknown>) => peticion.url === `${LISTADO}/7/cancel`)
+      .flush(
+        { type: 'https://akine.app/problems/not-found' },
+        { status: 404, statusText: 'Not Found' },
+      );
+    fixture.detectChanges();
+
+    // Cerrar el panel obligaria a rehacer el motivo para leer por que fallo.
+    expect(anfitrion.textContent).toContain('Este enlace no sirve');
+    expect(anfitrion.querySelector('#cancelar-invitacion-motivo')).not.toBeNull();
+  });
+
+  // -------------------------------------------------------------------------------------
+  // Filtro
+  // -------------------------------------------------------------------------------------
+
+  it('una invitacion aceptada no ofrece reenviar ni cancelar', async () => {
+    const fixture = await montar();
+    const anfitrion = fixture.nativeElement as HTMLElement;
+
+    const selector = anfitrion.querySelector('#filtro-estado-invitacion') as HTMLSelectElement;
+    selector.value = 'ACEPTADA';
+    selector.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+
+    const pedido = httpMock.expectOne(esListado());
+    expect(pedido.request.urlWithParams).toContain('estado=ACEPTADA');
+    pedido.flush([{ ...PENDIENTE, id: 12, estado: 'ACEPTADA', vencida: false }]);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    // Reenviar o cancelar algo ya aceptado es un 409 seguro: la fila no ofrece el camino.
+    expect(rotulos(anfitrion)).not.toContain('Reenviar');
+    expect(rotulos(anfitrion)).not.toContain('Cancelar');
+    expect(anfitrion.textContent).toContain('Aceptada');
+  });
+
   async function montar(): Promise<ComponentFixture<InvitacionesPage>> {
+    return montarConListado((pedido) => pedido.flush([PENDIENTE, VENCIDA]));
+  }
+
+  /** Monta la pantalla dejando que cada caso decida como responde el listado. */
+  async function montarConListado(
+    responder: (pedido: TestRequest) => void,
+  ): Promise<ComponentFixture<InvitacionesPage>> {
     tenantContext.select({
       organizationId: 1,
       organizationName: 'Centro Belgrano',
@@ -235,11 +429,16 @@ describe('InvitacionesPage', () => {
     const fixture = TestBed.createComponent(InvitacionesPage);
     fixture.detectChanges();
 
-    httpMock.expectOne(esListado()).flush([PENDIENTE, VENCIDA]);
+    responder(httpMock.expectOne(esListado()));
     await fixture.whenStable();
     fixture.detectChanges();
 
     return fixture;
+  }
+
+  function esAlta() {
+    return (peticion: HttpRequest<unknown>) =>
+      peticion.method === 'POST' && peticion.url === LISTADO;
   }
 
   function esListado() {
@@ -266,6 +465,21 @@ function escribir(anfitrion: HTMLElement, selector: string, valor: string) {
   }
   campo.value = valor;
   campo.dispatchEvent(new Event('input'));
+}
+
+/** Los rotulos de todos los botones: sirve para afirmar que una accion NO se ofrece. */
+function rotulos(anfitrion: HTMLElement): string[] {
+  return [...anfitrion.querySelectorAll('button')].map((boton) => (boton.textContent ?? '').trim());
+}
+
+function confirmar(anfitrion: HTMLElement, etiqueta: string) {
+  const boton = [...anfitrion.querySelectorAll('button')].find(
+    (candidato) => (candidato.textContent ?? '').trim() === etiqueta,
+  );
+  if (boton === undefined) {
+    throw new Error(`No existe el boton ${etiqueta}`);
+  }
+  boton.click();
 }
 
 function enviar(fixture: { nativeElement: HTMLElement; detectChanges(): void }) {

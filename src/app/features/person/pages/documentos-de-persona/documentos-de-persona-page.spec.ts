@@ -306,6 +306,237 @@ describe('DocumentosDePersonaPage', () => {
   });
 
   // -------------------------------------------------------------------------------------
+  // 5. Estados de error del listado
+  //
+  // Los dos 403 llegan con el mismo status y necesitan salidas OPUESTAS: uno se arregla
+  // eligiendo contexto y el otro pidiendo el permiso.
+  // -------------------------------------------------------------------------------------
+
+  it('una direccion que no identifica a nadie no dispara ninguna peticion', async () => {
+    tenantContext.select({
+      organizationId: 1,
+      organizationName: 'Centro Belgrano',
+      consultorioId: 3,
+      consultorioName: 'Sede Centro',
+    });
+    permisos.cargar().subscribe();
+    httpMock.expectOne(RUTA_PERMISOS_EFECTIVOS).flush({ permissions: [PERMISO_PACIENTE_MANAGE] });
+
+    const fixture = TestBed.createComponent(DocumentosDePersonaPage);
+    fixture.componentRef.setInput('personaId', 'sin-sentido');
+    fixture.detectChanges();
+    await estabilizar(fixture);
+
+    // Sin este corte sale un `GET /personas/NaN/adjuntos`, que el backend contesta con un 400
+    // sobre un parametro que el operador nunca escribio.
+    httpMock.expectNone(esListado());
+    expect(texto(fixture)).toContain('La direccion no identifica a ninguna persona');
+  });
+
+  it('un 403 por falta de permiso ofrece reintentar y no manda a elegir contexto', async () => {
+    const fixture = await montarConListado((pedido) =>
+      pedido.flush(
+        { type: 'https://akine.app/problems/forbidden', detail: 'sin permiso' },
+        { status: 403, statusText: 'Forbidden' },
+      ),
+    );
+
+    expect(texto(fixture)).toContain('hace falta el permiso de gestion de pacientes');
+    expect(rotulosDeBoton(fixture)).toContain('Reintentar');
+    expect(fixture.nativeElement.querySelector('a[href="/seleccionar-contexto"]')).toBeNull();
+  });
+
+  it('un 403 por falta de contexto manda a elegir contexto y no ofrece reintentar', async () => {
+    const fixture = await montarConListado((pedido) =>
+      pedido.flush(
+        { type: 'https://akine.app/problems/missing-tenant-context', detail: 'sin contexto' },
+        { status: 403, statusText: 'Forbidden' },
+      ),
+    );
+
+    // Y dice que la sesion sigue abierta: el reflejo ante un 403 es pensar que se deslogueo.
+    expect(texto(fixture)).toContain('Tu sesion sigue abierta');
+    expect(rotulosDeBoton(fixture)).not.toContain('Reintentar');
+    expect(fixture.nativeElement.querySelector('a[href="/seleccionar-contexto"]')).not.toBeNull();
+  });
+
+  it('sin paciente:manage se listan y se descargan los documentos, y no se modifican', async () => {
+    const fixture = await montarConListado((pedido) => responderListado(pedido, [CREDENCIAL]), []);
+
+    const ofrecidos = rotulosDeBoton(fixture);
+    // Consultar el padron si se puede, y por eso el listado se sigue viendo entero.
+    expect(texto(fixture)).toContain('Credencial OSDE');
+    expect(ofrecidos).toContain('Descargar');
+    expect(ofrecidos).not.toContain('Subir un documento');
+    expect(ofrecidos).not.toContain('Reclasificar');
+    expect(ofrecidos).not.toContain('Dar de baja');
+  });
+
+  // -------------------------------------------------------------------------------------
+  // 6. Descarga
+  // -------------------------------------------------------------------------------------
+
+  it('el archivo se guarda con el nombre que declara Content-Disposition, y el objectURL se revoca', async () => {
+    const fixture = await montar([CREDENCIAL]);
+    const descarga = espiarDescarga();
+
+    apretar(fixture, 'Descargar');
+    httpMock.expectOne(esDescarga()).flush(new Blob(['pdf']), {
+      headers: {
+        'Content-Disposition': "attachment; filename*=UTF-8''credencial%20ma%C3%B1ana.pdf",
+      },
+    });
+    await estabilizar(fixture);
+
+    // La forma extendida es la unica que sobrevive a los acentos; la simple los transliteran.
+    expect(descarga.enlace.download).toBe('credencial mañana.pdf');
+    // Un objectURL que no se revoca retiene el archivo entero en memoria toda la sesion, y esta
+    // es una pantalla de mostrador que descarga muchos.
+    expect(descarga.revocar).toHaveBeenCalledWith('blob:sintetico');
+    descarga.restaurar();
+  });
+
+  it('un Content-Disposition mal codificado no tira la descarga: cae en la forma simple', async () => {
+    const fixture = await montar([CREDENCIAL]);
+    const descarga = espiarDescarga();
+
+    apretar(fixture, 'Descargar');
+    // `%E1` suelto hace explotar a `decodeURIComponent`. Dejar que la excepcion suba cancelaria
+    // una descarga que el navegador podia resolver igual.
+    httpMock.expectOne(esDescarga()).flush(new Blob(['pdf']), {
+      headers: {
+        'Content-Disposition': 'attachment; filename*=UTF-8\'\'rot%E1; filename="credencial.pdf"',
+      },
+    });
+    await estabilizar(fixture);
+
+    expect(descarga.enlace.download).toBe('credencial.pdf');
+    descarga.restaurar();
+  });
+
+  it('una descarga rechazada avisa, aunque pierda el detalle del problema', async () => {
+    const fixture = await montar([CREDENCIAL]);
+    const descarga = espiarDescarga();
+
+    apretar(fixture, 'Descargar');
+    // La descarga viaja con `responseType: 'blob'`, asi que el cuerpo del error tambien llega
+    // como Blob y NO como objeto: se reproduce tal cual, porque es lo que pasa en el navegador.
+    httpMock.expectOne(esDescarga()).flush(
+      new Blob(
+        [
+          JSON.stringify({
+            type: 'https://akine.app/problems/adjunto-no-disponible',
+            detail: 'sin contenido',
+          }),
+        ],
+        { type: 'application/problem+json' },
+      ),
+      { status: 409, statusText: 'Conflict' },
+    );
+    await estabilizar(fixture);
+
+    // Lo que NO puede pasar bajo ningun arreglo: que el rechazo se lea como un exito, o que la
+    // pantalla se quede sin la fila que el operador estaba mirando.
+    expect(texto(fixture)).not.toContain('Se guardo');
+    expect(texto(fixture)).toContain('Credencial OSDE');
+    // Y no se entrega ningun archivo: un `download` disparado sobre un error guardaria el
+    // ProblemDetail con nombre de PDF.
+    expect(descarga.revocar).not.toHaveBeenCalled();
+    descarga.restaurar();
+  });
+
+  // -------------------------------------------------------------------------------------
+  // 7. Errores de las mutaciones
+  // -------------------------------------------------------------------------------------
+
+  it('reclasificar un documento dado de baja lo dice y no ofrece recargar', async () => {
+    const fixture = await montar([CREDENCIAL]);
+
+    apretar(fixture, 'Reclasificar');
+    elegirEn(fixture, `#reclasificar-categoria-${CREDENCIAL.id}`, 'OTRO');
+    apretar(fixture, 'Guardar');
+
+    // La carrera real: alguien lo dio de baja desde otra pantalla mientras este panel estaba
+    // abierto.
+    httpMock
+      .expectOne(esReclasificar())
+      .flush(
+        { type: 'https://akine.app/problems/adjunto-inactivo', detail: 'dado de baja' },
+        { status: 409, statusText: 'Conflict' },
+      );
+    await estabilizar(fixture);
+
+    expect(texto(fixture)).toContain('Se sigue pudiendo descargar');
+    // Recargar no cambia el desenlace de este caso: lo que hay que hacer es subir el archivo
+    // nuevo, y el mensaje ya lo dice.
+    expect(rotulosDeBoton(fixture)).not.toContain('Recargar los documentos');
+  });
+
+  it('un conflicto de concurrencia al reclasificar ofrece recargar los documentos', async () => {
+    const fixture = await montar([CREDENCIAL]);
+
+    apretar(fixture, 'Reclasificar');
+    elegirEn(fixture, `#reclasificar-categoria-${CREDENCIAL.id}`, 'OTRO');
+    apretar(fixture, 'Guardar');
+
+    httpMock
+      .expectOne(esReclasificar())
+      .flush(
+        { type: 'https://akine.app/problems/conflict', detail: 'version vieja' },
+        { status: 409, statusText: 'Conflict' },
+      );
+    await estabilizar(fixture);
+
+    // Aca si: lo unico que resuelve el error es ver como quedo la fila.
+    expect(rotulosDeBoton(fixture)).toContain('Recargar los documentos');
+    apretar(fixture, 'Recargar los documentos');
+    responderListado(httpMock.expectOne(esListado()), [CREDENCIAL]);
+    await estabilizar(fixture);
+  });
+
+  it('una baja que falla deja el panel abierto con el mensaje del backend', async () => {
+    const fixture = await montar([CREDENCIAL]);
+
+    apretar(fixture, 'Dar de baja');
+    escribirEn(fixture, `#baja-adjunto-${CREDENCIAL.id}`, 'Se vencio.');
+    apretar(fixture, 'Dar de baja el documento');
+
+    httpMock
+      .expectOne(esBaja())
+      .flush(
+        { type: 'https://akine.app/problems/forbidden', detail: 'sin permiso' },
+        { status: 403, statusText: 'Forbidden' },
+      );
+    await estabilizar(fixture);
+
+    expect(texto(fixture)).toContain('hace falta el permiso de gestion de pacientes');
+    // Cerrar el panel obligaria a reescribir el motivo solo para leer por que fallo.
+    expect(fixture.nativeElement.querySelector(`#baja-adjunto-${CREDENCIAL.id}`)).not.toBeNull();
+  });
+
+  // -------------------------------------------------------------------------------------
+  // 8. Filtro por categoria
+  // -------------------------------------------------------------------------------------
+
+  it('filtrar por categoria manda el parametro y volver a todas lo omite', async () => {
+    const fixture = await montar([CREDENCIAL]);
+
+    elegirEn(fixture, '#documentos-filtro-categoria', 'CREDENCIAL_COBERTURA');
+    const filtrado = httpMock.expectOne(esListado());
+    expect(filtrado.request.urlWithParams).toContain('categoria=CREDENCIAL_COBERTURA');
+    responderListado(filtrado, [CREDENCIAL]);
+    await estabilizar(fixture);
+
+    elegirEn(fixture, '#documentos-filtro-categoria', '');
+    const todas = httpMock.expectOne(esListado());
+    // Omitido y no vacio: `categoria=` es un valor, y el backend tendria que decidir si lo
+    // interpreta como "ninguna" o como "todas".
+    expect(todas.request.urlWithParams).not.toContain('categoria=');
+    responderListado(todas, [CREDENCIAL]);
+    await estabilizar(fixture);
+  });
+
+  // -------------------------------------------------------------------------------------
   // Accesibilidad
   // -------------------------------------------------------------------------------------
 
@@ -326,6 +557,19 @@ describe('DocumentosDePersonaPage', () => {
     adjuntos: object[],
     ficha: object = ACTIVA,
   ): Promise<ComponentFixture<DocumentosDePersonaPage>> {
+    return montarConListado(
+      (pedido) => responderListado(pedido, adjuntos),
+      [PERMISO_PACIENTE_MANAGE],
+      ficha,
+    );
+  }
+
+  /** Monta dejando que cada caso decida como responde el listado y que permisos tiene quien mira. */
+  async function montarConListado(
+    responder: (pedido: TestRequest) => void,
+    otorgados: readonly string[] = [PERMISO_PACIENTE_MANAGE],
+    ficha: object = ACTIVA,
+  ): Promise<ComponentFixture<DocumentosDePersonaPage>> {
     tenantContext.select({
       organizationId: 1,
       organizationName: 'Centro Belgrano',
@@ -334,16 +578,55 @@ describe('DocumentosDePersonaPage', () => {
     });
 
     permisos.cargar().subscribe();
-    httpMock.expectOne(RUTA_PERMISOS_EFECTIVOS).flush({ permissions: [PERMISO_PACIENTE_MANAGE] });
+    httpMock.expectOne(RUTA_PERMISOS_EFECTIVOS).flush({ permissions: otorgados });
 
     const fixture = TestBed.createComponent(DocumentosDePersonaPage);
     fixture.componentRef.setInput('personaId', String(PERSONA));
     fixture.detectChanges();
 
     httpMock.expectOne(FICHA).flush(ficha);
-    responderListado(httpMock.expectOne(esListado()), adjuntos);
+    responder(httpMock.expectOne(esListado()));
     await estabilizar(fixture);
     return fixture;
+  }
+
+  /**
+   * Sustituye el ancla efimera y las dos funciones de `URL`, que jsdom no implementa.
+   *
+   * <p>El ancla se devuelve para poder afirmar con que nombre se habria guardado el archivo: es
+   * el unico lugar donde eso queda escrito, y guardarlo con el id deja al operador con una
+   * carpeta de descargas ilegible.
+   */
+  function espiarDescarga() {
+    const crearOriginal = document.createElement.bind(document);
+    const enlace = crearOriginal('a');
+    vi.spyOn(enlace, 'click').mockImplementation(() => undefined);
+    const creador = vi
+      .spyOn(document, 'createElement')
+      .mockImplementation(((etiqueta: string) =>
+        etiqueta === 'a' ? enlace : crearOriginal(etiqueta)) as typeof document.createElement);
+
+    const urlGlobal = URL as unknown as Record<string, unknown>;
+    const crearPrevio = urlGlobal['createObjectURL'];
+    const revocarPrevio = urlGlobal['revokeObjectURL'];
+    const revocar = vi.fn();
+    urlGlobal['createObjectURL'] = vi.fn(() => 'blob:sintetico');
+    urlGlobal['revokeObjectURL'] = revocar;
+
+    return {
+      enlace,
+      revocar,
+      restaurar(): void {
+        creador.mockRestore();
+        urlGlobal['createObjectURL'] = crearPrevio;
+        urlGlobal['revokeObjectURL'] = revocarPrevio;
+      },
+    };
+  }
+
+  function esDescarga() {
+    return (p: HttpRequest<unknown>) =>
+      p.method === 'GET' && p.url === `${ADJUNTOS}/${CREDENCIAL.id}/contenido`;
   }
 
   /** Abre el formulario, adjunta un archivo sintetico, elige categoria y envia. */

@@ -41,6 +41,20 @@ const NORTE = {
 
 const PAGINA = { content: [CENTRO, NORTE], page: 0, size: 20, totalElements: 2, totalPages: 1 };
 
+/** Sede activa que NO es la del contexto de trabajo: darla de baja no expulsa a nadie. */
+const SUR = {
+  id: 7,
+  organizationId: 1,
+  name: 'Sede Sur',
+  timezone: 'America/Argentina/Cordoba',
+  slotMinutes: 30,
+  active: true,
+  estado: 'ACTIVO',
+  version: 1,
+};
+
+const PAGINA_SUR = { content: [SUR], page: 0, size: 20, totalElements: 1, totalPages: 1 };
+
 /**
  * Spec de la pantalla de sedes (M01, AKINE-02.01).
  *
@@ -228,6 +242,229 @@ describe('ConsultoriosPage', () => {
     expect(botones(fixture)).toContain('Dar de baja');
   });
 
+  it('sin consultorio:manage la tabla se ve entera y no hay ni una accion', async () => {
+    // El `GET` no exige el permiso a proposito: quien no administra sedes igual tiene que
+    // poder verlas. Lo que no puede es tener botones que el backend le va a rechazar con un
+    // 403, y menos el de dar de baja. Si `*akinePermiso` se cayera de la plantilla nadie se
+    // enteraria hasta el primer rechazo.
+    const fixture = await montarCon(PAGINA, []);
+
+    expect(fixture.nativeElement.querySelectorAll('tbody tr').length).toBe(2);
+    expect(texto(fixture)).toContain('Sede Centro');
+    expect(botones(fixture)).not.toContain('Editar');
+    expect(botones(fixture)).not.toContain('Dar de baja');
+    expect(texto(fixture)).not.toContain('Abrir una sede nueva');
+  });
+
+  it('un error de red ofrece reintentar, y la falta de contexto manda a elegirlo', async () => {
+    // Son las dos salidas OPUESTAS del mismo estado de error: sin red lo unico util es volver
+    // a pedir, y sin contexto reintentar falla siempre igual porque falta el encabezado de
+    // tenant. Ofrecer el boton equivocado deja al usuario dandole a un reintento infinito.
+    tenantContext.select({
+      organizationId: 1,
+      organizationName: 'Belgrano',
+      consultorioId: 3,
+      consultorioName: 'Sede Centro',
+    });
+    permisos.cargar().subscribe();
+    httpMock
+      .expectOne('/api/v1/me/permissions')
+      .flush({ permissions: [PERMISO_CONSULTORIO_MANAGE] });
+
+    const fixture = TestBed.createComponent(ConsultoriosPage);
+    fixture.detectChanges();
+
+    httpMock
+      .expectOne(esListado(1))
+      .error(new ProgressEvent('error'), { status: 0, statusText: 'Unknown Error' });
+    responderSedes(1);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(texto(fixture)).toContain('No se pudo contactar al servidor');
+    expect(botones(fixture)).toContain('Reintentar');
+
+    abrir(fixture, 'Reintentar');
+    httpMock
+      .expectOne(esListado(1))
+      .flush(
+        { type: 'https://akine.app/problems/missing-tenant-context', detail: 'Sin contexto' },
+        { status: 403, statusText: 'Forbidden' },
+      );
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(texto(fixture)).toContain('Todavia no elegiste un contexto');
+    // Ya no se ofrece reintentar: la salida es cambiar de contexto.
+    expect(botones(fixture)).not.toContain('Reintentar');
+    expect(fixture.nativeElement.querySelector('a[href="/seleccionar-contexto"]')).not.toBeNull();
+  });
+
+  it('el filtro de dadas de baja sin resultados dice eso, y no "no hay sedes"', async () => {
+    // Una lista vacia no es un error, y el texto tiene que decir cual de los dos vacios es:
+    // "no hay sedes que mostrar" en el filtro de bajas se lee como que la organizacion se
+    // quedo sin sedes.
+    const fixture = await montar();
+
+    elegir(fixture, '#filtro-estado', 'INACTIVO');
+    httpMock
+      .expectOne(
+        (peticion: HttpRequest<unknown>) =>
+          peticion.url === '/api/v1/organizations/1/consultorios' &&
+          peticion.params.get('estado') === 'INACTIVO',
+      )
+      .flush({ content: [], page: 0, size: 20, totalElements: 0, totalPages: 0 });
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(texto(fixture)).toContain('No hay sedes dadas de baja');
+  });
+
+  it('un email mal formado bloquea el PATCH en vez de gastar un rechazo del backend', async () => {
+    // El envio tiene que quedar BLOQUEADO: si saliera, el backend responderia 400 y el usuario
+    // veria un error generico en vez del campo marcado. Por eso se afirma que no hay peticion,
+    // no solo que aparece el texto.
+    const fixture = await montar();
+
+    abrir(fixture, 'Editar');
+    escribir(fixture, '#editar-email', 'esto-no-es-un-mail');
+    enviar(fixture, 'form');
+
+    httpMock.expectNone((peticion: HttpRequest<unknown>) => peticion.method === 'PATCH');
+    expect(texto(fixture)).toContain('no tiene una forma valida');
+
+    // El nombre vacio tambien bloquea, y por una razon distinta: no es un dato borrable, asi
+    // que viajaria como un renombre a cadena vacia y dejaria la sede sin nombre en la tabla.
+    escribir(fixture, '#editar-email', '');
+    escribir(fixture, '#editar-name', '');
+    enviar(fixture, 'form');
+
+    httpMock.expectNone((peticion: HttpRequest<unknown>) => peticion.method === 'PATCH');
+    expect(texto(fixture)).toContain('La sede necesita un nombre');
+
+    // Y vaciar el email si vale: la cadena vacia es la forma contractual de borrar el dato.
+    escribir(fixture, '#editar-name', 'Sede Centro');
+    enviar(fixture, 'form');
+
+    const peticion = httpMock.expectOne(
+      (candidata: HttpRequest<unknown>) => candidata.method === 'PATCH',
+    );
+    expect(peticion.request.body).toEqual({ version: 4 });
+    peticion.flush(CENTRO);
+    responderSedes(1);
+    httpMock.expectOne(esListado(1)).flush(PAGINA);
+    await fixture.whenStable();
+    fixture.detectChanges();
+  });
+
+  it('dar de baja la unica sede activa se explica en el panel y no cambia de contexto', async () => {
+    // Un "conflicto" a secas aca no dice nada: el usuario tiene que entender que la
+    // organizacion se quedaria sin ningun contexto donde entrar, y que la salida es dar de
+    // alta la otra sede primero. Y sobre todo: NO se lo puede llevar al selector, porque la
+    // baja no ocurrio.
+    const fixture = await montar();
+    const router = TestBed.inject(Router);
+    const navegar = vi.spyOn(router, 'navigate').mockResolvedValue(true);
+
+    abrir(fixture, 'Dar de baja');
+    escribir(fixture, '#baja-reason', 'Se cierra el centro');
+    enviar(fixture, 'form');
+
+    httpMock.expectOne('/api/v1/organizations/1/consultorios/3/deactivate').flush(
+      {
+        type: 'https://akine.app/problems/last-consultorio-required',
+        detail: 'Es la ultima sede activa',
+      },
+      { status: 409, statusText: 'Conflict' },
+    );
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(texto(fixture)).toContain('unica sede activa de la organizacion');
+    expect(navegar).not.toHaveBeenCalled();
+    // El panel sigue abierto: el motivo escrito no se pierde por un rechazo del servidor.
+    expect(fixture.nativeElement.querySelector('#baja-reason')).not.toBeNull();
+  });
+
+  it('dar de baja una sede que no es la del contexto deja al usuario donde estaba', async () => {
+    // El camino contrario al que ya se cubre: si esta rama navegara igual, cualquier baja
+    // rutinaria expulsaria al usuario al selector de contexto sin motivo.
+    const fixture = await montarCon(PAGINA_SUR);
+    const router = TestBed.inject(Router);
+    const navegar = vi.spyOn(router, 'navigate').mockResolvedValue(true);
+
+    abrir(fixture, 'Dar de baja');
+    escribir(fixture, '#baja-reason', 'Se unifica con la sede Centro');
+    enviar(fixture, 'form');
+
+    httpMock
+      .expectOne('/api/v1/organizations/1/consultorios/7/deactivate')
+      .flush({ ...SUR, active: false, estado: 'INACTIVO' });
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(navegar).not.toHaveBeenCalled();
+    responderSedes(1);
+    httpMock.expectOne(esListado(1)).flush(PAGINA_SUR);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(texto(fixture)).toContain('Sigue en el listado, con el motivo');
+  });
+
+  it('si la navegacion posterior a la baja falla, el fallo no queda en silencio', async () => {
+    // La baja SI ocurrio y el contexto quedo inservible: si nadie avisa, el usuario sigue en
+    // esta pantalla creyendo que puede operar y cada accion siguiente falla sin explicacion.
+    const fixture = await montar();
+    const router = TestBed.inject(Router);
+    vi.spyOn(router, 'navigate').mockRejectedValue(new Error('ruta rota'));
+    const consola = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    abrir(fixture, 'Dar de baja');
+    escribir(fixture, '#baja-reason', 'Se cierra el centro');
+    enviar(fixture, 'form');
+
+    httpMock
+      .expectOne('/api/v1/organizations/1/consultorios/3/deactivate')
+      .flush({ ...CENTRO, active: false, estado: 'INACTIVO' });
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(consola).toHaveBeenCalled();
+    consola.mockRestore();
+  });
+
+  it('si la relectura posterior al 409 tambien falla, el mensaje queda y el panel no se cierra', async () => {
+    // Caso encadenado: el servidor conflictua y ademas se cae. Si la relectura fallida cerrara
+    // el panel o tirara la excepcion, el usuario perderia lo escrito ADEMAS del cambio.
+    const fixture = await montar();
+
+    abrir(fixture, 'Editar');
+    escribir(fixture, '#editar-name', 'Sede Centro Nueva');
+    enviar(fixture, 'form');
+
+    httpMock
+      .expectOne((candidata: HttpRequest<unknown>) => candidata.method === 'PATCH')
+      .flush(
+        {
+          type: 'https://akine.app/problems/concurrent-modification',
+          detail: 'La version enviada quedo vieja',
+        },
+        { status: 409, statusText: 'Conflict' },
+      );
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    httpMock
+      .expectOne('/api/v1/organizations/1/consultorios/3')
+      .error(new ProgressEvent('error'), { status: 0, statusText: 'Unknown Error' });
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(texto(fixture)).toContain('Alguien mas edito esta sede');
+    expect(campo(fixture, '#editar-name')).toBe('Sede Centro Nueva');
+  });
+
   /** Monta la pantalla con contexto sobre la sede 3, permiso de gestion y las dos sedes. */
   async function montar() {
     tenantContext.select({
@@ -246,6 +483,32 @@ describe('ConsultoriosPage', () => {
     fixture.detectChanges();
 
     httpMock.expectOne(esListado(1)).flush(PAGINA);
+    responderSedes(1);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    return fixture;
+  }
+
+  /** Igual que {@link montar}, con la pagina y los permisos que el caso necesita. */
+  async function montarCon(
+    pagina: Record<string, unknown>,
+    otorgados: string[] = [PERMISO_CONSULTORIO_MANAGE],
+  ) {
+    tenantContext.select({
+      organizationId: 1,
+      organizationName: 'Belgrano',
+      consultorioId: 3,
+      consultorioName: 'Sede Centro',
+    });
+
+    permisos.cargar().subscribe();
+    httpMock.expectOne('/api/v1/me/permissions').flush({ permissions: otorgados });
+
+    const fixture = TestBed.createComponent(ConsultoriosPage);
+    fixture.detectChanges();
+
+    httpMock.expectOne(esListado(1)).flush(pagina);
     responderSedes(1);
     await fixture.whenStable();
     fixture.detectChanges();
@@ -294,6 +557,20 @@ function abrir(fixture: { nativeElement: HTMLElement; detectChanges(): void }, e
     (candidato) => (candidato.textContent ?? '').trim() === etiqueta,
   );
   boton?.click();
+  fixture.detectChanges();
+}
+
+function elegir(
+  fixture: { nativeElement: HTMLElement; detectChanges(): void },
+  selector: string,
+  valor: string,
+) {
+  const campo = fixture.nativeElement.querySelector<HTMLSelectElement>(selector);
+  if (campo === null) {
+    throw new Error(`No existe el selector ${selector}`);
+  }
+  campo.value = valor;
+  campo.dispatchEvent(new Event('change'));
   fixture.detectChanges();
 }
 

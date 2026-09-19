@@ -353,6 +353,36 @@ describe('SessionService', () => {
     expect(await resultado).toBe(0);
   });
 
+  // --- Tokens de contexto incompletos -----------------------------------------------
+
+  it('un token con scope context pero SIN ids no fija ningun tenant', async () => {
+    const terminado = primerValor(session.seleccionarContexto(1, 10));
+    // El backend dice "tenes contexto" y no dice cual. Inventar uno dibujaria una
+    // organizacion elegida por el cliente; dejar el tenant vacio deja la pantalla sin datos,
+    // que es lo unico honesto.
+    httpMock
+      .expectOne('/api/v1/auth/context')
+      .flush({ accessToken: 'token-sin-ids', scope: 'context' });
+    await terminado;
+
+    expect(session.estado()).toBe('activa');
+    expect(tenantStore.organizationId()).toBeNull();
+    expect(session.contextoActivo()).toBeNull();
+  });
+
+  it('un contexto conocido sin nombre cae a un rotulo derivado del id, no a vacio', async () => {
+    const terminado = primerValor(session.cargarContextos());
+    httpMock.expectOne('/api/v1/me/contexts').flush([{ organizationId: 7, consultorioId: 70 }]);
+    await terminado;
+
+    await elegirContexto(7, 70, 'token-sin-nombres');
+
+    // El selector de contexto y la barra superior pintan este texto. Un string vacio ahi deja
+    // al usuario sin saber en que organizacion esta parado.
+    expect(tenantStore.context()?.organizationName).toBe('Organizacion 7');
+    expect(tenantStore.context()?.consultorioName).toBeUndefined();
+  });
+
   // --- Ayudas ----------------------------------------------------------------------
 
   async function cargarContextosDePrueba(): Promise<void> {

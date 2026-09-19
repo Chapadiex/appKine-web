@@ -1,5 +1,9 @@
 import { HttpRequest, provideHttpClient, withInterceptors } from '@angular/common/http';
-import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import {
+  HttpTestingController,
+  TestRequest,
+  provideHttpClientTesting,
+} from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 
@@ -244,24 +248,253 @@ describe('CollaboratorsPage', () => {
     TIMEOUT_AXE,
   );
 
+  // -------------------------------------------------------------------------------------
+  // Estados de error del listado
+  //
+  // Los dos 403 llegan con el mismo status y necesitan salidas OPUESTAS: uno se arregla
+  // eligiendo contexto y el otro pidiendo el permiso. Ofrecer "Reintentar" a quien no tiene
+  // contexto lo deja repitiendo un pedido que va a fallar siempre.
+  // -------------------------------------------------------------------------------------
+
+  it('un 403 por falta de permiso ofrece reintentar y no manda a elegir contexto', async () => {
+    const fixture = await montarCon((pedido) =>
+      pedido.flush(
+        {
+          type: 'https://akine.app/problems/forbidden',
+          detail: 'No tenes permiso para ver los colaboradores',
+        },
+        { status: 403, statusText: 'Forbidden' },
+      ),
+    );
+
+    expect(texto(fixture)).toContain('No tenes permiso para ver los colaboradores');
+    expect(rotulos(fixture)).toContain('Reintentar');
+    expect(fixture.nativeElement.querySelector('a[href="/seleccionar-contexto"]')).toBeNull();
+  });
+
+  it('un 403 por falta de contexto manda a elegir contexto y no ofrece reintentar', async () => {
+    const fixture = await montarCon((pedido) =>
+      pedido.flush(
+        { type: 'https://akine.app/problems/missing-tenant-context', detail: 'sin contexto' },
+        { status: 403, statusText: 'Forbidden' },
+      ),
+    );
+
+    expect(rotulos(fixture)).not.toContain('Reintentar');
+    expect(fixture.nativeElement.querySelector('a[href="/seleccionar-contexto"]')).not.toBeNull();
+  });
+
+  // -------------------------------------------------------------------------------------
+  // Que acciones ofrece cada fila
+  // -------------------------------------------------------------------------------------
+
+  it('una fila revocada no ofrece ninguna accion, y una suspendida ofrece reactivar', async () => {
+    const fixture = await montarCon((pedido) =>
+      pedido.flush({
+        ...PAGINA,
+        content: [{ ...ACTIVA, id: 12, accountId: 102, estado: 'SUSPENDIDA' }, REVOCADA],
+      }),
+    );
+
+    const ofrecidos = rotulos(fixture);
+    // Revocar es terminal: ofrecer "Revocar" sobre una fila ya revocada es un 409 asegurado, y
+    // "Suspender" sobre una suspendida tambien.
+    expect(ofrecidos).toContain('Reactivar');
+    expect(ofrecidos).not.toContain('Suspender');
+    // La suspendida sigue admitiendo revocar y permisos; la revocada no aporta ninguna.
+    expect(ofrecidos.filter((rotulo) => rotulo === 'Revocar').length).toBe(1);
+  });
+
+  it('sin colaborador:manage se ve la tabla completa y ningun boton de accion', async () => {
+    const fixture = await montarCon((pedido) => pedido.flush(PAGINA), []);
+
+    // Ocultar no autoriza —el backend rechaza igual— pero mostrar acciones que siempre
+    // terminan en 403 convierte la pantalla en una trampa.
+    expect(texto(fixture)).toContain('Revocada');
+    expect(fixture.nativeElement.querySelectorAll('tbody tr').length).toBe(2);
+    expect(rotulos(fixture)).not.toContain('Cambiar rol o alcance');
+    expect(rotulos(fixture)).not.toContain('Revocar');
+  });
+
+  // -------------------------------------------------------------------------------------
+  // Validaciones que bloquean el envio
+  // -------------------------------------------------------------------------------------
+
+  it('cambiar de rol sin motivo no sale a la red', async () => {
+    const fixture = await montar();
+
+    abrirPanel(fixture, 'Cambiar rol o alcance');
+    elegir(fixture, '#edicion-roleCode', 'CONSULTORIO_ADMIN');
+    enviar(fixture, 'form');
+
+    // El motivo es lo que responde, seis meses despues, por que esta persona cambio de rol:
+    // dejar salir el PATCH sin el gasta un 400 sobre un campo que el usuario tiene delante.
+    httpMock.expectNone((peticion: HttpRequest<unknown>) => peticion.method === 'PATCH');
+    expect(texto(fixture)).toContain('Escribi por que se hace este cambio');
+  });
+
+  it('otorgar un permiso adicional sin elegir cual no sale a la red', async () => {
+    const fixture = await montar();
+    abrirPanel(fixture, 'Permisos adicionales');
+    responderGrants([]);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    escribir(fixture, '#grant-reason', 'Necesita auditar');
+    enviar(fixture, 'form');
+
+    httpMock.expectNone((peticion: HttpRequest<unknown>) => peticion.method === 'POST');
+    expect(texto(fixture)).toContain('Elegi el permiso que queres otorgar');
+  });
+
+  it('dar de baja un permiso sin escribir el motivo no sale a la red y lo avisa', async () => {
+    const fixture = await montar();
+    abrirPanel(fixture, 'Permisos adicionales');
+    responderGrants([{ id: 5, membershipId: 10, permissionCode: 'auditoria:read', active: true }]);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    apretar(fixture, 'Dar de baja');
+
+    // El motivo viaja en la query y el backend lo exige: sin este corte el usuario se come un
+    // 400 por un campo que esta viendo vacio en pantalla.
+    httpMock.expectNone((peticion: HttpRequest<unknown>) => peticion.method === 'DELETE');
+    expect(texto(fixture)).toContain('Escribi el motivo antes de dar de baja el permiso');
+  });
+
+  // -------------------------------------------------------------------------------------
+  // Traduccion del alcance y de la fecha
+  // -------------------------------------------------------------------------------------
+
+  it('mover a una sede concreta manda changeScope con el consultorioId como numero', async () => {
+    const fixture = await montar();
+
+    abrirPanel(fixture, 'Cambiar rol o alcance');
+    escribir(fixture, '#edicion-reason', 'Pasa a la sede Centro');
+    marcar(fixture, '#edicion-alcance-sede');
+    elegir(fixture, '#edicion-consultorioId', '3');
+    enviar(fixture, 'form');
+
+    const cuerpo = esperarPatch();
+
+    // El `select` entrega texto: un `consultorioId: "3"` es un 400 de validacion del contrato.
+    expect(cuerpo).toEqual({
+      reason: 'Pasa a la sede Centro',
+      // El rol viaja porque el formulario arranca en el que ya tiene, y mandar el mismo valor
+      // el backend lo acepta sin cambiar nada.
+      roleCode: 'PROFESIONAL',
+      changeScope: true,
+      consultorioId: 3,
+    });
+  });
+
+  it('un permiso con fecha de vencimiento rige hasta el final de ese dia', async () => {
+    const fixture = await montar();
+    abrirPanel(fixture, 'Permisos adicionales');
+    responderGrants([]);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    elegir(fixture, '#grant-permissionCode', PERMISO_COLABORADOR_MANAGE);
+    escribir(fixture, '#grant-reason', 'Cubre licencia');
+    escribir(fixture, '#grant-validUntil', '2026-10-31');
+    enviar(fixture, 'form');
+
+    const alta = httpMock.expectOne((peticion: HttpRequest<unknown>) => peticion.method === 'POST');
+    // El input `date` entrega 'YYYY-MM-DD'. Mandarlo como medianoche dejaria el permiso vencido
+    // un dia antes de lo que el usuario eligio.
+    expect((alta.request.body as Record<string, unknown>)['validUntil']).toBe(
+      '2026-10-31T23:59:59.000Z',
+    );
+    alta.flush({ id: 6, membershipId: 10, permissionCode: PERMISO_COLABORADOR_MANAGE });
+    responderGrants([]);
+    await fixture.whenStable();
+    fixture.detectChanges();
+  });
+
+  // -------------------------------------------------------------------------------------
+  // Errores del backend en las mutaciones
+  // -------------------------------------------------------------------------------------
+
+  it('un 429 al suspender dice cuantos segundos esperar y deja el panel abierto', async () => {
+    const fixture = await montar();
+    abrirPanel(fixture, 'Suspender');
+    escribir(fixture, '#panel-motivo', 'Licencia medica');
+    enviar(fixture, 'form');
+
+    httpMock
+      .expectOne(
+        (peticion: HttpRequest<unknown>) =>
+          peticion.url === '/api/v1/organizations/1/memberships/10/suspend',
+      )
+      .flush(
+        { type: 'https://akine.app/problems/rate-limited', detail: 'demasiados' },
+        { status: 429, statusText: 'Too Many Requests', headers: { 'Retry-After': '30' } },
+      );
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    // El plazo sale del header: inventarlo manda al usuario a comerse otro 429 auditado.
+    expect(texto(fixture)).toContain('Espera 30 segundos');
+    expect(texto(fixture)).toContain('Suspender a la cuenta 100');
+  });
+
+  it('un 409 al otorgar un permiso se muestra con el mensaje del backend', async () => {
+    const fixture = await montar();
+    abrirPanel(fixture, 'Permisos adicionales');
+    responderGrants([]);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    elegir(fixture, '#grant-permissionCode', PERMISO_COLABORADOR_MANAGE);
+    escribir(fixture, '#grant-reason', 'Cubre licencia');
+    enviar(fixture, 'form');
+
+    httpMock
+      .expectOne((peticion: HttpRequest<unknown>) => peticion.method === 'POST')
+      .flush(
+        {
+          type: 'https://akine.app/problems/conflict',
+          detail: 'Ese permiso ya esta vigente sobre el vinculo',
+        },
+        { status: 409, statusText: 'Conflict' },
+      );
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    // Gana el detail del backend: "ya esta vigente" y "no existe el permiso" son dos cosas
+    // distintas que el frontend no puede redactar mejor que quien las decidio.
+    expect(texto(fixture)).toContain('Ese permiso ya esta vigente sobre el vinculo');
+  });
+
   /** Monta la pantalla con contexto, permisos de gestion y una pagina de dos vinculos. */
   async function montar() {
+    return montarCon((pedido) => pedido.flush(PAGINA));
+  }
+
+  /** Monta dejando que cada caso decida como responde el listado y que permisos tiene quien mira. */
+  async function montarCon(
+    responder: (pedido: TestRequest) => void,
+    otorgados: readonly string[] = [PERMISO_COLABORADOR_MANAGE],
+  ) {
     tenantContext.select({ organizationId: 1, organizationName: 'Belgrano', consultorioId: 3 });
 
     permisos.cargar().subscribe();
-    httpMock
-      .expectOne('/api/v1/me/permissions')
-      .flush({ permissions: [PERMISO_COLABORADOR_MANAGE] });
+    httpMock.expectOne('/api/v1/me/permissions').flush({ permissions: otorgados });
 
     const fixture = TestBed.createComponent(CollaboratorsPage);
     fixture.detectChanges();
 
-    httpMock.expectOne(esListado(1)).flush(PAGINA);
+    responder(httpMock.expectOne(esListado(1)));
     responderSedes(1);
     await fixture.whenStable();
     fixture.detectChanges();
 
     return fixture;
+  }
+
+  function responderGrants(grants: object[]): void {
+    httpMock.expectOne('/api/v1/organizations/1/memberships/10/grants').flush(grants);
   }
 
   /** El selector de sede se puebla con una peticion aparte; sin responderla `verify` falla. */
@@ -292,6 +525,25 @@ function esListado(orgId: number) {
 
 function texto(fixture: { nativeElement: HTMLElement }): string {
   return fixture.nativeElement.textContent ?? '';
+}
+
+/** Los rotulos de todos los botones: sirve para afirmar que una accion NO se ofrece. */
+function rotulos(fixture: { nativeElement: HTMLElement }): string[] {
+  return [...fixture.nativeElement.querySelectorAll('button')].map((boton) =>
+    (boton.textContent ?? '').trim(),
+  );
+}
+
+/** Aprieta el boton cuyo rotulo coincide exacto; `abrirPanel` usa coincidencia parcial. */
+function apretar(fixture: { nativeElement: HTMLElement; detectChanges(): void }, rotulo: string) {
+  const boton = [...fixture.nativeElement.querySelectorAll('button')].find(
+    (candidato) => (candidato.textContent ?? '').trim() === rotulo,
+  );
+  if (boton === undefined) {
+    throw new Error(`No existe el boton ${rotulo}`);
+  }
+  boton.click();
+  fixture.detectChanges();
 }
 
 function abrirPanel(
