@@ -720,6 +720,61 @@ describe('OfertasDeLaSedePage', () => {
     fixture.detectChanges();
   });
 
+  it('vaciar duracion o esquema en la edicion no los manda: un campo vacio no se toca', async () => {
+    // El encabezado del panel promete "un campo vacio significa 'no lo toques'", y la capacidad,
+    // el precio y la vigencia lo cumplian. La duracion no: `Number('')` es 0, que es finito, asi
+    // que borrar el campo mandaba `duracionMinutos: 0` contra un check de la base. Y vaciar el
+    // esquema mandaba `esquemaCobro: ''`, cuando quitarlo es la casilla de al lado.
+    const fixture = await montar();
+
+    abrir(fixture, 'Editar');
+    escribir(fixture, '#editar-oferta-duracion', '');
+    escribir(fixture, '#editar-oferta-esquema', '');
+    escribir(fixture, '#editar-oferta-nombre', 'Rehabilitacion respiratoria adultos y mayores');
+    enviar(fixture, 'form[novalidate]');
+
+    const edicion = httpMock.expectOne(
+      (peticion: HttpRequest<unknown>) =>
+        peticion.method === 'PUT' && peticion.url === `${OFERTAS}/10`,
+    );
+    expect(edicion.request.body).toEqual({
+      expectedVersion: 4,
+      nombreComercial: 'Rehabilitacion respiratoria adultos y mayores',
+    });
+
+    edicion.flush({ ...VIGENTE, version: 5 });
+    httpMock.expectOne(esListado()).flush([VIGENTE, AUN_NO]);
+    await fixture.whenStable();
+    fixture.detectChanges();
+  });
+
+  it('una oferta sin modalidad no manda una modalidad vacia, y el selector no miente', async () => {
+    // El panel se abre con `oferta.modalidad ?? ''` y el enum del contrato solo admite
+    // INDIVIDUAL o GRUPAL: `modalidad: ''` es un 400 seguro. Ademas, sin una opcion con ese
+    // valor el selector mostraba INDIVIDUAL mientras el control valia ''.
+    const fixture = await montar({ ofertas: [{ ...VIGENTE, modalidad: undefined }] });
+
+    abrir(fixture, 'Editar');
+    const selector = (fixture.nativeElement as HTMLElement).querySelector<HTMLSelectElement>(
+      '#editar-oferta-modalidad',
+    );
+    expect(selector?.value).toBe('');
+
+    escribir(fixture, '#editar-oferta-nombre', 'Rehabilitacion respiratoria adultos y mayores');
+    enviar(fixture, 'form[novalidate]');
+
+    const edicion = httpMock.expectOne(
+      (peticion: HttpRequest<unknown>) =>
+        peticion.method === 'PUT' && peticion.url === `${OFERTAS}/10`,
+    );
+    expect((edicion.request.body as Record<string, unknown>)['modalidad']).toBeUndefined();
+
+    edicion.flush({ ...VIGENTE, version: 5 });
+    httpMock.expectOne(esListado()).flush([VIGENTE]);
+    await fixture.whenStable();
+    fixture.detectChanges();
+  });
+
   it(
     'la pantalla no tiene violaciones de accesibilidad',
     async () => {

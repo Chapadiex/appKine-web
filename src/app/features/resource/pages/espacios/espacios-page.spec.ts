@@ -478,6 +478,43 @@ describe('EspaciosPage', () => {
     expect(texto(fixture)).toContain('El espacio necesita un nombre.');
   });
 
+  it('vaciar la capacidad no la manda en cero: un campo borrado no se toca', async () => {
+    // Un `<input type="number">` vaciado entrega `null`, no `''`, asi que la guarda
+    // `valores.capacidad !== ''` lo daba por declarado y `Number(null)` mandaba `capacidad: 0`.
+    const fixture = await montar();
+
+    abrir(fixture, 'Editar');
+    escribir(fixture, '#editar-espacio-capacidad', '');
+    escribir(fixture, '#editar-espacio-notes', 'Se reviso el equipamiento');
+    enviar(fixture, 'form');
+
+    const peticion = httpMock.expectOne(
+      (candidata: HttpRequest<unknown>) => candidata.method === 'PATCH',
+    );
+    const cuerpo = peticion.request.body as Record<string, unknown>;
+    expect('capacidad' in cuerpo).toBe(false);
+    expect(cuerpo['notes']).toBe('Se reviso el equipamiento');
+
+    peticion.flush({ ...BOX_1, notes: 'Se reviso el equipamiento', version: 3 });
+    httpMock.expectOne(esListado()).flush(PAGINA);
+    await fixture.whenStable();
+    fixture.detectChanges();
+  });
+
+  it('un nombre de solo espacios tambien lo bloquea, y no viaja un name vacio', async () => {
+    // `Validators.required` solo mira la longitud: para el, '   ' es un nombre. Despues
+    // `armarCambios()` lo recorta y manda `name: ''` contra una restriccion de base que el
+    // operador no puede asociar a ningun campo de la pantalla.
+    const fixture = await montar();
+
+    abrir(fixture, 'Editar');
+    escribir(fixture, '#editar-espacio-name', '   ');
+    enviar(fixture, 'form');
+
+    httpMock.expectNone((candidata: HttpRequest<unknown>) => candidata.method === 'PATCH');
+    expect(texto(fixture)).toContain('El espacio necesita un nombre.');
+  });
+
   it('un 403 de permiso ofrece reintentar y NO manda a elegir consultorio', async () => {
     // Elegir otro contexto no consigue el permiso que falta: el enlace mandaria al usuario a
     // dar vueltas por una pantalla que no cambia nada.

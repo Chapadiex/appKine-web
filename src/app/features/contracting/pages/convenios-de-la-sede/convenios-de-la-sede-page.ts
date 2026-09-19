@@ -41,6 +41,8 @@ import {
   situacionDeVigencia,
   ventanaEnPalabras,
 } from '../../models/vigencia-de-contracting';
+import { textoRequerido } from '../../../../shared/validators/texto-requerido';
+import { numeroDeclarado } from '../../../../shared/utils/numero-declarado';
 
 /** Operacion abierta sobre una fila. Solo una a la vez. */
 type TipoAccion = 'editar' | 'baja';
@@ -168,8 +170,8 @@ export class ConveniosDeLaSedePage {
    * ya cargados sin tocar ni un numero. Es la misma clase de inmutabilidad que la del codigo.
    */
   protected readonly formularioAlta = this.formBuilder.nonNullable.group({
-    codigo: ['', [Validators.required]],
-    nombre: ['', [Validators.required]],
+    codigo: ['', [textoRequerido]],
+    nombre: ['', [textoRequerido]],
     financiadorId: ['', [Validators.required]],
     planId: ['', [Validators.required]],
     modalidad: ['', [Validators.required]],
@@ -186,7 +188,7 @@ export class ConveniosDeLaSedePage {
 
   /** Sin codigo, sin financiador, sin plan y sin moneda: son la identidad del convenio. */
   protected readonly formularioEdicion = this.formBuilder.nonNullable.group({
-    nombre: ['', [Validators.required]],
+    nombre: ['', [textoRequerido]],
     modalidad: [''],
     vigenciaDesde: [''],
     vigenciaHasta: [''],
@@ -402,8 +404,8 @@ export class ConveniosDeLaSedePage {
     if (valores.vigenciaHasta !== '') {
       cuerpo.vigenciaHasta = valores.vigenciaHasta;
     }
-    const tope = Number(valores.limiteSesionesMensual);
-    if (valores.limiteSesionesMensual !== '' && Number.isFinite(tope)) {
+    const tope = numeroDeclarado(valores.limiteSesionesMensual);
+    if (tope !== null) {
       cuerpo.limiteSesionesMensual = tope;
     }
     const documentacion = valores.documentacionRequerida.trim();
@@ -527,12 +529,8 @@ export class ConveniosDeLaSedePage {
       cambios.vigenciaHasta = valores.vigenciaHasta;
     }
 
-    const tope = Number(valores.limiteSesionesMensual);
-    if (
-      valores.limiteSesionesMensual !== '' &&
-      Number.isFinite(tope) &&
-      tope !== original.limiteSesionesMensual
-    ) {
+    const tope = numeroDeclarado(valores.limiteSesionesMensual);
+    if (tope !== null && tope !== original.limiteSesionesMensual) {
       cambios.limiteSesionesMensual = tope;
     }
 

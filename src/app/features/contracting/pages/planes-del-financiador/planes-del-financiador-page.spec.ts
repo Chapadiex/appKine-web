@@ -305,6 +305,32 @@ describe('PlanesDelFinanciadorPage', () => {
     fixture.detectChanges();
   });
 
+  it('vaciar el copago al editar no lo manda en cero: sin declarar NO es cero', async () => {
+    // Es la regla que esta pantalla tiene escrita en su javadoc, y la guarda `!== ''` no la
+    // sostenia: un `<input type="number">` vaciado entrega `null`, no `''`, y `Number(null)` es
+    // 0. El plan quedaba con copago cero, que el contrato distingue de "no lo sabemos".
+    const fixture = await montar();
+
+    abrir(fixture, 'Editar');
+    escribir(fixture, '#editar-plan-copago', '');
+    escribir(fixture, '#editar-plan-nombre', 'Plan 210 Plus');
+    enviar(fixture, 'tr.fila-panel form');
+
+    const edicion = httpMock.expectOne(
+      (peticion: HttpRequest<unknown>) =>
+        peticion.method === 'PUT' && peticion.url === `${PLANES}/100`,
+    );
+    expect(edicion.request.body).toEqual({
+      expectedVersion: 3,
+      nombre: 'Plan 210 Plus',
+    });
+
+    edicion.flush({ ...VIGENTE, version: 4 });
+    httpMock.expectOne(esListado()).flush([VIGENTE, VIGENCIA_CERRADA]);
+    await fixture.whenStable();
+    fixture.detectChanges();
+  });
+
   it('la baja del plan avisa que cerrar la vigencia era otra operacion', async () => {
     const fixture = await montar();
 

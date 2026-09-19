@@ -21,6 +21,7 @@ import { PERMISO_CONSULTORIO_MANAGE } from '../../../../core/models/permisos';
 import { PermisoDirective } from '../../../../shared/directives/permiso.directive';
 import { ServicioResponse } from '../../../../api/generated/model/servicio-response';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
+import { numeroDeclarado } from '../../../../shared/utils/numero-declarado';
 import { UpdateOfertaRequest } from '../../../../api/generated/model/update-oferta-request';
 import { FiltroEstado, OfferingApi } from '../../services/offering-api';
 import { CausaOffering, hayQueRecargar, traducirErrorOffering } from '../../models/offering-errors';
@@ -39,6 +40,7 @@ import {
   hoyLocal,
   situacionDeVigencia,
 } from '../../models/situacion-de-vigencia';
+import { textoRequerido } from '../../../../shared/validators/texto-requerido';
 
 /** Operacion abierta sobre una fila. Solo una a la vez. */
 type TipoAccion = 'editar' | 'baja';
@@ -211,7 +213,7 @@ export class OfertasDeLaSedePage {
 
   protected readonly formularioAlta = this.formBuilder.nonNullable.group({
     servicioId: ['', [Validators.required]],
-    nombreComercial: ['', [Validators.required]],
+    nombreComercial: ['', [textoRequerido]],
     descripcion: [''],
     // Los tres heredables: `''` es "que lo decida el servicio". Ver el javadoc de la clase.
     modalidad: [''],
@@ -231,7 +233,7 @@ export class OfertasDeLaSedePage {
   });
 
   protected readonly formularioEdicion = this.formBuilder.nonNullable.group({
-    nombreComercial: ['', [Validators.required]],
+    nombreComercial: ['', [textoRequerido]],
     descripcion: [''],
     modalidad: [''],
     duracionMinutos: [''],
@@ -474,8 +476,8 @@ export class OfertasDeLaSedePage {
     }
 
     const valores = this.formularioAlta.getRawValue();
-    const duracion = Number(valores.duracionMinutos);
-    if (!Number.isFinite(duracion) || duracion <= 0) {
+    const duracion = numeroDeclarado(valores.duracionMinutos) ?? 0;
+    if (duracion <= 0) {
       this.formularioAlta.controls.duracionMinutos.setErrors({ min: true });
       this.enfocar('#alta-oferta-duracion');
       return;
@@ -484,8 +486,8 @@ export class OfertasDeLaSedePage {
     // La capacidad es OBLIGATORIA en el alta y no se deriva de la modalidad: RF-M27-003 la pide
     // explicita porque un box con dos camillas puede atender de a dos en individual. Se valida
     // aca y no solo con el validador para poder enfocar el campo, igual que la duracion.
-    const capacidad = Number(valores.capacidad);
-    if (!Number.isFinite(capacidad) || capacidad <= 0) {
+    const capacidad = numeroDeclarado(valores.capacidad) ?? 0;
+    if (capacidad <= 0) {
       this.formularioAlta.controls.capacidad.setErrors({ min: true });
       this.enfocar('#alta-oferta-capacidad');
       return;
@@ -522,9 +524,9 @@ export class OfertasDeLaSedePage {
 
     // Precio y moneda: los dos o ninguno. El backend tiene un check que lo exige, asi que
     // mandar uno solo seria un rechazo garantizado.
-    const precio = Number(valores.precioBase);
+    const precio = numeroDeclarado(valores.precioBase);
     const moneda = valores.moneda.trim().toUpperCase();
-    if (valores.precioBase !== '' && Number.isFinite(precio) && moneda !== '') {
+    if (precio !== null && moneda !== '') {
       cuerpo.precioBase = precio;
       cuerpo.moneda = moneda;
     }
@@ -657,21 +659,22 @@ export class OfertasDeLaSedePage {
       cambios.descripcion = descripcion;
     }
 
-    if (valores.modalidad !== (original.modalidad ?? '')) {
+    // Los tres `!== ''` de abajo son la misma regla que el encabezado del panel le promete al
+    // usuario: "un campo vacio significa 'no lo toques'". Sin ellos, vaciar un campo manda el
+    // valor degenerado de su tipo —`''` en un enum, `0` en un numero— contra una restriccion de
+    // base, y el 400 que vuelve habla de una columna que no figura en ninguna parte de la
+    // pantalla.
+    if (valores.modalidad !== '' && valores.modalidad !== (original.modalidad ?? '')) {
       cambios.modalidad = valores.modalidad as UpdateOfertaRequest['modalidad'];
     }
 
-    const duracion = Number(valores.duracionMinutos);
-    if (Number.isFinite(duracion) && duracion !== original.duracionMinutos) {
+    const duracion = numeroDeclarado(valores.duracionMinutos);
+    if (duracion !== null && duracion !== original.duracionMinutos) {
       cambios.duracionMinutos = duracion;
     }
 
-    const capacidad = Number(valores.capacidad);
-    if (
-      valores.capacidad !== '' &&
-      Number.isFinite(capacidad) &&
-      capacidad !== original.capacidad
-    ) {
+    const capacidad = numeroDeclarado(valores.capacidad);
+    if (capacidad !== null && capacidad !== original.capacidad) {
       cambios.capacidad = capacidad;
     }
 
@@ -679,11 +682,11 @@ export class OfertasDeLaSedePage {
       // Saca el precio Y la moneda: son un solo dato.
       cambios.limpiarPrecio = true;
     } else {
-      const precio = Number(valores.precioBase);
+      const precio = numeroDeclarado(valores.precioBase);
       const moneda = valores.moneda.trim().toUpperCase();
-      const cambioElPrecio = valores.precioBase !== comoTexto(original.precioBase);
+      const cambioElPrecio = comoTexto(precio) !== comoTexto(original.precioBase);
       const cambioLaMoneda = moneda !== (original.moneda ?? '');
-      if ((cambioElPrecio || cambioLaMoneda) && valores.precioBase !== '' && moneda !== '') {
+      if ((cambioElPrecio || cambioLaMoneda) && precio !== null && moneda !== '') {
         cambios.precioBase = precio;
         cambios.moneda = moneda;
       }
@@ -693,7 +696,10 @@ export class OfertasDeLaSedePage {
       cambios.limpiarEsquemaCobro = true;
     } else {
       const esquema = valores.esquemaCobro.trim();
-      if (esquema !== (original.esquemaCobro ?? '')) {
+      // Vaciar el campo NO es como se quita el esquema: para eso esta `limpiarEsquemaCobro`, que
+      // es la casilla de al lado. Mandar `esquemaCobro: ''` seria pedir un esquema llamado cadena
+      // vacia.
+      if (esquema !== '' && esquema !== (original.esquemaCobro ?? '')) {
         cambios.esquemaCobro = esquema;
       }
     }

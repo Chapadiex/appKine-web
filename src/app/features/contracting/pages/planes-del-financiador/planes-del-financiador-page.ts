@@ -35,6 +35,8 @@ import {
   situacionDeVigencia,
   ventanaEnPalabras,
 } from '../../models/vigencia-de-contracting';
+import { textoRequerido } from '../../../../shared/validators/texto-requerido';
+import { numeroDeclarado } from '../../../../shared/utils/numero-declarado';
 
 /** Operacion abierta sobre una fila. Solo una a la vez. */
 type TipoAccion = 'editar' | 'baja';
@@ -169,8 +171,8 @@ export class PlanesDelFinanciadorPage {
   protected readonly hayQueRecargar = computed(() => hayQueRecargar(this.causaAccion()));
 
   protected readonly formularioAlta = this.formBuilder.nonNullable.group({
-    codigo: ['', [Validators.required]],
-    nombre: ['', [Validators.required]],
+    codigo: ['', [textoRequerido]],
+    nombre: ['', [textoRequerido]],
     descripcion: [''],
     vigenciaDesde: ['', [Validators.required]],
     vigenciaHasta: [''],
@@ -182,7 +184,7 @@ export class PlanesDelFinanciadorPage {
 
   /** Sin `codigo`: es inmutable, igual que el del financiador. */
   protected readonly formularioEdicion = this.formBuilder.nonNullable.group({
-    nombre: ['', [Validators.required]],
+    nombre: ['', [textoRequerido]],
     descripcion: [''],
     vigenciaDesde: [''],
     vigenciaHasta: [''],
@@ -339,14 +341,14 @@ export class PlanesDelFinanciadorPage {
     }
 
     const valores = this.formularioAlta.getRawValue();
-    const copago = Number(valores.copago);
+    const copago = numeroDeclarado(valores.copago);
     const moneda = valores.moneda.trim().toUpperCase();
-    if ((valores.copago !== '') !== (moneda !== '')) {
+    if ((copago !== null) !== (moneda !== '')) {
       this.errorAccion.set(
         'El copago y su moneda van juntos o no van ninguno: un importe sin moneda no es un ' +
           'importe. Completa los dos, o deja los dos vacios para no declarar copago.',
       );
-      this.enfocar(valores.copago === '' ? '#alta-plan-copago' : '#alta-plan-moneda');
+      this.enfocar(copago === null ? '#alta-plan-copago' : '#alta-plan-moneda');
       return;
     }
 
@@ -365,7 +367,7 @@ export class PlanesDelFinanciadorPage {
     if (valores.vigenciaHasta !== '') {
       cuerpo.vigenciaHasta = valores.vigenciaHasta;
     }
-    if (valores.copago !== '' && Number.isFinite(copago) && moneda !== '') {
+    if (copago !== null && moneda !== '') {
       cuerpo.copago = copago;
       cuerpo.moneda = moneda;
     }
@@ -479,11 +481,11 @@ export class PlanesDelFinanciadorPage {
     }
 
     // Copago y moneda son un solo dato: viajan los dos o ninguno, tambien al editar.
-    const copago = Number(valores.copago);
+    const copago = numeroDeclarado(valores.copago);
     const moneda = valores.moneda.trim().toUpperCase();
-    const cambioElCopago = valores.copago !== comoTexto(original.copago);
+    const cambioElCopago = comoTexto(copago) !== comoTexto(original.copago);
     const cambioLaMoneda = moneda !== (original.moneda ?? '');
-    if ((cambioElCopago || cambioLaMoneda) && valores.copago !== '' && moneda !== '') {
+    if ((cambioElCopago || cambioLaMoneda) && copago !== null && moneda !== '') {
       cambios.copago = copago;
       cambios.moneda = moneda;
     }

@@ -526,6 +526,14 @@
                           <div class="campo">
                             <label for="editar-oferta-modalidad">Modalidad</label>
                             <select id="editar-oferta-modalidad" formControlName="modalidad">
+                              <!--
+                                El panel se abre con `oferta.modalidad ?? ''`. Sin una opcion con
+                                ese valor, una oferta sin modalidad dejaba el selector mostrando
+                                INDIVIDUAL mientras el control valia '': el usuario leia una
+                                modalidad que no era la que se iba a guardar. Va deshabilitada
+                                porque "sin definir" no es algo que se pueda elegir.
+                              -->
+                              <option value="" disabled>Sin definir</option>
                               @for (opcion of modalidades; track opcion.valor) {
                                 <option [value]="opcion.valor">{{ opcion.etiqueta }}</option>
                               }

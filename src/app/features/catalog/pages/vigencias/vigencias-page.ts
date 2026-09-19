@@ -24,6 +24,8 @@ import { TenantContextStore } from '../../../../core/services/tenant-context.sto
 import { CausaCatalogo, traducirErrorCatalogo } from '../../models/catalogo-errors';
 import { esGlobal, etiquetaDeAlcance } from '../../models/tipos-de-catalogo';
 import { aInstanteUtc, formatearInstante } from '../../../../shared/utils/instantes';
+import { textoRequerido } from '../../../../shared/validators/texto-requerido';
+import { numeroDeclarado } from '../../../../shared/utils/numero-declarado';
 
 /** Filtro de estado del listado. Los tres valores son los del contrato. */
 type FiltroEstado = 'ACTIVO' | 'INACTIVO' | 'TODOS';
@@ -146,8 +148,8 @@ export class VigenciasPage {
   });
 
   protected readonly formularioAlta = this.formBuilder.nonNullable.group({
-    codigo: ['', [Validators.required]],
-    name: ['', [Validators.required]],
+    codigo: ['', [textoRequerido]],
+    name: ['', [textoRequerido]],
     // Texto y no numero: un `select` siempre entrega texto, y `''` es "todavia no elegiste".
     practicaId: ['', [Validators.required]],
     descripcion: [''],
@@ -310,8 +312,8 @@ export class VigenciasPage {
       cuerpo.descripcion = descripcion;
     }
 
-    const valor = Number(valores.valorReferencia);
-    if (valores.valorReferencia !== '' && Number.isFinite(valor)) {
+    const valor = numeroDeclarado(valores.valorReferencia);
+    if (valor !== null) {
       cuerpo.valorReferencia = valor;
     }
 

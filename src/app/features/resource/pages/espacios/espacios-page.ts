@@ -9,7 +9,7 @@ import {
   signal,
   untracked,
 } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { catchError, of } from 'rxjs';
 
@@ -32,6 +32,8 @@ import {
   formatearInstante,
   mismoInstante,
 } from '../../../../shared/utils/instantes';
+import { textoRequerido } from '../../../../shared/validators/texto-requerido';
+import { numeroDeclarado } from '../../../../shared/utils/numero-declarado';
 
 /** Filtro de estado del listado. Los tres valores son los del contrato. */
 type FiltroEstado = 'ACTIVO' | 'INACTIVO' | 'TODOS';
@@ -139,7 +141,7 @@ export class EspaciosPage {
   private readonly ahora = signal(new Date());
 
   protected readonly formularioEdicion = this.formBuilder.nonNullable.group({
-    name: ['', [Validators.required]],
+    name: ['', [textoRequerido]],
     tipo: [''],
     // Texto y no numero: un `input` siempre entrega texto, y `''` es "no lo toques".
     capacidad: [''],
@@ -440,12 +442,8 @@ export class EspaciosPage {
       cambios.tipo = valores.tipo as UpdateEspacioRequest['tipo'];
     }
 
-    const capacidad = Number(valores.capacidad);
-    if (
-      valores.capacidad !== '' &&
-      Number.isFinite(capacidad) &&
-      capacidad !== original.capacidad
-    ) {
+    const capacidad = numeroDeclarado(valores.capacidad);
+    if (capacidad !== null && capacidad !== original.capacidad) {
       cambios.capacidad = capacidad;
     }
 
