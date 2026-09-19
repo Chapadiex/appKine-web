@@ -298,6 +298,89 @@ describe('errorInterceptor', () => {
     expect(tokenStore.token()).toBe('jwt-valido');
   });
 
+  it('lee el ProblemDetail que viene dentro de un Blob: la descarga no pierde su tipo', async () => {
+    // Una peticion binaria -`responseType: 'blob'`, que es como se baja un adjunto- recibe el
+    // cuerpo del error tambien como Blob. Un Blob es un objeto no nulo, asi que pasaba por
+    // ProblemDetail sin serlo y `problemType` quedaba en null: la pantalla perdia el unico
+    // mensaje accionable del caso.
+    const capturado = esperarError(
+      http.get('/api/v1/personas/7/adjuntos/3/contenido', { responseType: 'blob' }),
+    );
+
+    httpMock.expectOne('/api/v1/personas/7/adjuntos/3/contenido').flush(
+      new Blob(
+        [
+          JSON.stringify({
+            type: 'https://akine.app/problems/adjunto-no-disponible',
+            detail: 'el almacenamiento perdio el binario',
+          }),
+        ],
+        { type: 'application/problem+json' },
+      ),
+      { status: 409, statusText: 'Conflict' },
+    );
+
+    const error = await capturado;
+    expect(error.problemType).toBe('adjunto-no-disponible');
+    expect(error.message).toBe('el almacenamiento perdio el binario');
+  });
+
+  it('si el Blob del error no se puede leer, igual sale un AkineHttpError', async () => {
+    // Leer un Blob puede fallar -archivo detras del Blob ya no disponible-. Si esa promesa
+    // rechazada subiera, la pantalla recibiria un error que no es un AkineHttpError y su
+    // traductor se caeria encima del rechazo original.
+    const ilegible = new Blob(['no importa']);
+    Object.defineProperty(ilegible, 'text', {
+      value: () => Promise.reject(new Error('no se puede leer')),
+    });
+
+    const capturado = esperarError(
+      http.get('/api/v1/personas/7/adjuntos/3/contenido', { responseType: 'blob' }),
+    );
+
+    httpMock
+      .expectOne('/api/v1/personas/7/adjuntos/3/contenido')
+      .flush(ilegible, { status: 409, statusText: 'Conflict' });
+
+    const error = await capturado;
+    expect(error).toBeInstanceOf(AkineHttpError);
+    expect(error.problemType).toBeNull();
+  });
+
+  it('un Blob vacio no se intenta parsear: un 500 sin cuerpo sigue siendo un 500', async () => {
+    const capturado = esperarError(
+      http.get('/api/v1/personas/7/adjuntos/3/contenido', { responseType: 'blob' }),
+    );
+
+    httpMock
+      .expectOne('/api/v1/personas/7/adjuntos/3/contenido')
+      .flush(new Blob([]), { status: 500, statusText: 'Internal Server Error' });
+
+    const error = await capturado;
+    expect(error.problemType).toBeNull();
+    expect(error.status).toBe(500);
+  });
+
+  it('un Blob que no es JSON no inventa un tipo: queda sin problemType y no rompe', async () => {
+    // La pagina HTML de un proxy, un cuerpo vacio, el texto de un gateway. Nada de eso es un
+    // problema de la API y forzarlo seria inventarle un `type` al rechazo.
+    const capturado = esperarError(
+      http.get('/api/v1/personas/7/adjuntos/3/contenido', { responseType: 'blob' }),
+    );
+
+    httpMock
+      .expectOne('/api/v1/personas/7/adjuntos/3/contenido')
+      .flush(new Blob(['<html>502 Bad Gateway</html>'], { type: 'text/html' }), {
+        status: 502,
+        statusText: 'Bad Gateway',
+      });
+
+    const error = await capturado;
+    expect(error.problemType).toBeNull();
+    expect(error.status).toBe(502);
+    expect(error.esDeRed).toBe(false);
+  });
+
   it('una respuesta exitosa pasa sin tocar', async () => {
     const respuesta = new Promise((resolve) => http.get('/api/v1/version').subscribe(resolve));
 

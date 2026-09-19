@@ -1,5 +1,5 @@
 import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
-import { catchError, throwError } from 'rxjs';
+import { catchError, from, of, switchMap, throwError } from 'rxjs';
 
 import { ProblemType } from '../../api/generated/model/problem-type';
 
@@ -204,16 +204,53 @@ export const errorInterceptor: HttpInterceptorFn = (request, next) =>
       // status 0 = el request nunca llego: sin red, CORS, o servidor caido.
       // No es lo mismo que un error del servidor y la UI debe distinguirlo.
       const esDeRed = error.status === 0;
+      const espera = leerRetryAfter(error);
+
+      // Una peticion binaria -`responseType: 'blob'`, que es como se descarga un adjunto- recibe
+      // el cuerpo del ERROR tambien como Blob. Un Blob es un objeto no nulo, asi que pasaba por
+      // ProblemDetail sin serlo: `type` quedaba `undefined`, `problemType` daba `null` y la
+      // pantalla caia en su mensaje generico. Se perdia justo lo unico accionable -
+      // `adjunto-no-disponible`, que le dice al operador que no vuelva a subir el archivo sobre
+      // esa fila-. Leer el Blob es asincronico, por eso esta rama devuelve un observable propio.
+      if (error.error instanceof Blob) {
+        return from(error.error.text()).pipe(
+          catchError(() => of('')),
+          switchMap((texto) =>
+            throwError(
+              () => new AkineHttpError(error.status, problemDelTexto(texto), esDeRed, espera),
+            ),
+          ),
+        );
+      }
+
       const problem = esProblemDetail(error.error) ? error.error : null;
 
-      return throwError(
-        () => new AkineHttpError(error.status, problem, esDeRed, leerRetryAfter(error)),
-      );
+      return throwError(() => new AkineHttpError(error.status, problem, esDeRed, espera));
     }),
   );
 
 function esProblemDetail(cuerpo: unknown): cuerpo is ProblemDetail {
   return typeof cuerpo === 'object' && cuerpo !== null;
+}
+
+/**
+ * El `ProblemDetail` que venia dentro de un cuerpo binario, o `null`.
+ *
+ * <p>Un error de una descarga no siempre trae JSON: puede ser la pagina HTML de un proxy, un
+ * cuerpo vacio o el texto de un gateway. Nada de eso es un problema del backend y forzarlo
+ * seria inventar un `type`, asi que se devuelve `null` y quien traduce usa su mensaje generico
+ * —que es exactamente lo correcto cuando el rechazo no vino de la API—.
+ */
+function problemDelTexto(texto: string): ProblemDetail | null {
+  if (texto.trim() === '') {
+    return null;
+  }
+  try {
+    const analizado: unknown = JSON.parse(texto);
+    return esProblemDetail(analizado) ? analizado : null;
+  } catch {
+    return null;
+  }
 }
 
 /**
