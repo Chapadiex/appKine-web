@@ -22,6 +22,7 @@ import { TenantContextStore } from '../../../../core/services/tenant-context.sto
 import { CausaCatalogo, traducirErrorCatalogo } from '../../models/catalogo-errors';
 import { TIPOS_DE_CATALOGO } from '../../models/tipos-de-catalogo';
 import { formatearInstante } from '../../../../shared/utils/instantes';
+import { textoRequerido } from '../../../../shared/validators/texto-requerido';
 
 /** Filtro de estado del listado. Los tres valores son los del contrato, mas "todas". */
 type FiltroEstado = 'TODAS' | 'PENDIENTE' | 'APROBADA' | 'RECHAZADA';
@@ -101,9 +102,9 @@ export class SolicitudesPage {
   protected readonly formularioAlta = this.formBuilder.nonNullable.group({
     // Texto y no enum: un `select` siempre entrega texto. Se valida contra los tres del contrato.
     tipo: ['', [Validators.required]],
-    nombrePropuesto: ['', [Validators.required]],
+    nombrePropuesto: ['', [textoRequerido]],
     codigoPropuesto: [''],
-    justificacion: ['', [Validators.required]],
+    justificacion: ['', [textoRequerido]],
   });
 
   constructor() {

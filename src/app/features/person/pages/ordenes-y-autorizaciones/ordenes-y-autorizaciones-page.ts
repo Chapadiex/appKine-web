@@ -41,6 +41,7 @@ import {
   situacionDeOrden,
   vigenciaDeDocumento,
 } from '../../models/etiquetas-de-documento';
+import { textoRequerido } from '../../../../shared/validators/texto-requerido';
 
 /** Panel abierto sobre una orden. Solo uno a la vez en toda la pantalla. */
 type PanelDeOrden = 'editar' | 'baja' | 'documento';
@@ -198,7 +199,7 @@ export class OrdenesYAutorizacionesPage {
   protected readonly formularioOrden = this.formBuilder.nonNullable.group({
     // El emisor es texto libre y obligatorio: el medico que firma es externo al centro y no esta
     // en ningun catalogo del tenant.
-    profesionalEmisor: ['', [Validators.required]],
+    profesionalEmisor: ['', [textoRequerido]],
     matriculaEmisor: [''],
     numero: [''],
     fechaEmision: ['', [Validators.required]],
@@ -223,7 +224,7 @@ export class OrdenesYAutorizacionesPage {
   });
 
   protected readonly formularioAutorizacion = this.formBuilder.nonNullable.group({
-    numero: ['', [Validators.required]],
+    numero: ['', [textoRequerido]],
     coberturaId: ['', [Validators.required]],
     practicaId: ['', [Validators.required]],
     ordenMedicaId: [''],

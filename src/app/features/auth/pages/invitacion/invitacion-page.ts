@@ -10,6 +10,7 @@ import {
   CausaInvitacion,
   traducirErrorInvitacion,
 } from '../../../organization/models/invitacion-errors';
+import { textoRequerido } from '../../../../shared/validators/texto-requerido';
 
 /** En cual de los cinco estados esta la pantalla. */
 type Estado =
@@ -163,7 +164,7 @@ export class InvitacionPage {
       // Los validadores se ponen aca y no en el grupo porque son condicionales: a quien ya
       // tiene cuenta no se le pide nada. Declararlos siempre haria que el formulario de esa
       // persona fuera invalido sin que ningun campo le sea aplicable.
-      this.formularioAlta.controls.nombre.setValidators([Validators.required]);
+      this.formularioAlta.controls.nombre.setValidators([textoRequerido]);
       this.formularioAlta.controls.password.setValidators([
         Validators.required,
         Validators.minLength(10),

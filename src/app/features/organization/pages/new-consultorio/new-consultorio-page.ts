@@ -10,6 +10,7 @@ import { CausaConsultorio, traducirErrorConsultorio } from '../../models/consult
 import { crearEsperaPorLimite } from '../../../../shared/utils/espera-por-limite';
 import { etiquetaDeZona, zonasHorarias } from '../../models/zonas-horarias';
 import { nuevaClaveDeIntento } from '../../../../shared/utils/clave-de-intento';
+import { textoRequerido } from '../../../../shared/validators/texto-requerido';
 
 /** Estado del alta. Los cuatro casos exigen pantalla distinta (ADR-0005). */
 type EstadoAlta =
@@ -75,7 +76,7 @@ export class NewConsultorioPage {
   protected readonly espera = crearEsperaPorLimite();
 
   protected readonly formulario = inject(FormBuilder).nonNullable.group({
-    name: ['', [Validators.required]],
+    name: ['', [textoRequerido]],
     // Vacio significa "heredar la de la organizacion": el contrato lo expresa OMITIENDO el
     // campo, no mandando una cadena vacia, que seria una zona invalida.
     timezone: [''],

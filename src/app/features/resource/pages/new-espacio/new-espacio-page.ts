@@ -10,6 +10,7 @@ import { CausaEspacio, traducirErrorEspacio } from '../../models/espacio-errors'
 import { TIPOS_DE_ESPACIO } from '../../models/tipos-de-espacio';
 import { aInstanteUtc } from '../../../../shared/utils/instantes';
 import { crearEsperaPorLimite } from '../../../../shared/utils/espera-por-limite';
+import { textoRequerido } from '../../../../shared/validators/texto-requerido';
 
 /** Estado del alta. Los cuatro casos exigen pantalla distinta (ADR-0005). */
 type EstadoAlta =
@@ -68,7 +69,7 @@ export class NewEspacioPage {
   );
 
   protected readonly formulario = inject(FormBuilder).nonNullable.group({
-    name: ['', [Validators.required]],
+    name: ['', [textoRequerido]],
     tipo: [EspacioResponseTipoEnum.BOX as string],
     capacidad: ['1', [Validators.min(1)]],
     notes: [''],

@@ -19,6 +19,7 @@ import { ETIQUETA_DE_ESTADO, ROLES_DE_VINCULO, etiquetaDeRol } from '../../model
 import { SedesDelContexto } from '../../services/sedes-del-contexto';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { traducirErrorColaborador } from '../../models/colaborador-errors';
+import { textoRequerido } from '../../../../shared/validators/texto-requerido';
 
 /** Operacion abierta sobre una fila. Solo una a la vez. */
 type TipoAccion = 'editar' | 'suspender' | 'reactivar' | 'revocar' | 'permisos';
@@ -125,13 +126,13 @@ export class CollaboratorsPage {
     roleCode: [''],
     alcance: ['sin-cambio' as AlcanceElegido],
     consultorioId: [''],
-    reason: ['', [Validators.required]],
+    reason: ['', [textoRequerido]],
   });
 
   /** Alta de un permiso adicional sobre el vinculo abierto. */
   protected readonly formularioGrant = this.formBuilder.nonNullable.group({
     permissionCode: ['', [Validators.required]],
-    reason: ['', [Validators.required]],
+    reason: ['', [textoRequerido]],
     validUntil: [''],
   });
 

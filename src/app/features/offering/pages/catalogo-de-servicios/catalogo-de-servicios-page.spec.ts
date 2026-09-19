@@ -343,6 +343,22 @@ describe('CatalogoDeServiciosPage', () => {
     );
   });
 
+  it('la edicion con un nombre de solo espacios tampoco emite el PUT', async () => {
+    // `Validators.required` mide longitud, asi que '   ' lo daba por valido y el `.trim()` de
+    // `armarCambios()` mandaba `nombre: ''`: el mismo 400 que el caso de arriba evita, por un
+    // camino que ningun test recorria.
+    const fixture = await montar();
+
+    abrir(fixture, 'Editar');
+    escribir(fixture, '#editar-servicio-nombre', '   ');
+    enviar(fixture, 'form[novalidate]');
+
+    httpMock.expectNone((peticion: HttpRequest<unknown>) => peticion.method === 'PUT');
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain(
+      'El nombre es obligatorio',
+    );
+  });
+
   it('la baja sin motivo no sale a la red, y con motivo se confirma y se relee', async () => {
     // El motivo es obligatorio en el backend: gastar un rechazo para enterarse deja al usuario
     // con un error generico en vez de con el campo marcado.

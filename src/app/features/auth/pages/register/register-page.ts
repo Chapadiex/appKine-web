@@ -7,6 +7,7 @@ import { RegisterAccountRequest } from '../../../../api/generated/model/register
 import { RegistroYActivacionService } from '../../../../api/generated/api/registro-y-activacion.service';
 import { crearEsperaPorLimite } from '../../../../shared/utils/espera-por-limite';
 import { nuevaClaveDeIntento } from '../../../../shared/utils/clave-de-intento';
+import { textoRequerido } from '../../../../shared/validators/texto-requerido';
 
 /** Campos obligatorios, en el orden en que se enfoca el primero invalido. */
 const CAMPOS = [
@@ -48,11 +49,11 @@ export class RegisterPage {
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
 
   protected readonly formulario = inject(FormBuilder).nonNullable.group({
-    firstName: ['', [Validators.required]],
-    lastName: ['', [Validators.required]],
+    firstName: ['', [textoRequerido]],
+    lastName: ['', [textoRequerido]],
     email: ['', [Validators.required, Validators.email]],
     password: ['', [Validators.required]],
-    organizationName: ['', [Validators.required]],
+    organizationName: ['', [textoRequerido]],
     organizationSlug: [''],
     consultorioName: [''],
     planCode: [''],

@@ -1,5 +1,5 @@
 import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { catchError, forkJoin, of } from 'rxjs';
 
 import { ConfirmacionConMotivo } from '../../../../shared/components/confirmacion-con-motivo/confirmacion-con-motivo';
@@ -25,6 +25,7 @@ import {
   perfilEnPalabras,
   personaInactiva,
 } from '../../models/etiquetas-de-person';
+import { textoRequerido } from '../../../../shared/validators/texto-requerido';
 
 /** Operacion abierta sobre una fila. Solo una a la vez. */
 type TipoAccion = 'editar' | 'activar-perfil';
@@ -179,8 +180,8 @@ export class PadronDePersonasPage {
   protected readonly formularioAlta = this.formBuilder.nonNullable.group({
     // Solo apellido y nombre son obligatorios: el documento es opcional a proposito, porque una
     // persona sin DNI es un caso real y exigirlo obligaria al mostrador a inventar uno.
-    apellido: ['', [Validators.required]],
-    nombre: ['', [Validators.required]],
+    apellido: ['', [textoRequerido]],
+    nombre: ['', [textoRequerido]],
     tipoDocumento: [''],
     numeroDocumento: [''],
     fechaNacimiento: [''],

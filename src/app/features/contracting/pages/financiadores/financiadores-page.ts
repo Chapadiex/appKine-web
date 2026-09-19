@@ -32,6 +32,7 @@ import {
   TIPOS_DE_FINANCIADOR,
   etiquetaDeTipo,
 } from '../../models/etiquetas-de-contracting';
+import { textoRequerido } from '../../../../shared/validators/texto-requerido';
 
 /** Operacion abierta sobre una fila. Solo una a la vez. */
 type TipoAccion = 'editar' | 'baja';
@@ -154,8 +155,8 @@ export class FinanciadoresPage {
   protected readonly formularioBusqueda = this.formBuilder.nonNullable.group({ q: [''] });
 
   protected readonly formularioAlta = this.formBuilder.nonNullable.group({
-    codigo: ['', [Validators.required]],
-    nombre: ['', [Validators.required]],
+    codigo: ['', [textoRequerido]],
+    nombre: ['', [textoRequerido]],
     tipo: ['', [Validators.required]],
     cuit: [''],
     emailContacto: [''],
@@ -167,7 +168,7 @@ export class FinanciadoresPage {
    * La edicion no tiene `codigo`, y no es un descuido: es inmutable. Ver el javadoc de la clase.
    */
   protected readonly formularioEdicion = this.formBuilder.nonNullable.group({
-    nombre: ['', [Validators.required]],
+    nombre: ['', [textoRequerido]],
     tipo: ['', [Validators.required]],
     cuit: [''],
     emailContacto: [''],

@@ -49,6 +49,20 @@ describe('ConfirmacionConMotivo', () => {
     );
   });
 
+  it('un motivo de solo espacios no es un motivo: no confirma y lo dice', async () => {
+    // Sin el validador de no-blanco, el motivo pasaba la validacion y se emitia recortado: la
+    // baja viajaba con `reason: ''` a un campo que el contrato declara obligatorio.
+    const fixture = await montar();
+
+    escribirMotivo(fixture, '   ');
+    enviar(fixture);
+
+    expect(fixture.componentInstance.emitidos).toEqual([]);
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain(
+      'El motivo es obligatorio',
+    );
+  });
+
   it('con el motivo declarado opcional confirma con el campo vacio', async () => {
     const fixture = await montar();
     fixture.componentInstance.obligatorio.set(false);
@@ -68,6 +82,15 @@ describe('ConfirmacionConMotivo', () => {
     await fixture.whenStable();
     fixture.detectChanges();
     return fixture;
+  }
+
+  function escribirMotivo(fixture: ComponentFixture<Anfitrion>, valor: string): void {
+    const campo = (fixture.nativeElement as HTMLElement).querySelector(
+      'input',
+    ) as HTMLInputElement;
+    campo.value = valor;
+    campo.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
   }
 
   function enviar(fixture: ComponentFixture<Anfitrion>): void {

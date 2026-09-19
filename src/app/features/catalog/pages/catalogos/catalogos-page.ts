@@ -10,7 +10,7 @@ import {
   signal,
   untracked,
 } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Subject, catchError, debounceTime, filter, of } from 'rxjs';
@@ -44,6 +44,7 @@ import {
   formatearInstante,
   mismoInstante,
 } from '../../../../shared/utils/instantes';
+import { textoRequerido } from '../../../../shared/validators/texto-requerido';
 
 /** Filtro de estado del listado. Los tres valores son los del contrato. */
 type FiltroEstado = 'ACTIVO' | 'INACTIVO' | 'TODOS';
@@ -201,8 +202,8 @@ export class CatalogosPage {
   protected readonly faltaContexto = this.vista.faltaContexto;
 
   protected readonly formularioAlta = this.formBuilder.nonNullable.group({
-    codigo: ['', [Validators.required]],
-    name: ['', [Validators.required]],
+    codigo: ['', [textoRequerido]],
+    name: ['', [textoRequerido]],
     descripcion: [''],
     // Texto y no numero: un `select` siempre entrega texto, y `''` es "todavia no elegiste".
     especialidadId: [''],
@@ -211,7 +212,7 @@ export class CatalogosPage {
   });
 
   protected readonly formularioEdicion = this.formBuilder.nonNullable.group({
-    name: ['', [Validators.required]],
+    name: ['', [textoRequerido]],
     descripcion: [''],
     validFrom: [''],
     validUntil: [''],

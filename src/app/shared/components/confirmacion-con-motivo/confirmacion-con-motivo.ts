@@ -9,7 +9,8 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { FormGroup, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormGroup, FormControl, ReactiveFormsModule } from '@angular/forms';
+import { textoRequerido } from '../../validators/texto-requerido';
 
 /**
  * Confirmacion de una accion que exige declarar un motivo.
@@ -114,7 +115,7 @@ export class ConfirmacionConMotivo {
     // El validador se aplica aca y no al construir el control: `motivoObligatorio` es un input
     // y su valor no esta disponible todavia en el inicializador del campo.
     effect(() => {
-      this.motivo.setValidators(this.motivoObligatorio() ? [Validators.required] : []);
+      this.motivo.setValidators(this.motivoObligatorio() ? [textoRequerido] : []);
       this.motivo.updateValueAndValidity({ emitEvent: false });
     });
 

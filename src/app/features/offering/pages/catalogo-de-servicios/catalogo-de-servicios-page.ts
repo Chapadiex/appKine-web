@@ -25,6 +25,7 @@ import {
   etiquetaDeNaturaleza,
 } from '../../models/etiquetas-de-offering';
 import { CausaOffering, hayQueRecargar, traducirErrorOffering } from '../../models/offering-errors';
+import { textoRequerido } from '../../../../shared/validators/texto-requerido';
 
 /** Operacion abierta sobre una fila. Solo una a la vez. */
 type TipoAccion = 'editar' | 'baja';
@@ -167,8 +168,8 @@ export class CatalogoDeServiciosPage {
   private readonly tecleado = new Subject<string>();
 
   protected readonly formularioAlta = this.formBuilder.nonNullable.group({
-    codigo: ['', [Validators.required]],
-    nombre: ['', [Validators.required]],
+    codigo: ['', [textoRequerido]],
+    nombre: ['', [textoRequerido]],
     descripcion: [''],
     naturaleza: ['', [Validators.required]],
     modalidadDefault: ['', [Validators.required]],
@@ -177,7 +178,7 @@ export class CatalogoDeServiciosPage {
   });
 
   protected readonly formularioEdicion = this.formBuilder.nonNullable.group({
-    nombre: ['', [Validators.required]],
+    nombre: ['', [textoRequerido]],
     descripcion: [''],
     naturaleza: ['', [Validators.required]],
     modalidadDefault: ['', [Validators.required]],

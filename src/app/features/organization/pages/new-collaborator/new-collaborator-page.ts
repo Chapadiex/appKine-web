@@ -9,6 +9,7 @@ import { SedesDelContexto } from '../../services/sedes-del-contexto';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { CausaColaborador, traducirErrorColaborador } from '../../models/colaborador-errors';
 import { crearEsperaPorLimite } from '../../../../shared/utils/espera-por-limite';
+import { textoRequerido } from '../../../../shared/validators/texto-requerido';
 
 /** Campos obligatorios, en el orden en que se enfoca el primero invalido tras un submit. */
 const CAMPOS = ['email', 'roleCode', 'reason'] as const;
@@ -69,7 +70,7 @@ export class NewCollaboratorPage {
     // existe "no tocar", porque el vinculo se esta creando. Son dos opciones, no tres.
     alcance: ['organizacion' as 'organizacion' | 'sede'],
     consultorioId: [''],
-    reason: ['', [Validators.required]],
+    reason: ['', [textoRequerido]],
   });
 
   protected readonly estado = signal<EstadoAlta>({ tipo: 'editando' });
