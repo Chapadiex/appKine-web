@@ -414,7 +414,7 @@ describe('DocumentosDePersonaPage', () => {
     descarga.restaurar();
   });
 
-  it('una descarga rechazada avisa, aunque pierda el detalle del problema', async () => {
+  it('una descarga rechazada muestra el problema real, con ningun panel abierto', async () => {
     const fixture = await montar([CREDENCIAL]);
     const descarga = espiarDescarga();
 
@@ -439,6 +439,13 @@ describe('DocumentosDePersonaPage', () => {
     // pantalla se quede sin la fila que el operador estaba mirando.
     expect(texto(fixture)).not.toContain('Se guardo');
     expect(texto(fixture)).toContain('Credencial OSDE');
+    // El aviso se ve CON TODOS LOS PANELES CERRADOS, que es el estado normal al tocar
+    // "Descargar": antes solo se renderizaba dentro de la subida y de los dos paneles de fila,
+    // asi que el boton parecia no hacer nada.
+    // Y dice el problema real, no el generico: el `type` viaja dentro de un Blob porque la
+    // descarga usa `responseType: 'blob'`, y es lo unico que le dice al operador que NO vuelva a
+    // subir el archivo sobre esta fila.
+    expect(texto(fixture)).toContain('No lo vuelvas a subir sobre esta fila');
     // Y no se entrega ningun archivo: un `download` disparado sobre un error guardaria el
     // ProblemDetail con nombre de PDF.
     expect(descarga.revocar).not.toHaveBeenCalled();

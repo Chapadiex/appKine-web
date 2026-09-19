@@ -342,6 +342,14 @@ describe('ConsultoriosPage', () => {
     httpMock.expectNone((peticion: HttpRequest<unknown>) => peticion.method === 'PATCH');
     expect(texto(fixture)).toContain('La sede necesita un nombre');
 
+    // Y un nombre de solo espacios es un nombre vacio. `Validators.required` lo daba por bueno
+    // -solo mira la longitud- y `armarCambios()` lo recortaba a '' al salir.
+    escribir(fixture, '#editar-name', '   ');
+    enviar(fixture, 'form');
+
+    httpMock.expectNone((peticion: HttpRequest<unknown>) => peticion.method === 'PATCH');
+    expect(texto(fixture)).toContain('La sede necesita un nombre');
+
     // Y vaciar el email si vale: la cadena vacia es la forma contractual de borrar el dato.
     escribir(fixture, '#editar-name', 'Sede Centro');
     enviar(fixture, 'form');
@@ -430,7 +438,14 @@ describe('ConsultoriosPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
+    await fixture.whenStable();
+    fixture.detectChanges();
+
     expect(consola).toHaveBeenCalled();
+    // Y se dice EN LA PANTALLA. El exito de la baja cierra el panel, asi que el aviso se escribe
+    // sin ningun panel abierto: mientras `errorAccion` solo se renderizaba dentro de los paneles,
+    // el unico rastro de esto era la consola del navegador, que el usuario no mira.
+    expect(texto(fixture)).toContain('no pudimos abrir la pantalla para elegir otra');
     consola.mockRestore();
   });
 

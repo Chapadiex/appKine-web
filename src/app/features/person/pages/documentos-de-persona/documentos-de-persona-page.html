@@ -341,3 +341,20 @@
     (cambioDePagina)="irAPagina($event)"
   />
 }
+
+<!--
+  Error de una accion sin ningun panel abierto. El caso concreto es "Descargar", que es la unica
+  accion de fila que no abre nada: su rechazo se escribia en `errorAccion` y el unico lugar donde
+  eso se renderizaba era dentro del formulario de subida y de los dos paneles, asi que con todo
+  cerrado -el estado normal al tocar Descargar- el boton parecia no hacer nada.
+-->
+@if (errorAccion(); as mensaje) {
+  @if (panel() === null && !subidaAbierta()) {
+    <p class="estado estado--error" role="alert">{{ mensaje }}</p>
+    @if (hayQueRecargar()) {
+      <p class="acciones">
+        <button type="button" class="boton" (click)="cargar()">Recargar los documentos</button>
+      </p>
+    }
+  }
+}

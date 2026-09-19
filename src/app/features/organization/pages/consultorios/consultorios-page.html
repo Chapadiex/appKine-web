@@ -427,3 +427,15 @@
     }
   </div>
 </section>
+
+<!--
+  Error de una accion que ya no tiene panel donde mostrarse. Pasa con la baja de la sede del
+  contexto: el exito cierra el panel y despues, si la navegacion al selector falla, el aviso se
+  escribe con la pantalla entera en su estado normal. Sin esto el unico rastro quedaba en la
+  consola y el usuario se quedaba con un contexto inservible sin enterarse.
+-->
+@if (errorAccion(); as mensaje) {
+  @if (panel() === null) {
+    <p class="estado estado--error" role="alert">{{ mensaje }}</p>
+  }
+}

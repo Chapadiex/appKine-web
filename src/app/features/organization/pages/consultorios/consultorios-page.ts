@@ -1,4 +1,4 @@
-import { Component, ElementRef, computed, effect, inject, signal, untracked } from '@angular/core';
+import { Component, ElementRef, effect, inject, signal, untracked } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { catchError, of } from 'rxjs';
@@ -19,6 +19,7 @@ import { UpdateConsultorioRequest } from '../../../../api/generated/model/update
 import { CausaConsultorio, traducirErrorConsultorio } from '../../models/consultorio-errors';
 import { MOTIVO_SEDE_INACTIVA, PARAM_MOTIVO } from '../../models/motivo-de-seleccion';
 import { etiquetaDeZona, zonasHorarias } from '../../models/zonas-horarias';
+import { textoRequerido } from '../../../../shared/validators/texto-requerido';
 
 /** Filtro de estado del listado. Los tres valores son los del contrato. */
 type FiltroEstado = 'ACTIVO' | 'INACTIVO' | 'TODOS';
@@ -126,7 +127,7 @@ export class ConsultoriosPage {
 
   /** Datos de la sede. `slotMinutes` va como texto: el `input` siempre entrega texto. */
   protected readonly formularioEdicion = this.formBuilder.nonNullable.group({
-    name: ['', [Validators.required]],
+    name: ['', [textoRequerido]],
     timezone: [''],
     slotMinutes: [''],
     legalName: [''],
@@ -141,14 +142,6 @@ export class ConsultoriosPage {
   protected readonly totalSedes = this.vista.totalElementos;
   protected readonly mensajeError = this.vista.mensajeError;
   protected readonly faltaContexto = this.vista.faltaContexto;
-
-  /**
-   * `true` cuando el error abierto es el tope del plan.
-   *
-   * <p>La plantilla lo usa para ofrecer el enlace a la suscripcion: el mensaje dice que hay
-   * que cambiar de plan y la pantalla tiene que dejar hacerlo, no obligar a buscarla.
-   */
-  protected readonly esTopeDelPlan = computed(() => this.causaAccion() === 'tope-del-plan');
 
   constructor() {
     effect(() => {
