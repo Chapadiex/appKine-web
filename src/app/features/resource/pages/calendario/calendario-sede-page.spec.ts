@@ -288,7 +288,7 @@ describe('CalendarioSedePage', () => {
       .expectOne((peticion: HttpRequest<unknown>) => peticion.url === CALENDARIO)
       .flush(
         {
-          type: 'https://akine.app/problems/server-error',
+          type: 'https://akine.app/problems/internal-error',
           detail: 'No se pudo leer el calendario de la sede',
         },
         { status: 500, statusText: 'X' },

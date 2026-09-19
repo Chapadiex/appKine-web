@@ -532,7 +532,7 @@ describe('ExcepcionesPage', () => {
         (peticion: HttpRequest<unknown>) =>
           peticion.method === 'GET' && peticion.url === CALENDARIO,
       )
-      .flush({ type: 'https://akine.app/problems/server-error' }, { status: 500, statusText: 'X' });
+      .flush({ type: 'https://akine.app/problems/internal-error' }, { status: 500, statusText: 'X' });
     await estabilizar(fixture);
 
     // No se guarda a ciegas: seguir de largo crearia en silencio justo el caso que el aviso
@@ -708,7 +708,7 @@ describe('ExcepcionesPage', () => {
     // por separado.
     httpMock
       .expectOne((peticion: HttpRequest<unknown>) => peticion.url === rutaMemberships(ORG))
-      .flush({ type: 'https://akine.app/problems/server-error' }, { status: 500, statusText: 'X' });
+      .flush({ type: 'https://akine.app/problems/internal-error' }, { status: 500, statusText: 'X' });
     listado().flush(
       { type: 'https://akine.app/problems/forbidden' },
       { status: 403, statusText: 'F' },
@@ -860,7 +860,7 @@ describe('ExcepcionesPage', () => {
 
     httpMock
       .expectOne((peticion: HttpRequest<unknown>) => peticion.url === rutaMemberships(ORG))
-      .flush({ type: 'https://akine.app/problems/server-error' }, { status: 500, statusText: 'X' });
+      .flush({ type: 'https://akine.app/problems/internal-error' }, { status: 500, statusText: 'X' });
 
     listado().flush(VIGENTES);
     await estabilizar(fixture);

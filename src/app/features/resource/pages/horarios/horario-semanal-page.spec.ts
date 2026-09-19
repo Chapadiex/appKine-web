@@ -365,7 +365,7 @@ describe('HorarioSemanalPage', () => {
 
     httpMock
       .expectOne((peticion: HttpRequest<unknown>) => peticion.url === rutaMemberships(ORG))
-      .flush({ type: 'https://akine.app/problems/server-error' }, { status: 500, statusText: 'X' });
+      .flush({ type: 'https://akine.app/problems/internal-error' }, { status: 500, statusText: 'X' });
     await estabilizar(fixture);
 
     // No se pide ningun horario: sin selector no hay profesional que consultar.

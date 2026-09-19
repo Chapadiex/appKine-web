@@ -19,7 +19,8 @@
     "format": "prettier --write \"src/**/*.{ts,html,css,json}\" \"e2e/**/*.ts\"",
     "format:check": "prettier --check \"src/**/*.{ts,html,css,json}\" \"e2e/**/*.ts\"",
     "api:generate": "openapi-generator-cli generate -i ../appKine-api/openapi/akine-api.yaml -g typescript-angular -o src/app/api/generated -c openapi-generator.json",
-    "api:check": "node scripts/check-contract-version.mjs",
+    "api:check": "node scripts/check-contract-version.mjs && node scripts/check-problem-types.mjs",
+    "problems:check": "node scripts/check-problem-types.mjs",
     "lint": "ng lint",
     "coverage:check": "node scripts/check-coverage.mjs"
   },
