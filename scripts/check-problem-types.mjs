@@ -97,7 +97,9 @@ const declarados = new Set(
   ),
 );
 if (declarados.size === 0) {
-  fallar('El enum ProblemType del contrato quedo vacio tras el parseo. Revisa el formato del YAML.');
+  fallar(
+    'El enum ProblemType del contrato quedo vacio tras el parseo. Revisa el formato del YAML.',
+  );
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -146,7 +148,10 @@ function registrar(slug, archivo) {
   usos.get(slug).add(relative(raizRepo, archivo).split('\\').join('/'));
 }
 
-for (const archivo of [...archivosTs(join(raizRepo, 'src')), ...archivosTs(join(raizRepo, 'e2e'))]) {
+for (const archivo of [
+  ...archivosTs(join(raizRepo, 'src')),
+  ...archivosTs(join(raizRepo, 'e2e')),
+]) {
   const texto = readFileSync(archivo, 'utf8');
 
   // (a) URI completa. Es la forma de los fixtures: `{ type: 'https://akine.app/problems/x' }`.
