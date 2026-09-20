@@ -126,7 +126,18 @@ export class HabilitacionesDeLaOfertaPage {
     return actual.tipo === 'error' ? actual.mensaje : null;
   });
 
-  protected readonly hayQueRecargar = computed(() => hayQueRecargar(this.causaAccion()));
+  /**
+   * La version de la oferta no se pudo leer, asi que no hay con que guardar.
+   *
+   * <p>Es estado de la pantalla y no una causa de error del backend: el fallo puede venir de la
+   * carga inicial o del refresco posterior a un guardado que si entro, y en ese segundo caso no
+   * hay ninguna operacion fallida a la que atribuirselo.
+   */
+  protected readonly ofertaIlegible = signal(false);
+
+  protected readonly hayQueRecargar = computed(
+    () => hayQueRecargar(this.causaAccion()) || this.ofertaIlegible(),
+  );
 
   protected readonly faltaContexto = computed(() => this.contexto.consultorioId() === null);
 
@@ -146,6 +157,7 @@ export class HabilitacionesDeLaOfertaPage {
     this.estado.set({ tipo: 'cargando' });
     this.errorAccion.set(null);
     this.causaAccion.set(null);
+    this.ofertaIlegible.set(false);
 
     this.api.verHabilitaciones(consultorioId, this.ofertaId).subscribe({
       next: (respuesta) => {
@@ -258,6 +270,11 @@ export class HabilitacionesDeLaOfertaPage {
     const consultorioId = this.contexto.consultorioId();
     const oferta = this.oferta();
     if (consultorioId === null || oferta === null) {
+      // Ultima red: la plantilla ya apaga los botones, pero un submit por teclado o una carrera
+      // entre el click y el fallo del refresco llegarian igual. Lo que no puede volver a pasar es
+      // que el corte no produzca NINGUN sintoma.
+      this.errorAccion.set(consultorioId === null ? MENSAJE_SIN_SEDE : MENSAJE_SIN_OFERTA);
+      this.ofertaIlegible.set(consultorioId !== null);
       return;
     }
 
@@ -298,14 +315,34 @@ export class HabilitacionesDeLaOfertaPage {
    * Vuelve a pedir la oferta, por su nombre comercial y sobre todo por su `version`.
    *
    * <p>Se pide aparte porque el endpoint de habilitaciones devuelve la configuracion y no la
-   * oferta. Un fallo aca deja `oferta` en `null` y con eso el guardado se corta solo: es
-   * preferible a guardar con una version inventada.
+   * oferta. Un fallo aca deja `oferta` en `null`, y sin version no se puede guardar: mandar una
+   * version inventada pisaria la edicion de otro, que es exactamente lo que el control optimista
+   * existe para impedir.
+   *
+   * <p><b>Cortar el guardado es correcto; cortarlo en silencio no.</b> Este fallo no tenia ni un
+   * sintoma: la pantalla se dibujaba entera, con las casillas y los dos botones habilitados, y
+   * apretar "Guardar" no producia nada —ni spinner, ni error, ni consola—. Peor todavia cuando
+   * ocurria en el refresco POSTERIOR a un guardado exitoso: el cartel de exito del primero
+   * quedaba en pantalla y el segundo boton quedaba muerto el resto de la sesion.
+   *
+   * <p>Por eso el fallo se declara al instante en {@link ofertaIlegible}: la plantilla apaga los
+   * dos botones, explica por que y ofrece recargar, que es la unica salida real.
    */
   private refrescarOferta(consultorioId: number): void {
     this.api.listarOfertas(consultorioId, { estado: 'TODOS' }).subscribe({
-      next: (ofertas) =>
-        this.oferta.set(ofertas.find((candidata) => candidata.id === this.ofertaId) ?? null),
-      error: () => this.oferta.set(null),
+      next: (ofertas) => {
+        const encontrada = ofertas.find((candidata) => candidata.id === this.ofertaId) ?? null;
+        this.oferta.set(encontrada);
+        this.ofertaIlegible.set(encontrada === null);
+        if (encontrada === null) {
+          this.errorAccion.set(MENSAJE_SIN_OFERTA);
+        }
+      },
+      error: () => {
+        this.oferta.set(null);
+        this.ofertaIlegible.set(true);
+        this.errorAccion.set(MENSAJE_SIN_OFERTA);
+      },
     });
   }
 
@@ -396,6 +433,21 @@ export class HabilitacionesDeLaOfertaPage {
     );
   }
 }
+
+/**
+ * El aviso de que no hay version con que guardar.
+ *
+ * <p>Nombra el dato que falta y la unica salida. Decir "ocurrio un error" dejaria al
+ * administrador apretando un boton apagado sin saber que recargar lo destraba.
+ */
+const MENSAJE_SIN_OFERTA =
+  'No pudimos leer la oferta, y sin su version no se puede guardar: mandar una version inventada ' +
+  'pisaria la edicion de otra persona. Las casillas que marcaste NO se guardaron. Recarga la ' +
+  'configuracion y volve a marcarlas.';
+
+/** Sin sede elegida no hay oferta: el problema es el contexto, no la oferta. */
+const MENSAJE_SIN_SEDE =
+  'No hay una sede elegida, y la oferta pertenece a una. Elegi la sede y volve a entrar.';
 
 /**
  * La union de lo habilitado y lo candidato, ordenada por etiqueta.

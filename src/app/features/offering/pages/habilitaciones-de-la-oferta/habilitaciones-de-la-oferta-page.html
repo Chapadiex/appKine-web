@@ -126,7 +126,7 @@
           type="button"
           class="boton"
           *akinePermiso="PERMISO_CONSULTORIO_MANAGE"
-          [disabled]="guardando()"
+          [disabled]="guardando() || ofertaIlegible()"
           (click)="guardarProfesionales()"
         >
           {{ guardando() ? 'Guardando…' : 'Guardar los profesionales' }}
@@ -182,7 +182,7 @@
           type="button"
           class="boton"
           *akinePermiso="PERMISO_CONSULTORIO_MANAGE"
-          [disabled]="guardando()"
+          [disabled]="guardando() || ofertaIlegible()"
           (click)="guardarEspacios()"
         >
           {{ guardando() ? 'Guardando…' : 'Guardar los espacios' }}

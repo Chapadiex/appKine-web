@@ -341,16 +341,59 @@ describe('HabilitacionesDeLaOfertaPage', () => {
     expect(texto).not.toContain('NaN');
   });
 
-  it('si no se pudo releer la oferta, guardar no manda nada a la red', async () => {
-    // Sin la `version` de la oferta el guardado se corta solo: mandar una inventada pisaria el
-    // cambio de otro, que es lo que el control optimista existe para impedir.
+  /**
+   * Cortar el guardado sin version es correcto. Cortarlo <b>sin sintoma</b> no lo era.
+   *
+   * <p>La pantalla se dibujaba entera, con las casillas y los dos botones habilitados, y apretar
+   * "Guardar" no producia nada: ni spinner, ni error, ni consola. Este test afirmaba el corte y
+   * nada mas, asi que el hueco pasaba por encima de el.
+   */
+  it('si no se pudo releer la oferta, guardar no manda nada a la red Y lo dice', async () => {
     const fixture = await montar(SIN_RESTRINGIR, { ofertaPerdida: true });
+
+    // El aviso no espera al click: el boton ya esta apagado cuando el fallo ocurre.
+    const boton = botonPorTexto(fixture, 'Guardar los profesionales');
+    expect(boton?.disabled).toBe(true);
+
+    const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(texto).toContain('sin su version no se puede guardar');
+    expect(texto).toContain('NO se guardaron');
+    expect(botonPorTexto(fixture, 'Recargar la configuracion')).not.toBeNull();
+
+    marcar(fixture, 0);
+    boton?.click();
+    fixture.detectChanges();
+
+    httpMock.expectNone((peticion: HttpRequest<unknown>) => peticion.method === 'PUT');
+  });
+
+  /**
+   * La variante peor: el primer guardado entra y el refresco posterior falla.
+   *
+   * <p>Antes, "Guardar los espacios" quedaba muerto el resto de la sesion con el cartel de exito
+   * del primero todavia en pantalla. El exito no se borra —es cierto, ese guardado si entro— pero
+   * el aviso de que no hay version con que seguir tiene que estar al lado.
+   */
+  it('si el refresco posterior a un guardado exitoso falla, el segundo boton no queda mudo', async () => {
+    const fixture = await montar();
 
     marcar(fixture, 0);
     botonPorTexto(fixture, 'Guardar los profesionales')?.click();
     fixture.detectChanges();
 
-    httpMock.expectNone((peticion: HttpRequest<unknown>) => peticion.method === 'PUT');
+    httpMock
+      .expectOne((peticion: HttpRequest<unknown>) => peticion.method === 'PUT')
+      .flush(SIN_RESTRINGIR);
+    // El repedido de la oferta -el que trae la version nueva- se cae.
+    httpMock.expectOne(esListadoDeOfertas()).flush(...ERROR_500);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(texto).toContain('Guardamos la configuracion de la oferta.');
+    expect(texto).toContain('sin su version no se puede guardar');
+    expect(botonPorTexto(fixture, 'Guardar los espacios')?.disabled).toBe(true);
+    expect(botonPorTexto(fixture, 'Recargar la configuracion')).not.toBeNull();
   });
 
   it('un 403 al guardar explica que falta administrar la sede, y no oculta la lista', async () => {
