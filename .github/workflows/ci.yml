@@ -139,6 +139,49 @@ jobs:
           fi
           echo "Cliente alineado con el contrato."
 
+  # Contraste de color medido en un navegador de verdad.
+  #
+  # Es un job propio y NO un paso del job `build` porque necesita Chromium, que `build` no
+  # instala: meterlo ahi le agregaria ~40 s de descarga a la corrida de lint y tests, que es la
+  # que todo el mundo espera mirando.
+  #
+  # A diferencia del job `e2e` de mas abajo, este NO necesita el backend: la API se simula con
+  # `route.fulfill` y lo unico que la auditoria necesita real es que la pantalla se pinte. Por eso
+  # esta activo y aquel sigue comentado.
+  contraste:
+    name: Contraste de color (WCAG AA, navegador real)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configurar Node ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Instalar Chromium
+        run: npx playwright install --with-deps chromium
+
+      # Los dos temas, en dos proyectos. Playwright levanta el frontend por su cuenta.
+      - name: Auditar contraste en modo claro y en modo oscuro
+        run: npm run a11y:contraste
+
+      - name: Publicar reporte
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: contraste-report
+          path: playwright-report/
+          if-no-files-found: ignore
+          retention-days: 14
+
   # PENDIENTE(AKINE-00.02): los E2E necesitan el stack completo (MySQL + backend + frontend).
   # Se activan cuando exista la imagen Docker del backend que publica su pipeline, para no
   # compilar Java dentro del job del frontend.

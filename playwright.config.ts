@@ -38,6 +38,33 @@ export default defineConfig({
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
+      // La auditoria de contraste tiene sus propios dos proyectos, uno por tema. Sin esto
+      // correria una tercera vez con el `colorScheme` que traiga el sistema del runner, que es
+      // justamente el dato que no se puede dejar al azar.
+      testIgnore: /contraste\.spec\.ts/,
+    },
+
+    /*
+     * Auditoria de contraste (WCAG 1.4.3 AA), un proyecto por tema.
+     *
+     * Son dos proyectos y no dos `test.use` dentro del spec porque el tema NO es un caso de
+     * prueba: es el entorno en el que TODOS los casos tienen que valer. Partido en proyectos, el
+     * reporte dice "contraste-oscuro / padron con un error del servidor" y se sabe de una que la
+     * falla es del modo oscuro; un solo proyecto con los dos temas adentro duplicaria cada
+     * `test()` a mano y el dia que alguien agregue el noveno se va a olvidar de la mitad.
+     *
+     * A diferencia del proyecto `chromium`, estos NO necesitan el backend: la API se simula con
+     * `route.fulfill`. Corren en cualquier maquina y en CI.
+     */
+    {
+      name: 'contraste-claro',
+      testMatch: /contraste\.spec\.ts/,
+      use: { ...devices['Desktop Chrome'], colorScheme: 'light' },
+    },
+    {
+      name: 'contraste-oscuro',
+      testMatch: /contraste\.spec\.ts/,
+      use: { ...devices['Desktop Chrome'], colorScheme: 'dark' },
     },
   ],
 
