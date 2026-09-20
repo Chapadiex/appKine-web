@@ -94,6 +94,34 @@ describe('NewConsultorioPage', () => {
     expect(texto(fixture)).toContain('La sede "Sede Norte" quedo creada');
   });
 
+  /**
+   * Escribir una duracion y despues borrarla NO es pedir turnos de cero minutos.
+   *
+   * <p>El `NumberValueAccessor` escribe `null` en el control cuando el `<input type="number">`
+   * queda vacio, y la guarda vieja —`valores.slotMinutes !== ''`— lo dejaba pasar: `Number(null)`
+   * es `0` y `Number.isFinite(0)` es verdadero, asi que el alta viajaba con `slotMinutes: 0`.
+   * `Validators.min(1)` no lo frena porque un control vacio le resulta valido.
+   */
+  it('borrar la duracion del turno la omite del alta en vez de mandarla en cero', async () => {
+    const fixture = montar();
+
+    escribir(fixture, '#sede-name', 'Sede Norte');
+    escribir(fixture, '#sede-slotMinutes', '30');
+    escribir(fixture, '#sede-slotMinutes', '');
+    enviar(fixture);
+    enviar(fixture);
+
+    const alta = httpMock.expectOne(RUTA_ALTA);
+    expect(alta.request.body).toEqual({ name: 'Sede Norte' });
+
+    alta.flush(
+      { id: 9, name: 'Sede Norte', estado: 'ACTIVO' },
+      { status: 201, statusText: 'Created' },
+    );
+    await fixture.whenStable();
+    fixture.detectChanges();
+  });
+
   it('el tope del plan se explica con el limite del plan y ofrece cambiarlo', async () => {
     const fixture = montar();
 

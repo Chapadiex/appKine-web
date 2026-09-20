@@ -19,6 +19,7 @@ import { UpdateConsultorioRequest } from '../../../../api/generated/model/update
 import { CausaConsultorio, traducirErrorConsultorio } from '../../models/consultorio-errors';
 import { MOTIVO_SEDE_INACTIVA, PARAM_MOTIVO } from '../../models/motivo-de-seleccion';
 import { etiquetaDeZona, zonasHorarias } from '../../models/zonas-horarias';
+import { numeroDeclarado } from '../../../../shared/utils/numero-declarado';
 import { textoRequerido } from '../../../../shared/validators/texto-requerido';
 
 /** Filtro de estado del listado. Los tres valores son los del contrato. */
@@ -408,8 +409,10 @@ export class ConsultoriosPage {
       cambios.timezone = valores.timezone;
     }
 
-    const slot = Number(valores.slotMinutes);
-    if (valores.slotMinutes !== '' && Number.isFinite(slot) && slot !== original.slotMinutes) {
+    // `numeroDeclarado` y no `valores.slotMinutes !== ''`: vaciar el campo entrega `null`, y la
+    // guarda vieja lo convertia en un `0` que viajaba como un cambio deliberado de duracion.
+    const slot = numeroDeclarado(valores.slotMinutes);
+    if (slot !== null && slot !== original.slotMinutes) {
       cambios.slotMinutes = slot;
     }
 

@@ -26,6 +26,7 @@ import { PERMISO_CONVENIO_MANAGE } from '../../../../core/models/permisos';
 import { PermisoDirective } from '../../../../shared/directives/permiso.directive';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { UpdateArancelRequest } from '../../../../api/generated/model/update-arancel-request';
+import { numeroDeclarado } from '../../../../shared/utils/numero-declarado';
 import {
   CausaContracting,
   hayQueRecargar,
@@ -464,15 +465,30 @@ export class ArancelesDelConvenioPage {
     const valores = this.formularioEdicion.getRawValue();
     const cambios: UpdateArancelRequest = { expectedVersion: version };
 
-    const total = Number(valores.importeTotal);
-    const financiador = Number(valores.importeFinanciador);
-    const coseguro = Number(valores.coseguro);
+    const total = numeroDeclarado(valores.importeTotal);
+    const financiador = numeroDeclarado(valores.importeFinanciador);
+    const coseguro = numeroDeclarado(valores.coseguro);
     const tocoImportes =
       valores.importeTotal !== comoTexto(original.importeTotal) ||
       valores.importeFinanciador !== comoTexto(original.importeFinanciador) ||
       valores.coseguro !== comoTexto(original.coseguro);
 
     if (tocoImportes) {
+      // Un importe borrado entrega `null`, no `''`: sin esta guarda `Number(null)` daba `0`, la
+      // terna `0 = 0 + 0` cuadraba, el contrato acepta `minimum: 0.00` y el arancel quedaba en
+      // cero pesos CON cartel de exito. Es el unico de los cuatro campos numericos del repo que
+      // no terminaba en un 400.
+      if (total === null || financiador === null || coseguro === null) {
+        this.errorAccion.set(MENSAJE_IMPORTE_VACIO);
+        this.enfocar(
+          total === null
+            ? '#editar-arancel-total'
+            : financiador === null
+              ? '#editar-arancel-financiador'
+              : '#editar-arancel-coseguro',
+        );
+        return null;
+      }
       if (!importesCuadran(total, financiador, coseguro)) {
         this.errorAccion.set(mensajeDeTerna(total, financiador, coseguro));
         this.enfocar('#editar-arancel-financiador');
@@ -596,6 +612,17 @@ export class ArancelesDelConvenioPage {
     this.host.nativeElement.querySelector<HTMLElement>(selector)?.focus();
   }
 }
+
+/**
+ * El aviso de un importe borrado.
+ *
+ * <p>Se dice "borraste" y no "es invalido" porque el campo vacio <b>no</b> es un error de formato:
+ * es un dato que falta, y los tres se mandan como terna aunque cambie uno solo.
+ */
+const MENSAJE_IMPORTE_VACIO =
+  'Los tres importes tienen que tener un valor. Dejar uno en blanco no es "no lo cambies": los ' +
+  'tres viajan juntos, asi que un campo vacio guardaria el arancel en cero. Volve a escribir el ' +
+  'importe, o cerra el panel para dejarlo como estaba.';
 
 /** Un numero del backend como texto para un `input`, o `''` si no vino. */
 function comoTexto(valor: number | undefined | null): string {

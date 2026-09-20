@@ -10,6 +10,7 @@ import { CausaConsultorio, traducirErrorConsultorio } from '../../models/consult
 import { crearEsperaPorLimite } from '../../../../shared/utils/espera-por-limite';
 import { etiquetaDeZona, zonasHorarias } from '../../models/zonas-horarias';
 import { nuevaClaveDeIntento } from '../../../../shared/utils/clave-de-intento';
+import { numeroDeclarado } from '../../../../shared/utils/numero-declarado';
 import { textoRequerido } from '../../../../shared/validators/texto-requerido';
 
 /** Estado del alta. Los cuatro casos exigen pantalla distinta (ADR-0005). */
@@ -263,8 +264,11 @@ export class NewConsultorioPage {
       cuerpo.timezone = valores.timezone;
     }
 
-    const slot = Number(valores.slotMinutes);
-    if (valores.slotMinutes !== '' && Number.isFinite(slot)) {
+    // `numeroDeclarado` y no `valores.slotMinutes !== ''`: un `input type="number"` vaciado
+    // entrega `null`, no `''`, y `Number(null)` es `0`. Un slot de 0 minutos viajaba como una
+    // duracion deliberada.
+    const slot = numeroDeclarado(valores.slotMinutes);
+    if (slot !== null) {
       cuerpo.slotMinutes = slot;
     }
 

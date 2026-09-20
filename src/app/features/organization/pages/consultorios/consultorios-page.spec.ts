@@ -137,6 +137,39 @@ describe('ConsultoriosPage', () => {
     expect(texto(fixture)).toContain('quedaron guardados');
   });
 
+  /**
+   * Vaciar un campo de texto es "borralo"; vaciar uno numerico NO es "ponelo en cero".
+   *
+   * <p>Un `<input type="number">` vaciado entrega `null`, no `''`, asi que la guarda vieja
+   * —`valores.slotMinutes !== ''`— lo dejaba pasar y `Number(null)` mandaba `slotMinutes: 0`: una
+   * duracion de turno de cero minutos, que es un cambio que el operador nunca pidio. La diferencia
+   * con `#editar-phone` de arriba es del contrato, no del gesto: la cadena vacia SI es la forma de
+   * borrar un campo institucional.
+   */
+  it('vaciar la duracion del turno no manda un cero: el campo directamente no viaja', async () => {
+    const fixture = await montar();
+
+    abrir(fixture, 'Editar');
+    escribir(fixture, '#editar-name', 'Sede Centro Nueva');
+    escribir(fixture, '#editar-slotMinutes', '');
+
+    enviar(fixture, 'form');
+
+    const peticion = httpMock.expectOne(
+      (candidata: HttpRequest<unknown>) => candidata.method === 'PATCH',
+    );
+    const cuerpo = peticion.request.body as Record<string, unknown>;
+
+    expect(cuerpo).toEqual({ version: 4, name: 'Sede Centro Nueva' });
+    expect('slotMinutes' in cuerpo).toBe(false);
+
+    peticion.flush({ ...CENTRO, name: 'Sede Centro Nueva', version: 5 });
+    responderSedes(1);
+    httpMock.expectOne(esListado(1)).flush(PAGINA);
+    await fixture.whenStable();
+    fixture.detectChanges();
+  });
+
   it('una version vieja no pisa nada: relee la sede, avisa y deja el panel abierto', async () => {
     const fixture = await montar();
 

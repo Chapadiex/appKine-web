@@ -91,6 +91,41 @@ describe('NewEspacioPage', () => {
     expect(campo?.getAttribute('aria-describedby')).toBe('espacio-name-conflicto');
     expect(texto(fixture)).toContain('SI se puede reusar');
   });
+
+  /**
+   * Un `<input type="number">` vaciado entrega `null`, no `''`.
+   *
+   * <p>La guarda vieja —`valores.capacidad !== ''`— lo dejaba pasar porque `null !== ''`, y
+   * `Number(null)` es `0`: el alta viajaba con `capacidad: 0`, que es un espacio donde no entra
+   * nadie. `Validators.min(1)` no lo frena, porque devuelve `null` —valido— ante un campo vacio,
+   * y el `min="1"` del HTML tampoco, porque el formulario lleva `novalidate`.
+   */
+  it('vaciar la capacidad la OMITE en vez de mandar un cero', async () => {
+    tenantContext.select({
+      organizationId: 1,
+      organizationName: 'Belgrano',
+      consultorioId: 3,
+      consultorioName: 'Sede Centro',
+    });
+
+    const fixture = TestBed.createComponent(NewEspacioPage);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    escribir(fixture, '#espacio-name', 'Box 9');
+    escribir(fixture, '#espacio-capacidad', '');
+    enviar(fixture);
+
+    const alta = httpMock.expectOne(
+      (peticion: HttpRequest<unknown>) => peticion.method === 'POST' && peticion.url === ESPACIOS,
+    );
+    expect(alta.request.body).toEqual({ name: 'Box 9', tipo: 'BOX' });
+
+    alta.flush({ id: 9, name: 'Box 9' });
+    await fixture.whenStable();
+    fixture.detectChanges();
+  });
 });
 
 function texto(fixture: { nativeElement: HTMLElement }): string {

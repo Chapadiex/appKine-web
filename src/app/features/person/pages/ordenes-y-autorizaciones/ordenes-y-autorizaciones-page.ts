@@ -27,6 +27,7 @@ import { CausaPersona, hayQueRecargar, traducirErrorPersona } from '../../models
 import { coberturaEnUnaLinea } from '../../models/etiquetas-de-cobertura';
 import { fechaEnPalabras } from '../../models/etiquetas-de-ficha';
 import { nombreCompleto } from '../../models/etiquetas-de-person';
+import { numeroDeclarado } from '../../../../shared/utils/numero-declarado';
 import {
   admiteResolucion,
   autorizacionInactiva,
@@ -857,17 +858,15 @@ function vacioEsUndefined(valor: string): string | undefined {
  * inicial. El tipo miente, compila, y `valor.trim()` explota en runtime con "trim is not a
  * function" — que fue exactamente el defecto que este comentario documenta. Vale para todos los
  * campos numericos de esta pantalla: cantidades y sesiones prescriptas.
+ *
+ * <p><b>La logica ya no vive aca.</b> Esta pantalla la habia resuelto por su cuenta antes de que
+ * existiera `shared/utils/numero-declarado`, y dos copias de la misma regla se desincronizan:
+ * cuando se arreglo el `null` del `NumberValueAccessor` en las otras cuatro pantallas, esta no se
+ * entero. Ahora delega, y lo unico propio que queda es el `undefined` que el cuerpo necesita —el
+ * contrato pide <b>omitir</b> el campo, y un `null` explicito no es lo mismo que omitirlo—.
  */
-function numeroEsUndefined(valor: string | number): number | undefined {
-  if (typeof valor === 'number') {
-    return Number.isFinite(valor) ? valor : undefined;
-  }
-  const limpio = valor.trim();
-  if (limpio === '') {
-    return undefined;
-  }
-  const numero = Number(limpio);
-  return Number.isFinite(numero) ? numero : undefined;
+function numeroEsUndefined(valor: unknown): number | undefined {
+  return numeroDeclarado(valor) ?? undefined;
 }
 
 function invalidoYTocado(control: { invalid: boolean; touched: boolean; dirty: boolean } | null) {

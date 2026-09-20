@@ -10,6 +10,7 @@ import { CausaEspacio, traducirErrorEspacio } from '../../models/espacio-errors'
 import { TIPOS_DE_ESPACIO } from '../../models/tipos-de-espacio';
 import { aInstanteUtc } from '../../../../shared/utils/instantes';
 import { crearEsperaPorLimite } from '../../../../shared/utils/espera-por-limite';
+import { numeroDeclarado } from '../../../../shared/utils/numero-declarado';
 import { textoRequerido } from '../../../../shared/validators/texto-requerido';
 
 /** Estado del alta. Los cuatro casos exigen pantalla distinta (ADR-0005). */
@@ -194,8 +195,11 @@ export class NewEspacioPage {
       cuerpo.tipo = valores.tipo as CreateEspacioRequest['tipo'];
     }
 
-    const capacidad = Number(valores.capacidad);
-    if (valores.capacidad !== '' && Number.isFinite(capacidad)) {
+    // `numeroDeclarado` y no `valores.capacidad !== ''`: un `input type="number"` vaciado entrega
+    // `null`, no `''`, asi que la guarda vieja dejaba pasar `Number(null) === 0` como si el
+    // usuario hubiera escrito un cero. Un box de capacidad 0 es un 400 del backend.
+    const capacidad = numeroDeclarado(valores.capacidad);
+    if (capacidad !== null) {
       cuerpo.capacidad = capacidad;
     }
 

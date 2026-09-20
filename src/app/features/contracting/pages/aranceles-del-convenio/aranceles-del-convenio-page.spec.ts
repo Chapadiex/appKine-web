@@ -235,6 +235,41 @@ describe('ArancelesDelConvenioPage', () => {
     );
   });
 
+  /**
+   * El unico campo numerico del repositorio cuyo vaciado NO terminaba en un 400.
+   *
+   * <p>Un `<input type="number">` vaciado entrega `null`, no `''`. La guarda vieja
+   * (`valores.campo !== ''`) lo dejaba pasar, `Number(null)` daba `0`, la terna `0 = 0 + 0`
+   * cuadraba y el contrato declara `minimum: 0.00`: el backend aceptaba y el arancel del convenio
+   * quedaba en cero pesos <b>con cartel de exito</b>. El formulario de alta nunca tuvo el hueco
+   * porque sus tres importes llevan `Validators.required`; el de edicion no lleva ninguno.
+   */
+  it('vaciar un importe en la edicion no guarda un cero: no manda nada y lo dice', async () => {
+    const fixture = await montar();
+
+    abrir(fixture, 'Editar');
+    escribir(fixture, '#editar-arancel-total', '');
+    enviar(fixture, 'tr.fila-panel form');
+
+    httpMock.expectNone((peticion: HttpRequest<unknown>) => peticion.method === 'PUT');
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain(
+      'Los tres importes tienen que tener un valor',
+    );
+  });
+
+  it('vaciar el coseguro en la edicion tampoco guarda un cero', async () => {
+    const fixture = await montar();
+
+    abrir(fixture, 'Editar');
+    escribir(fixture, '#editar-arancel-coseguro', '');
+    enviar(fixture, 'tr.fila-panel form');
+
+    httpMock.expectNone((peticion: HttpRequest<unknown>) => peticion.method === 'PUT');
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain(
+      'Los tres importes tienen que tener un valor',
+    );
+  });
+
   it('el alta sin practica ni importes no manda nada', async () => {
     const fixture = await montar();
 
