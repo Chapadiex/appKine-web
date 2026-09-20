@@ -7,7 +7,9 @@
  * ajustes de medida que estas pantallas necesitan sobre la base comun.
  *
  * Los colores salen de la capa de tokens de `src/design-system.css`; sus ratios de
- * contraste -en los dos modos- estan en `REGISTRO-TOKENS.md`.
+ * contraste -en los dos modos- los mide `e2e/contraste.spec.ts` contra Chromium
+ * (`npm run a11y:contraste`), que es el unico lugar del repositorio donde el contraste
+ * tiene un veredicto real.
  */
 
 /* --- Ajustes sobre la base global ------------------------------------------------------ */

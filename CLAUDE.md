@@ -262,9 +262,54 @@ Features: `auth`, `organization`, `platform`, `resource`, `catalog`, `offering`,
 > `contexto-sin-fuga`, `errores-sin-internals` y `smoke`— y ninguna de las pantallas de espacios,
 > catálogo, horarios ni servicios está cubierta. No es que no se corrieron: no existen.
 
-> **El contraste de color no está verificado en ninguna parte.** La regla `color-contrast` de axe
-> vuelve siempre `incomplete` bajo jsdom, que no calcula layout. Vale para todas las auditorías de
-> accesibilidad del repositorio.
+> **El contraste de color ya está medido, y es un gate.** Lo que decía este bloque —"no está
+> verificado en ninguna parte"— era cierto durante veinte etapas y dejó de serlo. `e2e/contraste.spec.ts`
+> corre la regla `color-contrast` de axe contra **Chromium**, que sí calcula layout, sobre ocho
+> estados de pantalla reales y en **los dos temas** (`npm run a11y:contraste`, job propio del
+> pipeline). No necesita backend: la API se simula con `route.fulfill`, igual que los dos E2E de
+> agenda.
+>
+> **La causa del hueco era más fea que el hueco.** El arnés de jsdom pedía `incomplete` en sus
+> `resultTypes` desde 01.02 y **nunca leía ese array**: cuarenta auditorías pasaban en verde
+> declarando un contraste que ninguna había podido medir. El censo instrumentado sobre los 110
+> archivos de spec dio **58 `incomplete`, todos de `color-contrast`** — ninguna otra regla de las
+> cinco etiquetas exigidas se queda sin veredicto bajo jsdom, así que el documento acertaba en el
+> alcance y erraba en creer que "incomplete" se estaba mirando.
+>
+> Ahora `esperarSinViolaciones` **falla** ante cualquier `incomplete` que no esté en
+> `REGLAS_SIN_VEREDICTO_EN_JSDOM`, un mapa de una sola entrada cuya justificación nombra dónde se
+> mide de verdad. Y `scripts/check-contraste-medido.mjs`, encadenado a `npm run test:ci`, rompe la
+> suite si alguien borra el spec de contraste, lo desconecta de `package.json`, deja de correr uno
+> de los dos temas o amplía esa lista de tolerancias. La excusa y su contrapartida se sostienen
+> entre sí o se caen juntas.
+>
+> **Resultado de la primera medición: cero violaciones de AA** en los 8 estados × 2 temas. Los
+> ratios que la etapa de tokens había calculado a mano se confirman contra el navegador.
+
+> **Dos huecos que la medición destapó y que el documento no preveía.**
+>
+> 1. **Ninguna tabla del producto es medible por una herramienta automática.** La sombra que
+>    anuncia el desborde horizontal está hecha con cuatro degradés en el `background` de
+>    `.tabla-scroll`, y axe no puede aplanar un `background-image`: devuelve `incomplete` para
+>    **cada celda que no traiga fondo propio**. Afecta a las **19 plantillas** que usan esa clase.
+>    Se detectó porque las filas `.fila--revocada` **sí** se medían —pintan su propio fondo— y las
+>    demás no. El arnés las mide contra el primer fondo opaco de la cadena en vez de darlas por
+>    buenas, así que hay veredicto; lo que sigue **sin medir es la franja de ~14 px donde el
+>    degradé sí pinta**, y ahí `--color-texto-suave` sobre la superficie oscurecida por
+>    `--sombra-scroll` da **≈4,16:1 contra un mínimo de 4,5**. No se arregló porque el arreglo es
+>    un rediseño: la técnica de sombra por degradé y la medición automática de contraste son
+>    incompatibles sobre el mismo elemento, y poner fondo opaco a las filas —lo único acotado—
+>    **tapa la sombra**, que es lo que ya le pasa hoy a las filas dadas de baja.
+> 2. **axe no mide los controles deshabilitados, y nadie lo sabía.** WCAG 1.4.3 exime a los
+>    componentes de interfaz inactivos, así que `color-contrast` los descarta antes de medirlos.
+>    Se descubrió rompiendo `--color-deshabilitado` a propósito para comprobar que el gate lo
+>    agarraba: **no lo agarraba**. Es decir que el estado más citado como problemático de
+>    contraste es exactamente el que ninguna herramienta automática mira. Ahora lo mide el arnés
+>    con la misma aritmética y el mismo mínimo; con el token real da **4,63:1** en claro.
+>
+> **Y lo que sigue sin cubrir:** WCAG **1.4.11** —contraste de lo que no es texto, 3:1: bordes de
+> control, anillo de foco, bordes de pastilla— no lo mide ninguna regla automática de axe, y los
+> estados `:hover` y `:focus-visible` tampoco se auditan.
 
 ### AKINE-00.01 — completada y verificada
 

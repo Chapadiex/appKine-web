@@ -30,7 +30,8 @@
  * campo de ancho acotado con una sola linea cada una.
  *
  * <p>Los colores ya no se escriben aca: salen de la capa de tokens de mas abajo, y sus
- * ratios de contraste -en claro y en oscuro- estan calculados en `REGISTRO-TOKENS.md`.
+ * ratios de contraste -en claro y en oscuro- los mide `e2e/contraste.spec.ts` contra un
+ * navegador real, con `npm run a11y:contraste`.
  */
 
 /* ======================================================================================
@@ -47,10 +48,14 @@
  * oscuro seria una segunda hoja de estilos y volveria a divergir como divergian las cinco
  * copias que originaron este archivo.
  *
- * Contraste: los pares texto/fondo que las pantallas usan de verdad estan calculados a mano
- * en los dos modos y documentados en `REGISTRO-TOKENS.md`. No se verifican con axe porque la
- * regla `color-contrast` devuelve siempre `incomplete` bajo jsdom -no calcula layout-, asi
- * que hasta hoy el contraste de este repositorio no estaba verificado en ninguna parte.
+ * Contraste: se MIDE, no se calcula a mano. `e2e/contraste.spec.ts` corre la regla
+ * `color-contrast` de axe contra Chromium sobre ocho estados de pantalla reales y en los dos
+ * temas, y falla el pipeline si un par no llega al minimo de AA. La suite de jsdom no puede
+ * hacerlo -no calcula layout, asi que la regla le devuelve siempre `incomplete`-, y ahora su
+ * arnes declara explicitamente esa limitacion en vez de dejarla pasar como verde.
+ *
+ * Si tocas un token de color de abajo, `npm run a11y:contraste` es lo que dice si rompiste
+ * algo, y en cual de los dos temas.
  * ====================================================================================== */
 
 :root {
