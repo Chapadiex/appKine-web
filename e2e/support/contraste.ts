@@ -565,7 +565,7 @@ export async function instalarApiDeContraste(page: Page): Promise<ApiDeContraste
     // --- Padron ------------------------------------------------------------------------
     if (camino === '/api/v1/personas' && metodo === 'GET') {
       if (api.padron === 'error') {
-        return problema(500, 'server-error', 'No pudimos leer el padron. Volve a intentar.');
+        return problema(500, 'internal-error', 'No pudimos leer el padron. Volve a intentar.');
       }
       return json(pagina(api.padron === 'vacio' ? [] : PERSONAS));
     }
