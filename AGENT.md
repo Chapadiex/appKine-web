@@ -19,12 +19,12 @@ No accede a base de datos ni a ningún otro servicio.
 
 ## 2. Documentación canónica
 
-Vive en el workspace padre (`../docs/`), no en este repo:
+Vive en el repo del backend (`../appKine-api/docs/producto/`), no en este:
 
-- `../docs/AKINE_Requerimientos_Integrados.md` — **fuente de verdad funcional** M01–M29 + §30–45.
-- `../docs/AKINE_IMPLEMENTATION_PLAN.md` — **fuente de verdad de arquitectura y roadmap**, DP-01…DP-09.
-- `../docs/arquitectura-java-angular21.md` — referencia de layout Angular 21.
-- `../docs/plan_sesiones.txt` — **rediseño clínico/UX de la Sesión de Evaluación (M14).**
+- `../appKine-api/docs/producto/AKINE_Requerimientos_Integrados.md` — **fuente de verdad funcional** M01–M29 + §30–45.
+- `../appKine-api/docs/producto/AKINE_IMPLEMENTATION_PLAN.md` — **fuente de verdad de arquitectura y roadmap**, DP-01…DP-09.
+- `../appKine-api/docs/producto/arquitectura-java-angular21.md` — referencia de layout Angular 21.
+- `../appKine-api/docs/producto/plan_sesiones.txt` — **rediseño clínico/UX de la Sesión de Evaluación (M14).**
   Lectura obligatoria antes de tocar la pantalla de Sesión.
 - Documentos históricos (`AKINE_info.txt`, `AkinePN.docx`): antecedente de negocio únicamente.
 
@@ -144,7 +144,7 @@ De `AKINE_Requerimientos_Integrados.md` §3. Confundirlas produce pantallas inco
 La UI no puede fusionarlas en un único wizard lineal: recepción y atención clínica son
 pantallas y roles distintos.
 
-**Sesión (M14)** tiene dos modos, definidos en `../docs/plan_sesiones.txt`:
+**Sesión (M14)** tiene dos modos, definidos en `../appKine-api/docs/producto/plan_sesiones.txt`:
 - **Sesión rápida** — seguimiento normal, mínima fricción.
 - **Evaluación completa** — primera sesión o re-evaluación.
 

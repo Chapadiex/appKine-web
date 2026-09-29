@@ -120,8 +120,8 @@ mkdir -p ~/.claude/templates && cp ../templates/*.md ~/.claude/templates/
 | `docs/ai-setup.md` | Esta guía. |
 | `.claude/qa-config.md` | Config local de QA. **Gitignored.** Sin él no hay QA manual ni deploy. |
 | `../CLAUDE.md` | Índice del workspace y regla de coordinación entre repos. |
-| `../docs/` | Especificación funcional canónica y plan de implementación. |
-| `../docs/plan_sesiones.txt` | Rediseño clínico/UX de la Sesión (M14). Obligatorio antes de tocar esa pantalla. |
+| `../../appKine-api/docs/producto/` | Especificación funcional canónica y plan de implementación. |
+| `../../appKine-api/docs/producto/plan_sesiones.txt` | Rediseño clínico/UX de la Sesión (M14). Obligatorio antes de tocar esa pantalla. |
 
 Verificación rápida:
 
@@ -142,7 +142,7 @@ mem_search("appKine-web CLAUDE.md workflow")
 ```
 
 Si no hay memorias: leer `AGENT.md` completo, luego `CLAUDE.md`, luego
-`../docs/AKINE_IMPLEMENTATION_PLAN.md`.
+`../../appKine-api/docs/producto/AKINE_IMPLEMENTATION_PLAN.md`.
 
 ---
 
@@ -285,7 +285,7 @@ línea de código de gráfico.
 - [ ] Skills instaladas: engram-sdd-flow, playwright-skill, debugging-code
 - [ ] `AGENT.md` leído
 - [ ] `CLAUDE.md` leído
-- [ ] `../docs/AKINE_IMPLEMENTATION_PLAN.md` consultado para la etapa en curso
+- [ ] `../../appKine-api/docs/producto/AKINE_IMPLEMENTATION_PLAN.md` consultado para la etapa en curso
 - [ ] Contexto Engram cargado (o archivos leídos como fallback)
 - [ ] Tests corriendo en verde — *N/A hasta AKINE-00.01*
 - [ ] Rama coincidente con `appKine-api` si se va a probar contra la API

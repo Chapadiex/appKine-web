@@ -256,7 +256,7 @@ Features: `auth`, `organization`, `platform`, `resource`, `catalog`, `offering`,
 > **Los bloques de abajo son el registro por etapa y quedaron congelados en su fecha.** Los
 > números de 01.02 —"3 commits", "sin commitear", cobertura del momento— describen ese cierre y
 > no el estado de hoy: el de hoy es el párrafo de arriba. Mapa verificado del proyecto:
-> `../docs/PROJECT_MAP.md`.
+> `../appKine-api/docs/producto/PROJECT_MAP.md`.
 
 > **Sin E2E desde 01.02.** `e2e/` sigue teniendo los mismos cuatro archivos —`auth-flujo`,
 > `contexto-sin-fuga`, `errores-sin-internals` y `smoke`— y ninguna de las pantallas de espacios,
@@ -407,7 +407,7 @@ Requiere backend levantado. Playwright arranca el frontend solo.
 - [x] **Estructura de rutas y layout**: `App` es layout puro, páginas en `features/`, ruta 404
 - [x] Tests de `core/`: stores de token y contexto tenant, ambos interceptores
 - [x] **ADRs** en `docs/adr/` — 5 decisiones
-- [x] Reporte reproducible: `../docs/baseline-report.md`
+- [x] Reporte reproducible: `../appKine-api/docs/producto/baseline-report.md`
 
 **37 pruebas** (30 unitarias + 7 E2E). Cobertura 98,7 % statements, 92,3 % branches.
 
