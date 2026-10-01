@@ -19,7 +19,7 @@ import { ProblemDetail } from '../model/models';
 import { Configuration }                                     from '../configuration';
 
 
-export interface AnularRequestParams {
+export interface AnularObligacionRequestParams {
     consultorioId: number;
     obligacionId: number;
     anularObligacion: AnularObligacion;
@@ -46,7 +46,7 @@ export interface ObligacionesServiceInterface {
      * @endpoint delete /api/v1/consultorios/{consultorioId}/obligaciones/{obligacionId}
 * @param requestParameters
      */
-    anular(requestParameters: AnularRequestParams, extraHttpRequestParams?: any): Observable<Obligacion>;
+    anularObligacion(requestParameters: AnularObligacionRequestParams, extraHttpRequestParams?: any): Observable<Obligacion>;
 
     /**
      * Cuenta corriente de un paciente

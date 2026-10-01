@@ -12,19 +12,27 @@ import { HttpHeaders }                                       from '@angular/comm
 import { Observable }                                        from 'rxjs';
 
 import { CerrarSesion } from '../model/models';
+import { EnmendarSesion } from '../model/models';
 import { GuardarBorrador } from '../model/models';
 import { GuardarEvaluacion } from '../model/models';
 import { ProblemDetail } from '../model/models';
 import { Sesion } from '../model/models';
+import { SesionVersion } from '../model/models';
 
 
 import { Configuration }                                     from '../configuration';
 
 
-export interface CerrarRequestParams {
+export interface CerrarSesionRequestParams {
     consultorioId: number;
     sesionId: number;
     cerrarSesion: CerrarSesion;
+}
+
+export interface EnmendarRequestParams {
+    consultorioId: number;
+    sesionId: number;
+    enmendarSesion: EnmendarSesion;
 }
 
 export interface EvaluarRequestParams {
@@ -39,12 +47,18 @@ export interface GuardarBorradorRequestParams {
     guardarBorrador: GuardarBorrador;
 }
 
-export interface IniciarRequestParams {
+export interface IniciarSesionRequestParams {
     consultorioId: number;
     turnoId: number;
+    casoId?: number;
 }
 
 export interface VerSesionRequestParams {
+    consultorioId: number;
+    sesionId: number;
+}
+
+export interface VersionesRequestParams {
     consultorioId: number;
     sesionId: number;
 }
@@ -56,11 +70,19 @@ export interface SesionesServiceInterface {
 
     /**
      * Cerrar la atencion
-     * Cierra la sesion y le asigna su **correlativo por historia clinica** — \&quot;la sesion numero 8 de este paciente\&quot;.  **Es idempotente.** Cerrar dos veces devuelve el mismo resultado con el mismo numero y no renumera: apretar dos veces \&quot;cerrar\&quot; es el caso normal, y renumerar una sesion cerrada seria reescribir historia clinica. La idempotencia se evalua ANTES de pedir un numero, para que un reintento no consuma un correlativo que despues nadie usa y deje huecos que parecen sesiones borradas.  **Cerrar no cobra.** DP-06: el cierre clinico no depende del pago y no crea ninguna obligacion economica. La obligacion se deriva despues, en AKINE-07.01, leyendo las sesiones cerradas.  **Una sesion cerrada no se edita.** Corregirla es una enmienda con su actor y su motivo, y eso es AKINE-06.06, fuera de alcance. Hasta entonces esto es fail-closed: es preferible no poder corregir a corregir sin dejar rastro.
+     * Cierra la sesion y le asigna su **correlativo por historia clinica** — \&quot;la sesion numero 8 de este paciente\&quot;.  **Es idempotente.** Cerrar dos veces devuelve el mismo resultado con el mismo numero y no renumera: apretar dos veces \&quot;cerrar\&quot; es el caso normal, y renumerar una sesion cerrada seria reescribir historia clinica. La idempotencia se evalua ANTES de pedir un numero, para que un reintento no consuma un correlativo que despues nadie usa y deje huecos que parecen sesiones borradas.  **Cerrar no cobra.** DP-06: el cierre clinico no depende del pago y no crea ninguna obligacion economica. La obligacion se deriva despues, en AKINE-07.01, leyendo las sesiones cerradas.  **Una sesion cerrada no se edita: se enmienda.** Corregirla exige motivo y deja una version en el historial (&#x60;POST .../enmiendas&#x60;). El cierre ademas **inaugura ese historial**: la version 1 es lo que se acaba de asentar.
      * @endpoint post /api/v1/consultorios/{consultorioId}/sesiones/{sesionId}/cierre
 * @param requestParameters
      */
-    cerrar(requestParameters: CerrarRequestParams, extraHttpRequestParams?: any): Observable<Sesion>;
+    cerrarSesion(requestParameters: CerrarSesionRequestParams, extraHttpRequestParams?: any): Observable<Sesion>;
+
+    /**
+     * Enmendar una sesion cerrada
+     * Corrige el contenido clinico de una atencion **ya cerrada**, escribiendo una **version nueva** que deja la anterior intacta y consultable (RF-M14-010).  **Enmendar no es editar.** RN-M14-006 no prohibe corregir una sesion cerrada: prohibe corregirla *silenciosamente*. Por eso el motivo es obligatorio, la version queda numerada con su autor y su instante, y la operacion deja evento de auditoria.  **LO QUE ESTA OPERACION NO PUEDE CORREGIR, y conviene saberlo antes de intentarlo:** la **asistencia**, los dos correlativos (&#x60;numeroSesion&#x60; y &#x60;numeroEnCaso&#x60;), la oferta, el turno, el profesional y las fechas de la atencion. No estan en el cuerpo del pedido, asi que no hay forma de mandarlos.  El caso que esto deja afuera es real y esta asumido: una sesion cerrada con &#x60;AUSENTE&#x60; cuando el paciente vino **no se arregla enmendando**. Cambiar la asistencia es un acto economico —obliga a devengar o anular una obligacion (M18) y a consumir o revertir una unidad de autorizacion (M17)— y esas compensaciones son explicitas y de otros modulos. Lo que si corresponde es enmendar la nota de cierre dejando escrito lo que paso, con ese motivo.  **La enmienda no vuelve a disparar nada economico.** No se devenga deuda ni se consume autorizacion: ninguno de los campos enmendables los afecta.  **Es un reemplazo completo, no un parche.** Un campo ausente significa \&quot;queda vacio\&quot;, no \&quot;dejalo como estaba\&quot;: la pantalla manda el formulario entero.  **Solo el profesional de la sesion puede enmendar.** No es cuestion de permiso —dos profesionales de la misma sede tienen el mismo &#x60;sesion:register&#x60;— sino de propiedad de esa atencion, y por eso el rechazo es 409 y no 403.  **No hay ventana temporal**: se puede enmendar una sesion de hace dos años. El error clinico que mas necesita correccion es el que se descubre tarde, y la enmienda no puede ocultar nada — el original queda, con su fecha y su autor.
+     * @endpoint post /api/v1/consultorios/{consultorioId}/sesiones/{sesionId}/enmiendas
+* @param requestParameters
+     */
+    enmendar(requestParameters: EnmendarRequestParams, extraHttpRequestParams?: any): Observable<Sesion>;
 
     /**
      * Guardar la evaluacion base
@@ -80,11 +102,11 @@ export interface SesionesServiceInterface {
 
     /**
      * Iniciar la atencion de un turno
-     * Abre la atencion, o **devuelve la que ya estaba abierta**.  El doble inicio es idempotente a proposito: un profesional que aprieta dos veces o recarga la pantalla es el caso normal, y un 409 le exigiria a la pantalla distinguir dos situaciones que para el usuario son la misma (RN-M14-001, un turno produce como mucho una sesion).  La Historia Clinica del paciente **se crea si no existia**. Exige perfil de paciente vigente: una atencion sobre alguien que solo es \&quot;persona\&quot; falla, y                no se crea historia clinica a nombre de quien no es paciente.                 Quien atiende es el profesional del turno. Si el turno tiene uno asignado y no es quien inicia, es 409: dejar que otro abra la sesion de un turno ajeno rompe la propiedad antes de que la sesion exista.
+     * Abre la atencion, o **devuelve la que ya estaba abierta**.  El doble inicio es idempotente a proposito: un profesional que aprieta dos veces o recarga la pantalla es el caso normal, y un 409 le exigiria a la pantalla distinguir dos situaciones que para el usuario son la misma (RN-M14-001, un turno produce como mucho una sesion).  La Historia Clinica del paciente **se crea si no existia**. Exige perfil de paciente vigente: una atencion sobre alguien que solo es \&quot;persona\&quot; falla, y                no se crea historia clinica a nombre de quien no es paciente.                 Quien atiende es el profesional del turno. Si el turno tiene uno asignado y no es quien inicia, es 409: dejar que otro abra la sesion de un turno ajeno rompe la propiedad antes de que la sesion exista.  EL CASO CLINICO ES OPCIONAL (04.03). Sin casoId la atencion se registra igual: RF-M14-002 admite atencion sin caso y ninguna sesion anterior a 04.03 lo tiene. Exigirlo es RF-M10-007, que necesita su propia ventana de migracion. Cuando viene, tiene que ser un caso ACTIVO de la MISMA historia clinica: uno de otro paciente responde 404 —indistinguible de \&quot;no existe\&quot;, para no poder censar casos ajenos probando ids— y uno cerrado responde 409, porque lleva a otra accion, que es reabrirlo.  LA IDEMPOTENCIA MANDA SOBRE EL CASO: si la sesion del turno ya existe se devuelve tal cual, con el caso que tenga, aunque esta llamada traiga otro. Reasignar el caso de una atencion ya empezada no es \&quot;iniciar\&quot;.
      * @endpoint post /api/v1/consultorios/{consultorioId}/sesiones/turnos/{turnoId}
 * @param requestParameters
      */
-    iniciar(requestParameters: IniciarRequestParams, extraHttpRequestParams?: any): Observable<Sesion>;
+    iniciarSesion(requestParameters: IniciarSesionRequestParams, extraHttpRequestParams?: any): Observable<Sesion>;
 
     /**
      * Ver una sesion
@@ -93,5 +115,13 @@ export interface SesionesServiceInterface {
 * @param requestParameters
      */
     verSesion(requestParameters: VerSesionRequestParams, extraHttpRequestParams?: any): Observable<Sesion>;
+
+    /**
+     * Historial de versiones de una sesion
+     * Todas las versiones del contenido, **de la 1 a la ultima** (RF-M24-005). La version 1 es lo que se asento al cerrar; cada enmienda agrego la siguiente con su motivo, su autor y su instante.  Cada version trae el contenido **completo**, no un diff: lo que hay que poder leer es que decia el registro en ese momento. La comparacion la arma la pantalla, que recibe las dos versiones enteras.  Lo que las versiones **no** repiten —asistencia, correlativos, fechas de la atencion— es lo que no es enmendable: vale lo mismo en todas y se lee de la sesion.  **Una sesion abierta devuelve una lista vacia**, no un error: todavia no tiene contenido versionado, y para la pantalla eso no es una condicion excepcional sino el estado normal de la atencion que esta ocurriendo.
+     * @endpoint get /api/v1/consultorios/{consultorioId}/sesiones/{sesionId}/versiones
+* @param requestParameters
+     */
+    versiones(requestParameters: VersionesRequestParams, extraHttpRequestParams?: any): Observable<Array<SesionVersion>>;
 
 }

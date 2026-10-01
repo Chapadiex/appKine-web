@@ -73,7 +73,7 @@ export class SchedulingApi {
     ofertaId: number,
     ventana: { readonly desde: string; readonly hasta: string; readonly profesionalId?: number },
   ): Observable<Agenda> {
-    return this.agenda.buscar({
+    return this.agenda.buscarAgenda({
       consultorioId,
       ofertaId,
       desde: ventana.desde,
@@ -122,7 +122,7 @@ export class SchedulingApi {
    * RESERVA: no dice nada del cobro ni de que el paciente haya llegado.
    */
   confirmar(consultorioId: number, turnoId: number): Observable<Turno> {
-    return this.turnos.confirmar({ consultorioId, turnoId });
+    return this.turnos.confirmarTurno({ consultorioId, turnoId });
   }
 
   /**
@@ -137,7 +137,7 @@ export class SchedulingApi {
     turnoId: number,
     cuerpo: { readonly motivo: string; readonly expectedVersion: number },
   ): Observable<Turno> {
-    return this.turnos.cancelar({
+    return this.turnos.cancelarTurno({
       consultorioId,
       turnoId,
       cancelarTurno: { motivo: cuerpo.motivo, expectedVersion: cuerpo.expectedVersion },
@@ -164,7 +164,7 @@ export class SchedulingApi {
       readonly profesionalId?: number;
     },
   ): Observable<Turno> {
-    return this.turnos.reprogramar({
+    return this.turnos.reprogramarTurno({
       consultorioId,
       turnoId,
       reprogramarTurno: {
@@ -210,7 +210,7 @@ export class SchedulingApi {
    * <p><b>Es lo unico que se puede leer de un turno existente</b>, y <b>no trae la version</b>.
    */
   historial(consultorioId: number, turnoId: number): Observable<readonly EventoDeTurno[]> {
-    return this.turnos.historial({ consultorioId, turnoId });
+    return this.turnos.historialTurno({ consultorioId, turnoId });
   }
 
   // -------------------------------------------------------------------------------------
@@ -239,7 +239,7 @@ export class SchedulingApi {
    * cosa.
    */
   turnosDelDia(consultorioId: number, fecha: string): Observable<AgendaDelDia> {
-    return this.turnos.delDia({ consultorioId, fecha });
+    return this.turnos.delDiaTurno({ consultorioId, fecha });
   }
 
   /**

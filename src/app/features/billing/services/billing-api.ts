@@ -99,7 +99,7 @@ export class BillingApi {
     motivo: string,
     version: number,
   ): Observable<Obligacion> {
-    return this.api.anular({
+    return this.api.anularObligacion({
       consultorioId,
       obligacionId,
       anularObligacion: { motivo, version },
@@ -129,7 +129,7 @@ export class BillingApi {
     consultorioId: number,
     cobro: RegistrarCobro & { readonly idempotencyKey: string },
   ): Observable<Cobro> {
-    return this.cobros.registrar({ consultorioId, registrarCobro: cobro });
+    return this.cobros.registrarCobro({ consultorioId, registrarCobro: cobro });
   }
 
   /** Los cobros del paciente en toda la organizacion, del mas reciente al mas viejo. */

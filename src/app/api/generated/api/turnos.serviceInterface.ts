@@ -25,18 +25,18 @@ import { TurnoDelDia } from '../model/models';
 import { Configuration }                                     from '../configuration';
 
 
-export interface CancelarRequestParams {
+export interface CancelarTurnoRequestParams {
     consultorioId: number;
     turnoId: number;
     cancelarTurno: CancelarTurno;
 }
 
-export interface ConfirmarRequestParams {
+export interface ConfirmarTurnoRequestParams {
     consultorioId: number;
     turnoId: number;
 }
 
-export interface DelDiaRequestParams {
+export interface DelDiaTurnoRequestParams {
     consultorioId: number;
     fecha: string;
 }
@@ -46,7 +46,7 @@ export interface DeshacerLlegadaRequestParams {
     turnoId: number;
 }
 
-export interface HistorialRequestParams {
+export interface HistorialTurnoRequestParams {
     consultorioId: number;
     turnoId: number;
 }
@@ -62,7 +62,7 @@ export interface RegistrarLlegadaRequestParams {
     turnoId: number;
 }
 
-export interface ReprogramarRequestParams {
+export interface ReprogramarTurnoRequestParams {
     consultorioId: number;
     turnoId: number;
     reprogramarTurno: ReprogramarTurno;
@@ -90,7 +90,7 @@ export interface TurnosServiceInterface {
      * @endpoint post /api/v1/consultorios/{consultorioId}/turnos/{turnoId}/cancelacion
 * @param requestParameters
      */
-    cancelar(requestParameters: CancelarRequestParams, extraHttpRequestParams?: any): Observable<Turno>;
+    cancelarTurno(requestParameters: CancelarTurnoRequestParams, extraHttpRequestParams?: any): Observable<Turno>;
 
     /**
      * Confirmar un turno reservado
@@ -98,7 +98,7 @@ export interface TurnosServiceInterface {
      * @endpoint post /api/v1/consultorios/{consultorioId}/turnos/{turnoId}/confirmacion
 * @param requestParameters
      */
-    confirmar(requestParameters: ConfirmarRequestParams, extraHttpRequestParams?: any): Observable<Turno>;
+    confirmarTurno(requestParameters: ConfirmarTurnoRequestParams, extraHttpRequestParams?: any): Observable<Turno>;
 
     /**
      * Agenda del dia de la sede
@@ -106,7 +106,7 @@ export interface TurnosServiceInterface {
      * @endpoint get /api/v1/consultorios/{consultorioId}/turnos
 * @param requestParameters
      */
-    delDia(requestParameters: DelDiaRequestParams, extraHttpRequestParams?: any): Observable<AgendaDelDia>;
+    delDiaTurno(requestParameters: DelDiaTurnoRequestParams, extraHttpRequestParams?: any): Observable<AgendaDelDia>;
 
     /**
      * Deshacer un check-in
@@ -122,7 +122,7 @@ export interface TurnosServiceInterface {
      * @endpoint get /api/v1/consultorios/{consultorioId}/turnos/{turnoId}/historial
 * @param requestParameters
      */
-    historial(requestParameters: HistorialRequestParams, extraHttpRequestParams?: any): Observable<Array<EventoDeTurno>>;
+    historialTurno(requestParameters: HistorialTurnoRequestParams, extraHttpRequestParams?: any): Observable<Array<EventoDeTurno>>;
 
     /**
      * Registrar que el paciente no vino
@@ -146,7 +146,7 @@ export interface TurnosServiceInterface {
      * @endpoint post /api/v1/consultorios/{consultorioId}/turnos/{turnoId}/reprogramacion
 * @param requestParameters
      */
-    reprogramar(requestParameters: ReprogramarRequestParams, extraHttpRequestParams?: any): Observable<Turno>;
+    reprogramarTurno(requestParameters: ReprogramarTurnoRequestParams, extraHttpRequestParams?: any): Observable<Turno>;
 
     /**
      * Reservar un turno

@@ -21,6 +21,10 @@ export interface Sesion {
      */
     borrador?: string;
     borradorGuardadoEn?: string;
+    /**
+     * Caso Clinico al que pertenece la atencion (04.03). **Ausente es legitimo**: RF-M14-002 admite atencion sin caso, y ninguna sesion anterior a 04.03 lo tiene. Exigirlo es RF-M10-007 y todavia no rige.
+     */
+    casoId?: number;
     cerradaEn?: string;
     /**
      * Cierre clinico. Ausente si la sesion sigue abierta.
@@ -37,11 +41,19 @@ export interface Sesion {
     evaluacion?: EvaluacionBase;
     evaluadaEn?: string;
     /**
+     * `true` si la sesion se corrigio al menos una vez. Viaja calculado y no como comparacion que la pantalla tenga que hacer: que un registro clinico este corregido es un hecho que quien lo lee tiene derecho a ver sin pedir el historial.
+     */
+    fueEnmendada?: boolean;
+    /**
      * Historia Clinica del paciente, de la ORGANIZACION y no de la sede (DP-03). Se crea al iniciar la primera atencion si no existia.
      */
     historiaClinicaId?: number;
     id?: number;
     iniciadaEn?: string;
+    /**
+     * Correlativo **dentro del Caso Clinico** (regla maestra 3, 04.03). Ausente si la sesion no tiene caso o sigue abierta. **No es numeroSesion**: aquel cuenta dentro de la historia y este dentro del caso. Desde 04.03 \"la sesion 8\" es ambigua si no se dice de que, y ninguna pantalla puede mostrar uno solo sin decir cual es.
+     */
+    numeroEnCaso?: number;
     /**
      * Correlativo por historia clinica: \"la sesion numero 8 de este paciente\". **Ausente mientras la sesion este abierta**, y es lo que la marca como cerrada.
      */
@@ -59,6 +71,10 @@ export interface Sesion {
      * Turno que origino la atencion. Ausente en una atencion sin turno.
      */
     turnoId?: number;
+    /**
+     * Numero de la ultima version de contenido (AKINE-06.06). `0` mientras la sesion esta abierta, `1` desde el cierre, y uno mas por cada enmienda. **No es `version`**, que es el control optimista del autosave.
+     */
+    ultimoNumeroVersion?: number;
     /**
      * **Devolvela al guardar.** Es lo que impide que dos pestanas se pisen.
      */

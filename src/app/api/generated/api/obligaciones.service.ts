@@ -29,7 +29,7 @@ import { Configuration }                                     from '../configurat
 import { BaseService } from '../api.base.service';
 import {
     ObligacionesServiceInterface,
-    AnularRequestParams,
+    AnularObligacionRequestParams,
     ObligacionesDeLaPersonaRequestParams,
     VerObligacionRequestParams
 } from './obligaciones.serviceInterface';
@@ -54,24 +54,27 @@ export class ObligacionesService extends BaseService implements ObligacionesServ
      * @param reportProgress flag to report request and response progress.
      * @param options additional options
      */
-    public anular(requestParameters: AnularRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<Obligacion>;
-    public anular(requestParameters: AnularRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<Obligacion>>;
-    public anular(requestParameters: AnularRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<Obligacion>>;
-    public anular(requestParameters: AnularRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+    public anularObligacion(requestParameters: AnularObligacionRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<Obligacion>;
+    public anularObligacion(requestParameters: AnularObligacionRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<Obligacion>>;
+    public anularObligacion(requestParameters: AnularObligacionRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<Obligacion>>;
+    public anularObligacion(requestParameters: AnularObligacionRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
         const consultorioId = requestParameters?.consultorioId;
         if (consultorioId === null || consultorioId === undefined) {
-            throw new Error('Required parameter consultorioId was null or undefined when calling anular.');
+            throw new Error('Required parameter consultorioId was null or undefined when calling anularObligacion.');
         }
         const obligacionId = requestParameters?.obligacionId;
         if (obligacionId === null || obligacionId === undefined) {
-            throw new Error('Required parameter obligacionId was null or undefined when calling anular.');
+            throw new Error('Required parameter obligacionId was null or undefined when calling anularObligacion.');
         }
         const anularObligacion = requestParameters?.anularObligacion;
         if (anularObligacion === null || anularObligacion === undefined) {
-            throw new Error('Required parameter anularObligacion was null or undefined when calling anular.');
+            throw new Error('Required parameter anularObligacion was null or undefined when calling anularObligacion.');
         }
 
         let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
 
         const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
             'application/json',
@@ -157,6 +160,9 @@ export class ObligacionesService extends BaseService implements ObligacionesServ
 
         let localVarHeaders = this.defaultHeaders;
 
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
+
         const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
             'application/json',
             'application/problem+json'
@@ -219,6 +225,9 @@ export class ObligacionesService extends BaseService implements ObligacionesServ
         }
 
         let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
 
         const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
             'application/json',

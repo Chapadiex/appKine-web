@@ -156,6 +156,8 @@ export enum ProblemType {
 
     HTTPS___AKINE_APP_PROBLEMS_SESION_CERRADA = 'https://akine.app/problems/sesion-cerrada',
 
+    HTTPS___AKINE_APP_PROBLEMS_SESION_NO_CERRADA = 'https://akine.app/problems/sesion-no-cerrada',
+
     HTTPS___AKINE_APP_PROBLEMS_OBLIGACION_ALREADY_ANULADA = 'https://akine.app/problems/obligacion-already-anulada',
 
     HTTPS___AKINE_APP_PROBLEMS_OBLIGACION_CON_COBROS = 'https://akine.app/problems/obligacion-con-cobros',
@@ -234,6 +236,144 @@ export enum ProblemType {
 
     HTTPS___AKINE_APP_PROBLEMS_AUTORIZACION_TRANSICION_NO_PERMITIDA = 'https://akine.app/problems/autorizacion-transicion-no-permitida',
 
-    HTTPS___AKINE_APP_PROBLEMS_DOCUMENTO_NUMERO_TAKEN = 'https://akine.app/problems/documento-numero-taken'
+    HTTPS___AKINE_APP_PROBLEMS_DOCUMENTO_NUMERO_TAKEN = 'https://akine.app/problems/documento-numero-taken',
+
+    HTTPS___AKINE_APP_PROBLEMS_ENTRADA_CLINICA_NO_ACCESIBLE = 'https://akine.app/problems/entrada-clinica-no-accesible',
+
+    HTTPS___AKINE_APP_PROBLEMS_ENTRADA_CLINICA_INACTIVA = 'https://akine.app/problems/entrada-clinica-inactiva',
+
+    HTTPS___AKINE_APP_PROBLEMS_ENMIENDA_SIN_MOTIVO = 'https://akine.app/problems/enmienda-sin-motivo',
+
+    HTTPS___AKINE_APP_PROBLEMS_ADJUNTO_CLINICO_NO_ACCESIBLE = 'https://akine.app/problems/adjunto-clinico-no-accesible',
+
+    HTTPS___AKINE_APP_PROBLEMS_ADJUNTO_CLINICO_INACTIVO = 'https://akine.app/problems/adjunto-clinico-inactivo',
+
+    HTTPS___AKINE_APP_PROBLEMS_ADJUNTO_CLINICO_NO_DISPONIBLE = 'https://akine.app/problems/adjunto-clinico-no-disponible',
+
+    HTTPS___AKINE_APP_PROBLEMS_CURSOR_INVALIDO = 'https://akine.app/problems/cursor-invalido',
+
+    HTTPS___AKINE_APP_PROBLEMS_CASO_CLINICO_NO_ACCESIBLE = 'https://akine.app/problems/caso-clinico-no-accesible',
+
+    HTTPS___AKINE_APP_PROBLEMS_CASO_CLINICO_CERRADO = 'https://akine.app/problems/caso-clinico-cerrado',
+
+    HTTPS___AKINE_APP_PROBLEMS_CASO_CLINICO_POSIBLE_DUPLICADO = 'https://akine.app/problems/caso-clinico-posible-duplicado',
+
+    HTTPS___AKINE_APP_PROBLEMS_CASO_SIN_MOTIVO_DE_CIERRE = 'https://akine.app/problems/caso-sin-motivo-de-cierre',
+
+    HTTPS___AKINE_APP_PROBLEMS_OFERTA_NO_VIGENTE = 'https://akine.app/problems/oferta-no-vigente',
+
+    HTTPS___AKINE_APP_PROBLEMS_PLAN_NO_ACCESIBLE = 'https://akine.app/problems/plan-no-accesible',
+
+    HTTPS___AKINE_APP_PROBLEMS_PLAN_NO_EDITABLE = 'https://akine.app/problems/plan-no-editable',
+
+    HTTPS___AKINE_APP_PROBLEMS_PLAN_TRANSICION_INVALIDA = 'https://akine.app/problems/plan-transicion-invalida',
+
+    HTTPS___AKINE_APP_PROBLEMS_PLAN_VIVO_EN_EL_CASO = 'https://akine.app/problems/plan-vivo-en-el-caso',
+
+    HTTPS___AKINE_APP_PROBLEMS_CASO_NO_ACTIVO = 'https://akine.app/problems/caso-no-activo',
+
+    HTTPS___AKINE_APP_PROBLEMS_OFERTA_NO_HABILITADA = 'https://akine.app/problems/oferta-no-habilitada',
+
+    HTTPS___AKINE_APP_PROBLEMS_AUTORIZACION_SIN_SALDO = 'https://akine.app/problems/autorizacion-sin-saldo',
+
+    HTTPS___AKINE_APP_PROBLEMS_AUTORIZACION_VENCIDA = 'https://akine.app/problems/autorizacion-vencida',
+
+    HTTPS___AKINE_APP_PROBLEMS_MOVIMIENTO_YA_REVERTIDO = 'https://akine.app/problems/movimiento-ya-revertido',
+
+    HTTPS___AKINE_APP_PROBLEMS_REVERSION_SIN_MOTIVO = 'https://akine.app/problems/reversion-sin-motivo',
+
+    HTTPS___AKINE_APP_PROBLEMS_CAJA_NO_ABIERTA = 'https://akine.app/problems/caja-no-abierta',
+
+    HTTPS___AKINE_APP_PROBLEMS_CAJA_YA_ABIERTA = 'https://akine.app/problems/caja-ya-abierta',
+
+    HTTPS___AKINE_APP_PROBLEMS_CAJA_CERRADA = 'https://akine.app/problems/caja-cerrada',
+
+    HTTPS___AKINE_APP_PROBLEMS_CAJA_SALDO_CAMBIO = 'https://akine.app/problems/caja-saldo-cambio',
+
+    HTTPS___AKINE_APP_PROBLEMS_CAJA_SALDO_INSUFICIENTE = 'https://akine.app/problems/caja-saldo-insuficiente',
+
+    HTTPS___AKINE_APP_PROBLEMS_CAJA_MONEDA_DISTINTA = 'https://akine.app/problems/caja-moneda-distinta',
+
+    HTTPS___AKINE_APP_PROBLEMS_MOVIMIENTO_NO_REVERSIBLE = 'https://akine.app/problems/movimiento-no-reversible',
+
+    HTTPS___AKINE_APP_PROBLEMS_CAJA_DIFERENCIA_SIN_MOTIVO = 'https://akine.app/problems/caja-diferencia-sin-motivo',
+
+    HTTPS___AKINE_APP_PROBLEMS_PRESENTACION_NO_EDITABLE = 'https://akine.app/problems/presentacion-no-editable',
+
+    HTTPS___AKINE_APP_PROBLEMS_PRESENTACION_ESTADO_INVALIDO = 'https://akine.app/problems/presentacion-estado-invalido',
+
+    HTTPS___AKINE_APP_PROBLEMS_PRESENTACION_VACIA = 'https://akine.app/problems/presentacion-vacia',
+
+    HTTPS___AKINE_APP_PROBLEMS_PRESENTACION_CON_HALLAZGOS = 'https://akine.app/problems/presentacion-con-hallazgos',
+
+    HTTPS___AKINE_APP_PROBLEMS_OBLIGACION_YA_PRESENTADA = 'https://akine.app/problems/obligacion-ya-presentada',
+
+    HTTPS___AKINE_APP_PROBLEMS_OBLIGACION_NO_PRESENTABLE = 'https://akine.app/problems/obligacion-no-presentable',
+
+    HTTPS___AKINE_APP_PROBLEMS_PRESENTACION_SALDO_INSUFICIENTE = 'https://akine.app/problems/presentacion-saldo-insuficiente',
+
+    HTTPS___AKINE_APP_PROBLEMS_PRESENTACION_NO_CONCILIA = 'https://akine.app/problems/presentacion-no-concilia',
+
+    HTTPS___AKINE_APP_PROBLEMS_ITEM_NO_DEBITABLE = 'https://akine.app/problems/item-no-debitable',
+
+    HTTPS___AKINE_APP_PROBLEMS_FACTURA_DUPLICADA = 'https://akine.app/problems/factura-duplicada',
+
+    HTTPS___AKINE_APP_PROBLEMS_EGRESO_NO_EDITABLE = 'https://akine.app/problems/egreso-no-editable',
+
+    HTTPS___AKINE_APP_PROBLEMS_EGRESO_NO_CONFIRMABLE = 'https://akine.app/problems/egreso-no-confirmable',
+
+    HTTPS___AKINE_APP_PROBLEMS_EGRESO_SIN_COMPROBANTE = 'https://akine.app/problems/egreso-sin-comprobante',
+
+    HTTPS___AKINE_APP_PROBLEMS_EGRESO_YA_ANULADO = 'https://akine.app/problems/egreso-ya-anulado',
+
+    HTTPS___AKINE_APP_PROBLEMS_EGRESO_CON_PAGOS = 'https://akine.app/problems/egreso-con-pagos',
+
+    HTTPS___AKINE_APP_PROBLEMS_EGRESO_NO_PAGABLE = 'https://akine.app/problems/egreso-no-pagable',
+
+    HTTPS___AKINE_APP_PROBLEMS_EGRESO_SALDO_INSUFICIENTE = 'https://akine.app/problems/egreso-saldo-insuficiente',
+
+    HTTPS___AKINE_APP_PROBLEMS_EGRESO_COMPROBANTE_DUPLICADO = 'https://akine.app/problems/egreso-comprobante-duplicado',
+
+    HTTPS___AKINE_APP_PROBLEMS_PAGO_EGRESO_YA_ANULADO = 'https://akine.app/problems/pago-egreso-ya-anulado',
+
+    HTTPS___AKINE_APP_PROBLEMS_BENEFICIARIO_NO_VINCULADO = 'https://akine.app/problems/beneficiario-no-vinculado',
+
+    HTTPS___AKINE_APP_PROBLEMS_RANGO_DE_REPORTE_INVALIDO = 'https://akine.app/problems/rango-de-reporte-invalido',
+
+    HTTPS___AKINE_APP_PROBLEMS_MEDICION_DEFINICION_NO_ACCESIBLE = 'https://akine.app/problems/medicion-definicion-no-accesible',
+
+    HTTPS___AKINE_APP_PROBLEMS_MEDICION_DEFINICION_INACTIVA = 'https://akine.app/problems/medicion-definicion-inactiva',
+
+    HTTPS___AKINE_APP_PROBLEMS_MEDICION_FUERA_DE_RANGO = 'https://akine.app/problems/medicion-fuera-de-rango',
+
+    HTTPS___AKINE_APP_PROBLEMS_MEDICION_TIPO_INCOMPATIBLE = 'https://akine.app/problems/medicion-tipo-incompatible',
+
+    HTTPS___AKINE_APP_PROBLEMS_TRATAMIENTO_NO_ACCESIBLE = 'https://akine.app/problems/tratamiento-no-accesible',
+
+    HTTPS___AKINE_APP_PROBLEMS_PRACTICA_NO_UTILIZABLE = 'https://akine.app/problems/practica-no-utilizable',
+
+    HTTPS___AKINE_APP_PROBLEMS_ESPACIO_NO_OPERABLE = 'https://akine.app/problems/espacio-no-operable',
+
+    HTTPS___AKINE_APP_PROBLEMS_PROFESIONAL_NO_ASIGNABLE = 'https://akine.app/problems/profesional-no-asignable',
+
+    HTTPS___AKINE_APP_PROBLEMS_PARAMETRO_INVALIDO = 'https://akine.app/problems/parametro-invalido',
+
+    HTTPS___AKINE_APP_PROBLEMS_CLASE_NO_PROGRAMABLE = 'https://akine.app/problems/clase-no-programable',
+
+    HTTPS___AKINE_APP_PROBLEMS_CLASE_TRANSICION_NO_PERMITIDA = 'https://akine.app/problems/clase-transicion-no-permitida',
+
+    HTTPS___AKINE_APP_PROBLEMS_CLASE_CAPACIDAD_NO_ADMITIDA = 'https://akine.app/problems/clase-capacidad-no-admitida',
+
+    HTTPS___AKINE_APP_PROBLEMS_CLASE_COMPLETA = 'https://akine.app/problems/clase-completa',
+
+    HTTPS___AKINE_APP_PROBLEMS_INSCRIPCION_TRANSICION_NO_PERMITIDA = 'https://akine.app/problems/inscripcion-transicion-no-permitida',
+
+    HTTPS___AKINE_APP_PROBLEMS_OFERTA_NO_CLINICA = 'https://akine.app/problems/oferta-no-clinica',
+
+    HTTPS___AKINE_APP_PROBLEMS_PARTICIPACION_SIN_ASISTENCIA = 'https://akine.app/problems/participacion-sin-asistencia',
+
+    HTTPS___AKINE_APP_PROBLEMS_AUTORIZACION_NO_ELEGIBLE = 'https://akine.app/problems/autorizacion-no-elegible',
+
+    HTTPS___AKINE_APP_PROBLEMS_DERIVACION_NO_ACCESIBLE = 'https://akine.app/problems/derivacion-no-accesible'
 }
 

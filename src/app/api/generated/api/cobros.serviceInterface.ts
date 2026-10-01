@@ -24,7 +24,7 @@ export interface CobrosDeLaPersonaRequestParams {
     personaId: number;
 }
 
-export interface RegistrarRequestParams {
+export interface RegistrarCobroRequestParams {
     consultorioId: number;
     registrarCobro: RegistrarCobro;
 }
@@ -53,7 +53,7 @@ export interface CobrosServiceInterface {
      * @endpoint post /api/v1/consultorios/{consultorioId}/cobros
 * @param requestParameters
      */
-    registrar(requestParameters: RegistrarRequestParams, extraHttpRequestParams?: any): Observable<Cobro>;
+    registrarCobro(requestParameters: RegistrarCobroRequestParams, extraHttpRequestParams?: any): Observable<Cobro>;
 
     /**
      * Recuperar un comprobante

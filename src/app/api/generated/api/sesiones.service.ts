@@ -19,6 +19,8 @@ import { OpenApiHttpParams, QueryParamStyle } from '../query.params';
 // @ts-ignore
 import { CerrarSesion } from '../model/cerrar-sesion';
 // @ts-ignore
+import { EnmendarSesion } from '../model/enmendar-sesion';
+// @ts-ignore
 import { GuardarBorrador } from '../model/guardar-borrador';
 // @ts-ignore
 import { GuardarEvaluacion } from '../model/guardar-evaluacion';
@@ -26,6 +28,8 @@ import { GuardarEvaluacion } from '../model/guardar-evaluacion';
 import { ProblemDetail } from '../model/problem-detail';
 // @ts-ignore
 import { Sesion } from '../model/sesion';
+// @ts-ignore
+import { SesionVersion } from '../model/sesion-version';
 
 // @ts-ignore
 import { BASE_PATH, COLLECTION_FORMATS }                     from '../variables';
@@ -33,11 +37,13 @@ import { Configuration }                                     from '../configurat
 import { BaseService } from '../api.base.service';
 import {
     SesionesServiceInterface,
-    CerrarRequestParams,
+    CerrarSesionRequestParams,
+    EnmendarRequestParams,
     EvaluarRequestParams,
     GuardarBorradorRequestParams,
-    IniciarRequestParams,
-    VerSesionRequestParams
+    IniciarSesionRequestParams,
+    VerSesionRequestParams,
+    VersionesRequestParams
 } from './sesiones.serviceInterface';
 
 
@@ -53,31 +59,34 @@ export class SesionesService extends BaseService implements SesionesServiceInter
 
     /**
      * Cerrar la atencion
-     * Cierra la sesion y le asigna su **correlativo por historia clinica** — \&quot;la sesion numero 8 de este paciente\&quot;.  **Es idempotente.** Cerrar dos veces devuelve el mismo resultado con el mismo numero y no renumera: apretar dos veces \&quot;cerrar\&quot; es el caso normal, y renumerar una sesion cerrada seria reescribir historia clinica. La idempotencia se evalua ANTES de pedir un numero, para que un reintento no consuma un correlativo que despues nadie usa y deje huecos que parecen sesiones borradas.  **Cerrar no cobra.** DP-06: el cierre clinico no depende del pago y no crea ninguna obligacion economica. La obligacion se deriva despues, en AKINE-07.01, leyendo las sesiones cerradas.  **Una sesion cerrada no se edita.** Corregirla es una enmienda con su actor y su motivo, y eso es AKINE-06.06, fuera de alcance. Hasta entonces esto es fail-closed: es preferible no poder corregir a corregir sin dejar rastro.
+     * Cierra la sesion y le asigna su **correlativo por historia clinica** — \&quot;la sesion numero 8 de este paciente\&quot;.  **Es idempotente.** Cerrar dos veces devuelve el mismo resultado con el mismo numero y no renumera: apretar dos veces \&quot;cerrar\&quot; es el caso normal, y renumerar una sesion cerrada seria reescribir historia clinica. La idempotencia se evalua ANTES de pedir un numero, para que un reintento no consuma un correlativo que despues nadie usa y deje huecos que parecen sesiones borradas.  **Cerrar no cobra.** DP-06: el cierre clinico no depende del pago y no crea ninguna obligacion economica. La obligacion se deriva despues, en AKINE-07.01, leyendo las sesiones cerradas.  **Una sesion cerrada no se edita: se enmienda.** Corregirla exige motivo y deja una version en el historial (&#x60;POST .../enmiendas&#x60;). El cierre ademas **inaugura ese historial**: la version 1 es lo que se acaba de asentar.
      * @endpoint post /api/v1/consultorios/{consultorioId}/sesiones/{sesionId}/cierre
      * @param requestParameters
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      * @param options additional options
      */
-    public cerrar(requestParameters: CerrarRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<Sesion>;
-    public cerrar(requestParameters: CerrarRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<Sesion>>;
-    public cerrar(requestParameters: CerrarRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<Sesion>>;
-    public cerrar(requestParameters: CerrarRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+    public cerrarSesion(requestParameters: CerrarSesionRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<Sesion>;
+    public cerrarSesion(requestParameters: CerrarSesionRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<Sesion>>;
+    public cerrarSesion(requestParameters: CerrarSesionRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<Sesion>>;
+    public cerrarSesion(requestParameters: CerrarSesionRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
         const consultorioId = requestParameters?.consultorioId;
         if (consultorioId === null || consultorioId === undefined) {
-            throw new Error('Required parameter consultorioId was null or undefined when calling cerrar.');
+            throw new Error('Required parameter consultorioId was null or undefined when calling cerrarSesion.');
         }
         const sesionId = requestParameters?.sesionId;
         if (sesionId === null || sesionId === undefined) {
-            throw new Error('Required parameter sesionId was null or undefined when calling cerrar.');
+            throw new Error('Required parameter sesionId was null or undefined when calling cerrarSesion.');
         }
         const cerrarSesion = requestParameters?.cerrarSesion;
         if (cerrarSesion === null || cerrarSesion === undefined) {
-            throw new Error('Required parameter cerrarSesion was null or undefined when calling cerrar.');
+            throw new Error('Required parameter cerrarSesion was null or undefined when calling cerrarSesion.');
         }
 
         let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
 
         const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
             'application/json',
@@ -129,6 +138,86 @@ export class SesionesService extends BaseService implements SesionesServiceInter
     }
 
     /**
+     * Enmendar una sesion cerrada
+     * Corrige el contenido clinico de una atencion **ya cerrada**, escribiendo una **version nueva** que deja la anterior intacta y consultable (RF-M14-010).  **Enmendar no es editar.** RN-M14-006 no prohibe corregir una sesion cerrada: prohibe corregirla *silenciosamente*. Por eso el motivo es obligatorio, la version queda numerada con su autor y su instante, y la operacion deja evento de auditoria.  **LO QUE ESTA OPERACION NO PUEDE CORREGIR, y conviene saberlo antes de intentarlo:** la **asistencia**, los dos correlativos (&#x60;numeroSesion&#x60; y &#x60;numeroEnCaso&#x60;), la oferta, el turno, el profesional y las fechas de la atencion. No estan en el cuerpo del pedido, asi que no hay forma de mandarlos.  El caso que esto deja afuera es real y esta asumido: una sesion cerrada con &#x60;AUSENTE&#x60; cuando el paciente vino **no se arregla enmendando**. Cambiar la asistencia es un acto economico —obliga a devengar o anular una obligacion (M18) y a consumir o revertir una unidad de autorizacion (M17)— y esas compensaciones son explicitas y de otros modulos. Lo que si corresponde es enmendar la nota de cierre dejando escrito lo que paso, con ese motivo.  **La enmienda no vuelve a disparar nada economico.** No se devenga deuda ni se consume autorizacion: ninguno de los campos enmendables los afecta.  **Es un reemplazo completo, no un parche.** Un campo ausente significa \&quot;queda vacio\&quot;, no \&quot;dejalo como estaba\&quot;: la pantalla manda el formulario entero.  **Solo el profesional de la sesion puede enmendar.** No es cuestion de permiso —dos profesionales de la misma sede tienen el mismo &#x60;sesion:register&#x60;— sino de propiedad de esa atencion, y por eso el rechazo es 409 y no 403.  **No hay ventana temporal**: se puede enmendar una sesion de hace dos años. El error clinico que mas necesita correccion es el que se descubre tarde, y la enmienda no puede ocultar nada — el original queda, con su fecha y su autor.
+     * @endpoint post /api/v1/consultorios/{consultorioId}/sesiones/{sesionId}/enmiendas
+     * @param requestParameters
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public enmendar(requestParameters: EnmendarRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<Sesion>;
+    public enmendar(requestParameters: EnmendarRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<Sesion>>;
+    public enmendar(requestParameters: EnmendarRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<Sesion>>;
+    public enmendar(requestParameters: EnmendarRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        const consultorioId = requestParameters?.consultorioId;
+        if (consultorioId === null || consultorioId === undefined) {
+            throw new Error('Required parameter consultorioId was null or undefined when calling enmendar.');
+        }
+        const sesionId = requestParameters?.sesionId;
+        if (sesionId === null || sesionId === undefined) {
+            throw new Error('Required parameter sesionId was null or undefined when calling enmendar.');
+        }
+        const enmendarSesion = requestParameters?.enmendarSesion;
+        if (enmendarSesion === null || enmendarSesion === undefined) {
+            throw new Error('Required parameter enmendarSesion was null or undefined when calling enmendar.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        // to determine the Content-Type header
+        const consumes: string[] = [
+            'application/json'
+        ];
+        const httpContentTypeSelected: string | undefined = this.configuration.selectHeaderContentType(consumes);
+        if (httpContentTypeSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Content-Type', httpContentTypeSelected);
+        }
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/consultorios/${this.configuration.encodeParam({name: "consultorioId", value: consultorioId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/sesiones/${this.configuration.encodeParam({name: "sesionId", value: sesionId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/enmiendas`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<Sesion>('post', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                body: enmendarSesion,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
      * Guardar la evaluacion base
      * Guarda dolor, evolucion, objetivo y limitacion funcional como **datos tipados y consultables** (RF-M14-003). Es lo que distingue esta operacion del borrador de AKINE-06.01, que es JSON opaco: una evolucion clinica que no se puede comparar entre sesiones no sirve para nada.  **Ningun campo clinico es obligatorio.** \&quot;Seguimiento no exige examen completo\&quot;: una sesion de seguimiento carga dolor y evolucion y nada mas, y esa es la mayoria de las sesiones de un tratamiento. Exigirlos obligaria a inventar datos clinicos para poder guardar.  Lo unico que se rechaza es lo que seria **falso**: un dolor fuera de la escala 0-10, y una lateralidad sin zona —\&quot;derecha\&quot; de que—. Los dos son 400: no dependen de nada que pueda cambiar entre dos peticiones, asi que reintentar no los arregla.  La respuesta incluye &#x60;previa&#x60;, la evaluacion de la sesion anterior del mismo paciente, para poder mostrar el cambio.
      * @endpoint put /api/v1/consultorios/{consultorioId}/sesiones/{sesionId}/evaluacion
@@ -155,6 +244,9 @@ export class SesionesService extends BaseService implements SesionesServiceInter
         }
 
         let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
 
         const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
             'application/json',
@@ -233,6 +325,9 @@ export class SesionesService extends BaseService implements SesionesServiceInter
 
         let localVarHeaders = this.defaultHeaders;
 
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
+
         const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
             'application/json',
             'application/problem+json'
@@ -284,27 +379,42 @@ export class SesionesService extends BaseService implements SesionesServiceInter
 
     /**
      * Iniciar la atencion de un turno
-     * Abre la atencion, o **devuelve la que ya estaba abierta**.  El doble inicio es idempotente a proposito: un profesional que aprieta dos veces o recarga la pantalla es el caso normal, y un 409 le exigiria a la pantalla distinguir dos situaciones que para el usuario son la misma (RN-M14-001, un turno produce como mucho una sesion).  La Historia Clinica del paciente **se crea si no existia**. Exige perfil de paciente vigente: una atencion sobre alguien que solo es \&quot;persona\&quot; falla, y                no se crea historia clinica a nombre de quien no es paciente.                 Quien atiende es el profesional del turno. Si el turno tiene uno asignado y no es quien inicia, es 409: dejar que otro abra la sesion de un turno ajeno rompe la propiedad antes de que la sesion exista.
+     * Abre la atencion, o **devuelve la que ya estaba abierta**.  El doble inicio es idempotente a proposito: un profesional que aprieta dos veces o recarga la pantalla es el caso normal, y un 409 le exigiria a la pantalla distinguir dos situaciones que para el usuario son la misma (RN-M14-001, un turno produce como mucho una sesion).  La Historia Clinica del paciente **se crea si no existia**. Exige perfil de paciente vigente: una atencion sobre alguien que solo es \&quot;persona\&quot; falla, y                no se crea historia clinica a nombre de quien no es paciente.                 Quien atiende es el profesional del turno. Si el turno tiene uno asignado y no es quien inicia, es 409: dejar que otro abra la sesion de un turno ajeno rompe la propiedad antes de que la sesion exista.  EL CASO CLINICO ES OPCIONAL (04.03). Sin casoId la atencion se registra igual: RF-M14-002 admite atencion sin caso y ninguna sesion anterior a 04.03 lo tiene. Exigirlo es RF-M10-007, que necesita su propia ventana de migracion. Cuando viene, tiene que ser un caso ACTIVO de la MISMA historia clinica: uno de otro paciente responde 404 —indistinguible de \&quot;no existe\&quot;, para no poder censar casos ajenos probando ids— y uno cerrado responde 409, porque lleva a otra accion, que es reabrirlo.  LA IDEMPOTENCIA MANDA SOBRE EL CASO: si la sesion del turno ya existe se devuelve tal cual, con el caso que tenga, aunque esta llamada traiga otro. Reasignar el caso de una atencion ya empezada no es \&quot;iniciar\&quot;.
      * @endpoint post /api/v1/consultorios/{consultorioId}/sesiones/turnos/{turnoId}
      * @param requestParameters
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      * @param options additional options
      */
-    public iniciar(requestParameters: IniciarRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<Sesion>;
-    public iniciar(requestParameters: IniciarRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<Sesion>>;
-    public iniciar(requestParameters: IniciarRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<Sesion>>;
-    public iniciar(requestParameters: IniciarRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+    public iniciarSesion(requestParameters: IniciarSesionRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<Sesion>;
+    public iniciarSesion(requestParameters: IniciarSesionRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<Sesion>>;
+    public iniciarSesion(requestParameters: IniciarSesionRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<Sesion>>;
+    public iniciarSesion(requestParameters: IniciarSesionRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
         const consultorioId = requestParameters?.consultorioId;
         if (consultorioId === null || consultorioId === undefined) {
-            throw new Error('Required parameter consultorioId was null or undefined when calling iniciar.');
+            throw new Error('Required parameter consultorioId was null or undefined when calling iniciarSesion.');
         }
         const turnoId = requestParameters?.turnoId;
         if (turnoId === null || turnoId === undefined) {
-            throw new Error('Required parameter turnoId was null or undefined when calling iniciar.');
+            throw new Error('Required parameter turnoId was null or undefined when calling iniciarSesion.');
         }
+        const casoId = requestParameters?.casoId;
+
+        let localVarQueryParameters = new OpenApiHttpParams(this.encoder);
+
+        localVarQueryParameters = this.addToHttpParams(
+            localVarQueryParameters,
+            'casoId',
+            <any>casoId,
+            QueryParamStyle.Form,
+            true,
+        );
+
 
         let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
 
         const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
             'application/json',
@@ -335,6 +445,7 @@ export class SesionesService extends BaseService implements SesionesServiceInter
         return this.httpClient.request<Sesion>('post', `${basePath}${localVarPath}`,
             {
                 context: localVarHttpContext,
+                params: localVarQueryParameters.toHttpParams(),
                 responseType: <any>responseType_,
                 ...(withCredentials ? { withCredentials } : {}),
                 headers: localVarHeaders,
@@ -369,6 +480,9 @@ export class SesionesService extends BaseService implements SesionesServiceInter
 
         let localVarHeaders = this.defaultHeaders;
 
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
+
         const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
             'application/json',
             'application/problem+json'
@@ -396,6 +510,72 @@ export class SesionesService extends BaseService implements SesionesServiceInter
         let localVarPath = `/api/v1/consultorios/${this.configuration.encodeParam({name: "consultorioId", value: consultorioId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/sesiones/${this.configuration.encodeParam({name: "sesionId", value: sesionId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}`;
         const { basePath, withCredentials } = this.configuration;
         return this.httpClient.request<Sesion>('get', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * Historial de versiones de una sesion
+     * Todas las versiones del contenido, **de la 1 a la ultima** (RF-M24-005). La version 1 es lo que se asento al cerrar; cada enmienda agrego la siguiente con su motivo, su autor y su instante.  Cada version trae el contenido **completo**, no un diff: lo que hay que poder leer es que decia el registro en ese momento. La comparacion la arma la pantalla, que recibe las dos versiones enteras.  Lo que las versiones **no** repiten —asistencia, correlativos, fechas de la atencion— es lo que no es enmendable: vale lo mismo en todas y se lee de la sesion.  **Una sesion abierta devuelve una lista vacia**, no un error: todavia no tiene contenido versionado, y para la pantalla eso no es una condicion excepcional sino el estado normal de la atencion que esta ocurriendo.
+     * @endpoint get /api/v1/consultorios/{consultorioId}/sesiones/{sesionId}/versiones
+     * @param requestParameters
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public versiones(requestParameters: VersionesRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<Array<SesionVersion>>;
+    public versiones(requestParameters: VersionesRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<Array<SesionVersion>>>;
+    public versiones(requestParameters: VersionesRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<Array<SesionVersion>>>;
+    public versiones(requestParameters: VersionesRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        const consultorioId = requestParameters?.consultorioId;
+        if (consultorioId === null || consultorioId === undefined) {
+            throw new Error('Required parameter consultorioId was null or undefined when calling versiones.');
+        }
+        const sesionId = requestParameters?.sesionId;
+        if (sesionId === null || sesionId === undefined) {
+            throw new Error('Required parameter sesionId was null or undefined when calling versiones.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/consultorios/${this.configuration.encodeParam({name: "consultorioId", value: consultorioId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/sesiones/${this.configuration.encodeParam({name: "sesionId", value: sesionId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/versiones`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<Array<SesionVersion>>('get', `${basePath}${localVarPath}`,
             {
                 context: localVarHttpContext,
                 responseType: <any>responseType_,

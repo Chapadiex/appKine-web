@@ -39,7 +39,7 @@ export class ClinicalApi {
    * no sobre la sesion: recargar la URL vuelve a la misma atencion.
    */
   iniciar(consultorioId: number, turnoId: number): Observable<Sesion> {
-    return this.sesiones.iniciar({ consultorioId, turnoId });
+    return this.sesiones.iniciarSesion({ consultorioId, turnoId });
   }
 
   /**
@@ -92,6 +92,6 @@ export class ClinicalApi {
    * la pantalla no necesita releer para pasar a modo lectura.
    */
   cerrar(consultorioId: number, sesionId: number, cierre: CerrarSesion): Observable<Sesion> {
-    return this.sesiones.cerrar({ consultorioId, sesionId, cerrarSesion: cierre });
+    return this.sesiones.cerrarSesion({ consultorioId, sesionId, cerrarSesion: cierre });
   }
 }

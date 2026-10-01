@@ -23,6 +23,10 @@ export interface Obligacion {
      * Los tres primeros se derivan del saldo; `ANULADA` es una decision.
      */
     estado?: ObligacionEstadoEnum;
+    /**
+     * Quien es el financiador cuando `responsable` es `FINANCIADOR`; ausente cuando debe el paciente. **Hoy siempre ausente**: el devengado todavia no se recableo contra convenios, asi que no existe ninguna obligacion de financiador. Sin este campo, M21 no tiene por donde agrupar un lote.
+     */
+    financiadorId?: number;
     id?: number;
     /**
      * Lo devengado. No cambia nunca.

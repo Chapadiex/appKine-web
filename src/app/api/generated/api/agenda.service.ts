@@ -27,7 +27,7 @@ import { Configuration }                                     from '../configurat
 import { BaseService } from '../api.base.service';
 import {
     AgendaServiceInterface,
-    BuscarRequestParams
+    BuscarAgendaRequestParams
 } from './agenda.serviceInterface';
 
 
@@ -50,25 +50,25 @@ export class AgendaService extends BaseService implements AgendaServiceInterface
      * @param reportProgress flag to report request and response progress.
      * @param options additional options
      */
-    public buscar(requestParameters: BuscarRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<Agenda>;
-    public buscar(requestParameters: BuscarRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<Agenda>>;
-    public buscar(requestParameters: BuscarRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<Agenda>>;
-    public buscar(requestParameters: BuscarRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+    public buscarAgenda(requestParameters: BuscarAgendaRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<Agenda>;
+    public buscarAgenda(requestParameters: BuscarAgendaRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<Agenda>>;
+    public buscarAgenda(requestParameters: BuscarAgendaRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<Agenda>>;
+    public buscarAgenda(requestParameters: BuscarAgendaRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
         const consultorioId = requestParameters?.consultorioId;
         if (consultorioId === null || consultorioId === undefined) {
-            throw new Error('Required parameter consultorioId was null or undefined when calling buscar.');
+            throw new Error('Required parameter consultorioId was null or undefined when calling buscarAgenda.');
         }
         const ofertaId = requestParameters?.ofertaId;
         if (ofertaId === null || ofertaId === undefined) {
-            throw new Error('Required parameter ofertaId was null or undefined when calling buscar.');
+            throw new Error('Required parameter ofertaId was null or undefined when calling buscarAgenda.');
         }
         const desde = requestParameters?.desde;
         if (desde === null || desde === undefined) {
-            throw new Error('Required parameter desde was null or undefined when calling buscar.');
+            throw new Error('Required parameter desde was null or undefined when calling buscarAgenda.');
         }
         const hasta = requestParameters?.hasta;
         if (hasta === null || hasta === undefined) {
-            throw new Error('Required parameter hasta was null or undefined when calling buscar.');
+            throw new Error('Required parameter hasta was null or undefined when calling buscarAgenda.');
         }
         const profesionalId = requestParameters?.profesionalId;
 
@@ -102,6 +102,9 @@ export class AgendaService extends BaseService implements AgendaServiceInterface
 
 
         let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
 
         const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
             'application/json',

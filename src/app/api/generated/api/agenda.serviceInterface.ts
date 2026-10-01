@@ -18,7 +18,7 @@ import { ProblemDetail } from '../model/models';
 import { Configuration }                                     from '../configuration';
 
 
-export interface BuscarRequestParams {
+export interface BuscarAgendaRequestParams {
     consultorioId: number;
     ofertaId: number;
     desde: string;
@@ -37,6 +37,6 @@ export interface AgendaServiceInterface {
      * @endpoint get /api/v1/consultorios/{consultorioId}/ofertas/{ofertaId}/agenda
 * @param requestParameters
      */
-    buscar(requestParameters: BuscarRequestParams, extraHttpRequestParams?: any): Observable<Agenda>;
+    buscarAgenda(requestParameters: BuscarAgendaRequestParams, extraHttpRequestParams?: any): Observable<Agenda>;
 
 }

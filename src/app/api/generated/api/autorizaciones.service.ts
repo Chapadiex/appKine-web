@@ -17,6 +17,8 @@ import { Observable }                                        from 'rxjs';
 import { OpenApiHttpParams, QueryParamStyle } from '../query.params';
 
 // @ts-ignore
+import { AutorizacionElegibleResponse } from '../model/autorizacion-elegible-response';
+// @ts-ignore
 import { AutorizacionResponse } from '../model/autorizacion-response';
 // @ts-ignore
 import { CreateAutorizacionRequest } from '../model/create-autorizacion-request';
@@ -41,6 +43,7 @@ import {
     DeactivateAutorizacionRequestParams,
     GetAutorizacionRequestParams,
     ListAutorizacionesDePacienteRequestParams,
+    ListAutorizacionesElegiblesRequestParams,
     ResolverAutorizacionRequestParams,
     UpdateAutorizacionRequestParams,
     VincularDocumentoDeAutorizacionRequestParams
@@ -80,6 +83,9 @@ export class AutorizacionesService extends BaseService implements Autorizaciones
         }
 
         let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
 
         const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
             'application/json',
@@ -158,6 +164,9 @@ export class AutorizacionesService extends BaseService implements Autorizaciones
 
         let localVarHeaders = this.defaultHeaders;
 
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
+
         const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
             'application/problem+json'
         ]);
@@ -208,7 +217,7 @@ export class AutorizacionesService extends BaseService implements Autorizaciones
 
     /**
      * Saldo y estado de una autorizacion
-     * RF-M17-003: devuelve autorizadas, consumidas y restantes.  cantidadConsumida vale SIEMPRE 0 y por lo tanto saldo vale siempre lo autorizado. No es un bug: RN-M17-001 separa autorizado de consumido, y quien mueve la resta es la sesion clinica en una integracion posterior. Los tres numeros viajan igual para que el contrato no cambie ese dia.  habilita es el veredicto completo —activa, APROBADA, vigente y con saldo— y consultarlo NO consume nada.
+     * RF-M17-003: devuelve autorizadas, consumidas y restantes.  cantidadConsumida YA NO vale siempre cero: desde AKINE-04.05 la descuenta el cierre de una sesion (RF-M17-004). RN-M17-001 sigue separando autorizado de consumido, y consultar este endpoint no descuenta nada. Para ver QUE gasto cada unidad esta el ledger en GET /api/v1/autorizaciones/{autorizacionId}/movimientos.  habilita es el veredicto completo —activa, APROBADA, vigente y con saldo— y consultarlo NO consume nada.
      * @endpoint get /api/v1/personas/{personaId}/autorizaciones/{autorizacionId}
      * @param requestParameters
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
@@ -241,6 +250,9 @@ export class AutorizacionesService extends BaseService implements Autorizaciones
 
 
         let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
 
         const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
             'application/json',
@@ -284,7 +296,7 @@ export class AutorizacionesService extends BaseService implements Autorizaciones
 
     /**
      * Historial de autorizaciones de un paciente
-     * RF-M17-003 y RF-M17-006. Devuelve TODAS, mas nuevas primero, incluidas las vencidas, las agotadas, las rechazadas y las dadas de baja.  Cada fila trae saldo, vencida, agotada, habilita y diasParaVencer CALCULADOS contra la fecha que se pregunta. Es lo que le permite al panel administrativo mostrar los vencimientos sin que exista ningun job que mueva estados: materializarlos dejaria autorizaciones vencidas que el sistema cree vigentes el dia que el job no corra.  estado filtra el CICLO DE VIDA (ACTIVA/INACTIVA), no el estado de la autorizacion ni su vigencia. Por defecto trae todas.  cantidadConsumida vale SIEMPRE 0 en esta version: el consumo clinico es una integracion posterior (RF-M17-004).
+     * RF-M17-003 y RF-M17-006. Devuelve TODAS, mas nuevas primero, incluidas las vencidas, las agotadas, las rechazadas y las dadas de baja.  Cada fila trae saldo, vencida, agotada, habilita y diasParaVencer CALCULADOS contra la fecha que se pregunta. Es lo que le permite al panel administrativo mostrar los vencimientos sin que exista ningun job que mueva estados: materializarlos dejaria autorizaciones vencidas que el sistema cree vigentes el dia que el job no corra.  estado filtra el CICLO DE VIDA (ACTIVA/INACTIVA), no el estado de la autorizacion ni su vigencia. Por defecto trae todas.  cantidadConsumida YA SE MUEVE desde AKINE-04.05: la descuenta el cierre de una sesion (RF-M17-004). El ledger que explica cada movimiento se lee en GET /api/v1/autorizaciones/{autorizacionId}/movimientos.
      * @endpoint get /api/v1/personas/{personaId}/autorizaciones
      * @param requestParameters
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
@@ -323,6 +335,9 @@ export class AutorizacionesService extends BaseService implements Autorizaciones
 
 
         let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
 
         const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
             'application/json',
@@ -365,6 +380,81 @@ export class AutorizacionesService extends BaseService implements Autorizaciones
     }
 
     /**
+     * Que autorizaciones sirven hoy, y por que las otras no
+     * RF-M17-007, AKINE-04.05. Es el selector EXPLICABLE: devuelve TODAS las autorizaciones activas del paciente con su veredicto, no solo las que sirven.  POR QUE TODAS: decirle al mostrador \&quot;no hay ninguna\&quot; sin decirle que una vencio anteayer y otra se agoto lo deja sin nada que hacer. Cada fila trae motivoNoElegible —VENCIDA, AGOTADA, AUN_NO_VIGENTE o NO_APROBADA— que es null exactamente cuando la autorizacion sirve.  ORDEN: primero las que habilitan y, dentro de cada grupo, la que vence antes. Es el orden en que hay que gastarlas, porque la que vence antes es la que se pierde antes, y es el mismo criterio con el que el cierre de sesion elige a cual descontarle.  NO FILTRA POR PRACTICA, y hay que saberlo: una sesion declara su OFERTA y una autorizacion es por PRACTICA. No existe ninguna tabla puente entre las dos —la migracion de M27 la dejo afuera a proposito—, asi que comparar las dos cosas seria comparar granularidades distintas. Cada fila trae su practicaId a la vista para que quien conoce el caso pueda elegir. Unificarlas es 06.04.  ESTO NO CONSUME NADA (RN-M17-001) y no persiste nada. Es idempotente.
+     * @endpoint get /api/v1/personas/{personaId}/autorizaciones/elegibles
+     * @param requestParameters
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public listAutorizacionesElegibles(requestParameters: ListAutorizacionesElegiblesRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<Array<AutorizacionElegibleResponse>>;
+    public listAutorizacionesElegibles(requestParameters: ListAutorizacionesElegiblesRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<Array<AutorizacionElegibleResponse>>>;
+    public listAutorizacionesElegibles(requestParameters: ListAutorizacionesElegiblesRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<Array<AutorizacionElegibleResponse>>>;
+    public listAutorizacionesElegibles(requestParameters: ListAutorizacionesElegiblesRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        const personaId = requestParameters?.personaId;
+        if (personaId === null || personaId === undefined) {
+            throw new Error('Required parameter personaId was null or undefined when calling listAutorizacionesElegibles.');
+        }
+        const fecha = requestParameters?.fecha;
+
+        let localVarQueryParameters = new OpenApiHttpParams(this.encoder);
+
+        localVarQueryParameters = this.addToHttpParams(
+            localVarQueryParameters,
+            'fecha',
+            <any>fecha,
+            QueryParamStyle.Form,
+            true,
+        );
+
+
+        let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/personas/${this.configuration.encodeParam({name: "personaId", value: personaId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/autorizaciones/elegibles`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<Array<AutorizacionElegibleResponse>>('get', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                params: localVarQueryParameters.toHttpParams(),
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
      * Aplicar la respuesta del financiador
      * RF-M17-001. Exige paciente:manage sobre la sede del contexto.  RECIBE UNA ACCION, NO UN ESTADO DESTINO. Con un estado destino, pedir APROBADA sobre una autorizacion RECHAZADA seria una peticion valida que el servidor tiene que rechazar por semantica, y el cliente podria construir cualquier transicion imaginable. Con una accion, la unica forma de llegar a APROBADA es APROBAR, y el conjunto de transiciones posibles queda del lado del backend.  Transiciones: PENDIENTE y OBSERVADA admiten las tres acciones. APROBADA y RECHAZADA son TERMINALES y responden 409 autorizacion-transicion-no-permitida. Corregir una decision tomada es dar de baja la autorizacion y cargar otra: si una aprobada pudiera volver a PENDIENTE, el saldo que ya se conto para atender a alguien desapareceria retroactivamente.  APROBACION CONCURRENTE: es el mismo mecanismo. El segundo en llegar encuentra la autorizacion ya resuelta y recibe 409, no un 200 que aprueba dos veces.  AUTORIZACION PARCIAL: al APROBAR, cantidadAutorizada y las vigencias pisan a las declaradas al cargar. El financiador puede otorgar seis sesiones donde se pidieron veinte, o una ventana mas corta: lo que vale es lo que concedio.  motivo es OBLIGATORIO al OBSERVAR y al RECHAZAR. Sin el, el mostrador no sabe que corregir.
      * @endpoint post /api/v1/personas/{personaId}/autorizaciones/{autorizacionId}/estado
@@ -391,6 +481,9 @@ export class AutorizacionesService extends BaseService implements Autorizaciones
         }
 
         let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
 
         const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
             'application/json',
@@ -469,6 +562,9 @@ export class AutorizacionesService extends BaseService implements Autorizaciones
 
         let localVarHeaders = this.defaultHeaders;
 
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
+
         const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
             'application/json',
             'application/problem+json'
@@ -545,6 +641,9 @@ export class AutorizacionesService extends BaseService implements Autorizaciones
         }
 
         let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
 
         const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
             'application/json',

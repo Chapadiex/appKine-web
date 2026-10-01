@@ -41,14 +41,14 @@ import { Configuration }                                     from '../configurat
 import { BaseService } from '../api.base.service';
 import {
     TurnosServiceInterface,
-    CancelarRequestParams,
-    ConfirmarRequestParams,
-    DelDiaRequestParams,
+    CancelarTurnoRequestParams,
+    ConfirmarTurnoRequestParams,
+    DelDiaTurnoRequestParams,
     DeshacerLlegadaRequestParams,
-    HistorialRequestParams,
+    HistorialTurnoRequestParams,
     RegistrarAusenciaRequestParams,
     RegistrarLlegadaRequestParams,
-    ReprogramarRequestParams,
+    ReprogramarTurnoRequestParams,
     ReservarRequestParams,
     VerTurnoRequestParams
 } from './turnos.serviceInterface';
@@ -73,24 +73,27 @@ export class TurnosService extends BaseService implements TurnosServiceInterface
      * @param reportProgress flag to report request and response progress.
      * @param options additional options
      */
-    public cancelar(requestParameters: CancelarRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<Turno>;
-    public cancelar(requestParameters: CancelarRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<Turno>>;
-    public cancelar(requestParameters: CancelarRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<Turno>>;
-    public cancelar(requestParameters: CancelarRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+    public cancelarTurno(requestParameters: CancelarTurnoRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<Turno>;
+    public cancelarTurno(requestParameters: CancelarTurnoRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<Turno>>;
+    public cancelarTurno(requestParameters: CancelarTurnoRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<Turno>>;
+    public cancelarTurno(requestParameters: CancelarTurnoRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
         const consultorioId = requestParameters?.consultorioId;
         if (consultorioId === null || consultorioId === undefined) {
-            throw new Error('Required parameter consultorioId was null or undefined when calling cancelar.');
+            throw new Error('Required parameter consultorioId was null or undefined when calling cancelarTurno.');
         }
         const turnoId = requestParameters?.turnoId;
         if (turnoId === null || turnoId === undefined) {
-            throw new Error('Required parameter turnoId was null or undefined when calling cancelar.');
+            throw new Error('Required parameter turnoId was null or undefined when calling cancelarTurno.');
         }
         const cancelarTurno = requestParameters?.cancelarTurno;
         if (cancelarTurno === null || cancelarTurno === undefined) {
-            throw new Error('Required parameter cancelarTurno was null or undefined when calling cancelar.');
+            throw new Error('Required parameter cancelarTurno was null or undefined when calling cancelarTurno.');
         }
 
         let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
 
         const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
             'application/json',
@@ -150,20 +153,23 @@ export class TurnosService extends BaseService implements TurnosServiceInterface
      * @param reportProgress flag to report request and response progress.
      * @param options additional options
      */
-    public confirmar(requestParameters: ConfirmarRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<Turno>;
-    public confirmar(requestParameters: ConfirmarRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<Turno>>;
-    public confirmar(requestParameters: ConfirmarRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<Turno>>;
-    public confirmar(requestParameters: ConfirmarRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+    public confirmarTurno(requestParameters: ConfirmarTurnoRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<Turno>;
+    public confirmarTurno(requestParameters: ConfirmarTurnoRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<Turno>>;
+    public confirmarTurno(requestParameters: ConfirmarTurnoRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<Turno>>;
+    public confirmarTurno(requestParameters: ConfirmarTurnoRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
         const consultorioId = requestParameters?.consultorioId;
         if (consultorioId === null || consultorioId === undefined) {
-            throw new Error('Required parameter consultorioId was null or undefined when calling confirmar.');
+            throw new Error('Required parameter consultorioId was null or undefined when calling confirmarTurno.');
         }
         const turnoId = requestParameters?.turnoId;
         if (turnoId === null || turnoId === undefined) {
-            throw new Error('Required parameter turnoId was null or undefined when calling confirmar.');
+            throw new Error('Required parameter turnoId was null or undefined when calling confirmarTurno.');
         }
 
         let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
 
         const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
             'application/json',
@@ -213,17 +219,17 @@ export class TurnosService extends BaseService implements TurnosServiceInterface
      * @param reportProgress flag to report request and response progress.
      * @param options additional options
      */
-    public delDia(requestParameters: DelDiaRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<AgendaDelDia>;
-    public delDia(requestParameters: DelDiaRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<AgendaDelDia>>;
-    public delDia(requestParameters: DelDiaRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<AgendaDelDia>>;
-    public delDia(requestParameters: DelDiaRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+    public delDiaTurno(requestParameters: DelDiaTurnoRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<AgendaDelDia>;
+    public delDiaTurno(requestParameters: DelDiaTurnoRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<AgendaDelDia>>;
+    public delDiaTurno(requestParameters: DelDiaTurnoRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<AgendaDelDia>>;
+    public delDiaTurno(requestParameters: DelDiaTurnoRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
         const consultorioId = requestParameters?.consultorioId;
         if (consultorioId === null || consultorioId === undefined) {
-            throw new Error('Required parameter consultorioId was null or undefined when calling delDia.');
+            throw new Error('Required parameter consultorioId was null or undefined when calling delDiaTurno.');
         }
         const fecha = requestParameters?.fecha;
         if (fecha === null || fecha === undefined) {
-            throw new Error('Required parameter fecha was null or undefined when calling delDia.');
+            throw new Error('Required parameter fecha was null or undefined when calling delDiaTurno.');
         }
 
         let localVarQueryParameters = new OpenApiHttpParams(this.encoder);
@@ -238,6 +244,9 @@ export class TurnosService extends BaseService implements TurnosServiceInterface
 
 
         let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
 
         const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
             'application/json',
@@ -303,6 +312,9 @@ export class TurnosService extends BaseService implements TurnosServiceInterface
 
         let localVarHeaders = this.defaultHeaders;
 
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
+
         const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
             'application/json',
             'application/problem+json'
@@ -351,20 +363,23 @@ export class TurnosService extends BaseService implements TurnosServiceInterface
      * @param reportProgress flag to report request and response progress.
      * @param options additional options
      */
-    public historial(requestParameters: HistorialRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<Array<EventoDeTurno>>;
-    public historial(requestParameters: HistorialRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<Array<EventoDeTurno>>>;
-    public historial(requestParameters: HistorialRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<Array<EventoDeTurno>>>;
-    public historial(requestParameters: HistorialRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+    public historialTurno(requestParameters: HistorialTurnoRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<Array<EventoDeTurno>>;
+    public historialTurno(requestParameters: HistorialTurnoRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<Array<EventoDeTurno>>>;
+    public historialTurno(requestParameters: HistorialTurnoRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<Array<EventoDeTurno>>>;
+    public historialTurno(requestParameters: HistorialTurnoRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
         const consultorioId = requestParameters?.consultorioId;
         if (consultorioId === null || consultorioId === undefined) {
-            throw new Error('Required parameter consultorioId was null or undefined when calling historial.');
+            throw new Error('Required parameter consultorioId was null or undefined when calling historialTurno.');
         }
         const turnoId = requestParameters?.turnoId;
         if (turnoId === null || turnoId === undefined) {
-            throw new Error('Required parameter turnoId was null or undefined when calling historial.');
+            throw new Error('Required parameter turnoId was null or undefined when calling historialTurno.');
         }
 
         let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
 
         const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
             'application/json',
@@ -432,6 +447,9 @@ export class TurnosService extends BaseService implements TurnosServiceInterface
         }
 
         let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
 
         const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
             'application/json',
@@ -506,6 +524,9 @@ export class TurnosService extends BaseService implements TurnosServiceInterface
 
         let localVarHeaders = this.defaultHeaders;
 
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
+
         const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
             'application/json',
             'application/problem+json'
@@ -554,24 +575,27 @@ export class TurnosService extends BaseService implements TurnosServiceInterface
      * @param reportProgress flag to report request and response progress.
      * @param options additional options
      */
-    public reprogramar(requestParameters: ReprogramarRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<Turno>;
-    public reprogramar(requestParameters: ReprogramarRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<Turno>>;
-    public reprogramar(requestParameters: ReprogramarRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<Turno>>;
-    public reprogramar(requestParameters: ReprogramarRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+    public reprogramarTurno(requestParameters: ReprogramarTurnoRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<Turno>;
+    public reprogramarTurno(requestParameters: ReprogramarTurnoRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<Turno>>;
+    public reprogramarTurno(requestParameters: ReprogramarTurnoRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<Turno>>;
+    public reprogramarTurno(requestParameters: ReprogramarTurnoRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
         const consultorioId = requestParameters?.consultorioId;
         if (consultorioId === null || consultorioId === undefined) {
-            throw new Error('Required parameter consultorioId was null or undefined when calling reprogramar.');
+            throw new Error('Required parameter consultorioId was null or undefined when calling reprogramarTurno.');
         }
         const turnoId = requestParameters?.turnoId;
         if (turnoId === null || turnoId === undefined) {
-            throw new Error('Required parameter turnoId was null or undefined when calling reprogramar.');
+            throw new Error('Required parameter turnoId was null or undefined when calling reprogramarTurno.');
         }
         const reprogramarTurno = requestParameters?.reprogramarTurno;
         if (reprogramarTurno === null || reprogramarTurno === undefined) {
-            throw new Error('Required parameter reprogramarTurno was null or undefined when calling reprogramar.');
+            throw new Error('Required parameter reprogramarTurno was null or undefined when calling reprogramarTurno.');
         }
 
         let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
 
         const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
             'application/json',
@@ -650,6 +674,9 @@ export class TurnosService extends BaseService implements TurnosServiceInterface
 
         let localVarHeaders = this.defaultHeaders;
 
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
+
         const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
             'application/json',
             'application/problem+json'
@@ -722,6 +749,9 @@ export class TurnosService extends BaseService implements TurnosServiceInterface
         }
 
         let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
 
         const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
             'application/json',

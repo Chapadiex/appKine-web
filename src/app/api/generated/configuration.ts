@@ -91,6 +91,26 @@ constructor({ accessToken, apiKeys, basePath, credentials, encodeParam, encoder,
         }
         this.encodeParam = encodeParam ?? (param => this.defaultEncodeParam(param));
         this.credentials = credentials ?? {};
+
+        // init default bearerAuth credential
+        if (!this.credentials['bearerAuth']) {
+            this.credentials['bearerAuth'] = () => {
+                return typeof this.accessToken === 'function'
+                    ? this.accessToken()
+                    : this.accessToken;
+            };
+        }
+
+        // init default refreshCookie credential
+        if (!this.credentials['refreshCookie']) {
+            this.credentials['refreshCookie'] = () => {
+                if (this.apiKeys === null || this.apiKeys === undefined) {
+                    return undefined;
+                } else {
+                    return this.apiKeys['refreshCookie'] || this.apiKeys['akine_rt'];
+                }
+            };
+        }
     }
 
     /**

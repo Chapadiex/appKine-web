@@ -30,7 +30,7 @@ import { BaseService } from '../api.base.service';
 import {
     CobrosServiceInterface,
     CobrosDeLaPersonaRequestParams,
-    RegistrarRequestParams,
+    RegistrarCobroRequestParams,
     VerCobroRequestParams
 } from './cobros.serviceInterface';
 
@@ -79,6 +79,9 @@ export class CobrosService extends BaseService implements CobrosServiceInterface
 
 
         let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
 
         const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
             'application/json',
@@ -129,20 +132,23 @@ export class CobrosService extends BaseService implements CobrosServiceInterface
      * @param reportProgress flag to report request and response progress.
      * @param options additional options
      */
-    public registrar(requestParameters: RegistrarRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<Cobro>;
-    public registrar(requestParameters: RegistrarRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<Cobro>>;
-    public registrar(requestParameters: RegistrarRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<Cobro>>;
-    public registrar(requestParameters: RegistrarRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+    public registrarCobro(requestParameters: RegistrarCobroRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<Cobro>;
+    public registrarCobro(requestParameters: RegistrarCobroRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<Cobro>>;
+    public registrarCobro(requestParameters: RegistrarCobroRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<Cobro>>;
+    public registrarCobro(requestParameters: RegistrarCobroRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
         const consultorioId = requestParameters?.consultorioId;
         if (consultorioId === null || consultorioId === undefined) {
-            throw new Error('Required parameter consultorioId was null or undefined when calling registrar.');
+            throw new Error('Required parameter consultorioId was null or undefined when calling registrarCobro.');
         }
         const registrarCobro = requestParameters?.registrarCobro;
         if (registrarCobro === null || registrarCobro === undefined) {
-            throw new Error('Required parameter registrarCobro was null or undefined when calling registrar.');
+            throw new Error('Required parameter registrarCobro was null or undefined when calling registrarCobro.');
         }
 
         let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
 
         const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
             'application/json',
@@ -216,6 +222,9 @@ export class CobrosService extends BaseService implements CobrosServiceInterface
         }
 
         let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
 
         const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
             'application/json',

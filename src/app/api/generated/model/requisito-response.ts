@@ -22,17 +22,25 @@ export interface RequisitoResponse {
      */
     detalle?: string;
     /**
+     * Dias que faltan para ese vencimiento, contra la fecha consultada. PUEDE SER CERO: vence hoy, y hoy todavia sirve, porque la vigencia es inclusiva. Null si no vence
+     */
+    diasParaVencer?: number;
+    /**
      * Orden o autorizacion que lo satisface, o la cobertura para la credencial. Null si falta
      */
     referenciaId?: number;
     /**
-     * Sesiones restantes cuando el requisito es AUTORIZACION y hay tope declarado
+     * Sesiones restantes cuando el requisito es AUTORIZACION y hay tope declarado. AKINE-04.05: ahora BAJA al atender, porque el consumo existe
      */
     saldo?: number;
     /**
      * Que exige el convenio. Son exactamente las tres banderas que declara desde M16
      */
     tipo?: RequisitoResponseTipoEnum;
+    /**
+     * ULTIMO dia inclusive del documento que lo satisface. Null si no vence o si el requisito esta faltante. La CREDENCIAL no lo publica: su vencimiento vive en la cobertura
+     */
+    vigenciaHasta?: string;
 }
 export enum RequisitoResponseTipoEnum {
     ORDEN = 'ORDEN',

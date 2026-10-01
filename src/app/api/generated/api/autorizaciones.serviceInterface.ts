@@ -11,6 +11,7 @@ import { HttpHeaders }                                       from '@angular/comm
 
 import { Observable }                                        from 'rxjs';
 
+import { AutorizacionElegibleResponse } from '../model/models';
 import { AutorizacionResponse } from '../model/models';
 import { CreateAutorizacionRequest } from '../model/models';
 import { DeactivateDocumentoRequest } from '../model/models';
@@ -43,6 +44,11 @@ export interface GetAutorizacionRequestParams {
 export interface ListAutorizacionesDePacienteRequestParams {
     personaId: number;
     estado?: 'ACTIVA' | 'INACTIVA' | 'TODAS';
+    fecha?: string;
+}
+
+export interface ListAutorizacionesElegiblesRequestParams {
+    personaId: number;
     fecha?: string;
 }
 
@@ -87,7 +93,7 @@ export interface AutorizacionesServiceInterface {
 
     /**
      * Saldo y estado de una autorizacion
-     * RF-M17-003: devuelve autorizadas, consumidas y restantes.  cantidadConsumida vale SIEMPRE 0 y por lo tanto saldo vale siempre lo autorizado. No es un bug: RN-M17-001 separa autorizado de consumido, y quien mueve la resta es la sesion clinica en una integracion posterior. Los tres numeros viajan igual para que el contrato no cambie ese dia.  habilita es el veredicto completo —activa, APROBADA, vigente y con saldo— y consultarlo NO consume nada.
+     * RF-M17-003: devuelve autorizadas, consumidas y restantes.  cantidadConsumida YA NO vale siempre cero: desde AKINE-04.05 la descuenta el cierre de una sesion (RF-M17-004). RN-M17-001 sigue separando autorizado de consumido, y consultar este endpoint no descuenta nada. Para ver QUE gasto cada unidad esta el ledger en GET /api/v1/autorizaciones/{autorizacionId}/movimientos.  habilita es el veredicto completo —activa, APROBADA, vigente y con saldo— y consultarlo NO consume nada.
      * @endpoint get /api/v1/personas/{personaId}/autorizaciones/{autorizacionId}
 * @param requestParameters
      */
@@ -95,11 +101,19 @@ export interface AutorizacionesServiceInterface {
 
     /**
      * Historial de autorizaciones de un paciente
-     * RF-M17-003 y RF-M17-006. Devuelve TODAS, mas nuevas primero, incluidas las vencidas, las agotadas, las rechazadas y las dadas de baja.  Cada fila trae saldo, vencida, agotada, habilita y diasParaVencer CALCULADOS contra la fecha que se pregunta. Es lo que le permite al panel administrativo mostrar los vencimientos sin que exista ningun job que mueva estados: materializarlos dejaria autorizaciones vencidas que el sistema cree vigentes el dia que el job no corra.  estado filtra el CICLO DE VIDA (ACTIVA/INACTIVA), no el estado de la autorizacion ni su vigencia. Por defecto trae todas.  cantidadConsumida vale SIEMPRE 0 en esta version: el consumo clinico es una integracion posterior (RF-M17-004).
+     * RF-M17-003 y RF-M17-006. Devuelve TODAS, mas nuevas primero, incluidas las vencidas, las agotadas, las rechazadas y las dadas de baja.  Cada fila trae saldo, vencida, agotada, habilita y diasParaVencer CALCULADOS contra la fecha que se pregunta. Es lo que le permite al panel administrativo mostrar los vencimientos sin que exista ningun job que mueva estados: materializarlos dejaria autorizaciones vencidas que el sistema cree vigentes el dia que el job no corra.  estado filtra el CICLO DE VIDA (ACTIVA/INACTIVA), no el estado de la autorizacion ni su vigencia. Por defecto trae todas.  cantidadConsumida YA SE MUEVE desde AKINE-04.05: la descuenta el cierre de una sesion (RF-M17-004). El ledger que explica cada movimiento se lee en GET /api/v1/autorizaciones/{autorizacionId}/movimientos.
      * @endpoint get /api/v1/personas/{personaId}/autorizaciones
 * @param requestParameters
      */
     listAutorizacionesDePaciente(requestParameters: ListAutorizacionesDePacienteRequestParams, extraHttpRequestParams?: any): Observable<Array<AutorizacionResponse>>;
+
+    /**
+     * Que autorizaciones sirven hoy, y por que las otras no
+     * RF-M17-007, AKINE-04.05. Es el selector EXPLICABLE: devuelve TODAS las autorizaciones activas del paciente con su veredicto, no solo las que sirven.  POR QUE TODAS: decirle al mostrador \&quot;no hay ninguna\&quot; sin decirle que una vencio anteayer y otra se agoto lo deja sin nada que hacer. Cada fila trae motivoNoElegible —VENCIDA, AGOTADA, AUN_NO_VIGENTE o NO_APROBADA— que es null exactamente cuando la autorizacion sirve.  ORDEN: primero las que habilitan y, dentro de cada grupo, la que vence antes. Es el orden en que hay que gastarlas, porque la que vence antes es la que se pierde antes, y es el mismo criterio con el que el cierre de sesion elige a cual descontarle.  NO FILTRA POR PRACTICA, y hay que saberlo: una sesion declara su OFERTA y una autorizacion es por PRACTICA. No existe ninguna tabla puente entre las dos —la migracion de M27 la dejo afuera a proposito—, asi que comparar las dos cosas seria comparar granularidades distintas. Cada fila trae su practicaId a la vista para que quien conoce el caso pueda elegir. Unificarlas es 06.04.  ESTO NO CONSUME NADA (RN-M17-001) y no persiste nada. Es idempotente.
+     * @endpoint get /api/v1/personas/{personaId}/autorizaciones/elegibles
+* @param requestParameters
+     */
+    listAutorizacionesElegibles(requestParameters: ListAutorizacionesElegiblesRequestParams, extraHttpRequestParams?: any): Observable<Array<AutorizacionElegibleResponse>>;
 
     /**
      * Aplicar la respuesta del financiador
