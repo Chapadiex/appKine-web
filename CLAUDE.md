@@ -466,20 +466,32 @@ Reglas que esta etapa dejó fijadas y que las siguientes heredan:
 | Los guards son **UX, no seguridad** | La autoridad de permisos es el backend, que rechaza igual si se llega por URL directa |
 | Falta de contexto se resuelve mandando a `/seleccionar-contexto`, no mostrando un 403 | Sin eso la pantalla se abre vacía y el usuario no tiene cómo salir |
 
-### Próximo paso — cerrar 03.01, o el frontend de 02.07
+### Próximo paso — regenerar el cliente: el backend está catorce versiones adelante
 
-Para cerrar **03.01** falta una sola cosa y es de entorno: el quinto escenario del QA manual
-—activar el perfil de paciente— **contra MySQL**. El defecto de código que lo bloqueaba ya está
-corregido y verificado en un navegador real contra la API simulada; lo que no arranca es el motor
-de Docker de esta máquina (`com.docker.service` detenido y la distro WSL `docker-desktop` también,
-y levantar ese servicio **exige elevación**).
+> **Actualizado el 29/09/2026.** Lo que decía antes —que faltaba el quinto escenario del QA manual
+> y que Docker no arrancaba— quedó viejo: **Docker funciona** (29.2.0) y el backend cerró su
+> integración completa ese día.
 
-El frontend de **02.07** sigue a medio hacer y sin commitear.
+**El cliente TypeScript está en `0.29.0` y el contrato del backend en `0.44.0`.** No es un desfase
+cosmético: son **101 operaciones nuevas** y significa que este repo **no tiene una sola pantalla**
+de nada posterior a F3. Falta todo el timeline clínico, el caso, el plan de tratamiento, el examen
+y las mediciones, los tratamientos realizados, la enmienda, la caja, las presentaciones a
+financiadores, los egresos, los reportes y toda la segunda entrega —clases, inscripciones,
+asistencia—.
+
+Regenerar el cliente desde `0.44.0` es el cuello de botella del producto entero: hasta que no pase,
+cada etapa de backend que se cierre suma funcionalidad que nadie puede usar. El contrato está sin
+drift y sin `operationId` desambiguado, así que la generación debería ser limpia; lo que va a doler
+es que **31 operaciones cambiaron de nombre** al recibir `operationId` explícito, y eso toca a los
+servicios que ya las consumen.
+
+`main` de este repo **está pusheado** (`94d5a9c`), con lint, 110 specs / 1.206 tests, cobertura
+sobre el piso de 80 % en las cuatro métricas y las 16 auditorías de contraste en verde.
 
 Pendientes que arrastra el frontend:
 
 - [ ] E2E de todo lo posterior a 01.03: espacios, catálogo, horarios, servicios y padrón. **Ninguno existe**
-- [ ] Protección de rama en `main`. El remote ya existe (`Chapadiex/appKine-web`); lo que falta es pushear y protegerla
+- [ ] Protección de rama en `main`. **Pushear ya está hecho** desde el 29/09 (`94d5a9c` en `Chapadiex/appKine-web`); falta protegerla en GitHub
 - [ ] Activar el job E2E del pipeline (listo y comentado — espera la imagen Docker del backend)
 - [ ] Regla de ESLint que prohíba imports entre features (ADR-0004, hoy depende de revisión)
 - [ ] Completar los `PENDIENTE(F1)` de `.claude/qa-config.md`
