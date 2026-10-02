@@ -32,6 +32,14 @@ Convenciones de identificadores: `RF-MXX-NNN`, `RN-MXX-NNN`, `RNF-MXX-NNN`, `CA-
 
 Todo cambio debe trazarse a un RF/CA concreto.
 
+### Retomar el trabajo: `../appKine-api/docs/fases/`
+
+**Antes de tocar una pantalla, leé la ficha de su fase** en `../appKine-api/docs/fases/` (empezá
+por `README.md` y `00-orden-recomendado.md`). Sale de la auditoría plan-vs-código del 01/10/2026 y
+lista, por fase, qué pantallas y E2E faltan —la mayor deuda del producto: F4 en adelante es casi
+todo backend sin UI— junto con lo que falta del lado del backend para que esa pantalla tenga
+sentido. Verificá cada faltante contra el código antes de actuar.
+
 ## 3. Stack
 
 | Capa | Tecnología |
