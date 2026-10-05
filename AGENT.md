@@ -40,6 +40,11 @@ lista, por fase, qué pantallas y E2E faltan —la mayor deuda del producto: F4 
 todo backend sin UI— junto con lo que falta del lado del backend para que esa pantalla tenga
 sentido. Verificá cada faltante contra el código antes de actuar.
 
+**Si trabajás en paralelo con otras personas**, leé además
+`../appKine-api/docs/fases/01-trabajo-en-paralelo.md`: qué paquetes son del frontend (carril D y
+las partes web de A, B, E, F y G), de qué endpoint depende cada pantalla, y la regla de la **rama
+con el mismo nombre en los dos repos** que usa el job `contrato` del CI.
+
 ## 3. Stack
 
 | Capa | Tecnología |
