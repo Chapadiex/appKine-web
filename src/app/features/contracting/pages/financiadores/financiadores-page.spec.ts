@@ -342,7 +342,10 @@ describe('FinanciadoresPage', () => {
         (peticion: HttpRequest<unknown>) =>
           peticion.url === RUTA_FINANCIADORES && peticion.params.get('estado') === 'INACTIVO',
       )
-      .flush({ type: 'https://akine.app/problems/internal-error' }, { status: 500, statusText: 'Error' });
+      .flush(
+        { type: 'https://akine.app/problems/internal-error' },
+        { status: 500, statusText: 'Error' },
+      );
     await fixture.whenStable();
     fixture.detectChanges();
 

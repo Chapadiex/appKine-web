@@ -152,10 +152,7 @@ export class CicloDeTurnoPage {
    * evento no lleva estado. Con `GET /turnos/{turnoId}` el estado es un dato, no una inferencia.
    */
   protected readonly estado = computed(
-    () =>
-      this.turno()?.estado ??
-      this.turnoLeido()?.estado ??
-      estadoSegunHistorial(this.eventos()),
+    () => this.turno()?.estado ?? this.turnoLeido()?.estado ?? estadoSegunHistorial(this.eventos()),
   );
 
   protected readonly horario = computed(() => {
