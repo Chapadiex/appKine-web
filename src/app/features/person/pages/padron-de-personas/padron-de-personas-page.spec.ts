@@ -302,6 +302,29 @@ describe('PadronDePersonasPage', () => {
     fixture.detectChanges();
   });
 
+  it('el buscador avisa que acepta numero de afiliado y lo manda en el mismo parametro q', async () => {
+    const fixture = await montar();
+    const pantalla = fixture.nativeElement as HTMLElement;
+
+    // El campo es el de siempre: no hay un parametro nuevo para el afiliado.
+    const etiqueta = pantalla.querySelector('label[for="padron-busqueda"]');
+    expect(etiqueta?.textContent).toContain('numero de afiliado');
+    expect(pantalla.querySelector('#padron-busqueda')?.getAttribute('aria-describedby')).toBe(
+      'padron-busqueda-ayuda',
+    );
+    expect(pantalla.textContent).toContain('numero de afiliado; no hace falta escribir puntos');
+
+    escribirYCambiar(fixture, '#padron-busqueda', 'OSDE123456');
+    const buscada = httpMock.expectOne(
+      (peticion: HttpRequest<unknown>) =>
+        peticion.url === PERSONAS && peticion.params.get('q') === 'OSDE123456',
+    );
+    expect(buscada.request.params.keys()).not.toContain('afiliado');
+    buscada.flush({ ...PAGINA, content: [SIN_PERFIL], totalElements: 1 });
+    await fixture.whenStable();
+    fixture.detectChanges();
+  });
+
   it('la edicion manda expectedVersion para no pisar el cambio ajeno', async () => {
     const fixture = await montar();
 
