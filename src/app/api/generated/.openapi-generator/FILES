@@ -57,6 +57,8 @@ api/excepciones-de-disponibilidad.service.ts
 api/excepciones-de-disponibilidad.serviceInterface.ts
 api/financiadores-y-planes.service.ts
 api/financiadores-y-planes.serviceInterface.ts
+api/historia-clinica.service.ts
+api/historia-clinica.serviceInterface.ts
 api/inscripciones.service.ts
 api/inscripciones.serviceInterface.ts
 api/invitaciones-recibidas.service.ts
@@ -119,6 +121,7 @@ model/account-response.ts
 model/account-state-change-request.ts
 model/activar-perfil-paciente-request.ts
 model/activate-account-request.ts
+model/actualizar-resumen-request.ts
 model/adjunto-clinico-page-response.ts
 model/adjunto-clinico-response.ts
 model/adjunto-page-response.ts
@@ -128,6 +131,7 @@ model/agenda-del-dia.ts
 model/agenda-unificada.ts
 model/agenda.ts
 model/agregar-item-a-presentacion.ts
+model/antecedente-response.ts
 model/anular-egreso.ts
 model/anular-obligacion.ts
 model/anular-presentacion.ts
@@ -144,6 +148,7 @@ model/avance-de-item.ts
 model/avance-del-plan.ts
 model/baja-de-adjunto-clinico-request.ts
 model/baja-de-adjunto-request.ts
+model/baja-de-antecedente-request.ts
 model/baja-de-entrada-clinica-request.ts
 model/baja-de-perfil-paciente-request.ts
 model/baja-de-persona-request.ts
@@ -247,6 +252,7 @@ model/grant-support-access-request.ts
 model/guardar-borrador.ts
 model/guardar-evaluacion.ts
 model/habilitaciones-response.ts
+model/historia-clinica-response.ts
 model/hito-response.ts
 model/imputacion-aplicada.ts
 model/imputacion-de-cobro.ts
@@ -313,6 +319,7 @@ model/reabrir-caso-clinico-request.ts
 model/reclasificar-adjunto-clinico-request.ts
 model/reemplazar-habilitaciones-request.ts
 model/register-account-request.ts
+model/registrar-antecedente-request.ts
 model/registrar-asistencia-lote.ts
 model/registrar-asistencia.ts
 model/registrar-ausencia.ts
