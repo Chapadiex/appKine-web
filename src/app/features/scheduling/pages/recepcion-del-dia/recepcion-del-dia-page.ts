@@ -314,6 +314,4 @@ export class RecepcionDelDiaPage {
       filas.map((fila) => (fila.id === turnoId ? { ...fila, ...cambios } : fila)),
     );
   }
-
-
 }
