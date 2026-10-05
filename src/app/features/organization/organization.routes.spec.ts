@@ -56,9 +56,7 @@ describe('Rutas de /organizacion', () => {
     expect(await componenteDe('/organizacion')).toBe(OrganizationPage);
     expect(await componenteDe('/organizacion/suscripcion')).toBe(SubscriptionPage);
     expect(await componenteDe('/organizacion/colaboradores/nuevo')).toBe(NewCollaboratorPage);
-    expect(await componenteDe('/organizacion/colaboradores/invitaciones')).toBe(
-      InvitacionesPage,
-    );
+    expect(await componenteDe('/organizacion/colaboradores/invitaciones')).toBe(InvitacionesPage);
     expect(await componenteDe('/organizacion/colaboradores')).toBe(CollaboratorsPage);
     expect(await componenteDe('/organizacion/sedes/nueva')).toBe(NewConsultorioPage);
     expect(await componenteDe('/organizacion/sedes')).toBe(ConsultoriosPage);

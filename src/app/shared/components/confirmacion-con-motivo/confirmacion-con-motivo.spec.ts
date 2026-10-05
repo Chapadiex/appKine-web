@@ -85,9 +85,7 @@ describe('ConfirmacionConMotivo', () => {
   }
 
   function escribirMotivo(fixture: ComponentFixture<Anfitrion>, valor: string): void {
-    const campo = (fixture.nativeElement as HTMLElement).querySelector(
-      'input',
-    ) as HTMLInputElement;
+    const campo = (fixture.nativeElement as HTMLElement).querySelector('input') as HTMLInputElement;
     campo.value = valor;
     campo.dispatchEvent(new Event('input'));
     fixture.detectChanges();
