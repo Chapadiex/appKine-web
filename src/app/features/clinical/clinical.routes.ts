@@ -45,4 +45,10 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/atencion/atencion-page').then((m) => m.AtencionPage),
     title: 'AKINE - Atencion clinica',
   },
+  {
+    path: 'planes/:casoId',
+    canActivate: [contextGuard],
+    loadComponent: () => import('./plan/plan-page').then((m) => m.PlanPage),
+    title: 'AKINE - Plan de tratamiento',
+  },
 ];
