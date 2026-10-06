@@ -27,6 +27,10 @@ async function abrirHistoriaConMotivo(page: Page, sembrada: HistoriaSembrada): P
 }
 
 test.describe('Historia clinica - timeline (D-a)', () => {
+  // Cada test siembra una organizacion, y el alta esta limitada a 5 por minuto: el helper espera
+  // turno (`esperarCupoDeRegistro`), y esa espera no puede comerse los 30 s por defecto.
+  test.describe.configure({ timeout: 120_000 });
+
   let sembrada: HistoriaSembrada;
 
   test.beforeEach(async ({ request }) => {
