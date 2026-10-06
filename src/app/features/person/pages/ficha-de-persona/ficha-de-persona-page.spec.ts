@@ -8,7 +8,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 
 import { FichaDePersonaPage } from './ficha-de-persona-page';
-import { PERMISO_PACIENTE_MANAGE } from '../../../../core/models/permisos';
+import { PERMISO_HC_READ, PERMISO_PACIENTE_MANAGE } from '../../../../core/models/permisos';
 import { PermissionsStore } from '../../../../core/services/permissions.store';
 import { RUTA_PERMISOS_EFECTIVOS } from '../../../../core/testing/rutas-api';
 import { TIMEOUT_AXE, esperarSinViolaciones } from '../../../../core/testing/axe';
@@ -185,6 +185,20 @@ describe('FichaDePersonaPage', () => {
     expect(texto(fixture)).toContain('no muestra nada clinico');
   });
 
+  it('con hc:read ofrece la historia clinica del paciente, sin mostrar nada de ella (D-e)', async () => {
+    const fixture = await montar(RESUMEN_COMPLETO, [PERMISO_PACIENTE_MANAGE, PERMISO_HC_READ]);
+
+    const enlace = enlaceA(fixture, 'Abrir la historia clinica');
+    expect(enlace?.getAttribute('href')).toBe(`/historia-clinica/personas/${PERSONA}`);
+  });
+
+  it('sin hc:read no ofrece la historia: el backend la negaria igual (D-e)', async () => {
+    const fixture = await montar(RESUMEN_COMPLETO);
+
+    expect(enlaceA(fixture, 'Abrir la historia clinica')).toBeNull();
+    expect(texto(fixture)).toContain('no muestra nada clinico');
+  });
+
   // -------------------------------------------------------------------------------------
   // 3. Las dos bajas
   // -------------------------------------------------------------------------------------
@@ -344,7 +358,10 @@ describe('FichaDePersonaPage', () => {
   // Apoyo
   // -------------------------------------------------------------------------------------
 
-  async function montar(resumen: object): Promise<ComponentFixture<FichaDePersonaPage>> {
+  async function montar(
+    resumen: object,
+    efectivos: readonly string[] = [PERMISO_PACIENTE_MANAGE],
+  ): Promise<ComponentFixture<FichaDePersonaPage>> {
     tenantContext.select({
       organizationId: 1,
       organizationName: 'Centro Belgrano',
@@ -353,7 +370,7 @@ describe('FichaDePersonaPage', () => {
     });
 
     permisos.cargar().subscribe();
-    httpMock.expectOne(RUTA_PERMISOS_EFECTIVOS).flush({ permissions: [PERMISO_PACIENTE_MANAGE] });
+    httpMock.expectOne(RUTA_PERMISOS_EFECTIVOS).flush({ permissions: efectivos });
 
     const fixture = TestBed.createComponent(FichaDePersonaPage);
     fixture.componentRef.setInput('personaId', String(PERSONA));
@@ -366,6 +383,11 @@ describe('FichaDePersonaPage', () => {
 
   function responder(pedido: TestRequest, cuerpo: object): void {
     pedido.flush(cuerpo);
+  }
+
+  function enlaceA(fixture: ComponentFixture<FichaDePersonaPage>, rotulo: string) {
+    const enlaces = (fixture.nativeElement as HTMLElement).querySelectorAll('a');
+    return Array.from(enlaces).find((a) => a.textContent?.trim() === rotulo) ?? null;
   }
 
   async function estabilizar(fixture: ComponentFixture<FichaDePersonaPage>): Promise<void> {

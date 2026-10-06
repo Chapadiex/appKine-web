@@ -8,6 +8,7 @@ import {
   signal,
   untracked,
 } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { Subscription } from 'rxjs';
 
 import { AntecedenteResponse } from '../../../../api/generated/model/antecedente-response';
@@ -54,7 +55,14 @@ type Estado =
  */
 @Component({
   selector: 'app-historia-clinica-page',
-  imports: [TimelineClinico, DetalleDeEntrada, VisorDeAdjunto, NuevaEntrada, NuevoAdjunto],
+  imports: [
+    RouterLink,
+    TimelineClinico,
+    DetalleDeEntrada,
+    VisorDeAdjunto,
+    NuevaEntrada,
+    NuevoAdjunto,
+  ],
   templateUrl: './historia-clinica-page.html',
   styleUrl: './historia-clinica.css',
 })
@@ -76,6 +84,9 @@ export class HistoriaClinicaPage {
 
   protected readonly seleccion = signal<EventoClinicoResponse | null>(null);
   protected readonly recargas = signal(0);
+
+  /** La ficha administrativa de la misma persona (D-e): el camino de ida y vuelta es uno solo. */
+  protected readonly rutaFicha = computed(() => `/pacientes/${this.personaId()}`);
 
   protected readonly historia = computed(() => {
     const estado = this.estado();

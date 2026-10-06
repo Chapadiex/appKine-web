@@ -39,6 +39,9 @@ export const TEXTO_DE_LA_ENTRADA = 'Dolor lumbar de tres semanas, sin irradiacio
 export interface HistoriaSembrada {
   readonly email: string;
   readonly organizacion: string;
+  readonly organizationId: number;
+  readonly consultorioId: number;
+  readonly membershipId: number;
   readonly personaId: number;
   readonly entradaId: number;
   readonly nombreCompleto: string;
@@ -127,6 +130,9 @@ export async function sembrarHistoria(request: APIRequestContext): Promise<Histo
   return {
     email,
     organizacion,
+    organizationId,
+    consultorioId,
+    membershipId,
     personaId: personaCreada.id,
     entradaId,
     nombreCompleto: `${personaCreada.apellido}, ${personaCreada.nombre}`,
@@ -154,4 +160,35 @@ async function elegirContexto(
 export async function entrarConContexto(page: Page, sembrada: HistoriaSembrada): Promise<void> {
   await ingresarPorPantalla(page, sembrada.email);
   await page.waitForURL((url) => !/\/(auth\/ingresar|seleccionar-contexto)/.test(url.pathname));
+}
+
+/**
+ * Le saca a la cuenta sembrada los dos permisos clinicos, por la API de grants, como lo haria un
+ * administrador. Es el camino "acceso clinico denegado": la persona y su historia siguen
+ * existiendo, lo que falta es el permiso.
+ */
+export async function quitarPermisosClinicos(
+  request: APIRequestContext,
+  sembrada: HistoriaSembrada,
+): Promise<void> {
+  const login = await request.post('/api/v1/auth/login', {
+    data: { email: sembrada.email, password: PASSWORD },
+  });
+  expect(login.status(), 'login por API').toBe(200);
+  const token = await elegirContexto(
+    request,
+    ((await login.json()) as { accessToken: string }).accessToken,
+    sembrada.organizationId,
+    sembrada.consultorioId,
+  );
+  for (const permissionCode of ['hc:read', 'hc:write']) {
+    const baja = await request.delete(
+      `/api/v1/organizations/${sembrada.organizationId}/memberships/${sembrada.membershipId}` +
+        `/grants/${encodeURIComponent(permissionCode)}?reason=${encodeURIComponent('Fin de la prueba E2E')}`,
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+    expect([200, 204], `baja del grant ${permissionCode}: ${await baja.text()}`).toContain(
+      baja.status(),
+    );
+  }
 }

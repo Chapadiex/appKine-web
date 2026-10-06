@@ -5,6 +5,8 @@
   en cada sesion, y nada de lo escrito se borra: se enmienda.
 </p>
 
+<p><a class="enlace" [routerLink]="rutaFicha()">Volver a la ficha de la persona</a></p>
+
 @switch (estado().tipo) {
   @case ('cargando') {
     <p class="estado estado--cargando" role="status">Cargando la historia clinica…</p>

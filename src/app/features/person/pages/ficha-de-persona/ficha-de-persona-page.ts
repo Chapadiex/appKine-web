@@ -3,7 +3,11 @@ import { RouterLink } from '@angular/router';
 
 import { ConfirmacionConMotivo } from '../../../../shared/components/confirmacion-con-motivo/confirmacion-con-motivo';
 import { HitoResponse } from '../../../../api/generated/model/hito-response';
-import { PERMISO_COBRO_REGISTER, PERMISO_PACIENTE_MANAGE } from '../../../../core/models/permisos';
+import {
+  PERMISO_COBRO_REGISTER,
+  PERMISO_HC_READ,
+  PERMISO_PACIENTE_MANAGE,
+} from '../../../../core/models/permisos';
 import { PermisoDirective } from '../../../../shared/directives/permiso.directive';
 import { PersonApi } from '../../services/person-api';
 import { PersonaResponse } from '../../../../api/generated/model/persona-response';
@@ -106,6 +110,7 @@ export class FichaDePersonaPage {
 
   protected readonly permisoManage = PERMISO_PACIENTE_MANAGE;
   protected readonly permisoCobro = PERMISO_COBRO_REGISTER;
+  protected readonly permisoHistoria = PERMISO_HC_READ;
 
   protected readonly documentoEnUnaLinea = documentoEnUnaLinea;
   protected readonly nombreCompleto = nombreCompleto;
@@ -161,6 +166,10 @@ export class FichaDePersonaPage {
   /** Rutas hermanas, absolutas: un `..` depende de donde este montada la pantalla. */
   protected readonly rutaDocumentos = computed(
     () => `/pacientes/${this.personaId()}/documentos` as const,
+  );
+  /** La historia se pide por persona: es la misma URL tenga o no historia abierta todavia. */
+  protected readonly rutaHistoriaClinica = computed(
+    () => `/historia-clinica/personas/${this.personaId()}` as const,
   );
   protected readonly rutaCoberturas = computed(
     () => `/pacientes/${this.personaId()}/coberturas` as const,

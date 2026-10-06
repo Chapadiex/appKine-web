@@ -95,6 +95,18 @@
       auditado: mostrarla al abrir una ficha de mostrador convertiria ese control en un tramite
       vacio. Lo clinico se consulta desde el modulo clinico, con su permiso.
     </p>
+    <!--
+      El enlace no abre nada clinico: lleva a la pantalla de la historia, que es la que pide el
+      motivo si hace falta. Solo se ofrece a un paciente —una persona sin perfil no tiene historia—
+      y a quien tiene hc:read. El permiso es UX: el backend rechaza igual.
+    -->
+    @if (ficha.esPaciente) {
+      <p *akinePermiso="permisoHistoria">
+        <a class="boton boton--secundario" [routerLink]="rutaHistoriaClinica()">
+          Abrir la historia clinica
+        </a>
+      </p>
+    }
   </section>
 
   <!-- Secciones que aportaron los modulos que el usuario SI puede ver. -->

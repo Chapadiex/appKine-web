@@ -111,3 +111,12 @@ export const PERMISO_TURNO_MANAGE = 'turno:manage';
  * dos sedes, pero quien la mira lo hace parado en un mostrador.
  */
 export const PERMISO_COBRO_REGISTER = 'cobro:register';
+
+/**
+ * Lectura de la Historia Clinica (M09, AKINE-04.01).
+ *
+ * <p>Solo decide si se OFRECE el enlace a la historia. No alcanza para leerla: sin relacion
+ * asistencial el backend pide ademas un motivo declarado (DP-03), y eso lo resuelve la pantalla de
+ * la historia. Por eso no se usa en un `permissionGuard`.
+ */
+export const PERMISO_HC_READ = 'hc:read';
