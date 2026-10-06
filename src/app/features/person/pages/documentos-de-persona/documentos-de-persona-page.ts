@@ -29,6 +29,7 @@ import {
   nombreDeCategoria,
   tamanoEnPalabras,
 } from '../../models/etiquetas-de-ficha';
+import { nombreDeContentDisposition } from '../../../../shared/utils/archivos';
 
 const TAMANO_DE_PAGINA = 20;
 
@@ -350,7 +351,7 @@ export class DocumentosDePersonaPage {
           const enlace = document.createElement('a');
           enlace.href = url;
           enlace.download =
-            nombreDelEncabezado(respuesta.headers.get('Content-Disposition')) ??
+            nombreDeContentDisposition(respuesta.headers.get('Content-Disposition')) ??
             adjunto.nombreArchivo ??
             'documento';
           enlace.click();
@@ -489,29 +490,4 @@ export class DocumentosDePersonaPage {
     this.filtro.set('VIGENTES');
     this.pagina.set(0);
   }
-}
-
-/**
- * El nombre del archivo declarado en `Content-Disposition`, o `null`.
- *
- * <p>Se leen las dos formas —`filename*=UTF-8''...` primero, `filename="..."` despues— porque un
- * nombre con acentos viaja en la primera y en la segunda queda transliterado o roto. Si ninguna
- * casa se devuelve `null` y quien llama usa el nombre de la metadata: inventar uno seria peor.
- */
-function nombreDelEncabezado(encabezado: string | null): string | null {
-  if (encabezado === null) {
-    return null;
-  }
-
-  const extendido = /filename\*=UTF-8''([^;]+)/i.exec(encabezado);
-  if (extendido !== null) {
-    try {
-      return decodeURIComponent(extendido[1]);
-    } catch {
-      // Porcentaje mal formado. Se sigue con la forma simple en vez de tirar la descarga.
-    }
-  }
-
-  const simple = /filename="?([^";]+)"?/i.exec(encabezado);
-  return simple === null ? null : simple[1];
 }

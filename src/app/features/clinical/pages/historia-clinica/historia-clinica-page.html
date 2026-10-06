@@ -1,0 +1,212 @@
+<h1>Historia clinica</h1>
+
+<p class="descripcion">
+  La historia clinica es de la persona en la organizacion. Reune lo que se registro en cada caso y
+  en cada sesion, y nada de lo escrito se borra: se enmienda.
+</p>
+
+@switch (estado().tipo) {
+  @case ('cargando') {
+    <p class="estado estado--cargando" role="status">Cargando la historia clinica…</p>
+  }
+
+  @case ('requiere-justificacion') {
+    <section class="tarjeta" aria-labelledby="titulo-justificacion">
+      <h2 id="titulo-justificacion">Declara el motivo del acceso</h2>
+      <p class="ayuda">
+        No figura que atiendas a esta persona en esta sede. Para ver su historia clinica tenes que
+        declarar por que la abris. El motivo queda registrado junto con cada lectura que hagas en
+        esta visita, y se vuelve a pedir la proxima vez que entres.
+      </p>
+
+      <form class="historia__formulario" (submit)="$event.preventDefault(); justificar()">
+        <div class="campo">
+          <label for="motivo-acceso">Motivo del acceso</label>
+          <input
+            id="motivo-acceso"
+            type="text"
+            [value]="motivoEscrito()"
+            [attr.aria-invalid]="intentoJustificar() && faltaMotivo()"
+            [attr.aria-describedby]="
+              intentoJustificar() && faltaMotivo() ? 'motivo-acceso-error' : 'motivo-acceso-ayuda'
+            "
+            (input)="motivoEscrito.set($any($event.target).value)"
+          />
+          <p id="motivo-acceso-ayuda" class="ayuda">
+            Por ejemplo: "interconsulta pedida por el profesional tratante".
+          </p>
+          @if (intentoJustificar() && faltaMotivo()) {
+            <p id="motivo-acceso-error" class="campo__error">
+              Sin motivo no se puede abrir la historia.
+            </p>
+          }
+        </div>
+        <div class="acciones">
+          <button type="submit" class="boton">Ver la historia clinica</button>
+        </div>
+      </form>
+    </section>
+  }
+
+  @case ('sin-historia') {
+    <section class="tarjeta" aria-labelledby="titulo-sin-historia">
+      <h2 id="titulo-sin-historia">Todavia no tiene historia clinica</h2>
+      <p class="estado estado--vacio">
+        Esta persona no tiene historia clinica en la organizacion. Se abre sola con la primera
+        sesion, o se puede abrir ahora para cargar antecedentes o adjuntos antes de atenderla.
+      </p>
+      @if (errorAlAbrir(); as problema) {
+        <p class="estado estado--error" role="alert">{{ problema.mensaje }}</p>
+      }
+      <div class="acciones">
+        <button type="button" class="boton" [disabled]="abriendo()" (click)="abrirHistoria()">
+          @if (abriendo()) {
+            Abriendo…
+          } @else {
+            Abrir la historia clinica
+          }
+        </button>
+      </div>
+    </section>
+  }
+
+  @case ('error') {
+    <section class="tarjeta" role="alert" aria-labelledby="titulo-error">
+      <h2 id="titulo-error">No se pudo abrir la historia clinica</h2>
+      <p class="estado estado--error">{{ error()?.mensaje }}</p>
+      @if (error()?.causa !== 'sin-permiso' && error()?.causa !== 'sin-contexto') {
+        <div class="acciones">
+          <button type="button" class="boton boton--secundario" (click)="reintentar()">
+            Reintentar
+          </button>
+        </div>
+      }
+    </section>
+  }
+
+  @case ('lista') {
+    @if (historia(); as hc) {
+      <section class="tarjeta" aria-labelledby="titulo-paciente">
+        <h2 id="titulo-paciente">{{ hc.personaNombreCompleto }}</h2>
+        <dl class="detalle">
+          @if (hc.personaDocumento) {
+            <dt>Documento</dt>
+            <dd>{{ hc.personaDocumento }}</dd>
+          }
+          <dt>Historia abierta</dt>
+          <dd>{{ fechaYHora(hc.abiertaEn) }}</dd>
+          <dt>Acceso</dt>
+          <dd>
+            @if (justificacion(); as motivo) {
+              Con motivo declarado: «{{ motivo }}»
+            } @else {
+              Por relacion asistencial
+            }
+          </dd>
+        </dl>
+
+        <h3>Resumen clinico</h3>
+        @if (hc.resumen) {
+          <p class="historia__cuerpo">{{ hc.resumen }}</p>
+        } @else {
+          <p class="estado estado--vacio">Sin resumen cargado.</p>
+        }
+
+        <h3>Antecedentes vigentes</h3>
+        @if (hc.antecedentes?.length) {
+          <ul class="historia__antecedentes">
+            @for (antecedente of hc.antecedentes; track antecedente.id) {
+              <li>
+                <b>{{ rotuloDeAntecedente(antecedente) }}:</b> {{ antecedente.descripcion }}
+              </li>
+            }
+          </ul>
+        } @else {
+          <p class="estado estado--vacio">Sin antecedentes registrados.</p>
+        }
+      </section>
+
+      <div class="historia__columnas">
+        <div class="historia__principal">
+          <app-timeline-clinico
+            [historiaClinicaId]="hc.id!"
+            [justificacion]="justificacion()"
+            [recargas]="recargas()"
+            [seleccionado]="claveElegida()"
+            (elegido)="elegir($event)"
+          />
+        </div>
+
+        <div class="historia__lateral">
+          @if (seleccion(); as evento) {
+            <section class="tarjeta" aria-labelledby="titulo-detalle">
+              <h2 id="titulo-detalle">
+                {{ etiquetaDeOrigen(evento.origen) }} · {{ fechaYHora(evento.ocurrioEn) }}
+              </h2>
+
+              @switch (evento.origen) {
+                @case ('ENTRADA_CLINICA') {
+                  <app-detalle-de-entrada
+                    [entradaId]="evento.referencia!"
+                    [justificacion]="justificacion()"
+                  />
+                }
+                @case ('ADJUNTO_CLINICO') {
+                  <app-visor-de-adjunto
+                    [historiaClinicaId]="hc.id!"
+                    [adjuntoId]="evento.referencia!"
+                    [justificacion]="justificacion()"
+                  />
+                }
+                @case ('ANTECEDENTE_CLINICO') {
+                  @if (antecedenteElegido(); as antecedente) {
+                    <p>
+                      <b>{{ rotuloDeAntecedente(antecedente) }}:</b> {{ antecedente.descripcion }}
+                    </p>
+                  } @else {
+                    <p class="ayuda">
+                      Este antecedente ya no esta vigente. Sigue registrado en la historia con su
+                      motivo de baja, pero esta pantalla solo muestra los vigentes.
+                    </p>
+                  }
+                }
+                @case ('SESION') {
+                  <p class="ayuda">
+                    Sesion cerrada. Lo que se registro en ella se consulta desde la atencion: el
+                    timeline la muestra como hecho, sin repetir su contenido.
+                  </p>
+                }
+              }
+
+              <div class="acciones">
+                <button type="button" class="boton boton--secundario" (click)="cerrarDetalle()">
+                  Cerrar el detalle
+                </button>
+              </div>
+            </section>
+          }
+
+          <section class="tarjeta" aria-labelledby="titulo-registrar">
+            <h2 id="titulo-registrar">Registrar en la historia</h2>
+            <details class="historia__plegable">
+              <summary>Nueva entrada clinica</summary>
+              <app-nueva-entrada
+                [historiaClinicaId]="hc.id!"
+                [justificacion]="justificacion()"
+                (registrada)="huboCambios()"
+              />
+            </details>
+            <details class="historia__plegable">
+              <summary>Subir un adjunto</summary>
+              <app-nuevo-adjunto
+                [historiaClinicaId]="hc.id!"
+                [justificacion]="justificacion()"
+                (subido)="huboCambios()"
+              />
+            </details>
+          </section>
+        </div>
+      </div>
+    }
+  }
+}

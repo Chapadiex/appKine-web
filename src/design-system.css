@@ -354,7 +354,8 @@ h1 {
 }
 
 .campo input,
-.campo select {
+.campo select,
+.campo textarea {
   padding: var(--esp-4) 0.625rem;
   border: var(--borde-fino) solid var(--color-borde-control);
   border-radius: var(--radio-md);
@@ -364,7 +365,8 @@ h1 {
 }
 
 .campo input:focus-visible,
-.campo select:focus-visible {
+.campo select:focus-visible,
+.campo textarea:focus-visible {
   outline: var(--foco-grosor) solid var(--color-foco);
   outline-offset: 1px;
 }
@@ -372,9 +374,18 @@ h1 {
 /* El estado invalido se dice tambien con el borde, no solo con el texto del error: el color
    nunca es el unico portador de informacion (WCAG 1.4.1), y el grosor cambia con el. */
 .campo input[aria-invalid='true'],
-.campo select[aria-invalid='true'] {
+.campo select[aria-invalid='true'],
+.campo textarea[aria-invalid='true'] {
   border-color: var(--color-peligro);
   border-width: var(--borde-medio);
+}
+
+/* El textarea ocupa el ancho y crece solo para abajo: horizontal desborda la tarjeta. */
+.campo textarea {
+  width: 100%;
+  box-sizing: border-box;
+  line-height: var(--linea-base);
+  resize: vertical;
 }
 
 .campo__opcional {

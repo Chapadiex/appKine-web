@@ -239,6 +239,18 @@ export const routes: Routes = [
     loadChildren: () => import('./features/clinical/clinical.routes').then((m) => m.routes),
   },
 
+  // Historia Clinica (M09/M25, D-a).
+  //
+  // Raiz propia y NO bajo `atencion`: la historia es de la persona en la organizacion y la
+  // atencion es una sesion de una sede. HC != Sesion es la regla maestra 1. La URL lleva la
+  // persona porque la historia se pide por persona, y una persona sin historia tiene que tener
+  // donde mostrarse. El detalle esta en `historia-clinica.routes.ts`.
+  {
+    path: 'historia-clinica',
+    canActivate: [authGuard],
+    loadChildren: () => import('./features/clinical/historia-clinica.routes').then((m) => m.routes),
+  },
+
   // Pantalla de permiso insuficiente (AKINE-01.03). Es el destino de `permissionGuard`.
   //
   // Sin guards, y no por descuido: quien llega aca YA paso por `authGuard` y `contextGuard`

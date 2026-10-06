@@ -1,0 +1,109 @@
+<section class="tarjeta" aria-labelledby="titulo-timeline">
+  <h2 id="titulo-timeline">Timeline clinico</h2>
+
+  <p class="ayuda">
+    Del hecho mas reciente al mas antiguo. Cada fila es un indice: el contenido se abre al elegirla,
+    y esa lectura queda registrada.
+  </p>
+
+  @if (casos().length > 0) {
+    <div class="campo">
+      <label for="timeline-caso">Caso clinico</label>
+      <select
+        id="timeline-caso"
+        [value]="casoId() === null ? '' : casoId()"
+        (change)="filtrarPorCaso($any($event.target).value)"
+      >
+        <option value="">Todos los hechos de la historia</option>
+        @for (opcion of opcionesDeCaso(); track opcion.id) {
+          <option [value]="opcion.id">{{ opcion.rotulo }}</option>
+        }
+      </select>
+    </div>
+  }
+
+  <p class="visualmente-oculto" aria-live="polite">{{ aviso() }}</p>
+
+  @switch (estado().tipo) {
+    @case ('cargando') {
+      <p class="estado estado--cargando" role="status">Cargando el timeline…</p>
+    }
+    @case ('error') {
+      <div role="alert">
+        <p class="estado estado--error">{{ error()?.mensaje }}</p>
+        <div class="acciones">
+          <button type="button" class="boton boton--secundario" (click)="reintentar()">
+            Reintentar
+          </button>
+        </div>
+      </div>
+    }
+    @case ('lista') {
+      @if (eventos().length === 0) {
+        <p class="estado estado--vacio">
+          @if (casoId() === null) {
+            Todavia no hay hechos clinicos registrados en esta historia.
+          } @else {
+            Este caso todavia no tiene hechos clinicos.
+          }
+        </p>
+      } @else {
+        <ol class="timeline" aria-label="Hechos clinicos, del mas reciente al mas antiguo">
+          @for (fila of filas(); track fila.clave) {
+            <li class="timeline__hecho">
+              @if (fila.conDetalle) {
+                <button
+                  type="button"
+                  class="timeline__boton"
+                  [class.timeline__boton--elegido]="seleccionado() === fila.clave"
+                  [attr.aria-pressed]="seleccionado() === fila.clave"
+                  (click)="elegido.emit(fila.evento)"
+                >
+                  <ng-container *ngTemplateOutlet="contenido; context: { $implicit: fila }" />
+                </button>
+              } @else {
+                <div class="timeline__boton timeline__boton--inerte">
+                  <ng-container *ngTemplateOutlet="contenido; context: { $implicit: fila }" />
+                </div>
+              }
+            </li>
+          }
+        </ol>
+
+        @if (errorAlCargarMas(); as problema) {
+          <p class="estado estado--error" role="alert">{{ problema.mensaje }}</p>
+        }
+
+        @if (hayMas()) {
+          <div class="acciones">
+            <button
+              type="button"
+              class="boton boton--secundario"
+              [disabled]="cargandoMas()"
+              (click)="cargarMas()"
+            >
+              @if (cargandoMas()) {
+                Cargando…
+              } @else {
+                Cargar hechos anteriores
+              }
+            </button>
+          </div>
+        } @else {
+          <p class="ayuda">Ese es el primer hecho de la historia.</p>
+        }
+      }
+    }
+  }
+</section>
+
+<ng-template #contenido let-fila>
+  <span class="timeline__origen">{{ fila.origen }}</span>
+  <span class="timeline__titulo">
+    {{ fila.evento.titulo }}
+    @if (fila.tipo) {
+      <span class="timeline__tipo">· {{ fila.tipo }}</span>
+    }
+  </span>
+  <time class="timeline__fecha" [attr.datetime]="fila.evento.ocurrioEn">{{ fila.fecha }}</time>
+</ng-template>
