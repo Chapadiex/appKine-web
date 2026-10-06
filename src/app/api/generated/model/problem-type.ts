@@ -168,6 +168,12 @@ export enum ProblemType {
 
     HTTPS___AKINE_APP_PROBLEMS_OBLIGACION_NO_COBRABLE = 'https://akine.app/problems/obligacion-no-cobrable',
 
+    HTTPS___AKINE_APP_PROBLEMS_COBRO_ANULADO = 'https://akine.app/problems/cobro-anulado',
+
+    HTTPS___AKINE_APP_PROBLEMS_COBRO_CON_REINTEGROS = 'https://akine.app/problems/cobro-con-reintegros',
+
+    HTTPS___AKINE_APP_PROBLEMS_SALDO_A_FAVOR_INSUFICIENTE = 'https://akine.app/problems/saldo-a-favor-insuficiente',
+
     HTTPS___AKINE_APP_PROBLEMS_CONSULTORIO_NO_OPERABLE = 'https://akine.app/problems/consultorio-no-operable',
 
     HTTPS___AKINE_APP_PROBLEMS_PERSONA_DOCUMENTO_TAKEN = 'https://akine.app/problems/persona-documento-taken',

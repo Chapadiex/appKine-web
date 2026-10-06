@@ -14,6 +14,10 @@ export interface ImputacionAplicada {
      * Lo que ESTE cobro aplico. El saldo que quedo vive en la obligacion.
      */
     importe?: number;
+    /**
+     * Cuando. Igual a `cobradoEn` si nacio con el cobro; posterior si aplico un anticipo despues.
+     */
+    imputadaEn?: string;
     obligacionId?: number;
 }
 

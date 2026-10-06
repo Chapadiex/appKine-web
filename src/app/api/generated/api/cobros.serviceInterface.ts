@@ -11,22 +11,44 @@ import { HttpHeaders }                                       from '@angular/comm
 
 import { Observable }                                        from 'rxjs';
 
+import { AnularCobro } from '../model/models';
 import { Cobro } from '../model/models';
+import { ImputarSaldoAFavor } from '../model/models';
 import { ProblemDetail } from '../model/models';
 import { RegistrarCobro } from '../model/models';
+import { ReintegrarSaldoAFavor } from '../model/models';
+import { ReintegroDeCobro } from '../model/models';
 
 
 import { Configuration }                                     from '../configuration';
 
+
+export interface AnularCobroRequestParams {
+    consultorioId: number;
+    cobroId: number;
+    anularCobro: AnularCobro;
+}
 
 export interface CobrosDeLaPersonaRequestParams {
     consultorioId: number;
     personaId: number;
 }
 
+export interface ImputarSaldoAFavorRequestParams {
+    consultorioId: number;
+    cobroId: number;
+    imputarSaldoAFavor: ImputarSaldoAFavor;
+}
+
 export interface RegistrarCobroRequestParams {
     consultorioId: number;
     registrarCobro: RegistrarCobro;
+}
+
+export interface ReintegrarSaldoAFavorRequestParams {
+    consultorioId: number;
+    cobroId: number;
+    reintegrarSaldoAFavor: ReintegrarSaldoAFavor;
 }
 
 export interface VerCobroRequestParams {
@@ -40,6 +62,14 @@ export interface CobrosServiceInterface {
     configuration: Configuration;
 
     /**
+     * Anular un cobro
+     * Revierte un cobro con trazabilidad (RF-M19-007, RN-M19-004), en una sola transaccion: cada imputacion **devuelve su importe a la deuda** —que vuelve a &#x60;PENDIENTE&#x60; o &#x60;PARCIAL&#x60;— y cada movimiento de caja del cobro **se revierte** en la jornada abierta hoy. Nada se borra: el cobro queda &#x60;ANULADO&#x60; con su motivo y **conserva su comprobante**.  Si el cobro entro en efectivo, la reversion exige caja abierta (409 &#x60;caja-no-abierta&#x60;) y plata en el cajon (409 &#x60;caja-saldo-insuficiente&#x60;). Un cobro que ya reintegro parte de su saldo a favor no se anula (409 &#x60;cobro-con-reintegros&#x60;): esa plata saldria del cajon dos veces.  Exige &#x60;cobro:register&#x60; **y** &#x60;caja:operate&#x60;: mueve plata del cajon.
+     * @endpoint post /api/v1/consultorios/{consultorioId}/cobros/{cobroId}/anulacion
+* @param requestParameters
+     */
+    anularCobro(requestParameters: AnularCobroRequestParams, extraHttpRequestParams?: any): Observable<Cobro>;
+
+    /**
      * Cobros de un paciente
      * Los cobros de un paciente en toda la organizacion, del mas reciente al mas viejo. Junto con las obligaciones forma su cuenta corriente.
      * @endpoint get /api/v1/consultorios/{consultorioId}/cobros
@@ -48,12 +78,28 @@ export interface CobrosServiceInterface {
     cobrosDeLaPersona(requestParameters: CobrosDeLaPersonaRequestParams, extraHttpRequestParams?: any): Observable<Array<Cobro>>;
 
     /**
+     * Imputar el saldo a favor de un cobro a una deuda
+     * Aplica parte del **anticipo** de un cobro a una deuda que nacio despues (RF-M19-003). Una deuda por pedido. **No mueve caja**: la plata entro cuando se cobro.  La deuda tiene que ser de la misma persona y la misma sede que el cobro, admitir cobro y estar en su moneda. Un cobro no imputa dos veces a la misma deuda: se imputa lo que corresponde de una vez.  Si otro operador uso el anticipo entre que la pantalla lo mostro y este confirmo, la respuesta es 409 &#x60;saldo-a-favor-insuficiente&#x60; con lo &#x60;disponible&#x60;. Manda &#x60;idempotencyKey&#x60;: un reintento devuelve el mismo cobro sin imputar dos veces.
+     * @endpoint post /api/v1/consultorios/{consultorioId}/cobros/{cobroId}/imputaciones
+* @param requestParameters
+     */
+    imputarSaldoAFavor(requestParameters: ImputarSaldoAFavorRequestParams, extraHttpRequestParams?: any): Observable<Cobro>;
+
+    /**
      * Registrar un cobro
-     * Recibe dinero por uno o varios medios y lo imputa a las deudas indicadas, emitiendo un **comprobante correlativo por sede**.  **Las dos sumas tienen que dar el total**: la de los medios y la de las imputaciones. Son invariantes de RN-M19 que ninguna constraint de base puede expresar, asi que las verifica el servidor y un cuerpo que no las cumple es 400. Sin la primera, un cobro de 8500 con un medio de 850 —un cero de menos— entraria igual, la deuda quedaria saldada y en la caja faltaria plata que nadie podria explicar.  **El descuento del saldo es atomico.** Si entre que la pantalla mostro la cuenta corriente y el operador confirmo otro cobro se llevo la plata, la respuesta es 409 &#x60;saldo-insuficiente&#x60; y no un saldo negativo.  **Manda &#x60;idempotencyKey&#x60;.** Un reintento devuelve el mismo cobro con el mismo comprobante; sin ella, un doble click cobra dos veces. La idempotencia se evalua antes de tocar el numerador, para que un reintento no consuma un numero de comprobante que despues nadie usa: la numeracion fiscal con huecos es peor que un cobro repetido.  **No hay anticipos ni anulacion todavia.** Los dos exigen la Caja (AKINE-07.03): un anticipo sin caja es plata que entro y que ningun arqueo puede encontrar, y un reintegro saca dinero de una caja que no existe.
+     * Recibe dinero por uno o varios medios y lo imputa a las deudas indicadas, emitiendo un **comprobante correlativo por sede**.  **Las dos sumas tienen que dar el total**: la de los medios y la de las imputaciones. Son invariantes de RN-M19 que ninguna constraint de base puede expresar, asi que las verifica el servidor y un cuerpo que no las cumple es 400. Sin la primera, un cobro de 8500 con un medio de 850 —un cero de menos— entraria igual, la deuda quedaria saldada y en la caja faltaria plata que nadie podria explicar.  **El descuento del saldo es atomico.** Si entre que la pantalla mostro la cuenta corriente y el operador confirmo otro cobro se llevo la plata, la respuesta es 409 &#x60;saldo-insuficiente&#x60; y no un saldo negativo.  **Manda &#x60;idempotencyKey&#x60;.** Un reintento devuelve el mismo cobro con el mismo comprobante; sin ella, un doble click cobra dos veces. La idempotencia se evalua antes de tocar el numerador, para que un reintento no consuma un numero de comprobante que despues nadie usa: la numeracion fiscal con huecos es peor que un cobro repetido.  **Anticipo.** Lo que no se imputa puede quedar a favor del paciente, pero **se declara** en &#x60;anticipo&#x60;: las imputaciones mas el anticipo tienen que dar el total. Un cobro puede ser todo anticipo —sin imputaciones, y entonces con &#x60;moneda&#x60;—. La plata entra a la caja ahora, una vez, y se aplica despues con &#x60;imputarSaldoAFavor&#x60; o se devuelve con &#x60;reintegrarSaldoAFavor&#x60;.
      * @endpoint post /api/v1/consultorios/{consultorioId}/cobros
 * @param requestParameters
      */
     registrarCobro(requestParameters: RegistrarCobroRequestParams, extraHttpRequestParams?: any): Observable<Cobro>;
+
+    /**
+     * Reintegrar el saldo a favor de un cobro
+     * Devuelve en dinero parte del **anticipo** de un cobro (DP-06). Es una salida de caja de origen &#x60;REINTEGRO&#x60; y no una reversion: puede ser parcial, repetirse y salir por otro medio que el que entro. **No toca ninguna deuda.**  En efectivo exige caja abierta y plata en el cajon. Si el saldo a favor no alcanza, 409 &#x60;saldo-a-favor-insuficiente&#x60; con lo &#x60;disponible&#x60;. Manda &#x60;idempotencyKey&#x60;: un reintento no devuelve dos veces.  Exige &#x60;cobro:register&#x60; **y** &#x60;caja:operate&#x60;.
+     * @endpoint post /api/v1/consultorios/{consultorioId}/cobros/{cobroId}/reintegros
+* @param requestParameters
+     */
+    reintegrarSaldoAFavor(requestParameters: ReintegrarSaldoAFavorRequestParams, extraHttpRequestParams?: any): Observable<ReintegroDeCobro>;
 
     /**
      * Recuperar un comprobante

@@ -12,21 +12,29 @@ import { ImputacionDeCobro } from './imputacion-de-cobro';
 
 
 /**
- * Dinero recibido, con sus medios y sus imputaciones. La suma de los medios y la de las imputaciones tienen que dar el total.
+ * Dinero recibido, con sus medios, sus imputaciones y su anticipo. La suma de los medios tiene que dar el total, y la de las imputaciones mas el anticipo tambien.
  */
 export interface RegistrarCobro { 
+    /**
+     * Lo que queda **a favor** del paciente (anticipo, DP-06). Se declara: lo que no se imputa y no se declara aca es un 400 `cobro-no-cuadra`, no un saldo a favor silencioso. Entra a la caja ahora y se imputa despues con `imputarSaldoAFavor`. Por defecto cero.
+     */
+    anticipo?: number;
     /**
      * Clave del cliente para que un reintento no cobre dos veces. Reusarla con **otro** contenido devuelve 409, no el cobro anterior.
      */
     idempotencyKey?: string;
     /**
-     * Contra que deudas se aplica. Un cobro puede saldar varias sesiones juntas. **Su suma tiene que dar el total**: mientras no existan los anticipos —AKINE-07.03, junto con la Caja— todo el dinero recibido tiene que aplicarse a alguna deuda.
+     * Contra que deudas se aplica. Un cobro puede saldar varias sesiones juntas. **Su suma mas el `anticipo` tiene que dar el total.** Puede venir vacia si todo el cobro es anticipo.
      */
-    imputaciones: Array<ImputacionDeCobro>;
+    imputaciones?: Array<ImputacionDeCobro>;
     /**
      * Por que via entro. Puede ser mas de uno: mitad efectivo y mitad tarjeta es normal. **Su suma tiene que dar el total.**
      */
     medios: Array<MedioDeCobro>;
+    /**
+     * Moneda del cobro. **Obligatoria si no hay imputaciones**: sin deudas no hay de donde tomarla. Con imputaciones sale de ellas y, si viene, tiene que coincidir.
+     */
+    moneda?: string;
     /**
      * Quien paga
      */
