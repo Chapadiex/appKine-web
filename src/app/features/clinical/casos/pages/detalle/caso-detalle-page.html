@@ -1,0 +1,219 @@
+<h1>Detalle del caso clinico</h1>
+
+@if (error(); as problema) {
+  <section class="tarjeta" role="alert" data-testid="caso-error">
+    <p class="estado estado--error">{{ problema.mensaje }}</p>
+    @if (problema.causa === 'version-vieja') {
+      <p class="ayuda">
+        Otra persona modifico el caso antes. Ya se volvio a leer; lo que escribiste sigue en
+        pantalla para que lo revises y vuelvas a guardar.
+      </p>
+    }
+  </section>
+}
+
+@if (cargando() && !caso()) {
+  <p class="estado estado--cargando">Cargando el caso…</p>
+}
+
+@if (caso(); as c) {
+  <section class="tarjeta" data-testid="caso-detalle">
+    <h2>Caso {{ c.numeroCaso }}</h2>
+    <p>
+      Estado: <b data-testid="caso-estado">{{ c.estado }}</b>
+    </p>
+    <p><b>Diagnostico presuntivo:</b> {{ c.diagnosticoPresuntivo }}</p>
+    <p><b>Objetivo terapeutico:</b> {{ c.objetivoTerapeutico || 'Sin objetivo cargado' }}</p>
+    @if (c.abiertoEn) {
+      <p class="ayuda">Abierto el {{ c.abiertoEn | date: 'dd/MM/yyyy HH:mm' }}</p>
+    }
+    @if (cerrado()) {
+      <p>
+        <b>Cerrado</b>
+        @if (c.cerradoEn) {
+          el {{ c.cerradoEn | date: 'dd/MM/yyyy HH:mm' }}
+        }
+        · Motivo de cierre: {{ c.motivoCierre }}
+      </p>
+    }
+    <p><a class="enlace" [routerLink]="rutaPlan()">Ver plan de tratamiento</a></p>
+    <p>
+      <a class="enlace" routerLink="/atencion">Volver</a>
+    </p>
+  </section>
+
+  <section class="tarjeta" data-testid="caso-equipo">
+    <h2>Equipo</h2>
+    @if (vigentes().length === 0) {
+      <p class="ayuda">El caso no tiene equipo vigente.</p>
+    } @else {
+      <ul>
+        @for (p of vigentes(); track p.id ?? p.profesionalMembershipId) {
+          <li>Profesional {{ p.profesionalMembershipId }} · {{ p.rol }}</li>
+        }
+      </ul>
+    }
+    @if (historicos().length > 0) {
+      <h3>Historico</h3>
+      <ul>
+        @for (p of historicos(); track p.id ?? p.profesionalMembershipId) {
+          <li>
+            Profesional {{ p.profesionalMembershipId }} · {{ p.rol }} ·
+            {{ p.desde | date: 'dd/MM/yyyy' }} a {{ p.hasta | date: 'dd/MM/yyyy' }}
+          </li>
+        }
+      </ul>
+    }
+
+    @if (activo()) {
+      <h3>Cambiar equipo</h3>
+      @for (i of integrantes(); track $index) {
+        <div class="grupo">
+          <label class="campo">
+            Membership del profesional
+            <input
+              type="number"
+              min="1"
+              [value]="i.membershipId"
+              (input)="cambiarIntegrante($index, { membershipId: $any($event.target).value })"
+            />
+          </label>
+          <label class="campo">
+            Rol
+            <select
+              [value]="i.rol"
+              (change)="cambiarIntegrante($index, { rol: $any($event.target).value })"
+            >
+              @for (r of roles; track r) {
+                <option [value]="r" [selected]="r === i.rol">{{ r }}</option>
+              }
+            </select>
+          </label>
+          <button type="button" class="boton boton--secundario" (click)="quitarIntegrante($index)">
+            Quitar
+          </button>
+        </div>
+      }
+      <div class="acciones">
+        <button type="button" class="boton boton--secundario" (click)="agregarIntegrante()">
+          Agregar integrante
+        </button>
+        <button
+          type="button"
+          class="boton"
+          data-testid="caso-equipo-guardar"
+          [disabled]="guardando() || !equipoValido()"
+          (click)="guardarEquipo()"
+        >
+          Guardar equipo
+        </button>
+      </div>
+    }
+  </section>
+
+  @if (activo() || cerrado()) {
+    <section class="tarjeta">
+      <h2>Acciones</h2>
+      <div class="acciones">
+        @if (activo()) {
+          <button
+            type="button"
+            class="boton boton--secundario"
+            data-testid="caso-editar"
+            [disabled]="guardando()"
+            (click)="abrirPanel('editar')"
+          >
+            Editar
+          </button>
+          <button
+            type="button"
+            class="boton boton--secundario"
+            data-testid="caso-cerrar"
+            [disabled]="guardando()"
+            (click)="abrirPanel('cerrar')"
+          >
+            Cerrar caso
+          </button>
+        }
+        @if (cerrado()) {
+          <button
+            type="button"
+            class="boton boton--secundario"
+            data-testid="caso-reabrir"
+            [disabled]="guardando()"
+            (click)="abrirPanel('reabrir')"
+          >
+            Reabrir caso
+          </button>
+        }
+      </div>
+
+      @if (panel() === 'editar') {
+        <label class="campo">
+          Diagnostico presuntivo
+          <textarea
+            rows="3"
+            [value]="diagnostico()"
+            (input)="diagnostico.set($any($event.target).value)"
+          ></textarea>
+        </label>
+        <label class="campo">
+          Objetivo terapeutico
+          <textarea
+            rows="3"
+            [value]="objetivo()"
+            (input)="objetivo.set($any($event.target).value)"
+          ></textarea>
+        </label>
+      } @else if (panel() !== null) {
+        <label class="campo">
+          Motivo
+          <input
+            type="text"
+            data-testid="caso-motivo"
+            [value]="motivo()"
+            (input)="motivo.set($any($event.target).value)"
+          />
+        </label>
+      }
+
+      @if (panel() !== null) {
+        <div class="acciones">
+          <button
+            type="button"
+            class="boton"
+            data-testid="caso-confirmar"
+            [disabled]="guardando() || !puedeConfirmar()"
+            (click)="confirmar()"
+          >
+            Confirmar
+          </button>
+          <button type="button" class="boton boton--secundario" (click)="cancelarPanel()">
+            Cancelar
+          </button>
+        </div>
+      }
+    </section>
+  }
+
+  <section class="tarjeta" data-testid="caso-eventos">
+    <h2>Linea de eventos</h2>
+    @if (eventos().length === 0) {
+      <p class="ayuda">Todavia no hay eventos.</p>
+    } @else {
+      <ol>
+        @for (e of eventos(); track e.id ?? $index) {
+          <li>
+            <b>{{ e.tipo }}</b> · {{ e.ocurrioEn | date: 'dd/MM/yyyy HH:mm' }}
+            @if (e.motivo) {
+              · Motivo: {{ e.motivo }}
+            }
+            @if (e.detalle) {
+              <span class="ayuda"> — {{ e.detalle }}</span>
+            }
+          </li>
+        }
+      </ol>
+    }
+  </section>
+}
