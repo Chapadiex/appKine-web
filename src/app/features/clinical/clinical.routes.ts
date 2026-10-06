@@ -46,9 +46,16 @@ export const routes: Routes = [
     title: 'AKINE - Atencion clinica',
   },
   {
+<<<<<<< HEAD
     path: 'historia/:personaId',
     canActivate: [contextGuard],
     loadComponent: () => import('./timeline/timeline-page').then((m) => m.TimelinePage),
     title: 'AKINE - Historia clinica',
+=======
+    path: 'planes/:casoId',
+    canActivate: [contextGuard],
+    loadComponent: () => import('./plan/plan-page').then((m) => m.PlanPage),
+    title: 'AKINE - Plan de tratamiento',
+>>>>>>> symphony/akine-g3/A3
   },
 ];
