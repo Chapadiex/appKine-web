@@ -124,6 +124,10 @@ export function traducirErrorCaso(error: unknown): ErrorCaso {
   }
 
   if (error.status === 409) {
+    if (error.problemType) {
+      // Cualquier otro 409 con problemType no reconocido. Gana el detail del backend.
+      return { mensaje: conDetalle(error, MENSAJE_CONFLICTO), causa: 'conflicto' };
+    }
     // El 409 de caso cerrado no trae un problemType propio: cae aca. No se reintenta.
     return { mensaje: conDetalle(error, MENSAJE_CASO_CERRADO), causa: 'caso-cerrado' };
   }
