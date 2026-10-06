@@ -1,6 +1,5 @@
-import { HttpErrorResponse } from '@angular/common/http';
-
 import { traducirErrorCaso } from './casos-errors';
+import { AkineHttpError, ProblemDetail } from '../../../core/interceptors/error.interceptor';
 
 /**
  * Spec de `traducirErrorCaso`: la tabla de rechazos del backend a la causa de dominio.
@@ -9,64 +8,80 @@ import { traducirErrorCaso } from './casos-errors';
  * duplicado, no reintentar), asi que confundir dos rechazos no es cosmetico: deja al profesional
  * sin la accion correcta. Se testea la causa, no el texto exacto del mensaje.
  *
- * <p>BLOQUEADO (spec): `traducirErrorCaso` devuelve 'otro' para TODA forma de entrada que este
- * nodo puede construir sin ver la implementacion: `HttpErrorResponse` por status (0/400/403/404),
- * por `.error.type` (URL completa y slug pelado), por `.error.problemType`, y objetos planos
- * equivalentes. La forma real que reconoce la produce el `errorInterceptor` en la capa HTTP, que el
- * encargo ("mockear CasosApi, sin HTTP") deja fuera de alcance. Estos casos quedan en `skip` hasta
- * que el padre agregue `casos-errors.ts` (+ el interceptor / tipo de error) a las Ubicaciones, o
- * autorice testear errores por el pipeline HTTP real como hace `atencion-page.spec.ts`.
+ * <p>La entrada es un `AkineHttpError` (lo que produce el `errorInterceptor` y lo que emiten las
+ * operaciones de `CasosApi`): la funcion ignora cualquier otra forma. El `problemType` sale del
+ * ultimo segmento de `type` y gana sobre el status; sin `problemType` conocido, decide el status.
  */
 describe('traducirErrorCaso', () => {
-  function problema(status: number, slug?: string): HttpErrorResponse {
-    return new HttpErrorResponse({
-      status,
-      statusText: String(status),
-      error: slug ? { type: `https://akine.app/problems/${slug}`, status, detail: 'detalle' } : {},
-    });
+  function akine(status: number, slug?: string, esDeRed = false): AkineHttpError {
+    const problem: ProblemDetail | null = slug
+      ? { type: `https://akine.app/problems/${slug}`, status, detail: 'detalle del backend' }
+      : null;
+    return new AkineHttpError(status, problem, esDeRed);
   }
 
-  it.skip('un 409 concurrent-modification es version-vieja: se relee y se reintenta', () => {
-    const r = traducirErrorCaso(problema(409, 'concurrent-modification'));
+  it('un 409 concurrent-modification es version-vieja: se relee y se reintenta', () => {
+    const r = traducirErrorCaso(akine(409, 'concurrent-modification'));
     expect(r.causa).toBe('version-vieja');
     expect(r.mensaje.length).toBeGreaterThan(0);
   });
 
-  it.skip('un 409 caso-clinico-posible-duplicado es posible-duplicado: se confirma, no se reintenta a ciegas', () => {
-    const r = traducirErrorCaso(problema(409, 'caso-clinico-posible-duplicado'));
+  it('un 409 caso-clinico-posible-duplicado es posible-duplicado: se confirma, no se reintenta a ciegas', () => {
+    const r = traducirErrorCaso(akine(409, 'caso-clinico-posible-duplicado'));
     expect(r.causa).toBe('posible-duplicado');
     expect(r.mensaje.length).toBeGreaterThan(0);
   });
 
-  it.skip('un 400 de validacion es validacion', () => {
-    const r = traducirErrorCaso(problema(400, 'validation-error'));
+  it('un 409 sin problemType propio es caso-cerrado: no se reintenta', () => {
+    const r = traducirErrorCaso(akine(409));
+    expect(r.causa).toBe('caso-cerrado');
+    expect(r.mensaje.length).toBeGreaterThan(0);
+  });
+
+  it('missing-tenant-context es sin-contexto, y gana sobre el status', () => {
+    const r = traducirErrorCaso(akine(403, 'missing-tenant-context'));
+    expect(r.causa).toBe('sin-contexto');
+  });
+
+  it('subscription-suspended es suscripcion-suspendida', () => {
+    const r = traducirErrorCaso(akine(409, 'subscription-suspended'));
+    expect(r.causa).toBe('suscripcion-suspendida');
+  });
+
+  it('caso-sin-motivo-de-cierre es validacion', () => {
+    const r = traducirErrorCaso(akine(409, 'caso-sin-motivo-de-cierre'));
     expect(r.causa).toBe('validacion');
-    expect(r.mensaje.length).toBeGreaterThan(0);
   });
 
-  it.skip('un 403 es sin-permiso', () => {
-    const r = traducirErrorCaso(problema(403));
+  it('un 400 sin slug es validacion', () => {
+    const r = traducirErrorCaso(akine(400));
+    expect(r.causa).toBe('validacion');
+  });
+
+  it('un 403 sin slug es sin-permiso', () => {
+    const r = traducirErrorCaso(akine(403));
     expect(r.causa).toBe('sin-permiso');
-    expect(r.mensaje.length).toBeGreaterThan(0);
   });
 
-  it.skip('un 404 es no-encontrado', () => {
-    const r = traducirErrorCaso(problema(404));
+  it('un 404 es no-encontrado', () => {
+    const r = traducirErrorCaso(akine(404));
     expect(r.causa).toBe('no-encontrado');
-    expect(r.mensaje.length).toBeGreaterThan(0);
   });
 
-  it.skip('un fallo de red (status 0) es red', () => {
-    const r = traducirErrorCaso(
-      new HttpErrorResponse({ status: 0, error: new ProgressEvent('error') }),
-    );
+  it('un 429 es limite', () => {
+    const r = traducirErrorCaso(akine(429));
+    expect(r.causa).toBe('limite');
+  });
+
+  it('un fallo de red es red, sin importar el status', () => {
+    const r = traducirErrorCaso(akine(0, undefined, true));
     expect(r.causa).toBe('red');
     expect(r.mensaje.length).toBeGreaterThan(0);
   });
 
-  it('algo que no es un error HTTP cae en otro, sin romperse', () => {
+  it('algo que no es un AkineHttpError cae en otro, sin romperse', () => {
     expect(traducirErrorCaso(new Error('boom')).causa).toBe('otro');
     expect(traducirErrorCaso(undefined).causa).toBe('otro');
-    expect(traducirErrorCaso({ cualquier: 'cosa' }).causa).toBe('otro');
+    expect(traducirErrorCaso({ status: 404 }).causa).toBe('otro');
   });
 });

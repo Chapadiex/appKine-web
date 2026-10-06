@@ -1,8 +1,9 @@
-import { HttpErrorResponse } from '@angular/common/http';
 import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { Observable, of, throwError } from 'rxjs';
+
+import { AkineHttpError } from '../../../../../core/interceptors/error.interceptor';
 
 @Component({ template: '', standalone: true })
 class RutaVacia {}
@@ -22,12 +23,12 @@ const ABIERTO: CasoClinico = {
   numeroCaso: 3,
 };
 
-function problema(status: number, slug: string): HttpErrorResponse {
-  return new HttpErrorResponse({
+function problema(status: number, slug: string): AkineHttpError {
+  return new AkineHttpError(
     status,
-    statusText: String(status),
-    error: { type: `https://akine.app/problems/${slug}`, status, detail: 'detalle' },
-  });
+    { type: `https://akine.app/problems/${slug}`, status, detail: 'detalle' },
+    false,
+  );
 }
 
 /**
@@ -70,11 +71,7 @@ describe('CasoAltaPage', () => {
     expect(api.abrir.mock.calls[0][0]).toBe(HC);
   });
 
-  // BLOQUEADO (spec): la pantalla clasifica el 409 via `traducirErrorCaso`, que con el error
-  // mockeado en la fachada devuelve 'otro' (muestra el cartel generico, no el aviso de duplicado).
-  // La forma de error que reconoce la produce el `errorInterceptor` HTTP, fuera del alcance
-  // "mockear CasosApi, sin HTTP". Pendiente de que el padre defina esa forma o habilite el pipeline.
-  it.skip('ante un posible duplicado no cierra: avisa y ofrece confirmar', async () => {
+  it('ante un posible duplicado no cierra: avisa y ofrece confirmar', async () => {
     api.abrir.mockReturnValue(throwError(() => problema(409, 'caso-clinico-posible-duplicado')));
     const fixture = montar();
 
@@ -86,7 +83,7 @@ describe('CasoAltaPage', () => {
     expect(testid(fixture, 'caso-confirmar-duplicado')).not.toBeNull();
   });
 
-  it.skip('confirmar el duplicado reenvia, ahora marcando la confirmacion', async () => {
+  it('confirmar el duplicado reenvia, ahora marcando la confirmacion', async () => {
     api.abrir.mockReturnValue(throwError(() => problema(409, 'caso-clinico-posible-duplicado')));
     const fixture = montar();
 
