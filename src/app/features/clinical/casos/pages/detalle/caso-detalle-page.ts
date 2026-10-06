@@ -20,7 +20,7 @@ import { CasosApi } from '../../casos-api';
 import { ErrorCaso, traducirErrorCaso } from '../../casos-errors';
 
 /** Enlace al plan de tratamiento del caso. Local a proposito: A2 lo reconcilia con A3. */
-const RUTA_PLAN_DEL_CASO = (casoId: number) => ['/atencion', 'plan', 'caso', casoId];
+const RUTA_PLAN_DEL_CASO = (casoId: number) => ['/atencion', 'planes', casoId];
 
 type PanelCaso = 'editar' | 'cerrar' | 'reabrir';
 
