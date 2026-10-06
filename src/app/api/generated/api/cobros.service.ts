@@ -17,11 +17,19 @@ import { Observable }                                        from 'rxjs';
 import { OpenApiHttpParams, QueryParamStyle } from '../query.params';
 
 // @ts-ignore
+import { AnularCobro } from '../model/anular-cobro';
+// @ts-ignore
 import { Cobro } from '../model/cobro';
+// @ts-ignore
+import { ImputarSaldoAFavor } from '../model/imputar-saldo-a-favor';
 // @ts-ignore
 import { ProblemDetail } from '../model/problem-detail';
 // @ts-ignore
 import { RegistrarCobro } from '../model/registrar-cobro';
+// @ts-ignore
+import { ReintegrarSaldoAFavor } from '../model/reintegrar-saldo-a-favor';
+// @ts-ignore
+import { ReintegroDeCobro } from '../model/reintegro-de-cobro';
 
 // @ts-ignore
 import { BASE_PATH, COLLECTION_FORMATS }                     from '../variables';
@@ -29,8 +37,11 @@ import { Configuration }                                     from '../configurat
 import { BaseService } from '../api.base.service';
 import {
     CobrosServiceInterface,
+    AnularCobroRequestParams,
     CobrosDeLaPersonaRequestParams,
+    ImputarSaldoAFavorRequestParams,
     RegistrarCobroRequestParams,
+    ReintegrarSaldoAFavorRequestParams,
     VerCobroRequestParams
 } from './cobros.serviceInterface';
 
@@ -43,6 +54,86 @@ export class CobrosService extends BaseService implements CobrosServiceInterface
 
     constructor(protected httpClient: HttpClient, @Optional() @Inject(BASE_PATH) basePath: string|string[], @Optional() configuration?: Configuration) {
         super(basePath, configuration);
+    }
+
+    /**
+     * Anular un cobro
+     * Revierte un cobro con trazabilidad (RF-M19-007, RN-M19-004), en una sola transaccion: cada imputacion **devuelve su importe a la deuda** —que vuelve a &#x60;PENDIENTE&#x60; o &#x60;PARCIAL&#x60;— y cada movimiento de caja del cobro **se revierte** en la jornada abierta hoy. Nada se borra: el cobro queda &#x60;ANULADO&#x60; con su motivo y **conserva su comprobante**.  Si el cobro entro en efectivo, la reversion exige caja abierta (409 &#x60;caja-no-abierta&#x60;) y plata en el cajon (409 &#x60;caja-saldo-insuficiente&#x60;). Un cobro que ya reintegro parte de su saldo a favor no se anula (409 &#x60;cobro-con-reintegros&#x60;): esa plata saldria del cajon dos veces.  Exige &#x60;cobro:register&#x60; **y** &#x60;caja:operate&#x60;: mueve plata del cajon.
+     * @endpoint post /api/v1/consultorios/{consultorioId}/cobros/{cobroId}/anulacion
+     * @param requestParameters
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public anularCobro(requestParameters: AnularCobroRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<Cobro>;
+    public anularCobro(requestParameters: AnularCobroRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<Cobro>>;
+    public anularCobro(requestParameters: AnularCobroRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<Cobro>>;
+    public anularCobro(requestParameters: AnularCobroRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        const consultorioId = requestParameters?.consultorioId;
+        if (consultorioId === null || consultorioId === undefined) {
+            throw new Error('Required parameter consultorioId was null or undefined when calling anularCobro.');
+        }
+        const cobroId = requestParameters?.cobroId;
+        if (cobroId === null || cobroId === undefined) {
+            throw new Error('Required parameter cobroId was null or undefined when calling anularCobro.');
+        }
+        const anularCobro = requestParameters?.anularCobro;
+        if (anularCobro === null || anularCobro === undefined) {
+            throw new Error('Required parameter anularCobro was null or undefined when calling anularCobro.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        // to determine the Content-Type header
+        const consumes: string[] = [
+            'application/json'
+        ];
+        const httpContentTypeSelected: string | undefined = this.configuration.selectHeaderContentType(consumes);
+        if (httpContentTypeSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Content-Type', httpContentTypeSelected);
+        }
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/consultorios/${this.configuration.encodeParam({name: "consultorioId", value: consultorioId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/cobros/${this.configuration.encodeParam({name: "cobroId", value: cobroId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/anulacion`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<Cobro>('post', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                body: anularCobro,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
     }
 
     /**
@@ -124,8 +215,88 @@ export class CobrosService extends BaseService implements CobrosServiceInterface
     }
 
     /**
+     * Imputar el saldo a favor de un cobro a una deuda
+     * Aplica parte del **anticipo** de un cobro a una deuda que nacio despues (RF-M19-003). Una deuda por pedido. **No mueve caja**: la plata entro cuando se cobro.  La deuda tiene que ser de la misma persona y la misma sede que el cobro, admitir cobro y estar en su moneda. Un cobro no imputa dos veces a la misma deuda: se imputa lo que corresponde de una vez.  Si otro operador uso el anticipo entre que la pantalla lo mostro y este confirmo, la respuesta es 409 &#x60;saldo-a-favor-insuficiente&#x60; con lo &#x60;disponible&#x60;. Manda &#x60;idempotencyKey&#x60;: un reintento devuelve el mismo cobro sin imputar dos veces.
+     * @endpoint post /api/v1/consultorios/{consultorioId}/cobros/{cobroId}/imputaciones
+     * @param requestParameters
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public imputarSaldoAFavor(requestParameters: ImputarSaldoAFavorRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<Cobro>;
+    public imputarSaldoAFavor(requestParameters: ImputarSaldoAFavorRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<Cobro>>;
+    public imputarSaldoAFavor(requestParameters: ImputarSaldoAFavorRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<Cobro>>;
+    public imputarSaldoAFavor(requestParameters: ImputarSaldoAFavorRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        const consultorioId = requestParameters?.consultorioId;
+        if (consultorioId === null || consultorioId === undefined) {
+            throw new Error('Required parameter consultorioId was null or undefined when calling imputarSaldoAFavor.');
+        }
+        const cobroId = requestParameters?.cobroId;
+        if (cobroId === null || cobroId === undefined) {
+            throw new Error('Required parameter cobroId was null or undefined when calling imputarSaldoAFavor.');
+        }
+        const imputarSaldoAFavor = requestParameters?.imputarSaldoAFavor;
+        if (imputarSaldoAFavor === null || imputarSaldoAFavor === undefined) {
+            throw new Error('Required parameter imputarSaldoAFavor was null or undefined when calling imputarSaldoAFavor.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        // to determine the Content-Type header
+        const consumes: string[] = [
+            'application/json'
+        ];
+        const httpContentTypeSelected: string | undefined = this.configuration.selectHeaderContentType(consumes);
+        if (httpContentTypeSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Content-Type', httpContentTypeSelected);
+        }
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/consultorios/${this.configuration.encodeParam({name: "consultorioId", value: consultorioId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/cobros/${this.configuration.encodeParam({name: "cobroId", value: cobroId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/imputaciones`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<Cobro>('post', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                body: imputarSaldoAFavor,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
      * Registrar un cobro
-     * Recibe dinero por uno o varios medios y lo imputa a las deudas indicadas, emitiendo un **comprobante correlativo por sede**.  **Las dos sumas tienen que dar el total**: la de los medios y la de las imputaciones. Son invariantes de RN-M19 que ninguna constraint de base puede expresar, asi que las verifica el servidor y un cuerpo que no las cumple es 400. Sin la primera, un cobro de 8500 con un medio de 850 —un cero de menos— entraria igual, la deuda quedaria saldada y en la caja faltaria plata que nadie podria explicar.  **El descuento del saldo es atomico.** Si entre que la pantalla mostro la cuenta corriente y el operador confirmo otro cobro se llevo la plata, la respuesta es 409 &#x60;saldo-insuficiente&#x60; y no un saldo negativo.  **Manda &#x60;idempotencyKey&#x60;.** Un reintento devuelve el mismo cobro con el mismo comprobante; sin ella, un doble click cobra dos veces. La idempotencia se evalua antes de tocar el numerador, para que un reintento no consuma un numero de comprobante que despues nadie usa: la numeracion fiscal con huecos es peor que un cobro repetido.  **No hay anticipos ni anulacion todavia.** Los dos exigen la Caja (AKINE-07.03): un anticipo sin caja es plata que entro y que ningun arqueo puede encontrar, y un reintegro saca dinero de una caja que no existe.
+     * Recibe dinero por uno o varios medios y lo imputa a las deudas indicadas, emitiendo un **comprobante correlativo por sede**.  **Las dos sumas tienen que dar el total**: la de los medios y la de las imputaciones. Son invariantes de RN-M19 que ninguna constraint de base puede expresar, asi que las verifica el servidor y un cuerpo que no las cumple es 400. Sin la primera, un cobro de 8500 con un medio de 850 —un cero de menos— entraria igual, la deuda quedaria saldada y en la caja faltaria plata que nadie podria explicar.  **El descuento del saldo es atomico.** Si entre que la pantalla mostro la cuenta corriente y el operador confirmo otro cobro se llevo la plata, la respuesta es 409 &#x60;saldo-insuficiente&#x60; y no un saldo negativo.  **Manda &#x60;idempotencyKey&#x60;.** Un reintento devuelve el mismo cobro con el mismo comprobante; sin ella, un doble click cobra dos veces. La idempotencia se evalua antes de tocar el numerador, para que un reintento no consuma un numero de comprobante que despues nadie usa: la numeracion fiscal con huecos es peor que un cobro repetido.  **Anticipo.** Lo que no se imputa puede quedar a favor del paciente, pero **se declara** en &#x60;anticipo&#x60;: las imputaciones mas el anticipo tienen que dar el total. Un cobro puede ser todo anticipo —sin imputaciones, y entonces con &#x60;moneda&#x60;—. La plata entra a la caja ahora, una vez, y se aplica despues con &#x60;imputarSaldoAFavor&#x60; o se devuelve con &#x60;reintegrarSaldoAFavor&#x60;.
      * @endpoint post /api/v1/consultorios/{consultorioId}/cobros
      * @param requestParameters
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
@@ -189,6 +360,86 @@ export class CobrosService extends BaseService implements CobrosServiceInterface
             {
                 context: localVarHttpContext,
                 body: registrarCobro,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * Reintegrar el saldo a favor de un cobro
+     * Devuelve en dinero parte del **anticipo** de un cobro (DP-06). Es una salida de caja de origen &#x60;REINTEGRO&#x60; y no una reversion: puede ser parcial, repetirse y salir por otro medio que el que entro. **No toca ninguna deuda.**  En efectivo exige caja abierta y plata en el cajon. Si el saldo a favor no alcanza, 409 &#x60;saldo-a-favor-insuficiente&#x60; con lo &#x60;disponible&#x60;. Manda &#x60;idempotencyKey&#x60;: un reintento no devuelve dos veces.  Exige &#x60;cobro:register&#x60; **y** &#x60;caja:operate&#x60;.
+     * @endpoint post /api/v1/consultorios/{consultorioId}/cobros/{cobroId}/reintegros
+     * @param requestParameters
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public reintegrarSaldoAFavor(requestParameters: ReintegrarSaldoAFavorRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<ReintegroDeCobro>;
+    public reintegrarSaldoAFavor(requestParameters: ReintegrarSaldoAFavorRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<ReintegroDeCobro>>;
+    public reintegrarSaldoAFavor(requestParameters: ReintegrarSaldoAFavorRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<ReintegroDeCobro>>;
+    public reintegrarSaldoAFavor(requestParameters: ReintegrarSaldoAFavorRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        const consultorioId = requestParameters?.consultorioId;
+        if (consultorioId === null || consultorioId === undefined) {
+            throw new Error('Required parameter consultorioId was null or undefined when calling reintegrarSaldoAFavor.');
+        }
+        const cobroId = requestParameters?.cobroId;
+        if (cobroId === null || cobroId === undefined) {
+            throw new Error('Required parameter cobroId was null or undefined when calling reintegrarSaldoAFavor.');
+        }
+        const reintegrarSaldoAFavor = requestParameters?.reintegrarSaldoAFavor;
+        if (reintegrarSaldoAFavor === null || reintegrarSaldoAFavor === undefined) {
+            throw new Error('Required parameter reintegrarSaldoAFavor was null or undefined when calling reintegrarSaldoAFavor.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        // to determine the Content-Type header
+        const consumes: string[] = [
+            'application/json'
+        ];
+        const httpContentTypeSelected: string | undefined = this.configuration.selectHeaderContentType(consumes);
+        if (httpContentTypeSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Content-Type', httpContentTypeSelected);
+        }
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/consultorios/${this.configuration.encodeParam({name: "consultorioId", value: consultorioId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/cobros/${this.configuration.encodeParam({name: "cobroId", value: cobroId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/reintegros`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<ReintegroDeCobro>('post', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                body: reintegrarSaldoAFavor,
                 responseType: <any>responseType_,
                 ...(withCredentials ? { withCredentials } : {}),
                 headers: localVarHeaders,

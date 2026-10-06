@@ -15,15 +15,23 @@ import { MedioDeCobroAplicado } from './medio-de-cobro-aplicado';
  * Dinero recibido. No es la deuda (M18) ni la caja (M20).
  */
 export interface Cobro { 
+    /**
+     * Cuando se anulo. Nulo si esta vigente.
+     */
+    anuladoEn?: string;
     cobradoEn?: string;
     /**
      * Correlativo **por sede**. Es lo que el paciente se lleva, y un numero repetido seria un problema fiscal.
      */
     comprobanteNumero?: number;
     consultorioId?: number;
+    /**
+     * Un cobro anulado **conserva su comprobante**: el numero queda usado.
+     */
+    estado?: CobroEstadoEnum;
     id?: number;
     /**
-     * Contra que deudas se aplico. Su suma da el total.
+     * Contra que deudas se aplico, al cobrar o despues. Su suma, mas el saldo a favor y lo reintegrado, da el total.
      */
     imputaciones?: Array<ImputacionAplicada>;
     /**
@@ -31,8 +39,22 @@ export interface Cobro {
      */
     medios?: Array<MedioDeCobroAplicado>;
     moneda?: string;
+    /**
+     * Por que se anulo. Nulo si esta vigente.
+     */
+    motivoAnulacion?: string;
     personaId?: number;
+    /**
+     * Lo recibido que todavia no se imputo ni se reintegro (anticipo). Se aplica a una deuda con `imputarSaldoAFavor` o se devuelve con `reintegrarSaldoAFavor`. Cero en un cobro anulado.
+     */
+    saldoAFavor?: number;
     total?: number;
     version?: number;
 }
+export enum CobroEstadoEnum {
+    VIGENTE = 'VIGENTE',
+    ANULADO = 'ANULADO'
+};
+
+
 

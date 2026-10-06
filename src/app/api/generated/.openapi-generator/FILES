@@ -69,6 +69,8 @@ api/mediciones-de-sesion.service.ts
 api/mediciones-de-sesion.serviceInterface.ts
 api/mi-cuenta.service.ts
 api/mi-cuenta.serviceInterface.ts
+api/notificaciones.service.ts
+api/notificaciones.serviceInterface.ts
 api/obligaciones.service.ts
 api/obligaciones.serviceInterface.ts
 api/ordenes-medicas.service.ts
@@ -132,6 +134,7 @@ model/agenda-unificada.ts
 model/agenda.ts
 model/agregar-item-a-presentacion.ts
 model/antecedente-response.ts
+model/anular-cobro.ts
 model/anular-egreso.ts
 model/anular-obligacion.ts
 model/anular-presentacion.ts
@@ -256,6 +259,7 @@ model/historia-clinica-response.ts
 model/hito-response.ts
 model/imputacion-aplicada.ts
 model/imputacion-de-cobro.ts
+model/imputar-saldo-a-favor.ts
 model/indicador-response.ts
 model/ingreso-sin-inscripcion.ts
 model/inscribir.ts
@@ -333,6 +337,8 @@ model/registrar-movimiento-de-caja.ts
 model/registrar-pago-de-egreso.ts
 model/registrar-pago-de-financiador.ts
 model/registrar-tratamiento.ts
+model/reintegrar-saldo-a-favor.ts
+model/reintegro-de-cobro.ts
 model/reparo-de-presentacion.ts
 model/reporte-disponible.ts
 model/reporte-response.ts
