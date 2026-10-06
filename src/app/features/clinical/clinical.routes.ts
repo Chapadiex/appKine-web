@@ -45,4 +45,10 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/atencion/atencion-page').then((m) => m.AtencionPage),
     title: 'AKINE - Atencion clinica',
   },
+  {
+    path: 'historia/:personaId',
+    canActivate: [contextGuard],
+    loadComponent: () => import('./timeline/timeline-page').then((m) => m.TimelinePage),
+    title: 'AKINE - Historia clinica',
+  },
 ];
