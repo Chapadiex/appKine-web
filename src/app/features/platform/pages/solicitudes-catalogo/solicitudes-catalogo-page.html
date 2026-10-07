@@ -1,0 +1,302 @@
+<h1>Solicitudes de catalogo</h1>
+
+<p class="descripcion">
+  Pedidos de los centros para sumar un concepto al catalogo comun. Aprobar publica el concepto
+  global en el mismo acto, con el codigo y el nombre que dejes en el formulario; rechazar le deja tu
+  nota al centro que lo pidio.
+</p>
+
+<div aria-live="polite">
+  @if (aviso(); as mensaje) {
+    <p
+      class="estado"
+      [class.estado--ok]="mensaje.ok"
+      [class.estado--error]="!mensaje.ok"
+      [attr.role]="mensaje.ok ? null : 'alert'"
+    >
+      {{ mensaje.texto }}
+    </p>
+  }
+</div>
+
+@if (seleccionada(); as solicitud) {
+  <section class="tarjeta" aria-labelledby="titulo-detalle-solicitud">
+    <h2 id="titulo-detalle-solicitud" tabindex="-1">
+      {{ etiquetaDeTipo(solicitud.tipo) }}: {{ solicitud.nombrePropuesto }}
+    </h2>
+
+    <dl class="detalle">
+      <dt>Codigo propuesto</dt>
+      <dd>{{ solicitud.codigoPropuesto || 'Sin codigo propuesto' }}</dd>
+      <dt>Justificacion</dt>
+      <dd>{{ solicitud.justificacion }}</dd>
+      <dt>Organizacion</dt>
+      <dd>
+        {{ solicitud.organizationId }}
+        @if (solicitud.consultorioId) {
+          (sede {{ solicitud.consultorioId }})
+        }
+      </dd>
+      <dt>Pedida el</dt>
+      <dd>{{ formatearInstante(solicitud.createdAt) ?? 'Sin fecha' }}</dd>
+      <dt>Estado</dt>
+      <dd>{{ etiquetaDeEstado(solicitud.estado) }}</dd>
+      @if (solicitud.resolucionNota) {
+        <dt>Nota de la resolucion</dt>
+        <dd>{{ solicitud.resolucionNota }}</dd>
+      }
+      @if (solicitud.resueltaAt) {
+        <dt>Resuelta el</dt>
+        <dd>{{ formatearInstante(solicitud.resueltaAt) }}</dd>
+      }
+      @if (solicitud.conceptoId) {
+        <dt>Concepto publicado</dt>
+        <dd>{{ solicitud.conceptoId }}</dd>
+      }
+    </dl>
+
+    @if (solicitud.estado === 'PENDIENTE') {
+      @if (desenlace() === null) {
+        <p class="acciones">
+          <button type="button" class="boton" (click)="elegirDesenlace('APROBAR')">
+            Aprobar y publicar
+          </button>
+          <button
+            type="button"
+            class="boton boton--secundario"
+            (click)="elegirDesenlace('RECHAZAR')"
+          >
+            Rechazar
+          </button>
+          <button type="button" class="boton boton--secundario" (click)="cerrar()">Volver</button>
+        </p>
+      } @else {
+        <form [formGroup]="formulario" (ngSubmit)="enviar()" novalidate>
+          <h3>
+            {{
+              desenlace() === 'APROBAR' ? 'Aprobar y publicar el concepto' : 'Rechazar el pedido'
+            }}
+          </h3>
+
+          @if (desenlace() === 'APROBAR') {
+            <div class="campo">
+              <label for="resolucion-codigo">Codigo con el que se publica</label>
+              <input
+                id="resolucion-codigo"
+                type="text"
+                formControlName="codigo"
+                autocomplete="off"
+                [attr.aria-invalid]="causaAccion() === 'codigo-tomado' ? 'true' : null"
+              />
+              @if (causaAccion() === 'codigo-tomado') {
+                <p class="campo__error" role="alert">{{ errorAccion() }}</p>
+              } @else {
+                <p class="ayuda">
+                  Precargado con el propuesto. Si queda vacio se usa el propuesto, y sin ninguno el
+                  servidor no puede publicar.
+                </p>
+              }
+            </div>
+
+            <div class="campo">
+              <label for="resolucion-nombre">Nombre con el que se publica</label>
+              <input
+                id="resolucion-nombre"
+                type="text"
+                formControlName="nombre"
+                autocomplete="off"
+                [attr.aria-invalid]="
+                  mostrarError('nombre') || causaAccion() === 'nombre-tomado' ? 'true' : null
+                "
+              />
+              @if (causaAccion() === 'nombre-tomado') {
+                <p class="campo__error" role="alert">{{ errorAccion() }}</p>
+              } @else if (mostrarError('nombre')) {
+                <p class="campo__error" role="alert">El nombre es obligatorio.</p>
+              }
+            </div>
+
+            <div class="campo">
+              <label for="resolucion-descripcion">Descripcion (opcional)</label>
+              <textarea
+                id="resolucion-descripcion"
+                rows="3"
+                formControlName="descripcion"
+              ></textarea>
+            </div>
+
+            @if (esPractica()) {
+              <div class="campo">
+                <label for="resolucion-especialidad">Especialidad del catalogo comun</label>
+                @switch (especialidades().tipo) {
+                  @case ('error') {
+                    <p class="estado estado--error" role="alert">
+                      No se pudieron leer las especialidades del catalogo comun.
+                    </p>
+                  }
+                  @case ('cargando') {
+                    <p class="estado estado--cargando">Cargando especialidades&hellip;</p>
+                  }
+                }
+                <select
+                  id="resolucion-especialidad"
+                  formControlName="especialidadId"
+                  [attr.aria-invalid]="
+                    mostrarError('especialidadId') || causaAccion() === 'especialidad-inactiva'
+                      ? 'true'
+                      : null
+                  "
+                >
+                  <option value="">Elegi la especialidad</option>
+                  @for (especialidad of opcionesDeEspecialidad(); track especialidad.id) {
+                    <option [value]="especialidad.id">
+                      {{ especialidad.name }}
+                      @if (especialidad.codigo) {
+                        ({{ especialidad.codigo }})
+                      }
+                    </option>
+                  }
+                </select>
+                @if (mostrarError('especialidadId')) {
+                  <p class="campo__error" role="alert">
+                    Una practica del catalogo comun necesita su especialidad.
+                  </p>
+                }
+              </div>
+            }
+          }
+
+          <div class="campo">
+            <label for="resolucion-nota">
+              {{ desenlace() === 'APROBAR' ? 'Nota para el centro' : 'Motivo del rechazo' }}
+            </label>
+            <textarea
+              id="resolucion-nota"
+              rows="3"
+              formControlName="nota"
+              [attr.aria-invalid]="mostrarError('nota') ? 'true' : null"
+              aria-describedby="resolucion-nota-ayuda"
+            ></textarea>
+            @if (mostrarError('nota')) {
+              <p class="campo__error" role="alert">La nota es obligatoria.</p>
+            }
+            <p class="ayuda" id="resolucion-nota-ayuda">
+              El centro la ve en sus pedidos. Si el concepto ya existe en el catalogo comun, decilo
+              aca y rechaza.
+            </p>
+          </div>
+
+          @if (
+            errorAccion() && causaAccion() !== 'codigo-tomado' && causaAccion() !== 'nombre-tomado'
+          ) {
+            <p class="estado estado--error" role="alert">{{ errorAccion() }}</p>
+          }
+
+          <p class="acciones">
+            <button type="submit" class="boton" [disabled]="enviando()">
+              @if (enviando()) {
+                Enviando...
+              } @else {
+                {{ desenlace() === 'APROBAR' ? 'Aprobar y publicar' : 'Rechazar' }}
+              }
+            </button>
+            <button
+              type="button"
+              class="boton boton--secundario"
+              (click)="elegirDesenlace(null)"
+              [disabled]="enviando()"
+            >
+              Cancelar
+            </button>
+          </p>
+        </form>
+      }
+    } @else {
+      <p class="acciones">
+        <button type="button" class="boton boton--secundario" (click)="cerrar()">Volver</button>
+      </p>
+    }
+  </section>
+}
+
+<section class="tarjeta" aria-labelledby="titulo-bandeja">
+  <h2 id="titulo-bandeja">Bandeja</h2>
+
+  <div class="campo">
+    <label for="filtro-estado-bandeja">Mostrar</label>
+    <select
+      id="filtro-estado-bandeja"
+      [value]="filtroEstado()"
+      (change)="cambiarFiltro($any($event.target).value)"
+    >
+      <option value="PENDIENTE">Solo las pendientes</option>
+      <option value="APROBADA">Solo las aprobadas</option>
+      <option value="RECHAZADA">Solo las rechazadas</option>
+      <option value="TODAS">Todas</option>
+    </select>
+  </div>
+
+  <div aria-live="polite">
+    @switch (estado().tipo) {
+      @case ('cargando') {
+        <p class="estado estado--cargando">Cargando las solicitudes&hellip;</p>
+      }
+      @case ('error') {
+        <p class="estado estado--error" role="alert">{{ mensajeError() }}</p>
+        <button type="button" class="boton" (click)="cargar()">Reintentar</button>
+      }
+      @case ('listo') {
+        @if (solicitudes().length === 0) {
+          <p class="estado estado--vacio">No hay solicitudes con el filtro elegido.</p>
+        } @else {
+          <div class="tabla-scroll" tabindex="0" role="region" aria-label="Solicitudes de catalogo">
+            <table class="tabla">
+              <caption class="visualmente-oculto">
+                Solicitudes de los centros al catalogo comun, con su tipo, el centro que la pidio,
+                la fecha y su estado.
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col">Concepto pedido</th>
+                  <th scope="col">Tipo</th>
+                  <th scope="col">Organizacion</th>
+                  <th scope="col">Pedida el</th>
+                  <th scope="col">Estado</th>
+                  <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (solicitud of solicitudes(); track solicitud.id) {
+                  <tr [class.fila--revocada]="solicitud.estado === 'RECHAZADA'">
+                    <th scope="row">
+                      {{ solicitud.nombrePropuesto }}
+                      @if (solicitud.codigoPropuesto) {
+                        ({{ solicitud.codigoPropuesto }})
+                      }
+                    </th>
+                    <td>{{ etiquetaDeTipo(solicitud.tipo) }}</td>
+                    <td>{{ solicitud.organizationId }}</td>
+                    <td>{{ formatearInstante(solicitud.createdAt) ?? 'Sin fecha' }}</td>
+                    <td>
+                      <span class="marca-estado">{{ etiquetaDeEstado(solicitud.estado) }}</span>
+                    </td>
+                    <td class="acciones-fila">
+                      <button
+                        type="button"
+                        class="boton boton--secundario"
+                        (click)="revisar(solicitud)"
+                        [attr.aria-label]="'Revisar ' + solicitud.nombrePropuesto"
+                      >
+                        Revisar
+                      </button>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      }
+    }
+  </div>
+</section>
