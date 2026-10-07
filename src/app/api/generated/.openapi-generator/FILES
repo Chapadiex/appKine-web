@@ -165,6 +165,7 @@ model/baja-de-perfil-paciente-request.ts
 model/baja-de-persona-request.ts
 model/bloque-response.ts
 model/calendario-sede-response.ts
+model/cambiar-fin-precio-particular-request.ts
 model/cancel-invitacion-request.ts
 model/cancelar-clase.ts
 model/cancelar-inscripcion.ts
@@ -185,6 +186,11 @@ model/cierre-de-sesion.ts
 model/clase.ts
 model/clasificar-adjunto-request.ts
 model/closed-sessions-response.ts
+model/cobertura-para-oferta-aplicable.ts
+model/cobertura-para-oferta-arancel.ts
+model/cobertura-para-oferta-no-aplicable.ts
+model/cobertura-para-oferta-practica.ts
+model/cobertura-para-oferta-response.ts
 model/cobertura-response.ts
 model/cobro.ts
 model/comparacion-de-mediciones.ts
@@ -214,6 +220,7 @@ model/create-orden-request.ts
 model/create-organization-request.ts
 model/create-persona-request.ts
 model/create-plan-cobertura-request.ts
+model/create-precio-particular-request.ts
 model/create-servicio-request.ts
 model/create-vigencia-request.ts
 model/created-membership-response.ts
@@ -303,6 +310,7 @@ model/modificar-plan-tratamiento-request.ts
 model/motivo-de-rechazo.ts
 model/movimiento-de-caja.ts
 model/movimiento-response.ts
+model/my-platform-role-response.ts
 model/obligacion.ts
 model/oferta-response.ts
 model/orden-response.ts
@@ -327,8 +335,11 @@ model/plan-response.ts
 model/plan-tratamiento-version.ts
 model/plan-tratamiento.ts
 model/platform-role-response.ts
+model/politica-de-prepago-request.ts
 model/practica-de-oferta.ts
 model/practicas-de-oferta-response.ts
+model/precio-particular-response.ts
+model/prepago-de-recepcion.ts
 model/presentacion-item.ts
 model/presentacion.ts
 model/problem-detail.ts

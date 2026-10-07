@@ -11,6 +11,7 @@ import { HttpHeaders }                                       from '@angular/comm
 
 import { Observable }                                        from 'rxjs';
 
+import { CoberturaParaOfertaResponse } from '../model/models';
 import { CoberturaResponse } from '../model/models';
 import { CreateCoberturaRequest } from '../model/models';
 import { DeactivateCoberturaRequest } from '../model/models';
@@ -44,6 +45,12 @@ export interface MarcarCoberturaPrincipalRequestParams {
     personaId: number;
     coberturaId: number;
     marcarCoberturaPrincipalRequest: MarcarCoberturaPrincipalRequest;
+}
+
+export interface ResolverCoberturaAplicablePorOfertaRequestParams {
+    personaId: number;
+    ofertaId: number;
+    fecha?: string;
 }
 
 export interface ResolverCoberturaParaAtencionRequestParams {
@@ -93,6 +100,14 @@ export interface CoberturasDelPacienteServiceInterface {
 * @param requestParameters
      */
     marcarCoberturaPrincipal(requestParameters: MarcarCoberturaPrincipalRequestParams, extraHttpRequestParams?: any): Observable<CoberturaResponse>;
+
+    /**
+     * Que cubre la obra social de la persona para esta oferta
+     * RF-M08-006 y RF-M08-007. Para cada cobertura FINANCIADA vigente de la persona dice si aplica a la oferta, con que practica y con que arancel; si no aplica, por que. Y sugiere la condicion: COBERTURA si alguna aplica, PARTICULAR si no, con el precio particular que rige ese dia.  LA OFERTA MANDA ANTES QUE LA COBERTURA (RN-M08-005): si la oferta no admite obra social, ninguna cobertura aplica y el paciente paga particular aunque tenga obra social (CA-M08-006-06, Pilates). Tener la cobertura no alcanza.  CON VARIAS PRACTICAS en la oferta (A-9), se prueban en el orden de DP-11 —la principal primero— y la cobertura aplica con la primera que resuelve. El detalle por practica explica las demas. El arancel especifico de la oferta (RF-M16-008) manda sobre el general de la practica: arancel.ofertaId lo dice.  NO DECIDE NADA. Atender como particular aunque haya cobertura es decision del operador en la recepcion (RF-M13-005) y no toca la cobertura del paciente (CA-M08-007-06). No persiste, no consume y es idempotente.  Exige consultorio en el contexto: la oferta y el convenio son de la sede. Se autoriza por pertenencia, como la lista de coberturas. El numero de afiliado no viaja.
+     * @endpoint get /api/v1/personas/{personaId}/cobertura-aplicable
+* @param requestParameters
+     */
+    resolverCoberturaAplicablePorOferta(requestParameters: ResolverCoberturaAplicablePorOfertaRequestParams, extraHttpRequestParams?: any): Observable<CoberturaParaOfertaResponse>;
 
     /**
      * Que coberturas se pueden elegir para atender ese dia

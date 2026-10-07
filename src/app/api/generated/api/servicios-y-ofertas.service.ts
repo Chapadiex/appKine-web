@@ -17,7 +17,11 @@ import { Observable }                                        from 'rxjs';
 import { OpenApiHttpParams, QueryParamStyle } from '../query.params';
 
 // @ts-ignore
+import { CambiarFinPrecioParticularRequest } from '../model/cambiar-fin-precio-particular-request';
+// @ts-ignore
 import { CreateOfertaRequest } from '../model/create-oferta-request';
+// @ts-ignore
+import { CreatePrecioParticularRequest } from '../model/create-precio-particular-request';
 // @ts-ignore
 import { CreateServicioRequest } from '../model/create-servicio-request';
 // @ts-ignore
@@ -27,7 +31,11 @@ import { HabilitacionesResponse } from '../model/habilitaciones-response';
 // @ts-ignore
 import { OfertaResponse } from '../model/oferta-response';
 // @ts-ignore
+import { PoliticaDePrepagoRequest } from '../model/politica-de-prepago-request';
+// @ts-ignore
 import { PracticasDeOfertaResponse } from '../model/practicas-de-oferta-response';
+// @ts-ignore
+import { PrecioParticularResponse } from '../model/precio-particular-response';
 // @ts-ignore
 import { ProblemDetail } from '../model/problem-detail';
 // @ts-ignore
@@ -49,18 +57,23 @@ import { Configuration }                                     from '../configurat
 import { BaseService } from '../api.base.service';
 import {
     ServiciosYOfertasServiceInterface,
+    CambiarFinPrecioParticularDeOfertaRequestParams,
     CreateOfertaRequestParams,
+    CreatePrecioParticularDeOfertaRequestParams,
     CreateServicioRequestParams,
     DeactivateOfertaRequestParams,
+    DeactivatePrecioParticularDeOfertaRequestParams,
     DeactivateServicioRequestParams,
     GetHabilitacionesRequestParams,
     GetPracticasDeOfertaRequestParams,
     ListOfertasRequestParams,
+    ListPreciosParticularesDeOfertaRequestParams,
     ListServiciosRequestParams,
     ReemplazarEspaciosHabilitadosRequestParams,
     ReemplazarPracticasDeOfertaRequestParams,
     ReemplazarProfesionalesHabilitadosRequestParams,
     UpdateOfertaRequestParams,
+    UpdatePoliticaDePrepagoDeOfertaRequestParams,
     UpdateServicioRequestParams,
     ValidarOfertaRequestParams
 } from './servicios-y-ofertas.serviceInterface';
@@ -74,6 +87,90 @@ export class ServiciosYOfertasService extends BaseService implements ServiciosYO
 
     constructor(protected httpClient: HttpClient, @Optional() @Inject(BASE_PATH) basePath: string|string[], @Optional() configuration?: Configuration) {
         super(basePath, configuration);
+    }
+
+    /**
+     * Cerrar o reabrir la vigencia de un precio particular
+     * RF-M16-009. Exige consultorio:manage. Es lo UNICO editable de un precio: el fin de su vigencia. Extenderlo puede producir 409 precio-particular-solapado.
+     * @endpoint put /api/v1/consultorios/{consultorioId}/ofertas/{ofertaId}/precios-particulares/{precioId}
+     * @param requestParameters
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public cambiarFinPrecioParticularDeOferta(requestParameters: CambiarFinPrecioParticularDeOfertaRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<PrecioParticularResponse>;
+    public cambiarFinPrecioParticularDeOferta(requestParameters: CambiarFinPrecioParticularDeOfertaRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<PrecioParticularResponse>>;
+    public cambiarFinPrecioParticularDeOferta(requestParameters: CambiarFinPrecioParticularDeOfertaRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<PrecioParticularResponse>>;
+    public cambiarFinPrecioParticularDeOferta(requestParameters: CambiarFinPrecioParticularDeOfertaRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        const consultorioId = requestParameters?.consultorioId;
+        if (consultorioId === null || consultorioId === undefined) {
+            throw new Error('Required parameter consultorioId was null or undefined when calling cambiarFinPrecioParticularDeOferta.');
+        }
+        const ofertaId = requestParameters?.ofertaId;
+        if (ofertaId === null || ofertaId === undefined) {
+            throw new Error('Required parameter ofertaId was null or undefined when calling cambiarFinPrecioParticularDeOferta.');
+        }
+        const precioId = requestParameters?.precioId;
+        if (precioId === null || precioId === undefined) {
+            throw new Error('Required parameter precioId was null or undefined when calling cambiarFinPrecioParticularDeOferta.');
+        }
+        const cambiarFinPrecioParticularRequest = requestParameters?.cambiarFinPrecioParticularRequest;
+        if (cambiarFinPrecioParticularRequest === null || cambiarFinPrecioParticularRequest === undefined) {
+            throw new Error('Required parameter cambiarFinPrecioParticularRequest was null or undefined when calling cambiarFinPrecioParticularDeOferta.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        // to determine the Content-Type header
+        const consumes: string[] = [
+            'application/json'
+        ];
+        const httpContentTypeSelected: string | undefined = this.configuration.selectHeaderContentType(consumes);
+        if (httpContentTypeSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Content-Type', httpContentTypeSelected);
+        }
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/consultorios/${this.configuration.encodeParam({name: "consultorioId", value: consultorioId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/ofertas/${this.configuration.encodeParam({name: "ofertaId", value: ofertaId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/precios-particulares/${this.configuration.encodeParam({name: "precioId", value: precioId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<PrecioParticularResponse>('put', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                body: cambiarFinPrecioParticularRequest,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
     }
 
     /**
@@ -142,6 +239,86 @@ export class ServiciosYOfertasService extends BaseService implements ServiciosYO
             {
                 context: localVarHttpContext,
                 body: createOfertaRequest,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * Fijar un precio particular de la oferta para un periodo
+     * RF-M16-009. Exige consultorio:manage sobre la sede de la ruta.  DOS PRECIOS ACTIVOS DE LA MISMA OFERTA NO PUEDEN PISARSE: 409 precio-particular-solapado, con el id y el periodo del que choca. Para subir un precio se cierra la vigencia del actual (PUT) y se carga el nuevo.  El importe no se edita despues: corregir una carga es darla de baja y cargarla de nuevo. Lo ya devengado no cambia nunca, porque la obligacion copio su importe.  Sin moneda, hereda la del precio de lista de la oferta.
+     * @endpoint post /api/v1/consultorios/{consultorioId}/ofertas/{ofertaId}/precios-particulares
+     * @param requestParameters
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public createPrecioParticularDeOferta(requestParameters: CreatePrecioParticularDeOfertaRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<PrecioParticularResponse>;
+    public createPrecioParticularDeOferta(requestParameters: CreatePrecioParticularDeOfertaRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<PrecioParticularResponse>>;
+    public createPrecioParticularDeOferta(requestParameters: CreatePrecioParticularDeOfertaRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<PrecioParticularResponse>>;
+    public createPrecioParticularDeOferta(requestParameters: CreatePrecioParticularDeOfertaRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        const consultorioId = requestParameters?.consultorioId;
+        if (consultorioId === null || consultorioId === undefined) {
+            throw new Error('Required parameter consultorioId was null or undefined when calling createPrecioParticularDeOferta.');
+        }
+        const ofertaId = requestParameters?.ofertaId;
+        if (ofertaId === null || ofertaId === undefined) {
+            throw new Error('Required parameter ofertaId was null or undefined when calling createPrecioParticularDeOferta.');
+        }
+        const createPrecioParticularRequest = requestParameters?.createPrecioParticularRequest;
+        if (createPrecioParticularRequest === null || createPrecioParticularRequest === undefined) {
+            throw new Error('Required parameter createPrecioParticularRequest was null or undefined when calling createPrecioParticularDeOferta.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        // to determine the Content-Type header
+        const consumes: string[] = [
+            'application/json'
+        ];
+        const httpContentTypeSelected: string | undefined = this.configuration.selectHeaderContentType(consumes);
+        if (httpContentTypeSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Content-Type', httpContentTypeSelected);
+        }
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/consultorios/${this.configuration.encodeParam({name: "consultorioId", value: consultorioId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/ofertas/${this.configuration.encodeParam({name: "ofertaId", value: ofertaId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/precios-particulares`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<PrecioParticularResponse>('post', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                body: createPrecioParticularRequest,
                 responseType: <any>responseType_,
                 ...(withCredentials ? { withCredentials } : {}),
                 headers: localVarHeaders,
@@ -288,6 +465,89 @@ export class ServiciosYOfertasService extends BaseService implements ServiciosYO
         }
 
         let localVarPath = `/api/v1/consultorios/${this.configuration.encodeParam({name: "consultorioId", value: consultorioId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/ofertas/${this.configuration.encodeParam({name: "ofertaId", value: ofertaId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<any>('delete', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                body: deactivateOfferingRequest,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * Dar de baja un precio particular
+     * Baja LOGICA con motivo obligatorio. Exige consultorio:manage. Libera el periodo; lo ya devengado con ese precio no se toca.
+     * @endpoint delete /api/v1/consultorios/{consultorioId}/ofertas/{ofertaId}/precios-particulares/{precioId}
+     * @param requestParameters
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public deactivatePrecioParticularDeOferta(requestParameters: DeactivatePrecioParticularDeOfertaRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any>;
+    public deactivatePrecioParticularDeOferta(requestParameters: DeactivatePrecioParticularDeOfertaRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<any>>;
+    public deactivatePrecioParticularDeOferta(requestParameters: DeactivatePrecioParticularDeOfertaRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<any>>;
+    public deactivatePrecioParticularDeOferta(requestParameters: DeactivatePrecioParticularDeOfertaRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        const consultorioId = requestParameters?.consultorioId;
+        if (consultorioId === null || consultorioId === undefined) {
+            throw new Error('Required parameter consultorioId was null or undefined when calling deactivatePrecioParticularDeOferta.');
+        }
+        const ofertaId = requestParameters?.ofertaId;
+        if (ofertaId === null || ofertaId === undefined) {
+            throw new Error('Required parameter ofertaId was null or undefined when calling deactivatePrecioParticularDeOferta.');
+        }
+        const precioId = requestParameters?.precioId;
+        if (precioId === null || precioId === undefined) {
+            throw new Error('Required parameter precioId was null or undefined when calling deactivatePrecioParticularDeOferta.');
+        }
+        const deactivateOfferingRequest = requestParameters?.deactivateOfferingRequest;
+        if (deactivateOfferingRequest === null || deactivateOfferingRequest === undefined) {
+            throw new Error('Required parameter deactivateOfferingRequest was null or undefined when calling deactivatePrecioParticularDeOferta.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        // to determine the Content-Type header
+        const consumes: string[] = [
+            'application/json'
+        ];
+        const httpContentTypeSelected: string | undefined = this.configuration.selectHeaderContentType(consumes);
+        if (httpContentTypeSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Content-Type', httpContentTypeSelected);
+        }
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/consultorios/${this.configuration.encodeParam({name: "consultorioId", value: consultorioId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/ofertas/${this.configuration.encodeParam({name: "ofertaId", value: ofertaId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/precios-particulares/${this.configuration.encodeParam({name: "precioId", value: precioId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}`;
         const { basePath, withCredentials } = this.configuration;
         return this.httpClient.request<any>('delete', `${basePath}${localVarPath}`,
             {
@@ -585,6 +845,72 @@ export class ServiciosYOfertasService extends BaseService implements ServiciosYO
             {
                 context: localVarHttpContext,
                 params: localVarQueryParameters.toHttpParams(),
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * Listar los precios particulares por vigencia de la oferta
+     * RF-M16-009. La grilla de vigencias, ACTIVOS E HISTORICOS, del mas nuevo al mas viejo. vigente dice cual rige hoy.  El dia que ningun precio particular lo cubre, la oferta cobra su precio de lista (precioBase). Una lista vacia es el caso normal de una oferta que nunca tuvo precios por vigencia.
+     * @endpoint get /api/v1/consultorios/{consultorioId}/ofertas/{ofertaId}/precios-particulares
+     * @param requestParameters
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public listPreciosParticularesDeOferta(requestParameters: ListPreciosParticularesDeOfertaRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<Array<PrecioParticularResponse>>;
+    public listPreciosParticularesDeOferta(requestParameters: ListPreciosParticularesDeOfertaRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<Array<PrecioParticularResponse>>>;
+    public listPreciosParticularesDeOferta(requestParameters: ListPreciosParticularesDeOfertaRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<Array<PrecioParticularResponse>>>;
+    public listPreciosParticularesDeOferta(requestParameters: ListPreciosParticularesDeOfertaRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        const consultorioId = requestParameters?.consultorioId;
+        if (consultorioId === null || consultorioId === undefined) {
+            throw new Error('Required parameter consultorioId was null or undefined when calling listPreciosParticularesDeOferta.');
+        }
+        const ofertaId = requestParameters?.ofertaId;
+        if (ofertaId === null || ofertaId === undefined) {
+            throw new Error('Required parameter ofertaId was null or undefined when calling listPreciosParticularesDeOferta.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/consultorios/${this.configuration.encodeParam({name: "consultorioId", value: consultorioId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/ofertas/${this.configuration.encodeParam({name: "ofertaId", value: ofertaId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/precios-particulares`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<Array<PrecioParticularResponse>>('get', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
                 responseType: <any>responseType_,
                 ...(withCredentials ? { withCredentials } : {}),
                 headers: localVarHeaders,
@@ -986,6 +1312,86 @@ export class ServiciosYOfertasService extends BaseService implements ServiciosYO
             {
                 context: localVarHttpContext,
                 body: updateOfertaRequest,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * Cambiar la politica de prepago de una oferta
+     * Exige consultorio:manage sobre esa sede. AKINE E-6, DP-06 / ADR-0013.  Con exigePrepago en true, la recepcion de los turnos de esta oferta muestra      el prepago como PENDIENTE hasta que se registre un anticipo con turnoId. Es      una ALERTA: nunca impide pasar a espera, atender ni cerrar la sesion.  Una oferta dada de baja no admite cambios: 409 oferta-inactiva.
+     * @endpoint put /api/v1/consultorios/{consultorioId}/ofertas/{ofertaId}/politica-de-prepago
+     * @param requestParameters
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public updatePoliticaDePrepagoDeOferta(requestParameters: UpdatePoliticaDePrepagoDeOfertaRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<OfertaResponse>;
+    public updatePoliticaDePrepagoDeOferta(requestParameters: UpdatePoliticaDePrepagoDeOfertaRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<OfertaResponse>>;
+    public updatePoliticaDePrepagoDeOferta(requestParameters: UpdatePoliticaDePrepagoDeOfertaRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<OfertaResponse>>;
+    public updatePoliticaDePrepagoDeOferta(requestParameters: UpdatePoliticaDePrepagoDeOfertaRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        const consultorioId = requestParameters?.consultorioId;
+        if (consultorioId === null || consultorioId === undefined) {
+            throw new Error('Required parameter consultorioId was null or undefined when calling updatePoliticaDePrepagoDeOferta.');
+        }
+        const ofertaId = requestParameters?.ofertaId;
+        if (ofertaId === null || ofertaId === undefined) {
+            throw new Error('Required parameter ofertaId was null or undefined when calling updatePoliticaDePrepagoDeOferta.');
+        }
+        const politicaDePrepagoRequest = requestParameters?.politicaDePrepagoRequest;
+        if (politicaDePrepagoRequest === null || politicaDePrepagoRequest === undefined) {
+            throw new Error('Required parameter politicaDePrepagoRequest was null or undefined when calling updatePoliticaDePrepagoDeOferta.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        // to determine the Content-Type header
+        const consumes: string[] = [
+            'application/json'
+        ];
+        const httpContentTypeSelected: string | undefined = this.configuration.selectHeaderContentType(consumes);
+        if (httpContentTypeSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Content-Type', httpContentTypeSelected);
+        }
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/consultorios/${this.configuration.encodeParam({name: "consultorioId", value: consultorioId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/ofertas/${this.configuration.encodeParam({name: "ofertaId", value: ofertaId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/politica-de-prepago`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<OfertaResponse>('put', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                body: politicaDePrepagoRequest,
                 responseType: <any>responseType_,
                 ...(withCredentials ? { withCredentials } : {}),
                 headers: localVarHeaders,

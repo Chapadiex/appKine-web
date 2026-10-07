@@ -78,6 +78,10 @@ export interface ArancelEfectivoResponse {
      */
     motivo?: ArancelEfectivoResponseMotivoEnum;
     /**
+     * B-3. Null si salio el arancel GENERAL de la practica; el id de la oferta si salio el arancel especifico de esa oferta (RF-M16-008)
+     */
+    ofertaId?: number;
+    /**
      * Si exige autorizacion previa del financiador
      */
     requiereAutorizacion?: boolean;

@@ -7,6 +7,7 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { PrepagoDeRecepcion } from './prepago-de-recepcion';
 
 
 /**
@@ -60,6 +61,10 @@ export interface Recepcion {
      * Practica con la que se valido (principal de la oferta).
      */
     practicaId?: number;
+    /**
+     * Estado del prepago (E-6). Una alerta, nunca un bloqueo.
+     */
+    prepago?: PrepagoDeRecepcion;
     turnoId?: number;
     validadaEn?: string;
     /**

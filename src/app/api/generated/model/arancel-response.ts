@@ -50,6 +50,10 @@ export interface ArancelResponse {
      */
     moneda?: string;
     /**
+     * Null = arancel GENERAL de la practica en el convenio. Con valor: arancel de la practica cuando se presta dentro de esa oferta (RF-M16-008), que al resolver con esa oferta manda sobre el general
+     */
+    ofertaId?: number;
+    /**
      * Practica arancelada. No cambia
      */
     practicaId?: number;

@@ -50,6 +50,10 @@ export interface OfertaResponse {
      */
     estado?: OfertaResponseEstadoEnum;
     /**
+     * Politica de prepago (E-6): la recepcion alerta si el paciente no abono antes de ser atendido. Nunca bloquea la atencion ni el cierre (DP-06). Se cambia con PUT .../ofertas/{ofertaId}/politica-de-prepago
+     */
+    exigePrepago?: boolean;
+    /**
      * Si al prestarse genera registro clinico
      */
     generaRegistroClinico?: boolean;
