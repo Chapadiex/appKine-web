@@ -139,6 +139,8 @@ model/agenda.ts
 model/agregar-item-a-presentacion.ts
 model/alcance-de-serie.ts
 model/alerta-de-autorizacion-response.ts
+model/alta-sede-franja-horaria-request.ts
+model/alta-sede-primer-box-request.ts
 model/antecedente-response.ts
 model/anular-cobro.ts
 model/anular-egreso.ts
@@ -276,6 +278,8 @@ model/guardar-evaluacion.ts
 model/habilitaciones-response.ts
 model/historia-clinica-response.ts
 model/hito-response.ts
+model/horario-general-franja-request.ts
+model/horario-general-franja-response.ts
 model/imputacion-aplicada.ts
 model/imputacion-de-cobro.ts
 model/imputar-saldo-a-favor.ts
@@ -396,6 +400,8 @@ model/seccion-omitida-response.ts
 model/seccion-response.ts
 model/seleccion-de-cobertura-response.ts
 model/select-context-request.ts
+model/serie-de-turnos-page.ts
+model/serie-de-turnos-resumen.ts
 model/serie-de-turnos.ts
 model/servicio-response.ts
 model/sesion-version.ts

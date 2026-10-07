@@ -17,6 +17,7 @@ import { CrearSerieDeTurnos } from '../model/models';
 import { ProblemDetail } from '../model/models';
 import { ReprogramarSerieDeTurnos } from '../model/models';
 import { SerieDeTurnos } from '../model/models';
+import { SerieDeTurnosPage } from '../model/models';
 
 
 import { Configuration }                                     from '../configuration';
@@ -31,6 +32,14 @@ export interface CancelarSerieDeTurnosRequestParams {
 export interface CrearSerieDeTurnosRequestParams {
     consultorioId: number;
     crearSerieDeTurnos: CrearSerieDeTurnos;
+}
+
+export interface ListarSeriesDeTurnosRequestParams {
+    consultorioId: number;
+    personaId?: number;
+    estado?: 'VIGENTE' | 'FINALIZADA';
+    page?: number;
+    size?: number;
 }
 
 export interface PrevisualizarAlcanceDeSerieRequestParams {
@@ -71,6 +80,14 @@ export interface SeriesDeTurnosServiceInterface {
 * @param requestParameters
      */
     crearSerieDeTurnos(requestParameters: CrearSerieDeTurnosRequestParams, extraHttpRequestParams?: any): Observable<SerieDeTurnos>;
+
+    /**
+     * Bandeja de series de turnos de la sede
+     * Las series de la sede, **mas nuevas primero**, con la regla resumida, el paciente y la oferta resueltos, y la foto de sus turnos hoy: cuantos tiene, cuantos quedan pendientes y cuando es el proximo. Para ver los turnos de una, &#x60;verSerieDeTurnos&#x60;.  - &#x60;personaId&#x60;: solo las series de ese paciente. Uno de otro tenant da una pagina vacia, no un error. - &#x60;estado&#x60;: la serie **no tiene estado propio** (DP-04); se deriva de sus turnos al leer. &#x60;VIGENTE&#x60; &#x3D; le queda algun turno RESERVADO o CONFIRMADO que todavia no empezo; &#x60;FINALIZADA&#x60; &#x3D; no le queda ninguno.  Paginado base cero; &#x60;size&#x60; se acota a 100. Exige &#x60;turno:read&#x60;. PHI minima: nombre y documento del paciente, nada clinico.
+     * @endpoint get /api/v1/consultorios/{consultorioId}/series-de-turnos
+* @param requestParameters
+     */
+    listarSeriesDeTurnos(requestParameters: ListarSeriesDeTurnosRequestParams, extraHttpRequestParams?: any): Observable<SerieDeTurnosPage>;
 
     /**
      * Previsualizar que turnos toca una operacion con alcance

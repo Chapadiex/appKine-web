@@ -7,6 +7,7 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { PrepagoDeRecepcion } from './prepago-de-recepcion';
 import { Recepcion } from './recepcion';
 
 
@@ -50,6 +51,10 @@ export interface TurnoDelDia {
      * Apellido y nombre, ya compuestos
      */
     personaNombre?: string;
+    /**
+     * Estado del prepago del turno, calculado al leer (AKINE E-8), **tambien antes del check-in**: la agenda sabe si la oferta lo exige sin esperar a que haya recepcion. Sin recepcion, `PENDIENTE` quiere decir \"si se atiende como particular\" —la cobertura la resuelve la validacion— y un turno cancelado o ausente es `NO_EXIGIDO` salvo que tenga un anticipo vigente (`REGISTRADO`). Con recepcion vigente es el mismo que `recepcion.prepago`. Es una alerta: no bloquea nada (DP-06).
+     */
+    prepago?: PrepagoDeRecepcion;
     /**
      * Membership del profesional. Ausente si la oferta no lo requiere.
      */

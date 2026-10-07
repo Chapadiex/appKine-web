@@ -7,6 +7,8 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { AltaSedeFranjaHorariaRequest } from './alta-sede-franja-horaria-request';
+import { AltaSedePrimerBoxRequest } from './alta-sede-primer-box-request';
 
 
 /**
@@ -22,6 +24,10 @@ export interface CreateConsultorioRequest {
      */
     contactEmail?: string;
     /**
+     * Horario general de la sede (RF-M03-002): franjas semanales en la zona de la sede. Informativo: NO sustituye la disponibilidad de cada profesional, que es lo que la agenda usa para ofrecer turnos (RN-M03-004). Se crea en la misma transaccion que la sede; dos franjas del mismo dia que se pisan, o una que termina antes de empezar, rechazan el alta entera con 400. Se lee y se edita despues por /consultorios/{id}/calendario
+     */
+    horarioGeneral?: Array<AltaSedeFranjaHorariaRequest>;
+    /**
      * Razon social
      */
     legalName?: string;
@@ -33,6 +39,10 @@ export interface CreateConsultorioRequest {
      * Telefono de contacto
      */
     phone?: string;
+    /**
+     * Primer box de la sede (RF-M03-002). Si viene, se crea en la misma transaccion que la sede: si algo falla no queda ni la sede ni el box. Omitirlo da de alta la sede sola, como antes
+     */
+    primerBox?: AltaSedePrimerBoxRequest;
     /**
      * Intervalo por defecto de la agenda, en minutos. Si se omite, 30
      */
