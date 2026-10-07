@@ -87,6 +87,24 @@ export const routes: Routes = [
       import('./pages/reserva-de-turno/reserva-de-turno-page').then((m) => m.ReservaDeTurnoPage),
     title: 'AKINE - Reservar un turno',
   },
+  // Series de turnos (AKINE E-3, DP-04). El alta llega desde la reserva con el mismo slot en la
+  // query; la serie se abre por su id, porque el contrato no publica un listado de series.
+  {
+    path: 'ofertas/:ofertaId/reservar-serie',
+    canActivate: [contextGuard],
+    loadComponent: () =>
+      import('./pages/serie-de-turnos-alta/serie-de-turnos-alta-page').then(
+        (m) => m.SerieDeTurnosAltaPage,
+      ),
+    title: 'AKINE - Reservar una serie de turnos',
+  },
+  {
+    path: 'series/:serieId',
+    canActivate: [contextGuard, permissionGuard(PERMISO_TURNO_READ)],
+    loadComponent: () =>
+      import('./pages/serie-de-turnos/serie-de-turnos-page').then((m) => m.SerieDeTurnosPage),
+    title: 'AKINE - Serie de turnos',
+  },
   {
     path: 'recepcion',
     canActivate: [contextGuard, permissionGuard(PERMISO_TURNO_READ)],

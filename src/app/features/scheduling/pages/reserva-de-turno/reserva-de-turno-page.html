@@ -51,6 +51,19 @@
       Ese horario ya no figura en la agenda de este dia. Volve al buscador y elegi otro.
     </p>
   }
+
+  <!-- Serie de turnos (AKINE E-3): el mismo slot viaja por la query, como llego aca. -->
+  @if (!reservado()) {
+    <p>
+      <a
+        class="enlace"
+        [routerLink]="['/agenda', 'ofertas', ofertaId(), 'reservar-serie']"
+        [queryParams]="{ fecha: fecha(), inicio: instante(), profesionalId: profesionalId() }"
+      >
+        Reservar una serie semanal desde este horario
+      </a>
+    </p>
+  }
 </section>
 
 @if (!reservado()) {
