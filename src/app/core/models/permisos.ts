@@ -122,3 +122,12 @@ export const PERMISO_COBRO_REGISTER = 'cobro:register';
  * cada consultorio tiene la suya y el backend evalua el permiso contra `{consultorioId}`.
  */
 export const PERMISO_CAJA_OPERATE = 'caja:operate';
+
+/**
+ * Ver reportes de la sede (F8, M23, AKINE-07.06; repartido por DP-15 / G-1).
+ *
+ * <p>Abre la pantalla; <b>no</b> decide que se ve adentro. Cada seccion del reporte pide ademas el
+ * permiso de su fuente, y la que falta llega declarada en `omitidas`. Al `PROFESIONAL` el backend
+ * se lo da con alcance de actividad propia y lo avisa con una advertencia.
+ */
+export const PERMISO_REPORTE_READ = 'reporte:read';

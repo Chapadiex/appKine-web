@@ -1,6 +1,7 @@
 import { RUTA_HORARIOS } from '../../features/resource/models/rutas-de-horarios';
 import { PERMISO_CAJA_OPERATE, PERMISO_COLABORADOR_READ } from '../../core/models/permisos';
 import { PERMISO_COBRO_REGISTER as PERMISO_PRESENTACIONES } from '../../core/models/permisos';
+import { PERMISO_REPORTE_READ } from '../../core/models/permisos';
 
 /** Una entrada de la navegacion principal. */
 export interface Seccion {
@@ -85,6 +86,8 @@ export const SECCIONES: readonly Seccion[] = [
   { etiqueta: 'Caja', ruta: '/caja', permisos: [PERMISO_CAJA_OPERATE] },
   // Presentaciones a financiadores (M21). El permiso es `cobro:register`: lo decidio el backend.
   { etiqueta: 'Presentaciones', ruta: '/presentaciones', permisos: [PERMISO_PRESENTACIONES] },
+  // Reportes (M23). `reporting.routes.ts` exige `reporte:read`; adentro cada seccion pide el suyo.
+  { etiqueta: 'Reportes', ruta: '/reportes', permisos: [PERMISO_REPORTE_READ] },
   { etiqueta: 'Organizacion', ruta: '/organizacion' },
 ];
 

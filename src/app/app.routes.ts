@@ -265,6 +265,14 @@ export const routes: Routes = [
     loadChildren: () => import('./features/billing/presentaciones.routes').then((m) => m.routes),
   },
 
+  // Reportes de la sede (M23, AKINE-07.06 y G-8). `contextGuard` y `permissionGuard(reporte:read)`
+  // los pone `reporting.routes.ts`, como en caja y presentaciones.
+  {
+    path: 'reportes',
+    canActivate: [authGuard],
+    loadChildren: () => import('./features/reporting/reporting.routes').then((m) => m.routes),
+  },
+
   {
     path: 'sin-permiso',
     loadComponent: () => import('./shared/pages/sin-permiso/sin-permiso').then((m) => m.SinPermiso),
