@@ -239,6 +239,18 @@ export const routes: Routes = [
     loadChildren: () => import('./features/clinical/clinical.routes').then((m) => m.routes),
   },
 
+  // Caja diaria de la sede (M20, AKINE-07.03).
+  //
+  // Raiz propia y no bajo `pacientes/.../cuenta-corriente`: la caja es de la SEDE, no de una
+  // persona, y Obligacion, Cobro y Caja son tres vistas distintas (regla maestra 5). Misma
+  // feature `billing`, otro archivo de rutas. `contextGuard` y `permissionGuard` los pone la ruta
+  // hija; el detalle esta en `caja.routes.ts`.
+  {
+    path: 'caja',
+    canActivate: [authGuard],
+    loadChildren: () => import('./features/billing/caja.routes').then((m) => m.routes),
+  },
+
   // Pantalla de permiso insuficiente (AKINE-01.03). Es el destino de `permissionGuard`.
   //
   // Sin guards, y no por descuido: quien llega aca YA paso por `authGuard` y `contextGuard`
