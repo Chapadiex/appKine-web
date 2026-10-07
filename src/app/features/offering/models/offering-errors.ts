@@ -43,6 +43,10 @@ export type CausaOffering =
   | 'concurrencia'
   /** 409 subscription-suspended: lo emite el filtro, antes del controller. */
   | 'suscripcion-suspendida'
+  /** 409 precio-particular-solapado: dos precios activos de la misma oferta se pisan. */
+  | 'precio-solapado'
+  /** 409 precio-particular-inactivo: el precio ya esta dado de baja. */
+  | 'precio-inactivo'
   /** Cualquier otro 409: unicidad, servicio inactivo, baja ya hecha. Gana el `detail`. */
   | 'conflicto'
   /** 429: hay que esperar. Ver `segundosDeEspera`. */
@@ -111,6 +115,21 @@ const MENSAJE_SUSCRIPCION_SUSPENDIDA =
   'La suscripcion de la organizacion esta suspendida, asi que no se pueden registrar cambios. Se ' +
   'resuelve desde la pantalla de suscripcion.';
 
+/**
+ * Dos precios activos de la misma oferta no pueden cubrir el mismo dia (RF-M16-009).
+ *
+ * <p>Nombra la salida concreta: subir un precio es cerrar la vigencia del actual y cargar el
+ * nuevo, no editar el importe, que no se edita.
+ */
+const MENSAJE_PRECIO_SOLAPADO =
+  'Ya hay otro precio particular activo de esta oferta que cubre alguno de esos dias, y dos ' +
+  'precios no pueden pisarse. Para subir un precio, cerrale la vigencia al actual el dia anterior ' +
+  'y carga el nuevo desde el dia siguiente.';
+
+const MENSAJE_PRECIO_INACTIVO =
+  'Ese precio ya esta dado de baja, asi que no admite cambios. Recarga la grilla para verlo con ' +
+  'su estado actual y, si hace falta, carga otro.';
+
 const MENSAJE_CONFLICTO =
   'El servidor rechazo el cambio por un conflicto con lo que ya hay guardado. Recarga el listado ' +
   'para ver el estado actual y volve a intentar.';
@@ -160,6 +179,10 @@ export function traducirErrorOffering(error: unknown, ambito: AmbitoOffering): E
     // falls through
     case 'concurrent-modification':
       return base(MENSAJE_CONCURRENCIA, 'concurrencia');
+    case 'precio-particular-solapado':
+      return base(MENSAJE_PRECIO_SOLAPADO, 'precio-solapado');
+    case 'precio-particular-inactivo':
+      return base(MENSAJE_PRECIO_INACTIVO, 'precio-inactivo');
     default:
       break;
   }
@@ -193,7 +216,7 @@ export function traducirErrorOffering(error: unknown, ambito: AmbitoOffering): E
 
 /** `true` cuando lo unico que resuelve el error es releer el listado. */
 export function hayQueRecargar(causa: CausaOffering | null): boolean {
-  return causa === 'no-encontrado' || causa === 'conflicto';
+  return causa === 'no-encontrado' || causa === 'conflicto' || causa === 'precio-inactivo';
 }
 
 function base(mensaje: string, causa: CausaOffering): ErrorOffering {

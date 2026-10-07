@@ -10,6 +10,7 @@ import {
   RUTA_PERMISOS_EFECTIVOS,
   rutaAranceles,
   rutaConvenios,
+  rutaOfertas,
 } from '../../../../core/testing/rutas-api';
 import { TIMEOUT_AXE, esperarSinViolaciones } from '../../../../core/testing/axe';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
@@ -35,6 +36,21 @@ const EL_CONVENIO = {
 };
 
 const PRACTICA = { id: 55, codigo: 'KIN-01', name: 'Sesion de kinesiologia', tipo: 'PRACTICA' };
+
+/** Admite obra social y declara la practica 55: es candidata para un arancel por oferta. */
+const PILATES = {
+  id: 31,
+  nombreComercial: 'Pilates terapeutico',
+  estado: 'ACTIVO',
+  admiteObraSocial: true,
+};
+/** No admite obra social: nunca se ofrece, aunque declare la practica. */
+const GIMNASIO = {
+  id: 32,
+  nombreComercial: 'Gimnasio libre',
+  estado: 'ACTIVO',
+  admiteObraSocial: false,
+};
 
 /** Vigente hoy. Los tres importes cuadran: 9000 + 3000 = 12000. */
 const VIGENTE = {
@@ -450,6 +466,51 @@ describe('ArancelesDelConvenioPage', () => {
     expect(texto).toContain('Sesion de kinesiologia');
   });
 
+  it('el arancel por oferta: solo ofrece las ofertas que admiten obra social y declaran la practica', async () => {
+    const fixture = await montar();
+    const filas = (fixture.nativeElement as HTMLElement).querySelectorAll('tbody tr');
+    expect((filas[0] as HTMLElement).textContent).toContain('General del convenio');
+
+    abrir(fixture, 'Cargar un arancel');
+    const opciones = () =>
+      [
+        ...(fixture.nativeElement as HTMLElement).querySelectorAll('#alta-arancel-oferta option'),
+      ].map((opcion) => (opcion.textContent ?? '').trim());
+    // Sin practica elegida no hay oferta que pueda declararla.
+    expect(opciones()).toEqual(['General: vale para cualquier oferta']);
+
+    elegir(fixture, '#alta-arancel-practica', '55');
+    expect(opciones()).toEqual([
+      'General: vale para cualquier oferta',
+      'Solo en Pilates terapeutico',
+    ]);
+
+    elegir(fixture, '#alta-arancel-oferta', '31');
+    escribir(fixture, '#alta-arancel-total', '12000');
+    escribir(fixture, '#alta-arancel-financiador', '9000');
+    escribir(fixture, '#alta-arancel-coseguro', '3000');
+    escribir(fixture, '#alta-arancel-desde', '2026-07-01');
+    enviar(fixture, 'form[novalidate]');
+
+    const alta = httpMock.expectOne(
+      (peticion: HttpRequest<unknown>) => peticion.method === 'POST' && peticion.url === ARANCELES,
+    );
+    expect((alta.request.body as Record<string, unknown>)['ofertaId']).toBe(31);
+    alta.flush(
+      {
+        type: 'https://akine.app/problems/practica-no-habilitada-en-oferta',
+        status: 409,
+        detail: 'x',
+      },
+      { status: 409, statusText: 'Conflict' },
+    );
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain(
+      'Esa oferta no declara la practica de este arancel',
+    );
+  });
+
   it(
     'la pantalla no tiene violaciones de accesibilidad',
     async () => {
@@ -484,6 +545,18 @@ describe('ArancelesDelConvenioPage', () => {
     httpMock
       .expectOne((peticion: HttpRequest<unknown>) => peticion.url === RUTA_PRACTICAS)
       .flush({ content: [PRACTICA] });
+    httpMock
+      .expectOne((peticion: HttpRequest<unknown>) => peticion.url === rutaOfertas(SEDE))
+      .flush([PILATES, GIMNASIO]);
+    httpMock
+      .expectOne(
+        (peticion: HttpRequest<unknown>) =>
+          peticion.url === `${rutaOfertas(SEDE)}/${PILATES.id}/practicas`,
+      )
+      .flush({
+        ofertaId: PILATES.id,
+        practicas: [{ practicaId: 55, estado: 'ACTIVO', principal: true }],
+      });
     await fixture.whenStable();
     fixture.detectChanges();
 

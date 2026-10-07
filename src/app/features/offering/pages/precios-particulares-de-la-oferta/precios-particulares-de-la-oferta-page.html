@@ -1,0 +1,287 @@
+<h1>Precios particulares de la oferta</h1>
+
+@if (oferta(); as detalle) {
+  <p class="descripcion">
+    Cuanto paga quien se atiende como particular en <b>{{ detalle.nombreComercial }}</b
+    >, por periodo. Precio de lista de la oferta: <b>{{ precioEnPalabras(detalle) }}</b
+    >.
+  </p>
+} @else {
+  <p class="descripcion">
+    Cuanto paga quien se atiende como particular en esta oferta, por periodo.
+  </p>
+}
+
+<nav class="acciones" aria-label="Servicios y ofertas">
+  <a class="boton boton--secundario" routerLink="/servicios/ofertas">Ofertas de la sede</a>
+  <a
+    class="boton boton--secundario"
+    [routerLink]="['/servicios/ofertas', ofertaId, 'habilitaciones']"
+  >
+    Habilitaciones
+  </a>
+</nav>
+
+<section class="tarjeta nota-clave" aria-labelledby="titulo-nota-precios">
+  <h2 id="titulo-nota-precios">El precio particular manda sobre el de lista, y no se edita</h2>
+  <p>
+    El dia que un precio de esta grilla cubre, <b>manda sobre el precio de lista</b>; el dia que
+    ninguno cubre, rige el de lista. No es el arancel de una obra social: ese se carga en el
+    convenio, y los dos conviven.
+  </p>
+  <p>
+    Para <b>subir un precio</b>, cerrale la vigencia al actual el dia anterior y carga el nuevo. El
+    importe no se edita: si una carga estaba mal, dala de baja y volvela a cargar. Lo ya devengado
+    guardo su importe y no cambia.
+  </p>
+</section>
+
+<div aria-live="polite">
+  @if (exito(); as mensaje) {
+    <p class="estado estado--ok">{{ mensaje }}</p>
+  }
+</div>
+
+<p class="acciones">
+  <button
+    type="button"
+    class="boton"
+    (click)="abrirAlta()"
+    *akinePermiso="PERMISO_CONSULTORIO_MANAGE"
+  >
+    Cargar un precio
+  </button>
+</p>
+
+@if (altaAbierta()) {
+  <section class="tarjeta" aria-labelledby="titulo-alta-precio">
+    <h2 id="titulo-alta-precio">Nuevo precio particular</h2>
+
+    <form [formGroup]="formularioAlta" (ngSubmit)="enviarAlta()" novalidate>
+      <div class="campo">
+        <label for="alta-precio-importe">Importe</label>
+        <input
+          id="alta-precio-importe"
+          type="number"
+          min="0"
+          step="0.01"
+          formControlName="importe"
+          [attr.aria-invalid]="mostrarErrorAlta('importe') ? 'true' : null"
+          aria-describedby="alta-precio-importe-ayuda"
+        />
+        @if (mostrarErrorAlta('importe')) {
+          <p class="campo__error" role="alert">El importe es obligatorio, y puede ser cero.</p>
+        }
+        <p class="ayuda" id="alta-precio-importe-ayuda">
+          En la moneda del precio de lista de la oferta.
+        </p>
+      </div>
+
+      <div class="par-de-campos">
+        <div class="campo">
+          <label for="alta-precio-desde">Rige desde</label>
+          <input
+            id="alta-precio-desde"
+            type="date"
+            formControlName="vigenciaDesde"
+            [attr.aria-invalid]="mostrarErrorAlta('vigenciaDesde') ? 'true' : null"
+          />
+          @if (mostrarErrorAlta('vigenciaDesde')) {
+            <p class="campo__error" role="alert">La fecha de inicio es obligatoria.</p>
+          }
+        </div>
+
+        <div class="campo">
+          <label for="alta-precio-hasta">Rige hasta (opcional)</label>
+          <input
+            id="alta-precio-hasta"
+            type="date"
+            formControlName="vigenciaHasta"
+            aria-describedby="alta-precio-hasta-ayuda"
+          />
+          <p class="ayuda" id="alta-precio-hasta-ayuda">
+            Es el <b>ultimo dia</b> en que rige, inclusive. Vacio, no tiene fin previsto.
+          </p>
+        </div>
+      </div>
+
+      @if (errorAccion(); as mensaje) {
+        <p class="estado estado--error" role="alert">{{ mensaje }}</p>
+      }
+
+      <p class="acciones">
+        <button type="submit" class="boton" [disabled]="enviando()">
+          {{ enviando() ? 'Guardando...' : 'Cargar precio' }}
+        </button>
+        <button
+          type="button"
+          class="boton boton--secundario"
+          (click)="cerrarPanel()"
+          [disabled]="enviando()"
+        >
+          Cancelar
+        </button>
+      </p>
+    </form>
+  </section>
+}
+
+<section class="tarjeta" aria-labelledby="titulo-grilla-precios">
+  <h2 id="titulo-grilla-precios">Grilla de vigencias</h2>
+
+  <div aria-live="polite">
+    @switch (estado().tipo) {
+      @case ('cargando') {
+        <p class="estado" role="status">Cargando los precios&hellip;</p>
+      }
+
+      @case ('sin-contexto') {
+        <p class="estado estado--vacio">Todavia no elegiste un consultorio.</p>
+        <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
+      }
+
+      @case ('error') {
+        <p class="estado estado--error" role="alert">{{ mensajeDeCarga() }}</p>
+        @if (faltaContexto()) {
+          <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
+        } @else {
+          <button type="button" class="boton" (click)="cargar()">Reintentar</button>
+        }
+      }
+
+      @case ('listo') {
+        @if (precios().length === 0) {
+          <p class="estado estado--vacio">
+            Esta oferta no tiene precios por vigencia: todos los dias rige el precio de lista.
+          </p>
+        } @else {
+          <div class="tabla-scroll" tabindex="0" role="region" aria-label="Precios particulares">
+            <table class="tabla">
+              <caption class="visualmente-oculto">
+                Precios particulares de la oferta, con su importe, su vigencia, la situacion y las
+                acciones.
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col">Importe</th>
+                  <th scope="col">Vigencia</th>
+                  <th scope="col">Situacion</th>
+                  <th scope="col">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (precio of precios(); track precio.id) {
+                  @let situacionDeLaFila = situacion(precio);
+                  <tr
+                    [class.fila--revocada]="precio.estado === 'INACTIVO'"
+                    [class.fila--atenuada]="situacionDeLaFila.atenuada"
+                  >
+                    <th scope="row" class="importe">{{ importe(precio) }}</th>
+                    <td>{{ ventana(precio) }}</td>
+                    <td>
+                      <span class="marca-estado">{{ situacionDeLaFila.resumen }}</span>
+                      @if (precio.estado === 'INACTIVO' && precio.deactivationReason) {
+                        <p class="ayuda">{{ precio.deactivationReason }}</p>
+                      }
+                    </td>
+                    <td class="acciones-fila">
+                      @if (precio.estado === 'ACTIVO') {
+                        <ng-container *akinePermiso="PERMISO_CONSULTORIO_MANAGE">
+                          <button
+                            type="button"
+                            class="boton boton--secundario"
+                            (click)="abrirPanel(precio, 'fin')"
+                          >
+                            Cambiar fin
+                          </button>
+                          <button
+                            type="button"
+                            class="boton boton--secundario"
+                            (click)="abrirPanel(precio, 'baja')"
+                          >
+                            Dar de baja
+                          </button>
+                        </ng-container>
+                      }
+                    </td>
+                  </tr>
+
+                  @if (panelAbierto(precio.id, 'fin')) {
+                    <tr class="fila-panel">
+                      <td colspan="4">
+                        <form [formGroup]="formularioFin" (ngSubmit)="enviarFin()" novalidate>
+                          <h3>Cambiar el fin del precio de {{ importe(precio) }}</h3>
+                          <div class="campo">
+                            <label for="fin-precio-hasta">Rige hasta</label>
+                            <input
+                              id="fin-precio-hasta"
+                              type="date"
+                              formControlName="vigenciaHasta"
+                              aria-describedby="fin-precio-hasta-ayuda"
+                            />
+                            <p class="ayuda" id="fin-precio-hasta-ayuda">
+                              Ultimo dia en que rige, inclusive. <b>Vacio, se reabre</b> y queda sin
+                              fin previsto. Extenderlo puede chocar con otro precio de la oferta.
+                            </p>
+                          </div>
+
+                          @if (errorAccion(); as mensaje) {
+                            <p class="estado estado--error" role="alert">{{ mensaje }}</p>
+                          }
+
+                          <p class="acciones">
+                            <button type="submit" class="boton" [disabled]="enviando()">
+                              {{ enviando() ? 'Guardando...' : 'Guardar el fin' }}
+                            </button>
+                            <button
+                              type="button"
+                              class="boton boton--secundario"
+                              (click)="cerrarPanel()"
+                              [disabled]="enviando()"
+                            >
+                              Cancelar
+                            </button>
+                            @if (hayQueRecargar()) {
+                              <button type="button" class="boton" (click)="cargar()">
+                                Recargar la grilla
+                              </button>
+                            }
+                          </p>
+                        </form>
+                      </td>
+                    </tr>
+                  }
+
+                  @if (panelAbierto(precio.id, 'baja')) {
+                    <tr class="fila-panel">
+                      <td colspan="4">
+                        <app-confirmacion-con-motivo
+                          idCampo="baja-precio-motivo"
+                          [titulo]="'Dar de baja el precio de ' + importe(precio)"
+                          etiqueta="Motivo de la baja"
+                          ayuda="Queda registrado junto al precio y libera su periodo: esos dias vuelve a regir el precio de lista, salvo que cargues otro. Lo ya devengado no cambia. No hay reactivacion."
+                          textoConfirmar="Dar de baja"
+                          [enviando]="enviando()"
+                          (confirmado)="enviarBaja($event)"
+                          (cancelado)="cerrarPanel()"
+                        />
+                        @if (errorAccion(); as mensaje) {
+                          <p class="estado estado--error" role="alert">{{ mensaje }}</p>
+                        }
+                        @if (hayQueRecargar()) {
+                          <button type="button" class="boton" (click)="cargar()">
+                            Recargar la grilla
+                          </button>
+                        }
+                      </td>
+                    </tr>
+                  }
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      }
+    }
+  </div>
+</section>

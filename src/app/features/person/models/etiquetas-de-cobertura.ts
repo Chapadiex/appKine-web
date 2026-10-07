@@ -93,3 +93,24 @@ export function credencialEnPalabras(cobertura: CoberturaResponse): string {
 export function coberturaOperable(cobertura: CoberturaResponse): boolean {
   return !coberturaInactiva(cobertura);
 }
+
+/**
+ * Por que una cobertura vigente no aplica a una oferta, o a una practica de ella (RF-M08-006).
+ *
+ * <p>Los cuatro valores son los del contrato. Uno desconocido devuelve un texto neutro en vez de
+ * la constante cruda: un codigo en pantalla no le dice nada a quien atiende el mostrador.
+ */
+export function motivoDeNoAplicable(motivo: string | undefined): string {
+  switch (motivo) {
+    case 'OFERTA_NO_ADMITE_OBRA_SOCIAL':
+      return 'La oferta no admite obra social: se atiende como particular aunque el paciente tenga cobertura.';
+    case 'OFERTA_SIN_PRACTICAS':
+      return 'La oferta no declara practicas, asi que no hay nada que facturarle al financiador.';
+    case 'SIN_CONVENIO_VIGENTE':
+      return 'El centro no tiene convenio vigente con este financiador y plan para ese dia.';
+    case 'SIN_ARANCEL_VIGENTE':
+      return 'Hay convenio, pero sin arancel vigente para la practica ese dia.';
+    default:
+      return 'No aplica a esta oferta.';
+  }
+}

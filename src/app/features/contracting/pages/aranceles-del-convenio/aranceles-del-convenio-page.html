@@ -96,6 +96,31 @@
         </p>
       </div>
 
+      <div class="campo">
+        <label for="alta-arancel-oferta">Oferta (opcional)</label>
+        <select
+          id="alta-arancel-oferta"
+          formControlName="ofertaId"
+          aria-describedby="alta-arancel-oferta-ayuda"
+        >
+          <option value="">General: vale para cualquier oferta</option>
+          @for (oferta of ofertasCandidatas(); track oferta.id) {
+            <option [value]="oferta.id">Solo en {{ oferta.nombreComercial }}</option>
+          }
+        </select>
+        <p class="ayuda" id="alta-arancel-oferta-ayuda">
+          Sin oferta, es el arancel <b>general</b> de la practica en este convenio. Con una oferta,
+          es el precio de esa practica <b>cuando se presta dentro de esa oferta</b>, y ahi manda
+          sobre el general; los dos conviven en el mismo periodo. Aparecen las ofertas activas de la
+          sede que admiten obra social y declaran la practica elegida.
+          @if (
+            formularioAlta.controls.practicaId.value !== '' && ofertasCandidatas().length === 0
+          ) {
+            <b>Ninguna oferta de la sede cumple las tres condiciones para esta practica.</b>
+          }
+        </p>
+      </div>
+
       <div class="par-de-campos">
         <div class="campo">
           <label for="alta-arancel-total">Importe total</label>
@@ -311,7 +336,10 @@
                     [class.fila--revocada]="arancel.estado === 'INACTIVO'"
                     [class.fila--atenuada]="situacionDeLaFila.atenuada"
                   >
-                    <th scope="row">{{ nombreDeLaPractica(arancel) }}</th>
+                    <th scope="row">
+                      {{ nombreDeLaPractica(arancel) }}
+                      <p class="ayuda">{{ alcanceDelArancel(arancel) }}</p>
+                    </th>
                     <td class="importe">
                       {{ importeEnPalabras(arancel.importeTotal, moneda(), '-') }}
                     </td>

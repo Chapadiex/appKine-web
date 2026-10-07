@@ -2,7 +2,9 @@ import { Component, computed, effect, inject, input, signal, untracked } from '@
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 
+import { CoberturaAplicable } from '../../components/cobertura-aplicable/cobertura-aplicable';
 import { CoberturaResponse } from '../../../../api/generated/model/cobertura-response';
+import { OfertaResponse } from '../../../../api/generated/model/oferta-response';
 import { ConfirmacionConMotivo } from '../../../../shared/components/confirmacion-con-motivo/confirmacion-con-motivo';
 import { CreateCoberturaRequest } from '../../../../api/generated/model/create-cobertura-request';
 import { FinanciadorResponse } from '../../../../api/generated/model/financiador-response';
@@ -88,7 +90,13 @@ type EstadoDeCoberturas =
  */
 @Component({
   selector: 'app-coberturas-del-paciente-page',
-  imports: [ReactiveFormsModule, RouterLink, ConfirmacionConMotivo, PermisoDirective],
+  imports: [
+    ReactiveFormsModule,
+    RouterLink,
+    ConfirmacionConMotivo,
+    PermisoDirective,
+    CoberturaAplicable,
+  ],
   templateUrl: './coberturas-del-paciente-page.html',
   styleUrl: '../../person.css',
 })
@@ -205,6 +213,14 @@ export class CoberturasDelPacientePage {
   /** Cobertura tal como la devolvio el backend, para el panel abierto. Da la version. */
   private readonly original = signal<CoberturaResponse | null>(null);
 
+  // Consulta de cobertura aplicable por oferta (RF-M08-006, AKINE B-3). Se abre a pedido, como el
+  // alta: las ofertas de la sede no se piden en cada visita a la pantalla.
+  protected readonly consultaAbierta = signal(false);
+  protected readonly ofertas = signal<readonly OfertaResponse[]>([]);
+  protected readonly ofertaConsultada = signal<number | null>(null);
+  protected readonly fechaConsultada = signal('');
+  protected readonly personaNumerica = computed(() => this.identificador());
+
   constructor() {
     effect(() => {
       this.personaId();
@@ -258,6 +274,27 @@ export class CoberturasDelPacientePage {
         });
       },
     });
+  }
+
+  protected abrirConsulta(): void {
+    this.consultaAbierta.set(true);
+    const consultorioId = this.tenantContext.consultorioId();
+    if (consultorioId === null) {
+      return;
+    }
+    this.api.ofertasDeLaSede(consultorioId).subscribe({
+      next: (lista) => this.ofertas.set(lista),
+      error: () => this.ofertas.set([]),
+    });
+  }
+
+  protected elegirOferta(valor: string): void {
+    const id = Number(valor);
+    this.ofertaConsultada.set(Number.isInteger(id) && id > 0 ? id : null);
+  }
+
+  protected elegirFechaConsultada(valor: string): void {
+    this.fechaConsultada.set(valor);
   }
 
   protected cambiarFiltro(valor: string): void {
@@ -536,6 +573,10 @@ export class CoberturasDelPacientePage {
     this.financiadores.set([]);
     this.planes.set([]);
     this.filtro.set('TODAS');
+    this.consultaAbierta.set(false);
+    this.ofertas.set([]);
+    this.ofertaConsultada.set(null);
+    this.fechaConsultada.set('');
   }
 }
 

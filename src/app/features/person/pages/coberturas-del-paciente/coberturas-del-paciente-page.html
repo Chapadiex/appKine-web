@@ -74,6 +74,53 @@
   </p>
 </section>
 
+<!-- RF-M08-006: tener una cobertura no dice que aplique a una oferta concreta. -->
+<section class="tarjeta" aria-labelledby="titulo-aplicable">
+  <h2 id="titulo-aplicable">Que cobertura aplica a una oferta</h2>
+  <p class="ayuda">
+    Una cobertura vigente puede no aplicar: depende de que la oferta admita obra social y de que el
+    centro tenga convenio y arancel para su practica ese dia. Esto <b>solo consulta</b>: con que se
+    atiende se elige en la recepcion.
+  </p>
+
+  @if (!consultaAbierta()) {
+    <button type="button" class="boton boton--secundario" (click)="abrirConsulta()">
+      Consultar por oferta
+    </button>
+  } @else {
+    <div class="filtros">
+      <div class="campo">
+        <label for="consulta-oferta">Oferta</label>
+        <select id="consulta-oferta" (change)="elegirOferta($any($event.target).value)">
+          <option value="">Elegi una oferta</option>
+          @for (oferta of ofertas(); track oferta.id) {
+            <option [value]="oferta.id">{{ oferta.nombreComercial }}</option>
+          }
+        </select>
+      </div>
+      <div class="campo">
+        <label for="consulta-fecha">Dia (opcional)</label>
+        <input
+          id="consulta-fecha"
+          type="date"
+          [value]="fechaConsultada()"
+          (change)="elegirFechaConsultada($any($event.target).value)"
+          aria-describedby="consulta-fecha-ayuda"
+        />
+        <p class="ayuda" id="consulta-fecha-ayuda">Vacio, se resuelve para hoy.</p>
+      </div>
+    </div>
+
+    @if (personaNumerica(); as id) {
+      <app-cobertura-aplicable
+        [personaId]="id"
+        [ofertaId]="ofertaConsultada()"
+        [fecha]="fechaConsultada()"
+      />
+    }
+  }
+</section>
+
 <section class="tarjeta" aria-labelledby="titulo-historial">
   <h2 id="titulo-historial">Historial de coberturas</h2>
 
