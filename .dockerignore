@@ -1,0 +1,60 @@
+# Contexto de build de la imagen del frontend (G-3).
+#
+# El Dockerfile solo necesita package.json, package-lock.json, angular.json, los tsconfig,
+# public/, src/ y docker/. Todo lo demas se excluye: achica el contexto que se manda al daemon
+# y evita que un artefacto local o un secreto termine en una capa de la imagen.
+
+# Build local: la imagen instala y compila desde cero, nunca reutiliza los de la maquina.
+node_modules/
+dist/
+.angular/
+out-tsc/
+tmp/
+
+# Tests y sus reportes: no participan del bundle.
+coverage/
+test-results/
+playwright-report/
+blob-report/
+e2e/
+**/*.spec.ts
+vitest.config.ts
+playwright.config.ts
+tsconfig.spec.json
+
+# Git y worktrees.
+.git/
+.gitignore
+.gitattributes
+.claude/
+wt-*/
+
+# CI, scripts del repo y documentacion.
+.github/
+scripts/
+docs/
+*.md
+openapi-generator.json
+openapitools.json
+proxy.conf.json
+
+# IDE y sistema operativo.
+.vscode/
+.idea/
+.editorconfig
+.prettierrc
+.prettierignore
+eslint.config.js
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Secretos.
+.env
+.env.*
+*.pem
+*.key
+
+# La propia receta.
+Dockerfile
+.dockerignore
