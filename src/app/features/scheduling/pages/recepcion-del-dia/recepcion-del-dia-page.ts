@@ -4,9 +4,10 @@ import { RouterLink } from '@angular/router';
 import { Observable } from 'rxjs';
 
 import { ConfirmacionConMotivo } from '../../../../shared/components/confirmacion-con-motivo/confirmacion-con-motivo';
-import { PERMISO_TURNO_MANAGE } from '../../../../core/models/permisos';
+import { PERMISO_COBRO_REGISTER, PERMISO_TURNO_MANAGE } from '../../../../core/models/permisos';
 import { PermissionsStore } from '../../../../core/services/permissions.store';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
+import { PrepagoDeRecepcionEstadoEnum } from '../../../../api/generated/model/prepago-de-recepcion';
 import { Recepcion, RecepcionEstadoEnum } from '../../../../api/generated/model/recepcion';
 import { TurnoDelDia, TurnoDelDiaEstadoEnum } from '../../../../api/generated/model/turno-del-dia';
 import { SchedulingApi } from '../../services/scheduling-api';
@@ -16,6 +17,7 @@ import { textoDeEstado } from '../../models/etiquetas-de-turno';
 import {
   recepcionAbierta,
   textoDeModalidad,
+  textoDePrepago,
   textoDeRecepcion,
 } from '../../models/etiquetas-de-recepcion';
 
@@ -84,6 +86,13 @@ const CAUSAS_QUE_RELEEN: ReadonlySet<CausaAgenda> = new Set<CausaAgenda>([
  *
  * <p>Los instantes vienen en UTC y las horas del mostrador son locales de la sede. Si la zona
  * llegara vacia, la pantalla <b>rotula UTC</b> en vez de mentir con la del navegador.
+ *
+ * <h2>7. El prepago avisa, no bloquea (E-6, DP-06 / ADR-0013)</h2>
+ *
+ * <p>`Recepcion.prepago` lo calcula el servidor al leer. `PENDIENTE` se muestra como alerta con el
+ * precio sugerido y ofrece "Registrar prepago", que lleva al registro de cobro de `billing` en modo
+ * anticipo atado al turno. Ninguna transicion de esta pantalla mira el prepago: pasar a espera con
+ * el prepago pendiente se permite y el servidor deja constancia.
  */
 @Component({
   selector: 'app-recepcion-del-dia-page',
@@ -104,6 +113,7 @@ export class RecepcionDelDiaPage {
   protected readonly textoDeEstado = textoDeEstado;
   protected readonly textoDeRecepcion = textoDeRecepcion;
   protected readonly textoDeModalidad = textoDeModalidad;
+  protected readonly textoDePrepago = textoDePrepago;
 
   /** Dia que se muestra. Vive en un signal aparte del input: el selector lo mueve sin navegar. */
   protected readonly dia = signal(hoy());
@@ -127,6 +137,7 @@ export class RecepcionDelDiaPage {
   protected readonly zonaConocida = computed(() => this.timezone() !== '');
 
   protected readonly puedeOperar = computed(() => this.permisos.tiene(PERMISO_TURNO_MANAGE));
+  protected readonly puedeCobrar = computed(() => this.permisos.tiene(PERMISO_COBRO_REGISTER));
   protected readonly hayTurnos = computed(() => this.turnos().length > 0);
 
   /** Cuantos estan en la sala de espera. Es el numero que el mostrador mira sin leer la tabla. */
@@ -218,7 +229,12 @@ export class RecepcionDelDiaPage {
     this.transicion(
       turno,
       (c, t) => this.api.pasarAEspera(c, t, versionDe(turno)),
-      () => `${nombre(turno)} paso a la sala de espera: aguarda ser llamado.`,
+      () =>
+        `${nombre(turno)} paso a la sala de espera: aguarda ser llamado.` +
+        // El prepago pendiente avisa y no bloquea (DP-06): el servidor deja constancia en el evento.
+        (this.prepagoPendiente(turno)
+          ? ' Paso sin el prepago que exige la prestacion; quedo registrado en la recepcion.'
+          : ''),
     );
   }
 
@@ -327,6 +343,47 @@ export class RecepcionDelDiaPage {
   /** Query del enlace al ciclo del turno: sin la version, esa pantalla no puede operar. */
   protected queryDelTurno(turno: TurnoDelDia): Record<string, string | number> {
     return { version: turno.version ?? 0, ofertaId: turno.ofertaId ?? 0, fecha: this.dia() };
+  }
+
+  /**
+   * `true` cuando la fila ofrece "Registrar prepago" (E-6): la oferta lo exige, no hay anticipo y
+   * el turno sigue siendo una reserva viva, que es lo unico que el backend admite. Si no se cumple
+   * igual responde 409 `prepago-no-admitido`; esto solo evita ofrecer lo que va a fallar.
+   */
+  protected admitePrepago(turno: TurnoDelDia): boolean {
+    const reservaViva =
+      turno.estado === TurnoDelDiaEstadoEnum.RESERVADO ||
+      turno.estado === TurnoDelDiaEstadoEnum.CONFIRMADO;
+    return (
+      reservaViva &&
+      turno.personaId !== undefined &&
+      turno.recepcion?.prepago?.estado === PrepagoDeRecepcionEstadoEnum.PENDIENTE
+    );
+  }
+
+  protected prepagoPendiente(turno: TurnoDelDia): boolean {
+    return turno.recepcion?.prepago?.estado === PrepagoDeRecepcionEstadoEnum.PENDIENTE;
+  }
+
+  /**
+   * Enlace al registro de cobro en modo prepago. Es una URL y no un import: `billing` es otro
+   * feature (AGENT.md 4.4). Lleva el turno, el importe sugerido, la moneda y el dia para volver;
+   * al volver, esta pantalla relee el dia entero y la fila ya dice REGISTRADO.
+   */
+  protected rutaDePrepago(turno: TurnoDelDia): readonly (string | number)[] {
+    return ['/pacientes', turno.personaId ?? 0, 'cuenta-corriente', 'cobrar'];
+  }
+
+  protected queryDePrepago(turno: TurnoDelDia): Record<string, string | number> {
+    const prepago = turno.recepcion?.prepago;
+    return {
+      turnoId: turno.id ?? 0,
+      fecha: this.dia(),
+      ...(prepago?.importeSugerido === undefined
+        ? {}
+        : { importeSugerido: prepago.importeSugerido }),
+      ...(prepago?.moneda ? { monedaSugerida: prepago.moneda } : {}),
+    };
   }
 
   // -------------------------------------------------------------------------------------

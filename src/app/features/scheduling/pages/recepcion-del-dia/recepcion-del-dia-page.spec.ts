@@ -4,7 +4,11 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 
 import { RecepcionDelDiaPage } from './recepcion-del-dia-page';
-import { PERMISO_TURNO_MANAGE, PERMISO_TURNO_READ } from '../../../../core/models/permisos';
+import {
+  PERMISO_COBRO_REGISTER,
+  PERMISO_TURNO_MANAGE,
+  PERMISO_TURNO_READ,
+} from '../../../../core/models/permisos';
 import { PermissionsStore } from '../../../../core/services/permissions.store';
 import { RUTA_PERMISOS_EFECTIVOS } from '../../../../core/testing/rutas-api';
 import { TIMEOUT_AXE, esperarSinViolaciones } from '../../../../core/testing/axe';
@@ -426,6 +430,71 @@ describe('RecepcionDelDiaPage', () => {
     // El contrato no publica el `timezone` en la respuesta del dia. Rotular UTC es lo unico
     // honesto: la zona del navegador correria las horas del mostrador sin que nada falle.
     expect(textoDe(fixture)).toContain('no se pudo averiguar la zona horaria');
+  });
+
+  describe('prepago (E-6)', () => {
+    const PENDIENTE = {
+      ...DEL_DIA[3],
+      personaId: 501,
+      recepcion: {
+        ...DEL_DIA[3].recepcion,
+        estado: 'VALIDADA',
+        prepago: { estado: 'PENDIENTE', importeSugerido: 15000, moneda: 'ARS' },
+      },
+    };
+
+    it('PENDIENTE avisa con el sugerido, no bloquea y lleva al cobro con el turno', async () => {
+      const fixture = await montar({
+        permisos: [PERMISO_TURNO_READ, PERMISO_TURNO_MANAGE, PERMISO_COBRO_REGISTER],
+        turnos: [PENDIENTE],
+      });
+
+      const texto = fila(fixture, 'Ibarra, Dario').textContent ?? '';
+      expect(texto).toContain('Prepago pendiente');
+      expect(texto).toMatch(/sugerido \$\s?15\.000,00/);
+      // Avisa y no bloquea: pasar a espera sigue disponible.
+      expect(botonesDeLaFila(fixture, 'Ibarra, Dario')).toContain('Pasar a espera');
+
+      const enlace = Array.from(fila(fixture, 'Ibarra, Dario').querySelectorAll('a')).find((a) =>
+        (a.textContent ?? '').includes('Registrar prepago'),
+      ) as HTMLAnchorElement;
+      expect(enlace.getAttribute('href')).toBe(
+        `/pacientes/501/cuenta-corriente/cobrar?turnoId=304&fecha=${FECHA}` +
+          '&importeSugerido=15000&monedaSugerida=ARS',
+      );
+    });
+
+    it('pasar a espera con el prepago pendiente se permite y lo dice', async () => {
+      const fixture = await montar({ turnos: [PENDIENTE] });
+
+      // Sin `cobro:register` no se ofrece cobrar, pero el aviso sigue a la vista.
+      expect(textoDe(fixture)).not.toContain('Registrar prepago');
+      clickearEnLaFila(fixture, 'Ibarra, Dario', 'Pasar a espera');
+      httpMock
+        .expectOne(recepcion(304, 'espera'))
+        .flush({ ...PENDIENTE.recepcion, estado: 'EN_ESPERA', version: 2 });
+      await asentar(fixture);
+
+      expect(textoDe(fixture)).toContain('Paso sin el prepago que exige la prestacion');
+    });
+
+    it('REGISTRADO muestra el anticipo y no ofrece cobrar de nuevo', async () => {
+      const fixture = await montar({
+        permisos: [PERMISO_TURNO_READ, PERMISO_TURNO_MANAGE, PERMISO_COBRO_REGISTER],
+        turnos: [
+          {
+            ...PENDIENTE,
+            recepcion: {
+              ...PENDIENTE.recepcion,
+              prepago: { estado: 'REGISTRADO', cobroId: 9, importe: 15000, moneda: 'ARS' },
+            },
+          },
+        ],
+      });
+
+      expect(textoDe(fixture)).toContain('Prepago registrado por');
+      expect(textoDe(fixture)).not.toContain('Registrar prepago');
+    });
   });
 
   it(
