@@ -74,6 +74,18 @@ export const routes: Routes = [
     data: { [DATA_ANCHO]: ANCHO_AMPLIO },
   },
   {
+    // Precios particulares por vigencia (RF-M16-009, AKINE B-3). Cuelga de la oferta por lo mismo
+    // que las habilitaciones: no tiene sentido sin la oferta delante.
+    path: 'ofertas/:ofertaId/precios',
+    canActivate: [contextGuard],
+    loadComponent: () =>
+      import('./pages/precios-particulares-de-la-oferta/precios-particulares-de-la-oferta-page').then(
+        (m) => m.PreciosParticularesDeLaOfertaPage,
+      ),
+    title: 'AKINE - Precios particulares de la oferta',
+    data: { [DATA_ANCHO]: ANCHO_AMPLIO },
+  },
+  {
     // Entrar a `/servicios` a secas cae en las ofertas, no en el catalogo: el diseno (6) dice
     // que la de ofertas "es la que usa un administrador todos los dias", y el catalogo global
     // es sobre todo una referencia que se consulta cuando hay que dar de alta una oferta.
