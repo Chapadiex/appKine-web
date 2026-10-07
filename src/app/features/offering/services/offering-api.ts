@@ -7,6 +7,8 @@ import { ColaboradoresService } from '../../../api/generated/api/colaboradores.s
 import { EspaciosService } from '../../../api/generated/api/espacios.service';
 import { HabilitacionesResponse } from '../../../api/generated/model/habilitaciones-response';
 import { OfertaResponse } from '../../../api/generated/model/oferta-response';
+import { CreatePrecioParticularRequest } from '../../../api/generated/model/create-precio-particular-request';
+import { PrecioParticularResponse } from '../../../api/generated/model/precio-particular-response';
 import { ServicioResponse } from '../../../api/generated/model/servicio-response';
 import { ValidacionDeOfertaResponse } from '../../../api/generated/model/validacion-de-oferta-response';
 import { ServiciosYOfertasService } from '../../../api/generated/api/servicios-y-ofertas.service';
@@ -153,6 +155,26 @@ export class OfferingApi {
     return this.api.updateOferta({ consultorioId, ofertaId, updateOfertaRequest: cuerpo });
   }
 
+  /**
+   * Activa o desactiva la politica de prepago de la oferta (E-6, DP-06 / ADR-0013).
+   *
+   * <p>Es un recurso aparte del `PUT` de la oferta a proposito: es configuracion del mostrador, no
+   * de la prestacion. Lleva la `version` leida; un 409 de concurrencia significa que otro la toco.
+   * La politica <b>alerta</b> en la recepcion, nunca bloquea la atencion.
+   */
+  fijarPoliticaDePrepago(
+    consultorioId: number,
+    ofertaId: number,
+    exigePrepago: boolean,
+    expectedVersion: number,
+  ): Observable<OfertaResponse> {
+    return this.api.updatePoliticaDePrepagoDeOferta({
+      consultorioId,
+      ofertaId,
+      politicaDePrepagoRequest: { exigePrepago, expectedVersion },
+    });
+  }
+
   darDeBajaOferta(consultorioId: number, ofertaId: number, motivo: string): Observable<unknown> {
     return this.api.deactivateOferta({
       consultorioId,
@@ -261,6 +283,68 @@ export class OfferingApi {
       consultorioId,
       estado: 'ACTIVO',
       size: 200,
+    });
+  }
+
+  // ---------------------------------------------------------------------------------------
+  // Precios particulares por vigencia (RF-M16-009, AKINE B-3). Lectura por pertenencia;
+  // mutaciones con `consultorio:manage`, el mismo permiso que configura la oferta.
+  // ---------------------------------------------------------------------------------------
+
+  /** Los precios de la oferta, activos y dados de baja: la baja se muestra con su motivo. */
+  listarPreciosParticulares(
+    consultorioId: number,
+    ofertaId: number,
+  ): Observable<readonly PrecioParticularResponse[]> {
+    return this.api.listPreciosParticularesDeOferta({ consultorioId, ofertaId });
+  }
+
+  /** Sin moneda, el precio hereda la del precio de lista de la oferta. */
+  crearPrecioParticular(
+    consultorioId: number,
+    ofertaId: number,
+    cuerpo: CreatePrecioParticularRequest,
+  ): Observable<PrecioParticularResponse> {
+    return this.api.createPrecioParticularDeOferta({
+      consultorioId,
+      ofertaId,
+      createPrecioParticularRequest: cuerpo,
+    });
+  }
+
+  /**
+   * Lo UNICO editable de un precio: el fin de su vigencia. `null` la reabre.
+   *
+   * <p>El importe no se edita: corregir una carga es darla de baja y cargarla de nuevo, porque lo
+   * ya devengado copio su importe y no se vuelve a leer (CA-M16-009-06).
+   */
+  cambiarFinPrecioParticular(
+    consultorioId: number,
+    ofertaId: number,
+    precioId: number,
+    vigenciaHasta: string | null,
+    expectedVersion: number,
+  ): Observable<PrecioParticularResponse> {
+    return this.api.cambiarFinPrecioParticularDeOferta({
+      consultorioId,
+      ofertaId,
+      precioId,
+      cambiarFinPrecioParticularRequest:
+        vigenciaHasta === null ? { expectedVersion } : { expectedVersion, vigenciaHasta },
+    });
+  }
+
+  darDeBajaPrecioParticular(
+    consultorioId: number,
+    ofertaId: number,
+    precioId: number,
+    motivo: string,
+  ): Observable<unknown> {
+    return this.api.deactivatePrecioParticularDeOferta({
+      consultorioId,
+      ofertaId,
+      precioId,
+      deactivateOfferingRequest: { reason: motivo },
     });
   }
 }

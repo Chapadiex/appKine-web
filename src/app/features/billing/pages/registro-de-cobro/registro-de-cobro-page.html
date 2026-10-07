@@ -1,9 +1,24 @@
-<h1>Registrar un cobro</h1>
+@if (modoPrepago()) {
+  <h1>Registrar un prepago</h1>
 
-<p class="descripcion">
-  Esto registra <b>dinero recibido</b> y lo imputa a deuda. <b>No es la caja</b>: el arqueo y el
-  turno de caja son otro circuito (M20) y viven en la seccion Caja.
-</p>
+  <!--
+    E-6 (DP-06 / ADR-0013): el prepago es un ANTICIPO atado a un turno. No hay deuda todavia —la
+    deuda nace al cerrar la sesion— asi que no se imputa nada: todo queda a favor del paciente y el
+    backend lo imputa solo cuando se cierra la sesion de ese turno. Lo que sobre sigue a favor.
+  -->
+  <p class="descripcion">
+    Esto registra un <b>anticipo</b> por el turno de hoy. No hay deuda todavia: se genera al cerrar
+    la atencion, y en ese momento el anticipo se imputa solo. Si sobra, queda a favor del paciente;
+    si el paciente no viene, el anticipo queda disponible para reintegrarlo.
+  </p>
+} @else {
+  <h1>Registrar un cobro</h1>
+
+  <p class="descripcion">
+    Esto registra <b>dinero recibido</b> y lo imputa a deuda. <b>No es la caja</b>: el arqueo y el
+    turno de caja son otro circuito (M20) y viven en la seccion Caja.
+  </p>
+}
 
 @if (nombreDeLaPersona(); as quien) {
   <p class="ayuda">
@@ -13,7 +28,13 @@
 }
 
 <p>
-  <a class="enlace" [routerLink]="rutaCuenta()">Volver a la cuenta corriente</a>
+  @if (modoPrepago()) {
+    <a class="enlace" routerLink="/agenda/recepcion" [queryParams]="queryRecepcion()">
+      Volver a la recepcion del dia
+    </a>
+  } @else {
+    <a class="enlace" [routerLink]="rutaCuenta()">Volver a la cuenta corriente</a>
+  }
 </p>
 
 @if (cargando()) {
@@ -62,78 +83,122 @@
       <dt>Medios</dt>
       <dd>{{ mensajeDeMedios(registrado) }}</dd>
 
-      <dt>Deudas imputadas</dt>
-      <dd>{{ registrado.imputaciones?.length }}</dd>
+      @if (modoPrepago()) {
+        <dt>Imputacion</dt>
+        <dd>
+          Ninguna todavia: es un anticipo del turno. Se imputa solo al cerrar la sesion, y lo que
+          sobre queda a favor del paciente.
+        </dd>
+      } @else {
+        <dt>Deudas imputadas</dt>
+        <dd>{{ registrado.imputaciones?.length }}</dd>
+      }
     </dl>
 
-    <div class="acciones">
-      <a class="boton" [routerLink]="rutaCuenta()">Ver la cuenta corriente</a>
-      <a class="boton boton--secundario" [routerLink]="rutaCobros()">
-        Ver los cobros y comprobantes
-      </a>
-      <button type="button" class="boton boton--secundario" (click)="recargar()">
-        Registrar otro cobro
-      </button>
-    </div>
+    @if (modoPrepago()) {
+      <div class="acciones">
+        <a class="boton" routerLink="/agenda/recepcion" [queryParams]="queryRecepcion()">
+          Volver a la recepcion del dia
+        </a>
+        <a class="boton boton--secundario" [routerLink]="rutaCobros()">
+          Ver los cobros y comprobantes
+        </a>
+      </div>
+    } @else {
+      <div class="acciones">
+        <a class="boton" [routerLink]="rutaCuenta()">Ver la cuenta corriente</a>
+        <a class="boton boton--secundario" [routerLink]="rutaCobros()">
+          Ver los cobros y comprobantes
+        </a>
+        <button type="button" class="boton boton--secundario" (click)="recargar()">
+          Registrar otro cobro
+        </button>
+      </div>
+    }
   </section>
 }
 
 <!-- ============================ Formulario ========================================== -->
 
-@if (deudas().length > 0 && !registrado()) {
-  <fieldset class="grupo">
-    <legend>Deudas a las que se imputa</legend>
+@if ((deudas().length > 0 || (modoPrepago() && !cargando())) && !registrado()) {
+  @if (modoPrepago()) {
+    <div class="campo">
+      <label for="moneda-prepago">Moneda del prepago</label>
+      <input
+        id="moneda-prepago"
+        type="text"
+        autocomplete="off"
+        maxlength="3"
+        [value]="monedaDelPrepago()"
+        [attr.aria-invalid]="moneda() === null"
+        aria-describedby="ayuda-moneda-prepago"
+        (input)="cambiarMonedaDelPrepago($any($event.target).value)"
+      />
+      <p class="ayuda" id="ayuda-moneda-prepago">
+        Codigo de tres letras (ARS, USD). Viene de la oferta; el anticipo se imputa solo a una deuda
+        en la misma moneda.
+      </p>
+    </div>
+  } @else {
+    <fieldset class="grupo">
+      <legend>Deudas a las que se imputa</legend>
 
-    <p class="ayuda">
-      Se propone el saldo completo de cada deuda elegida. Es editable: un pago parcial deja la deuda
-      en «pagada en parte» y no la cierra.
-    </p>
+      <p class="ayuda">
+        Se propone el saldo completo de cada deuda elegida. Es editable: un pago parcial deja la
+        deuda en «pagada en parte» y no la cierra.
+      </p>
 
-    @for (deuda of deudas(); track deuda.id) {
-      <div class="linea-deuda">
-        <div class="opcion-radio">
-          <input
-            type="checkbox"
-            [id]="'deuda-' + deuda.id"
-            [checked]="estaElegida(deuda)"
-            (change)="alternar(deuda)"
-          />
-          <label [for]="'deuda-' + deuda.id">
-            {{ deuda.snapshotNombre }} — {{ fechaEnPalabras(deuda.devengadaEn) }} — saldo
-            <b>{{ saldoEnPalabras(deuda) }}</b>
-            <span class="ayuda">(de {{ importeOriginalEnPalabras(deuda) }})</span>
-          </label>
-        </div>
-
-        @if (estaElegida(deuda)) {
-          <div class="campo campo--sangrado">
-            <label [for]="'imputacion-' + deuda.id">Importe a imputar a esta deuda</label>
+      @for (deuda of deudas(); track deuda.id) {
+        <div class="linea-deuda">
+          <div class="opcion-radio">
             <input
-              [id]="'imputacion-' + deuda.id"
-              type="text"
-              inputmode="decimal"
-              autocomplete="off"
-              [value]="importeDe(deuda)"
-              [attr.aria-invalid]="excede(deuda)"
-              [attr.aria-describedby]="'ayuda-imputacion-' + deuda.id"
-              (input)="cambiarImporte(deuda, $any($event.target).value)"
+              type="checkbox"
+              [id]="'deuda-' + deuda.id"
+              [checked]="estaElegida(deuda)"
+              (change)="alternar(deuda)"
             />
-            <p class="ayuda" [id]="'ayuda-imputacion-' + deuda.id">
-              Hasta {{ saldoEnPalabras(deuda) }}. Un saldo no puede quedar negativo: el servidor
-              descuenta solo si alcanza.
-            </p>
+            <label [for]="'deuda-' + deuda.id">
+              {{ deuda.snapshotNombre }} — {{ fechaEnPalabras(deuda.devengadaEn) }} — saldo
+              <b>{{ saldoEnPalabras(deuda) }}</b>
+              <span class="ayuda">(de {{ importeOriginalEnPalabras(deuda) }})</span>
+            </label>
           </div>
-        }
-      </div>
-    }
-  </fieldset>
+
+          @if (estaElegida(deuda)) {
+            <div class="campo campo--sangrado">
+              <label [for]="'imputacion-' + deuda.id">Importe a imputar a esta deuda</label>
+              <input
+                [id]="'imputacion-' + deuda.id"
+                type="text"
+                inputmode="decimal"
+                autocomplete="off"
+                [value]="importeDe(deuda)"
+                [attr.aria-invalid]="excede(deuda)"
+                [attr.aria-describedby]="'ayuda-imputacion-' + deuda.id"
+                (input)="cambiarImporte(deuda, $any($event.target).value)"
+              />
+              <p class="ayuda" [id]="'ayuda-imputacion-' + deuda.id">
+                Hasta {{ saldoEnPalabras(deuda) }}. Un saldo no puede quedar negativo: el servidor
+                descuenta solo si alcanza.
+              </p>
+            </div>
+          }
+        </div>
+      }
+    </fieldset>
+  }
 
   <fieldset class="grupo">
     <legend>Como entro la plata</legend>
 
     <p class="ayuda">
-      Puede ser mas de un medio: mitad efectivo y mitad tarjeta es normal. La suma tiene que dar lo
-      mismo que las imputaciones.
+      @if (modoPrepago()) {
+        Se propone el precio particular de la prestacion; es editable, el importe lo decide quien
+        cobra. El efectivo necesita la caja abierta.
+      } @else {
+        Puede ser mas de un medio: mitad efectivo y mitad tarjeta es normal. La suma tiene que dar
+        lo mismo que las imputaciones.
+      }
     </p>
 
     @for (linea of medios(); track linea.id) {
@@ -212,8 +277,13 @@
   <section class="tarjeta" aria-labelledby="titulo-totales">
     <h2 id="titulo-totales">Totales</h2>
     <dl class="detalle">
-      <dt>Imputado a deuda</dt>
-      <dd class="importe">{{ totalImputadoEnPalabras() || '—' }}</dd>
+      @if (modoPrepago()) {
+        <dt>Queda a favor del paciente (anticipo)</dt>
+        <dd class="importe">{{ totalDeMediosEnPalabras() || '—' }}</dd>
+      } @else {
+        <dt>Imputado a deuda</dt>
+        <dd class="importe">{{ totalImputadoEnPalabras() || '—' }}</dd>
+      }
 
       <dt>Recibido por medios</dt>
       <dd class="importe">{{ totalDeMediosEnPalabras() || '—' }}</dd>
@@ -235,7 +305,7 @@
 
   <div class="acciones">
     <button type="button" class="boton" [disabled]="!puedeConfirmar()" (click)="confirmar()">
-      Registrar el cobro
+      {{ modoPrepago() ? 'Registrar el prepago' : 'Registrar el cobro' }}
     </button>
   </div>
 }
@@ -250,6 +320,20 @@
 
       @if (fallo.motivo) {
         <p class="ayuda">Lo que dijo el servidor: {{ fallo.motivo }}</p>
+      }
+
+      @if (fallo.causa === 'prepago-no-admitido' || fallo.causa === 'prepago-ya-registrado') {
+        <!-- Reintentar tal cual falla igual: lo util es ver el turno como esta ahora. -->
+        <div class="acciones">
+          <a class="boton" routerLink="/agenda/recepcion" [queryParams]="queryRecepcion()">
+            Volver a la recepcion del dia
+          </a>
+          @if (fallo.causa === 'prepago-ya-registrado') {
+            <a class="boton boton--secundario" [routerLink]="rutaCobros()">
+              Ver los cobros del paciente
+            </a>
+          }
+        </div>
       }
 
       @if (fallo.causa === 'no-cuadra' && fallo.esperado !== null && fallo.recibido !== null) {

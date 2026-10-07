@@ -57,6 +57,8 @@ describe('traducirErrorContracting', () => {
       // del que ya esta— y separarlos daria dos mensajes que dicen lo mismo con otras palabras.
       [409, 'convenio-solapado', 'convenio', 'solapamiento'],
       [409, 'arancel-solapado', 'arancel', 'solapamiento'],
+      [409, 'oferta-sin-obra-social', 'arancel', 'oferta-sin-obra-social'],
+      [409, 'practica-no-habilitada-en-oferta', 'arancel', 'practica-fuera-de-la-oferta'],
 
       [409, 'financiador-inactivo', 'plan', 'referencia-inactiva'],
       [409, 'plan-cobertura-inactivo', 'convenio', 'referencia-inactiva'],

@@ -64,6 +64,10 @@ export type CausaContracting =
   | 'referencia-inactiva'
   /** 409 *-already-inactive: la baja ya se hizo. No es un fallo del usuario. */
   | 'ya-dada-de-baja'
+  /** 409 oferta-sin-obra-social: el arancel por oferta exige una oferta que admita obra social. */
+  | 'oferta-sin-obra-social'
+  /** 409 practica-no-habilitada-en-oferta: la oferta no declara la practica del arancel. */
+  | 'practica-fuera-de-la-oferta'
   /** Cualquier otro 409. Gana el `detail` del backend, que nombra el conflicto concreto. */
   | 'conflicto'
   /** 429: hay que esperar. Ver `segundosDeEspera`. */
@@ -191,6 +195,19 @@ const MENSAJE_REFERENCIA_INACTIVA =
   'lo unico que se impide es lo nuevo. Si hace falta volver a operar con ella, se da de alta otra ' +
   'ficha; no hay reactivacion.';
 
+/**
+ * El arancel por oferta (RF-M16-008) sobre una oferta que no admite obra social.
+ *
+ * <p>Ese arancel nunca resolveria: la cobertura aplicable corta antes, en la oferta.
+ */
+const MENSAJE_OFERTA_SIN_OBRA_SOCIAL =
+  'Esa oferta no admite obra social, asi que un arancel del convenio para ella nunca se usaria. ' +
+  'Carga el arancel como general, o habilita la obra social en la oferta primero.';
+
+const MENSAJE_PRACTICA_FUERA_DE_LA_OFERTA =
+  'Esa oferta no declara la practica de este arancel. Agregale la practica a la oferta, o elegi ' +
+  'otra oferta, o dejalo como arancel general del convenio.';
+
 const MENSAJE_YA_DADA_DE_BAJA =
   'Esto ya estaba dado de baja, asi que no hay nada que hacer. Recarga el listado para verlo con ' +
   'su estado actual.';
@@ -270,6 +287,12 @@ export function traducirErrorContracting(
     case 'convenio-already-inactive':
     case 'arancel-already-inactive':
       return base(MENSAJE_YA_DADA_DE_BAJA, 'ya-dada-de-baja');
+
+    case 'oferta-sin-obra-social':
+      return base(MENSAJE_OFERTA_SIN_OBRA_SOCIAL, 'oferta-sin-obra-social');
+
+    case 'practica-no-habilitada-en-oferta':
+      return base(MENSAJE_PRACTICA_FUERA_DE_LA_OFERTA, 'practica-fuera-de-la-oferta');
 
     default:
       break;
