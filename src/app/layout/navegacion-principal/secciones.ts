@@ -1,5 +1,6 @@
 import { RUTA_HORARIOS } from '../../features/resource/models/rutas-de-horarios';
 import { PERMISO_COLABORADOR_READ } from '../../core/models/permisos';
+import { PERMISO_COBRO_REGISTER as PERMISO_PRESENTACIONES } from '../../core/models/permisos';
 
 /** Una entrada de la navegacion principal. */
 export interface Seccion {
@@ -77,6 +78,8 @@ export const SECCIONES: readonly Seccion[] = [
   // despues con quien se acordo cobrarlo. "Contratacion" y no "Convenios" porque la seccion
   // tambien incluye el catalogo de financiadores, que no es un convenio.
   { etiqueta: 'Contratacion', ruta: '/contratacion' },
+  // Presentaciones a financiadores (M21). El permiso es `cobro:register`: lo decidio el backend.
+  { etiqueta: 'Presentaciones', ruta: '/presentaciones', permisos: [PERMISO_PRESENTACIONES] },
   { etiqueta: 'Organizacion', ruta: '/organizacion' },
 ];
 

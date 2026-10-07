@@ -1,0 +1,210 @@
+<h1>Presentaciones a financiadores</h1>
+
+<p class="descripcion">
+  Un lote es lo que la sede le reclama a una obra social o prepaga por las prestaciones de un
+  periodo. <b>Presentar no es cobrar</b>: la deuda de cada prestacion se salda recien cuando el lote
+  se cierra, y la plata entra cuando se registra el pago del financiador.
+</p>
+
+<!-- ================================ Filtros =================================== -->
+
+<section class="tarjeta" aria-labelledby="titulo-filtros">
+  <h2 id="titulo-filtros">Buscar lotes</h2>
+  <form [formGroup]="filtro" (ngSubmit)="buscar()" novalidate>
+    <div class="campos-en-linea">
+      <div class="campo">
+        <label for="filtro-estado">Estado</label>
+        <select id="filtro-estado" formControlName="estado">
+          <option value="">Todos</option>
+          @for (opcion of estados; track opcion) {
+            <option [value]="opcion">{{ estadoEnPalabras(opcion) }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="campo">
+        <label for="filtro-financiador">Financiador</label>
+        <select id="filtro-financiador" formControlName="financiadorId">
+          <option value="">Todos</option>
+          @for (ficha of financiadores(); track ficha.id) {
+            <option [value]="ficha.id">{{ ficha.nombre }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="campo">
+        <label for="filtro-desde">Periodo desde</label>
+        <input id="filtro-desde" type="date" formControlName="desde" />
+      </div>
+
+      <div class="campo">
+        <label for="filtro-hasta">Periodo hasta</label>
+        <input id="filtro-hasta" type="date" formControlName="hasta" />
+      </div>
+    </div>
+
+    <div class="acciones">
+      <button type="submit" class="boton">Buscar</button>
+    </div>
+  </form>
+</section>
+
+@if (cuenta(); as resumen) {
+  <section class="tarjeta" aria-labelledby="titulo-cuenta-financiador">
+    <h2 id="titulo-cuenta-financiador">Cuenta corriente de {{ resumen.financiadorNombre }}</h2>
+    <dl class="detalle">
+      <dt>Lotes presentados</dt>
+      <dd>{{ resumen.lotes }}</dd>
+      <dt>Presentado</dt>
+      <dd class="importe">{{ importeDeCuenta(resumen.totalPresentado) }}</dd>
+      <dt>Debitado</dt>
+      <dd class="importe">{{ importeDeCuenta(resumen.totalDebitado) }}</dd>
+      <dt>Cobrado</dt>
+      <dd class="importe">{{ importeDeCuenta(resumen.totalCobrado) }}</dd>
+      <dt>Saldo a cobrar</dt>
+      <dd class="importe">{{ importeDeCuenta(resumen.saldo) }}</dd>
+    </dl>
+  </section>
+}
+
+<!-- ================================ Listado =================================== -->
+
+@if (estado().tipo === 'cargando') {
+  <p class="estado estado--cargando">Cargando los lotes…</p>
+}
+
+@if (error(); as fallo) {
+  <section class="tarjeta" role="alert" aria-labelledby="titulo-error-lotes">
+    <h2 id="titulo-error-lotes">No se pudieron cargar los lotes</h2>
+    <p class="estado estado--error">{{ fallo.mensaje }}</p>
+    <div class="acciones">
+      @if (fallo.causa === 'sin-contexto') {
+        <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto</a>
+      } @else {
+        <button type="button" class="boton boton--secundario" (click)="buscar()">Reintentar</button>
+      }
+    </div>
+  </section>
+}
+
+@if (vacia()) {
+  <p class="estado estado--vacio">No hay lotes con esos filtros. Podes abrir uno abajo.</p>
+}
+
+@if (lotes().length > 0) {
+  <div class="tabla-scroll" tabindex="0" role="region" aria-labelledby="titulo-tabla-lotes">
+    <h2 id="titulo-tabla-lotes" class="visualmente-oculto">Lotes de presentacion</h2>
+    <table class="tabla">
+      <thead>
+        <tr>
+          <th scope="col">Numero</th>
+          <th scope="col">Financiador</th>
+          <th scope="col">Periodo</th>
+          <th scope="col">Estado</th>
+          <th scope="col">Presentado</th>
+          <th scope="col">Saldo</th>
+          <th scope="col">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (lote of lotes(); track lote.id) {
+          <tr>
+            <td>{{ lote.numero ? 'N.º ' + lote.numero : 'Sin numero (borrador)' }}</td>
+            <td>{{ lote.financiadorNombre }}</td>
+            <td>{{ fecha(lote.periodoDesde) }} al {{ fecha(lote.periodoHasta) }}</td>
+            <td>
+              <span [class]="claseDeEstado(lote.estado)">{{ estadoEnPalabras(lote.estado) }}</span>
+            </td>
+            <td class="importe">{{ importe(lote, lote.totalPresentado) }}</td>
+            <td class="importe">{{ importe(lote, lote.saldo) }}</td>
+            <td>
+              <a class="enlace" [routerLink]="['/presentaciones', lote.id]">
+                Abrir el lote<span class="visualmente-oculto"> {{ lote.id }}</span>
+              </a>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}
+
+<!-- ================================ Alta =================================== -->
+
+<section class="tarjeta" aria-labelledby="titulo-alta">
+  <h2 id="titulo-alta">Abrir un borrador</h2>
+  <p class="ayuda">
+    El periodo es un filtro de la bandeja de prestaciones, no una restriccion: dos lotes del mismo
+    periodo son validos (por ejemplo, un reenvio de debitadas).
+  </p>
+  <form [formGroup]="alta" (ngSubmit)="crear()" novalidate>
+    <div class="campos-en-linea">
+      <div class="campo">
+        <label for="alta-financiador">Financiador</label>
+        <select
+          id="alta-financiador"
+          formControlName="financiadorId"
+          [attr.aria-invalid]="campoInvalido('financiadorId') ? 'true' : null"
+        >
+          <option value="">Elegi un financiador</option>
+          @for (ficha of financiadores(); track ficha.id) {
+            <option [value]="ficha.id">{{ ficha.nombre }}</option>
+          }
+        </select>
+        @if (campoInvalido('financiadorId')) {
+          <p class="campo__error" role="alert">Elegi a que financiador se presenta.</p>
+        }
+      </div>
+
+      <div class="campo">
+        <label for="alta-desde">Periodo desde</label>
+        <input
+          id="alta-desde"
+          type="date"
+          formControlName="periodoDesde"
+          [attr.aria-invalid]="campoInvalido('periodoDesde') ? 'true' : null"
+        />
+        @if (campoInvalido('periodoDesde')) {
+          <p class="campo__error" role="alert">La fecha de inicio es obligatoria.</p>
+        }
+      </div>
+
+      <div class="campo">
+        <label for="alta-hasta">Periodo hasta</label>
+        <input
+          id="alta-hasta"
+          type="date"
+          formControlName="periodoHasta"
+          [attr.aria-invalid]="campoInvalido('periodoHasta') ? 'true' : null"
+        />
+        @if (campoInvalido('periodoHasta')) {
+          <p class="campo__error" role="alert">La fecha de fin es obligatoria.</p>
+        }
+      </div>
+
+      <div class="campo">
+        <label for="alta-moneda">Moneda</label>
+        <input
+          id="alta-moneda"
+          type="text"
+          maxlength="3"
+          formControlName="moneda"
+          [attr.aria-invalid]="campoInvalido('moneda') ? 'true' : null"
+        />
+        @if (campoInvalido('moneda')) {
+          <p class="campo__error" role="alert">Codigo ISO de tres letras, por ejemplo ARS.</p>
+        }
+      </div>
+    </div>
+
+    <div class="acciones">
+      <button type="submit" class="boton" [disabled]="creando()">Abrir el borrador</button>
+    </div>
+  </form>
+
+  <div aria-live="polite">
+    @if (errorAlta(); as fallo) {
+      <p class="estado estado--error">{{ fallo.mensaje }}</p>
+    }
+  </div>
+</section>

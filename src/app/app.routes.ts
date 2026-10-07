@@ -246,6 +246,13 @@ export const routes: Routes = [
   // ademas peligroso el dia que algo redirija aca sin sesion: el usuario rebotaria al login,
   // volveria a la URL original y giraria en el mismo bucle que esta pantalla existe para
   // cortar. La constante que la nombra vive en `core/models/rutas.ts` (RUTA_SIN_PERMISO).
+  // Presentaciones a financiadores (M21, AKINE-07.04 + F-7). Rutas propias dentro de `billing`.
+  {
+    path: 'presentaciones',
+    canActivate: [authGuard],
+    loadChildren: () => import('./features/billing/presentaciones.routes').then((m) => m.routes),
+  },
+
   {
     path: 'sin-permiso',
     loadComponent: () => import('./shared/pages/sin-permiso/sin-permiso').then((m) => m.SinPermiso),
