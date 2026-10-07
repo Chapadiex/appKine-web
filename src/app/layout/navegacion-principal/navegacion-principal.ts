@@ -2,6 +2,8 @@ import { Component, computed, effect, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 
 import { PermissionsStore } from '../../core/services/permissions.store';
+import { PlatformRoleStore } from '../../core/services/platform-role.store';
+import { RUTA_SOLICITUDES_DE_PLATAFORMA } from '../../features/platform/models/rutas-de-plataforma';
 import { RUTA_SELECTOR_CONTEXTO } from '../../core/models/rutas';
 import { SECCIONES, Seccion } from './secciones';
 import { SessionService } from '../../core/services/session.service';
@@ -59,6 +61,14 @@ export class NavegacionPrincipal {
   private readonly session = inject(SessionService);
   private readonly tenant = inject(TenantContextStore);
   private readonly permisos = inject(PermissionsStore);
+  private readonly rolDePlataforma = inject(PlatformRoleStore);
+
+  /**
+   * Enlace a la consola de plataforma (AKINE-A-7), solo para quien la administra. Va aparte de
+   * `SECCIONES` porque no depende del contexto: un administrador de plataforma no tiene ninguno.
+   */
+  protected readonly rutaPlataforma = RUTA_SOLICITUDES_DE_PLATAFORMA;
+  protected readonly esAdminDePlataforma = this.rolDePlataforma.esAdminDePlataforma;
 
   protected readonly rutaSelector = RUTA_SELECTOR_CONTEXTO;
 
@@ -97,6 +107,13 @@ export class NavegacionPrincipal {
     effect(() => {
       if (this.hayContexto() && !this.permisos.cargados()) {
         this.permisos.asegurarCargados();
+      }
+    });
+
+    // El rol de plataforma es de la cuenta: se pregunta una vez por sesion, con o sin contexto.
+    effect(() => {
+      if (this.session.estado() !== 'anonimo') {
+        this.rolDePlataforma.asegurarCargado();
       }
     });
   }

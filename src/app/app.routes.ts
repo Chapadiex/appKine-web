@@ -4,6 +4,8 @@ import { RUTA_INICIO } from './layout/navegacion-principal/secciones';
 import { SEGMENTO_HORARIOS } from './features/resource/models/rutas-de-horarios';
 import { authGuard } from './core/guards/auth.guard';
 import { contextGuard } from './core/guards/context.guard';
+import { platformAdminGuard } from './core/guards/platform-admin.guard';
+import { SEGMENTO_PLATAFORMA } from './features/platform/models/rutas-de-plataforma';
 
 /**
  * Rutas raiz de AKINE (estructura fijada en AKINE-00.02).
@@ -49,6 +51,17 @@ export const routes: Routes = [
     path: 'estado',
     loadComponent: () => import('./features/platform/pages/estado/estado').then((m) => m.Estado),
     title: 'AKINE - Baseline tecnico',
+  },
+
+  // Consola de plataforma (AKINE-A-7): la bandeja de solicitudes al catalogo comun.
+  //
+  // `authGuard` sin `contextGuard`: quien la usa administra la plataforma, no es miembro de
+  // ningun centro y opera con el token `pre_context`. `platformAdminGuard` es UX: el backend
+  // verifica el rol en cada request.
+  {
+    path: SEGMENTO_PLATAFORMA,
+    canActivate: [authGuard, platformAdminGuard],
+    loadChildren: () => import('./features/platform/platform.routes').then((m) => m.routes),
   },
 
   // Feature `auth` (M02). Lazy loaded segun ADR-0004.
