@@ -97,6 +97,11 @@
   @if (exito(); as mensaje) {
     <p class="estado estado--ok">{{ mensaje }}</p>
   }
+  @if (avisoTurnos(); as aviso) {
+    <div class="aviso-apertura">
+      <p><b>Turnos para revisar.</b> {{ aviso }}</p>
+    </div>
+  }
 </div>
 
 <section class="tarjeta" aria-labelledby="titulo-semana">
@@ -446,6 +451,13 @@
                             Quitar el fin de vigencia y dejarlo sin fin previsto
                           </label>
 
+                          <p class="ayuda">
+                            Si el cambio quita horario, los turnos pendientes que caian ahi quedan
+                            en conflicto: no se cancelan ni se mueven. El sistema no puede
+                            calcularlos antes de guardar; al confirmar te dice cuantos pueden estar
+                            afectados.
+                          </p>
+
                           <div class="acciones">
                             <button type="submit" class="boton" [disabled]="enviando()">
                               Guardar los cambios
@@ -497,6 +509,11 @@
                             partir de una fecha, <b>no lo des de baja</b>: edita el fin de vigencia
                             del bloque. Asi el horario historico sigue explicando los turnos que ya
                             se dieron.
+                          </p>
+                          <p class="ayuda">
+                            Los turnos pendientes que caian ahi quedan en conflicto: no se cancelan
+                            ni se mueven. El sistema no puede calcularlos de antemano; al confirmar
+                            te dice cuantos pueden estar afectados.
                           </p>
                         </akine-confirmacion-con-motivo>
 
