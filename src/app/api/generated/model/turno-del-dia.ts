@@ -7,6 +7,7 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { Recepcion } from './recepcion';
 
 
 /**
@@ -22,7 +23,7 @@ export interface TurnoDelDia {
      */
     espacioId?: number;
     /**
-     * `EN_ESPERA` significa que el paciente llego y aguarda. No significa que lo esten atendiendo: la prestacion la registra la Sesion.
+     * Estado de la RESERVA. **`EN_ESPERA` esta deprecado desde 0.63.0 y el servidor ya no lo emite**: si el paciente llego lo dice `recepcion` (DP-16). Se conserva declarado una version para no romper al cliente.
      */
     estado?: TurnoDelDiaEstadoEnum;
     /**
@@ -35,7 +36,7 @@ export interface TurnoDelDia {
      */
     inicio?: string;
     /**
-     * Hora REAL de llegada, puesta por el servidor. Ausente si no llego.
+     * Hora REAL de llegada, puesta por el servidor, leida de la recepcion vigente. Ausente si no llego. Es la misma que `recepcion.llegadaEn`.
      */
     llegadaEn?: string;
     /**
@@ -53,6 +54,14 @@ export interface TurnoDelDia {
      * Membership del profesional. Ausente si la oferta no lo requiere.
      */
     profesionalId?: number;
+    /**
+     * La recepcion vigente del turno (M13, DP-16): llegada, validacion, espera y llamado. Ausente si nadie registro la llegada.
+     */
+    recepcion?: Recepcion;
+    /**
+     * Serie que genero el turno (AKINE E-3). Ausente en un turno suelto: la pantalla lo usa para ofrecer el alcance al cancelar o mover.
+     */
+    serieId?: number;
     /**
      * Version para el control optimista de las transiciones
      */

@@ -54,11 +54,11 @@ export interface BloqueResponse {
      */
     organizationId?: number;
     /**
-     * Instante del primero de esos turnos, para que la pantalla pueda decir \"desde el martes\". null cuando no hay ninguno, que es siempre hoy
+     * Instante del primero de esos turnos, para que la pantalla pueda decir \"desde el martes\". null cuando no hay ninguno
      */
     primerTurnoAfectado?: string;
     /**
-     * Turnos futuros que este cambio dejaria en conflicto (RN-M05-004). SIEMPRE 0 en esta version del contrato: el modulo de agenda no existe todavia. En un ALTA es 0 por construccion —agregar disponibilidad no deja ningun turno afuera—; en una edicion o una baja va a dejar de ser 0 cuando exista F5, sin cambiar este contrato
+     * Turnos futuros que este cambio podria dejar en conflicto (RN-M05-004): los pendientes de ese profesional en esa sede que empiezan entre ahora y el fin de vigencia mas lejano entre el estado anterior y el nuevo, con un horizonte de 90 dias si no hay fin. Es una cota superior: puede incluir turnos de otros bloques vigentes del mismo profesional. En un ALTA es 0 por construccion —agregar disponibilidad no deja ningun turno afuera—
      */
     turnosAfectados?: number;
     /**

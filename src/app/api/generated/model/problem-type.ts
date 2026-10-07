@@ -150,6 +150,8 @@ export enum ProblemType {
 
     HTTPS___AKINE_APP_PROBLEMS_TURNO_CON_ATENCION = 'https://akine.app/problems/turno-con-atencion',
 
+    HTTPS___AKINE_APP_PROBLEMS_RECEPCION_TRANSICION_NO_PERMITIDA = 'https://akine.app/problems/recepcion-transicion-no-permitida',
+
     HTTPS___AKINE_APP_PROBLEMS_TURNO_NO_ATENDIBLE = 'https://akine.app/problems/turno-no-atendible',
 
     HTTPS___AKINE_APP_PROBLEMS_SESION_AJENA = 'https://akine.app/problems/sesion-ajena',
@@ -157,6 +159,8 @@ export enum ProblemType {
     HTTPS___AKINE_APP_PROBLEMS_SESION_CERRADA = 'https://akine.app/problems/sesion-cerrada',
 
     HTTPS___AKINE_APP_PROBLEMS_SESION_NO_CERRADA = 'https://akine.app/problems/sesion-no-cerrada',
+
+    HTTPS___AKINE_APP_PROBLEMS_ENMIENDA_CAMBIA_PRACTICAS = 'https://akine.app/problems/enmienda-cambia-practicas',
 
     HTTPS___AKINE_APP_PROBLEMS_OBLIGACION_ALREADY_ANULADA = 'https://akine.app/problems/obligacion-already-anulada',
 

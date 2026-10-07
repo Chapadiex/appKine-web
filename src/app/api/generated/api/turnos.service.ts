@@ -289,13 +289,14 @@ export class TurnosService extends BaseService implements TurnosServiceInterface
     }
 
     /**
-     * Deshacer un check-in
-     * Revierte una llegada marcada sobre el turno equivocado. El turno vuelve al estado del que vino —RESERVADO o CONFIRMADO— y **se limpia la hora de llegada**: un check-in deshecho no dejo una llegada, dejo un error corregido.  El rastro de que ocurrio queda en el historial, que es append-only.                 **No es idempotente**: deshacer lo ya deshecho responde 409. A diferencia del                check-in, aca el segundo click no es un doble click sino una operacion sobre                un turno que entre medio pudo haber cambiado de estado.
+     * Deshacer un check-in (deprecado)
+     * **Deprecado desde 0.63.0**: usar &#x60;POST /{turnoId}/recepcion/anulacion&#x60; (DP-16).  Anula la recepcion abierta del turno: la llegada no vale. La fila y su historial quedan. Devuelve el turno, que no cambia de estado.  **No es idempotente**: sin recepcion abierta responde 409 (&#x60;recepcion-transicion-no-permitida&#x60;).
      * @endpoint delete /api/v1/consultorios/{consultorioId}/turnos/{turnoId}/llegada
      * @param requestParameters
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      * @param options additional options
+     * @deprecated
      */
     public deshacerLlegada(requestParameters: DeshacerLlegadaRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<Turno>;
     public deshacerLlegada(requestParameters: DeshacerLlegadaRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<Turno>>;
@@ -501,13 +502,14 @@ export class TurnosService extends BaseService implements TurnosServiceInterface
     }
 
     /**
-     * Registrar la llegada del paciente
-     * Marca que el paciente llego al centro y lo deja **en espera** (RF-M13-002). La hora la pone el servidor: no se envia ningun cuerpo.  **Es idempotente**: marcar dos veces devuelve 200 sin mover la hora ni registrar un segundo evento. El doble click en el mostrador es el caso normal.  La llegada es un estado de la RESERVA, no de la atencion (DP-05). Que un turno no pase por aca no impide atenderlo; impide saber a que hora llego el paciente.  **No valida cobertura ni autorizaciones**: con cobertura PARTICULAR unica no hay condicion administrativa que validar (recableo DP-10).
+     * Registrar la llegada del paciente (deprecado)
+     * **Deprecado desde 0.63.0**: usar &#x60;POST /{turnoId}/recepcion&#x60; (DP-16).  Abre la recepcion del turno en &#x60;LLEGO&#x60;, igual que aquella, y devuelve el turno con &#x60;llegadaEn&#x60;. **El turno ya no pasa a &#x60;EN_ESPERA&#x60;**: la espera es un estado de la recepcion, no de la reserva, y el turno sigue en &#x60;RESERVADO&#x60; o &#x60;CONFIRMADO&#x60;.  Es idempotente: marcar dos veces devuelve 200 sin mover la hora.
      * @endpoint post /api/v1/consultorios/{consultorioId}/turnos/{turnoId}/llegada
      * @param requestParameters
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      * @param options additional options
+     * @deprecated
      */
     public registrarLlegada(requestParameters: RegistrarLlegadaRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<Turno>;
     public registrarLlegada(requestParameters: RegistrarLlegadaRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<Turno>>;
