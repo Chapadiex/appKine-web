@@ -1,0 +1,198 @@
+<h1>Serie de turnos</h1>
+
+<p class="descripcion">
+  La regla con la que se genero la serie y sus turnos tal como estan hoy. Cada turno es propio: se
+  puede cancelar o mover solo, o junto con los demas.
+</p>
+
+<p><a class="enlace" routerLink="/agenda">Volver al buscador de agenda</a></p>
+
+@if (cargando()) {
+  <p class="estado estado--cargando">Leyendo la serie…</p>
+}
+
+<div aria-live="polite">
+  @if (resultado(); as hecho) {
+    <p class="estado estado--ok">
+      Se cancelaron {{ hecho.afectados?.length ?? 0 }} turnos.
+      @if ((hecho.omitidos?.length ?? 0) > 0) {
+        {{ hecho.omitidos?.length }} quedaron como estaban.
+      }
+    </p>
+  }
+
+  @if (error(); as fallo) {
+    <section class="tarjeta conflicto" aria-labelledby="titulo-conflicto-serie">
+      <h2 id="titulo-conflicto-serie">No se pudo completar la operacion</h2>
+      <p class="estado estado--error">{{ fallo.mensaje }}</p>
+      @if (fallo.accion === 'releer-alcance' && pedido() !== null) {
+        <div class="acciones">
+          <button type="button" class="boton" (click)="previsualizar()">
+            Volver a previsualizar
+          </button>
+        </div>
+      }
+      @if (fallo.accion === 'elegir-contexto') {
+        <div class="acciones">
+          <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto de trabajo</a>
+        </div>
+      }
+    </section>
+  }
+</div>
+
+@if (serie(); as actual) {
+  <section class="tarjeta" aria-labelledby="titulo-regla-serie">
+    <h2 id="titulo-regla-serie">Regla</h2>
+    <dl class="detalle">
+      <dt>Dias</dt>
+      <dd>{{ textoDeDias(actual.diasSemana) }}</dd>
+      <dt>Hora</dt>
+      <dd>
+        {{ actual.hora?.slice(0, 5) }} <span class="ayuda">(zona {{ timezone() }})</span>
+      </dd>
+      <dt>Desde</dt>
+      <dd>{{ fechaEnPalabras(actual.fechaDesde) }}</dd>
+      @if (actual.cantidad) {
+        <dt>Cantidad</dt>
+        <dd>{{ actual.cantidad }} turnos</dd>
+      }
+      @if (actual.fechaHasta) {
+        <dt>Hasta</dt>
+        <dd>{{ fechaEnPalabras(actual.fechaHasta) }}</dd>
+      }
+    </dl>
+    @if (puedeOperar()) {
+      <div class="acciones">
+        <button
+          type="button"
+          class="boton boton--secundario"
+          (click)="elegir(Alcance.TODA_LA_SERIE)"
+        >
+          Cancelar toda la serie
+        </button>
+      </div>
+    }
+  </section>
+
+  @if (pedido(); as elegido) {
+    <section class="tarjeta" aria-labelledby="titulo-alcance">
+      <h2 id="titulo-alcance">Cancelar: {{ textoDeAlcance(elegido.alcance) }}</h2>
+
+      @if (previsualizando()) {
+        <p class="estado estado--cargando">Calculando que turnos se cancelarian…</p>
+      }
+
+      @if (alcance(); as calculado) {
+        @if (afectados().length > 0) {
+          <p>Se cancelarian estos {{ afectados().length }} turnos:</p>
+          <ul>
+            @for (turno of afectados(); track turno.id) {
+              <li>{{ fechaHora(turno.inicio) }}</li>
+            }
+          </ul>
+        } @else {
+          <p class="estado estado--vacio">
+            No hay ningun turno pendiente en ese alcance: no hay nada que cancelar.
+          </p>
+        }
+
+        @if ((calculado.omitidos?.length ?? 0) > 0) {
+          <p>Quedan como estan:</p>
+          <ul>
+            @for (omitido of calculado.omitidos ?? []; track omitido.turno?.id) {
+              <li>{{ fechaHora(omitido.turno?.inicio) }} — {{ textoDeOmitido(omitido.motivo) }}</li>
+            }
+          </ul>
+        }
+
+        @if (afectados().length > 0) {
+          <akine-confirmacion-con-motivo
+            idCampo="serie-cancelar-motivo"
+            titulo="Confirmar la cancelacion"
+            etiqueta="Motivo de la cancelacion"
+            ayuda="Queda registrado en el historial de cada turno, junto a quien lo cancelo."
+            [textoConfirmar]="'Cancelar ' + afectados().length + ' turnos'"
+            [enviando]="enviando()"
+            (confirmado)="cancelar($event)"
+            (cancelado)="cerrar()"
+          >
+            <p class="ayuda">
+              Cancelar libera cada lugar, que vuelve a la agenda. No borra nada: cada turno queda
+              con su motivo y su historial.
+            </p>
+          </akine-confirmacion-con-motivo>
+        } @else {
+          <div class="acciones">
+            <button type="button" class="boton boton--secundario" (click)="cerrar()">Cerrar</button>
+          </div>
+        }
+      }
+    </section>
+  }
+
+  <section class="tarjeta" aria-labelledby="titulo-turnos-serie">
+    <h2 id="titulo-turnos-serie">Turnos</h2>
+    <div class="tabla-scroll" tabindex="0" role="region" aria-label="Turnos de la serie">
+      <table class="tabla">
+        <caption class="visualmente-oculto">
+          Turnos de la serie, del mas temprano al mas tarde, con su estado
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">Fecha y hora</th>
+            <th scope="col">Estado</th>
+            <th scope="col">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (turno of actual.turnos ?? []; track turno.id) {
+            <tr [class.fila--revocada]="turno.estado === 'CANCELADO'">
+              <td>{{ fechaHora(turno.inicio) }}</td>
+              <td>{{ textoDeEstado(turno.estado) }}</td>
+              <td>
+                <div class="acciones-fila">
+                  @if (puedeOperar() && esPendiente(turno)) {
+                    <button
+                      type="button"
+                      class="boton boton--secundario"
+                      (click)="elegir(Alcance.ESTE, turno.id)"
+                    >
+                      Cancelar este<span class="visualmente-oculto">
+                        turno, del {{ fechaHora(turno.inicio) }}</span
+                      >
+                    </button>
+                    <button
+                      type="button"
+                      class="boton boton--secundario"
+                      (click)="elegir(Alcance.ESTE_Y_SIGUIENTES, turno.id)"
+                    >
+                      Cancelar este y los siguientes<span class="visualmente-oculto">
+                        desde el {{ fechaHora(turno.inicio) }}</span
+                      >
+                    </button>
+                  }
+                  @if (turno.id) {
+                    <a
+                      class="enlace"
+                      [routerLink]="['/agenda', 'turnos', turno.id]"
+                      [queryParams]="{
+                        version: turno.version,
+                        ofertaId: actual.ofertaId,
+                        fecha: fechaLocal(turno),
+                      }"
+                    >
+                      Ver o mover<span class="visualmente-oculto">
+                        el turno del {{ fechaHora(turno.inicio) }}</span
+                      >
+                    </a>
+                  }
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+}

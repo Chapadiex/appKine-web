@@ -1,0 +1,284 @@
+<h1>Reservar una serie de turnos</h1>
+
+<p class="descripcion">
+  Una serie reserva el mismo horario todas las semanas. Cada turno queda como un turno propio: se
+  confirma, se cancela o se mueve solo, y una ausencia no borra los demas. Se reservan
+  <b>todos o ninguno</b>.
+</p>
+
+<p><a class="enlace" routerLink="/agenda">Volver al buscador de agenda</a></p>
+
+@if (serie(); as creada) {
+  <section class="tarjeta" aria-labelledby="titulo-serie-creada">
+    <h2 id="titulo-serie-creada">Serie reservada</h2>
+    <p class="estado estado--ok">
+      Se reservaron {{ creada.turnos?.length ?? 0 }} turnos. Cada uno queda reservado y falta
+      confirmarlo, como un turno suelto.
+    </p>
+    <ul>
+      @for (turno of creada.turnos ?? []; track turno.id) {
+        <li>{{ fechaHora(turno.inicio) }} — {{ textoDeEstado(turno.estado) }}</li>
+      }
+    </ul>
+    @if (creada.id) {
+      <p>
+        <a class="enlace" [routerLink]="['/agenda', 'series', creada.id]">
+          Ver la serie, o cancelar algunos de sus turnos
+        </a>
+      </p>
+    }
+  </section>
+} @else {
+  <section class="tarjeta" aria-labelledby="titulo-origen">
+    <h2 id="titulo-origen">Que se repite</h2>
+    <dl class="detalle">
+      <dt>Oferta</dt>
+      <dd>{{ nombreComercial() || '#' + ofertaId() }}</dd>
+      @if (nombreDelProfesional(); as profesional) {
+        <dt>Profesional</dt>
+        <dd>{{ profesional }}</dd>
+      }
+      <dt>Paciente</dt>
+      <dd>
+        @if (persona(); as elegida) {
+          {{ elegida.apellido }}, {{ elegida.nombre }}
+        } @else {
+          Todavia no elegiste a quien se le reserva.
+        }
+      </dd>
+    </dl>
+  </section>
+
+  <section class="tarjeta" aria-labelledby="titulo-persona-serie">
+    <h2 id="titulo-persona-serie">A quien se le reserva</h2>
+    <div class="campo">
+      <label for="serie-persona">Documento, apellido, nombre o telefono</label>
+      <input
+        id="serie-persona"
+        name="serie-persona"
+        type="search"
+        autocomplete="off"
+        (input)="buscarPersona($any($event.target).value)"
+      />
+    </div>
+    @if (candidatas().length > 0) {
+      <ul class="lista-personas">
+        @for (candidata of candidatas(); track candidata.id) {
+          <li>
+            <button
+              type="button"
+              class="boton boton--secundario"
+              (click)="elegirPersona(candidata)"
+            >
+              {{ candidata.apellido }}, {{ candidata.nombre }}
+              @if (candidata.numeroDocumento) {
+                — {{ candidata.tipoDocumento }} {{ candidata.numeroDocumento }}
+              }
+            </button>
+          </li>
+        }
+      </ul>
+    } @else if (buscoPersonas()) {
+      <p class="estado estado--vacio">
+        Ninguna persona del padron coincide con esa busqueda. Si es alguien nuevo, cargala primero
+        en el padron.
+      </p>
+    }
+  </section>
+
+  <section class="tarjeta" aria-labelledby="titulo-regla">
+    <h2 id="titulo-regla">La regla</h2>
+
+    <fieldset class="grupo">
+      <legend>Dias de la semana</legend>
+      @for (dia of dias; track dia.iso) {
+        <label class="opcion-radio" [for]="'serie-dia-' + dia.iso">
+          <input
+            type="checkbox"
+            [id]="'serie-dia-' + dia.iso"
+            [checked]="tieneDia(dia.iso)"
+            (change)="alternarDia(dia.iso, $any($event.target).checked)"
+          />
+          {{ dia.nombre }}
+        </label>
+      }
+    </fieldset>
+
+    <div class="campo">
+      <label for="serie-hora">Hora de inicio (hora de la sede)</label>
+      <input
+        id="serie-hora"
+        type="time"
+        [value]="hora()"
+        (change)="cambiarHora($any($event.target).value)"
+      />
+    </div>
+
+    <div class="campo">
+      <label for="serie-desde">Desde</label>
+      <input
+        id="serie-desde"
+        type="date"
+        [value]="fechaDesde()"
+        (change)="cambiarFechaDesde($any($event.target).value)"
+      />
+    </div>
+
+    <fieldset class="grupo">
+      <legend>Hasta cuando</legend>
+      <label class="opcion-radio" for="serie-fin-cantidad">
+        <input
+          id="serie-fin-cantidad"
+          type="radio"
+          name="serie-fin"
+          [checked]="modoDeFin() === 'cantidad'"
+          (change)="cambiarModoDeFin('cantidad')"
+        />
+        Una cantidad de turnos
+      </label>
+      <label class="opcion-radio" for="serie-fin-fecha">
+        <input
+          id="serie-fin-fecha"
+          type="radio"
+          name="serie-fin"
+          [checked]="modoDeFin() === 'fecha'"
+          (change)="cambiarModoDeFin('fecha')"
+        />
+        Hasta una fecha
+      </label>
+
+      @if (modoDeFin() === 'cantidad') {
+        <div class="campo">
+          <label for="serie-cantidad">Cantidad de turnos (maximo {{ maximo }})</label>
+          <input
+            id="serie-cantidad"
+            type="number"
+            min="1"
+            [max]="maximo"
+            [value]="cantidad()"
+            (change)="cambiarCantidad($any($event.target).value)"
+          />
+        </div>
+      } @else {
+        <div class="campo">
+          <label for="serie-hasta">Ultimo dia posible</label>
+          <input
+            id="serie-hasta"
+            type="date"
+            [value]="fechaHasta()"
+            (change)="cambiarFechaHasta($any($event.target).value)"
+          />
+        </div>
+      }
+    </fieldset>
+
+    <div class="acciones">
+      <button
+        type="button"
+        class="boton boton--secundario"
+        [disabled]="previsualizando()"
+        (click)="previsualizar()"
+      >
+        Previsualizar los turnos
+      </button>
+    </div>
+  </section>
+
+  <div aria-live="polite">
+    @if (aviso(); as texto) {
+      <p class="estado estado--vacio">{{ texto }}</p>
+    }
+    @if (previsualizando()) {
+      <p class="estado estado--cargando">Leyendo la agenda de cada fecha…</p>
+    }
+    @if (error(); as fallo) {
+      <section class="tarjeta conflicto" aria-labelledby="titulo-conflicto-serie">
+        <h2 id="titulo-conflicto-serie">No se pudo reservar la serie</h2>
+        <p class="estado estado--error">{{ fallo.mensaje }}</p>
+        @switch (fallo.accion) {
+          @case ('revisar-ocurrencias') {
+            <div class="acciones">
+              <button type="button" class="boton" (click)="previsualizar()">
+                Volver a previsualizar
+              </button>
+            </div>
+          }
+          @case ('activar-perfil') {
+            <div class="acciones">
+              <a class="boton" routerLink="/pacientes">Activar el perfil de paciente</a>
+            </div>
+          }
+          @case ('reintentar-con-clave-nueva') {
+            <div class="acciones">
+              <button type="button" class="boton" [disabled]="enviando()" (click)="reservar()">
+                Volver a intentar
+              </button>
+            </div>
+          }
+          @case ('elegir-contexto') {
+            <div class="acciones">
+              <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto de trabajo</a>
+            </div>
+          }
+        }
+      </section>
+    }
+  </div>
+
+  @if (previsualizacion(); as prevista) {
+    <section class="tarjeta" aria-labelledby="titulo-previsualizacion">
+      <h2 id="titulo-previsualizacion">
+        {{ prevista.length }} turnos · {{ textoDeDias(diasSemana()) }} a las {{ hora() }}
+      </h2>
+      <p class="ayuda">
+        Es una lectura de la agenda de hoy: al reservar, el servidor vuelve a revisar cada fecha y,
+        si una ya no tiene lugar, no reserva ninguna.
+      </p>
+      @if (conflictos() > 0) {
+        <p class="estado estado--error">
+          {{ conflictos() }} de {{ prevista.length }} fechas no tienen lugar. Cambia el dia, la hora
+          o la fecha de inicio: la serie entra entera o no entra.
+        </p>
+      }
+      <div class="tabla-scroll" tabindex="0" role="region" aria-label="Turnos de la serie">
+        <table class="tabla">
+          <caption class="visualmente-oculto">
+            Fechas que reservaria la serie, y si cada una tiene lugar
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">Fecha</th>
+              <th scope="col">Lugar</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (ocurrencia of prevista; track ocurrencia.fecha) {
+              <tr [class.fila--revocada]="ocurrencia.fecha === fechaRechazada()">
+                <td>{{ fechaEnPalabras(ocurrencia.fecha) }}</td>
+                <td>
+                  @if (ocurrencia.fecha === fechaRechazada()) {
+                    <span class="marca-estado marca-estado--revocada">Rechazada al reservar</span>
+                  } @else if (ocurrencia.estado === 'libre') {
+                    <span class="marca-estado marca-estado--activa">Libre</span>
+                  } @else {
+                    <span class="marca-estado marca-estado--revocada">Sin lugar</span>
+                    {{ ocurrencia.detalle }}
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <div class="acciones">
+        <button type="button" class="boton" [disabled]="!puedeReservar()" (click)="reservar()">
+          Reservar los {{ prevista.length }} turnos
+        </button>
+        @if (persona() === null) {
+          <span class="ayuda">Falta elegir a quien se le reserva.</span>
+        }
+      </div>
+    </section>
+  }
+}
