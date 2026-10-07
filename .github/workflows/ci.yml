@@ -182,6 +182,80 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
 
+  # Construye la imagen con el Dockerfile de la raiz y NO la publica en ningun registry: el job
+  # prueba que la receta compila, que la imagen arranca y sirve la SPA, y deja el SBOM como
+  # evidencia. Corre en paralelo con `build`: la imagen no ejecuta lint ni tests.
+  #
+  # El SBOM se extrae DE LA IMAGEN, igual que en el backend: el artifact es exactamente el
+  # inventario que viaja con el bundle construido, no uno de un build paralelo.
+  imagen:
+    name: Imagen Docker y SBOM
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Construir imagen
+        run: docker build --tag akine-web:${{ github.sha }} .
+
+      - name: Extraer el SBOM embebido en la imagen
+        run: |
+          id=$(docker create akine-web:${{ github.sha }})
+          mkdir -p sbom
+          docker cp "$id:/usr/share/akine/sbom/akine-web.cdx.json" sbom/akine-web.cdx.json
+          docker rm "$id"
+          test -s sbom/akine-web.cdx.json
+          echo "Imagen: $(docker image inspect akine-web:${{ github.sha }} --format '{{.Size}}') bytes"
+
+      # La CSP permite por hash el onload con el que Angular carga la hoja de estilos diferida.
+      # Si una version de Angular cambia ese texto, el hash deja de coincidir y la app se sirve
+      # SIN ESTILOS en produccion sin que falle nada mas. Este paso lo convierte en un error.
+      - name: Verificar que la CSP cubre los handlers inline del index.html
+        run: |
+          id=$(docker create akine-web:${{ github.sha }})
+          docker cp "$id:/usr/share/nginx/html/index.html" index.prod.html
+          docker rm "$id"
+          grep -o 'onload="[^"]*"' index.prod.html | sed 's/^onload="//;s/"$//' | sort -u > handlers.txt || true
+          falta=0
+          while IFS= read -r h; do
+            hash=$(printf '%s' "$h" | openssl dgst -sha256 -binary | base64)
+            if ! grep -qF "'sha256-$hash'" docker/nginx/security-headers.conf; then
+              echo "::error::El handler inline \"$h\" (sha256-$hash) no esta en la CSP de docker/nginx/security-headers.conf."
+              falta=1
+            fi
+          done < handlers.txt
+          exit $falta
+
+      - name: Arrancar la imagen y probar la SPA
+        run: |
+          docker run -d --name akine-web -p 8080:8080 akine-web:${{ github.sha }}
+          for i in $(seq 1 20); do
+            curl -fsS http://localhost:8080/healthz && break
+            sleep 1
+          done
+          # Ruta profunda del router: tiene que devolver index.html, no 404.
+          curl -fsS http://localhost:8080/una/ruta/profunda | grep -q '<app-root>'
+          # index.html sin cache; un asset con hash, inmutable.
+          curl -fsSI http://localhost:8080/ | grep -qi '^cache-control: no-cache'
+          asset=$(curl -fsS http://localhost:8080/ | grep -o 'main-[A-Z0-9]*\.js' | head -1)
+          curl -fsSI "http://localhost:8080/$asset" | grep -qi '^cache-control: public, max-age=31536000, immutable'
+          curl -fsSI http://localhost:8080/ | grep -qi '^content-security-policy:'
+          test "$(docker exec akine-web id -u)" != "0"
+
+      - name: Logs del contenedor
+        if: failure()
+        run: docker logs akine-web || true
+
+      - name: Publicar SBOM
+        uses: actions/upload-artifact@v4
+        with:
+          name: akine-web-sbom
+          path: sbom/akine-web.cdx.json
+          if-no-files-found: error
+          retention-days: 90
+
   # PENDIENTE(AKINE-00.02): los E2E necesitan el stack completo (MySQL + backend + frontend).
   # Se activan cuando exista la imagen Docker del backend que publica su pipeline, para no
   # compilar Java dentro del job del frontend.

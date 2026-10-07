@@ -193,7 +193,9 @@ comparabilidad con sesiones anteriores, mínimo ruido administrativo visible.
 
 - Sin secretos en el bundle. Nada de credenciales en `environment.ts`.
 - `environment.apiBaseUrl` está vacío a propósito: las peticiones son relativas y el proxy
-  de dev las resuelve. Así no hay URL de localhost que se pueda commitear por accidente.
+  de dev las resuelve. Así no hay URL de localhost que se pueda commitear por accidente. En la
+  imagen Docker las resuelve nginx como proxy inverso hacia `AKINE_API_URL`, en runtime: ver
+  `docs/imagen-docker.md`.
 - No confiar en ningún dato del cliente para decidir permisos.
 - Datos de prueba: **exclusivamente sintéticos.** Nunca datos reales de pacientes.
 
