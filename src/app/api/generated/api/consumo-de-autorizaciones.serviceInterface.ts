@@ -11,6 +11,7 @@ import { HttpHeaders }                                       from '@angular/comm
 
 import { Observable }                                        from 'rxjs';
 
+import { AlertaDeAutorizacionResponse } from '../model/models';
 import { MovimientoResponse } from '../model/models';
 import { ProblemDetail } from '../model/models';
 import { RevertirConsumoRequest } from '../model/models';
@@ -23,6 +24,10 @@ import { Configuration }                                     from '../configurat
 export interface ConsultarSaldoDeAutorizacionRequestParams {
     autorizacionId: number;
     fecha?: string;
+}
+
+export interface ListAlertasDeAutorizacionRequestParams {
+    autorizacionId: number;
 }
 
 export interface ListMovimientosDeAutorizacionRequestParams {
@@ -46,6 +51,14 @@ export interface ConsumoDeAutorizacionesServiceInterface {
 * @param requestParameters
      */
     consultarSaldoDeAutorizacion(requestParameters: ConsultarSaldoDeAutorizacionRequestParams, extraHttpRequestParams?: any): Observable<SaldoAutorizacionResponse>;
+
+    /**
+     * Las alertas de una autorizacion
+     * DP-13 y RN-M17-003. Hoy un solo tipo: CONSUMO_A_REVISAR, que nace cuando se anula la obligacion economica de una sesion que consumio esta autorizacion.  NO MUEVE EL SALDO. Anular la deuda no prueba que la prestacion no ocurrio —puede ser una cortesia o un error de precio—, asi que la unidad no vuelve sola. Si corresponde devolverla, se revierte el consumo con POST /reversiones, y eso resuelve la alerta (resolucion &#x3D; REVERTIDO).  Una alerta por consumo: anular varias obligaciones de la misma sesion no la repite. Se listan de la mas vieja a la mas nueva, resueltas incluidas: una alerta se resuelve, no se borra.  Las alertas de vencimiento y agote (RF-M17-006) NO viven aca: se calculan al leer, en GET /saldo.
+     * @endpoint get /api/v1/autorizaciones/{autorizacionId}/alertas
+* @param requestParameters
+     */
+    listAlertasDeAutorizacion(requestParameters: ListAlertasDeAutorizacionRequestParams, extraHttpRequestParams?: any): Observable<Array<AlertaDeAutorizacionResponse>>;
 
     /**
      * El ledger de una autorizacion

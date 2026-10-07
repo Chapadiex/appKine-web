@@ -17,6 +17,8 @@ import { Observable }                                        from 'rxjs';
 import { OpenApiHttpParams, QueryParamStyle } from '../query.params';
 
 // @ts-ignore
+import { AlertaDeAutorizacionResponse } from '../model/alerta-de-autorizacion-response';
+// @ts-ignore
 import { MovimientoResponse } from '../model/movimiento-response';
 // @ts-ignore
 import { ProblemDetail } from '../model/problem-detail';
@@ -32,6 +34,7 @@ import { BaseService } from '../api.base.service';
 import {
     ConsumoDeAutorizacionesServiceInterface,
     ConsultarSaldoDeAutorizacionRequestParams,
+    ListAlertasDeAutorizacionRequestParams,
     ListMovimientosDeAutorizacionRequestParams,
     RevertirConsumoDeAutorizacionRequestParams
 } from './consumo-de-autorizaciones.serviceInterface';
@@ -112,6 +115,68 @@ export class ConsumoDeAutorizacionesService extends BaseService implements Consu
             {
                 context: localVarHttpContext,
                 params: localVarQueryParameters.toHttpParams(),
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * Las alertas de una autorizacion
+     * DP-13 y RN-M17-003. Hoy un solo tipo: CONSUMO_A_REVISAR, que nace cuando se anula la obligacion economica de una sesion que consumio esta autorizacion.  NO MUEVE EL SALDO. Anular la deuda no prueba que la prestacion no ocurrio —puede ser una cortesia o un error de precio—, asi que la unidad no vuelve sola. Si corresponde devolverla, se revierte el consumo con POST /reversiones, y eso resuelve la alerta (resolucion &#x3D; REVERTIDO).  Una alerta por consumo: anular varias obligaciones de la misma sesion no la repite. Se listan de la mas vieja a la mas nueva, resueltas incluidas: una alerta se resuelve, no se borra.  Las alertas de vencimiento y agote (RF-M17-006) NO viven aca: se calculan al leer, en GET /saldo.
+     * @endpoint get /api/v1/autorizaciones/{autorizacionId}/alertas
+     * @param requestParameters
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public listAlertasDeAutorizacion(requestParameters: ListAlertasDeAutorizacionRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<Array<AlertaDeAutorizacionResponse>>;
+    public listAlertasDeAutorizacion(requestParameters: ListAlertasDeAutorizacionRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<Array<AlertaDeAutorizacionResponse>>>;
+    public listAlertasDeAutorizacion(requestParameters: ListAlertasDeAutorizacionRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<Array<AlertaDeAutorizacionResponse>>>;
+    public listAlertasDeAutorizacion(requestParameters: ListAlertasDeAutorizacionRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        const autorizacionId = requestParameters?.autorizacionId;
+        if (autorizacionId === null || autorizacionId === undefined) {
+            throw new Error('Required parameter autorizacionId was null or undefined when calling listAlertasDeAutorizacion.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/autorizaciones/${this.configuration.encodeParam({name: "autorizacionId", value: autorizacionId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/alertas`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<Array<AlertaDeAutorizacionResponse>>('get', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
                 responseType: <any>responseType_,
                 ...(withCredentials ? { withCredentials } : {}),
                 headers: localVarHeaders,

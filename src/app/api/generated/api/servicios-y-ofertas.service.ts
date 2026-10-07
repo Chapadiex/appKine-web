@@ -27,9 +27,13 @@ import { HabilitacionesResponse } from '../model/habilitaciones-response';
 // @ts-ignore
 import { OfertaResponse } from '../model/oferta-response';
 // @ts-ignore
+import { PracticasDeOfertaResponse } from '../model/practicas-de-oferta-response';
+// @ts-ignore
 import { ProblemDetail } from '../model/problem-detail';
 // @ts-ignore
 import { ReemplazarHabilitacionesRequest } from '../model/reemplazar-habilitaciones-request';
+// @ts-ignore
+import { ReemplazarPracticasRequest } from '../model/reemplazar-practicas-request';
 // @ts-ignore
 import { ServicioResponse } from '../model/servicio-response';
 // @ts-ignore
@@ -50,9 +54,11 @@ import {
     DeactivateOfertaRequestParams,
     DeactivateServicioRequestParams,
     GetHabilitacionesRequestParams,
+    GetPracticasDeOfertaRequestParams,
     ListOfertasRequestParams,
     ListServiciosRequestParams,
     ReemplazarEspaciosHabilitadosRequestParams,
+    ReemplazarPracticasDeOfertaRequestParams,
     ReemplazarProfesionalesHabilitadosRequestParams,
     UpdateOfertaRequestParams,
     UpdateServicioRequestParams,
@@ -439,6 +445,72 @@ export class ServiciosYOfertasService extends BaseService implements ServiciosYO
     }
 
     /**
+     * Ver que practicas puede prestar la oferta y cual es la principal
+     * Devuelve las practicas de la oferta, ACTIVAS E INACTIVAS, con la principal vigente en practicaPrincipalId.  Declaran lo que la oferta PUEDE prestar, no lo que se presto en una sesion: eso lo dicen los tratamientos realizados. La principal es la que se devenga o consume cuando una sesion cierra sin tratamientos.  Una lista vacia significa que la oferta no declara practicas (por ejemplo una actividad como Pilates). NO significa todas, al reves que las habilitaciones.  vigenteEnCatalogo en false es una practica dada de baja en el catalogo que la oferta conserva: la fila sigue valiendo y se muestra.
+     * @endpoint get /api/v1/consultorios/{consultorioId}/ofertas/{ofertaId}/practicas
+     * @param requestParameters
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public getPracticasDeOferta(requestParameters: GetPracticasDeOfertaRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<PracticasDeOfertaResponse>;
+    public getPracticasDeOferta(requestParameters: GetPracticasDeOfertaRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<PracticasDeOfertaResponse>>;
+    public getPracticasDeOferta(requestParameters: GetPracticasDeOfertaRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<PracticasDeOfertaResponse>>;
+    public getPracticasDeOferta(requestParameters: GetPracticasDeOfertaRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        const consultorioId = requestParameters?.consultorioId;
+        if (consultorioId === null || consultorioId === undefined) {
+            throw new Error('Required parameter consultorioId was null or undefined when calling getPracticasDeOferta.');
+        }
+        const ofertaId = requestParameters?.ofertaId;
+        if (ofertaId === null || ofertaId === undefined) {
+            throw new Error('Required parameter ofertaId was null or undefined when calling getPracticasDeOferta.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/consultorios/${this.configuration.encodeParam({name: "consultorioId", value: consultorioId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/ofertas/${this.configuration.encodeParam({name: "ofertaId", value: ofertaId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/practicas`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<PracticasDeOfertaResponse>('get', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
      * Listar las ofertas de la sede
      * Devuelve las ofertas de esa sede ordenadas por nombre comercial. Exige pertenencia a la sede.  estado filtra por ciclo de vida y por defecto trae solo las ACTIVAS. servicioId, si viene, acota a las ofertas de ese servicio.  OJO CON ESTADO Y VIGENTEHOY: son dos cosas distintas. estado dice si la oferta fue dada de baja; vigenteHoy dice si ADEMAS hoy cae dentro de su ventana de vigencia, calculado en la zona horaria DE LA SEDE y no en la del servidor ni en la del navegador. Una oferta ACTIVA que arranca el mes que viene tiene estado&#x3D;ACTIVO y vigenteHoy&#x3D;false, y es correcto que no aparezca todavia en un selector de reserva. Es la misma distincion que espacio hace entre activo y en servicio.
      * @endpoint get /api/v1/consultorios/{consultorioId}/ofertas
@@ -674,6 +746,86 @@ export class ServiciosYOfertasService extends BaseService implements ServiciosYO
             {
                 context: localVarHttpContext,
                 body: reemplazarHabilitacionesRequest,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * Fijar que practicas puede prestar la oferta y cual es la principal
+     * REEMPLAZA EL CONJUNTO COMPLETO. Lo que entra y no estaba se crea, lo que estaba y no entra se da de baja con motivo automatico, y lo que sigue no se toca. Si cambia la principal, la anterior pierde la marca.  Con al menos una practica, practicaPrincipalId es obligatoria y tiene que estar en la lista; con la lista vacia tiene que ser null. Si no, 400.  Las practicas que ENTRAN tienen que existir, ser visibles para el centro (propias o del catalogo de plataforma) y poder elegirse hoy: una ajena o inexistente responde 404, una dada de baja o fuera de vigencia 409 practica-no-utilizable. Las que ya estaban no se revalidan.  expectedVersion es la de la OFERTA, la misma que usan los reemplazos de habilitaciones.
+     * @endpoint put /api/v1/consultorios/{consultorioId}/ofertas/{ofertaId}/practicas
+     * @param requestParameters
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public reemplazarPracticasDeOferta(requestParameters: ReemplazarPracticasDeOfertaRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<PracticasDeOfertaResponse>;
+    public reemplazarPracticasDeOferta(requestParameters: ReemplazarPracticasDeOfertaRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<PracticasDeOfertaResponse>>;
+    public reemplazarPracticasDeOferta(requestParameters: ReemplazarPracticasDeOfertaRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<PracticasDeOfertaResponse>>;
+    public reemplazarPracticasDeOferta(requestParameters: ReemplazarPracticasDeOfertaRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        const consultorioId = requestParameters?.consultorioId;
+        if (consultorioId === null || consultorioId === undefined) {
+            throw new Error('Required parameter consultorioId was null or undefined when calling reemplazarPracticasDeOferta.');
+        }
+        const ofertaId = requestParameters?.ofertaId;
+        if (ofertaId === null || ofertaId === undefined) {
+            throw new Error('Required parameter ofertaId was null or undefined when calling reemplazarPracticasDeOferta.');
+        }
+        const reemplazarPracticasRequest = requestParameters?.reemplazarPracticasRequest;
+        if (reemplazarPracticasRequest === null || reemplazarPracticasRequest === undefined) {
+            throw new Error('Required parameter reemplazarPracticasRequest was null or undefined when calling reemplazarPracticasDeOferta.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        // to determine the Content-Type header
+        const consumes: string[] = [
+            'application/json'
+        ];
+        const httpContentTypeSelected: string | undefined = this.configuration.selectHeaderContentType(consumes);
+        if (httpContentTypeSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Content-Type', httpContentTypeSelected);
+        }
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/consultorios/${this.configuration.encodeParam({name: "consultorioId", value: consultorioId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/ofertas/${this.configuration.encodeParam({name: "ofertaId", value: ofertaId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/practicas`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<PracticasDeOfertaResponse>('put', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                body: reemplazarPracticasRequest,
                 responseType: <any>responseType_,
                 ...(withCredentials ? { withCredentials } : {}),
                 headers: localVarHeaders,

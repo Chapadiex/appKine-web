@@ -16,8 +16,10 @@ import { CreateServicioRequest } from '../model/models';
 import { DeactivateOfferingRequest } from '../model/models';
 import { HabilitacionesResponse } from '../model/models';
 import { OfertaResponse } from '../model/models';
+import { PracticasDeOfertaResponse } from '../model/models';
 import { ProblemDetail } from '../model/models';
 import { ReemplazarHabilitacionesRequest } from '../model/models';
+import { ReemplazarPracticasRequest } from '../model/models';
 import { ServicioResponse } from '../model/models';
 import { UpdateOfertaRequest } from '../model/models';
 import { UpdateServicioRequest } from '../model/models';
@@ -52,6 +54,11 @@ export interface GetHabilitacionesRequestParams {
     ofertaId: number;
 }
 
+export interface GetPracticasDeOfertaRequestParams {
+    consultorioId: number;
+    ofertaId: number;
+}
+
 export interface ListOfertasRequestParams {
     consultorioId: number;
     estado?: 'ACTIVO' | 'INACTIVO' | 'TODOS';
@@ -67,6 +74,12 @@ export interface ReemplazarEspaciosHabilitadosRequestParams {
     consultorioId: number;
     ofertaId: number;
     reemplazarHabilitacionesRequest: ReemplazarHabilitacionesRequest;
+}
+
+export interface ReemplazarPracticasDeOfertaRequestParams {
+    consultorioId: number;
+    ofertaId: number;
+    reemplazarPracticasRequest: ReemplazarPracticasRequest;
 }
 
 export interface ReemplazarProfesionalesHabilitadosRequestParams {
@@ -139,6 +152,14 @@ export interface ServiciosYOfertasServiceInterface {
     getHabilitaciones(requestParameters: GetHabilitacionesRequestParams, extraHttpRequestParams?: any): Observable<HabilitacionesResponse>;
 
     /**
+     * Ver que practicas puede prestar la oferta y cual es la principal
+     * Devuelve las practicas de la oferta, ACTIVAS E INACTIVAS, con la principal vigente en practicaPrincipalId.  Declaran lo que la oferta PUEDE prestar, no lo que se presto en una sesion: eso lo dicen los tratamientos realizados. La principal es la que se devenga o consume cuando una sesion cierra sin tratamientos.  Una lista vacia significa que la oferta no declara practicas (por ejemplo una actividad como Pilates). NO significa todas, al reves que las habilitaciones.  vigenteEnCatalogo en false es una practica dada de baja en el catalogo que la oferta conserva: la fila sigue valiendo y se muestra.
+     * @endpoint get /api/v1/consultorios/{consultorioId}/ofertas/{ofertaId}/practicas
+* @param requestParameters
+     */
+    getPracticasDeOferta(requestParameters: GetPracticasDeOfertaRequestParams, extraHttpRequestParams?: any): Observable<PracticasDeOfertaResponse>;
+
+    /**
      * Listar las ofertas de la sede
      * Devuelve las ofertas de esa sede ordenadas por nombre comercial. Exige pertenencia a la sede.  estado filtra por ciclo de vida y por defecto trae solo las ACTIVAS. servicioId, si viene, acota a las ofertas de ese servicio.  OJO CON ESTADO Y VIGENTEHOY: son dos cosas distintas. estado dice si la oferta fue dada de baja; vigenteHoy dice si ADEMAS hoy cae dentro de su ventana de vigencia, calculado en la zona horaria DE LA SEDE y no en la del servidor ni en la del navegador. Una oferta ACTIVA que arranca el mes que viene tiene estado&#x3D;ACTIVO y vigenteHoy&#x3D;false, y es correcto que no aparezca todavia en un selector de reserva. Es la misma distincion que espacio hace entre activo y en servicio.
      * @endpoint get /api/v1/consultorios/{consultorioId}/ofertas
@@ -161,6 +182,14 @@ export interface ServiciosYOfertasServiceInterface {
 * @param requestParameters
      */
     reemplazarEspaciosHabilitados(requestParameters: ReemplazarEspaciosHabilitadosRequestParams, extraHttpRequestParams?: any): Observable<HabilitacionesResponse>;
+
+    /**
+     * Fijar que practicas puede prestar la oferta y cual es la principal
+     * REEMPLAZA EL CONJUNTO COMPLETO. Lo que entra y no estaba se crea, lo que estaba y no entra se da de baja con motivo automatico, y lo que sigue no se toca. Si cambia la principal, la anterior pierde la marca.  Con al menos una practica, practicaPrincipalId es obligatoria y tiene que estar en la lista; con la lista vacia tiene que ser null. Si no, 400.  Las practicas que ENTRAN tienen que existir, ser visibles para el centro (propias o del catalogo de plataforma) y poder elegirse hoy: una ajena o inexistente responde 404, una dada de baja o fuera de vigencia 409 practica-no-utilizable. Las que ya estaban no se revalidan.  expectedVersion es la de la OFERTA, la misma que usan los reemplazos de habilitaciones.
+     * @endpoint put /api/v1/consultorios/{consultorioId}/ofertas/{ofertaId}/practicas
+* @param requestParameters
+     */
+    reemplazarPracticasDeOferta(requestParameters: ReemplazarPracticasDeOfertaRequestParams, extraHttpRequestParams?: any): Observable<PracticasDeOfertaResponse>;
 
     /**
      * Fijar que profesionales pueden prestar la oferta
