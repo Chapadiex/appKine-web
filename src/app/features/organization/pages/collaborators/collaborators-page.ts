@@ -1,4 +1,4 @@
-import { Component, ElementRef, effect, inject, signal, untracked } from '@angular/core';
+import { Component, ElementRef, computed, effect, inject, signal, untracked } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Observable } from 'rxjs';
 import { RouterLink } from '@angular/router';
@@ -16,6 +16,7 @@ import { PERMISOS_F1, PERMISO_COLABORADOR_MANAGE } from '../../../../core/models
 import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
 import { PermisoDirective } from '../../../../shared/directives/permiso.directive';
 import { ETIQUETA_DE_ESTADO, ROLES_DE_VINCULO, etiquetaDeRol } from '../../models/roles';
+import { ImpactoDeDesvinculacion, resumenDeImpacto } from '../../models/impacto-de-desvinculacion';
 import { SedesDelContexto } from '../../services/sedes-del-contexto';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { traducirErrorColaborador } from '../../models/colaborador-errors';
@@ -103,6 +104,19 @@ export class CollaboratorsPage {
 
   /** Permisos adicionales de la fila abierta en el panel `permisos`. `null` mientras carga. */
   protected readonly grants = signal<readonly MembershipGrantResponse[] | null>(null);
+
+  /**
+   * Que quedaria pendiente si se revoca el vinculo abierto, o `null` si no hay revocacion abierta.
+   *
+   * <p>Se consulta al abrir el panel y no al confirmar: sirve para decidir, y quien decide tiene
+   * que verlo antes de escribir el motivo. No bloquea el boton: RN-M05-004 pide que los turnos
+   * queden visibles para resolucion, no que impidan la desvinculacion.
+   */
+  protected readonly impacto = signal<ImpactoDeDesvinculacion | null>(null);
+  protected readonly resumenDelImpacto = computed(() => {
+    const impacto = this.impacto();
+    return impacto?.tipo === 'listo' ? resumenDeImpacto(impacto.respuesta) : null;
+  });
 
   /**
    * Cambio de rol y/o de alcance.
@@ -251,11 +265,16 @@ export class CollaboratorsPage {
     if (tipo === 'permisos') {
       this.cargarGrants(id);
     }
+
+    if (tipo === 'revocar') {
+      this.cargarImpacto(id);
+    }
   }
 
   protected cerrarPanel(): void {
     this.panel.set(null);
     this.grants.set(null);
+    this.impacto.set(null);
     this.enviando.set(false);
     this.errorAccion.set(null);
     this.intentos.set(0);
@@ -385,6 +404,26 @@ export class CollaboratorsPage {
       .listMembershipGrants({ orgId, membershipId })
       .pipe(catchError(() => of([] as MembershipGrantResponse[])))
       .subscribe((respuesta) => this.grants.set(respuesta));
+  }
+
+  private cargarImpacto(membershipId: number): void {
+    const orgId = this.tenantContext.organizationId();
+    if (orgId === null) {
+      return;
+    }
+
+    this.impacto.set({ tipo: 'cargando' });
+    this.colaboradores
+      .getDesvinculacionImpacto({ orgId, membershipId })
+      .pipe(catchError(() => of(null)))
+      .subscribe((respuesta) => {
+        // La respuesta puede llegar con el panel ya cerrado o abierto sobre otra fila: pintarla
+        // ahi le atribuiria a una persona lo pendiente de otra.
+        if (!this.panelAbierto(membershipId, 'revocar')) {
+          return;
+        }
+        this.impacto.set(respuesta === null ? { tipo: 'error' } : { tipo: 'listo', respuesta });
+      });
   }
 
   protected asignarGrant(): void {

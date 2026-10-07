@@ -37,6 +37,7 @@ import { TenantContextStore } from '../../../../core/services/tenant-context.sto
 import { UpdateBloqueRequest } from '../../../../api/generated/model/update-bloque-request';
 import { BloqueEnConflicto, CausaBloque, traducirErrorBloque } from '../../models/bloque-errors';
 import { DIAS_DE_LA_SEMANA, etiquetaDeDia } from '../../models/dias-de-la-semana';
+import { avisoDeTurnosAfectados } from '../../models/turnos-afectados';
 import {
   TEXTO_LISTA_INCOMPLETA,
   TOPE_DE_VINCULOS,
@@ -223,6 +224,14 @@ export class HorarioSemanalPage {
   protected readonly intentos = signal(0);
 
   /**
+   * Turnos que la ultima edicion o baja pudo dejar fuera de horario, ya redactado, o `null`.
+   *
+   * <p>Vive al lado de {@link exito} y se limpia con el: es la otra mitad del mismo resultado.
+   * Ver `turnos-afectados.ts` por que el texto dice "hasta".
+   */
+  protected readonly avisoTurnos = signal<string | null>(null);
+
+  /**
    * El otro bloque del ultimo solapamiento, o `null`.
    *
    * <p>Es lo que permite marcar <b>la fila</b> del bloque con el que se choca. Se limpia al
@@ -257,6 +266,7 @@ export class HorarioSemanalPage {
         this.cerrarPanel();
         this.altaAbierta.set(false);
         this.exito.set(null);
+        this.avisoTurnos.set(null);
         this.membershipElegido.set(inicial);
         this.estado.set({ tipo: 'inicial' });
         this.cargarProfesionales();
@@ -327,6 +337,7 @@ export class HorarioSemanalPage {
     this.cerrarPanel();
     this.altaAbierta.set(false);
     this.exito.set(null);
+    this.avisoTurnos.set(null);
 
     if (valor === '' || !Number.isFinite(membershipId)) {
       this.membershipElegido.set(null);
@@ -377,6 +388,7 @@ export class HorarioSemanalPage {
   protected abrirAlta(): void {
     this.cerrarPanel();
     this.exito.set(null);
+    this.avisoTurnos.set(null);
     this.formularioAlta.reset({
       diaSemana: '1',
       horaDesde: '',
@@ -405,6 +417,7 @@ export class HorarioSemanalPage {
     this.cerrarPanel();
     this.altaAbierta.set(false);
     this.exito.set(null);
+    this.avisoTurnos.set(null);
     this.panel.set({ id, tipo });
 
     if (tipo === 'editar') {
@@ -540,9 +553,10 @@ export class HorarioSemanalPage {
         updateBloqueRequest: cambios,
       })
       .subscribe({
-        next: () => {
+        next: (bloque) => {
           this.cerrarPanel();
           this.exito.set('Los cambios del bloque quedaron guardados.');
+          this.avisoTurnos.set(avisoDeTurnosAfectados(bloque.turnosAfectados));
           this.cargar();
         },
         error: (error: unknown) => this.fallar(error),
@@ -577,12 +591,13 @@ export class HorarioSemanalPage {
         deactivateBloqueRequest: { reason: motivo },
       })
       .subscribe({
-        next: () => {
+        next: (bloque) => {
           this.cerrarPanel();
           this.exito.set(
             'El bloque quedo dado de baja. La fila no se borra: sobrevive con su motivo y su ' +
               'autor en la auditoria.',
           );
+          this.avisoTurnos.set(avisoDeTurnosAfectados(bloque.turnosAfectados));
           this.cargar();
         },
         error: (error: unknown) => this.fallar(error),
@@ -643,6 +658,7 @@ export class HorarioSemanalPage {
     this.causaAccion.set(null);
     this.conflicto.set(null);
     this.exito.set(null);
+    this.avisoTurnos.set(null);
   }
 
   /**

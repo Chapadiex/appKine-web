@@ -254,6 +254,8 @@ describe('HorarioSemanalPage', () => {
 
     // La irreversibilidad se dice ANTES de confirmar: el contrato no publica reactivacion.
     expect(texto(fixture)).toContain('no se puede deshacer');
+    // No hay consulta previa en el contrato: la pantalla avisa que el numero llega al confirmar.
+    expect(texto(fixture)).toContain('al confirmar te dice cuantos');
 
     // Sin motivo NO sale a la red. El backend lo exige igual, y gastar un rechazo del servidor
     // para decir algo que ya se sabe deja al usuario esperando un viaje de ida y vuelta.
@@ -270,11 +272,14 @@ describe('HorarioSemanalPage', () => {
     expect(baja.request.url).toBe(`${BLOQUES}/${LUNES_MANANA.id}`);
     expect(baja.request.body).toEqual({ reason: 'Dejo de atender los lunes a la manana' });
 
-    baja.flush({ ...LUNES_MANANA, estado: 'INACTIVO' });
+    baja.flush({ ...LUNES_MANANA, estado: 'INACTIVO', turnosAfectados: 3 });
     httpMock.expectOne(BLOQUES).flush([LUNES_TARDE, MARTES_NOCHE]);
     await estabilizar(fixture);
 
     expect(texto(fixture)).toContain('sobrevive con su motivo');
+    // El backend cuenta de mas, nunca de menos: el aviso dice "hasta" y declara la cota.
+    expect(texto(fixture)).toContain('Hasta 3 turnos pendientes');
+    expect(texto(fixture)).toContain('cota superior');
   });
 
   it('la edicion manda solo lo que cambio, y siempre la version', async () => {
@@ -301,6 +306,8 @@ describe('HorarioSemanalPage', () => {
     await estabilizar(fixture);
 
     expect(texto(fixture)).toContain('quedaron guardados');
+    // Sin turnos afectados no hay aviso que hacer.
+    expect(texto(fixture)).not.toContain('Turnos para revisar');
   });
 
   it('un rango invertido no sale a la red, y volver a "Sin elegir" vacia la semana', async () => {
