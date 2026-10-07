@@ -1,3 +1,7 @@
+import {
+  PrepagoDeRecepcion,
+  PrepagoDeRecepcionEstadoEnum,
+} from '../../../api/generated/model/prepago-de-recepcion';
 import { Recepcion, RecepcionEstadoEnum } from '../../../api/generated/model/recepcion';
 
 /**
@@ -56,4 +60,54 @@ export function textoDeModalidad(modalidad: string | undefined): string {
  */
 export function recepcionAbierta(recepcion: Recepcion | undefined): boolean {
   return recepcion?.estado !== undefined && !CERRADOS.has(recepcion.estado);
+}
+
+/**
+ * Lo que la fila dice del prepago (E-6, DP-06 / ADR-0013), o vacio cuando no hay nada que decir.
+ *
+ * <p>`PENDIENTE` es una <b>alerta</b>: el centro exige un anticipo para esta oferta y todavia no se
+ * cobro. Nunca impide pasar a espera, llamar ni atender. El importe que acompana es el precio
+ * particular <b>sugerido</b>; lo decide quien cobra. `NO_EXIGIDO` no se rotula: seria ruido en
+ * cada fila de un centro que no usa la politica.
+ */
+export function textoDePrepago(prepago: PrepagoDeRecepcion | undefined): string {
+  switch (prepago?.estado) {
+    case PrepagoDeRecepcionEstadoEnum.PENDIENTE: {
+      const sugerido = importeDePrepago(prepago.importeSugerido, prepago.moneda);
+      return sugerido === ''
+        ? 'Prepago pendiente: esta prestacion exige un anticipo y no se registro. Es un aviso, no impide atender.'
+        : `Prepago pendiente (sugerido ${sugerido}): esta prestacion exige un anticipo y no se ` +
+            'registro. Es un aviso, no impide atender.';
+    }
+    case PrepagoDeRecepcionEstadoEnum.REGISTRADO: {
+      const importe = importeDePrepago(prepago.importe, prepago.moneda);
+      return importe === ''
+        ? 'Prepago registrado. Se imputa solo al cerrar la sesion.'
+        : `Prepago registrado por ${importe}. Se imputa solo al cerrar la sesion; lo que sobre ` +
+            'queda a favor del paciente.';
+    }
+    default:
+      return '';
+  }
+}
+
+/**
+ * Importe con su moneda, o vacio si no vino.
+ *
+ * <p>Se formatea aca y no con el helper de `billing`: un feature no importa de otro (AGENT.md 4.4).
+ * Con una moneda que `Intl` no conoce se muestra el codigo al lado del numero, nunca un simbolo que
+ * podria estar mintiendo.
+ */
+export function importeDePrepago(valor: number | undefined, moneda: string | undefined): string {
+  if (valor === undefined || !Number.isFinite(valor)) {
+    return '';
+  }
+  if (moneda !== undefined && moneda !== '') {
+    try {
+      return new Intl.NumberFormat('es-AR', { style: 'currency', currency: moneda }).format(valor);
+    } catch {
+      return `${valor.toFixed(2)} ${moneda}`;
+    }
+  }
+  return valor.toFixed(2);
 }
