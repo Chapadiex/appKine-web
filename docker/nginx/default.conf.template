@@ -1,0 +1,79 @@
+# Server de AKINE (G-3). Plantilla: el entrypoint de nginx reemplaza ${AKINE_API_URL} y
+# ${NGINX_LOCAL_RESOLVERS} al arrancar (filtrado por NGINX_ENVSUBST_FILTER, ver Dockerfile).
+# Las variables propias de nginx ($uri, $host...) no se tocan.
+
+server {
+    listen 8080;
+    server_name _;
+
+    root /usr/share/nginx/html;
+    index index.html;
+
+    server_tokens off;
+
+    gzip on;
+    gzip_comp_level 5;
+    gzip_min_length 1024;
+    gzip_vary on;
+    gzip_types text/css application/javascript text/javascript application/json image/svg+xml text/plain;
+
+    # Liveness del contenedor. No toca el backend a proposito.
+    location = /healthz {
+        access_log off;
+        default_type text/plain;
+        return 200 "ok\n";
+    }
+
+    # Proxy inverso al backend. El bundle pide /api/... relativo al origen (apiBaseUrl vacio),
+    # igual que con proxy.conf.json en desarrollo: mismo origen, sin CORS, y la cookie de
+    # refresh viaja como first-party.
+    #
+    # proxy_pass con variable: el nombre del backend se resuelve en cada peticion contra los
+    # resolvers del contenedor, no al arrancar. nginx levanta aunque el backend no exista
+    # todavia, y responde 502 a /api hasta que aparezca.
+    location /api/ {
+        resolver ${NGINX_LOCAL_RESOLVERS} valid=30s ipv6=off;
+        set $akine_api "${AKINE_API_URL}";
+        proxy_pass $akine_api;
+
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Host $host;
+
+        # Tope del backend: spring.servlet.multipart.max-request-size = 16MB.
+        client_max_body_size 16m;
+        proxy_read_timeout 60s;
+    }
+
+    # Archivos con hash en el nombre (chunk-XXXXXXXX.js, styles-XXXXXXXX.css, media/...):
+    # el nombre cambia con el contenido, asi que se cachean un anio como inmutables. Si no
+    # existen, 404: nunca index.html servido como JavaScript.
+    location ~* "-[A-Z0-9]{8}\.[a-z0-9]+$" {
+        include /etc/nginx/snippets/security-headers.conf;
+        add_header Cache-Control "public, max-age=31536000, immutable" always;
+        try_files $uri =404;
+    }
+
+    # index.html nunca se cachea sin revalidar: es el que apunta a los nombres con hash del
+    # despliegue vigente. Cachearlo dejaria al navegador pidiendo chunks que ya no existen.
+    location = /index.html {
+        include /etc/nginx/snippets/security-headers.conf;
+        add_header Cache-Control "no-cache" always;
+    }
+
+    # Ningun archivo oculto (.git, .env...) se sirve aunque terminara en la raiz web.
+    location ~ /\. {
+        return 404;
+    }
+
+    # Fallback de SPA: cualquier ruta que no sea un archivo es una ruta del router de Angular
+    # y recibe index.html (que cae en el location de arriba, sin cache).
+    location / {
+        include /etc/nginx/snippets/security-headers.conf;
+        add_header Cache-Control "no-cache" always;
+        try_files $uri $uri/ /index.html;
+    }
+}
