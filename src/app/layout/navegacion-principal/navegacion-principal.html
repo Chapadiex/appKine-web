@@ -23,6 +23,18 @@
             >
           </li>
         }
+        @if (esAdminDePlataforma()) {
+          <li>
+            <a
+              class="nav__enlace"
+              [routerLink]="rutaPlataforma"
+              routerLinkActive="nav__enlace--actual"
+              #activoPlataforma="routerLinkActive"
+              [attr.aria-current]="activoPlataforma.isActive ? 'page' : null"
+              >Plataforma</a
+            >
+          </li>
+        }
       </ul>
     </nav>
 
@@ -50,4 +62,13 @@
   <p class="contexto">
     <a class="contexto__cambiar" [routerLink]="rutaSelector">Elegi donde vas a trabajar</a>
   </p>
+  <!--
+    Un administrador de plataforma no es miembro de ningun centro: este es su unico camino a la
+    consola (AKINE-A-7).
+  -->
+  @if (esAdminDePlataforma()) {
+    <p class="contexto">
+      <a class="contexto__cambiar" [routerLink]="rutaPlataforma">Consola de plataforma</a>
+    </p>
+  }
 }

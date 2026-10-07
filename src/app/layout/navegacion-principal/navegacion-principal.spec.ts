@@ -8,6 +8,7 @@ import { EstadoSesion, SessionService } from '../../core/services/session.servic
 import { NavegacionPrincipal } from './navegacion-principal';
 import { PERMISO_COLABORADOR_READ } from '../../core/models/permisos';
 import { PermissionsStore } from '../../core/services/permissions.store';
+import { PlatformRoleStore } from '../../core/services/platform-role.store';
 import { RUTA_PERMISOS_EFECTIVOS } from '../../core/testing/rutas-api';
 import { TIMEOUT_AXE, esperarSinViolaciones } from '../../core/testing/axe';
 import { TenantContextStore } from '../../core/services/tenant-context.store';
@@ -31,9 +32,11 @@ describe('NavegacionPrincipal', () => {
   let httpMock: HttpTestingController;
   let tenant: TenantContextStore;
   let router: Router;
+  let adminDePlataforma: WritableSignal<boolean>;
 
   beforeEach(() => {
     estado = signal<EstadoSesion>('activa');
+    adminDePlataforma = signal(false);
 
     TestBed.configureTestingModule({
       providers: [
@@ -47,6 +50,10 @@ describe('NavegacionPrincipal', () => {
           { path: 'organizacion', component: Pagina },
         ]),
         { provide: SessionService, useValue: { estado } },
+        {
+          provide: PlatformRoleStore,
+          useValue: { esAdminDePlataforma: adminDePlataforma, asegurarCargado: () => undefined },
+        },
       ],
     });
 
@@ -72,6 +79,30 @@ describe('NavegacionPrincipal', () => {
 
     const salida = html.querySelector<HTMLAnchorElement>('a.contexto__cambiar');
     expect(salida?.getAttribute('href')).toBe('/seleccionar-contexto');
+  });
+
+  /**
+   * AKINE-A-7: un administrador de plataforma no tiene contexto, y el enlace a su consola es su
+   * unica salida desde la cabecera. Con contexto, va al final del menu.
+   */
+  it('ofrece la consola de plataforma solo a quien la administra, con o sin contexto', () => {
+    estado.set('sin-contexto');
+    const sinContexto = montar();
+    expect((sinContexto.nativeElement as HTMLElement).textContent).not.toContain('Consola');
+
+    adminDePlataforma.set(true);
+    sinContexto.detectChanges();
+    const consola = Array.from(
+      (sinContexto.nativeElement as HTMLElement).querySelectorAll<HTMLAnchorElement>('a'),
+    ).find((enlace) => enlace.textContent?.includes('Consola de plataforma'));
+    expect(consola?.getAttribute('href')).toBe('/plataforma/solicitudes');
+
+    estado.set('activa');
+    conContexto();
+    sinContexto.detectChanges();
+    responderPermisos([]);
+    sinContexto.detectChanges();
+    expect(enlaces(sinContexto)).toContain('Plataforma');
   });
 
   /** Un anonimo esta en el login: no tiene a donde navegar y el selector tampoco le sirve. */
