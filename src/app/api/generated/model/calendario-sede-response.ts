@@ -8,6 +8,7 @@
  * Do not edit the class manually.
  */
 import { FeriadoResponse } from './feriado-response';
+import { HorarioGeneralFranjaResponse } from './horario-general-franja-response';
 
 
 /**
@@ -30,6 +31,10 @@ export interface CalendarioSedeResponse {
      * Feriados del pais que caen en [desde, hasta). VACIA en la respuesta del PUT, que no tiene ventana: vacia significa \"no se pregunto\"
      */
     feriados?: Array<FeriadoResponse>;
+    /**
+     * Franjas VIGENTES del horario general de la sede (RF-M03-002), ordenadas por dia y hora. Vacia significa que la sede no declaro horario general, no que este cerrada. Informativo: la agenda ofrece turnos con la disponibilidad de cada profesional, no con este horario (RN-M03-004). Viaja completa tambien en la respuesta del PUT
+     */
+    horarioGeneral?: Array<HorarioGeneralFranjaResponse>;
     /**
      * Pais cuyo calendario de feriados usa la sede
      */
