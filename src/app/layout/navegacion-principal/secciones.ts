@@ -1,5 +1,6 @@
 import { RUTA_HORARIOS } from '../../features/resource/models/rutas-de-horarios';
 import { PERMISO_CAJA_OPERATE, PERMISO_COLABORADOR_READ } from '../../core/models/permisos';
+import { PERMISO_COBRO_REGISTER as PERMISO_PRESENTACIONES } from '../../core/models/permisos';
 
 /** Una entrada de la navegacion principal. */
 export interface Seccion {
@@ -82,6 +83,8 @@ export const SECCIONES: readonly Seccion[] = [
   { etiqueta: 'Contratacion', ruta: '/contratacion' },
   // La caja es de la sede y la opera recepcion. Sin `caja:operate` no hay nada que mirar.
   { etiqueta: 'Caja', ruta: '/caja', permisos: [PERMISO_CAJA_OPERATE] },
+  // Presentaciones a financiadores (M21). El permiso es `cobro:register`: lo decidio el backend.
+  { etiqueta: 'Presentaciones', ruta: '/presentaciones', permisos: [PERMISO_PRESENTACIONES] },
   { etiqueta: 'Organizacion', ruta: '/organizacion' },
 ];
 

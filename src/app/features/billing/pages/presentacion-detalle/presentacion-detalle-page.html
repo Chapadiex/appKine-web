@@ -1,0 +1,443 @@
+<p>
+  <a class="enlace" routerLink="/presentaciones">Volver a las presentaciones</a>
+</p>
+
+@if (carga().tipo === 'cargando' && lote() === null) {
+  <h1>Lote de presentacion</h1>
+  <p class="estado estado--cargando">Cargando el lote…</p>
+}
+
+@if (carga(); as estadoCarga) {
+  @if (estadoCarga.tipo === 'error') {
+    <h1>Lote de presentacion</h1>
+    <section class="tarjeta" role="alert" aria-labelledby="titulo-error-lote">
+      <h2 id="titulo-error-lote">No se pudo cargar el lote</h2>
+      <p class="estado estado--error">{{ estadoCarga.error.mensaje }}</p>
+      <div class="acciones">
+        @if (estadoCarga.error.causa === 'sin-contexto') {
+          <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto</a>
+        } @else {
+          <button type="button" class="boton boton--secundario" (click)="cargar()">
+            Reintentar
+          </button>
+        }
+      </div>
+    </section>
+  }
+}
+
+@if (lote(); as p) {
+  <h1>Lote {{ p.numero ? 'N.º ' + p.numero : 'en borrador' }} a {{ p.financiadorNombre }}</h1>
+
+  <dl class="detalle">
+    <dt>Estado</dt>
+    <dd>
+      <span [class]="claseDeEstado(p.estado)">{{ estadoEnPalabras(p.estado) }}</span>
+    </dd>
+    <dt>Periodo</dt>
+    <dd>{{ fecha(p.periodoDesde) }} al {{ fecha(p.periodoHasta) }}</dd>
+    <dt>Moneda</dt>
+    <dd>{{ p.moneda }}</dd>
+    @if (p.facturaNumero) {
+      <dt>Factura</dt>
+      <dd>{{ p.facturaNumero }} del {{ fecha(p.facturaFecha) }}</dd>
+    }
+    @if (p.motivoAnulacion) {
+      <dt>Motivo de la anulacion</dt>
+      <dd>{{ p.motivoAnulacion }}</dd>
+    }
+    <dt>Presentado</dt>
+    <dd class="importe">{{ importe(p.totalPresentado) }}</dd>
+    <dt>Debitado</dt>
+    <dd class="importe">{{ importe(p.totalDebitado) }}</dd>
+    <dt>Cobrado</dt>
+    <dd class="importe">{{ importe(p.totalCobrado) }}</dd>
+    <dt>Saldo</dt>
+    <dd class="importe">{{ importe(p.saldo) }}</dd>
+  </dl>
+
+  <div aria-live="polite">
+    @if (aviso(); as texto) {
+      <p class="estado estado--ok" role="status">{{ texto }}</p>
+    }
+    @if (errorOperacion(); as fallo) {
+      <section class="tarjeta" aria-labelledby="titulo-error-operacion">
+        <h2 id="titulo-error-operacion">No se pudo completar la operacion</h2>
+        <p class="estado estado--error">{{ fallo.mensaje }}</p>
+        @if (fallo.recargar) {
+          <div class="acciones">
+            <button type="button" class="boton boton--secundario" (click)="cargar()">
+              Recargar el lote
+            </button>
+          </div>
+        }
+      </section>
+    }
+  </div>
+
+  <!-- ============================ Prestaciones del lote ============================ -->
+
+  <section class="tarjeta" aria-labelledby="titulo-items">
+    <h2 id="titulo-items">Prestaciones del lote</h2>
+
+    @if (items().length === 0) {
+      <p class="estado estado--vacio">
+        El lote no tiene prestaciones todavia.
+        @if (esBorrador()) {
+          Agregalas desde la bandeja de abajo.
+        }
+      </p>
+    } @else {
+      <div
+        class="tabla-scroll"
+        tabindex="0"
+        role="region"
+        aria-label="Tabla de prestaciones del lote"
+      >
+        <table class="tabla">
+          <thead>
+            <tr>
+              <th scope="col">Prestacion</th>
+              <th scope="col">Fecha</th>
+              <th scope="col">Paciente</th>
+              <th scope="col">Importe</th>
+              <th scope="col">Estado</th>
+              <th scope="col">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of items(); track item.id) {
+              <tr>
+                <td>
+                  {{ item.concepto }}
+                  @if (item.id !== undefined && hallazgosPorItem().get(item.id); as observaciones) {
+                    <ul class="ayuda">
+                      @for (o of observaciones; track $index) {
+                        <li><b>Observada:</b> {{ o }}</li>
+                      }
+                    </ul>
+                  }
+                  @if (item.motivoDebito) {
+                    <p class="ayuda">Debito: {{ item.motivoDebito }}</p>
+                  }
+                </td>
+                <td>{{ fecha(item.fechaPrestacion) }}</td>
+                <td>Persona #{{ item.personaId }}</td>
+                <td class="importe">
+                  {{ importe(item.importePresentado) }}
+                  @if (item.importeDebitado) {
+                    <br /><span class="ayuda">Debitado {{ importe(item.importeDebitado) }}</span>
+                  }
+                </td>
+                <td>{{ estadoDeItem(item.estado) }}</td>
+                <td>
+                  <div class="acciones-fila">
+                    @if (esBorrador()) {
+                      <button
+                        type="button"
+                        class="boton boton--secundario"
+                        [disabled]="operando() !== null"
+                        (click)="quitar(item)"
+                      >
+                        Quitar
+                      </button>
+                    }
+                    @if (enCurso() && esDebitable(item)) {
+                      <button
+                        type="button"
+                        class="boton boton--secundario"
+                        [disabled]="operando() !== null"
+                        (click)="abrirDebito(item)"
+                      >
+                        Registrar debito
+                      </button>
+                    }
+                  </div>
+                </td>
+              </tr>
+
+              @if (itemDebitando() !== null && itemDebitando() === item.id) {
+                <tr class="fila-panel">
+                  <td colspan="6">
+                    <form [formGroup]="debito" (ngSubmit)="debitar(item)" novalidate>
+                      <h3>Debito o rechazo de la prestacion</h3>
+                      <p class="ayuda">
+                        Registra lo que el financiador no reconoce. La deuda de la prestacion sigue
+                        pendiente y se puede volver a presentar.
+                      </p>
+                      <div class="campos-en-linea">
+                        <div class="campo">
+                          <label for="debito-importe">Importe debitado</label>
+                          <input
+                            id="debito-importe"
+                            type="number"
+                            min="0.01"
+                            step="0.01"
+                            formControlName="importe"
+                          />
+                        </div>
+                        <div class="campo">
+                          <label for="debito-motivo">Motivo informado por el financiador</label>
+                          <input id="debito-motivo" type="text" formControlName="motivo" />
+                          @if (debito.controls.motivo.touched && debito.controls.motivo.invalid) {
+                            <p class="campo__error" role="alert">El motivo es obligatorio.</p>
+                          }
+                        </div>
+                      </div>
+                      <div class="acciones">
+                        <button type="submit" class="boton" [disabled]="operando() !== null">
+                          Confirmar el debito
+                        </button>
+                        <button
+                          type="button"
+                          class="boton boton--secundario"
+                          (click)="cerrarPaneles()"
+                        >
+                          Cancelar
+                        </button>
+                      </div>
+                    </form>
+                  </td>
+                </tr>
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+
+  <!-- ============================ Borrador: revision y acciones ======================= -->
+
+  @if (esBorrador()) {
+    <section class="tarjeta" aria-labelledby="titulo-revision">
+      <h2 id="titulo-revision">Revision antes de presentar</h2>
+      @if (validacion(); as resultado) {
+        @if (hallazgos().length === 0) {
+          <p class="estado estado--ok">
+            Ninguna prestacion tiene observaciones.
+            @if (!resultado.confirmable) {
+              Igual el lote todavia no se puede confirmar (por ejemplo, porque esta vacio).
+            }
+          </p>
+        } @else {
+          <p class="estado estado--error">
+            {{ hallazgos().length }} observacion(es): quitalas del lote antes de confirmarlo.
+          </p>
+          <ul>
+            @for (reparo of hallazgos(); track $index) {
+              <li>
+                Prestacion de la deuda #{{ reparo.obligacionId }}:
+                {{ hallazgoEnPalabras(reparo.hallazgo) }}
+              </li>
+            }
+          </ul>
+        }
+      }
+      <p class="ayuda">
+        Todavia no se valida que haya orden, autorizacion y credencial: revisalas a mano con los
+        requisitos que muestra la bandeja.
+      </p>
+      <div class="acciones">
+        <button type="button" class="boton boton--secundario" (click)="revisar()">
+          Volver a revisar
+        </button>
+        <button
+          type="button"
+          class="boton"
+          [disabled]="operando() !== null || items().length === 0"
+          (click)="confirmar()"
+        >
+          Confirmar y presentar
+        </button>
+        <button
+          type="button"
+          class="boton boton--secundario"
+          [disabled]="operando() !== null"
+          (click)="abrirAnulacion()"
+        >
+          Descartar el borrador
+        </button>
+      </div>
+
+      @if (anulando()) {
+        <app-confirmacion-con-motivo
+          idCampo="anular-presentacion-motivo"
+          titulo="Descartar el borrador"
+          etiqueta="Motivo"
+          ayuda="El lote queda anulado con este motivo y sus prestaciones vuelven a la bandeja. No se deshace."
+          textoConfirmar="Descartar"
+          [enviando]="operando() === 'anular'"
+          (confirmado)="anular($event)"
+          (cancelado)="cerrarPaneles()"
+        />
+      }
+    </section>
+
+    <section class="tarjeta" aria-labelledby="titulo-elegibles">
+      <h2 id="titulo-elegibles">Prestaciones elegibles</h2>
+      <p class="ayuda">
+        Deudas a cargo de {{ p.financiadorNombre }} devengadas en el periodo del lote y que no estan
+        en otro lote vivo.
+      </p>
+      @if (elegibles().length === 0) {
+        <p class="estado estado--vacio">No hay prestaciones para agregar en este periodo.</p>
+      } @else {
+        <div
+          class="tabla-scroll"
+          tabindex="0"
+          role="region"
+          aria-label="Tabla de prestaciones elegibles"
+        >
+          <table class="tabla">
+            <thead>
+              <tr>
+                <th scope="col">Prestacion</th>
+                <th scope="col">Devengada</th>
+                <th scope="col">Paciente</th>
+                <th scope="col">Saldo</th>
+                <th scope="col">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (obligacion of elegibles(); track obligacion.id) {
+                <tr>
+                  <td>
+                    {{ obligacion.snapshotNombre }}
+                    @if (obligacion.convenio?.convenioNombre) {
+                      <span class="ayuda">({{ obligacion.convenio?.convenioNombre }})</span>
+                    }
+                    @if (requisitos(obligacion); as texto) {
+                      <p class="ayuda">{{ texto }}</p>
+                    }
+                  </td>
+                  <td>{{ instante(obligacion.devengadaEn) }}</td>
+                  <td>Persona #{{ obligacion.personaId }}</td>
+                  <td class="importe">{{ importe(obligacion.saldo) }}</td>
+                  <td>
+                    <button
+                      type="button"
+                      class="boton boton--secundario"
+                      [disabled]="operando() !== null"
+                      (click)="agregar(obligacion)"
+                    >
+                      Agregar<span class="visualmente-oculto"> la deuda {{ obligacion.id }}</span>
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
+  }
+
+  <!-- ============================ Lote presentado ============================ -->
+
+  @if (enCurso()) {
+    @if (admiteFactura()) {
+      <section class="tarjeta" aria-labelledby="titulo-factura">
+        <h2 id="titulo-factura">Factura del lote</h2>
+        <form [formGroup]="factura" (ngSubmit)="registrarFactura()" novalidate>
+          <div class="campos-en-linea">
+            <div class="campo">
+              <label for="factura-numero">Numero de factura</label>
+              <input id="factura-numero" type="text" formControlName="numero" />
+              @if (factura.controls.numero.touched && factura.controls.numero.invalid) {
+                <p class="campo__error" role="alert">El numero es obligatorio.</p>
+              }
+            </div>
+            <div class="campo">
+              <label for="factura-fecha">Fecha</label>
+              <input id="factura-fecha" type="date" formControlName="fecha" />
+            </div>
+          </div>
+          <div class="acciones">
+            <button type="submit" class="boton" [disabled]="operando() !== null">
+              Registrar la factura
+            </button>
+          </div>
+        </form>
+      </section>
+    }
+
+    <section class="tarjeta" aria-labelledby="titulo-pago">
+      <h2 id="titulo-pago">Pago del financiador</h2>
+      <p class="ayuda">
+        Un pago en efectivo entra a la caja del dia y necesita una jornada abierta. Transferencia o
+        tarjeta no tocan el arqueo. Un pago mayor que el saldo se rechaza.
+      </p>
+      <form [formGroup]="pago" (ngSubmit)="registrarPago()" novalidate>
+        <div class="campos-en-linea">
+          <div class="campo">
+            <label for="pago-importe">Importe</label>
+            <input
+              id="pago-importe"
+              type="number"
+              min="0.01"
+              step="0.01"
+              formControlName="importe"
+            />
+            @if (pago.controls.importe.touched && pago.controls.importe.invalid) {
+              <p class="campo__error" role="alert">El importe tiene que ser mayor que cero.</p>
+            }
+          </div>
+          <div class="campo">
+            <label for="pago-medio">Medio</label>
+            <select id="pago-medio" formControlName="medio">
+              @for (m of medios; track m) {
+                <option [value]="m">{{ medioEnPalabras(m) }}</option>
+              }
+            </select>
+          </div>
+          <div class="campo">
+            <label for="pago-fecha">Fecha del pago</label>
+            <input id="pago-fecha" type="date" formControlName="fechaPago" />
+          </div>
+          <div class="campo">
+            <label for="pago-referencia"
+              >Referencia <span class="campo__opcional">(opcional)</span></label
+            >
+            <input id="pago-referencia" type="text" formControlName="referencia" />
+          </div>
+        </div>
+        <div class="acciones">
+          <button type="submit" class="boton" [disabled]="operando() !== null">
+            Registrar el pago
+          </button>
+        </div>
+      </form>
+    </section>
+
+    <section class="tarjeta" aria-labelledby="titulo-cierre">
+      <h2 id="titulo-cierre">Cerrar el lote</h2>
+      <p class="ayuda">
+        Se cierra cuando el saldo llega a cero: todo lo presentado quedo explicado por debitos o
+        pagos. Si queda saldo, el servidor lo rechaza y dice cuanto falta.
+      </p>
+      <div class="acciones">
+        <button type="button" class="boton" [disabled]="operando() !== null" (click)="conciliar()">
+          Cerrar (conciliar) el lote
+        </button>
+      </div>
+    </section>
+  }
+
+  @if (pagos().length > 0) {
+    <section class="tarjeta" aria-labelledby="titulo-pagos">
+      <h2 id="titulo-pagos">Pagos registrados</h2>
+      <ul>
+        @for (registrado of pagos(); track registrado.id) {
+          <li>
+            {{ fecha(registrado.fechaPago) }} — {{ medioEnPalabras(registrado.medio) }} —
+            <span class="importe">{{ importe(registrado.importe) }}</span>
+            @if (registrado.referencia) {
+              <span class="ayuda">(ref. {{ registrado.referencia }})</span>
+            }
+          </li>
+        }
+      </ul>
+    </section>
+  }
+}
