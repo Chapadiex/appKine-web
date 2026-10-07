@@ -113,7 +113,50 @@
         </dl>
       }
 
-      @if (hitosDe(seccion).length === 0) {
+      @if (seccion.seccion === seccionCoberturas) {
+        <!--
+          Coberturas vigentes hoy (B-5). El historial y el numero de afiliado completo viven en la
+          pantalla de coberturas: aca va lo que el mostrador necesita de un vistazo.
+        -->
+        @if (hitosDe(seccion).length === 0) {
+          <p class="estado">
+            No tiene coberturas vigentes hoy: se atiende como particular. Es un dato, no un error:
+            la seccion se consulto y no hay ninguna vigente.
+          </p>
+        } @else {
+          <ul class="lista-cobertura">
+            @for (hito of hitosDe(seccion); track $index) {
+              @let cobertura = coberturaDelResumen(hito);
+              <li>
+                <b>{{ cobertura.descripcion }}</b>
+                @if (cobertura.principal) {
+                  <span class="etiqueta">Principal</span>
+                }
+                @if (cobertura.vigenteDesde) {
+                  <p class="ayuda">Vigente desde el {{ cobertura.vigenteDesde }}.</p>
+                }
+                @if (cobertura.credencialVencida) {
+                  <p>
+                    <b>Credencial vencida.</b> No invalida la cobertura: pedi la credencial renovada
+                    antes de presentar la prestacion.
+                  </p>
+                }
+              </li>
+            }
+          </ul>
+          <p class="ayuda">
+            El numero de afiliado se muestra enmascarado. El completo esta en Coberturas.
+          </p>
+        }
+
+        <p class="ayuda">
+          Tener una cobertura vigente no dice que aplique a una oferta concreta: eso se consulta en
+          Coberturas, eligiendo la oferta.
+        </p>
+        <p class="acciones">
+          <a class="boton" [routerLink]="rutaCoberturas()">Ver coberturas del paciente</a>
+        </p>
+      } @else if (hitosDe(seccion).length === 0) {
         <p class="estado">
           Sin movimientos registrados en esta seccion. Es un dato, no un error: la seccion se
           consulto y no hay nada.

@@ -57,10 +57,33 @@ const RESUMEN_COMPLETO = {
       ],
     },
     {
+      // Forma real del contribuyente de B-5: la principal primero, afiliado ya enmascarado.
       seccion: 'coberturas',
-      indicadores: [],
-      hitos: [],
+      indicadores: [
+        { clave: 'coberturas-vigentes', etiqueta: 'Coberturas vigentes', cantidad: 2 },
+        { clave: 'credenciales-vencidas', etiqueta: 'Credenciales vencidas', cantidad: 1 },
+      ],
+      hitos: [
+        {
+          seccion: 'coberturas',
+          tipo: 'COBERTURA_PRINCIPAL',
+          ocurrioEn: '2026-03-01T00:00:00Z',
+          titulo: 'OSDE · 310 · Afiliado ···4567 · hasta 2026-12-31',
+          estado: 'VIGENTE',
+          referencia: 11,
+        },
+        {
+          seccion: 'coberturas',
+          tipo: 'COBERTURA',
+          ocurrioEn: '2026-01-15T00:00:00Z',
+          titulo: 'IOSFA · General · Afiliado ··· · sin vencimiento',
+          estado: 'CREDENCIAL_VENCIDA',
+          referencia: 12,
+        },
+      ],
     },
+    // Seccion de un contribuyente que el frontend no conoce, vacia: se pinta con la forma generica.
+    { seccion: 'clases', indicadores: [], hitos: [] },
   ],
   seccionesOmitidas: [{ seccion: 'economia', permisoRequerido: 'cobro:register' }],
 };
@@ -155,6 +178,39 @@ describe('FichaDePersonaPage', () => {
     expect(contenido).toContain('Turnos futuros');
     expect(contenido).toContain('Turno');
     expect(contenido).toContain('CONFIRMADO');
+  });
+
+  // -------------------------------------------------------------------------------------
+  // 2b. Coberturas vigentes (B-5)
+  // -------------------------------------------------------------------------------------
+
+  it('la seccion de coberturas muestra financiador, plan, afiliado enmascarado, vigencia y la credencial vencida', async () => {
+    const fixture = await montar(RESUMEN_COMPLETO);
+    const raiz = fixture.nativeElement as HTMLElement;
+    const seccion = raiz.querySelector('[aria-labelledby="titulo-seccion-coberturas"]');
+    const contenido = seccion?.textContent ?? '';
+
+    expect(contenido).toContain('Coberturas vigentes');
+    expect(contenido).toContain('OSDE · 310 · Afiliado ···4567 · hasta 31/12/2026');
+    expect(contenido).toContain('Principal');
+    // Medianoche UTC del 1 de marzo es una fecha, no un instante: no puede leerse como el 28/02.
+    expect(contenido).toContain('Vigente desde el 01/03/2026');
+    expect(contenido).toContain('Credencial vencida');
+    expect(contenido).not.toContain('CREDENCIAL_VENCIDA');
+    expect(
+      seccion?.querySelector(`a[href="/pacientes/${PERSONA}/coberturas"]`)?.textContent,
+    ).toContain('Ver coberturas del paciente');
+  });
+
+  it('sin coberturas vigentes dice que se atiende como particular, no "sin movimientos"', async () => {
+    const fixture = await montar({
+      ...RESUMEN_COMPLETO,
+      secciones: [{ seccion: 'coberturas', indicadores: [], hitos: [] }],
+    });
+    const contenido = texto(fixture);
+
+    expect(contenido).toContain('No tiene coberturas vigentes hoy: se atiende como particular');
+    expect(contenido).not.toContain('Sin movimientos registrados');
   });
 
   it('un indicador de dinero se formatea con su moneda y no se suma con ningun otro', async () => {

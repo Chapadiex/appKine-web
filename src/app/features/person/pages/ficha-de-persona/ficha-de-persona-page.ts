@@ -26,6 +26,7 @@ import {
   omisionEnPalabras,
   valorDeIndicador,
 } from '../../models/etiquetas-de-ficha';
+import { SECCION_COBERTURAS, coberturaDelResumen } from '../../models/etiquetas-de-cobertura';
 
 /** Confirmacion abierta sobre la ficha. Solo una a la vez. */
 type TipoDeBaja = 'persona' | 'perfil';
@@ -118,6 +119,9 @@ export class FichaDePersonaPage {
   protected readonly hitoEnPalabras = hitoEnPalabras;
   protected readonly nombreDeCategoria = nombreDeCategoria;
   protected readonly fechaEnPalabras = fechaEnPalabras;
+  /** La seccion de coberturas (B-5) se pinta con forma propia; las demas, con la generica. */
+  protected readonly seccionCoberturas = SECCION_COBERTURAS;
+  protected readonly coberturaDelResumen = coberturaDelResumen;
 
   protected readonly resumen = signal<ResumenDePersonaResponse | null>(null);
   protected readonly cargando = signal(true);
