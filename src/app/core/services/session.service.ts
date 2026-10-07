@@ -49,6 +49,7 @@ export class SessionService {
   private readonly scope = signal<AccessTokenResponseScopeEnum | null>(null);
   private readonly contextosDisponibles = signal<readonly AuthorizedContextResponse[]>([]);
   private readonly contextoElegido = signal<AuthorizedContextResponse | null>(null);
+  private readonly identidad = signal(0);
 
   /**
    * `anonimo` sin token, `sin-contexto` con token `pre_context`, `activa` con `context`.
@@ -73,6 +74,15 @@ export class SessionService {
     this.contextoElegido.asReadonly();
 
   /**
+   * Avanza en cada login y en cada limpieza de sesion (AKINE-A-7).
+   *
+   * <p>Es la epoca de lo que pertenece a la <b>cuenta</b> y no al contexto —hoy, el rol de
+   * plataforma—. `contextEpoch` no sirve para eso: cambiar de consultorio no cambia quien es
+   * uno, y cerrar sesion sin haber elegido contexto nunca lo movio.
+   */
+  readonly epocaDeIdentidad: Signal<number> = this.identidad.asReadonly();
+
+  /**
    * Refresh en vuelo, compartido. Ver {@link refrescar}: es la mitad del mecanismo
    * single-flight; la otra mitad la consume el interceptor de auth.
    */
@@ -92,6 +102,7 @@ export class SessionService {
         // Login siempre arranca de cero: si habia una sesion anterior a medio limpiar, su
         // contexto no puede sobrevivir al cambio de identidad.
         this.limpiarEstadoDeContexto();
+        this.identidad.update((epoca) => epoca + 1);
         this.aplicarToken(respuesta);
       }),
       map(() => undefined),
@@ -228,6 +239,7 @@ export class SessionService {
   limpiarSesion(): void {
     this.tokenStore.clear();
     this.scope.set(null);
+    this.identidad.update((epoca) => epoca + 1);
     this.limpiarEstadoDeContexto();
   }
 

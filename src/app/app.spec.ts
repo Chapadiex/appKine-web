@@ -6,6 +6,7 @@ import { Component } from '@angular/core';
 
 import { ANCHO_AMPLIO, DATA_ANCHO } from './core/models/ancho-de-contenido';
 import { SessionService } from './core/services/session.service';
+import { PlatformRoleStore } from './core/services/platform-role.store';
 import { TenantContextStore } from './core/services/tenant-context.store';
 import { App } from './app';
 import { provideApi } from './api/generated/provide-api';
@@ -119,6 +120,10 @@ describe('App (layout)', () => {
         ...PROVIDERS,
         provideRouter([]),
         { provide: SessionService, useValue: { estado: () => 'activa' } },
+        {
+          provide: PlatformRoleStore,
+          useValue: { esAdminDePlataforma: () => false, asegurarCargado: () => undefined },
+        },
       ],
     }).compileComponents();
 
