@@ -315,20 +315,31 @@ describe('traducirErrorRecepcion', () => {
     );
   }
 
-  it('el 409 de deshacer explica la asimetria y NO es un "error inesperado"', () => {
+  it('el 409 de la recepcion explica la asimetria y NO es un "error inesperado"', () => {
+    const traducido = traducirErrorRecepcion(
+      conflicto('recepcion-transicion-no-permitida', {
+        motivo: 'no hay recepcion abierta: no hay ninguna llegada que anular',
+      }),
+    );
+
+    expect(traducido.causa).toBe('recepcion-transicion-no-permitida');
+    // Registrar es idempotente y anular no: el texto lo dice.
+    expect(traducido.mensaje).toContain('idempotente');
+    expect(traducido.mensaje).not.toContain('No pudimos completar la operacion');
+    expect(traducido.motivo).toBe('no hay recepcion abierta: no hay ninguna llegada que anular');
+    expect(traducido.accion).toBe('recargar-dia');
+  });
+
+  it('el 409 del check-in sobre un turno cancelado nombra la llegada', () => {
     const traducido = traducirErrorRecepcion(
       conflicto('turno-transicion-no-permitida', {
-        motivo: 'no esta en espera: no hay ninguna llegada que deshacer',
+        motivo: 'esta cancelado y no admite registrar una llegada',
       }),
     );
 
     expect(traducido.causa).toBe('turno-transicion-no-permitida');
-    // Marcar es idempotente y deshacer no: el texto lo dice, que es el requisito de la etapa.
-    expect(traducido.mensaje).toContain('idempotente');
-    expect(traducido.mensaje).toContain('deshacerla si');
-    expect(traducido.mensaje).not.toContain('No pudimos completar la operacion');
-    // El motivo del servidor sobrevive: es lo que separa "esta cancelado" de "no esta en espera".
-    expect(traducido.motivo).toBe('no esta en espera: no hay ninguna llegada que deshacer');
+    expect(traducido.mensaje).toContain('ya no admite registrar una llegada');
+    expect(traducido.motivo).toBe('esta cancelado y no admite registrar una llegada');
     expect(traducido.accion).toBe('recargar-dia');
   });
 

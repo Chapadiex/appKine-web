@@ -22,19 +22,23 @@ import { TurnoEstadoEnum } from '../../../api/generated/model/turno';
  * la ausencia no, porque la hora se consumio igual y el profesional estuvo ahi. Es la distincion
  * que DP-04 protege y la que un rotulo perezoso —"turno no realizado" para los dos— borraria.
  *
- * <p><b>`EN_ESPERA` tampoco dice que lo esten atendiendo.</b> Dice que llego y espera: entre
- * llegar y ser atendido puede irse, y la prestacion la registra la Sesion.
+ * <p><b>`EN_ESPERA` ya no es un estado del turno</b> (DP-16, contrato 0.63.0): la llegada y la
+ * espera son de la Recepcion (`etiquetas-de-recepcion.ts`) y el servidor dejo de emitirlo. El
+ * enum generado lo conserva declarado una version mas, y los <b>eventos historicos</b> del turno
+ * pueden seguir trayendolo en `estadoAnterior`/`estadoNuevo`: por eso queda un texto de
+ * historia, escrito con el literal y no con el miembro deprecado del enum.
  *
- * <p>Ninguno de los cinco dice nada sobre la atencion: que el paciente haya sido atendido lo dice
+ * <p>Ninguno de los cuatro dice nada sobre la atencion: que el paciente haya sido atendido lo dice
  * la Sesion (DP-05, regla maestra 4).
  */
-const TEXTOS_DE_ESTADO: Readonly<Record<TurnoEstadoEnum, string>> = {
+const TEXTOS_DE_ESTADO: Readonly<Record<string, string>> = {
   [TurnoEstadoEnum.RESERVADO]: 'Reservado — el lugar esta tomado, falta confirmarlo',
   [TurnoEstadoEnum.CONFIRMADO]:
     'Confirmado — la reserva quedo confirmada, no el cobro ni la llegada',
-  [TurnoEstadoEnum.EN_ESPERA]: 'En espera — el paciente llego y aguarda ser atendido',
   [TurnoEstadoEnum.CANCELADO]: 'Cancelado — el lugar se libero y volvio a la agenda',
   [TurnoEstadoEnum.AUSENTE]: 'Ausente — el paciente no vino y la hora se consumio igual',
+  // Solo historia: lo traen eventos anteriores a DP-16. Hoy la espera es de la Recepcion.
+  EN_ESPERA: 'En espera (historico) — la llegada se registraba en el turno, antes de la recepcion',
 };
 
 const TEXTOS_DE_EVENTO: Readonly<Record<EventoDeTurnoTipoEnum, string>> = {
@@ -63,7 +67,7 @@ export function textoDeEstado(estado: string | undefined): string {
   if (estado === undefined || estado === '') {
     return 'Estado desconocido';
   }
-  return TEXTOS_DE_ESTADO[estado as TurnoEstadoEnum] ?? estado;
+  return TEXTOS_DE_ESTADO[estado] ?? estado;
 }
 
 /** Texto del evento, con el mismo respaldo que {@link textoDeEstado}. */

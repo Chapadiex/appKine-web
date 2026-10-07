@@ -111,3 +111,14 @@ export const PERMISO_TURNO_MANAGE = 'turno:manage';
  * dos sedes, pero quien la mira lo hace parado en un mostrador.
  */
 export const PERMISO_COBRO_REGISTER = 'cobro:register';
+
+/**
+ * Operar la caja diaria de la sede (F7, etapa AKINE-07.03, M20).
+ *
+ * <p>Gobierna abrir y cerrar la jornada, registrar y revertir movimientos manuales y consultar la
+ * operatoria. El contrato no declara un `caja:read` aparte: quien arquea es quien mira.
+ *
+ * <p><b>Es de la sede, no de la organizacion.</b> La caja es un cajon fisico en un mostrador:
+ * cada consultorio tiene la suya y el backend evalua el permiso contra `{consultorioId}`.
+ */
+export const PERMISO_CAJA_OPERATE = 'caja:operate';

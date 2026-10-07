@@ -8,6 +8,8 @@ import { HabilitacionesResponse } from '../../../api/generated/model/habilitacio
 import { OfertaResponse } from '../../../api/generated/model/oferta-response';
 import { PersonaPageResponse } from '../../../api/generated/model/persona-page-response';
 import { PersonasService } from '../../../api/generated/api/personas.service';
+import { Recepcion } from '../../../api/generated/model/recepcion';
+import { RecepcionService } from '../../../api/generated/api/recepcion.service';
 import { ServiciosYOfertasService } from '../../../api/generated/api/servicios-y-ofertas.service';
 import { Turno } from '../../../api/generated/model/turno';
 import { AgendaDelDia } from '../../../api/generated/model/agenda-del-dia';
@@ -15,7 +17,7 @@ import { TurnoDelDia } from '../../../api/generated/model/turno-del-dia';
 import { TurnosService } from '../../../api/generated/api/turnos.service';
 
 /**
- * Unico punto de la feature `scheduling` que toca el cliente generado (M12, AKINE-05.01 y 05.02).
+ * Unico punto de la feature `scheduling` que toca el cliente generado (M12/M13, AKINE-05.01 a E-4).
  *
  * <p>Mismo criterio que `PersonApi` y `OfferingApi`: las pantallas dependen de esta clase y de los
  * tipos del contrato, nunca de los servicios generados directo.
@@ -46,9 +48,13 @@ import { TurnosService } from '../../../api/generated/api/turnos.service';
  * `version`</b>: la limitacion que `pages/ciclo-de-turno` documenta dejo de existir del lado del
  * contrato, aunque esa pantalla todavia no la aproveche.
  *
- * <p>{@link registrarLlegada} y {@link deshacerLlegada} <b>no son simetricas</b>, y escribirlas
- * como si lo fueran es el error facil: la primera es idempotente y la segunda no. El detalle esta
- * en el javadoc de cada una.
+ * <h2>La recepcion con maquina propia (M13, AKINE E-4, DP-16)</h2>
+ *
+ * <p>Desde el contrato <b>0.63.0</b> la llegada, la validacion, la espera y el llamado son de la
+ * entidad `Recepcion` (`RecepcionService`), no del turno: el turno vuelve a ser solo la reserva.
+ * Los `POST`/`DELETE /turnos/{id}/llegada` y el `EN_ESPERA` del turno quedaron deprecados y
+ * <b>esta fachada ya no los expone</b>. Las transiciones de recepcion llevan la `version` de la
+ * <b>recepcion</b>, que no es la del turno.
  *
  * <p>Esta fachada no traduce errores —eso es `models/agenda-errors.ts`— ni guarda estado.
  */
@@ -56,6 +62,7 @@ import { TurnosService } from '../../../api/generated/api/turnos.service';
 export class SchedulingApi {
   private readonly agenda = inject(AgendaService);
   private readonly turnos = inject(TurnosService);
+  private readonly recepcion = inject(RecepcionService);
   private readonly ofertas = inject(ServiciosYOfertasService);
   private readonly personas = inject(PersonasService);
 
@@ -253,38 +260,109 @@ export class SchedulingApi {
     return this.turnos.verTurno({ consultorioId, turnoId });
   }
 
+  // -------------------------------------------------------------------------------------
+  // Recepcion con maquina propia (M13, AKINE E-4, DP-16)
+  // -------------------------------------------------------------------------------------
+
   /**
-   * Check-in: el paciente llego y queda <b>en espera</b> (RF-M13-002). <b>Sin cuerpo</b> — la hora
-   * la pone el servidor, que es lo que la hace la hora REAL de llegada y no la que alguien tipeo.
+   * Check-in: abre la recepcion del turno en `LLEGO` (RF-M13-002). <b>Sin cuerpo</b> — la hora la
+   * pone el servidor, que es lo que la hace la hora REAL de llegada.
    *
-   * <p><b>Es idempotente</b>: marcar dos veces devuelve 200 sin mover la hora ni registrar un
-   * segundo evento. El doble click en el mostrador es el caso normal, no un error, y ni esta
-   * fachada ni la pantalla tienen que defenderse de el.
+   * <p><b>Es idempotente</b>: con una recepcion abierta devuelve 200 con esa misma, sin mover la
+   * hora. El doble click del mostrador es el caso normal, no un error.
    *
-   * <p><b>`EN_ESPERA` no significa que lo esten atendiendo.</b> Significa que llego y aguarda:
-   * entre llegar y ser atendido el paciente todavia puede irse. La prestacion la registra la
-   * Sesion, que es otra pantalla y otra maquina de estados (DP-05).
+   * <p><b>No cambia el estado del turno</b> (DP-16): la reserva sigue `RESERVADO` o `CONFIRMADO`.
+   * Lo que si avanza es la `version` del turno —para que una cancelacion que leyo el turno antes
+   * de la llegada se rechace—, asi que quien tenga la version del turno en memoria tiene que
+   * releerla despues de esta llamada.
    *
-   * <p>409 `turno-transicion-no-permitida` si el turno esta cancelado o ya marcado ausente.
+   * <p>409 `turno-transicion-no-permitida` si el turno esta cancelado o ausente.
    */
-  registrarLlegada(consultorioId: number, turnoId: number): Observable<Turno> {
-    return this.turnos.registrarLlegada({ consultorioId, turnoId });
+  registrarLlegada(consultorioId: number, turnoId: number): Observable<Recepcion> {
+    return this.recepcion.registrarLlegadaRecepcion({ consultorioId, turnoId });
   }
 
   /**
-   * Revierte un check-in hecho sobre el turno equivocado. El turno vuelve al estado del que vino
-   * y <b>se limpia la hora de llegada</b>: un check-in deshecho no dejo una llegada, dejo un error
-   * corregido. El rastro de que ocurrio queda en el historial, que es append-only.
+   * Valida cobertura y documentacion (RF-M13-003/004). <b>El servidor decide</b> si queda
+   * `VALIDADA` u `OBSERVADA`: no se manda el resultado.
    *
-   * <p><b>NO es idempotente, al reves que {@link registrarLlegada}</b>, y la asimetria es
-   * deliberada: deshacer lo ya deshecho responde 409. Aca el segundo click no es un doble click
-   * sino una operacion sobre un turno que entre medio pudo cambiar de estado —lo pudieron marcar
-   * ausente—, y contestar 200 le haria creer al operador que revirtio algo.
-   *
-   * <p>Por eso ese 409 <b>no se muestra como "error inesperado"</b>: ver `traducirErrorRecepcion`.
+   * <p>Una observacion <b>no es un error</b>: responde 200 y la recepcion puede pasar a espera
+   * igual o seguir como Particular. Sin `coberturaId` el servidor usa la primera aplicable.
    */
-  deshacerLlegada(consultorioId: number, turnoId: number): Observable<Turno> {
-    return this.turnos.deshacerLlegada({ consultorioId, turnoId });
+  validarRecepcion(
+    consultorioId: number,
+    turnoId: number,
+    cuerpo: { readonly expectedVersion: number; readonly coberturaId?: number },
+  ): Observable<Recepcion> {
+    return this.recepcion.validarRecepcion({
+      consultorioId,
+      turnoId,
+      validarRecepcion: {
+        expectedVersion: cuerpo.expectedVersion,
+        coberturaId: cuerpo.coberturaId,
+      },
+    });
+  }
+
+  /**
+   * Continua como Particular (RF-M13-005). El motivo es <b>obligatorio</b>: es una decision del
+   * operador. No modifica la cobertura maestra del paciente (RN-M13-004).
+   */
+  atenderComoParticular(
+    consultorioId: number,
+    turnoId: number,
+    cuerpo: { readonly expectedVersion: number; readonly motivo: string },
+  ): Observable<Recepcion> {
+    return this.recepcion.atenderComoParticular({
+      consultorioId,
+      turnoId,
+      atenderComoParticular: { expectedVersion: cuerpo.expectedVersion, motivo: cuerpo.motivo },
+    });
+  }
+
+  /** Pasa a la sala de espera una recepcion `VALIDADA` u `OBSERVADA`. */
+  pasarAEspera(
+    consultorioId: number,
+    turnoId: number,
+    expectedVersion: number,
+  ): Observable<Recepcion> {
+    return this.recepcion.pasarAEsperaRecepcion({
+      consultorioId,
+      turnoId,
+      transicionDeRecepcion: { expectedVersion },
+    });
+  }
+
+  /**
+   * Llama a quien esta en espera. <b>No abre la Sesion</b>, y `LLAMADA` no es "atendido": son dos
+   * actos de dos personas (DP-05).
+   */
+  llamar(consultorioId: number, turnoId: number, expectedVersion: number): Observable<Recepcion> {
+    return this.recepcion.llamarRecepcion({
+      consultorioId,
+      turnoId,
+      transicionDeRecepcion: { expectedVersion },
+    });
+  }
+
+  /**
+   * Anula un check-in hecho por error. La recepcion queda `ANULADA` como historia y la llegada
+   * deja de valer. <b>No es idempotente</b>: anular sin recepcion abierta responde 409
+   * `recepcion-transicion-no-permitida`.
+   */
+  anularRecepcion(
+    consultorioId: number,
+    turnoId: number,
+    cuerpo: { readonly expectedVersion: number; readonly motivo?: string },
+  ): Observable<Recepcion> {
+    return this.recepcion.anularRecepcion({
+      consultorioId,
+      turnoId,
+      anularRecepcion: {
+        expectedVersion: cuerpo.expectedVersion,
+        motivo: cuerpo.motivo === '' ? undefined : cuerpo.motivo,
+      },
+    });
   }
 
   /** Ofertas ACTIVAS de la sede: son las unicas que se pueden agendar. */
