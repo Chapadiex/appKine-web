@@ -1,10 +1,10 @@
 import { Injectable, inject } from '@angular/core';
+import { ReporteResponse } from '../../../api/generated/model/reporte-response';
 import { Observable } from 'rxjs';
 
 import { CatalogoDeReportesResponse } from '../../../api/generated/model/catalogo-de-reportes-response';
 import { ReportesService } from '../../../api/generated/api/reportes.service';
 import { CodigoDeReporte } from '../models/reportes';
-import { ReporteLeido } from '../models/lectura-de-reporte';
 
 /**
  * Fachada de M23 sobre el cliente generado (AGENT.md §4.5: las features no usan `HttpClient`).
@@ -17,13 +17,12 @@ export class ReportesApi {
     return this.api.catalogoDeReportes({ consultorioId });
   }
 
-  /** Ver `lectura-de-reporte.ts`: el contrato 0.66.0 tipa mal las secciones. */
   generar(
     consultorioId: number,
     reporte: CodigoDeReporte,
     desde: string,
     hasta: string,
-  ): Observable<ReporteLeido> {
+  ): Observable<ReporteResponse> {
     return this.api.generarReporte({ consultorioId, reporte, desde, hasta });
   }
 

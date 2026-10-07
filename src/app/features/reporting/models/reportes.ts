@@ -1,5 +1,5 @@
 import { GenerarReporteRequestParams } from '../../../api/generated/api/reportes.serviceInterface';
-import { IndicadorDeReporte } from './lectura-de-reporte';
+import { IndicadorDeReporteResponse } from '../../../api/generated/model/indicador-de-reporte-response';
 
 /** Codigo de reporte tal como lo tipa el cliente generado. */
 export type CodigoDeReporte = GenerarReporteRequestParams['reporte'];
@@ -108,15 +108,14 @@ export function fechaEnPalabras(fecha: string | undefined): string {
 /**
  * El valor de un indicador como se lee en pantalla, segun su `tipo`.
  *
- * <p>No suma ni convierte nada: el numero es el del servidor. Si el indicador no trae `valor`
- * —la forma que hoy describe el contrato— se cae a `importe`/`cantidad`.
+ * <p>No suma ni convierte nada: el numero es el del servidor.
  */
-export function valorDeIndicador(indicador: IndicadorDeReporte): string {
-  const valor = indicador.valor ?? indicador.importe ?? indicador.cantidad;
+export function valorDeIndicador(indicador: IndicadorDeReporteResponse): string {
+  const valor = indicador.valor;
   if (valor === undefined || valor === null || !Number.isFinite(valor)) {
     return '—';
   }
-  const tipo = indicador.tipo ?? (indicador.importe !== undefined ? 'DINERO' : 'CONTEO');
+  const tipo = indicador.tipo;
   if (tipo === 'DINERO' && indicador.moneda) {
     try {
       return new Intl.NumberFormat('es-AR', {

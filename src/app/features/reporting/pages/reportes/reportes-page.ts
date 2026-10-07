@@ -1,4 +1,5 @@
 import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
+import { ReporteResponse } from '../../../../api/generated/model/reporte-response';
 import { NonNullableFormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
@@ -6,7 +7,6 @@ import { RouterLink } from '@angular/router';
 import { ReporteDisponible } from '../../../../api/generated/model/reporte-disponible';
 import { PermissionsStore } from '../../../../core/services/permissions.store';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
-import { ReporteLeido } from '../../models/lectura-de-reporte';
 import { ErrorReporte, errorSinContexto, traducirErrorReporte } from '../../models/reporte-errors';
 import {
   ADVERTENCIA_ACTIVIDAD_PROPIA,
@@ -26,7 +26,7 @@ import { ReportesApi } from '../../services/reportes-api';
 type EstadoReporte =
   | { readonly tipo: 'inicial' }
   | { readonly tipo: 'cargando' }
-  | { readonly tipo: 'listo'; readonly reporte: ReporteLeido }
+  | { readonly tipo: 'listo'; readonly reporte: ReporteResponse }
   | { readonly tipo: 'error'; readonly error: ErrorReporte };
 
 /**

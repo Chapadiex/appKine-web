@@ -31,7 +31,7 @@ describe('reportes', () => {
     expect(valorDeIndicador({ tipo: 'DINERO', valor: 10, moneda: 'XX' })).toBe('10,00 XX');
     expect(valorDeIndicador({ tipo: 'PORCENTAJE', valor: 12.34 })).toBe('12,3 %');
     expect(valorDeIndicador({ tipo: 'CONTEO', valor: 1234 })).toBe('1.234');
-    expect(valorDeIndicador({ cantidad: 7 })).toBe('7');
+    expect(valorDeIndicador({ valor: 7 })).toBe('7');
     expect(valorDeIndicador({ clave: 'x' })).toBe('—');
   });
 

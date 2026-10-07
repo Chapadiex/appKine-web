@@ -279,6 +279,7 @@ model/hito-response.ts
 model/imputacion-aplicada.ts
 model/imputacion-de-cobro.ts
 model/imputar-saldo-a-favor.ts
+model/indicador-de-reporte-response.ts
 model/indicador-response.ts
 model/ingreso-sin-inscripcion.ts
 model/inscribir.ts
@@ -388,7 +389,9 @@ model/resumen-de-persona-response.ts
 model/revertir-consumo-request.ts
 model/revertir-movimiento-de-caja.ts
 model/saldo-autorizacion-response.ts
+model/seccion-de-reporte-response.ts
 model/seccion-disponible-response.ts
+model/seccion-omitida-de-reporte-response.ts
 model/seccion-omitida-response.ts
 model/seccion-response.ts
 model/seleccion-de-cobertura-response.ts
