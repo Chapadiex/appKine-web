@@ -304,6 +304,39 @@
                               este listado con quien lo revoco y por que, porque los historicos que
                               lo referencian tienen que seguir siendo legibles.
                             </p>
+                            <div class="impacto-desvinculacion" aria-live="polite">
+                              @switch (impacto()?.tipo) {
+                                @case ('cargando') {
+                                  <p class="estado estado--cargando">
+                                    Consultando que queda pendiente a su nombre&hellip;
+                                  </p>
+                                }
+                                @case ('error') {
+                                  <p class="banner banner--suspendida">
+                                    No pudimos consultar que queda pendiente a su nombre. Podes
+                                    revocar igual, pero revisa su agenda antes.
+                                  </p>
+                                }
+                                @case ('listo') {
+                                  @if (resumenDelImpacto(); as resumen) {
+                                    <div class="banner banner--suspendida">
+                                      <h3>Antes de revocar</h3>
+                                      <p>{{ resumen }}</p>
+                                      <p>
+                                        Revocar no los cancela ni los reasigna: quedan visibles para
+                                        que alguien los resuelva. El aviso muestra una sola fuente:
+                                        si tiene turnos pendientes, no suma ademas sus bloques de
+                                        horario ni sus excepciones.
+                                      </p>
+                                    </div>
+                                  } @else {
+                                    <p class="estado estado--ok">
+                                      No queda nada pendiente a su nombre.
+                                    </p>
+                                  }
+                                }
+                              }
+                            </div>
                           }
                         </akine-confirmacion-con-motivo>
 

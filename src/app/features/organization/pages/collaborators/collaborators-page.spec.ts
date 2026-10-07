@@ -171,6 +171,7 @@ describe('CollaboratorsPage', () => {
   it('un conflicto del backend se muestra con su mensaje y deja el panel abierto', async () => {
     const fixture = await montar();
     abrirPanel(fixture, 'Revocar');
+    responderImpacto({ tipo: null, count: 0, desde: null });
     escribir(fixture, '#panel-motivo', 'Fin de contrato');
     enviar(fixture, 'form');
 
@@ -192,6 +193,46 @@ describe('CollaboratorsPage', () => {
     // El panel sigue abierto con el motivo escrito: cerrarlo obligaria a rehacer todo para
     // leer el mensaje, y el conflicto puede resolverse cambiando de fila, no de motivo.
     expect(texto(fixture)).toContain('No podes revocar al ultimo administrador');
+    expect(texto(fixture)).toContain('Revocar el vinculo de la cuenta 100');
+  });
+
+  it('revocar muestra antes de confirmar lo que queda pendiente, sin bloquear el envio', async () => {
+    const fixture = await montar();
+    abrirPanel(fixture, 'Revocar');
+    expect(texto(fixture)).toContain('Consultando que queda pendiente');
+
+    responderImpacto({ tipo: 'turnos', count: 4, desde: '2026-10-20T13:00:00Z' });
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    // La cantidad y el tipo salen tal cual del backend, y el aviso declara su limite: una sola
+    // fuente, nunca la suma de turnos y bloques.
+    expect(texto(fixture)).toContain('Quedan 4 turnos a su nombre, el primero el');
+    expect(texto(fixture)).toContain('una sola fuente');
+
+    // RN-M05-004: el impacto informa, no impide. La revocacion sale igual.
+    escribir(fixture, '#panel-motivo', 'Renuncia');
+    enviar(fixture, 'form');
+    httpMock
+      .expectOne(
+        (peticion: HttpRequest<unknown>) =>
+          peticion.url === '/api/v1/organizations/1/memberships/10/revoke',
+      )
+      .flush({ ...ACTIVA, estado: 'REVOCADA' });
+    httpMock.expectOne(esListado(1)).flush(PAGINA);
+  });
+
+  it('si la sonda de impacto falla lo dice y deja revocar igual', async () => {
+    const fixture = await montar();
+    abrirPanel(fixture, 'Revocar');
+
+    httpMock
+      .expectOne('/api/v1/organizations/1/memberships/10/desvinculacion-impacto')
+      .flush({ type: 'about:blank' }, { status: 500, statusText: 'Server Error' });
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(texto(fixture)).toContain('No pudimos consultar que queda pendiente');
     expect(texto(fixture)).toContain('Revocar el vinculo de la cuenta 100');
   });
 
@@ -491,6 +532,12 @@ describe('CollaboratorsPage', () => {
     fixture.detectChanges();
 
     return fixture;
+  }
+
+  function responderImpacto(impacto: object): void {
+    httpMock
+      .expectOne('/api/v1/organizations/1/memberships/10/desvinculacion-impacto')
+      .flush(impacto);
   }
 
   function responderGrants(grants: object[]): void {
