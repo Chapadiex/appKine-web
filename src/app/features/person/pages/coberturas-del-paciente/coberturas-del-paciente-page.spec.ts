@@ -378,6 +378,38 @@ describe('CoberturasDelPacientePage', () => {
   // Accesibilidad
   // -------------------------------------------------------------------------------------
 
+  it('la consulta por oferta pide las ofertas a pedido y resuelve la elegida', async () => {
+    const fixture = await montar([OSDE]);
+    // Entrar a la pantalla no pide las ofertas: es una consulta ocasional.
+    httpMock.expectNone((peticion: HttpRequest<unknown>) => peticion.url.endsWith('/ofertas'));
+
+    const boton = [...(fixture.nativeElement as HTMLElement).querySelectorAll('button')].find(
+      (candidato) => (candidato.textContent ?? '').trim() === 'Consultar por oferta',
+    );
+    boton?.click();
+    fixture.detectChanges();
+    httpMock
+      .expectOne('/api/v1/consultorios/3/ofertas?estado=ACTIVO')
+      .flush([{ id: 31, nombreComercial: 'Pilates terapeutico', estado: 'ACTIVO' }]);
+    await estabilizar(fixture);
+
+    const selector = (fixture.nativeElement as HTMLElement).querySelector(
+      '#consulta-oferta',
+    ) as HTMLSelectElement;
+    selector.value = '31';
+    selector.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    httpMock
+      .expectOne(`/api/v1/personas/${PERSONA}/cobertura-aplicable?ofertaId=31`)
+      .flush({ condicionSugerida: 'PARTICULAR', precioParticular: 9000, moneda: 'ARS' });
+    httpMock.expectOne('/api/v1/consultorios/3/ofertas/31/practicas').flush({ practicas: [] });
+    await estabilizar(fixture);
+
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('atender como particular');
+  });
+
   it(
     'no tiene violaciones de accesibilidad',
     async () => {
