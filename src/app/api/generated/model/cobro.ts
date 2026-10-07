@@ -49,6 +49,10 @@ export interface Cobro {
      */
     saldoAFavor?: number;
     total?: number;
+    /**
+     * Turno en cuya recepcion se tomo este cobro como prepago (E-6). Nulo en cualquier otro cobro.
+     */
+    turnoId?: number;
     version?: number;
 }
 export enum CobroEstadoEnum {

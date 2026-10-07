@@ -11,12 +11,16 @@ import { HttpHeaders }                                       from '@angular/comm
 
 import { Observable }                                        from 'rxjs';
 
+import { CambiarFinPrecioParticularRequest } from '../model/models';
 import { CreateOfertaRequest } from '../model/models';
+import { CreatePrecioParticularRequest } from '../model/models';
 import { CreateServicioRequest } from '../model/models';
 import { DeactivateOfferingRequest } from '../model/models';
 import { HabilitacionesResponse } from '../model/models';
 import { OfertaResponse } from '../model/models';
+import { PoliticaDePrepagoRequest } from '../model/models';
 import { PracticasDeOfertaResponse } from '../model/models';
+import { PrecioParticularResponse } from '../model/models';
 import { ProblemDetail } from '../model/models';
 import { ReemplazarHabilitacionesRequest } from '../model/models';
 import { ReemplazarPracticasRequest } from '../model/models';
@@ -29,9 +33,22 @@ import { ValidacionDeOfertaResponse } from '../model/models';
 import { Configuration }                                     from '../configuration';
 
 
+export interface CambiarFinPrecioParticularDeOfertaRequestParams {
+    consultorioId: number;
+    ofertaId: number;
+    precioId: number;
+    cambiarFinPrecioParticularRequest: CambiarFinPrecioParticularRequest;
+}
+
 export interface CreateOfertaRequestParams {
     consultorioId: number;
     createOfertaRequest: CreateOfertaRequest;
+}
+
+export interface CreatePrecioParticularDeOfertaRequestParams {
+    consultorioId: number;
+    ofertaId: number;
+    createPrecioParticularRequest: CreatePrecioParticularRequest;
 }
 
 export interface CreateServicioRequestParams {
@@ -41,6 +58,13 @@ export interface CreateServicioRequestParams {
 export interface DeactivateOfertaRequestParams {
     consultorioId: number;
     ofertaId: number;
+    deactivateOfferingRequest: DeactivateOfferingRequest;
+}
+
+export interface DeactivatePrecioParticularDeOfertaRequestParams {
+    consultorioId: number;
+    ofertaId: number;
+    precioId: number;
     deactivateOfferingRequest: DeactivateOfferingRequest;
 }
 
@@ -63,6 +87,11 @@ export interface ListOfertasRequestParams {
     consultorioId: number;
     estado?: 'ACTIVO' | 'INACTIVO' | 'TODOS';
     servicioId?: number;
+}
+
+export interface ListPreciosParticularesDeOfertaRequestParams {
+    consultorioId: number;
+    ofertaId: number;
 }
 
 export interface ListServiciosRequestParams {
@@ -94,6 +123,12 @@ export interface UpdateOfertaRequestParams {
     updateOfertaRequest: UpdateOfertaRequest;
 }
 
+export interface UpdatePoliticaDePrepagoDeOfertaRequestParams {
+    consultorioId: number;
+    ofertaId: number;
+    politicaDePrepagoRequest: PoliticaDePrepagoRequest;
+}
+
 export interface UpdateServicioRequestParams {
     servicioId: number;
     updateServicioRequest: UpdateServicioRequest;
@@ -112,12 +147,28 @@ export interface ServiciosYOfertasServiceInterface {
     configuration: Configuration;
 
     /**
+     * Cerrar o reabrir la vigencia de un precio particular
+     * RF-M16-009. Exige consultorio:manage. Es lo UNICO editable de un precio: el fin de su vigencia. Extenderlo puede producir 409 precio-particular-solapado.
+     * @endpoint put /api/v1/consultorios/{consultorioId}/ofertas/{ofertaId}/precios-particulares/{precioId}
+* @param requestParameters
+     */
+    cambiarFinPrecioParticularDeOferta(requestParameters: CambiarFinPrecioParticularDeOfertaRequestParams, extraHttpRequestParams?: any): Observable<PrecioParticularResponse>;
+
+    /**
      * Dar de alta una oferta en la sede
      * Declara que esta sede presta un servicio del catalogo global, y en que condiciones. Exige consultorio:manage sobre esa sede.  El servicio tiene que estar VIGENTE: sobre uno dado de baja responde 409 servicio-inactivo. Es el unico efecto que la baja de un servicio global tiene sobre los centros; las ofertas que ya existian siguen operando.  LO QUE SE OMITE, HEREDA. modalidad, requiereCasoClinico y generaRegistroClinico toman el default del servicio si no vienen. Omitirlos NO es apagarlos.  El nombre comercial es unico entre las ofertas VIGENTES de esa sede, comparado sin distinguir mayusculas ni acentos. El de una oferta dada de baja si se puede reusar.  El esquema de cobro se guarda como texto declarado y NADIE lo resuelve: los modulos que lo interpretarian no existen todavia (RN-M27-006). Se pide para no perder el dato, no para ramificar por el.
      * @endpoint post /api/v1/consultorios/{consultorioId}/ofertas
 * @param requestParameters
      */
     createOferta(requestParameters: CreateOfertaRequestParams, extraHttpRequestParams?: any): Observable<OfertaResponse>;
+
+    /**
+     * Fijar un precio particular de la oferta para un periodo
+     * RF-M16-009. Exige consultorio:manage sobre la sede de la ruta.  DOS PRECIOS ACTIVOS DE LA MISMA OFERTA NO PUEDEN PISARSE: 409 precio-particular-solapado, con el id y el periodo del que choca. Para subir un precio se cierra la vigencia del actual (PUT) y se carga el nuevo.  El importe no se edita despues: corregir una carga es darla de baja y cargarla de nuevo. Lo ya devengado no cambia nunca, porque la obligacion copio su importe.  Sin moneda, hereda la del precio de lista de la oferta.
+     * @endpoint post /api/v1/consultorios/{consultorioId}/ofertas/{ofertaId}/precios-particulares
+* @param requestParameters
+     */
+    createPrecioParticularDeOferta(requestParameters: CreatePrecioParticularDeOfertaRequestParams, extraHttpRequestParams?: any): Observable<PrecioParticularResponse>;
 
     /**
      * Dar de alta un servicio del catalogo global
@@ -134,6 +185,14 @@ export interface ServiciosYOfertasServiceInterface {
 * @param requestParameters
      */
     deactivateOferta(requestParameters: DeactivateOfertaRequestParams, extraHttpRequestParams?: any): Observable<{}>;
+
+    /**
+     * Dar de baja un precio particular
+     * Baja LOGICA con motivo obligatorio. Exige consultorio:manage. Libera el periodo; lo ya devengado con ese precio no se toca.
+     * @endpoint delete /api/v1/consultorios/{consultorioId}/ofertas/{ofertaId}/precios-particulares/{precioId}
+* @param requestParameters
+     */
+    deactivatePrecioParticularDeOferta(requestParameters: DeactivatePrecioParticularDeOfertaRequestParams, extraHttpRequestParams?: any): Observable<{}>;
 
     /**
      * Dar de baja un servicio del catalogo global
@@ -166,6 +225,14 @@ export interface ServiciosYOfertasServiceInterface {
 * @param requestParameters
      */
     listOfertas(requestParameters: ListOfertasRequestParams, extraHttpRequestParams?: any): Observable<Array<OfertaResponse>>;
+
+    /**
+     * Listar los precios particulares por vigencia de la oferta
+     * RF-M16-009. La grilla de vigencias, ACTIVOS E HISTORICOS, del mas nuevo al mas viejo. vigente dice cual rige hoy.  El dia que ningun precio particular lo cubre, la oferta cobra su precio de lista (precioBase). Una lista vacia es el caso normal de una oferta que nunca tuvo precios por vigencia.
+     * @endpoint get /api/v1/consultorios/{consultorioId}/ofertas/{ofertaId}/precios-particulares
+* @param requestParameters
+     */
+    listPreciosParticularesDeOferta(requestParameters: ListPreciosParticularesDeOfertaRequestParams, extraHttpRequestParams?: any): Observable<Array<PrecioParticularResponse>>;
 
     /**
      * Listar el catalogo global de servicios
@@ -206,6 +273,14 @@ export interface ServiciosYOfertasServiceInterface {
 * @param requestParameters
      */
     updateOferta(requestParameters: UpdateOfertaRequestParams, extraHttpRequestParams?: any): Observable<OfertaResponse>;
+
+    /**
+     * Cambiar la politica de prepago de una oferta
+     * Exige consultorio:manage sobre esa sede. AKINE E-6, DP-06 / ADR-0013.  Con exigePrepago en true, la recepcion de los turnos de esta oferta muestra      el prepago como PENDIENTE hasta que se registre un anticipo con turnoId. Es      una ALERTA: nunca impide pasar a espera, atender ni cerrar la sesion.  Una oferta dada de baja no admite cambios: 409 oferta-inactiva.
+     * @endpoint put /api/v1/consultorios/{consultorioId}/ofertas/{ofertaId}/politica-de-prepago
+* @param requestParameters
+     */
+    updatePoliticaDePrepagoDeOferta(requestParameters: UpdatePoliticaDePrepagoDeOfertaRequestParams, extraHttpRequestParams?: any): Observable<OfertaResponse>;
 
     /**
      * Editar un servicio del catalogo global

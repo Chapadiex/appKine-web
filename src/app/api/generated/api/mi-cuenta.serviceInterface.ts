@@ -13,6 +13,7 @@ import { Observable }                                        from 'rxjs';
 
 import { AuthorizedContextResponse } from '../model/models';
 import { EffectivePermissionsResponse } from '../model/models';
+import { MyPlatformRoleResponse } from '../model/models';
 import { ProblemDetail } from '../model/models';
 
 
@@ -30,6 +31,13 @@ export interface MiCuentaServiceInterface {
      * @endpoint get /api/v1/me/permissions
 */
     getMyPermissions(extraHttpRequestParams?: any): Observable<EffectivePermissionsResponse>;
+
+    /**
+     * Si la cuenta administra la plataforma
+     * Responde si la cuenta autenticada tiene un rol de plataforma vigente. Es lo que el frontend consulta para decidir si muestra la consola de plataforma (bandeja de solicitudes de catalogo, catalogo global) o el selector de contexto.  El rol NO sale del token: se revalida contra la base en este mismo request, asi que un rol revocado hace un minuto ya responde false aunque el access token siga vigente.  No requiere contexto de tenant: se consulta con el token pre_context, antes de elegir donde trabajar. Con sesion responde siempre 200 —false no es un error—. No se audita: es la cuenta preguntando por si misma.  Es insumo de UX, no un mecanismo de seguridad: cada endpoint de plataforma verifica el rol por su cuenta.
+     * @endpoint get /api/v1/me/platform-role
+*/
+    getMyPlatformRole(extraHttpRequestParams?: any): Observable<MyPlatformRoleResponse>;
 
     /**
      * Contextos de trabajo habilitados

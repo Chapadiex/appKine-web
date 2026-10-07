@@ -136,6 +136,10 @@ export enum ProblemType {
 
     HTTPS___AKINE_APP_PROBLEMS_OFERTA_ALREADY_INACTIVE = 'https://akine.app/problems/oferta-already-inactive',
 
+    HTTPS___AKINE_APP_PROBLEMS_PRECIO_PARTICULAR_SOLAPADO = 'https://akine.app/problems/precio-particular-solapado',
+
+    HTTPS___AKINE_APP_PROBLEMS_PRECIO_PARTICULAR_INACTIVO = 'https://akine.app/problems/precio-particular-inactivo',
+
     HTTPS___AKINE_APP_PROBLEMS_OFERTA_NO_AGENDABLE = 'https://akine.app/problems/oferta-no-agendable',
 
     HTTPS___AKINE_APP_PROBLEMS_SLOT_NO_DISPONIBLE = 'https://akine.app/problems/slot-no-disponible',
@@ -177,6 +181,10 @@ export enum ProblemType {
     HTTPS___AKINE_APP_PROBLEMS_COBRO_CON_REINTEGROS = 'https://akine.app/problems/cobro-con-reintegros',
 
     HTTPS___AKINE_APP_PROBLEMS_SALDO_A_FAVOR_INSUFICIENTE = 'https://akine.app/problems/saldo-a-favor-insuficiente',
+
+    HTTPS___AKINE_APP_PROBLEMS_PREPAGO_NO_ADMITIDO = 'https://akine.app/problems/prepago-no-admitido',
+
+    HTTPS___AKINE_APP_PROBLEMS_PREPAGO_YA_REGISTRADO = 'https://akine.app/problems/prepago-ya-registrado',
 
     HTTPS___AKINE_APP_PROBLEMS_CONSULTORIO_NO_OPERABLE = 'https://akine.app/problems/consultorio-no-operable',
 
@@ -233,6 +241,10 @@ export enum ProblemType {
     HTTPS___AKINE_APP_PROBLEMS_ARANCEL_INACTIVO = 'https://akine.app/problems/arancel-inactivo',
 
     HTTPS___AKINE_APP_PROBLEMS_ARANCEL_ALREADY_INACTIVE = 'https://akine.app/problems/arancel-already-inactive',
+
+    HTTPS___AKINE_APP_PROBLEMS_PRACTICA_NO_HABILITADA_EN_OFERTA = 'https://akine.app/problems/practica-no-habilitada-en-oferta',
+
+    HTTPS___AKINE_APP_PROBLEMS_OFERTA_SIN_OBRA_SOCIAL = 'https://akine.app/problems/oferta-sin-obra-social',
 
     HTTPS___AKINE_APP_PROBLEMS_ORDEN_INACTIVA = 'https://akine.app/problems/orden-inactiva',
 

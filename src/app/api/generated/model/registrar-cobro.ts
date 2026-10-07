@@ -43,5 +43,9 @@ export interface RegistrarCobro {
      * Total recibido. Decimal exacto, nunca float.
      */
     total: number;
+    /**
+     * Prepago de recepcion (E-6, DP-06): el turno en cuya recepcion se cobra antes de atender. Exige un **anticipo puro** —sin imputaciones y con `anticipo` igual al total— de la misma persona del turno, sobre un turno RESERVADO o CONFIRMADO. Un solo prepago vigente por turno. Al cerrar la sesion de ese turno el anticipo se imputa solo a la deuda del paciente; lo que sobra queda a favor.
+     */
+    turnoId?: number;
 }
 

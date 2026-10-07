@@ -74,6 +74,7 @@ export interface ResolveArancelEfectivoRequestParams {
     planId: number;
     practicaId: number;
     fecha?: string;
+    ofertaId?: number;
 }
 
 export interface UpdateArancelRequestParams {
@@ -96,7 +97,7 @@ export interface ConveniosYArancelesServiceInterface {
 
     /**
      * Definir el arancel de una practica bajo un convenio
-     * Exige convenio:manage sobre la sede de la ruta.  DOS ARANCELES DE LA MISMA PRACTICA EN EL MISMO CONVENIO NO PUEDEN SOLAPARSE: 409 arancel-solapado, con el id y el periodo del que choca en el cuerpo del problema. Dos aranceles de la misma practica SI conviven —el de 2026 y el de 2027— y esa convivencia es el caso normal.  LOS TRES IMPORTES TIENEN QUE CUADRAR: importeFinanciador + coseguro &#x3D; importeTotal, exactamente. No hay porcentaje de cobertura a proposito: un porcentaje obliga a redondear, y el redondeo de un arancel es la diferencia de un centavo que aparece seis meses despues en una presentacion rechazada.  La moneda NO viaja en el cuerpo: la hereda del convenio.  La vigencia del arancel tiene que estar CONTENIDA en la del convenio. Fuera de ella nunca podria resolver, porque la resolucion exige primero un convenio aplicable.  La practica puede ser global de plataforma o propia de la organizacion; una de otro tenant responde 404.
+     * Exige convenio:manage sobre la sede de la ruta.  DOS ARANCELES DE LA MISMA PRACTICA EN EL MISMO CONVENIO NO PUEDEN SOLAPARSE: 409 arancel-solapado, con el id y el periodo del que choca en el cuerpo del problema. Dos aranceles de la misma practica SI conviven —el de 2026 y el de 2027— y esa convivencia es el caso normal.  LOS TRES IMPORTES TIENEN QUE CUADRAR: importeFinanciador + coseguro &#x3D; importeTotal, exactamente. No hay porcentaje de cobertura a proposito: un porcentaje obliga a redondear, y el redondeo de un arancel es la diferencia de un centavo que aparece seis meses despues en una presentacion rechazada.  La moneda NO viaja en el cuerpo: la hereda del convenio.  La vigencia del arancel tiene que estar CONTENIDA en la del convenio. Fuera de ella nunca podria resolver, porque la resolucion exige primero un convenio aplicable.  La practica puede ser global de plataforma o propia de la organizacion; una de otro tenant responde 404.  ARANCEL POR OFERTA (RF-M16-008): con ofertaId, el arancel es el de esa practica cuando se presta dentro de esa oferta, y al resolver con esa oferta manda sobre el general. El general y el de cada oferta conviven en el mismo periodo; dos de la misma oferta no. La oferta tiene que ser de esta sede (404), admitir obra social (409 oferta-sin-obra-social) y declarar la practica (409 practica-no-habilitada-en-oferta).
      * @endpoint post /api/v1/consultorios/{consultorioId}/convenios/{convenioId}/aranceles
 * @param requestParameters
      */
