@@ -1,5 +1,5 @@
 import { RUTA_HORARIOS } from '../../features/resource/models/rutas-de-horarios';
-import { PERMISO_COLABORADOR_READ } from '../../core/models/permisos';
+import { PERMISO_CAJA_OPERATE, PERMISO_COLABORADOR_READ } from '../../core/models/permisos';
 import { PERMISO_COBRO_REGISTER as PERMISO_PRESENTACIONES } from '../../core/models/permisos';
 
 /** Una entrada de la navegacion principal. */
@@ -42,8 +42,8 @@ export interface Seccion {
  *       (`GET .../espacios` exige solo ser miembro). El alta si, con
  *       `consultorio:manage`.</li>
  *   <li><b>Horarios</b> — `horarios.routes.ts`: las <b>cuatro</b> rutas llevan
- *       `permissionGuard(PERMISO_COLABORADOR_READ)`, la ruta vacia incluida. Es la unica
- *       seccion de esta lista con permiso, y por eso es la unica con `permisos`.</li>
+ *       `permissionGuard(PERMISO_COLABORADOR_READ)`, la ruta vacia incluida, y por eso lleva
+ *       `permisos`.</li>
  *   <li><b>Catalogo</b> — `catalog.routes.ts`: ninguna lleva `permissionGuard`; consultar que
  *       practicas existen es lo que necesita cualquiera que registre una sesion.</li>
  *   <li><b>Servicios</b> — `offering.routes.ts`: ninguna lleva `permissionGuard`.</li>
@@ -58,6 +58,9 @@ export interface Seccion {
  *       Esconder la seccion entera por un permiso que solo hace falta tres clicks mas
  *       adelante le sacaria a un profesional la pantalla de su propia organizacion, que si
  *       puede ver.</li>
+ *   <li><b>Caja</b> — `caja.routes.ts`: la unica ruta lleva
+ *       `permissionGuard(PERMISO_CAJA_OPERATE)`. Todo lo que hay en la pantalla, incluso leer
+ *       la jornada, lo autoriza `caja:operate`, asi que sin el no queda nada que mirar.</li>
  * </ul>
  *
  * <p><b>Esconder no es autorizar.</b> Esta lista es exclusivamente UX: evita ofrecer un enlace
@@ -78,6 +81,8 @@ export const SECCIONES: readonly Seccion[] = [
   // despues con quien se acordo cobrarlo. "Contratacion" y no "Convenios" porque la seccion
   // tambien incluye el catalogo de financiadores, que no es un convenio.
   { etiqueta: 'Contratacion', ruta: '/contratacion' },
+  // La caja es de la sede y la opera recepcion. Sin `caja:operate` no hay nada que mirar.
+  { etiqueta: 'Caja', ruta: '/caja', permisos: [PERMISO_CAJA_OPERATE] },
   // Presentaciones a financiadores (M21). El permiso es `cobro:register`: lo decidio el backend.
   { etiqueta: 'Presentaciones', ruta: '/presentaciones', permisos: [PERMISO_PRESENTACIONES] },
   { etiqueta: 'Organizacion', ruta: '/organizacion' },

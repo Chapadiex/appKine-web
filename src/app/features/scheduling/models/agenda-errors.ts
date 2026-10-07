@@ -87,6 +87,12 @@ export type CausaAgenda =
    * prueba de que la atencion ocurrio.
    */
   | 'turno-con-atencion'
+  /**
+   * 409 `recepcion-transicion-no-permitida`: el estado de la RECEPCION no admite esa transicion
+   * (AKINE E-4, DP-16). Viaja con `motivo`. Distinto del de turno: lo que quedo viejo es la
+   * recepcion, no la reserva.
+   */
+  | 'recepcion-transicion-no-permitida'
   /** 409 subscription-suspended: lo emite el filtro, antes del controller. */
   | 'suscripcion-suspendida'
   /** Cualquier otro 409. Gana el `detail` del backend. */
@@ -298,6 +304,15 @@ export function traducirErrorAgenda(error: unknown): ErrorAgenda {
         ...base(MENSAJE_TRANSICION_NO_PERMITIDA, 'turno-transicion-no-permitida', 'recargar-turno'),
         motivo: textoDeExtension(error, 'motivo'),
       };
+    case 'recepcion-transicion-no-permitida':
+      return {
+        ...base(
+          MENSAJE_RECEPCION_NO_PERMITIDA,
+          'recepcion-transicion-no-permitida',
+          'recargar-dia',
+        ),
+        motivo: textoDeExtension(error, 'motivo'),
+      };
     case 'turno-con-atencion':
       return base(MENSAJE_TURNO_CON_ATENCION, 'turno-con-atencion', 'resolver-atencion');
     case 'oferta-inactiva':
@@ -331,28 +346,28 @@ export function traducirErrorAgenda(error: unknown): ErrorAgenda {
 }
 
 /**
- * El check-in ya no se puede marcar, o ya no se puede deshacer.
+ * El turno ya no admite una llegada: esta cancelado o marcado ausente (AKINE E-4).
  *
- * <p>Es el mismo `problemType` para las dos operaciones —`turno-transicion-no-permitida`, con el
- * detalle en `motivo`—, y en la recepcion cubre exactamente dos escenarios reales:
- *
- * <ul>
- *   <li><b>Marcar la llegada de un turno cancelado o ya ausente.</b> El backend contesta "esta
- *       cancelado y no admite registrar una llegada".</li>
- *   <li><b>Deshacer un check-in que ya no existe.</b> Deshacer <b>no es idempotente</b>, al reves
- *       que marcar: el segundo click responde "no esta en espera: no hay ninguna llegada que
- *       deshacer". El requisito de la etapa era explicito en que eso no se muestre como un error
- *       inesperado, asi que el texto <b>explica la asimetria</b> en vez de disculparse.</li>
- * </ul>
- *
- * <p>Las dos terminan igual: la fila que se ve quedo vieja porque otra persona toco ese turno, y
- * lo que resuelve es releerla.
+ * <p>Con DP-16 este tipo solo lo devuelve el check-in: las demas transiciones del mostrador son de
+ * la recepcion y tienen su propio tipo. El detalle del servidor viaja en `motivo`.
  */
 const MENSAJE_LLEGADA_NO_APLICABLE =
-  'Ese turno ya no esta en el estado que esa accion necesita. Marcar la llegada dos veces no es un ' +
-  'problema —es idempotente—, pero deshacerla si: solo se puede deshacer una llegada que este ' +
-  'vigente, y esta ya no lo esta. Puede que otra persona haya tocado el turno desde el mostrador. ' +
-  'Actualizamos la fila con lo que dice el servidor.';
+  'Ese turno ya no admite registrar una llegada: puede que otra persona lo haya cancelado o ' +
+  'marcado ausente desde otro puesto. Actualizamos la fila con lo que dice el servidor.';
+
+/**
+ * La recepcion no admite esa transicion en su estado actual (AKINE E-4, DP-16).
+ *
+ * <p>El caso tipico es el que la etapa 05.04 ya conocia con otro nombre: <b>anular no es
+ * idempotente</b>. Registrar la llegada dos veces no es problema, pero anular lo ya anulado, o
+ * llamar a alguien que otro puesto ya llamo, responde 409. El texto explica la asimetria en vez de
+ * disculparse, y la fila se relee sola.
+ */
+const MENSAJE_RECEPCION_NO_PERMITIDA =
+  'La recepcion de ese turno ya no esta en el estado que esa accion necesita. Registrar la ' +
+  'llegada dos veces no es un problema —es idempotente—, pero anular, llamar o pasar a espera ' +
+  'si: puede que otra persona ya lo haya hecho desde otro puesto. Actualizamos la fila con lo ' +
+  'que dice el servidor.';
 
 /**
  * Traduce los errores de la <b>recepcion del dia</b> (M13, AKINE-05.04).
