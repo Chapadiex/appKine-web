@@ -153,6 +153,26 @@ export class OfferingApi {
     return this.api.updateOferta({ consultorioId, ofertaId, updateOfertaRequest: cuerpo });
   }
 
+  /**
+   * Activa o desactiva la politica de prepago de la oferta (E-6, DP-06 / ADR-0013).
+   *
+   * <p>Es un recurso aparte del `PUT` de la oferta a proposito: es configuracion del mostrador, no
+   * de la prestacion. Lleva la `version` leida; un 409 de concurrencia significa que otro la toco.
+   * La politica <b>alerta</b> en la recepcion, nunca bloquea la atencion.
+   */
+  fijarPoliticaDePrepago(
+    consultorioId: number,
+    ofertaId: number,
+    exigePrepago: boolean,
+    expectedVersion: number,
+  ): Observable<OfertaResponse> {
+    return this.api.updatePoliticaDePrepagoDeOferta({
+      consultorioId,
+      ofertaId,
+      politicaDePrepagoRequest: { exigePrepago, expectedVersion },
+    });
+  }
+
   darDeBajaOferta(consultorioId: number, ofertaId: number, motivo: string): Observable<unknown> {
     return this.api.deactivateOferta({
       consultorioId,
