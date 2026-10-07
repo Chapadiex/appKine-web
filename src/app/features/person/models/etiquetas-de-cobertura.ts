@@ -1,4 +1,5 @@
 import { CoberturaResponse } from '../../../api/generated/model/cobertura-response';
+import { HitoResponse } from '../../../api/generated/model/hito-response';
 import { fechaEnPalabras } from './etiquetas-de-ficha';
 
 /**
@@ -113,4 +114,51 @@ export function motivoDeNoAplicable(motivo: string | undefined): string {
     default:
       return 'No aplica a esta oferta.';
   }
+}
+
+// -----------------------------------------------------------------------------------------
+// La seccion "coberturas" del Paciente 360 (B-5)
+// -----------------------------------------------------------------------------------------
+
+/** Clave estable con la que `person` aporta las coberturas vigentes al 360. */
+export const SECCION_COBERTURAS = 'coberturas';
+
+/** Una cobertura vigente del 360, ya redactada para pintarla. */
+export interface CoberturaDelResumen {
+  readonly principal: boolean;
+  /** Financiador · plan · afiliado enmascarado · fin de vigencia, con las fechas legibles. */
+  readonly descripcion: string;
+  /** `dd/mm/aaaa`, o vacio si no vino. */
+  readonly vigenteDesde: string;
+  readonly credencialVencida: boolean;
+}
+
+/**
+ * Lee un hito de la seccion `coberturas` del 360.
+ *
+ * <p>La seccion viaja en la estructura generica —indicadores e hitos— y no en un schema propio, asi
+ * que el contrato no cambio con B-5. El backend fija el significado de cada campo del hito:
+ *
+ * <ul>
+ *   <li>`tipo` `COBERTURA_PRINCIPAL` o `COBERTURA`.</li>
+ *   <li>`ocurrioEn` es el <b>inicio de la vigencia a medianoche UTC</b>: una fecha disfrazada de
+ *       instante. Se toma la parte de fecha tal cual y <b>no pasa por `Date`</b>: en el huso del
+ *       pais, la medianoche UTC del 15 se formatea como el 14.</li>
+ *   <li>`titulo` lo redacta el backend con el numero de afiliado <b>ya enmascarado</b>. Aca solo se
+ *       vuelven legibles las fechas ISO que trae ("hasta 2026-12-31").</li>
+ *   <li>`estado` `CREDENCIAL_VENCIDA` o `VIGENTE`.</li>
+ * </ul>
+ */
+export function coberturaDelResumen(hito: HitoResponse): CoberturaDelResumen {
+  const titulo = hito.titulo?.trim() ?? '';
+  const fechaDeInicio = /^(\d{4}-\d{2}-\d{2})T/.exec(hito.ocurrioEn ?? '');
+  return {
+    principal: hito.tipo === 'COBERTURA_PRINCIPAL',
+    descripcion:
+      titulo === ''
+        ? 'Cobertura sin descripcion'
+        : titulo.replace(/\b(\d{4})-(\d{2})-(\d{2})\b/g, '$3/$2/$1'),
+    vigenteDesde: fechaDeInicio === null ? '' : fechaEnPalabras(fechaDeInicio[1]),
+    credencialVencida: hito.estado === 'CREDENCIAL_VENCIDA',
+  };
 }
