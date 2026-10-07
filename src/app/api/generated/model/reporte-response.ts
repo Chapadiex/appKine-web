@@ -7,9 +7,9 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
-import { SeccionResponse } from './seccion-response';
+import { SeccionDeReporteResponse } from './seccion-de-reporte-response';
 import { AdvertenciaResponse } from './advertencia-response';
-import { SeccionOmitidaResponse } from './seccion-omitida-response';
+import { SeccionOmitidaDeReporteResponse } from './seccion-omitida-de-reporte-response';
 
 
 /**
@@ -36,12 +36,12 @@ export interface ReporteResponse {
     /**
      * Secciones que el actor no puede ver, con el permiso que le falta. No producen 403: el reporte devuelve lo que se puede ver y declara el resto
      */
-    omitidas?: Array<SeccionOmitidaResponse>;
+    omitidas?: Array<SeccionOmitidaDeReporteResponse>;
     /**
      * Que reporte es
      */
     reporte?: string;
-    secciones?: Array<SeccionResponse>;
+    secciones?: Array<SeccionDeReporteResponse>;
     /**
      * Zona IANA con la que se recorto el periodo
      */
