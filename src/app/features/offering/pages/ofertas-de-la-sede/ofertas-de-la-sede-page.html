@@ -41,6 +41,9 @@
   @if (exito(); as mensaje) {
     <p class="estado estado--ok">{{ mensaje }}</p>
   }
+  @if (errorPrepago(); as mensaje) {
+    <p class="estado estado--error">No se cambio la politica de prepago. {{ mensaje }}</p>
+  }
 </div>
 
 <p class="acciones">
@@ -424,7 +427,13 @@
                     <td>{{ nombreDelServicio(oferta) }}</td>
                     <td>{{ modalidadConCapacidad(oferta) }}</td>
                     <td>{{ oferta.duracionMinutos }} min</td>
-                    <td>{{ precioEnPalabras(oferta) }}</td>
+                    <td>
+                      {{ precioEnPalabras(oferta) }}
+                      @if (oferta.exigePrepago) {
+                        <!-- E-6: la recepcion avisa si falta el anticipo; nunca bloquea. -->
+                        <p class="ayuda">Exige prepago en recepcion.</p>
+                      }
+                    </td>
                     <td>
                       Desde {{ enPalabras(oferta.vigenciaDesde ?? '') }}
                       @if (oferta.vigenciaHasta) {
@@ -472,6 +481,14 @@
                             (click)="abrirPanel(oferta, 'baja')"
                           >
                             Dar de baja
+                          </button>
+                          <button
+                            type="button"
+                            class="boton boton--secundario"
+                            [disabled]="prepagoEnVuelo() === oferta.id"
+                            (click)="alternarPrepago(oferta)"
+                          >
+                            {{ oferta.exigePrepago ? 'Dejar de exigir prepago' : 'Exigir prepago' }}
                           </button>
                         </ng-container>
                       }

@@ -775,6 +775,49 @@ describe('OfertasDeLaSedePage', () => {
     fixture.detectChanges();
   });
 
+  // -----------------------------------------------------------------------------------------
+  // E-6. Politica de prepago: recurso propio, con version y relectura ante conflicto
+  // -----------------------------------------------------------------------------------------
+
+  it('exigir prepago manda la version leida al recurso propio y actualiza la fila', async () => {
+    const fixture = await montar({ ofertas: [VIGENTE] });
+
+    hacerClick(fixture, 'Exigir prepago');
+    const pedido = httpMock.expectOne(`${OFERTAS}/10/politica-de-prepago`);
+    expect(pedido.request.method).toBe('PUT');
+    expect(pedido.request.body).toEqual({ exigePrepago: true, expectedVersion: 4 });
+    pedido.flush({ ...VIGENTE, exigePrepago: true, version: 5 });
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(texto).toContain('Exige prepago en recepcion.');
+    expect(texto).toContain('Es un aviso, no impide atenderlo');
+    expect(textoDeBotones(fixture)).toContain('Dejar de exigir prepago');
+  });
+
+  it('un conflicto de version al cambiar el prepago se explica y relee el listado', async () => {
+    const fixture = await montar({ ofertas: [{ ...VIGENTE, exigePrepago: true }] });
+
+    hacerClick(fixture, 'Dejar de exigir prepago');
+    const pedido = httpMock.expectOne(`${OFERTAS}/10/politica-de-prepago`);
+    expect(pedido.request.body).toEqual({ exigePrepago: false, expectedVersion: 4 });
+    pedido.flush(
+      { type: 'https://akine.app/problems/conflict', status: 409, detail: 'version vieja' },
+      { status: 409, statusText: 'Conflict' },
+    );
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    httpMock.expectOne(esListado()).flush([{ ...VIGENTE, exigePrepago: false, version: 5 }]);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(texto).toContain('No se cambio la politica de prepago');
+    expect(textoDeBotones(fixture)).toContain('Exigir prepago');
+  });
+
   it(
     'la pantalla no tiene violaciones de accesibilidad',
     async () => {

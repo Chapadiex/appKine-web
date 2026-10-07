@@ -43,6 +43,10 @@ export type CausaCobro =
   | 'saldo-insuficiente'
   /** 409 `obligacion-no-cobrable`: anulada, pagada, de otra persona o en otra moneda. */
   | 'no-cobrable'
+  /** 409 `prepago-no-admitido` (E-6): el turno no admite prepago —de otra persona o ya no es una reserva viva—. */
+  | 'prepago-no-admitido'
+  /** 409 `prepago-ya-registrado` (E-6): el turno ya tiene un prepago vigente. No se cobra dos veces. */
+  | 'prepago-ya-registrado'
   /** 409 `idempotency-key-conflict`: la clave se reuso con otro contenido. */
   | 'clave-reusada'
   /** 409 subscription-suspended: lo emite el filtro, antes del controller. */
@@ -93,6 +97,8 @@ export interface ErrorCobro {
   readonly importeIntentado: number | null;
   /** `obligacion-no-cobrable`: por que no admite el cobro, en texto del backend. */
   readonly motivo: string | null;
+  /** `prepago-ya-registrado`: el cobro que ya es el prepago vigente del turno. */
+  readonly cobroId: number | null;
 }
 
 const MENSAJE_GENERICO = 'No pudimos registrar el cobro. Volve a intentar en un momento.';
@@ -145,6 +151,21 @@ const MENSAJE_CLAVE_REUSADA =
   'Se reuso la clave de este intento con un cobro distinto, asi que el servidor no aplico nada. ' +
   'No es un error tuyo: volve a confirmar y sale con una clave nueva.';
 
+/**
+ * `prepago-no-admitido` (E-6): el turno es de otra persona o ya no es una reserva viva (se
+ * atendio, se cancelo, se reprogramo). Reintentar tal cual falla igual; lo util es volver a la
+ * recepcion, que relee el dia.
+ */
+const MENSAJE_PREPAGO_NO_ADMITIDO =
+  'Este turno ya no admite un prepago: puede que se haya cancelado, atendido o reprogramado, o que ' +
+  'no sea de esta persona. No se registro nada. Volve a la recepcion del dia para ver su estado ' +
+  'actual.';
+
+/** `prepago-ya-registrado` (E-6): otro puesto ya cobro el prepago de este turno. */
+const MENSAJE_PREPAGO_YA_REGISTRADO =
+  'Este turno ya tiene un prepago registrado, asi que no se cobro de nuevo. Si hay que corregirlo, ' +
+  'se anula ese cobro desde los cobros del paciente y se registra otro.';
+
 const MENSAJE_SUSCRIPCION_SUSPENDIDA =
   'La suscripcion de la organizacion esta suspendida, asi que no se pueden registrar cobros.';
 
@@ -191,6 +212,16 @@ export function traducirErrorCobro(error: unknown): ErrorCobro {
       return {
         ...base(MENSAJE_NO_COBRABLE, 'no-cobrable', 'recargar-cuenta'),
         motivo: textoDeExtension(error, 'motivo'),
+      };
+    case 'prepago-no-admitido':
+      return {
+        ...base(MENSAJE_PREPAGO_NO_ADMITIDO, 'prepago-no-admitido', 'ninguna'),
+        motivo: error.problem === null ? null : error.mensaje,
+      };
+    case 'prepago-ya-registrado':
+      return {
+        ...base(MENSAJE_PREPAGO_YA_REGISTRADO, 'prepago-ya-registrado', 'ninguna'),
+        cobroId: error.numeroDeExtension('cobroId'),
       };
     case 'idempotency-key-conflict':
       return base(MENSAJE_CLAVE_REUSADA, 'clave-reusada', 'reintentar-con-clave-nueva');
@@ -246,6 +277,7 @@ function base(mensaje: string, causa: CausaCobro, accion: AccionCobro): ErrorCob
     obligacionId: null,
     importeIntentado: null,
     motivo: null,
+    cobroId: null,
   };
 }
 

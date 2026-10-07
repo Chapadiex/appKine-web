@@ -78,6 +78,15 @@ type EstadoDeuda =
  * contexto tira todo —deudas, seleccion, medios, clave— y recarga: imputar contra obligaciones de
  * otra organizacion es la fuga de tenant que el aislamiento existe para evitar. El otro caso es la
  * persona sin deuda cobrable, que se resuelve con un mensaje y no con un formulario vacio.
+ *
+ * <h2>6. Modo prepago (E-6, DP-06 / ADR-0013)</h2>
+ *
+ * <p>Con `?turnoId=` —el enlace "Registrar prepago" de la recepcion del dia— la pantalla no lee
+ * la cuenta corriente ni ofrece deudas: arma un <b>anticipo puro</b> (`imputaciones: []`,
+ * `anticipo = total`, con `turnoId` y moneda), que es lo unico que el backend admite para un
+ * prepago. El importe arranca en el precio sugerido y es editable. Al cerrar la sesion de ese
+ * turno el backend imputa solo; lo que sobra queda a favor. Los rechazos propios —409
+ * `prepago-no-admitido` y `prepago-ya-registrado`— llevan de vuelta a la recepcion.
  */
 @Component({
   selector: 'app-registro-de-cobro-page',
@@ -91,6 +100,27 @@ export class RegistroDeCobroPage {
 
   /** De la ruta padre. `withComponentInputBinding` lo liga solo. */
   readonly personaId = input.required<string>();
+
+  /**
+   * Modo prepago (E-6, DP-06 / ADR-0013): llegan por query desde la recepcion del dia. Con
+   * `turnoId` el cobro es un <b>anticipo puro</b> atado a ese turno —sin imputaciones y con
+   * `anticipo` igual al total—, que es lo unico que el backend admite. `importe` es el precio
+   * sugerido (`importeSugerido`, editable), `monedaSugerida` la de la oferta y `fecha` el dia de la recepcion para volver.
+   */
+  readonly turnoId = input<string | undefined>(undefined);
+  readonly importeSugerido = input<string | undefined>(undefined);
+  readonly monedaSugerida = input<string | undefined>(undefined);
+  readonly fecha = input<string | undefined>(undefined);
+
+  /** El turno del prepago, o `null` fuera del modo prepago. */
+  protected readonly turnoDelPrepago = computed(() => {
+    const id = Number(this.turnoId() ?? '');
+    return Number.isInteger(id) && id > 0 ? id : null;
+  });
+  protected readonly modoPrepago = computed(() => this.turnoDelPrepago() !== null);
+
+  /** Moneda del prepago. Editable: sin imputaciones no hay deuda de donde tomarla. */
+  protected readonly monedaDelPrepago = signal('');
 
   protected readonly mediosDisponibles = MEDIOS_DE_COBRO;
   protected readonly medioEnPalabras = medioEnPalabras;
@@ -133,8 +163,18 @@ export class RegistroDeCobroPage {
   });
 
   protected readonly sinDeudaCobrable = computed(
-    () => this.estado().tipo === 'listo' && this.deudas().length === 0,
+    () => !this.modoPrepago() && this.estado().tipo === 'listo' && this.deudas().length === 0,
   );
+
+  /** Donde vuelve el prepago: la recepcion del dia del que se vino. Relee el dia al entrar. */
+  protected readonly queryRecepcion = computed<Record<string, string>>(() => {
+    const dia = this.fecha() ?? '';
+    const query: Record<string, string> = {};
+    if (dia !== '') {
+      query['fecha'] = dia;
+    }
+    return query;
+  });
 
   protected readonly nombreDeLaPersona = computed(() => {
     const ficha = this.persona();
@@ -164,6 +204,10 @@ export class RegistroDeCobroPage {
    * se puede armar: un solo cobro mezcla un solo tipo de plata, y el backend lo rechaza igual.
    */
   protected readonly moneda = computed<string | null>(() => {
+    if (this.modoPrepago()) {
+      const declarada = this.monedaDelPrepago().trim().toUpperCase();
+      return /^[A-Z]{3}$/.test(declarada) ? declarada : null;
+    }
     const elegidas = this.obligacionesElegidas();
     if (elegidas.length === 0) {
       return null;
@@ -229,6 +273,9 @@ export class RegistroDeCobroPage {
    * operador probando cosas. Cada entrada es una frase accionable, no un codigo.
    */
   protected readonly problemas = computed<readonly string[]>(() => {
+    if (this.modoPrepago()) {
+      return this.problemasDelPrepago();
+    }
     const faltantes: string[] = [];
     const elegidas = this.imputaciones();
 
@@ -268,6 +315,21 @@ export class RegistroDeCobroPage {
     return faltantes;
   });
 
+  /**
+   * Lo que falta en modo prepago. No hay deudas: el total es lo recibido y todo queda a favor
+   * hasta que la sesion se cierre y el backend lo impute solo.
+   */
+  private problemasDelPrepago(): readonly string[] {
+    const faltantes: string[] = [];
+    if (this.moneda() === null) {
+      faltantes.push('Indica la moneda del prepago con su codigo de tres letras, por ejemplo ARS.');
+    }
+    if (this.totalDeMedios() === null) {
+      faltantes.push('Hay un medio de pago sin importe, o con un importe que no es un numero.');
+    }
+    return faltantes;
+  }
+
   protected readonly puedeConfirmar = computed(
     () => this.problemas().length === 0 && !this.enviando() && !this.registrado(),
   );
@@ -282,6 +344,9 @@ export class RegistroDeCobroPage {
       // Depende de la ruta y del contexto: cambiar de sede o de organizacion invalida las deudas
       // que se estan por imputar, y con ellas todo el formulario.
       this.personaId();
+      this.turnoDelPrepago();
+      this.importeSugerido();
+      this.monedaSugerida();
       this.tenantContext.contextEpoch();
       untracked(() => this.reiniciar());
     });
@@ -300,7 +365,7 @@ export class RegistroDeCobroPage {
    */
   protected recargar(): void {
     this.imputaciones.set(new Map());
-    this.medios.set([nuevoMedio(this.siguienteId++)]);
+    this.medios.set([this.medioInicial()]);
     this.claveDeIntento.set('');
     this.error.set(null);
     this.cobro.set(null);
@@ -329,6 +394,12 @@ export class RegistroDeCobroPage {
       .verPersona(personaId)
       .pipe(catchError(() => of(null)))
       .subscribe((ficha) => this.persona.set(ficha));
+
+    // El prepago no se imputa a deuda: la cuenta corriente no hace falta para armarlo.
+    if (this.modoPrepago()) {
+      this.estado.set({ tipo: 'listo', deudas: [] });
+      return;
+    }
 
     this.api.deLaPersona(consultorioId, personaId).subscribe({
       next: (obligaciones) =>
@@ -473,7 +544,8 @@ export class RegistroDeCobroPage {
   protected confirmar(): void {
     const consultorioId = this.tenantContext.consultorioId();
     const personaId = this.numeroDePersona();
-    const total = this.totalImputado();
+    const turnoId = this.turnoDelPrepago();
+    const total = turnoId === null ? this.totalImputado() : this.totalDeMedios();
     if (consultorioId === null || personaId === null || total === null || !this.puedeConfirmar()) {
       return;
     }
@@ -502,13 +574,29 @@ export class RegistroDeCobroPage {
     this.error.set(null);
 
     this.api
-      .registrarCobro(consultorioId, {
-        personaId,
-        total: deCentavos(total),
-        imputaciones,
-        medios,
-        idempotencyKey: this.claveDelIntento(),
-      })
+      .registrarCobro(
+        consultorioId,
+        turnoId === null
+          ? {
+              personaId,
+              total: deCentavos(total),
+              imputaciones,
+              medios,
+              idempotencyKey: this.claveDelIntento(),
+            }
+          : {
+              // Anticipo puro: sin imputaciones y con anticipo = total. Es la unica forma que el
+              // backend admite para un prepago; se imputa solo al cerrar la sesion del turno.
+              personaId,
+              turnoId,
+              total: deCentavos(total),
+              anticipo: deCentavos(total),
+              imputaciones: [],
+              moneda: this.moneda() ?? undefined,
+              medios,
+              idempotencyKey: this.claveDelIntento(),
+            },
+      )
       .subscribe({
         next: (cobro) => {
           this.enviando.set(false);
@@ -582,7 +670,8 @@ export class RegistroDeCobroPage {
 
   private reiniciar(): void {
     this.imputaciones.set(new Map());
-    this.medios.set([nuevoMedio(this.siguienteId++)]);
+    this.monedaDelPrepago.set((this.monedaSugerida() ?? '').toUpperCase());
+    this.medios.set([this.medioInicial()]);
     this.claveDeIntento.set('');
     this.error.set(null);
     this.cobro.set(null);
@@ -620,6 +709,23 @@ export class RegistroDeCobroPage {
         : `akine-${Date.now()}-${Math.random().toString(36).slice(2)}`;
     this.claveDeIntento.set(nueva);
     return nueva;
+  }
+
+  /**
+   * Primer medio del formulario. En modo prepago arranca con el importe sugerido por la recepcion
+   * —el precio particular de la oferta—, que sigue siendo editable: lo decide quien cobra.
+   */
+  private medioInicial(): LineaDeMedio {
+    const medio = nuevoMedio(this.siguienteId++);
+    const sugerido = this.modoPrepago() ? centavosDeTexto(this.importeSugerido() ?? '') : null;
+    return sugerido === null || sugerido <= 0
+      ? medio
+      : { ...medio, importe: textoDeCentavos(sugerido) };
+  }
+
+  protected cambiarMonedaDelPrepago(texto: string): void {
+    this.monedaDelPrepago.set(texto);
+    this.otroIntento();
   }
 
   private numeroDePersona(): number | null {

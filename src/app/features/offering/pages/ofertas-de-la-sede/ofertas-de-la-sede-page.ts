@@ -208,6 +208,11 @@ export class OfertasDeLaSedePage {
 
   protected readonly hayQueRecargar = computed(() => hayQueRecargar(this.causaAccion()));
 
+  /** Oferta cuya politica de prepago se esta guardando, o `null` (E-6). */
+  protected readonly prepagoEnVuelo = signal<number | null>(null);
+  /** Rechazo del ultimo cambio de politica de prepago. Vive aparte: no es un panel. */
+  protected readonly errorPrepago = signal<string | null>(null);
+
   /** `true` si el alta eligio modalidad grupal. Ver {@link marcarModalidadDelAlta}. */
   protected readonly altaEsGrupal = signal(false);
 
@@ -624,6 +629,61 @@ export class OfertasDeLaSedePage {
         this.cargar();
       },
       error: (error: unknown) => this.fallar(error),
+    });
+  }
+
+  /**
+   * Activa o desactiva "exige prepago" (E-6, DP-06 / ADR-0013).
+   *
+   * <p>La politica <b>alerta</b> en la recepcion del dia cuando el paciente llega sin anticipo;
+   * nunca impide atenderlo. Viaja con la `version` leida: ante un 409 de concurrencia no se
+   * reintenta a ciegas —otro puesto cambio la oferta— sino que se relee el listado y se explica.
+   */
+  protected alternarPrepago(oferta: OfertaResponse): void {
+    const consultorioId = this.tenantContext.consultorioId();
+    if (
+      consultorioId === null ||
+      oferta.id === undefined ||
+      oferta.version === undefined ||
+      this.prepagoEnVuelo() !== null
+    ) {
+      return;
+    }
+    const exigir = !(oferta.exigePrepago ?? false);
+    this.prepagoEnVuelo.set(oferta.id);
+    this.errorPrepago.set(null);
+    this.exito.set(null);
+
+    this.api.fijarPoliticaDePrepago(consultorioId, oferta.id, exigir, oferta.version).subscribe({
+      next: (actualizada) => {
+        this.prepagoEnVuelo.set(null);
+        this.exito.set(
+          exigir
+            ? `"${oferta.nombreComercial}" exige prepago: la recepcion avisa cuando alguien llega ` +
+                'sin anticipo. Es un aviso, no impide atenderlo.'
+            : `"${oferta.nombreComercial}" ya no exige prepago.`,
+        );
+        this.estado.update((actual) =>
+          actual.tipo === 'listo'
+            ? {
+                tipo: 'listo',
+                pagina: actual.pagina.map((fila) =>
+                  fila.id === actualizada.id ? actualizada : fila,
+                ),
+              }
+            : actual,
+        );
+      },
+      error: (error: unknown) => {
+        this.prepagoEnVuelo.set(null);
+        const traducido = traducirErrorOffering(error, 'oferta');
+        this.errorPrepago.set(traducido.mensaje);
+        // Concurrencia: la version leida quedo vieja. Se relee para que el proximo clic lleve la
+        // nueva y el operador vea lo que el otro puesto dejo antes de decidir de nuevo.
+        if (traducido.causa === 'concurrencia' || hayQueRecargar(traducido.causa)) {
+          this.cargar();
+        }
+      },
     });
   }
 

@@ -303,6 +303,84 @@ describe('RegistroDeCobroPage', () => {
   );
 
   // -------------------------------------------------------------------------------------
+  // E-6. Modo prepago: anticipo puro atado al turno
+  // -------------------------------------------------------------------------------------
+
+  describe('modo prepago (E-6)', () => {
+    it('manda un anticipo puro con el turno, sin leer la cuenta corriente', async () => {
+      const fixture = await montarPrepago();
+
+      expect(texto(fixture)).toContain('Registrar un prepago');
+      // El importe sugerido llega precargado y es editable.
+      const importe = fixture.nativeElement.querySelector('#importe-medio-0') as HTMLInputElement;
+      expect(importe.value).toBe('15000.00');
+
+      apretar(fixture, 'Registrar el prepago');
+
+      const pedido = httpMock.expectOne(esRegistro());
+      expect(pedido.request.body).toEqual(
+        expect.objectContaining({
+          personaId: PERSONA,
+          turnoId: 77,
+          total: 15000,
+          anticipo: 15000,
+          imputaciones: [],
+          moneda: 'ARS',
+        }),
+      );
+      responderCobro(pedido);
+      await estabilizar(fixture);
+
+      expect(texto(fixture)).toContain('Se imputa solo al cerrar la sesion');
+      expect(texto(fixture)).toContain('Volver a la recepcion del dia');
+    });
+
+    it('no deja confirmar sin una moneda valida', async () => {
+      const fixture = await montarPrepago();
+      escribirEn(fixture, '#moneda-prepago', 'pe');
+      expect(botonDe(fixture, 'Registrar el prepago').disabled).toBe(true);
+      expect(texto(fixture)).toContain('codigo de tres letras');
+    });
+
+    it('traduce prepago-ya-registrado y prepago-no-admitido y ofrece volver a la recepcion', async () => {
+      const fixture = await montarPrepago();
+
+      apretar(fixture, 'Registrar el prepago');
+      rechazar(httpMock.expectOne(esRegistro()), 'prepago-ya-registrado', { cobroId: 5001 });
+      await estabilizar(fixture);
+      expect(texto(fixture)).toContain('ya tiene un prepago registrado');
+      expect(texto(fixture)).toContain('Ver los cobros del paciente');
+
+      apretar(fixture, 'Registrar el prepago');
+      rechazar(httpMock.expectOne(esRegistro()), 'prepago-no-admitido');
+      await estabilizar(fixture);
+      expect(texto(fixture)).toContain('ya no admite un prepago');
+      expect(texto(fixture)).toContain('Volver a la recepcion del dia');
+    });
+
+    async function montarPrepago(): Promise<ComponentFixture<RegistroDeCobroPage>> {
+      tenantContext.select({
+        organizationId: 1,
+        organizationName: 'Centro Belgrano',
+        consultorioId: CONSULTORIO,
+        consultorioName: 'Sede Centro',
+      });
+      const fixture = TestBed.createComponent(RegistroDeCobroPage);
+      fixture.componentRef.setInput('personaId', String(PERSONA));
+      fixture.componentRef.setInput('turnoId', '77');
+      fixture.componentRef.setInput('importeSugerido', '15000');
+      fixture.componentRef.setInput('monedaSugerida', 'ars');
+      fixture.componentRef.setInput('fecha', '2026-10-07');
+      fixture.detectChanges();
+
+      httpMock.expectOne(FICHA).flush({ id: PERSONA, apellido: 'Gomez', nombre: 'Ana' });
+      // Sin pedido a la cuenta corriente: `httpMock.verify()` lo hace cumplir.
+      await estabilizar(fixture);
+      return fixture;
+    }
+  });
+
+  // -------------------------------------------------------------------------------------
   // Apoyo
   // -------------------------------------------------------------------------------------
 
