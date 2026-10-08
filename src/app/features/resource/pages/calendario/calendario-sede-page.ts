@@ -5,6 +5,9 @@ import { catchError, of } from 'rxjs';
 
 import { CalendarioDeSedeService } from '../../../../api/generated/api/calendario-de-sede.service';
 import { CalendarioSedeResponse } from '../../../../api/generated/model/calendario-sede-response';
+import { ImpactoDisponibilidadResponse } from '../../../../api/generated/model/impacto-disponibilidad-response';
+import { formatearInstante } from '../../../../shared/utils/instantes';
+import { avisoDeHorarioDeSede, notaDeListaRecortada } from '../../models/turnos-afectados';
 import { EstadoDeListado, vistaDeListado } from '../../../../shared/utils/estado-de-listado';
 import { FeriadoResponse } from '../../../../api/generated/model/feriado-response';
 import { PERMISO_CONSULTORIO_MANAGE } from '../../../../core/models/permisos';
@@ -167,6 +170,21 @@ export class CalendarioSedePage {
   protected readonly errorHorario = signal<string | null>(null);
   protected readonly erroresFranja = signal<ReadonlyMap<number, string>>(new Map());
   protected readonly exitoHorario = signal<string | null>(null);
+
+  /**
+   * Turnos pendientes que el ultimo guardado del horario dejo fuera (A-8b, DP-19), o `null`
+   * cuando no dejo ninguno: en cero no se muestra nada. No se cancelan, solo se informan.
+   */
+  protected readonly impactoHorario = signal<ImpactoDisponibilidadResponse | null>(null);
+  protected readonly avisoImpactoHorario = computed(() =>
+    avisoDeHorarioDeSede(this.impactoHorario()),
+  );
+  protected readonly turnosImpactoHorario = computed(() => this.impactoHorario()?.turnos ?? []);
+  protected readonly notaImpactoHorario = computed(() => {
+    const impacto = this.impactoHorario();
+    return impacto === null ? null : notaDeListaRecortada(impacto);
+  });
+  protected readonly formatearInstante = formatearInstante;
 
   /** El horario guardado, redactado: lo que ve quien no puede editarlo. */
   protected readonly horarioGuardado = computed(() =>
@@ -410,8 +428,10 @@ export class CalendarioSedePage {
           this.exitoHorario.set(
             horarioGeneral.length === 0
               ? 'Listo: la sede ya no tiene horario general declarado.'
-              : 'Listo: el horario general quedo guardado. Recorda que es informativo: no cambia la agenda.',
+              : 'Listo: el horario general quedo guardado. Desde ahora la agenda no ofrece turnos fuera de el.',
           );
+          const impacto = respuesta.impactoDelHorario ?? null;
+          this.impactoHorario.set((impacto?.turnosAfectados ?? 0) > 0 ? impacto : null);
         },
         error: (error: unknown) => {
           this.guardandoHorario.set(false);
@@ -431,6 +451,7 @@ export class CalendarioSedePage {
     this.errorHorario.set(null);
     this.erroresFranja.set(new Map());
     this.exitoHorario.set(null);
+    this.impactoHorario.set(null);
   }
 }
 

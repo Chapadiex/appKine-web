@@ -103,3 +103,22 @@ export function avisoDeExcepcion(previsto: number | null): string | null {
     'revisalos en la agenda. Si alguien reservo mientras confirmabas, puede haber alguno mas.'
   );
 }
+
+/**
+ * Aviso despues de guardar el horario general de la sede (A-8b, DP-19), o `null` en cero.
+ *
+ * <p>Desde DP-19 el horario de la sede <b>limita</b> la agenda. El `PUT` del calendario responde
+ * en `impactoDelHorario` cuantos turnos pendientes, de cualquier profesional, quedaron fuera del
+ * horario nuevo. No se cancelan: se informan para que la sede decida.
+ */
+export function avisoDeHorarioDeSede(
+  impacto: ImpactoDisponibilidadResponse | null | undefined,
+): string | null {
+  const cantidad = impacto?.turnosAfectados ?? 0;
+  if (cantidad <= 0) {
+    return null;
+  }
+  return cantidad === 1
+    ? '1 turno queda fuera del horario; revisalo en la agenda. No se cancelo.'
+    : `${cantidad} turnos quedan fuera del horario; revisalos en la agenda. Ninguno se cancelo.`;
+}

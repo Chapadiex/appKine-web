@@ -9,6 +9,7 @@ import { CreateAutorizacionRequest } from '../../../api/generated/model/create-a
 import { CreateOrdenRequest } from '../../../api/generated/model/create-orden-request';
 import { ElegibilidadAdministrativaService } from '../../../api/generated/api/elegibilidad-administrativa.service';
 import { ElegibilidadResponse } from '../../../api/generated/model/elegibilidad-response';
+import { HistorialDeAutorizacionResponse } from '../../../api/generated/model/historial-de-autorizacion-response';
 import { OrdenResponse } from '../../../api/generated/model/orden-response';
 import { OrdenesMedicasService } from '../../../api/generated/api/ordenes-medicas.service';
 import { ResolverAutorizacionRequest } from '../../../api/generated/model/resolver-autorizacion-request';
@@ -270,6 +271,27 @@ export class DocumentosApi {
       coberturaId,
       practicaId,
       fecha: fecha === '' ? undefined : fecha,
+    });
+  }
+
+  /**
+   * Historial de una autorizacion (B-4, DP-23): sus hechos del mas viejo al mas nuevo, paginado.
+   *
+   * <p>El vencimiento <b>no es un evento</b>: viaja calculado en `vencida`/`vencidaDesde` contra
+   * la fecha de hoy. Las autorizaciones cargadas antes del historial traen un solo ALTA
+   * reconstruido, y su `detalle` lo declara.
+   */
+  historialDeAutorizacion(
+    personaId: number,
+    autorizacionId: number,
+    pagina: number,
+    tamano: number,
+  ): Observable<HistorialDeAutorizacionResponse> {
+    return this.autorizacionesApi.getHistorialDeAutorizacion({
+      personaId,
+      autorizacionId,
+      page: pagina,
+      size: tamano,
     });
   }
 
