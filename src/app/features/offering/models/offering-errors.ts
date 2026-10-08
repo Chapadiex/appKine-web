@@ -43,6 +43,12 @@ export type CausaOffering =
   | 'concurrencia'
   /** 409 subscription-suspended: lo emite el filtro, antes del controller. */
   | 'suscripcion-suspendida'
+  /** 409 practica-no-utilizable: una practica que ENTRA esta dada de baja o fuera de vigencia (A-9). */
+  | 'practica-no-utilizable'
+  /** 409 oferta-inactiva: la oferta esta dada de baja y no admite cambios. */
+  | 'oferta-inactiva'
+  /** 409 consultorio-no-operable: la sede no admite cambios ahora. */
+  | 'consultorio-no-operable'
   /** 409 precio-particular-solapado: dos precios activos de la misma oferta se pisan. */
   | 'precio-solapado'
   /** 409 precio-particular-inactivo: el precio ya esta dado de baja. */
@@ -130,6 +136,17 @@ const MENSAJE_PRECIO_INACTIVO =
   'Ese precio ya esta dado de baja, asi que no admite cambios. Recarga la grilla para verlo con ' +
   'su estado actual y, si hace falta, carga otro.';
 
+const MENSAJE_PRACTICA_NO_UTILIZABLE =
+  'Alguna de las practicas que agregaste esta dada de baja o fuera de vigencia en el catalogo, ' +
+  'asi que no se puede sumar a la oferta. Sacala de la lista y volve a guardar. Las que la oferta ' +
+  'ya tenia no se revalidan: siguen valiendo aunque el catalogo las haya dado de baja.';
+
+const MENSAJE_OFERTA_INACTIVA =
+  'Esta oferta esta dada de baja, asi que no admite cambios. Volve al listado de ofertas de la sede.';
+
+const MENSAJE_CONSULTORIO_NO_OPERABLE =
+  'La sede no esta operable en este momento, asi que no se pueden cambiar sus ofertas.';
+
 const MENSAJE_CONFLICTO =
   'El servidor rechazo el cambio por un conflicto con lo que ya hay guardado. Recarga el listado ' +
   'para ver el estado actual y volve a intentar.';
@@ -183,6 +200,12 @@ export function traducirErrorOffering(error: unknown, ambito: AmbitoOffering): E
       return base(MENSAJE_PRECIO_SOLAPADO, 'precio-solapado');
     case 'precio-particular-inactivo':
       return base(MENSAJE_PRECIO_INACTIVO, 'precio-inactivo');
+    case 'practica-no-utilizable':
+      return base(MENSAJE_PRACTICA_NO_UTILIZABLE, 'practica-no-utilizable');
+    case 'oferta-inactiva':
+      return base(MENSAJE_OFERTA_INACTIVA, 'oferta-inactiva');
+    case 'consultorio-no-operable':
+      return base(MENSAJE_CONSULTORIO_NO_OPERABLE, 'consultorio-no-operable');
     default:
       break;
   }
