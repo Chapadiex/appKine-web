@@ -29,6 +29,8 @@ import {
   textoDeEstado,
   textoDeEvento,
 } from '../../models/etiquetas-de-turno';
+import { recepcionAbierta, textoDePrepago } from '../../models/etiquetas-de-recepcion';
+import { PrepagoDeRecepcionEstadoEnum } from '../../../../api/generated/model/prepago-de-recepcion';
 
 /** Panel abierto. Uno solo a la vez: son tres confirmaciones sobre el mismo turno. */
 type Panel = 'ninguno' | 'cancelar' | 'ausencia' | 'reprogramar';
@@ -181,6 +183,9 @@ export class CicloDeTurnoPage {
    * seguir operando. Antes de 0.23.0 era la unica fuente, y por eso una URL pegada a mano dejaba
    * la pantalla a medias.
    */
+  /** Serie que genero el turno (E-3), para enlazarla. `undefined` en un turno suelto. */
+  protected readonly serieId = computed(() => this.turno()?.serieId ?? this.turnoLeido()?.serieId);
+
   protected readonly versionConocida = computed<number | null>(() => {
     const deLaTransicion = this.turno()?.version;
     if (deLaTransicion !== undefined) {
@@ -196,6 +201,26 @@ export class CicloDeTurnoPage {
 
   protected readonly puedeOperar = computed(() => this.permisos.tiene(PERMISO_TURNO_MANAGE));
   protected readonly cicloCerrado = computed(() => esTerminal(this.estado()));
+
+  /**
+   * Lo que se sabe del prepago (E-8), o vacio. Solo de lectura: cobrarlo es de la recepcion del dia.
+   *
+   * <p>Sale de la lectura del turno, porque las transiciones devuelven un `Turno` sin prepago. Un
+   * `PENDIENTE` leido deja de valer si el turno se cancelo o quedo ausente despues —el servidor lo
+   * recalcularia como `NO_EXIGIDO`—, asi que no se muestra; un `REGISTRADO` sigue siendo cierto.
+   */
+  protected readonly textoDePrepago = computed(() => {
+    const leido = this.turnoLeido();
+    const prepago = leido?.prepago;
+    const caido = this.cicloCerrado();
+    if (caido && prepago?.estado === PrepagoDeRecepcionEstadoEnum.PENDIENTE) {
+      return '';
+    }
+    return textoDePrepago(prepago, {
+      antesDelCheckin: !recepcionAbierta(leido?.recepcion),
+      turnoCaido: caido,
+    });
+  });
 
   /** Las tres transiciones con version, disponibles solo cuando hay todo lo que necesitan. */
   protected readonly puedeTransicionar = computed(

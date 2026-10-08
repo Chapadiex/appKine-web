@@ -63,24 +63,55 @@ export function recepcionAbierta(recepcion: Recepcion | undefined): boolean {
 }
 
 /**
- * Lo que la fila dice del prepago (E-6, DP-06 / ADR-0013), o vacio cuando no hay nada que decir.
+ * En que punto del turno se lee el prepago. Cambia lo que el texto puede afirmar, no el estado.
+ *
+ * <ul>
+ *   <li>`antesDelCheckin`: no hay recepcion vigente. Un `PENDIENTE` vale <b>"si se atiende como
+ *       particular"</b>: la cobertura la resuelve la validacion de la llegada, y si cubre, el
+ *       prepago deja de exigirse (E-8).</li>
+ *   <li>`turnoCaido`: el turno se cancelo o quedo ausente. El servidor solo devuelve `REGISTRADO`
+ *       en ese caso, y lo que dice es que hay un anticipo cobrado para una atencion que no va a
+ *       ocurrir.</li>
+ * </ul>
+ */
+export interface ContextoDePrepago {
+  readonly antesDelCheckin?: boolean;
+  readonly turnoCaido?: boolean;
+}
+
+/**
+ * Lo que la fila dice del prepago (E-6 y E-8, DP-06 / ADR-0013), o vacio cuando no hay nada que
+ * decir.
  *
  * <p>`PENDIENTE` es una <b>alerta</b>: el centro exige un anticipo para esta oferta y todavia no se
  * cobro. Nunca impide pasar a espera, llamar ni atender. El importe que acompana es el precio
  * particular <b>sugerido</b>; lo decide quien cobra. `NO_EXIGIDO` no se rotula: seria ruido en
  * cada fila de un centro que no usa la politica.
  */
-export function textoDePrepago(prepago: PrepagoDeRecepcion | undefined): string {
+export function textoDePrepago(
+  prepago: PrepagoDeRecepcion | undefined,
+  contexto: ContextoDePrepago = {},
+): string {
   switch (prepago?.estado) {
     case PrepagoDeRecepcionEstadoEnum.PENDIENTE: {
       const sugerido = importeDePrepago(prepago.importeSugerido, prepago.moneda);
-      return sugerido === ''
-        ? 'Prepago pendiente: esta prestacion exige un anticipo y no se registro. Es un aviso, no impide atender.'
-        : `Prepago pendiente (sugerido ${sugerido}): esta prestacion exige un anticipo y no se ` +
-            'registro. Es un aviso, no impide atender.';
+      const conSugerido = sugerido === '' ? '' : ` (sugerido ${sugerido})`;
+      return contexto.antesDelCheckin
+        ? `Prepago pendiente si se atiende como particular${conSugerido}: esta prestacion exige ` +
+            'un anticipo y no se registro. Si la cobertura la cubre, se resuelve al validar la ' +
+            'llegada. Es un aviso, no impide atender.'
+        : `Prepago pendiente${conSugerido}: esta prestacion exige un anticipo y no se registro. ` +
+            'Es un aviso, no impide atender.';
     }
     case PrepagoDeRecepcionEstadoEnum.REGISTRADO: {
       const importe = importeDePrepago(prepago.importe, prepago.moneda);
+      if (contexto.turnoCaido) {
+        return (
+          `Prepago registrado${importe === '' ? '' : ` por ${importe}`} para un turno que no se ` +
+          'va a atender: el anticipo queda a favor del paciente, para reintegrarlo o usarlo en ' +
+          'otra atencion.'
+        );
+      }
       return importe === ''
         ? 'Prepago registrado. Se imputa solo al cerrar la sesion.'
         : `Prepago registrado por ${importe}. Se imputa solo al cerrar la sesion; lo que sobre ` +

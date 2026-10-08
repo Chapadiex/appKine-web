@@ -125,6 +125,27 @@ describe('CicloDeTurnoPage', () => {
     expect(texto).toContain('09:00');
     expect(texto).toContain('America/Argentina/Cordoba');
     expect(texto).toContain('Se reservo el turno');
+    expect(enlaceCon(fixture, 'Es parte de una serie')).toBeNull();
+  });
+
+  it('un turno de una serie enlaza a la serie', async () => {
+    const fixture = await montar({ serieId: 7 });
+    expect(enlaceCon(fixture, 'Es parte de una serie')?.getAttribute('href')).toBe(
+      '/agenda/series/7',
+    );
+  });
+
+  it('muestra el prepago pendiente del turno antes de la llegada (E-8), sin bloquear nada', async () => {
+    const fixture = await montar({
+      leido: {
+        ...TURNO_LEIDO,
+        prepago: { estado: 'PENDIENTE', importeSugerido: 15000, moneda: 'ARS' },
+      },
+    });
+
+    const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(texto).toContain('Prepago pendiente si se atiende como particular');
+    expect(texto).toMatch(/sugerido \$\s?15\.000,00/);
   });
 
   it('la ausencia sale con el motivo VACIO: el contrato lo declara opcional', async () => {
@@ -401,19 +422,25 @@ describe('CicloDeTurnoPage', () => {
    * de la query — que es el camino que existia antes de que hubiera lectura, y que sigue
    * teniendo que funcionar.
    */
-  function responderLectura(falla: boolean): void {
+  function responderLectura(falla: boolean, leido: object = TURNO_LEIDO): void {
     const pedido = httpMock.expectOne(
       (p: HttpRequest<unknown>) => p.method === 'GET' && p.url === TURNO_URL,
     );
     if (falla) {
       pedido.flush(null, { status: 500, statusText: 'Server Error' });
     } else {
-      pedido.flush(TURNO_LEIDO);
+      pedido.flush(leido);
     }
   }
 
   async function montar(
-    opciones: { version?: string; permisos?: string[]; lecturaFalla?: boolean } = {},
+    opciones: {
+      version?: string;
+      permisos?: string[];
+      lecturaFalla?: boolean;
+      leido?: object;
+      serieId?: number;
+    } = {},
   ): Promise<ComponentFixture<CicloDeTurnoPage>> {
     tenantContext.select({
       organizationId: 1,
@@ -434,7 +461,13 @@ describe('CicloDeTurnoPage', () => {
     fixture.componentRef.setInput('fecha', FECHA);
     fixture.detectChanges();
 
-    responderLectura(opciones.lecturaFalla === true);
+    responderLectura(
+      opciones.lecturaFalla === true,
+      opciones.leido ??
+        (opciones.serieId === undefined
+          ? TURNO_LEIDO
+          : { ...TURNO_LEIDO, serieId: opciones.serieId }),
+    );
     httpMock.expectOne(HISTORIAL).flush(EVENTOS);
     httpMock.expectOne(esAgenda()).flush(DIA);
     await asentar(fixture);
