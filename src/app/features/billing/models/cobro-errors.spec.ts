@@ -118,6 +118,16 @@ describe('traducirErrorCobro', () => {
     expect(traducido.accion).toBe('recargar-cuenta');
   });
 
+  it('caja-no-abierta manda a abrir la caja, no a recargar la cuenta: recargar no la abre', () => {
+    const traducido = traducirErrorCobro(problema('caja-no-abierta', 409, { consultorioId: 7 }));
+
+    expect(traducido.accion).toBe('abrir-caja');
+    expect(traducido.mensaje).toContain('La caja de esta sede no esta abierta');
+    expect(traducido.mensaje).toContain('No se hizo nada');
+    // El formulario queda cargado: abierta la caja, el mismo cobro entra.
+    expect(noSeRegistro(traducido.causa)).toBe(true);
+  });
+
   it('idempotency-key-conflict pide reintentar con clave nueva', () => {
     const traducido = traducirErrorCobro(problema('idempotency-key-conflict', 409));
 

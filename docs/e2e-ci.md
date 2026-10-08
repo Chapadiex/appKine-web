@@ -87,3 +87,28 @@ contrasena se restablece con el enlace real que el backend manda a Mailpit, leid
   la pantalla de Auditoria.
 - Para no compartir los archivos de coordinacion (`akine-e2e-registros.json`, el centro de
   agenda) con otra corrida en la misma maquina, apunta `TEMP`/`TMP` a un directorio propio.
+
+## Las verticales del 07/10 (`e2e/flujo-*.spec.ts`)
+
+Corren en el proyecto `agenda` —el CI ya lo invoca— porque usan el mismo centro sembrado: un
+segundo centro serian dos altas mas contra el limite de 4 por minuto.
+
+| Spec | Que recorre | Error real que afirma |
+|---|---|---|
+| `flujo-caja` | Abrir, movimiento manual, revertir, cerrar con arqueo y faltante; cobro en efectivo de una sesion cerrada que entra a la caja | `caja-saldo-insuficiente`, `caja-saldo-cambio`, `caja-no-abierta` |
+| `flujo-presentaciones` | Deuda del financiador (convenio + arancel + cobertura, sesion cerrada) → borrador → agregar → revisar → confirmar → factura → pago → conciliar | `obligacion-no-presentable`, `presentacion-no-concilia` |
+| `flujo-series` | Alta con previsualizacion → bandeja `/agenda/series` → detalle → cancelar "este y los siguientes" | `turno-transicion-no-permitida` |
+| `flujo-prepago` | Oferta que exige prepago: PENDIENTE antes del check-in → registrar el anticipo → REGISTRADO | `prepago-ya-registrado`, `prepago-no-admitido` |
+
+Tres cosas que el sembrado tiene que saber y que no son obvias:
+
+- **La sesion la cierra la profesional, no la administradora.** `sesion:register` es exclusivo del
+  rol PROFESIONAL y no se puede otorgar como grant, y la sesion es de quien atiende el turno
+  (`turno-no-atendible` / `sesion-ajena`). Por eso `agenda-setup` activa tambien la cuenta de la
+  profesional, y `comoProfesional` ingresa por la API eligiendo el contexto del centro (tiene ademas
+  el de su consultorio propio).
+- **Sin precio no hay deuda, y no lo avisa nadie.** El devengado sin precio vigente no crea la
+  obligacion y solo deja un `log.warn`. `fijarPrecio` carga un precio particular desde hoy.
+- **La caja es una por sede.** Los dos tests que la abren viven en `flujo-caja.spec.ts`, corren en
+  orden (`mode: 'default'`) y arrancan cerrando lo que haya quedado abierto. El prepago y el pago
+  del financiador van por transferencia para no tocar el cajon.

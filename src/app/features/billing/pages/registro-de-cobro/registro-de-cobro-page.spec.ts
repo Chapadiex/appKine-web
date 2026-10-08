@@ -186,6 +186,26 @@ describe('RegistroDeCobroPage', () => {
     expect(texto(fixture)).toContain('Eligi al menos una deuda');
   });
 
+  it('el 409 caja-no-abierta ofrece ir a la caja y deja el cobro armado para reintentar', async () => {
+    const fixture = await montar([DEUDA]);
+
+    elegir(fixture, DEUDA.id);
+    apretar(fixture, 'Completar con el total imputado');
+    apretar(fixture, 'Registrar el cobro');
+
+    rechazar(httpMock.expectOne(esRegistro()), 'caja-no-abierta', { consultorioId: 7 });
+    await estabilizar(fixture);
+
+    expect(texto(fixture)).toContain('La caja de esta sede no esta abierta');
+    const enlace = Array.from(
+      fixture.nativeElement.querySelectorAll('a') as NodeListOf<HTMLAnchorElement>,
+    ).find((a) => (a.textContent ?? '').trim() === 'Ir a la caja');
+    expect(enlace?.getAttribute('href')).toBe('/caja');
+    // Recargar la cuenta no abre ninguna caja: ofrecerlo mandaria a repetir el mismo rechazo.
+    expect(rotulosDeBoton(fixture)).not.toContain('Recargar los saldos y volver a armar el cobro');
+    expect(botonDe(fixture, 'Registrar el cobro').disabled).toBe(false);
+  });
+
   it('las deudas pagadas y anuladas no se ofrecen: imputar contra ellas no descuenta nada', async () => {
     const fixture = await montar([DEUDA, PAGADA, ANULADA]);
 

@@ -47,7 +47,7 @@ export default defineConfig({
       // La auditoria de contraste tiene sus propios dos proyectos, uno por tema. Sin esto
       // correria una tercera vez con el `colorScheme` que traiga el sistema del runner, que es
       // justamente el dato que no se puede dejar al azar.
-      testIgnore: [/contraste(-no-textual)?\.spec\.ts/, /agenda[-.]/],
+      testIgnore: [/contraste(-no-textual)?\.spec\.ts/, /agenda[-.]/, /flujo-/],
       // Casi todos estos tests dan de alta una o dos cuentas, y el alta esta espaciada a 4 por
       // minuto (`esperarCupoDeRegistro`, por el limite del backend). Corridos uno detras de otro
       // —como en el CI— la espera sola se come los 30 s por defecto. Se alarga el plazo; el
@@ -66,6 +66,10 @@ export default defineConfig({
      * (`akine.security.rate-limit`), cada test ingresa por pantalla y cada `page.goto` canjea el
      * refresh. Con todos los nucleos de una maquina de desarrollo el limite se pasa y los tests
      * fallan con 429, que es el limite funcionando y no el producto fallando.
+     *
+     * Los `flujo-*.spec.ts` (caja, cobro, presentaciones, series y prepago) viven en este mismo
+     * proyecto porque trabajan sobre el MISMO centro sembrado: un segundo centro serian dos altas
+     * mas contra un limite de 4 por minuto, y el CI ya corre `--project=agenda`.
      */
     {
       name: 'agenda-setup',
@@ -73,7 +77,7 @@ export default defineConfig({
     },
     {
       name: 'agenda',
-      testMatch: /agenda-.*\.spec\.ts/,
+      testMatch: /(agenda|flujo)-.*\.spec\.ts/,
       dependencies: ['agenda-setup'],
       workers: 2,
       // Cada paso espera una vuelta real al backend, a veces dos. Los 5 s por defecto alcanzan en

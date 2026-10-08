@@ -75,6 +75,12 @@ export const DIAS = {
   cicloConflicto: 29,
   // El buscador de motivos necesita cinco dias habiles seguidos y los busca desde aca.
   buscadorMotivos: 40,
+  // Una serie ocupa el MISMO dia de la semana durante tres semanas: el bloque arranca lejos de
+  // todo lo anterior (que llega hasta ~60 con la ventana del buscador) y busca su propio inicio.
+  serie: 63,
+  // Turnos que terminan en una sesion cerrada (la sesion admite turnos futuros).
+  cobro: 90,
+  presentacion: 93,
 } as const;
 
 /** Cada test busca su dia dentro de su bloque: ver {@link diaDeTrabajo}. */
@@ -83,6 +89,12 @@ const LARGO_DEL_BLOQUE = 3;
 /** Lo que el proyecto `agenda-setup` deja escrito para el resto de la corrida. */
 export interface Centro {
   readonly emailAdmin: string;
+  /**
+   * Cuenta de la profesional del centro. Ingresa SOLO por la API y SOLO para iniciar y cerrar
+   * sesiones: `sesion:register` es exclusivo del rol PROFESIONAL y la sesion es de quien atiende el
+   * turno (`turno-no-atendible` / `sesion-ajena`), asi que la administradora no puede cerrarlas.
+   */
+  readonly emailProfesional: string;
   readonly organizationId: number;
   readonly consultorioId: number;
   readonly nombreCentro: string;
@@ -405,6 +417,8 @@ export async function sembrarCentro(): Promise<Centro> {
       organizationName: `Consultorio Propio ${sufijo}`,
     });
     await activarPorMailpit(http, emailAdmin);
+    // La profesional tambien se activa: cierra sesiones por la API (ver `Centro.emailProfesional`).
+    await activarPorMailpit(http, emailProfesional);
 
     const api = await ApiAkine.como(emailAdmin);
     try {
@@ -444,6 +458,7 @@ export async function sembrarCentro(): Promise<Centro> {
 
       const centro: Centro = {
         emailAdmin,
+        emailProfesional,
         organizationId,
         consultorioId,
         nombreCentro,
@@ -628,6 +643,8 @@ export async function crearOferta(
     duracionMinutos?: number;
     vigenciaHasta?: string;
     habilitarProfesional?: boolean;
+    /** Campos de `CreateOfertaRequest` que el test necesita ademas (precio, obra social). */
+    extra?: Record<string, unknown>;
   } = {},
 ): Promise<Oferta> {
   const nombre = opciones.nombre ?? `Kinesio E2E ${nonce()}`;
@@ -642,6 +659,7 @@ export async function crearOferta(
       requiereProfesional: true,
       requiereEspacio: false,
       vigenciaHasta: opciones.vigenciaHasta,
+      ...opciones.extra,
     },
   );
   if (opciones.habilitarProfesional ?? true) {
@@ -775,4 +793,170 @@ export function verTurno(
   turnoId: number,
 ): Promise<Turno & { recepcion?: { estado: string; modalidad?: string } }> {
   return api.exigir('GET', `/api/v1/consultorios/${centro.consultorioId}/turnos/${turnoId}`);
+}
+
+/**
+ * Reserva el primer horario todavia futuro de HOY que siga libre (la recepcion solo opera turnos
+ * del dia). Devuelve `null` si ya no queda ninguno —pasadas las 23:30 en la zona de la sede— y el
+ * test se saltea diciendo por que. Dos workers pueden competir por el mismo horario: un 409
+ * `recurso-ocupado` es el otro test, y se prueba el siguiente.
+ */
+export async function turnoDeHoy(
+  api: ApiAkine,
+  centro: Centro,
+  oferta: Oferta,
+  persona: Persona,
+): Promise<Turno | null> {
+  const hoy = fechaLocal(centro.timezone);
+  const futuros = (await slotsDelDia(api, centro, oferta.id, hoy)).filter(
+    (s) => new Date(s.desde).getTime() > Date.now() + 60_000,
+  );
+  for (const slot of futuros) {
+    const respuesta = await pedirReserva(api, centro, oferta.id, persona.id, slot.desde);
+    if (respuesta.status() === 201) {
+      return (await respuesta.json()) as Turno;
+    }
+    expect(respuesta.status(), await respuesta.text()).toBe(409);
+  }
+  return null;
+}
+
+/** Marca la oferta como "exige prepago" (E-6, `PUT /politica-de-prepago`). */
+export async function exigirPrepago(
+  api: ApiAkine,
+  centro: Centro,
+  oferta: Oferta,
+): Promise<Oferta> {
+  const actualizada = await api.exigir<{ version: number; exigePrepago: boolean }>(
+    'PUT',
+    `/api/v1/consultorios/${centro.consultorioId}/ofertas/${oferta.id}/politica-de-prepago`,
+    { exigePrepago: true, expectedVersion: oferta.version },
+  );
+  expect(actualizada.exigePrepago).toBe(true);
+  return { ...oferta, version: actualizada.version };
+}
+
+// ---------------------------------------------------------------------------------------------
+// Precio, sesion cerrada y caja
+// ---------------------------------------------------------------------------------------------
+
+/**
+ * Precio particular vigente desde hoy. Sin precio el devengado NO crea la deuda al cerrar la
+ * sesion, y no lo avisa: solo deja un `log.warn` en el backend.
+ */
+export async function fijarPrecio(
+  api: ApiAkine,
+  centro: Centro,
+  oferta: Oferta,
+  importe: number,
+): Promise<void> {
+  await api.exigir(
+    'POST',
+    `/api/v1/consultorios/${centro.consultorioId}/ofertas/${oferta.id}/precios-particulares`,
+    { importe, moneda: 'ARS', vigenciaDesde: fechaLocal(centro.timezone) },
+  );
+}
+
+/** Cliente de la API como la profesional del centro, con el contexto del centro elegido. */
+export function comoProfesional(centro: Centro): Promise<ApiAkine> {
+  return ApiAkine.como(centro.emailProfesional, { organizationId: centro.organizationId });
+}
+
+export interface Obligacion {
+  readonly id: number;
+  readonly sesionId: number;
+  readonly personaId: number;
+  readonly responsable: string;
+  readonly concepto: string;
+  readonly estado: string;
+  readonly importeOriginal: number;
+  readonly saldo: number;
+  readonly moneda: string;
+  readonly financiadorId?: number;
+}
+
+/**
+ * Inicia y cierra con asistencia PRESENTE la sesion del turno, como la profesional que lo atiende.
+ * El cierre devenga la deuda en la misma transaccion. Devuelve el id de la sesion.
+ */
+export async function cerrarSesionDelTurno(
+  profesional: ApiAkine,
+  centro: Centro,
+  turnoId: number,
+): Promise<number> {
+  const sesion = await profesional.exigir<{ id: number; version: number }>(
+    'POST',
+    `/api/v1/consultorios/${centro.consultorioId}/sesiones/turnos/${turnoId}`,
+  );
+  await profesional.exigir(
+    'POST',
+    `/api/v1/consultorios/${centro.consultorioId}/sesiones/${sesion.id}/cierre`,
+    {
+      asistencia: 'PRESENTE',
+      notaDeCierre: 'Sesion sintetica de los E2E: movilidad conservada, sin dolor.',
+      version: sesion.version,
+    },
+  );
+  return sesion.id;
+}
+
+/** Deudas de la persona, tal como las lee la cuenta corriente. */
+export function obligacionesDe(
+  api: ApiAkine,
+  centro: Centro,
+  personaId: number,
+): Promise<Obligacion[]> {
+  return api.exigir(
+    'GET',
+    `/api/v1/consultorios/${centro.consultorioId}/obligaciones?personaId=${personaId}`,
+  );
+}
+
+export interface JornadaDeCaja {
+  readonly id: number;
+  readonly estado: string;
+  readonly saldoTeorico: number;
+}
+
+/** La jornada ABIERTA de la sede, o `null`. */
+export async function cajaAbierta(api: ApiAkine, centro: Centro): Promise<JornadaDeCaja | null> {
+  const [abierta] = await api.exigir<JornadaDeCaja[]>(
+    'GET',
+    `/api/v1/consultorios/${centro.consultorioId}/caja/jornadas?estado=ABIERTA&limite=1`,
+  );
+  if (abierta === undefined) {
+    return null;
+  }
+  return api.exigir(
+    'GET',
+    `/api/v1/consultorios/${centro.consultorioId}/caja/jornadas/${abierta.id}`,
+  );
+}
+
+/**
+ * Deja la caja de la sede cerrada, arqueando lo que diga el teorico. La caja es UNA por sede y la
+ * comparten los tests que la usan: si uno fallo con la caja abierta, el siguiente arranca limpio.
+ */
+export async function dejarLaCajaCerrada(api: ApiAkine, centro: Centro): Promise<void> {
+  const abierta = await cajaAbierta(api, centro);
+  if (abierta !== null) {
+    await api.exigir(
+      'POST',
+      `/api/v1/consultorios/${centro.consultorioId}/caja/jornadas/${abierta.id}/cierre`,
+      { saldoTeoricoEsperado: abierta.saldoTeorico, saldoDeclarado: abierta.saldoTeorico },
+    );
+  }
+}
+
+/** Movimiento manual por la API: "otra computadora" que mueve la caja mientras la pantalla mira. */
+export function moverLaCaja(
+  api: ApiAkine,
+  centro: Centro,
+  movimiento: { tipo: 'INGRESO' | 'EGRESO'; importe: number; concepto: string },
+): Promise<unknown> {
+  return api.exigir('POST', `/api/v1/consultorios/${centro.consultorioId}/caja/movimientos`, {
+    ...movimiento,
+    medio: 'EFECTIVO',
+    idempotencyKey: randomUUID(),
+  });
 }

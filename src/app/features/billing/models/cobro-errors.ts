@@ -86,6 +86,8 @@ export type AccionCobro =
   | 'reintentar-con-clave-nueva'
   /** Falta contexto de trabajo: el unico camino es el selector. */
   | 'elegir-contexto'
+  /** El efectivo no tiene donde entrar: hay que abrir la caja de la sede, y el cobro sigue armado. */
+  | 'abrir-caja'
   /** No hay nada que ofrecer que no sea volver a intentar mas tarde. */
   | 'ninguna';
 
@@ -295,7 +297,9 @@ export function traducirErrorCobro(
         importeIntentado: error.numeroDeExtension('importeIntentado'),
       };
     case 'caja-no-abierta':
-      return base(MENSAJE_CAJA_NO_ABIERTA, 'caja-no-abierta', 'ninguna');
+      // La salida es abrir la caja, y la pantalla la ofrece con un enlace: el backend lo pide asi en
+      // su handler, y sin el enlace el operador se queda con un cartel y el paciente enfrente.
+      return base(MENSAJE_CAJA_NO_ABIERTA, 'caja-no-abierta', 'abrir-caja');
     case 'caja-saldo-insuficiente':
       return base(MENSAJE_CAJA_SIN_EFECTIVO, 'caja-sin-efectivo', 'corregir-importes');
     case 'validation-error':
