@@ -93,6 +93,20 @@ describe('App (layout)', () => {
     expect(skipLink?.getAttribute('href')).toBe('#contenido');
   });
 
+  it('el skip link mueve el foco al contenido sin navegar', () => {
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+
+    const html = fixture.nativeElement as HTMLElement;
+    expect(html.isConnected).toBe(true);
+    const clic = new MouseEvent('click', { bubbles: true, cancelable: true });
+    html.querySelector<HTMLAnchorElement>('a.skip-link')?.dispatchEvent(clic);
+
+    // Con `<base href="/">` la navegacion por defecto iria a `/#contenido`: no tiene que ocurrir.
+    expect(clic.defaultPrevented).toBe(true);
+    expect(document.activeElement).toBe(html.querySelector('main#contenido'));
+  });
+
   it('define los landmarks semanticos y el destino del skip link', () => {
     const fixture = TestBed.createComponent(App);
     fixture.detectChanges();
