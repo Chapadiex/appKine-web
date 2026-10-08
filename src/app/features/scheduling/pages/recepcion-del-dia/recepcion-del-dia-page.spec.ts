@@ -343,6 +343,11 @@ describe('RecepcionDelDiaPage', () => {
     expect(pedido.request.body).toEqual({ expectedVersion: 1 });
     pedido.flush({ ...DEL_DIA[3].recepcion, estado: 'ANULADA', version: 2 });
     await asentar(fixture);
+    // Sin recepcion vigente, el prepago "antes del check-in" lo recalcula el servidor (E-8).
+    httpMock
+      .expectOne(`${TURNOS}/304`)
+      .flush({ ...DEL_DIA[3], recepcion: undefined, llegadaEn: undefined, version: 5 });
+    await asentar(fixture);
 
     expect(textoDe(fixture)).toContain('anulada');
     expect(botonesDeLaFila(fixture, 'Ibarra, Dario')).toEqual(['Registrar la llegada']);
@@ -432,15 +437,15 @@ describe('RecepcionDelDiaPage', () => {
     expect(textoDe(fixture)).toContain('no se pudo averiguar la zona horaria');
   });
 
-  describe('prepago (E-6)', () => {
+  describe('prepago (E-6 y E-8)', () => {
+    const PREPAGO_PENDIENTE = { estado: 'PENDIENTE', importeSugerido: 15000, moneda: 'ARS' };
+    const PREPAGO_REGISTRADO = { estado: 'REGISTRADO', cobroId: 9, importe: 15000, moneda: 'ARS' };
+    // Con recepcion vigente el servidor manda el mismo prepago en el turno y en la recepcion.
     const PENDIENTE = {
       ...DEL_DIA[3],
       personaId: 501,
-      recepcion: {
-        ...DEL_DIA[3].recepcion,
-        estado: 'VALIDADA',
-        prepago: { estado: 'PENDIENTE', importeSugerido: 15000, moneda: 'ARS' },
-      },
+      prepago: PREPAGO_PENDIENTE,
+      recepcion: { ...DEL_DIA[3].recepcion, estado: 'VALIDADA', prepago: PREPAGO_PENDIENTE },
     };
 
     it('PENDIENTE avisa con el sugerido, no bloquea y lleva al cobro con el turno', async () => {
@@ -451,6 +456,7 @@ describe('RecepcionDelDiaPage', () => {
 
       const texto = fila(fixture, 'Ibarra, Dario').textContent ?? '';
       expect(texto).toContain('Prepago pendiente');
+      expect(texto).not.toContain('si se atiende como particular');
       expect(texto).toMatch(/sugerido \$\s?15\.000,00/);
       // Avisa y no bloquea: pasar a espera sigue disponible.
       expect(botonesDeLaFila(fixture, 'Ibarra, Dario')).toContain('Pasar a espera');
@@ -484,15 +490,64 @@ describe('RecepcionDelDiaPage', () => {
         turnos: [
           {
             ...PENDIENTE,
-            recepcion: {
-              ...PENDIENTE.recepcion,
-              prepago: { estado: 'REGISTRADO', cobroId: 9, importe: 15000, moneda: 'ARS' },
-            },
+            prepago: PREPAGO_REGISTRADO,
+            recepcion: { ...PENDIENTE.recepcion, prepago: PREPAGO_REGISTRADO },
           },
         ],
       });
 
       expect(textoDe(fixture)).toContain('Prepago registrado por');
+      expect(textoDe(fixture)).not.toContain('Registrar prepago');
+    });
+
+    it('antes del check-in avisa "si se atiende como particular" y ofrece cobrar igual', async () => {
+      const fixture = await montar({
+        permisos: [PERMISO_TURNO_READ, PERMISO_TURNO_MANAGE, PERMISO_COBRO_REGISTER],
+        turnos: [{ ...DEL_DIA[0], personaId: 500, prepago: PREPAGO_PENDIENTE }],
+      });
+
+      const texto = fila(fixture, 'Ramirez, Ana').textContent ?? '';
+      expect(texto).toContain('Sin recepcion');
+      expect(texto).toContain('Prepago pendiente si se atiende como particular');
+      expect(botonesDeLaFila(fixture, 'Ramirez, Ana')).toContain('Registrar la llegada');
+      const enlace = Array.from(fila(fixture, 'Ramirez, Ana').querySelectorAll('a')).find((a) =>
+        (a.textContent ?? '').includes('Registrar prepago'),
+      ) as HTMLAnchorElement;
+      expect(enlace.getAttribute('href')).toBe(
+        `/pacientes/500/cuenta-corriente/cobrar?turnoId=301&fecha=${FECHA}` +
+          '&importeSugerido=15000&monedaSugerida=ARS',
+      );
+    });
+
+    it('un turno cancelado con anticipo lo muestra para reintegrar, sin ofrecer cobrar', async () => {
+      const fixture = await montar({
+        permisos: [PERMISO_TURNO_READ, PERMISO_TURNO_MANAGE, PERMISO_COBRO_REGISTER],
+        turnos: [{ ...DEL_DIA[2], personaId: 502, prepago: PREPAGO_REGISTRADO }],
+      });
+
+      const texto = fila(fixture, 'Vega, Carla').textContent ?? '';
+      expect(texto).toContain('para un turno que no se va a atender');
+      expect(texto).toContain('reintegrarlo');
+      expect(texto).not.toContain('Registrar prepago');
+    });
+
+    it('al validar con cobertura la fila toma el prepago de la recepcion devuelta', async () => {
+      const fixture = await montar({
+        permisos: [PERMISO_TURNO_READ, PERMISO_TURNO_MANAGE, PERMISO_COBRO_REGISTER],
+        turnos: [{ ...PENDIENTE, recepcion: { ...PENDIENTE.recepcion, estado: 'LLEGO' } }],
+      });
+
+      clickearEnLaFila(fixture, 'Ibarra, Dario', 'Validar cobertura');
+      httpMock.expectOne(recepcion(304, 'validacion')).flush({
+        ...PENDIENTE.recepcion,
+        estado: 'VALIDADA',
+        modalidad: 'COBERTURA',
+        prepago: { estado: 'NO_EXIGIDO' },
+        version: 2,
+      });
+      await asentar(fixture);
+
+      expect(fila(fixture, 'Ibarra, Dario').textContent).not.toContain('Prepago pendiente');
       expect(textoDe(fixture)).not.toContain('Registrar prepago');
     });
   });

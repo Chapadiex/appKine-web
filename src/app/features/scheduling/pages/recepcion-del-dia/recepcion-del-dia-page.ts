@@ -87,12 +87,22 @@ const CAUSAS_QUE_RELEEN: ReadonlySet<CausaAgenda> = new Set<CausaAgenda>([
  * <p>Los instantes vienen en UTC y las horas del mostrador son locales de la sede. Si la zona
  * llegara vacia, la pantalla <b>rotula UTC</b> en vez de mentir con la del navegador.
  *
- * <h2>7. El prepago avisa, no bloquea (E-6, DP-06 / ADR-0013)</h2>
+ * <h2>7. El prepago avisa, no bloquea, y se ve antes de la llegada (E-6 y E-8, DP-06 / ADR-0013)</h2>
  *
- * <p>`Recepcion.prepago` lo calcula el servidor al leer. `PENDIENTE` se muestra como alerta con el
- * precio sugerido y ofrece "Registrar prepago", que lleva al registro de cobro de `billing` en modo
- * anticipo atado al turno. Ninguna transicion de esta pantalla mira el prepago: pasar a espera con
- * el prepago pendiente se permite y el servidor deja constancia.
+ * <p>Desde el contrato 0.68.0 el servidor calcula `TurnoDelDia.prepago` para <b>todas</b> las filas,
+ * haya recepcion o no, y con recepcion vigente es el mismo que `recepcion.prepago`. Por eso esta
+ * pantalla lee una sola fuente, la del turno, y no la de la recepcion.
+ *
+ * <p>`PENDIENTE` se muestra como alerta con el precio sugerido y ofrece "Registrar prepago", que
+ * lleva al registro de cobro de `billing` en modo anticipo atado al turno. Antes del check-in vale
+ * "si se atiende como particular": la cobertura se resuelve al validar. Un `REGISTRADO` en un turno
+ * cancelado se muestra igual, porque es un anticipo que hay que reintegrar. Ninguna transicion de
+ * esta pantalla mira el prepago: pasar a espera con el prepago pendiente se permite y el servidor
+ * deja constancia.
+ *
+ * <p>Las transiciones devuelven la recepcion y no el turno, asi que el prepago de la fila se toma de
+ * `recepcion.prepago` al fusionar; si la recepcion deja de ser vigente (anulada), la fila se relee
+ * para que el servidor recalcule el del turno.
  */
 @Component({
   selector: 'app-recepcion-del-dia-page',
@@ -113,7 +123,6 @@ export class RecepcionDelDiaPage {
   protected readonly textoDeEstado = textoDeEstado;
   protected readonly textoDeRecepcion = textoDeRecepcion;
   protected readonly textoDeModalidad = textoDeModalidad;
-  protected readonly textoDePrepago = textoDePrepago;
 
   /** Dia que se muestra. Vive en un signal aparte del input: el selector lo mueve sin navegar. */
   protected readonly dia = signal(hoy());
@@ -346,23 +355,33 @@ export class RecepcionDelDiaPage {
   }
 
   /**
-   * `true` cuando la fila ofrece "Registrar prepago" (E-6): la oferta lo exige, no hay anticipo y
-   * el turno sigue siendo una reserva viva, que es lo unico que el backend admite. Si no se cumple
+   * `true` cuando la fila ofrece "Registrar prepago" (E-6, E-8): la oferta lo exige, no hay anticipo
+   * y el turno sigue siendo una reserva viva, que es lo unico que el backend admite. <b>No hace falta
+   * que haya llegado</b>: el anticipo se puede cobrar antes del check-in. Si no se cumple el servidor
    * igual responde 409 `prepago-no-admitido`; esto solo evita ofrecer lo que va a fallar.
    */
   protected admitePrepago(turno: TurnoDelDia): boolean {
     const reservaViva =
       turno.estado === TurnoDelDiaEstadoEnum.RESERVADO ||
       turno.estado === TurnoDelDiaEstadoEnum.CONFIRMADO;
-    return (
-      reservaViva &&
-      turno.personaId !== undefined &&
-      turno.recepcion?.prepago?.estado === PrepagoDeRecepcionEstadoEnum.PENDIENTE
-    );
+    return reservaViva && turno.personaId !== undefined && this.prepagoPendiente(turno);
   }
 
   protected prepagoPendiente(turno: TurnoDelDia): boolean {
-    return turno.recepcion?.prepago?.estado === PrepagoDeRecepcionEstadoEnum.PENDIENTE;
+    return turno.prepago?.estado === PrepagoDeRecepcionEstadoEnum.PENDIENTE;
+  }
+
+  /**
+   * Texto del prepago de la fila. Sin recepcion vigente, un pendiente vale "si se atiende como
+   * particular"; en un turno cancelado o ausente, un registrado es un anticipo para reintegrar.
+   */
+  protected textoDePrepago(turno: TurnoDelDia): string {
+    return textoDePrepago(turno.prepago, {
+      antesDelCheckin: !recepcionAbierta(turno.recepcion),
+      turnoCaido:
+        turno.estado === TurnoDelDiaEstadoEnum.CANCELADO ||
+        turno.estado === TurnoDelDiaEstadoEnum.AUSENTE,
+    });
   }
 
   /**
@@ -375,7 +394,7 @@ export class RecepcionDelDiaPage {
   }
 
   protected queryDePrepago(turno: TurnoDelDia): Record<string, string | number> {
-    const prepago = turno.recepcion?.prepago;
+    const prepago = turno.prepago;
     return {
       turnoId: turno.id ?? 0,
       fecha: this.dia(),
@@ -426,8 +445,15 @@ export class RecepcionDelDiaPage {
         this.enVuelo.set(null);
         this.exito.set(mensaje(recepcion));
         const vigente = recepcion.estado === RecepcionEstadoEnum.ANULADA ? undefined : recepcion;
-        this.fusionar(turnoId, { recepcion: vigente, llegadaEn: vigente?.llegadaEn });
-        if (releerTurno) {
+        this.fusionar(turnoId, {
+          recepcion: vigente,
+          llegadaEn: vigente?.llegadaEn,
+          // Con recepcion vigente, el prepago del turno ES el de la recepcion (E-8).
+          ...(vigente?.prepago ? { prepago: vigente.prepago } : {}),
+        });
+        // Sin recepcion vigente el prepago vuelve a ser el "antes del check-in", que solo el
+        // servidor sabe recalcular.
+        if (releerTurno || vigente === undefined) {
           this.refrescarFila(turnoId);
         }
       },
@@ -460,6 +486,7 @@ export class RecepcionDelDiaPage {
           ...leido,
           recepcion: leido.recepcion,
           llegadaEn: leido.llegadaEn,
+          prepago: leido.prepago,
         }),
       error: () => undefined,
     });

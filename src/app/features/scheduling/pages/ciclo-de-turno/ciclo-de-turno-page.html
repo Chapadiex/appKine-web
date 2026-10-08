@@ -32,6 +32,11 @@
       </dd>
     }
 
+    @if (textoDePrepago(); as prepago) {
+      <!-- E-8: se ve antes de la llegada. Avisa y no bloquea ninguna transicion (DP-06). -->
+      <dt>Prepago</dt>
+      <dd>{{ prepago }}</dd>
+    }
     @if (serieId(); as serie) {
       <dt>Serie</dt>
       <dd>

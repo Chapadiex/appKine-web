@@ -135,6 +135,19 @@ describe('CicloDeTurnoPage', () => {
     );
   });
 
+  it('muestra el prepago pendiente del turno antes de la llegada (E-8), sin bloquear nada', async () => {
+    const fixture = await montar({
+      leido: {
+        ...TURNO_LEIDO,
+        prepago: { estado: 'PENDIENTE', importeSugerido: 15000, moneda: 'ARS' },
+      },
+    });
+
+    const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(texto).toContain('Prepago pendiente si se atiende como particular');
+    expect(texto).toMatch(/sugerido \$\s?15\.000,00/);
+  });
+
   it('la ausencia sale con el motivo VACIO: el contrato lo declara opcional', async () => {
     const fixture = await montar();
     clickear(fixture, 'Marcar que no vino');
@@ -409,14 +422,14 @@ describe('CicloDeTurnoPage', () => {
    * de la query — que es el camino que existia antes de que hubiera lectura, y que sigue
    * teniendo que funcionar.
    */
-  function responderLectura(falla: boolean, serieId?: number): void {
+  function responderLectura(falla: boolean, leido: object = TURNO_LEIDO): void {
     const pedido = httpMock.expectOne(
       (p: HttpRequest<unknown>) => p.method === 'GET' && p.url === TURNO_URL,
     );
     if (falla) {
       pedido.flush(null, { status: 500, statusText: 'Server Error' });
     } else {
-      pedido.flush(serieId === undefined ? TURNO_LEIDO : { ...TURNO_LEIDO, serieId });
+      pedido.flush(leido);
     }
   }
 
@@ -425,6 +438,7 @@ describe('CicloDeTurnoPage', () => {
       version?: string;
       permisos?: string[];
       lecturaFalla?: boolean;
+      leido?: object;
       serieId?: number;
     } = {},
   ): Promise<ComponentFixture<CicloDeTurnoPage>> {
@@ -447,7 +461,13 @@ describe('CicloDeTurnoPage', () => {
     fixture.componentRef.setInput('fecha', FECHA);
     fixture.detectChanges();
 
-    responderLectura(opciones.lecturaFalla === true, opciones.serieId);
+    responderLectura(
+      opciones.lecturaFalla === true,
+      opciones.leido ??
+        (opciones.serieId === undefined
+          ? TURNO_LEIDO
+          : { ...TURNO_LEIDO, serieId: opciones.serieId }),
+    );
     httpMock.expectOne(HISTORIAL).flush(EVENTOS);
     httpMock.expectOne(esAgenda()).flush(DIA);
     await asentar(fixture);
