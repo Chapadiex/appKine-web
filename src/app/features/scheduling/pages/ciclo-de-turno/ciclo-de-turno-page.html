@@ -37,6 +37,14 @@
       <dt>Prepago</dt>
       <dd>{{ prepago }}</dd>
     }
+    @if (serieId(); as serie) {
+      <dt>Serie</dt>
+      <dd>
+        <a class="enlace" [routerLink]="['/agenda', 'series', serie]">
+          Es parte de una serie semanal: verla
+        </a>
+      </dd>
+    }
   </dl>
 
   @if (estado() === '') {

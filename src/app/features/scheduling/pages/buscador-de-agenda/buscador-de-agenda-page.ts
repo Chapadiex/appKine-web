@@ -4,7 +4,7 @@ import { Router, RouterLink } from '@angular/router';
 import { Agenda } from '../../../../api/generated/model/agenda';
 import { DiaDeAgenda } from '../../../../api/generated/model/dia-de-agenda';
 import { OfertaResponse } from '../../../../api/generated/model/oferta-response';
-import { PERMISO_TURNO_MANAGE } from '../../../../core/models/permisos';
+import { PERMISO_TURNO_MANAGE, PERMISO_TURNO_READ } from '../../../../core/models/permisos';
 import { PermissionsStore } from '../../../../core/services/permissions.store';
 import { ProfesionalHabilitado } from '../../../../api/generated/model/profesional-habilitado';
 import { SlotDisponible } from '../../../../api/generated/model/slot-disponible';
@@ -85,6 +85,8 @@ export class BuscadorDeAgendaPage {
    * o un texto, <b>nunca</b> para esconderlo.
    */
   protected readonly puedeReservar = computed(() => this.permisos.tiene(PERMISO_TURNO_MANAGE));
+  /** La bandeja de series pide `turno:read` (E-8). UX: el backend rechaza igual. */
+  protected readonly puedeVerSeries = computed(() => this.permisos.tiene(PERMISO_TURNO_READ));
   protected readonly diaSinSlots = diaSinSlots;
   protected readonly fechaEnPalabras = fechaEnPalabras;
   protected readonly slotCompleto = slotCompleto;

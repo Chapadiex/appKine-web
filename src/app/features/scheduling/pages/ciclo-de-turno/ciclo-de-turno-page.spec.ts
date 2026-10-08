@@ -125,6 +125,14 @@ describe('CicloDeTurnoPage', () => {
     expect(texto).toContain('09:00');
     expect(texto).toContain('America/Argentina/Cordoba');
     expect(texto).toContain('Se reservo el turno');
+    expect(enlaceCon(fixture, 'Es parte de una serie')).toBeNull();
+  });
+
+  it('un turno de una serie enlaza a la serie', async () => {
+    const fixture = await montar({ serieId: 7 });
+    expect(enlaceCon(fixture, 'Es parte de una serie')?.getAttribute('href')).toBe(
+      '/agenda/series/7',
+    );
   });
 
   it('muestra el prepago pendiente del turno antes de la llegada (E-8), sin bloquear nada', async () => {
@@ -431,6 +439,7 @@ describe('CicloDeTurnoPage', () => {
       permisos?: string[];
       lecturaFalla?: boolean;
       leido?: object;
+      serieId?: number;
     } = {},
   ): Promise<ComponentFixture<CicloDeTurnoPage>> {
     tenantContext.select({
@@ -452,7 +461,13 @@ describe('CicloDeTurnoPage', () => {
     fixture.componentRef.setInput('fecha', FECHA);
     fixture.detectChanges();
 
-    responderLectura(opciones.lecturaFalla === true, opciones.leido);
+    responderLectura(
+      opciones.lecturaFalla === true,
+      opciones.leido ??
+        (opciones.serieId === undefined
+          ? TURNO_LEIDO
+          : { ...TURNO_LEIDO, serieId: opciones.serieId }),
+    );
     httpMock.expectOne(HISTORIAL).flush(EVENTOS);
     httpMock.expectOne(esAgenda()).flush(DIA);
     await asentar(fixture);
