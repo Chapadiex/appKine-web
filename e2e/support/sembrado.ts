@@ -211,6 +211,11 @@ export async function deAUnLogin<T>(accion: () => Promise<T>): Promise<T> {
 // Cliente HTTP con sesion
 // ---------------------------------------------------------------------------------------------
 
+export interface OpcionesDeSesion {
+  readonly password?: string;
+  readonly organizationId?: number;
+}
+
 /**
  * Cliente de la API autenticado como la administradora del centro, con contexto ya elegido.
  *
@@ -224,11 +229,16 @@ export class ApiAkine {
   private constructor(
     private readonly http: APIRequestContext,
     private readonly email: string,
+    private readonly opciones: OpcionesDeSesion,
   ) {}
 
-  static async como(email: string): Promise<ApiAkine> {
+  /**
+   * Ingresa como `email`. Por defecto con {@link PASSWORD} y en el PRIMER contexto que devuelve
+   * `/me/contexts`; `organizationId` elige otro, para la cuenta que es miembro de dos centros.
+   */
+  static async como(email: string, opciones: OpcionesDeSesion = {}): Promise<ApiAkine> {
     const http = await fabricaDeRequest.newContext({ baseURL: API });
-    const api = new ApiAkine(http, email);
+    const api = new ApiAkine(http, email, opciones);
     await api.ingresar();
     return api;
   }
@@ -243,7 +253,7 @@ export class ApiAkine {
 
   private async ingresarSinCerrojo(): Promise<void> {
     const login = await this.http.post('/api/v1/auth/login', {
-      data: { email: this.email, password: PASSWORD },
+      data: { email: this.email, password: this.opciones.password ?? PASSWORD },
     });
     expect(login.status(), `login de ${this.email}: ${await login.text()}`).toBe(200);
     const preContexto = ((await login.json()) as { accessToken: string }).accessToken;
@@ -251,11 +261,19 @@ export class ApiAkine {
     const contextos = await this.http.get('/api/v1/me/contexts', {
       headers: { authorization: `Bearer ${preContexto}` },
     });
-    const [contexto] = (await contextos.json()) as {
+    const disponibles = (await contextos.json()) as {
       organizationId: number;
       consultorioId: number;
     }[];
-    expect(contexto, `${this.email} tiene un contexto de trabajo`).toBeDefined();
+    const buscado = this.opciones.organizationId;
+    const contexto =
+      buscado === undefined
+        ? disponibles[0]
+        : disponibles.find((c) => c.organizationId === buscado);
+    expect(
+      contexto,
+      `${this.email} tiene un contexto de trabajo${buscado === undefined ? '' : ` en ${buscado}`}`,
+    ).toBeDefined();
 
     const elegido = await this.http.post('/api/v1/auth/context', {
       headers: { authorization: `Bearer ${preContexto}` },
@@ -270,6 +288,7 @@ export class ApiAkine {
     metodo: 'GET' | 'POST' | 'PUT' | 'DELETE',
     ruta: string,
     cuerpo?: unknown,
+    cabeceras: Record<string, string> = {},
   ): Promise<APIResponse> {
     const hacer = (): Promise<APIResponse> =>
       this.http.fetch(ruta, {
@@ -277,6 +296,7 @@ export class ApiAkine {
         headers: {
           authorization: `Bearer ${this.token ?? ''}`,
           accept: 'application/json, application/problem+json',
+          ...cabeceras,
         },
         data: cuerpo,
       });
@@ -507,7 +527,7 @@ async function servicioAgendable(api: ApiAkine): Promise<number> {
  * credencial, asi que `password` es obligatorio). Si el enlace no esta —Mailpit reiniciado, o
  * vencido—, se pide el reenvio publico, que vale mientras la cuenta siga pendiente.
  */
-async function ingresarComoPlataforma(http: APIRequestContext): Promise<string> {
+export async function ingresarComoPlataforma(http: APIRequestContext): Promise<string> {
   const ingresar = (): Promise<APIResponse> =>
     deAUnLogin(() =>
       http.post('/api/v1/auth/login', { data: { email: EMAIL_PLATAFORMA, password: PASSWORD } }),
