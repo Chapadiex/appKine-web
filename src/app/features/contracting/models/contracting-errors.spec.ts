@@ -91,6 +91,12 @@ describe('traducirErrorContracting', () => {
     expect(mensajes[3]).toContain('grilla del convenio');
     expect(new Set(mensajes).size).toBe(4);
 
+    // B-3: el alta con oferta habla de la oferta, no de un arancel que todavia no existe.
+    const deOferta = traducirErrorContracting(problema(404, 'not-found'), 'arancel-de-oferta');
+    expect(deOferta.causa).toBe('no-encontrado');
+    expect(deOferta.mensaje).toContain('oferta elegida');
+    expect(deOferta.mensaje).not.toContain('grilla del convenio');
+
     // Y el resto NO cambia con el ambito: si cambiara, harian falta cuatro traductores.
     const permiso = (['financiador', 'convenio'] as const).map(
       (ambito) => traducirErrorContracting(problema(403, 'forbidden'), ambito).mensaje,

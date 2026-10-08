@@ -263,6 +263,10 @@ export class ConveniosApi {
    * <p><b>`fecha` es el dia de la PRESTACION, no el de hoy.</b> Consultar una fecha pasada
    * devuelve el arancel que regia entonces, que es lo que hace que una atencion retroactiva se
    * cobre bien. Si se omite, el backend usa hoy.
+   *
+   * <p><b>`ofertaId` es opcional (B-3, RF-M16-008).</b> Con oferta, manda el arancel propio de esa
+   * oferta y, si no tiene, el general de la practica; la respuesta trae `ofertaId` solo cuando
+   * salio el propio. Sin oferta resuelve siempre el general, como antes de B-3.
    */
   resolverArancelEfectivo(
     consultorioId: number,
@@ -271,6 +275,7 @@ export class ConveniosApi {
       readonly planId: number;
       readonly practicaId: number;
       readonly fecha?: string;
+      readonly ofertaId?: number;
     },
   ): Observable<ArancelEfectivoResponse> {
     return this.api.resolveArancelEfectivo({
@@ -279,6 +284,7 @@ export class ConveniosApi {
       planId: clave.planId,
       practicaId: clave.practicaId,
       fecha: clave.fecha,
+      ofertaId: clave.ofertaId,
     });
   }
 }

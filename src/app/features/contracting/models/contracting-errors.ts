@@ -91,7 +91,15 @@ export interface ErrorContracting {
  * El resto de los mensajes es identico para las cuatro entidades, y por eso no hay cuatro
  * traductores.
  */
-export type AmbitoContracting = 'financiador' | 'plan' | 'convenio' | 'arancel';
+export type AmbitoContracting =
+  | 'financiador'
+  | 'plan'
+  | 'convenio'
+  | 'arancel'
+  // B-3: el alta de un arancel atado a una oferta. El 404 que mas probablemente produce es la
+  // OFERTA —dada de baja o de otra sede—, y decirle "ese arancel ya no existe" a quien todavia no
+  // lo creo manda a recargar una grilla que no tiene nada que ver.
+  | 'arancel-de-oferta';
 
 const MENSAJE_GENERICO = 'No pudimos completar la operacion. Volve a intentar en un momento.';
 const MENSAJE_DE_RED = 'No se pudo contactar al servidor. Revisa tu conexion y volve a intentar.';
@@ -130,6 +138,10 @@ const MENSAJE_NO_ENCONTRADO: Readonly<Record<AmbitoContracting, string>> = {
     'Ese convenio ya no existe, o no es de esta sede. Recarga el listado para ver los que hay ' +
     'ahora.',
   arancel: 'Ese arancel ya no existe. Recarga la grilla del convenio para ver los que hay ahora.',
+  'arancel-de-oferta':
+    'No encontramos la oferta elegida en esta sede: puede haberse dado de baja o ser de otra ' +
+    'sede. Recarga la pagina para ver las ofertas vigentes, o deja el arancel como general del ' +
+    'convenio.',
 };
 
 /**
