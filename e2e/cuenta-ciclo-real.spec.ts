@@ -284,21 +284,7 @@ test.describe('Cuenta de punta a punta contra el backend real (A-6)', () => {
       }
     });
 
-    /*
-     * DEFECTO DEL BACKEND, medido el 08/10/2026 contra `appKine-api` `main` (9c15b95, contrato
-     * 0.72.0). `test.fail()` lo deja escrito y en verde mientras siga roto; el dia que el backend lo
-     * corrija, Playwright avisa que "paso un test que se esperaba que fallara" y hay que sacarlo.
-     *
-     * `GET /organizations/{orgId}/audit-events` no mira el contexto activo: autoriza contra la
-     * membership de la cuenta en `orgId`. Una cuenta que trabaja en el centro A (token `org=A`) lee
-     * la auditoria entera de B, donde es ORG_ADMIN, con 200. El contrato promete 404 —"La
-     * organizacion no existe o no es la del contexto del actor"— y `GET /organizations/{orgId}`
-     * con el mismo token SI responde 404. No le da a nadie datos que no podria ver cambiando de
-     * contexto, pero rompe la regla de que el contexto de trabajo acota todo lo que se lee.
-     */
     test('la auditoria se lee solo desde el contexto de esa organizacion', async () => {
-      test.fail(true, 'audit-events ignora el contexto activo: ver el comentario del test');
-
       const { emailProfesional, organizationId, organizacionPropia } = montaje;
       const enLoPropio = await ApiAkine.como(emailProfesional, {
         organizationId: organizacionPropia,
