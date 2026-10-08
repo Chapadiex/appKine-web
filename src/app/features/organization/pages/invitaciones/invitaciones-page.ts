@@ -14,6 +14,7 @@ import { RouterLink } from '@angular/router';
 import { catchError, of } from 'rxjs';
 
 import { ConfirmacionConMotivo } from '../../../../shared/components/confirmacion-con-motivo/confirmacion-con-motivo';
+import { ReintentoDeNotificacion } from '../../components/reintento-de-notificacion/reintento-de-notificacion';
 import { CreateInvitacionRequest } from '../../../../api/generated/model/create-invitacion-request';
 import { InvitacionResponse } from '../../../../api/generated/model/invitacion-response';
 import { InvitacionesService } from '../../../../api/generated/api/invitaciones.service';
@@ -75,7 +76,13 @@ const ROLES = [
  */
 @Component({
   selector: 'app-invitaciones-page',
-  imports: [ReactiveFormsModule, RouterLink, PermisoDirective, ConfirmacionConMotivo],
+  imports: [
+    ReactiveFormsModule,
+    RouterLink,
+    PermisoDirective,
+    ConfirmacionConMotivo,
+    ReintentoDeNotificacion,
+  ],
   templateUrl: './invitaciones-page.html',
   styleUrl: '../../organization.css',
 })

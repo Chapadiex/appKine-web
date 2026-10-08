@@ -1,0 +1,34 @@
+<section class="tarjeta" aria-labelledby="titulo-reintento-notificacion">
+  <h2 id="titulo-reintento-notificacion">Reintentar una notificacion que no salio</h2>
+  <p class="ayuda">
+    Si un correo quedo <b>fallido</b> o <b>agotado</b> —por ejemplo, el servidor de correo estuvo
+    caido—, se puede devolver a la cola. Solo se repite el envio, no la invitacion ni ninguna otra
+    accion. Todavia no hay un listado de notificaciones fallidas en pantalla: el numero lo da
+    soporte tecnico. Si lo que necesitas es mandarle de nuevo el enlace a una persona invitada, usa
+    <b>Reenviar</b> en su fila.
+  </p>
+
+  <form novalidate (submit)="reintentar($event)">
+    <div class="campo">
+      <label for="reintento-notificacion-id">Numero de la notificacion</label>
+      <input
+        id="reintento-notificacion-id"
+        type="text"
+        inputmode="numeric"
+        autocomplete="off"
+        [value]="numero()"
+        (input)="escribir($event)"
+      />
+    </div>
+    <button type="submit" class="boton boton--secundario" [disabled]="enviando()">
+      {{ enviando() ? 'Reintentando…' : 'Reintentar el envio' }}
+    </button>
+  </form>
+
+  @if (exito(); as mensaje) {
+    <p class="estado estado--ok" role="status">{{ mensaje }}</p>
+  }
+  @if (error(); as mensaje) {
+    <p class="estado estado--error" role="alert">{{ mensaje }}</p>
+  }
+</section>
