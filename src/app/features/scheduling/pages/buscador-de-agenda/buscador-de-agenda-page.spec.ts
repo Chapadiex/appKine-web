@@ -156,6 +156,38 @@ describe('BuscadorDeAgendaPage', () => {
     expect((fixture.nativeElement as HTMLElement).querySelectorAll('.dia').length).toBe(3);
   });
 
+  /**
+   * Encontrado por el E2E contra el backend real (AKINE E-2): con dos consultas en vuelo, la que
+   * volvia ULTIMA pisaba la grilla, aunque fuera la mas vieja. Cambiar `hasta` y enseguida `desde`
+   * dejaba los campos en una ventana y la grilla en otra — y la ventana mas ancha es justamente la
+   * que tarda mas.
+   */
+  it('una consulta nueva cancela la anterior: la grilla nunca muestra una ventana vieja', async () => {
+    const fixture = await montarConAgenda();
+    const raiz = fixture.nativeElement as HTMLElement;
+
+    const cambiarFecha = (id: string, valor: string): void => {
+      const campo = raiz.querySelector(id) as HTMLInputElement;
+      campo.value = valor;
+      campo.dispatchEvent(new Event('change'));
+    };
+    cambiarFecha('#agenda-hasta', '2026-10-30');
+    cambiarFecha('#agenda-desde', '2026-10-20');
+
+    const [vieja, nueva] = httpMock.match(esAgenda());
+    expect(vieja.cancelled).toBe(true);
+    expect(nueva.request.params.get('desde')).toBe('2026-10-20');
+
+    nueva.flush({
+      ...AGENDA_CON_TRES_DIAS,
+      dias: [{ fecha: '2026-10-20', motivoSinSlots: 'FERIADO', slots: [] }],
+    });
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(raiz.querySelectorAll('.dia').length).toBe(1);
+  });
+
   it(
     'no tiene violaciones de accesibilidad',
     async () => {

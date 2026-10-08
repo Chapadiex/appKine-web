@@ -1,5 +1,6 @@
 import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
+import { Subscription } from 'rxjs';
 
 import { Agenda } from '../../../../api/generated/model/agenda';
 import { DiaDeAgenda } from '../../../../api/generated/model/dia-de-agenda';
@@ -98,6 +99,14 @@ export class BuscadorDeAgendaPage {
   protected readonly profesionalId = signal<number | null>(null);
   protected readonly desde = signal(hoy());
   protected readonly hasta = signal(sumarDias(hoy(), DIAS_POR_DEFECTO));
+
+  /**
+   * La consulta de agenda en vuelo. Cada consulta nueva cancela la anterior: sin esto gana la
+   * respuesta que llega ULTIMA y no la del pedido mas nuevo, y la ventana mas ancha —la que tarda
+   * mas— pisaba la grilla de la que el usuario acababa de pedir. Lo destapo el E2E contra el
+   * backend real (AKINE E-2).
+   */
+  private consultaEnVuelo: Subscription | null = null;
 
   protected readonly agenda = signal<Agenda | null>(null);
   protected readonly cargando = signal(false);
@@ -228,7 +237,8 @@ export class BuscadorDeAgendaPage {
     this.error.set(null);
     this.faltaContexto.set(false);
 
-    this.api
+    this.consultaEnVuelo?.unsubscribe();
+    this.consultaEnVuelo = this.api
       .buscarAgenda(consultorioId, ofertaId, {
         desde: this.desde(),
         hasta: this.hasta(),

@@ -406,6 +406,36 @@ describe('RecepcionDelDiaPage', () => {
     httpMock.expectNone(esAgenda());
   });
 
+  /**
+   * Encontrado por el E2E contra el backend real (AKINE E-2). El unico enlace a esta pantalla
+   * —"Ver la recepcion del dia", desde la agenda— no lleva `?fecha=`, y `withComponentInputBinding`
+   * no deja el input en su default cuando falta el parametro: lo pone en `undefined`. La pantalla
+   * llamaba al cliente generado con `fecha` indefinida, que lanza antes de salir a la red, y
+   * quedaba en blanco: sin lista, sin error y con el campo de fecha vacio.
+   */
+  it('sin `?fecha=` en la URL abre el dia de hoy, que es lo que pasa al entrar desde la agenda', async () => {
+    tenantContext.select({
+      organizationId: 1,
+      organizationName: 'Centro Belgrano',
+      consultorioId: CONSULTORIO,
+      consultorioName: 'Sede Centro',
+    });
+    permisos.cargar().subscribe();
+    httpMock.expectOne(RUTA_PERMISOS_EFECTIVOS).flush({ permissions: [PERMISO_TURNO_READ] });
+
+    const fixture = TestBed.createComponent(RecepcionDelDiaPage);
+    // Lo que hace el router con un query param ausente.
+    fixture.componentRef.setInput('fecha', undefined);
+    fixture.detectChanges();
+
+    const pedido = httpMock.expectOne(esDelDia());
+    expect(pedido.request.params.get('fecha')).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    pedido.flush({ fecha: pedido.request.params.get('fecha'), timezone: ZONA, turnos: [] });
+    await asentar(fixture);
+
+    expect(textoDe(fixture)).toContain('no tiene ningun turno agendado');
+  });
+
   it('cambiar la fecha vuelve a pedir ESE dia', async () => {
     const fixture = await montar();
 

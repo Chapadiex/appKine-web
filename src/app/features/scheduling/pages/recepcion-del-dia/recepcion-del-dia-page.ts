@@ -106,8 +106,15 @@ export class RecepcionDelDiaPage {
   private readonly permisos = inject(PermissionsStore);
   private readonly location = inject(Location);
 
-  /** De la query. Sin ella, hoy: la recepcion abre el dia que esta atendiendo. */
-  readonly fecha = input<string>('');
+  /**
+   * De la query. Sin ella, hoy: la recepcion abre el dia que esta atendiendo.
+   *
+   * <p>El `transform` no es decorativo: con `withComponentInputBinding`, un query param AUSENTE
+   * llega como `undefined` y no como el default. Sin normalizarlo, entrar desde el enlace de la
+   * agenda —que no lleva `?fecha=`— dejaba la pantalla en blanco. Lo destapo el E2E contra el
+   * backend real (AKINE E-2).
+   */
+  readonly fecha = input('', { transform: (valor: string | undefined) => valor ?? '' });
 
   protected readonly fechaEnPalabras = fechaEnPalabras;
   protected readonly textoDeEstado = textoDeEstado;

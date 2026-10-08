@@ -264,7 +264,14 @@ export class CicloDeTurnoPage {
     const sabiaLaOferta = this.numeroDeOferta() !== null;
     this.api.verTurno(consultorioId, turnoId).subscribe({
       next: (turno) => {
+        // La lectura es lo mas nuevo que hay: reemplaza a la respuesta de la ultima transicion,
+        // que `estado` y `versionConocida` prefieren. Sin esto, despues de un 409 por un turno
+        // que otra persona movio, releer traia la version nueva y la pantalla seguia mostrando
+        // y mandando la vieja: un 409 sin salida. Lo destapo el E2E contra el backend real
+        // (AKINE E-2).
+        this.turno.set(null);
         this.turnoLeido.set(turno);
+        this.fijarVersionEnLaUrl(turno.version);
         if (!sabiaLaOferta && this.numeroDeOferta() !== null) {
           this.cargarDestino();
         }
