@@ -232,49 +232,16 @@
           confirmado vuelve a quedar reservado, porque lo que el paciente confirmo era otro horario.
         </p>
 
-        <div class="campo">
-          <label for="turno-reprogramar-dia">Dia destino</label>
-          <input
-            id="turno-reprogramar-dia"
-            type="date"
-            [value]="fechaDestino()"
-            (change)="cambiarDiaDestino($any($event.target).value)"
-          />
-        </div>
-
-        <fieldset>
-          <legend>Horario destino — {{ fechaEnPalabras(fechaDestino()) }}</legend>
-          @if (slotsDestino().length === 0) {
-            <p class="estado estado--vacio">
-              Ese dia no tiene ningun horario disponible para esta oferta. Proba otro dia.
-            </p>
-          } @else {
-            <ul class="slots">
-              @for (slot of slotsDestino(); track slot.desde) {
-                <li>
-                  <button
-                    type="button"
-                    class="slot"
-                    [class.slot--completo]="slotCompleto(slot)"
-                    [disabled]="slotCompleto(slot)"
-                    [attr.aria-pressed]="esElDestino(slot)"
-                    (click)="elegirDestino(slot)"
-                  >
-                    <span class="slot__hora">{{ rangoDelSlot(slot) }}</span>
-                    @if (slotCompleto(slot)) {
-                      <span class="slot__nota">completo</span>
-                    } @else if (esElDestino(slot)) {
-                      <span class="slot__nota">elegido</span>
-                    }
-                  </button>
-                </li>
-              }
-            </ul>
-          }
-          @if (faltaHorario()) {
-            <p class="campo__error">Elegi el horario destino antes de mover el turno.</p>
-          }
-        </fieldset>
+        <app-selector-de-horario
+          idDia="turno-reprogramar-dia"
+          [fecha]="fechaDestino()"
+          [slots]="slotsDestino()"
+          [timezone]="timezone()"
+          [elegido]="instanteDestino()"
+          [faltaHorario]="faltaHorario()"
+          (diaCambiado)="cambiarDiaDestino($event)"
+          (slotElegido)="elegirDestino($event)"
+        />
       </akine-confirmacion-con-motivo>
     </section>
   }

@@ -14,9 +14,14 @@
 <div aria-live="polite">
   @if (resultado(); as hecho) {
     <p class="estado estado--ok">
-      Se cancelaron {{ hecho.afectados?.length ?? 0 }} turnos.
-      @if ((hecho.omitidos?.length ?? 0) > 0) {
-        {{ hecho.omitidos?.length }} quedaron como estaban.
+      @if (hecho.operacion === 'reprogramar') {
+        Se movieron {{ hecho.alcance.afectados?.length ?? 0 }} turnos. Cada uno conserva su numero,
+        su paciente y su historial, y vuelve a quedar reservado.
+      } @else {
+        Se cancelaron {{ hecho.alcance.afectados?.length ?? 0 }} turnos.
+      }
+      @if ((hecho.alcance.omitidos?.length ?? 0) > 0) {
+        {{ hecho.alcance.omitidos?.length }} quedaron como estaban.
       }
     </p>
   }
@@ -64,6 +69,15 @@
     </dl>
     @if (puedeOperar()) {
       <div class="acciones">
+        @if (primerPendiente(); as pivote) {
+          <button
+            type="button"
+            class="boton boton--secundario"
+            (click)="reprogramarDesde(pivote, Alcance.TODA_LA_SERIE)"
+          >
+            Reprogramar toda la serie
+          </button>
+        }
         <button
           type="button"
           class="boton boton--secundario"
@@ -75,7 +89,116 @@
     }
   </section>
 
-  @if (pedido(); as elegido) {
+  @if (reprogramacion(); as mover) {
+    <section class="tarjeta" aria-labelledby="titulo-reprogramar">
+      <h2 id="titulo-reprogramar">
+        Reprogramar desde el turno del {{ fechaHora(mover.pivote.inicio) }}
+      </h2>
+
+      <akine-confirmacion-con-motivo
+        idCampo="serie-reprogramar-motivo"
+        titulo="Confirmar la reprogramacion"
+        etiqueta="Motivo del cambio"
+        ayuda="Queda en el historial de cada turno, junto al horario del que vino."
+        [textoConfirmar]="'Mover ' + afectados().length + ' turnos'"
+        [enviando]="enviando() || previsualizando() || afectados().length === 0"
+        (confirmado)="reprogramar($event)"
+        (cancelado)="cerrar()"
+      >
+        <p class="ayuda">
+          Se elige el horario nuevo del turno de partida. Los demas se corren lo mismo, en hora de
+          la sede: si este pasa del lunes 09:00 al martes 10:00, todos pasan un dia y una hora mas
+          tarde. Se mueven todos o ninguno, y los que estaban confirmados vuelven a quedar
+          reservados.
+        </p>
+
+        <fieldset class="grupo">
+          <legend>Que turnos se mueven</legend>
+          @for (opcion of alcancesDeReprogramacion; track opcion) {
+            <label class="opcion-radio" [for]="'serie-reprogramar-alcance-' + opcion">
+              <input
+                type="radio"
+                name="serie-reprogramar-alcance"
+                [id]="'serie-reprogramar-alcance-' + opcion"
+                [checked]="mover.alcance === opcion"
+                (change)="cambiarAlcance(opcion)"
+              />
+              {{ textoDeAlcance(opcion) }}
+            </label>
+          }
+        </fieldset>
+
+        <app-selector-de-horario
+          idDia="serie-reprogramar-dia"
+          [fecha]="fechaDestino()"
+          [slots]="slotsDestino()"
+          [timezone]="timezone()"
+          [elegido]="instanteDestino()"
+          [faltaHorario]="faltaHorario()"
+          textoFaltaHorario="Elegi el horario nuevo del turno de partida antes de mover la serie."
+          (diaCambiado)="cambiarDiaDestino($event)"
+          (slotElegido)="elegirDestino($event)"
+        />
+
+        <label class="opcion-radio" for="serie-reprogramar-profesional">
+          <input
+            id="serie-reprogramar-profesional"
+            type="checkbox"
+            [checked]="cambiarProfesional()"
+            (change)="alternarProfesional($any($event.target).checked)"
+          />
+          Pasar los turnos al profesional del horario elegido
+        </label>
+        <p class="ayuda">
+          Sin marcar, cada turno conserva su profesional y solo se ofrecen los horarios del
+          profesional de este turno.
+        </p>
+
+        @if (previsualizando()) {
+          <p class="estado estado--cargando">Calculando que turnos se moverian…</p>
+        }
+
+        @if (alcance(); as calculado) {
+          @if (afectados().length > 0) {
+            <p>Se moverian estos {{ afectados().length }} turnos:</p>
+            <ul>
+              @for (turno of afectados(); track turno.id) {
+                <li>
+                  {{ fechaHora(turno.inicio) }}
+                  @if (destinoEstimado(turno); as destino) {
+                    → {{ destino }}
+                  }
+                </li>
+              }
+            </ul>
+            @if (instanteDestino() === '') {
+              <p class="ayuda">Elegi un horario para ver a donde pasaria cada uno.</p>
+            } @else {
+              <p class="ayuda">
+                El horario nuevo de cada uno es una estimacion: el servidor lo calcula y revisa que
+                haya lugar al confirmar.
+              </p>
+            }
+          } @else {
+            <p class="estado estado--vacio">
+              No hay ningun turno pendiente en ese alcance: no hay nada que mover.
+            </p>
+          }
+
+          @if ((calculado.omitidos?.length ?? 0) > 0) {
+            <p>Quedan como estan:</p>
+            <ul>
+              @for (omitido of calculado.omitidos ?? []; track omitido.turno?.id) {
+                <li>
+                  {{ fechaHora(omitido.turno?.inicio) }} — {{ textoDeOmitido(omitido.motivo) }}
+                </li>
+              }
+            </ul>
+          }
+        }
+      </akine-confirmacion-con-motivo>
+    </section>
+  } @else if (pedido(); as elegido) {
     <section class="tarjeta" aria-labelledby="titulo-alcance">
       <h2 id="titulo-alcance">Cancelar: {{ textoDeAlcance(elegido.alcance) }}</h2>
 
@@ -153,6 +276,15 @@
               <td>
                 <div class="acciones-fila">
                   @if (puedeOperar() && esPendiente(turno)) {
+                    <button
+                      type="button"
+                      class="boton boton--secundario"
+                      (click)="reprogramarDesde(turno)"
+                    >
+                      Reprogramar<span class="visualmente-oculto">
+                        desde el turno del {{ fechaHora(turno.inicio) }}</span
+                      >
+                    </button>
                     <button
                       type="button"
                       class="boton boton--secundario"

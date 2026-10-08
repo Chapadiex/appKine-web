@@ -20,6 +20,9 @@ import { fechaHoraEnZona } from './etiquetas-de-turno';
  *       Se resuelve volviendo a previsualizar.</li>
  *   <li><b>`turno-transicion-no-permitida`</b> en la cancelacion es "no queda ningun turno
  *       pendiente en el alcance".</li>
+ *   <li><b>La reprogramacion con alcance</b> tiene los mismos tres casos, pero lo que no paso es
+ *       que se movieran los turnos, y lo que se corrige ante un destino sin lugar es el horario
+ *       elegido, no la regla. Por eso el traductor recibe la {@link OperacionDeSerie}.</li>
  * </ul>
  */
 export type AccionSerie =
@@ -32,6 +35,9 @@ export type AccionSerie =
   | 'elegir-contexto'
   | 'ninguna';
 
+/** Que se estaba haciendo con la serie: cambia lo que el mensaje dice que no paso. */
+export type OperacionDeSerie = 'alta' | 'cancelar' | 'reprogramar';
+
 export interface ErrorSerie {
   readonly mensaje: string;
   readonly causa: CausaAgenda;
@@ -42,22 +48,55 @@ export interface ErrorSerie {
   readonly motivo: string;
 }
 
-const MENSAJE_CANTIDAD_CAMBIO =
-  'La serie cambio desde que se previsualizo: la cantidad de turnos afectados ya no es la que ' +
-  'confirmaste. No se cancelo nada. Volve a previsualizar y confirma de nuevo.';
+function mensajeCantidadCambio(nada: string): string {
+  return (
+    'La serie cambio desde que se previsualizo: la cantidad de turnos afectados ya no es la que ' +
+    `confirmaste. ${nada} Volve a previsualizar y confirma de nuevo.`
+  );
+}
 
-const MENSAJE_NADA_PENDIENTE =
-  'No queda ningun turno pendiente en ese alcance: los que hay ya pasaron, ya estan cancelados o ' +
-  'tienen una atencion. No se cancelo nada.';
+function mensajeNadaPendiente(nada: string): string {
+  return (
+    'No queda ningun turno pendiente en ese alcance: los que hay ya pasaron, ya estan cancelados o ' +
+    `tienen una atencion. ${nada}`
+  );
+}
+
+function nadaHecho(operacion: OperacionDeSerie): string {
+  return operacion === 'reprogramar' ? 'No se movio nada.' : 'No se cancelo nada.';
+}
 
 const MENSAJE_SIN_LUGAR_SIN_FECHA =
   'Una de las fechas de la serie no tiene lugar, asi que no se reservo ningun turno: la serie ' +
   'entra entera o no entra. Revisa las ocurrencias y cambia el dia, la hora o la fecha de inicio.';
 
-/** Traduce un error de alta o cancelacion de serie. `timezone` es la de la sede, para la fecha. */
-export function traducirErrorSerie(error: unknown, timezone = ''): ErrorSerie {
+/**
+ * Traduce un error de una operacion de serie. `timezone` es la de la sede, para la fecha.
+ *
+ * <p>`operacion` vale `cancelar` por omision porque es el unico caso que no lo dice: el alta
+ * solo produce los errores de "sin lugar", que no dependen de el.
+ */
+export function traducirErrorSerie(
+  error: unknown,
+  timezone = '',
+  operacion: OperacionDeSerie = 'cancelar',
+): ErrorSerie {
   const base = traducirErrorAgenda(error);
   const ocurrenciaInicio = extensionDeTexto(error, 'ocurrenciaInicio');
+
+  if (operacion === 'reprogramar' && (ocurrenciaInicio !== '' || esSinLugar(base.causa))) {
+    return {
+      ...resumen(base, 'revisar-ocurrencias'),
+      ocurrenciaInicio,
+      mensaje:
+        'No se movio ningun turno: la reprogramacion entra entera o no entra. ' +
+        (ocurrenciaInicio === ''
+          ? 'Uno de los destinos no tiene lugar. '
+          : `El turno que iba a quedar el ${fechaHoraEnZona(ocurrenciaInicio, timezone)} ` +
+            `${causaDeOcurrencia(base)}. `) +
+        'Elegi otro horario para el turno de partida o achica el alcance.',
+    };
+  }
 
   if (ocurrenciaInicio !== '' || esSinLugar(base.causa)) {
     return {
@@ -74,9 +113,15 @@ export function traducirErrorSerie(error: unknown, timezone = ''): ErrorSerie {
 
   switch (base.causa) {
     case 'conflicto':
-      return { ...resumen(base, 'releer-alcance'), mensaje: MENSAJE_CANTIDAD_CAMBIO };
+      return {
+        ...resumen(base, 'releer-alcance'),
+        mensaje: mensajeCantidadCambio(nadaHecho(operacion)),
+      };
     case 'turno-transicion-no-permitida':
-      return { ...resumen(base, 'releer-alcance'), mensaje: MENSAJE_NADA_PENDIENTE };
+      return {
+        ...resumen(base, 'releer-alcance'),
+        mensaje: mensajeNadaPendiente(nadaHecho(operacion)),
+      };
     case 'persona-sin-perfil-paciente':
       return resumen(base, 'activar-perfil');
     case 'clave-reusada':

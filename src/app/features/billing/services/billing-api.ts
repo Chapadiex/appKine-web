@@ -3,6 +3,9 @@ import { Observable } from 'rxjs';
 
 import { Cobro } from '../../../api/generated/model/cobro';
 import { CobrosService } from '../../../api/generated/api/cobros.service';
+import { ImputarSaldoAFavor } from '../../../api/generated/model/imputar-saldo-a-favor';
+import { ReintegrarSaldoAFavor } from '../../../api/generated/model/reintegrar-saldo-a-favor';
+import { ReintegroDeCobro } from '../../../api/generated/model/reintegro-de-cobro';
 import { Obligacion } from '../../../api/generated/model/obligacion';
 import { ObligacionesService } from '../../../api/generated/api/obligaciones.service';
 import { PersonaResponse } from '../../../api/generated/model/persona-response';
@@ -30,10 +33,9 @@ import { RegistrarCobro } from '../../../api/generated/model/registrar-cobro';
  * metodo que devuelva "el estado de cuenta" fusionando las dos, porque no es una fusion: una
  * deuda y un cobro no son el mismo hecho ni se anulan entre si en una lista.
  *
- * <p><b>La Caja no esta y no puede estarla.</b> Es M20 / AKINE-07.03. Sin ella tampoco hay
- * anticipos ni anulacion de cobro: un anticipo sin caja es plata que entro y que ningun arqueo
- * puede encontrar, y un reintegro saca dinero de una caja que no existe. El contrato no publica
- * esos endpoints y esta clase no los inventa.
+ * <p><b>La Caja no esta aca.</b> Es M20 y tiene su propia fachada (`CajaApi`). Desde F-3
+ * (contrato 0.54.0) esta clase si anula cobros y reintegra saldo a favor, que <b>mueven</b> la
+ * caja, pero lo hacen del lado del servidor: la pantalla no asienta ningun movimiento.
  *
  * <h2>Lo que esta fachada NO tiene</h2>
  *
@@ -150,5 +152,52 @@ export class BillingApi {
    */
   verCobro(consultorioId: number, cobroId: number): Observable<Cobro> {
     return this.cobros.verCobro({ consultorioId, cobroId });
+  }
+
+  // -------------------------------------------------------------------------------------
+  // Anulacion, reintegro e imputacion posterior — F-3, contrato 0.54.0
+  // -------------------------------------------------------------------------------------
+
+  /**
+   * Anula un cobro con motivo. <b>No lo borra</b>: el comprobante queda usado, las imputaciones
+   * devuelven saldo a sus deudas y los movimientos de caja se revierten del lado del servidor.
+   * Pide `cobro:register` y `caja:operate`.
+   */
+  anularCobro(consultorioId: number, cobroId: number, motivo: string): Observable<Cobro> {
+    return this.cobros.anularCobro({ consultorioId, cobroId, anularCobro: { motivo } });
+  }
+
+  /**
+   * Devuelve en dinero parte del saldo a favor. Sale de la caja: en efectivo exige jornada abierta
+   * y plata en el cajon. Pide `cobro:register` y `caja:operate`. La clave es obligatoria en el tipo
+   * por la misma razon que en `registrarCobro`: sin ella un doble click devuelve dos veces.
+   */
+  reintegrarSaldoAFavor(
+    consultorioId: number,
+    cobroId: number,
+    reintegro: ReintegrarSaldoAFavor & { readonly idempotencyKey: string },
+  ): Observable<ReintegroDeCobro> {
+    return this.cobros.reintegrarSaldoAFavor({
+      consultorioId,
+      cobroId,
+      reintegrarSaldoAFavor: reintegro,
+    });
+  }
+
+  /**
+   * Aplica parte del saldo a favor a <b>una</b> deuda. No mueve caja: la plata entro al cobrar.
+   * Una deuda por pedido —la clave de idempotencia es de la fila—, asi que imputar a varias son
+   * varios pedidos en serie.
+   */
+  imputarSaldoAFavor(
+    consultorioId: number,
+    cobroId: number,
+    imputacion: ImputarSaldoAFavor & { readonly idempotencyKey: string },
+  ): Observable<Cobro> {
+    return this.cobros.imputarSaldoAFavor({
+      consultorioId,
+      cobroId,
+      imputarSaldoAFavor: imputacion,
+    });
   }
 }

@@ -473,6 +473,12 @@
                         >
                           Precios
                         </a>
+                        <a
+                          class="boton boton--secundario"
+                          [routerLink]="['/servicios/ofertas', oferta.id, 'practicas']"
+                        >
+                          Practicas
+                        </a>
                         <ng-container *akinePermiso="permisoManage">
                           <button
                             type="button"

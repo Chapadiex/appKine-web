@@ -196,7 +196,7 @@ describe('RegistroDeCobroPage', () => {
     rechazar(httpMock.expectOne(esRegistro()), 'caja-no-abierta', { consultorioId: 7 });
     await estabilizar(fixture);
 
-    expect(texto(fixture)).toContain('No hay una caja abierta en esta sede');
+    expect(texto(fixture)).toContain('La caja de esta sede no esta abierta');
     const enlace = Array.from(
       fixture.nativeElement.querySelectorAll('a') as NodeListOf<HTMLAnchorElement>,
     ).find((a) => (a.textContent ?? '').trim() === 'Ir a la caja');

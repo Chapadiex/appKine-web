@@ -13,14 +13,9 @@ import { TurnoDelDia } from '../../../../api/generated/model/turno-del-dia';
 import { Turno } from '../../../../api/generated/model/turno';
 import { ConfirmacionConMotivo } from '../../../../shared/components/confirmacion-con-motivo/confirmacion-con-motivo';
 import { SchedulingApi } from '../../services/scheduling-api';
+import { SelectorDeHorario } from '../../components/selector-de-horario/selector-de-horario';
 import { AccionSugerida, ErrorAgenda, traducirErrorAgenda } from '../../models/agenda-errors';
-import {
-  fechaEnPalabras,
-  hoy,
-  rangoEnZona,
-  slotCompleto,
-  sumarDias,
-} from '../../models/etiquetas-de-agenda';
+import { hoy, sumarDias } from '../../models/etiquetas-de-agenda';
 import {
   esTerminal,
   estadoSegunHistorial,
@@ -90,7 +85,7 @@ type Panel = 'ninguno' | 'cancelar' | 'ausencia' | 'reprogramar';
  */
 @Component({
   selector: 'app-ciclo-de-turno-page',
-  imports: [RouterLink, ConfirmacionConMotivo],
+  imports: [RouterLink, ConfirmacionConMotivo, SelectorDeHorario],
   templateUrl: './ciclo-de-turno-page.html',
   styleUrl: '../../agenda.css',
 })
@@ -108,7 +103,6 @@ export class CicloDeTurnoPage {
   readonly ofertaId = input<string>('');
   readonly fecha = input<string>('');
 
-  protected readonly fechaEnPalabras = fechaEnPalabras;
   protected readonly textoDeEstado = textoDeEstado;
   protected readonly textoDeEvento = textoDeEvento;
 
@@ -480,16 +474,6 @@ export class CicloDeTurnoPage {
 
   protected instanteEnZona(instante: string | undefined): string {
     return fechaHoraEnZona(instante, this.timezone());
-  }
-
-  protected rangoDelSlot(slot: SlotDisponible): string {
-    return rangoEnZona(slot, this.timezone());
-  }
-
-  protected slotCompleto = slotCompleto;
-
-  protected esElDestino(slot: SlotDisponible): boolean {
-    return slot.desde === this.instanteDestino() && this.instanteDestino() !== '';
   }
 
   /**

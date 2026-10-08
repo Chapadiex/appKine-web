@@ -18,8 +18,12 @@ const PROBLEMAS_DEL_COBRO = [
   'saldo-insuficiente',
   'obligacion-no-cobrable',
   'idempotency-key-conflict',
-  // El efectivo entra a la caja de la sede: sin jornada abierta, el cobro entero se rechaza.
+  // F-3: anulacion, reintegro e imputacion posterior.
+  'cobro-anulado',
+  'cobro-con-reintegros',
+  'saldo-a-favor-insuficiente',
   'caja-no-abierta',
+  'caja-saldo-insuficiente',
 ] as const;
 
 function cuerpo(datos: Record<string, unknown>): ProblemDetail {
@@ -68,7 +72,11 @@ describe('traducirErrorCobro', () => {
       'saldo-insuficiente',
       'no-cobrable',
       'clave-reusada',
+      'cobro-anulado',
+      'con-reintegros',
+      'saldo-a-favor-insuficiente',
       'caja-no-abierta',
+      'caja-sin-efectivo',
     ] satisfies CausaCobro[]);
     expect(new Set(causas).size).toBe(PROBLEMAS_DEL_COBRO.length);
   });
@@ -114,8 +122,8 @@ describe('traducirErrorCobro', () => {
     const traducido = traducirErrorCobro(problema('caja-no-abierta', 409, { consultorioId: 7 }));
 
     expect(traducido.accion).toBe('abrir-caja');
-    expect(traducido.mensaje).toContain('caja abierta');
-    expect(traducido.mensaje).toContain('No se registro nada');
+    expect(traducido.mensaje).toContain('La caja de esta sede no esta abierta');
+    expect(traducido.mensaje).toContain('No se hizo nada');
     // El formulario queda cargado: abierta la caja, el mismo cobro entra.
     expect(noSeRegistro(traducido.causa)).toBe(true);
   });
@@ -181,5 +189,18 @@ describe('traducirErrorCobro', () => {
 
     expect(traducirErrorCobro(limitado).causa).toBe('limite');
     expect(traducirErrorCobro(new Error('cualquier cosa')).causa).toBe('otro');
+  });
+
+  it('saldo-a-favor-insuficiente trae lo disponible, y el 403 de anular nombra los dos permisos', () => {
+    const traducido = traducirErrorCobro(
+      problema('saldo-a-favor-insuficiente', 409, { disponible: 1200, importeIntentado: 3000 }),
+    );
+    expect(traducido.disponible).toBe(1200);
+    expect(traducido.importeIntentado).toBe(3000);
+    expect(traducido.accion).toBe('recargar-cuenta');
+
+    const prohibido = problema('forbidden', 403);
+    expect(traducirErrorCobro(prohibido, 'anular').mensaje).toContain('operar la caja');
+    expect(traducirErrorCobro(prohibido, 'imputar').mensaje).not.toContain('operar la caja');
   });
 });

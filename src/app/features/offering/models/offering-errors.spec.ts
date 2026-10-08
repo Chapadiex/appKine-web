@@ -44,6 +44,9 @@ describe('traducirErrorOffering', () => {
       [409, 'servicio-codigo-taken', 'servicio', 'conflicto'],
       [409, 'precio-particular-solapado', 'oferta', 'precio-solapado'],
       [409, 'precio-particular-inactivo', 'oferta', 'precio-inactivo'],
+      [409, 'practica-no-utilizable', 'oferta', 'practica-no-utilizable'],
+      [409, 'oferta-inactiva', 'oferta', 'oferta-inactiva'],
+      [409, 'consultorio-no-operable', 'oferta', 'consultorio-no-operable'],
       [500, null, 'oferta', 'otro'],
     ];
 

@@ -1,7 +1,10 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
+import { CatalogoClinicoService } from '../../../api/generated/api/catalogo-clinico.service';
+import { CatalogoConceptoPageResponse } from '../../../api/generated/model/catalogo-concepto-page-response';
 import { CreateOfertaRequest } from '../../../api/generated/model/create-oferta-request';
+import { PracticasDeOfertaResponse } from '../../../api/generated/model/practicas-de-oferta-response';
 import { CreateServicioRequest } from '../../../api/generated/model/create-servicio-request';
 import { ColaboradoresService } from '../../../api/generated/api/colaboradores.service';
 import { EspaciosService } from '../../../api/generated/api/espacios.service';
@@ -62,6 +65,7 @@ export class OfferingApi {
   // "listame los candidatos" habria duplicado dos listados que existen.
   private readonly colaboradores = inject(ColaboradoresService);
   private readonly espaciosApi = inject(EspaciosService);
+  private readonly catalogo = inject(CatalogoClinicoService);
 
   // ---------------------------------------------------------------------------------------
   // Catalogo global de Servicios. Autenticado para leer; rol de plataforma para mutar.
@@ -283,6 +287,44 @@ export class OfferingApi {
       consultorioId,
       estado: 'ACTIVO',
       size: 200,
+    });
+  }
+
+  // ---------------------------------------------------------------------------------------
+  // Practicas de una oferta (AKINE A-9, DP-11). Lectura por pertenencia; el reemplazo exige
+  // `consultorio:manage` y comparte la version de la OFERTA con las habilitaciones.
+  // ---------------------------------------------------------------------------------------
+
+  verPracticas(consultorioId: number, ofertaId: number): Observable<PracticasDeOfertaResponse> {
+    return this.api.getPracticasDeOferta({ consultorioId, ofertaId });
+  }
+
+  fijarPracticas(
+    consultorioId: number,
+    ofertaId: number,
+    practicaIds: readonly number[],
+    practicaPrincipalId: number | null,
+    expectedVersion: number,
+  ): Observable<PracticasDeOfertaResponse> {
+    return this.api.reemplazarPracticasDeOferta({
+      consultorioId,
+      ofertaId,
+      reemplazarPracticasRequest:
+        practicaPrincipalId === null
+          ? { practicaIds: [...practicaIds], expectedVersion }
+          : { practicaIds: [...practicaIds], practicaPrincipalId, expectedVersion },
+    });
+  }
+
+  /** Practicas vigentes del catalogo (de plataforma y propias del centro) que se pueden sumar. */
+  buscarPracticasDelCatalogo(texto: string): Observable<CatalogoConceptoPageResponse> {
+    const q = texto.trim();
+    return this.catalogo.searchCatalogo({
+      tipo: 'practicas',
+      q: q === '' ? undefined : q,
+      estado: 'ACTIVO',
+      alcance: 'TODOS',
+      size: 20,
     });
   }
 

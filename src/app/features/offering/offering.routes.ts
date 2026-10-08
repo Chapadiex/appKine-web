@@ -74,6 +74,16 @@ export const routes: Routes = [
     data: { [DATA_ANCHO]: ANCHO_AMPLIO },
   },
   {
+    path: 'ofertas/:ofertaId/practicas',
+    canActivate: [contextGuard],
+    loadComponent: () =>
+      import('./pages/practicas-de-la-oferta/practicas-de-la-oferta-page').then(
+        (m) => m.PracticasDeLaOfertaPage,
+      ),
+    title: 'AKINE - Practicas de la oferta',
+    data: { [DATA_ANCHO]: ANCHO_AMPLIO },
+  },
+  {
     // Precios particulares por vigencia (RF-M16-009, AKINE B-3). Cuelga de la oferta por lo mismo
     // que las habilitaciones: no tiene sentido sin la oferta delante.
     path: 'ofertas/:ofertaId/precios',

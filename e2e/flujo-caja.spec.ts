@@ -201,7 +201,7 @@ test.describe('Cobro en efectivo de una sesion cerrada contra el backend real', 
     expect(sinCaja.status()).toBe(409);
     expect((await problemaDe(sinCaja)).type).toBe(uriDeProblema('caja-no-abierta'));
     await expect(page.getByRole('heading', { name: 'No se registro el cobro' })).toBeVisible();
-    await expect(page.getByText('No hay una caja abierta en esta sede')).toBeVisible();
+    await expect(page.getByText(/La caja de esta sede no esta abierta/)).toBeVisible();
     await expect(
       page.getByRole('button', { name: 'Recargar los saldos y volver a armar el cobro' }),
     ).toHaveCount(0);

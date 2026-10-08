@@ -10,6 +10,7 @@ import { PersonaResponse } from '../../../../api/generated/model/persona-respons
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { ErrorCobro, traducirErrorCobro } from '../../models/cobro-errors';
 import { MEDIOS_DE_COBRO, medioEnPalabras } from '../../models/etiquetas-de-cobro';
+import { nuevaClaveDeIntento } from '../../models/operaciones-de-cobro';
 import { fechaEnPalabras, importeEnPalabras } from '../../models/etiquetas-de-obligacion';
 import {
   aCentavos,
@@ -691,22 +692,13 @@ export class RegistroDeCobroPage {
     this.error.set(null);
   }
 
-  /**
-   * La clave del intento, generandola si todavia no existe.
-   *
-   * <p>`crypto.randomUUID` no esta en contextos inseguros ni en algunos runtimes de test, asi que
-   * hay respaldo: una clave debil solo es peor que ninguna si se repite, y esta no se repite
-   * dentro de una sesion.
-   */
+  /** La clave del intento, generandola si todavia no existe. */
   private claveDelIntento(): string {
     const actual = this.claveDeIntento();
     if (actual !== '') {
       return actual;
     }
-    const nueva =
-      typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
-        ? crypto.randomUUID()
-        : `akine-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const nueva = nuevaClaveDeIntento();
     this.claveDeIntento.set(nueva);
     return nueva;
   }

@@ -1,0 +1,196 @@
+<h1>Practicas de la oferta</h1>
+
+<p class="descripcion">
+  Que practicas del catalogo puede prestar esta oferta, y cual es la principal.
+</p>
+
+<nav class="acciones" aria-label="Servicios y ofertas">
+  <a class="boton boton--secundario" routerLink="/servicios/ofertas">Ofertas de la sede</a>
+  <a
+    class="boton boton--secundario"
+    [routerLink]="['/servicios/ofertas', ofertaId, 'habilitaciones']"
+  >
+    Habilitaciones
+  </a>
+</nav>
+
+<section class="tarjeta nota-clave" aria-labelledby="nota-practicas">
+  <h2 id="nota-practicas">Para que sirve esta lista</h2>
+  <p>
+    La oferta es lo que el centro vende; la practica es lo que el financiador reconoce y paga. La
+    <b>cobertura aplicable</b> de un paciente se calcula sobre estas practicas, y cuando una sesion
+    cierra <b>sin tratamientos registrados</b>, el <b>devengo al financiador</b> y el consumo de la
+    autorizacion usan la <b>practica principal</b>. Si se registraron tratamientos, manda la
+    practica realizada.
+  </p>
+  <p>Esta lista dice lo que la oferta <b>puede</b> prestar, no lo que se presto en una sesion.</p>
+</section>
+
+@switch (estado().tipo) {
+  @case ('cargando') {
+    <p class="estado" role="status">Cargando las practicas de la oferta…</p>
+  }
+
+  @case ('sin-contexto') {
+    <section class="estado estado--vacio">
+      <h2>Elegi una sede</h2>
+      <p>
+        Las ofertas son de una sede concreta, asi que hay que saber en cual estas trabajando. Tu
+        sesion sigue abierta.
+      </p>
+      <a class="boton" routerLink="/seleccionar-contexto">Elegir consultorio</a>
+    </section>
+  }
+
+  @case ('error') {
+    <p class="estado estado--error" role="alert">{{ mensajeDeCarga() }}</p>
+    <button type="button" class="boton" (click)="cargar()">Reintentar</button>
+  }
+
+  @case ('listo') {
+    @if (exito(); as mensaje) {
+      <p class="estado estado--ok" role="status">{{ mensaje }}</p>
+    }
+    @if (errorAccion(); as mensaje) {
+      <p class="estado estado--error" role="alert">{{ mensaje }}</p>
+      @if (hayQueRecargar()) {
+        <button type="button" class="boton" (click)="cargar()">Recargar las practicas</button>
+      }
+    }
+
+    <section class="tarjeta" aria-labelledby="declaradas-titulo">
+      <h2 id="declaradas-titulo">Practicas declaradas</h2>
+
+      @if (seleccion().length === 0) {
+        <p class="ayuda" role="status">
+          <b>Sin practicas, la oferta no le devenga nada a ningun financiador</b> y ninguna
+          cobertura le aplica. Una lista vacia NO significa "todas": es lo que corresponde a una
+          actividad que no se factura a obras sociales, como Pilates.
+        </p>
+      } @else {
+        <fieldset class="grupo">
+          <legend>Practica principal</legend>
+          <ul>
+            @for (fila of seleccion(); track fila.practicaId) {
+              <li>
+                <label class="opcion-radio">
+                  <input
+                    type="radio"
+                    name="practica-principal"
+                    [checked]="principal() === fila.practicaId"
+                    [disabled]="guardando()"
+                    (change)="marcarPrincipal(fila.practicaId)"
+                  />
+                  <span class="etiqueta">{{ fila.nombre }}</span>
+                  @if (fila.codigo) {
+                    <span class="detalle">{{ fila.codigo }}</span>
+                  }
+                  @if (principal() === fila.practicaId) {
+                    <span class="detalle">(principal)</span>
+                  }
+                </label>
+                <button
+                  type="button"
+                  class="boton boton--secundario"
+                  *akinePermiso="PERMISO_CONSULTORIO_MANAGE"
+                  [disabled]="guardando()"
+                  [attr.aria-label]="'Quitar ' + fila.nombre"
+                  (click)="quitar(fila.practicaId)"
+                >
+                  Quitar
+                </button>
+                @if (fila.fueraDelCatalogo) {
+                  <p class="ayuda">
+                    El catalogo dio de baja esta practica. La oferta la conserva y sigue valiendo,
+                    pero si era la principal conviene elegir otra.
+                  </p>
+                }
+              </li>
+            }
+          </ul>
+        </fieldset>
+      }
+
+      <button
+        type="button"
+        class="boton"
+        *akinePermiso="PERMISO_CONSULTORIO_MANAGE"
+        [disabled]="guardando() || !hayCambios()"
+        (click)="guardar()"
+      >
+        {{ guardando() ? 'Guardando…' : 'Guardar las practicas' }}
+      </button>
+    </section>
+
+    <section
+      class="tarjeta"
+      *akinePermiso="PERMISO_CONSULTORIO_MANAGE"
+      aria-labelledby="agregar-titulo"
+    >
+      <h2 id="agregar-titulo">Agregar una practica</h2>
+      <form novalidate (submit)="buscar($event)">
+        <label for="buscar-practica">Buscar en el catalogo por nombre o codigo</label>
+        <input
+          id="buscar-practica"
+          type="search"
+          [value]="textoBusqueda()"
+          (input)="escribirBusqueda($event)"
+        />
+        <button type="submit" class="boton boton--secundario" [disabled]="buscando()">
+          {{ buscando() ? 'Buscando…' : 'Buscar' }}
+        </button>
+      </form>
+
+      @if (errorBusqueda(); as mensaje) {
+        <p class="estado estado--error" role="alert">{{ mensaje }}</p>
+      }
+
+      @if (resultados(); as encontradas) {
+        @if (encontradas.length === 0) {
+          <p class="estado estado--vacio" role="status">
+            No hay practicas vigentes con ese texto. Las practicas propias del centro se cargan en
+            <a routerLink="/catalogo/practicas">Catalogo clinico</a>.
+          </p>
+        } @else {
+          <ul class="grupo">
+            @for (concepto of encontradas; track concepto.id) {
+              <li>
+                <span class="etiqueta">{{ concepto.name }}</span>
+                <span class="detalle">{{ concepto.codigo }}</span>
+                <button
+                  type="button"
+                  class="boton boton--secundario"
+                  [disabled]="yaEsta(concepto.id) || guardando()"
+                  [attr.aria-label]="'Agregar ' + concepto.name"
+                  (click)="agregar(concepto)"
+                >
+                  {{ yaEsta(concepto.id) ? 'Ya esta' : 'Agregar' }}
+                </button>
+              </li>
+            }
+          </ul>
+        }
+      }
+    </section>
+
+    @if (dadasDeBaja().length > 0) {
+      <section class="tarjeta" aria-labelledby="baja-titulo">
+        <h2 id="baja-titulo">Dadas de baja</h2>
+        <p class="ayuda">
+          Practicas que la oferta tuvo y se quitaron. Quedan como historia; para volver a sumar una,
+          buscala y agregala.
+        </p>
+        <ul class="grupo">
+          @for (fila of dadasDeBaja(); track fila.id) {
+            <li>
+              <span class="etiqueta">{{ fila.nombre ?? 'Practica #' + fila.practicaId }}</span>
+              @if (fila.deactivationReason) {
+                <span class="detalle">{{ fila.deactivationReason }}</span>
+              }
+            </li>
+          }
+        </ul>
+      </section>
+    }
+  }
+}

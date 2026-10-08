@@ -97,9 +97,8 @@ test.describe('Buscador de agenda contra el backend real', () => {
         'Todos los turnos de este dia ya estan reservados. La agenda esta bien: se lleno.',
       ),
     ).toBeVisible();
-    // Que d+2 no dibuje su turno tomado lo prueba el `toHaveCount(2)` de arriba: con turnos de 12
-    // horas los cuatro dias ofrecen el MISMO rango (00:00 a 12:00), asi que un tercer boton seria el
-    // de d+2. Afirmar cero botones con ese nombre contradecia a esa misma linea.
+    // El turno tomado tiene la misma franja (00:00 a 12:00) que los de d y d+3: el `toHaveCount(2)`
+    // de arriba ya prueba que el dia lleno no agrega un boton.
     await expect(page.getByText('La oferta no esta vigente este dia.')).toBeVisible();
 
     await expect(page.getByText('Ningun dia de este rango tiene turnos disponibles')).toHaveCount(
