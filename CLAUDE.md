@@ -224,19 +224,19 @@ Reglas innegociables del QA:
 
 ## 7. Estado actual
 
-### Estado al 07/10/2026, sobre `1a02164`
+### Estado al 07/10/2026, sobre `e22d75d`
 
 > Esta subsección **supersede** al párrafo del 30/08 que sigue y al "Próximo paso" del 29/09 del
 > final de esta sección. Lo demás queda como historia.
 
-`main` tiene **144 commits**, el último merge es `1a02164` (PR #22) y está pusheado a
-`Chapadiex/appKine-web`. El 07/10 entraron **17 PR, del #6 al #22**. Queda abierto el **#4**
+`main` tiene **146 commits**, el último merge es `e22d75d` (PR #23) y está pusheado a
+`Chapadiex/appKine-web`. El 07/10 entraron **18 PR, del #6 al #23**. Queda abierto el **#4**
 (historia clínica en pantalla: D-a, D-b, D-c), sin mergear.
 
 | | Valor medido |
 |---|---|
 | Cliente generado | **0.69.0** (`contractVersion` en los dos `environment`), igual que el contrato de `appKine-api` `main`. Se regeneró tres veces en el día: 0.63.0 (#6), 0.66.0 (#11) y 0.69.0 (#19) |
-| Tests | **128 archivos de spec / 1.344 tests, 0 fallos**, medidos con `npm ci && npm run test:ci` sobre `1a02164` el 07/10. Cobertura st 91,06 % · rama 82,79 % · fn 87,30 % · ln 92,18 %, sobre el piso de 80 % en las cuatro; el chequeo de cableado del contraste pasa |
+| Tests | **128 archivos de spec / 1.348 tests, 0 fallos**, medidos con `npm ci && npm run test:ci` sobre `e22d75d` el 08/10. Cobertura st 91,07 % · rama 82,81 % · fn 87,29 % · ln 92,19 %, sobre el piso de 80 % en las cuatro; el chequeo de cableado del contraste pasa |
 | E2E | Siete specs en `e2e/`: `auth-flujo`, `contexto-sin-fuga`, `errores-sin-internals`, `smoke`, los dos de agenda (con `route.fulfill`) y `contraste`. **Ninguna pantalla del 07/10 tiene E2E** |
 | Imagen Docker | **G-3 cerrado** (#18): `Dockerfile` multi-stage → `nginx-unprivileged` (UID 101, puerto 8080, `HEALTHCHECK` en `/healthz`), proxy de `/api/` a `AKINE_API_URL` resuelto en runtime —el mismo bundle para todos los entornos—, SBOM CycloneDX embebido y job `imagen` en el CI. Detalle en `docs/imagen-docker.md` |
 
@@ -254,7 +254,7 @@ Lo que el 07/10 puso en pantalla, con su PR:
 | G-8 | Tablero de reportes, `features/reporting`, `/reportes` (`reporte:read`): fuente y criterio de fecha por indicador, secciones omitidas y CSV | #12 |
 | A-7 | Consola de plataforma en `features/platform`, `/plataforma/solicitudes`, con `PlatformRoleStore` y `platformAdminGuard` | #13 |
 | E-6 | Prepago como anticipo: política en la oferta, aviso en la recepción y modo prepago del registro de cobro | #14 |
-| B-3 | Cobertura aplicable por oferta (componente `app-cobertura-aplicable` en Coberturas del paciente), arancel por oferta y precios particulares `/servicios/ofertas/:ofertaId/precios` | #15 |
+| B-3 | Cobertura aplicable por oferta (componente `app-cobertura-aplicable` en Coberturas del paciente), arancel por oferta y precios particulares `/servicios/ofertas/:ofertaId/precios`; filtro por oferta en el arancel efectivo (#23) | #15, #23 |
 | B-5 | Sección de coberturas en el Paciente 360 | #16 |
 | A-10 | Impacto de desvinculación al revocar y turnos afectados al editar disponibilidad | #17 |
 | E-8 | Bandeja de series `/agenda/series` (#20) y prepago visible antes del check-in (#21) | #20, #21 |
