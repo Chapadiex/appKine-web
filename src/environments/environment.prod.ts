@@ -8,5 +8,5 @@
 export const environment = {
   production: true,
   apiBaseUrl: '',
-  contractVersion: '0.71.0',
+  contractVersion: '0.72.0',
 } as const;
