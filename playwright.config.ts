@@ -41,8 +41,7 @@ export default defineConfig({
       // La auditoria de contraste tiene sus propios dos proyectos, uno por tema. Sin esto
       // correria una tercera vez con el `colorScheme` que traiga el sistema del runner, que es
       // justamente el dato que no se puede dejar al azar.
-<<<<<<< HEAD
-      testIgnore: [/contraste\.spec\.ts/, /agenda[-.]/],
+      testIgnore: [/contraste(-no-textual)?\.spec\.ts/, /agenda[-.]/],
     },
 
     /*
@@ -73,9 +72,6 @@ export default defineConfig({
       // en una maquina tranquila y no cuando el backend o el dev server compiten por CPU.
       timeout: 90_000,
       use: { ...devices['Desktop Chrome'] },
-=======
-      testIgnore: /contraste(-no-textual)?\.spec\.ts/,
->>>>>>> origin/main
     },
 
     /*
