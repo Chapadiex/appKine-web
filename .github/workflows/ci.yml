@@ -170,7 +170,8 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       # Los dos temas, en dos proyectos. Playwright levanta el frontend por su cuenta.
-      - name: Auditar contraste en modo claro y en modo oscuro
+      # Incluye `contraste-no-textual.spec.ts` (AKINE-G-7): bordes, foco, hover y teclado.
+      - name: Auditar contraste, bordes, foco y teclado en modo claro y en modo oscuro
         run: npm run a11y:contraste
 
       - name: Publicar reporte
