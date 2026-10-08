@@ -368,6 +368,12 @@
             <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto de trabajo</a>
           </div>
         }
+        @case ('abrir-caja') {
+          <!-- El formulario sigue cargado: con la caja abierta, el mismo cobro entra. -->
+          <div class="acciones">
+            <a class="boton boton--secundario" routerLink="/caja">Ir a la caja</a>
+          </div>
+        }
       }
     </section>
   }

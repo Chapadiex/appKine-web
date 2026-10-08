@@ -49,6 +49,8 @@ export type CausaCobro =
   | 'prepago-ya-registrado'
   /** 409 `idempotency-key-conflict`: la clave se reuso con otro contenido. */
   | 'clave-reusada'
+  /** 409 `caja-no-abierta`: hay efectivo y la sede no tiene jornada de caja abierta. */
+  | 'caja-no-abierta'
   /** 409 subscription-suspended: lo emite el filtro, antes del controller. */
   | 'suscripcion-suspendida'
   /** 400 de validacion de campos: importe en cero, lista vacia, referencia demasiado larga. */
@@ -76,6 +78,8 @@ export type AccionCobro =
   | 'reintentar-con-clave-nueva'
   /** Falta contexto de trabajo: el unico camino es el selector. */
   | 'elegir-contexto'
+  /** El efectivo no tiene donde entrar: hay que abrir la caja de la sede, y el cobro sigue armado. */
+  | 'abrir-caja'
   /** No hay nada que ofrecer que no sea volver a intentar mas tarde. */
   | 'ninguna';
 
@@ -166,6 +170,17 @@ const MENSAJE_PREPAGO_YA_REGISTRADO =
   'Este turno ya tiene un prepago registrado, asi que no se cobro de nuevo. Si hay que corregirlo, ' +
   'se anula ese cobro desde los cobros del paciente y se registra otro.';
 
+/**
+ * `caja-no-abierta`: el cobro lleva efectivo y la sede no tiene una jornada de caja abierta, asi
+ * que el servidor rechaza el cobro ENTERO. Antes caia en el 409 generico, que ofrecia "recargar
+ * los saldos": recargar no abre ninguna caja y el operador repetia el mismo rechazo. El backend lo
+ * documenta asi en su handler: la pantalla tiene que poder ofrecer abrir la caja.
+ */
+const MENSAJE_CAJA_NO_ABIERTA =
+  'No hay una caja abierta en esta sede, y el efectivo tiene que entrar en una. No se registro ' +
+  'nada. Abri la caja (o pedile a quien la opera que la abra) y volve a confirmar este mismo ' +
+  'cobro, o cobralo con otro medio.';
+
 const MENSAJE_SUSCRIPCION_SUSPENDIDA =
   'La suscripcion de la organizacion esta suspendida, asi que no se pueden registrar cobros.';
 
@@ -225,6 +240,8 @@ export function traducirErrorCobro(error: unknown): ErrorCobro {
       };
     case 'idempotency-key-conflict':
       return base(MENSAJE_CLAVE_REUSADA, 'clave-reusada', 'reintentar-con-clave-nueva');
+    case 'caja-no-abierta':
+      return base(MENSAJE_CAJA_NO_ABIERTA, 'caja-no-abierta', 'abrir-caja');
     case 'validation-error':
       return base(
         conDetalle(error, MENSAJE_DATOS_INVALIDOS),
