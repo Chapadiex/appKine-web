@@ -43,11 +43,9 @@ test.describe('Buscador de agenda contra el backend real', () => {
    * Cinco dias seguidos y ninguno omitido: dos con turno, un cierre del profesional, un dia lleno
    * y la oferta fuera de vigencia. Todos montados con los endpoints del producto, ninguno por SQL.
    *
-   * <p><b>El dia lleno NO viaja con `motivoSinSlots: COMPLETO`</b>, aunque el contrato declare ese
-   * valor y la version simulada de este test lo afirmara: el backend devuelve el slot con
-   * `cupoLibre: 0` (`MotivoSinSlots.COMPLETO` dice "hoy no puede ocurrir"). Se afirma lo que el
-   * backend hace —el slot marcado, sin boton—, que es ademas lo que la grilla necesita para no
-   * dejar un hueco.
+   * <p><b>El dia lleno viaja sin slots y con `motivoSinSlots: COMPLETO`</b> desde appKine-api #66.
+   * Hasta entonces el backend nunca emitia ese motivo y devolvia el slot con `cupoLibre: 0`. Un dia
+   * con algun lugar libre sigue dibujando sus slots llenos marcados: eso lo cubre el ultimo test.
    */
   test('ningun dia de la ventana se omite y cada dia vacio muestra su motivo', async ({
     page,
@@ -92,11 +90,14 @@ test.describe('Buscador de agenda contra el backend real', () => {
     await expect(
       page.getByText('La sede cierra este dia por una excepcion cargada en el calendario.'),
     ).toBeVisible();
-    const diaLleno = page
-      .getByRole('listitem')
-      .filter({ has: page.getByText('Completo', { exact: true }) });
-    await expect(diaLleno.getByText(rango(unico, centro.timezone))).toBeVisible();
-    await expect(diaLleno.getByRole('button')).toHaveCount(0);
+    // Desde appKine-api #66 un dia sin ningun cupo libre viaja SIN slots y con `COMPLETO`: ya no
+    // se dibuja el turno tomado con cupo 0, se dice que el dia se lleno.
+    await expect(
+      page.getByText(
+        'Todos los turnos de este dia ya estan reservados. La agenda esta bien: se lleno.',
+      ),
+    ).toBeVisible();
+    await expect(page.getByRole('button', { name: rango(unico, centro.timezone) })).toHaveCount(0);
     await expect(page.getByText('La oferta no esta vigente este dia.')).toBeVisible();
 
     await expect(page.getByText('Ningun dia de este rango tiene turnos disponibles')).toHaveCount(
