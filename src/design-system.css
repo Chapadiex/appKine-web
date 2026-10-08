@@ -98,6 +98,12 @@
   --color-accion-texto: #fff;
   --color-enlace: #10263f;
   --color-foco: #1b3a5c;
+  /*
+   * Anillo de foco SOBRE LA BARRA DE MARCA. `--color-foco` es casi el mismo azul que la barra:
+   * ahi daba 1,2:1 y el teclado no veia donde estaba parado (medido en AKINE-G-7). Es el celeste
+   * del marcador de seccion, que ya estaba elegido para verse sobre la barra: 6,8:1 en claro.
+   */
+  --color-foco-sobre-marca: #7fb6ea;
 
   /* --- Estados ------------------------------------------------------------------------ */
   --color-exito: #1d6b3f;
@@ -200,6 +206,7 @@
     --color-accion-texto: #06121c;
     --color-enlace: #7fb6ea;
     --color-foco: #7fb6ea;
+    --color-foco-sobre-marca: #7fb6ea;
 
     --color-exito: #4cc38a;
     --color-exito-fondo: #10291d;
@@ -216,6 +223,30 @@
     --sombra-scroll: rgb(0 0 0 / 0.5);
     --sombra-scroll-fade: rgb(0 0 0 / 0);
   }
+}
+
+/* --- Foco visible --------------------------------------------------------------------- */
+
+/*
+ * Anillo de foco de TODO elemento operable (WCAG 2.4.7 y 1.4.11, ADR-0005).
+ *
+ * Vivia en `app.css`, que es la hoja de un componente: la encapsulacion de Angular la ataba a la
+ * plantilla del layout y no alcanzaba a ninguna pantalla. Los controles sin regla propia -los
+ * enlaces de la navegacion, "Cambiar" contexto- quedaban con el anillo por defecto del navegador,
+ * que sobre la barra de marca media 1,2:1. Aca es global y es el piso: las reglas de componente
+ * que ya pintan el mismo anillo siguen valiendo, y ninguna puede quedar sin indicador.
+ *
+ * `e2e/contraste-no-textual.spec.ts` recorre las pantallas con Tab y falla si un elemento
+ * enfocado no tiene un anillo solido de 2 px o mas que llegue a 3:1 contra su fondo.
+ */
+:focus-visible {
+  outline: var(--foco-grosor) solid var(--color-foco);
+  outline-offset: var(--foco-offset);
+}
+
+/* Sobre la barra de marca el anillo cambia de color: `--color-foco` ahi no se ve. */
+.cabecera :focus-visible {
+  outline-color: var(--color-foco-sobre-marca);
 }
 
 /* --- Tipografia de pagina ------------------------------------------------------------- */
@@ -353,8 +384,11 @@ h1 {
   font-weight: var(--peso-semi);
 }
 
+/* `textarea` entra con los otros dos desde AKINE-G-7: sin regla quedaba con el borde y el anillo
+   del navegador, distinto del resto del formulario en el que vive. */
 .campo input,
-.campo select {
+.campo select,
+.campo textarea {
   padding: var(--esp-4) 0.625rem;
   border: var(--borde-fino) solid var(--color-borde-control);
   border-radius: var(--radio-md);
@@ -364,7 +398,8 @@ h1 {
 }
 
 .campo input:focus-visible,
-.campo select:focus-visible {
+.campo select:focus-visible,
+.campo textarea:focus-visible {
   outline: var(--foco-grosor) solid var(--color-foco);
   outline-offset: 1px;
 }
@@ -372,7 +407,8 @@ h1 {
 /* El estado invalido se dice tambien con el borde, no solo con el texto del error: el color
    nunca es el unico portador de informacion (WCAG 1.4.1), y el grosor cambia con el. */
 .campo input[aria-invalid='true'],
-.campo select[aria-invalid='true'] {
+.campo select[aria-invalid='true'],
+.campo textarea[aria-invalid='true'] {
   border-color: var(--color-peligro);
   border-width: var(--borde-medio);
 }

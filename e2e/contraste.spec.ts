@@ -52,13 +52,13 @@ import {
  *
  * <ul>
  *   <li><b>WCAG 1.4.11 (contraste de lo que no es texto, 3:1).</b> `color-contrast` mide texto y
- *       nada mas. El borde de un `input`, el anillo de foco y el borde de una pastilla quedan
- *       fuera: axe no tiene regla automatica para eso. Los valores estan elegidos para cumplirlo
- *       —`--color-borde-control` da 3,54:1 en claro— pero <b>nadie los verifica</b>.</li>
+ *       nada mas. El borde de los controles y el anillo de foco los mide, desde AKINE-G-7,
+ *       `contraste-no-textual.spec.ts`. El borde de una pastilla sigue sin medir: no es un
+ *       control, y su estado se dice tambien con texto.</li>
  *   <li><b>La franja donde el degrade del desborde de tabla si pinta.</b> Ver la declaracion del
  *       escenario de espacios.</li>
- *   <li><b>Los estados `:hover` y `:focus-visible`.</b> Se auditan los estados en reposo; un
- *       token de hover que rompa contraste no lo agarra nada de esto.</li>
+ *   <li><b>Los estados `:hover` y `:focus-visible`.</b> Aca se auditan los estados en reposo; el
+ *       hover y el foco por teclado los mide `contraste-no-textual.spec.ts`.</li>
  * </ul>
  *
  * <h2>Los dos temas</h2>

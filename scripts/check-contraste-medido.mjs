@@ -29,7 +29,7 @@
  * Se encadena en `npm run test:ci`, detras del gate de cobertura: la suite de jsdom es la que se
  * beneficia de la excusa, asi que es la que tiene que pagar por sostenerla.
  */
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join, resolve } from 'node:path';
 
@@ -123,6 +123,63 @@ if (bloque === null) {
   }
 }
 
+// 5. Contraste no textual, foco y teclado (AKINE-G-7) ---------------------------------------------
+//
+// `contraste-no-textual.spec.ts` mide lo que axe no mide: bordes de control y anillo de foco a 3:1
+// (WCAG 1.4.11), hover y recorrido por teclado. Corre en los MISMOS dos proyectos de tema; si el
+// `testMatch` deja de alcanzarlo, el spec existe y no corre nunca, que es el regreso silencioso que
+// este gate existe para impedir.
+
+const SPEC_NO_TEXTUAL = 'e2e/contraste-no-textual.spec.ts';
+if (leer(SPEC_NO_TEXTUAL) === null) {
+  fallas.push(
+    `No existe ${SPEC_NO_TEXTUAL}. Es el unico lugar donde se miden el borde de los controles, el ` +
+      'anillo de foco y el recorrido por teclado: axe no tiene regla automatica para ninguno.',
+  );
+}
+const matchers = [...configPlaywright.matchAll(/testMatch:\s*(\/.+?\/)\s*,/g)].map((m) => m[1]);
+const alcanzado = matchers.some((literal) => {
+  const regex = new RegExp(literal.slice(1, -1));
+  return regex.test('contraste-no-textual.spec.ts') && regex.test('contraste.spec.ts');
+});
+if (matchers.length < PROYECTOS.length || !alcanzado) {
+  fallas.push(
+    `Los proyectos de contraste no alcanzan a ${SPEC_NO_TEXTUAL} en su \`testMatch\`: el spec ` +
+      'existiria y no correria en ningun tema.',
+  );
+}
+
+// 6. Ningun `outline: none` sin reemplazo ---------------------------------------------------------
+//
+// Quitar el anillo de foco deja al teclado sin saber donde esta (WCAG 2.4.7). La unica excepcion
+// es el `main` del layout: es el destino del skip link, tiene `tabindex="-1"` y el Tab no lo
+// alcanza nunca, asi que no hay indicador que mostrar.
+
+const OUTLINE_PERMITIDO = new Set(['src/app/app.css::.contenido:focus']);
+
+function hojas(directorio) {
+  return readdirSync(join(raizRepo, directorio), { withFileTypes: true }).flatMap((entrada) => {
+    const ruta = `${directorio}/${entrada.name}`;
+    if (entrada.isDirectory()) return ruta.endsWith('api/generated') ? [] : hojas(ruta);
+    return entrada.name.endsWith('.css') ? [ruta] : [];
+  });
+}
+
+for (const hoja of hojas('src')) {
+  const css = leer(hoja) ?? '';
+  for (const regla of css.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+    if (!/outline(-style)?\s*:\s*(none|0)\s*[;}]?/.test(regla[2])) continue;
+    const selector = regla[1].replace(/\/\*[\s\S]*?\*\//g, '').trim();
+    if (!OUTLINE_PERMITIDO.has(`${hoja}::${selector}`)) {
+      fallas.push(
+        `${hoja}: \`${selector}\` quita el outline. Sin anillo de foco el teclado no sabe donde ` +
+          'esta (WCAG 2.4.7): reemplazalo por el anillo del sistema de diseno o justifica la ' +
+          'excepcion en OUTLINE_PERMITIDO.',
+      );
+    }
+  }
+}
+
 // ----------------------------------------------------------------------------------------------
 
 if (fallas.length > 0) {
@@ -135,5 +192,6 @@ if (fallas.length > 0) {
 
 console.log(
   `[contraste:check] El contraste se mide en ${SPEC_DE_CONTRASTE}, en modo claro y oscuro ` +
-    '(`npm run a11y:contraste`). El arnes de jsdom solo tolera el `incomplete` de color-contrast.',
+    '(`npm run a11y:contraste`), junto con el contraste no textual, el foco y el teclado de ' +
+    `${SPEC_NO_TEXTUAL}. El arnes de jsdom solo tolera el incomplete de color-contrast.`,
 );

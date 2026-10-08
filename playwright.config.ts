@@ -41,7 +41,7 @@ export default defineConfig({
       // La auditoria de contraste tiene sus propios dos proyectos, uno por tema. Sin esto
       // correria una tercera vez con el `colorScheme` que traiga el sistema del runner, que es
       // justamente el dato que no se puede dejar al azar.
-      testIgnore: /contraste\.spec\.ts/,
+      testIgnore: /contraste(-no-textual)?\.spec\.ts/,
     },
 
     /*
@@ -55,15 +55,19 @@ export default defineConfig({
      *
      * A diferencia del proyecto `chromium`, estos NO necesitan el backend: la API se simula con
      * `route.fulfill`. Corren en cualquier maquina y en CI.
+     *
+     * Desde AKINE-G-7 corren tambien `contraste-no-textual.spec.ts`: contorno de controles y
+     * anillo de foco a 3:1 (WCAG 1.4.11), hover y recorrido por teclado. Los bordes y el foco
+     * cambian de token entre temas igual que el texto, asi que necesitan los mismos dos proyectos.
      */
     {
       name: 'contraste-claro',
-      testMatch: /contraste\.spec\.ts/,
+      testMatch: /contraste(-no-textual)?\.spec\.ts/,
       use: { ...devices['Desktop Chrome'], colorScheme: 'light' },
     },
     {
       name: 'contraste-oscuro',
-      testMatch: /contraste\.spec\.ts/,
+      testMatch: /contraste(-no-textual)?\.spec\.ts/,
       use: { ...devices['Desktop Chrome'], colorScheme: 'dark' },
     },
   ],
