@@ -29,7 +29,7 @@
           Todavia no tiene boxes: se agregan desde Espacios.
         }
         @if (conHorarioCreado()) {
-          El horario general quedo cargado; es informativo y no limita la agenda.
+          El horario general quedo cargado: ningun turno se ofrece fuera de ese horario.
         } @else {
           Sin horario general: se puede cargar desde el calendario de la sede.
         }
@@ -168,9 +168,9 @@
             Horario general <span class="campo__opcional">(opcional)</span>
           </h3>
           <p class="ayuda">
-            Los dias y horas en que la sede esta abierta. Es <b>informativo</b>: la agenda ofrece
-            turnos con la disponibilidad de cada profesional, no con este horario. Se puede cargar o
-            cambiar despues desde el calendario de la sede.
+            Los dias y horas en que la sede esta abierta. <b>Limita la agenda</b>: ningun turno se
+            ofrece fuera de este horario, aunque el profesional tenga disponibilidad. Sin horario no
+            se limita nada. Se puede cargar o cambiar despues desde el calendario de la sede.
           </p>
           <app-editor-de-franjas
             idBase="sede-horario"

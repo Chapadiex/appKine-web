@@ -175,9 +175,9 @@
         <h2 id="titulo-horario-general">Horario general de la sede</h2>
 
         <p class="ayuda">
-          Los dias y horas en que la sede esta abierta. Es <b>informativo</b>: la agenda ofrece
-          turnos con la disponibilidad de cada profesional, no con este horario, asi que cambiarlo
-          no abre ni cierra turnos.
+          Los dias y horas en que la sede esta abierta. <b>Limita la agenda</b>: ningun turno se
+          ofrece ni se reserva fuera de este horario, aunque el profesional tenga disponibilidad, y
+          no abre nada que el profesional no tenga. Sin horario general no se limita nada.
         </p>
 
         @if (puedeGestionar()) {
@@ -239,6 +239,24 @@
         <div aria-live="polite">
           @if (exitoHorario(); as mensaje) {
             <p class="estado estado--ok">{{ mensaje }}</p>
+          }
+          @if (avisoImpactoHorario(); as aviso) {
+            <div class="aviso-apertura" role="status">
+              <p>
+                <b>{{ aviso }}</b>
+                <a class="enlace" routerLink="/agenda">Ir a la agenda</a>
+              </p>
+              @if (turnosImpactoHorario().length > 0) {
+                <ul class="lista-datos" aria-label="Turnos fuera del horario">
+                  @for (turno of turnosImpactoHorario(); track turno.turnoId) {
+                    <li>{{ formatearInstante(turno.inicio) ?? 'Sin fecha' }}</li>
+                  }
+                </ul>
+              }
+              @if (notaImpactoHorario(); as nota) {
+                <p class="ayuda">{{ nota }}</p>
+              }
+            </div>
           }
           @if (errorHorario(); as mensaje) {
             <p class="estado estado--error" role="alert">{{ mensaje }}</p>

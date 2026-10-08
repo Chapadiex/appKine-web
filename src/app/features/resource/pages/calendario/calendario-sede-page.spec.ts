@@ -334,7 +334,7 @@ describe('CalendarioSedePage', () => {
     it('guardar manda SOLO el horario, reemplazandolo, y no pisa los feriados', async () => {
       const fixture = await montar(CON_HORARIO);
 
-      expect(texto(fixture)).toContain('Es informativo');
+      expect(texto(fixture)).toContain('Limita la agenda');
       expect(valor(fixture, '#calendario-horario-hasta-0')).toBe('18:00');
 
       escribir(fixture, '#calendario-horario-hasta-0', '24:00');
@@ -359,6 +359,52 @@ describe('CalendarioSedePage', () => {
       expect(texto(fixture)).toContain('el horario general quedo guardado');
       expect(texto(fixture)).not.toContain('Hay cambios sin guardar en el horario');
       expect(texto(fixture)).toContain('Navidad');
+      // Sin impacto en la respuesta no hay aviso: en cero no se muestra nada.
+      expect(texto(fixture)).not.toContain('fuera del horario');
+    });
+
+    it('si el horario nuevo deja turnos afuera lo dice, con la lista y sin cancelarlos', async () => {
+      const fixture = await montar(CON_HORARIO);
+
+      escribir(fixture, '#calendario-horario-hasta-0', '17:00');
+      enviar(fixture, '#form-horario-general');
+
+      httpMock
+        .expectOne((peticion: HttpRequest<unknown>) => peticion.method === 'PUT')
+        .flush({
+          ...POLITICA,
+          feriados: [],
+          horarioGeneral: [{ diaSemana: 1, horaDesde: '09:00', horaHasta: '17:00' }],
+          impactoDelHorario: {
+            turnosAfectados: 3,
+            primerTurnoAfectado: '2026-10-12T20:00:00Z',
+            evaluadoHasta: '2027-01-10',
+            turnos: [
+              {
+                turnoId: 71,
+                membershipId: 5,
+                inicio: '2026-10-12T20:00:00Z',
+                fin: '2026-10-12T20:30:00Z',
+              },
+              {
+                turnoId: 72,
+                membershipId: 6,
+                inicio: '2026-10-19T20:00:00Z',
+                fin: '2026-10-19T20:30:00Z',
+              },
+            ],
+          },
+        });
+      await estabilizar(fixture);
+
+      const contenido = texto(fixture);
+      expect(contenido).toContain('3 turnos quedan fuera del horario; revisalos en la agenda');
+      expect(contenido).toContain('Se muestran los primeros 2 de 3');
+      expect(
+        fixture.nativeElement.querySelectorAll('ul[aria-label="Turnos fuera del horario"] li')
+          .length,
+      ).toBe(2);
+      expect(fixture.nativeElement.querySelector('a[href="/agenda"]')).not.toBeNull();
     });
 
     it('borrar manda una lista vacia, que no es lo mismo que omitir el campo', async () => {
