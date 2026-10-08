@@ -230,14 +230,14 @@ Reglas innegociables del QA:
 > final de esta sección. Lo demás queda como historia.
 
 `main` tiene **146 commits**, el último merge es `e22d75d` (PR #23) y está pusheado a
-`Chapadiex/appKine-web`. El 07/10 entraron **18 PR, del #6 al #23**. Queda abierto el **#4**
+`Chapadiex/appKine-web`. El 07/10 entraron **18 PR, del #6 al #23**. Después de esa medición entró el **#24** (G-7, accesibilidad no textual), que no se volvió a medir acá. Queda abierto el **#4**
 (historia clínica en pantalla: D-a, D-b, D-c), sin mergear.
 
 | | Valor medido |
 |---|---|
 | Cliente generado | **0.69.0** (`contractVersion` en los dos `environment`), igual que el contrato de `appKine-api` `main`. Se regeneró tres veces en el día: 0.63.0 (#6), 0.66.0 (#11) y 0.69.0 (#19) |
 | Tests | **128 archivos de spec / 1.348 tests, 0 fallos**, medidos con `npm ci && npm run test:ci` sobre `e22d75d` el 08/10. Cobertura st 91,07 % · rama 82,81 % · fn 87,29 % · ln 92,19 %, sobre el piso de 80 % en las cuatro; el chequeo de cableado del contraste pasa |
-| E2E | Siete specs en `e2e/`: `auth-flujo`, `contexto-sin-fuga`, `errores-sin-internals`, `smoke`, los dos de agenda (con `route.fulfill`) y `contraste`. **Ninguna pantalla del 07/10 tiene E2E** |
+| E2E | Ocho specs en `e2e/`: `auth-flujo`, `contexto-sin-fuga`, `errores-sin-internals`, `smoke`, los dos de agenda (con `route.fulfill`), `contraste` y `contraste-no-textual` (G-7, #24). **Ninguna pantalla del 07/10 tiene E2E** |
 | Imagen Docker | **G-3 cerrado** (#18): `Dockerfile` multi-stage → `nginx-unprivileged` (UID 101, puerto 8080, `HEALTHCHECK` en `/healthz`), proxy de `/api/` a `AKINE_API_URL` resuelto en runtime —el mismo bundle para todos los entornos—, SBOM CycloneDX embebido y job `imagen` en el CI. Detalle en `docs/imagen-docker.md` |
 
 Features: `auth`, `organization`, `platform`, `resource`, `catalog`, `offering`, `person`,
