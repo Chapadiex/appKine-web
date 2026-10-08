@@ -151,6 +151,90 @@ describe('NewConsultorioPage', () => {
     ).not.toBeNull();
   });
 
+  describe('alta en un acto: primer box y horario general (A-8, CA-M03-002)', () => {
+    it('el box y las franjas viajan en el mismo POST, con 24:00 como cierre', async () => {
+      const fixture = montar();
+
+      escribir(fixture, '#sede-name', 'Sede Norte');
+      escribir(fixture, '#sede-boxNombre', 'Box 1');
+      escribir(fixture, '#sede-boxCapacidad', '2');
+      agregarFranja(fixture);
+      escribir(fixture, '#sede-horario-desde-0', '09:00');
+      escribir(fixture, '#sede-horario-hasta-0', '13:00');
+      agregarFranja(fixture);
+      escribir(fixture, '#sede-horario-desde-1', '14:00');
+      escribir(fixture, '#sede-horario-hasta-1', '24:00');
+      enviar(fixture);
+
+      // El resumen del paso 2 dice lo que se va a crear, medianoche incluida.
+      expect(texto(fixture)).toContain('Box 1 (capacidad 2)');
+      expect(texto(fixture)).toContain('Lunes: 14:00 a medianoche (24:00)');
+
+      enviar(fixture);
+      const alta = httpMock.expectOne(RUTA_ALTA);
+      expect(alta.request.body).toEqual({
+        name: 'Sede Norte',
+        primerBox: { name: 'Box 1', capacidad: 2 },
+        horarioGeneral: [
+          { diaSemana: 1, horaDesde: '09:00', horaHasta: '13:00' },
+          { diaSemana: 1, horaDesde: '14:00', horaHasta: '24:00' },
+        ],
+      });
+      alta.flush({ id: 9, name: 'Sede Norte' }, { status: 201, statusText: 'Created' });
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      expect(texto(fixture)).toContain('Se creo junto con su primer box');
+      expect(texto(fixture)).toContain('es informativo y no limita la agenda');
+    });
+
+    it('dos franjas del mismo dia que se pisan no dejan avanzar', () => {
+      const fixture = montar();
+
+      escribir(fixture, '#sede-name', 'Sede Norte');
+      agregarFranja(fixture);
+      escribir(fixture, '#sede-horario-desde-0', '09:00');
+      escribir(fixture, '#sede-horario-hasta-0', '13:00');
+      agregarFranja(fixture);
+      escribir(fixture, '#sede-horario-desde-1', '12:00');
+      escribir(fixture, '#sede-horario-hasta-1', '18:00');
+      enviar(fixture);
+
+      expect(texto(fixture)).toContain('Paso 1 de 2');
+      expect(texto(fixture)).toContain('Se pisa con otra franja del mismo dia');
+    });
+
+    it('un 400 sobre una franja vuelve al paso 1 y marca esa franja, no un cartel generico', async () => {
+      const fixture = montar();
+
+      escribir(fixture, '#sede-name', 'Sede Norte');
+      agregarFranja(fixture);
+      escribir(fixture, '#sede-horario-desde-0', '09:00');
+      escribir(fixture, '#sede-horario-hasta-0', '13:00');
+      agregarFranja(fixture);
+      escribir(fixture, '#sede-horario-desde-1', '14:00');
+      escribir(fixture, '#sede-horario-hasta-1', '18:00');
+      enviar(fixture);
+      enviar(fixture);
+
+      httpMock.expectOne(RUTA_ALTA).flush(
+        {
+          type: 'https://akine.app/problems/validation-error',
+          detail: 'La solicitud contiene campos invalidos',
+          errors: { 'horarioGeneral[1].horaHasta': 'La hora de cierre tiene que ser HH:mm' },
+        },
+        { status: 400, statusText: 'Bad Request' },
+      );
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      expect(texto(fixture)).toContain('Paso 1 de 2');
+      const error = fixture.nativeElement.querySelector('#sede-horario-error-1');
+      expect(error?.textContent).toContain('La hora de cierre tiene que ser HH:mm');
+      expect(fixture.nativeElement.querySelector('#sede-horario-error-0')).toBeNull();
+    });
+  });
+
   function montar() {
     const fixture = TestBed.createComponent(NewConsultorioPage);
     fixture.detectChanges();
@@ -173,6 +257,17 @@ function escribir(
   }
   campo.value = valor;
   campo.dispatchEvent(new Event('input'));
+  fixture.detectChanges();
+}
+
+function agregarFranja(fixture: { nativeElement: HTMLElement; detectChanges(): void }) {
+  const boton = Array.from(fixture.nativeElement.querySelectorAll('button')).find((candidato) =>
+    candidato.textContent?.includes('Agregar una franja'),
+  );
+  if (boton === undefined) {
+    throw new Error('No existe el boton para agregar una franja');
+  }
+  boton.click();
   fixture.detectChanges();
 }
 

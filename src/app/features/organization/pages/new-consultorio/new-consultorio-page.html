@@ -23,8 +23,16 @@
     @if (hecho()) {
       <p class="estado estado--ok">La sede "{{ sedeCreada() }}" quedo creada.</p>
       <p class="ayuda">
-        Todavia no tiene boxes ni horario general: eso se configura mas adelante, cuando esten los
-        espacios y la disponibilidad profesional.
+        @if (conBoxCreado()) {
+          Se creo junto con su primer box.
+        } @else {
+          Todavia no tiene boxes: se agregan desde Espacios.
+        }
+        @if (conHorarioCreado()) {
+          El horario general quedo cargado; es informativo y no limita la agenda.
+        } @else {
+          Sin horario general: se puede cargar desde el calendario de la sede.
+        }
       </p>
       <p class="acciones">
         <a class="boton" routerLink="/organizacion/sedes">Volver al listado de sedes</a>
@@ -108,6 +116,70 @@
           }
         </div>
 
+        <fieldset class="grupo" aria-describedby="sede-box-ayuda">
+          <legend>Primer box <span class="campo__opcional">(opcional)</span></legend>
+          <p class="ayuda" id="sede-box-ayuda">
+            Si lo cargas ahora, la sede y el box se crean juntos. Si lo dejas vacio, la sede se crea
+            sin boxes y los agregas despues desde Espacios.
+          </p>
+
+          <div class="campo">
+            <label for="sede-boxNombre">Nombre del box</label>
+            <input
+              id="sede-boxNombre"
+              type="text"
+              formControlName="boxNombre"
+              autocomplete="off"
+              placeholder="Box 1"
+              [attr.aria-invalid]="errorPrimerBox() !== null"
+              [attr.aria-describedby]="errorPrimerBox() !== null ? 'sede-box-error' : null"
+            />
+          </div>
+
+          <div class="campo">
+            <label for="sede-boxCapacidad">
+              Capacidad <span class="campo__opcional">(opcional)</span>
+            </label>
+            <input
+              id="sede-boxCapacidad"
+              type="number"
+              min="1"
+              formControlName="boxCapacidad"
+              aria-describedby="sede-boxCapacidad-ayuda"
+              [attr.aria-invalid]="mostrarError('boxCapacidad')"
+            />
+            <p class="ayuda" id="sede-boxCapacidad-ayuda">
+              Cuantas personas atiende a la vez. Si lo dejas vacio, 1. Sin nombre no se crea el box.
+            </p>
+            @if (mostrarError('boxCapacidad')) {
+              <p class="campo__error" id="sede-boxCapacidad-error">
+                Tiene que ser un numero mayor que cero.
+              </p>
+            }
+          </div>
+
+          @if (errorPrimerBox(); as mensaje) {
+            <p class="campo__error" id="sede-box-error">{{ mensaje }}</p>
+          }
+        </fieldset>
+
+        <section class="grupo" aria-labelledby="titulo-horario-general">
+          <h3 id="titulo-horario-general" tabindex="-1">
+            Horario general <span class="campo__opcional">(opcional)</span>
+          </h3>
+          <p class="ayuda">
+            Los dias y horas en que la sede esta abierta. Es <b>informativo</b>: la agenda ofrece
+            turnos con la disponibilidad de cada profesional, no con este horario. Se puede cargar o
+            cambiar despues desde el calendario de la sede.
+          </p>
+          <app-editor-de-franjas
+            idBase="sede-horario"
+            [franjas]="horario"
+            [mostrarErrores]="intentos() > 0"
+            [erroresDelServidor]="erroresHorario()"
+          />
+        </section>
+
         <div class="acciones">
           <button type="submit" class="boton">Continuar</button>
           <a class="boton boton--secundario" routerLink="/organizacion/sedes">Cancelar</a>
@@ -171,6 +243,20 @@
           <dd>{{ resumen().zona }}</dd>
           <dt>Duracion del turno</dt>
           <dd>{{ resumen().turno }}</dd>
+          <dt>Primer box</dt>
+          <dd>{{ resumen().box }}</dd>
+          <dt>Horario general</dt>
+          <dd>
+            @if (resumen().horario.length === 0) {
+              Sin horario general por ahora
+            } @else {
+              <ul>
+                @for (linea of resumen().horario; track $index) {
+                  <li>{{ linea }}</li>
+                }
+              </ul>
+            }
+          </dd>
         </dl>
 
         <div class="acciones">

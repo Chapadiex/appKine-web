@@ -1,4 +1,4 @@
-<h1>Feriados de la sede</h1>
+<h1>Horario general y feriados de la sede</h1>
 
 <p class="descripcion">
   Si <b>{{ nombreDeLaSede() }}</b> cierra los feriados de su calendario nacional, y cuales son los
@@ -169,6 +169,81 @@
             }
           </div>
         </form>
+      </section>
+
+      <section class="tarjeta" aria-labelledby="titulo-horario-general">
+        <h2 id="titulo-horario-general">Horario general de la sede</h2>
+
+        <p class="ayuda">
+          Los dias y horas en que la sede esta abierta. Es <b>informativo</b>: la agenda ofrece
+          turnos con la disponibilidad de cada profesional, no con este horario, asi que cambiarlo
+          no abre ni cierra turnos.
+        </p>
+
+        @if (puedeGestionar()) {
+          <form
+            id="form-horario-general"
+            [formGroup]="formularioHorarioGrupo"
+            (ngSubmit)="guardarHorario()"
+            novalidate
+          >
+            <app-editor-de-franjas
+              idBase="calendario-horario"
+              [franjas]="formularioHorario"
+              [mostrarErrores]="intentosHorario() > 0"
+              [erroresDelServidor]="erroresFranja()"
+            />
+
+            @if (hayCambiosEnHorario()) {
+              <p class="ayuda">Hay cambios sin guardar en el horario.</p>
+            }
+
+            <div class="acciones">
+              <button type="submit" class="boton" [disabled]="guardandoHorario()">
+                Guardar el horario
+              </button>
+              @if (horarioGuardado().length > 0) {
+                <button
+                  type="button"
+                  class="boton boton--secundario"
+                  [disabled]="guardandoHorario()"
+                  (click)="borrarHorario()"
+                >
+                  Borrar el horario general
+                </button>
+              }
+            </div>
+
+            <p class="ayuda">
+              Guardar reemplaza el horario entero por el de arriba. Si quitas todas las franjas y
+              guardas, el horario se borra.
+            </p>
+          </form>
+        } @else {
+          @if (horarioGuardado().length === 0) {
+            <p class="estado estado--vacio">
+              La sede no declaro horario general. Eso no significa que este cerrada.
+            </p>
+          } @else {
+            <ul>
+              @for (linea of horarioGuardado(); track $index) {
+                <li>{{ linea }}</li>
+              }
+            </ul>
+          }
+          @if (modoLectura()) {
+            <p class="ayuda">{{ textoModoLectura }}</p>
+          }
+        }
+
+        <div aria-live="polite">
+          @if (exitoHorario(); as mensaje) {
+            <p class="estado estado--ok">{{ mensaje }}</p>
+          }
+          @if (errorHorario(); as mensaje) {
+            <p class="estado estado--error" role="alert">{{ mensaje }}</p>
+          }
+        </div>
       </section>
 
       <section class="tarjeta" aria-labelledby="titulo-feriados">
