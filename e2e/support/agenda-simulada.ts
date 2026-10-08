@@ -3,6 +3,12 @@ import { Page, Request, Route } from '@playwright/test';
 /**
  * Harness de los E2E de la vertical de turnos (M12, AKINE-05.01 y 05.02).
  *
+ * <p><b>Desde AKINE E-2 lo usa solamente la auditoria de contraste</b> (`contraste.spec.ts`), que
+ * tiene que correr sin backend. Los E2E de agenda, reserva, ciclo y recepcion se reescribieron
+ * contra el backend real (`support/sembrado.ts`, proyecto `agenda`): la premisa de abajo —que el
+ * backend no produce esos conflictos a pedido— resulto falsa, y la version simulada afirmaba un
+ * `motivoSinSlots: COMPLETO` que el backend nunca emite. El texto de abajo queda como historia.
+ *
  * <h2>Por que estos E2E simulan la API y los cuatro anteriores no</h2>
  *
  * <p>`auth-flujo`, `contexto-sin-fuga`, `errores-sin-internals` y `smoke` golpean el stack real

@@ -1,186 +1,161 @@
-import { expect, test } from '@playwright/test';
-
 import {
-  ApiDeTurnos,
-  NOMBRE_OFERTA,
-  agendaDe,
-  anchoEnDias,
-  diaConSlots,
-  diaVacio,
-  instalarApiDeTurnos,
-  masDias,
-  ok,
-  problema,
-} from './support/agenda-simulada';
+  abrirLaAgenda,
+  expect,
+  ingresar,
+  navegar,
+  problemaDe,
+  respuestaDe,
+  test,
+} from './support/agenda-real';
+import {
+  DIAS,
+  crearOferta,
+  crearPersona,
+  diaDeTrabajo,
+  fechaLocal,
+  rango,
+  reservar,
+  slotsDelDia,
+  sumarDias,
+  uriDeProblema,
+  ventanaHabil,
+} from './support/sembrado';
 
 /**
- * E2E del buscador de agenda (M12, AKINE-05.01).
+ * E2E del buscador de agenda (M12, AKINE-05.01) contra el backend REAL (AKINE E-2).
  *
- * <p>Cubre las tres afirmaciones que la etapa hace sobre la grilla y que ningun test unitario
- * puede sostener solo, porque dependen de que el router, los guards, los signals y el cliente
- * generado se comporten juntos en un navegador de verdad:
+ * <p>Las mismas tres afirmaciones que la version con `route.fulfill`, ahora con el motor de
+ * slots de verdad detras: ningun dia se omite y cada dia vacio dice su motivo, la ventana de mas
+ * de 62 dias se recorta sola, y el slot completo se dibuja marcado. Lo que la version simulada no
+ * podia probar —y esta si— es que el backend emita esos motivos y ese 400 con esos nombres.
  *
- * <ol>
- *   <li>Ningun dia de la ventana se omite, y cada dia vacio muestra <b>su</b> motivo.</li>
- *   <li>La ventana de mas de 62 dias se recorta sola y se reintenta, en vez de fallar.</li>
- *   <li>El slot completo se dibuja marcado, no se esconde.</li>
- * </ol>
- *
- * <p>El alcance y los limites del harness estan en `support/agenda-simulada.ts`.
+ * <p>Fuera de esta suite queda "sin permiso para reservar": todos los roles de tenant tienen
+ * `turno:manage` (ver `RolePermissions`), asi que con el backend real no hay cuenta con la que
+ * montarlo sin quitar un permiso a mano. Lo sigue cubriendo `buscador-de-agenda-page.spec.ts`.
  */
 
-/** Deja el buscador con una oferta elegida y la grilla dibujada. */
-async function elegirLaOferta(page: import('@playwright/test').Page): Promise<void> {
-  await page.getByLabel('Oferta', { exact: true }).selectOption({ label: NOMBRE_OFERTA });
-  await expect(page.getByRole('heading', { name: NOMBRE_OFERTA, level: 2 })).toBeVisible();
-}
-
-test.describe('Buscador de agenda', () => {
-  let api: ApiDeTurnos;
-
-  test.beforeEach(async ({ page }) => {
-    api = await instalarApiDeTurnos(page);
+test.describe('Buscador de agenda contra el backend real', () => {
+  test.beforeEach(async ({ page, centro }) => {
+    await ingresar(page, centro);
   });
 
   /**
-   * Escenario 2. Es la mitad del criterio de aceptacion de AKINE-05.01: el backend nunca omite
-   * un dia de la ventana y manda `motivoSinSlots` con uno de nueve valores.
+   * Cinco dias seguidos y ninguno omitido: dos con turno, un cierre del profesional, un dia lleno
+   * y la oferta fuera de vigencia. Todos montados con los endpoints del producto, ninguno por SQL.
    *
-   * <p>Se afirman las dos cosas por separado, porque son dos fallas distintas: que <b>esten los
-   * cinco dias</b> —un salto de fechas es indistinguible de un error del sistema— y que cada uno
-   * diga <b>algo distinto</b> —un "no hay turnos" generico no dice si hay que cargar un horario,
-   * habilitar un profesional o simplemente probar otro dia—.
+   * <p><b>El dia lleno NO viaja con `motivoSinSlots: COMPLETO`</b>, aunque el contrato declare ese
+   * valor y la version simulada de este test lo afirmara: el backend devuelve el slot con
+   * `cupoLibre: 0` (`MotivoSinSlots.COMPLETO` dice "hoy no puede ocurrir"). Se afirma lo que el
+   * backend hace —el slot marcado, sin boton—, que es ademas lo que la grilla necesita para no
+   * dejar un hueco.
    */
-  test('ningun dia de la ventana se omite y cada dia vacio muestra su motivo', async ({ page }) => {
-    api.agenda = (url) => {
-      const desde = url.searchParams.get('desde') ?? '';
-      return ok(
-        agendaDe([
-          diaConSlots(desde),
-          diaVacio(masDias(desde, 1), 'FERIADO'),
-          diaVacio(masDias(desde, 2), 'SIN_HORARIO'),
-          diaVacio(masDias(desde, 3), 'COMPLETO'),
-          diaVacio(masDias(desde, 4), 'OFERTA_NO_VIGENTE'),
-        ]),
-      );
-    };
+  test('ningun dia de la ventana se omite y cada dia vacio muestra su motivo', async ({
+    page,
+    api,
+    centro,
+  }) => {
+    // Cuatro dias habiles seguidos, sin un feriado nacional en el medio que cambie los motivos.
+    const sonda = await crearOferta(api, centro);
+    const d = await ventanaHabil(api, centro, sonda.id, DIAS.buscadorMotivos, 4);
 
-    await page.goto('/agenda');
-    await elegirLaOferta(page);
+    // Turnos de 12 horas: con la franja de 00:00 a 23:45 entra UNO por dia, asi que llenar un
+    // dia es una sola reserva. Vigente hasta d+3 inclusive: d+4 queda fuera.
+    const oferta = await crearOferta(api, centro, {
+      duracionMinutos: 720,
+      vigenciaHasta: sumarDias(d, 3),
+    });
 
-    // Los cinco dias estan dibujados: ninguno se salteo por venir vacio.
+    // d+1: el profesional no atiende por una excepcion de cierre (licencia).
+    await api.exigir('POST', `/api/v1/consultorios/${centro.consultorioId}/excepciones`, {
+      tipo: 'CIERRE',
+      motivo: 'LICENCIA',
+      membershipId: centro.profesional.membershipId,
+      fechaDesde: sumarDias(d, 1),
+      fechaHasta: sumarDias(d, 2),
+    });
+
+    // d+2: el unico turno del dia, tomado.
+    const persona = await crearPersona(api);
+    const [unico] = await slotsDelDia(api, centro, oferta.id, sumarDias(d, 2));
+    await reservar(api, centro, oferta.id, persona.id, unico.desde);
+
+    const primerDia = await slotsDelDia(api, centro, oferta.id, d);
+    await abrirLaAgenda(page, oferta, d, sumarDias(d, 5));
+
+    // Los cinco dias dibujados: ninguno se salteo por venir vacio.
     await expect(page.getByRole('heading', { level: 3 })).toHaveCount(5);
 
-    // Y los cuatro motivos dicen cosas distintas, que es la razon por la que el backend los
-    // distingue en vez de mandar un unico "sin turnos".
-    await expect(page.getByText('Feriado: la sede no atiende este dia.')).toBeVisible();
+    // d y d+3 ofrecen su turno; los otros tres dicen cada uno por que no.
     await expect(
-      page.getByText('Ningun profesional habilitado tiene horario cargado este dia.'),
+      page.getByRole('button', { name: rango(primerDia[0], centro.timezone) }),
+    ).toHaveCount(2);
+    await expect(
+      page.getByText('La sede cierra este dia por una excepcion cargada en el calendario.'),
     ).toBeVisible();
-    await expect(page.getByText('Todos los turnos de este dia ya estan reservados.')).toBeVisible();
+    const diaLleno = page
+      .getByRole('listitem')
+      .filter({ has: page.getByText('Completo', { exact: true }) });
+    await expect(diaLleno.getByText(rango(unico, centro.timezone))).toBeVisible();
+    await expect(diaLleno.getByRole('button')).toHaveCount(0);
     await expect(page.getByText('La oferta no esta vigente este dia.')).toBeVisible();
 
-    // El resumen de ventana vacia NO aparece: hay un dia con turnos.
     await expect(page.getByText('Ningun dia de este rango tiene turnos disponibles')).toHaveCount(
       0,
     );
   });
 
   /**
-   * Escenario 5. El 400 `ventana-demasiado-amplia` trae `maxDays`, y con ese numero la pantalla
-   * recorta y <b>vuelve a pedir</b>. Es la diferencia entre una pantalla que responde y un cartel.
-   *
-   * <p>Se afirman las tres consecuencias: que la segunda consulta salio con la ventana recortada,
-   * que el campo de la pantalla quedo en el valor recortado —si no, el proximo cambio vuelve a
-   * fallar— y que <b>hay grilla y no hay error</b>.
+   * El 400 `ventana-demasiado-amplia` del backend real trae `maxDays`, y con ese numero la
+   * pantalla recorta y vuelve a pedir. Se afirma el problema TAL COMO LO EMITIO el servidor.
    */
   test('la ventana de mas de 62 dias se recorta sola y se reintenta, sin mostrar un error', async ({
     page,
+    api,
+    centro,
   }) => {
-    const MAXIMO = 62;
-    api.agenda = (url) => {
-      const desde = url.searchParams.get('desde') ?? '';
-      const hasta = url.searchParams.get('hasta') ?? '';
-      if (anchoEnDias(desde, hasta) > MAXIMO) {
-        return problema(400, 'ventana-demasiado-amplia', 'La ventana pedida supera el maximo.', {
-          maxDays: MAXIMO,
-        });
-      }
-      return ok(agendaDe([diaConSlots(desde)]));
-    };
+    const oferta = await crearOferta(api, centro);
+    const desde = fechaLocal(centro.timezone);
+    await navegar(page, '/agenda');
+    await page.getByLabel('Oferta', { exact: true }).selectOption({ label: oferta.nombre });
+    await expect(page.getByRole('heading', { name: oferta.nombre, level: 2 })).toBeVisible();
 
-    await page.goto('/agenda');
-    await elegirLaOferta(page);
+    const rechazo = respuestaDe(page, 'GET', /\/ofertas\/\d+\/agenda$/);
+    await page.getByLabel('Hasta (sin incluir)').fill(sumarDias(desde, 120));
 
-    const desde = await page.getByLabel('Desde').inputValue();
-    api.ventanasPedidas.length = 0;
+    const respuesta = await rechazo;
+    expect(respuesta.status()).toBe(400);
+    const problema = await problemaDe(respuesta);
+    expect(problema.type).toBe(uriDeProblema('ventana-demasiado-amplia'));
+    expect(problema['maxDays']).toBe(62);
 
-    await page.getByLabel('Hasta (sin incluir)').fill(masDias(desde, 120));
-
-    // El aviso dice que se recorto, que es distinto de fallar.
     await expect(page.getByText('Lo recortamos y volvimos a pedirla.')).toBeVisible();
-
-    // El campo quedo en el valor recortado: si no, el proximo cambio del usuario vuelve a fallar.
-    await expect(page.getByLabel('Hasta (sin incluir)')).toHaveValue(masDias(desde, MAXIMO));
-
-    // Y la grilla esta: la consulta se hizo igual.
-    await expect(page.getByRole('heading', { name: NOMBRE_OFERTA, level: 2 })).toBeVisible();
-    await expect(page.getByRole('heading', { level: 3 })).toHaveCount(1);
-
-    // La prueba de que reintento solo: dos consultas, la segunda ya recortada.
-    expect(api.ventanasPedidas).toEqual([
-      { desde, hasta: masDias(desde, 120) },
-      { desde, hasta: masDias(desde, MAXIMO) },
-    ]);
-
-    // Y el aviso no sobrevive a la consulta siguiente. Esta ventana entra sin recortar; dejar el
-    // cartel dibujado afirmaria que TAMBIEN se recorto, que es falso, y el usuario no tendria
-    // forma de saber cual de las dos consultas describe.
-    await page.getByLabel('Desde').fill(masDias(desde, 1));
-    await expect(page.getByText('Lo recortamos y volvimos a pedirla.')).toHaveCount(0);
+    await expect(page.getByLabel('Hasta (sin incluir)')).toHaveValue(sumarDias(desde, 62));
+    await expect(page.getByRole('heading', { level: 3 })).toHaveCount(62);
   });
 
   /**
-   * Escenario 6. Un hueco en la grilla el usuario lo lee como "no atiende a esa hora", que es
-   * una afirmacion distinta —y falsa— de "a esa hora atiende y ya se lleno".
-   *
-   * <p>Por eso no alcanza con que el slot lleno se vea: hay que afirmar tambien que <b>no es
-   * accionable</b>. Un slot completo que sigue siendo boton lleva a una reserva que el backend
-   * rechaza con `slot-completo`, que es el conflicto que la pantalla existe para evitar.
+   * Un hueco en la grilla se lee como "no atiende a esa hora". El slot que el backend devuelve con
+   * `cupoLibre: 0` tiene que verse, marcado, y no ser un boton.
    */
   test('el slot completo se dibuja marcado y sin ser accionable, no se esconde', async ({
     page,
+    api,
+    centro,
   }) => {
-    api.agenda = (url) =>
-      ok(agendaDe([diaConSlots(url.searchParams.get('desde') ?? '', { completoElPrimero: true })]));
+    const oferta = await crearOferta(api, centro);
+    const {
+      fecha: d,
+      slots: [primero, segundo],
+    } = await diaDeTrabajo(api, centro, oferta.id, DIAS.buscadorSlotCompleto);
+    await reservar(api, centro, oferta.id, (await crearPersona(api)).id, primero.desde);
 
-    await page.goto('/agenda');
-    await elegirLaOferta(page);
+    await abrirLaAgenda(page, oferta, d, sumarDias(d, 1));
 
-    // Los tres horarios se ven, el lleno incluido: la grilla no tiene huecos.
-    await expect(page.getByText('09:00 a 09:45')).toBeVisible();
-    await expect(page.getByText('09:45 a 10:30')).toBeVisible();
-    await expect(page.getByText('10:30 a 11:15')).toBeVisible();
-    await expect(page.getByText('Completo')).toBeVisible();
-
-    // Pero solo dos son accionables, y el lleno no es uno de ellos.
-    await expect(page.getByRole('button', { name: /09:00 a 09:45/ })).toHaveCount(0);
-    await expect(page.getByRole('button', { name: /09:45 a 10:30/ })).toBeVisible();
-    await expect(page.getByRole('button', { name: /10:30 a 11:15/ })).toBeVisible();
-  });
-
-  /**
-   * Corolario del escenario 6 que vale la pena fijar: sin `turno:manage` el hueco se muestra
-   * igual, sin ser accionable. Esconderlo dejaria la grilla llena de agujeros para quien solo
-   * puede consultarla, que es el mismo malentendido.
-   */
-  test('sin permiso para reservar, los slots se ven pero ninguno es un boton', async ({ page }) => {
-    api.permisos = ['tenant:read', 'turno:read'];
-
-    await page.goto('/agenda');
-    await elegirLaOferta(page);
-
-    await expect(page.getByText('09:00 a 09:45')).toBeVisible();
-    await expect(page.getByRole('button', { name: /09:00 a 09:45/ })).toHaveCount(0);
+    await expect(page.getByText(rango(primero, centro.timezone))).toBeVisible();
+    await expect(page.getByText('Completo', { exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: rango(primero, centro.timezone) })).toHaveCount(
+      0,
+    );
+    await expect(page.getByRole('button', { name: rango(segundo, centro.timezone) })).toBeVisible();
   });
 });

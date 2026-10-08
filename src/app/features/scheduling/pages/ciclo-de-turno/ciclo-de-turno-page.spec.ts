@@ -281,6 +281,99 @@ describe('CicloDeTurnoPage', () => {
   });
 
   /**
+   * Encontrado por el E2E contra el backend real (AKINE E-2). Despues de una transicion hecha
+   * desde esta pantalla, la respuesta de esa transicion le ganaba para siempre a cualquier
+   * relectura: si otra persona movia el turno, "Releer el turno" traia la version nueva pero la
+   * pantalla seguia mostrando el estado viejo y mandando la version vieja. El 409 no tenia salida.
+   */
+  it('releer despues de un 409 reemplaza lo que dejo la ultima transicion', async () => {
+    const fixture = await montar();
+
+    clickear(fixture, 'Confirmar el turno');
+    httpMock
+      .expectOne(CONFIRMACION)
+      .flush({ id: TURNO, estado: 'CONFIRMADO', version: 1, inicio: INICIO, fin: SIGUIENTE });
+    await asentar(fixture);
+    httpMock.expectOne(HISTORIAL).flush(EVENTOS);
+    await asentar(fixture);
+
+    // Mientras tanto otra persona lo reprogramo (version 2): cancelar con la 1 rebota.
+    clickear(fixture, 'Cancelar el turno');
+    escribirMotivo(fixture, 'Con la version vieja');
+    enviarPanel(fixture);
+    httpMock
+      .expectOne(CANCELACION)
+      .flush(
+        { type: 'https://akine.app/problems/conflict', status: 409, detail: 'Version vieja.' },
+        { status: 409, statusText: 'Conflict' },
+      );
+    await asentar(fixture);
+
+    clickear(fixture, 'Releer el turno');
+    httpMock
+      .expectOne((p: HttpRequest<unknown>) => p.method === 'GET' && p.url === TURNO_URL)
+      .flush({ ...TURNO_LEIDO, estado: 'RESERVADO', version: 2 });
+    httpMock.expectOne(HISTORIAL).flush(EVENTOS);
+    httpMock.expectOne(esAgenda()).flush(DIA);
+    await asentar(fixture);
+
+    expect(textoDe(fixture)).toContain('Reservado');
+
+    // El panel de cancelar sigue abierto: releer no tira lo que la persona ya escribio.
+    escribirMotivo(fixture, 'Con la version vigente');
+    enviarPanel(fixture);
+    const vigente = httpMock.expectOne(CANCELACION);
+    expect(vigente.request.body).toEqual({
+      motivo: 'Con la version vigente',
+      expectedVersion: 2,
+    });
+    vigente.flush({ id: TURNO, estado: 'CANCELADO', version: 3, inicio: INICIO, fin: SIGUIENTE });
+    await asentar(fixture);
+    httpMock.expectOne(HISTORIAL).flush(EVENTOS);
+  });
+
+  /** La otra cara del caso anterior, y tambien la vio el E2E: el orden de llegada no manda. */
+  it('la lectura de la apertura que vuelve tarde no pisa una transicion mas nueva', async () => {
+    tenantContext.select({
+      organizationId: 1,
+      organizationName: 'Centro Belgrano',
+      consultorioId: CONSULTORIO,
+      consultorioName: 'Sede Centro',
+    });
+    permisos.cargar().subscribe();
+    httpMock
+      .expectOne(RUTA_PERMISOS_EFECTIVOS)
+      .flush({ permissions: [PERMISO_TURNO_READ, PERMISO_TURNO_MANAGE] });
+    const fixture = TestBed.createComponent(CicloDeTurnoPage);
+    fixture.componentRef.setInput('turnoId', String(TURNO));
+    fixture.componentRef.setInput('version', '0');
+    fixture.componentRef.setInput('ofertaId', String(OFERTA));
+    fixture.componentRef.setInput('fecha', FECHA);
+    fixture.detectChanges();
+
+    // La lectura de la apertura queda en vuelo mientras la persona confirma.
+    const apertura = httpMock.expectOne(
+      (p: HttpRequest<unknown>) => p.method === 'GET' && p.url === TURNO_URL,
+    );
+    httpMock.expectOne(HISTORIAL).flush(EVENTOS);
+    httpMock.expectOne(esAgenda()).flush(DIA);
+    await asentar(fixture);
+
+    clickear(fixture, 'Confirmar el turno');
+    httpMock
+      .expectOne(CONFIRMACION)
+      .flush({ id: TURNO, estado: 'CONFIRMADO', version: 1, inicio: INICIO, fin: SIGUIENTE });
+    await asentar(fixture);
+    httpMock.expectOne(HISTORIAL).flush(EVENTOS);
+
+    apertura.flush(TURNO_LEIDO);
+    await asentar(fixture);
+
+    expect(textoDe(fixture)).toContain('Confirmado');
+    expect(textoDe(fixture)).not.toContain('Reservado —');
+  });
+
+  /**
    * Es el motivo del cambio de 0.23.0. Antes, un enlace sin `?version=` dejaba la pantalla a
    * medias: historial completo, confirmar, y nada mas. Ahora la version sale de la lectura del
    * turno y la pantalla opera igual.
