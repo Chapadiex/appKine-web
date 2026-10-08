@@ -5,6 +5,7 @@ import {
   diaIso,
   expandirRegla,
   fechaEnZona,
+  horarioDesplazado,
   textoDeDias,
   textoDeOmitido,
   ventanasDeAgenda,
@@ -160,9 +161,37 @@ describe('traducirErrorSerie', () => {
     expect(error.mensaje).toContain('ningun turno pendiente');
   });
 
+  it('en la reprogramacion, el destino sin lugar dice que no se movio ninguno', () => {
+    const error = traducirErrorSerie(
+      problema(409, 'slot-completo', { ocurrenciaInicio: '2026-10-20T13:00:00Z' }),
+      ZONA,
+      'reprogramar',
+    );
+    expect(error.mensaje).toContain('No se movio ningun turno');
+    expect(error.mensaje).toContain('20/10/2026');
+    expect(error.mensaje).not.toContain('reservo');
+    expect(traducirErrorSerie(problema(409, 'conflict'), ZONA, 'reprogramar').mensaje).toContain(
+      'No se movio nada',
+    );
+  });
+
   it('la clave reusada pide reintentar con otra', () => {
     expect(traducirErrorSerie(problema(409, 'idempotency-key-conflict')).accion).toBe(
       'reintentar-con-clave-nueva',
     );
+  });
+});
+
+describe('horarioDesplazado', () => {
+  it('corre cada turno lo mismo que el pivote, en hora local de la sede', () => {
+    // Pivote: lunes 12/10 09:00 -> martes 13/10 10:00 (Cordoba, UTC-3): +1 dia y +1 hora.
+    const pivote = '2026-10-12T12:00:00Z';
+    const nuevo = '2026-10-13T13:00:00Z';
+    expect(horarioDesplazado('2026-10-26T12:00:00Z', pivote, nuevo, ZONA)).toBe(
+      'martes, 27 de octubre, 10:00',
+    );
+    // Un turno movido a mano a las 11:00 conserva su diferencia.
+    expect(horarioDesplazado('2026-10-19T14:00:00Z', pivote, nuevo, ZONA)).toContain('12:00');
+    expect(horarioDesplazado(undefined, pivote, nuevo, ZONA)).toBe('');
   });
 });
