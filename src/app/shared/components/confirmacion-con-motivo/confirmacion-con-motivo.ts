@@ -1,8 +1,11 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  DOCUMENT,
+  DestroyRef,
   ElementRef,
   afterNextRender,
+  inject,
   effect,
   input,
   output,
@@ -111,7 +114,32 @@ export class ConfirmacionConMotivo {
 
   private readonly campo = viewChild<ElementRef<HTMLInputElement>>('campoMotivo');
 
+  /**
+   * El control que abrio el panel: el que tenia el foco cuando el panel se monto.
+   *
+   * <p>Al cerrarse -cancelado o confirmado- el panel desaparece con el campo enfocado adentro y
+   * el foco cae al `body`: quien navega por teclado vuelve al principio del documento. WCAG 2.4.3
+   * pide que vuelva al control que abrio el panel, si ese control sigue en la pantalla.
+   */
+  private readonly disparador: HTMLElement | null;
+
   constructor() {
+    const documento = inject(DOCUMENT);
+    const activo = documento.activeElement;
+    this.disparador = activo instanceof HTMLElement && activo !== documento.body ? activo : null;
+
+    inject(DestroyRef).onDestroy(() => {
+      // Despues del desmontaje: recien ahi se sabe si el foco quedo huerfano. Si la pantalla ya lo
+      // movio a otro lado -un mensaje, el paso siguiente-, no se le pisa la decision.
+      setTimeout(() => {
+        const huerfano =
+          documento.activeElement === null || documento.activeElement === documento.body;
+        if (huerfano && this.disparador?.isConnected) {
+          this.disparador.focus();
+        }
+      });
+    });
+
     // El validador se aplica aca y no al construir el control: `motivoObligatorio` es un input
     // y su valor no esta disponible todavia en el inicializador del campo.
     effect(() => {

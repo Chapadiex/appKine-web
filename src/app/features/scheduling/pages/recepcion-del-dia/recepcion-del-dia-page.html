@@ -168,24 +168,25 @@
                   <!-- La observacion advierte y no bloquea (RN-M13-003): queda a la vista. -->
                   <p class="ayuda">Observacion: {{ recepcion.observacion }}</p>
                 }
-                @if (textoDePrepago(recepcion.prepago); as prepago) {
-                  <!--
-                    E-6: el prepago AVISA y no bloquea (DP-06). Se dice con texto, no solo con el
-                    color de la pastilla (WCAG 1.4.1).
-                  -->
-                  <p class="ayuda">
-                    <span
-                      class="marca-estado"
-                      [class.marca-estado--suspendida]="prepagoPendiente(turno)"
-                      [class.marca-estado--activa]="!prepagoPendiente(turno)"
-                    >
-                      {{ prepagoPendiente(turno) ? 'Prepago pendiente' : 'Prepago registrado' }}
-                    </span>
-                    {{ prepago }}
-                  </p>
-                }
               } @else {
                 <span class="ayuda">Sin recepcion</span>
+              }
+              @if (textoDePrepago(turno); as prepago) {
+                <!--
+                  E-6/E-8: el prepago AVISA y no bloquea (DP-06), y se ve tambien antes de la
+                  llegada: sale del turno, no de la recepcion. Se dice con texto, no solo con el
+                  color de la pastilla (WCAG 1.4.1).
+                -->
+                <p class="ayuda">
+                  <span
+                    class="marca-estado"
+                    [class.marca-estado--suspendida]="prepagoPendiente(turno)"
+                    [class.marca-estado--activa]="!prepagoPendiente(turno)"
+                  >
+                    {{ prepagoPendiente(turno) ? 'Prepago pendiente' : 'Prepago registrado' }}
+                  </span>
+                  {{ prepago }}
+                </p>
               }
             </td>
 
@@ -271,7 +272,8 @@
                 @if (puedeCobrar() && admitePrepago(turno)) {
                   <!--
                     El prepago se cobra en el registro de cobro (billing), como anticipo atado al
-                    turno. Al volver, esta pantalla relee el dia y la fila pasa a REGISTRADO.
+                    turno, tambien antes de la llegada. Al volver, esta pantalla relee el dia y la
+                    fila pasa a REGISTRADO.
                   -->
                   <a
                     class="boton boton--secundario"

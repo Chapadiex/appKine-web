@@ -1,4 +1,15 @@
-import { Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  Injector,
+  afterNextRender,
+  computed,
+  effect,
+  inject,
+  input,
+  signal,
+  untracked,
+} from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { BillingApi } from '../../services/billing-api';
@@ -46,6 +57,8 @@ type EstadoCobros =
 export class CobrosPage {
   private readonly api = inject(BillingApi);
   private readonly tenantContext = inject(TenantContextStore);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly injector = inject(Injector);
 
   /** De la ruta padre. `withComponentInputBinding` lo liga solo. */
   readonly personaId = input.required<string>();
@@ -140,6 +153,7 @@ export class CobrosPage {
       next: (fresco) => {
         this.abriendo.set(null);
         this.comprobante.set(fresco);
+        this.enfocarBotonDelComprobante(cobro.id);
       },
       error: (error: unknown) => {
         this.abriendo.set(null);
@@ -149,8 +163,25 @@ export class CobrosPage {
   }
 
   protected cerrar(): void {
+    const abierto = this.comprobante()?.id;
     this.comprobante.set(null);
     this.errorDetalle.set(null);
+    this.enfocarBotonDelComprobante(abierto);
+  }
+
+  /**
+   * "Ver el comprobante" y "Cerrar el comprobante" se reemplazan uno por otro en la misma celda:
+   * el que se apreto desaparece y el foco caeria al `body`. Comparten `id`, asi que se enfoca el
+   * que quedo (WCAG 2.4.3).
+   */
+  private enfocarBotonDelComprobante(cobroId: number | undefined): void {
+    if (cobroId === undefined) {
+      return;
+    }
+    afterNextRender(
+      () => this.host.nativeElement.querySelector<HTMLElement>(`#comprobante-${cobroId}`)?.focus(),
+      { injector: this.injector },
+    );
   }
 
   protected esElAbierto(cobro: Cobro): boolean {

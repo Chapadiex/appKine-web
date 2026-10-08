@@ -1,5 +1,6 @@
 import { Agenda } from '../../../api/generated/model/agenda';
 import { AlcanceDeSerieAlcanceEnum } from '../../../api/generated/model/alcance-de-serie';
+import { SerieDeTurnosResumenEstadoEnum } from '../../../api/generated/model/serie-de-turnos-resumen';
 import { SlotDisponible } from '../../../api/generated/model/slot-disponible';
 import { TurnoOmitidoMotivoEnum } from '../../../api/generated/model/turno-omitido';
 import { horaEnZona, slotCompleto, sumarDias, textoSinSlots } from './etiquetas-de-agenda';
@@ -224,4 +225,17 @@ export function textoDeDias(dias: readonly number[] | undefined): string {
 
 function capitalizar(texto: string): string {
   return texto === '' ? '' : texto[0].toUpperCase() + texto.slice(1);
+}
+
+const TEXTOS_DE_ESTADO_DE_SERIE: Readonly<Record<SerieDeTurnosResumenEstadoEnum, string>> = {
+  [SerieDeTurnosResumenEstadoEnum.VIGENTE]: 'Vigente',
+  [SerieDeTurnosResumenEstadoEnum.FINALIZADA]: 'Finalizada',
+};
+
+/**
+ * Estado de una serie en la bandeja (AKINE E-8). Lo deriva el backend de los turnos al leer:
+ * `VIGENTE` si le queda uno pendiente. "Finalizada" no distingue cancelada de terminada.
+ */
+export function textoDeEstadoDeSerie(estado: string | undefined): string {
+  return TEXTOS_DE_ESTADO_DE_SERIE[estado as SerieDeTurnosResumenEstadoEnum] ?? '';
 }

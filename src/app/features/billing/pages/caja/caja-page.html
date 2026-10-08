@@ -287,6 +287,7 @@
                     <button
                       type="button"
                       class="boton boton--secundario"
+                      [id]="'revertir-' + movimiento.id"
                       (click)="pedirReversion(movimiento)"
                     >
                       Revertir

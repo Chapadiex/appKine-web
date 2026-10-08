@@ -511,6 +511,34 @@ describe('ArancelesDelConvenioPage', () => {
     );
   });
 
+  it('el 404 de un alta con oferta habla de la oferta, no de un arancel que no existe', async () => {
+    const fixture = await montar();
+    abrir(fixture, 'Cargar un arancel');
+    elegir(fixture, '#alta-arancel-practica', '55');
+    elegir(fixture, '#alta-arancel-oferta', '31');
+    escribir(fixture, '#alta-arancel-total', '12000');
+    escribir(fixture, '#alta-arancel-financiador', '9000');
+    escribir(fixture, '#alta-arancel-coseguro', '3000');
+    escribir(fixture, '#alta-arancel-desde', '2026-07-01');
+    enviar(fixture, 'form[novalidate]');
+
+    httpMock
+      .expectOne(
+        (peticion: HttpRequest<unknown>) =>
+          peticion.method === 'POST' && peticion.url === ARANCELES,
+      )
+      .flush(
+        { type: 'https://akine.app/problems/not-found', status: 404, detail: 'x' },
+        { status: 404, statusText: 'Not Found' },
+      );
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(texto).toContain('No encontramos la oferta elegida en esta sede');
+    expect(texto).not.toContain('Ese arancel ya no existe');
+  });
+
   it(
     'la pantalla no tiene violaciones de accesibilidad',
     async () => {

@@ -20,6 +20,17 @@ import { TEXTO_MODO_LECTURA, modoLectura, puedeGestionar } from '../../models/mo
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { etiquetaDeTipoDeFeriado } from '../../models/tipos-de-feriado';
 import { traducirErrorExcepcion } from '../../models/excepcion-errors';
+import { AkineHttpError } from '../../../../core/interceptors/error.interceptor';
+import { EditorDeFranjas } from '../../../../shared/components/editor-de-franjas/editor-de-franjas';
+import { etiquetaDeDia } from '../../../../shared/utils/dias-de-la-semana';
+import { rangoHorario } from '../../../../shared/utils/horas-de-pared';
+import {
+  FranjaSemanal,
+  crearFranjasForm,
+  erroresDeFranjasDelServidor,
+  franjasDelFormulario,
+  reemplazarFranjas,
+} from '../../../../shared/utils/franjas-semanales';
 import {
   MAXIMO_DIAS_VENTANA,
   diasEntre,
@@ -62,7 +73,7 @@ const DIAS_PROPUESTOS = 365;
  */
 @Component({
   selector: 'app-calendario-sede-page',
-  imports: [ReactiveFormsModule, RouterLink, PermisoDirective],
+  imports: [ReactiveFormsModule, RouterLink, PermisoDirective, EditorDeFranjas],
   templateUrl: './calendario-sede-page.html',
   styleUrl: '../../resource.css',
 })
@@ -95,7 +106,7 @@ export class CalendarioSedePage {
   protected readonly modoLectura = modoLectura(this.permisos);
 
   /** `true` solo cuando consta que el permiso esta. Con permisos desconocidos, `false`. */
-  private readonly puedeGestionar = puedeGestionar(this.permisos);
+  protected readonly puedeGestionar = puedeGestionar(this.permisos);
   protected readonly maximoDias = MAXIMO_DIAS_VENTANA;
   protected readonly etiquetaDeFecha = etiquetaDeFecha;
 
@@ -138,6 +149,32 @@ export class CalendarioSedePage {
   protected readonly formularioPolitica = this.formBuilder.nonNullable.group({
     cierraPorFeriado: [{ value: true, disabled: true }],
   });
+
+  /**
+   * Horario general de la sede (A-8, RF-M03-003): la lista que se edita.
+   *
+   * <p>Es <b>informativo</b>: la agenda ofrece turnos con la disponibilidad de cada profesional,
+   * no con esto (RN-M03-004). La pantalla lo dice, porque un horario general "de 9 a 18" invita a
+   * creer que fuera de esa franja no se puede reservar.
+   */
+  protected readonly formularioHorario = crearFranjasForm();
+  /** Envoltorio para el `<form>`: `ngSubmit` es de `FormGroupDirective`, no de un `FormArray`. */
+  protected readonly formularioHorarioGrupo = this.formBuilder.group({
+    franjas: this.formularioHorario,
+  });
+  protected readonly guardandoHorario = signal(false);
+  protected readonly intentosHorario = signal(0);
+  protected readonly errorHorario = signal<string | null>(null);
+  protected readonly erroresFranja = signal<ReadonlyMap<number, string>>(new Map());
+  protected readonly exitoHorario = signal<string | null>(null);
+
+  /** El horario guardado, redactado: lo que ve quien no puede editarlo. */
+  protected readonly horarioGuardado = computed(() =>
+    (this.politica()?.horarioGeneral ?? []).map(
+      (franja) =>
+        `${etiquetaDeDia(franja.diaSemana)}: ${rangoHorario(franja.horaDesde, franja.horaHasta)}`,
+    ),
+  );
 
   /**
    * `true` mientras la casilla esta desmarcada, haya guardado o no.
@@ -185,6 +222,10 @@ export class CalendarioSedePage {
         this.politica.set(null);
         this.exito.set(null);
         this.errorPolitica.set(null);
+        // El horario de la sede anterior no puede quedar en el editor bajo la sede nueva.
+        reemplazarFranjas(this.formularioHorario, []);
+        this.intentosHorario.set(0);
+        this.limpiarAvisosDeHorario();
         this.proponerVentana(inicial);
         this.consultar();
       });
@@ -248,12 +289,19 @@ export class CalendarioSedePage {
           return;
         }
 
+        // Cambiar la ventana de feriados vuelve a leer la politica entera. Si el horario tiene
+        // cambios sin guardar, no se pisan: la ventana no tiene nada que ver con el horario.
+        // Se mide ANTES de pisar la politica, que es contra lo que se compara.
+        const habiaCambios = this.hayCambiosEnHorario();
         this.politica.set(respuesta);
         // La casilla refleja lo guardado. `cierraPorFeriado` puede no venir: el default de una
         // sede sin fila propia es cerrar, que es lo conservador.
         this.formularioPolitica.setValue({
           cierraPorFeriado: respuesta.cierraPorFeriado !== false,
         });
+        if (!habiaCambios) {
+          this.cargarHorario(respuesta.horarioGeneral);
+        }
         this.estado.set({ tipo: 'listo', pagina: { content: respuesta.feriados ?? [] } });
       });
   }
@@ -304,4 +352,95 @@ export class CalendarioSedePage {
         },
       });
   }
+
+  /** `true` cuando las franjas del editor difieren de las guardadas. */
+  protected hayCambiosEnHorario(): boolean {
+    const guardadas = normalizar(this.politica()?.horarioGeneral ?? []);
+    return (
+      JSON.stringify(franjasDelFormulario(this.formularioHorario)) !== JSON.stringify(guardadas)
+    );
+  }
+
+  /**
+   * Reemplaza el horario general por el del editor.
+   *
+   * <p>El `PUT` manda <b>solo</b> `horarioGeneral`: omitir `pais` y `cierraPorFeriado` los deja
+   * como estaban. Una lista REEMPLAZA el horario entero —lo anterior queda como historia del
+   * lado del backend—, y una lista vacia lo borra. Por eso guardar con el editor vacio es lo
+   * mismo que {@link borrarHorario}.
+   */
+  protected guardarHorario(): void {
+    this.intentosHorario.update((valor) => valor + 1);
+    if (this.formularioHorario.invalid) {
+      this.formularioHorario.markAllAsTouched();
+      return;
+    }
+    this.enviarHorario(franjasDelFormulario(this.formularioHorario));
+  }
+
+  /** Borra el horario general: `[]` explicito, que no es lo mismo que omitir el campo. */
+  protected borrarHorario(): void {
+    this.enviarHorario([]);
+  }
+
+  private enviarHorario(horarioGeneral: FranjaSemanal[]): void {
+    // Misma guarda que `guardar()`: los botones viven detras del permiso, pero Enter no.
+    if (!this.puedeGestionar()) {
+      return;
+    }
+    const consultorioId = this.tenantContext.consultorioId();
+    if (consultorioId === null || this.guardandoHorario()) {
+      return;
+    }
+
+    this.guardandoHorario.set(true);
+    this.limpiarAvisosDeHorario();
+
+    this.calendario
+      .updateCalendarioSede({ consultorioId, updateCalendarioRequest: { horarioGeneral } })
+      .subscribe({
+        next: (respuesta) => {
+          this.guardandoHorario.set(false);
+          this.intentosHorario.set(0);
+          // Igual que en `guardar()`: la lista de feriados del PUT viene vacia y no se pisa.
+          this.politica.set({ ...respuesta, feriados: this.politica()?.feriados ?? [] });
+          // El backend devuelve el horario ordenado por dia y hora: el editor queda como quedo
+          // guardado, no como se tipeo.
+          this.cargarHorario(respuesta.horarioGeneral);
+          this.exitoHorario.set(
+            horarioGeneral.length === 0
+              ? 'Listo: la sede ya no tiene horario general declarado.'
+              : 'Listo: el horario general quedo guardado. Recorda que es informativo: no cambia la agenda.',
+          );
+        },
+        error: (error: unknown) => {
+          this.guardandoHorario.set(false);
+          this.errorHorario.set(traducirErrorExcepcion(error).mensaje);
+          if (error instanceof AkineHttpError) {
+            this.erroresFranja.set(erroresDeFranjasDelServidor(error.erroresPorCampo));
+          }
+        },
+      });
+  }
+
+  private cargarHorario(horario: CalendarioSedeResponse['horarioGeneral']): void {
+    reemplazarFranjas(this.formularioHorario, normalizar(horario ?? []));
+  }
+
+  private limpiarAvisosDeHorario(): void {
+    this.errorHorario.set(null);
+    this.erroresFranja.set(new Map());
+    this.exitoHorario.set(null);
+  }
+}
+
+/** Las franjas de la respuesta —todos sus campos son opcionales en el contrato— como filas. */
+function normalizar(
+  horario: NonNullable<CalendarioSedeResponse['horarioGeneral']>,
+): FranjaSemanal[] {
+  return horario.map((franja) => ({
+    diaSemana: franja.diaSemana ?? 1,
+    horaDesde: franja.horaDesde ?? '',
+    horaHasta: franja.horaHasta ?? '',
+  }));
 }

@@ -1,4 +1,14 @@
-import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  Injector,
+  afterNextRender,
+  computed,
+  effect,
+  inject,
+  signal,
+  untracked,
+} from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { forkJoin, of, switchMap } from 'rxjs';
 
@@ -72,6 +82,8 @@ const PAGINA_DE_MOVIMIENTOS = 50;
 export class CajaPage {
   private readonly api = inject(CajaApi);
   private readonly tenantContext = inject(TenantContextStore);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly injector = inject(Injector);
 
   protected readonly medioEnPalabras = medioEnPalabras;
   protected readonly tipoEnPalabras = tipoDeMovimientoEnPalabras;
@@ -356,15 +368,33 @@ export class CajaPage {
     return movimiento.id !== undefined && this.revertidos().has(movimiento.id);
   }
 
+  /**
+   * Abre el panel de reversion bajo la fila.
+   *
+   * <p>El boton "Revertir" desaparece al abrirse el panel, asi que el foco se lleva al motivo: si
+   * no, cae al `body` y quien usa teclado vuelve al principio del documento (WCAG 2.4.3).
+   */
   protected pedirReversion(movimiento: MovimientoDeCaja): void {
     this.revirtiendo.set(movimiento.id ?? null);
     this.motivoReversion.set('');
     this.error.set(null);
+    this.enfocarDespues(`#motivo-reversion-${movimiento.id}`);
   }
 
+  /** Cierra el panel y devuelve el foco al "Revertir" que lo abrio. */
   protected cancelarReversion(): void {
+    const movimientoId = this.revirtiendo();
     this.revirtiendo.set(null);
     this.motivoReversion.set('');
+    if (movimientoId !== null) {
+      this.enfocarDespues(`#revertir-${movimientoId}`);
+    }
+  }
+
+  private enfocarDespues(selector: string): void {
+    afterNextRender(() => this.host.nativeElement.querySelector<HTMLElement>(selector)?.focus(), {
+      injector: this.injector,
+    });
   }
 
   protected confirmarReversion(): void {

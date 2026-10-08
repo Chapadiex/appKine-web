@@ -5,10 +5,15 @@ import { AlcanceDeSerie } from '../../../api/generated/model/alcance-de-serie';
 import { CancelarSerieDeTurnosAlcanceEnum } from '../../../api/generated/model/cancelar-serie-de-turnos';
 import { CrearSerieDeTurnos } from '../../../api/generated/model/crear-serie-de-turnos';
 import { SerieDeTurnos } from '../../../api/generated/model/serie-de-turnos';
+import { SerieDeTurnosPage } from '../../../api/generated/model/serie-de-turnos-page';
 import { SeriesDeTurnosService } from '../../../api/generated/api/series-de-turnos.service';
+import { ListarSeriesDeTurnosRequestParams } from '../../../api/generated/api/series-de-turnos.serviceInterface';
 
 /** Los tres alcances que el contrato admite. Es el enum generado, con un nombre de la feature. */
 export type AlcanceSerie = CancelarSerieDeTurnosAlcanceEnum;
+
+/** Filtro de la bandeja: los parametros de `listarSeriesDeTurnos` sin la sede. */
+export type FiltroDeSeries = Omit<ListarSeriesDeTurnosRequestParams, 'consultorioId'>;
 
 /**
  * Fachada de las series de turnos (M12, AKINE E-3, DP-04).
@@ -27,8 +32,8 @@ export type AlcanceSerie = CancelarSerieDeTurnosAlcanceEnum;
  *   <li><b>La cancelacion con alcance si tiene previsualizacion</b> (`GET .../alcance`), y el
  *       comando exige `cantidadConfirmada`: la cantidad de afectados que se le mostro al
  *       operador. Si cambio entre medio, 409 `conflict` y no se cancela nada.</li>
- *   <li><b>No hay listado de series.</b> Una serie se alcanza por su id: desde el alta, o desde un
- *       turno que trae `serieId`.</li>
+ *   <li><b>El listado llego con el contrato 0.68.0</b> (E-8, {@link listar}): la bandeja de la
+ *       sede, filtrable por persona y por estado. Antes una serie solo se alcanzaba por su id.</li>
  * </ul>
  */
 @Injectable({ providedIn: 'root' })
@@ -43,6 +48,16 @@ export class SeriesApi {
    */
   crear(consultorioId: number, cuerpo: CrearSerieDeTurnos): Observable<SerieDeTurnos> {
     return this.series.crearSerieDeTurnos({ consultorioId, crearSerieDeTurnos: cuerpo });
+  }
+
+  /**
+   * Bandeja de series de la sede, mas nuevas primero (AKINE E-8). Exige `turno:read`.
+   *
+   * <p>El estado no es una columna: el backend lo deriva de los turnos al leer, con el mismo
+   * instante con que filtra. `size` se acota a 100 del lado del servidor.
+   */
+  listar(consultorioId: number, filtro: FiltroDeSeries): Observable<SerieDeTurnosPage> {
+    return this.series.listarSeriesDeTurnos({ consultorioId, ...filtro });
   }
 
   /** La regla y los turnos tal como estan hoy, en cualquier estado. Exige `turno:read`. */

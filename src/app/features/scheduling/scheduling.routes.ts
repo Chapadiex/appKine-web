@@ -88,7 +88,7 @@ export const routes: Routes = [
     title: 'AKINE - Reservar un turno',
   },
   // Series de turnos (AKINE E-3, DP-04). El alta llega desde la reserva con el mismo slot en la
-  // query; la serie se abre por su id, porque el contrato no publica un listado de series.
+  // query; la serie se abre por su id o desde la bandeja de series (E-8).
   {
     path: 'ofertas/:ofertaId/reservar-serie',
     canActivate: [contextGuard],
@@ -97,6 +97,16 @@ export const routes: Routes = [
         (m) => m.SerieDeTurnosAltaPage,
       ),
     title: 'AKINE - Reservar una serie de turnos',
+  },
+  // Bandeja de series de la sede (AKINE E-8, contrato 0.68.0). `turno:read`, como ver una serie.
+  {
+    path: 'series',
+    canActivate: [contextGuard, permissionGuard(PERMISO_TURNO_READ)],
+    loadComponent: () =>
+      import('./pages/bandeja-de-series/bandeja-de-series-page').then((m) => m.BandejaDeSeriesPage),
+    title: 'AKINE - Series de turnos',
+    // Ancho amplio: siete columnas, y la regla y el paciente llevan dos renglones cada uno.
+    data: { [DATA_ANCHO]: ANCHO_AMPLIO },
   },
   {
     path: 'series/:serieId',
