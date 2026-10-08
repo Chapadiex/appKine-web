@@ -41,7 +41,31 @@ export default defineConfig({
       // La auditoria de contraste tiene sus propios dos proyectos, uno por tema. Sin esto
       // correria una tercera vez con el `colorScheme` que traiga el sistema del runner, que es
       // justamente el dato que no se puede dejar al azar.
-      testIgnore: /contraste\.spec\.ts/,
+      testIgnore: [/contraste\.spec\.ts/, /agenda[-.]/],
+    },
+
+    /*
+     * Agenda, ciclo del turno y recepcion contra el backend REAL (AKINE E-2).
+     *
+     * `agenda-setup` siembra por la API un centro con su profesional y su disponibilidad; el
+     * proyecto `agenda` lo declara como dependencia, asi que `--project=agenda` arrastra el
+     * sembrado solo y `npm run a11y:contraste` no lo toca.
+     *
+     * `workers: 2` no es timidez: login y refresh comparten un limite de 30 por minuto y por IP
+     * (`akine.security.rate-limit`), cada test ingresa por pantalla y cada `page.goto` canjea el
+     * refresh. Con todos los nucleos de una maquina de desarrollo el limite se pasa y los tests
+     * fallan con 429, que es el limite funcionando y no el producto fallando.
+     */
+    {
+      name: 'agenda-setup',
+      testMatch: /agenda\.setup\.ts/,
+    },
+    {
+      name: 'agenda',
+      testMatch: /agenda-.*\.spec\.ts/,
+      dependencies: ['agenda-setup'],
+      workers: 2,
+      use: { ...devices['Desktop Chrome'] },
     },
 
     /*
