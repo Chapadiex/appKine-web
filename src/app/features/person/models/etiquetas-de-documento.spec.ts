@@ -1,5 +1,8 @@
 import { AutorizacionResponseEstadoEnum as CicloAut } from '../../../api/generated/model/autorizacion-response';
-import { OrdenResponseEstadoEnum as CicloOrden } from '../../../api/generated/model/orden-response';
+import {
+  OrdenResponseEstadoEnum as CicloOrden,
+  OrdenResponseSituacionEnum as Situacion,
+} from '../../../api/generated/model/orden-response';
 import { AutorizacionResponseEstadoAutorizacionEnum as EstadoAut } from '../../../api/generated/model/autorizacion-response';
 import { ElegibilidadResponseMotivoEnum as MotivoElegibilidad } from '../../../api/generated/model/elegibilidad-response';
 import { RequisitoResponseTipoEnum as TipoRequisito } from '../../../api/generated/model/requisito-response';
@@ -100,6 +103,15 @@ describe('etiquetas de ordenes y autorizaciones', () => {
       'Todavia no vigente',
     );
     expect(ordenInactiva({ estado: CicloOrden.INACTIVA })).toBe(true);
+  });
+
+  it('la situacion derivada del backend manda sobre la cuenta por vigencia (B-4)', () => {
+    expect(
+      situacionDeOrden({ estado: CicloOrden.ACTIVA, vigente: true, situacion: Situacion.CUMPLIDA }),
+    ).toBe('Cumplida: se consumieron las sesiones prescriptas');
+    expect(
+      situacionDeOrden({ estado: CicloOrden.ACTIVA, situacion: Situacion.SIN_AUTORIZACION }),
+    ).toBe('Sin autorizacion cargada');
   });
 
   it('el aviso de vencimiento solo aparece cuando hay algo que avisar', () => {

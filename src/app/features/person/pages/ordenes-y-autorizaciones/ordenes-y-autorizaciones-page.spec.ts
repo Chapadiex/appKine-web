@@ -591,6 +591,88 @@ describe('OrdenesYAutorizacionesPage', () => {
   });
 
   // -------------------------------------------------------------------------------------
+  // B-4 (DP-23): situacion de la orden e historial de la autorizacion
+  // -------------------------------------------------------------------------------------
+
+  it('la orden muestra la situacion que deriva el backend y las sesiones consumidas', async () => {
+    const fixture = await montar({
+      ordenes: [{ ...ORDEN, situacion: 'EN_CURSO', sesionesConsumidas: 3 }],
+    });
+    const contenido = texto(fixture);
+
+    expect(contenido).toContain('En curso: ya tiene sesiones consumidas');
+    expect(contenido).toContain('3 de 10 consumidas');
+  });
+
+  it(
+    'el historial se lee paginado, del mas viejo al mas nuevo, y dice si esta vencida',
+    async () => {
+      const fixture = await montar({ autorizaciones: [PENDIENTE] });
+
+      apretar(fixture, 'Historial');
+      const primera = httpMock.expectOne(esHistorial(PENDIENTE.id));
+      expect(primera.request.params.get('page')).toBe('0');
+      expect(primera.request.params.get('size')).toBe('20');
+      primera.flush({
+        autorizacionId: PENDIENTE.id,
+        estadoActual: 'APROBADA',
+        activa: true,
+        vencida: true,
+        vencidaDesde: '2027-01-01',
+        page: 0,
+        size: 20,
+        totalElements: 21,
+        totalPages: 2,
+        content: [
+          {
+            id: 1,
+            tipo: 'ALTA',
+            estadoNuevo: 'PENDIENTE',
+            ocurridoEn: '2026-08-01T13:00:00Z',
+            detalle: 'Reconstruido al crear el historial',
+          },
+          {
+            id: 2,
+            tipo: 'CONSUMO',
+            estadoAnterior: 'APROBADA',
+            estadoNuevo: 'APROBADA',
+            cantidad: 1,
+            actorCuentaId: 42,
+            ocurridoEn: '2026-08-10T13:00:00Z',
+          },
+        ],
+      });
+      await estabilizar(fixture);
+
+      const contenido = texto(fixture);
+      expect(contenido).toContain('Historial de la autorizacion AUT-1');
+      expect(contenido).toContain('Nace como pendiente de respuesta');
+      expect(contenido).toContain('Reconstruido al crear el historial');
+      expect(contenido).toContain('Consumo de una sesion');
+      expect(contenido).toContain('Cantidad: 1');
+      expect(contenido).toContain('Cuenta 42');
+      expect(contenido).toContain('Vencida');
+      expect(contenido).toContain('Pagina 1 de 2');
+      await esperarSinViolaciones(fixture.nativeElement as HTMLElement);
+
+      apretar(fixture, 'Hechos siguientes');
+      const segunda = httpMock.expectOne(esHistorial(PENDIENTE.id));
+      expect(segunda.request.params.get('page')).toBe('1');
+      segunda.flush({ page: 1, size: 20, totalElements: 21, totalPages: 2, content: [] });
+      await estabilizar(fixture);
+
+      apretar(fixture, 'Cerrar el historial');
+      expect(texto(fixture)).not.toContain('Historial de la autorizacion AUT-1');
+    },
+    TIMEOUT_AXE,
+  );
+
+  function esHistorial(autorizacionId: number) {
+    return (p: HttpRequest<unknown>) =>
+      p.method === 'GET' && p.url === `${AUTORIZACIONES}/${autorizacionId}/historial`;
+  }
+
+  // -------------------------------------------------------------------------------------
   // Accesibilidad
   // -------------------------------------------------------------------------------------
 
