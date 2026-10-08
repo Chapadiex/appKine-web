@@ -1,0 +1,68 @@
+# E2E contra el backend real, en el CI y al costado del entorno de desarrollo (AKINE G-9)
+
+## Que corre en el CI
+
+Job `e2e` de `.github/workflows/ci.yml`:
+
+1. Clona `Chapadiex/appKine-api` en la **misma rama** que el PR, o `main` si no existe.
+2. Levanta MySQL y Mailpit con el `compose.yaml` del backend (`-p akine`, red `akine_default`,
+   contenedor `akine-mysql`, el que usan los specs viejos para sembrar por SQL).
+3. Construye la imagen del backend con su `Dockerfile` (cache de capas de Actions) y la arranca
+   con el perfil `local` y `AKINE_BOOTSTRAP_ADMIN_EMAIL=plataforma.e2e@ejemplo.test`.
+4. Corre `--project=agenda --project=chromium`, sin el smoke de version de contrato (lo cubre
+   el job `contrato`). Al fallar publica `e2e-report`: reporte HTML, trazas, capturas, videos y el
+   log del backend.
+
+## El catalogo global en una base nueva
+
+Toda oferta cuelga de un servicio del catalogo global, y crearlo exige rol de plataforma. El
+sembrado de `agenda-setup` (`e2e/support/sembrado.ts`, `servicioAgendable`):
+
+- si el catalogo ya tiene un servicio activo (la base de desarrollo de siempre), usa el primero;
+- si esta vacio, ingresa como admin de plataforma con `AKINE_E2E_PLATAFORMA_EMAIL`
+  (default `plataforma.e2e@ejemplo.test`). Si la cuenta todavia no tiene contrasena, lee de
+  Mailpit el enlace que encolo el bootstrap de DP-14 (o pide el reenvio publico), la activa
+  fijando la contrasena de los E2E, y da de alta `E2E_KINESIOLOGIA`. Un 409 de codigo repetido
+  es otra corrida que ya lo creo.
+
+La casilla tiene que ser la misma en el backend (`AKINE_BOOTSTRAP_ADMIN_EMAIL`) y en el sembrado.
+
+## Correr una pila aislada en la maquina
+
+Sin tocar `akine-mysql`, `akine-mailpit` ni los puertos 8080/4200 de quien este trabajando:
+
+```bash
+docker network create g9net
+docker run -d --name g9-mysql --network g9net --network-alias mysql -p 3318:3306 \
+  -e MYSQL_DATABASE=akine_local -e MYSQL_USER=akine -e MYSQL_PASSWORD=akine \
+  -e MYSQL_ROOT_PASSWORD=root -e TZ=UTC mysql:8.4 \
+  --character-set-server=utf8mb4 --collation-server=utf8mb4_0900_ai_ci \
+  --default-time-zone=+00:00 --log-bin-trust-function-creators=1
+docker run -d --name g9-mailpit --network g9net --network-alias mailpit -p 8036:8025 \
+  -e MP_SMTP_AUTH_ACCEPT_ANY=true -e MP_SMTP_AUTH_ALLOW_INSECURE=true axllent/mailpit:v1.21.8
+(cd ../appKine-api && docker build -t akine-api:e2e .)
+docker run -d --name g9-api --network g9net -p 8090:8080 -e SPRING_PROFILES_ACTIVE=local \
+  -e 'AKINE_DB_URL=jdbc:mysql://mysql:3306/akine_local?useUnicode=true&characterEncoding=UTF-8&serverTimezone=UTC' \
+  -e AKINE_DB_USER=akine -e AKINE_DB_PASSWORD=akine -e AKINE_MAIL_HOST=mailpit \
+  -e AKINE_BOOTSTRAP_ADMIN_EMAIL=plataforma.e2e@ejemplo.test \
+  -e AKINE_CORS_ORIGINS=http://localhost:4210 akine-api:e2e
+```
+
+Un `proxy.conf.json` copiado con `localhost:8090` como destino, y el frontend en otro puerto:
+
+```bash
+npx ng serve --port 4210 --proxy-config <copia-del-proxy>.json
+AKINE_E2E_WEB=http://localhost:4210 AKINE_E2E_API=http://localhost:8090 \
+AKINE_E2E_MAILPIT=http://localhost:8036 AKINE_E2E_MYSQL_CONTAINER=g9-mysql \
+  npx playwright test --project=agenda --project=chromium --workers=1
+```
+
+Al terminar: `docker rm -f g9-api g9-mysql g9-mailpit && docker network rm g9net`.
+
+| Variable | Default | Para que |
+|---|---|---|
+| `AKINE_E2E_WEB` | `http://localhost:4200` | `baseURL` y servidor de Playwright |
+| `AKINE_E2E_API` | `http://localhost:8080` | Backend directo del sembrado |
+| `AKINE_E2E_MAILPIT` | `http://localhost:8025` | API de Mailpit |
+| `AKINE_E2E_MYSQL_CONTAINER` | `akine-mysql` | Contenedor del sembrado por SQL de los specs de 01.02 |
+| `AKINE_E2E_PLATAFORMA_EMAIL` | `plataforma.e2e@ejemplo.test` | Admin de plataforma del bootstrap |

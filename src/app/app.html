@@ -4,7 +4,9 @@
   Fija las garantias de accesibilidad WCAG 2.1 AA que toda pantalla hereda: skip link como
   primer elemento enfocable, landmarks semanticos y foco gestionable. Ver ADR-0005.
 -->
-<a class="skip-link" href="#contenido">Saltar al contenido principal</a>
+<a class="skip-link" href="#contenido" (click)="saltarAlContenido($event)"
+  >Saltar al contenido principal</a
+>
 
 <header class="cabecera">
   <div class="cabecera__marca">

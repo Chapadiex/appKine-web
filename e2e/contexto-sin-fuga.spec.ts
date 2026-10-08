@@ -142,11 +142,19 @@ test.describe('Escenario 10 - cambio de contexto sin fuga de datos', () => {
     // caso puede aparecer el dato de una organizacion sobre la que no se declaro contexto.
     await page.goto('/organizacion');
 
-    const texto = await page.locator('body').innerText();
-    expect(texto, 'sin contexto no se puede filtrar el nombre de una organizacion').not.toContain(
-      centroA,
-    );
-    expect(texto).not.toContain(centroB);
+    // El guard de contexto devuelve al selector, y el selector SI lista las dos organizaciones:
+    // son las de la propia cuenta, ofrecidas para elegir, y eso no es una fuga. Antes el test leia
+    // el texto de la pagina apenas terminaba el `goto` y pasaba o fallaba segun si la redireccion
+    // ya habia ocurrido. Ahora se espera el destino y se afirma sobre lo que importa: la pantalla
+    // de organizacion no llego a pintarse y los nombres estan solo como opciones del selector.
+    await expect(page).toHaveURL(/\/seleccionar-contexto/);
+    const titulo = page.getByRole('heading', { level: 1 });
+    await expect(titulo).toHaveText('Elegi donde vas a trabajar');
+    for (const centro of [centroA, centroB]) {
+      await expect(page.locator('main').getByText(centro)).toHaveCount(
+        await page.getByRole('button', { name: centro }).getByText(centro).count(),
+      );
+    }
   });
 
   test('cerrar y volver a abrir la aplicacion no revive el contexto en una sesion anonima', async ({
