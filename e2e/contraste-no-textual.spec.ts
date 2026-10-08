@@ -107,13 +107,23 @@ test.describe('Contraste no textual, foco y teclado', () => {
       await instalarApiDelRecorrido(page);
       await page.goto(`/agenda/recepcion?fecha=${FECHA}`);
 
-      const abrir = page.getByRole('button', { name: 'Atender como Particular' });
+      // Los dos localizadores van acotados a su contenedor y con nombre exacto. Mientras el panel
+      // esta montado, su boton de confirmar TAMBIEN se llama "Atender como Particular": un
+      // `getByRole` sobre toda la pagina resolvia a dos botones si el `expect` final corria antes
+      // del re-render que desmonta el panel, y Playwright corta en el acto por modo estricto, sin
+      // reintentar. Era una carrera contra el change detection: fallaba solo en un runner lento.
+      const fila = page.getByRole('row').filter({ hasText: 'Ibarra, Dario' });
+      const abrir = fila.getByRole('button', { name: 'Atender como Particular', exact: true });
+      const panel = page.getByRole('region', { name: 'Confirmar la transicion de la recepcion' });
+      await expect(abrir).toBeVisible({ timeout: LLEGADA });
+
       await abrir.focus();
       await page.keyboard.press('Enter');
-      await expect(page.getByLabel('Motivo (obligatorio)')).toBeFocused();
+      await expect(panel.getByLabel('Motivo (obligatorio)')).toBeFocused();
 
-      await page.getByRole('button', { name: 'Cancelar' }).focus();
+      await panel.getByRole('button', { name: 'Cancelar', exact: true }).focus();
       await page.keyboard.press('Enter');
+      await expect(panel).toBeHidden();
       await expect(abrir).toBeFocused();
     });
 
