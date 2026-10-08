@@ -7,17 +7,12 @@ import { AkineHttpError } from '../../../core/interceptors/error.interceptor';
  * en espacios y en el catalogo clinico: `detail` es prosa y cambia cuando alguien corrige una
  * redaccion.
  *
- * <h2>El 409 de concurrencia llega como `conflict`, NO como `concurrent-modification`</h2>
+ * <h2>El 409 de concurrencia llega como `concurrent-modification` (DP-21)</h2>
  *
- * <p>El diseno de la etapa lo declara explicitamente (seccion 5): `offering` lanza el
- * `OptimisticLockingFailureException` plano y lo mapea el handler global, que emite
- * `conflict`. `concurrent-modification` lo emite solo `OrganizationProblemHandler`, asi que
- * ramificar por ese tipo aca daria una rama muerta y el usuario veria el mensaje generico
- * justo en el unico caso donde hay algo concreto que explicarle.
- *
- * <p>Se reconocen <b>los dos</b> igual, y no por indecision: si alguna vez se unifican los dos
- * tipos en todos los modulos -es una de las dos decisiones transversales abiertas del
- * workspace- esta pantalla no se entera. La rama que hoy se ejercita es `conflict`.
+ * <p>Desde el contrato 0.80.0 toda version vieja responde `concurrent-modification` en todos
+ * los modulos -el handler global mapea asi el `OptimisticLockingFailureException`- y
+ * `conflict` queda solo para conflictos de negocio. Un `conflict` ya no manda a recargar por
+ * concurrencia: cae en {@link CausaOffering `conflicto`}, con el `detail` del servidor.
  *
  * <h2>Los 409 de unicidad todavia no tienen tipo publicado</h2>
  *
@@ -39,7 +34,7 @@ export type CausaOffering =
   | 'validacion'
   /** 404: no existe, o es de otro tenant. Los dos responden igual a proposito. */
   | 'no-encontrado'
-  /** 409 conflict: la `expectedVersion` enviada quedo vieja. Ver el javadoc de arriba. */
+  /** 409 concurrent-modification: la `expectedVersion` enviada quedo vieja. Ver arriba. */
   | 'concurrencia'
   /** 409 subscription-suspended: lo emite el filtro, antes del controller. */
   | 'suscripcion-suspendida'
@@ -190,10 +185,6 @@ export function traducirErrorOffering(error: unknown, ambito: AmbitoOffering): E
       return base(MENSAJE_SIN_CONTEXTO, 'sin-contexto');
     case 'subscription-suspended':
       return base(MENSAJE_SUSCRIPCION_SUSPENDIDA, 'suscripcion-suspendida');
-    case 'conflict':
-    // `concurrent-modification` no lo emite `offering` hoy. Se reconoce igual por si algun
-    // dia se unifican los dos tipos: ver el javadoc de `CausaOffering`.
-    // falls through
     case 'concurrent-modification':
       return base(MENSAJE_CONCURRENCIA, 'concurrencia');
     case 'precio-particular-solapado':

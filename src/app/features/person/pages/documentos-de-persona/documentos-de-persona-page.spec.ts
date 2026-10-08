@@ -489,7 +489,7 @@ describe('DocumentosDePersonaPage', () => {
     httpMock
       .expectOne(esReclasificar())
       .flush(
-        { type: 'https://akine.app/problems/conflict', detail: 'version vieja' },
+        { type: 'https://akine.app/problems/concurrent-modification', detail: 'version vieja' },
         { status: 409, statusText: 'Conflict' },
       );
     await estabilizar(fixture);

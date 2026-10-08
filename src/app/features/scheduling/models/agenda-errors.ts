@@ -42,11 +42,12 @@ import { AkineHttpError } from '../../../core/interceptors/error.interceptor';
  *       <b>ir a la atencion</b>, no reintentar: no hay nada que refrescar.</li>
  * </ul>
  *
- * <p><b>La version vieja NO tiene tipo propio</b>, y conviene saberlo. Las tres transiciones que
- * llevan `expectedVersion` rechazan con `OptimisticLockingFailureException`, que el handler global
- * del backend mapea al `conflict` generico —el catalogo tiene `concurrent-modification` y
- * `scheduling` no lo usa—. Aca cae en la causa `conflicto`, con el `detail` del servidor, que dice
- * releer y reintentar. Es la deuda transversal que el workspace ya tiene anotada.
+ * <p><b>La version vieja llega como `concurrent-modification` (DP-21)</b>: desde el contrato
+ * 0.80.0 el handler global del backend mapea asi el `OptimisticLockingFailureException` de las
+ * transiciones que llevan `expectedVersion`, y `conflict` queda solo para conflictos de negocio.
+ * Esta pantalla no le da causa propia a ninguno de los dos: cualquier 409 sin tipo propio cae en
+ * la causa `conflicto`, con el `detail` del servidor, y manda a recargar la agenda —que es lo
+ * correcto para los dos—.
  */
 export type CausaAgenda =
   /** 400 `ventana-demasiado-amplia`. Ver `maxDays`: la pantalla recorta sola y reintenta. */
@@ -396,8 +397,8 @@ export function traducirErrorRecepcion(error: unknown): ErrorAgenda {
   }
 
   // Los dos que llegan aca con `recargar-agenda`: el 404 —el turno se borro, o la sede es de otro
-  // tenant— y cualquier 409 sin tipo propio, que incluye el `conflict` generico al que el handler
-  // global mapea la version vieja.
+  // tenant— y cualquier 409 sin tipo propio, que incluye el `concurrent-modification` de la
+  // version vieja (DP-21) y el `conflict` de negocio.
   if (traducido.accion === 'recargar-agenda') {
     return { ...traducido, accion: 'recargar-dia' };
   }

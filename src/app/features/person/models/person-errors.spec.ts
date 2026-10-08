@@ -61,12 +61,11 @@ describe('traducirErrorPersona', () => {
     expect(traducido.mensaje).toContain('sesion sigue abierta');
   });
 
-  it('el 409 de concurrencia llega como conflict, y tambien se reconoce el otro tipo', () => {
-    expect(traducirErrorPersona(problema('conflict', 409, {})).causa).toBe('concurrencia');
-    // `person` no emite `concurrent-modification` hoy. Se reconoce por si algun dia se unifican.
+  it('DP-21: la version vieja es concurrent-modification y conflict es de negocio', () => {
     expect(traducirErrorPersona(problema('concurrent-modification', 409, {})).causa).toBe(
       'concurrencia',
     );
+    expect(traducirErrorPersona(problema('conflict', 409, {})).causa).toBe('conflicto');
   });
 
   it('un 403 sin tipo conocido es falta de permiso, y un 404 es no encontrado', () => {

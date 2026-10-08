@@ -20,12 +20,11 @@ import { rangoHorario } from '../../../shared/utils/horas-de-pared';
  * termina en un cartel: termina senalando <b>dos</b> filas de la grilla. Ese dato viaja en las
  * extensiones del Problem Details y no existe en el mundo de los espacios.
  *
- * <p><b>La version vieja de un bloque llega como `conflict`, no como
- * `concurrent-modification`.</b> Es el generico: `concurrent-modification` lo emite
- * `organization` para el mismo hecho, y el modulo `resource` no lo reusa para disponibilidad.
- * Ramificar por el codigo equivocado dejaria el conflicto de concurrencia cayendo en la rama
- * generica, que dice "no pudimos completar la operacion" sobre el unico error donde hay que
- * recargar antes de reintentar.
+ * <p><b>La version vieja de un bloque llega como `concurrent-modification` (DP-21).</b> Desde el
+ * contrato 0.80.0 todos los modulos responden asi a la version desactualizada, y `conflict`
+ * queda solo para conflictos de negocio. Ramificar por el codigo equivocado dejaria el conflicto
+ * de concurrencia cayendo en la rama generica, que dice "no pudimos completar la operacion"
+ * sobre el unico error donde hay que recargar antes de reintentar.
  */
 export type CausaBloque =
   /** 403 missing-tenant-context: hay sesion, pero no hay sede elegida. NUNCA cerrar sesion. */
@@ -42,7 +41,7 @@ export type CausaBloque =
   | 'bloque-inactivo'
   /** 409 bloque-already-inactive: la baja ya estaba hecha. Hay que recargar. */
   | 'ya-inactivo'
-  /** 409 conflict: la `version` enviada quedo vieja. Recargar y decidir de nuevo. */
+  /** 409 concurrent-modification: la `version` enviada quedo vieja. Recargar y decidir de nuevo. */
   | 'concurrencia'
   /** 409 profesional-no-vinculado: la membership no habilita a atender en ESTA sede. */
   | 'profesional-no-vinculado'
@@ -216,7 +215,7 @@ export function traducirErrorBloque(error: unknown): ErrorBloque {
       return base(MENSAJE_BLOQUE_INACTIVO, 'bloque-inactivo');
     case 'bloque-already-inactive':
       return base(MENSAJE_YA_INACTIVO, 'ya-inactivo');
-    case 'conflict':
+    case 'concurrent-modification':
       return base(MENSAJE_CONCURRENCIA, 'concurrencia');
     case 'profesional-no-vinculado':
       return base(MENSAJE_NO_VINCULADO, 'profesional-no-vinculado');

@@ -125,15 +125,12 @@ describe('traducirErrorAgenda', () => {
   });
 
   /**
-   * La version vieja NO tiene tipo propio, y el traductor no puede inventarselo.
-   *
-   * <p>El backend la mapea al `conflict` generico. Este test lo fija para que el dia que
-   * `scheduling` empiece a emitir `concurrent-modification` alguien se entere aca y no en
-   * produccion.
+   * DP-21: la version vieja llega como `concurrent-modification`, y la agenda no le da causa
+   * propia: cae en `conflicto`, conserva el `detail` y manda a recargar, que es lo correcto.
    */
   it('la version vieja llega como conflicto generico y conserva el mensaje del backend', () => {
     const traducido = traducirErrorAgenda(
-      conflicto('conflict', {
+      conflicto('concurrent-modification', {
         detail: 'El recurso fue modificado por otra operacion. Vuelva a leerlo y reintente.',
       }),
     );

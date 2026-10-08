@@ -34,10 +34,9 @@ describe('traducirErrorOffering', () => {
       [403, 'missing-tenant-context', 'oferta', 'sin-contexto'],
       [403, 'missing-tenant-context', 'servicio', 'sin-contexto'],
       [409, 'subscription-suspended', 'oferta', 'suscripcion-suspendida'],
-      [409, 'conflict', 'oferta', 'concurrencia'],
-      // `concurrent-modification` no lo emite `offering` hoy. Se reconoce igual, y esto lo fija:
-      // si algun dia se unifican los dos tipos, esta pantalla no se entera.
+      // DP-21: la version vieja es `concurrent-modification`; `conflict` es de negocio.
       [409, 'concurrent-modification', 'oferta', 'concurrencia'],
+      [409, 'conflict', 'oferta', 'conflicto'],
       [400, 'validation-error', 'oferta', 'validacion'],
       [409, 'oferta-nombre-comercial-taken', 'oferta', 'conflicto'],
       [409, 'servicio-inactivo', 'oferta', 'conflicto'],
