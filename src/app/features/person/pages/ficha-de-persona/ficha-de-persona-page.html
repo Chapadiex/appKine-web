@@ -132,14 +132,19 @@
                 @if (cobertura.principal) {
                   <span class="etiqueta">Principal</span>
                 }
-                @if (cobertura.vigenteDesde) {
-                  <p class="ayuda">Vigente desde el {{ cobertura.vigenteDesde }}.</p>
+                @if (cobertura.afiliado) {
+                  <p class="ayuda">{{ cobertura.afiliado }}</p>
+                }
+                @if (cobertura.vigencia) {
+                  <p class="ayuda">{{ cobertura.vigencia }}</p>
                 }
                 @if (cobertura.credencialVencida) {
                   <p>
                     <b>Credencial vencida.</b> No invalida la cobertura: pedi la credencial renovada
                     antes de presentar la prestacion.
                   </p>
+                } @else if (cobertura.credencial) {
+                  <p class="ayuda">{{ cobertura.credencial }}</p>
                 }
               </li>
             }

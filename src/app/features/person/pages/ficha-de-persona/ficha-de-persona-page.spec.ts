@@ -15,6 +15,7 @@ import { TIMEOUT_AXE, esperarSinViolaciones } from '../../../../core/testing/axe
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { errorInterceptor } from '../../../../core/interceptors/error.interceptor';
 import { provideApi } from '../../../../api/generated/provide-api';
+import { CoberturaDelHitoResponseEstadoCredencialEnum } from '../../../../api/generated/model/cobertura-del-hito-response';
 
 const PERSONA = 7;
 const RESUMEN = `/api/v1/personas/${PERSONA}/resumen`;
@@ -71,8 +72,23 @@ const RESUMEN_COMPLETO = {
           titulo: 'OSDE · 310 · Afiliado ···4567 · hasta 2026-12-31',
           estado: 'VIGENTE',
           referencia: 11,
+          // Desde 0.70.0 los datos viajan como campos: la pantalla no parte el titulo.
+          cobertura: {
+            tipo: 'FINANCIADA',
+            financiadorId: 7,
+            financiadorNombre: 'OSDE',
+            planId: 70,
+            planNombre: '310',
+            afiliadoEnmascarado: '···4567',
+            vigenciaDesde: '2026-03-01',
+            vigenciaHasta: '2026-12-31',
+            principal: true,
+            estadoCredencial: CoberturaDelHitoResponseEstadoCredencialEnum.VIGENTE,
+            credencialVigenciaHasta: '2027-02-28',
+          },
         },
         {
+          // Sin `cobertura`: un backend anterior a 0.70.0. Se degrada al titulo entero.
           seccion: 'coberturas',
           tipo: 'COBERTURA',
           ocurrioEn: '2026-01-15T00:00:00Z',
@@ -191,10 +207,17 @@ describe('FichaDePersonaPage', () => {
     const contenido = seccion?.textContent ?? '';
 
     expect(contenido).toContain('Coberturas vigentes');
-    expect(contenido).toContain('OSDE · 310 · Afiliado ···4567 · hasta 31/12/2026');
+    // Con campos: financiador y plan, afiliado enmascarado y vigencia salen de `cobertura`.
+    expect(contenido).toContain('OSDE — 310');
+    expect(contenido).not.toContain('OSDE · 310');
+    expect(contenido).toContain('Afiliado ···4567');
+    expect(contenido).toContain('Vigente desde el 01/03/2026 hasta el 31/12/2026 inclusive');
+    expect(contenido).toContain('Credencial vigente hasta el 28/02/2027');
     expect(contenido).toContain('Principal');
-    // Medianoche UTC del 1 de marzo es una fecha, no un instante: no puede leerse como el 28/02.
-    expect(contenido).toContain('Vigente desde el 01/03/2026');
+    // Sin campos se degrada al titulo con las fechas legibles, y la vigencia sale de `ocurrioEn`:
+    // medianoche UTC del 15 de enero es una fecha, no un instante, y no puede leerse como el 14.
+    expect(contenido).toContain('IOSFA · General · Afiliado ··· · sin vencimiento');
+    expect(contenido).toContain('Vigente desde el 15/01/2026');
     expect(contenido).toContain('Credencial vencida');
     expect(contenido).not.toContain('CREDENCIAL_VENCIDA');
     expect(
