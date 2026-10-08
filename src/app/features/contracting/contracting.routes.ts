@@ -86,6 +86,16 @@ export const routes: Routes = [
     data: { [DATA_ANCHO]: ANCHO_AMPLIO },
   },
   {
+    path: 'convenios/:convenioId/aranceles/importar',
+    canActivate: [contextGuard],
+    loadComponent: () =>
+      import('./pages/importar-aranceles/importar-aranceles-page').then(
+        (m) => m.ImportarArancelesPage,
+      ),
+    title: 'AKINE - Importar aranceles',
+    data: { [DATA_ANCHO]: ANCHO_AMPLIO },
+  },
+  {
     // Va sin `:convenioId`: la consulta no arranca de un convenio, arranca de la pregunta
     // "cuanto sale esto para este paciente". Cual convenio resuelve —si es que alguno resuelve—
     // es justamente lo que la pantalla averigua, y pedirlo en la URL seria pedir la respuesta.

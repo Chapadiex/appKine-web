@@ -6,6 +6,7 @@ import { ArancelEfectivoPage } from './pages/arancel-efectivo/arancel-efectivo-p
 import { ArancelesDelConvenioPage } from './pages/aranceles-del-convenio/aranceles-del-convenio-page';
 import { ConveniosDeLaSedePage } from './pages/convenios-de-la-sede/convenios-de-la-sede-page';
 import { FinanciadoresPage } from './pages/financiadores/financiadores-page';
+import { ImportarArancelesPage } from './pages/importar-aranceles/importar-aranceles-page';
 import { NotFound } from '../../shared/pages/not-found/not-found';
 import { PermissionsStore } from '../../core/services/permissions.store';
 import { PlanesDelFinanciadorPage } from './pages/planes-del-financiador/planes-del-financiador-page';
@@ -57,6 +58,9 @@ describe('Rutas de /contratacion', () => {
     expect(await componenteDe('/contratacion/convenios')).toBe(ConveniosDeLaSedePage);
     expect(await componenteDe('/contratacion/convenios/7/aranceles')).toBe(
       ArancelesDelConvenioPage,
+    );
+    expect(await componenteDe('/contratacion/convenios/7/aranceles/importar')).toBe(
+      ImportarArancelesPage,
     );
     expect(await componenteDe('/contratacion/arancel-efectivo')).toBe(ArancelEfectivoPage);
   });
