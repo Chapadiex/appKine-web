@@ -5,8 +5,8 @@ import {
   mensajeTraducido,
   segundosDeEspera,
 } from './errores-comunes';
-import { etiquetaDeDia } from './dias-de-la-semana';
-import { rangoHorario } from './horas-de-pared';
+import { etiquetaDeDia } from '../../../shared/utils/dias-de-la-semana';
+import { rangoHorario } from '../../../shared/utils/horas-de-pared';
 
 /**
  * Motivo por el que fallo una operacion sobre bloques de disponibilidad (M05, AKINE-02.04).

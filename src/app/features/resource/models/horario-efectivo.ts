@@ -3,7 +3,7 @@ import {
   FranjaResueltaResponse,
   FranjaResueltaResponseOrigenEnum,
 } from '../../../api/generated/model/franja-resuelta-response';
-import { HORA_MEDIANOCHE } from './horas-de-pared';
+import { HORA_MEDIANOCHE } from '../../../shared/utils/horas-de-pared';
 import {
   RUTA_HORARIOS,
   RUTA_HORARIOS_CALENDARIO,

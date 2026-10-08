@@ -36,7 +36,7 @@ import { TEXTO_MODO_LECTURA, modoLectura } from '../../models/modo-lectura';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { UpdateBloqueRequest } from '../../../../api/generated/model/update-bloque-request';
 import { BloqueEnConflicto, CausaBloque, traducirErrorBloque } from '../../models/bloque-errors';
-import { DIAS_DE_LA_SEMANA, etiquetaDeDia } from '../../models/dias-de-la-semana';
+import { DIAS_DE_LA_SEMANA, etiquetaDeDia } from '../../../../shared/utils/dias-de-la-semana';
 import { avisoDeTurnosAfectados } from '../../models/turnos-afectados';
 import {
   TEXTO_LISTA_INCOMPLETA,
@@ -51,7 +51,7 @@ import {
   esHoraDePared,
   minutosDeHora,
   rangoHorario,
-} from '../../models/horas-de-pared';
+} from '../../../../shared/utils/horas-de-pared';
 
 /** Operacion abierta sobre un bloque. Solo una a la vez, y nunca junto con el alta. */
 type TipoAccion = 'editar' | 'baja';

@@ -77,7 +77,7 @@ export const routes: Routes = [
     canActivate: [permissionGuard(PERMISO_COLABORADOR_READ)],
     loadComponent: () =>
       import('./pages/calendario/calendario-sede-page').then((m) => m.CalendarioSedePage),
-    title: 'AKINE - Feriados de la sede',
+    title: 'AKINE - Horario general y feriados de la sede',
   },
   {
     path: '',

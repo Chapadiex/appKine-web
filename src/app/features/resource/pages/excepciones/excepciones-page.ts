@@ -52,7 +52,7 @@ import {
   esHoraDePared,
   minutosDeHora,
   rangoHorario,
-} from '../../models/horas-de-pared';
+} from '../../../../shared/utils/horas-de-pared';
 import {
   TEXTO_LISTA_INCOMPLETA,
   TOPE_DE_VINCULOS,
