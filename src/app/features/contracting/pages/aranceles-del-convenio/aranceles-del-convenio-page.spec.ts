@@ -539,6 +539,22 @@ describe('ArancelesDelConvenioPage', () => {
     expect(texto).not.toContain('Ese arancel ya no existe');
   });
 
+  it('al volver de una importacion confirmada anuncia cuantos aranceles entraron', async () => {
+    Object.assign(TestBed.inject(ActivatedRoute).snapshot, {
+      queryParamMap: convertToParamMap({ importados: '3' }),
+    });
+    const fixture = await montar();
+    const pagina = fixture.nativeElement as HTMLElement;
+
+    expect(pagina.textContent).toContain('Se importaron 3 aranceles');
+    const enlace = [...pagina.querySelectorAll('a')].find(
+      (candidato) => (candidato.textContent ?? '').trim() === 'Importar aranceles',
+    );
+    expect(enlace?.getAttribute('href')).toBe(
+      `/contratacion/convenios/${CONVENIO}/aranceles/importar`,
+    );
+  });
+
   it(
     'la pantalla no tiene violaciones de accesibilidad',
     async () => {

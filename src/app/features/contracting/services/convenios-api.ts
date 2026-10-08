@@ -8,6 +8,8 @@ import { ConveniosYArancelesService } from '../../../api/generated/api/convenios
 import { CreateArancelRequest } from '../../../api/generated/model/create-arancel-request';
 import { CreateConvenioRequest } from '../../../api/generated/model/create-convenio-request';
 import { DeactivateContractingRequest } from '../../../api/generated/model/deactivate-contracting-request';
+import { ImportacionArancelesResponse } from '../../../api/generated/model/importacion-aranceles-response';
+import { ImportarArancelesRequest } from '../../../api/generated/model/importar-aranceles-request';
 import { UpdateArancelRequest } from '../../../api/generated/model/update-arancel-request';
 import { UpdateConvenioRequest } from '../../../api/generated/model/update-convenio-request';
 import { OfertaResponse } from '../../../api/generated/model/oferta-response';
@@ -285,6 +287,25 @@ export class ConveniosApi {
       practicaId: clave.practicaId,
       fecha: clave.fecha,
       ofertaId: clave.ofertaId,
+    });
+  }
+
+  /**
+   * Vista previa o confirmacion de una importacion masiva de aranceles (RF-M16-007, AKINE-B-7).
+   *
+   * <p>Una sola operacion con `modo`: el preview y la confirmacion reciben <b>el mismo cuerpo</b>,
+   * y la pantalla manda el mismo lote dos veces cambiando una palabra. La confirmacion es todo o
+   * nada: si una fila no entra responde `409 importacion-aranceles-rechazada` y no escribe nada.
+   */
+  importarAranceles(
+    consultorioId: number,
+    convenioId: number,
+    cuerpo: ImportarArancelesRequest,
+  ): Observable<ImportacionArancelesResponse> {
+    return this.api.importArancelesDeConvenio({
+      consultorioId,
+      convenioId,
+      importarArancelesRequest: cuerpo,
     });
   }
 }
