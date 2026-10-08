@@ -181,6 +181,9 @@ export class CicloDeTurnoPage {
    * seguir operando. Antes de 0.23.0 era la unica fuente, y por eso una URL pegada a mano dejaba
    * la pantalla a medias.
    */
+  /** Serie que genero el turno (E-3), para enlazarla. `undefined` en un turno suelto. */
+  protected readonly serieId = computed(() => this.turno()?.serieId ?? this.turnoLeido()?.serieId);
+
   protected readonly versionConocida = computed<number | null>(() => {
     const deLaTransicion = this.turno()?.version;
     if (deLaTransicion !== undefined) {

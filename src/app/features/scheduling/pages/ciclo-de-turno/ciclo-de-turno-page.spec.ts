@@ -125,6 +125,14 @@ describe('CicloDeTurnoPage', () => {
     expect(texto).toContain('09:00');
     expect(texto).toContain('America/Argentina/Cordoba');
     expect(texto).toContain('Se reservo el turno');
+    expect(enlaceCon(fixture, 'Es parte de una serie')).toBeNull();
+  });
+
+  it('un turno de una serie enlaza a la serie', async () => {
+    const fixture = await montar({ serieId: 7 });
+    expect(enlaceCon(fixture, 'Es parte de una serie')?.getAttribute('href')).toBe(
+      '/agenda/series/7',
+    );
   });
 
   it('la ausencia sale con el motivo VACIO: el contrato lo declara opcional', async () => {
@@ -401,19 +409,24 @@ describe('CicloDeTurnoPage', () => {
    * de la query — que es el camino que existia antes de que hubiera lectura, y que sigue
    * teniendo que funcionar.
    */
-  function responderLectura(falla: boolean): void {
+  function responderLectura(falla: boolean, serieId?: number): void {
     const pedido = httpMock.expectOne(
       (p: HttpRequest<unknown>) => p.method === 'GET' && p.url === TURNO_URL,
     );
     if (falla) {
       pedido.flush(null, { status: 500, statusText: 'Server Error' });
     } else {
-      pedido.flush(TURNO_LEIDO);
+      pedido.flush(serieId === undefined ? TURNO_LEIDO : { ...TURNO_LEIDO, serieId });
     }
   }
 
   async function montar(
-    opciones: { version?: string; permisos?: string[]; lecturaFalla?: boolean } = {},
+    opciones: {
+      version?: string;
+      permisos?: string[];
+      lecturaFalla?: boolean;
+      serieId?: number;
+    } = {},
   ): Promise<ComponentFixture<CicloDeTurnoPage>> {
     tenantContext.select({
       organizationId: 1,
@@ -434,7 +447,7 @@ describe('CicloDeTurnoPage', () => {
     fixture.componentRef.setInput('fecha', FECHA);
     fixture.detectChanges();
 
-    responderLectura(opciones.lecturaFalla === true);
+    responderLectura(opciones.lecturaFalla === true, opciones.serieId);
     httpMock.expectOne(HISTORIAL).flush(EVENTOS);
     httpMock.expectOne(esAgenda()).flush(DIA);
     await asentar(fixture);
