@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { AlcanceDeSerie } from '../../../api/generated/model/alcance-de-serie';
 import { CancelarSerieDeTurnosAlcanceEnum } from '../../../api/generated/model/cancelar-serie-de-turnos';
 import { CrearSerieDeTurnos } from '../../../api/generated/model/crear-serie-de-turnos';
+import { ReprogramarSerieDeTurnosAlcanceEnum } from '../../../api/generated/model/reprogramar-serie-de-turnos';
 import { SerieDeTurnos } from '../../../api/generated/model/serie-de-turnos';
 import { SerieDeTurnosPage } from '../../../api/generated/model/serie-de-turnos-page';
 import { SeriesDeTurnosService } from '../../../api/generated/api/series-de-turnos.service';
@@ -32,6 +33,9 @@ export type FiltroDeSeries = Omit<ListarSeriesDeTurnosRequestParams, 'consultori
  *   <li><b>La cancelacion con alcance si tiene previsualizacion</b> (`GET .../alcance`), y el
  *       comando exige `cantidadConfirmada`: la cantidad de afectados que se le mostro al
  *       operador. Si cambio entre medio, 409 `conflict` y no se cancela nada.</li>
+ *   <li><b>La reprogramacion con alcance</b> ({@link reprogramar}) usa la misma previsualizacion
+ *       y la misma confirmacion que la cancelacion: los afectados y omitidos son los mismos, y lo
+ *       unico que agrega es el horario nuevo del pivote, del que sale el desplazamiento.</li>
  *   <li><b>El listado llego con el contrato 0.68.0</b> (E-8, {@link listar}): la bandeja de la
  *       sede, filtrable por persona y por estado. Antes una serie solo se alcanzaba por su id.</li>
  * </ul>
@@ -101,6 +105,44 @@ export class SeriesApi {
       cancelarSerieDeTurnos: {
         alcance: cuerpo.alcance,
         turnoId: cuerpo.turnoId,
+        motivo: cuerpo.motivo,
+        cantidadConfirmada: cuerpo.cantidadConfirmada,
+      },
+    });
+  }
+
+  /**
+   * Mueve los turnos futuros pendientes del alcance (RN-M12-003): cada uno conserva id, paciente
+   * e historial.
+   *
+   * <p>`inicio` es el horario nuevo <b>del pivote</b>, tal como lo devolvio la agenda; el backend
+   * calcula el desplazamiento en hora local de la sede y lo aplica igual a todos. Todo o nada: si
+   * un destino no tiene lugar no se mueve ninguno, y el 409 trae `ocurrenciaInicio`.
+   *
+   * <p>`profesionalId` es opcional: si no viaja, cada turno conserva el suyo (appKine-api #66);
+   * si viaja, todos pasan a ese profesional. Misma `cantidadConfirmada` que la cancelacion.
+   */
+  reprogramar(
+    consultorioId: number,
+    serieId: number,
+    cuerpo: {
+      readonly alcance: AlcanceSerie;
+      readonly turnoId: number;
+      readonly inicio: string;
+      readonly profesionalId?: number;
+      readonly motivo: string;
+      readonly cantidadConfirmada: number;
+    },
+  ): Observable<AlcanceDeSerie> {
+    return this.series.reprogramarSerieDeTurnos({
+      consultorioId,
+      serieId,
+      reprogramarSerieDeTurnos: {
+        // Mismos tres valores, otro enum generado: TypeScript no los da por iguales.
+        alcance: ReprogramarSerieDeTurnosAlcanceEnum[cuerpo.alcance],
+        turnoId: cuerpo.turnoId,
+        inicio: cuerpo.inicio,
+        profesionalId: cuerpo.profesionalId,
         motivo: cuerpo.motivo,
         cantidadConfirmada: cuerpo.cantidadConfirmada,
       },

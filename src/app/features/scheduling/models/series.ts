@@ -3,7 +3,13 @@ import { AlcanceDeSerieAlcanceEnum } from '../../../api/generated/model/alcance-
 import { SerieDeTurnosResumenEstadoEnum } from '../../../api/generated/model/serie-de-turnos-resumen';
 import { SlotDisponible } from '../../../api/generated/model/slot-disponible';
 import { TurnoOmitidoMotivoEnum } from '../../../api/generated/model/turno-omitido';
-import { horaEnZona, slotCompleto, sumarDias, textoSinSlots } from './etiquetas-de-agenda';
+import {
+  fechaEnPalabras,
+  horaEnZona,
+  slotCompleto,
+  sumarDias,
+  textoSinSlots,
+} from './etiquetas-de-agenda';
 
 /**
  * Reglas de pantalla de las series de turnos (M12, AKINE E-3, DP-04).
@@ -238,4 +244,44 @@ const TEXTOS_DE_ESTADO_DE_SERIE: Readonly<Record<SerieDeTurnosResumenEstadoEnum,
  */
 export function textoDeEstadoDeSerie(estado: string | undefined): string {
   return TEXTOS_DE_ESTADO_DE_SERIE[estado as SerieDeTurnosResumenEstadoEnum] ?? '';
+}
+
+/**
+ * Donde quedaria un turno si la serie se mueve como el pivote, en hora local de la sede.
+ *
+ * <p>Es la misma cuenta que hace el backend al reprogramar con alcance (AKINE E-3 §5): el
+ * desplazamiento sale del horario local actual del pivote y del nuevo —de "lunes 09:00" a "martes
+ * 10:00" son +1 dia y +1 hora— y se suma a la hora local de cada turno, asi que un turno movido a
+ * mano conserva su diferencia y un cambio de horario no corre la serie una hora. Es una
+ * <b>estimacion para mostrar</b>: el backend calcula y revalida cada destino bajo el lock.
+ *
+ * <p>Devuelve `lunes 19 de octubre, 10:00`, o vacio si falta algun instante.
+ */
+export function horarioDesplazado(
+  inicio: string | undefined,
+  pivoteActual: string | undefined,
+  pivoteNuevo: string,
+  timezone: string,
+): string {
+  const turno = minutosLocales(inicio, timezone);
+  const desde = minutosLocales(pivoteActual, timezone);
+  const hasta = minutosLocales(pivoteNuevo, timezone);
+  if (turno === null || desde === null || hasta === null) {
+    return '';
+  }
+  const destino = new Date((turno + hasta - desde) * 60_000);
+  const fecha = destino.toISOString().slice(0, 10);
+  const hora = destino.toISOString().slice(11, 16);
+  return `${fechaEnPalabras(fecha)}, ${hora}`;
+}
+
+/** Minutos desde la epoca de la fecha y hora LOCALES de la sede, tomadas como si fueran UTC. */
+function minutosLocales(instante: string | undefined, timezone: string): number | null {
+  const fecha = fechaEnZona(instante, timezone);
+  const hora = horaEnZona(instante, timezone).replace(/^24/, '00');
+  if (fecha === '' || hora === '') {
+    return null;
+  }
+  const ms = Date.parse(`${fecha}T${hora}:00Z`);
+  return Number.isNaN(ms) ? null : ms / 60_000;
 }

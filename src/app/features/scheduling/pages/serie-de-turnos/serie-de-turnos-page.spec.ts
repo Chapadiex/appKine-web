@@ -17,7 +17,13 @@ const SERIE = 7;
 const ZONA = 'America/Argentina/Cordoba';
 const URL_SERIE = `/api/v1/consultorios/${CONSULTORIO}/series-de-turnos/${SERIE}`;
 
-const T1 = { id: 301, inicio: '2026-10-12T12:00:00Z', estado: 'CONFIRMADO', version: 1 };
+const T1 = {
+  id: 301,
+  inicio: '2026-10-12T12:00:00Z',
+  estado: 'CONFIRMADO',
+  version: 1,
+  profesionalId: 9,
+};
 const T2 = { id: 302, inicio: '2026-10-19T12:00:00Z', estado: 'EN_ESPERA', version: 2 };
 const T3 = { id: 303, inicio: '2026-10-26T12:00:00Z', estado: 'RESERVADO', version: 0 };
 
@@ -31,6 +37,33 @@ const LA_SERIE = {
   cantidad: 3,
   frecuencia: 'SEMANAL',
   turnos: [T1, T2, T3],
+};
+
+const URL_AGENDA = `/api/v1/consultorios/${CONSULTORIO}/ofertas/42/agenda`;
+
+/** Agenda del martes 13/10: un slot completo y uno libre a las 10:00 de Cordoba. */
+const AGENDA_MARTES = {
+  timezone: ZONA,
+  dias: [
+    {
+      fecha: '2026-10-13',
+      slots: [
+        {
+          desde: '2026-10-13T12:00:00Z',
+          hasta: '2026-10-13T12:45:00Z',
+          cupoTotal: 1,
+          cupoLibre: 0,
+        },
+        {
+          desde: '2026-10-13T13:00:00Z',
+          hasta: '2026-10-13T13:45:00Z',
+          cupoTotal: 1,
+          cupoLibre: 1,
+          profesionalId: 9,
+        },
+      ],
+    },
+  ],
 };
 
 const ALCANCE = {
@@ -124,10 +157,83 @@ describe('SerieDeTurnosPage', () => {
     httpMock.expectOne((p) => p.url === `${URL_SERIE}/alcance`).flush(ALCANCE);
   });
 
+  it(
+    'reprogramar elige pivote, alcance y horario, estima destinos y confirma la cantidad',
+    async () => {
+      const fixture = await montar();
+
+      clickear(fixture, 'desde el turno del');
+      // La agenda se pide filtrada por el profesional del pivote: cada turno conserva el suyo.
+      const agendaDelLunes = httpMock.expectOne((p) => p.url === URL_AGENDA);
+      expect(agendaDelLunes.request.params.get('desde')).toBe('2026-10-12');
+      expect(agendaDelLunes.request.params.get('profesionalId')).toBe('9');
+      agendaDelLunes.flush({ timezone: ZONA, dias: [] });
+      const soloEste = httpMock.expectOne((p) => p.url === `${URL_SERIE}/alcance`);
+      expect(soloEste.request.params.get('alcance')).toBe('ESTE');
+      expect(soloEste.request.params.get('turnoId')).toBe(String(T1.id));
+      soloEste.flush({ ...ALCANCE, alcance: 'ESTE', afectados: [T1], omitidos: [] });
+      await asentar(fixture);
+
+      // Cambiar el alcance vuelve a previsualizar.
+      marcar(fixture, '#serie-reprogramar-alcance-ESTE_Y_SIGUIENTES');
+      const siguientes = httpMock.expectOne((p) => p.url === `${URL_SERIE}/alcance`);
+      expect(siguientes.request.params.get('alcance')).toBe('ESTE_Y_SIGUIENTES');
+      siguientes.flush(ALCANCE);
+      await asentar(fixture);
+      expect(texto(fixture)).toContain('Se moverian estos 2 turnos');
+      expect(texto(fixture)).toContain('El paciente ya llego');
+
+      // Sin horario no se manda nada.
+      escribirMotivo(fixture, 'El profesional pasa a los martes', '#serie-reprogramar-motivo');
+      enviar(fixture);
+      expect(texto(fixture)).toContain('Elegi el horario nuevo del turno de partida');
+
+      cambiarDia(fixture, '2026-10-13');
+      httpMock.expectOne((p) => p.url === URL_AGENDA).flush(AGENDA_MARTES);
+      await asentar(fixture);
+      clickear(fixture, '10:00 a 10:45');
+      expect(texto(fixture)).toContain('martes, 27 de octubre, 10:00');
+      await esperarSinViolaciones(fixture.nativeElement);
+
+      enviar(fixture);
+      const mover = httpMock.expectOne(
+        (p) => p.method === 'POST' && p.url === `${URL_SERIE}/reprogramacion`,
+      );
+      expect(mover.request.body).toEqual({
+        alcance: 'ESTE_Y_SIGUIENTES',
+        turnoId: T1.id,
+        inicio: '2026-10-13T13:00:00Z',
+        motivo: 'El profesional pasa a los martes',
+        cantidadConfirmada: 2,
+      });
+      mover.flush(
+        { type: 'https://akine.app/problems/conflict', status: 409, detail: 'Cambio' },
+        { status: 409, statusText: 'Conflict' },
+      );
+      await asentar(fixture);
+
+      expect(texto(fixture)).toContain('No se movio nada');
+      expect(texto(fixture)).not.toContain('Se moverian estos');
+      clickear(fixture, 'Volver a previsualizar');
+      httpMock.expectOne((p) => p.url === `${URL_SERIE}/alcance`).flush(ALCANCE);
+      await asentar(fixture);
+
+      enviar(fixture);
+      httpMock
+        .expectOne((p) => p.method === 'POST' && p.url === `${URL_SERIE}/reprogramacion`)
+        .flush(ALCANCE);
+      httpMock.expectOne(URL_SERIE).flush(LA_SERIE);
+      await asentar(fixture);
+      expect(texto(fixture)).toContain('Se movieron 2 turnos');
+    },
+    TIMEOUT_AXE,
+  );
+
   it('con solo turno:read no ofrece cancelar', async () => {
     const fixture = await montar([PERMISO_TURNO_READ]);
     expect(texto(fixture)).toContain('Lunes');
     expect(boton(fixture, 'Cancelar')).toBeNull();
+    expect(boton(fixture, 'Reprogramar')).toBeNull();
   });
 
   // ---------------------------------------------------------------------------------------
@@ -176,12 +282,34 @@ describe('SerieDeTurnosPage', () => {
     fixture.detectChanges();
   }
 
-  function escribirMotivo(fixture: ComponentFixture<SerieDeTurnosPage>, motivo: string): void {
+  function escribirMotivo(
+    fixture: ComponentFixture<SerieDeTurnosPage>,
+    motivo: string,
+    selector = '#serie-cancelar-motivo',
+  ): void {
     const campo = (fixture.nativeElement as HTMLElement).querySelector(
-      '#serie-cancelar-motivo',
+      selector,
     ) as HTMLInputElement;
     campo.value = motivo;
     campo.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+  }
+
+  function marcar(fixture: ComponentFixture<SerieDeTurnosPage>, selector: string): void {
+    const radio = (fixture.nativeElement as HTMLElement).querySelector(
+      selector,
+    ) as HTMLInputElement;
+    radio.checked = true;
+    radio.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+  }
+
+  function cambiarDia(fixture: ComponentFixture<SerieDeTurnosPage>, fecha: string): void {
+    const campo = (fixture.nativeElement as HTMLElement).querySelector(
+      '#serie-reprogramar-dia',
+    ) as HTMLInputElement;
+    campo.value = fecha;
+    campo.dispatchEvent(new Event('change'));
     fixture.detectChanges();
   }
 
