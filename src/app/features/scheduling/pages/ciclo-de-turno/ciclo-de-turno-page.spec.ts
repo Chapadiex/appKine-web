@@ -311,6 +311,47 @@ describe('CicloDeTurnoPage', () => {
     httpMock.expectOne(HISTORIAL).flush(EVENTOS);
   });
 
+  /** La otra cara del caso anterior, y tambien la vio el E2E: el orden de llegada no manda. */
+  it('la lectura de la apertura que vuelve tarde no pisa una transicion mas nueva', async () => {
+    tenantContext.select({
+      organizationId: 1,
+      organizationName: 'Centro Belgrano',
+      consultorioId: CONSULTORIO,
+      consultorioName: 'Sede Centro',
+    });
+    permisos.cargar().subscribe();
+    httpMock
+      .expectOne(RUTA_PERMISOS_EFECTIVOS)
+      .flush({ permissions: [PERMISO_TURNO_READ, PERMISO_TURNO_MANAGE] });
+    const fixture = TestBed.createComponent(CicloDeTurnoPage);
+    fixture.componentRef.setInput('turnoId', String(TURNO));
+    fixture.componentRef.setInput('version', '0');
+    fixture.componentRef.setInput('ofertaId', String(OFERTA));
+    fixture.componentRef.setInput('fecha', FECHA);
+    fixture.detectChanges();
+
+    // La lectura de la apertura queda en vuelo mientras la persona confirma.
+    const apertura = httpMock.expectOne(
+      (p: HttpRequest<unknown>) => p.method === 'GET' && p.url === TURNO_URL,
+    );
+    httpMock.expectOne(HISTORIAL).flush(EVENTOS);
+    httpMock.expectOne(esAgenda()).flush(DIA);
+    await asentar(fixture);
+
+    clickear(fixture, 'Confirmar el turno');
+    httpMock
+      .expectOne(CONFIRMACION)
+      .flush({ id: TURNO, estado: 'CONFIRMADO', version: 1, inicio: INICIO, fin: SIGUIENTE });
+    await asentar(fixture);
+    httpMock.expectOne(HISTORIAL).flush(EVENTOS);
+
+    apertura.flush(TURNO_LEIDO);
+    await asentar(fixture);
+
+    expect(textoDe(fixture)).toContain('Confirmado');
+    expect(textoDe(fixture)).not.toContain('Reservado —');
+  });
+
   /**
    * Es el motivo del cambio de 0.23.0. Antes, un enlace sin `?version=` dejaba la pantalla a
    * medias: historial completo, confirmar, y nada mas. Ahora la version sale de la lectura del

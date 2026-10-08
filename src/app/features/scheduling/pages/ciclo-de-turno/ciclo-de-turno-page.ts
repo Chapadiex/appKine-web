@@ -264,14 +264,20 @@ export class CicloDeTurnoPage {
     const sabiaLaOferta = this.numeroDeOferta() !== null;
     this.api.verTurno(consultorioId, turnoId).subscribe({
       next: (turno) => {
-        // La lectura es lo mas nuevo que hay: reemplaza a la respuesta de la ultima transicion,
-        // que `estado` y `versionConocida` prefieren. Sin esto, despues de un 409 por un turno
-        // que otra persona movio, releer traia la version nueva y la pantalla seguia mostrando
-        // y mandando la vieja: un 409 sin salida. Lo destapo el E2E contra el backend real
+        // Gana la version mas nueva, venga de donde venga. Una lectura que vuelve con una
+        // version MAYOR que la de la ultima transicion reemplaza a esa transicion, que
+        // `estado` y `versionConocida` prefieren: sin esto, despues de un 409 por un turno que
+        // otra persona movio, releer traia la version nueva y la pantalla seguia mostrando y
+        // mandando la vieja, un 409 sin salida. Y una lectura que vuelve con una version MENOR
+        // —la de la apertura, que llego despues de un "Confirmar" rapido— no puede pisar lo que
+        // la transicion ya devolvio. Las dos cosas las destapo el E2E contra el backend real
         // (AKINE E-2).
-        this.turno.set(null);
-        this.turnoLeido.set(turno);
-        this.fijarVersionEnLaUrl(turno.version);
+        const deLaTransicion = this.turno()?.version;
+        if (deLaTransicion === undefined || (turno.version ?? -1) >= deLaTransicion) {
+          this.turno.set(null);
+          this.turnoLeido.set(turno);
+          this.fijarVersionEnLaUrl(turno.version);
+        }
         if (!sabiaLaOferta && this.numeroDeOferta() !== null) {
           this.cargarDestino();
         }
