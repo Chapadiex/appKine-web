@@ -2,6 +2,8 @@ import { Routes } from '@angular/router';
 
 import { ANCHO_AMPLIO, DATA_ANCHO } from '../../core/models/ancho-de-contenido';
 import { contextGuard } from '../../core/guards/context.guard';
+import { permissionGuard } from '../../core/guards/permission.guard';
+import { PERMISO_PACIENTE_READ } from '../../core/models/permisos';
 
 /**
  * Rutas de la feature `person` (padron de personas M07, etapa AKINE-03.01).
@@ -25,10 +27,11 @@ import { contextGuard } from '../../core/guards/context.guard';
  * responde 403 y la pantalla quedaria en modo solo-lectura sin poder explicar por que. Es
  * preferible mandar al selector una vez que dejar al recepcionista mirando botones que fallan.
  *
- * <p><b>No lleva `permissionGuard`, y no es un olvido.</b> La lectura del padron se autoriza por
- * pertenencia, sin evaluar ningun permiso: poner un guard de `paciente:manage` sobre la pantalla
- * dejaria sin poder consultarla a quien solo necesita mirar. Las <b>acciones</b> si van detras de
- * `*akinePermiso`, que es UX; la autoridad sigue siendo el backend.
+ * <p><b>Todas llevan `permissionGuard(PERMISO_PACIENTE_READ)`</b> (DU-6 / DP-22): desde el contrato
+ * 0.80.0 toda lectura de personas exige `paciente:read`, que el staff tiene y el paciente no. Es
+ * `paciente:read` y no `paciente:manage`: un guard de gestion dejaria sin poder consultar a quien
+ * solo necesita mirar. Las <b>acciones</b> van detras de `*akinePermiso`, que es UX; la autoridad
+ * sigue siendo el backend.
  *
  * <p><b>No hay `:orgId` en ninguna URL.</b> La organizacion es la del contexto de trabajo. Un id
  * en la URL seria un segundo lugar desde donde elegir tenant, y el unico que el token acota es el
@@ -41,7 +44,7 @@ import { contextGuard } from '../../core/guards/context.guard';
 export const routes: Routes = [
   {
     path: '',
-    canActivate: [contextGuard],
+    canActivate: [contextGuard, permissionGuard(PERMISO_PACIENTE_READ)],
     loadComponent: () =>
       import('./pages/padron-de-personas/padron-de-personas-page').then(
         (m) => m.PadronDePersonasPage,
@@ -63,7 +66,7 @@ export const routes: Routes = [
   // probando. Es el backtracking del matcher, no la suerte del orden.
   {
     path: ':personaId',
-    canActivate: [contextGuard],
+    canActivate: [contextGuard, permissionGuard(PERMISO_PACIENTE_READ)],
     loadComponent: () =>
       import('./pages/ficha-de-persona/ficha-de-persona-page').then((m) => m.FichaDePersonaPage),
     title: 'AKINE - Ficha de la persona',
@@ -79,7 +82,7 @@ export const routes: Routes = [
   // Ancho amplio: la tabla tiene seis columnas de datos mas la de acciones.
   {
     path: ':personaId/documentos',
-    canActivate: [contextGuard],
+    canActivate: [contextGuard, permissionGuard(PERMISO_PACIENTE_READ)],
     loadComponent: () =>
       import('./pages/documentos-de-persona/documentos-de-persona-page').then(
         (m) => m.DocumentosDePersonaPage,
@@ -99,7 +102,7 @@ export const routes: Routes = [
   // aplica hoy.
   {
     path: ':personaId/coberturas',
-    canActivate: [contextGuard],
+    canActivate: [contextGuard, permissionGuard(PERMISO_PACIENTE_READ)],
     loadComponent: () =>
       import('./pages/coberturas-del-paciente/coberturas-del-paciente-page').then(
         (m) => m.CoberturasDelPacientePage,
@@ -118,7 +121,7 @@ export const routes: Routes = [
   // Ancho amplio: las dos tablas tienen siete y ocho columnas.
   {
     path: ':personaId/autorizaciones',
-    canActivate: [contextGuard],
+    canActivate: [contextGuard, permissionGuard(PERMISO_PACIENTE_READ)],
     loadComponent: () =>
       import('./pages/ordenes-y-autorizaciones/ordenes-y-autorizaciones-page').then(
         (m) => m.OrdenesYAutorizacionesPage,

@@ -12,7 +12,10 @@
   </p>
 }
 
-<p><a class="enlace" routerLink="/pacientes">Volver al padron</a></p>
+<!-- El padron exige `paciente:read` (DP-22): sin el, el enlace llevaria a "no tenes permiso". -->
+<p *akinePermiso="PERMISO_PACIENTE_READ">
+  <a class="enlace" routerLink="/pacientes">Volver al padron</a>
+</p>
 
 <!--
   Cobrar es una MUTACION de dinero y el enlace va detras del permiso: ofrecerlo a quien no lo tiene
