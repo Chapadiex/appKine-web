@@ -19,7 +19,7 @@ export interface DiaDeAgenda {
      */
     fecha?: string;
     /**
-     * Por que el dia no tiene ningun slot. Ausente si el dia SI tiene slots. Nunca falta cuando la lista esta vacia: un dia en blanco sin explicacion es indistinguible de un error del sistema.
+     * Por que el dia no tiene ningun slot. Ausente si el dia SI tiene slots. Nunca falta cuando la lista esta vacia: un dia en blanco sin explicacion es indistinguible de un error del sistema. `COMPLETO`: ningun slot tiene cupo libre (si queda alguno, los llenos viajan con `cupoLibre` 0 y no hay motivo). `PASADO`: el dia ya paso, o es hoy y todos sus horarios ya empezaron. Los horarios de hoy que ya empezaron nunca se ofrecen: la reserva los rechaza.
      */
     motivoSinSlots?: DiaDeAgendaMotivoSinSlotsEnum;
     /**
@@ -36,7 +36,8 @@ export enum DiaDeAgendaMotivoSinSlotsEnum {
     SIN_PROFESIONAL = 'SIN_PROFESIONAL',
     SIN_ESPACIO = 'SIN_ESPACIO',
     FRANJA_MAS_CORTA_QUE_LA_OFERTA = 'FRANJA_MAS_CORTA_QUE_LA_OFERTA',
-    COMPLETO = 'COMPLETO'
+    COMPLETO = 'COMPLETO',
+    PASADO = 'PASADO'
 };
 
 

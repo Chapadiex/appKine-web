@@ -58,7 +58,7 @@ export interface BloqueResponse {
      */
     primerTurnoAfectado?: string;
     /**
-     * Turnos futuros que este cambio podria dejar en conflicto (RN-M05-004): los pendientes de ese profesional en esa sede que empiezan entre ahora y el fin de vigencia mas lejano entre el estado anterior y el nuevo, con un horizonte de 90 dias si no hay fin. Es una cota superior: puede incluir turnos de otros bloques vigentes del mismo profesional. En un ALTA es 0 por construccion —agregar disponibilidad no deja ningun turno afuera—
+     * Turnos futuros que este cambio podria dejar en conflicto (RN-M05-004): los pendientes de ese profesional en esa sede que empiezan entre ahora y el fin de vigencia mas lejano entre el estado anterior y el nuevo, con un horizonte de 90 dias si no hay fin, y que la disponibilidad efectiva cubria antes del cambio y no cubre despues: un turno cubierto por otro bloque vigente del mismo profesional no cuenta. En un ALTA es 0 por construccion —agregar disponibilidad no deja ningun turno afuera—
      */
     turnosAfectados?: number;
     /**

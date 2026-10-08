@@ -58,6 +58,13 @@
     <button type="button" class="boton" (click)="abrirAlta()" *akinePermiso="permisoManage">
       Cargar un arancel
     </button>
+    <a
+      class="boton boton--secundario"
+      [routerLink]="['/contratacion/convenios', convenioId, 'aranceles', 'importar']"
+      *akinePermiso="permisoManage"
+    >
+      Importar aranceles
+    </a>
   </p>
 }
 

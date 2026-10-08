@@ -47,6 +47,8 @@ import {
 import { TEXTO_MODO_LECTURA, modoLectura } from '../../models/modo-lectura';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { CausaExcepcion, traducirErrorExcepcion } from '../../models/excepcion-errors';
+import { ImpactoPrevioPanel } from '../../components/impacto-previo/impacto-previo';
+import { ImpactoPrevio, avisoDeExcepcion, turnosPrevistos } from '../../models/turnos-afectados';
 import {
   PATRON_HORA,
   esHoraDePared,
@@ -146,7 +148,13 @@ const MOTIVOS: readonly {
  */
 @Component({
   selector: 'app-excepciones-page',
-  imports: [ReactiveFormsModule, RouterLink, PermisoDirective, ConfirmacionConMotivo],
+  imports: [
+    ReactiveFormsModule,
+    RouterLink,
+    PermisoDirective,
+    ConfirmacionConMotivo,
+    ImpactoPrevioPanel,
+  ],
   templateUrl: './excepciones-page.html',
   styleUrl: '../../resource.css',
 })
@@ -285,6 +293,37 @@ export class ExcepcionesPage {
    */
   protected readonly avisoDeApertura = signal<AvisoDeApertura | null>(null);
   private readonly pendiente = signal<CreateExcepcionRequest | null>(null);
+
+  /**
+   * Consulta previa de impacto del alta o de la baja abierta (A-11), o `null`.
+   *
+   * <p>En el alta se pide al enviar, con el cuerpo armado y despues del aviso de feriados si lo
+   * hubo: si no deja ningun turno afuera, el alta sigue de largo; si deja alguno, se muestran y
+   * se espera una confirmacion. En la baja se pide al abrir el panel. Una excepcion de
+   * <b>sede</b> se evalua contra todos los profesionales: la lista nombra a cada uno.
+   */
+  protected readonly impacto = signal<ImpactoPrevio | null>(null);
+
+  /** El cuerpo de alta sobre el que se calculo {@link impacto}. */
+  private readonly cuerpoDelImpacto = signal<CreateExcepcionRequest | null>(null);
+
+  /**
+   * Turnos que el alta o la baja dejo fuera de horario, segun la consulta previa, o `null`.
+   * `ExcepcionResponse` no trae la cuenta: ver `avisoDeExcepcion`.
+   */
+  protected readonly avisoTurnos = signal<string | null>(null);
+
+  /** Si el alta espera la confirmacion de su impacto. */
+  protected readonly altaConImpacto = computed(() => {
+    const tipo = this.impacto()?.tipo;
+    return this.altaAbierta() && (tipo === 'listo' || tipo === 'error');
+  });
+
+  /** Nombre del profesional de un turno afectado, para la lista de una excepcion de sede. */
+  protected readonly nombreDeProfesional = (membershipId: number | undefined): string => {
+    const vinculo = this.profesionales().find((candidato) => candidato.id === membershipId);
+    return vinculo === undefined ? `Vinculo ${membershipId ?? '?'}` : nombreDeVinculo(vinculo);
+  };
 
   /** Errores que solo se resuelven releyendo la ventana. */
   protected readonly hayQueRecargar = computed(() => {
@@ -498,6 +537,7 @@ export class ExcepcionesPage {
   protected abrirAlta(): void {
     this.bajaAbierta.set(null);
     this.exito.set(null);
+    this.avisoTurnos.set(null);
     const desde = this.formularioVentana.getRawValue().desde || hoyLocal();
     this.formularioAlta.reset({
       tipo: String(CreateExcepcionRequestTipoEnum.CIERRE),
@@ -584,7 +624,7 @@ export class ExcepcionesPage {
       return;
     }
 
-    this.crear(consultorioId, cuerpo);
+    this.revisarImpacto(consultorioId, cuerpo);
   }
 
   /**
@@ -618,7 +658,70 @@ export class ExcepcionesPage {
     }
 
     this.avisoDeApertura.set(null);
+    this.revisarImpacto(consultorioId, confirmado);
+  }
+
+  /**
+   * Confirmacion del impacto: recien aca sale el alta a la red.
+   *
+   * <p>Como en {@link confirmarApertura}, se vuelve a leer el formulario: si quien lee la lista
+   * de turnos corrige las fechas o el alcance, el numero mostrado ya no describe lo escrito y
+   * se vuelve a consultar.
+   */
+  protected confirmarImpacto(): void {
+    const consultorioId = this.tenantContext.consultorioId();
+    const confirmado = this.cuerpoDelImpacto();
+    if (consultorioId === null || confirmado === null || this.enviando()) {
+      return;
+    }
+
+    if (this.formularioAlta.invalid || !mismoCuerpo(this.armarCuerpo(), confirmado)) {
+      this.impacto.set(null);
+      this.cuerpoDelImpacto.set(null);
+      this.enviarAlta();
+      return;
+    }
+
     this.crear(consultorioId, confirmado);
+  }
+
+  protected descartarImpacto(): void {
+    this.impacto.set(null);
+    this.cuerpoDelImpacto.set(null);
+    this.enfocar('#alta-excepcion-desde');
+  }
+
+  /** Consulta sin efectos del alta. Si no deja ningun turno afuera, la crea. */
+  private revisarImpacto(consultorioId: number, cuerpo: CreateExcepcionRequest): void {
+    this.enviando.set(true);
+    this.impacto.set({ tipo: 'consultando' });
+    this.cuerpoDelImpacto.set(cuerpo);
+
+    this.excepciones
+      .simularImpactoAltaExcepcion({ consultorioId, createExcepcionRequest: cuerpo })
+      .subscribe({
+        next: (impacto) => {
+          if (!this.altaAbierta() || this.cuerpoDelImpacto() !== cuerpo) {
+            return;
+          }
+          this.impacto.set({ tipo: 'listo', impacto });
+          if ((impacto.turnosAfectados ?? 0) <= 0) {
+            this.crear(consultorioId, cuerpo);
+            return;
+          }
+          this.enviando.set(false);
+          this.enfocarImpacto();
+        },
+        error: (error: unknown) => {
+          if (!this.altaAbierta()) {
+            return;
+          }
+          if (this.fallarConsulta(error)) {
+            return;
+          }
+          this.enfocarImpacto();
+        },
+      });
   }
 
   protected descartarAviso(): void {
@@ -653,12 +756,13 @@ export class ExcepcionesPage {
         }
 
         // Sin feriados que la sede cierre, la apertura solo suma disponibilidad: no descarta
-        // el horario de nadie y no hay nada que advertir.
-        this.crear(consultorioId, cuerpo);
+        // el horario de nadie y no hay feriado que advertir. Queda la consulta de impacto.
+        this.revisarImpacto(consultorioId, cuerpo);
       });
   }
 
   private crear(consultorioId: number, cuerpo: CreateExcepcionRequest): void {
+    const previsto = turnosPrevistos(this.impacto());
     this.enviando.set(true);
 
     this.excepciones.createExcepcion({ consultorioId, createExcepcionRequest: cuerpo }).subscribe({
@@ -671,6 +775,7 @@ export class ExcepcionesPage {
             ? 'La apertura quedo cargada.'
             : 'El cierre quedo cargado.',
         );
+        this.avisoTurnos.set(avisoDeExcepcion(previsto));
         this.consultar();
       },
       error: (error: unknown) => this.fallar(error),
@@ -720,7 +825,32 @@ export class ExcepcionesPage {
     }
     this.cerrarAlta();
     this.exito.set(null);
+    this.avisoTurnos.set(null);
     this.bajaAbierta.set(id);
+    this.consultarImpactoDeBaja(id);
+  }
+
+  /** Consulta sin efectos de la baja, al abrir el panel. */
+  private consultarImpactoDeBaja(excepcionId: number): void {
+    const consultorioId = this.tenantContext.consultorioId();
+    if (consultorioId === null) {
+      return;
+    }
+
+    this.impacto.set({ tipo: 'consultando' });
+
+    this.excepciones.simularImpactoBajaExcepcion({ consultorioId, excepcionId }).subscribe({
+      next: (impacto) => {
+        if (this.bajaAbierta() === excepcionId) {
+          this.impacto.set({ tipo: 'listo', impacto });
+        }
+      },
+      error: (error: unknown) => {
+        if (this.bajaAbierta() === excepcionId) {
+          this.fallarConsulta(error);
+        }
+      },
+    });
   }
 
   protected cerrarBaja(): void {
@@ -735,6 +865,7 @@ export class ExcepcionesPage {
       return;
     }
 
+    const previsto = turnosPrevistos(this.impacto());
     this.enviando.set(true);
     this.errorAccion.set(null);
     this.causaAccion.set(null);
@@ -753,6 +884,7 @@ export class ExcepcionesPage {
             'La excepcion quedo dada de baja. La fila no se borra: sobrevive con sus fechas, su ' +
               'motivo y su autor.',
           );
+          this.avisoTurnos.set(avisoDeExcepcion(previsto));
           this.consultar();
         },
         error: (error: unknown) => this.fallar(error),
@@ -770,6 +902,25 @@ export class ExcepcionesPage {
     this.causaAccion.set(traducido.causa);
   }
 
+  /**
+   * Fallo de una consulta previa. Devuelve `true` si se informo como error de la operacion.
+   *
+   * <p>Si la mutacion fallaria por lo mismo —ya dada de baja (`409`), no existe, cuerpo
+   * invalido, falta contexto o permiso— se informa como su error. Cualquier otra falla no
+   * frena: se dice que no se pudo calcular y se deja confirmar igual (ADR-0011).
+   */
+  private fallarConsulta(error: unknown): boolean {
+    if (FRENAN_LA_MUTACION.has(traducirErrorExcepcion(error).causa)) {
+      this.impacto.set(null);
+      this.cuerpoDelImpacto.set(null);
+      this.fallar(error);
+      return true;
+    }
+    this.enviando.set(false);
+    this.impacto.set({ tipo: 'error' });
+    return false;
+  }
+
   private limpiarEnvio(): void {
     this.enviando.set(false);
     this.errorAccion.set(null);
@@ -777,6 +928,12 @@ export class ExcepcionesPage {
     this.avisoDeApertura.set(null);
     this.pendiente.set(null);
     this.intentos.set(0);
+    this.impacto.set(null);
+    this.cuerpoDelImpacto.set(null);
+  }
+
+  private enfocarImpacto(): void {
+    afterNextRender(() => this.enfocar('#impacto-alta-confirmar'), { injector: this.injector });
   }
 
   private enfocarAviso(): void {
@@ -787,6 +944,15 @@ export class ExcepcionesPage {
     this.host.nativeElement.querySelector<HTMLElement>(selector)?.focus();
   }
 }
+
+/** Causas de falla de la consulta previa que la mutacion tendria igual. */
+const FRENAN_LA_MUTACION: ReadonlySet<CausaExcepcion> = new Set<CausaExcepcion>([
+  'ya-inactiva',
+  'no-encontrado',
+  'validacion',
+  'sin-contexto',
+  'sin-permiso',
+]);
 
 /**
  * `true` si los dos cuerpos piden exactamente la misma excepcion.

@@ -29,6 +29,10 @@ import { CreateConvenioRequest } from '../model/create-convenio-request';
 // @ts-ignore
 import { DeactivateContractingRequest } from '../model/deactivate-contracting-request';
 // @ts-ignore
+import { ImportacionArancelesResponse } from '../model/importacion-aranceles-response';
+// @ts-ignore
+import { ImportarArancelesRequest } from '../model/importar-aranceles-request';
+// @ts-ignore
 import { ProblemDetail } from '../model/problem-detail';
 // @ts-ignore
 import { UpdateArancelRequest } from '../model/update-arancel-request';
@@ -46,6 +50,7 @@ import {
     DeactivateArancelRequestParams,
     DeactivateConvenioRequestParams,
     GetConvenioRequestParams,
+    ImportArancelesDeConvenioRequestParams,
     ListArancelesRequestParams,
     ListConveniosRequestParams,
     ResolveArancelEfectivoRequestParams,
@@ -451,6 +456,86 @@ export class ConveniosYArancelesService extends BaseService implements Convenios
             {
                 context: localVarHttpContext,
                 params: localVarQueryParameters.toHttpParams(),
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * Previsualizar o confirmar una importacion masiva de aranceles
+     * RF-M16-007. Exige convenio:manage sobre la sede de la ruta, en los dos modos.  Cada fila se valida con LAS MISMAS reglas que el alta unitaria de un arancel: practica visible para el tenant (por practicaId o por codigoPractica), importes que cuadran, vigencia contenida en la del convenio, oferta de la sede que admite obra social y declara la practica, y que no se pise con un arancel vigente del mismo grupo (convenio, practica, oferta). Ademas, dos filas del mismo lote tampoco pueden pisarse entre si.  PREVIEW responde 200 con el desenlace de cada fila: ALTA, o RECHAZADA con el problemType que daria el alta unitaria. No escribe nada ni toma el lock: es una prediccion, no una reserva.  CONFIRMAR es TODO O NADA. Revalida el lote entero bajo el lock del convenio —lo que se cargo despues del preview cuenta— y, si todas las filas entran, las inserta y responde 200 con aplicada &#x3D; true y el arancelId de cada una. Si una sola no entra, 409 importacion-aranceles-rechazada con el desenlace de cada fila en la propiedad filas, y ninguna fila escrita.  Reintentar una confirmacion ya aplicada no duplica nada: sus filas chocan contra los aranceles que ella misma creo y responde 409.
+     * @endpoint post /api/v1/consultorios/{consultorioId}/convenios/{convenioId}/aranceles/importacion
+     * @param requestParameters
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public importArancelesDeConvenio(requestParameters: ImportArancelesDeConvenioRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<ImportacionArancelesResponse>;
+    public importArancelesDeConvenio(requestParameters: ImportArancelesDeConvenioRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<ImportacionArancelesResponse>>;
+    public importArancelesDeConvenio(requestParameters: ImportArancelesDeConvenioRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<ImportacionArancelesResponse>>;
+    public importArancelesDeConvenio(requestParameters: ImportArancelesDeConvenioRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        const consultorioId = requestParameters?.consultorioId;
+        if (consultorioId === null || consultorioId === undefined) {
+            throw new Error('Required parameter consultorioId was null or undefined when calling importArancelesDeConvenio.');
+        }
+        const convenioId = requestParameters?.convenioId;
+        if (convenioId === null || convenioId === undefined) {
+            throw new Error('Required parameter convenioId was null or undefined when calling importArancelesDeConvenio.');
+        }
+        const importarArancelesRequest = requestParameters?.importarArancelesRequest;
+        if (importarArancelesRequest === null || importarArancelesRequest === undefined) {
+            throw new Error('Required parameter importarArancelesRequest was null or undefined when calling importArancelesDeConvenio.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        // to determine the Content-Type header
+        const consumes: string[] = [
+            'application/json'
+        ];
+        const httpContentTypeSelected: string | undefined = this.configuration.selectHeaderContentType(consumes);
+        if (httpContentTypeSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Content-Type', httpContentTypeSelected);
+        }
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/consultorios/${this.configuration.encodeParam({name: "consultorioId", value: consultorioId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/convenios/${this.configuration.encodeParam({name: "convenioId", value: convenioId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/aranceles/importacion`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<ImportacionArancelesResponse>('post', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                body: importarArancelesRequest,
                 responseType: <any>responseType_,
                 ...(withCredentials ? { withCredentials } : {}),
                 headers: localVarHeaders,

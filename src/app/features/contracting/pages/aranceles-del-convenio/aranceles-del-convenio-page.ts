@@ -182,6 +182,7 @@ export class ArancelesDelConvenioPage {
   protected readonly errorAccion = signal<string | null>(null);
   protected readonly causaAccion = signal<CausaContracting | null>(null);
   protected readonly exito = signal<string | null>(null);
+  private importacionAnunciada = false;
   protected readonly intentos = signal(0);
 
   protected readonly hayQueRecargar = computed(() => hayQueRecargar(this.causaAccion()));
@@ -235,6 +236,7 @@ export class ArancelesDelConvenioPage {
       this.tenantContext.contextEpoch();
       untracked(() => {
         this.reiniciar();
+        this.anunciarImportacion();
         this.cargar();
         this.cargarConvenio();
         this.cargarPracticas();
@@ -704,6 +706,25 @@ export class ArancelesDelConvenioPage {
           ),
         ).subscribe((pares) => this.practicasPorOferta.set(new Map(pares)));
       });
+  }
+
+  /**
+   * Al volver de una importacion confirmada (AKINE-B-7), la grilla dice cuantos aranceles entraron.
+   *
+   * <p>Solo la primera vez: si despues cambia el contexto, el anuncio ya no describe esta sede.
+   */
+  private anunciarImportacion(): void {
+    if (this.importacionAnunciada) {
+      return;
+    }
+    this.importacionAnunciada = true;
+    const importados = Number(this.ruta.snapshot.queryParamMap?.get('importados') ?? '');
+    if (Number.isInteger(importados) && importados > 0) {
+      this.exito.set(
+        `Se importaron ${importados} aranceles. La grilla ya los muestra; la moneda es la del ` +
+          'convenio.',
+      );
+    }
   }
 
   private reiniciar(): void {
