@@ -67,11 +67,26 @@ Al terminar: `docker rm -f g9-api g9-mysql g9-mailpit && docker network rm g9net
 | `AKINE_E2E_MYSQL_CONTAINER` | `akine-mysql` | Contenedor del sembrado por SQL de los specs de 01.02 |
 | `AKINE_E2E_PLATAFORMA_EMAIL` | `plataforma.e2e@ejemplo.test` | Admin de plataforma del bootstrap |
 
-> **Dos pilas a la vez en la misma maquina: separa tambien el `TEMP`.** El centro que siembra
-> `agenda-setup` se comparte por `os.tmpdir()/akine-e2e-centro-agenda.json`, y el cerrojo de
-> logins vive al lado. Dos corridas contra dos backends distintos con el mismo `TEMP` se pisan el
-> archivo: una lee el centro que sembro la otra en OTRO backend y falla con 401 o 404. Exporta
-> `TEMP`/`TMP` (y `TMPDIR` en Linux) a una carpeta propia de cada pila.
+## Cuenta y cobertura de punta a punta (AKINE A-6, B-6)
+
+`e2e/cuenta-ciclo-real.spec.ts` y `e2e/cobertura-autorizacion.spec.ts` corren en el proyecto
+`chromium`, asi que entran solos en el job `e2e`. No siembran por SQL: las cuentas se activan y la
+contrasena se restablece con el enlace real que el backend manda a Mailpit, leido por asunto con
+`enlaceDelCorreo` (`e2e/support/cuentas.ts`).
+
+- Del enlace se usa la **ruta** y no el origen: el origen lo fija `AKINE_PUBLIC_BASE_URL` del
+  backend (default `http://localhost:4200`), que en una pila aislada no es el puerto del frontend
+  bajo prueba. Navegar la ruta contra el `baseURL` es abrir el mismo enlace en el frontend que se
+  prueba.
+- Los `problemType` se afirman con la URI completa (`esperarProblema(respuesta, 409,
+  'https://akine.app/problems/...')`), que es la forma que `npm run api:check` contrasta contra el
+  contrato.
+- Los hechos de auditoria de identidad (activacion, login, restablecimiento) se graban sin
+  `organization_id` y ninguna API los lee: el spec de A-6 los consulta en `audit_event` por el
+  contenedor de `AKINE_E2E_MYSQL_CONTAINER`, en modo lectura. Los del tenant van por la API y por
+  la pantalla de Auditoria.
+- Para no compartir los archivos de coordinacion (`akine-e2e-registros.json`, el centro de
+  agenda) con otra corrida en la misma maquina, apunta `TEMP`/`TMP` a un directorio propio.
 
 ## Las verticales del 07/10 (`e2e/flujo-*.spec.ts`)
 
