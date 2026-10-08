@@ -105,6 +105,11 @@
   @if (exito(); as mensaje) {
     <p class="estado estado--ok">{{ mensaje }}</p>
   }
+  @if (avisoTurnos(); as aviso) {
+    <div class="aviso-apertura">
+      <p><b>Turnos para revisar.</b> {{ aviso }}</p>
+    </div>
+  }
 </div>
 
 <section class="tarjeta" aria-labelledby="titulo-excepciones">
@@ -455,6 +460,37 @@
               }
             </div>
 
+            <!--
+              Impacto previo (A-11): cuantos turnos pendientes deja afuera esta excepcion. Si no
+              deja ninguno el alta sigue de largo y este bloque no llega a pedir nada.
+            -->
+            @if (impacto(); as estadoImpacto) {
+              <app-impacto-previo
+                [estado]="estadoImpacto"
+                [nombreDe]="esDeSede() ? nombreDeProfesional : null"
+              />
+              @if (altaConImpacto()) {
+                <div class="acciones">
+                  <button
+                    id="impacto-alta-confirmar"
+                    type="button"
+                    class="boton"
+                    [disabled]="enviando()"
+                    (click)="confirmarImpacto()"
+                  >
+                    Cargar igual
+                  </button>
+                  <button
+                    type="button"
+                    class="boton boton--secundario"
+                    (click)="descartarImpacto()"
+                  >
+                    Volver y cambiar la excepcion
+                  </button>
+                </div>
+              }
+            }
+
             <div aria-live="polite">
               @if (errorAccion(); as mensaje) {
                 <p class="estado estado--error" role="alert">{{ mensaje }}</p>
@@ -541,7 +577,7 @@
                       ' de ' +
                       alcanceDe(excepcion)
                     "
-                    [enviando]="enviando()"
+                    [enviando]="enviando() || impacto()?.tipo === 'consultando'"
                     (confirmado)="enviarBaja($event)"
                     (cancelado)="cerrarBaja()"
                   >
@@ -549,6 +585,10 @@
                       La fila no se borra: queda inactiva con sus fechas intactas, su motivo y su
                       autor. Si la excepcion vuelve a hacer falta, se carga como una nueva.
                     </p>
+                    <app-impacto-previo
+                      [estado]="impacto()"
+                      [nombreDe]="excepcion.membershipId ? null : nombreDeProfesional"
+                    />
                   </akine-confirmacion-con-motivo>
 
                   <div aria-live="polite">
