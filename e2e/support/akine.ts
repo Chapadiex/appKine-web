@@ -236,7 +236,13 @@ export function esperarSinInternals(texto: string, deDonde: string): void {
 // ---------------------------------------------------------------------------------------------
 
 const CUPO_DE_REGISTRO = 4;
-const VENTANA_DE_REGISTRO_MS = 60_000;
+/**
+ * La ventana del servidor (60 s) mas un margen. La marca se anota ANTES de enviar —en los flujos
+ * de pantalla, a veces antes de llenar el formulario—, y la ventana fija del servidor abre con la
+ * primera LLEGADA: con ese desfasaje, dos tandas de 4 pueden caer en la misma ventana del
+ * servidor y la quinta vuelve 429. El margen cubre el desfasaje (AKINE A-6).
+ */
+const VENTANA_DE_REGISTRO_MS = 70_000;
 const LEDGER_DE_REGISTRO = nodePath.join(nodeOs.tmpdir(), 'akine-e2e-registros.json');
 const CERROJO_DE_REGISTRO = nodePath.join(nodeOs.tmpdir(), 'akine-e2e-registros.lock');
 
