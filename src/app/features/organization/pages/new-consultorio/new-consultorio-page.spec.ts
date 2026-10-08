@@ -185,7 +185,7 @@ describe('NewConsultorioPage', () => {
       fixture.detectChanges();
 
       expect(texto(fixture)).toContain('Se creo junto con su primer box');
-      expect(texto(fixture)).toContain('es informativo y no limita la agenda');
+      expect(texto(fixture)).toContain('ningun turno se ofrece fuera de ese horario');
     });
 
     it('dos franjas del mismo dia que se pisan no dejan avanzar', () => {

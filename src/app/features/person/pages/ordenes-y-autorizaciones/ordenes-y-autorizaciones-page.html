@@ -363,7 +363,7 @@
                 <span class="etiqueta">{{ aviso }}</span>
               }
             </td>
-            <td>{{ orden.sesionesPrescriptas || '—' }}</td>
+            <td>{{ sesionesDeOrden(orden) }}</td>
             <td>
               {{ situacionDeOrden(orden) }}
               @if (orden.deactivationReason) {
@@ -813,6 +813,14 @@
             <td>{{ habilitaEnPalabras(autorizacion) }}</td>
             <td>{{ autorizacion.adjuntoId ? 'Vinculado' : 'Sin vincular' }}</td>
             <td>
+              <button
+                type="button"
+                class="boton boton--secundario"
+                [attr.aria-expanded]="esPanelDeAutorizacion(autorizacion, 'historial')"
+                (click)="alternarHistorial(autorizacion)"
+              >
+                Historial
+              </button>
               @if (!autorizacionInactiva(autorizacion)) {
                 @if (admiteResolucion(autorizacion)) {
                   <button
@@ -1123,6 +1131,117 @@
                 @if (errorAccion(); as mensaje) {
                   <p class="estado estado--error" role="alert">{{ mensaje }}</p>
                 }
+              </td>
+            </tr>
+          }
+
+          @if (esPanelDeAutorizacion(autorizacion, 'historial')) {
+            <tr>
+              <td colspan="7">
+                <section aria-labelledby="titulo-historial-{{ autorizacion.id }}">
+                  <h2 id="titulo-historial-{{ autorizacion.id }}" class="panel__titulo">
+                    Historial de la autorizacion {{ autorizacion.numero }}
+                  </h2>
+                  <p class="ayuda">
+                    Cada hecho que cambio esta autorizacion, del mas viejo al mas nuevo. El
+                    vencimiento no es un hecho: se calcula contra la fecha de hoy.
+                  </p>
+
+                  <div aria-live="polite">
+                    @switch (historial()?.tipo) {
+                      @case ('cargando') {
+                        <p class="estado estado--cargando">Cargando el historial&hellip;</p>
+                      }
+                      @case ('error') {
+                        <p class="estado estado--error" role="alert">{{ mensajeDeHistorial() }}</p>
+                        <p class="acciones">
+                          <button
+                            type="button"
+                            class="boton boton--secundario"
+                            (click)="paginaDeHistorial(0)"
+                          >
+                            Reintentar
+                          </button>
+                        </p>
+                      }
+                      @case ('listo') {
+                        @if (historialListo(); as respuesta) {
+                          @if (respuesta.vencida) {
+                            <p class="estado">
+                              <b>Vencida</b> desde el {{ fechaEnPalabras(respuesta.vencidaDesde) }}.
+                            </p>
+                          }
+
+                          @if ((respuesta.content ?? []).length === 0) {
+                            <p class="estado estado--vacio">Esta pagina no tiene hechos.</p>
+                          } @else {
+                            <ol class="lista-hitos">
+                              @for (evento of respuesta.content ?? []; track evento.id ?? $index) {
+                                <li>
+                                  <p>
+                                    <b>{{ tipoDeEvento(evento) }}</b>
+                                    — {{ formatearInstante(evento.ocurridoEn) ?? 'Sin fecha' }} ·
+                                    {{ actorDeEvento(evento) }}
+                                  </p>
+                                  @if (cambioDeEstado(evento); as cambio) {
+                                    <p>{{ cambio }}</p>
+                                  }
+                                  @if (evento.cantidad !== undefined && evento.cantidad !== null) {
+                                    <p>Cantidad: {{ evento.cantidad }}</p>
+                                  }
+                                  @if (evento.detalle) {
+                                    <p class="ayuda">{{ evento.detalle }}</p>
+                                  }
+                                  @if (evento.motivo) {
+                                    <p>Motivo: {{ evento.motivo }}</p>
+                                  }
+                                </li>
+                              }
+                            </ol>
+                          }
+
+                          @if ((respuesta.totalPages ?? 0) > 1) {
+                            <nav
+                              class="acciones"
+                              attr.aria-label="Paginas del historial de la {{
+                                autorizacion.numero
+                              }}"
+                            >
+                              <button
+                                type="button"
+                                class="boton boton--secundario"
+                                [disabled]="(respuesta.page ?? 0) === 0"
+                                (click)="paginaDeHistorial((respuesta.page ?? 0) - 1)"
+                              >
+                                Hechos anteriores
+                              </button>
+                              <span>
+                                Pagina {{ (respuesta.page ?? 0) + 1 }} de
+                                {{ respuesta.totalPages }} ({{ respuesta.totalElements }} hechos)
+                              </span>
+                              <button
+                                type="button"
+                                class="boton boton--secundario"
+                                [disabled]="
+                                  (respuesta.page ?? 0) + 1 >= (respuesta.totalPages ?? 0)
+                                "
+                                (click)="paginaDeHistorial((respuesta.page ?? 0) + 1)"
+                              >
+                                Hechos siguientes
+                              </button>
+                            </nav>
+                          }
+                        }
+                      }
+                    }
+                  </div>
+
+                  <p class="acciones">
+                    <button type="button" class="boton boton--secundario" (click)="cerrarPaneles()">
+                      Cerrar el historial
+                    </button>
+                  </p>
+                </section>
               </td>
             </tr>
           }
