@@ -30,7 +30,7 @@ export interface UpdateBloqueRequest {
      */
     limpiarVigenciaHasta?: boolean;
     /**
-     * Version que el cliente leyo. Se compara ANTES de mutar: si quedo vieja la respuesta es 409 con type conflict y hay que recargar. Sin esto dos ediciones simultaneas se pisan y el segundo en guardar borra el cambio del primero sin que nadie se entere
+     * Version que el cliente leyo. Se compara ANTES de mutar: si quedo vieja la respuesta es 409 concurrent-modification y hay que recargar. Sin esto dos ediciones simultaneas se pisan y el segundo en guardar borra el cambio del primero sin que nadie se entere
      */
     version: number;
     /**

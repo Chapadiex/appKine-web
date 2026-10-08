@@ -15,6 +15,7 @@ import { AutorizacionElegibleResponse } from '../model/models';
 import { AutorizacionResponse } from '../model/models';
 import { CreateAutorizacionRequest } from '../model/models';
 import { DeactivateDocumentoRequest } from '../model/models';
+import { HistorialDeAutorizacionResponse } from '../model/models';
 import { ProblemDetail } from '../model/models';
 import { ResolverAutorizacionRequest } from '../model/models';
 import { UpdateAutorizacionRequest } from '../model/models';
@@ -38,6 +39,14 @@ export interface DeactivateAutorizacionRequestParams {
 export interface GetAutorizacionRequestParams {
     personaId: number;
     autorizacionId: number;
+    fecha?: string;
+}
+
+export interface GetHistorialDeAutorizacionRequestParams {
+    personaId: number;
+    autorizacionId: number;
+    page?: number;
+    size?: number;
     fecha?: string;
 }
 
@@ -98,6 +107,14 @@ export interface AutorizacionesServiceInterface {
 * @param requestParameters
      */
     getAutorizacion(requestParameters: GetAutorizacionRequestParams, extraHttpRequestParams?: any): Observable<AutorizacionResponse>;
+
+    /**
+     * Historial de estados de una autorizacion
+     * DP-23. Los hechos de la autorizacion, del mas viejo al mas nuevo: ALTA, APROBACION, OBSERVACION, RECHAZO, MODIFICACION, DOCUMENTO, CONSUMO, REVERSION_DE_CONSUMO y ANULACION, cada uno con estado anterior y nuevo, actor, momento y motivo. Vive en una tabla propia append-only, escrita en la misma transaccion que cada mutacion: no se arma leyendo la auditoria.  EL VENCIMIENTO NO ES UN EVENTO. Vencer es funcion del reloj y nada lo escribe: viaja CALCULADO contra fecha en vencida y vencidaDesde.  Las autorizaciones cargadas antes del historial (V85) traen un solo ALTA reconstruido con el estado que tenian ese dia, declarado en detalle.  Mismo permiso que leer la autorizacion: pertenencia al tenant.
+     * @endpoint get /api/v1/personas/{personaId}/autorizaciones/{autorizacionId}/historial
+* @param requestParameters
+     */
+    getHistorialDeAutorizacion(requestParameters: GetHistorialDeAutorizacionRequestParams, extraHttpRequestParams?: any): Observable<HistorialDeAutorizacionResponse>;
 
     /**
      * Historial de autorizaciones de un paciente

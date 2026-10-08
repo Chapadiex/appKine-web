@@ -37,7 +37,7 @@ export interface CrearSerieDeTurnosRequestParams {
 export interface ListarSeriesDeTurnosRequestParams {
     consultorioId: number;
     personaId?: number;
-    estado?: 'VIGENTE' | 'FINALIZADA';
+    estado?: 'VIGENTE' | 'CANCELADA' | 'FINALIZADA';
     page?: number;
     size?: number;
 }
@@ -67,7 +67,7 @@ export interface SeriesDeTurnosServiceInterface {
 
     /**
      * Cancelar turnos de una serie con alcance
-     * Cancela los turnos **futuros pendientes** del alcance, cada uno con la misma cancelacion de un turno suelto: motivo, actor, historial, aviso al paciente y **liberacion del lugar**, sin borrar ninguna fila (RN-M12-002).  Los pasados, los cancelados o ausentes, los que estan en espera y los que tienen atencion **no se tocan**: vuelven en &#x60;omitidos&#x60; (DP-04).  **Confirmacion explicita**: &#x60;cantidadConfirmada&#x60; tiene que coincidir con los afectados que hay al ejecutar. Si alguien movio o cancelo un turno entre medio, 409 &#x60;conflict&#x60; y no se cancela nada. No es idempotente: repetirla da 409.
+     * Cancela los turnos **futuros pendientes** del alcance, cada uno con la misma cancelacion de un turno suelto: motivo, actor, historial, aviso al paciente y **liberacion del lugar**, sin borrar ninguna fila (RN-M12-002).  Los pasados, los cancelados o ausentes, los que estan en espera y los que tienen atencion **no se tocan**: vuelven en &#x60;omitidos&#x60; (DP-04).  **Confirmacion explicita**: &#x60;cantidadConfirmada&#x60; tiene que coincidir con los afectados que hay al ejecutar. Si alguien movio o cancelo un turno entre medio, 409 &#x60;conflict&#x60; —no &#x60;concurrent-modification&#x60;: hay que volver a previsualizar, no recargar— y no se cancela nada. No es idempotente: repetirla da 409.
      * @endpoint post /api/v1/consultorios/{consultorioId}/series-de-turnos/{serieId}/cancelacion
 * @param requestParameters
      */

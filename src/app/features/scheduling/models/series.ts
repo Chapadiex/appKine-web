@@ -236,6 +236,7 @@ function capitalizar(texto: string): string {
 const TEXTOS_DE_ESTADO_DE_SERIE: Readonly<Record<SerieDeTurnosResumenEstadoEnum, string>> = {
   [SerieDeTurnosResumenEstadoEnum.VIGENTE]: 'Vigente',
   [SerieDeTurnosResumenEstadoEnum.FINALIZADA]: 'Finalizada',
+  [SerieDeTurnosResumenEstadoEnum.CANCELADA]: 'Cancelada',
 };
 
 /**

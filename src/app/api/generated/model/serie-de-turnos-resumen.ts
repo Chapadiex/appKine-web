@@ -28,7 +28,7 @@ export interface SerieDeTurnosResumen {
      */
     documento?: string;
     /**
-     * Estado DERIVADO de sus turnos, calculado al leer: la serie no tiene estado propio (DP-04). `VIGENTE` si le queda un turno pendiente, `FINALIZADA` si no.
+     * Estado DERIVADO de sus turnos, calculado al leer: la serie no tiene estado propio (DP-04). `VIGENTE` si le queda un turno pendiente; si no, `CANCELADA` si su ultimo turno esta cancelado (la serie se corto, DP-20) y `FINALIZADA` si no (se agoto por fecha o por cantidad).
      */
     estado?: SerieDeTurnosResumenEstadoEnum;
     fechaDesde?: string;
@@ -72,6 +72,7 @@ export interface SerieDeTurnosResumen {
 }
 export enum SerieDeTurnosResumenEstadoEnum {
     VIGENTE = 'VIGENTE',
+    CANCELADA = 'CANCELADA',
     FINALIZADA = 'FINALIZADA'
 };
 export enum SerieDeTurnosResumenFrecuenciaEnum {

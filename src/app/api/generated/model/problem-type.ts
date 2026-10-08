@@ -398,6 +398,8 @@ export enum ProblemType {
 
     HTTPS___AKINE_APP_PROBLEMS_AUTORIZACION_NO_ELEGIBLE = 'https://akine.app/problems/autorizacion-no-elegible',
 
-    HTTPS___AKINE_APP_PROBLEMS_DERIVACION_NO_ACCESIBLE = 'https://akine.app/problems/derivacion-no-accesible'
+    HTTPS___AKINE_APP_PROBLEMS_DERIVACION_NO_ACCESIBLE = 'https://akine.app/problems/derivacion-no-accesible',
+
+    HTTPS___AKINE_APP_PROBLEMS_OFERTA_SIN_PRECIO = 'https://akine.app/problems/oferta-sin-precio'
 }
 

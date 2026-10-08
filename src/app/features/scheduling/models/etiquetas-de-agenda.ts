@@ -43,6 +43,8 @@ const TEXTOS_SIN_SLOTS: Readonly<Record<DiaDeAgendaMotivoSinSlotsEnum, string>> 
     'entra ningun turno completo.',
   [DiaDeAgendaMotivoSinSlotsEnum.COMPLETO]:
     'Todos los turnos de este dia ya estan reservados. La agenda esta bien: se lleno.',
+  [DiaDeAgendaMotivoSinSlotsEnum.FUERA_DE_HORARIO_SEDE]:
+    'La sede no atiende en las horas del profesional este dia. El horario general de la sede se edita desde Horarios.',
   [DiaDeAgendaMotivoSinSlotsEnum.PASADO]:
     'Este dia ya no tiene turnos por delante: los horarios que quedaban ya empezaron.',
 };

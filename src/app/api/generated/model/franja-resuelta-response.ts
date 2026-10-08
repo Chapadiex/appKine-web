@@ -26,7 +26,7 @@ export interface FranjaResueltaResponse {
      */
     origen?: FranjaResueltaResponseOrigenEnum;
     /**
-     * Por que la franja quedo mas corta que la regla que la produjo. DOS estados, y el segundo es el normal:  CIERRE — una excepcion de tipo CIERRE le recorto un pedazo. Es lo que explica por que la franja termina a las 11 y no a las 13.  null — nada la recorto: la franja es la regla entera.  NO se declara como enum en el contrato aunque la lista sea cerrada. Ver la nota de razonVacio: un campo nullable con enum se publica en OpenAPI 3.1 con un tipo que admite el nulo y un enum que no lo contiene, y un cliente generado con validacion estricta rechazaria nuestra propia respuesta.
+     * Por que la franja quedo mas corta que la regla que la produjo. TRES estados, y el ultimo es el normal:  CIERRE — una excepcion de tipo CIERRE le recorto un pedazo. Es lo que explica por que la franja termina a las 11 y no a las 13.  HORARIO_SEDE (0.74.0) — la franja excedia el horario general de la sede y quedo solo la parte comun.  null — nada la recorto: la franja es la regla entera.  NO se declara como enum en el contrato aunque la lista sea cerrada. Ver la nota de razonVacio: un campo nullable con enum se publica en OpenAPI 3.1 con un tipo que admite el nulo y un enum que no lo contiene, y un cliente generado con validacion estricta rechazaria nuestra propia respuesta.
      */
     recortadoPor?: string | null;
     /**

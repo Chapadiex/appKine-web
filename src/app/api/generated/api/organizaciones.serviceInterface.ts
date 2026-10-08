@@ -73,7 +73,7 @@ export interface OrganizacionesServiceInterface {
 
     /**
      * Editar los datos mutables de la organizacion
-     * Actualiza nombre y zona horaria. Requiere administrar esa organizacion.  El slug no se puede cambiar: se usa en URLs y en soporte, y renombrarlo rompe enlaces. Cambiar de identificador es crear otro tenant, no editar este.  La version enviada se compara antes de mutar. Si quedo vieja porque alguien mas edito mientras tanto, la respuesta es 409 conflict y hay que releer y reintentar: es preferible a pisar en silencio el cambio de otro.  Los campos omitidos o vacios se dejan como estan; no los borra.
+     * Actualiza nombre y zona horaria. Requiere administrar esa organizacion.  El slug no se puede cambiar: se usa en URLs y en soporte, y renombrarlo rompe enlaces. Cambiar de identificador es crear otro tenant, no editar este.  La version enviada se compara antes de mutar. Si quedo vieja porque alguien mas edito mientras tanto, la respuesta es 409 concurrent-modification y hay que releer y reintentar: es preferible a pisar en silencio el cambio de otro.  Los campos omitidos o vacios se dejan como estan; no los borra.
      * @endpoint patch /api/v1/organizations/{orgId}
 * @param requestParameters
      */
