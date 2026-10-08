@@ -30,6 +30,7 @@ import { TenantContextStore } from '../../../../core/services/tenant-context.sto
 import { UpdateArancelRequest } from '../../../../api/generated/model/update-arancel-request';
 import { numeroDeclarado } from '../../../../shared/utils/numero-declarado';
 import {
+  AmbitoContracting,
   CausaContracting,
   hayQueRecargar,
   traducirErrorContracting,
@@ -445,7 +446,8 @@ export class ArancelesDelConvenioPage {
         );
         this.cargar();
       },
-      error: (error: unknown) => this.fallar(error),
+      error: (error: unknown) =>
+        this.fallar(error, cuerpo.ofertaId === undefined ? 'arancel' : 'arancel-de-oferta'),
     });
   }
 
@@ -604,8 +606,8 @@ export class ArancelesDelConvenioPage {
       });
   }
 
-  private fallar(error: unknown): void {
-    const traducido = traducirErrorContracting(error, 'arancel');
+  private fallar(error: unknown, ambito: AmbitoContracting = 'arancel'): void {
+    const traducido = traducirErrorContracting(error, ambito);
     this.enviando.set(false);
     this.errorAccion.set(traducido.mensaje);
     this.causaAccion.set(traducido.causa);
