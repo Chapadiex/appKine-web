@@ -224,6 +224,53 @@ Reglas innegociables del QA:
 
 ## 7. Estado actual
 
+### Estado al 07/10/2026, sobre `1a02164`
+
+> Esta subsección **supersede** al párrafo del 30/08 que sigue y al "Próximo paso" del 29/09 del
+> final de esta sección. Lo demás queda como historia.
+
+`main` tiene **144 commits**, el último merge es `1a02164` (PR #22) y está pusheado a
+`Chapadiex/appKine-web`. El 07/10 entraron **17 PR, del #6 al #22**. Queda abierto el **#4**
+(historia clínica en pantalla: D-a, D-b, D-c), sin mergear.
+
+| | Valor medido |
+|---|---|
+| Cliente generado | **0.69.0** (`contractVersion` en los dos `environment`), igual que el contrato de `appKine-api` `main`. Se regeneró tres veces en el día: 0.63.0 (#6), 0.66.0 (#11) y 0.69.0 (#19) |
+| Tests | **128 archivos de spec / 1.344 tests, 0 fallos**, medidos con `npm ci && npm run test:ci` sobre `1a02164` el 07/10. Cobertura st 91,06 % · rama 82,79 % · fn 87,30 % · ln 92,18 %, sobre el piso de 80 % en las cuatro; el chequeo de cableado del contraste pasa |
+| E2E | Siete specs en `e2e/`: `auth-flujo`, `contexto-sin-fuga`, `errores-sin-internals`, `smoke`, los dos de agenda (con `route.fulfill`) y `contraste`. **Ninguna pantalla del 07/10 tiene E2E** |
+| Imagen Docker | **G-3 cerrado** (#18): `Dockerfile` multi-stage → `nginx-unprivileged` (UID 101, puerto 8080, `HEALTHCHECK` en `/healthz`), proxy de `/api/` a `AKINE_API_URL` resuelto en runtime —el mismo bundle para todos los entornos—, SBOM CycloneDX embebido y job `imagen` en el CI. Detalle en `docs/imagen-docker.md` |
+
+Features: `auth`, `organization`, `platform`, `resource`, `catalog`, `offering`, `person`,
+`contracting`, `scheduling`, `clinical`, `billing` y, desde el 07/10, **`reporting`**.
+
+Lo que el 07/10 puso en pantalla, con su PR:
+
+| Paquete | Qué | PR |
+|---|---|---|
+| F-6 | Caja diaria de la sede, `/caja` (`caja:operate`): apertura, movimientos manuales, reversión, arqueo y cierre | #7 |
+| E-4 | Recepción del día sobre la máquina de estados propia (DP-16): llegada, validación, Particular con motivo, espera, llamado y anulación | #8 |
+| F-7 | Presentaciones a financiadores, `/presentaciones` y `/presentaciones/:id` (`cobro:register`): bandeja, armado, revisión, factura, débito, pagos y conciliación | #9 |
+| E-3 | Series de turnos: alta con previsualización, detalle `/agenda/series/:serieId` y cancelación con alcance | #10 |
+| G-8 | Tablero de reportes, `features/reporting`, `/reportes` (`reporte:read`): fuente y criterio de fecha por indicador, secciones omitidas y CSV | #12 |
+| A-7 | Consola de plataforma en `features/platform`, `/plataforma/solicitudes`, con `PlatformRoleStore` y `platformAdminGuard` | #13 |
+| E-6 | Prepago como anticipo: política en la oferta, aviso en la recepción y modo prepago del registro de cobro | #14 |
+| B-3 | Cobertura aplicable por oferta (componente `app-cobertura-aplicable` en Coberturas del paciente), arancel por oferta y precios particulares `/servicios/ofertas/:ofertaId/precios` | #15 |
+| B-5 | Sección de coberturas en el Paciente 360 | #16 |
+| A-10 | Impacto de desvinculación al revocar y turnos afectados al editar disponibilidad | #17 |
+| E-8 | Bandeja de series `/agenda/series` (#20) y prepago visible antes del check-in (#21) | #20, #21 |
+| A-8 | Alta de sede con primer box y horario general en un acto; horario general en el calendario de la sede | #22 |
+
+> **Nada de esto se verificó contra el backend real.** Cada uno de esos PR lo declara: los tests
+> son unitarios con `HttpTestingController`, que no negocia contenido ni prueba que el servidor
+> emita cada `problemType`. Es la misma deuda que el QA manual del §6 de `appKine-api`.
+
+> **El defecto de contrato que destapó G-8.** El contrato 0.66.0 publicaba para los reportes los
+> schemas del Paciente 360 (springdoc nombra por el nombre simple y los dos módulos usaban
+> `IndicadorResponse`/`SeccionResponse`). #12 entró con un puente manual de tipos; el backend lo
+> corrigió en 0.67.0 (`appKine-api` #58) y el puente se borró (`e62253f`). No quedan DTO manuales.
+
+### Estado al 30/08/2026 (histórico)
+
 **Rama `akine-01.02-identidad`, working tree CON cambios sin commitear** (30/08/2026). Nada
 pusheado todavía: el remote `Chapadiex/appKine-web` existe, pero la rama es local. El conteo de
 commits sale de `git log` y este archivo no lo repite: se desactualiza con su propio commit.
@@ -466,37 +513,32 @@ Reglas que esta etapa dejó fijadas y que las siguientes heredan:
 | Los guards son **UX, no seguridad** | La autoridad de permisos es el backend, que rechaza igual si se llega por URL directa |
 | Falta de contexto se resuelve mandando a `/seleccionar-contexto`, no mostrando un 403 | Sin eso la pantalla se abre vacía y el usuario no tiene cómo salir |
 
-### Próximo paso — regenerar el cliente: el backend está catorce versiones adelante
+### Próximo paso
 
-> **Actualizado el 29/09/2026.** Lo que decía antes —que faltaba el quinto escenario del QA manual
-> y que Docker no arrancaba— quedó viejo: **Docker funciona** (29.2.0) y el backend cerró su
-> integración completa ese día.
+> **Reescrito el 07/10/2026.** El del 29/09 pedía regenerar el cliente desde `0.29.0`: ya está en
+> `0.69.0`, igual que el contrato.
 
-**El cliente TypeScript está en `0.29.0` y el contrato del backend en `0.44.0`.** No es un desfase
-cosmético: son **101 operaciones nuevas** y significa que este repo **no tiene una sola pantalla**
-de nada posterior a F3. Falta todo el timeline clínico, el caso, el plan de tratamiento, el examen
-y las mediciones, los tratamientos realizados, la enmienda, la caja, las presentaciones a
-financiadores, los egresos, los reportes y toda la segunda entrega —clases, inscripciones,
-asistencia—.
-
-Regenerar el cliente desde `0.44.0` es el cuello de botella del producto entero: hasta que no pase,
-cada etapa de backend que se cierre suma funcionalidad que nadie puede usar. El contrato está sin
-drift y sin `operationId` desambiguado, así que la generación debería ser limpia; lo que va a doler
-es que **31 operaciones cambiaron de nombre** al recibir `operationId` explícito, y eso toca a los
-servicios que ya las consumen.
-
-`main` de este repo **está pusheado** (`94d5a9c`), con lint, 110 specs / 1.206 tests, cobertura
-sobre el piso de 80 % en las cuatro métricas y las 16 auditorías de contraste en verde.
+1. **Verificar contra el backend real** lo que entró el 07/10 (QA manual del §6 de `appKine-api`,
+   G-12) y escribir los E2E de las verticales que no tienen ninguno: clínica, F3, caja,
+   presentaciones, recepción y series.
+2. **Activar el job E2E del CI (G-9):** esperaba la imagen Docker, y las dos ya existen (backend
+   `appKine-api` #29, frontend #18).
+3. **Mergear o cerrar el PR #4** (historia clínica en pantalla, D-a a D-c), abierto desde antes del
+   07/10.
+4. **Las pantallas que siguen faltando:** anulación, reintegro e imputación posterior de cobros
+   (F-3), edición de las prácticas de una oferta (A-9), alertas de consumo y selector de
+   autorización (D-f), reprogramación de serie con alcance, reintento de notificaciones, y egresos
+   y pagos a profesionales (el cliente tiene `EgresosService` y ningún feature lo usa).
 
 Pendientes que arrastra el frontend:
 
 - [ ] E2E de todo lo posterior a 01.03: espacios, catálogo, horarios, servicios y padrón. **Ninguno existe**
 - [ ] Protección de rama en `main`. **Pushear ya está hecho** desde el 29/09 (`94d5a9c` en `Chapadiex/appKine-web`); falta protegerla en GitHub
-- [ ] Activar el job E2E del pipeline (listo y comentado — espera la imagen Docker del backend)
+- [ ] Activar el job E2E del pipeline (listo y comentado). Ya no espera nada: las imágenes de los dos repos existen desde el 07/10 (G-9)
 - [ ] Regla de ESLint que prohíba imports entre features (ADR-0004, hoy depende de revisión)
 - [ ] Completar los `PENDIENTE(F1)` de `.claude/qa-config.md`
 - [ ] `src/app/features/organization/organization.routes.spec.ts` no pasa `format:check`. Preexistente, sin relación con ninguna etapa reciente
-- [ ] Endpoint que diga si el usuario tiene rol de plataforma: sin él, la pantalla de servicios muestra las acciones y deja que el 403 del servidor sea la respuesta
+- [x] ~~Endpoint que diga si el usuario tiene rol de plataforma~~: existe desde A-7 (`GET /me/platform-role`, contrato 0.64.0) y lo consume `PlatformRoleStore` (#13). La pantalla de servicios todavía no lo usa para ocultar acciones
 
 ## 8. Checklist de cierre de tarea
 
