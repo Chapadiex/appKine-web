@@ -4,7 +4,7 @@ import { ProblemType } from '../../../api/generated/model/problem-type';
 import { CausaCobro, noSeRegistro, traducirErrorCobro } from './cobro-errors';
 
 /**
- * Los cuatro `problemType` propios del cobro, escritos a mano y a proposito.
+ * Los `problemType` propios del cobro, escritos a mano y a proposito.
  *
  * <p>Esta lista es el <b>contrato entre esta pantalla y el backend</b>, y por eso la primera
  * prueba del archivo la confronta contra el enum generado. Si el backend renombra
@@ -18,6 +18,12 @@ const PROBLEMAS_DEL_COBRO = [
   'saldo-insuficiente',
   'obligacion-no-cobrable',
   'idempotency-key-conflict',
+  // F-3: anulacion, reintegro e imputacion posterior.
+  'cobro-anulado',
+  'cobro-con-reintegros',
+  'saldo-a-favor-insuficiente',
+  'caja-no-abierta',
+  'caja-saldo-insuficiente',
 ] as const;
 
 function cuerpo(datos: Record<string, unknown>): ProblemDetail {
@@ -48,7 +54,7 @@ describe('traducirErrorCobro', () => {
   // 1. Los nombres
   // -------------------------------------------------------------------------------------
 
-  it('los cuatro problemType del cobro existen en el contrato publicado', () => {
+  it('los problemType del cobro existen en el contrato publicado', () => {
     const publicados = new Set(Object.values(ProblemType).map((uri) => uri.split('/').pop()));
 
     for (const tipo of PROBLEMAS_DEL_COBRO) {
@@ -66,6 +72,11 @@ describe('traducirErrorCobro', () => {
       'saldo-insuficiente',
       'no-cobrable',
       'clave-reusada',
+      'cobro-anulado',
+      'con-reintegros',
+      'saldo-a-favor-insuficiente',
+      'caja-no-abierta',
+      'caja-sin-efectivo',
     ] satisfies CausaCobro[]);
     expect(new Set(causas).size).toBe(PROBLEMAS_DEL_COBRO.length);
   });
@@ -168,5 +179,18 @@ describe('traducirErrorCobro', () => {
 
     expect(traducirErrorCobro(limitado).causa).toBe('limite');
     expect(traducirErrorCobro(new Error('cualquier cosa')).causa).toBe('otro');
+  });
+
+  it('saldo-a-favor-insuficiente trae lo disponible, y el 403 de anular nombra los dos permisos', () => {
+    const traducido = traducirErrorCobro(
+      problema('saldo-a-favor-insuficiente', 409, { disponible: 1200, importeIntentado: 3000 }),
+    );
+    expect(traducido.disponible).toBe(1200);
+    expect(traducido.importeIntentado).toBe(3000);
+    expect(traducido.accion).toBe('recargar-cuenta');
+
+    const prohibido = problema('forbidden', 403);
+    expect(traducirErrorCobro(prohibido, 'anular').mensaje).toContain('operar la caja');
+    expect(traducirErrorCobro(prohibido, 'imputar').mensaje).not.toContain('operar la caja');
   });
 });
