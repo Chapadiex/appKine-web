@@ -29,6 +29,14 @@
       <p class="ayuda">Motivo que dio el servidor: {{ problema.motivo }}</p>
     }
 
+    @if (problema.causa === 'oferta-sin-precio' && problema.ofertaId) {
+      <p>
+        <a class="enlace" [routerLink]="['/servicios/ofertas', problema.ofertaId, 'precios']">
+          Cargar el precio de la oferta
+        </a>
+      </p>
+    }
+
     @if (hayConflicto()) {
       <p class="ayuda">
         Lo que escribiste sigue en pantalla y no se mando a ningun lado. Al releer vas a ver lo que
