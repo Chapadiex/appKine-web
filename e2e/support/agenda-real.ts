@@ -107,3 +107,38 @@ export async function abrirReserva(
 
 /** POST de la reserva de turno. */
 export const RESERVA = /\/turnos\/ofertas\/\d+$/;
+
+/**
+ * Abre el buscador con la oferta elegida y la ventana [desde, hasta), y espera a que la grilla
+ * dibuje ESA ventana.
+ *
+ * <p>Esperar la respuesta de esa consulta, y no solo que el campo tenga el valor, no es exceso de
+ * celo: mientras la consulta nueva viaja la grilla sigue mostrando la anterior, y un localizador
+ * que matchea varios slots de la grilla vieja falla en el acto por modo estricto.
+ */
+export async function abrirLaAgenda(
+  page: Page,
+  oferta: Oferta,
+  desde: string,
+  hasta: string,
+): Promise<void> {
+  await navegar(page, '/agenda');
+  await page.getByLabel('Oferta', { exact: true }).selectOption({ label: oferta.nombre });
+  await expect(page.getByRole('heading', { name: oferta.nombre, level: 2 })).toBeVisible();
+
+  const consulta = page.waitForResponse((r) => {
+    const url = new URL(r.url());
+    return (
+      url.pathname.endsWith('/agenda') &&
+      url.searchParams.get('desde') === desde &&
+      url.searchParams.get('hasta') === hasta
+    );
+  });
+  // Primero `hasta`: con `desde` adelante de `hasta` la ventana quedaria invertida un instante.
+  await page.getByLabel('Hasta (sin incluir)').fill(hasta);
+  await page.getByLabel('Desde').fill(desde);
+  expect((await consulta).status()).toBe(200);
+
+  const dias = (Date.parse(hasta) - Date.parse(desde)) / 86_400_000;
+  await expect(page.getByRole('heading', { level: 3 })).toHaveCount(dias);
+}

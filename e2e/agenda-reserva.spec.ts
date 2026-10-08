@@ -2,11 +2,11 @@ import { Page } from '@playwright/test';
 
 import {
   RESERVA,
+  abrirLaAgenda,
   abrirReserva,
   elegirPersona,
   expect,
   ingresar,
-  navegar,
   problemaDe,
   respuestaDe,
   test,
@@ -86,10 +86,7 @@ test.describe('Reserva de turno contra el backend real', () => {
       slots: [slot],
     } = await diaDeTrabajo(api, centro, oferta.id, DIAS.reservaFeliz);
 
-    await navegar(page, '/agenda');
-    await page.getByLabel('Oferta', { exact: true }).selectOption({ label: oferta.nombre });
-    await page.getByLabel('Hasta (sin incluir)').fill(sumarDias(d, 1));
-    await page.getByLabel('Desde').fill(d);
+    await abrirLaAgenda(page, oferta, d, sumarDias(d, 1));
     await page.getByRole('button', { name: rango(slot, centro.timezone) }).click();
 
     await expect(page).toHaveURL(/\/agenda\/ofertas\/\d+\/reservar\?/);

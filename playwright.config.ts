@@ -65,6 +65,9 @@ export default defineConfig({
       testMatch: /agenda-.*\.spec\.ts/,
       dependencies: ['agenda-setup'],
       workers: 2,
+      // Cada paso espera una vuelta real al backend, a veces dos. Los 5 s por defecto alcanzan en
+      // una maquina tranquila y no con el backend compilando o atendiendo otra corrida.
+      expect: { timeout: 10_000 },
       use: { ...devices['Desktop Chrome'] },
     },
 

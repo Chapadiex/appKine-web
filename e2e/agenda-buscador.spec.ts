@@ -1,9 +1,14 @@
-import { Page } from '@playwright/test';
-
-import { expect, ingresar, navegar, problemaDe, respuestaDe, test } from './support/agenda-real';
+import {
+  abrirLaAgenda,
+  expect,
+  ingresar,
+  navegar,
+  problemaDe,
+  respuestaDe,
+  test,
+} from './support/agenda-real';
 import {
   DIAS,
-  Oferta,
   crearOferta,
   crearPersona,
   diaDeTrabajo,
@@ -28,17 +33,6 @@ import {
  * `turno:manage` (ver `RolePermissions`), asi que con el backend real no hay cuenta con la que
  * montarlo sin quitar un permiso a mano. Lo sigue cubriendo `buscador-de-agenda-page.spec.ts`.
  */
-
-/** Abre el buscador con la oferta elegida y la ventana [desde, hasta). */
-async function abrirLaAgenda(page: Page, oferta: Oferta, desde: string, hasta: string) {
-  await navegar(page, '/agenda');
-  await page.getByLabel('Oferta', { exact: true }).selectOption({ label: oferta.nombre });
-  await expect(page.getByRole('heading', { name: oferta.nombre, level: 2 })).toBeVisible();
-  // Primero `hasta`: con `desde` adelante de `hasta` la ventana quedaria invertida un instante.
-  await page.getByLabel('Hasta (sin incluir)').fill(hasta);
-  await page.getByLabel('Desde').fill(desde);
-  await expect(page.getByLabel('Desde')).toHaveValue(desde);
-}
 
 test.describe('Buscador de agenda contra el backend real', () => {
   test.beforeEach(async ({ page, centro }) => {
