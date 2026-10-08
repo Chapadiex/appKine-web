@@ -20,16 +20,16 @@ const INSTANTE = '2026-09-15T12:00:00Z';
  * dia"— y que la hora se formatee en la <b>zona de la sede</b> y no en la del navegador.
  */
 describe('textoSinSlots', () => {
-  it('los diez motivos del contrato tienen un texto propio', () => {
+  it('los once motivos del contrato tienen un texto propio', () => {
     const motivos = Object.values(DiaDeAgendaMotivoSinSlotsEnum);
     const textos = motivos.map((motivo) =>
       textoSinSlots({ fecha: '2026-09-15', motivoSinSlots: motivo }),
     );
 
-    expect(motivos.length).toBe(10);
+    expect(motivos.length).toBe(11);
     // Uno por motivo y todos distintos: si dos compartieran texto, el operador no podria
     // distinguir un feriado de una oferta vencida, que se arreglan en pantallas distintas.
-    expect(new Set(textos).size).toBe(10);
+    expect(new Set(textos).size).toBe(11);
     expect(textos.every((texto) => texto.length > 0)).toBe(true);
   });
 

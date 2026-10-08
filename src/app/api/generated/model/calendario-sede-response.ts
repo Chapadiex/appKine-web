@@ -7,6 +7,7 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { ImpactoDisponibilidadResponse } from './impacto-disponibilidad-response';
 import { FeriadoResponse } from './feriado-response';
 import { HorarioGeneralFranjaResponse } from './horario-general-franja-response';
 
@@ -32,9 +33,13 @@ export interface CalendarioSedeResponse {
      */
     feriados?: Array<FeriadoResponse>;
     /**
-     * Franjas VIGENTES del horario general de la sede (RF-M03-002), ordenadas por dia y hora. Vacia significa que la sede no declaro horario general, no que este cerrada. Informativo: la agenda ofrece turnos con la disponibilidad de cada profesional, no con este horario (RN-M03-004). Viaja completa tambien en la respuesta del PUT
+     * Franjas VIGENTES del horario general de la sede (RF-M03-002), ordenadas por dia y hora. Vacia significa que la sede no declaro horario general, no que este cerrada. Desde 0.74.0 (DP-19) es un LIMITE de la agenda: la disponibilidad de cada profesional se recorta a este horario y ningun turno se ofrece ni se reserva fuera de el; no abre nada que el profesional no tenga (RN-M03-004). Vacia no limita nada. Viaja completa tambien en la respuesta del PUT
      */
     horarioGeneral?: Array<HorarioGeneralFranjaResponse>;
+    /**
+     * Turnos pendientes que el reemplazo del horario general dejo FUERA de la disponibilidad efectiva (0.74.0). Se informan y NO se cancelan: quien decide que hacer con ellos es la sede. Mismo criterio exacto que el impacto de un cambio de disponibilidad: cuenta un turno que el horario anterior cubria y el nuevo no, de cualquier profesional, desde hoy hasta noventa dias. En el GET y en un PUT que no cambia el horario viaja en cero con evaluadoHasta nulo
+     */
+    impactoDelHorario?: ImpactoDisponibilidadResponse;
     /**
      * Pais cuyo calendario de feriados usa la sede
      */

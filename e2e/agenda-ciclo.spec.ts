@@ -168,9 +168,8 @@ test.describe('Ciclo del turno contra el backend real', () => {
     const respuesta = await rechazo;
     expect(respuesta.status()).toBe(409);
     const problema = await problemaDe(respuesta);
-    // `conflict` y no `concurrent-modification`: es la decision transversal pendiente del workspace
-    // (los dos tipos conviven). Se afirma lo que el backend emite hoy.
-    expect(problema.type).toBe(uriDeProblema('conflict'));
+    // Desde DP-21 (appKine-api #74) toda version vieja es `concurrent-modification`.
+    expect(problema.type).toBe(uriDeProblema('concurrent-modification'));
 
     await expect(
       page.getByRole('heading', { name: 'No se pudo operar sobre el turno' }),

@@ -264,6 +264,7 @@ model/evaluacion-previa.ts
 model/evento-clinico-response.ts
 model/evento-de-agenda.ts
 model/evento-de-asistencia.ts
+model/evento-de-autorizacion-response.ts
 model/evento-de-clase.ts
 model/evento-de-recepcion.ts
 model/evento-de-turno.ts
@@ -280,6 +281,7 @@ model/guardar-borrador.ts
 model/guardar-evaluacion.ts
 model/habilitaciones-response.ts
 model/historia-clinica-response.ts
+model/historial-de-autorizacion-response.ts
 model/hito-response.ts
 model/horario-general-franja-request.ts
 model/horario-general-franja-response.ts
