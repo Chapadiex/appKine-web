@@ -10,7 +10,7 @@ import {
   request as fabricaDeRequest,
 } from '@playwright/test';
 
-import { PASSWORD, emailUnico, esperarCupoDeRegistro, nonce } from './akine';
+import { PASSWORD, conReintentoPor429, emailUnico, nonce } from './akine';
 
 /**
  * Sembrado por la API REAL para los E2E de agenda, ciclo del turno y recepcion (AKINE E-2).
@@ -312,11 +312,13 @@ async function registrar(
   http: APIRequestContext,
   datos: { email: string; firstName: string; lastName: string; organizationName: string },
 ): Promise<void> {
-  await esperarCupoDeRegistro();
-  const respuesta = await http.post('/api/v1/auth/register', {
-    headers: { 'Idempotency-Key': randomUUID() },
-    data: { ...datos, password: PASSWORD },
-  });
+  const clave = randomUUID();
+  const respuesta = await conReintentoPor429(() =>
+    http.post('/api/v1/auth/register', {
+      headers: { 'Idempotency-Key': clave },
+      data: { ...datos, password: PASSWORD },
+    }),
+  );
   expect(respuesta.status(), `alta de ${datos.email}: ${await respuesta.text()}`).toBe(202);
 }
 
@@ -440,22 +442,134 @@ export async function sembrarCentro(): Promise<Centro> {
 }
 
 /**
+ * Casilla del administrador de plataforma de la corrida (AKINE G-9).
+ *
+ * <p>Tiene que ser la MISMA que el backend recibe en `AKINE_BOOTSTRAP_ADMIN_EMAIL`: el bootstrap
+ * de DP-14 re-apunta a ella la cuenta sembrada por `V15` y le manda el enlace de activacion. El
+ * job `e2e` del CI arranca el backend con este default.
+ */
+export const EMAIL_PLATAFORMA =
+  process.env['AKINE_E2E_PLATAFORMA_EMAIL'] ?? 'plataforma.e2e@ejemplo.test';
+
+/** Servicio global que el sembrado da de alta cuando el catalogo esta vacio. */
+const SERVICIO_E2E = {
+  codigo: 'E2E_KINESIOLOGIA',
+  nombre: 'Kinesiologia E2E',
+  naturaleza: 'TERAPEUTICO',
+  modalidadDefault: 'INDIVIDUAL',
+  descripcion: 'Servicio sintetico sembrado por los E2E',
+} as const;
+
+/**
  * Un servicio ACTIVO del catalogo global, que es de donde cuelga toda oferta.
  *
- * <p><b>Limite declarado:</b> crear un servicio exige rol de plataforma, y la unica forma de
- * tener esa cuenta en un despliegue nuevo es el bootstrap de DP-14 (`AKINE_BOOTSTRAP_ADMIN_EMAIL`).
- * Este sembrado no lo hace: usa el primer servicio activo que haya. Una base recien creada no
- * tiene ninguno, y ahi la suite falla aca, diciendo por que, en vez de fallar en cada test.
+ * <p>Si ya hay alguno —la base de desarrollo de siempre— se usa el primero y no se toca nada. Si
+ * el catalogo esta vacio —una base nueva, como la del CI— se crea {@link SERVICIO_E2E} como
+ * administrador de plataforma (ver {@link ingresarComoPlataforma}). Es idempotente: un 409 de
+ * codigo repetido significa que otra corrida ya lo creo, y se vuelve a leer el catalogo.
  */
 async function servicioAgendable(api: ApiAkine): Promise<number> {
   const servicios = await api.exigir<{ id: number }[]>('GET', '/api/v1/servicios');
-  expect(
-    servicios.length,
-    'El catalogo global no tiene ningun servicio ACTIVO y crearlo exige rol de plataforma. ' +
-      'Arranca el backend con AKINE_BOOTSTRAP_ADMIN_EMAIL (DP-14), activa esa cuenta y da de ' +
-      'alta un servicio en /plataforma antes de correr estos E2E.',
-  ).toBeGreaterThan(0);
-  return servicios[0].id;
+  if (servicios.length > 0) {
+    return servicios[0].id;
+  }
+
+  const http = await fabricaDeRequest.newContext({ baseURL: API });
+  try {
+    const token = await ingresarComoPlataforma(http);
+    const alta = await http.post('/api/v1/servicios', {
+      headers: {
+        authorization: `Bearer ${token}`,
+        accept: 'application/json, application/problem+json',
+      },
+      data: SERVICIO_E2E,
+    });
+    expect(
+      [201, 409],
+      `alta del servicio global ${SERVICIO_E2E.codigo}: ${alta.status()} ${await alta.text()}`,
+    ).toContain(alta.status());
+  } finally {
+    await http.dispose();
+  }
+
+  const despues = await api.exigir<{ id: number }[]>('GET', '/api/v1/servicios');
+  expect(despues.length, 'el catalogo global tiene el servicio recien sembrado').toBeGreaterThan(0);
+  return despues[0].id;
+}
+
+/**
+ * Access token del administrador de plataforma, tomando posesion de la cuenta si hace falta.
+ *
+ * <p>Primero intenta ingresar: si la cuenta ya se activo en una corrida anterior, alcanza. Si no,
+ * es el flujo del bootstrap de DP-14 tal cual lo recorre una persona: el backend arranco con
+ * `AKINE_BOOTSTRAP_ADMIN_EMAIL`, re-apunto la cuenta de `V15` a esa casilla y encolo el enlace de
+ * activacion; se lo lee de Mailpit y se lo canjea fijando la contrasena (la cuenta no tiene
+ * credencial, asi que `password` es obligatorio). Si el enlace no esta —Mailpit reiniciado, o
+ * vencido—, se pide el reenvio publico, que vale mientras la cuenta siga pendiente.
+ */
+async function ingresarComoPlataforma(http: APIRequestContext): Promise<string> {
+  const ingresar = (): Promise<APIResponse> =>
+    deAUnLogin(() =>
+      http.post('/api/v1/auth/login', { data: { email: EMAIL_PLATAFORMA, password: PASSWORD } }),
+    );
+
+  let login = await ingresar();
+  if (login.status() !== 200) {
+    let token = await tokenDeActivacion(EMAIL_PLATAFORMA, 15_000);
+    if (token === undefined) {
+      await http.post('/api/v1/auth/activation/resend', { data: { email: EMAIL_PLATAFORMA } });
+      token = await tokenDeActivacion(EMAIL_PLATAFORMA, 30_000);
+    }
+    expect(
+      token,
+      `El catalogo global esta vacio y no hay enlace de activacion para ${EMAIL_PLATAFORMA} en ` +
+        `Mailpit. Arranca el backend con AKINE_BOOTSTRAP_ADMIN_EMAIL=${EMAIL_PLATAFORMA} (DP-14) ` +
+        'o define AKINE_E2E_PLATAFORMA_EMAIL con la casilla del admin de plataforma de tu base.',
+    ).toBeDefined();
+    const activacion = await http.post('/api/v1/auth/activate', {
+      data: { token, password: PASSWORD },
+    });
+    expect(
+      activacion.status(),
+      `activacion del admin de plataforma ${EMAIL_PLATAFORMA}: ${await activacion.text()}`,
+    ).toBe(204);
+    login = await ingresar();
+  }
+  expect(login.status(), `login del admin de plataforma: ${await login.text()}`).toBe(200);
+  return ((await login.json()) as { accessToken: string }).accessToken;
+}
+
+/**
+ * El token del enlace de activacion mas reciente que Mailpit tiene para `email`, o `undefined` si
+ * no llega ninguno en `esperaMs`. El correo sale por el outbox, asi que puede tardar unos segundos.
+ */
+async function tokenDeActivacion(email: string, esperaMs: number): Promise<string | undefined> {
+  const correo = await fabricaDeRequest.newContext({ baseURL: MAILPIT });
+  try {
+    const limite = Date.now() + esperaMs;
+    for (;;) {
+      const busqueda = await correo.get('/api/v1/search', {
+        params: { query: `to:"${email}" subject:"Activa"` },
+      });
+      expect(busqueda.ok(), 'Mailpit responde (docker compose up -d en appKine-api)').toBe(true);
+      const { messages } = (await busqueda.json()) as { messages: { ID: string }[] };
+      if (messages.length > 0) {
+        // Mailpit ordena del mas nuevo al mas viejo: un reenvio invalida los enlaces anteriores.
+        const mensaje = await correo.get(`/api/v1/message/${messages[0].ID}`);
+        const { Text } = (await mensaje.json()) as { Text: string };
+        const token = /[?&]token=([A-Za-z0-9_-]+)/.exec(Text)?.[1];
+        if (token !== undefined) {
+          return token;
+        }
+      }
+      if (Date.now() > limite) {
+        return undefined;
+      }
+      await new Promise((resolver) => setTimeout(resolver, 1_000));
+    }
+  } finally {
+    await correo.dispose();
+  }
 }
 
 /** El centro que sembro `agenda-setup` en esta corrida. */

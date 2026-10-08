@@ -147,7 +147,7 @@ jobs:
   #
   # A diferencia del job `e2e` de mas abajo, este NO necesita el backend: la API se simula con
   # `route.fulfill` y lo unico que la auditoria necesita real es que la pantalla se pinte. Por eso
-  # esta activo y aquel sigue comentado.
+  # no espera a que se construya y arranque el backend.
   contraste:
     name: Contraste de color (WCAG AA, navegador real)
     runs-on: ubuntu-latest
@@ -257,32 +257,153 @@ jobs:
           if-no-files-found: error
           retention-days: 90
 
-  # PENDIENTE(AKINE-00.02): los E2E necesitan el stack completo (MySQL + backend + frontend).
-  # Se activan cuando exista la imagen Docker del backend que publica su pipeline, para no
-  # compilar Java dentro del job del frontend.
+  # E2E contra el backend REAL (AKINE G-9): MySQL + Mailpit + backend + frontend en el runner.
   #
-  # e2e:
-  #   name: E2E Playwright
-  #   needs: build
-  #   runs-on: ubuntu-latest
-  #   services:
-  #     mysql:
-  #       image: mysql:8.4
-  #       env:
-  #         MYSQL_DATABASE: akine_local
-  #         MYSQL_USER: akine
-  #         MYSQL_PASSWORD: akine
-  #         MYSQL_ROOT_PASSWORD: root
-  #       ports: ['3306:3306']
-  #       options: >-
-  #         --health-cmd="mysqladmin ping -h localhost -u root -proot"
-  #         --health-interval=5s --health-timeout=5s --health-retries=20
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #     - uses: actions/setup-node@v4
-  #       with: { node-version: '24', cache: npm }
-  #     - run: npm ci
-  #     - run: npx playwright install --with-deps chromium
-  #     - name: Levantar backend
-  #       run: docker run -d -p 8080:8080 --network host ghcr.io/chapadiex/akine-api:latest
-  #     - run: npm run e2e
+  # El backend se construye con su propio Dockerfile, desde `Chapadiex/appKine-api` en la MISMA
+  # rama que este PR cuando existe y si no desde `main`, igual que el job `contrato`. La imagen
+  # no se publica en ningun registry: se construye aca, con la cache de capas de Actions para no
+  # bajar Maven entero en cada corrida.
+  #
+  # MySQL y Mailpit salen del `compose.yaml` del backend y no de `services:` del job, porque
+  # MySQL necesita `--log-bin-trust-function-creators=1` para los triggers de V14 y un service
+  # container no admite argumentos de arranque. Ademas el contenedor queda con el nombre
+  # `akine-mysql`, que es el que usan los specs viejos para sembrar por SQL.
+  #
+  # La base es NUEVA en cada corrida: el catalogo global esta vacio y crear un servicio exige rol
+  # de plataforma. Por eso el backend arranca con AKINE_BOOTSTRAP_ADMIN_EMAIL (DP-14) y el
+  # sembrado de `agenda-setup` activa esa cuenta por Mailpit y da de alta el servicio.
+  e2e:
+    name: E2E Playwright contra el backend real
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    env:
+      # La misma casilla en el backend (bootstrap) y en el sembrado (e2e/support/sembrado.ts).
+      AKINE_E2E_PLATAFORMA_EMAIL: plataforma.e2e@ejemplo.test
+
+    steps:
+      - name: Checkout frontend
+        uses: actions/checkout@v4
+        with:
+          path: appKine-web
+
+      - name: Checkout backend (misma rama)
+        uses: actions/checkout@v4
+        continue-on-error: true
+        id: checkout-backend
+        with:
+          repository: Chapadiex/appKine-api
+          ref: ${{ github.head_ref || github.ref_name }}
+          path: appKine-api
+
+      - name: Checkout backend (fallback a main)
+        if: steps.checkout-backend.outcome == 'failure'
+        uses: actions/checkout@v4
+        with:
+          repository: Chapadiex/appKine-api
+          ref: main
+          path: appKine-api
+
+      - name: Version del backend bajo prueba
+        working-directory: appKine-api
+        run: |
+          echo "Backend: $(git rev-parse --abbrev-ref HEAD) @ $(git rev-parse --short HEAD)"
+          echo "Contrato: $(grep -o '<akine.contract.version>[^<]*' pom.xml | cut -d'>' -f2)"
+
+      # Proyecto `akine` explicito: la red queda como `akine_default` y el backend se engancha ahi.
+      - name: Levantar MySQL y Mailpit
+        run: docker compose -p akine -f appKine-api/compose.yaml up -d --wait
+
+      - name: Preparar buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Construir la imagen del backend
+        uses: docker/build-push-action@v6
+        with:
+          context: appKine-api
+          tags: akine-api:e2e
+          load: true
+          cache-from: type=gha,scope=akine-api-e2e
+          cache-to: type=gha,mode=max,scope=akine-api-e2e
+
+      # Perfil `local`: secreto de JWT de desarrollo, SMTP sin TLS contra Mailpit y CORS de
+      # localhost. Es exactamente la pila con la que corren los E2E en una maquina de desarrollo.
+      - name: Arrancar el backend
+        run: |
+          docker run -d --name akine-api --network akine_default -p 8080:8080 \
+            -e SPRING_PROFILES_ACTIVE=local \
+            -e AKINE_DB_URL='jdbc:mysql://mysql:3306/akine_local?useUnicode=true&characterEncoding=UTF-8&serverTimezone=UTC' \
+            -e AKINE_DB_USER=akine -e AKINE_DB_PASSWORD=akine \
+            -e AKINE_MAIL_HOST=mailpit -e AKINE_MAIL_PORT=1025 \
+            -e AKINE_BOOTSTRAP_ADMIN_EMAIL="$AKINE_E2E_PLATAFORMA_EMAIL" \
+            akine-api:e2e
+
+      - name: Configurar Node ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: appKine-web/package-lock.json
+
+      - name: Instalar dependencias
+        working-directory: appKine-web
+        run: npm ci
+
+      - name: Instalar Chromium
+        working-directory: appKine-web
+        run: npx playwright install --with-deps chromium
+
+      # El primer arranque aplica todas las migraciones contra la base vacia (~2,5 min medido).
+      - name: Esperar a que el backend este listo
+        run: |
+          for i in $(seq 1 120); do
+            if curl -fsS http://localhost:8080/actuator/health/readiness > /dev/null 2>&1; then
+              echo "Backend listo."
+              exit 0
+            fi
+            if [ "$(docker inspect -f '{{.State.Running}}' akine-api)" != "true" ]; then
+              echo "::error::El backend se cayo al arrancar."
+              docker logs akine-api | tail -200
+              exit 1
+            fi
+            sleep 5
+          done
+          echo "::error::El backend no quedo listo en 10 minutos."
+          docker logs akine-api | tail -200
+          exit 1
+
+      # `agenda` arrastra a `agenda-setup` por `dependencies`. `chromium` son los specs del
+      # stack real de 01.02 (auth, contexto, errores, smoke). Los de contraste corren en su job.
+      #
+      # Fuera: el smoke "misma version de contrato". Compara `contractVersion` contra el
+      # `/api/v1/version` del backend, que es exactamente lo que ya hace el job `contrato` con el
+      # YAML, y falla cada vez que el backend publica una minor antes de que se regenere el
+      # cliente. Ese desfasaje se ve en `contrato`; aca tumbaria la corrida entera de E2E por algo
+      # que no es un flujo.
+      - name: Correr los E2E
+        working-directory: appKine-web
+        run: >-
+          npx playwright test --project=agenda --project=chromium
+          --grep-invert "misma version de contrato"
+
+      - name: Logs del backend
+        if: failure()
+        run: docker logs akine-api > backend.log 2>&1 || true
+
+      - name: Publicar reporte, trazas y capturas
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-report
+          path: |
+            appKine-web/playwright-report/
+            appKine-web/test-results/
+            backend.log
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Apagar la pila
+        if: always()
+        run: |
+          docker rm -f akine-api || true
+          docker compose -p akine -f appKine-api/compose.yaml down -v || true

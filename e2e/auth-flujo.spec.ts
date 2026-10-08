@@ -118,7 +118,9 @@ test.describe('Registro, activacion y login (M02)', () => {
     // `context-selector-page.spec.ts`; lo que solo se puede verificar de punta a punta es que
     // el canje de contexto ocurrio y dejo al usuario adentro con los datos de su centro.
     await expect(page).toHaveURL(/\/organizacion/);
-    await expect(page.getByText(centro)).toBeVisible();
+    // `exact`: desde la navegacion principal el nombre del centro aparece tambien en la cabecera,
+    // como "· <centro>", y sin `exact` el localizador choca en modo estricto.
+    await expect(page.getByText(centro, { exact: true })).toBeVisible();
   });
 
   test('el pedido de restablecimiento responde igual exista o no la cuenta', async ({ page }) => {
