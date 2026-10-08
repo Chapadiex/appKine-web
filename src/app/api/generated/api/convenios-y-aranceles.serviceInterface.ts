@@ -17,6 +17,8 @@ import { ConvenioResponse } from '../model/models';
 import { CreateArancelRequest } from '../model/models';
 import { CreateConvenioRequest } from '../model/models';
 import { DeactivateContractingRequest } from '../model/models';
+import { ImportacionArancelesResponse } from '../model/models';
+import { ImportarArancelesRequest } from '../model/models';
 import { ProblemDetail } from '../model/models';
 import { UpdateArancelRequest } from '../model/models';
 import { UpdateConvenioRequest } from '../model/models';
@@ -53,6 +55,12 @@ export interface GetConvenioRequestParams {
     consultorioId: number;
     convenioId: number;
     fecha?: string;
+}
+
+export interface ImportArancelesDeConvenioRequestParams {
+    consultorioId: number;
+    convenioId: number;
+    importarArancelesRequest: ImportarArancelesRequest;
 }
 
 export interface ListArancelesRequestParams {
@@ -134,6 +142,14 @@ export interface ConveniosYArancelesServiceInterface {
 * @param requestParameters
      */
     getConvenio(requestParameters: GetConvenioRequestParams, extraHttpRequestParams?: any): Observable<ConvenioResponse>;
+
+    /**
+     * Previsualizar o confirmar una importacion masiva de aranceles
+     * RF-M16-007. Exige convenio:manage sobre la sede de la ruta, en los dos modos.  Cada fila se valida con LAS MISMAS reglas que el alta unitaria de un arancel: practica visible para el tenant (por practicaId o por codigoPractica), importes que cuadran, vigencia contenida en la del convenio, oferta de la sede que admite obra social y declara la practica, y que no se pise con un arancel vigente del mismo grupo (convenio, practica, oferta). Ademas, dos filas del mismo lote tampoco pueden pisarse entre si.  PREVIEW responde 200 con el desenlace de cada fila: ALTA, o RECHAZADA con el problemType que daria el alta unitaria. No escribe nada ni toma el lock: es una prediccion, no una reserva.  CONFIRMAR es TODO O NADA. Revalida el lote entero bajo el lock del convenio —lo que se cargo despues del preview cuenta— y, si todas las filas entran, las inserta y responde 200 con aplicada &#x3D; true y el arancelId de cada una. Si una sola no entra, 409 importacion-aranceles-rechazada con el desenlace de cada fila en la propiedad filas, y ninguna fila escrita.  Reintentar una confirmacion ya aplicada no duplica nada: sus filas chocan contra los aranceles que ella misma creo y responde 409.
+     * @endpoint post /api/v1/consultorios/{consultorioId}/convenios/{convenioId}/aranceles/importacion
+* @param requestParameters
+     */
+    importArancelesDeConvenio(requestParameters: ImportArancelesDeConvenioRequestParams, extraHttpRequestParams?: any): Observable<ImportacionArancelesResponse>;
 
     /**
      * Listar los aranceles de un convenio

@@ -246,6 +246,8 @@ export enum ProblemType {
 
     HTTPS___AKINE_APP_PROBLEMS_OFERTA_SIN_OBRA_SOCIAL = 'https://akine.app/problems/oferta-sin-obra-social',
 
+    HTTPS___AKINE_APP_PROBLEMS_IMPORTACION_ARANCELES_RECHAZADA = 'https://akine.app/problems/importacion-aranceles-rechazada',
+
     HTTPS___AKINE_APP_PROBLEMS_ORDEN_INACTIVA = 'https://akine.app/problems/orden-inactiva',
 
     HTTPS___AKINE_APP_PROBLEMS_ORDEN_ALREADY_INACTIVE = 'https://akine.app/problems/orden-already-inactive',

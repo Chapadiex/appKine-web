@@ -23,6 +23,8 @@ import { DeactivateExcepcionRequest } from '../model/deactivate-excepcion-reques
 // @ts-ignore
 import { ExcepcionResponse } from '../model/excepcion-response';
 // @ts-ignore
+import { ImpactoDisponibilidadResponse } from '../model/impacto-disponibilidad-response';
+// @ts-ignore
 import { ProblemDetail } from '../model/problem-detail';
 
 // @ts-ignore
@@ -33,7 +35,9 @@ import {
     ExcepcionesDeDisponibilidadServiceInterface,
     CreateExcepcionRequestParams,
     DeactivateExcepcionRequestParams,
-    ListExcepcionesRequestParams
+    ListExcepcionesRequestParams,
+    SimularImpactoAltaExcepcionRequestParams,
+    SimularImpactoBajaExcepcionRequestParams
 } from './excepciones-de-disponibilidad.serviceInterface';
 
 
@@ -294,6 +298,148 @@ export class ExcepcionesDeDisponibilidadService extends BaseService implements E
             {
                 context: localVarHttpContext,
                 params: localVarQueryParameters.toHttpParams(),
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * Turnos que dejaria afuera una excepcion, sin cargarla
+     * Consulta previa SIN EFECTOS (A-11, RN-M05-004): evalua la excepcion propuesta —el mismo cuerpo que el alta— y devuelve los turnos pendientes que quedarian fuera de la disponibilidad efectiva. No guarda nada, no toma locks y no audita. Es POST porque la excepcion propuesta viaja en el cuerpo.  Un CIERRE de un profesional evalua sus turnos; uno sin membershipId (SEDE ENTERA) evalua los de todos los profesionales de la sede. Una APERTURA responde cero: solo agrega disponibilidad. Cuenta exacta: un turno cuenta si la disponibilidad lo cubria antes y no despues. La ventana es la de la excepcion desde hoy, acotada a noventa dias; evaluadoHasta dice hasta donde se miro.  No adelanta los 409 del alta (sede dada de baja, profesional sin vinculo vigente): esos los responde el alta. Exige consultorio:manage sobre esa sede.
+     * @endpoint post /api/v1/consultorios/{consultorioId}/excepciones/impacto-de-alta
+     * @param requestParameters
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public simularImpactoAltaExcepcion(requestParameters: SimularImpactoAltaExcepcionRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<ImpactoDisponibilidadResponse>;
+    public simularImpactoAltaExcepcion(requestParameters: SimularImpactoAltaExcepcionRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<ImpactoDisponibilidadResponse>>;
+    public simularImpactoAltaExcepcion(requestParameters: SimularImpactoAltaExcepcionRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<ImpactoDisponibilidadResponse>>;
+    public simularImpactoAltaExcepcion(requestParameters: SimularImpactoAltaExcepcionRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        const consultorioId = requestParameters?.consultorioId;
+        if (consultorioId === null || consultorioId === undefined) {
+            throw new Error('Required parameter consultorioId was null or undefined when calling simularImpactoAltaExcepcion.');
+        }
+        const createExcepcionRequest = requestParameters?.createExcepcionRequest;
+        if (createExcepcionRequest === null || createExcepcionRequest === undefined) {
+            throw new Error('Required parameter createExcepcionRequest was null or undefined when calling simularImpactoAltaExcepcion.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        // to determine the Content-Type header
+        const consumes: string[] = [
+            'application/json'
+        ];
+        const httpContentTypeSelected: string | undefined = this.configuration.selectHeaderContentType(consumes);
+        if (httpContentTypeSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Content-Type', httpContentTypeSelected);
+        }
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/consultorios/${this.configuration.encodeParam({name: "consultorioId", value: consultorioId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/excepciones/impacto-de-alta`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<ImpactoDisponibilidadResponse>('post', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                body: createExcepcionRequest,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * Turnos que dejaria afuera la baja de una excepcion, sin aplicarla
+     * Consulta previa SIN EFECTOS (A-11, RN-M05-004). Solo quitar una APERTURA puede dejar turnos afuera; quitar un CIERRE responde cero. Misma cuenta exacta y misma ventana que la consulta previa del alta. Exige consultorio:manage sobre esa sede.
+     * @endpoint get /api/v1/consultorios/{consultorioId}/excepciones/{excepcionId}/impacto-de-baja
+     * @param requestParameters
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public simularImpactoBajaExcepcion(requestParameters: SimularImpactoBajaExcepcionRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<ImpactoDisponibilidadResponse>;
+    public simularImpactoBajaExcepcion(requestParameters: SimularImpactoBajaExcepcionRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<ImpactoDisponibilidadResponse>>;
+    public simularImpactoBajaExcepcion(requestParameters: SimularImpactoBajaExcepcionRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<ImpactoDisponibilidadResponse>>;
+    public simularImpactoBajaExcepcion(requestParameters: SimularImpactoBajaExcepcionRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        const consultorioId = requestParameters?.consultorioId;
+        if (consultorioId === null || consultorioId === undefined) {
+            throw new Error('Required parameter consultorioId was null or undefined when calling simularImpactoBajaExcepcion.');
+        }
+        const excepcionId = requestParameters?.excepcionId;
+        if (excepcionId === null || excepcionId === undefined) {
+            throw new Error('Required parameter excepcionId was null or undefined when calling simularImpactoBajaExcepcion.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/consultorios/${this.configuration.encodeParam({name: "consultorioId", value: consultorioId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/excepciones/${this.configuration.encodeParam({name: "excepcionId", value: excepcionId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/impacto-de-baja`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<ImpactoDisponibilidadResponse>('get', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
                 responseType: <any>responseType_,
                 ...(withCredentials ? { withCredentials } : {}),
                 headers: localVarHeaders,
