@@ -15,7 +15,7 @@ import {
   nuevaClaveDeIntento,
   saldoAFavorEnCentavos,
 } from '../../models/operaciones-de-cobro';
-import { PERMISO_COBRO_REGISTER } from '../../../../core/models/permisos';
+import { PERMISO_COBRO_REGISTER, PERMISO_PACIENTE_READ } from '../../../../core/models/permisos';
 import { PermisoDirective } from '../../../../shared/directives/permiso.directive';
 import { PersonaResponse } from '../../../../api/generated/model/persona-response';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
@@ -98,6 +98,7 @@ export class CuentaCorrientePage {
   readonly personaId = input.required<string>();
 
   protected readonly PERMISO_COBRO_REGISTER = PERMISO_COBRO_REGISTER;
+  protected readonly PERMISO_PACIENTE_READ = PERMISO_PACIENTE_READ;
 
   /**
    * Las dos rutas hermanas de esta pantalla, absolutas.

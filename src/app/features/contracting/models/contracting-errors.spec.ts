@@ -39,11 +39,10 @@ describe('traducirErrorContracting', () => {
     ])[] = [
       [403, 'missing-tenant-context', 'convenio', 'sin-contexto'],
       [409, 'subscription-suspended', 'financiador', 'suscripcion-suspendida'],
-      [409, 'conflict', 'financiador', 'concurrencia'],
-      // `concurrent-modification` no lo emite `contracting` hoy —la version vieja sale como
-      // `conflict`—. Se reconoce igual, y esto lo fija: si algun dia se unifican los dos tipos
-      // en todos los modulos, estas pantallas no se enteran.
+      // DP-21: la version vieja es `concurrent-modification`; `conflict` es de negocio y gana
+      // el `detail` del servidor.
       [409, 'concurrent-modification', 'convenio', 'concurrencia'],
+      [409, 'conflict', 'financiador', 'conflicto'],
       [400, 'validation-error', 'arancel', 'validacion'],
 
       [409, 'financiador-codigo-taken', 'financiador', 'codigo-repetido'],

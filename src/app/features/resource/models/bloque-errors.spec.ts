@@ -32,7 +32,7 @@ describe('traducirErrorBloque', () => {
       [409, 'bloque-solapado', 'solapado'],
       [409, 'bloque-inactivo', 'bloque-inactivo'],
       [409, 'bloque-already-inactive', 'ya-inactivo'],
-      [409, 'conflict', 'concurrencia'],
+      [409, 'concurrent-modification', 'concurrencia'],
       [409, 'profesional-no-vinculado', 'profesional-no-vinculado'],
       [409, 'consultorio-inactive', 'sede-inactiva'],
       [409, 'subscription-suspended', 'suscripcion-suspendida'],
@@ -47,16 +47,16 @@ describe('traducirErrorBloque', () => {
   });
 
   /**
-   * La version vieja llega como `conflict`, el generico.
+   * DP-21: la version vieja llega como `concurrent-modification` en todos los modulos.
    *
-   * <p>`concurrent-modification` es el que emite `organization` para el mismo hecho, y
-   * `resource` no lo reusa para disponibilidad. Ramificar por el codigo equivocado dejaria el
-   * unico error del modulo donde hay que RECARGAR antes de reintentar cayendo en la rama
-   * generica, que solo dice "volve a intentar".
+   * <p>Ramificar por el codigo equivocado dejaria el unico error del modulo donde hay que
+   * RECARGAR antes de reintentar cayendo en la rama generica, que solo dice "volve a intentar".
    */
-  it('la version vieja de un bloque llega como conflict, no como concurrent-modification', () => {
-    expect(traducirErrorBloque(problema(409, 'conflict')).causa).toBe('concurrencia');
-    expect(traducirErrorBloque(problema(409, 'conflict')).mensaje).toContain('Recarga el horario');
+  it('la version vieja de un bloque llega como concurrent-modification y manda a recargar', () => {
+    const traducido = traducirErrorBloque(problema(409, 'concurrent-modification'));
+    expect(traducido.causa).toBe('concurrencia');
+    expect(traducido.mensaje).toContain('Recarga el horario');
+    expect(traducirErrorBloque(problema(409, 'conflict')).causa).not.toBe('concurrencia');
   });
 
   it('el solapamiento publica el bloque en conflicto y lo nombra en el mensaje', () => {

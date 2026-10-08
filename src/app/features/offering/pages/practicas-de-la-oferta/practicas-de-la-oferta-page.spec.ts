@@ -156,7 +156,7 @@ describe('PracticasDeLaOfertaPage', () => {
     httpMock
       .expectOne((peticion: HttpRequest<unknown>) => peticion.method === 'PUT')
       .flush(
-        { type: 'https://akine.app/problems/conflict', status: 409 },
+        { type: 'https://akine.app/problems/concurrent-modification', status: 409 },
         { status: 409, statusText: 'Conflict' },
       );
     responderCarga();

@@ -1,6 +1,9 @@
 import { Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
+import { PERMISO_PACIENTE_READ } from '../../../../core/models/permisos';
+import { PermisoDirective } from '../../../../shared/directives/permiso.directive';
+
 import { Agenda } from '../../../../api/generated/model/agenda';
 import { PersonaResponse } from '../../../../api/generated/model/persona-response';
 import { ProfesionalHabilitado } from '../../../../api/generated/model/profesional-habilitado';
@@ -60,11 +63,13 @@ const ESPERA_DE_BUSQUEDA_MS = 300;
  */
 @Component({
   selector: 'app-reserva-de-turno-page',
-  imports: [RouterLink],
+  imports: [RouterLink, PermisoDirective],
   templateUrl: './reserva-de-turno-page.html',
   styleUrl: '../../agenda.css',
 })
 export class ReservaDeTurnoPage {
+  protected readonly PERMISO_PACIENTE_READ = PERMISO_PACIENTE_READ;
+
   private readonly api = inject(SchedulingApi);
   private readonly tenantContext = inject(TenantContextStore);
 

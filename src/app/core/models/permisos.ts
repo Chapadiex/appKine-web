@@ -32,14 +32,23 @@ export const PERMISO_AUDITORIA_READ_CLINICA = 'auditoria:read-clinica';
  * Gestionar paciente (F3, etapa AKINE-03.01).
  *
  * <p>Gobierna las MUTACIONES del padron: dar de alta una persona, editarla y activarle el perfil
- * clinico. <b>No hay permiso de lectura</b>: consultar el padron se autoriza por pertenencia, y
- * por eso ninguna pantalla pregunta por un `paciente:read` que la matriz no declara.
+ * clinico. La lectura es {@link PERMISO_PACIENTE_READ}.
  *
  * <p>Esta fuera de {@link PERMISOS_F1} a proposito: esa lista es la de la Fase 1 y este codigo es
  * de F3. Que no este ahi no cambia nada para la directiva `*akinePermiso`, que recibe un string
  * cualquiera; la lista es documental.
  */
 export const PERMISO_PACIENTE_MANAGE = 'paciente:manage';
+
+/**
+ * Consultar el padron de personas (DU-6 / DP-22, contrato 0.80.0).
+ *
+ * <p>Hasta DP-22 la lectura del padron se autorizaba por pertenencia, y una membership con rol
+ * `PACIENTE` leia el padron entero de su organizacion. Ahora toda lectura de personas exige
+ * `paciente:read`: el staff lo tiene y el paciente no. En el frontend es UX —esconde la seccion
+ * y los enlaces a la ficha—; el backend rechaza igual a quien llegue por URL.
+ */
+export const PERMISO_PACIENTE_READ = 'paciente:read';
 
 /**
  * Permisos que el frontend conoce hoy.

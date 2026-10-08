@@ -550,7 +550,13 @@ export async function instalarApiDeContraste(page: Page): Promise<ApiDeContraste
       // Con permisos de gestion la tabla dibuja su celda de acciones, que es donde viven los
       // botones chicos y —en las filas dadas de baja— los botones deshabilitados.
       return json({
-        permissions: ['tenant:read', 'consultorio:manage', 'paciente:manage', 'turno:read'],
+        permissions: [
+          'tenant:read',
+          'consultorio:manage',
+          'paciente:manage',
+          'paciente:read',
+          'turno:read',
+        ],
       });
     }
 

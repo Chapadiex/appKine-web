@@ -26,13 +26,13 @@ import { AkineHttpError } from '../../../core/interceptors/error.interceptor';
  * enumerado vuelve como `null`, asi que un codigo escrito de memoria <b>no falla</b>, cae en la
  * rama por defecto y esconde para siempre el mensaje que deberia mostrar.
  *
- * <h2>El 409 de concurrencia llega como `conflict`, NO como `concurrent-modification`</h2>
+ * <h2>El 409 de concurrencia llega como `concurrent-modification` (DP-21)</h2>
  *
- * <p>El registro de cierre de 03.05 lo declara: "la version desactualizada sale como `conflict`,
- * igual que en 03.03". `concurrent-modification` lo emite solo `OrganizationProblemHandler`.
- * Ramificar unicamente por ese tipo daria una rama muerta. Se reconocen <b>los dos</b> por si
- * algun dia se unifican —es una de las decisiones de contrato transversales abiertas del
- * workspace—, pero la rama que hoy se ejercita es `conflict`.
+ * <p>Desde el contrato 0.80.0 toda version vieja responde `concurrent-modification` en todos los
+ * modulos, y `conflict` queda solo para conflictos de negocio. Hasta entonces `contracting`
+ * emitia `conflict` para la version desactualizada y esta pantalla lo trataba como "recargar";
+ * ya no: un `conflict` cae en {@link CausaContracting `conflicto`}, con el `detail` del servidor,
+ * que nombra el conflicto concreto.
  */
 export type CausaContracting =
   /** 403 missing-tenant-context: hay sesion, pero no hay sede elegida. NUNCA cerrar sesion. */
@@ -43,7 +43,7 @@ export type CausaContracting =
   | 'validacion'
   /** 404: no existe, o es de otro tenant. Los dos responden igual a proposito. */
   | 'no-encontrado'
-  /** 409 conflict: la `expectedVersion` enviada quedo vieja. Ver el javadoc de arriba. */
+  /** 409 concurrent-modification: la `expectedVersion` enviada quedo vieja. Ver arriba. */
   | 'concurrencia'
   /** 409 subscription-suspended: lo emite el filtro, antes del controller. */
   | 'suscripcion-suspendida'
@@ -265,10 +265,6 @@ export function traducirErrorContracting(
       return base(MENSAJE_SIN_CONTEXTO, 'sin-contexto');
     case 'subscription-suspended':
       return base(MENSAJE_SUSCRIPCION_SUSPENDIDA, 'suscripcion-suspendida');
-    case 'conflict':
-    // `concurrent-modification` no lo emite `contracting` hoy. Se reconoce igual por si algun
-    // dia se unifican los dos tipos: ver el javadoc de `CausaContracting`.
-    // falls through
     case 'concurrent-modification':
       return base(MENSAJE_CONCURRENCIA, 'concurrencia');
 

@@ -278,10 +278,13 @@ describe('OfertasDeLaSedePage', () => {
         (peticion: HttpRequest<unknown>) =>
           peticion.method === 'PUT' && peticion.url === `${OFERTAS}/10`,
       )
-      // `conflict`, NO `concurrent-modification`: es lo que emite el handler global para el
-      // bloqueo optimista de este modulo. Ver `offering-errors.ts`.
+      // `concurrent-modification` (DP-21): es lo que emite el handler global para el bloqueo
+      // optimista. Ver `offering-errors.ts`.
       .flush(
-        { type: 'https://akine.app/problems/conflict', detail: 'la version quedo vieja' },
+        {
+          type: 'https://akine.app/problems/concurrent-modification',
+          detail: 'la version quedo vieja',
+        },
         { status: 409, statusText: 'Conflict' },
       );
     fixture.detectChanges();
@@ -803,7 +806,11 @@ describe('OfertasDeLaSedePage', () => {
     const pedido = httpMock.expectOne(`${OFERTAS}/10/politica-de-prepago`);
     expect(pedido.request.body).toEqual({ exigePrepago: false, expectedVersion: 4 });
     pedido.flush(
-      { type: 'https://akine.app/problems/conflict', status: 409, detail: 'version vieja' },
+      {
+        type: 'https://akine.app/problems/concurrent-modification',
+        status: 409,
+        detail: 'version vieja',
+      },
       { status: 409, statusText: 'Conflict' },
     );
     await fixture.whenStable();

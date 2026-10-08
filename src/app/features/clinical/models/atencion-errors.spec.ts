@@ -36,6 +36,25 @@ describe('traducirErrorAtencion', () => {
     expect(traducirErrorAtencion(error).motivo).toBe('El turno esta cancelado');
   });
 
+  it('oferta-sin-precio (DP-17) explica el motivo y publica la oferta a la que le falta precio', () => {
+    const error = new AkineHttpError(
+      409,
+      {
+        type: 'https://akine.app/problems/oferta-sin-precio',
+        status: 409,
+        detail: 'Sin precio.',
+        properties: { ofertaId: 12, dia: '2026-10-08', motivo: 'OFERTA_SIN_OBRA_SOCIAL' },
+      },
+      false,
+    );
+
+    const traducido = traducirErrorAtencion(error);
+    expect(traducido.causa).toBe('oferta-sin-precio');
+    expect(traducido.ofertaId).toBe(12);
+    expect(traducido.mensaje).toContain('08/10/2026');
+    expect(traducido.mensaje).toContain('no admite obra social');
+  });
+
   it('un 403 crudo NO se confunde con sesion-ajena: uno es permiso y el otro propiedad', () => {
     expect(traducirErrorAtencion(problema('forbidden', 403, 'Sin permiso.')).causa).toBe(
       'sin-permiso',

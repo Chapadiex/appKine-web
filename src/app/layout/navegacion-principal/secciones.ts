@@ -2,6 +2,7 @@ import { RUTA_HORARIOS } from '../../features/resource/models/rutas-de-horarios'
 import { PERMISO_CAJA_OPERATE, PERMISO_COLABORADOR_READ } from '../../core/models/permisos';
 import { PERMISO_COBRO_REGISTER as PERMISO_PRESENTACIONES } from '../../core/models/permisos';
 import { PERMISO_REPORTE_READ } from '../../core/models/permisos';
+import { PERMISO_PACIENTE_READ } from '../../core/models/permisos';
 
 /** Una entrada de la navegacion principal. */
 export interface Seccion {
@@ -36,9 +37,9 @@ export interface Seccion {
  *   <li><b>Agenda</b> — `scheduling.routes.ts`: solo `contextGuard`. Consultar la agenda lo
  *       hace cualquiera que atienda; `turno:manage` gobierna el boton de reservar y eso lo
  *       resuelve la pantalla, no este menu.</li>
- *   <li><b>Pacientes</b> — `person.routes.ts`: solo `contextGuard`. La lectura del padron se
- *       autoriza por pertenencia y `paciente:read` no existe; `paciente:manage` gobierna el
- *       alta, que tambien es de la pantalla.</li>
+ *   <li><b>Pacientes</b> — `person.routes.ts`: `permissionGuard(PERMISO_PACIENTE_READ)` en todas
+ *       las rutas (DP-22): la lectura de personas exige `paciente:read`, que el staff tiene y el
+ *       paciente no. `paciente:manage` gobierna el alta, que es de la pantalla.</li>
  *   <li><b>Espacios</b> — `resource.routes.ts`: el listado NO lleva `permissionGuard`
  *       (`GET .../espacios` exige solo ser miembro). El alta si, con
  *       `consultorio:manage`.</li>
@@ -73,7 +74,7 @@ export interface Seccion {
  */
 export const SECCIONES: readonly Seccion[] = [
   { etiqueta: 'Agenda', ruta: '/agenda' },
-  { etiqueta: 'Pacientes', ruta: '/pacientes' },
+  { etiqueta: 'Pacientes', ruta: '/pacientes', permisos: [PERMISO_PACIENTE_READ] },
   { etiqueta: 'Espacios', ruta: '/espacios' },
   { etiqueta: 'Horarios', ruta: RUTA_HORARIOS, permisos: [PERMISO_COLABORADOR_READ] },
   { etiqueta: 'Catalogo', ruta: '/catalogo' },

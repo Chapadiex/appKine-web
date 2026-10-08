@@ -126,6 +126,8 @@ describe('NavegacionPrincipal', () => {
     fixture.detectChanges();
 
     expect(enlaces(fixture)).not.toContain('Horarios');
+    // DP-22: el padron exige `paciente:read`.
+    expect(enlaces(fixture)).not.toContain('Pacientes');
     // Las que se autorizan por pertenencia no dependen de los permisos y se ven igual.
     expect(enlaces(fixture)).toContain('Agenda');
 
@@ -147,7 +149,7 @@ describe('NavegacionPrincipal', () => {
     const fixture = montar();
     responderPermisos([]);
 
-    await router.navigateByUrl('/pacientes');
+    await router.navigateByUrl('/agenda');
     fixture.detectChanges();
 
     const marcados = Array.from(
@@ -156,7 +158,7 @@ describe('NavegacionPrincipal', () => {
       ),
     ).map((enlace) => enlace.textContent?.trim());
 
-    expect(marcados).toEqual(['Pacientes']);
+    expect(marcados).toEqual(['Agenda']);
   });
 
   it(

@@ -1,5 +1,8 @@
 import { Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
 import { RouterLink } from '@angular/router';
+
+import { PERMISO_PACIENTE_READ } from '../../../../core/models/permisos';
+import { PermisoDirective } from '../../../../shared/directives/permiso.directive';
 import { forkJoin } from 'rxjs';
 
 import { Agenda } from '../../../../api/generated/model/agenda';
@@ -59,11 +62,13 @@ type ModoDeFin = 'cantidad' | 'fecha';
  */
 @Component({
   selector: 'app-serie-de-turnos-alta-page',
-  imports: [RouterLink],
+  imports: [RouterLink, PermisoDirective],
   templateUrl: './serie-de-turnos-alta-page.html',
   styleUrl: '../../agenda.css',
 })
 export class SerieDeTurnosAltaPage {
+  protected readonly PERMISO_PACIENTE_READ = PERMISO_PACIENTE_READ;
+
   private readonly agendaApi = inject(SchedulingApi);
   private readonly seriesApi = inject(SeriesApi);
   private readonly tenantContext = inject(TenantContextStore);

@@ -158,7 +158,7 @@
           </div>
         }
         @case ('activar-perfil') {
-          <div class="acciones">
+          <div class="acciones" *akinePermiso="PERMISO_PACIENTE_READ">
             <a class="boton" routerLink="/pacientes">Activar el perfil de paciente</a>
           </div>
         }

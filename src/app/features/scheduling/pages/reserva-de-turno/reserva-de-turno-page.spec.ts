@@ -3,7 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 
-import { PERMISO_TURNO_MANAGE } from '../../../../core/models/permisos';
+import { PERMISO_PACIENTE_READ, PERMISO_TURNO_MANAGE } from '../../../../core/models/permisos';
 import { PermissionsStore } from '../../../../core/services/permissions.store';
 import { RUTA_PERMISOS_EFECTIVOS } from '../../../../core/testing/rutas-api';
 import { ReservaDeTurnoPage } from './reserva-de-turno-page';
@@ -402,7 +402,9 @@ describe('ReservaDeTurnoPage', () => {
     });
 
     permisos.cargar().subscribe();
-    httpMock.expectOne(RUTA_PERMISOS_EFECTIVOS).flush({ permissions: [PERMISO_TURNO_MANAGE] });
+    httpMock
+      .expectOne(RUTA_PERMISOS_EFECTIVOS)
+      .flush({ permissions: [PERMISO_TURNO_MANAGE, PERMISO_PACIENTE_READ] });
 
     const fixture = TestBed.createComponent(ReservaDeTurnoPage);
     fixture.componentRef.setInput('ofertaId', String(OFERTA));

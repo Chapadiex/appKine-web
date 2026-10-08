@@ -48,6 +48,11 @@ export type CausaAtencion =
   | 'sesion-cerrada'
   /** 409 subscription-suspended: lo emite el filtro, antes del controller. */
   | 'suscripcion-suspendida'
+  /**
+   * 409 `oferta-sin-precio` (DP-17): la deuda es el precio particular y la oferta no tiene uno
+   * vigente ese dia. La sesion sigue abierta: se carga el precio y se reintenta. Ver `ofertaId`.
+   */
+  | 'oferta-sin-precio'
   /** Cualquier otro 409. Gana el `detail` del backend. */
   | 'conflicto'
   /** 429: hay que esperar. */
@@ -62,6 +67,8 @@ export interface ErrorAtencion {
   readonly causa: CausaAtencion;
   /** Por que el turno no es atendible. Vacio fuera de `turno-no-atendible`. */
   readonly motivo: string;
+  /** Oferta a la que le falta precio. Solo en `oferta-sin-precio`, y si el servidor la mando. */
+  readonly ofertaId?: number | null;
 }
 
 const MENSAJE_GENERICO = 'No pudimos completar la operacion. Volve a intentar en un momento.';
@@ -116,6 +123,16 @@ const MENSAJE_CONFLICTO =
   'El servidor rechazo la operacion por un conflicto con lo que ya hay guardado. Volve a abrir ' +
   'la atencion para ver el estado actual.';
 
+/**
+ * Por que la deuda de esta sesion es el precio particular, segun el `motivo` de
+ * `oferta-sin-precio`. Un motivo desconocido no rompe el mensaje: simplemente no se explica.
+ */
+const RAZON_PRECIO_PARTICULAR: Readonly<Record<string, string>> = {
+  PARTICULAR_POR_RECEPCION: 'la recepcion se resolvio como particular',
+  OFERTA_SIN_OBRA_SOCIAL: 'la oferta no admite obra social',
+  SIN_COBERTURA_APLICABLE: 'el paciente no tiene una cobertura con convenio y arancel aplicables',
+};
+
 const MENSAJE_VALIDACION =
   'El servidor rechazo un dato clinico. El dolor va de 0 a 10, y la lateralidad exige una zona: ' +
   '"derecha" de que.';
@@ -153,6 +170,13 @@ export function traducirErrorAtencion(error: unknown): ErrorAtencion {
       };
     case 'concurrent-modification':
       return { mensaje: MENSAJE_VERSION_VIEJA, causa: 'version-vieja', motivo: '' };
+    case 'oferta-sin-precio':
+      return {
+        mensaje: mensajeSinPrecio(error),
+        causa: 'oferta-sin-precio',
+        motivo: '',
+        ofertaId: error.numeroDeExtension('ofertaId'),
+      };
     case 'sesion-cerrada':
       return { mensaje: MENSAJE_SESION_CERRADA, causa: 'sesion-cerrada', motivo: '' };
     case 'validation-error':
@@ -180,6 +204,30 @@ export function traducirErrorAtencion(error: unknown): ErrorAtencion {
   }
 
   return { mensaje: conDetalle(error, MENSAJE_GENERICO), causa: 'otro', motivo: '' };
+}
+
+/**
+ * `oferta-sin-precio` explicado: toda prestacion cerrada genera deuda (DP-17), y la de esta es el
+ * precio particular, que la oferta no tiene cargado para ese dia. Lo que importa decir es que no
+ * se perdio nada —la sesion sigue abierta— y cual es la salida: cargar el precio y volver a cerrar.
+ */
+function mensajeSinPrecio(error: AkineHttpError): string {
+  const razon = RAZON_PRECIO_PARTICULAR[textoDeExtension(error, 'motivo')];
+  const dia = fechaLegible(textoDeExtension(error, 'dia'));
+  return (
+    'No se pudo cerrar la atencion: el paciente debe el precio particular' +
+    (razon ? ` porque ${razon}` : '') +
+    ', y la oferta no tiene un precio vigente' +
+    (dia ? ` para el ${dia}` : ' para ese dia') +
+    '. La atencion sigue abierta y no se perdio nada: carga el precio de la oferta y volve a ' +
+    'cerrarla.'
+  );
+}
+
+/** `2026-10-08` -> `08/10/2026`. Cualquier otra cosa se devuelve tal cual. */
+function fechaLegible(iso: string): string {
+  const partes = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
+  return partes === null ? iso : `${partes[3]}/${partes[2]}/${partes[1]}`;
 }
 
 /**
