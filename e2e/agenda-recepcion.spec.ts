@@ -2,16 +2,13 @@ import { Locator, Page } from '@playwright/test';
 
 import { expect, ingresar, navegar, problemaDe, respuestaDe, test } from './support/agenda-real';
 import {
-  ApiAkine,
-  Centro,
   Oferta,
   Persona,
   Turno,
   crearOferta,
   crearPersona,
   fechaLocal,
-  pedirReserva,
-  slotsDelDia,
+  turnoDeHoy,
   uriDeProblema,
   verTurno,
 } from './support/sembrado';
@@ -30,28 +27,6 @@ import {
  * <p>Despues de cada paso se relee el turno por la API. Que la fila diga `LLAMADA` no prueba que
  * la recepcion haya quedado asi guardada, y DP-16 exige ademas que el TURNO no cambie de estado.
  */
-
-/** Reserva el primer horario futuro de hoy que siga libre. Dos workers pueden competir por el. */
-async function turnoDeHoy(
-  api: ApiAkine,
-  centro: Centro,
-  oferta: Oferta,
-  persona: Persona,
-): Promise<Turno | null> {
-  const hoy = fechaLocal(centro.timezone);
-  const futuros = (await slotsDelDia(api, centro, oferta.id, hoy)).filter(
-    (s) => new Date(s.desde).getTime() > Date.now() + 60_000,
-  );
-  for (const slot of futuros) {
-    const respuesta = await pedirReserva(api, centro, oferta.id, persona.id, slot.desde);
-    if (respuesta.status() === 201) {
-      return (await respuesta.json()) as Turno;
-    }
-    // 409 recurso-ocupado: otro test de recepcion tomo al profesional a esa hora. Siguiente.
-    expect(respuesta.status(), await respuesta.text()).toBe(409);
-  }
-  return null;
-}
 
 /** La fila del turno en la tabla del dia, ubicada por el apellido unico de la persona. */
 function filaDe(page: Page, persona: Persona): Locator {

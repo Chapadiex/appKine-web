@@ -66,3 +66,34 @@ Al terminar: `docker rm -f g9-api g9-mysql g9-mailpit && docker network rm g9net
 | `AKINE_E2E_MAILPIT` | `http://localhost:8025` | API de Mailpit |
 | `AKINE_E2E_MYSQL_CONTAINER` | `akine-mysql` | Contenedor del sembrado por SQL de los specs de 01.02 |
 | `AKINE_E2E_PLATAFORMA_EMAIL` | `plataforma.e2e@ejemplo.test` | Admin de plataforma del bootstrap |
+
+> **Dos pilas a la vez en la misma maquina: separa tambien el `TEMP`.** El centro que siembra
+> `agenda-setup` se comparte por `os.tmpdir()/akine-e2e-centro-agenda.json`, y el cerrojo de
+> logins vive al lado. Dos corridas contra dos backends distintos con el mismo `TEMP` se pisan el
+> archivo: una lee el centro que sembro la otra en OTRO backend y falla con 401 o 404. Exporta
+> `TEMP`/`TMP` (y `TMPDIR` en Linux) a una carpeta propia de cada pila.
+
+## Las verticales del 07/10 (`e2e/flujo-*.spec.ts`)
+
+Corren en el proyecto `agenda` —el CI ya lo invoca— porque usan el mismo centro sembrado: un
+segundo centro serian dos altas mas contra el limite de 4 por minuto.
+
+| Spec | Que recorre | Error real que afirma |
+|---|---|---|
+| `flujo-caja` | Abrir, movimiento manual, revertir, cerrar con arqueo y faltante; cobro en efectivo de una sesion cerrada que entra a la caja | `caja-saldo-insuficiente`, `caja-saldo-cambio`, `caja-no-abierta` |
+| `flujo-presentaciones` | Deuda del financiador (convenio + arancel + cobertura, sesion cerrada) → borrador → agregar → revisar → confirmar → factura → pago → conciliar | `obligacion-no-presentable`, `presentacion-no-concilia` |
+| `flujo-series` | Alta con previsualizacion → bandeja `/agenda/series` → detalle → cancelar "este y los siguientes" | `turno-transicion-no-permitida` |
+| `flujo-prepago` | Oferta que exige prepago: PENDIENTE antes del check-in → registrar el anticipo → REGISTRADO | `prepago-ya-registrado`, `prepago-no-admitido` |
+
+Tres cosas que el sembrado tiene que saber y que no son obvias:
+
+- **La sesion la cierra la profesional, no la administradora.** `sesion:register` es exclusivo del
+  rol PROFESIONAL y no se puede otorgar como grant, y la sesion es de quien atiende el turno
+  (`turno-no-atendible` / `sesion-ajena`). Por eso `agenda-setup` activa tambien la cuenta de la
+  profesional, y `comoProfesional` ingresa por la API eligiendo el contexto del centro (tiene ademas
+  el de su consultorio propio).
+- **Sin precio no hay deuda, y no lo avisa nadie.** El devengado sin precio vigente no crea la
+  obligacion y solo deja un `log.warn`. `fijarPrecio` carga un precio particular desde hoy.
+- **La caja es una por sede.** Los dos tests que la abren viven en `flujo-caja.spec.ts`, corren en
+  orden (`mode: 'default'`) y arrancan cerrando lo que haya quedado abierto. El prepago y el pago
+  del financiador van por transferencia para no tocar el cajon.
