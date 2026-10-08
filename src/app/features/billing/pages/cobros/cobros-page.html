@@ -14,6 +14,10 @@
   <p class="estado estado--cargando">Cargando los cobros…</p>
 }
 
+@if (exito(); as mensaje) {
+  <p class="estado estado--ok" role="status">{{ mensaje }}</p>
+}
+
 @if (mensajeError(); as mensaje) {
   <section class="tarjeta" role="alert" aria-labelledby="titulo-error-cobros">
     <h2 id="titulo-error-cobros">No se pudieron cargar los cobros</h2>
@@ -48,6 +52,7 @@
           <th scope="col">Total</th>
           <th scope="col">Medios</th>
           <th scope="col">Deudas imputadas</th>
+          <th scope="col">Saldo a favor</th>
           <th scope="col">Acciones</th>
         </tr>
       </thead>
@@ -59,6 +64,7 @@
             <td class="importe">{{ importe(cobro, cobro.total) }}</td>
             <td>{{ cobro.medios?.length }}</td>
             <td>{{ cobro.imputaciones?.length }}</td>
+            <td class="importe">{{ importe(cobro, cobro.saldoAFavor ?? 0) }}</td>
             <td>
               <div class="acciones-fila">
                 @if (esElAbierto(cobro)) {
@@ -81,13 +87,59 @@
                     Ver el comprobante
                   </button>
                 }
+
+                <!--
+                  Anular y reintegrar mueven la caja y piden DOS permisos: cobro:register y
+                  caja:operate. La directiva acepta cualquiera de los que recibe, asi que se
+                  anidan. Ocultar no es autorizar: el backend rechaza igual.
+
+                  Cuando la accion no corresponde a ESTE cobro, el boton se deshabilita con la
+                  explicacion al lado en vez de esconderse: un boton que desaparece en una fila y
+                  no en otra no le dice a nadie por que.
+                -->
+                <ng-container *akinePermiso="PERMISO_COBRO_REGISTER">
+                  <ng-container *akinePermiso="PERMISO_CAJA_OPERATE">
+                    <button
+                      type="button"
+                      class="boton boton--secundario"
+                      [disabled]="motivoParaNoAnular(cobro) !== null"
+                      [attr.aria-describedby]="
+                        motivoParaNoAnular(cobro) !== null ? 'no-anular-' + cobro.id : null
+                      "
+                      (click)="abrirOperacion('anular', cobro)"
+                    >
+                      Anular
+                    </button>
+                    <button
+                      type="button"
+                      class="boton boton--secundario"
+                      [disabled]="motivoParaNoReintegrar(cobro) !== null"
+                      [attr.aria-describedby]="
+                        motivoParaNoReintegrar(cobro) !== null ? 'no-reintegrar-' + cobro.id : null
+                      "
+                      (click)="abrirOperacion('reintegrar', cobro)"
+                    >
+                      Reintegrar saldo a favor
+                    </button>
+                    @if (motivoParaNoAnular(cobro); as porQue) {
+                      <span class="ayuda" [id]="'no-anular-' + cobro.id">
+                        No se puede anular: {{ porQue }}
+                      </span>
+                    }
+                    @if (motivoParaNoReintegrar(cobro); as porQue) {
+                      <span class="ayuda" [id]="'no-reintegrar-' + cobro.id">
+                        Nada para reintegrar: {{ porQue }}
+                      </span>
+                    }
+                  </ng-container>
+                </ng-container>
               </div>
             </td>
           </tr>
 
           @if (esElAbierto(cobro)) {
             <tr class="fila-panel">
-              <td colspan="6">
+              <td colspan="7">
                 @if (comprobante(); as detalle) {
                   <h3>Comprobante N.º {{ detalle.comprobanteNumero }}</h3>
                   <p class="ayuda">
@@ -133,6 +185,172 @@
                 }
               </td>
             </tr>
+          }
+
+          @switch (operacionSobre(cobro)) {
+            @case ('anular') {
+              <tr class="fila-panel">
+                <td colspan="7">
+                  <akine-confirmacion-con-motivo
+                    [idCampo]="'anular-cobro-' + cobro.id"
+                    [titulo]="
+                      'Anular el comprobante N.º ' +
+                      cobro.comprobanteNumero +
+                      ' por ' +
+                      importe(cobro, cobro.total)
+                    "
+                    etiqueta="Motivo de la anulacion"
+                    ayuda="Queda en el cobro, en las reversiones de caja y en la auditoria. No se
+                      borra nada: el comprobante sigue existiendo, anulado y con este motivo."
+                    textoError="El motivo es obligatorio para anular un cobro."
+                    textoConfirmar="Anular el cobro"
+                    [enviando]="enviando()"
+                    (confirmado)="confirmarAnulacion($event)"
+                    (cancelado)="cerrarOperacion()"
+                  >
+                    <p class="ayuda">
+                      Cada deuda a la que se imputo recupera ese saldo, y los movimientos de caja
+                      del cobro se revierten <b>hoy</b>. Si entro en efectivo, hace falta la caja
+                      abierta y que en el cajon este la plata.
+                    </p>
+                  </akine-confirmacion-con-motivo>
+                  @if (errorOperacion()) {
+                    <p class="estado estado--error" role="alert">{{ mensajeDelRechazo() }}</p>
+                    <div class="acciones">
+                      <button
+                        type="button"
+                        class="boton boton--secundario"
+                        (click)="recargarTrasRechazo()"
+                      >
+                        Recargar los cobros
+                      </button>
+                    </div>
+                  }
+                </td>
+              </tr>
+            }
+            @case ('reintegrar') {
+              <tr class="fila-panel">
+                <td colspan="7">
+                  <form class="tarjeta" (submit)="$event.preventDefault(); confirmarReintegro()">
+                    <h3>
+                      Reintegrar saldo a favor del comprobante N.º {{ cobro.comprobanteNumero }}
+                    </h3>
+                    <p class="ayuda">
+                      Devuelve en dinero parte de lo que el paciente dejo a favor. Saldo a favor
+                      disponible: <b class="importe">{{ importe(cobro, cobro.saldoAFavor) }}</b
+                      >.
+                    </p>
+
+                    <div class="campo">
+                      <label [for]="'reintegro-importe-' + cobro.id">Importe a devolver</label>
+                      <input
+                        [id]="'reintegro-importe-' + cobro.id"
+                        type="text"
+                        inputmode="decimal"
+                        autocomplete="off"
+                        [value]="importeReintegro()"
+                        [attr.aria-invalid]="reintegroIntentado() && problemaDelImporte() !== null"
+                        [attr.aria-describedby]="'reintegro-importe-ayuda-' + cobro.id"
+                        (input)="editarReintegro('importe', $any($event.target).value)"
+                      />
+                      <p class="ayuda" [id]="'reintegro-importe-ayuda-' + cobro.id">
+                        @if (reintegroIntentado() && problemaDelImporte(); as problema) {
+                          <span class="estado--error">{{ problema }}</span>
+                        } @else {
+                          Hasta {{ importe(cobro, cobro.saldoAFavor) }}.
+                        }
+                      </p>
+                    </div>
+
+                    <div class="campo">
+                      <label [for]="'reintegro-medio-' + cobro.id">Por donde sale la plata</label>
+                      <select
+                        [id]="'reintegro-medio-' + cobro.id"
+                        [value]="medioReintegro()"
+                        [attr.aria-describedby]="'reintegro-medio-ayuda-' + cobro.id"
+                        (change)="editarReintegro('medio', $any($event.target).value)"
+                      >
+                        @for (opcion of mediosDeReintegro; track opcion) {
+                          <option [value]="opcion" [selected]="opcion === medioReintegro()">
+                            {{ medioEnPalabras(opcion) }}
+                          </option>
+                        }
+                      </select>
+                      <p class="ayuda" [id]="'reintegro-medio-ayuda-' + cobro.id">
+                        @if (esEfectivo()) {
+                          <b>El efectivo sale del cajon:</b> mueve la caja de hoy, exige que este
+                          abierta y que haya esa plata.
+                        } @else {
+                          Puede no ser el medio por el que entro. Queda registrado como salida de
+                          caja, pero no mueve el arqueo del efectivo.
+                        }
+                      </p>
+                    </div>
+
+                    <div class="campo">
+                      <label [for]="'reintegro-motivo-' + cobro.id">Motivo</label>
+                      <textarea
+                        [id]="'reintegro-motivo-' + cobro.id"
+                        rows="2"
+                        maxlength="280"
+                        [value]="motivoReintegro()"
+                        [attr.aria-invalid]="reintegroIntentado() && faltaMotivo()"
+                        [attr.aria-describedby]="'reintegro-motivo-ayuda-' + cobro.id"
+                        (input)="editarReintegro('motivo', $any($event.target).value)"
+                      ></textarea>
+                      <p class="ayuda" [id]="'reintegro-motivo-ayuda-' + cobro.id">
+                        @if (reintegroIntentado() && faltaMotivo()) {
+                          <span class="estado--error">El motivo es obligatorio.</span>
+                        } @else {
+                          Queda en el reintegro y en la auditoria.
+                        }
+                      </p>
+                    </div>
+
+                    <div class="campo">
+                      <label [for]="'reintegro-referencia-' + cobro.id">
+                        Referencia <span class="campo__opcional">(opcional)</span>
+                      </label>
+                      <input
+                        [id]="'reintegro-referencia-' + cobro.id"
+                        type="text"
+                        autocomplete="off"
+                        maxlength="120"
+                        [value]="referenciaReintegro()"
+                        (input)="editarReintegro('referencia', $any($event.target).value)"
+                      />
+                    </div>
+
+                    @if (errorOperacion()) {
+                      <p class="estado estado--error" role="alert">{{ mensajeDelRechazo() }}</p>
+                    }
+
+                    <div class="acciones">
+                      <button type="submit" class="boton" [disabled]="enviando()">
+                        Reintegrar
+                      </button>
+                      <button
+                        type="button"
+                        class="boton boton--secundario"
+                        (click)="cerrarOperacion()"
+                      >
+                        Cancelar
+                      </button>
+                      @if (errorOperacion()) {
+                        <button
+                          type="button"
+                          class="boton boton--secundario"
+                          (click)="recargarTrasRechazo()"
+                        >
+                          Recargar los cobros
+                        </button>
+                      }
+                    </div>
+                  </form>
+                </td>
+              </tr>
+            }
           }
         }
       </tbody>

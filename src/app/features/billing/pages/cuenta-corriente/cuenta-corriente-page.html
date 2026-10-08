@@ -175,3 +175,160 @@
     numero que despues alguien le dice a un paciente.
   </p>
 }
+
+<!--
+  Saldo a favor (F-3). Son cobros, no deudas: se muestran aparte y nunca como una deuda negativa
+  (regla maestra 5). Imputarlo no mueve la caja —la plata entro al cobrar— y por eso pide solo
+  cobro:register, no caja:operate.
+-->
+@if (estado().tipo === 'listo') {
+  <section aria-labelledby="titulo-saldo-a-favor">
+    <h2 id="titulo-saldo-a-favor">Saldo a favor</h2>
+
+    @if (cobrosNoCargaron()) {
+      <p class="estado estado--error">
+        No se pudieron leer los cobros, asi que no sabemos si hay saldo a favor. La deuda de arriba
+        esta bien.
+        <button type="button" class="boton boton--secundario" (click)="cargar()">
+          Volver a leer
+        </button>
+      </p>
+    } @else if (conSaldoAFavor().length === 0) {
+      <p class="estado estado--vacio">
+        Esta persona no tiene saldo a favor: no hay anticipos ni sobrantes sin imputar.
+      </p>
+    } @else {
+      <p class="ayuda">
+        Plata que entro y todavia no se aplico a ninguna deuda (anticipos y sobrantes). Se imputa a
+        deudas <b>de la misma sede y la misma moneda</b> que el cobro; devolverla en dinero se hace
+        desde los cobros registrados.
+      </p>
+
+      <div class="tabla-scroll" tabindex="0" role="region" aria-label="Cobros con saldo a favor">
+        <table class="tabla">
+          <thead>
+            <tr>
+              <th scope="col">Comprobante</th>
+              <th scope="col">Cobrado</th>
+              <th scope="col">Total del cobro</th>
+              <th scope="col">Saldo a favor</th>
+              <th scope="col">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (cobro of conSaldoAFavor(); track cobro.id) {
+              <tr>
+                <td>N.º {{ cobro.comprobanteNumero }}</td>
+                <td>{{ instanteEnPalabras(cobro.cobradoEn) }}</td>
+                <td class="importe">{{ importeEnPalabras(cobro.total, cobro.moneda) }}</td>
+                <td class="importe">{{ importeEnPalabras(cobro.saldoAFavor, cobro.moneda) }}</td>
+                <td>
+                  <div class="acciones-fila">
+                    <button
+                      *akinePermiso="PERMISO_COBRO_REGISTER"
+                      type="button"
+                      class="boton boton--secundario"
+                      (click)="abrirImputacion(cobro)"
+                    >
+                      Imputar a deudas
+                    </button>
+                  </div>
+                </td>
+              </tr>
+
+              @if (esElImputando(cobro)) {
+                <tr class="fila-panel">
+                  <td colspan="5">
+                    <form class="tarjeta" (submit)="$event.preventDefault(); confirmarImputacion()">
+                      <h3>
+                        Imputar el saldo a favor del comprobante N.º {{ cobro.comprobanteNumero }}
+                      </h3>
+                      <p class="ayuda">
+                        Disponible:
+                        <b class="importe">{{
+                          importeEnPalabras(cobro.saldoAFavor, cobro.moneda)
+                        }}</b
+                        >. Escribi cuanto aplicar a cada deuda; las que quedan vacias no se tocan.
+                        No mueve la caja.
+                      </p>
+
+                      @if (deudasDelImputando().length === 0) {
+                        <p class="estado estado--vacio">
+                          No hay deudas pendientes de esta persona en la sede y la moneda de este
+                          cobro. El saldo a favor solo se imputa a deudas de la misma sede.
+                        </p>
+                      } @else {
+                        <fieldset class="grupo">
+                          <legend>Deudas pendientes de la misma sede</legend>
+                          @for (deuda of deudasDelImputando(); track deuda.id) {
+                            <div class="campo">
+                              <label [for]="'imputar-' + cobro.id + '-' + deuda.id">
+                                {{ deuda.snapshotNombre }} —
+                                {{ fechaEnPalabras(deuda.devengadaEn) }} — saldo
+                                {{ importe(deuda, deuda.saldo) }}
+                              </label>
+                              <input
+                                [id]="'imputar-' + cobro.id + '-' + deuda.id"
+                                type="text"
+                                inputmode="decimal"
+                                autocomplete="off"
+                                [value]="importeTipeado(deuda)"
+                                (input)="
+                                  cambiarImporteDeImputacion(deuda, $any($event.target).value)
+                                "
+                              />
+                            </div>
+                          }
+                        </fieldset>
+
+                        @if (imputacionIntentada() && problemaDeImputacion(); as problema) {
+                          <p class="estado estado--error" role="alert">{{ problema }}</p>
+                        }
+                      }
+
+                      @if (errorImputacion(); as fallo) {
+                        <div role="alert">
+                          <p class="estado estado--error">{{ fallo.mensaje }}</p>
+                          @if (imputadasAntesDelRechazo() > 0) {
+                            <p class="ayuda">
+                              Antes del rechazo entraron {{ imputadasAntesDelRechazo() }}
+                              imputaciones. Recarga para ver como quedaron los saldos.
+                            </p>
+                          }
+                        </div>
+                      }
+
+                      <div class="acciones">
+                        @if (deudasDelImputando().length > 0) {
+                          <button type="submit" class="boton" [disabled]="enviandoImputacion()">
+                            Imputar
+                          </button>
+                        }
+                        <button
+                          type="button"
+                          class="boton boton--secundario"
+                          (click)="cerrarImputacion()"
+                        >
+                          Cancelar
+                        </button>
+                        @if (errorImputacion()) {
+                          <button
+                            type="button"
+                            class="boton boton--secundario"
+                            (click)="recargarTrasImputacion()"
+                          >
+                            Recargar la cuenta corriente
+                          </button>
+                        }
+                      </div>
+                    </form>
+                  </td>
+                </tr>
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+}

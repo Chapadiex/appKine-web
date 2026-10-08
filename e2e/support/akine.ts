@@ -30,7 +30,8 @@ export function sql(consulta: string): string {
     'docker',
     [
       'exec',
-      'akine-mysql',
+      // Contenedor de `appKine-api/compose.yaml`: el mismo nombre en desarrollo y en el CI.
+      process.env['AKINE_E2E_MYSQL_CONTAINER'] ?? 'akine-mysql',
       'mysql',
       '-N',
       '-B',
@@ -72,21 +73,42 @@ export async function registrarPorApi(
   request: APIRequestContext,
   datos: AltaSelfService,
 ): Promise<void> {
-  // Throttle del limite de 5 altas/min por IP. Ver "Throttle del alta self-service" abajo.
-  await esperarCupoDeRegistro();
-
-  const respuesta = await request.post('/api/v1/auth/register', {
-    headers: { 'Idempotency-Key': randomUUID() },
-    data: {
-      firstName: datos.firstName ?? 'Ana',
-      lastName: datos.lastName ?? 'Prueba',
-      email: datos.email,
-      password: PASSWORD,
-      organizationName: datos.organizationName,
-    },
-  });
+  const clave = randomUUID();
+  const respuesta = await conReintentoPor429(() =>
+    request.post('/api/v1/auth/register', {
+      headers: { 'Idempotency-Key': clave },
+      data: {
+        firstName: datos.firstName ?? 'Ana',
+        lastName: datos.lastName ?? 'Prueba',
+        email: datos.email,
+        password: PASSWORD,
+        organizationName: datos.organizationName,
+      },
+    }),
+  );
 
   expect(respuesta.status(), 'el alta self-service responde 202 uniforme (ADR-0018)').toBe(202);
+}
+
+/**
+ * Pide cupo con {@link esperarCupoDeRegistro} y hace el alta; ante un 429 espera y reintenta.
+ *
+ * <p>El espaciado del cliente es una ventana deslizante y el limite del servidor es una ventana
+ * fija: en el borde de la ventana el servidor puede contar un alta de mas y responder 429 con
+ * `reintentarEnSegundos=0` (visto el 08/10/2026, AKINE G-9). Un 429 no procesa el alta, asi que
+ * repetir con la misma `Idempotency-Key` es seguro.
+ */
+export async function conReintentoPor429<T extends { status(): number }>(
+  alta: () => Promise<T>,
+): Promise<T> {
+  for (let intento = 1; ; intento++) {
+    await esperarCupoDeRegistro();
+    const respuesta = await alta();
+    if (respuesta.status() !== 429 || intento === 3) {
+      return respuesta;
+    }
+    await dormir(5_000);
+  }
 }
 
 /**
@@ -150,7 +172,11 @@ export function darMembership(accountId: number, organizationId: number): void {
   sql(
     `INSERT INTO membership (organization_id, consultorio_id, account_id, role_code, is_founder,` +
       ` valid_from, active, version, created_at, updated_at)` +
-      ` VALUES (${organizationId}, NULL, ${accountId}, 'ORG_ADMIN', 0, NOW(6), 1, 0, NOW(6), NOW(6))`,
+      ` VALUES (${organizationId}, NULL, ${accountId}, 'ORG_ADMIN', 0,` +
+      // Un minuto atras y no NOW(6): `valid_from` lo compara el backend contra SU reloj, y si el
+      // del contenedor de MySQL va adelantado medio segundo la membership todavia no vale en el
+      // login que sigue y la cuenta entra con un solo contexto (visto el 08/10/2026, AKINE G-9).
+      ` NOW(6) - INTERVAL 1 MINUTE, 1, 0, NOW(6), NOW(6))`,
   );
 }
 

@@ -15,6 +15,12 @@ import { defineConfig, devices } from '@playwright/test';
  * Regla innegociable: ambos repos en la MISMA rama. Si no, se prueban dos versiones
  * distintas y el resultado no vale.
  */
+/**
+ * Frontend contra el que corren los E2E. Por defecto el `npm start` de siempre; se cambia para
+ * correr una segunda pila al lado de la de desarrollo sin pisarla (ver `docs/e2e-ci.md`).
+ */
+const WEB = process.env['AKINE_E2E_WEB'] ?? 'http://localhost:4200';
+
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: true,
@@ -28,7 +34,7 @@ export default defineConfig({
   reporter: process.env['CI'] ? [['html'], ['github']] : [['html']],
 
   use: {
-    baseURL: 'http://localhost:4200',
+    baseURL: WEB,
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
@@ -42,6 +48,11 @@ export default defineConfig({
       // correria una tercera vez con el `colorScheme` que traiga el sistema del runner, que es
       // justamente el dato que no se puede dejar al azar.
       testIgnore: [/contraste(-no-textual)?\.spec\.ts/, /agenda[-.]/],
+      // Casi todos estos tests dan de alta una o dos cuentas, y el alta esta espaciada a 4 por
+      // minuto (`esperarCupoDeRegistro`, por el limite del backend). Corridos uno detras de otro
+      // —como en el CI— la espera sola se come los 30 s por defecto. Se alarga el plazo; el
+      // limite no se apaga (AKINE G-9).
+      timeout: 120_000,
     },
 
     /*
@@ -104,7 +115,7 @@ export default defineConfig({
 
   webServer: {
     command: 'npm start',
-    url: 'http://localhost:4200',
+    url: WEB,
     reuseExistingServer: !process.env['CI'],
     timeout: 120_000,
   },

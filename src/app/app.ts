@@ -1,3 +1,4 @@
+import { DOCUMENT } from '@angular/common';
 import { Component, inject } from '@angular/core';
 import {
   ActivatedRoute,
@@ -43,6 +44,7 @@ import { NavegacionPrincipal } from './layout/navegacion-principal/navegacion-pr
 export class App {
   private readonly router = inject(Router);
   private readonly raiz = inject(ActivatedRoute);
+  private readonly documento = inject(DOCUMENT);
 
   /**
    * Ancho pedido por la ruta activa mas profunda.
@@ -63,6 +65,20 @@ export class App {
     ),
     { initialValue: 'lectura' as AnchoDeContenido },
   );
+
+  /**
+   * Lleva el foco al `main` sin navegar.
+   *
+   * <p>El `href="#contenido"` solo no alcanza: con `<base href="/">` el navegador lo resuelve a
+   * `/#contenido`, o sea que desde cualquier pantalla que no sea la raiz el skip link NAVEGA a la
+   * raiz —y de ahi a la Agenda o al login— en vez de saltar al contenido. Lo destapo el E2E de
+   * `smoke` al correr en el CI contra el backend real (AKINE G-9). El `href` queda para que siga
+   * siendo un enlace para el lector de pantalla y el teclado.
+   */
+  protected saltarAlContenido(evento: Event): void {
+    evento.preventDefault();
+    this.documento.getElementById('contenido')?.focus();
+  }
 }
 
 /** Baja hasta la ruta activa mas profunda y devuelve el ancho que declaro, o el defecto. */

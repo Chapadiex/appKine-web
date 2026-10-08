@@ -49,6 +49,16 @@ export type CausaCobro =
   | 'prepago-ya-registrado'
   /** 409 `idempotency-key-conflict`: la clave se reuso con otro contenido. */
   | 'clave-reusada'
+  /** 409 `cobro-anulado` (F-3): el cobro ya estaba anulado. No se opera sobre el dos veces. */
+  | 'cobro-anulado'
+  /** 409 `cobro-con-reintegros` (F-3): ya devolvio plata; anularlo la sacaria dos veces del cajon. */
+  | 'con-reintegros'
+  /** 409 `saldo-a-favor-insuficiente` (F-3): el anticipo ya no alcanza. Viaja con `disponible`. */
+  | 'saldo-a-favor-insuficiente'
+  /** 409 `caja-no-abierta`: la operacion mueve efectivo y la sede no tiene jornada abierta. */
+  | 'caja-no-abierta'
+  /** 409 `caja-saldo-insuficiente`: devolver ese efectivo dejaria el cajon en negativo. */
+  | 'caja-sin-efectivo'
   /** 409 subscription-suspended: lo emite el filtro, antes del controller. */
   | 'suscripcion-suspendida'
   /** 400 de validacion de campos: importe en cero, lista vacia, referencia demasiado larga. */
@@ -99,7 +109,18 @@ export interface ErrorCobro {
   readonly motivo: string | null;
   /** `prepago-ya-registrado`: el cobro que ya es el prepago vigente del turno. */
   readonly cobroId: number | null;
+  /** `saldo-a-favor-insuficiente`: lo que el cobro todavia tenia a favor. Sin formatear. */
+  readonly disponible: number | null;
 }
+
+/**
+ * Que operacion sobre el cobro fallo (F-3).
+ *
+ * <p>Solo cambia el texto del 403: registrar e imputar piden `cobro:register`, y anular y
+ * reintegrar piden ademas `caja:operate`. Decirle "no tenes permiso para registrar cobros" a quien
+ * si lo tiene lo manda a pedir lo que ya tiene.
+ */
+export type OperacionDeCobro = 'registrar' | 'imputar' | 'anular' | 'reintegrar';
 
 const MENSAJE_GENERICO = 'No pudimos registrar el cobro. Volve a intentar en un momento.';
 const MENSAJE_DE_RED =
@@ -113,6 +134,33 @@ const MENSAJE_SIN_CONTEXTO =
 
 const MENSAJE_SIN_PERMISO =
   'No tenes permiso para registrar cobros en esta sede. Pediselo a quien administra el centro.';
+
+/**
+ * Anular y reintegrar mueven la caja, y por eso piden los dos permisos: el de cobros y el de
+ * operar la caja. El mensaje nombra los dos para que se sepa que pedir.
+ */
+const MENSAJE_SIN_PERMISO_DE_CAJA =
+  'Para anular un cobro o devolver un saldo a favor hacen falta dos permisos en esta sede: ' +
+  'registrar cobros y operar la caja. Pediselos a quien administra el centro.';
+
+const MENSAJE_COBRO_ANULADO =
+  'Ese cobro ya esta anulado, asi que no se hizo nada. Recarga para ver su estado actual.';
+
+const MENSAJE_CON_REINTEGROS =
+  'Este cobro ya devolvio parte de su saldo a favor, y anularlo sacaria esa plata dos veces del ' +
+  'cajon. No se anulo. Si hay que corregir lo devuelto, se registra un ingreso manual en la caja.';
+
+const MENSAJE_SALDO_A_FAVOR_INSUFICIENTE =
+  'El saldo a favor de este cobro ya no alcanza: otra operacion lo uso mientras tanto. No se ' +
+  'movio nada. Recarga y volve a armar la operacion con el saldo real.';
+
+const MENSAJE_CAJA_NO_ABIERTA =
+  'La caja de esta sede no esta abierta, y esta operacion mueve efectivo del cajon. No se hizo ' +
+  'nada: abri la caja en la seccion Caja y volve a intentar.';
+
+const MENSAJE_CAJA_SIN_EFECTIVO =
+  'En el cajon no hay efectivo suficiente para esa salida, y un cajon no puede quedar en ' +
+  'negativo. No se hizo nada: usa otro medio o revisa la caja.';
 
 const MENSAJE_NO_ENCONTRADO =
   'La sede, la persona o el cobro no existen, o no son de esta organizacion. Volve al padron y ' +
@@ -177,8 +225,15 @@ const MENSAJE_CONFLICTO =
   'El servidor rechazo el cobro por un conflicto con lo que ya hay guardado. Recarga la cuenta ' +
   'corriente para ver el estado actual antes de volver a intentar.';
 
-/** Traduce cualquier error del circuito de cobros. */
-export function traducirErrorCobro(error: unknown): ErrorCobro {
+/**
+ * Traduce cualquier error del circuito de cobros.
+ *
+ * <p>`operacion` solo elige el texto del 403; todo lo demas se ramifica por `problemType`.
+ */
+export function traducirErrorCobro(
+  error: unknown,
+  operacion: OperacionDeCobro = 'registrar',
+): ErrorCobro {
   if (!(error instanceof AkineHttpError)) {
     return base(MENSAJE_GENERICO, 'otro', 'ninguna');
   }
@@ -225,6 +280,24 @@ export function traducirErrorCobro(error: unknown): ErrorCobro {
       };
     case 'idempotency-key-conflict':
       return base(MENSAJE_CLAVE_REUSADA, 'clave-reusada', 'reintentar-con-clave-nueva');
+    case 'cobro-anulado':
+      return base(MENSAJE_COBRO_ANULADO, 'cobro-anulado', 'recargar-cuenta');
+    case 'cobro-con-reintegros':
+      return base(MENSAJE_CON_REINTEGROS, 'con-reintegros', 'recargar-cuenta');
+    case 'saldo-a-favor-insuficiente':
+      return {
+        ...base(
+          MENSAJE_SALDO_A_FAVOR_INSUFICIENTE,
+          'saldo-a-favor-insuficiente',
+          'recargar-cuenta',
+        ),
+        disponible: error.numeroDeExtension('disponible'),
+        importeIntentado: error.numeroDeExtension('importeIntentado'),
+      };
+    case 'caja-no-abierta':
+      return base(MENSAJE_CAJA_NO_ABIERTA, 'caja-no-abierta', 'ninguna');
+    case 'caja-saldo-insuficiente':
+      return base(MENSAJE_CAJA_SIN_EFECTIVO, 'caja-sin-efectivo', 'corregir-importes');
     case 'validation-error':
       return base(
         conDetalle(error, MENSAJE_DATOS_INVALIDOS),
@@ -236,7 +309,12 @@ export function traducirErrorCobro(error: unknown): ErrorCobro {
   }
 
   if (error.status === 403) {
-    return base(MENSAJE_SIN_PERMISO, 'sin-permiso', 'ninguna');
+    const mueveCaja = operacion === 'anular' || operacion === 'reintegrar';
+    return base(
+      mueveCaja ? MENSAJE_SIN_PERMISO_DE_CAJA : MENSAJE_SIN_PERMISO,
+      'sin-permiso',
+      'ninguna',
+    );
   }
 
   if (error.status === 404) {
@@ -278,6 +356,7 @@ function base(mensaje: string, causa: CausaCobro, accion: AccionCobro): ErrorCob
     importeIntentado: null,
     motivo: null,
     cobroId: null,
+    disponible: null,
   };
 }
 
