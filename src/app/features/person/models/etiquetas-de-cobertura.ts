@@ -1,3 +1,4 @@
+import { CoberturaDelHitoResponse } from '../../../api/generated/model/cobertura-del-hito-response';
 import { CoberturaResponse } from '../../../api/generated/model/cobertura-response';
 import { HitoResponse } from '../../../api/generated/model/hito-response';
 import { fechaEnPalabras } from './etiquetas-de-ficha';
@@ -126,39 +127,91 @@ export const SECCION_COBERTURAS = 'coberturas';
 /** Una cobertura vigente del 360, ya redactada para pintarla. */
 export interface CoberturaDelResumen {
   readonly principal: boolean;
-  /** Financiador · plan · afiliado enmascarado · fin de vigencia, con las fechas legibles. */
+  /** Financiador y plan congelados, "Particular", o el titulo entero si no vinieron los campos. */
   readonly descripcion: string;
-  /** `dd/mm/aaaa`, o vacio si no vino. */
-  readonly vigenteDesde: string;
+  /** "Afiliado ···4567", o vacio si no hay numero o no vinieron los campos. */
+  readonly afiliado: string;
+  /** La vigencia en una frase, o vacio si no se puede redactar. */
+  readonly vigencia: string;
+  /** Que decir de la credencial cuando NO esta vencida, o vacio. */
+  readonly credencial: string;
   readonly credencialVencida: boolean;
 }
 
 /**
  * Lee un hito de la seccion `coberturas` del 360.
  *
- * <p>La seccion viaja en la estructura generica —indicadores e hitos— y no en un schema propio, asi
- * que el contrato no cambio con B-5. El backend fija el significado de cada campo del hito:
+ * <p>Desde el contrato 0.70.0 (A-11) cada hito trae `cobertura` con los datos como campos:
+ * financiador y plan congelados, afiliado <b>ya enmascarado</b>, vigencia y credencial como fechas
+ * sin hora. Esos campos son los que mandan. El `titulo` es para leer, no para partir: partirlo ataba
+ * la pantalla a una redaccion del backend que nadie prometio mantener.
  *
- * <ul>
- *   <li>`tipo` `COBERTURA_PRINCIPAL` o `COBERTURA`.</li>
- *   <li>`ocurrioEn` es el <b>inicio de la vigencia a medianoche UTC</b>: una fecha disfrazada de
- *       instante. Se toma la parte de fecha tal cual y <b>no pasa por `Date`</b>: en el huso del
- *       pais, la medianoche UTC del 15 se formatea como el 14.</li>
- *   <li>`titulo` lo redacta el backend con el numero de afiliado <b>ya enmascarado</b>. Aca solo se
- *       vuelven legibles las fechas ISO que trae ("hasta 2026-12-31").</li>
- *   <li>`estado` `CREDENCIAL_VENCIDA` o `VIGENTE`.</li>
- * </ul>
+ * <p><b>Degradacion:</b> si `cobertura` viene nula —un backend anterior a 0.70.0— se muestra el
+ * titulo entero con las fechas ISO vueltas legibles, sin intentar separarlo, y la vigencia sale de
+ * `ocurrioEn` (inicio de vigencia a medianoche UTC, que se lee como fecha y no pasa por `Date`).
  */
 export function coberturaDelResumen(hito: HitoResponse): CoberturaDelResumen {
+  const principal = hito.tipo === 'COBERTURA_PRINCIPAL';
+  const datos = hito.cobertura;
+  if (datos === undefined || datos === null) {
+    return degradado(hito, principal);
+  }
+
+  const vencida = datos.estadoCredencial === 'VENCIDA';
+  return {
+    principal: datos.principal ?? principal,
+    descripcion: financiadorYPlan(datos),
+    afiliado: datos.afiliadoEnmascarado ? `Afiliado ${datos.afiliadoEnmascarado}` : '',
+    vigencia: vigenciaDelHito(datos.vigenciaDesde, datos.vigenciaHasta),
+    credencial: vencida ? '' : credencialDelHito(datos),
+    credencialVencida: vencida,
+  };
+}
+
+function financiadorYPlan(datos: CoberturaDelHitoResponse): string {
+  if (datos.tipo === 'PARTICULAR') {
+    return 'Particular';
+  }
+  const financiador = datos.financiadorNombre || 'Financiador sin nombre';
+  return datos.planNombre ? `${financiador} — ${datos.planNombre}` : financiador;
+}
+
+/** `vigenciaHasta` es el ultimo dia de la cobertura: inclusivo. */
+function vigenciaDelHito(desde: string | undefined, hasta: string | null | undefined): string {
+  const inicio = fechaEnPalabras(desde);
+  const fin = fechaEnPalabras(hasta);
+  if (inicio === '') {
+    return fin === '' ? '' : `Vigente hasta el ${fin} inclusive.`;
+  }
+  return fin === ''
+    ? `Vigente desde el ${inicio}, sin fecha de fin.`
+    : `Vigente desde el ${inicio} hasta el ${fin} inclusive.`;
+}
+
+function credencialDelHito(datos: CoberturaDelHitoResponse): string {
+  const hasta = fechaEnPalabras(datos.credencialVigenciaHasta);
+  if (datos.estadoCredencial === 'VIGENTE' && hasta !== '') {
+    return `Credencial vigente hasta el ${hasta}.`;
+  }
+  if (datos.estadoCredencial === 'SIN_VENCIMIENTO') {
+    return 'Credencial sin vencimiento cargado.';
+  }
+  return '';
+}
+
+function degradado(hito: HitoResponse, principal: boolean): CoberturaDelResumen {
   const titulo = hito.titulo?.trim() ?? '';
   const fechaDeInicio = /^(\d{4}-\d{2}-\d{2})T/.exec(hito.ocurrioEn ?? '');
+  const desde = fechaDeInicio === null ? '' : fechaEnPalabras(fechaDeInicio[1]);
   return {
-    principal: hito.tipo === 'COBERTURA_PRINCIPAL',
+    principal,
     descripcion:
       titulo === ''
         ? 'Cobertura sin descripcion'
         : titulo.replace(/\b(\d{4})-(\d{2})-(\d{2})\b/g, '$3/$2/$1'),
-    vigenteDesde: fechaDeInicio === null ? '' : fechaEnPalabras(fechaDeInicio[1]),
+    afiliado: '',
+    vigencia: desde === '' ? '' : `Vigente desde el ${desde}.`,
+    credencial: '',
     credencialVencida: hito.estado === 'CREDENCIAL_VENCIDA',
   };
 }

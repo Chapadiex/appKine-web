@@ -453,14 +453,15 @@
 
                           <p class="ayuda">
                             Si el cambio quita horario, los turnos pendientes que caian ahi quedan
-                            en conflicto: no se cancelan ni se mueven. El sistema no puede
-                            calcularlos antes de guardar; al confirmar te dice cuantos pueden estar
-                            afectados.
+                            en conflicto: no se cancelan ni se mueven. Antes de guardar se calcula
+                            cuantos son; si hay alguno, te los mostramos y te pedimos que confirmes.
                           </p>
+
+                          <app-impacto-previo [estado]="impacto()" />
 
                           <div class="acciones">
                             <button type="submit" class="boton" [disabled]="enviando()">
-                              Guardar los cambios
+                              {{ edicionConImpacto() ? 'Guardar igual' : 'Guardar los cambios' }}
                             </button>
                             <button
                               type="button"
@@ -496,7 +497,7 @@
                             ' de ' +
                             rangoHorario(bloque.horaDesde, bloque.horaHasta)
                           "
-                          [enviando]="enviando()"
+                          [enviando]="enviando() || impacto()?.tipo === 'consultando'"
                           (confirmado)="enviarBaja($event)"
                           (cancelado)="cerrarPanel()"
                         >
@@ -510,11 +511,7 @@
                             del bloque. Asi el horario historico sigue explicando los turnos que ya
                             se dieron.
                           </p>
-                          <p class="ayuda">
-                            Los turnos pendientes que caian ahi quedan en conflicto: no se cancelan
-                            ni se mueven. El sistema no puede calcularlos de antemano; al confirmar
-                            te dice cuantos pueden estar afectados.
-                          </p>
+                          <app-impacto-previo [estado]="impacto()" />
                         </akine-confirmacion-con-motivo>
 
                         <div aria-live="polite">

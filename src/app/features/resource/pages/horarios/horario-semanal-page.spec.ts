@@ -254,8 +254,34 @@ describe('HorarioSemanalPage', () => {
 
     // La irreversibilidad se dice ANTES de confirmar: el contrato no publica reactivacion.
     expect(texto(fixture)).toContain('no se puede deshacer');
-    // No hay consulta previa en el contrato: la pantalla avisa que el numero llega al confirmar.
-    expect(texto(fixture)).toContain('al confirmar te dice cuantos');
+
+    // La consulta previa sale al abrir el panel (A-11): no hay nada que escribir antes.
+    httpMock.expectOne(`${BLOQUES}/${LUNES_MANANA.id}/impacto-de-baja`).flush({
+      turnosAfectados: 2,
+      primerTurnoAfectado: '2026-10-12T12:00:00Z',
+      turnos: [
+        {
+          turnoId: 900,
+          membershipId: PROFESIONAL,
+          inicio: '2026-10-12T12:00:00Z',
+          fin: '2026-10-12T12:30:00Z',
+        },
+        {
+          turnoId: 901,
+          membershipId: PROFESIONAL,
+          inicio: '2026-10-19T12:00:00Z',
+          fin: '2026-10-19T12:30:00Z',
+        },
+      ],
+      evaluadoHasta: '2027-01-06',
+    });
+    await estabilizar(fixture);
+
+    expect(texto(fixture)).toContain('Turnos afectados: 2.');
+    expect(fixture.nativeElement.querySelectorAll('app-impacto-previo li').length).toBe(2);
+    expect(texto(fixture)).toContain('hasta el 5 de enero de 2027 inclusive');
+    // La cuenta es exacta desde A-11: el texto de cota superior no puede volver.
+    expect(texto(fixture)).not.toContain('cota superior');
 
     // Sin motivo NO sale a la red. El backend lo exige igual, y gastar un rechazo del servidor
     // para decir algo que ya se sabe deja al usuario esperando un viaje de ida y vuelta.
@@ -277,9 +303,9 @@ describe('HorarioSemanalPage', () => {
     await estabilizar(fixture);
 
     expect(texto(fixture)).toContain('sobrevive con su motivo');
-    // El backend cuenta de mas, nunca de menos: el aviso dice "hasta" y declara la cota.
-    expect(texto(fixture)).toContain('Hasta 3 turnos pendientes');
-    expect(texto(fixture)).toContain('cota superior');
+    // Manda el numero de la mutacion, y si difiere de la consulta previa se dice por que.
+    expect(texto(fixture)).toContain('3 turnos pendientes de este profesional en la sede quedaron');
+    expect(texto(fixture)).toContain('La consulta previa habia calculado 2');
   });
 
   it('la edicion manda solo lo que cambio, y siempre la version', async () => {
@@ -292,6 +318,12 @@ describe('HorarioSemanalPage', () => {
 
     seleccionar(fixture, '#editar-bloque-dia', '4');
     enviar(fixture, 'form');
+
+    // Primero la consulta sin efectos, con el mismo cuerpo y SIN version. Sin turnos afectados
+    // la edicion sigue de largo: no hay nada que confirmar.
+    const consulta = httpMock.expectOne(`${BLOQUES}/${LUNES_MANANA.id}/impacto-de-edicion`);
+    expect(consulta.request.body).toEqual({ diaSemana: 4 });
+    consulta.flush({ turnosAfectados: 0, turnos: [], evaluadoHasta: '2027-01-06' });
 
     const edicion = httpMock.expectOne(
       (peticion: HttpRequest<unknown>) => peticion.method === 'PUT',
@@ -342,8 +374,9 @@ describe('HorarioSemanalPage', () => {
     seleccionar(fixture, '#editar-bloque-dia', '5');
     enviar(fixture, 'form');
 
+    // La consulta previa ya lo sabe: el PUT no llega a salir.
     httpMock
-      .expectOne((peticion: HttpRequest<unknown>) => peticion.method === 'PUT')
+      .expectOne(`${BLOQUES}/${LUNES_MANANA.id}/impacto-de-edicion`)
       .flush(
         { type: 'https://akine.app/problems/bloque-inactivo' },
         { status: 409, statusText: 'Conflict' },
@@ -354,6 +387,71 @@ describe('HorarioSemanalPage', () => {
     expect(texto(fixture)).toContain('La baja no se deshace');
     const dia: HTMLSelectElement | null = fixture.nativeElement.querySelector('#editar-bloque-dia');
     expect(dia?.disabled).toBe(true);
+    httpMock.expectNone((peticion: HttpRequest<unknown>) => peticion.method === 'PUT');
+  });
+
+  it('una edicion que deja turnos afuera los muestra y espera "Guardar igual"', async () => {
+    const fixture = await montar();
+
+    abrir(fixture, 'Editar');
+    escribir(fixture, '#editar-bloque-hasta', '11:00');
+    enviar(fixture, 'form');
+
+    httpMock.expectOne(`${BLOQUES}/${LUNES_MANANA.id}/impacto-de-edicion`).flush({
+      turnosAfectados: 1,
+      turnos: [
+        {
+          turnoId: 900,
+          membershipId: PROFESIONAL,
+          inicio: '2026-10-12T14:00:00Z',
+          fin: '2026-10-12T14:30:00Z',
+        },
+      ],
+      evaluadoHasta: '2027-01-06',
+    });
+    await estabilizar(fixture);
+
+    // No guarda solo: muestra el numero y la lista, y el boton cambia de sentido.
+    httpMock.expectNone((peticion: HttpRequest<unknown>) => peticion.method === 'PUT');
+    expect(texto(fixture)).toContain('Turnos afectados: 1.');
+    expect(texto(fixture)).toContain('1 turno pendiente queda fuera de horario');
+    abrir(fixture, 'Guardar igual');
+
+    const edicion = httpMock.expectOne(
+      (peticion: HttpRequest<unknown>) => peticion.method === 'PUT',
+    );
+    expect(edicion.request.body).toEqual({ version: 1, horaHasta: '11:00' });
+    edicion.flush({ ...LUNES_MANANA, horaHasta: '11:00', version: 2, turnosAfectados: 1 });
+    httpMock.expectOne(BLOQUES).flush(HORARIO);
+    await estabilizar(fixture);
+
+    // Coincide con lo previsto: se informa el numero, sin hablar de diferencias.
+    expect(texto(fixture)).toContain('1 turno pendiente de este profesional en la sede quedo');
+    expect(texto(fixture)).not.toContain('La consulta previa habia calculado');
+  });
+
+  it('si la consulta previa falla por otra causa, lo dice y deja guardar igual', async () => {
+    const fixture = await montar();
+
+    abrir(fixture, 'Dar de baja');
+    httpMock
+      .expectOne(`${BLOQUES}/${LUNES_MANANA.id}/impacto-de-baja`)
+      .flush({}, { status: 500, statusText: 'Server Error' });
+    await estabilizar(fixture);
+
+    // Nunca "ningun turno afectado": no saber no es cero.
+    expect(texto(fixture)).toContain('No pudimos calcular de antemano');
+    expect(texto(fixture)).not.toContain('Ningun turno pendiente');
+
+    escribir(fixture, '#baja-bloque-reason', 'Cierre de la franja');
+    enviar(fixture, 'akine-confirmacion-con-motivo form');
+    httpMock
+      .expectOne((peticion: HttpRequest<unknown>) => peticion.method === 'DELETE')
+      .flush({ ...LUNES_MANANA, estado: 'INACTIVO', turnosAfectados: 0 });
+    httpMock.expectOne(BLOQUES).flush([LUNES_TARDE, MARTES_NOCHE]);
+    await estabilizar(fixture);
+
+    expect(texto(fixture)).toContain('quedo dado de baja');
   });
 
   it('si el listado de profesionales falla, se puede reintentar sin recargar la pagina', async () => {
