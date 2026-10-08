@@ -62,13 +62,19 @@
             <td>
               <div class="acciones-fila">
                 @if (esElAbierto(cobro)) {
-                  <button type="button" class="boton boton--secundario" (click)="cerrar()">
+                  <button
+                    type="button"
+                    class="boton boton--secundario"
+                    [id]="'comprobante-' + cobro.id"
+                    (click)="cerrar()"
+                  >
                     Cerrar el comprobante
                   </button>
                 } @else {
                   <button
                     type="button"
                     class="boton boton--secundario"
+                    [id]="'comprobante-' + cobro.id"
                     [disabled]="abriendo() === cobro.id"
                     (click)="abrir(cobro)"
                   >

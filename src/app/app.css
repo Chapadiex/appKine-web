@@ -24,10 +24,18 @@
   left: 0;
 }
 
-/* Foco visible en todo elemento interactivo. Nunca usar outline: none sin reemplazo. */
-:focus-visible {
-  outline: var(--foco-grosor) solid var(--color-acento-claro);
-  outline-offset: var(--foco-offset);
+/*
+  El anillo del skip link va HACIA ADENTRO, sobre su propio fondo de marca. Aparece pegado a la
+  esquina superior izquierda: un anillo exterior caeria la mitad fuera de la pantalla y la otra
+  mitad sobre la cabecera, que es del mismo azul que el boton. Adentro se mide contra un solo
+  fondo, y con el celeste de foco sobre marca da 6,8:1 en claro.
+
+  El anillo de foco del resto de la aplicacion ya no vive aca: era una regla de componente y la
+  encapsulacion la dejaba sin efecto fuera de esta plantilla. Esta en `src/design-system.css`.
+*/
+.skip-link:focus-visible {
+  outline: var(--foco-grosor) solid var(--color-foco-sobre-marca);
+  outline-offset: calc(-1 * (var(--foco-grosor) + var(--foco-offset)));
 }
 
 /*

@@ -104,7 +104,11 @@
   color: var(--color-texto-suave);
 }
 
+/* El hueco libre es un BOTON con el relleno de la pagina: su borde es lo unico que lo delimita, y
+   tiene que ser el de control. Con `--color-borde` daba 1,36:1 en claro (WCAG 1.4.11). El
+   completo y el de solo lectura no son operables y se quedan con el decorativo. */
 button.slot--libre {
+  border-color: var(--color-borde-control);
   cursor: pointer;
 }
 

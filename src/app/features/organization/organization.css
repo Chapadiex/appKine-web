@@ -43,7 +43,9 @@
   gap: var(--esp-1);
   width: 100%;
   padding: var(--esp-5) var(--esp-6);
-  border: var(--borde-fino) solid var(--color-borde);
+  /* Borde de CONTROL y no `--color-borde`: la opcion es un boton cuyo relleno es el de la pagina,
+     asi que el borde es lo unico que lo delimita, y con el decorativo daba 1,36:1 (WCAG 1.4.11). */
+  border: var(--borde-fino) solid var(--color-borde-control);
   border-radius: var(--radio-md);
   background: var(--color-superficie);
   font: inherit;
