@@ -14,6 +14,7 @@ import { Observable }                                        from 'rxjs';
 import { CreateExcepcionRequest } from '../model/models';
 import { DeactivateExcepcionRequest } from '../model/models';
 import { ExcepcionResponse } from '../model/models';
+import { ImpactoDisponibilidadResponse } from '../model/models';
 import { ProblemDetail } from '../model/models';
 
 
@@ -36,6 +37,16 @@ export interface ListExcepcionesRequestParams {
     desde: string;
     hasta: string;
     membershipId?: number;
+}
+
+export interface SimularImpactoAltaExcepcionRequestParams {
+    consultorioId: number;
+    createExcepcionRequest: CreateExcepcionRequest;
+}
+
+export interface SimularImpactoBajaExcepcionRequestParams {
+    consultorioId: number;
+    excepcionId: number;
 }
 
 
@@ -66,5 +77,21 @@ export interface ExcepcionesDeDisponibilidadServiceInterface {
 * @param requestParameters
      */
     listExcepciones(requestParameters: ListExcepcionesRequestParams, extraHttpRequestParams?: any): Observable<Array<ExcepcionResponse>>;
+
+    /**
+     * Turnos que dejaria afuera una excepcion, sin cargarla
+     * Consulta previa SIN EFECTOS (A-11, RN-M05-004): evalua la excepcion propuesta —el mismo cuerpo que el alta— y devuelve los turnos pendientes que quedarian fuera de la disponibilidad efectiva. No guarda nada, no toma locks y no audita. Es POST porque la excepcion propuesta viaja en el cuerpo.  Un CIERRE de un profesional evalua sus turnos; uno sin membershipId (SEDE ENTERA) evalua los de todos los profesionales de la sede. Una APERTURA responde cero: solo agrega disponibilidad. Cuenta exacta: un turno cuenta si la disponibilidad lo cubria antes y no despues. La ventana es la de la excepcion desde hoy, acotada a noventa dias; evaluadoHasta dice hasta donde se miro.  No adelanta los 409 del alta (sede dada de baja, profesional sin vinculo vigente): esos los responde el alta. Exige consultorio:manage sobre esa sede.
+     * @endpoint post /api/v1/consultorios/{consultorioId}/excepciones/impacto-de-alta
+* @param requestParameters
+     */
+    simularImpactoAltaExcepcion(requestParameters: SimularImpactoAltaExcepcionRequestParams, extraHttpRequestParams?: any): Observable<ImpactoDisponibilidadResponse>;
+
+    /**
+     * Turnos que dejaria afuera la baja de una excepcion, sin aplicarla
+     * Consulta previa SIN EFECTOS (A-11, RN-M05-004). Solo quitar una APERTURA puede dejar turnos afuera; quitar un CIERRE responde cero. Misma cuenta exacta y misma ventana que la consulta previa del alta. Exige consultorio:manage sobre esa sede.
+     * @endpoint get /api/v1/consultorios/{consultorioId}/excepciones/{excepcionId}/impacto-de-baja
+* @param requestParameters
+     */
+    simularImpactoBajaExcepcion(requestParameters: SimularImpactoBajaExcepcionRequestParams, extraHttpRequestParams?: any): Observable<ImpactoDisponibilidadResponse>;
 
 }

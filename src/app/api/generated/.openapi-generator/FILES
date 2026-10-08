@@ -188,6 +188,7 @@ model/cierre-de-sesion.ts
 model/clase.ts
 model/clasificar-adjunto-request.ts
 model/closed-sessions-response.ts
+model/cobertura-del-hito-response.ts
 model/cobertura-para-oferta-aplicable.ts
 model/cobertura-para-oferta-arancel.ts
 model/cobertura-para-oferta-no-aplicable.ts
@@ -268,6 +269,8 @@ model/evento-de-recepcion.ts
 model/evento-de-turno.ts
 model/excepcion-response.ts
 model/feriado-response.ts
+model/fila-importacion-arancel-request.ts
+model/fila-importacion-arancel-response.ts
 model/finalizar-plan-tratamiento-request.ts
 model/financiador-response.ts
 model/franja-resuelta-response.ts
@@ -280,6 +283,9 @@ model/historia-clinica-response.ts
 model/hito-response.ts
 model/horario-general-franja-request.ts
 model/horario-general-franja-response.ts
+model/impacto-disponibilidad-response.ts
+model/importacion-aranceles-response.ts
+model/importar-aranceles-request.ts
 model/imputacion-aplicada.ts
 model/imputacion-de-cobro.ts
 model/imputar-saldo-a-favor.ts
@@ -406,6 +412,7 @@ model/serie-de-turnos.ts
 model/servicio-response.ts
 model/sesion-version.ts
 model/sesion.ts
+model/simular-edicion-bloque-request.ts
 model/slot-disponible.ts
 model/subscription-response.ts
 model/subscription-transition-page-response.ts
@@ -420,6 +427,7 @@ model/transicion-de-recepcion.ts
 model/tratamiento-en-version.ts
 model/tratamiento-enmendado.ts
 model/tratamiento.ts
+model/turno-afectado-por-disponibilidad-response.ts
 model/turno-del-dia.ts
 model/turno-omitido.ts
 model/turno.ts
