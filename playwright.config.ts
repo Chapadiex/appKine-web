@@ -68,6 +68,9 @@ export default defineConfig({
       // Cada paso espera una vuelta real al backend, a veces dos. Los 5 s por defecto alcanzan en
       // una maquina tranquila y no con el backend compilando o atendiendo otra corrida.
       expect: { timeout: 10_000 },
+      // Un test de recepcion o de ciclo encadena una docena de vueltas al backend: 30 s alcanzan
+      // en una maquina tranquila y no cuando el backend o el dev server compiten por CPU.
+      timeout: 90_000,
       use: { ...devices['Desktop Chrome'] },
     },
 
