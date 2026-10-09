@@ -1,0 +1,61 @@
+<h1>Historia clinica</h1>
+
+@if (paciente()) {
+  <p class="descripcion">{{ paciente() }}</p>
+}
+
+<p><a class="enlace" routerLink="/agenda">Volver a la agenda</a></p>
+
+@if (error(); as problema) {
+  <section class="tarjeta" role="alert">
+    <h2>No se pudo completar</h2>
+    <p class="estado estado--error">{{ problema.mensaje }}</p>
+    @if (problema.causa === 'red' || problema.causa === 'otro') {
+      <button type="button" (click)="abrir()">Reintentar</button>
+    }
+  </section>
+}
+
+@if (vacio()) {
+  <p class="estado">Todavia no hay eventos en la historia clinica.</p>
+}
+
+@if (eventos().length > 0) {
+  <ol class="timeline" aria-label="Eventos de la historia clinica">
+    @for (evento of eventos(); track $index) {
+      <li class="tarjeta">
+        <h2>{{ evento.titulo }}</h2>
+        <p class="ayuda">{{ evento.ocurrioEn }} · {{ evento.tipo }}</p>
+        @if (adjuntosDe(evento).length > 0) {
+          <ul aria-label="Adjuntos">
+            @for (adjunto of adjuntosDe(evento); track adjunto.id) {
+              <li>
+                {{ adjunto.titulo || adjunto.nombreArchivo }}
+                @if (sePuedeVer(adjunto)) {
+                  <button type="button" (click)="abrirAdjunto(adjunto, false)">Ver</button>
+                }
+                <button type="button" (click)="abrirAdjunto(adjunto, true)">Descargar</button>
+              </li>
+            }
+          </ul>
+        }
+      </li>
+    }
+  </ol>
+}
+
+@if (preview(); as vista) {
+  <section class="tarjeta" aria-label="Vista previa del adjunto">
+    <h2>{{ vista.titulo }}</h2>
+    <img [src]="vista.url" [alt]="vista.titulo" />
+    <button type="button" (click)="cerrarPreview()">Cerrar</button>
+  </section>
+}
+
+@if (cargando()) {
+  <p class="estado estado--cargando">Cargando…</p>
+}
+
+@if (hayMas() && !cargando()) {
+  <button type="button" (click)="verMas()">Ver mas</button>
+}

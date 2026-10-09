@@ -45,4 +45,36 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/atencion/atencion-page').then((m) => m.AtencionPage),
     title: 'AKINE - Atencion clinica',
   },
+  {
+    path: 'historia/:personaId',
+    canActivate: [contextGuard],
+    loadComponent: () => import('./timeline/timeline-page').then((m) => m.TimelinePage),
+    title: 'AKINE - Historia clinica',
+  },
+  {
+    path: 'planes/:casoId',
+    canActivate: [contextGuard],
+    loadComponent: () => import('./plan/plan-page').then((m) => m.PlanPage),
+    title: 'AKINE - Plan de tratamiento',
+  },
+  {
+    path: 'casos/hc/:historiaClinicaId',
+    canActivate: [contextGuard],
+    loadComponent: () =>
+      import('./casos/pages/listado/casos-listado-page').then((m) => m.CasosListadoPage),
+    title: 'AKINE - Casos clinicos',
+  },
+  {
+    path: 'casos/hc/:historiaClinicaId/nuevo',
+    canActivate: [contextGuard],
+    loadComponent: () => import('./casos/pages/alta/caso-alta-page').then((m) => m.CasoAltaPage),
+    title: 'AKINE - Abrir caso clinico',
+  },
+  {
+    path: 'casos/detalle/:casoId',
+    canActivate: [contextGuard],
+    loadComponent: () =>
+      import('./casos/pages/detalle/caso-detalle-page').then((m) => m.CasoDetallePage),
+    title: 'AKINE - Caso clinico',
+  },
 ];
