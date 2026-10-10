@@ -71,6 +71,7 @@
         <tr>
           <th scope="col">Devengada</th>
           <th scope="col">Prestacion</th>
+          <th scope="col">Concepto</th>
           <th scope="col">Precio al devengar</th>
           <th scope="col">Importe</th>
           <th scope="col">Saldo</th>
@@ -83,6 +84,21 @@
           <tr [class.fila--revocada]="!sePuedeAnular(obligacion)">
             <td>{{ fechaEnPalabras(obligacion.devengadaEn) }}</td>
             <td>{{ obligacion.snapshotNombre }}</td>
+            <td>
+              {{ conceptoEnPalabras(obligacion.concepto) }}
+              @if (obligacion.convenio?.convenioNombre; as convenio) {
+                <div class="ayuda">Convenio {{ convenio }}</div>
+              }
+              <!--
+                DP-11: es una alerta para revisar, no un rechazo. La deuda existe y se cobra igual;
+                lo que hay que mirar es por que se facturo una practica que la oferta no declara.
+              -->
+              @if (obligacion.alertaPracticaNoHabilitada) {
+                <div class="ayuda">
+                  <b>Revisar:</b> la practica facturada no esta habilitada en la oferta.
+                </div>
+              }
+            </td>
 
             <!--
               El precio congelado al momento de devengar, y el encabezado lo dice: editar la oferta
@@ -116,7 +132,7 @@
 
           @if (esObjetivo(obligacion)) {
             <tr class="fila-panel">
-              <td colspan="7">
+              <td colspan="8">
                 <!--
                   `motivoObligatorio` se deja en su default (`true`). Aca el motivo no se puede
                   omitir: una deuda que se borra sin explicacion es exactamente lo que una
@@ -171,6 +187,22 @@
       </tbody>
     </table>
   </div>
+
+  <!--
+    El listado por persona trae solo lo que debe el PACIENTE (por diseno): la parte del financiador
+    no esta aca y la pantalla no la reconstruye. Se avisa solo cuando hay coseguros, que es cuando
+    alguien puede preguntarse donde quedo el resto de la prestacion.
+  -->
+  @if (hayCoseguros()) {
+    <p class="ayuda">
+      En las prestaciones con cobertura aca se ve solo el <b>coseguro</b>, que es lo que paga la
+      persona. La parte de la obra social no es una deuda del paciente: se gestiona en las
+      presentaciones a financiadores.
+      <a *akinePermiso="PERMISO_COBRO_REGISTER" class="enlace" routerLink="/presentaciones"
+        >Ir a presentaciones</a
+      >
+    </p>
+  }
 
   <p class="ayuda">
     <b>No se muestra un total.</b> El backend no lo devuelve y sumarlo en la pantalla produciria
