@@ -86,7 +86,13 @@ export default defineConfig({
       // Un test de recepcion o de ciclo encadena una docena de vueltas al backend: 30 s alcanzan
       // en una maquina tranquila y no cuando el backend o el dev server compiten por CPU.
       timeout: 90_000,
-      use: { ...devices['Desktop Chrome'] },
+      /*
+       * El navegador en la zona de la sede sembrada (la de por defecto, `V2`). La pantalla toma
+       * "hoy" del reloj del navegador y los specs calculan las fechas con `fechaLocal(timezone)`
+       * de la sede: con el runner en UTC, entre las 21:00 y las 24:00 de Argentina los dos "hoy"
+       * difieren en un dia y fallaban el recorte de 62 dias y la recepcion del dia (09/10/2026).
+       */
+      use: { ...devices['Desktop Chrome'], timezoneId: 'America/Argentina/Cordoba' },
     },
 
     /*

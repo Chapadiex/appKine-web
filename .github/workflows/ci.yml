@@ -37,6 +37,13 @@ jobs:
       - name: Instalar dependencias
         run: npm ci
 
+      # Vulnerabilidades conocidas de las dependencias que VIAJAN al navegador (AKINE G-6).
+      # `--omit=dev` deja afuera el tooling (CLI, generador de cliente, Vitest, Playwright), que no
+      # llega al bundle; `--audit-level=high` falla sólo por altas y críticas para no frenar todo
+      # por ruido. Las de desarrollo las propone Dependabot y se ven con `npm audit` a secas.
+      - name: Auditar dependencias de produccion
+        run: npm audit --omit=dev --audit-level=high
+
       - name: Verificar formato
         run: npm run format:check
 
@@ -73,6 +80,75 @@ jobs:
           path: dist/
           if-no-files-found: error
           retention-days: 14
+
+  # Análisis de SonarQube (AKINE G-6). Listo y apagado hasta que existan la instancia y el token.
+  #
+  # Para activarlo alcanza con cargar dos secretos en Settings > Secrets and variables > Actions:
+  #   SONAR_TOKEN     token de análisis del proyecto (SonarQube: My Account > Security)
+  #   SONAR_HOST_URL  URL de la instancia, p. ej. https://sonarcloud.io o https://sonar.ejemplo.test
+  # Sin los dos, el job termina en verde con un aviso y no corre el análisis. Los PR desde forks
+  # no reciben secretos y también se saltean. El backend usa los mismos dos nombres.
+  #
+  # No vuelve a correr los tests: reusa el lcov.info que publica `build` en `coverage-report`.
+  # El cliente generado queda fuera del análisis y de la cobertura, igual que en `angular.json`.
+  sonar:
+    name: Analisis SonarQube
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    env:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+
+    steps:
+      - name: Verificar si SonarQube esta configurado
+        id: config
+        run: |
+          if [ -n "$SONAR_TOKEN" ] && [ -n "$SONAR_HOST_URL" ]; then
+            echo "activo=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "activo=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::SonarQube sin configurar (faltan SONAR_TOKEN o SONAR_HOST_URL): se saltea el analisis."
+          fi
+
+      - name: Checkout
+        if: steps.config.outputs.activo == 'true'
+        uses: actions/checkout@v4
+        with:
+          # SonarQube necesita el historial completo para atribuir blame y detectar codigo nuevo.
+          fetch-depth: 0
+
+      - name: Bajar el reporte de cobertura del job build
+        if: steps.config.outputs.activo == 'true'
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage
+
+      # El builder de Angular deja el lcov en `coverage/` o en `coverage/<proyecto>/` según la
+      # versión: se busca en vez de fijar la ruta.
+      - name: Ubicar lcov.info
+        if: steps.config.outputs.activo == 'true'
+        id: lcov
+        run: |
+          lcov=$(find coverage -name lcov.info | head -1)
+          test -n "$lcov" || { echo "::error::No hay lcov.info en el reporte de cobertura."; exit 1; }
+          echo "ruta=$lcov" >> "$GITHUB_OUTPUT"
+
+      - name: Analisis SonarQube
+        if: steps.config.outputs.activo == 'true'
+        uses: SonarSource/sonarqube-scan-action@v6
+        with:
+          args: >-
+            -Dsonar.projectKey=akine-web
+            -Dsonar.projectName=akine-web
+            -Dsonar.sources=src
+            -Dsonar.tests=src
+            -Dsonar.test.inclusions=**/*.spec.ts
+            -Dsonar.exclusions=src/app/api/generated/**,**/*.spec.ts
+            -Dsonar.coverage.exclusions=src/app/api/generated/**,src/main.ts,src/environments/**
+            -Dsonar.javascript.lcov.reportPaths=${{ steps.lcov.outputs.ruta }}
 
   contrato:
     name: Cliente API alineado con el contrato

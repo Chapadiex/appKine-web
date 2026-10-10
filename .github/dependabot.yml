@@ -1,0 +1,79 @@
+# Dependabot del frontend (AKINE G-6).
+#
+# Criterio: una corrida por semana, los lunes a la mañana de Argentina, y las versiones menores y
+# de parche AGRUPADAS para no inundar de PRs. Angular va en un grupo propio porque sus paquetes
+# (`@angular/*`, `angular-eslint`) se declaran como peer de la MISMA versión exacta: actualizados
+# por separado, `npm ci` falla con ERESOLVE. Las mayores llegan de a una, porque cada una es una
+# migración (`ng update`) y no un bump.
+#
+# `main` está protegida: ningún PR de Dependabot entra sin el CI verde, incluidos `npm audit`, el
+# drift del cliente generado, el contraste y los E2E contra el backend real.
+#
+# Las actualizaciones de SEGURIDAD no respetan el agrupado ni el horario: Dependabot las abre
+# apenas sale el advisory, y cuentan aparte del límite de PRs abiertos.
+version: 2
+
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '06:00'
+      timezone: America/Argentina/Cordoba
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: deps
+      prefix-development: deps-dev
+      include: scope
+    groups:
+      angular:
+        patterns:
+          - '@angular/*'
+          - '@angular-devkit/*'
+          - 'angular-eslint'
+        update-types:
+          - minor
+          - patch
+      npm-menores:
+        update-types:
+          - minor
+          - patch
+    ignore:
+      # TypeScript la fija Angular (`~5.9`): la sube `ng update`, no Dependabot.
+      - dependency-name: typescript
+        update-types:
+          - version-update:semver-major
+          - version-update:semver-minor
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '06:00'
+      timezone: America/Argentina/Cordoba
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: ci
+    groups:
+      actions:
+        patterns:
+          - '*'
+
+  # Imágenes base del Dockerfile: node (build) y nginx-unprivileged (runtime). Se ignoran las
+  # mayores de node: la versión la fija `NODE_VERSION` del CI y se mueven juntas.
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '06:00'
+      timezone: America/Argentina/Cordoba
+    open-pull-requests-limit: 2
+    commit-message:
+      prefix: docker
+    ignore:
+      - dependency-name: node
+        update-types:
+          - version-update:semver-major
