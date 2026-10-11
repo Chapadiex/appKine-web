@@ -24,10 +24,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Configurar Node ${{ env.NODE_VERSION }}
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
@@ -62,7 +62,7 @@ jobs:
 
       - name: Publicar reporte de cobertura
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: coverage-report
           path: coverage/
@@ -74,7 +74,7 @@ jobs:
       #
       # Requiere el contrato del backend. Ver el job `contrato` mas abajo.
       - name: Publicar build
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: akine-web-dist
           path: dist/
@@ -114,14 +114,14 @@ jobs:
 
       - name: Checkout
         if: steps.config.outputs.activo == 'true'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           # SonarQube necesita el historial completo para atribuir blame y detectar codigo nuevo.
           fetch-depth: 0
 
       - name: Bajar el reporte de cobertura del job build
         if: steps.config.outputs.activo == 'true'
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: coverage-report
           path: coverage
@@ -138,7 +138,7 @@ jobs:
 
       - name: Analisis SonarQube
         if: steps.config.outputs.activo == 'true'
-        uses: SonarSource/sonarqube-scan-action@v6
+        uses: SonarSource/sonarqube-scan-action@v8
         with:
           args: >-
             -Dsonar.projectKey=akine-web
@@ -157,7 +157,7 @@ jobs:
 
     steps:
       - name: Checkout frontend
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           path: appKine-web
 
@@ -165,7 +165,7 @@ jobs:
       # MISMA rama cuando existe, para no comparar contra una version distinta de la que
       # este PR asume.
       - name: Checkout backend (contrato canonico)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         continue-on-error: true
         id: checkout-backend
         with:
@@ -175,14 +175,14 @@ jobs:
 
       - name: Checkout backend (fallback a main)
         if: steps.checkout-backend.outcome == 'failure'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: Chapadiex/appKine-api
           ref: main
           path: appKine-api
 
       - name: Configurar Node ${{ env.NODE_VERSION }}
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
@@ -194,7 +194,7 @@ jobs:
 
       # openapi-generator corre sobre JVM.
       - name: Configurar JDK 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: '21'
@@ -231,10 +231,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Configurar Node ${{ env.NODE_VERSION }}
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
@@ -252,7 +252,7 @@ jobs:
 
       - name: Publicar reporte
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: contraste-report
           path: playwright-report/
@@ -272,7 +272,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Construir imagen
         run: docker build --tag akine-web:${{ github.sha }} .
@@ -326,7 +326,7 @@ jobs:
         run: docker logs akine-web || true
 
       - name: Publicar SBOM
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: akine-web-sbom
           path: sbom/akine-web.cdx.json
@@ -359,12 +359,12 @@ jobs:
 
     steps:
       - name: Checkout frontend
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           path: appKine-web
 
       - name: Checkout backend (misma rama)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         continue-on-error: true
         id: checkout-backend
         with:
@@ -374,7 +374,7 @@ jobs:
 
       - name: Checkout backend (fallback a main)
         if: steps.checkout-backend.outcome == 'failure'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: Chapadiex/appKine-api
           ref: main
@@ -391,10 +391,10 @@ jobs:
         run: docker compose -p akine -f appKine-api/compose.yaml up -d --wait
 
       - name: Preparar buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Construir la imagen del backend
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: appKine-api
           tags: akine-api:e2e
@@ -415,7 +415,7 @@ jobs:
             akine-api:e2e
 
       - name: Configurar Node ${{ env.NODE_VERSION }}
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
@@ -468,7 +468,7 @@ jobs:
 
       - name: Publicar reporte, trazas y capturas
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: e2e-report
           path: |
