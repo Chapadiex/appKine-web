@@ -20,7 +20,8 @@ import {
   explicarSinArancel,
   importeEnPalabras,
 } from '../../models/etiquetas-de-contracting';
-import { enPalabras, hoyLocal } from '../../models/vigencia-de-contracting';
+import { enPalabras } from '../../models/vigencia-de-contracting';
+import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 
 /**
  * Consulta del arancel efectivo de una practica para una fecha (M16, RF-M16-006 y RF-M16-010).
@@ -73,6 +74,7 @@ import { enPalabras, hoyLocal } from '../../models/vigencia-de-contracting';
 })
 export class ArancelEfectivoPage {
   private readonly api = inject(ConveniosApi);
+  private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly catalogo = inject(ContractingApi);
   private readonly catalogoClinico = inject(CatalogoClinicoService);
   private readonly tenantContext = inject(TenantContextStore);
@@ -159,7 +161,7 @@ export class ArancelEfectivoPage {
     financiadorId: ['', [Validators.required]],
     planId: ['', [Validators.required]],
     practicaId: ['', [Validators.required]],
-    fecha: [hoyLocal(), [Validators.required]],
+    fecha: [this.diaDeLaSede.hoy(), [Validators.required]],
     // Vacio = sin oferta: resuelve el arancel general, que es lo que existia antes de B-3.
     ofertaId: [''],
   });
@@ -167,6 +169,13 @@ export class ArancelEfectivoPage {
   protected readonly intentos = signal(0);
 
   constructor() {
+    // Fechas por defecto tomadas antes de conocer la zona de la sede: se corrigen al llegar.
+    const fecha = this.formulario.controls.fecha;
+    this.diaDeLaSede.alinear(
+      () => fecha.value,
+      (hoy) => fecha.setValue(hoy),
+    );
+
     effect(() => {
       this.tenantContext.contextEpoch();
       untracked(() => {
@@ -327,7 +336,7 @@ export class ArancelEfectivoPage {
       financiadorId: '',
       planId: '',
       practicaId: '',
-      fecha: hoyLocal(),
+      fecha: this.diaDeLaSede.hoy(),
       ofertaId: '',
     });
   }

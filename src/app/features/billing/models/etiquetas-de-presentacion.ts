@@ -117,13 +117,6 @@ export function esDebitable(item: PresentacionItem): boolean {
   return item.estado === PresentacionItemEstadoEnum.INCLUIDO;
 }
 
-/** Hoy en formato `AAAA-MM-DD`, en hora local: es lo que un `<input type="date">` espera. */
-export function hoyIso(ahora: Date = new Date()): string {
-  const mes = String(ahora.getMonth() + 1).padStart(2, '0');
-  const dia = String(ahora.getDate()).padStart(2, '0');
-  return `${ahora.getFullYear()}-${mes}-${dia}`;
-}
-
 /** `AAAA-MM-DD` → `DD/MM/AAAA`, sin pasar por `Date` para no correr el dia por zona horaria. */
 export function fechaIsoEnPalabras(fecha: string | undefined): string {
   if (fecha === undefined || fecha === '') {

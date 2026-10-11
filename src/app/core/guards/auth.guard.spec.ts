@@ -12,7 +12,9 @@ import { Observable, isObservable } from 'rxjs';
 
 import { authGuard } from './auth.guard';
 import { contextGuard } from './context.guard';
+import { DiaDeLaSede } from '../services/dia-de-la-sede';
 import { SessionService } from '../services/session.service';
+import { fijarReloj, soltarReloj } from '../testing/reloj';
 import { provideApi } from '../../api/generated/provide-api';
 
 /**
@@ -86,10 +88,49 @@ describe('guards de sesion', () => {
       expect((resultado as UrlTree).toString()).toContain('/auth/ingresar');
     });
 
-    it('con contexto activo deja pasar', () => {
+    it('con contexto activo deja pasar sin esperar la zona, y corrige el default cuando llega', () => {
+      // 00:25 UTC del 10/10 con el navegador en UTC: en Cordoba siguen siendo las 21:25 del 09/10.
+      fijarReloj('2026-10-10T00:25:00Z', { navegadorEnUtc: true });
+      try {
+        autenticar('context');
+        const dia = TestBed.inject(DiaDeLaSede);
+
+        // No bloquea: deja pasar en el acto y, mientras tanto, "hoy" es el del navegador.
+        expect(correr(contextGuard, '/organizacion')).toBe(true);
+        expect(dia.hoy()).toBe('2026-10-10');
+        let fecha = dia.hoy();
+        TestBed.runInInjectionContext(() =>
+          dia.alinear(
+            () => fecha,
+            (hoy) => (fecha = hoy),
+          ),
+        );
+
+        httpMock
+          .expectOne((req) => req.url === '/api/v1/organizations/1/consultorios')
+          .flush({ content: [{ id: 10, timezone: 'America/Argentina/Cordoba' }] });
+
+        expect(dia.hoy()).toBe('2026-10-09');
+        expect(fecha).toBe('2026-10-09');
+      } finally {
+        soltarReloj();
+      }
+    });
+
+    it('sin la sede en el listado cae a la zona de la organizacion, y un error no rompe nada', () => {
       autenticar('context');
 
       expect(correr(contextGuard, '/organizacion')).toBe(true);
+      // Una segunda navegacion con la carga en vuelo no la repite.
+      expect(correr(contextGuard, '/organizacion')).toBe(true);
+      httpMock
+        .expectOne((req) => req.url === '/api/v1/organizations/1/consultorios')
+        .flush({ content: [] });
+      httpMock
+        .expectOne('/api/v1/organizations/1')
+        .flush(null, { status: 500, statusText: 'Server Error' });
+
+      expect(TestBed.inject(DiaDeLaSede).zona()).toBe('');
     });
   });
 
@@ -124,6 +165,12 @@ describe('guards de sesion', () => {
 
       httpMock.expectOne('/api/v1/me/contexts').flush([]);
       expect(resultados).toEqual([true]);
+
+      // Recien con el contexto resuelto dispara la zona de la sede, y no la espera para decidir.
+      httpMock
+        .expectOne((req) => req.url === '/api/v1/organizations/1/consultorios')
+        .flush({ content: [{ id: 10, timezone: 'America/Argentina/Cordoba' }] });
+      expect(TestBed.inject(DiaDeLaSede).zona()).toBe('America/Argentina/Cordoba');
     });
 
     it('sin cookie, terminada la restauracion, manda al login', () => {

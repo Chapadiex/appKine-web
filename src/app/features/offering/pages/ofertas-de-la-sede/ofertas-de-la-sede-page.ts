@@ -37,10 +37,10 @@ import {
 import {
   SituacionDeVigencia,
   enPalabras,
-  hoyLocal,
   situacionDeVigencia,
 } from '../../models/situacion-de-vigencia';
 import { textoRequerido } from '../../../../shared/validators/texto-requerido';
+import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 
 /** Operacion abierta sobre una fila. Solo una a la vez. */
 type TipoAccion = 'editar' | 'baja';
@@ -112,6 +112,7 @@ type Heredable = '' | 'true' | 'false';
 })
 export class OfertasDeLaSedePage {
   private readonly api = inject(OfferingApi);
+  private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly tenantContext = inject(TenantContextStore);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly formBuilder = inject(FormBuilder);
@@ -132,7 +133,10 @@ export class OfertasDeLaSedePage {
    * <p>Solo se usa para <b>redactar</b> el motivo de una fila que no esta vigente. La decision de
    * si esta vigente o no la toma el backend, en la zona de la sede.
    */
-  private readonly hoy = hoyLocal();
+  /** Lee el signal de la zona: lo que dependa de esto se actualiza cuando la zona llega. */
+  private get hoy(): string {
+    return this.diaDeLaSede.hoy();
+  }
 
   /**
    * Estado del listado. `GET /consultorios/{cid}/ofertas` <b>no pagina</b>: el contrato devuelve

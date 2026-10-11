@@ -28,6 +28,8 @@ export enum ProblemType {
 
     HTTPS___AKINE_APP_PROBLEMS_INTERNAL_ERROR = 'https://akine.app/problems/internal-error',
 
+    HTTPS___AKINE_APP_PROBLEMS_SERVICE_UNAVAILABLE = 'https://akine.app/problems/service-unavailable',
+
     HTTPS___AKINE_APP_PROBLEMS_INVALID_CREDENTIALS = 'https://akine.app/problems/invalid-credentials',
 
     HTTPS___AKINE_APP_PROBLEMS_INVALID_REFRESH = 'https://akine.app/problems/invalid-refresh',

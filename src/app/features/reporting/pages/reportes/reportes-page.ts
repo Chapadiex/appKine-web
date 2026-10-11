@@ -14,7 +14,6 @@ import {
   REPORTES,
   esCodigoDeReporte,
   fechaEnPalabras,
-  fechaIso,
   nombreDeArchivo,
   nombreDeReporte,
   permisoEnPalabras,
@@ -22,6 +21,7 @@ import {
   valorDeIndicador,
 } from '../../models/reportes';
 import { ReportesApi } from '../../services/reportes-api';
+import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 
 type EstadoReporte =
   | { readonly tipo: 'inicial' }
@@ -54,6 +54,7 @@ type EstadoReporte =
 })
 export class ReportesPage {
   private readonly api = inject(ReportesApi);
+  private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly tenantContext = inject(TenantContextStore);
   private readonly permisos = inject(PermissionsStore);
   private readonly fb = inject(NonNullableFormBuilder);
@@ -66,8 +67,8 @@ export class ReportesPage {
 
   protected readonly filtro = this.fb.group({
     reporte: ['OPERATIVO'],
-    desde: [primerDiaDelMes()],
-    hasta: [fechaIso(new Date())],
+    desde: [primerDiaDelMes(this.diaDeLaSede.hoy())],
+    hasta: [this.diaDeLaSede.hoy()],
   });
 
   protected readonly catalogo = signal<readonly ReporteDisponible[]>([]);
@@ -114,6 +115,17 @@ export class ReportesPage {
   );
 
   constructor() {
+    // Fechas por defecto tomadas antes de conocer la zona de la sede: se corrigen al llegar.
+    const { desde, hasta } = this.filtro.controls;
+    this.diaDeLaSede.alinear(
+      () => desde.value,
+      (hoy) => desde.setValue(primerDiaDelMes(hoy)),
+    );
+    this.diaDeLaSede.alinear(
+      () => hasta.value,
+      (hoy) => hasta.setValue(hoy),
+    );
+
     effect(() => {
       this.tenantContext.contextEpoch();
       untracked(() => {
@@ -202,9 +214,9 @@ export class ReportesPage {
   }
 }
 
-function primerDiaDelMes(): string {
-  const hoy = new Date();
-  return fechaIso(new Date(hoy.getFullYear(), hoy.getMonth(), 1));
+/** El primero del mes de `hoy` (`YYYY-MM-DD`), que ya viene en la zona de la sede. */
+function primerDiaDelMes(hoy: string): string {
+  return `${hoy.slice(0, 8)}01`;
 }
 
 function descargar(contenido: string, nombre: string): void {

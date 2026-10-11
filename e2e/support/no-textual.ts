@@ -648,6 +648,9 @@ export async function instalarApiDelRecorrido(
       });
     }
     if (camino === '/api/v1/me/contexts') return json(CONTEXTOS);
+    // La zona de la sede: `contextGuard` la pide (sin esperarla) al abrir cualquier pantalla del tenant.
+    if (camino === `/api/v1/organizations/${ORGANIZATION_ID}/consultorios`)
+      return json({ content: [{ id: CONSULTORIO_ID, timezone: 'America/Argentina/Cordoba' }] });
     if (camino === '/api/v1/me/permissions') return json({ permissions: PERMISOS });
 
     const base = `/api/v1/consultorios/${CONSULTORIO_ID}`;

@@ -38,10 +38,10 @@ import {
 import { importeEnPalabras, importesCuadran } from '../../models/etiquetas-de-contracting';
 import {
   SituacionDeVigencia,
-  hoyLocal,
   situacionDeVigencia,
   ventanaEnPalabras,
 } from '../../models/vigencia-de-contracting';
+import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 
 /** Operacion abierta sobre una fila. Solo una a la vez. */
 type TipoAccion = 'editar' | 'baja';
@@ -101,6 +101,7 @@ type TipoAccion = 'editar' | 'baja';
 })
 export class ArancelesDelConvenioPage {
   private readonly api = inject(ConveniosApi);
+  private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly catalogoClinico = inject(CatalogoClinicoService);
   private readonly ruta = inject(ActivatedRoute);
   private readonly tenantContext = inject(TenantContextStore);
@@ -116,7 +117,7 @@ export class ArancelesDelConvenioPage {
   protected readonly convenioId = Number(this.ruta.snapshot.paramMap.get('convenioId'));
 
   /** Dia contra el que el backend calcula `vigente`. No filtra. */
-  protected readonly fecha = signal(hoyLocal());
+  protected readonly fecha = signal(this.diaDeLaSede.hoy());
 
   protected readonly estado = signal<EstadoDeListado<readonly ArancelResponse[]>>({
     tipo: 'cargando',
@@ -232,6 +233,12 @@ export class ArancelesDelConvenioPage {
   });
 
   constructor() {
+    // Fechas por defecto tomadas antes de conocer la zona de la sede: se corrigen al llegar.
+    this.diaDeLaSede.alinear(this.fecha, (hoy) => {
+      this.fecha.set(hoy);
+      this.cargar();
+    });
+
     effect(() => {
       this.tenantContext.contextEpoch();
       untracked(() => {
@@ -624,7 +631,7 @@ export class ArancelesDelConvenioPage {
 
   /** Fecha inicial sugerida para el alta: el inicio del convenio si todavia no arranco. */
   private arranqueSugerido(): string {
-    const hoy = hoyLocal();
+    const hoy = this.diaDeLaSede.hoy();
     const desde = this.convenio()?.vigenciaDesde ?? '';
     return desde !== '' && desde > hoy ? desde : hoy;
   }
@@ -731,7 +738,7 @@ export class ArancelesDelConvenioPage {
     this.cerrarPanel();
     this.exito.set(null);
     this.filtroEstado.set('ACTIVO');
-    this.fecha.set(hoyLocal());
+    this.fecha.set(this.diaDeLaSede.hoy());
     this.convenio.set(null);
     this.practicas.set([]);
     this.ofertas.set([]);
