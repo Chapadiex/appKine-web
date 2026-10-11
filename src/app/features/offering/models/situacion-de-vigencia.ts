@@ -134,18 +134,6 @@ export function situacionDeVigencia(oferta: OfertaResponse, hoy: string): Situac
   };
 }
 
-/**
- * El dia de hoy en hora <b>local</b>, como `YYYY-MM-DD`.
- *
- * <p>Nunca en UTC: hoy es hoy aca. Solo se usa para <b>redactar</b> motivos, jamas para
- * decidir si una oferta esta vigente — esa decision es del backend, en la zona de la sede.
- */
-export function hoyLocal(referencia: Date = new Date()): string {
-  const mes = String(referencia.getMonth() + 1).padStart(2, '0');
-  const dia = String(referencia.getDate()).padStart(2, '0');
-  return `${referencia.getFullYear()}-${mes}-${dia}`;
-}
-
 const NOMBRES_DE_MES = [
   'enero',
   'febrero',

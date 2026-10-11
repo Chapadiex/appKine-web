@@ -68,9 +68,9 @@ import {
   diasEntre,
   esFechaDeCalendario,
   etiquetaDeFecha,
-  hoyLocal,
   sumarDias,
 } from '../../models/ventana-de-fechas';
+import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 
 /** Cuantos dias de ventana se proponen al entrar. Un trimestre es lo que se planifica. */
 const DIAS_PROPUESTOS = 90;
@@ -160,6 +160,7 @@ const MOTIVOS: readonly {
 })
 export class ExcepcionesPage {
   private readonly excepciones = inject(ExcepcionesDeDisponibilidadService);
+  private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly calendario = inject(CalendarioDeSedeService);
   private readonly colaboradores = inject(ColaboradoresService);
   private readonly tenantContext = inject(TenantContextStore);
@@ -385,7 +386,7 @@ export class ExcepcionesPage {
       this.errorVentana.set(null);
       return;
     }
-    const desde = hoyLocal();
+    const desde = this.diaDeLaSede.hoy();
     this.formularioVentana.reset({ desde, hasta: sumarDias(desde, DIAS_PROPUESTOS) });
     this.errorVentana.set(null);
   }
@@ -538,7 +539,7 @@ export class ExcepcionesPage {
     this.bajaAbierta.set(null);
     this.exito.set(null);
     this.avisoTurnos.set(null);
-    const desde = this.formularioVentana.getRawValue().desde || hoyLocal();
+    const desde = this.formularioVentana.getRawValue().desde || this.diaDeLaSede.hoy();
     this.formularioAlta.reset({
       tipo: String(CreateExcepcionRequestTipoEnum.CIERRE),
       motivo: String(CreateExcepcionRequestMotivoEnum.AUSENCIA),

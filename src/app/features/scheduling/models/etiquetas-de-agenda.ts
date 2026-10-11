@@ -152,39 +152,11 @@ export function sumarDias(fecha: string, dias: number): string {
 }
 
 /**
- * Hoy, en fecha local del NAVEGADOR. Es solo un valor provisorio.
- *
- * <p>El dia que vale es el de la sede ({@link hoyEnZona}), y la zona de la sede no se conoce hasta
- * la primera respuesta. Las pantallas arrancan con este valor y lo corrigen en cuanto la respuesta
- * trae el `timezone`: entre las 21:00 y las 24:00 de Cordoba un navegador en UTC ya esta en el dia
- * siguiente, y la recepcion abria un dia sin turnos (lo destapo el CI, que corre en UTC).
+ * `hoy` (dia del navegador, provisorio) y `hoyEnZona` viven en `core/services/dia-de-la-sede`,
+ * que es de donde los toma el resto de las pantallas. La agenda arranca con
+ * `DiaDeLaSede.hoy()` y, si una respuesta trae otra zona, corrige una vez al dia de esa zona.
  */
-export function hoy(ahora: Date = new Date()): string {
-  const local = new Date(ahora.getTime() - ahora.getTimezoneOffset() * 60_000);
-  return local.toISOString().slice(0, 10);
-}
-
-/**
- * Hoy, en la zona IANA de la sede. Es el dia operativo: el que atiende la recepcion y desde el que
- * el backend cuenta la agenda. Con una zona vacia o desconocida cae al dia del navegador, que es lo
- * mejor que se puede hacer sin dato.
- */
-export function hoyEnZona(timezone: string, ahora: Date = new Date()): string {
-  if (timezone === '') {
-    return hoy(ahora);
-  }
-  try {
-    // `en-CA` formatea `YYYY-MM-DD`, que es exactamente la fecha de calendario que viaja.
-    return new Intl.DateTimeFormat('en-CA', {
-      timeZone: timezone,
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-    }).format(ahora);
-  } catch {
-    return hoy(ahora);
-  }
-}
+export { hoyDelNavegador as hoy, hoyEnZona } from '../../../core/services/dia-de-la-sede';
 
 /**
  * La zona de la respuesta, o UTC si vino vacia o no la conoce el navegador.

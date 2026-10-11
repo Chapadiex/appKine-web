@@ -31,10 +31,10 @@ import {
   estadoDePresentacionEnPalabras,
   fechaIsoEnPalabras,
   hallazgoEnPalabras,
-  hoyIso,
 } from '../../models/etiquetas-de-presentacion';
 import { fechaEnPalabras, importeEnPalabras } from '../../models/etiquetas-de-obligacion';
 import { medioEnPalabras } from '../../models/etiquetas-de-cobro';
+import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 
 type EstadoCarga =
   | { readonly tipo: 'cargando' }
@@ -76,6 +76,7 @@ interface Lectura {
 })
 export class PresentacionDetallePage {
   private readonly api = inject(PresentacionesApi);
+  private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly tenantContext = inject(TenantContextStore);
   private readonly fb = inject(NonNullableFormBuilder);
 
@@ -108,13 +109,13 @@ export class PresentacionDetallePage {
 
   protected readonly factura = this.fb.group({
     numero: ['', Validators.required],
-    fecha: [hoyIso(), Validators.required],
+    fecha: [this.diaDeLaSede.hoy(), Validators.required],
   });
 
   protected readonly pago = this.fb.group({
     importe: [0, [Validators.required, Validators.min(0.01)]],
     medio: [RegistrarPagoDeFinanciadorMedioEnum.TRANSFERENCIA as string, Validators.required],
-    fechaPago: [hoyIso(), Validators.required],
+    fechaPago: [this.diaDeLaSede.hoy(), Validators.required],
     referencia: [''],
   });
 
@@ -294,7 +295,7 @@ export class PresentacionDetallePage {
         this.pago.reset({
           importe: 0,
           medio: RegistrarPagoDeFinanciadorMedioEnum.TRANSFERENCIA,
-          fechaPago: hoyIso(),
+          fechaPago: this.diaDeLaSede.hoy(),
           referencia: '',
         });
       },

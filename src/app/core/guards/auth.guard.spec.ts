@@ -8,9 +8,13 @@ import {
   provideRouter,
 } from '@angular/router';
 
+import { Observable } from 'rxjs';
+
 import { authGuard } from './auth.guard';
 import { contextGuard } from './context.guard';
+import { DiaDeLaSede } from '../services/dia-de-la-sede';
 import { SessionService } from '../services/session.service';
+import { fijarReloj, soltarReloj } from '../testing/reloj';
 import { provideApi } from '../../api/generated/provide-api';
 
 /**
@@ -84,10 +88,39 @@ describe('guards de sesion', () => {
       expect((resultado as UrlTree).toString()).toContain('/auth/ingresar');
     });
 
-    it('con contexto activo deja pasar', () => {
+    it('con contexto activo deja pasar cuando conoce la zona de la sede, y "hoy" sale de ella', () => {
       autenticar('context');
 
-      expect(correr(contextGuard, '/organizacion')).toBe(true);
+      const pasa = vi.fn();
+      (correr(contextGuard, '/organizacion') as unknown as Observable<boolean>).subscribe(pasa);
+      httpMock
+        .expectOne((req) => req.url === '/api/v1/organizations/1/consultorios')
+        .flush({ content: [{ id: 10, timezone: 'America/Argentina/Cordoba' }] });
+
+      expect(pasa).toHaveBeenCalledWith(true);
+      // 00:25 UTC del 10/10 con el navegador en UTC: en Cordoba siguen siendo las 21:25 del 09/10.
+      fijarReloj('2026-10-10T00:25:00Z', { navegadorEnUtc: true });
+      try {
+        expect(TestBed.inject(DiaDeLaSede).hoy()).toBe('2026-10-09');
+      } finally {
+        soltarReloj();
+      }
+    });
+
+    it('sin la sede en el listado cae a la zona de la organizacion, y un error no bloquea', () => {
+      autenticar('context');
+
+      const pasa = vi.fn();
+      (correr(contextGuard, '/organizacion') as unknown as Observable<boolean>).subscribe(pasa);
+      httpMock
+        .expectOne((req) => req.url === '/api/v1/organizations/1/consultorios')
+        .flush({ content: [] });
+      httpMock
+        .expectOne('/api/v1/organizations/1')
+        .flush(null, { status: 500, statusText: 'Server Error' });
+
+      expect(pasa).toHaveBeenCalledWith(true);
+      expect(TestBed.inject(DiaDeLaSede).zona()).toBe('');
     });
   });
 

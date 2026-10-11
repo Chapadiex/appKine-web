@@ -12,7 +12,7 @@ import { Recepcion, RecepcionEstadoEnum } from '../../../../api/generated/model/
 import { TurnoDelDia, TurnoDelDiaEstadoEnum } from '../../../../api/generated/model/turno-del-dia';
 import { SchedulingApi } from '../../services/scheduling-api';
 import { CausaAgenda, ErrorAgenda, traducirErrorRecepcion } from '../../models/agenda-errors';
-import { fechaEnPalabras, horaEnZona, hoy, hoyEnZona } from '../../models/etiquetas-de-agenda';
+import { fechaEnPalabras, horaEnZona, hoyEnZona } from '../../models/etiquetas-de-agenda';
 import { textoDeEstado } from '../../models/etiquetas-de-turno';
 import {
   recepcionAbierta,
@@ -20,6 +20,7 @@ import {
   textoDePrepago,
   textoDeRecepcion,
 } from '../../models/etiquetas-de-recepcion';
+import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 
 /** La ruta que monta esta pantalla. Se reescribe la fecha sobre ella sin navegar. */
 const RUTA = '/agenda/recepcion';
@@ -119,6 +120,7 @@ const CAUSAS_QUE_RELEEN: ReadonlySet<CausaAgenda> = new Set<CausaAgenda>([
 })
 export class RecepcionDelDiaPage {
   private readonly api = inject(SchedulingApi);
+  private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly tenantContext = inject(TenantContextStore);
   private readonly permisos = inject(PermissionsStore);
   private readonly location = inject(Location);
@@ -139,7 +141,7 @@ export class RecepcionDelDiaPage {
   protected readonly textoDeModalidad = textoDeModalidad;
 
   /** Dia que se muestra. Vive en un signal aparte del input: el selector lo mueve sin navegar. */
-  protected readonly dia = signal(hoy());
+  protected readonly dia = signal(this.diaDeLaSede.hoy());
 
   /**
    * `true` mientras {@link dia} es el provisorio del navegador y todavia no se lo comparo con el
@@ -181,7 +183,7 @@ export class RecepcionDelDiaPage {
       const deLaUrl = this.fecha();
       this.tenantContext.contextEpoch();
       untracked(() => {
-        this.dia.set(deLaUrl === '' ? hoy() : deLaUrl);
+        this.dia.set(deLaUrl === '' ? this.diaDeLaSede.hoy() : deLaUrl);
         this.diaPorDefecto = deLaUrl === '';
         this.reiniciar();
         this.cargar();

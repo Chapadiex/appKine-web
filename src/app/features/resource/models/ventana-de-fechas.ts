@@ -43,11 +43,6 @@ export function esFechaDeCalendario(valor: string): boolean {
   return EXPRESION_FECHA.test(valor);
 }
 
-/** El dia de hoy en hora local, como `YYYY-MM-DD`. Nunca en UTC: hoy es hoy aca. */
-export function hoyLocal(referencia: Date = new Date()): string {
-  return comoFechaDeCalendario(referencia);
-}
-
 /** Un `Date` escrito como `YYYY-MM-DD` con sus componentes <b>locales</b>. */
 function comoFechaDeCalendario(momento: Date): string {
   const mes = String(momento.getMonth() + 1).padStart(2, '0');

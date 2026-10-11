@@ -31,12 +31,12 @@ import {
 import { etiquetaDeTipo, importeEnPalabras } from '../../models/etiquetas-de-contracting';
 import {
   SituacionDeVigencia,
-  hoyLocal,
   situacionDeVigencia,
   ventanaEnPalabras,
 } from '../../models/vigencia-de-contracting';
 import { textoRequerido } from '../../../../shared/validators/texto-requerido';
 import { numeroDeclarado } from '../../../../shared/utils/numero-declarado';
+import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 
 /** Operacion abierta sobre una fila. Solo una a la vez. */
 type TipoAccion = 'editar' | 'baja';
@@ -98,6 +98,7 @@ type TipoAccion = 'editar' | 'baja';
 })
 export class PlanesDelFinanciadorPage {
   private readonly api = inject(ContractingApi);
+  private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly ruta = inject(ActivatedRoute);
   private readonly tenantContext = inject(TenantContextStore);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
@@ -118,7 +119,7 @@ export class PlanesDelFinanciadorPage {
    * podian elegir en marzo" es exactamente lo que hace falta para explicar una cobertura vieja, y
    * es la unica forma de hacerlo sin recalcular nada en el navegador.
    */
-  protected readonly fecha = signal(hoyLocal());
+  protected readonly fecha = signal(this.diaDeLaSede.hoy());
 
   protected readonly estado = signal<EstadoDeListado<readonly PlanCoberturaResponse[]>>({
     tipo: 'cargando',
@@ -261,7 +262,7 @@ export class PlanesDelFinanciadorPage {
       descripcion: '',
       // Arranca hoy y no vacio: el caso abrumadoramente mas frecuente es un plan que empieza a
       // ofrecerse ya. Dejarlo vacio obligaria a tipear la fecha de hoy en cada alta.
-      vigenciaDesde: hoyLocal(),
+      vigenciaDesde: this.diaDeLaSede.hoy(),
       vigenciaHasta: '',
       copago: '',
       moneda: '',
@@ -556,7 +557,7 @@ export class PlanesDelFinanciadorPage {
     this.cerrarPanel();
     this.exito.set(null);
     this.filtroEstado.set('ACTIVO');
-    this.fecha.set(hoyLocal());
+    this.fecha.set(this.diaDeLaSede.hoy());
     this.financiador.set(null);
   }
 

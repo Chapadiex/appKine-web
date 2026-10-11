@@ -15,7 +15,6 @@ import { recortarVentana, traducirErrorAgenda } from '../../models/agenda-errors
 import {
   diaSinSlots,
   fechaEnPalabras,
-  hoy,
   hoyEnZona,
   rangoEnZona,
   slotCompleto,
@@ -23,6 +22,7 @@ import {
   textoDeCupo,
   textoSinSlots,
 } from '../../models/etiquetas-de-agenda';
+import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 
 /** Ventana por defecto: una semana. `hasta` es exclusivo. */
 const DIAS_POR_DEFECTO = 7;
@@ -75,6 +75,7 @@ const DIAS_POR_DEFECTO = 7;
 })
 export class BuscadorDeAgendaPage {
   private readonly api = inject(SchedulingApi);
+  private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly tenantContext = inject(TenantContextStore);
   private readonly router = inject(Router);
 
@@ -100,8 +101,8 @@ export class BuscadorDeAgendaPage {
 
   protected readonly ofertaId = signal<number | null>(null);
   protected readonly profesionalId = signal<number | null>(null);
-  protected readonly desde = signal(hoy());
-  protected readonly hasta = signal(sumarDias(hoy(), DIAS_POR_DEFECTO));
+  protected readonly desde = signal(this.diaDeLaSede.hoy());
+  protected readonly hasta = signal(sumarDias(this.diaDeLaSede.hoy(), DIAS_POR_DEFECTO));
 
   /**
    * `true` mientras el borde sigue siendo el default calculado con el dia del NAVEGADOR.

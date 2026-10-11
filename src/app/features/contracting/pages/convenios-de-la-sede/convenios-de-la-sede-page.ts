@@ -37,12 +37,12 @@ import {
 } from '../../models/etiquetas-de-contracting';
 import {
   SituacionDeVigencia,
-  hoyLocal,
   situacionDeVigencia,
   ventanaEnPalabras,
 } from '../../models/vigencia-de-contracting';
 import { textoRequerido } from '../../../../shared/validators/texto-requerido';
 import { numeroDeclarado } from '../../../../shared/utils/numero-declarado';
+import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 
 /** Operacion abierta sobre una fila. Solo una a la vez. */
 type TipoAccion = 'editar' | 'baja';
@@ -98,6 +98,7 @@ type TipoAccion = 'editar' | 'baja';
 })
 export class ConveniosDeLaSedePage {
   private readonly api = inject(ConveniosApi);
+  private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly catalogo = inject(ContractingApi);
   private readonly tenantContext = inject(TenantContextStore);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
@@ -111,7 +112,7 @@ export class ConveniosDeLaSedePage {
   protected readonly ventanaEnPalabras = ventanaEnPalabras;
 
   /** Dia contra el que el backend calcula `vigente`. No filtra: ver el javadoc de la fachada. */
-  protected readonly fecha = signal(hoyLocal());
+  protected readonly fecha = signal(this.diaDeLaSede.hoy());
 
   protected readonly estado = signal<EstadoDeListado<readonly ConvenioResponse[]>>({
     tipo: 'cargando',
@@ -305,7 +306,7 @@ export class ConveniosDeLaSedePage {
       planId: '',
       modalidad: '',
       moneda: '',
-      vigenciaDesde: hoyLocal(),
+      vigenciaDesde: this.diaDeLaSede.hoy(),
       vigenciaHasta: '',
       limiteSesionesMensual: '',
       documentacionRequerida: '',
@@ -619,7 +620,7 @@ export class ConveniosDeLaSedePage {
     this.cerrarPanel();
     this.exito.set(null);
     this.filtroEstado.set('ACTIVO');
-    this.fecha.set(hoyLocal());
+    this.fecha.set(this.diaDeLaSede.hoy());
     this.financiadores.set([]);
     this.planes.set([]);
   }

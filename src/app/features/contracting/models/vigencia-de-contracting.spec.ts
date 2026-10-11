@@ -1,9 +1,4 @@
-import {
-  enPalabras,
-  hoyLocal,
-  situacionDeVigencia,
-  ventanaEnPalabras,
-} from './vigencia-de-contracting';
+import { enPalabras, situacionDeVigencia, ventanaEnPalabras } from './vigencia-de-contracting';
 
 const HOY = '2026-09-03';
 
@@ -121,7 +116,7 @@ describe('ventanaEnPalabras', () => {
   });
 });
 
-describe('enPalabras y hoyLocal', () => {
+describe('enPalabras', () => {
   it('no pierde un dia por pasar la fecha por Date, que interpreta UTC', () => {
     // `new Date('2026-05-25')` es medianoche UTC: en Argentina es el 24 a las 21. Es el bug que
     // `features/resource` ya documento para los feriados.
@@ -133,13 +128,5 @@ describe('enPalabras y hoyLocal', () => {
     expect(enPalabras('manana')).toBe('manana');
     expect(enPalabras('2026-13-01')).toBe('2026-13-01');
     expect(enPalabras('2026-05-xx')).toBe('2026-05-xx');
-  });
-
-  it('hoy se calcula en hora local y no en UTC', () => {
-    // Con una hora que en UTC ya es del dia siguiente, `hoyLocal` tiene que seguir diciendo hoy:
-    // se usa como valor inicial del filtro de fecha, y arrancar con el dia equivocado haria que
-    // la grilla mostrara vigencias de manana sin que nadie lo pidiera.
-    expect(hoyLocal(new Date(2026, 8, 3, 23, 30))).toBe('2026-09-03');
-    expect(hoyLocal(new Date(2026, 0, 9))).toBe('2026-01-09');
   });
 });
