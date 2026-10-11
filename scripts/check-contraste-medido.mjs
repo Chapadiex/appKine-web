@@ -24,7 +24,8 @@
  * 2. Que `playwright.config.ts` declare un proyecto por tema, claro y oscuro, cada uno con su
  *    `colorScheme`: un contraste que pasa en claro puede fallar en oscuro.
  * 3. Que `package.json` exponga `a11y:contraste` corriendo **los dos** proyectos.
- * 4. Que el arnes de jsdom no tolere mas `incomplete` que el de `color-contrast`.
+ * 4. Que el arnes de jsdom no tolere mas `incomplete` que los de `color-contrast` y
+ *    `label-content-name-mismatch`, y que cada una se siga corriendo en el arnes de Chromium.
  *
  * Se encadena en `npm run test:ci`, detras del gate de cobertura: la suite de jsdom es la que se
  * beneficia de la excusa, asi que es la que tiene que pagar por sostenerla.
@@ -38,6 +39,9 @@ const raizRepo = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const SPEC_DE_CONTRASTE = 'e2e/contraste.spec.ts';
 const ARNES_JSDOM = 'src/app/core/testing/axe.ts';
 const PROYECTOS = ['contraste-claro', 'contraste-oscuro'];
+const ARNES_CHROMIUM = 'e2e/support/contraste.ts';
+/** Reglas cuyo `incomplete` jsdom puede tolerar porque el arnes de Chromium las corre. */
+const TOLERADAS_CON_COBERTURA = ['color-contrast', 'label-content-name-mismatch'];
 
 const fallas = [];
 
@@ -111,7 +115,19 @@ if (bloque === null) {
   );
 } else {
   const toleradas = [...bloque[1].matchAll(/^\s*\[\s*'([a-z0-9-]+)'/gm)].map((m) => m[1]);
-  const inesperadas = toleradas.filter((regla) => regla !== 'color-contrast');
+  const inesperadas = toleradas.filter((regla) => !TOLERADAS_CON_COBERTURA.includes(regla));
+
+  // Tolerar una regla en jsdom es remitirla a Chromium: si el arnes de Chromium deja de correrla,
+  // la remision apunta a un lugar que ya no la mide y la regla queda sin medir en ningun lado.
+  const arnesChromium = leer(ARNES_CHROMIUM) ?? '';
+  for (const regla of toleradas.filter((r) => TOLERADAS_CON_COBERTURA.includes(r))) {
+    if (!arnesChromium.includes(`values: ['${regla}']`)) {
+      fallas.push(
+        `El arnes de jsdom tolera el incomplete de \`${regla}\` remitiendo a ${ARNES_CHROMIUM}, y ` +
+          'ese arnes ya no corre la regla: quedaria sin medir en ningun lado.',
+      );
+    }
+  }
 
   if (inesperadas.length > 0) {
     fallas.push(
@@ -193,5 +209,6 @@ if (fallas.length > 0) {
 console.log(
   `[contraste:check] El contraste se mide en ${SPEC_DE_CONTRASTE}, en modo claro y oscuro ` +
     '(`npm run a11y:contraste`), junto con el contraste no textual, el foco y el teclado de ' +
-    `${SPEC_NO_TEXTUAL}. El arnes de jsdom solo tolera el incomplete de color-contrast.`,
+    `${SPEC_NO_TEXTUAL}. El arnes de jsdom solo tolera el incomplete de color-contrast y ` +
+    'de label-content-name-mismatch (WCAG 2.5.3), las dos medidas en Chromium.',
 );

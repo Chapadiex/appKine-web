@@ -64,9 +64,13 @@ export const TIMEOUT_AXE = 35_000;
  * <p><b>El censo esta medido, no estimado.</b> Se corrio la suite completa con el arnes
  * instrumentado para volcar todo `incomplete` que produjeran los 110 archivos de spec: 58
  * ocurrencias, <b>todas de la misma regla</b>. Ninguna otra de las cinco etiquetas exigidas
- * -`wcag2a`, `wcag2aa`, `wcag21a`, `wcag21aa`, `best-practice`- se queda sin veredicto bajo
+ * -`wcag2a`, `wcag2aa`, `wcag21a`, `wcag21aa`, `best-practice`- se quedaba sin veredicto bajo
  * jsdom. Si una version futura de axe agrega otra, esta lista la va a delatar en la primera
  * corrida.
+ *
+ * <p><b>Y la delato.</b> axe-core 4.14 activo `label-content-name-mismatch` bajo `wcag21a`, y
+ * bajo jsdom quedo sin veredicto en cuatro specs de pantalla a la vez. Se declaro aca con el
+ * mismo criterio que el contraste: no se apaga, se mide donde se puede medir.
  *
  * <p><b>Agregar una entrada es una decision, no un tramite.</b> `axe.spec.ts` afirma el
  * contenido exacto de este mapa: sumar una regla obliga a tocar ese test y a escribir ahi por
@@ -80,6 +84,16 @@ export const REGLAS_SIN_VEREDICTO_EN_JSDOM: ReadonlyMap<string, string> = new Ma
       'en Chromium, con los dos temas, en `e2e/contraste.spec.ts` (`npm run a11y:contraste`), ' +
       'que es un gate propio del pipeline. Ese es el unico lugar del repositorio donde el ' +
       'contraste tiene un veredicto real.',
+  ],
+  [
+    'label-content-name-mismatch',
+    'WCAG 2.5.3 (Etiqueta en el nombre): el nombre accesible de un control tiene que contener ' +
+      'su texto visible. axe-core la etiqueta `wcag21a` desde 4.14 y, para comparar el texto, ' +
+      'necesita saber que caracteres son visibles: lo resuelve dibujando en un `canvas`, que ' +
+      'jsdom no implementa, asi que aca termina SIEMPRE en `incomplete` ("Axe encountered an ' +
+      'error"). Se mide en Chromium, con los dos temas, en `e2e/contraste.spec.ts` ' +
+      '(`npm run a11y:contraste`): `auditarContraste` corre la regla sobre cada pantalla que ' +
+      'audita y falla tanto con una violacion como con un `incomplete`.',
   ],
 ]);
 

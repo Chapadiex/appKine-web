@@ -108,6 +108,10 @@ describe('PracticasDeLaOfertaPage', () => {
     botones(fixture, 'Agregar')[0].click();
     fixture.detectChanges();
     expect(botones(fixture, 'Ya esta')).toHaveLength(1);
+    // WCAG 2.5.3: el nombre accesible empieza por el texto visible, tambien en este estado.
+    expect(botones(fixture, 'Ya esta')[0].getAttribute('aria-label')).toBe(
+      'Ya esta Drenaje linfatico',
+    );
 
     radio(fixture, 2).click();
     fixture.detectChanges();

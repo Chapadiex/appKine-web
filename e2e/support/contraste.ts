@@ -4,7 +4,9 @@ import { join } from 'node:path';
 import { Page, Request, Route, expect } from '@playwright/test';
 
 /**
- * Arnes de la auditoria de CONTRASTE DE COLOR (WCAG 1.4.3 y 1.4.11, nivel AA).
+ * Arnes de la auditoria de CONTRASTE DE COLOR (WCAG 1.4.3 y 1.4.11, nivel AA), y de la ETIQUETA EN
+ * EL NOMBRE (WCAG 2.5.3, nivel A): la otra regla que jsdom no puede decidir. Ver
+ * {@link auditarEtiquetaEnElNombre}.
  *
  * <h2>Por que esto no podia vivir en los tests unitarios</h2>
  *
@@ -161,6 +163,59 @@ export async function auditarContraste(
         'aplanar, y axe midio todo sin problemas. La declaracion quedo vieja: borrala.',
     ).toBeGreaterThan(0);
   }
+
+  await auditarEtiquetaEnElNombre(page, donde);
+}
+
+/**
+ * La otra regla que jsdom no puede decidir: WCAG 2.5.3, <b>Etiqueta en el nombre</b> (nivel A).
+ *
+ * <p>Si un control muestra un texto, su nombre accesible tiene que contenerlo: quien maneja la
+ * pantalla por voz dice "clic en Guardar" porque eso es lo que ve, y si el `aria-label` dice otra
+ * cosa el comando no encuentra el boton. axe-core la activa bajo `wcag21a` desde 4.14, pero para
+ * saber que caracteres del texto son visibles dibuja en un `canvas`, y jsdom no lo implementa: en
+ * la suite unitaria termina siempre en `incomplete`. El arnes de jsdom la declara en
+ * `REGLAS_SIN_VEREDICTO_EN_JSDOM` remitiendo a este lugar, y esta funcion es lo que vuelve cierta
+ * esa remision.
+ *
+ * <p>Vive dentro de `auditarContraste` y no en un spec propio porque necesita exactamente lo mismo
+ * -Chromium real, pantallas pintadas en sus estados mas cargados, los dos temas- y porque asi
+ * ningun escenario de contraste puede olvidarse de medirla. Corre en una pasada aparte de
+ * `color-contrast` para no mezclar sus `passes` con el conteo de pares de color medidos.
+ *
+ * <p>Se exige cero violaciones <b>y</b> cero `incomplete`, el mismo criterio que con el contraste.
+ * No se exige que haya nodos aplicables: una pantalla sin controles con `aria-label` no tiene nada
+ * que comparar, y eso es un resultado legitimo, no una medicion vacia.
+ */
+async function auditarEtiquetaEnElNombre(page: Page, donde: string): Promise<void> {
+  const resultado = await page.evaluate(async () => {
+    const motor = (
+      window as unknown as { axe: { run: (ctx: unknown, op: unknown) => Promise<unknown> } }
+    ).axe;
+    return (await motor.run(document, {
+      runOnly: { type: 'rule', values: ['label-content-name-mismatch'] },
+      resultTypes: ['violations', 'incomplete'],
+    })) as {
+      violations: { nodes: { target: string[]; html: string }[] }[];
+      incomplete: { nodes: { target: string[]; html: string }[] }[];
+    };
+  });
+
+  const nodos = (resultados: typeof resultado.violations, rotulo: string): string[] =>
+    resultados.flatMap((regla) =>
+      regla.nodes.map((nodo) => `  [${rotulo}] ${nodo.target.join(' ')}\n      ${nodo.html}`),
+    );
+  const fallos = [
+    ...nodos(resultado.violations, 'VIOLACION'),
+    ...nodos(resultado.incomplete, 'SIN MEDIR'),
+  ];
+
+  expect(
+    fallos,
+    `WCAG 2.5.3 (etiqueta en el nombre) en ${donde}:\n${fallos.join('\n')}\n` +
+      'El nombre accesible de un control (`aria-label`, `aria-labelledby`) tiene que contener ' +
+      'su texto visible.',
+  ).toEqual([]);
 }
 
 function contarNodos(resultados: readonly ResultadoDeAxe[]): number {

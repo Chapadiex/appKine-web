@@ -111,7 +111,11 @@
                           type="button"
                           class="boton boton--secundario"
                           [disabled]="reintentando() !== null"
-                          [attr.aria-label]="'Reintentar la notificacion ' + fila.id"
+                          [attr.aria-label]="
+                            (reintentando() === fila.id ? 'Reintentando' : 'Reintentar') +
+                            ' la notificacion ' +
+                            fila.id
+                          "
                           (click)="reintentar(fila)"
                         >
                           {{ reintentando() === fila.id ? 'Reintentando…' : 'Reintentar' }}
