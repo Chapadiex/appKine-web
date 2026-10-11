@@ -1,4 +1,13 @@
-import { importeEnPalabras } from './etiquetas-de-obligacion';
+import { conceptoEnPalabras, importeEnPalabras } from './etiquetas-de-obligacion';
+
+describe('conceptoEnPalabras', () => {
+  it('traduce los tres conceptos de F-4 y no inventa uno cuando no vino', () => {
+    expect(conceptoEnPalabras('PARTICULAR')).toBe('Particular');
+    expect(conceptoEnPalabras('COSEGURO')).toBe('Coseguro');
+    expect(conceptoEnPalabras('FINANCIADOR')).toBe('A cargo de la obra social');
+    expect(conceptoEnPalabras(undefined)).toBe('');
+  });
+});
 
 /**
  * Formateo de importes de la cuenta corriente (M18, AKINE-07.01).

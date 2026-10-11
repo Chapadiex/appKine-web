@@ -21,6 +21,33 @@ import { defineConfig, devices } from '@playwright/test';
  */
 const WEB = process.env['AKINE_E2E_WEB'] ?? 'http://localhost:4200';
 
+/**
+ * Zona horaria del NAVEGADOR en los proyectos que corren contra el backend real.
+ *
+ * <p>Nunca la de la sede, y elegida para que el dia del navegador sea OTRO que el de la sede en el
+ * momento en que arranca la corrida. "Hoy" en AKINE es el dia de la sede (su `timezone`), no el del
+ * navegador; un `new Date()` que se cuela en una pantalla o en un helper da el dia equivocado solo
+ * cuando las dos fechas difieren. Con el navegador en la zona del runner eso pasaba entre las 21:00 y
+ * las 24:00 de Cordoba, cuando el CI —que corre en UTC— ya esta en el dia siguiente: el job E2E del
+ * PR #42 se cayo asi, y de dia el mismo defecto pasaba en verde.
+ *
+ * <p>Ninguna zona fija difiere de la sede las 24 horas, asi que se elige al cargar la config: Kiritimati
+ * (UTC+14, 17 horas por delante de Cordoba) ya esta en manana desde las 07:00 de Cordoba, y Pago Pago
+ * (UTC-11, 8 horas por detras) sigue en ayer hasta las 08:00. Entre las dos cubren el dia entero.
+ * `AKINE_E2E_TIMEZONE` la fija a mano para reproducir algo puntual.
+ */
+const ZONA_DE_LA_SEDE = process.env['AKINE_E2E_ZONA_SEDE'] ?? 'America/Argentina/Cordoba';
+const ZONA_DEL_NAVEGADOR = process.env['AKINE_E2E_TIMEZONE'] ?? zonaConOtroDia(ZONA_DE_LA_SEDE);
+
+function zonaConOtroDia(sede: string, ahora = new Date()): string {
+  const fecha = (zona: string) =>
+    new Intl.DateTimeFormat('en-CA', { timeZone: zona, dateStyle: 'short' }).format(ahora);
+  const candidata = ['Pacific/Kiritimati', 'Pacific/Pago_Pago'].find(
+    (z) => fecha(z) !== fecha(sede),
+  );
+  return candidata ?? 'Pacific/Kiritimati';
+}
+
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: true,
@@ -43,7 +70,7 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      use: { ...devices['Desktop Chrome'], timezoneId: ZONA_DEL_NAVEGADOR },
       // La auditoria de contraste tiene sus propios dos proyectos, uno por tema. Sin esto
       // correria una tercera vez con el `colorScheme` que traiga el sistema del runner, que es
       // justamente el dato que no se puede dejar al azar.
@@ -86,13 +113,7 @@ export default defineConfig({
       // Un test de recepcion o de ciclo encadena una docena de vueltas al backend: 30 s alcanzan
       // en una maquina tranquila y no cuando el backend o el dev server compiten por CPU.
       timeout: 90_000,
-      /*
-       * El navegador en la zona de la sede sembrada (la de por defecto, `V2`). La pantalla toma
-       * "hoy" del reloj del navegador y los specs calculan las fechas con `fechaLocal(timezone)`
-       * de la sede: con el runner en UTC, entre las 21:00 y las 24:00 de Argentina los dos "hoy"
-       * difieren en un dia y fallaban el recorte de 62 dias y la recepcion del dia (09/10/2026).
-       */
-      use: { ...devices['Desktop Chrome'], timezoneId: 'America/Argentina/Cordoba' },
+      use: { ...devices['Desktop Chrome'], timezoneId: ZONA_DEL_NAVEGADOR },
     },
 
     /*
