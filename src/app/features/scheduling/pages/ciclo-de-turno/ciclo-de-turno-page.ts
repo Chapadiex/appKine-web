@@ -15,7 +15,7 @@ import { ConfirmacionConMotivo } from '../../../../shared/components/confirmacio
 import { SchedulingApi } from '../../services/scheduling-api';
 import { SelectorDeHorario } from '../../components/selector-de-horario/selector-de-horario';
 import { AccionSugerida, ErrorAgenda, traducirErrorAgenda } from '../../models/agenda-errors';
-import { hoy, hoyEnZona, sumarDias } from '../../models/etiquetas-de-agenda';
+import { hoyEnZona, sumarDias } from '../../models/etiquetas-de-agenda';
 import {
   esTerminal,
   estadoSegunHistorial,
@@ -26,6 +26,7 @@ import {
 } from '../../models/etiquetas-de-turno';
 import { recepcionAbierta, textoDePrepago } from '../../models/etiquetas-de-recepcion';
 import { PrepagoDeRecepcionEstadoEnum } from '../../../../api/generated/model/prepago-de-recepcion';
+import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 
 /** Panel abierto. Uno solo a la vez: son tres confirmaciones sobre el mismo turno. */
 type Panel = 'ninguno' | 'cancelar' | 'ausencia' | 'reprogramar';
@@ -91,6 +92,7 @@ type Panel = 'ninguno' | 'cancelar' | 'ausencia' | 'reprogramar';
 })
 export class CicloDeTurnoPage {
   private readonly api = inject(SchedulingApi);
+  private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly tenantContext = inject(TenantContextStore);
   private readonly permisos = inject(PermissionsStore);
   private readonly location = inject(Location);
@@ -258,7 +260,7 @@ export class CicloDeTurnoPage {
         // `!fecha` y no `=== ''`: con `withComponentInputBinding` un query param ausente llega
         // como `undefined`, igual que en la recepcion.
         this.destinoPorDefecto = !fecha;
-        this.fechaDestino.set(fecha ? fecha : hoy());
+        this.fechaDestino.set(fecha ? fecha : this.diaDeLaSede.hoy());
         this.cargarTurnoYHistorial();
         this.cargarDestino();
       });

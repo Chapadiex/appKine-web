@@ -92,13 +92,6 @@ function diaEnUtc(fecha: string): number | null {
   return vuelta.getUTCMonth() === mes - 1 && vuelta.getUTCDate() === dia ? instante : null;
 }
 
-/** `yyyy-mm-dd` de una fecha local, sin pasar por UTC (que corre el dia de noche). */
-export function fechaIso(fecha: Date): string {
-  const mes = String(fecha.getMonth() + 1).padStart(2, '0');
-  const dia = String(fecha.getDate()).padStart(2, '0');
-  return `${fecha.getFullYear()}-${mes}-${dia}`;
-}
-
 /** `2026-09-01` → `01/09/2026`. */
 export function fechaEnPalabras(fecha: string | undefined): string {
   const partes = fecha ? /^(\d{4})-(\d{2})-(\d{2})/.exec(fecha) : null;

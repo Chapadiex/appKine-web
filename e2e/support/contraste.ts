@@ -546,6 +546,11 @@ export async function instalarApiDeContraste(page: Page): Promise<ApiDeContraste
       ]);
     }
 
+    // La zona de la sede: `contextGuard` la pide (sin esperarla) al abrir cualquier pantalla del tenant.
+    if (camino === `/api/v1/organizations/${ORGANIZATION_ID}/consultorios`) {
+      return json({ content: [{ id: CONSULTORIO_ID, timezone: 'America/Argentina/Cordoba' }] });
+    }
+
     if (camino === '/api/v1/me/permissions') {
       // Con permisos de gestion la tabla dibuja su celda de acciones, que es donde viven los
       // botones chicos y —en las filas dadas de baja— los botones deshabilitados.

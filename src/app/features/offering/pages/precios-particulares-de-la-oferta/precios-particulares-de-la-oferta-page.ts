@@ -25,7 +25,8 @@ import { numeroDeclarado } from '../../../../shared/utils/numero-declarado';
 import { OfferingApi } from '../../services/offering-api';
 import { CausaOffering, hayQueRecargar, traducirErrorOffering } from '../../models/offering-errors';
 import { precioEnPalabras } from '../../models/etiquetas-de-offering';
-import { enPalabras, hoyLocal } from '../../models/situacion-de-vigencia';
+import { enPalabras } from '../../models/situacion-de-vigencia';
+import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 
 /** Operacion abierta sobre una fila. Solo una a la vez. */
 type TipoAccion = 'fin' | 'baja';
@@ -61,6 +62,7 @@ interface SituacionDelPrecio {
 })
 export class PreciosParticularesDeLaOfertaPage {
   private readonly api = inject(OfferingApi);
+  private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly contexto = inject(TenantContextStore);
   private readonly ruta = inject(ActivatedRoute);
   private readonly formBuilder = inject(FormBuilder);
@@ -72,7 +74,10 @@ export class PreciosParticularesDeLaOfertaPage {
   protected readonly precioEnPalabras = precioEnPalabras;
 
   protected readonly ofertaId = Number(this.ruta.snapshot.paramMap.get('ofertaId'));
-  private readonly hoy = hoyLocal();
+  /** Lee el signal de la zona: lo que dependa de esto se actualiza cuando la zona llega. */
+  private get hoy(): string {
+    return this.diaDeLaSede.hoy();
+  }
 
   protected readonly estado = signal<EstadoDeListado<readonly PrecioParticularResponse[]>>({
     tipo: 'cargando',
