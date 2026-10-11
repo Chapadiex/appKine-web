@@ -62,6 +62,8 @@ export enum ProblemType {
 
     HTTPS___AKINE_APP_PROBLEMS_GRANT_ALREADY_ACTIVE = 'https://akine.app/problems/grant-already-active',
 
+    HTTPS___AKINE_APP_PROBLEMS_PERMISO_NO_OTORGABLE_AL_ROL = 'https://akine.app/problems/permiso-no-otorgable-al-rol',
+
     HTTPS___AKINE_APP_PROBLEMS_CONSULTORIO_NAME_TAKEN = 'https://akine.app/problems/consultorio-name-taken',
 
     HTTPS___AKINE_APP_PROBLEMS_CONSULTORIO_INACTIVE = 'https://akine.app/problems/consultorio-inactive',
