@@ -41,7 +41,10 @@ RUN mkdir -p /sbom \
 COPY angular.json tsconfig.json tsconfig.app.json ./
 COPY public/ public/
 COPY src/ src/
-RUN npx ng build --configuration production
+# `npm run build` y no `ng build`: el script activa el optimizador de chunks y verifica que el
+# JavaScript inicial llegue en un solo archivo (AKINE-LCP, ver scripts/build-produccion.mjs).
+COPY scripts/build-produccion.mjs scripts/
+RUN npm run build
 
 # ============================================================================================
 # Etapa 2 — runtime

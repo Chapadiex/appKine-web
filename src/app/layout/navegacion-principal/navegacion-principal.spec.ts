@@ -33,10 +33,12 @@ describe('NavegacionPrincipal', () => {
   let tenant: TenantContextStore;
   let router: Router;
   let adminDePlataforma: WritableSignal<boolean>;
+  let restaurando: WritableSignal<boolean>;
 
   beforeEach(() => {
     estado = signal<EstadoSesion>('activa');
     adminDePlataforma = signal(false);
+    restaurando = signal(false);
 
     TestBed.configureTestingModule({
       providers: [
@@ -49,7 +51,7 @@ describe('NavegacionPrincipal', () => {
           { path: 'horarios', component: Pagina },
           { path: 'organizacion', component: Pagina },
         ]),
-        { provide: SessionService, useValue: { estado } },
+        { provide: SessionService, useValue: { estado, restaurando } },
         {
           provide: PlatformRoleStore,
           useValue: { esAdminDePlataforma: adminDePlataforma, asegurarCargado: () => undefined },
@@ -103,6 +105,27 @@ describe('NavegacionPrincipal', () => {
     responderPermisos([]);
     sinContexto.detectChanges();
     expect(enlaces(sinContexto)).toContain('Plataforma');
+  });
+
+  /**
+   * AKINE-LCP: el shell se dibuja con la restauracion de la sesion en vuelo. Entre el refresh y
+   * los nombres de los contextos, la organizacion tiene un rotulo provisorio: la barra espera.
+   * Los permisos, en cambio, se piden ya: es lo que adelanta.
+   */
+  it('con la restauracion en vuelo no dibuja la barra, pero ya pide los permisos', () => {
+    restaurando.set(true);
+    conContexto();
+    const fixture = montar();
+    const html = fixture.nativeElement as HTMLElement;
+
+    expect(html.querySelector('nav')).toBeNull();
+    expect(html.querySelector('.contexto')).toBeNull();
+    responderPermisos([]);
+
+    restaurando.set(false);
+    fixture.detectChanges();
+    expect(html.querySelector('nav')).not.toBeNull();
+    expect(html.textContent).toContain('Centro Kine');
   });
 
   /** Un anonimo esta en el login: no tiene a donde navegar y el selector tampoco le sirve. */
