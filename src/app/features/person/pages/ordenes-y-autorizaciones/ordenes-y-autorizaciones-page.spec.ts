@@ -667,6 +667,37 @@ describe('OrdenesYAutorizacionesPage', () => {
     TIMEOUT_AXE,
   );
 
+  it('el saldo y los consumos se abren por fila y una reversion relee solo el listado', async () => {
+    const fixture = await montar({ autorizaciones: [PENDIENTE] });
+    const base = `/api/v1/autorizaciones/${PENDIENTE.id}`;
+
+    apretar(fixture, 'Saldo y consumos');
+    httpMock.expectOne(esListado(`${base}/saldo`)).flush({ cantidadAutorizada: 20, saldo: 19 });
+    httpMock
+      .expectOne(esListado(`${base}/movimientos`))
+      .flush([{ id: 1, tipo: 'CONSUMO', tipoOrigen: 'SESION', referenciaOrigen: 70 }]);
+    httpMock.expectOne(esListado(`${base}/alertas`)).flush([]);
+    await estabilizar(fixture);
+    expect(texto(fixture)).toContain('Saldo y consumos de la autorizacion AUT-1');
+
+    apretar(fixture, 'Revertir el consumo #1');
+    escribirEn(fixture, '#revertir-consumo-1', 'Error de carga');
+    apretar(fixture, 'Confirmar la reversion');
+    httpMock
+      .expectOne((p) => p.method === 'POST' && p.url === `${base}/reversiones`)
+      .flush({ id: 2, tipo: 'REVERSION', movimientoOrigenId: 1 });
+    httpMock.expectOne(esListado(`${base}/saldo`)).flush({ cantidadAutorizada: 20, saldo: 20 });
+    httpMock.expectOne(esListado(`${base}/movimientos`)).flush([]);
+    httpMock.expectOne(esListado(`${base}/alertas`)).flush([]);
+    // Solo el listado de autorizaciones: la pantalla no vuelve a "cargando" y el panel sigue abierto.
+    httpMock.expectOne(esListado(AUTORIZACIONES)).flush([{ ...PENDIENTE, saldo: 20 }]);
+    await estabilizar(fixture);
+    expect(texto(fixture)).toContain('Se revirtio el consumo #1');
+
+    apretar(fixture, 'Cerrar el saldo');
+    expect(texto(fixture)).not.toContain('Saldo y consumos de la autorizacion AUT-1');
+  });
+
   function esHistorial(autorizacionId: number) {
     return (p: HttpRequest<unknown>) =>
       p.method === 'GET' && p.url === `${AUTORIZACIONES}/${autorizacionId}/historial`;
