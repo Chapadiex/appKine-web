@@ -126,6 +126,38 @@ export function traducirErrorColaborador(
   return { mensaje: conDetalle(error, MENSAJE_GENERICO), causa: 'otro', segundosDeEspera: 0 };
 }
 
+/**
+ * Traduce el error al otorgar un permiso adicional a un vinculo.
+ *
+ * <p>Desde G-5 (backend #78) un permiso que la matriz marca "No" para el rol del vinculo
+ * -`hc:write` a un administrador de organizacion, `hc:read` a un administrativo- responde
+ * `400 validation-error`, igual que un codigo inexistente o un motivo vacio. El motivo vacio
+ * lo frena el formulario y la lista de codigos sale del catalogo conocido, asi que un `400`
+ * SIN errores por campo es, en esta pantalla, el rechazo de la matriz.
+ *
+ * <p><b>No se replica la matriz aca.</b> El frontend no sabe que grants admite cada rol: el
+ * contrato no lo expone, y copiar la tabla la convertiria en una segunda fuente de verdad que
+ * diverge en silencio. Se ofrece la lista completa y se explica el rechazo con el `detail`
+ * del servidor, que nombra el rol.
+ */
+export function traducirErrorGrant(error: unknown, rol: string): ErrorColaborador {
+  const traducido = traducirErrorColaborador(error);
+  if (
+    traducido.causa !== 'validacion' ||
+    !(error instanceof AkineHttpError) ||
+    Object.keys(error.erroresPorCampo).length > 0
+  ) {
+    return traducido;
+  }
+  const base = `Ese permiso no se puede otorgar a un colaborador con rol ${rol} segun la matriz de permisos.`;
+  return {
+    ...traducido,
+    mensaje: error.problem?.detail
+      ? `${base} Detalle: ${error.problem.detail.replace(/\.$/, '')}.`
+      : base,
+  };
+}
+
 /** El mensaje del backend, o el de respaldo si el cuerpo no traia `ProblemDetail`. */
 function conDetalle(error: AkineHttpError, respaldo: string): string {
   return error.problem === null ? respaldo : error.message;

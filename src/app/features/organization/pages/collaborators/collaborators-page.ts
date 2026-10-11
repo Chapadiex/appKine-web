@@ -19,7 +19,7 @@ import { ETIQUETA_DE_ESTADO, ROLES_DE_VINCULO, etiquetaDeRol } from '../../model
 import { ImpactoDeDesvinculacion, resumenDeImpacto } from '../../models/impacto-de-desvinculacion';
 import { SedesDelContexto } from '../../services/sedes-del-contexto';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
-import { traducirErrorColaborador } from '../../models/colaborador-errors';
+import { traducirErrorColaborador, traducirErrorGrant } from '../../models/colaborador-errors';
 import { textoRequerido } from '../../../../shared/validators/texto-requerido';
 
 /** Operacion abierta sobre una fila. Solo una a la vez. */
@@ -94,9 +94,12 @@ export class CollaboratorsPage {
   protected readonly paginaActual = signal(0);
 
   /** Fila y operacion abiertas, o `null` si no hay ninguna. Solo una a la vez. */
-  protected readonly panel = signal<{ readonly id: number; readonly tipo: TipoAccion } | null>(
-    null,
-  );
+  protected readonly panel = signal<{
+    readonly id: number;
+    readonly tipo: TipoAccion;
+    /** Rol del vinculo al abrir el panel: redacta el rechazo de la matriz al otorgar. */
+    readonly rol?: string;
+  } | null>(null);
   protected readonly enviando = signal(false);
   protected readonly errorAccion = signal<string | null>(null);
   protected readonly exito = signal<string | null>(null);
@@ -249,7 +252,7 @@ export class CollaboratorsPage {
 
     this.cerrarPanel();
     this.exito.set(null);
-    this.panel.set({ id, tipo });
+    this.panel.set({ id, tipo, rol: colaborador.roleCode });
 
     if (tipo === 'editar') {
       // El rol arranca en el que ya tiene: el usuario ve de donde parte, y dejarlo asi manda
@@ -469,7 +472,10 @@ export class CollaboratorsPage {
           this.formularioGrant.reset({ permissionCode: '', reason: '', validUntil: '' });
           this.cargarGrants(panel.id);
         },
-        error: (error: unknown) => this.fallar(error),
+        error: (error: unknown) => {
+          this.enviando.set(false);
+          this.errorAccion.set(traducirErrorGrant(error, etiquetaDeRol(panel.rol)).mensaje);
+        },
       });
   }
 
