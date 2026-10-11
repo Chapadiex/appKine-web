@@ -8,6 +8,7 @@ import { ConsultoriosPage } from './pages/consultorios/consultorios-page';
 import { InvitacionesPage } from './pages/invitaciones/invitaciones-page';
 import { NewCollaboratorPage } from './pages/new-collaborator/new-collaborator-page';
 import { NewConsultorioPage } from './pages/new-consultorio/new-consultorio-page';
+import { NotificacionesPage } from './pages/notificaciones/notificaciones-page';
 import { OrganizationPage } from './pages/organization/organization-page';
 import { SubscriptionPage } from './pages/subscription/subscription-page';
 import { NotFound } from '../../shared/pages/not-found/not-found';
@@ -57,6 +58,9 @@ describe('Rutas de /organizacion', () => {
     expect(await componenteDe('/organizacion/suscripcion')).toBe(SubscriptionPage);
     expect(await componenteDe('/organizacion/colaboradores/nuevo')).toBe(NewCollaboratorPage);
     expect(await componenteDe('/organizacion/colaboradores/invitaciones')).toBe(InvitacionesPage);
+    expect(await componenteDe('/organizacion/colaboradores/notificaciones')).toBe(
+      NotificacionesPage,
+    );
     expect(await componenteDe('/organizacion/colaboradores')).toBe(CollaboratorsPage);
     expect(await componenteDe('/organizacion/sedes/nueva')).toBe(NewConsultorioPage);
     expect(await componenteDe('/organizacion/sedes')).toBe(ConsultoriosPage);

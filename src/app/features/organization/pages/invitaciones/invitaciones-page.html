@@ -278,6 +278,7 @@
   </div>
 </section>
 
-@if (estado().tipo === 'listo') {
-  <app-reintento-de-notificacion *akinePermiso="permisoManage" />
-}
+<p class="ayuda" *akinePermiso="permisoManage">
+  Si un correo de invitacion no salio, podes reintentarlo desde
+  <a class="enlace" routerLink="/organizacion/colaboradores/notificaciones">Notificaciones</a>.
+</p>
