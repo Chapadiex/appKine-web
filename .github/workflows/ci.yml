@@ -242,6 +242,11 @@ jobs:
           curl -fsSI http://localhost:8080/ | grep -qi '^cache-control: no-cache'
           asset=$(curl -fsS http://localhost:8080/ | grep -o 'main-[A-Z0-9]*\.js' | head -1)
           curl -fsSI "http://localhost:8080/$asset" | grep -qi '^cache-control: public, max-age=31536000, immutable'
+          # Un chunk perezoso tambien: con el optimizador de chunks su hash trae minusculas,
+          # '-' y '_' (AKINE-LCP), y tiene que caer en el mismo location inmutable.
+          hash=$(curl -fsS "http://localhost:8080/$asset" | grep -oE 'chunk-[A-Za-z0-9_-]{8}\.js' | sed 's/^chunk-//' | grep -E '[a-z_-]' | head -1)
+          test -n "$hash"
+          curl -fsSI "http://localhost:8080/chunk-$hash" | grep -qi '^cache-control: public, max-age=31536000, immutable'
           curl -fsSI http://localhost:8080/ | grep -qi '^content-security-policy:'
           test "$(docker exec akine-web id -u)" != "0"
 

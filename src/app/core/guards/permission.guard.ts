@@ -10,6 +10,7 @@ import {
   RUTA_SELECTOR_CONTEXTO,
   RUTA_SIN_PERMISO,
 } from '../models/rutas';
+import { trasRestaurarSesion } from './tras-restaurar-sesion';
 
 /**
  * Exige al menos uno de los permisos para entrar a la ruta.
@@ -55,28 +56,30 @@ export function permissionGuard(...permisos: string[]): CanActivateFn {
     const store = inject(PermissionsStore);
     const router = inject(Router);
 
-    const situacion = session.estado();
+    return trasRestaurarSesion(estado, () => {
+      const situacion = session.estado();
 
-    if (situacion === 'anonimo') {
-      return router.createUrlTree([RUTA_LOGIN], {
-        queryParams: { [PARAM_VOLVER_A]: estado.url },
-      });
-    }
+      if (situacion === 'anonimo') {
+        return router.createUrlTree([RUTA_LOGIN], {
+          queryParams: { [PARAM_VOLVER_A]: estado.url },
+        });
+      }
 
-    if (situacion === 'sin-contexto') {
-      return router.createUrlTree([RUTA_SELECTOR_CONTEXTO], {
-        queryParams: { [PARAM_VOLVER_A]: estado.url },
-      });
-    }
+      if (situacion === 'sin-contexto') {
+        return router.createUrlTree([RUTA_SELECTOR_CONTEXTO], {
+          queryParams: { [PARAM_VOLVER_A]: estado.url },
+        });
+      }
 
-    const decidir = (): boolean | UrlTree =>
-      store.tieneAlguno(...permisos) ? true : router.createUrlTree([RUTA_SIN_PERMISO]);
+      const decidir = (): boolean | UrlTree =>
+        store.tieneAlguno(...permisos) ? true : router.createUrlTree([RUTA_SIN_PERMISO]);
 
-    if (store.cargados()) {
-      return decidir();
-    }
+      if (store.cargados()) {
+        return decidir();
+      }
 
-    return cargarYDecidir(store, decidir, () => router.createUrlTree([RUTA_SIN_PERMISO]));
+      return cargarYDecidir(store, decidir, () => router.createUrlTree([RUTA_SIN_PERMISO]));
+    });
   };
 }
 

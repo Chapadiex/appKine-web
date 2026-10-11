@@ -3,6 +3,7 @@ import { CanActivateFn, Router } from '@angular/router';
 
 import { SessionService } from '../services/session.service';
 import { PARAM_VOLVER_A, RUTA_LOGIN, RUTA_SELECTOR_CONTEXTO } from '../models/rutas';
+import { trasRestaurarSesion } from './tras-restaurar-sesion';
 
 /**
  * Sesion sin contexto elegido, al selector de Organizacion + Consultorio (DP-02).
@@ -22,21 +23,23 @@ export const contextGuard: CanActivateFn = (_ruta, estado) => {
   const session = inject(SessionService);
   const router = inject(Router);
 
-  const situacion = session.estado();
+  return trasRestaurarSesion(estado, () => {
+    const situacion = session.estado();
 
-  if (situacion === 'activa') {
-    return true;
-  }
+    if (situacion === 'activa') {
+      return true;
+    }
 
-  if (situacion === 'anonimo') {
-    return router.createUrlTree([RUTA_LOGIN], {
+    if (situacion === 'anonimo') {
+      return router.createUrlTree([RUTA_LOGIN], {
+        queryParams: { [PARAM_VOLVER_A]: estado.url },
+      });
+    }
+
+    // Autenticado pero sin contexto: se recuerda a donde queria ir para que el selector lo
+    // devuelva ahi una vez que el token quede acotado.
+    return router.createUrlTree([RUTA_SELECTOR_CONTEXTO], {
       queryParams: { [PARAM_VOLVER_A]: estado.url },
     });
-  }
-
-  // Autenticado pero sin contexto: se recuerda a donde queria ir para que el selector lo
-  // devuelva ahi una vez que el token quede acotado.
-  return router.createUrlTree([RUTA_SELECTOR_CONTEXTO], {
-    queryParams: { [PARAM_VOLVER_A]: estado.url },
   });
 };

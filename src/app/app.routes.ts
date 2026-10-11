@@ -6,21 +6,46 @@ import { authGuard } from './core/guards/auth.guard';
 import { contextGuard } from './core/guards/context.guard';
 import { platformAdminGuard } from './core/guards/platform-admin.guard';
 import { SEGMENTO_PLATAFORMA } from './features/platform/models/rutas-de-plataforma';
+import { routes as rutasPlatform } from './features/platform/platform.routes';
+import { routes as rutasAuth } from './features/auth/auth.routes';
+import { routes as rutasOrganization } from './features/organization/organization.routes';
+import { routes as rutasResource } from './features/resource/resource.routes';
+import { routes as rutasHorarios } from './features/resource/horarios.routes';
+import { routes as rutasCatalog } from './features/catalog/catalog.routes';
+import { routes as rutasOffering } from './features/offering/offering.routes';
+import { routes as rutasContracting } from './features/contracting/contracting.routes';
+import { routes as rutasBilling } from './features/billing/billing.routes';
+import { routes as rutasPerson } from './features/person/person.routes';
+import { routes as rutasScheduling } from './features/scheduling/scheduling.routes';
+import { routes as rutasCaja } from './features/billing/caja.routes';
+import { routes as rutasPresentaciones } from './features/billing/presentaciones.routes';
+import { routes as rutasReporting } from './features/reporting/reporting.routes';
 
 /**
  * Rutas raiz de AKINE (estructura fijada en AKINE-00.02).
  *
- * <p><b>Convencion para las features de M01-M29:</b> cada dominio se monta como una ruta
- * con `loadChildren` apuntando a su propio archivo de rutas, para que quede lazy loaded y
- * el bundle inicial no crezca con cada modulo (ADR-0004):
+ * <p><b>Convencion para las features de M01-M29:</b> cada dominio tiene su propio archivo de
+ * rutas y cada PANTALLA se carga perezosa con `loadComponent` (ADR-0004). El archivo de rutas
+ * se monta con `children`, no con `loadChildren`:
  *
  * <pre>
+ * import { routes as rutasPerson } from './features/person/person.routes';
  * {
  *   path: 'pacientes',
- *   loadChildren: () =&gt; import('./features/person/person.routes').then(m =&gt; m.routes),
+ *   children: rutasPerson,
  *   canActivate: [authGuard, contextGuard],
  * }
  * </pre>
+ *
+ * <p><b>Por que `children` (AKINE-LCP).</b> Con `loadChildren` la primera carga de cualquier
+ * pantalla interna bajaba en serie el chunk de la configuracion, el de sus imports y recien
+ * despues el de la pantalla: una ida y vuelta mas antes de pintar, ~200 ms con la latencia de
+ * un movil 4G (G-10). Las configuraciones son tablas de rutas —strings, guards y
+ * `loadComponent`—, y todas juntas pesan unos pocos KB comprimidos en el bundle inicial; lo
+ * que pesa, el codigo de cada pantalla, sigue siendo perezoso. Un archivo de rutas NUNCA
+ * importa un componente de forma estatica: lo arrastraria al bundle inicial.
+ *
+ * <p>`clinical` sigue con `loadChildren`: queda fuera del alcance de ese cambio.
  *
  * <p>Los guards son UX: evitan una navegacion que va a fallar. La autoridad de permisos es
  * el backend, que rechaza igual si se llega por URL directa.
@@ -61,7 +86,7 @@ export const routes: Routes = [
   {
     path: SEGMENTO_PLATAFORMA,
     canActivate: [authGuard, platformAdminGuard],
-    loadChildren: () => import('./features/platform/platform.routes').then((m) => m.routes),
+    children: rutasPlatform,
   },
 
   // Feature `auth` (M02). Lazy loaded segun ADR-0004.
@@ -70,7 +95,7 @@ export const routes: Routes = [
   // abrir. Los enlaces de los correos entran por `auth/activar` y `auth/restablecer`.
   {
     path: 'auth',
-    loadChildren: () => import('./features/auth/auth.routes').then((m) => m.routes),
+    children: rutasAuth,
   },
 
   // Seleccion del contexto de trabajo (M01). Va suelta y no bajo `organizacion` porque
@@ -96,7 +121,7 @@ export const routes: Routes = [
   {
     path: 'organizacion',
     canActivate: [authGuard, contextGuard],
-    loadChildren: () => import('./features/organization/organization.routes').then((m) => m.routes),
+    children: rutasOrganization,
   },
 
   // Feature `resource` (M04, espacios y boxes). Lazy loaded segun ADR-0004.
@@ -110,7 +135,7 @@ export const routes: Routes = [
   {
     path: 'espacios',
     canActivate: [authGuard, contextGuard],
-    loadChildren: () => import('./features/resource/resource.routes').then((m) => m.routes),
+    children: rutasResource,
   },
 
   // Horarios de profesional (M05, AKINE-02.04). Lazy loaded segun ADR-0004.
@@ -129,7 +154,7 @@ export const routes: Routes = [
   {
     path: SEGMENTO_HORARIOS,
     canActivate: [authGuard, contextGuard],
-    loadChildren: () => import('./features/resource/horarios.routes').then((m) => m.routes),
+    children: rutasHorarios,
   },
 
   // Catalogo clinico: especialidades, practicas, nomencladores y los pedidos al catalogo comun
@@ -144,7 +169,7 @@ export const routes: Routes = [
   {
     path: 'catalogo',
     canActivate: [authGuard, contextGuard],
-    loadChildren: () => import('./features/catalog/catalog.routes').then((m) => m.routes),
+    children: rutasCatalog,
   },
 
   // Servicios del catalogo global y ofertas de la sede (M27, AKINE-02.06).
@@ -162,7 +187,7 @@ export const routes: Routes = [
   {
     path: 'servicios',
     canActivate: [authGuard],
-    loadChildren: () => import('./features/offering/offering.routes').then((m) => m.routes),
+    children: rutasOffering,
   },
 
   // Financiadores, planes, convenios y aranceles (M15 y M16, AKINE-03.03 y 03.05).
@@ -182,7 +207,7 @@ export const routes: Routes = [
   {
     path: 'contratacion',
     canActivate: [authGuard],
-    loadChildren: () => import('./features/contracting/contracting.routes').then((m) => m.routes),
+    children: rutasContracting,
   },
 
   // Padron de personas (M07, AKINE-03.01).
@@ -210,13 +235,13 @@ export const routes: Routes = [
   {
     path: 'pacientes/:personaId/cuenta-corriente',
     canActivate: [authGuard],
-    loadChildren: () => import('./features/billing/billing.routes').then((m) => m.routes),
+    children: rutasBilling,
   },
 
   {
     path: 'pacientes',
     canActivate: [authGuard],
-    loadChildren: () => import('./features/person/person.routes').then((m) => m.routes),
+    children: rutasPerson,
   },
 
   // Agenda de turnos y reserva (M12, AKINE-05.01 y 05.02).
@@ -231,7 +256,7 @@ export const routes: Routes = [
   {
     path: 'agenda',
     canActivate: [authGuard],
-    loadChildren: () => import('./features/scheduling/scheduling.routes').then((m) => m.routes),
+    children: rutasScheduling,
   },
 
   // Atencion clinica (M14, AKINE-06.01 y 06.02).
@@ -261,7 +286,7 @@ export const routes: Routes = [
   {
     path: 'caja',
     canActivate: [authGuard],
-    loadChildren: () => import('./features/billing/caja.routes').then((m) => m.routes),
+    children: rutasCaja,
   },
 
   // Pantalla de permiso insuficiente (AKINE-01.03). Es el destino de `permissionGuard`.
@@ -275,7 +300,7 @@ export const routes: Routes = [
   {
     path: 'presentaciones',
     canActivate: [authGuard],
-    loadChildren: () => import('./features/billing/presentaciones.routes').then((m) => m.routes),
+    children: rutasPresentaciones,
   },
 
   // Reportes de la sede (M23, AKINE-07.06 y G-8). `contextGuard` y `permissionGuard(reporte:read)`
@@ -283,7 +308,7 @@ export const routes: Routes = [
   {
     path: 'reportes',
     canActivate: [authGuard],
-    loadChildren: () => import('./features/reporting/reporting.routes').then((m) => m.routes),
+    children: rutasReporting,
   },
 
   {

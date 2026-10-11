@@ -8,7 +8,9 @@ import { routes as rutasDeLaApp } from '../../app.routes';
 describe('Rutas de /presentaciones', () => {
   it('estan montadas en la app y cada una resuelve a su pantalla con guards', async () => {
     const montada = rutasDeLaApp.find((r) => r.path === 'presentaciones') as Route;
-    expect(await (montada.loadChildren as () => Promise<unknown>)()).toBe(routes);
+    // Montada con `children`, no `loadChildren` (AKINE-LCP): la tabla de rutas va en el bundle
+    // inicial y solo las pantallas son perezosas.
+    expect(montada.children).toBe(routes);
 
     const [listado, detalle] = routes;
     expect(await (listado.loadComponent as () => Promise<unknown>)()).toBe(PresentacionesPage);

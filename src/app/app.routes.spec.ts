@@ -16,7 +16,7 @@ import { routes } from './app.routes';
  * AKINE-01.02/02.03) y que ninguna feature especifica cubre: la raiz, el selector de
  * contexto, la pantalla de "sin permiso" y el comodin.
  *
- * <p>Las cuatro features con `loadChildren` (`auth`, `organizacion`, `espacios`, `catalogo`)
+ * <p>Las cuatro features montadas con su archivo de rutas (`auth`, `organizacion`, `espacios`, `catalogo`)
  * tienen su propio spec de rutas junto al archivo que montan —`auth.routes.spec.ts`,
  * `organization.routes.spec.ts`, `resource.routes.spec.ts`, `catalog.routes.spec.ts`—, y cada
  * uno de ellos ya prueba, como parte de pinear sus hijas, que el prefijo raiz de la feature
@@ -33,7 +33,7 @@ describe('Rutas de la raiz de la app', () => {
     TestBed.configureTestingModule({
       providers: [
         provideRouter(routes),
-        { provide: SessionService, useValue: { estado: () => 'activa' } },
+        { provide: SessionService, useValue: { estado: () => 'activa', restaurando: () => false } },
       ],
     });
 
