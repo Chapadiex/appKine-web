@@ -177,6 +177,11 @@
     }
   </section>
 
+  <!-- Selector explicable (RF-M17-007, C-4): de que autorizacion se descontaria, y por que. -->
+  @if (identificadorNumerico(); as id) {
+    <app-selector-de-autorizacion [personaId]="id" [practicas]="practicas()" />
+  }
+
   <!-- =================================================================================
        Ordenes medicas
        ================================================================================= -->
@@ -821,6 +826,14 @@
               >
                 Historial
               </button>
+              <button
+                type="button"
+                class="boton boton--secundario"
+                [attr.aria-expanded]="esPanelDeAutorizacion(autorizacion, 'consumo')"
+                (click)="alternarConsumo(autorizacion)"
+              >
+                Saldo y consumos
+              </button>
               @if (!autorizacionInactiva(autorizacion)) {
                 @if (admiteResolucion(autorizacion)) {
                   <button
@@ -1131,6 +1144,23 @@
                 @if (errorAccion(); as mensaje) {
                   <p class="estado estado--error" role="alert">{{ mensaje }}</p>
                 }
+              </td>
+            </tr>
+          }
+
+          @if (esPanelDeAutorizacion(autorizacion, 'consumo') && autorizacion.id !== undefined) {
+            <tr>
+              <td colspan="7">
+                <app-consumo-de-autorizacion
+                  [autorizacionId]="autorizacion.id"
+                  [numero]="autorizacion.numero ?? ''"
+                  (revertido)="releerAutorizaciones()"
+                />
+                <p class="acciones">
+                  <button type="button" class="boton boton--secundario" (click)="cerrarPaneles()">
+                    Cerrar el saldo
+                  </button>
+                </p>
               </td>
             </tr>
           }

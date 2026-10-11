@@ -224,7 +224,91 @@ Reglas innegociables del QA:
 
 ## 7. Estado actual
 
-### Estado al 07/10/2026, sobre `e22d75d`
+### Estado al 11/10/2026, sobre `680b508`
+
+> Esta subsección **supersede** a la del 07/10, que sigue abajo como historia, y al "Próximo paso"
+> del final de esta sección.
+
+`main` tiene **233 commits** y el último merge es `680b508` (PR #41, G-6), pusheado a
+`Chapadiex/appKine-web`. Entre el 08/10 y el 11/10 entraron **24 PR, del #24 al #48**: todos
+salvo el **#47** (LCP móvil, abierto). Sigue abierto también el **#4** (historia clínica en
+pantalla: D-a, D-b, D-c), sin tocar desde el 06/10. `main` está **protegida** en GitHub con
+cinco checks obligatorios —lint/build/tests, cliente alineado, contraste, imagen Docker y E2E
+contra el backend real— y es la rama por defecto (consultado por la API el 11/10).
+
+| | Valor |
+|---|---|
+| Cliente generado | **0.84.0** (`contractVersion` en los dos `environment`), igual que `openapi/akine-api.yaml` de `appKine-api` `main`. Se regeneró cinco veces: 0.71.0 (#27), 0.72.0 (#31), 0.80.0 (#38), 0.82.0 (#45) y 0.84.0 dentro de #48. `npm run api:check`: alineado, **131 `problemType` usados**, todos declarados en un catálogo de 195 |
+| Tests | **133 archivos de spec / 1.423 tests, 0 fallos**, medidos con `npm ci && npm run test:ci` sobre `680b508` el 11/10. Cobertura st **91,03 %** · rama **82,49 %** · fn **87,44 %** · ln **92,06 %**, sobre el piso de 80 % en las cuatro; el chequeo de cableado del contraste pasa. `npm run lint` y `npm run format:check` limpios, medidos el mismo día |
+| E2E | **16 specs** en `e2e/`. **14 corren contra el backend real** en el job `e2e` del CI desde G-9 (#30): proyecto `agenda` (`agenda-buscador`, `agenda-reserva`, `agenda-ciclo`, `agenda-recepcion` y `flujo-caja`, `flujo-presentaciones`, `flujo-series`, `flujo-prepago`, con el sembrado por API de `agenda-setup`) y proyecto `chromium` (`auth-flujo`, `contexto-sin-fuga`, `errores-sin-internals`, `smoke`, `cuenta-ciclo-real`, `cobertura-autorizacion`). Los **2 de contraste** corren sin backend en su job. Desde #43 el navegador corre en una zona cuyo día es **distinto** del de la sede, a propósito. No se corrieron localmente para este documento: el número sale del CI de los PR |
+| Dependencias | G-6 (#41): Dependabot semanal, `npm audit --omit=dev --audit-level=high` en el job `build` (0 vulnerabilidades de producción) y job `sonar` que se saltea sin `SONAR_TOKEN`/`SONAR_HOST_URL`. Angular 21.2.25. Abierta: la cadena `openapi-generator-cli → … → basic-ftp ≤ 6.2.0` (5 altas, sólo en `api:generate`, nunca en el bundle). Ver `docs/calidad.md` |
+
+Lo que entró en pantalla del 08/10 al 11/10, con su PR:
+
+| Paquete | Qué | PR |
+|---|---|---|
+| G-7 | Anillo de foco global, contorno de controles 3:1 (WCAG 1.4.11), foco que vuelve al cerrar paneles y gate `contraste-no-textual` (34/34 en `a11y:contraste`) | #24 |
+| B-7 | Importación masiva de aranceles de un convenio desde CSV o planilla pegada, con vista previa y confirmación todo o nada | #28 |
+| A-11 | Impacto previo (cuenta exacta) al editar o dar de baja disponibilidad y excepciones; coberturas del 360 por campos | #29 |
+| A-9 · A-3 | Prácticas de una oferta `/servicios/ofertas/:ofertaId/practicas`, y reintento de notificaciones (reemplazado por #46) | #32 |
+| F-3 | Anulación, reintegro de saldo a favor e imputación posterior de cobros | #33 |
+| E-3 | Reprogramar una serie con alcance y previsualización; `components/selector-de-horario` compartido | #34 |
+| B-4 · A-8b | Historial de cada autorización y situación de la orden; aviso de turnos que quedan fuera del horario de la sede | #39 |
+| DP-21 · DP-17 · DP-22 | Versión vieja = `concurrent-modification` en todos los features; `oferta-sin-precio` al cerrar con enlace a los precios; sección Pacientes y rutas de `person` detrás de `paciente:read` | #40 |
+| F-4 | Concepto, convenio y alerta DP-11 de cada deuda en la cuenta corriente | #42 |
+| — | La agenda, la recepción y el ciclo del turno toman "hoy" en la zona de la sede (`hoyEnZona`) | #43 |
+| G-5 | Permisos adicionales: el selector ofrece sólo lo que `permisos-otorgables` admite para el rol, marca los grants "No vigente con el rol actual" y traduce `permiso-no-otorgable-al-rol` | #44, #48 |
+| A-3 | Listado de notificaciones fallidas `/organizacion/colaboradores/notificaciones` con reintento por fila | #46 |
+
+Y los E2E contra el backend real: E-2 (#26, agenda, ciclo y recepción), A-6 y B-6 (#36, cuenta
+y cobertura → autorización → vencimiento), las verticales de caja, cobro, presentaciones, series
+y prepago (#35), y el job del CI (G-9, #30). #37 sacó el `test.fail()` que documentaba la
+auditoría legible desde otro contexto, cuando `appKine-api` #70 lo corrigió.
+
+#### Los defectos reales del frontend desde el 07/10
+
+| # | Qué pasaba | PR |
+|---|---|---|
+| 1 | La recepción del día quedaba **en blanco** al entrar desde la agenda: sin `?fecha=`, `withComponentInputBinding` pone el input en `undefined` y el cliente generado lanzaba antes de salir a la red | #26 |
+| 2 | El buscador de agenda mostraba la **ventana vieja**: con dos consultas en vuelo ganaba la que llegaba última | #26 |
+| 3 | El ciclo del turno tenía un **409 sin salida**: la respuesta de la última transición le ganaba a cualquier relectura | #26 |
+| 4 | El **skip link navegaba a la raíz** desde cualquier pantalla que no fuera `/` (`<base href="/">` resuelve `#contenido` a `/#contenido`) | #30 |
+| 5 | La agenda, la recepción y la reprogramación arrancaban con el "hoy" del **navegador**: entre las 21 y las 24 de Córdoba, un navegador en UTC ya está en el día siguiente | #43 |
+
+Dos E2E intermitentes quedaron deterministas: el foco de la recepción en `contraste-no-textual`
+(#34, 4 fallas en 50 → 80/80) y `contexto-sin-fuga` › "sin contexto elegido" (#42, `count()` sin
+reintento). Los E2E también destaparon defectos del backend, corregidos allá: cuatro de la agenda
+(`appKine-api` #66), los logins simultáneos (#67), el `Retry-After: 0` (#69) y la auditoría legible
+desde otro contexto (#70).
+
+> **Lo que sigue sin verificar contra el backend real:** B-7, A-11, A-9, F-3, E-3, B-4, A-8b, la
+> cuenta corriente de F-4, los permisos otorgables y el listado de notificaciones. Cada PR lo
+> declara: tests unitarios con `HttpTestingController`, sin E2E.
+
+#### Próximo paso
+
+1. **El QA manual del §6 de `appKine-api` (G-12):** la guía está en `appKine-api/docs/qa/` desde
+   el 11/10 y la ejecución es del usuario. Es lo único que verifica las pantallas de arriba.
+2. **Mergear o cerrar el PR #4** (D-a, D-b, D-c), sin actualizar desde el 06/10: `main` avanzó
+   unos cuarenta PR desde entonces, así que necesita rebase y regenerar el cliente.
+3. **El PR #47 (LCP móvil)**: G-10 midió 2,85–4,10 s en 4G contra un SLO que no cumple.
+4. **Pantallas que siguen faltando:** alertas de consumo y selector de autorización (D-f),
+   mediciones y tratamientos en la atención (D-d), entrada a la HC desde el 360 (D-e), enmiendas
+   (D-g) y egresos y pagos a profesionales (F-5: el cliente tiene `EgresosService` y ningún feature
+   lo usa). `npm run api:check` lista 67 `problemType` declarados que ninguna pantalla maneja.
+
+Pendientes que arrastra el frontend:
+
+- [ ] E2E de espacios, catálogo, horarios, servicios y del alta de padrón por pantalla
+- [x] ~~Protección de rama en `main`~~ — hecha: cinco checks obligatorios (API de GitHub, 11/10)
+- [x] ~~Activar el job E2E del pipeline~~ — G-9 (#30)
+- [ ] Regla de ESLint que prohíba imports entre features (ADR-0004): `eslint.config.js` sigue sin ella
+- [ ] Completar los `PENDIENTE(F1)` de `.claude/qa-config.md`
+- [x] ~~`organization.routes.spec.ts` no pasa `format:check`~~ — `npm run format:check` limpio el 11/10
+- [ ] La cadena `basic-ftp` del generador de cliente (decisión de G-6)
+- [ ] Activar Sonar: cargar `SONAR_TOKEN` y `SONAR_HOST_URL` (`docs/calidad.md`)
+
+### Estado al 07/10/2026, sobre `e22d75d` (histórico)
 
 > Esta subsección **supersede** al párrafo del 30/08 que sigue y al "Próximo paso" del 29/09 del
 > final de esta sección. Lo demás queda como historia.

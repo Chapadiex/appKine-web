@@ -79,6 +79,34 @@ describe('PermissionsStore', () => {
     expect(store.permisos().size).toBe(0);
   });
 
+  it('dos cargas concurrentes del mismo contexto salen como UNA peticion', () => {
+    tenant.select(ORG_A);
+    let terminadas = 0;
+
+    // El menu y el permissionGuard la piden a la vez en la primera carga (AKINE-LCP).
+    store.cargar().subscribe(() => terminadas++);
+    store.cargar().subscribe(() => terminadas++);
+    httpMock.expectOne(RUTA_PERMISOS_EFECTIVOS).flush({ permissions: [PERMISO_COLABORADOR_READ] });
+
+    expect(terminadas).toBe(2);
+    expect(store.tiene(PERMISO_COLABORADOR_READ)).toBe(true);
+
+    // Terminada, la siguiente vuelve a salir: no es un cache.
+    store.cargar().subscribe();
+    httpMock.expectOne(RUTA_PERMISOS_EFECTIVOS).flush({ permissions: [] });
+  });
+
+  it('con otro contexto no se suma a la peticion en vuelo del anterior', () => {
+    tenant.select(ORG_A);
+    store.cargar().subscribe();
+    tenant.select(ORG_B);
+    store.cargar().subscribe();
+
+    const peticiones = httpMock.match(RUTA_PERMISOS_EFECTIVOS);
+    expect(peticiones).toHaveLength(2);
+    peticiones.forEach((peticion) => peticion.flush({ permissions: [] }));
+  });
+
   it('propaga el error en vez de fingir que no hay permisos', () => {
     tenant.select(ORG_A);
 

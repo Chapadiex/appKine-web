@@ -8,6 +8,8 @@ import {
   provideRouter,
 } from '@angular/router';
 
+import { Observable, isObservable } from 'rxjs';
+
 import { authGuard } from './auth.guard';
 import { contextGuard } from './context.guard';
 import { SessionService } from '../services/session.service';
@@ -91,7 +93,108 @@ describe('guards de sesion', () => {
     });
   });
 
+  // El arranque ya no espera la restauracion de la sesion (AKINE-LCP): la esperan los guards.
+  describe('con la restauracion del arranque en vuelo', () => {
+    it('authGuard espera el refresh en vez de mandar al login a quien tiene sesion', () => {
+      session.iniciarRestauracion();
+      const resultados: unknown[] = [];
+
+      observar(correr(authGuard, '/agenda')).subscribe((r) => resultados.push(r));
+      expect(resultados).toEqual([]);
+
+      httpMock
+        .expectOne('/api/v1/auth/refresh')
+        .flush({ accessToken: 'jwt-restaurado', scope: 'pre_context' });
+
+      expect(resultados).toEqual([true]);
+    });
+
+    it('contextGuard decide con los nombres ya rehidratados, no antes', () => {
+      session.iniciarRestauracion();
+      const resultados: unknown[] = [];
+
+      observar(correr(contextGuard, '/agenda')).subscribe((r) => resultados.push(r));
+      httpMock.expectOne('/api/v1/auth/refresh').flush({
+        accessToken: 'jwt-ctx',
+        scope: 'context',
+        organizationId: 1,
+        consultorioId: 10,
+      });
+      expect(resultados).toEqual([]);
+
+      httpMock.expectOne('/api/v1/me/contexts').flush([]);
+      expect(resultados).toEqual([true]);
+    });
+
+    it('sin cookie, terminada la restauracion, manda al login', () => {
+      session.iniciarRestauracion();
+      const resultados: unknown[] = [];
+
+      observar(correr(authGuard, '/agenda')).subscribe((r) => resultados.push(r));
+      httpMock
+        .expectOne('/api/v1/auth/refresh')
+        .flush(
+          { type: 'https://akine.app/problems/invalid-refresh' },
+          { status: 401, statusText: 'Unauthorized' },
+        );
+
+      expect(resultados).toHaveLength(1);
+      expect((resultados[0] as UrlTree).toString()).toContain('/auth/ingresar');
+    });
+
+    it('mientras espera, precarga el componente de la pantalla de destino', () => {
+      session.iniciarRestauracion();
+      const cargarPantalla = vi.fn(() => Promise.resolve(class {}));
+      const destino = {
+        routeConfig: null,
+        firstChild: { routeConfig: { loadComponent: cargarPantalla }, firstChild: null },
+      } as unknown as ActivatedRouteSnapshot;
+
+      observar(
+        TestBed.runInInjectionContext(() =>
+          authGuard(
+            {} as ActivatedRouteSnapshot,
+            {
+              url: '/agenda',
+              root: destino,
+            } as RouterStateSnapshot,
+          ),
+        ),
+      ).subscribe();
+
+      // Adelanta el import que el router haria despues de los guards: no decide nada.
+      expect(cargarPantalla).toHaveBeenCalledTimes(1);
+      httpMock
+        .expectOne('/api/v1/auth/refresh')
+        .flush({ accessToken: 'jwt-restaurado', scope: 'pre_context' });
+    });
+
+    it('sin restauracion en vuelo no precarga nada: el router lo hace a su tiempo', () => {
+      const cargarPantalla = vi.fn(() => Promise.resolve(class {}));
+      const destino = {
+        firstChild: { routeConfig: { loadComponent: cargarPantalla }, firstChild: null },
+      } as unknown as ActivatedRouteSnapshot;
+
+      TestBed.runInInjectionContext(() =>
+        authGuard(
+          {} as ActivatedRouteSnapshot,
+          {
+            url: '/agenda',
+            root: destino,
+          } as RouterStateSnapshot,
+        ),
+      );
+
+      expect(cargarPantalla).not.toHaveBeenCalled();
+    });
+  });
+
   // --- Ayudas ----------------------------------------------------------------------
+
+  function observar(resultado: unknown): Observable<unknown> {
+    expect(isObservable(resultado)).toBe(true);
+    return resultado as Observable<unknown>;
+  }
 
   /** Autentica de verdad, contra el flujo real, para no falsear el estado del servicio. */
   function autenticar(scope: 'pre_context' | 'context'): void {

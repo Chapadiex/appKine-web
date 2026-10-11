@@ -19,7 +19,7 @@
 # Etapa 1 — build
 # ============================================================================================
 # Version exacta: un `node:24` flotante cambiaria el toolchain debajo del lockfile sin aviso.
-FROM node:24.13.0-alpine AS build
+FROM node:24.21.0-alpine AS build
 WORKDIR /build
 
 # Capa de dependencias: solo cambia cuando cambia el lockfile. Un cambio de codigo reutiliza
@@ -41,14 +41,17 @@ RUN mkdir -p /sbom \
 COPY angular.json tsconfig.json tsconfig.app.json ./
 COPY public/ public/
 COPY src/ src/
-RUN npx ng build --configuration production
+# `npm run build` y no `ng build`: el script activa el optimizador de chunks y verifica que el
+# JavaScript inicial llegue en un solo archivo (AKINE-LCP, ver scripts/build-produccion.mjs).
+COPY scripts/build-produccion.mjs scripts/
+RUN npm run build
 
 # ============================================================================================
 # Etapa 2 — runtime
 # ============================================================================================
 # nginx-unprivileged: corre como el usuario `nginx` (UID 101) y escucha en 8080, sin
 # capacidades para puertos privilegiados. El proceso nunca corre como root.
-FROM nginxinc/nginx-unprivileged:1.30.0-alpine AS runtime
+FROM nginxinc/nginx-unprivileged:1.31.6-alpine AS runtime
 
 LABEL org.opencontainers.image.title="akine-web" \
 	org.opencontainers.image.description="AKINE frontend - SPA Angular servida por nginx" \

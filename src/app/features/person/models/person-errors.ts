@@ -117,6 +117,13 @@ export type CausaPersona =
   | 'transicion-no-permitida'
   /** 409 documento-numero-taken: ya hay una orden o autorizacion vigente con ese numero. */
   | 'numero-en-uso'
+  /**
+   * 409 movimiento-ya-revertido: ese consumo ya tiene su reversion (RF-M17-005).
+   *
+   * <p>Es la segunda de dos reversiones del mismo consumo —dos operadores, o un doble click—, y lo
+   * que corresponde es releer el ledger: la unidad ya volvio una vez.
+   */
+  | 'consumo-ya-revertido'
   /** 409 concurrent-modification: la `expectedVersion` enviada quedo vieja (DP-21). */
   | 'concurrencia'
   /** 409 subscription-suspended: lo emite el filtro, antes del controller. */
@@ -311,6 +318,14 @@ const MENSAJE_AUTORIZACION_SUPERPUESTA =
   'El paciente ya tiene una autorizacion aprobada de esa practica vigente en ese periodo, y dos que ' +
   'se pisan contarian el saldo dos veces. Dos consecutivas —renovar— si conviven: revisa las fechas.';
 
+const MENSAJE_CONSUMO_YA_REVERTIDO =
+  'Ese consumo ya estaba revertido: la unidad volvio al saldo una vez y no vuelve dos. Recarga los ' +
+  'movimientos para ver la reversion que ya existe.';
+
+const MENSAJE_REVERSION_SIN_MOTIVO =
+  'Para revertir un consumo hay que declarar el motivo: sin el, quien audite no puede distinguir un ' +
+  'error de carga de otra cosa.';
+
 const MENSAJE_NUMERO_EN_USO =
   'Ya hay un documento vigente con ese numero. Revisa si no lo cargaste antes: el numero de uno ' +
   'dado de baja si se puede volver a usar.';
@@ -410,6 +425,10 @@ export function traducirErrorPersona(error: unknown): ErrorPersona {
       return base(conDetalle(error, MENSAJE_CONFLICTO), 'transicion-no-permitida');
     case 'documento-numero-taken':
       return base(MENSAJE_NUMERO_EN_USO, 'numero-en-uso');
+    case 'movimiento-ya-revertido':
+      return base(MENSAJE_CONSUMO_YA_REVERTIDO, 'consumo-ya-revertido');
+    case 'reversion-sin-motivo':
+      return base(MENSAJE_REVERSION_SIN_MOTIVO, 'validacion');
     case 'concurrent-modification':
       return base(MENSAJE_CONCURRENCIA, 'concurrencia');
     default:
@@ -453,7 +472,8 @@ export function hayQueRecargar(causa: CausaPersona | null): boolean {
     causa === 'cobertura-ya-inactiva' ||
     causa === 'orden-ya-inactiva' ||
     causa === 'autorizacion-ya-inactiva' ||
-    causa === 'transicion-no-permitida'
+    causa === 'transicion-no-permitida' ||
+    causa === 'consumo-ya-revertido'
   );
 }
 
