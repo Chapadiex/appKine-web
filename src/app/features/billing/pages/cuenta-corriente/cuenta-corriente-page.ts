@@ -5,7 +5,7 @@ import { catchError, concat, of, tap } from 'rxjs';
 import { BillingApi } from '../../services/billing-api';
 import { ConfirmacionConMotivo } from '../../../../shared/components/confirmacion-con-motivo/confirmacion-con-motivo';
 import { Cobro } from '../../../../api/generated/model/cobro';
-import { Obligacion } from '../../../../api/generated/model/obligacion';
+import { Obligacion, ObligacionConceptoEnum } from '../../../../api/generated/model/obligacion';
 import { ErrorCobro, traducirErrorCobro } from '../../models/cobro-errors';
 import { aCentavos, centavosDeTexto, deCentavos, sumaDeCentavos } from '../../models/dinero';
 import { instanteEnPalabras } from '../../models/etiquetas-de-cobro';
@@ -27,6 +27,7 @@ import {
 } from '../../models/obligacion-errors';
 import {
   claseDeEstado,
+  conceptoEnPalabras,
   estadoEnPalabras,
   fechaEnPalabras,
   importeEnPalabras,
@@ -115,6 +116,7 @@ export class CuentaCorrientePage {
 
   protected readonly estadoEnPalabras = estadoEnPalabras;
   protected readonly claseDeEstado = claseDeEstado;
+  protected readonly conceptoEnPalabras = conceptoEnPalabras;
   protected readonly fechaEnPalabras = fechaEnPalabras;
   protected readonly sePuedeAnular = sePuedeAnular;
 
@@ -144,6 +146,11 @@ export class CuentaCorrientePage {
     const actual = this.estado();
     return actual.tipo === 'error' && actual.faltaContexto;
   });
+
+  /** `true` si alguna deuda es un coseguro: la parte del financiador vive en otra pantalla. */
+  protected readonly hayCoseguros = computed(() =>
+    this.obligaciones().some((o) => o.concepto === ObligacionConceptoEnum.COSEGURO),
+  );
 
   protected readonly vacia = computed(
     () => this.estado().tipo === 'listo' && this.obligaciones().length === 0,

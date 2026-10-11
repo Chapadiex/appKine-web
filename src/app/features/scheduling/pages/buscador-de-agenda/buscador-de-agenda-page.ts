@@ -16,6 +16,7 @@ import {
   diaSinSlots,
   fechaEnPalabras,
   hoy,
+  hoyEnZona,
   rangoEnZona,
   slotCompleto,
   sumarDias,
@@ -101,6 +102,18 @@ export class BuscadorDeAgendaPage {
   protected readonly profesionalId = signal<number | null>(null);
   protected readonly desde = signal(hoy());
   protected readonly hasta = signal(sumarDias(hoy(), DIAS_POR_DEFECTO));
+
+  /**
+   * `true` mientras el borde sigue siendo el default calculado con el dia del NAVEGADOR.
+   *
+   * <p>El dia que vale es el de la sede, y su zona recien llega con la primera agenda. Entre las
+   * 21:00 y las 24:00 de Cordoba un navegador en UTC ya esta en el dia siguiente: la ventana
+   * arrancaba un dia tarde y el recorte a 62 dias terminaba un dia despues (lo destapo el E2E del
+   * CI, que corre en UTC). Con la primera respuesta los bordes que nadie toco se mueven al dia de la
+   * sede y se vuelve a pedir; los que el usuario eligio no se tocan.
+   */
+  private desdePorDefecto = true;
+  private hastaPorDefecto = true;
 
   /**
    * La consulta de agenda en vuelo. Cada consulta nueva cancela la anterior: sin esto gana la
@@ -214,12 +227,14 @@ export class BuscadorDeAgendaPage {
    */
   protected cambiarDesde(valor: string): void {
     this.avisoDeRecorte.set(null);
+    this.desdePorDefecto = false;
     this.desde.set(valor);
     this.buscar();
   }
 
   protected cambiarHasta(valor: string): void {
     this.avisoDeRecorte.set(null);
+    this.hastaPorDefecto = false;
     this.hasta.set(valor);
     this.buscar();
   }
@@ -248,6 +263,9 @@ export class BuscadorDeAgendaPage {
       })
       .subscribe({
         next: (agenda) => {
+          if (this.corregirAlDiaDeLaSede(agenda.timezone ?? '')) {
+            return;
+          }
           this.agenda.set(agenda);
           this.cargando.set(false);
         },
@@ -272,6 +290,28 @@ export class BuscadorDeAgendaPage {
           this.faltaContexto.set(traducido.causa === 'sin-contexto');
         },
       });
+  }
+
+  /**
+   * Mueve al dia de la sede los bordes que siguen en su default del navegador y vuelve a pedir.
+   * Devuelve `true` cuando la respuesta en mano es de otra ventana y hay que tirarla.
+   */
+  private corregirAlDiaDeLaSede(timezone: string): boolean {
+    if (!this.desdePorDefecto || timezone === '') {
+      return false;
+    }
+    this.desdePorDefecto = false;
+    const deLaSede = hoyEnZona(timezone);
+    if (deLaSede === this.desde()) {
+      return false;
+    }
+    this.desde.set(deLaSede);
+    // Un `hasta` elegido a mano se respeta, salvo que la ventana corrida quede vacia o invertida.
+    if (this.hastaPorDefecto || this.hasta() <= deLaSede) {
+      this.hasta.set(sumarDias(deLaSede, DIAS_POR_DEFECTO));
+    }
+    this.buscar();
+    return true;
   }
 
   /** Navega a la reserva con todo lo que esa pantalla necesita para rearmar el resumen. */

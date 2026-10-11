@@ -135,6 +135,39 @@ describe('CuentaCorrientePage', () => {
     expect(texto(fixture)).toContain('Precio al devengar');
   });
 
+  it('dice el concepto de cada deuda, avisa la practica no habilitada y manda la parte de la obra social a presentaciones', async () => {
+    const fixture = await montar([
+      { ...PENDIENTE, id: 9001, concepto: 'PARTICULAR' },
+      {
+        ...PENDIENTE,
+        id: 9002,
+        concepto: 'COSEGURO',
+        practicaId: 77,
+        alertaPracticaNoHabilitada: true,
+        convenio: { convenioNombre: 'OSDE 210' },
+      },
+    ]);
+
+    const contenido = texto(fixture);
+    expect(contenido).toContain('Particular');
+    expect(contenido).toContain('Coseguro');
+    expect(contenido).toContain('Convenio OSDE 210');
+    expect(contenido).not.toContain('COSEGURO');
+    expect(contenido).toContain('la practica facturada no esta habilitada en la oferta');
+    const enlace = (fixture.nativeElement as HTMLElement).querySelector(
+      'a[href="/presentaciones"]',
+    );
+    expect(enlace?.textContent).toContain('Ir a presentaciones');
+  });
+
+  it('sin coseguros no habla de la obra social ni avisa nada', async () => {
+    const fixture = await montar([{ ...PENDIENTE, concepto: 'PARTICULAR' }]);
+
+    const contenido = texto(fixture);
+    expect(contenido).not.toContain('presentaciones a financiadores');
+    expect(contenido).not.toContain('Revisar:');
+  });
+
   it('una lista vacia no es un error, y dice de donde salen las deudas', async () => {
     const fixture = await montar([]);
 

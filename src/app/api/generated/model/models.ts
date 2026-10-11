@@ -204,6 +204,8 @@ export * from './motivo-de-rechazo';
 export * from './movimiento-de-caja';
 export * from './movimiento-response';
 export * from './my-platform-role-response';
+export * from './notification-page-response';
+export * from './notification-response';
 export * from './obligacion';
 export * from './oferta-response';
 export * from './orden-response';

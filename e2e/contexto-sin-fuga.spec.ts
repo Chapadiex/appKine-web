@@ -150,10 +150,27 @@ test.describe('Escenario 10 - cambio de contexto sin fuga de datos', () => {
     await expect(page).toHaveURL(/\/seleccionar-contexto/);
     const titulo = page.getByRole('heading', { level: 1 });
     await expect(titulo).toHaveText('Elegi donde vas a trabajar');
+
+    // Antes se comparaba la cuenta de textos en `main` contra `button.count()`, y `count()` NO
+    // reintenta: se evaluaba una sola vez, a veces mientras el selector todavia decia "Buscando tus
+    // contextos" (el titulo es estatico y aparece antes que la lista). Si en ese instante habia 0
+    // botones y la lista se pintaba antes de la asercion siguiente, se exigia `toHaveCount(0)` sobre
+    // una pantalla que ya mostraba 1, y fallaba; si no, pasaba sin haber afirmado nada. Ahora se
+    // espera a la lista con aserciones que reintentan, y recien sobre la lista cargada se cuenta.
     for (const centro of [centroA, centroB]) {
-      await expect(page.locator('main').getByText(centro)).toHaveCount(
-        await page.getByRole('button', { name: centro }).getByText(centro).count(),
-      );
+      await expect(page.getByRole('button', { name: centro })).toBeVisible();
+    }
+    await expect(page.getByRole('heading', { name: 'Organizacion', exact: true })).toHaveCount(0);
+    // El alta self-service nombra al primer consultorio igual que a la organizacion, asi que cada
+    // opcion puede mostrar el nombre dos veces. Lo que se exige es que TODA aparicion en `main`
+    // este dentro de su opcion. El `count()` ya no corre en carrera: la lista esta pintada.
+    for (const centro of [centroA, centroB]) {
+      const enSuOpcion = await page
+        .getByRole('button', { name: centro })
+        .getByText(centro, { exact: true })
+        .count();
+      expect(enSuOpcion).toBeGreaterThan(0);
+      await expect(page.locator('main').getByText(centro, { exact: true })).toHaveCount(enSuOpcion);
     }
   });
 

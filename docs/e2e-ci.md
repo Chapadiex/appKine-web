@@ -13,6 +13,16 @@ Job `e2e` de `.github/workflows/ci.yml`:
    el job `contrato`). Al fallar publica `e2e-report`: reporte HTML, trazas, capturas, videos y el
    log del backend.
 
+## El navegador corre en otra zona que la sede, a proposito
+
+Los proyectos `agenda` y `chromium` fijan `timezoneId` del navegador (`playwright.config.ts`,
+`ZONA_DEL_NAVEGADOR`) en una zona cuyo dia es **otro** que el de la sede al arrancar la corrida:
+`Pacific/Kiritimati` desde las 07:00 de Cordoba, `Pacific/Pago_Pago` antes. "Hoy" en AKINE es el
+dia de la sede; cualquier `new Date()` que se cuele en una pantalla o en un helper falla siempre, y
+no solo entre las 21:00 y las 24:00 de Cordoba, que es cuando un runner en UTC ya esta en el dia
+siguiente (asi se cayo el job del PR #42). Para reproducir algo puntual se fija a mano con
+`AKINE_E2E_TIMEZONE` (por ejemplo `UTC`); `AKINE_E2E_ZONA_SEDE` cambia la zona de referencia.
+
 ## El catalogo global en una base nueva
 
 Toda oferta cuelga de un servicio del catalogo global, y crearlo exige rol de plataforma. El

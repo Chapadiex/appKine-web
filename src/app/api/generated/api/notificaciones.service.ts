@@ -17,6 +17,8 @@ import { Observable }                                        from 'rxjs';
 import { OpenApiHttpParams, QueryParamStyle } from '../query.params';
 
 // @ts-ignore
+import { NotificationPageResponse } from '../model/notification-page-response';
+// @ts-ignore
 import { ProblemDetail } from '../model/problem-detail';
 
 // @ts-ignore
@@ -25,6 +27,7 @@ import { Configuration }                                     from '../configurat
 import { BaseService } from '../api.base.service';
 import {
     NotificacionesServiceInterface,
+    ListNotificationsRequestParams,
     RetryNotificationRequestParams
 } from './notificaciones.serviceInterface';
 
@@ -37,6 +40,101 @@ export class NotificacionesService extends BaseService implements Notificaciones
 
     constructor(protected httpClient: HttpClient, @Optional() @Inject(BASE_PATH) basePath: string|string[], @Optional() configuration?: Configuration) {
         super(basePath, configuration);
+    }
+
+    /**
+     * Listar las notificaciones de la organizacion
+     * Lo que alimenta a retryNotification: sin esto no habia forma de saber que reintentar. Sin &#x60;estado&#x60; lista las **FALLIDA** y **AGOTADA**, que son las que admiten reintento; se puede pedir cualquier combinacion de estados (&#x60;estado&#x3D;FALLIDA,AGOTADA&#x60; o &#x60;estado&#x3D;FALLIDA&amp;estado&#x3D;AGOTADA&#x60;).  Requiere &#x60;colaborador:manage&#x60;, el mismo permiso que el reintento. Solo alcanza notificaciones de la organizacion del contexto. Las que nacen sin tenant (recuperacion de contraseña, activaciones fuera del alta de la organizacion) no aparecen; la activacion del fundador en el alta si, porque es de la organizacion.  **Sin datos clinicos ni contenido:** el destinatario va enmascarado, el cuerpo no sale nunca y el ultimo error es un resumen ya sanitizado. De la mas nueva a la mas vieja. &#x60;size&#x60; se acota a 100 por request.
+     * @endpoint get /api/v1/organizations/{orgId}/notifications
+     * @param requestParameters
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public listNotifications(requestParameters: ListNotificationsRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<NotificationPageResponse>;
+    public listNotifications(requestParameters: ListNotificationsRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<NotificationPageResponse>>;
+    public listNotifications(requestParameters: ListNotificationsRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<NotificationPageResponse>>;
+    public listNotifications(requestParameters: ListNotificationsRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        const orgId = requestParameters?.orgId;
+        if (orgId === null || orgId === undefined) {
+            throw new Error('Required parameter orgId was null or undefined when calling listNotifications.');
+        }
+        const estado = requestParameters?.estado;
+        const page = requestParameters?.page;
+        const size = requestParameters?.size;
+
+        let localVarQueryParameters = new OpenApiHttpParams(this.encoder);
+
+        localVarQueryParameters = this.addToHttpParams(
+            localVarQueryParameters,
+            'estado',
+            <any>estado,
+            QueryParamStyle.Form,
+            true,
+        );
+
+
+        localVarQueryParameters = this.addToHttpParams(
+            localVarQueryParameters,
+            'page',
+            <any>page,
+            QueryParamStyle.Form,
+            true,
+        );
+
+
+        localVarQueryParameters = this.addToHttpParams(
+            localVarQueryParameters,
+            'size',
+            <any>size,
+            QueryParamStyle.Form,
+            true,
+        );
+
+
+        let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/organizations/${this.configuration.encodeParam({name: "orgId", value: orgId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/notifications`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<NotificationPageResponse>('get', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                params: localVarQueryParameters.toHttpParams(),
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
     }
 
     /**
