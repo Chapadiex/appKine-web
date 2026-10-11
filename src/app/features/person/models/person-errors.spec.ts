@@ -125,6 +125,17 @@ describe('traducirErrorPersona', () => {
     expect(traducido.mensaje).toContain('suscripcion');
   });
 
+  it('C-4: la reversion repetida pide releer y la reversion sin motivo es validacion', () => {
+    const repetida = traducirErrorPersona(problema('movimiento-ya-revertido', 409, {}));
+    expect(repetida.causa).toBe('consumo-ya-revertido');
+    expect(repetida.mensaje).toContain('ya estaba revertido');
+    expect(hayQueRecargar(repetida.causa)).toBe(true);
+
+    const sinMotivo = traducirErrorPersona(problema('reversion-sin-motivo', 400, {}));
+    expect(sinMotivo.causa).toBe('validacion');
+    expect(sinMotivo.mensaje).toContain('motivo');
+  });
+
   it('hayQueRecargar solo pide recargar donde recargar sirve', () => {
     expect(hayQueRecargar('no-encontrado')).toBe(true);
     expect(hayQueRecargar('concurrencia')).toBe(true);
