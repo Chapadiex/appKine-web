@@ -338,6 +338,7 @@ model/participante-operativo.ts
 model/participante.ts
 model/password-reset-confirm-request.ts
 model/password-reset-request.ts
+model/permisos-otorgables-response.ts
 model/persona-page-response.ts
 model/persona-response.ts
 model/plan-change-request.ts

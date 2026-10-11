@@ -1,4 +1,5 @@
 import { AkineHttpError } from '../../../core/interceptors/error.interceptor';
+import { etiquetaDeRol } from './roles';
 
 /**
  * Motivo por el que fallo una operacion sobre colaboradores o auditoria (M05 / M24).
@@ -129,32 +130,31 @@ export function traducirErrorColaborador(
 /**
  * Traduce el error al otorgar un permiso adicional a un vinculo.
  *
- * <p>Desde G-5 (backend #78) un permiso que la matriz marca "No" para el rol del vinculo
- * -`hc:write` a un administrador de organizacion, `hc:read` a un administrativo- responde
- * `400 validation-error`, igual que un codigo inexistente o un motivo vacio. El motivo vacio
- * lo frena el formulario y la lista de codigos sale del catalogo conocido, asi que un `400`
- * SIN errores por campo es, en esta pantalla, el rechazo de la matriz.
+ * <p>Desde el contrato 0.84.0 un permiso que la matriz no admite para el rol del vinculo
+ * responde `400 permiso-no-otorgable-al-rol`, con `roleCode` y `permissionCode` en las
+ * propiedades. Antes salia como `validation-error` y habia que adivinarlo por la ausencia de
+ * errores por campo; ahora se ramifica por el tipo, y un `validation-error` vuelve a ser lo
+ * que dice -un codigo inexistente o un campo mal formado-.
  *
- * <p><b>No se replica la matriz aca.</b> El frontend no sabe que grants admite cada rol: el
- * contrato no lo expone, y copiar la tabla la convertiria en una segunda fuente de verdad que
- * diverge en silencio. Se ofrece la lista completa y se explica el rechazo con el `detail`
- * del servidor, que nombra el rol.
+ * <p>El selector ya ofrece solo lo otorgable al rol, asi que este rechazo aparece cuando el rol
+ * cambio entre que se abrio el panel y se envio. Por eso el rol del mensaje sale de la
+ * respuesta y no del que la pantalla tenia en memoria: el del backend es el vigente.
  */
 export function traducirErrorGrant(error: unknown, rol: string): ErrorColaborador {
   const traducido = traducirErrorColaborador(error);
-  if (
-    traducido.causa !== 'validacion' ||
-    !(error instanceof AkineHttpError) ||
-    Object.keys(error.erroresPorCampo).length > 0
-  ) {
+  if (!(error instanceof AkineHttpError) || error.problemType !== 'permiso-no-otorgable-al-rol') {
     return traducido;
   }
-  const base = `Ese permiso no se puede otorgar a un colaborador con rol ${rol} segun la matriz de permisos.`;
+  const roleCode = error.extension('roleCode');
+  const permissionCode = error.extension('permissionCode');
+  const permiso =
+    typeof permissionCode === 'string' ? `El permiso ${permissionCode}` : 'Ese permiso';
+  const rolVigente = typeof roleCode === 'string' ? etiquetaDeRol(roleCode) : rol;
   return {
     ...traducido,
-    mensaje: error.problem?.detail
-      ? `${base} Detalle: ${error.problem.detail.replace(/\.$/, '')}.`
-      : base,
+    mensaje:
+      `${permiso} no se puede otorgar a un colaborador con rol ${rolVigente} segun la matriz ` +
+      'de permisos. Si el rol cambio hace poco, cerra el panel y volve a abrirlo para ver lo que admite.',
   };
 }
 

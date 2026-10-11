@@ -218,6 +218,7 @@ export * from './participante';
 export * from './participante-operativo';
 export * from './password-reset-confirm-request';
 export * from './password-reset-request';
+export * from './permisos-otorgables-response';
 export * from './persona-page-response';
 export * from './persona-response';
 export * from './plan-change-request';
