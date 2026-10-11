@@ -15,7 +15,7 @@ import { ConfirmacionConMotivo } from '../../../../shared/components/confirmacio
 import { SchedulingApi } from '../../services/scheduling-api';
 import { SelectorDeHorario } from '../../components/selector-de-horario/selector-de-horario';
 import { AccionSugerida, ErrorAgenda, traducirErrorAgenda } from '../../models/agenda-errors';
-import { hoy, sumarDias } from '../../models/etiquetas-de-agenda';
+import { hoy, hoyEnZona, sumarDias } from '../../models/etiquetas-de-agenda';
 import {
   esTerminal,
   estadoSegunHistorial,
@@ -128,6 +128,13 @@ export class CicloDeTurnoPage {
   /** Agenda del dia destino, para el selector de horarios de la reprogramacion. */
   protected readonly agendaDestino = signal<Agenda | null>(null);
   protected readonly fechaDestino = signal('');
+
+  /**
+   * `true` mientras {@link fechaDestino} es el hoy provisorio del navegador. La primera agenda trae
+   * la zona de la sede y, si el dia no coincide, se corrige y se vuelve a pedir: de noche un
+   * navegador en UTC ya esta en el dia siguiente al de la sede.
+   */
+  private destinoPorDefecto = false;
   protected readonly instanteDestino = signal('');
   protected readonly faltaHorario = signal(false);
 
@@ -248,7 +255,10 @@ export class CicloDeTurnoPage {
         this.exito.set(null);
         this.panel.set('ninguno');
         this.instanteDestino.set('');
-        this.fechaDestino.set(fecha === '' ? hoy() : fecha);
+        // `!fecha` y no `=== ''`: con `withComponentInputBinding` un query param ausente llega
+        // como `undefined`, igual que en la recepcion.
+        this.destinoPorDefecto = !fecha;
+        this.fechaDestino.set(fecha ? fecha : hoy());
         this.cargarTurnoYHistorial();
         this.cargarDestino();
       });
@@ -353,12 +363,33 @@ export class CicloDeTurnoPage {
     this.api
       .buscarAgenda(consultorioId, ofertaId, { desde, hasta: sumarDias(desde, 1) })
       .subscribe({
-        next: (agenda) => this.agendaDestino.set(agenda),
+        next: (agenda) => {
+          if (this.corregirAlDiaDeLaSede(agenda.timezone ?? '')) {
+            return;
+          }
+          this.agendaDestino.set(agenda);
+        },
         error: () => this.agendaDestino.set(null),
       });
   }
 
+  /** Igual que en la recepcion: el hoy del navegador se corrige una vez al de la sede. */
+  private corregirAlDiaDeLaSede(timezone: string): boolean {
+    if (!this.destinoPorDefecto || timezone === '') {
+      return false;
+    }
+    this.destinoPorDefecto = false;
+    const deLaSede = hoyEnZona(timezone);
+    if (deLaSede === this.fechaDestino()) {
+      return false;
+    }
+    this.fechaDestino.set(deLaSede);
+    this.cargarDestino();
+    return true;
+  }
+
   protected cambiarDiaDestino(fecha: string): void {
+    this.destinoPorDefecto = false;
     this.fechaDestino.set(fecha);
     this.instanteDestino.set('');
     this.cargarDestino();

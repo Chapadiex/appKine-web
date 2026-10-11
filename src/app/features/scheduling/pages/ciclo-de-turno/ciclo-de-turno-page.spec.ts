@@ -11,6 +11,7 @@ import { TIMEOUT_AXE, esperarSinViolaciones } from '../../../../core/testing/axe
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { errorInterceptor } from '../../../../core/interceptors/error.interceptor';
 import { provideApi } from '../../../../api/generated/provide-api';
+import { fijarReloj, soltarReloj } from '../../../../core/testing/reloj';
 
 const CONSULTORIO = 3;
 const OFERTA = 42;
@@ -113,7 +114,45 @@ describe('CicloDeTurnoPage', () => {
   });
 
   afterEach(() => {
+    soltarReloj();
     httpMock.verify();
+  });
+
+  /**
+   * Sin `?fecha=` el destino de la reprogramacion arranca hoy, y hoy es el de la SEDE: a las 21:25
+   * de Cordoba un navegador en UTC ya esta en el 10/10. La agenda trae la zona y el dia se corrige.
+   */
+  it('sin `?fecha=` el dia destino es hoy en la sede, no en el navegador', async () => {
+    fijarReloj('2026-10-10T00:25:00Z', { navegadorEnUtc: true });
+    tenantContext.select({
+      organizationId: 1,
+      organizationName: 'Centro Belgrano',
+      consultorioId: CONSULTORIO,
+      consultorioName: 'Sede Centro',
+    });
+    permisos.cargar().subscribe();
+    httpMock
+      .expectOne(RUTA_PERMISOS_EFECTIVOS)
+      .flush({ permissions: [PERMISO_TURNO_READ, PERMISO_TURNO_MANAGE] });
+    const fixture = TestBed.createComponent(CicloDeTurnoPage);
+    fixture.componentRef.setInput('turnoId', String(TURNO));
+    fixture.componentRef.setInput('version', '0');
+    fixture.componentRef.setInput('ofertaId', String(OFERTA));
+    // Lo que hace el router con un query param ausente.
+    fixture.componentRef.setInput('fecha', undefined);
+    fixture.detectChanges();
+
+    responderLectura(false);
+    httpMock.expectOne(HISTORIAL).flush(EVENTOS);
+    const provisoria = httpMock.expectOne(esAgenda());
+    expect(provisoria.request.params.get('desde')).toBe('2026-10-10');
+    provisoria.flush(DIA);
+
+    const deLaSede = httpMock.expectOne(esAgenda());
+    expect(deLaSede.request.params.get('desde')).toBe('2026-10-09');
+    expect(deLaSede.request.params.get('hasta')).toBe('2026-10-10');
+    deLaSede.flush(DIA);
+    await asentar(fixture);
   });
 
   it('reconstruye estado y horario desde el historial, que es la unica lectura que hay', async () => {

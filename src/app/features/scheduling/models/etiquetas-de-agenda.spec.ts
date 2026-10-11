@@ -2,6 +2,8 @@ import { DiaDeAgendaMotivoSinSlotsEnum } from '../../../api/generated/model/dia-
 import {
   fechaEnPalabras,
   horaEnZona,
+  hoy,
+  hoyEnZona,
   rangoEnZona,
   slotCompleto,
   sumarDias,
@@ -97,5 +99,23 @@ describe('sumarDias', () => {
   it('cruza el fin de mes y no toca una fecha invalida', () => {
     expect(sumarDias('2026-09-30', 1)).toBe('2026-10-01');
     expect(sumarDias('no es una fecha', 1)).toBe('no es una fecha');
+  });
+});
+
+/**
+ * "Hoy" es el dia de la SEDE. A las 00:25 UTC del 10/10 —la hora a la que se cayo el E2E del PR
+ * #42— en Cordoba siguen siendo las 21:25 del 09/10.
+ */
+describe('hoyEnZona', () => {
+  const NOCHE_EN_CORDOBA = new Date('2026-10-10T00:25:00Z');
+
+  it('da el dia de la sede aunque en UTC ya sea el dia siguiente', () => {
+    expect(hoyEnZona(ZONA, NOCHE_EN_CORDOBA)).toBe('2026-10-09');
+    expect(hoyEnZona('UTC', NOCHE_EN_CORDOBA)).toBe('2026-10-10');
+  });
+
+  it('sin zona, o con una que el navegador no conoce, cae al dia del navegador', () => {
+    expect(hoyEnZona('', NOCHE_EN_CORDOBA)).toBe(hoy(NOCHE_EN_CORDOBA));
+    expect(hoyEnZona('Marte/Olympus_Mons', NOCHE_EN_CORDOBA)).toBe(hoy(NOCHE_EN_CORDOBA));
   });
 });
