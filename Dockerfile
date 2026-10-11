@@ -19,7 +19,7 @@
 # Etapa 1 — build
 # ============================================================================================
 # Version exacta: un `node:24` flotante cambiaria el toolchain debajo del lockfile sin aviso.
-FROM node:24.13.0-alpine AS build
+FROM node:24.21.0-alpine AS build
 WORKDIR /build
 
 # Capa de dependencias: solo cambia cuando cambia el lockfile. Un cambio de codigo reutiliza
