@@ -508,6 +508,35 @@ describe('CollaboratorsPage', () => {
     expect(texto(fixture)).toContain('Ese permiso ya esta vigente sobre el vinculo');
   });
 
+  it('un 400 de la matriz al otorgar explica que ese permiso no admite el rol del vinculo', async () => {
+    const fixture = await montar();
+    abrirPanel(fixture, 'Permisos adicionales');
+    responderGrants([]);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    elegir(fixture, '#grant-permissionCode', PERMISO_COLABORADOR_MANAGE);
+    escribir(fixture, '#grant-reason', 'Cubre licencia');
+    enviar(fixture, 'form');
+
+    httpMock
+      .expectOne((peticion: HttpRequest<unknown>) => peticion.method === 'POST')
+      .flush(
+        {
+          type: 'https://akine.app/problems/validation-error',
+          detail: 'La matriz de permisos no admite otorgar ese permiso al rol PROFESIONAL',
+        },
+        { status: 400, statusText: 'Bad Request' },
+      );
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(texto(fixture)).toContain(
+      'no se puede otorgar a un colaborador con rol Profesional segun la matriz de permisos',
+    );
+    expect(texto(fixture)).toContain('al rol PROFESIONAL');
+  });
+
   /** Monta la pantalla con contexto, permisos de gestion y una pagina de dos vinculos. */
   async function montar() {
     return montarCon((pedido) => pedido.flush(PAGINA));

@@ -1,5 +1,9 @@
 import { AkineHttpError } from '../../../core/interceptors/error.interceptor';
-import { CausaColaborador, traducirErrorColaborador } from './colaborador-errors';
+import {
+  CausaColaborador,
+  traducirErrorColaborador,
+  traducirErrorGrant,
+} from './colaborador-errors';
 
 /** Arma el error tal como lo entrega `errorInterceptor` a las pantallas. */
 function problema(status: number, tipo: string | null, detail = 'Detalle del backend') {
@@ -94,5 +98,42 @@ describe('traducirErrorColaborador', () => {
 
     expect(traducido.causa).toBe('otro');
     expect(traducido.mensaje).toContain('No pudimos completar');
+  });
+});
+
+/**
+ * G-5 (backend #78): un grant que la matriz no admite para el rol del vinculo es un `400`
+ * `validation-error` sin errores por campo. La pantalla lo explica nombrando el rol y sin
+ * replicar la matriz.
+ */
+describe('traducirErrorGrant', () => {
+  it('un 400 sin errores por campo se explica como rechazo de la matriz, con el detail', () => {
+    const error = problema(
+      400,
+      'validation-error',
+      'La matriz de permisos no admite otorgar ese permiso al rol ADMINISTRATIVO',
+    );
+    const traducido = traducirErrorGrant(error, 'Administrativo');
+    expect(traducido.causa).toBe('validacion');
+    expect(traducido.mensaje).toContain('rol Administrativo segun la matriz de permisos');
+    expect(traducido.mensaje).toContain('al rol ADMINISTRATIVO.');
+  });
+
+  it('un 400 con errores por campo conserva el mensaje de validacion comun', () => {
+    const error = new AkineHttpError(
+      400,
+      {
+        type: 'https://akine.app/problems/validation-error',
+        detail: 'Hay campos invalidos',
+        errors: { reason: 'obligatorio' },
+      },
+      false,
+    );
+    expect(traducirErrorGrant(error, 'Profesional').mensaje).not.toContain('matriz');
+  });
+
+  it('otros errores pasan sin cambios', () => {
+    const error = problema(409, 'grant-already-active', 'Ya esta vigente');
+    expect(traducirErrorGrant(error, 'Profesional')).toEqual(traducirErrorColaborador(error));
   });
 });

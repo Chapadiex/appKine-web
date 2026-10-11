@@ -359,6 +359,11 @@
                           Se suman a los que ya trae el rol. Solo se listan los vigentes: los dados
                           de baja quedan en la auditoria.
                         </p>
+                        <p class="ayuda">
+                          La matriz de permisos decide cuales admite cada rol: uno que no admite se
+                          rechaza al otorgarlo, y si el rol cambia, un permiso que el rol nuevo no
+                          admite deja de conceder acceso aunque siga en esta lista.
+                        </p>
 
                         <div aria-live="polite">
                           @if (grants() === null) {
