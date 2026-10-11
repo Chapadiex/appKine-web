@@ -1,4 +1,4 @@
-import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
+import { DestroyRef, Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { catchError, of } from 'rxjs';
@@ -86,6 +86,7 @@ const DIAS_PROPUESTOS = 7;
 export class HorarioEfectivoPage {
   private readonly disponibilidad = inject(DisponibilidadProfesionalService);
   private readonly diaDeLaSede = inject(DiaDeLaSede);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly colaboradores = inject(ColaboradoresService);
   private readonly tenantContext = inject(TenantContextStore);
   private readonly formBuilder = inject(FormBuilder);
@@ -195,6 +196,15 @@ export class HorarioEfectivoPage {
     const desde = this.diaDeLaSede.hoy();
     this.formularioVentana.reset({ desde, hasta: sumarDias(desde, DIAS_PROPUESTOS) });
     this.errorVentana.set(null);
+    // Propuesta con el dia del navegador si la zona de la sede todavia no llego: se corrige al llegar.
+    const campoDesde = this.formularioVentana.controls.desde;
+    this.diaDeLaSede.alinear(
+      () => campoDesde.value,
+      (hoy) => {
+        this.formularioVentana.reset({ desde: hoy, hasta: sumarDias(hoy, DIAS_PROPUESTOS) });
+      },
+      this.destroyRef,
+    );
   }
 
   /**

@@ -115,6 +115,17 @@ export class ReportesPage {
   );
 
   constructor() {
+    // Fechas por defecto tomadas antes de conocer la zona de la sede: se corrigen al llegar.
+    const { desde, hasta } = this.filtro.controls;
+    this.diaDeLaSede.alinear(
+      () => desde.value,
+      (hoy) => desde.setValue(primerDiaDelMes(hoy)),
+    );
+    this.diaDeLaSede.alinear(
+      () => hasta.value,
+      (hoy) => hasta.setValue(hoy),
+    );
+
     effect(() => {
       this.tenantContext.contextEpoch();
       untracked(() => {

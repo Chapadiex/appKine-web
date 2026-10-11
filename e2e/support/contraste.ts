@@ -546,7 +546,7 @@ export async function instalarApiDeContraste(page: Page): Promise<ApiDeContraste
       ]);
     }
 
-    // La zona de la sede: `contextGuard` la pide antes de abrir cualquier pantalla del tenant.
+    // La zona de la sede: `contextGuard` la pide (sin esperarla) al abrir cualquier pantalla del tenant.
     if (camino === `/api/v1/organizations/${ORGANIZATION_ID}/consultorios`) {
       return json({ content: [{ id: CONSULTORIO_ID, timezone: 'America/Argentina/Cordoba' }] });
     }

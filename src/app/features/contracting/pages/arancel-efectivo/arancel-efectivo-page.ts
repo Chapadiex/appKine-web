@@ -169,6 +169,13 @@ export class ArancelEfectivoPage {
   protected readonly intentos = signal(0);
 
   constructor() {
+    // Fechas por defecto tomadas antes de conocer la zona de la sede: se corrigen al llegar.
+    const fecha = this.formulario.controls.fecha;
+    this.diaDeLaSede.alinear(
+      () => fecha.value,
+      (hoy) => fecha.setValue(hoy),
+    );
+
     effect(() => {
       this.tenantContext.contextEpoch();
       untracked(() => {

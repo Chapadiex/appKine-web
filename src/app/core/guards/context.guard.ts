@@ -19,10 +19,9 @@ import { PARAM_VOLVER_A, RUTA_LOGIN, RUTA_SELECTOR_CONTEXTO } from '../models/ru
  * <p>Se usa junto a `authGuard`, no en su lugar: cubre el caso anonimo por si alguien lo
  * monta solo, pero el orden natural en las rutas es `[authGuard, contextGuard]`.
  *
- * <p><b>Con contexto, espera la zona de la sede</b> ({@link DiaDeLaSede#asegurar}) antes de dejar
- * pasar: las pantallas toman de ahi su "hoy" al construirse, y entre las 21:00 y las 24:00 de
- * Argentina un navegador en UTC ya esta en el dia siguiente. Un fallo no bloquea: la pantalla
- * abre con el dia del navegador.
+ * <p><b>Con contexto, dispara la carga de la zona de la sede</b> ({@link DiaDeLaSede#cargar}) y deja
+ * pasar sin esperarla: es el "hoy" de negocio, y esperarla sumaria un round-trip en serie antes
+ * de la primera pintura. Las pantallas se corrigen cuando llega.
  */
 export const contextGuard: CanActivateFn = (_ruta, estado) => {
   const session = inject(SessionService);
@@ -31,7 +30,8 @@ export const contextGuard: CanActivateFn = (_ruta, estado) => {
   const situacion = session.estado();
 
   if (situacion === 'activa') {
-    return inject(DiaDeLaSede).asegurar();
+    inject(DiaDeLaSede).cargar();
+    return true;
   }
 
   if (situacion === 'anonimo') {

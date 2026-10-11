@@ -196,6 +196,12 @@ export class PlanesDelFinanciadorPage {
   });
 
   constructor() {
+    // Fechas por defecto tomadas antes de conocer la zona de la sede: se corrigen al llegar.
+    this.diaDeLaSede.alinear(this.fecha, (hoy) => {
+      this.fecha.set(hoy);
+      this.cargar();
+    });
+
     effect(() => {
       this.tenantContext.contextEpoch();
       untracked(() => {

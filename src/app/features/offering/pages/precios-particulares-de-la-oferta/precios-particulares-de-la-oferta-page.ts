@@ -74,7 +74,10 @@ export class PreciosParticularesDeLaOfertaPage {
   protected readonly precioEnPalabras = precioEnPalabras;
 
   protected readonly ofertaId = Number(this.ruta.snapshot.paramMap.get('ofertaId'));
-  private readonly hoy = this.diaDeLaSede.hoy();
+  /** Lee el signal de la zona: lo que dependa de esto se actualiza cuando la zona llega. */
+  private get hoy(): string {
+    return this.diaDeLaSede.hoy();
+  }
 
   protected readonly estado = signal<EstadoDeListado<readonly PrecioParticularResponse[]>>({
     tipo: 'cargando',

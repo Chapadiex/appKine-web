@@ -152,6 +152,18 @@ export class PresentacionDetallePage {
   });
 
   constructor() {
+    // Fechas por defecto tomadas antes de conocer la zona de la sede: se corrigen al llegar.
+    const fechaFactura = this.factura.controls.fecha;
+    const fechaPago = this.pago.controls.fechaPago;
+    this.diaDeLaSede.alinear(
+      () => fechaFactura.value ?? '',
+      (hoy) => fechaFactura.setValue(hoy),
+    );
+    this.diaDeLaSede.alinear(
+      () => fechaPago.value ?? '',
+      (hoy) => fechaPago.setValue(hoy),
+    );
+
     effect(() => {
       this.presentacionId();
       this.tenantContext.contextEpoch();

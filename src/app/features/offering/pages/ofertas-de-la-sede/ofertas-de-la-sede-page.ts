@@ -133,7 +133,10 @@ export class OfertasDeLaSedePage {
    * <p>Solo se usa para <b>redactar</b> el motivo de una fila que no esta vigente. La decision de
    * si esta vigente o no la toma el backend, en la zona de la sede.
    */
-  private readonly hoy = this.diaDeLaSede.hoy();
+  /** Lee el signal de la zona: lo que dependa de esto se actualiza cuando la zona llega. */
+  private get hoy(): string {
+    return this.diaDeLaSede.hoy();
+  }
 
   /**
    * Estado del listado. `GET /consultorios/{cid}/ofertas` <b>no pagina</b>: el contrato devuelve
