@@ -10,6 +10,8 @@ import { CatalogoConceptoResponse } from '../../../../api/generated/model/catalo
 import { CoberturaResponse } from '../../../../api/generated/model/cobertura-response';
 import { CoberturasApi } from '../../services/coberturas-api';
 import { ConfirmacionConMotivo } from '../../../../shared/components/confirmacion-con-motivo/confirmacion-con-motivo';
+import { ConsumoDeAutorizacion } from '../../components/consumo-de-autorizacion/consumo-de-autorizacion';
+import { SelectorDeAutorizacion } from '../../components/selector-de-autorizacion/selector-de-autorizacion';
 import { CreateAutorizacionRequest } from '../../../../api/generated/model/create-autorizacion-request';
 import { CreateOrdenRequest } from '../../../../api/generated/model/create-orden-request';
 import { ElegibilidadResponse } from '../../../../api/generated/model/elegibilidad-response';
@@ -54,7 +56,7 @@ import { textoRequerido } from '../../../../shared/validators/texto-requerido';
 type PanelDeOrden = 'editar' | 'baja' | 'documento';
 
 /** Panel abierto sobre una autorizacion. */
-type PanelDeAutorizacion = 'editar' | 'baja' | 'documento' | 'resolver' | 'historial';
+type PanelDeAutorizacion = 'editar' | 'baja' | 'documento' | 'resolver' | 'historial' | 'consumo';
 
 /** Eventos por pagina del historial de una autorizacion. Tiene decenas de hechos, no miles. */
 const TAMANO_DE_HISTORIAL = 20;
@@ -135,7 +137,14 @@ interface PanelAbierto {
  */
 @Component({
   selector: 'app-ordenes-y-autorizaciones-page',
-  imports: [ReactiveFormsModule, RouterLink, ConfirmacionConMotivo, PermisoDirective],
+  imports: [
+    ReactiveFormsModule,
+    RouterLink,
+    ConfirmacionConMotivo,
+    PermisoDirective,
+    ConsumoDeAutorizacion,
+    SelectorDeAutorizacion,
+  ],
   templateUrl: './ordenes-y-autorizaciones-page.html',
   styleUrl: '../../person.css',
 })
@@ -219,6 +228,9 @@ export class OrdenesYAutorizacionesPage {
    * que. La pantalla lo dice y enlaza a donde se resuelve.
    */
   protected readonly sinCoberturas = computed(() => this.coberturas().length === 0);
+
+  /** El id de la persona como numero, para los componentes hijos. `null` si la URL no lo es. */
+  protected readonly identificadorNumerico = computed(() => this.identificador());
 
   protected readonly rutaFicha = computed(() => `/pacientes/${this.personaId()}` as const);
   protected readonly rutaCoberturas = computed(
@@ -716,6 +728,37 @@ export class OrdenesYAutorizacionesPage {
           }
         },
       });
+  }
+
+  // -------------------------------------------------------------------------------------
+  // Saldo, ledger y alertas (C-4, D-f)
+  // -------------------------------------------------------------------------------------
+
+  /** Abre el saldo explicable de la autorizacion, o lo cierra. Es lectura: no pide permiso. */
+  protected alternarConsumo(autorizacion: AutorizacionResponse): void {
+    if (this.esPanelDeAutorizacion(autorizacion, 'consumo')) {
+      this.cerrarPaneles();
+      return;
+    }
+    this.cerrarPaneles();
+    this.abrirPanel('autorizacion', autorizacion.id, 'consumo');
+  }
+
+  /**
+   * Relee solo el listado de autorizaciones despues de una reversion.
+   *
+   * <p>No pasa por {@link cargar}: esa pone la pantalla en "cargando" y destruiria el panel que el
+   * operador esta mirando justo cuando acaba de ver aparecer la reversion en el ledger.
+   */
+  protected releerAutorizaciones(): void {
+    const id = this.identificador();
+    if (id === null) {
+      return;
+    }
+    this.api.listarAutorizaciones(id, 'TODAS', undefined).subscribe({
+      next: (autorizaciones) => this.autorizaciones.set(autorizaciones),
+      error: (error: unknown) => this.fallo(error),
+    });
   }
 
   // -------------------------------------------------------------------------------------

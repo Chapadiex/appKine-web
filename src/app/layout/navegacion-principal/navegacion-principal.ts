@@ -89,6 +89,16 @@ export class NavegacionPrincipal {
     () => this.session.estado() === 'activa' && this.tenant.context() !== null,
   );
 
+  /**
+   * `true` cuando ya no hay una restauracion del arranque en vuelo (AKINE-LCP).
+   *
+   * <p>El shell se dibuja mientras la sesion de la recarga se recupera. Entre el refresh y los
+   * nombres de los contextos, el store tiene la organizacion con un nombre provisorio
+   * ("Organizacion 3"): la barra espera a que termine para no mostrarlo. Los efectos de abajo
+   * NO esperan: pedir los permisos y el rol en paralelo con los nombres es lo que adelanta.
+   */
+  protected readonly sesionResuelta = computed(() => !this.session.restaurando());
+
   /** Las secciones que este contexto puede abrir, en el orden declarado. */
   protected readonly secciones = computed<readonly Seccion[]>(() =>
     SECCIONES.filter(

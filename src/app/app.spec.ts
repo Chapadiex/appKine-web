@@ -133,7 +133,7 @@ describe('App (layout)', () => {
       providers: [
         ...PROVIDERS,
         provideRouter([]),
-        { provide: SessionService, useValue: { estado: () => 'activa' } },
+        { provide: SessionService, useValue: { estado: () => 'activa', restaurando: () => false } },
         {
           provide: PlatformRoleStore,
           useValue: { esAdminDePlataforma: () => false, asegurarCargado: () => undefined },

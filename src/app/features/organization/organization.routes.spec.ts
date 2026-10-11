@@ -42,7 +42,7 @@ describe('Rutas de /organizacion', () => {
     TestBed.configureTestingModule({
       providers: [
         provideRouter(rutasDeLaApp),
-        { provide: SessionService, useValue: { estado: () => 'activa' } },
+        { provide: SessionService, useValue: { estado: () => 'activa', restaurando: () => false } },
         {
           provide: PermissionsStore,
           useValue: { cargados: () => true, tieneAlguno: () => true, tiene: () => true },

@@ -1,0 +1,115 @@
+<section class="tarjeta" aria-labelledby="titulo-selector-autorizacion">
+  <h2 id="titulo-selector-autorizacion">De que autorizacion se descontaria</h2>
+
+  <p class="ayuda">
+    Todas las autorizaciones activas del paciente con su veredicto para ese dia, en el orden en que
+    el cierre de una sesion las gasta: primero las que sirven y, entre ellas, la que vence antes.
+    <b>No consume nada.</b> Lo que de verdad se desconto queda en "Saldo y consumos" de cada
+    autorizacion.
+  </p>
+
+  <form [formGroup]="formulario" (ngSubmit)="consultar()" novalidate>
+    <div class="filtros">
+      <div class="campo">
+        <label for="selector-practica">Practica</label>
+        <select
+          id="selector-practica"
+          formControlName="practicaId"
+          aria-describedby="selector-practica-ayuda"
+        >
+          <option value="">Todas las practicas</option>
+          @for (practica of practicas(); track practica.id) {
+            <option [value]="practica.id">{{ practica.name }}</option>
+          }
+        </select>
+        <p class="ayuda" id="selector-practica-ayuda">
+          Elegila para ver cual se usaria. La autorizacion es por practica.
+        </p>
+      </div>
+
+      <div class="campo">
+        <label for="selector-fecha">Para el dia</label>
+        <input
+          id="selector-fecha"
+          type="date"
+          formControlName="fecha"
+          aria-describedby="selector-fecha-ayuda"
+        />
+        <p class="ayuda" id="selector-fecha-ayuda">Sin fecha, se consulta contra hoy.</p>
+      </div>
+    </div>
+
+    <p class="acciones">
+      <button type="submit" class="boton" [disabled]="estado().tipo === 'cargando'">
+        {{ estado().tipo === 'cargando' ? 'Consultando...' : 'Ver candidatas' }}
+      </button>
+    </p>
+  </form>
+
+  <div aria-live="polite">
+    @if (mensajeError(); as mensaje) {
+      <p class="estado estado--error" role="alert">{{ mensaje }}</p>
+    }
+
+    @if (listo()) {
+      @if (practicaConsultada() !== null) {
+        @if (elegida(); as elegida) {
+          <p class="estado estado--ok">
+            Se descontaria de la <b>{{ elegida.numero }}</b
+            >: sirve ese dia y es, entre las que sirven para esta practica, la que vence antes.
+          </p>
+        } @else {
+          <p class="estado">
+            Ninguna autorizacion sirve para esta practica ese dia. Si se atiende igual, la sesion
+            cierra sin consumir: abajo esta por que no sirve cada una.
+          </p>
+        }
+        <p class="ayuda">
+          Al cerrar, el sistema ademas descarta las autorizaciones cuya cobertura no este vigente
+          ese dia y las atadas al plan de otro caso clinico. Esta consulta no evalua esas dos
+          condiciones.
+        </p>
+      }
+
+      @if (candidatas().length === 0) {
+        <p class="estado estado--vacio">
+          @if (practicaConsultada() === null) {
+            Este paciente no tiene autorizaciones activas.
+          } @else {
+            No hay autorizaciones activas para esta practica.
+          }
+        </p>
+      } @else {
+        <ol class="lista-hitos">
+          @for (candidata of candidatas(); track candidata.id) {
+            <li>
+              <p>
+                <b>{{ candidata.numero }}</b> — {{ nombreDePractica(candidata.practicaId) }}
+                @if (elegida()?.id === candidata.id) {
+                  <span class="etiqueta">La que se usaria</span>
+                }
+              </p>
+              <p>{{ veredictoDeCandidata(candidata) }}</p>
+              @if (porQueNoEsLaElegida(candidata); as motivo) {
+                <p class="ayuda">{{ motivo }}</p>
+              }
+              <p>
+                Saldo: {{ saldoDeCandidata(candidata) }} · {{ vencimientoDeCandidata(candidata) }}
+                @if (candidata.convenioNombre) {
+                  · Convenio {{ candidata.convenioNombre }}
+                }
+              </p>
+            </li>
+          }
+        </ol>
+      }
+
+      @if (deOtrasPracticas() > 0) {
+        <p class="ayuda">
+          {{ deOtrasPracticas() }} autorizacion(es) de otras practicas no se muestran: no sirven
+          para esta.
+        </p>
+      }
+    }
+  </div>
+</section>

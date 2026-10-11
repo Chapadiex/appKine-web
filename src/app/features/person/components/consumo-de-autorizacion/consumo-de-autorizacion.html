@@ -1,0 +1,162 @@
+<section [attr.aria-labelledby]="'titulo-consumo-' + autorizacionId()">
+  <h2 [id]="'titulo-consumo-' + autorizacionId()" class="panel__titulo">
+    Saldo y consumos de la autorizacion {{ numero() }}
+  </h2>
+  <p class="ayuda">
+    Por que el saldo es el que es: lo otorgado, cada sesion que consumio y cada reversion. Nada de
+    esto consume: las unidades se descuentan solo al cerrar una sesion.
+  </p>
+
+  <div aria-live="polite">
+    @if (exito(); as mensaje) {
+      <p class="estado estado--ok">{{ mensaje }}</p>
+    }
+  </div>
+
+  @switch (estado().tipo) {
+    @case ('cargando') {
+      <p class="estado estado--cargando">Cargando el saldo y los consumos&hellip;</p>
+    }
+    @case ('error') {
+      <p class="estado estado--error" role="alert">{{ mensajeDeCarga() }}</p>
+      <p class="acciones">
+        <button type="button" class="boton boton--secundario" (click)="reintentar()">
+          Reintentar
+        </button>
+      </p>
+    }
+    @case ('listo') {
+      @if (lectura(); as datos) {
+        <h3>Saldo</h3>
+        <dl class="datos">
+          <div>
+            <dt>Otorgadas</dt>
+            <dd>{{ cantidadOSinTope(datos.saldo.cantidadAutorizada) }}</dd>
+          </div>
+          <div>
+            <dt>Consumidas</dt>
+            <dd>{{ datos.saldo.cantidadConsumida ?? 0 }}</dd>
+          </div>
+          <div>
+            <dt>Disponibles</dt>
+            <dd>{{ cantidadOSinTope(datos.saldo.saldo) }}</dd>
+          </div>
+          <div>
+            <dt>Consumos a revisar</dt>
+            <dd>{{ datos.saldo.consumosARevisar ?? 0 }}</dd>
+          </div>
+        </dl>
+        <p>{{ veredictoDeSaldo(datos.saldo) }}</p>
+
+        @if (datos.saldo.coherente === false) {
+          <p class="estado estado--error" role="alert">
+            Las dos cuentas del saldo no coinciden: la columna dice
+            {{ datos.saldo.cantidadConsumida ?? 0 }} consumidas y el ledger
+            {{ datos.saldo.consumidaSegunElLedger ?? 0 }}. No es un estado normal y el sistema no lo
+            corrige solo: avisale a quien administra el sistema.
+          </p>
+        }
+
+        <h3>Alertas</h3>
+        @if (alertasPendientes().length === 0 && alertasResueltas().length === 0) {
+          <p class="estado estado--vacio">No hay consumos a revisar.</p>
+        }
+        @if (alertasPendientes().length > 0) {
+          <p class="ayuda">
+            Anular la deuda de una sesion <b>no devuelve la unidad</b>: la atencion pudo haber
+            ocurrido igual (una cortesia, un error de precio). Si la sesion no debio consumir, hay
+            que revertir el consumo con un motivo: eso devuelve la unidad y resuelve la alerta. No
+            hay forma de descartar la alerta sin revertir.
+          </p>
+          <ul class="lista-hitos">
+            @for (alerta of alertasPendientes(); track alerta.id ?? $index) {
+              <li>
+                <p><b>Consumo a revisar.</b> {{ alertaEnPalabras(alerta) }}</p>
+                @if (alerta.motivoOrigen) {
+                  <p>Motivo de la anulacion: {{ alerta.motivoOrigen }}</p>
+                }
+                @if (alerta.movimientoId !== undefined) {
+                  <p class="acciones">
+                    <button
+                      type="button"
+                      class="boton boton--secundario"
+                      (click)="pedirReversion(alerta.movimientoId)"
+                      *akinePermiso="permisoManage"
+                    >
+                      Revertir el consumo #{{ alerta.movimientoId }}
+                    </button>
+                  </p>
+                }
+              </li>
+            }
+          </ul>
+        }
+        @if (alertasResueltas().length > 0) {
+          <ul class="lista-hitos">
+            @for (alerta of alertasResueltas(); track alerta.id ?? $index) {
+              <li>
+                <p>{{ alertaEnPalabras(alerta) }}</p>
+                <p>{{ resolucionDeAlerta(alerta) }}</p>
+              </li>
+            }
+          </ul>
+        }
+
+        <h3>Movimientos</h3>
+        @if (datos.movimientos.length === 0) {
+          <p class="estado estado--vacio">
+            Todavia no consumio ninguna sesion. El consumo nace al cerrar una sesion, no al dar el
+            turno.
+          </p>
+        } @else {
+          <ol class="lista-hitos">
+            @for (movimiento of datos.movimientos; track movimiento.id ?? $index) {
+              <li>
+                <p>
+                  <b>{{ tipoDeMovimiento(movimiento) }} #{{ movimiento.id }}</b>
+                  — {{ formatearInstante(movimiento.ocurrioEn) ?? 'Sin fecha' }} ·
+                  {{ efectoEnPalabras(movimiento) }}
+                </p>
+                <p>{{ origenDeMovimiento(movimiento) }}</p>
+                @if (movimiento.motivo) {
+                  <p>Motivo: {{ movimiento.motivo }}</p>
+                }
+                @if (movimiento.id !== undefined && revertidos().has(movimiento.id)) {
+                  <p class="ayuda">Ya revertido: la unidad volvio al saldo.</p>
+                }
+                @if (esRevertible(movimiento)) {
+                  <p class="acciones">
+                    <button
+                      type="button"
+                      class="boton boton--secundario"
+                      (click)="pedirReversion(movimiento.id)"
+                      *akinePermiso="permisoManage"
+                    >
+                      Revertir el consumo #{{ movimiento.id }}
+                    </button>
+                  </p>
+                }
+              </li>
+            }
+          </ol>
+        }
+
+        @if (aRevertir(); as movimientoId) {
+          <akine-confirmacion-con-motivo
+            [idCampo]="'revertir-consumo-' + movimientoId"
+            [titulo]="'Revertir el consumo #' + movimientoId"
+            etiqueta="Motivo"
+            ayuda="Revertir devuelve la unidad al saldo con una fila de compensacion. No borra el consumo original: queda en el ledger diciendo que ocurrio. Sin motivo, quien audite no puede distinguir un error de carga de otra cosa."
+            textoConfirmar="Confirmar la reversion"
+            [enviando]="enviando()"
+            (confirmado)="confirmarReversion($event)"
+            (cancelado)="cancelarReversion()"
+          />
+        }
+        @if (errorAccion(); as mensaje) {
+          <p class="estado estado--error" role="alert">{{ mensaje }}</p>
+        }
+      }
+    }
+  }
+</section>

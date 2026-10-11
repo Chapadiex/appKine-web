@@ -5,6 +5,7 @@ import { map } from 'rxjs';
 import { PlatformRoleStore } from '../services/platform-role.store';
 import { SessionService } from '../services/session.service';
 import { PARAM_VOLVER_A, RUTA_LOGIN, RUTA_SIN_PERMISO } from '../models/rutas';
+import { trasRestaurarSesion } from './tras-restaurar-sesion';
 
 /**
  * Solo deja entrar a la consola de plataforma a quien administra la plataforma (AKINE-A-7).
@@ -22,13 +23,15 @@ export const platformAdminGuard: CanActivateFn = (_ruta, estado) => {
   const rol = inject(PlatformRoleStore);
   const router = inject(Router);
 
-  if (session.estado() === 'anonimo') {
-    return router.createUrlTree([RUTA_LOGIN], {
-      queryParams: { [PARAM_VOLVER_A]: estado.url },
-    });
-  }
+  return trasRestaurarSesion(estado, () => {
+    if (session.estado() === 'anonimo') {
+      return router.createUrlTree([RUTA_LOGIN], {
+        queryParams: { [PARAM_VOLVER_A]: estado.url },
+      });
+    }
 
-  return rol
-    .resolver()
-    .pipe(map((admin) => (admin ? true : router.createUrlTree([RUTA_SIN_PERMISO]))));
+    return rol
+      .resolver()
+      .pipe(map((admin) => (admin ? true : router.createUrlTree([RUTA_SIN_PERMISO]))));
+  });
 };

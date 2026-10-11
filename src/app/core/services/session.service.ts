@@ -88,6 +88,19 @@ export class SessionService {
    */
   private refreshEnVuelo: Observable<void> | null = null;
 
+  /** Restauracion del arranque en vuelo, compartida. Ver {@link iniciarRestauracion}. */
+  private restauracionEnVuelo: Observable<boolean> | null = null;
+
+  private readonly restaurandoSesion = signal(false);
+
+  /**
+   * `true` mientras se recupera la sesion que sobrevivio a la recarga (refresh y nombres del
+   * contexto). Los guards esperan a que baje, y el shell no dibuja la navegacion hasta
+   * entonces: un menu que todavia no sabe quien mira mostraria una organizacion con nombre
+   * provisorio.
+   */
+  readonly restaurando: Signal<boolean> = this.restaurandoSesion.asReadonly();
+
   /**
    * Autentica la identidad. El token que devuelve es `pre_context`: no habilita negocio.
    *
@@ -97,7 +110,11 @@ export class SessionService {
    * unico mensaje. No hay forma de distinguir cual de los tres fue, y no hay que intentarlo.
    */
   login(email: string, password: string): Observable<void> {
-    return this.api.login({ loginRequest: { email, password } }).pipe(
+    // Con la restauracion del arranque todavia en vuelo, el login la espera: si no, su
+    // respuesta podria llegar despues y pisar el token recien emitido con el de la cookie
+    // vieja. Sin restauracion en vuelo no agrega nada (emite en el acto).
+    return this.esperarRestauracion().pipe(
+      switchMap(() => this.api.login({ loginRequest: { email, password } })),
       tap((respuesta) => {
         // Login siempre arranca de cero: si habia una sesion anterior a medio limpiar, su
         // contexto no puede sobrevivir al cambio de identidad.
@@ -231,6 +248,43 @@ export class SessionService {
   }
 
   /**
+   * Arranca {@link restaurarSesion} sin bloquear el arranque de la aplicacion.
+   *
+   * <p>Hasta G-10 el `provideAppInitializer` ESPERABA la restauracion: el router no pedia
+   * nada hasta que volvieran el refresh y los contextos, y con 150 ms de latencia movil eran
+   * dos idas y vueltas en serie antes de empezar a bajar el codigo de la pantalla. Ahora la
+   * restauracion corre en paralelo con la navegacion inicial: el router baja la pantalla
+   * mientras tanto y los guards ({@link esperarRestauracion}) esperan la respuesta antes de
+   * decidir. Recargar una pantalla interna sigue sin rebotar al login: ningun guard decide
+   * con la sesion a medio resolver.
+   *
+   * <p>Idempotente: con una restauracion en vuelo no vuelve a salir a la red.
+   */
+  iniciarRestauracion(): void {
+    if (this.restauracionEnVuelo !== null) {
+      return;
+    }
+    this.restaurandoSesion.set(true);
+    const flujo = this.restaurarSesion().pipe(
+      finalize(() => {
+        this.restauracionEnVuelo = null;
+        this.restaurandoSesion.set(false);
+      }),
+      shareReplay({ bufferSize: 1, refCount: false }),
+    );
+    this.restauracionEnVuelo = flujo;
+    flujo.subscribe();
+  }
+
+  /**
+   * Emite una vez cuando la restauracion del arranque termino, o en el acto si no hay ninguna
+   * en vuelo. Nunca falla: {@link restaurarSesion} ya convierte el error en `false`.
+   */
+  esperarRestauracion(): Observable<unknown> {
+    return this.restauracionEnVuelo ?? of(true);
+  }
+
+  /**
    * Borra todo rastro local de la sesion. Lo usa el interceptor cuando el refresh falla.
    *
    * No llama al backend: es limpieza local. O el backend ya invalido lo suyo, o nunca hubo
@@ -276,7 +330,7 @@ export class SessionService {
    * provisorio con los ids y {@link rehidratarContexto} lo completa. Nunca se bloquea una
    * sesion que el backend acepto por no tener un nombre: es dato de presentacion.
    */
-  private fijarContexto(organizationId: number, consultorioId: number): void {
+  private fijarContexto(organizationId: number, consultorioId: number, renombre = false): void {
     const conocido = this.contextosDisponibles().find(
       (contexto) =>
         contexto.organizationId === organizationId && contexto.consultorioId === consultorioId,
@@ -290,12 +344,19 @@ export class SessionService {
     };
 
     this.contextoElegido.set(contexto);
-    this.tenantStore.select({
+    const tenant = {
       organizationId,
       organizationName: contexto.organizationName ?? `Organizacion ${organizationId}`,
       consultorioId,
       consultorioName: contexto.consultorioName,
-    });
+    };
+    // La rehidratacion solo completa nombres: no es un cambio de contexto y no invalida lo que
+    // las features ya cargaron con el (ver TenantContextStore.renombrar).
+    if (renombre) {
+      this.tenantStore.renombrar(tenant);
+    } else {
+      this.tenantStore.select(tenant);
+    }
   }
 
   /** Completa los nombres del contexto que el token trajo solo como ids. */
@@ -308,7 +369,7 @@ export class SessionService {
     return this.cargarContextos().pipe(
       tap(() => {
         if (activo.organizationId !== undefined && activo.consultorioId !== undefined) {
-          this.fijarContexto(activo.organizationId, activo.consultorioId);
+          this.fijarContexto(activo.organizationId, activo.consultorioId, true);
         }
       }),
       // Que falle el listado de nombres no invalida una sesion que el backend ya acepto.

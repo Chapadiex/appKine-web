@@ -2,7 +2,7 @@
   Navegacion principal. Va dentro del `header` del layout raiz, que ya es el landmark
   `banner`: un `nav` anidado ahi sigue siendo un landmark propio y axe lo exige nombrado.
 -->
-@if (hayContexto()) {
+@if (sesionResuelta() && hayContexto()) {
   <div class="barra">
     <nav class="nav" aria-label="Secciones de AKINE">
       <ul class="nav__lista">
@@ -54,7 +54,7 @@
       </p>
     }
   </div>
-} @else if (faltaContexto()) {
+} @else if (sesionResuelta() && faltaContexto()) {
   <!--
     Autenticado sin contexto: con un token `pre_context` ninguna seccion responde, asi que el
     unico enlace util es el que resuelve eso.
