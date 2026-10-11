@@ -12,7 +12,7 @@ import { Recepcion, RecepcionEstadoEnum } from '../../../../api/generated/model/
 import { TurnoDelDia, TurnoDelDiaEstadoEnum } from '../../../../api/generated/model/turno-del-dia';
 import { SchedulingApi } from '../../services/scheduling-api';
 import { CausaAgenda, ErrorAgenda, traducirErrorRecepcion } from '../../models/agenda-errors';
-import { fechaEnPalabras, horaEnZona, hoy } from '../../models/etiquetas-de-agenda';
+import { fechaEnPalabras, horaEnZona, hoy, hoyEnZona } from '../../models/etiquetas-de-agenda';
 import { textoDeEstado } from '../../models/etiquetas-de-turno';
 import {
   recepcionAbierta,
@@ -87,6 +87,13 @@ const CAUSAS_QUE_RELEEN: ReadonlySet<CausaAgenda> = new Set<CausaAgenda>([
  * <p>Los instantes vienen en UTC y las horas del mostrador son locales de la sede. Si la zona
  * llegara vacia, la pantalla <b>rotula UTC</b> en vez de mentir con la del navegador.
  *
+ * <p><b>Y "hoy" tambien es el de la sede.</b> Sin `?fecha=` la pantalla abre con el dia del
+ * navegador, que es lo unico que sabe antes de la primera respuesta, y en cuanto la respuesta trae
+ * el `timezone` lo corrige al dia de la sede y vuelve a pedir. Entre las 21:00 y las 24:00 de
+ * Cordoba un navegador en UTC —o en cualquier zona adelantada— ya esta en el dia siguiente y abria
+ * una recepcion vacia. Lo destapo el E2E del CI, que corre en UTC. La correccion es una sola vez:
+ * un dia elegido a mano, o el de la URL, no se toca.
+ *
  * <h2>7. El prepago avisa, no bloquea, y se ve antes de la llegada (E-6 y E-8, DP-06 / ADR-0013)</h2>
  *
  * <p>Desde el contrato 0.68.0 el servidor calcula `TurnoDelDia.prepago` para <b>todas</b> las filas,
@@ -134,6 +141,12 @@ export class RecepcionDelDiaPage {
   /** Dia que se muestra. Vive en un signal aparte del input: el selector lo mueve sin navegar. */
   protected readonly dia = signal(hoy());
 
+  /**
+   * `true` mientras {@link dia} es el provisorio del navegador y todavia no se lo comparo con el
+   * de la sede. Ver el punto 6 del encabezado.
+   */
+  private diaPorDefecto = false;
+
   protected readonly turnos = signal<readonly TurnoDelDia[]>([]);
   protected readonly cargando = signal(false);
   protected readonly error = signal<ErrorAgenda | null>(null);
@@ -169,6 +182,7 @@ export class RecepcionDelDiaPage {
       this.tenantContext.contextEpoch();
       untracked(() => {
         this.dia.set(deLaUrl === '' ? hoy() : deLaUrl);
+        this.diaPorDefecto = deLaUrl === '';
         this.reiniciar();
         this.cargar();
       });
@@ -184,6 +198,7 @@ export class RecepcionDelDiaPage {
       return;
     }
     this.dia.set(fecha);
+    this.diaPorDefecto = false;
     // `replaceState` y no una navegacion: navegar volveria a disparar el efecto que reinicia
     // todo. Lo que se gana es que un refresh —o un enlace copiado— siga abriendo el mismo dia.
     this.location.replaceState(RUTA, `fecha=${fecha}`);
@@ -201,6 +216,9 @@ export class RecepcionDelDiaPage {
     this.cargando.set(true);
     this.api.turnosDelDia(consultorioId, this.dia()).subscribe({
       next: (agenda) => {
+        if (this.corregirAlDiaDeLaSede(agenda.timezone ?? '')) {
+          return;
+        }
         this.turnos.set(agenda.turnos ?? []);
         this.timezone.set(agenda.timezone ?? '');
         this.cargando.set(false);
@@ -210,6 +228,24 @@ export class RecepcionDelDiaPage {
         this.error.set(traducirErrorRecepcion(error));
       },
     });
+  }
+
+  /**
+   * Si el dia mostrado es el provisorio del navegador y no coincide con hoy en la sede, lo cambia y
+   * vuelve a pedir. Devuelve `true` cuando la respuesta en mano es de otro dia y hay que tirarla.
+   */
+  private corregirAlDiaDeLaSede(timezone: string): boolean {
+    if (!this.diaPorDefecto || timezone === '') {
+      return false;
+    }
+    this.diaPorDefecto = false;
+    const deLaSede = hoyEnZona(timezone);
+    if (deLaSede === this.dia()) {
+      return false;
+    }
+    this.dia.set(deLaSede);
+    this.cargar();
+    return true;
   }
 
   // -------------------------------------------------------------------------------------
