@@ -15,6 +15,7 @@ import { TIMEOUT_AXE, esperarSinViolaciones } from '../../../../core/testing/axe
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { errorInterceptor } from '../../../../core/interceptors/error.interceptor';
 import { provideApi } from '../../../../api/generated/provide-api';
+import { fijarReloj, soltarReloj } from '../../../../core/testing/reloj';
 
 const CONSULTORIO = 3;
 const OFERTA = 42;
@@ -136,6 +137,7 @@ describe('RecepcionDelDiaPage', () => {
   });
 
   afterEach(() => {
+    soltarReloj();
     // Tambien prueba que nada pega contra los `/llegada` deprecados: seria un pedido sin atender.
     httpMock.verify();
   });
@@ -419,6 +421,8 @@ describe('RecepcionDelDiaPage', () => {
    * quedaba en blanco: sin lista, sin error y con el campo de fecha vacio.
    */
   it('sin `?fecha=` en la URL abre el dia de hoy, que es lo que pasa al entrar desde la agenda', async () => {
+    // Mediodia en UTC y en Cordoba: el dia del navegador y el de la sede coinciden.
+    fijarReloj('2026-09-15T15:00:00Z', { navegadorEnUtc: true });
     tenantContext.select({
       organizationId: 1,
       organizationName: 'Centro Belgrano',
@@ -439,6 +443,51 @@ describe('RecepcionDelDiaPage', () => {
     await asentar(fixture);
 
     expect(textoDe(fixture)).toContain('no tiene ningun turno agendado');
+  });
+
+  /**
+   * Lo que tumbo el E2E del PR #42: a las 21:25 de Cordoba un navegador en UTC ya esta en el dia
+   * siguiente. "Hoy" es el de la sede: la primera respuesta trae su zona, el dia se corrige y se
+   * vuelve a pedir, y la respuesta del dia equivocado se descarta.
+   */
+  it('sin `?fecha=` abre el dia de la SEDE aunque el navegador ya este en el dia siguiente', async () => {
+    fijarReloj('2026-10-10T00:25:00Z', { navegadorEnUtc: true });
+    tenantContext.select({
+      organizationId: 1,
+      organizationName: 'Centro Belgrano',
+      consultorioId: CONSULTORIO,
+      consultorioName: 'Sede Centro',
+    });
+    permisos.cargar().subscribe();
+    httpMock.expectOne(RUTA_PERMISOS_EFECTIVOS).flush({ permissions: [PERMISO_TURNO_READ] });
+
+    const fixture = TestBed.createComponent(RecepcionDelDiaPage);
+    fixture.componentRef.setInput('fecha', undefined);
+    fixture.detectChanges();
+
+    const provisorio = httpMock.expectOne(esDelDia());
+    expect(provisorio.request.params.get('fecha')).toBe('2026-10-10');
+    provisorio.flush({ fecha: '2026-10-10', timezone: ZONA, turnos: [] });
+
+    const deLaSede = httpMock.expectOne(esDelDia());
+    expect(deLaSede.request.params.get('fecha')).toBe('2026-10-09');
+    deLaSede.flush({ fecha: '2026-10-09', timezone: ZONA, turnos: [DEL_DIA[0]] });
+    await asentar(fixture);
+
+    expect(textoDe(fixture)).toContain('Ramirez, Ana');
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector<HTMLInputElement>('input[type="date"]')
+        ?.value,
+    ).toBe('2026-10-09');
+  });
+
+  it('un dia que vino en la URL no se corrige aunque no sea hoy en la sede', async () => {
+    fijarReloj('2026-10-10T00:25:00Z', { navegadorEnUtc: true });
+    // `montar` abre FECHA desde la URL y espera UN solo pedido: `verify` del afterEach falla si
+    // la pantalla pidiera otro dia.
+    const fixture = await montar();
+
+    expect(textoDe(fixture)).toContain('Ramirez, Ana');
   });
 
   it('cambiar la fecha vuelve a pedir ESE dia', async () => {
