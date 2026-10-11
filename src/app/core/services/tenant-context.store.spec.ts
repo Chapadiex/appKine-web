@@ -87,4 +87,34 @@ describe('TenantContextStore', () => {
     // barato, quedarse con datos viejos no.
     expect(store.contextEpoch()).toBeGreaterThan(antes);
   });
+
+  it('renombrar el contexto activo cambia los nombres SIN mover la epoca (AKINE-LCP)', () => {
+    store.select({ ...ORG_A, organizationName: 'Organizacion 1' });
+    const epoca = store.contextEpoch();
+
+    store.renombrar(ORG_A);
+
+    // Es el mismo contexto: lo que las features cargaron con el rotulo provisorio sigue valiendo.
+    expect(store.contextEpoch()).toBe(epoca);
+    expect(store.context()?.organizationName).toBe('Centro Kine A');
+  });
+
+  it('renombrar con otros ids no es un renombre: avanza la epoca como select', () => {
+    store.select(ORG_A);
+    const epoca = store.contextEpoch();
+
+    store.renombrar(ORG_B);
+
+    expect(store.contextEpoch()).toBe(epoca + 1);
+    expect(store.organizationId()).toBe(2);
+  });
+
+  it('renombrar sin contexto previo lo selecciona', () => {
+    const epoca = store.contextEpoch();
+
+    store.renombrar(ORG_A);
+
+    expect(store.contextEpoch()).toBe(epoca + 1);
+    expect(store.hasContext()).toBe(true);
+  });
 });

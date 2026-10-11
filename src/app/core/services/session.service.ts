@@ -330,7 +330,7 @@ export class SessionService {
    * provisorio con los ids y {@link rehidratarContexto} lo completa. Nunca se bloquea una
    * sesion que el backend acepto por no tener un nombre: es dato de presentacion.
    */
-  private fijarContexto(organizationId: number, consultorioId: number): void {
+  private fijarContexto(organizationId: number, consultorioId: number, renombre = false): void {
     const conocido = this.contextosDisponibles().find(
       (contexto) =>
         contexto.organizationId === organizationId && contexto.consultorioId === consultorioId,
@@ -344,12 +344,19 @@ export class SessionService {
     };
 
     this.contextoElegido.set(contexto);
-    this.tenantStore.select({
+    const tenant = {
       organizationId,
       organizationName: contexto.organizationName ?? `Organizacion ${organizationId}`,
       consultorioId,
       consultorioName: contexto.consultorioName,
-    });
+    };
+    // La rehidratacion solo completa nombres: no es un cambio de contexto y no invalida lo que
+    // las features ya cargaron con el (ver TenantContextStore.renombrar).
+    if (renombre) {
+      this.tenantStore.renombrar(tenant);
+    } else {
+      this.tenantStore.select(tenant);
+    }
   }
 
   /** Completa los nombres del contexto que el token trajo solo como ids. */
@@ -362,7 +369,7 @@ export class SessionService {
     return this.cargarContextos().pipe(
       tap(() => {
         if (activo.organizationId !== undefined && activo.consultorioId !== undefined) {
-          this.fijarContexto(activo.organizationId, activo.consultorioId);
+          this.fijarContexto(activo.organizationId, activo.consultorioId, true);
         }
       }),
       // Que falle el listado de nombres no invalida una sesion que el backend ya acepto.

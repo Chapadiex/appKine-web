@@ -338,6 +338,25 @@ describe('SessionService', () => {
     expect(session.contextoActivo()?.organizationName).toBe('Centro Norte');
   });
 
+  it('los nombres que llegan con la restauracion no invalidan lo cargado con el contexto', () => {
+    session.iniciarRestauracion();
+    httpMock.expectOne('/api/v1/auth/refresh').flush({
+      accessToken: 'jwt-ctx',
+      scope: 'context',
+      organizationId: 1,
+      consultorioId: 10,
+    });
+    // Con el token aplicado el menu ya pidio los permisos para esta epoca.
+    const epoca = tenantStore.contextEpoch();
+
+    httpMock
+      .expectOne('/api/v1/me/contexts')
+      .flush([{ organizationId: 1, organizationName: 'Centro Norte', consultorioId: 10 }]);
+
+    expect(tenantStore.contextEpoch()).toBe(epoca);
+    expect(tenantStore.context()?.organizationName).toBe('Centro Norte');
+  });
+
   it('iniciarRestauracion es idempotente: con una en vuelo no vuelve a salir a la red', () => {
     session.iniciarRestauracion();
     session.iniciarRestauracion();
