@@ -80,6 +80,16 @@ export const routes: Routes = [
     title: 'AKINE - Invitaciones',
     data: { [DATA_ANCHO]: ANCHO_AMPLIO },
   },
+  // Notificaciones que no salieron, con reintento por fila (RF-M26-005). Mismo permiso que el
+  // backend, `colaborador:manage`: se ven destinatarios (enmascarados) de correos del centro.
+  {
+    path: 'colaboradores/notificaciones',
+    canActivate: [permissionGuard(PERMISO_COLABORADOR_MANAGE)],
+    loadComponent: () =>
+      import('./pages/notificaciones/notificaciones-page').then((m) => m.NotificacionesPage),
+    title: 'AKINE - Notificaciones',
+    data: { [DATA_ANCHO]: ANCHO_AMPLIO },
+  },
   {
     path: 'colaboradores',
     canActivate: [permissionGuard(PERMISO_COLABORADOR_READ)],
