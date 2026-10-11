@@ -100,36 +100,42 @@ describe('traducirErrorColaborador', () => {
     expect(traducido.mensaje).toContain('No pudimos completar');
   });
 });
-
 /**
- * G-5 (backend #78): un grant que la matriz no admite para el rol del vinculo es un `400`
- * `validation-error` sin errores por campo. La pantalla lo explica nombrando el rol y sin
- * replicar la matriz.
+ * Contrato 0.84.0: un grant que la matriz no admite para el rol del vinculo es un `400`
+ * `permiso-no-otorgable-al-rol`, con `roleCode` y `permissionCode` como propiedades. Un
+ * `validation-error` ya no se interpreta como rechazo de la matriz.
  */
 describe('traducirErrorGrant', () => {
-  it('un 400 sin errores por campo se explica como rechazo de la matriz, con el detail', () => {
-    const error = problema(
-      400,
-      'validation-error',
-      'La matriz de permisos no admite otorgar ese permiso al rol ADMINISTRATIVO',
-    );
-    const traducido = traducirErrorGrant(error, 'Administrativo');
-    expect(traducido.causa).toBe('validacion');
-    expect(traducido.mensaje).toContain('rol Administrativo segun la matriz de permisos');
-    expect(traducido.mensaje).toContain('al rol ADMINISTRATIVO.');
-  });
-
-  it('un 400 con errores por campo conserva el mensaje de validacion comun', () => {
+  it('permiso-no-otorgable-al-rol nombra el permiso y el rol que devolvio el backend', () => {
     const error = new AkineHttpError(
       400,
       {
-        type: 'https://akine.app/problems/validation-error',
-        detail: 'Hay campos invalidos',
-        errors: { reason: 'obligatorio' },
-      },
+        type: 'https://akine.app/problems/permiso-no-otorgable-al-rol',
+        detail: 'no admitido',
+        roleCode: 'ADMINISTRATIVO',
+        permissionCode: 'hc:read',
+      } as never,
       false,
     );
-    expect(traducirErrorGrant(error, 'Profesional').mensaje).not.toContain('matriz');
+    const traducido = traducirErrorGrant(error, 'Profesional');
+    expect(traducido.causa).toBe('validacion');
+    expect(traducido.mensaje).toContain(
+      'El permiso hc:read no se puede otorgar a un colaborador con rol Administrativo',
+    );
+  });
+
+  it('sin propiedades cae en el rol que la pantalla tenia', () => {
+    const traducido = traducirErrorGrant(
+      problema(400, 'permiso-no-otorgable-al-rol'),
+      'Profesional',
+    );
+    expect(traducido.mensaje).toContain('Ese permiso no se puede otorgar');
+    expect(traducido.mensaje).toContain('rol Profesional');
+  });
+
+  it('un validation-error conserva el mensaje del backend', () => {
+    const error = problema(400, 'validation-error', 'Ese codigo no existe');
+    expect(traducirErrorGrant(error, 'Profesional')).toEqual(traducirErrorColaborador(error));
   });
 
   it('otros errores pasan sin cambios', () => {

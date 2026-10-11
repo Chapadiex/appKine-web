@@ -160,6 +160,12 @@
   font-family: var(--fuente-mono);
 }
 
+/* La explicacion de un grant sin efecto ocupa su propio renglon dentro del item. */
+.grant__no-vigente {
+  flex-basis: 100%;
+  margin: 0;
+}
+
 /* Datos institucionales de una sede dentro de su celda: son varios renglones cortos y
    apilados, no una lista con vinietas que agregaria ruido a una tabla ya densa. */
 .lista-datos {

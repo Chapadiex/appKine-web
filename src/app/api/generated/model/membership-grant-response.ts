@@ -45,5 +45,9 @@ export interface MembershipGrantResponse {
      * Momento hasta el que rige, o null si no vence
      */
     validUntil?: string;
+    /**
+     * Si el permiso concede algo con el rol ACTUAL del vinculo. false cuando la matriz no admite ese permiso como grant para ese rol: se otorgo antes de la regla de G-5 o el rol cambio despues. La fila sigue activa pero el evaluador la ignora, asi que la pantalla la muestra sin efecto
+     */
+    vigenteConElRolActual?: boolean;
 }
 

@@ -12,7 +12,7 @@ import { ConfirmacionConMotivo } from '../../../../shared/components/confirmacio
 import { MembershipGrantResponse } from '../../../../api/generated/model/membership-grant-response';
 import { MembershipPageResponse } from '../../../../api/generated/model/membership-page-response';
 import { MembershipResponse } from '../../../../api/generated/model/membership-response';
-import { PERMISOS_F1, PERMISO_COLABORADOR_MANAGE } from '../../../../core/models/permisos';
+import { PERMISO_COLABORADOR_MANAGE } from '../../../../core/models/permisos';
 import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
 import { PermisoDirective } from '../../../../shared/directives/permiso.directive';
 import { ETIQUETA_DE_ESTADO, ROLES_DE_VINCULO, etiquetaDeRol } from '../../models/roles';
@@ -24,6 +24,12 @@ import { textoRequerido } from '../../../../shared/validators/texto-requerido';
 
 /** Operacion abierta sobre una fila. Solo una a la vez. */
 type TipoAccion = 'editar' | 'suspender' | 'reactivar' | 'revocar' | 'permisos';
+
+/** Codigos que el rol del vinculo abierto admite como permiso adicional. */
+type Otorgables =
+  | { readonly tipo: 'cargando' }
+  | { readonly tipo: 'listo'; readonly codigos: readonly string[] }
+  | { readonly tipo: 'error' };
 
 /**
  * Cuantos colaboradores se piden por pagina.
@@ -77,7 +83,6 @@ export class CollaboratorsPage {
 
   protected readonly permisoManage = PERMISO_COLABORADOR_MANAGE;
   protected readonly roles = ROLES_DE_VINCULO;
-  protected readonly permisosOtorgables = PERMISOS_F1;
   protected readonly etiquetaDeRol = etiquetaDeRol;
 
   protected readonly estado = signal<EstadoDeListado<MembershipPageResponse>>({
@@ -107,6 +112,22 @@ export class CollaboratorsPage {
 
   /** Permisos adicionales de la fila abierta en el panel `permisos`. `null` mientras carga. */
   protected readonly grants = signal<readonly MembershipGrantResponse[] | null>(null);
+
+  /**
+   * Lo que el selector ofrece al otorgar, segun el rol del vinculo abierto (contrato 0.84.0).
+   *
+   * <p>Sale de `listPermisosOtorgablesDelRol`, que el backend calcula con la misma regla que
+   * valida el alta: ofrecer el catalogo entero dejaba elegir permisos que la matriz rechaza con
+   * 400. <b>No se filtran los que el rol ya tiene por base</b>: la pantalla no conoce los
+   * permisos base de cada rol, y el backend los incluye porque los admite como redundantes. Si
+   * la consulta falla el selector queda vacio: replicar la matriz aca seria una segunda fuente
+   * de verdad.
+   */
+  protected readonly otorgables = signal<Otorgables>({ tipo: 'cargando' });
+  protected readonly codigosOtorgables = computed(() => {
+    const otorgables = this.otorgables();
+    return otorgables.tipo === 'listo' ? otorgables.codigos : [];
+  });
 
   /**
    * Que quedaria pendiente si se revoca el vinculo abierto, o `null` si no hay revocacion abierta.
@@ -267,6 +288,7 @@ export class CollaboratorsPage {
 
     if (tipo === 'permisos') {
       this.cargarGrants(id);
+      this.cargarOtorgables(id, colaborador.roleCode);
     }
 
     if (tipo === 'revocar') {
@@ -277,6 +299,7 @@ export class CollaboratorsPage {
   protected cerrarPanel(): void {
     this.panel.set(null);
     this.grants.set(null);
+    this.otorgables.set({ tipo: 'cargando' });
     this.impacto.set(null);
     this.enviando.set(false);
     this.errorAccion.set(null);
@@ -407,6 +430,29 @@ export class CollaboratorsPage {
       .listMembershipGrants({ orgId, membershipId })
       .pipe(catchError(() => of([] as MembershipGrantResponse[])))
       .subscribe((respuesta) => this.grants.set(respuesta));
+  }
+
+  private cargarOtorgables(membershipId: number, roleCode: string | undefined): void {
+    const orgId = this.tenantContext.organizationId();
+    if (orgId === null || roleCode === undefined) {
+      this.otorgables.set({ tipo: 'error' });
+      return;
+    }
+
+    this.colaboradores
+      .listPermisosOtorgablesDelRol({ orgId, roleCode })
+      .pipe(catchError(() => of(null)))
+      .subscribe((respuesta) => {
+        // Misma guarda que el impacto: la lista de otro rol no puede quedar en este selector.
+        if (!this.panelAbierto(membershipId, 'permisos')) {
+          return;
+        }
+        this.otorgables.set(
+          respuesta === null
+            ? { tipo: 'error' }
+            : { tipo: 'listo', codigos: respuesta.permissionCodes ?? [] },
+        );
+      });
   }
 
   private cargarImpacto(membershipId: number): void {
