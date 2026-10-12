@@ -960,3 +960,11 @@ export function moverLaCaja(
     idempotencyKey: randomUUID(),
   });
 }
+
+/** Abre la caja de la sede por la API con `saldoInicial` en efectivo. Exige que este cerrada. */
+export function abrirLaCaja(api: ApiAkine, centro: Centro, saldoInicial: number): Promise<unknown> {
+  return api.exigir('POST', `/api/v1/consultorios/${centro.consultorioId}/caja/jornadas`, {
+    moneda: 'ARS',
+    saldoInicial,
+  });
+}

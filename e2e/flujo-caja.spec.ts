@@ -3,6 +3,7 @@ import { Page, Locator } from '@playwright/test';
 import { expect, ingresar, navegar, problemaDe, respuestaDe, test } from './support/agenda-real';
 import {
   ApiAkine,
+  abrirLaCaja,
   DIAS,
   cajaAbierta,
   cerrarSesionDelTurno,
@@ -239,5 +240,86 @@ test.describe('Cobro en efectivo de una sesion cerrada contra el backend real', 
     await expect(filaCobro.getByRole('button', { name: 'Revertir' })).toHaveCount(0);
 
     await dejarLaCajaCerrada(api, centro);
+  });
+});
+
+test.describe('Egreso pagado en efectivo contra el backend real', () => {
+  test.beforeEach(async ({ page, api, centro }) => {
+    await dejarLaCajaCerrada(api, centro);
+    await abrirLaCaja(api, centro, 5000);
+    await ingresar(page, centro);
+  });
+
+  test.afterEach(async ({ api, centro }) => {
+    await dejarLaCajaCerrada(api, centro);
+  });
+
+  test('alta → confirmacion → pago en efectivo → movimiento en la caja → anulacion del pago', async ({
+    page,
+  }) => {
+    const sufijo = Date.now().toString(36);
+    const concepto = `Honorarios E2E ${sufijo}`;
+
+    // Alta de un borrador a nombre de un colaborador, con su comprobante.
+    await navegar(page, '/egresos');
+    await expect(page.getByRole('heading', { name: 'Egresos', level: 1 })).toBeVisible();
+    const colaborador = page.getByLabel('Colaborador', { exact: true });
+    await colaborador.locator('option').nth(1).waitFor({ state: 'attached' });
+    await colaborador.selectOption({ index: 1 });
+    await page.getByLabel('Concepto').fill(concepto);
+    await page.getByLabel('Importe total').fill('3000');
+    await page.getByLabel('Tipo').fill('Factura C');
+    await page.getByLabel('Numero').fill(`E2E-${sufijo}`);
+    const alta = respuestaDe(page, 'POST', /\/egresos$/);
+    await page.getByRole('button', { name: 'Cargar el borrador' }).click();
+    const creado = await alta;
+    expect(creado.status()).toBe(201);
+    const egresoId = ((await creado.json()) as { id: number }).id;
+    await expect(page).toHaveURL(new RegExp(`/egresos/${egresoId}$`));
+    await expect(page.getByRole('heading', { name: concepto })).toBeVisible();
+    await expect(dato(page, 'Estado')).toContainText('Borrador');
+
+    // Confirmar no mueve plata: habilita los pagos.
+    await page.getByRole('button', { name: 'Confirmar el egreso' }).click();
+    await expect(page.getByRole('status').filter({ hasText: 'Egreso confirmado' })).toBeVisible();
+    await expect(dato(page, 'Estado')).toContainText('Confirmado, a pagar');
+
+    // Pago parcial en efectivo: la pantalla avisa lo que hay en el cajon.
+    await expect(page.getByText(/Caja abierta: deberia haber/)).toContainText('5.000,00');
+    await page.getByLabel('Importe del pago').fill('1200');
+    await page.getByLabel('Medio').selectOption({ label: 'Efectivo' });
+    const pago = respuestaDe(page, 'POST', /\/egresos\/\d+\/pagos$/);
+    await page.getByRole('button', { name: 'Registrar el pago' }).click();
+    expect((await pago).status()).toBe(201);
+    await expect(page.getByRole('status').filter({ hasText: 'Pago registrado' })).toBeVisible();
+    await expect(dato(page, 'Saldo pendiente')).toContainText('1.800,00');
+    await expect(dato(page, 'Ya pagado')).toContainText('1.200,00');
+
+    // La caja lo muestra como egreso en efectivo, y no se revierte desde ahi.
+    await navegar(page, '/caja');
+    await expect(page.getByRole('heading', { name: 'Caja abierta' })).toBeVisible();
+    await expect(dato(page, 'Deberia haber en el cajon')).toContainText('3.800,00');
+    const salida = movimiento(page, `Pago de egreso ${egresoId}`);
+    await expect(salida).toContainText('Egreso');
+    await expect(salida).toContainText('Efectivo');
+    await expect(salida).toContainText('− $');
+    await expect(salida.getByRole('button', { name: 'Revertir' })).toHaveCount(0);
+
+    // Anular el pago devuelve la plata al cajon y el saldo al egreso.
+    await navegar(page, `/egresos/${egresoId}`);
+    await page.getByRole('button', { name: /^Anular el pago/ }).click();
+    await page.getByLabel('Motivo de la anulacion').fill('Se pago al profesional equivocado');
+    const anulacion = respuestaDe(page, 'POST', /\/pagos\/\d+\/anulacion$/);
+    await page.getByRole('button', { name: 'Anular el pago', exact: true }).click();
+    expect((await anulacion).status()).toBe(200);
+    await expect(page.getByRole('status').filter({ hasText: 'Pago anulado' })).toBeVisible();
+    await expect(dato(page, 'Saldo pendiente')).toContainText('3.000,00');
+    await expect(
+      page.getByRole('region', { name: 'Pagos' }).getByRole('row').filter({ hasText: 'Anulado' }),
+    ).toHaveCount(1);
+
+    await navegar(page, '/caja');
+    await expect(dato(page, 'Deberia haber en el cajon')).toContainText('5.000,00');
+    await expect(movimiento(page, 'Reversion de egreso')).toHaveCount(1);
   });
 });
