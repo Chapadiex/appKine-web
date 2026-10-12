@@ -5,7 +5,7 @@ import { catchError, of } from 'rxjs';
 import { AkineHttpError } from '../../../../core/interceptors/error.interceptor';
 import { OrganizacionesService } from '../../../../api/generated/api/organizaciones.service';
 import { OrganizationResponse } from '../../../../api/generated/model/organization-response';
-import { RUTA_HORARIOS } from '../../../resource/models/rutas-de-horarios';
+import { RUTA_HORARIOS } from '../../../../core/models/rutas';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 
 /** Estado de la pantalla de organizacion (ADR-0005). */
@@ -50,10 +50,10 @@ export class OrganizationPage {
   /**
    * La URL del editor de horarios, tomada de su constante y no escrita a mano.
    *
-   * <p>Es un import a otra feature, igual que el de `app.routes.ts`: `rutas-de-horarios.ts` es
-   * un archivo de strings sin dependencias, asi que no arrastra ningun componente ni rompe el
-   * lazy loading. Un literal `/horarios` escrito aca es exactamente la forma que dejo los
-   * enlaces de correo apuntando al comodin `**` durante tres etapas.
+   * <p>Sale de `core/models/rutas.ts` y no de `features/resource`: una feature no importa de
+   * otra (ADR-0004, verificado por `akine/sin-imports-entre-features`). Un literal `/horarios`
+   * escrito aca es exactamente la forma que dejo los enlaces de correo apuntando al comodin `**`
+   * durante tres etapas.
    */
   protected readonly rutaHorarios = RUTA_HORARIOS;
 

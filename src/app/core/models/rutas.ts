@@ -72,3 +72,15 @@ export function destinoInterno(valor: string | null | undefined): string | null 
  * que le faltaba era autorizacion.
  */
 export const RUTA_SIN_PERMISO = '/sin-permiso';
+
+/**
+ * Segmento raiz del editor de horarios (`features/resource`), tal como lo monta `app.routes.ts`.
+ *
+ * <p>Esta aca y no solo en `features/resource/models/rutas-de-horarios.ts` porque la pantalla de
+ * organizacion enlaza al editor y una feature no importa de otra (ADR-0004). Esa feature lo
+ * re-exporta y deriva de este string sus otras tres URLs.
+ */
+export const SEGMENTO_HORARIOS = 'horarios';
+
+/** Horario semanal del profesional: la ruta vacia de la feature de horarios. */
+export const RUTA_HORARIOS = `/${SEGMENTO_HORARIOS}`;
