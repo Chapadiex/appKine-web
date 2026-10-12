@@ -145,3 +145,30 @@ persona, su turno en su propio bloque de `DIAS`); ninguna usa efectivo.
   invitacion moriria AGOTADA por enlace consumido.
 - **`reservarElPrimeroLibre`**: el CI reintenta dos veces, y el reintento encuentra ocupado el
   horario que reservo el intento anterior. Los specs nuevos reservan el primer slot libre del dia.
+
+## Configuracion y padron (`e2e/flujo-*.spec.ts`, tercera tanda)
+
+Espacios, catalogo, horarios, servicios y padron, en el mismo proyecto `agenda` y sobre el mismo
+centro. Los helpers viven en `e2e/support/sembrado-configuracion.ts` (no en `sembrado.ts`, para no
+chocar con otros PR que agregan al final), y sus bloques de dias en `DIAS_CONFIGURACION` (110 y
+116, despues de los de `DIAS`).
+
+| Spec | Que recorre | Lo que afirma contra el backend real |
+|---|---|---|
+| `flujo-espacios` | Alta del box por pantalla → turno pendiente en ese box (oferta que exige espacio, habilitada solo ahi) → baja frenada → se cancela el turno → baja con motivo → historico con su motivo | `espacio-has-active-references` con `referenceCount: 1`, y el texto "1 turno pendiente" |
+| `flujo-catalogo` | Especialidad propia del centro (filtro "de este centro" si, "de la plataforma" no). Pedido al catalogo comun → la plataforma lo aprueba en `/plataforma/solicitudes` → el centro lo ve Aprobado con la nota → aparece entre los de la plataforma | El ida y vuelta de RF-M06-005 con dos cuentas |
+| `flujo-horarios` | Profesional PROPIA (no la compartida) → bloque semanal por pantalla en el dia de la semana de un feriado nacional F → turno en F+14 → cierre de la profesional en F+14 con impacto "Turnos afectados: 1" → "Cargar igual" → el feriado en el calendario de la sede | Agenda: F = `FERIADO`, F+7 con sus 3 turnos, F+14 = `CIERRE`; tambien en la grilla de `/agenda` |
+| `flujo-servicios` | La plataforma da de alta un servicio global → el centro arma la oferta, habilita a su profesional y le carga un precio particular → la plataforma da de baja el servicio | La oferta sigue ACTIVA, con su precio y sus turnos: la baja no cascadea |
+| `flujo-padron` | Alta de persona → activar perfil con el motivo VACIO → editar → baja de la ficha desde el 360 | El boton del motivo opcional envia (el bug del 30/08); el de la baja, con motivo vacio, no |
+
+- **Horarios no toca al profesional compartido ni al horario de la sede**: vincula una cuenta nueva
+  (un alta self-service mas, dentro del cupo de `esperarCupoDeRegistro`). Los feriados se leen del
+  calendario nacional; si la sede no cierra por feriado, el test se saltea diciendolo.
+- **Catalogo (la aprobacion) y servicios necesitan la cuenta de plataforma** del bootstrap de DP-14.
+  `plataformaDisponible()` la activa por Mailpit si hace falta y, si no puede, el test se saltea con
+  el motivo. La plataforma ingresa por pantalla en un navegador aparte, sin contexto de centro.
+- El servicio de `flujo-servicios` queda dado de baja: `servicioAgendable` toma el PRIMER servicio
+  activo, asi que no cambia las corridas siguientes.
+- **Los specs de "hoy" fallan en un dia feriado**: `agenda-recepcion` y `flujo-prepago` reservan
+  turnos de HOY, y el 12/10/2026 (feriado nacional) la agenda del dia viene `FERIADO`. No es de esta
+  tanda; queda anotado porque se vio al correr la suite entera ese dia.

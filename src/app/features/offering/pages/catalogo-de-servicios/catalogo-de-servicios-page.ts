@@ -10,7 +10,7 @@ import {
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Subject, catchError, debounceTime, of } from 'rxjs';
+import { Subject, Subscription, catchError, debounceTime, of } from 'rxjs';
 
 import { ConfirmacionConMotivo } from '../../../../shared/components/confirmacion-con-motivo/confirmacion-con-motivo';
 import { CreateServicioRequest } from '../../../../api/generated/model/create-servicio-request';
@@ -166,6 +166,8 @@ export class CatalogoDeServiciosPage {
 
   /** Lo que el usuario tipea, antes del debounce. Ver {@link ESPERA_DE_BUSQUEDA}. */
   private readonly tecleado = new Subject<string>();
+  /** La consulta del listado en curso, para cancelarla si llega otra. Ver {@link cargar}. */
+  private cargaEnVuelo: Subscription | null = null;
 
   protected readonly formularioAlta = this.formBuilder.nonNullable.group({
     codigo: ['', [textoRequerido]],
@@ -207,7 +209,12 @@ export class CatalogoDeServiciosPage {
   protected cargar(): void {
     this.estado.set({ tipo: 'cargando' });
 
-    this.api
+    // Una sola consulta en vuelo: la nueva cancela la anterior. Sin esto ganaba la que llegaba
+    // ULTIMA, y despues de una baja —que relee con "Solo los activos"— cambiar enseguida a "Solo
+    // los dados de baja" podia terminar mostrando la lista de activos bajo el filtro de bajas
+    // (encontrado por el E2E de servicios contra el backend real).
+    this.cargaEnVuelo?.unsubscribe();
+    this.cargaEnVuelo = this.api
       .listarServicios({ texto: this.busqueda(), estado: this.filtroEstado() })
       .pipe(catchError((error: unknown) => of(error instanceof Error ? error : new Error(''))))
       .subscribe((respuesta) => {

@@ -72,8 +72,28 @@
         @if (mostrarErrorAlta('importe')) {
           <p class="campo__error" role="alert">El importe es obligatorio, y puede ser cero.</p>
         }
-        <p class="ayuda" id="alta-precio-importe-ayuda">
-          En la moneda del precio de lista de la oferta.
+        <p class="ayuda" id="alta-precio-importe-ayuda">En la moneda que elijas abajo.</p>
+      </div>
+
+      <div class="campo">
+        <label for="alta-precio-moneda">Moneda</label>
+        <input
+          id="alta-precio-moneda"
+          type="text"
+          maxlength="3"
+          autocomplete="off"
+          formControlName="moneda"
+          [attr.aria-invalid]="mostrarErrorAlta('moneda') ? 'true' : null"
+          aria-describedby="alta-precio-moneda-ayuda"
+        />
+        @if (mostrarErrorAlta('moneda')) {
+          <p class="campo__error" role="alert">
+            La moneda es obligatoria: tres letras, como ARS o USD.
+          </p>
+        }
+        <p class="ayuda" id="alta-precio-moneda-ayuda">
+          Codigo de tres letras (ARS, USD). Si la oferta tiene precio de lista, se propone su
+          moneda.
         </p>
       </div>
 

@@ -299,7 +299,7 @@ desde otro contexto (#70).
 
 Pendientes que arrastra el frontend:
 
-- [ ] E2E de espacios, catálogo, horarios, servicios y del alta de padrón por pantalla
+- [x] ~~E2E de espacios, catálogo, horarios, servicios y del alta de padrón por pantalla~~ — `flujo-espacios`, `flujo-catalogo`, `flujo-horarios`, `flujo-servicios` y `flujo-padron` (ver `docs/e2e-ci.md`)
 - [x] ~~Protección de rama en `main`~~ — hecha: cinco checks obligatorios (API de GitHub, 11/10)
 - [x] ~~Activar el job E2E del pipeline~~ — G-9 (#30)
 - [ ] Regla de ESLint que prohíba imports entre features (ADR-0004): `eslint.config.js` sigue sin ella

@@ -103,6 +103,27 @@ describe('CatalogoDeServiciosPage', () => {
     );
   });
 
+  it('cambiar el filtro con una consulta en vuelo la cancela: no gana la que llega ultima', async () => {
+    const fixture = await montar();
+
+    elegir(fixture, '#filtro-estado-servicio', 'TODOS');
+    const vieja = httpMock.expectOne(
+      (peticion: HttpRequest<unknown>) => peticion.params.get('estado') === 'TODOS',
+    );
+    elegir(fixture, '#filtro-estado-servicio', 'INACTIVO');
+    const nueva = httpMock.expectOne(
+      (peticion: HttpRequest<unknown>) => peticion.params.get('estado') === 'INACTIVO',
+    );
+
+    expect(vieja.cancelled).toBe(true);
+    nueva.flush([]);
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain(
+      'No hay servicios que coincidan',
+    );
+  });
+
   it('el alta manda los cinco campos del contrato y omite la descripcion vacia', async () => {
     const fixture = await montar();
 

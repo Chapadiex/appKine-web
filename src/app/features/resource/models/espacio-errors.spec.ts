@@ -93,6 +93,25 @@ describe('traducirErrorEspacio', () => {
     );
     expect(conReferencias.mensaje).toContain('14 turnos futuros');
 
+    // El vocabulario REAL del backend (`EspacioOcupadoPorTurnos.TIPO`) no se muestra crudo.
+    const delBackend = traducirErrorEspacio(
+      problema(409, 'espacio-has-active-references', {
+        referenceType: 'turnos-futuros',
+        referenceCount: 1,
+      }),
+    );
+    expect(delBackend.mensaje).toContain('tiene 1 turno pendiente sin resolver');
+    expect(delBackend.mensaje).not.toContain('turnos-futuros');
+    expect(
+      traducirErrorEspacio(
+        problema(409, 'espacio-capacity-below-occupancy', {
+          requestedCapacity: 1,
+          currentOccupancy: 2,
+          occupancyType: 'turnos-futuros',
+        }),
+      ).mensaje,
+    ).toContain('(turnos pendientes)');
+
     // Sin los extras el mensaje sigue siendo accionable, solo que sin numeros.
     expect(
       traducirErrorEspacio(problema(409, 'espacio-capacity-below-occupancy')).mensaje,
