@@ -7,7 +7,18 @@ import {
 } from '@angular/router';
 import { from, isObservable, of, switchMap } from 'rxjs';
 
+import { PrecargaDeModulos } from '../services/precarga-de-modulos';
 import { SessionService } from '../services/session.service';
+
+/** Clave de `data` de una ruta con precarga de datos. Ver {@link trasRestaurarSesion}. */
+export const DATA_PRECARGA_DE_DATOS = 'akinePrecargaDeDatos';
+
+/**
+ * Adelanta la consulta principal de una pantalla en la primera carga (AKINE-LCP). Corre en un
+ * contexto de inyeccion y puede llamarse mas de una vez por carga —cada guard de la cadena pasa
+ * por {@link trasRestaurarSesion}—, asi que tiene que ser idempotente.
+ */
+export type PrecargaDeDatos = (ruta: ActivatedRouteSnapshot) => void;
 
 /**
  * Corre la decision de un guard cuando la sesion ya esta resuelta (AKINE-LCP).
@@ -29,6 +40,11 @@ import { SessionService } from '../services/session.service';
  * <p>La precarga no decide nada ni saltea ningun guard: solo adelanta un `import()` que el
  * router va a hacer igual si el guard deja pasar. Si el guard redirige, el modulo queda en la
  * cache del navegador sin ejecutarse como pantalla.
+ *
+ * <p>Una ruta puede declarar ademas en su `data` una {@link PrecargaDeDatos} bajo
+ * {@link DATA_PRECARGA_DE_DATOS}: se llama aca, una sola vez por carga, para que la consulta
+ * principal de la pantalla salga apenas haya token y no recien cuando el componente se construye.
+ * Tampoco decide nada: el backend autoriza esa consulta igual que si la hiciera la pantalla.
  */
 export function trasRestaurarSesion(
   estado: RouterStateSnapshot,
@@ -40,7 +56,7 @@ export function trasRestaurarSesion(
     return decidir();
   }
 
-  precargarDestino(estado.root);
+  precargarDestino(estado.root, inject(PrecargaDeModulos));
 
   return session.esperarRestauracion().pipe(
     switchMap(() => {
@@ -53,10 +69,14 @@ export function trasRestaurarSesion(
 }
 
 /**
- * Dispara el `loadComponent` de cada ruta del destino. El navegador no baja dos veces el mismo
+ * Dispara el `loadComponent` de cada ruta del destino, y su precarga de datos si la declara.
+ * El navegador no baja dos veces el mismo
  * modulo: el `import()` que el router hace despues resuelve del mapa de modulos ya cargados.
  */
-function precargarDestino(raiz: ActivatedRouteSnapshot | undefined): void {
+function precargarDestino(
+  raiz: ActivatedRouteSnapshot | undefined,
+  precarga: PrecargaDeModulos,
+): void {
   for (let actual = raiz ?? null; actual !== null; actual = actual.firstChild) {
     const cargar = actual.routeConfig?.loadComponent;
     if (cargar) {
@@ -70,6 +90,13 @@ function precargarDestino(raiz: ActivatedRouteSnapshot | undefined): void {
       } catch {
         // idem: el router lo reintenta y reporta
       }
+      // Despues del chunk de la pantalla, para que pida conexion primero: sus dependencias
+      // compartidas salen en la misma ida y vuelta, no despues de analizarlo (PrecargaDeModulos).
+      precarga.precargar(cargar);
+    }
+    const precargarDatos: unknown = actual.routeConfig?.data?.[DATA_PRECARGA_DE_DATOS];
+    if (typeof precargarDatos === 'function') {
+      (precargarDatos as PrecargaDeDatos)(actual);
     }
   }
 }

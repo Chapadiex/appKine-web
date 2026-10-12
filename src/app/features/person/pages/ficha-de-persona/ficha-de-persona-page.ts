@@ -6,6 +6,7 @@ import { HitoResponse } from '../../../../api/generated/model/hito-response';
 import { PERMISO_COBRO_REGISTER, PERMISO_PACIENTE_MANAGE } from '../../../../core/models/permisos';
 import { PermisoDirective } from '../../../../shared/directives/permiso.directive';
 import { PersonApi } from '../../services/person-api';
+import { PrecargaDeFicha } from '../../services/precarga-de-ficha';
 import { PersonaResponse } from '../../../../api/generated/model/persona-response';
 import { ResumenDePersonaResponse } from '../../../../api/generated/model/resumen-de-persona-response';
 import { SeccionResponse } from '../../../../api/generated/model/seccion-response';
@@ -100,6 +101,7 @@ interface ConteoPorCategoria {
 })
 export class FichaDePersonaPage {
   private readonly api = inject(PersonApi);
+  private readonly precarga = inject(PrecargaDeFicha);
   private readonly tenantContext = inject(TenantContextStore);
 
   /** De la ruta. `withComponentInputBinding` lo liga solo. */
@@ -205,7 +207,8 @@ export class FichaDePersonaPage {
     this.errorDeCarga.set(null);
     this.faltaContexto.set(false);
 
-    this.api.resumen(id).subscribe({
+    // En la primera carga el resumen ya puede venir pedido desde la ruta (AKINE-LCP).
+    (this.precarga.tomar(id) ?? this.api.resumen(id)).subscribe({
       next: (resumen) => {
         this.resumen.set(resumen);
         this.cargando.set(false);

@@ -285,6 +285,19 @@ export class SessionService {
   }
 
   /**
+   * Emite una vez cuando ya hay access token: al volver el refresh en vuelo, o en el acto si no
+   * hay ninguno. A diferencia de {@link esperarRestauracion} NO espera los nombres del contexto
+   * (`/me/contexts`), que no cambian el alcance del token. Nunca falla: quien lo usa mira
+   * {@link estado} despues.
+   *
+   * <p>Es para la precarga de datos de una pantalla (AKINE-LCP): su consulta puede salir apenas
+   * el token existe, en paralelo con el resto de la restauracion y con los guards.
+   */
+  esperarAcceso(): Observable<unknown> {
+    return (this.refreshEnVuelo ?? of(undefined)).pipe(catchError(() => of(undefined)));
+  }
+
+  /**
    * Borra todo rastro local de la sesion. Lo usa el interceptor cuando el refresh falla.
    *
    * No llama al backend: es limpieza local. O el backend ya invalido lo suyo, o nunca hubo
