@@ -4,6 +4,8 @@ import { ANCHO_AMPLIO, DATA_ANCHO } from '../../core/models/ancho-de-contenido';
 import { contextGuard } from '../../core/guards/context.guard';
 import { permissionGuard } from '../../core/guards/permission.guard';
 import { PERMISO_PACIENTE_READ } from '../../core/models/permisos';
+import { DATA_PRECARGA_DE_DATOS } from '../../core/guards/tras-restaurar-sesion';
+import { precargarResumenDeFicha } from './services/precarga-de-ficha';
 
 /**
  * Rutas de la feature `person` (padron de personas M07, etapa AKINE-03.01).
@@ -70,6 +72,9 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./pages/ficha-de-persona/ficha-de-persona-page').then((m) => m.FichaDePersonaPage),
     title: 'AKINE - Ficha de la persona',
+    // En una carga dura el resumen sale apenas vuelve el refresh, sin esperar a los guards ni a
+    // la pantalla (AKINE-LCP). Ver PrecargaDeFicha.
+    data: { [DATA_PRECARGA_DE_DATOS]: precargarResumenDeFicha },
   },
 
   // Documentacion administrativa (M25, AKINE-03.02).

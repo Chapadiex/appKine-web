@@ -6,8 +6,11 @@ import {
 } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+import { of } from 'rxjs';
 
 import { FichaDePersonaPage } from './ficha-de-persona-page';
+import { PrecargaDeFicha } from '../../services/precarga-de-ficha';
+import { ResumenDePersonaResponse } from '../../../../api/generated/model/resumen-de-persona-response';
 import { PERMISO_PACIENTE_MANAGE } from '../../../../core/models/permisos';
 import { PermissionsStore } from '../../../../core/services/permissions.store';
 import { RUTA_PERMISOS_EFECTIVOS } from '../../../../core/testing/rutas-api';
@@ -181,6 +184,30 @@ describe('FichaDePersonaPage', () => {
 
     expect(titulos).toContain('Coberturas');
     expect(titulos).toContain('Situacion economica — sin permiso');
+  });
+
+  it('en la primera carga toma el resumen que la ruta ya pidio, sin volver a la red', async () => {
+    // AKINE-LCP: la ruta lo pide apenas vuelve el refresh (PrecargaDeFicha).
+    const tomar = vi
+      .spyOn(TestBed.inject(PrecargaDeFicha), 'tomar')
+      .mockReturnValue(of(RESUMEN_COMPLETO as ResumenDePersonaResponse));
+    tenantContext.select({
+      organizationId: 1,
+      organizationName: 'Centro Belgrano',
+      consultorioId: 3,
+      consultorioName: 'Sede Centro',
+    });
+    permisos.cargar().subscribe();
+    httpMock.expectOne(RUTA_PERMISOS_EFECTIVOS).flush({ permissions: [PERMISO_PACIENTE_MANAGE] });
+
+    const fixture = TestBed.createComponent(FichaDePersonaPage);
+    fixture.componentRef.setInput('personaId', String(PERSONA));
+    fixture.detectChanges();
+    await estabilizar(fixture);
+
+    expect(tomar).toHaveBeenCalledWith(PERSONA);
+    httpMock.expectNone(RESUMEN);
+    expect(texto(fixture)).toContain('Sin movimientos registrados');
   });
 
   // -------------------------------------------------------------------------------------

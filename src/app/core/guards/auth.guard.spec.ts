@@ -12,6 +12,7 @@ import { Observable, isObservable } from 'rxjs';
 
 import { authGuard } from './auth.guard';
 import { contextGuard } from './context.guard';
+import { DATA_PRECARGA_DE_DATOS } from './tras-restaurar-sesion';
 import { DiaDeLaSede } from '../services/dia-de-la-sede';
 import { SessionService } from '../services/session.service';
 import { fijarReloj, soltarReloj } from '../testing/reloj';
@@ -189,12 +190,20 @@ describe('guards de sesion', () => {
       expect((resultados[0] as UrlTree).toString()).toContain('/auth/ingresar');
     });
 
-    it('mientras espera, precarga el componente de la pantalla de destino', () => {
+    it('mientras espera, precarga el componente de la pantalla de destino y sus datos', () => {
       session.iniciarRestauracion();
       const cargarPantalla = vi.fn(() => Promise.resolve(class {}));
+      const precargarDatos = vi.fn();
+      const pantalla = {
+        routeConfig: {
+          loadComponent: cargarPantalla,
+          data: { [DATA_PRECARGA_DE_DATOS]: precargarDatos },
+        },
+        firstChild: null,
+      };
       const destino = {
         routeConfig: null,
-        firstChild: { routeConfig: { loadComponent: cargarPantalla }, firstChild: null },
+        firstChild: pantalla,
       } as unknown as ActivatedRouteSnapshot;
 
       observar(
@@ -211,6 +220,8 @@ describe('guards de sesion', () => {
 
       // Adelanta el import que el router haria despues de los guards: no decide nada.
       expect(cargarPantalla).toHaveBeenCalledTimes(1);
+      // Y la consulta principal de la pantalla, con su snapshot (AKINE-LCP).
+      expect(precargarDatos).toHaveBeenCalledExactlyOnceWith(pantalla);
       httpMock
         .expectOne('/api/v1/auth/refresh')
         .flush({ accessToken: 'jwt-restaurado', scope: 'pre_context' });
