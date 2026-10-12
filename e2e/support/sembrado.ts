@@ -81,6 +81,10 @@ export const DIAS = {
   // Turnos que terminan en una sesion cerrada (la sesion admite turnos futuros).
   cobro: 90,
   presentacion: 93,
+  // Las verticales del 11/10: cada una reserva o cierra turnos propios.
+  autorizacion: 96,
+  cobrosPosteriores: 99,
+  notificacion: 102,
 } as const;
 
 /** Cada test busca su dia dentro de su bloque: ver {@link diaDeTrabajo}. */
@@ -959,6 +963,112 @@ export function moverLaCaja(
     medio: 'EFECTIVO',
     idempotencyKey: randomUUID(),
   });
+}
+
+// ---------------------------------------------------------------------------------------------
+// Contratacion: financiador, plan, convenio y cobertura del paciente
+// ---------------------------------------------------------------------------------------------
+
+/** Practica global sembrada por V25 (catalogo de plataforma), por su codigo. */
+export async function practicaGlobal(api: ApiAkine, codigo: string): Promise<number> {
+  const respuesta = await api.exigir<
+    { id: number; codigo: string }[] | { content: { id: number; codigo: string }[] }
+  >('GET', `/api/v1/catalogos/practicas?q=${codigo}`);
+  const lista = Array.isArray(respuesta) ? respuesta : respuesta.content;
+  const practica = lista.find((p) => p.codigo === codigo);
+  expect(practica, `la practica global ${codigo} existe (V25)`).toBeDefined();
+  return practica!.id;
+}
+
+export interface Financiador {
+  readonly id: number;
+  readonly nombre: string;
+  readonly planId: number;
+}
+
+/** Obra social con un plan, vigentes desde `desde`. Codigos unicos por llamada. */
+export async function crearFinanciador(api: ApiAkine, desde: string): Promise<Financiador> {
+  const sufijo = nonce();
+  const nombre = `Obra Social E2E ${sufijo}`;
+  const financiador = await api.exigir<{ id: number }>('POST', '/api/v1/financiadores', {
+    codigo: `OSE2E${sufijo}`.slice(0, 20),
+    nombre,
+    tipo: 'OBRA_SOCIAL',
+  });
+  const plan = await api.exigir<{ id: number }>(
+    'POST',
+    `/api/v1/financiadores/${financiador.id}/planes`,
+    { codigo: `P${sufijo}`.slice(0, 20), nombre: `Plan E2E ${sufijo}`, vigenciaDesde: desde },
+  );
+  return { id: financiador.id, nombre, planId: plan.id };
+}
+
+/** Convenio POR_PRESTACION de la sede con el plan del financiador, en ARS y sin aranceles. */
+export async function crearConvenio(
+  api: ApiAkine,
+  centro: Centro,
+  financiador: Financiador,
+  desde: string,
+): Promise<{ readonly id: number; readonly nombre: string }> {
+  const sufijo = nonce();
+  const nombre = `Convenio E2E ${sufijo}`;
+  const convenio = await api.exigir<{ id: number }>(
+    'POST',
+    `/api/v1/consultorios/${centro.consultorioId}/convenios`,
+    {
+      financiadorId: financiador.id,
+      planId: financiador.planId,
+      codigo: `CV${sufijo}`.slice(0, 20),
+      nombre,
+      modalidad: 'POR_PRESTACION',
+      vigenciaDesde: desde,
+      moneda: 'ARS',
+    },
+  );
+  return { id: convenio.id, nombre };
+}
+
+/** Cobertura FINANCIADA y principal de la persona con el plan. Devuelve su id. */
+export async function darCobertura(
+  api: ApiAkine,
+  persona: Persona,
+  financiador: Financiador,
+  desde: string,
+): Promise<number> {
+  const cobertura = await api.exigir<{ id: number }>(
+    'POST',
+    `/api/v1/personas/${persona.id}/coberturas`,
+    {
+      tipo: 'FINANCIADA',
+      planId: financiador.planId,
+      numeroAfiliado: `AF-${nonce()}`,
+      vigenciaDesde: desde,
+      principal: true,
+    },
+  );
+  return cobertura.id;
+}
+
+/**
+ * Reserva el primer horario libre de `slots`. Un reintento del mismo test (el CI reintenta dos veces)
+ * encuentra ocupado el horario que reservo el intento anterior: `recurso-ocupado` es eso, y se prueba
+ * el siguiente.
+ */
+export async function reservarElPrimeroLibre(
+  api: ApiAkine,
+  centro: Centro,
+  ofertaId: number,
+  personaId: number,
+  slots: readonly Slot[],
+): Promise<Turno> {
+  for (const slot of slots) {
+    const respuesta = await pedirReserva(api, centro, ofertaId, personaId, slot.desde);
+    if (respuesta.status() === 201) {
+      return (await respuesta.json()) as Turno;
+    }
+    expect(respuesta.status(), await respuesta.text()).toBe(409);
+  }
+  throw new Error(`ningun horario libre entre ${slots.length} slots`);
 }
 
 /** Abre la caja de la sede por la API con `saldoInicial` en efectivo. Exige que este cerrada. */

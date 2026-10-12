@@ -122,3 +122,26 @@ Tres cosas que el sembrado tiene que saber y que no son obvias:
 - **La caja es una por sede.** Los dos tests que la abren viven en `flujo-caja.spec.ts`, corren en
   orden (`mode: 'default'`) y arrancan cerrando lo que haya quedado abierto. El prepago y el pago
   del financiador van por transferencia para no tocar el cajon.
+
+## Las pantallas del 08/10 al 11/10 (`e2e/flujo-*.spec.ts`, segunda tanda)
+
+Mismo proyecto `agenda` y mismo centro sembrado. Cada una trabaja sobre lo suyo (su oferta, su
+persona, su turno en su propio bloque de `DIAS`); ninguna usa efectivo.
+
+| Spec | Que recorre | Lo que afirma contra el backend real |
+|---|---|---|
+| `flujo-colaboradores` | Cuenta nueva vinculada como admin de sede → el selector de permisos ofrece exactamente `permisos-otorgables` del rol → otorgar → cambiar el rol a Profesional → marca "No vigente con el rol actual" → dar de baja | `permiso-no-otorgable-al-rol` al reotorgarlo por la API |
+| `flujo-autorizaciones` | Autorizacion APROBADA con cobertura, convenio y arancel; la profesional cierra la sesion → saldo y ledger (consumo de la sesion) → anular el coseguro desde la cuenta corriente → alerta "consumo a revisar" → revertir desde el panel | La anulacion no devuelve la unidad; la reversion si, y resuelve la alerta |
+| `flujo-notificaciones` | Persona con correo reserva → `TURNO_RESERVADO` sale a Mailpit → **sembrado declarado: la fila ENVIADA pasa a FALLIDA por SQL** → listado por defecto → reintentar desde la fila → el worker la vuelve a entregar (segundo correo) | 409 al reintentar una ENVIADA |
+| `flujo-cobros-posteriores` | Anticipo por transferencia → imputarlo despues a la deuda desde la cuenta corriente → anular el cobro (la deuda recupera el saldo) → reintegrar parte de otro anticipo | El anulado queda ANULADO por id; con reintegro hecho, "Anular" queda deshabilitado con su motivo |
+| `flujo-practicas-y-aranceles` | Practicas de una oferta: agregar `KIN_SESION` y `KIN_EVAL`, elegir principal, guardar, quitar una. Importacion: planilla con una fila que se pisa → vista previa la marca → corregir → confirmar 2 | `practicaPrincipalId` y la grilla del convenio leidas por la API |
+| `flujo-dia-de-la-sede` | Navegador en `Pacific/Kiritimati` con el reloj fijado a las 23:30 del ultimo dia del mes anterior en la zona de la sede → `/reportes` y `/contratacion/convenios` | Proponen el dia y el MES de la sede. Verificado por mutacion: con `hoy()` devolviendo el dia del navegador, falla |
+
+- **La falla de envio no tiene camino en el producto.** Contra Mailpit, que acepta cualquier
+  destinatario, no se puede provocar un fallo permanente del SMTP sin bajar el servidor de correo
+  que comparten los demas specs. Por eso `flujo-notificaciones` escribe FALLIDA en la fila ya
+  ENVIADA (contenedor de `AKINE_E2E_MYSQL_CONTAINER`); el listado, el reintento y el segundo envio
+  son del backend real. Se usa un aviso de turno porque no lleva enlace: uno de activacion o de
+  invitacion moriria AGOTADA por enlace consumido.
+- **`reservarElPrimeroLibre`**: el CI reintenta dos veces, y el reintento encuentra ocupado el
+  horario que reservo el intento anterior. Los specs nuevos reservan el primer slot libre del dia.
