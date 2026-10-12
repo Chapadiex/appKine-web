@@ -64,8 +64,6 @@
   --color-superficie-sutil: #f4f7fa;
   --color-superficie-atenuada: #f7f8fa;
   --color-superficie-codigo: #eef2f6;
-  /* La superficie con alfa 0, para el degrade que anuncia el desborde de la tabla. */
-  --color-superficie-fade: rgb(255 255 255 / 0);
 
   /* --- Texto -------------------------------------------------------------------------- */
   --color-texto: #10263f;
@@ -116,10 +114,9 @@
   --color-peligro-fondo: #fdeded;
   --color-peligro-texto: #7d1717;
 
-  /* --- Sombras ------------------------------------------------------------------------ */
-  /* La unica sombra que el sistema dibuja hoy: el borde de la tabla desplazable. */
-  --sombra-scroll: rgb(16 38 63 / 0.22);
-  --sombra-scroll-fade: rgb(16 38 63 / 0);
+  /* --- Desborde ---------------------------------------------------------------------- */
+  /* Barra lateral de la tabla desplazable que anuncia contenido escondido. Grafico: 3:1. */
+  --color-desborde: var(--color-borde-control);
 
   /* --- Tipografia --------------------------------------------------------------------- */
   --fuente-base: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
@@ -180,7 +177,6 @@
     --color-superficie-sutil: #17242f;
     --color-superficie-atenuada: #131e29;
     --color-superficie-codigo: #1b2a38;
-    --color-superficie-fade: rgb(15 26 38 / 0);
 
     --color-texto: #e6edf3;
     --color-texto-fuerte: #f4f8fb;
@@ -218,10 +214,6 @@
     --color-peligro-fondo: #2b1416;
     --color-peligro-texto: #ffb3b3;
 
-    /* La sombra del desborde deja de ser el azul de la marca: sobre fondo oscuro no se ve.
-       Negro puro, que es lo unico mas oscuro que la superficie. */
-    --sombra-scroll: rgb(0 0 0 / 0.5);
-    --sombra-scroll-fade: rgb(0 0 0 / 0);
   }
 }
 
@@ -359,8 +351,15 @@ h1 {
   background: var(--color-superficie-sutil);
 }
 
+/*
+ * El `padding-block` lleva la caja de un enlace de 20-21 px de alto a 24 px o mas: es el objetivo de
+ * toque minimo de WCAG 2.5.8 (AA). En un elemento en linea el padding vertical agranda la zona que
+ * se toca sin mover el renglon, asi que un enlace dentro de un parrafo no cambia de lugar. Medido a
+ * 375 px por `e2e/movil.spec.ts`.
+ */
 .enlace {
   color: var(--color-enlace);
+  padding-block: var(--esp-1);
 }
 
 /* Foco visible: nunca se quita el outline sin reemplazo (ADR-0005). */
@@ -372,11 +371,17 @@ h1 {
 
 /* --- Formularios ---------------------------------------------------------------------- */
 
+/*
+ * `min-width: 0` porque un `.campo` suele ser item de una fila flexible de filtros, y ahi el
+ * minimo automatico es el ancho intrinseco del control: un `select` con una opcion larga (el
+ * nombre de un financiador, una practica) empujaba la PAGINA a 470-670 px en un telefono de 375.
+ */
 .campo {
   display: flex;
   flex-direction: column;
   gap: var(--esp-2);
   margin-bottom: var(--esp-6);
+  min-width: 0;
 }
 
 .campo label {
@@ -395,6 +400,8 @@ h1 {
   background: var(--color-superficie);
   color: var(--color-texto);
   font: inherit;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .campo input:focus-visible,
@@ -501,28 +508,59 @@ h1 {
 }
 
 /*
- * Sombra en el borde por el que hay contenido escondido.
+ * Indicador de desborde: una barra en el borde por el que queda contenido escondido.
  *
- * Puro CSS: dos capas de fondo fijas a los extremos del contenedor tapan a dos capas
- * `local` que viajan con el scroll. Cuando no queda nada para desplazar de ese lado, la capa
- * blanca tapa a la sombra y la sombra desaparece sola. Sin JavaScript, sin `ResizeObserver`
- * y sin una bandera que alguien se olvide de actualizar: el desborde se anuncia solo.
+ * <b>Por que no es una sombra.</b> Hasta el 12/10/2026 eran cuatro degrades en el `background`
+ * del contenedor: dos capas `local` que viajaban con el scroll tapaban a dos sombras fijas en los
+ * extremos. Funcionaba sin JavaScript, pero la sombra se pintaba DEBAJO del texto: en la franja de
+ * ~14 px donde oscurecia, `--color-texto-suave` caia a ~4,16:1 contra 4,5 (WCAG 1.4.3), y como el
+ * fondo era un `background-image` axe no podia medir NINGUNA celda de las tablas del producto.
+ *
+ * Ahora el indicador vive en el BORDE del contenedor, que esta afuera de la caja de padding donde
+ * el contenido se recorta: nunca se superpone a una letra. Cada borde lateral se pinta con
+ * `--color-desborde` mientras haya algo escondido de ese lado, y lo decide una animacion atada al
+ * propio scroll horizontal (`animation-timeline: scroll(self inline)`):
+ *
+ * - sin desborde, la linea de tiempo esta inactiva, la animacion no aplica y los dos bordes quedan
+ *   transparentes;
+ * - al principio del recorrido solo se pinta el final; al final, solo el principio; en el medio,
+ *   los dos.
+ *
+ * Es un indicador grafico, asi que va a 3:1 (WCAG 1.4.11): el token es el del borde de un control.
+ * Un navegador sin scroll-driven animations (Firefox, hoy) se queda con la barra de desplazamiento
+ * nativa como unica senal: es la degradacion aceptada, y nunca oscurece el texto.
+ *
+ * `position: relative` no es decorativo: convierte al contenedor en el bloque contenedor de lo que
+ * va posicionado adentro. Sin eso, un `.visualmente-oculto` dentro de una celda —el nombre largo de
+ * un enlace "Abrir"— se ubicaba contra la pagina y no contra el scroll, escapaba del recorte y le
+ * daba a la PAGINA un scroll horizontal (841 px en un telefono de 375, medido en egresos).
  */
 .tabla-scroll {
-  background:
-    linear-gradient(to right, var(--color-superficie) 30%, var(--color-superficie-fade)) left center,
-    linear-gradient(to left, var(--color-superficie) 30%, var(--color-superficie-fade)) right center,
-    radial-gradient(farthest-side at 0 50%, var(--sombra-scroll), var(--sombra-scroll-fade)) left
-      center,
-    radial-gradient(farthest-side at 100% 50%, var(--sombra-scroll), var(--sombra-scroll-fade))
-      right center;
-  background-repeat: no-repeat;
-  background-size:
-    3rem 100%,
-    3rem 100%,
-    0.875rem 100%,
-    0.875rem 100%;
-  background-attachment: local, local, scroll, scroll;
+  position: relative;
+  border-inline: var(--borde-acento) solid transparent;
+}
+
+@supports (animation-timeline: scroll()) {
+  .tabla-scroll {
+    animation: tabla-desborde linear both;
+    animation-timeline: scroll(self inline);
+  }
+}
+
+@keyframes tabla-desborde {
+  0% {
+    border-inline-start-color: transparent;
+    border-inline-end-color: var(--color-desborde);
+  }
+  2%,
+  98% {
+    border-inline-start-color: var(--color-desborde);
+    border-inline-end-color: var(--color-desborde);
+  }
+  100% {
+    border-inline-start-color: var(--color-desborde);
+    border-inline-end-color: transparent;
+  }
 }
 
 .tabla {

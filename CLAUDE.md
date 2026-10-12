@@ -419,7 +419,19 @@ Features: `auth`, `organization`, `platform`, `resource`, `catalog`, `offering`,
 
 > **Dos huecos que la medición destapó y que el documento no preveía.**
 >
-> 1. **Ninguna tabla del producto es medible por una herramienta automática.** La sombra que
+> 1. **~~Ninguna tabla del producto es medible por una herramienta automática.~~ SALDADO el
+>    12/10/2026** (rama `akine-web-tablas-y-movil`): el indicador de desborde dejó de ser un
+>    degradé en el `background` y pasó a ser el **borde lateral** de `.tabla-scroll`, pintado con
+>    `--color-desborde` (= `--color-borde-control`, 3:1) por una animación atada al propio scroll
+>    (`animation-timeline: scroll(self inline)`). Vive afuera de la caja donde se recorta el
+>    contenido, así que no oscurece ninguna letra, y axe mide todas las celdas sin `incomplete`: la
+>    medición a mano (`FondoConDegrade`) se borró del arnés. Firefox, sin scroll-driven animations,
+>    se queda con la barra de desplazamiento nativa. `contraste.spec.ts` suma el estado "tabla
+>    desbordada, desplazada a la mitad". El `position: relative` que se agregó de paso arregló un
+>    scroll horizontal de **página** en todas las tablas con un `.visualmente-oculto` adentro. El
+>    texto original, como historia:
+>
+>    **Ninguna tabla del producto es medible por una herramienta automática.** La sombra que
 >    anuncia el desborde horizontal está hecha con cuatro degradés en el `background` de
 >    `.tabla-scroll`, y axe no puede aplanar un `background-image`: devuelve `incomplete` para
 >    **cada celda que no traiga fondo propio**. Afecta a las **19 plantillas** que usan esa clase.

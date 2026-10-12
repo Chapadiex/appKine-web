@@ -74,7 +74,7 @@ export default defineConfig({
       // La auditoria de contraste tiene sus propios dos proyectos, uno por tema. Sin esto
       // correria una tercera vez con el `colorScheme` que traiga el sistema del runner, que es
       // justamente el dato que no se puede dejar al azar.
-      testIgnore: [/contraste(-no-textual)?\.spec\.ts/, /agenda[-.]/, /flujo-/],
+      testIgnore: [/contraste(-no-textual)?\.spec\.ts/, /agenda[-.]/, /flujo-/, /movil\.spec\.ts/],
       // Casi todos estos tests dan de alta una o dos cuentas, y el alta esta espaciada a 4 por
       // minuto (`esperarCupoDeRegistro`, por el limite del backend). Corridos uno detras de otro
       // —como en el CI— la espera sola se come los 30 s por defecto. Se alarga el plazo; el
@@ -141,6 +141,22 @@ export default defineConfig({
       name: 'contraste-oscuro',
       testMatch: /contraste(-no-textual)?\.spec\.ts/,
       use: { ...devices['Desktop Chrome'], colorScheme: 'dark' },
+    },
+
+    /*
+     * Ancho de telefono (WCAG 1.4.10 y 2.5.8): 375 px con toque. Sin backend, como el contraste:
+     * la API se simula con `route.fulfill` (`e2e/support/movil.ts`). `npm run a11y:movil`.
+     */
+    {
+      name: 'movil',
+      testMatch: /movil\.spec\.ts/,
+      use: {
+        ...devices['Desktop Chrome'],
+        viewport: { width: 375, height: 812 },
+        isMobile: true,
+        hasTouch: true,
+        deviceScaleFactor: 2,
+      },
     },
   ],
 
