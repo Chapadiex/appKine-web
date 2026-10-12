@@ -23,6 +23,22 @@
   <app-navegacion-principal />
 </header>
 
+<!--
+  Aviso de servicio no disponible (503). La region viva existe SIEMPRE y solo cambia su
+  contenido: un lector de pantalla no anuncia una region que aparece ya cargada. Es `status` y
+  no `alert`: es transitorio, no interrumpe, y la pantalla que fallo muestra su propio error.
+-->
+<div class="aviso-servicio-region" role="status" aria-live="polite">
+  @if (avisoDeServicio(); as aviso) {
+    <div class="aviso-servicio">
+      <p class="aviso-servicio__texto">{{ aviso }}</p>
+      <button type="button" class="aviso-servicio__cerrar" (click)="cerrarAvisoDeServicio()">
+        Cerrar aviso
+      </button>
+    </div>
+  }
+</div>
+
 <main
   id="contenido"
   class="contenido"

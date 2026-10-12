@@ -34,6 +34,8 @@ describe('traducirErrorColaborador', () => {
     ['404 no encontrado', problema(404, 'not-found'), 'no-encontrado'],
     ['409 vinculo duplicado', problema(409, 'membership-already-exists'), 'conflicto'],
     ['409 ultimo administrador', problema(409, 'last-admin-required'), 'conflicto'],
+    ['409 auto-revocacion', problema(409, 'self-revoke-not-allowed'), 'auto-revocacion'],
+    ['409 vinculo no activo', problema(409, 'membership-not-active'), 'vinculo-no-activo'],
     ['500 del servidor', problema(500, 'internal-error'), 'otro'],
   ];
 
@@ -51,6 +53,23 @@ describe('traducirErrorColaborador', () => {
     // AGENT.md seccion 8: el backend ya lo redacto para el usuario final, y en los conflictos
     // es la unica informacion accionable. Un "ocurrio un error" tira eso a la basura.
     expect(traducido.mensaje).toBe('No podes revocar al ultimo administrador');
+  });
+
+  it('membership-not-active nombra el estado actual del vinculo y manda a recargar', () => {
+    const error = new AkineHttpError(
+      409,
+      {
+        type: 'https://akine.app/problems/membership-not-active',
+        properties: { currentState: 'REVOCADA' },
+      },
+      false,
+    );
+    const mensaje = traducirErrorColaborador(error).mensaje;
+    expect(mensaje).toContain('ya está revocado');
+    expect(mensaje).toContain('recargá el listado');
+    expect(traducirErrorColaborador(problema(409, 'membership-not-active')).mensaje).toContain(
+      'cambió de estado',
+    );
   });
 
   it('un cuerpo sin ProblemDetail cae en el texto de respaldo', () => {

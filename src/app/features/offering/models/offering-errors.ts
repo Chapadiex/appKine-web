@@ -14,13 +14,13 @@ import { AkineHttpError } from '../../../core/interceptors/error.interceptor';
  * `conflict` queda solo para conflictos de negocio. Un `conflict` ya no manda a recargar por
  * concurrencia: cae en {@link CausaOffering `conflicto`}, con el `detail` del servidor.
  *
- * <h2>Los 409 de unicidad todavia no tienen tipo publicado</h2>
+ * <h2>Los 409 sin tipo propio caen en `conflicto`</h2>
  *
- * <p>El contrato 0.12.0 declara los `409` de la etapa pero el diseno no fija codigos propios
- * para "ya hay una oferta con ese nombre comercial" ni para el codigo de servicio repetido.
- * <b>No se inventan.</b> Un `problemType` escrito de memoria no falla en ningun lado: cae en
- * la rama por defecto y esconde para siempre el mensaje que deberia mostrar. Mientras tanto
- * esos casos caen en {@link CausaOffering `conflicto`}, que muestra el `detail` del backend
+ * <p>El codigo y el nombre de servicio repetidos, el servicio dado de baja y la baja ya hecha
+ * tienen tipo publicado y causa propia. Lo que no lo tiene <b>no se inventa</b>: un
+ * `problemType` escrito de memoria no falla en ningun lado, cae en la rama por defecto y esconde
+ * para siempre el mensaje que deberia mostrar. Esos casos -el nombre comercial repetido, por
+ * ejemplo- caen en {@link CausaOffering `conflicto`}, que muestra el `detail` del backend
  * —que si nombra el conflicto concreto— en vez de un generico.
  */
 export type CausaOffering =
@@ -48,6 +48,12 @@ export type CausaOffering =
   | 'precio-solapado'
   /** 409 precio-particular-inactivo: el precio ya esta dado de baja. */
   | 'precio-inactivo'
+  /** 409 servicio-codigo-taken / servicio-nombre-taken: ya hay un servicio vigente igual. */
+  | 'servicio-duplicado'
+  /** 409 servicio-inactivo: el servicio esta dado de baja; no admite ofertas nuevas ni ediciones. */
+  | 'servicio-inactivo'
+  /** 409 oferta-already-inactive: la baja ya estaba hecha. El estado buscado ya es el que hay. */
+  | 'oferta-ya-inactiva'
   /** Cualquier otro 409: unicidad, servicio inactivo, baja ya hecha. Gana el `detail`. */
   | 'conflicto'
   /** 429: hay que esperar. Ver `segundosDeEspera`. */
@@ -142,6 +148,21 @@ const MENSAJE_OFERTA_INACTIVA =
 const MENSAJE_CONSULTORIO_NO_OPERABLE =
   'La sede no esta operable en este momento, asi que no se pueden cambiar sus ofertas.';
 
+const MENSAJE_SERVICIO_CODIGO_EN_USO =
+  'Ya hay un servicio vigente con ese código en el catálogo. Usá otro código: el de un servicio ' +
+  'dado de baja sí se puede reusar.';
+
+const MENSAJE_SERVICIO_NOMBRE_EN_USO =
+  'Ya hay un servicio vigente con ese nombre en el catálogo (la comparación no distingue ' +
+  'mayúsculas ni acentos). Elegí otro nombre o editá el que ya existe.';
+
+const MENSAJE_SERVICIO_INACTIVO =
+  'Ese servicio está dado de baja en el catálogo: no admite ofertas nuevas ni cambios. Las ' +
+  'ofertas que ya lo prestaban siguen operando. Recargá el listado para ver los vigentes.';
+
+const MENSAJE_OFERTA_YA_INACTIVA =
+  'Esa oferta ya estaba dada de baja. No hicimos nada: el estado que buscabas ya es el que hay.';
+
 const MENSAJE_CONFLICTO =
   'El servidor rechazo el cambio por un conflicto con lo que ya hay guardado. Recarga el listado ' +
   'para ver el estado actual y volve a intentar.';
@@ -197,6 +218,14 @@ export function traducirErrorOffering(error: unknown, ambito: AmbitoOffering): E
       return base(MENSAJE_OFERTA_INACTIVA, 'oferta-inactiva');
     case 'consultorio-no-operable':
       return base(MENSAJE_CONSULTORIO_NO_OPERABLE, 'consultorio-no-operable');
+    case 'servicio-codigo-taken':
+      return base(MENSAJE_SERVICIO_CODIGO_EN_USO, 'servicio-duplicado');
+    case 'servicio-nombre-taken':
+      return base(MENSAJE_SERVICIO_NOMBRE_EN_USO, 'servicio-duplicado');
+    case 'servicio-inactivo':
+      return base(MENSAJE_SERVICIO_INACTIVO, 'servicio-inactivo');
+    case 'oferta-already-inactive':
+      return base(MENSAJE_OFERTA_YA_INACTIVA, 'oferta-ya-inactiva');
     default:
       break;
   }
@@ -216,7 +245,7 @@ export function traducirErrorOffering(error: unknown, ambito: AmbitoOffering): E
   }
 
   if (error.status === 409) {
-    // Unicidad del nombre comercial, servicio inactivo, baja ya hecha: el backend nombra
+    // Unicidad del nombre comercial y cualquier otro 409 sin causa propia: el backend nombra
     // cual. Ver el javadoc de arriba sobre por que no se inventan tipos propios.
     return base(conDetalle(error, MENSAJE_CONFLICTO), 'conflicto');
   }
@@ -230,7 +259,13 @@ export function traducirErrorOffering(error: unknown, ambito: AmbitoOffering): E
 
 /** `true` cuando lo unico que resuelve el error es releer el listado. */
 export function hayQueRecargar(causa: CausaOffering | null): boolean {
-  return causa === 'no-encontrado' || causa === 'conflicto' || causa === 'precio-inactivo';
+  return (
+    causa === 'no-encontrado' ||
+    causa === 'conflicto' ||
+    causa === 'precio-inactivo' ||
+    causa === 'servicio-inactivo' ||
+    causa === 'oferta-ya-inactiva'
+  );
 }
 
 function base(mensaje: string, causa: CausaOffering): ErrorOffering {

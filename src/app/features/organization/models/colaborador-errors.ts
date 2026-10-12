@@ -24,8 +24,15 @@ export type CausaColaborador =
   | 'validacion'
   /** 404: el email no tiene cuenta, o la sede/vinculo no es de esta organizacion. */
   | 'no-encontrado'
-  /** 409: se toco un invariante -vinculo duplicado, ultimo admin, self-revoke, estado-. */
+  /** 409: se toco un invariante sin causa propia -vinculo duplicado, ultimo admin-. */
   | 'conflicto'
+  /** 409 self-revoke-not-allowed: quien opera se quitaria su ultimo rol administrativo. */
+  | 'auto-revocacion'
+  /**
+   * 409 membership-not-active: el vinculo ya no esta en el estado que la accion supone
+   * -suspender uno revocado, reactivar uno activo-. Casi siempre es pantalla vieja.
+   */
+  | 'vinculo-no-activo'
   /** 429: hay que esperar. Ver `segundosDeEspera`. */
   | 'limite'
   /** El request nunca llego: sin red, CORS o servidor caido. */
@@ -52,6 +59,16 @@ const MENSAJE_DE_RED = 'No se pudo contactar al servidor. Revisa tu conexion y v
 const MENSAJE_SIN_CONTEXTO = 'Todavia no elegiste un contexto de trabajo.';
 const MENSAJE_SIN_PERMISO =
   'No tenes permiso para esta operacion en este contexto. Pediselo a quien administra la organizacion.';
+const MENSAJE_AUTO_REVOCACION =
+  'No podés quitarte a vos mismo tu último rol de administración: después no podrías deshacerlo. ' +
+  'Pedile a otro administrador de la organización que lo haga.';
+
+const ESTADOS_DE_VINCULO: Readonly<Record<string, string>> = {
+  ACTIVA: 'activo',
+  SUSPENDIDA: 'suspendido',
+  REVOCADA: 'revocado',
+};
+
 const MENSAJE_LIMITE_SIN_PLAZO =
   'Demasiados intentos. Espera un momento antes de volver a intentar.';
 
@@ -90,6 +107,19 @@ export function traducirErrorColaborador(
 
   if (error.faltaContexto) {
     return { mensaje: MENSAJE_SIN_CONTEXTO, causa: 'sin-contexto', segundosDeEspera: 0 };
+  }
+
+  switch (error.problemType) {
+    case 'self-revoke-not-allowed':
+      return { mensaje: MENSAJE_AUTO_REVOCACION, causa: 'auto-revocacion', segundosDeEspera: 0 };
+    case 'membership-not-active':
+      return {
+        mensaje: mensajeVinculoNoActivo(error),
+        causa: 'vinculo-no-activo',
+        segundosDeEspera: 0,
+      };
+    default:
+      break;
   }
 
   if (error.status === 403) {
@@ -156,6 +186,25 @@ export function traducirErrorGrant(error: unknown, rol: string): ErrorColaborado
       `${permiso} no se puede otorgar a un colaborador con rol ${rolVigente} segun la matriz ` +
       'de permisos. Si el rol cambio hace poco, cerra el panel y volve a abrirlo para ver lo que admite.',
   };
+}
+
+/**
+ * `membership-not-active` con los estados que manda el backend (`currentState`), en castellano.
+ *
+ * <p>Casi siempre la causa es que otra persona cambio el vinculo mientras este panel estaba
+ * abierto, asi que la salida es releer el listado, no reintentar.
+ */
+function mensajeVinculoNoActivo(error: AkineHttpError): string {
+  const actual = error.extension('currentState');
+  const estado =
+    typeof actual === 'string' && Object.hasOwn(ESTADOS_DE_VINCULO, actual)
+      ? ESTADOS_DE_VINCULO[actual]
+      : undefined;
+  const como = estado === undefined ? 'cambió de estado' : `ya está ${estado}`;
+  return (
+    `Este vínculo ${como} y no admite esa acción. Puede que otra persona lo haya modificado: ` +
+    'cerrá el panel y recargá el listado para verlo como quedó.'
+  );
 }
 
 /** El mensaje del backend, o el de respaldo si el cuerpo no traia `ProblemDetail`. */
