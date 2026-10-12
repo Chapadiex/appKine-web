@@ -22,16 +22,18 @@
  * configuracion real y verifica que ninguna caiga en el comodin.
  */
 
-/** Segmento raiz de la feature, tal como lo monta `app.routes.ts`. */
-export const SEGMENTO_HORARIOS = 'horarios';
+/**
+ * Segmento raiz de la feature y su URL. Viven en `core/models/rutas.ts` porque otra feature
+ * (`organization`) enlaza al editor de horarios y ADR-0004 no le deja importar de `resource`.
+ * Se re-exportan aca para que la feature siga teniendo sus cuatro rutas en un solo archivo.
+ */
+import { RUTA_HORARIOS, SEGMENTO_HORARIOS } from '../../../core/models/rutas';
+export { RUTA_HORARIOS, SEGMENTO_HORARIOS };
 
 /** Segmentos hijos, tal como los monta `horarios.routes.ts`. */
 export const SEGMENTO_EXCEPCIONES = 'excepciones';
 export const SEGMENTO_CALENDARIO = 'calendario';
 export const SEGMENTO_EFECTIVO = 'efectivo';
-
-/** Horario semanal del profesional — la ruta vacia de la feature. */
-export const RUTA_HORARIOS = `/${SEGMENTO_HORARIOS}`;
 
 /** Cierres y aperturas. */
 export const RUTA_HORARIOS_EXCEPCIONES = `${RUTA_HORARIOS}/${SEGMENTO_EXCEPCIONES}`;

@@ -14,17 +14,20 @@
 </nav>
 
 <!--
-  La aclaracion que sostiene la decision de esta pantalla: las acciones se muestran para todos y
-  el rechazo lo da el servidor, porque hoy ningun endpoint declara el rol de plataforma. Ver el
-  javadoc del componente. Va ARRIBA de las acciones y no en un tooltip: quien va a apretar el
-  boton tiene que llegar sabiendo que puede recibir un rechazo, y por que.
+  Las acciones de alta, edicion y baja solo aparecen con rol de plataforma (PlatformRoleStore).
+  Esta nota va ARRIBA y no en un tooltip: a quien no las ve le explica por que no estan, y a
+  quien si las ve le recuerda que lo que cambie aca lo ven todos los centros.
 -->
 <section class="tarjeta nota-clave" aria-labelledby="titulo-nota-quien-administra">
   <h2 id="titulo-nota-quien-administra">Este catalogo lo administra AKINE, no tu centro</h2>
   <p>
     Cualquiera puede <b>consultarlo</b>: es la lista de la que se elige al crear una oferta. Dar de
-    alta, editar o dar de baja un servicio, en cambio, exige <b>rol de plataforma</b>, y el servidor
-    lo verifica en cada intento. Si no lo tenes, la accion va a ser rechazada con una explicacion.
+    alta, editar o dar de baja un servicio, en cambio, exige <b>rol de plataforma</b>.
+    @if (puedeAdministrar()) {
+      Tu cuenta lo tiene: lo que cambies aca lo ven todos los centros.
+    } @else if (rolConsultado()) {
+      Tu cuenta no lo tiene, por eso esas acciones no aparecen en esta pantalla.
+    }
   </p>
   <p>
     Lo que si administra tu centro son las
@@ -39,9 +42,11 @@
   }
 </div>
 
-<p class="acciones">
-  <button type="button" class="boton" (click)="abrirAlta()">Dar de alta un servicio</button>
-</p>
+@if (puedeAdministrar()) {
+  <p class="acciones">
+    <button type="button" class="boton" (click)="abrirAlta()">Dar de alta un servicio</button>
+  </p>
+}
 
 @if (altaAbierta()) {
   <section class="tarjeta" aria-labelledby="titulo-alta-servicio">
@@ -263,7 +268,9 @@
                   <th scope="col">Modalidad por defecto</th>
                   <th scope="col">Valores clinicos por defecto</th>
                   <th scope="col">Estado</th>
-                  <th scope="col">Acciones</th>
+                  @if (puedeAdministrar()) {
+                    <th scope="col">Acciones</th>
+                  }
                 </tr>
               </thead>
               <tbody>
@@ -298,24 +305,26 @@
                         <span class="marca-estado">Activo</span>
                       }
                     </td>
-                    <td class="acciones-fila">
-                      @if (servicio.estado === 'ACTIVO') {
-                        <button
-                          type="button"
-                          class="boton boton--secundario"
-                          (click)="abrirPanel(servicio, 'editar')"
-                        >
-                          Editar
-                        </button>
-                        <button
-                          type="button"
-                          class="boton boton--secundario"
-                          (click)="abrirPanel(servicio, 'baja')"
-                        >
-                          Dar de baja
-                        </button>
-                      }
-                    </td>
+                    @if (puedeAdministrar()) {
+                      <td class="acciones-fila">
+                        @if (servicio.estado === 'ACTIVO') {
+                          <button
+                            type="button"
+                            class="boton boton--secundario"
+                            (click)="abrirPanel(servicio, 'editar')"
+                          >
+                            Editar
+                          </button>
+                          <button
+                            type="button"
+                            class="boton boton--secundario"
+                            (click)="abrirPanel(servicio, 'baja')"
+                          >
+                            Dar de baja
+                          </button>
+                        }
+                      </td>
+                    }
                   </tr>
 
                   @if (panelAbierto(servicio.id, 'editar')) {

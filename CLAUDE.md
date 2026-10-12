@@ -299,10 +299,10 @@ desde otro contexto (#70).
 
 Pendientes que arrastra el frontend:
 
-- [ ] E2E de espacios, catálogo, horarios, servicios y del alta de padrón por pantalla
+- [x] ~~E2E de espacios, catálogo, horarios, servicios y del alta de padrón por pantalla~~ — `flujo-espacios`, `flujo-catalogo`, `flujo-horarios`, `flujo-servicios` y `flujo-padron` (ver `docs/e2e-ci.md`)
 - [x] ~~Protección de rama en `main`~~ — hecha: cinco checks obligatorios (API de GitHub, 11/10)
 - [x] ~~Activar el job E2E del pipeline~~ — G-9 (#30)
-- [ ] Regla de ESLint que prohíba imports entre features (ADR-0004): `eslint.config.js` sigue sin ella
+- [x] ~~Regla de ESLint que prohíba imports entre features (ADR-0004)~~ — `akine/sin-imports-entre-features`, 12/10
 - [ ] Completar los `PENDIENTE(F1)` de `.claude/qa-config.md`
 - [x] ~~`organization.routes.spec.ts` no pasa `format:check`~~ — `npm run format:check` limpio el 11/10
 - [ ] La cadena `basic-ftp` del generador de cliente (decisión de G-6)
