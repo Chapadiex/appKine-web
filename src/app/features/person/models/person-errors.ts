@@ -124,6 +124,12 @@ export type CausaPersona =
    * que corresponde es releer el ledger: la unidad ya volvio una vez.
    */
   | 'consumo-ya-revertido'
+  /**
+   * 409 autorizacion-sin-saldo al revertir: el ledger dice que la unidad se consumio y el saldo
+   * materializado no tiene nada que devolver. Las dos fuentes divergieron; reintentar no lo
+   * arregla, y el backend corta en vez de escribir una reversion que lo empeoraria.
+   */
+  | 'saldo-divergente'
   /** 409 concurrent-modification: la `expectedVersion` enviada quedo vieja (DP-21). */
   | 'concurrencia'
   /** 409 subscription-suspended: lo emite el filtro, antes del controller. */
@@ -322,6 +328,11 @@ const MENSAJE_CONSUMO_YA_REVERTIDO =
   'Ese consumo ya estaba revertido: la unidad volvio al saldo una vez y no vuelve dos. Recarga los ' +
   'movimientos para ver la reversion que ya existe.';
 
+const MENSAJE_SALDO_DIVERGENTE =
+  'No se revirtió el consumo: el saldo de la autorización no coincide con sus movimientos, así ' +
+  'que no hay una unidad que devolver. No lo reintentes. Recargá los movimientos y avisale a ' +
+  'quien administra el sistema para que revise esa autorización.';
+
 const MENSAJE_REVERSION_SIN_MOTIVO =
   'Para revertir un consumo hay que declarar el motivo: sin el, quien audite no puede distinguir un ' +
   'error de carga de otra cosa.';
@@ -427,6 +438,8 @@ export function traducirErrorPersona(error: unknown): ErrorPersona {
       return base(MENSAJE_NUMERO_EN_USO, 'numero-en-uso');
     case 'movimiento-ya-revertido':
       return base(MENSAJE_CONSUMO_YA_REVERTIDO, 'consumo-ya-revertido');
+    case 'autorizacion-sin-saldo':
+      return base(MENSAJE_SALDO_DIVERGENTE, 'saldo-divergente');
     case 'reversion-sin-motivo':
       return base(MENSAJE_REVERSION_SIN_MOTIVO, 'validacion');
     case 'concurrent-modification':
@@ -473,7 +486,8 @@ export function hayQueRecargar(causa: CausaPersona | null): boolean {
     causa === 'orden-ya-inactiva' ||
     causa === 'autorizacion-ya-inactiva' ||
     causa === 'transicion-no-permitida' ||
-    causa === 'consumo-ya-revertido'
+    causa === 'consumo-ya-revertido' ||
+    causa === 'saldo-divergente'
   );
 }
 

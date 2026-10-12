@@ -4,6 +4,7 @@ import { TestBed } from '@angular/core/testing';
 
 import { AkineHttpError, errorInterceptor } from './error.interceptor';
 import { AuthTokenStore } from '../services/auth-token.store';
+import { ServicioNoDisponibleStore } from '../services/servicio-no-disponible.store';
 
 /**
  * Verifica el interceptor de errores (ADR-0005 del frontend, ADR-0005 del backend).
@@ -387,6 +388,44 @@ describe('errorInterceptor', () => {
     httpMock.expectOne('/api/v1/version').flush({ application: 'akine-api' });
 
     expect(await respuesta).toEqual({ application: 'akine-api' });
+  });
+
+  describe('503 service-unavailable (contrato 0.85.0)', () => {
+    it('publica el aviso global con el Retry-After y NO toca el token', async () => {
+      tokenStore.set('jwt-vigente');
+      const aviso = TestBed.inject(ServicioNoDisponibleStore);
+      const capturado = esperarError(http.get('/api/v1/pacientes'));
+
+      httpMock.expectOne('/api/v1/pacientes').flush(
+        {
+          type: 'https://akine.app/problems/service-unavailable',
+          status: 503,
+          detail: 'El servicio no esta disponible.',
+        },
+        { status: 503, statusText: 'Service Unavailable', headers: { 'Retry-After': '30' } },
+      );
+
+      const error = await capturado;
+      expect(error.esServicioNoDisponible).toBe(true);
+      expect(error.esSesionExpirada).toBe(false);
+      expect(error.reintentarEnSegundos).toBe(30);
+      expect(aviso.aviso()).toBe('El servicio no está disponible. Reintentá en 30 segundos.');
+      expect(tokenStore.token()).toBe('jwt-vigente');
+    });
+
+    it('sin Retry-After no inventa un plazo, y la siguiente respuesta exitosa lo descarta', async () => {
+      const aviso = TestBed.inject(ServicioNoDisponibleStore);
+      const capturado = esperarError(http.get('/api/v1/pacientes'));
+      httpMock
+        .expectOne('/api/v1/pacientes')
+        .flush(null, { status: 503, statusText: 'Service Unavailable' });
+      await capturado;
+      expect(aviso.aviso()).toBe('El servicio no está disponible, reintentá en unos segundos.');
+
+      http.get('/api/v1/version').subscribe();
+      httpMock.expectOne('/api/v1/version').flush({});
+      expect(aviso.aviso()).toBeNull();
+    });
   });
 });
 

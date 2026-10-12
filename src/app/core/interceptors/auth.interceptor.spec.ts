@@ -176,6 +176,31 @@ describe('authInterceptor', () => {
     expect(session.estado()).toBe('anonimo');
   });
 
+  it('si el refresh responde 503 NO borra la sesion ni navega: el backend no la rechazo', async () => {
+    const router = TestBed.inject(Router);
+    const navegar = vi.spyOn(router, 'navigate').mockResolvedValue(true);
+    const navegarUrl = vi.spyOn(router, 'navigateByUrl').mockResolvedValue(true);
+    tokenStore.set('jwt-vencido');
+
+    const fallo = new Promise<unknown>((resolve) =>
+      http.get('/api/v1/pacientes').subscribe({ error: resolve }),
+    );
+
+    httpMock.expectOne('/api/v1/pacientes').flush(null, { status: 401, statusText: 'x' });
+    httpMock
+      .expectOne('/api/v1/auth/refresh')
+      .flush(
+        { type: 'https://akine.app/problems/service-unavailable' },
+        { status: 503, statusText: 'Service Unavailable' },
+      );
+
+    const error = (await fallo) as { status: number };
+    expect(error.status).toBe(503);
+    expect(tokenStore.token()).toBe('jwt-vencido');
+    expect(navegar).not.toHaveBeenCalled();
+    expect(navegarUrl).not.toHaveBeenCalled();
+  });
+
   it('si el refresh falla con sesion previa manda a sesion expirada, conservando el destino', async () => {
     const router = TestBed.inject(Router);
     const navegar = vi.spyOn(router, 'navigate').mockResolvedValue(true);

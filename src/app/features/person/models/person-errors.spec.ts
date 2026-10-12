@@ -134,6 +134,11 @@ describe('traducirErrorPersona', () => {
     const sinMotivo = traducirErrorPersona(problema('reversion-sin-motivo', 400, {}));
     expect(sinMotivo.causa).toBe('validacion');
     expect(sinMotivo.mensaje).toContain('motivo');
+
+    const divergente = traducirErrorPersona(problema('autorizacion-sin-saldo', 409, {}));
+    expect(divergente.causa).toBe('saldo-divergente');
+    expect(divergente.mensaje).toContain('No lo reintentes');
+    expect(hayQueRecargar(divergente.causa)).toBe(true);
   });
 
   it('hayQueRecargar solo pide recargar donde recargar sirve', () => {

@@ -11,6 +11,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { filter, map, startWith } from 'rxjs';
 
 import { AnchoDeContenido, DATA_ANCHO } from './core/models/ancho-de-contenido';
+import { ServicioNoDisponibleStore } from './core/services/servicio-no-disponible.store';
 import { NavegacionPrincipal } from './layout/navegacion-principal/navegacion-principal';
 
 /**
@@ -45,6 +46,17 @@ export class App {
   private readonly router = inject(Router);
   private readonly raiz = inject(ActivatedRoute);
   private readonly documento = inject(DOCUMENT);
+  private readonly servicio = inject(ServicioNoDisponibleStore);
+
+  /**
+   * Aviso global de `503 service-unavailable`, o `null`. Vive en el shell porque no es de
+   * ninguna pantalla: la caida es del servidor y cualquier pedido la puede destapar.
+   */
+  protected readonly avisoDeServicio = this.servicio.aviso;
+
+  protected cerrarAvisoDeServicio(): void {
+    this.servicio.descartar();
+  }
 
   /**
    * Ancho pedido por la ruta activa mas profunda.

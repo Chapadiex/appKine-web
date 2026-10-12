@@ -8,6 +8,7 @@ import { ANCHO_AMPLIO, DATA_ANCHO } from './core/models/ancho-de-contenido';
 import { SessionService } from './core/services/session.service';
 import { PlatformRoleStore } from './core/services/platform-role.store';
 import { TenantContextStore } from './core/services/tenant-context.store';
+import { ServicioNoDisponibleStore } from './core/services/servicio-no-disponible.store';
 import { App } from './app';
 import { provideApi } from './api/generated/provide-api';
 
@@ -156,5 +157,21 @@ describe('App (layout)', () => {
 
     expect(enfocables.length).toBeGreaterThan(1);
     expect(enfocables.item(0)?.classList.contains('skip-link')).toBe(true);
+  });
+
+  it('muestra el aviso de 503 en una region viva y lo cierra sin tocar nada mas', () => {
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+    const raiz = fixture.nativeElement as HTMLElement;
+    const region = raiz.querySelector('[role="status"]');
+    expect(region?.textContent?.trim()).toBe('');
+
+    TestBed.inject(ServicioNoDisponibleStore).avisar(20);
+    fixture.detectChanges();
+    expect(region?.textContent).toContain('Reintentá en 20 segundos');
+
+    raiz.querySelector<HTMLButtonElement>('.aviso-servicio__cerrar')?.click();
+    fixture.detectChanges();
+    expect(region?.textContent?.trim()).toBe('');
   });
 });

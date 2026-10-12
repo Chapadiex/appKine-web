@@ -98,3 +98,31 @@
 .contenido:focus {
   outline: none;
 }
+
+/*
+ * Aviso de servicio no disponible (503). Tokens de aviso del design system: el mismo par
+ * fondo/texto que ya mide `a11y:contraste` en las pantallas que lo usan.
+ */
+.aviso-servicio {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--esp-4);
+  padding: var(--esp-4) var(--esp-8);
+  background: var(--color-aviso-fondo);
+  color: var(--color-aviso-texto);
+  border-bottom: 1px solid var(--color-aviso);
+}
+
+.aviso-servicio__texto {
+  margin: 0;
+}
+
+.aviso-servicio__cerrar {
+  background: transparent;
+  color: var(--color-aviso-texto);
+  border: 1px solid var(--color-aviso);
+  padding: var(--esp-2) var(--esp-4);
+  cursor: pointer;
+}
