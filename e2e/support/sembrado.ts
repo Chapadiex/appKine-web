@@ -230,6 +230,47 @@ export async function deAUnLogin<T>(accion: () => Promise<T>): Promise<T> {
 export interface OpcionesDeSesion {
   readonly password?: string;
   readonly organizationId?: number;
+  /**
+   * Reusa el access token que otro worker —o el intento anterior del mismo test— ya obtuvo para
+   * esta cuenta y este centro, en vez de ingresar de nuevo (ver {@link ARCHIVO_DE_SESIONES}). Solo
+   * para las cuentas del centro compartido, cuyos permisos no cambian durante la corrida: el token
+   * lleva el contexto elegido, y una cuenta a la que un test le cambia el rol necesita un login
+   * nuevo para verlo.
+   */
+  readonly reusarSesion?: boolean;
+}
+
+/**
+ * Access tokens de las cuentas del centro compartido, por cuenta y centro, con su hora de emision.
+ *
+ * <p><b>Por que existe.</b> Login y refresh comparten un limite de 30 por minuto y por IP. Cada
+ * worker ingresaba una vez por la API, y un test que falla reinicia su worker: con los reintentos
+ * del CI, cuatro tests fallando en cadena eran una docena de logins en segundos, el limite se pasaba
+ * y los specs SIGUIENTES —que no tenian nada roto— caian con 429 (12/10/2026, feriado: la recepcion
+ * fallaba por el feriado y arrastraba a caja, cobros posteriores y colaboradores). Con el token en un
+ * archivo, la corrida entera ingresa por la API una vez por cuenta cada {@link VIDA_DEL_TOKEN_MS}.
+ * El archivo esta en el tmp del runner, como {@link ARCHIVO_DEL_CENTRO}, y nunca se imprime.
+ */
+const ARCHIVO_DE_SESIONES = nodePath.join(nodeOs.tmpdir(), 'akine-e2e-sesiones-agenda.json');
+
+/** El access token dura 10 minutos (`akine.security.jwt.access-ttl`); se reusa hasta los 8. */
+const VIDA_DEL_TOKEN_MS = 8 * 60_000;
+
+function leerSesiones(): Record<string, { token: string; emitido: number }> {
+  try {
+    return JSON.parse(nodeFs.readFileSync(ARCHIVO_DE_SESIONES, 'utf8')) as Record<
+      string,
+      { token: string; emitido: number }
+    >;
+  } catch {
+    return {};
+  }
+}
+
+/** Segundos que pide esperar un 429 (`Retry-After`), acotados entre 2 y 60. */
+export function esperaDel429(respuesta: { headers(): Record<string, string> }): number {
+  const segundos = Number(respuesta.headers()['retry-after']);
+  return Math.min(60, Math.max(2, Number.isFinite(segundos) ? segundos : 10));
 }
 
 /**
@@ -263,14 +304,48 @@ export class ApiAkine {
     await this.http.dispose();
   }
 
-  private async ingresar(): Promise<void> {
-    await deAUnLogin(() => this.ingresarSinCerrojo());
+  /**
+   * Ingresa, o reusa la sesion guardada si {@link OpcionesDeSesion.reusarSesion}. `renovar` descarta
+   * la guardada: es el camino del 401, cuando el token ya no sirve.
+   *
+   * <p>Ante un 429 espera lo que diga `Retry-After` FUERA del cerrojo —para que los otros workers no
+   * lo fuercen por huerfano— y reintenta, hasta tres intentos.
+   */
+  private async ingresar(renovar = false): Promise<void> {
+    const clave = `${this.email}|${this.opciones.organizationId ?? ''}`;
+    for (let intento = 1; ; intento++) {
+      const espera = await deAUnLogin(async () => {
+        if (this.opciones.reusarSesion && !renovar) {
+          const guardada = leerSesiones()[clave];
+          if (guardada !== undefined && Date.now() - guardada.emitido < VIDA_DEL_TOKEN_MS) {
+            this.token = guardada.token;
+            return 0;
+          }
+        }
+        const emitido = Date.now();
+        const resultado = await this.ingresarSinCerrojo(intento === 3);
+        if (resultado === 0 && this.opciones.reusarSesion && this.token !== null) {
+          const sesiones = leerSesiones();
+          sesiones[clave] = { token: this.token, emitido };
+          nodeFs.writeFileSync(ARCHIVO_DE_SESIONES, JSON.stringify(sesiones));
+        }
+        return resultado;
+      });
+      if (espera === 0) {
+        return;
+      }
+      await new Promise((resolver) => setTimeout(resolver, espera * 1_000));
+    }
   }
 
-  private async ingresarSinCerrojo(): Promise<void> {
+  /** Devuelve 0 si ingreso, o los segundos a esperar si el login respondio 429. */
+  private async ingresarSinCerrojo(ultimoIntento: boolean): Promise<number> {
     const login = await this.http.post('/api/v1/auth/login', {
       data: { email: this.email, password: this.opciones.password ?? PASSWORD },
     });
+    if (login.status() === 429 && !ultimoIntento) {
+      return esperaDel429(login);
+    }
     expect(login.status(), `login de ${this.email}: ${await login.text()}`).toBe(200);
     const preContexto = ((await login.json()) as { accessToken: string }).accessToken;
 
@@ -297,6 +372,7 @@ export class ApiAkine {
     });
     expect(elegido.status(), 'seleccion de contexto').toBe(200);
     this.token = ((await elegido.json()) as { accessToken: string }).accessToken;
+    return 0;
   }
 
   /** Pedido crudo: devuelve la respuesta tal cual, para que el test afirme sobre los errores. */
@@ -318,7 +394,7 @@ export class ApiAkine {
       });
     let respuesta = await hacer();
     if (respuesta.status() === 401) {
-      await this.ingresar();
+      await this.ingresar(true);
       respuesta = await hacer();
     }
     return respuesta;
@@ -460,6 +536,8 @@ export async function sembrarCentro(): Promise<Centro> {
         );
       }
 
+      await abrirLosFeriadosCercanos(api, consultorioId, membershipId, sede.timezone);
+
       const centro: Centro = {
         emailAdmin,
         emailProfesional,
@@ -477,6 +555,56 @@ export async function sembrarCentro(): Promise<Centro> {
     }
   } finally {
     await http.dispose();
+  }
+}
+
+/**
+ * Abre por excepcion, para la profesional, los feriados de HOY y de MAÑANA en la sede.
+ *
+ * <p><b>Por que.</b> La sede cierra los feriados nacionales por defecto
+ * (`CalendarioSede.CIERRA_POR_FERIADO_POR_DEFECTO`), y la recepcion y el prepago solo operan turnos
+ * del dia: un feriado dejaba HOY sin slots y esos specs fallaban todo el dia (`el 2026-10-12 tiene
+ * slots (motivo: FERIADO)`, 12/10/2026). Los demas tests ya esquivan feriados con su bloque de
+ * {@link DIAS}; el dia de hoy no se puede esquivar.
+ *
+ * <p><b>Por que una APERTURA y no apagar `cierraPorFeriado`.</b> Es como un centro real declara que
+ * atiende un feriado (`DisponibilidadEfectivaCalculator`, etapa 3): afecta solo a esa fecha y a esa
+ * profesional, y deja intacta la politica de calendario de la sede. La apertura de un feriado
+ * REEMPLAZA al horario base de ese dia, asi que se carga con la misma franja de 00:00 a 23:45.
+ * Mañana entra para la corrida que cruza la medianoche.
+ *
+ * <p>Idempotente: el centro es nuevo en cada corrida, y el backend devuelve la excepcion ya
+ * existente si se carga dos veces la misma.
+ */
+async function abrirLosFeriadosCercanos(
+  api: ApiAkine,
+  consultorioId: number,
+  membershipId: number,
+  timezone: string,
+): Promise<void> {
+  const hoy = fechaLocal(timezone);
+  const calendario = await api.exigir<{
+    cierraPorFeriado: boolean;
+    feriados: { id: number; fecha: string }[];
+  }>(
+    'GET',
+    `/api/v1/consultorios/${consultorioId}/calendario?desde=${hoy}&hasta=${sumarDias(hoy, 2)}`,
+  );
+  if (!calendario.cierraPorFeriado) {
+    return;
+  }
+  for (const feriado of calendario.feriados) {
+    await api.exigir('POST', `/api/v1/consultorios/${consultorioId}/excepciones`, {
+      membershipId,
+      tipo: 'APERTURA',
+      motivo: 'FERIADO',
+      fechaDesde: feriado.fecha,
+      fechaHasta: sumarDias(feriado.fecha, 1),
+      horaDesde: '00:00',
+      horaHasta: '23:45',
+      feriadoId: feriado.id,
+      notes: 'Apertura sintetica de los E2E: la recepcion opera turnos de hoy',
+    });
   }
 }
 
@@ -863,7 +991,10 @@ export async function fijarPrecio(
 
 /** Cliente de la API como la profesional del centro, con el contexto del centro elegido. */
 export function comoProfesional(centro: Centro): Promise<ApiAkine> {
-  return ApiAkine.como(centro.emailProfesional, { organizationId: centro.organizationId });
+  return ApiAkine.como(centro.emailProfesional, {
+    organizationId: centro.organizationId,
+    reusarSesion: true,
+  });
 }
 
 export interface Obligacion {

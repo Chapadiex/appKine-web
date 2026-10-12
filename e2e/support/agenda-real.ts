@@ -1,7 +1,16 @@
 import { Page, Response, expect, test as base } from '@playwright/test';
 
 import { ingresarPorPantalla } from './akine';
-import { ApiAkine, Centro, Oferta, Persona, Slot, deAUnLogin, leerCentro } from './sembrado';
+import {
+  ApiAkine,
+  Centro,
+  Oferta,
+  Persona,
+  Slot,
+  deAUnLogin,
+  esperaDel429,
+  leerCentro,
+} from './sembrado';
 
 /**
  * Fixtures de los E2E de agenda, ciclo del turno y recepcion contra el backend real (AKINE E-2).
@@ -23,7 +32,9 @@ export const test = base.extend<object, { centro: Centro; api: ApiAkine }>({
   ],
   api: [
     async ({ centro }, usar) => {
-      const api = await ApiAkine.como(centro.emailAdmin);
+      // El worker que reinicia un test fallido reusa el token en vez de volver a ingresar: ver
+      // `ARCHIVO_DE_SESIONES` en `support/sembrado.ts`.
+      const api = await ApiAkine.como(centro.emailAdmin, { reusarSesion: true });
       await usar(api);
       await api.cerrar();
     },
@@ -33,14 +44,34 @@ export const test = base.extend<object, { centro: Centro; api: ApiAkine }>({
 
 export { expect };
 
-/** Ingresa por pantalla como la administradora y espera a quedar adentro de su centro. */
+/**
+ * Ingresa por pantalla como la administradora y espera a quedar adentro de su centro.
+ *
+ * <p>Un 429 del login no es el producto fallando sino el limite de 30 por minuto y por IP que
+ * comparten todos los workers: se espera lo que pide `Retry-After` y se vuelve a ingresar, hasta
+ * tres intentos. Sin esto un test que fallaba y se reintentaba consumia el cupo de los siguientes.
+ */
 export async function ingresar(page: Page, centro: Centro): Promise<void> {
-  // De a un login por vez en toda la corrida: ver `deAUnLogin`, es un defecto del backend.
-  await deAUnLogin(async () => {
-    await ingresarPorPantalla(page, centro.emailAdmin);
-    // Con un solo contexto el selector no pregunta y entra solo.
-    await expect(page).not.toHaveURL(/\/(auth|seleccionar-contexto)/, { timeout: 15_000 });
-  });
+  for (let intento = 1; ; intento++) {
+    // De a un login por vez en toda la corrida: ver `deAUnLogin`, es un defecto del backend.
+    const espera = await deAUnLogin(async () => {
+      const login = page.waitForResponse(
+        (r) => r.request().method() === 'POST' && new URL(r.url()).pathname.endsWith('/auth/login'),
+      );
+      await ingresarPorPantalla(page, centro.emailAdmin);
+      const respuesta = await login;
+      if (respuesta.status() === 429 && intento < 3) {
+        return esperaDel429(respuesta);
+      }
+      // Con un solo contexto el selector no pregunta y entra solo.
+      await expect(page).not.toHaveURL(/\/(auth|seleccionar-contexto)/, { timeout: 15_000 });
+      return 0;
+    });
+    if (espera === 0) {
+      return;
+    }
+    await page.waitForTimeout(espera * 1_000);
+  }
 }
 
 /**
