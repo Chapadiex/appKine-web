@@ -351,14 +351,15 @@ h1 {
 }
 
 /*
- * El `padding-block` lleva la caja de un enlace de 20-21 px de alto a 24 px o mas: es el objetivo de
- * toque minimo de WCAG 2.5.8 (AA). En un elemento en linea el padding vertical agranda la zona que
+ * El `padding-block` lleva la caja de un enlace a 24 px de alto o mas: es el objetivo de toque
+ * minimo de WCAG 2.5.8 (AA). El alto del texto depende de la fuente del sistema -20-21 px en
+ * Windows, 18-19 en el Linux del CI-, asi que el relleno se elige para el caso mas bajo. En un elemento en linea el padding vertical agranda la zona que
  * se toca sin mover el renglon, asi que un enlace dentro de un parrafo no cambia de lugar. Medido a
  * 375 px por `e2e/movil.spec.ts`.
  */
 .enlace {
   color: var(--color-enlace);
-  padding-block: var(--esp-1);
+  padding-block: var(--esp-2);
 }
 
 /* Foco visible: nunca se quita el outline sin reemplazo (ADR-0005). */

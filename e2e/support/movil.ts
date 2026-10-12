@@ -384,8 +384,8 @@ export async function instalarApiMovil(
         status: 401,
         contentType: 'application/problem+json',
         body: JSON.stringify({
-          type: 'https://akine.app/problems/unauthenticated',
-          title: 'unauthenticated',
+          type: 'https://akine.app/problems/invalid-refresh',
+          title: 'invalid-refresh',
           status: 401,
         }),
       });
