@@ -19,6 +19,7 @@ import { routes as rutasPerson } from './features/person/person.routes';
 import { routes as rutasScheduling } from './features/scheduling/scheduling.routes';
 import { routes as rutasCaja } from './features/billing/caja.routes';
 import { routes as rutasPresentaciones } from './features/billing/presentaciones.routes';
+import { routes as rutasEgresos } from './features/billing/egresos.routes';
 import { routes as rutasReporting } from './features/reporting/reporting.routes';
 
 /**
@@ -301,6 +302,14 @@ export const routes: Routes = [
     path: 'presentaciones',
     canActivate: [authGuard],
     children: rutasPresentaciones,
+  },
+
+  // Egresos y pagos de la sede (M22, AKINE-07.05 + F-5). Rutas propias dentro de `billing`;
+  // `contextGuard` y `permissionGuard(caja:operate)` los pone `egresos.routes.ts`.
+  {
+    path: 'egresos',
+    canActivate: [authGuard],
+    children: rutasEgresos,
   },
 
   // Reportes de la sede (M23, AKINE-07.06 y G-8). `contextGuard` y `permissionGuard(reporte:read)`

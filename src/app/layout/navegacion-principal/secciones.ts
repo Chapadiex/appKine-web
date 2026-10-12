@@ -63,6 +63,8 @@ export interface Seccion {
  *   <li><b>Caja</b> — `caja.routes.ts`: la unica ruta lleva
  *       `permissionGuard(PERMISO_CAJA_OPERATE)`. Todo lo que hay en la pantalla, incluso leer
  *       la jornada, lo autoriza `caja:operate`, asi que sin el no queda nada que mirar.</li>
+ *   <li><b>Egresos</b> — `egresos.routes.ts`: las dos rutas llevan
+ *       `permissionGuard(PERMISO_CAJA_OPERATE)`, el permiso que el backend exige en M22.</li>
  * </ul>
  *
  * <p><b>Esconder no es autorizar.</b> Esta lista es exclusivamente UX: evita ofrecer un enlace
@@ -85,6 +87,8 @@ export const SECCIONES: readonly Seccion[] = [
   { etiqueta: 'Contratacion', ruta: '/contratacion' },
   // La caja es de la sede y la opera recepcion. Sin `caja:operate` no hay nada que mirar.
   { etiqueta: 'Caja', ruta: '/caja', permisos: [PERMISO_CAJA_OPERATE] },
+  // Egresos y pagos (M22). El backend los autoriza con `caja:operate` (DU-10 sigue abierta).
+  { etiqueta: 'Egresos', ruta: '/egresos', permisos: [PERMISO_CAJA_OPERATE] },
   // Presentaciones a financiadores (M21). El permiso es `cobro:register`: lo decidio el backend.
   { etiqueta: 'Presentaciones', ruta: '/presentaciones', permisos: [PERMISO_PRESENTACIONES] },
   // Reportes (M23). `reporting.routes.ts` exige `reporte:read`; adentro cada seccion pide el suyo.
