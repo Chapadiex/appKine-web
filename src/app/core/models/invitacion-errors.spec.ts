@@ -1,4 +1,4 @@
-import { AkineHttpError } from '../../../core/interceptors/error.interceptor';
+import { AkineHttpError } from '../interceptors/error.interceptor';
 import {
   CausaInvitacion,
   seResuelveReenviando,

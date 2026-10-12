@@ -1,4 +1,4 @@
-import { AkineHttpError } from '../../../core/interceptors/error.interceptor';
+import { AkineHttpError } from '../interceptors/error.interceptor';
 
 /**
  * Motivo por el que fallo una operacion sobre invitaciones (M05, AKINE-02.03).
@@ -10,6 +10,12 @@ import { AkineHttpError } from '../../../core/interceptors/error.interceptor';
  * que responde— y no se parte en dos archivos, aunque las pantallas sean distintas: los codigos
  * son los mismos y el que aparece en las dos puntas es justamente el mas delicado
  * (`invitacion-ya-resuelta`, que es la carrera entre las dos personas).
+ *
+ * <p><b>Por que vive en `core/` y no en una feature.</b> Lo usan dos features: `organization`
+ * (el administrador que invita) y `auth` (el invitado que abre el enlace). ADR-0004 prohibe que
+ * una feature importe de otra, y `shared/` no admite reglas de dominio, asi que sube a `core/`:
+ * es un traductor sin estado, no un singleton con datos de feature. Hasta que la regla de lint
+ * `akine/sin-imports-entre-features` lo detecto vivia en `features/organization/models/`.
  */
 export type CausaInvitacion =
   /** 403 missing-tenant-context: hay sesion, pero no hay organizacion elegida. */
