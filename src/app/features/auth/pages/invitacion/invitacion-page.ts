@@ -9,7 +9,7 @@ import { InvitacionesRecibidasService } from '../../../../api/generated/api/invi
 import {
   CausaInvitacion,
   traducirErrorInvitacion,
-} from '../../../organization/models/invitacion-errors';
+} from '../../../../core/models/invitacion-errors';
 import { textoRequerido } from '../../../../shared/validators/texto-requerido';
 
 /** En cual de los cinco estados esta la pantalla. */

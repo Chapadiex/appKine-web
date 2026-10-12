@@ -101,5 +101,11 @@ algo los reemplace.
   Org A a Org B y confirmar que no queda ningún dato de A en pantalla ni en memoria. Está
   documentado en `.claude/qa-config.md`.
 - Antes de poner algo en `shared/`, preguntarse si sabe de dominio. Si sí, no va ahí.
-- **PENDIENTE(AKINE-00.03):** evaluar una regla de ESLint que prohíba los imports entre
-  features. Hoy la regla 4 depende de la revisión, y eso la hace la más frágil de las seis.
+- **La regla 4 la verifica ESLint desde el 12/10/2026**: `akine/sin-imports-entre-features`,
+  regla local en `eslint.config.js` (sin dependencia nueva). Resuelve cada import relativo
+  —`import`, `export ... from` e `import()`— contra el archivo que lo declara y falla si cae en
+  otra carpeta de `features/`. Al introducirla encontró dos violaciones, resueltas subiendo lo
+  común a `core/models/`: el traductor de errores de invitaciones (`auth` → `organization`) y la
+  URL del editor de horarios (`organization` → `resource`). Las excepciones se declaran por
+  archivo en `EXCEPCIONES_ENTRE_FEATURES` y hoy no hay ninguna. `app.routes.ts` y `layout/` no
+  son features y la regla no los mira.

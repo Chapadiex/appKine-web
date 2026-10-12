@@ -20,7 +20,10 @@ import { InvitacionesService } from '../../../../api/generated/api/invitaciones.
 import { PERMISO_COLABORADOR_MANAGE } from '../../../../core/models/permisos';
 import { PermisoDirective } from '../../../../shared/directives/permiso.directive';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
-import { CausaInvitacion, traducirErrorInvitacion } from '../../models/invitacion-errors';
+import {
+  CausaInvitacion,
+  traducirErrorInvitacion,
+} from '../../../../core/models/invitacion-errors';
 import { formatearInstante } from '../../../../shared/utils/instantes';
 
 /** Filtro del listado. Los cuatro estados del contrato, mas "todas". */
