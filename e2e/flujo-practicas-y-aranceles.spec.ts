@@ -34,7 +34,7 @@ async function agregarPractica(page: Page, codigo: string): Promise<void> {
     .getByRole('listitem')
     .filter({ hasText: codigo });
   await resultado.getByRole('button', { name: /^Agregar / }).click();
-  await expect(resultado.getByRole('button', { name: /^Agregar / })).toHaveText('Ya esta');
+  await expect(resultado.getByRole('button')).toHaveText('Ya esta');
 }
 
 function declarada(page: Page, codigo: string): Locator {
