@@ -161,7 +161,9 @@
                   type="button"
                   class="boton boton--secundario"
                   [disabled]="yaEsta(concepto.id) || guardando()"
-                  [attr.aria-label]="'Agregar ' + concepto.name"
+                  [attr.aria-label]="
+                    (yaEsta(concepto.id) ? 'Ya esta ' : 'Agregar ') + concepto.name
+                  "
                   (click)="agregar(concepto)"
                 >
                   {{ yaEsta(concepto.id) ? 'Ya esta' : 'Agregar' }}
