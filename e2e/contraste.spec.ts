@@ -55,8 +55,6 @@ import {
  *       nada mas. El borde de los controles y el anillo de foco los mide, desde AKINE-G-7,
  *       `contraste-no-textual.spec.ts`. El borde de una pastilla sigue sin medir: no es un
  *       control, y su estado se dice tambien con texto.</li>
- *   <li><b>La franja donde el degrade del desborde de tabla si pinta.</b> Ver la declaracion del
- *       escenario de espacios.</li>
  *   <li><b>Los estados `:hover` y `:focus-visible`.</b> Aca se auditan los estados en reposo; el
  *       hover y el foco por teclado los mide `contraste-no-textual.spec.ts`.</li>
  * </ul>
@@ -184,18 +182,80 @@ test.describe('Contraste de color', () => {
       await page.getByLabel('Mostrar').selectOption('TODOS');
       await expect(page.getByText('Sala grupal chica')).toBeVisible();
 
-      await auditarContraste(page, 'espacios de la sede con los dados de baja a la vista', {
-        degrade: {
-          selector: '.tabla-scroll',
-          porque:
-            'La sombra que anuncia el desborde horizontal esta hecha con cuatro degrades en el ' +
-            '`background` del contenedor desplazable (`src/design-system.css`). axe no puede ' +
-            'aplanar un `background-image`, asi que devuelve `incomplete` para CADA celda que ' +
-            'no traiga fondo propio -las de `.fila--revocada` si se miden, porque la fila pinta ' +
-            'el suyo-. El arnes las mide contra el primer fondo opaco de la cadena en vez de ' +
-            'darlas por buenas. Afecta a las 19 plantillas que usan `.tabla-scroll`.',
-        },
+      await auditarContraste(page, 'espacios de la sede con los dados de baja a la vista');
+    });
+
+    /**
+     * La tabla DESBORDADA y desplazada a la mitad: el unico estado en que el indicador de
+     * desborde se pinta de los dos lados a la vez.
+     *
+     * <p>Hasta el 12/10/2026 el indicador era una sombra en el `background` del contenedor, y en
+     * la franja donde pintaba el texto suave caia a ~4,16:1 sin que nada lo midiera: axe no aplana
+     * un `background-image`. Ahora es el borde lateral del contenedor, afuera del area donde se
+     * recorta el contenido. Esto prueba tres cosas: que con contenido escondido de los dos lados
+     * los DOS bordes se pintan, que llegan a 3:1 contra la pagina (WCAG 1.4.11, es un indicador
+     * grafico), y que el contenedor no pinta NADA debajo del texto: sin `background-image` y con el
+     * indicador en el borde, afuera de la caja donde se recorta el contenido. Que axe mida cada
+     * celda sin un `incomplete` lo prueba el escenario de espacios de arriba, que antes necesitaba
+     * la medicion a mano y ya no.
+     *
+     * <p>Aca NO se corre axe, y es a proposito: con la tabla desplazada, las columnas que quedan
+     * afuera del contenedor son `incomplete` por estar fuera de la vista, no por su color. Es la
+     * misma razon por la que axe no puede auditar un carrusel a mitad de recorrido.
+     */
+    test('una tabla desbordada, desplazada a la mitad, con el indicador a los dos lados', async ({
+      page,
+    }) => {
+      await page.setViewportSize({ width: 480, height: 900 });
+      await instalarApiDeContraste(page);
+      await page.goto('/espacios');
+      await page.getByLabel('Mostrar').selectOption('TODOS');
+      await expect(page.getByText('Sala grupal chica')).toBeVisible();
+
+      const contenedor = page.locator('.tabla-scroll').first();
+      const bordes = () =>
+        contenedor.evaluate((el) => {
+          const estilo = getComputedStyle(el);
+          return {
+            inicio: estilo.borderLeftColor,
+            fin: estilo.borderRightColor,
+            desborda: el.scrollWidth > el.clientWidth,
+          };
+        });
+
+      const alPrincipio = await bordes();
+      expect(alPrincipio.desborda, 'a 480 px la tabla de espacios tiene que desbordar').toBe(true);
+      expect(
+        esTransparente(alPrincipio.inicio),
+        'al principio no hay nada escondido a la izquierda',
+      ).toBe(true);
+      expect(
+        esTransparente(alPrincipio.fin),
+        'al principio hay columnas escondidas a la derecha',
+      ).toBe(false);
+
+      await contenedor.evaluate((el) => {
+        el.scrollLeft = (el.scrollWidth - el.clientWidth) / 2;
       });
+      await expect.poll(async () => esTransparente((await bordes()).inicio)).toBe(false);
+      const enElMedio = await bordes();
+      expect(esTransparente(enElMedio.fin)).toBe(false);
+
+      const fondo = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+      expect(
+        contraste(enElMedio.inicio, fondo),
+        `el indicador de desborde (${enElMedio.inicio}) contra la pagina (${fondo})`,
+      ).toBeGreaterThanOrEqual(3);
+
+      const pintura = await contenedor.evaluate((el) => ({
+        fondo: getComputedStyle(el).backgroundImage,
+        bordeIzquierdo: el.clientLeft,
+      }));
+      expect(pintura.fondo, 'el contenedor no pinta ningun degrade debajo del texto').toBe('none');
+      expect(
+        pintura.bordeIzquierdo,
+        'el indicador ocupa el borde, afuera de la caja donde se recorta el contenido',
+      ).toBeGreaterThan(0);
     });
 
     test('el padron sin ninguna fila', async ({ page }) => {
@@ -240,3 +300,25 @@ test.describe('Contraste de color', () => {
     });
   });
 });
+
+function canales(color: string): number[] {
+  return (color.match(/[\d.]+/g) ?? []).map(Number);
+}
+
+function esTransparente(color: string): boolean {
+  const [, , , alfa] = canales(color);
+  return alfa === 0;
+}
+
+/** Razon de contraste de WCAG 2.1 entre dos colores opacos `rgb(...)`. */
+function contraste(uno: string, otro: string): number {
+  const luminancia = (color: string): number => {
+    const [r, g, b] = canales(color).map((canal) => {
+      const v = canal / 255;
+      return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+    });
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  };
+  const [a, b] = [luminancia(uno), luminancia(otro)];
+  return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+}

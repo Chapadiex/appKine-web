@@ -337,273 +337,281 @@
   @if (ordenes().length === 0) {
     <p class="estado">Este paciente no tiene ordenes cargadas.</p>
   } @else {
-    <table class="tabla">
-      <caption>
-        {{
-          ordenes().length
-        }}
-        orden(es) del paciente
-      </caption>
-      <thead>
-        <tr>
-          <th scope="col">Emisor</th>
-          <th scope="col">Numero</th>
-          <th scope="col">Emitida</th>
-          <th scope="col">Vigencia</th>
-          <th scope="col">Sesiones</th>
-          <th scope="col">Situacion</th>
-          <th scope="col">Escaneo</th>
-          <th scope="col">Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (orden of ordenes(); track orden.id) {
+    <div class="tabla-scroll" tabindex="0" role="region" aria-labelledby="caption-ordenes">
+      <table class="tabla">
+        <caption id="caption-ordenes">
+          {{
+            ordenes().length
+          }}
+          orden(es) del paciente
+        </caption>
+        <thead>
           <tr>
-            <td>{{ emisorEnPalabras(orden) }}</td>
-            <td>{{ orden.numero || '—' }}</td>
-            <td>{{ fechaEnPalabras(orden.fechaEmision) }}</td>
-            <td>
-              {{ vigenciaDeDocumento(orden.vigenciaDesde, orden.vigenciaHasta) }}
-              @if (avisoDeVencimiento(orden.diasParaVencer); as aviso) {
-                <span class="etiqueta">{{ aviso }}</span>
-              }
-            </td>
-            <td>{{ sesionesDeOrden(orden) }}</td>
-            <td>
-              {{ situacionDeOrden(orden) }}
-              @if (orden.deactivationReason) {
-                — {{ orden.deactivationReason }}
-              }
-            </td>
-            <td>{{ orden.adjuntoId ? 'Vinculado' : 'Sin vincular' }}</td>
-            <td>
-              @if (!ordenInactiva(orden)) {
-                <button
-                  type="button"
-                  class="boton boton--secundario"
-                  (click)="abrirEdicionDeOrden(orden)"
-                  *akinePermiso="permisoManage"
-                >
-                  Corregir
-                </button>
-                <button
-                  type="button"
-                  class="boton boton--secundario"
-                  (click)="abrirDocumentoDeOrden(orden)"
-                  *akinePermiso="permisoManage"
-                >
-                  Escaneo
-                </button>
-                <button
-                  type="button"
-                  class="boton boton--secundario"
-                  (click)="abrirBajaDeOrden(orden)"
-                  *akinePermiso="permisoManage"
-                >
-                  Dar de baja la orden
-                </button>
-              }
-            </td>
+            <th scope="col">Emisor</th>
+            <th scope="col">Numero</th>
+            <th scope="col">Emitida</th>
+            <th scope="col">Vigencia</th>
+            <th scope="col">Sesiones</th>
+            <th scope="col">Situacion</th>
+            <th scope="col">Escaneo</th>
+            <th scope="col">Acciones</th>
           </tr>
-
-          @if (esPanelDeOrden(orden, 'editar')) {
+        </thead>
+        <tbody>
+          @for (orden of ordenes(); track orden.id) {
             <tr>
-              <td colspan="8">
-                <section aria-labelledby="titulo-editar-orden-{{ orden.id }}">
-                  <h2 id="titulo-editar-orden-{{ orden.id }}" class="panel__titulo">
-                    Corregir la orden de {{ emisorEnPalabras(orden) }}
-                  </h2>
-                  <p class="ayuda">
-                    Una orden <b>vencida si se corrige</b>: arreglar una fecha mal tipeada es el
-                    caso normal. El paciente y la cobertura no se pueden cambiar — mudar una orden
-                    de paciente reescribiria quien presento que papel.
-                  </p>
-
-                  <form
-                    [formGroup]="formularioEdicionDeOrden"
-                    (ngSubmit)="enviarEdicionDeOrden()"
-                    novalidate
+              <td>{{ emisorEnPalabras(orden) }}</td>
+              <td>{{ orden.numero || '—' }}</td>
+              <td>{{ fechaEnPalabras(orden.fechaEmision) }}</td>
+              <td>
+                {{ vigenciaDeDocumento(orden.vigenciaDesde, orden.vigenciaHasta) }}
+                @if (avisoDeVencimiento(orden.diasParaVencer); as aviso) {
+                  <span class="etiqueta">{{ aviso }}</span>
+                }
+              </td>
+              <td>{{ sesionesDeOrden(orden) }}</td>
+              <td>
+                {{ situacionDeOrden(orden) }}
+                @if (orden.deactivationReason) {
+                  — {{ orden.deactivationReason }}
+                }
+              </td>
+              <td>{{ orden.adjuntoId ? 'Vinculado' : 'Sin vincular' }}</td>
+              <td>
+                @if (!ordenInactiva(orden)) {
+                  <button
+                    type="button"
+                    class="boton boton--secundario"
+                    (click)="abrirEdicionDeOrden(orden)"
+                    *akinePermiso="permisoManage"
                   >
-                    <div class="campo">
-                      <label for="editar-orden-emisor-{{ orden.id }}">Profesional</label>
-                      <input
-                        id="editar-orden-emisor-{{ orden.id }}"
-                        type="text"
-                        formControlName="profesionalEmisor"
-                      />
-                    </div>
-
-                    <div class="campo">
-                      <label for="editar-orden-matricula-{{ orden.id }}">Matricula</label>
-                      <input
-                        id="editar-orden-matricula-{{ orden.id }}"
-                        type="text"
-                        formControlName="matriculaEmisor"
-                      />
-                    </div>
-
-                    <div class="campo">
-                      <label for="editar-orden-numero-{{ orden.id }}">Numero</label>
-                      <input
-                        id="editar-orden-numero-{{ orden.id }}"
-                        type="text"
-                        formControlName="numero"
-                      />
-                    </div>
-
-                    <div class="campo">
-                      <label for="editar-orden-emision-{{ orden.id }}">Fecha de emision</label>
-                      <input
-                        id="editar-orden-emision-{{ orden.id }}"
-                        type="date"
-                        formControlName="fechaEmision"
-                      />
-                    </div>
-
-                    <div class="campo">
-                      <label for="editar-orden-desde-{{ orden.id }}">Vigente desde</label>
-                      <input
-                        id="editar-orden-desde-{{ orden.id }}"
-                        type="date"
-                        formControlName="vigenciaDesde"
-                      />
-                    </div>
-
-                    <div class="campo">
-                      <label for="editar-orden-hasta-{{ orden.id }}">Vigente hasta</label>
-                      <input
-                        id="editar-orden-hasta-{{ orden.id }}"
-                        type="date"
-                        formControlName="vigenciaHasta"
-                      />
-                    </div>
-
-                    <div class="campo">
-                      <label for="editar-orden-sesiones-{{ orden.id }}">Sesiones prescriptas</label>
-                      <input
-                        id="editar-orden-sesiones-{{ orden.id }}"
-                        type="number"
-                        min="1"
-                        formControlName="sesionesPrescriptas"
-                      />
-                    </div>
-
-                    <div class="campo">
-                      <label for="editar-orden-indicacion-{{ orden.id }}">Indicacion</label>
-                      <textarea
-                        id="editar-orden-indicacion-{{ orden.id }}"
-                        formControlName="indicacion"
-                        rows="2"
-                      ></textarea>
-                    </div>
-
-                    <div class="campo">
-                      <label for="editar-orden-observaciones-{{ orden.id }}">Observaciones</label>
-                      <textarea
-                        id="editar-orden-observaciones-{{ orden.id }}"
-                        formControlName="observaciones"
-                        rows="2"
-                      ></textarea>
-                    </div>
-
-                    <p class="acciones">
-                      <button type="submit" class="boton" [disabled]="enviando()">
-                        {{ enviando() ? 'Guardando...' : 'Guardar la orden' }}
-                      </button>
-                      <button
-                        type="button"
-                        class="boton boton--secundario"
-                        (click)="cerrarPaneles()"
-                      >
-                        Cancelar
-                      </button>
-                    </p>
-                  </form>
-
-                  @if (errorAccion(); as mensaje) {
-                    <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-                    @if (hayQueRecargar()) {
-                      <p class="acciones">
-                        <button type="button" class="boton" (click)="cargar()">Recargar</button>
-                      </p>
-                    }
-                  }
-                </section>
-              </td>
-            </tr>
-          }
-
-          @if (esPanelDeOrden(orden, 'documento')) {
-            <tr>
-              <td colspan="8">
-                <section aria-labelledby="titulo-doc-orden-{{ orden.id }}">
-                  <h2 id="titulo-doc-orden-{{ orden.id }}" class="panel__titulo">
-                    Escaneo de la orden
-                  </h2>
-                  <p class="ayuda">
-                    Aca <b>no se sube nada</b>: se elige entre los documentos que ya tiene cargados
-                    la persona. Para subir uno nuevo, anda a
-                    <a class="enlace" [routerLink]="rutaDocumentos()">Documentacion</a>.
-                  </p>
-
-                  <form [formGroup]="formularioDocumento" (ngSubmit)="enviarDocumento()" novalidate>
-                    <div class="campo">
-                      <label for="doc-orden-{{ orden.id }}">Documento</label>
-                      <select id="doc-orden-{{ orden.id }}" formControlName="adjuntoId">
-                        <option value="">Sin documento (quita el vinculo)</option>
-                        @for (adjunto of adjuntos(); track adjunto.id) {
-                          <option [value]="adjunto.id">
-                            {{ adjunto.titulo || adjunto.nombreArchivo }}
-                          </option>
-                        }
-                      </select>
-                    </div>
-
-                    <p class="acciones">
-                      <button type="submit" class="boton" [disabled]="enviando()">
-                        {{ enviando() ? 'Guardando...' : 'Guardar el vinculo' }}
-                      </button>
-                      <button
-                        type="button"
-                        class="boton boton--secundario"
-                        (click)="cerrarPaneles()"
-                      >
-                        Cancelar
-                      </button>
-                    </p>
-                  </form>
-
-                  @if (errorAccion(); as mensaje) {
-                    <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-                  }
-                </section>
-              </td>
-            </tr>
-          }
-
-          @if (esPanelDeOrden(orden, 'baja')) {
-            <tr>
-              <td colspan="8">
-                <akine-confirmacion-con-motivo
-                  idCampo="baja-orden-{{ orden.id }}"
-                  titulo="Dar de baja la orden de {{ emisorEnPalabras(orden) }}"
-                  etiqueta="Motivo"
-                  ayuda="Dar de baja significa que esta orden NUNCA debio cargarse. Si simplemente vencio, no hace falta: una orden vencida se sigue viendo y se puede corregir. La baja no borra nada y las autorizaciones que la referencian quedan intactas."
-                  textoConfirmar="Confirmar la baja de la orden"
-                  [enviando]="enviando()"
-                  (confirmado)="confirmarBajaDeOrden($event)"
-                  (cancelado)="cerrarPaneles()"
-                />
-
-                @if (errorAccion(); as mensaje) {
-                  <p class="estado estado--error" role="alert">{{ mensaje }}</p>
+                    Corregir
+                  </button>
+                  <button
+                    type="button"
+                    class="boton boton--secundario"
+                    (click)="abrirDocumentoDeOrden(orden)"
+                    *akinePermiso="permisoManage"
+                  >
+                    Escaneo
+                  </button>
+                  <button
+                    type="button"
+                    class="boton boton--secundario"
+                    (click)="abrirBajaDeOrden(orden)"
+                    *akinePermiso="permisoManage"
+                  >
+                    Dar de baja la orden
+                  </button>
                 }
               </td>
             </tr>
+
+            @if (esPanelDeOrden(orden, 'editar')) {
+              <tr>
+                <td colspan="8">
+                  <section aria-labelledby="titulo-editar-orden-{{ orden.id }}">
+                    <h2 id="titulo-editar-orden-{{ orden.id }}" class="panel__titulo">
+                      Corregir la orden de {{ emisorEnPalabras(orden) }}
+                    </h2>
+                    <p class="ayuda">
+                      Una orden <b>vencida si se corrige</b>: arreglar una fecha mal tipeada es el
+                      caso normal. El paciente y la cobertura no se pueden cambiar — mudar una orden
+                      de paciente reescribiria quien presento que papel.
+                    </p>
+
+                    <form
+                      [formGroup]="formularioEdicionDeOrden"
+                      (ngSubmit)="enviarEdicionDeOrden()"
+                      novalidate
+                    >
+                      <div class="campo">
+                        <label for="editar-orden-emisor-{{ orden.id }}">Profesional</label>
+                        <input
+                          id="editar-orden-emisor-{{ orden.id }}"
+                          type="text"
+                          formControlName="profesionalEmisor"
+                        />
+                      </div>
+
+                      <div class="campo">
+                        <label for="editar-orden-matricula-{{ orden.id }}">Matricula</label>
+                        <input
+                          id="editar-orden-matricula-{{ orden.id }}"
+                          type="text"
+                          formControlName="matriculaEmisor"
+                        />
+                      </div>
+
+                      <div class="campo">
+                        <label for="editar-orden-numero-{{ orden.id }}">Numero</label>
+                        <input
+                          id="editar-orden-numero-{{ orden.id }}"
+                          type="text"
+                          formControlName="numero"
+                        />
+                      </div>
+
+                      <div class="campo">
+                        <label for="editar-orden-emision-{{ orden.id }}">Fecha de emision</label>
+                        <input
+                          id="editar-orden-emision-{{ orden.id }}"
+                          type="date"
+                          formControlName="fechaEmision"
+                        />
+                      </div>
+
+                      <div class="campo">
+                        <label for="editar-orden-desde-{{ orden.id }}">Vigente desde</label>
+                        <input
+                          id="editar-orden-desde-{{ orden.id }}"
+                          type="date"
+                          formControlName="vigenciaDesde"
+                        />
+                      </div>
+
+                      <div class="campo">
+                        <label for="editar-orden-hasta-{{ orden.id }}">Vigente hasta</label>
+                        <input
+                          id="editar-orden-hasta-{{ orden.id }}"
+                          type="date"
+                          formControlName="vigenciaHasta"
+                        />
+                      </div>
+
+                      <div class="campo">
+                        <label for="editar-orden-sesiones-{{ orden.id }}"
+                          >Sesiones prescriptas</label
+                        >
+                        <input
+                          id="editar-orden-sesiones-{{ orden.id }}"
+                          type="number"
+                          min="1"
+                          formControlName="sesionesPrescriptas"
+                        />
+                      </div>
+
+                      <div class="campo">
+                        <label for="editar-orden-indicacion-{{ orden.id }}">Indicacion</label>
+                        <textarea
+                          id="editar-orden-indicacion-{{ orden.id }}"
+                          formControlName="indicacion"
+                          rows="2"
+                        ></textarea>
+                      </div>
+
+                      <div class="campo">
+                        <label for="editar-orden-observaciones-{{ orden.id }}">Observaciones</label>
+                        <textarea
+                          id="editar-orden-observaciones-{{ orden.id }}"
+                          formControlName="observaciones"
+                          rows="2"
+                        ></textarea>
+                      </div>
+
+                      <p class="acciones">
+                        <button type="submit" class="boton" [disabled]="enviando()">
+                          {{ enviando() ? 'Guardando...' : 'Guardar la orden' }}
+                        </button>
+                        <button
+                          type="button"
+                          class="boton boton--secundario"
+                          (click)="cerrarPaneles()"
+                        >
+                          Cancelar
+                        </button>
+                      </p>
+                    </form>
+
+                    @if (errorAccion(); as mensaje) {
+                      <p class="estado estado--error" role="alert">{{ mensaje }}</p>
+                      @if (hayQueRecargar()) {
+                        <p class="acciones">
+                          <button type="button" class="boton" (click)="cargar()">Recargar</button>
+                        </p>
+                      }
+                    }
+                  </section>
+                </td>
+              </tr>
+            }
+
+            @if (esPanelDeOrden(orden, 'documento')) {
+              <tr>
+                <td colspan="8">
+                  <section aria-labelledby="titulo-doc-orden-{{ orden.id }}">
+                    <h2 id="titulo-doc-orden-{{ orden.id }}" class="panel__titulo">
+                      Escaneo de la orden
+                    </h2>
+                    <p class="ayuda">
+                      Aca <b>no se sube nada</b>: se elige entre los documentos que ya tiene
+                      cargados la persona. Para subir uno nuevo, anda a
+                      <a class="enlace" [routerLink]="rutaDocumentos()">Documentacion</a>.
+                    </p>
+
+                    <form
+                      [formGroup]="formularioDocumento"
+                      (ngSubmit)="enviarDocumento()"
+                      novalidate
+                    >
+                      <div class="campo">
+                        <label for="doc-orden-{{ orden.id }}">Documento</label>
+                        <select id="doc-orden-{{ orden.id }}" formControlName="adjuntoId">
+                          <option value="">Sin documento (quita el vinculo)</option>
+                          @for (adjunto of adjuntos(); track adjunto.id) {
+                            <option [value]="adjunto.id">
+                              {{ adjunto.titulo || adjunto.nombreArchivo }}
+                            </option>
+                          }
+                        </select>
+                      </div>
+
+                      <p class="acciones">
+                        <button type="submit" class="boton" [disabled]="enviando()">
+                          {{ enviando() ? 'Guardando...' : 'Guardar el vinculo' }}
+                        </button>
+                        <button
+                          type="button"
+                          class="boton boton--secundario"
+                          (click)="cerrarPaneles()"
+                        >
+                          Cancelar
+                        </button>
+                      </p>
+                    </form>
+
+                    @if (errorAccion(); as mensaje) {
+                      <p class="estado estado--error" role="alert">{{ mensaje }}</p>
+                    }
+                  </section>
+                </td>
+              </tr>
+            }
+
+            @if (esPanelDeOrden(orden, 'baja')) {
+              <tr>
+                <td colspan="8">
+                  <akine-confirmacion-con-motivo
+                    idCampo="baja-orden-{{ orden.id }}"
+                    titulo="Dar de baja la orden de {{ emisorEnPalabras(orden) }}"
+                    etiqueta="Motivo"
+                    ayuda="Dar de baja significa que esta orden NUNCA debio cargarse. Si simplemente vencio, no hace falta: una orden vencida se sigue viendo y se puede corregir. La baja no borra nada y las autorizaciones que la referencian quedan intactas."
+                    textoConfirmar="Confirmar la baja de la orden"
+                    [enviando]="enviando()"
+                    (confirmado)="confirmarBajaDeOrden($event)"
+                    (cancelado)="cerrarPaneles()"
+                  />
+
+                  @if (errorAccion(); as mensaje) {
+                    <p class="estado estado--error" role="alert">{{ mensaje }}</p>
+                  }
+                </td>
+              </tr>
+            }
           }
-        }
-      </tbody>
-    </table>
+        </tbody>
+      </table>
+    </div>
   }
 
   <!-- =================================================================================
@@ -772,512 +780,534 @@
   @if (autorizaciones().length === 0) {
     <p class="estado">Este paciente no tiene autorizaciones cargadas.</p>
   } @else {
-    <table class="tabla">
-      <caption>
-        {{
-          autorizaciones().length
-        }}
-        autorizacion(es) del paciente
-      </caption>
-      <thead>
-        <tr>
-          <th scope="col">Numero</th>
-          <th scope="col">Estado</th>
-          <th scope="col">Vigencia</th>
-          <th scope="col">Saldo</th>
-          <th scope="col">Veredicto</th>
-          <th scope="col">Comprobante</th>
-          <th scope="col">Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (autorizacion of autorizaciones(); track autorizacion.id) {
-          <tr [class.fila-senalada]="estaSenalada(autorizacion)">
-            <td>
-              {{ autorizacion.numero }}
-              @if (estaSenalada(autorizacion)) {
-                <span class="etiqueta">Es la que se pisa</span>
-              }
-            </td>
-            <td>
-              {{ estadoDeAutorizacion(autorizacion) }}
-              @if (autorizacionInactiva(autorizacion)) {
-                — dada de baja
-              }
-              @if (autorizacion.motivo) {
-                — {{ autorizacion.motivo }}
-              }
-            </td>
-            <td>
-              {{ vigenciaDeDocumento(autorizacion.vigenciaDesde, autorizacion.vigenciaHasta) }}
-              @if (avisoDeVencimiento(autorizacion.diasParaVencer); as aviso) {
-                <span class="etiqueta">{{ aviso }}</span>
-              }
-            </td>
-            <td>{{ saldoEnPalabras(autorizacion) }}</td>
-            <td>{{ habilitaEnPalabras(autorizacion) }}</td>
-            <td>{{ autorizacion.adjuntoId ? 'Vinculado' : 'Sin vincular' }}</td>
-            <td>
-              <button
-                type="button"
-                class="boton boton--secundario"
-                [attr.aria-expanded]="esPanelDeAutorizacion(autorizacion, 'historial')"
-                (click)="alternarHistorial(autorizacion)"
-              >
-                Historial
-              </button>
-              <button
-                type="button"
-                class="boton boton--secundario"
-                [attr.aria-expanded]="esPanelDeAutorizacion(autorizacion, 'consumo')"
-                (click)="alternarConsumo(autorizacion)"
-              >
-                Saldo y consumos
-              </button>
-              @if (!autorizacionInactiva(autorizacion)) {
-                @if (admiteResolucion(autorizacion)) {
+    <div class="tabla-scroll" tabindex="0" role="region" aria-labelledby="caption-autorizaciones">
+      <table class="tabla">
+        <caption id="caption-autorizaciones">
+          {{
+            autorizaciones().length
+          }}
+          autorizacion(es) del paciente
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">Numero</th>
+            <th scope="col">Estado</th>
+            <th scope="col">Vigencia</th>
+            <th scope="col">Saldo</th>
+            <th scope="col">Veredicto</th>
+            <th scope="col">Comprobante</th>
+            <th scope="col">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (autorizacion of autorizaciones(); track autorizacion.id) {
+            <tr [class.fila-senalada]="estaSenalada(autorizacion)">
+              <td>
+                {{ autorizacion.numero }}
+                @if (estaSenalada(autorizacion)) {
+                  <span class="etiqueta">Es la que se pisa</span>
+                }
+              </td>
+              <td>
+                {{ estadoDeAutorizacion(autorizacion) }}
+                @if (autorizacionInactiva(autorizacion)) {
+                  — dada de baja
+                }
+                @if (autorizacion.motivo) {
+                  — {{ autorizacion.motivo }}
+                }
+              </td>
+              <td>
+                {{ vigenciaDeDocumento(autorizacion.vigenciaDesde, autorizacion.vigenciaHasta) }}
+                @if (avisoDeVencimiento(autorizacion.diasParaVencer); as aviso) {
+                  <span class="etiqueta">{{ aviso }}</span>
+                }
+              </td>
+              <td>{{ saldoEnPalabras(autorizacion) }}</td>
+              <td>{{ habilitaEnPalabras(autorizacion) }}</td>
+              <td>{{ autorizacion.adjuntoId ? 'Vinculado' : 'Sin vincular' }}</td>
+              <td>
+                <button
+                  type="button"
+                  class="boton boton--secundario"
+                  [attr.aria-expanded]="esPanelDeAutorizacion(autorizacion, 'historial')"
+                  (click)="alternarHistorial(autorizacion)"
+                >
+                  Historial
+                </button>
+                <button
+                  type="button"
+                  class="boton boton--secundario"
+                  [attr.aria-expanded]="esPanelDeAutorizacion(autorizacion, 'consumo')"
+                  (click)="alternarConsumo(autorizacion)"
+                >
+                  Saldo y consumos
+                </button>
+                @if (!autorizacionInactiva(autorizacion)) {
+                  @if (admiteResolucion(autorizacion)) {
+                    <button
+                      type="button"
+                      class="boton boton--secundario"
+                      (click)="abrirResolucion(autorizacion)"
+                      *akinePermiso="permisoManage"
+                    >
+                      Respuesta del financiador
+                    </button>
+                  }
                   <button
                     type="button"
                     class="boton boton--secundario"
-                    (click)="abrirResolucion(autorizacion)"
+                    (click)="abrirEdicionDeAutorizacion(autorizacion)"
                     *akinePermiso="permisoManage"
                   >
-                    Respuesta del financiador
+                    Corregir
+                  </button>
+                  <button
+                    type="button"
+                    class="boton boton--secundario"
+                    (click)="abrirDocumentoDeAutorizacion(autorizacion)"
+                    *akinePermiso="permisoManage"
+                  >
+                    Comprobante
+                  </button>
+                  <button
+                    type="button"
+                    class="boton boton--secundario"
+                    (click)="abrirBajaDeAutorizacion(autorizacion)"
+                    *akinePermiso="permisoManage"
+                  >
+                    Dar de baja la autorizacion
                   </button>
                 }
-                <button
-                  type="button"
-                  class="boton boton--secundario"
-                  (click)="abrirEdicionDeAutorizacion(autorizacion)"
-                  *akinePermiso="permisoManage"
-                >
-                  Corregir
-                </button>
-                <button
-                  type="button"
-                  class="boton boton--secundario"
-                  (click)="abrirDocumentoDeAutorizacion(autorizacion)"
-                  *akinePermiso="permisoManage"
-                >
-                  Comprobante
-                </button>
-                <button
-                  type="button"
-                  class="boton boton--secundario"
-                  (click)="abrirBajaDeAutorizacion(autorizacion)"
-                  *akinePermiso="permisoManage"
-                >
-                  Dar de baja la autorizacion
-                </button>
-              }
-            </td>
-          </tr>
+              </td>
+            </tr>
 
-          @if (esPanelDeAutorizacion(autorizacion, 'resolver')) {
-            <tr>
-              <td colspan="7">
-                <section aria-labelledby="titulo-resolver-{{ autorizacion.id }}">
-                  <h2 id="titulo-resolver-{{ autorizacion.id }}" class="panel__titulo">
-                    Respuesta del financiador para la {{ autorizacion.numero }}
-                  </h2>
-                  <p class="ayuda">
-                    <b>Al aprobar, lo que pongas aca pisa lo que se pidio.</b> Si el financiador
-                    otorgo menos sesiones o una ventana mas corta, corregi los campos: lo que vale
-                    es lo que concedio. Aprobar y rechazar son <b>terminales</b>.
-                  </p>
-
-                  <form
-                    [formGroup]="formularioResolucion"
-                    (ngSubmit)="enviarResolucion()"
-                    novalidate
-                  >
-                    <div class="campo">
-                      <label for="resolver-accion-{{ autorizacion.id }}">Que contesto</label>
-                      <select id="resolver-accion-{{ autorizacion.id }}" formControlName="accion">
-                        <option value="APROBAR">Aprobo</option>
-                        <option value="OBSERVAR">Observo (pide correcciones)</option>
-                        <option value="RECHAZAR">Rechazo</option>
-                      </select>
-                    </div>
-
-                    <div class="campo">
-                      <label for="resolver-cantidad-{{ autorizacion.id }}">Cantidad otorgada</label>
-                      <input
-                        id="resolver-cantidad-{{ autorizacion.id }}"
-                        type="number"
-                        min="1"
-                        formControlName="cantidadAutorizada"
-                      />
-                    </div>
-
-                    <div class="campo">
-                      <label for="resolver-desde-{{ autorizacion.id }}">Vigente desde</label>
-                      <input
-                        id="resolver-desde-{{ autorizacion.id }}"
-                        type="date"
-                        formControlName="vigenciaDesde"
-                      />
-                    </div>
-
-                    <div class="campo">
-                      <label for="resolver-hasta-{{ autorizacion.id }}">Vigente hasta</label>
-                      <input
-                        id="resolver-hasta-{{ autorizacion.id }}"
-                        type="date"
-                        formControlName="vigenciaHasta"
-                      />
-                    </div>
-
-                    <div class="campo">
-                      <label for="resolver-motivo-{{ autorizacion.id }}">
-                        Motivo
-                        @if (resolucionExigeMotivo()) {
-                          (obligatorio al observar o rechazar)
-                        }
-                      </label>
-                      <input
-                        id="resolver-motivo-{{ autorizacion.id }}"
-                        type="text"
-                        formControlName="motivo"
-                        aria-describedby="resolver-motivo-ayuda-{{ autorizacion.id }}"
-                      />
-                      <p class="ayuda" id="resolver-motivo-ayuda-{{ autorizacion.id }}">
-                        Sin motivo, el mostrador no sabe que corregir para volver a presentarla.
-                      </p>
-                    </div>
-
-                    <p class="acciones">
-                      <button type="submit" class="boton" [disabled]="enviando()">
-                        {{ enviando() ? 'Guardando...' : 'Registrar la respuesta' }}
-                      </button>
-                      <button
-                        type="button"
-                        class="boton boton--secundario"
-                        (click)="cerrarPaneles()"
-                      >
-                        Cancelar
-                      </button>
+            @if (esPanelDeAutorizacion(autorizacion, 'resolver')) {
+              <tr>
+                <td colspan="7">
+                  <section aria-labelledby="titulo-resolver-{{ autorizacion.id }}">
+                    <h2 id="titulo-resolver-{{ autorizacion.id }}" class="panel__titulo">
+                      Respuesta del financiador para la {{ autorizacion.numero }}
+                    </h2>
+                    <p class="ayuda">
+                      <b>Al aprobar, lo que pongas aca pisa lo que se pidio.</b> Si el financiador
+                      otorgo menos sesiones o una ventana mas corta, corregi los campos: lo que vale
+                      es lo que concedio. Aprobar y rechazar son <b>terminales</b>.
                     </p>
-                  </form>
 
-                  @if (errorAccion(); as mensaje) {
-                    <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-                    @if (hayQueRecargar()) {
+                    <form
+                      [formGroup]="formularioResolucion"
+                      (ngSubmit)="enviarResolucion()"
+                      novalidate
+                    >
+                      <div class="campo">
+                        <label for="resolver-accion-{{ autorizacion.id }}">Que contesto</label>
+                        <select id="resolver-accion-{{ autorizacion.id }}" formControlName="accion">
+                          <option value="APROBAR">Aprobo</option>
+                          <option value="OBSERVAR">Observo (pide correcciones)</option>
+                          <option value="RECHAZAR">Rechazo</option>
+                        </select>
+                      </div>
+
+                      <div class="campo">
+                        <label for="resolver-cantidad-{{ autorizacion.id }}"
+                          >Cantidad otorgada</label
+                        >
+                        <input
+                          id="resolver-cantidad-{{ autorizacion.id }}"
+                          type="number"
+                          min="1"
+                          formControlName="cantidadAutorizada"
+                        />
+                      </div>
+
+                      <div class="campo">
+                        <label for="resolver-desde-{{ autorizacion.id }}">Vigente desde</label>
+                        <input
+                          id="resolver-desde-{{ autorizacion.id }}"
+                          type="date"
+                          formControlName="vigenciaDesde"
+                        />
+                      </div>
+
+                      <div class="campo">
+                        <label for="resolver-hasta-{{ autorizacion.id }}">Vigente hasta</label>
+                        <input
+                          id="resolver-hasta-{{ autorizacion.id }}"
+                          type="date"
+                          formControlName="vigenciaHasta"
+                        />
+                      </div>
+
+                      <div class="campo">
+                        <label for="resolver-motivo-{{ autorizacion.id }}">
+                          Motivo
+                          @if (resolucionExigeMotivo()) {
+                            (obligatorio al observar o rechazar)
+                          }
+                        </label>
+                        <input
+                          id="resolver-motivo-{{ autorizacion.id }}"
+                          type="text"
+                          formControlName="motivo"
+                          aria-describedby="resolver-motivo-ayuda-{{ autorizacion.id }}"
+                        />
+                        <p class="ayuda" id="resolver-motivo-ayuda-{{ autorizacion.id }}">
+                          Sin motivo, el mostrador no sabe que corregir para volver a presentarla.
+                        </p>
+                      </div>
+
                       <p class="acciones">
-                        <button type="button" class="boton" (click)="cargar()">Recargar</button>
+                        <button type="submit" class="boton" [disabled]="enviando()">
+                          {{ enviando() ? 'Guardando...' : 'Registrar la respuesta' }}
+                        </button>
+                        <button
+                          type="button"
+                          class="boton boton--secundario"
+                          (click)="cerrarPaneles()"
+                        >
+                          Cancelar
+                        </button>
                       </p>
-                    }
-                  }
-                </section>
-              </td>
-            </tr>
-          }
+                    </form>
 
-          @if (esPanelDeAutorizacion(autorizacion, 'editar')) {
-            <tr>
-              <td colspan="7">
-                <section aria-labelledby="titulo-editar-aut-{{ autorizacion.id }}">
-                  <h2 id="titulo-editar-aut-{{ autorizacion.id }}" class="panel__titulo">
-                    Corregir la autorizacion {{ autorizacion.numero }}
-                  </h2>
-                  <p class="ayuda">
-                    La cobertura, la practica y el estado <b>no se corrigen aca</b>: las dos
-                    primeras son otra autorizacion, y el estado se mueve con la respuesta del
-                    financiador.
-                  </p>
-
-                  <form
-                    [formGroup]="formularioEdicionDeAutorizacion"
-                    (ngSubmit)="enviarEdicionDeAutorizacion()"
-                    novalidate
-                  >
-                    <div class="campo">
-                      <label for="editar-aut-numero-{{ autorizacion.id }}">Numero</label>
-                      <input
-                        id="editar-aut-numero-{{ autorizacion.id }}"
-                        type="text"
-                        formControlName="numero"
-                      />
-                    </div>
-
-                    <div class="campo">
-                      <label for="editar-aut-orden-{{ autorizacion.id }}">Orden que respalda</label>
-                      <select
-                        id="editar-aut-orden-{{ autorizacion.id }}"
-                        formControlName="ordenMedicaId"
-                      >
-                        <option value="">Sin orden</option>
-                        @for (orden of ordenes(); track orden.id) {
-                          <option [value]="orden.id">{{ rotuloDeOrden(orden) }}</option>
-                        }
-                      </select>
-                    </div>
-
-                    <div class="campo">
-                      <label for="editar-aut-cantidad-{{ autorizacion.id }}">Cantidad</label>
-                      <input
-                        id="editar-aut-cantidad-{{ autorizacion.id }}"
-                        type="number"
-                        min="1"
-                        formControlName="cantidadAutorizada"
-                      />
-                    </div>
-
-                    <div class="campo">
-                      <label for="editar-aut-desde-{{ autorizacion.id }}">Vigente desde</label>
-                      <input
-                        id="editar-aut-desde-{{ autorizacion.id }}"
-                        type="date"
-                        formControlName="vigenciaDesde"
-                      />
-                    </div>
-
-                    <div class="campo">
-                      <label for="editar-aut-hasta-{{ autorizacion.id }}">Vigente hasta</label>
-                      <input
-                        id="editar-aut-hasta-{{ autorizacion.id }}"
-                        type="date"
-                        formControlName="vigenciaHasta"
-                      />
-                    </div>
-
-                    <div class="campo">
-                      <label for="editar-aut-observaciones-{{ autorizacion.id }}"
-                        >Observaciones</label
-                      >
-                      <textarea
-                        id="editar-aut-observaciones-{{ autorizacion.id }}"
-                        formControlName="observaciones"
-                        rows="2"
-                      ></textarea>
-                    </div>
-
-                    <p class="acciones">
-                      <button type="submit" class="boton" [disabled]="enviando()">
-                        {{ enviando() ? 'Guardando...' : 'Guardar la autorizacion' }}
-                      </button>
-                      <button
-                        type="button"
-                        class="boton boton--secundario"
-                        (click)="cerrarPaneles()"
-                      >
-                        Cancelar
-                      </button>
-                    </p>
-                  </form>
-
-                  @if (errorAccion(); as mensaje) {
-                    <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-                    @if (hayQueRecargar()) {
-                      <p class="acciones">
-                        <button type="button" class="boton" (click)="cargar()">Recargar</button>
-                      </p>
-                    }
-                  }
-                </section>
-              </td>
-            </tr>
-          }
-
-          @if (esPanelDeAutorizacion(autorizacion, 'documento')) {
-            <tr>
-              <td colspan="7">
-                <section aria-labelledby="titulo-doc-aut-{{ autorizacion.id }}">
-                  <h2 id="titulo-doc-aut-{{ autorizacion.id }}" class="panel__titulo">
-                    Comprobante de la autorizacion
-                  </h2>
-                  <p class="ayuda">
-                    Aca <b>no se sube nada</b>: se elige entre los documentos que ya tiene cargados
-                    la persona. Para subir uno nuevo, anda a
-                    <a class="enlace" [routerLink]="rutaDocumentos()">Documentacion</a>.
-                  </p>
-
-                  <form [formGroup]="formularioDocumento" (ngSubmit)="enviarDocumento()" novalidate>
-                    <div class="campo">
-                      <label for="doc-aut-{{ autorizacion.id }}">Documento</label>
-                      <select id="doc-aut-{{ autorizacion.id }}" formControlName="adjuntoId">
-                        <option value="">Sin documento (quita el vinculo)</option>
-                        @for (adjunto of adjuntos(); track adjunto.id) {
-                          <option [value]="adjunto.id">
-                            {{ adjunto.titulo || adjunto.nombreArchivo }}
-                          </option>
-                        }
-                      </select>
-                    </div>
-
-                    <p class="acciones">
-                      <button type="submit" class="boton" [disabled]="enviando()">
-                        {{ enviando() ? 'Guardando...' : 'Guardar el vinculo' }}
-                      </button>
-                      <button
-                        type="button"
-                        class="boton boton--secundario"
-                        (click)="cerrarPaneles()"
-                      >
-                        Cancelar
-                      </button>
-                    </p>
-                  </form>
-
-                  @if (errorAccion(); as mensaje) {
-                    <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-                  }
-                </section>
-              </td>
-            </tr>
-          }
-
-          @if (esPanelDeAutorizacion(autorizacion, 'baja')) {
-            <tr>
-              <td colspan="7">
-                <akine-confirmacion-con-motivo
-                  idCampo="baja-autorizacion-{{ autorizacion.id }}"
-                  titulo="Dar de baja la autorizacion {{ autorizacion.numero }}"
-                  etiqueta="Motivo"
-                  ayuda="Dar de baja NO es rechazar y NO es vencer. Rechazar es la respuesta del financiador y deja la autorizacion viva, explicando por que no se pudo atender. Dar de baja significa que nunca debio cargarse. No borra nada, y el numero se puede volver a usar."
-                  textoConfirmar="Confirmar la baja de la autorizacion"
-                  [enviando]="enviando()"
-                  (confirmado)="confirmarBajaDeAutorizacion($event)"
-                  (cancelado)="cerrarPaneles()"
-                />
-
-                @if (errorAccion(); as mensaje) {
-                  <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-                }
-              </td>
-            </tr>
-          }
-
-          @if (esPanelDeAutorizacion(autorizacion, 'consumo') && autorizacion.id !== undefined) {
-            <tr>
-              <td colspan="7">
-                <app-consumo-de-autorizacion
-                  [autorizacionId]="autorizacion.id"
-                  [numero]="autorizacion.numero ?? ''"
-                  (revertido)="releerAutorizaciones()"
-                />
-                <p class="acciones">
-                  <button type="button" class="boton boton--secundario" (click)="cerrarPaneles()">
-                    Cerrar el saldo
-                  </button>
-                </p>
-              </td>
-            </tr>
-          }
-
-          @if (esPanelDeAutorizacion(autorizacion, 'historial')) {
-            <tr>
-              <td colspan="7">
-                <section aria-labelledby="titulo-historial-{{ autorizacion.id }}">
-                  <h2 id="titulo-historial-{{ autorizacion.id }}" class="panel__titulo">
-                    Historial de la autorizacion {{ autorizacion.numero }}
-                  </h2>
-                  <p class="ayuda">
-                    Cada hecho que cambio esta autorizacion, del mas viejo al mas nuevo. El
-                    vencimiento no es un hecho: se calcula contra la fecha de hoy.
-                  </p>
-
-                  <div aria-live="polite">
-                    @switch (historial()?.tipo) {
-                      @case ('cargando') {
-                        <p class="estado estado--cargando">Cargando el historial&hellip;</p>
-                      }
-                      @case ('error') {
-                        <p class="estado estado--error" role="alert">{{ mensajeDeHistorial() }}</p>
+                    @if (errorAccion(); as mensaje) {
+                      <p class="estado estado--error" role="alert">{{ mensaje }}</p>
+                      @if (hayQueRecargar()) {
                         <p class="acciones">
-                          <button
-                            type="button"
-                            class="boton boton--secundario"
-                            (click)="paginaDeHistorial(0)"
-                          >
-                            Reintentar
-                          </button>
+                          <button type="button" class="boton" (click)="cargar()">Recargar</button>
                         </p>
                       }
-                      @case ('listo') {
-                        @if (historialListo(); as respuesta) {
-                          @if (respuesta.vencida) {
-                            <p class="estado">
-                              <b>Vencida</b> desde el {{ fechaEnPalabras(respuesta.vencidaDesde) }}.
-                            </p>
-                          }
+                    }
+                  </section>
+                </td>
+              </tr>
+            }
 
-                          @if ((respuesta.content ?? []).length === 0) {
-                            <p class="estado estado--vacio">Esta pagina no tiene hechos.</p>
-                          } @else {
-                            <ol class="lista-hitos">
-                              @for (evento of respuesta.content ?? []; track evento.id ?? $index) {
-                                <li>
-                                  <p>
-                                    <b>{{ tipoDeEvento(evento) }}</b>
-                                    — {{ formatearInstante(evento.ocurridoEn) ?? 'Sin fecha' }} ·
-                                    {{ actorDeEvento(evento) }}
-                                  </p>
-                                  @if (cambioDeEstado(evento); as cambio) {
-                                    <p>{{ cambio }}</p>
-                                  }
-                                  @if (evento.cantidad !== undefined && evento.cantidad !== null) {
-                                    <p>Cantidad: {{ evento.cantidad }}</p>
-                                  }
-                                  @if (evento.detalle) {
-                                    <p class="ayuda">{{ evento.detalle }}</p>
-                                  }
-                                  @if (evento.motivo) {
-                                    <p>Motivo: {{ evento.motivo }}</p>
-                                  }
-                                </li>
-                              }
-                            </ol>
-                          }
+            @if (esPanelDeAutorizacion(autorizacion, 'editar')) {
+              <tr>
+                <td colspan="7">
+                  <section aria-labelledby="titulo-editar-aut-{{ autorizacion.id }}">
+                    <h2 id="titulo-editar-aut-{{ autorizacion.id }}" class="panel__titulo">
+                      Corregir la autorizacion {{ autorizacion.numero }}
+                    </h2>
+                    <p class="ayuda">
+                      La cobertura, la practica y el estado <b>no se corrigen aca</b>: las dos
+                      primeras son otra autorizacion, y el estado se mueve con la respuesta del
+                      financiador.
+                    </p>
 
-                          @if ((respuesta.totalPages ?? 0) > 1) {
-                            <nav
-                              class="acciones"
-                              attr.aria-label="Paginas del historial de la {{
-                                autorizacion.numero
-                              }}"
+                    <form
+                      [formGroup]="formularioEdicionDeAutorizacion"
+                      (ngSubmit)="enviarEdicionDeAutorizacion()"
+                      novalidate
+                    >
+                      <div class="campo">
+                        <label for="editar-aut-numero-{{ autorizacion.id }}">Numero</label>
+                        <input
+                          id="editar-aut-numero-{{ autorizacion.id }}"
+                          type="text"
+                          formControlName="numero"
+                        />
+                      </div>
+
+                      <div class="campo">
+                        <label for="editar-aut-orden-{{ autorizacion.id }}"
+                          >Orden que respalda</label
+                        >
+                        <select
+                          id="editar-aut-orden-{{ autorizacion.id }}"
+                          formControlName="ordenMedicaId"
+                        >
+                          <option value="">Sin orden</option>
+                          @for (orden of ordenes(); track orden.id) {
+                            <option [value]="orden.id">{{ rotuloDeOrden(orden) }}</option>
+                          }
+                        </select>
+                      </div>
+
+                      <div class="campo">
+                        <label for="editar-aut-cantidad-{{ autorizacion.id }}">Cantidad</label>
+                        <input
+                          id="editar-aut-cantidad-{{ autorizacion.id }}"
+                          type="number"
+                          min="1"
+                          formControlName="cantidadAutorizada"
+                        />
+                      </div>
+
+                      <div class="campo">
+                        <label for="editar-aut-desde-{{ autorizacion.id }}">Vigente desde</label>
+                        <input
+                          id="editar-aut-desde-{{ autorizacion.id }}"
+                          type="date"
+                          formControlName="vigenciaDesde"
+                        />
+                      </div>
+
+                      <div class="campo">
+                        <label for="editar-aut-hasta-{{ autorizacion.id }}">Vigente hasta</label>
+                        <input
+                          id="editar-aut-hasta-{{ autorizacion.id }}"
+                          type="date"
+                          formControlName="vigenciaHasta"
+                        />
+                      </div>
+
+                      <div class="campo">
+                        <label for="editar-aut-observaciones-{{ autorizacion.id }}"
+                          >Observaciones</label
+                        >
+                        <textarea
+                          id="editar-aut-observaciones-{{ autorizacion.id }}"
+                          formControlName="observaciones"
+                          rows="2"
+                        ></textarea>
+                      </div>
+
+                      <p class="acciones">
+                        <button type="submit" class="boton" [disabled]="enviando()">
+                          {{ enviando() ? 'Guardando...' : 'Guardar la autorizacion' }}
+                        </button>
+                        <button
+                          type="button"
+                          class="boton boton--secundario"
+                          (click)="cerrarPaneles()"
+                        >
+                          Cancelar
+                        </button>
+                      </p>
+                    </form>
+
+                    @if (errorAccion(); as mensaje) {
+                      <p class="estado estado--error" role="alert">{{ mensaje }}</p>
+                      @if (hayQueRecargar()) {
+                        <p class="acciones">
+                          <button type="button" class="boton" (click)="cargar()">Recargar</button>
+                        </p>
+                      }
+                    }
+                  </section>
+                </td>
+              </tr>
+            }
+
+            @if (esPanelDeAutorizacion(autorizacion, 'documento')) {
+              <tr>
+                <td colspan="7">
+                  <section aria-labelledby="titulo-doc-aut-{{ autorizacion.id }}">
+                    <h2 id="titulo-doc-aut-{{ autorizacion.id }}" class="panel__titulo">
+                      Comprobante de la autorizacion
+                    </h2>
+                    <p class="ayuda">
+                      Aca <b>no se sube nada</b>: se elige entre los documentos que ya tiene
+                      cargados la persona. Para subir uno nuevo, anda a
+                      <a class="enlace" [routerLink]="rutaDocumentos()">Documentacion</a>.
+                    </p>
+
+                    <form
+                      [formGroup]="formularioDocumento"
+                      (ngSubmit)="enviarDocumento()"
+                      novalidate
+                    >
+                      <div class="campo">
+                        <label for="doc-aut-{{ autorizacion.id }}">Documento</label>
+                        <select id="doc-aut-{{ autorizacion.id }}" formControlName="adjuntoId">
+                          <option value="">Sin documento (quita el vinculo)</option>
+                          @for (adjunto of adjuntos(); track adjunto.id) {
+                            <option [value]="adjunto.id">
+                              {{ adjunto.titulo || adjunto.nombreArchivo }}
+                            </option>
+                          }
+                        </select>
+                      </div>
+
+                      <p class="acciones">
+                        <button type="submit" class="boton" [disabled]="enviando()">
+                          {{ enviando() ? 'Guardando...' : 'Guardar el vinculo' }}
+                        </button>
+                        <button
+                          type="button"
+                          class="boton boton--secundario"
+                          (click)="cerrarPaneles()"
+                        >
+                          Cancelar
+                        </button>
+                      </p>
+                    </form>
+
+                    @if (errorAccion(); as mensaje) {
+                      <p class="estado estado--error" role="alert">{{ mensaje }}</p>
+                    }
+                  </section>
+                </td>
+              </tr>
+            }
+
+            @if (esPanelDeAutorizacion(autorizacion, 'baja')) {
+              <tr>
+                <td colspan="7">
+                  <akine-confirmacion-con-motivo
+                    idCampo="baja-autorizacion-{{ autorizacion.id }}"
+                    titulo="Dar de baja la autorizacion {{ autorizacion.numero }}"
+                    etiqueta="Motivo"
+                    ayuda="Dar de baja NO es rechazar y NO es vencer. Rechazar es la respuesta del financiador y deja la autorizacion viva, explicando por que no se pudo atender. Dar de baja significa que nunca debio cargarse. No borra nada, y el numero se puede volver a usar."
+                    textoConfirmar="Confirmar la baja de la autorizacion"
+                    [enviando]="enviando()"
+                    (confirmado)="confirmarBajaDeAutorizacion($event)"
+                    (cancelado)="cerrarPaneles()"
+                  />
+
+                  @if (errorAccion(); as mensaje) {
+                    <p class="estado estado--error" role="alert">{{ mensaje }}</p>
+                  }
+                </td>
+              </tr>
+            }
+
+            @if (esPanelDeAutorizacion(autorizacion, 'consumo') && autorizacion.id !== undefined) {
+              <tr>
+                <td colspan="7">
+                  <app-consumo-de-autorizacion
+                    [autorizacionId]="autorizacion.id"
+                    [numero]="autorizacion.numero ?? ''"
+                    (revertido)="releerAutorizaciones()"
+                  />
+                  <p class="acciones">
+                    <button type="button" class="boton boton--secundario" (click)="cerrarPaneles()">
+                      Cerrar el saldo
+                    </button>
+                  </p>
+                </td>
+              </tr>
+            }
+
+            @if (esPanelDeAutorizacion(autorizacion, 'historial')) {
+              <tr>
+                <td colspan="7">
+                  <section aria-labelledby="titulo-historial-{{ autorizacion.id }}">
+                    <h2 id="titulo-historial-{{ autorizacion.id }}" class="panel__titulo">
+                      Historial de la autorizacion {{ autorizacion.numero }}
+                    </h2>
+                    <p class="ayuda">
+                      Cada hecho que cambio esta autorizacion, del mas viejo al mas nuevo. El
+                      vencimiento no es un hecho: se calcula contra la fecha de hoy.
+                    </p>
+
+                    <div aria-live="polite">
+                      @switch (historial()?.tipo) {
+                        @case ('cargando') {
+                          <p class="estado estado--cargando">Cargando el historial&hellip;</p>
+                        }
+                        @case ('error') {
+                          <p class="estado estado--error" role="alert">
+                            {{ mensajeDeHistorial() }}
+                          </p>
+                          <p class="acciones">
+                            <button
+                              type="button"
+                              class="boton boton--secundario"
+                              (click)="paginaDeHistorial(0)"
                             >
-                              <button
-                                type="button"
-                                class="boton boton--secundario"
-                                [disabled]="(respuesta.page ?? 0) === 0"
-                                (click)="paginaDeHistorial((respuesta.page ?? 0) - 1)"
+                              Reintentar
+                            </button>
+                          </p>
+                        }
+                        @case ('listo') {
+                          @if (historialListo(); as respuesta) {
+                            @if (respuesta.vencida) {
+                              <p class="estado">
+                                <b>Vencida</b> desde el
+                                {{ fechaEnPalabras(respuesta.vencidaDesde) }}.
+                              </p>
+                            }
+
+                            @if ((respuesta.content ?? []).length === 0) {
+                              <p class="estado estado--vacio">Esta pagina no tiene hechos.</p>
+                            } @else {
+                              <ol class="lista-hitos">
+                                @for (
+                                  evento of respuesta.content ?? [];
+                                  track evento.id ?? $index
+                                ) {
+                                  <li>
+                                    <p>
+                                      <b>{{ tipoDeEvento(evento) }}</b>
+                                      — {{ formatearInstante(evento.ocurridoEn) ?? 'Sin fecha' }} ·
+                                      {{ actorDeEvento(evento) }}
+                                    </p>
+                                    @if (cambioDeEstado(evento); as cambio) {
+                                      <p>{{ cambio }}</p>
+                                    }
+                                    @if (
+                                      evento.cantidad !== undefined && evento.cantidad !== null
+                                    ) {
+                                      <p>Cantidad: {{ evento.cantidad }}</p>
+                                    }
+                                    @if (evento.detalle) {
+                                      <p class="ayuda">{{ evento.detalle }}</p>
+                                    }
+                                    @if (evento.motivo) {
+                                      <p>Motivo: {{ evento.motivo }}</p>
+                                    }
+                                  </li>
+                                }
+                              </ol>
+                            }
+
+                            @if ((respuesta.totalPages ?? 0) > 1) {
+                              <nav
+                                class="acciones"
+                                attr.aria-label="Paginas del historial de la {{
+                                  autorizacion.numero
+                                }}"
                               >
-                                Hechos anteriores
-                              </button>
-                              <span>
-                                Pagina {{ (respuesta.page ?? 0) + 1 }} de
-                                {{ respuesta.totalPages }} ({{ respuesta.totalElements }} hechos)
-                              </span>
-                              <button
-                                type="button"
-                                class="boton boton--secundario"
-                                [disabled]="
-                                  (respuesta.page ?? 0) + 1 >= (respuesta.totalPages ?? 0)
-                                "
-                                (click)="paginaDeHistorial((respuesta.page ?? 0) + 1)"
-                              >
-                                Hechos siguientes
-                              </button>
-                            </nav>
+                                <button
+                                  type="button"
+                                  class="boton boton--secundario"
+                                  [disabled]="(respuesta.page ?? 0) === 0"
+                                  (click)="paginaDeHistorial((respuesta.page ?? 0) - 1)"
+                                >
+                                  Hechos anteriores
+                                </button>
+                                <span>
+                                  Pagina {{ (respuesta.page ?? 0) + 1 }} de
+                                  {{ respuesta.totalPages }} ({{ respuesta.totalElements }} hechos)
+                                </span>
+                                <button
+                                  type="button"
+                                  class="boton boton--secundario"
+                                  [disabled]="
+                                    (respuesta.page ?? 0) + 1 >= (respuesta.totalPages ?? 0)
+                                  "
+                                  (click)="paginaDeHistorial((respuesta.page ?? 0) + 1)"
+                                >
+                                  Hechos siguientes
+                                </button>
+                              </nav>
+                            }
                           }
                         }
                       }
-                    }
-                  </div>
+                    </div>
 
-                  <p class="acciones">
-                    <button type="button" class="boton boton--secundario" (click)="cerrarPaneles()">
-                      Cerrar el historial
-                    </button>
-                  </p>
-                </section>
-              </td>
-            </tr>
+                    <p class="acciones">
+                      <button
+                        type="button"
+                        class="boton boton--secundario"
+                        (click)="cerrarPaneles()"
+                      >
+                        Cerrar el historial
+                      </button>
+                    </p>
+                  </section>
+                </td>
+              </tr>
+            }
           }
-        }
-      </tbody>
-    </table>
+        </tbody>
+      </table>
+    </div>
   }
 
   <!-- Error de una accion sin panel abierto: la fila involucrada puede ser otra, y ya esta marcada. -->

@@ -101,8 +101,10 @@ interface CorridaDeAxe {
  *       igual que el caso anterior, y es el <b>mismo error</b> que la suite de jsdom venia
  *       cometiendo en silencio. Por eso se exige que `passes` traiga nodos: si axe no tuvo nada
  *       que medir, el test rompe.</li>
- *   <li><b>La regla no pudo decidir</b> (`incomplete`). No se tolera en silencio: o se mide de
- *       otra forma —ver {@link FondoConDegrade}— o rompe el test.</li>
+ *   <li><b>La regla no pudo decidir</b> (`incomplete`). No se tolera en silencio: rompe el
+ *       test. Hasta el 12/10/2026 caian aca las celdas de `.tabla-scroll` —la sombra de
+ *       desborde era un `background-image`, que axe no aplana— y el arnes las media a mano contra
+ *       el primer fondo opaco. El indicador paso al borde del contenedor y axe las mide solo.</li>
  * </ol>
  *
  * @param page la pagina ya pintada en el estado que se quiere auditar
@@ -113,18 +115,13 @@ export async function auditarContraste(
   page: Page,
   donde: string,
   opciones: {
-    readonly degrade?: FondoConDegrade;
     readonly queAxeNoMide?: readonly QueAxeNoMide[];
   } = {},
 ): Promise<void> {
   await page.addScriptTag({ path: RUTA_AXE });
 
   const aMano = (opciones.queAxeNoMide ?? []).map((zona) => zona.selector);
-  const {
-    axe: resultado,
-    medidos,
-    vacios,
-  } = await correr(page, opciones.degrade?.selector ?? null, aMano);
+  const { axe: resultado, medidos, vacios } = await correr(page, aMano);
 
   // Un selector declarado que hoy no existe es una declaracion vieja: la zona dejo de estar sin
   // medir, o -peor- el selector se escribio mal y nunca midio nada.
@@ -153,16 +150,6 @@ export async function auditarContraste(
     `no se midio ni un solo par de colores en ${donde}. La pantalla no llego a pintar, o el ` +
       'contexto de la auditoria quedo vacio: un cero aca NO es "sin violaciones", es "sin medir".',
   ).toBeGreaterThan(0);
-
-  if (opciones.degrade !== undefined) {
-    // Una tolerancia que ya no corresponde es peor que ninguna: si el degrade se fue, esto lo
-    // dice en vez de dejar la excepcion escrita para siempre.
-    expect(
-      medidos.filter((nodo) => nodo.origen === 'degrade').length,
-      `${donde} declara que \`${opciones.degrade.selector}\` tiene un fondo que axe no puede ` +
-        'aplanar, y axe midio todo sin problemas. La declaracion quedo vieja: borrala.',
-    ).toBeGreaterThan(0);
-  }
 
   await auditarEtiquetaEnElNombre(page, donde);
 }
@@ -254,29 +241,7 @@ export interface QueAxeNoMide {
   readonly porque: string;
 }
 
-/**
- * Una zona cuyo fondo axe no puede aplanar, y por lo tanto se mide de otra forma.
- *
- * <p><b>Esto NO es una exclusion.</b> `color-contrast` devuelve `incomplete` cuando en la pila de
- * fondos hay un `background-image` —un degrade cuenta— porque no puede promediar un gradiente
- * pixel a pixel. Apagar la regla ahi dejaria el texto sin medir, que es justo de lo que viene
- * esta etapa. Lo que se hace en cambio es medir ese texto <b>contra el primer fondo opaco de la
- * cadena de ancestros</b>, que es el color real sobre el que se lee en toda la superficie salvo
- * donde el degrade pinta. Se sigue exigiendo el mismo minimo de AA.
- *
- * <p><b>Lo que esa segunda medicion NO cubre, y hay que decirlo:</b> la franja donde el degrade
- * si pinta. Se declara como deuda en el `CLAUDE.md` del repo y en el registro de la etapa.
- */
-export interface FondoConDegrade {
-  /** Selector del contenedor cuyo `background-image` impide aplanar el fondo. */
-  readonly selector: string;
-  /** Por que ese contenedor lo tiene. Obliga a escribirlo en el sitio de la llamada. */
-  readonly porque: string;
-}
-
 interface MedicionPropia {
-  /** Por que la midio el arnes y no axe. Las dos causas no se pueden tapar entre si. */
-  readonly origen: 'degrade' | 'fuera-del-alcance-de-axe';
   readonly selector: string;
   readonly ratio: number;
   readonly minimo: number;
@@ -285,8 +250,8 @@ interface MedicionPropia {
 }
 
 /**
- * Corre axe y, para los nodos que hayan quedado sin veredicto dentro de `selectorConDegrade`,
- * mide el contraste a mano contra el primer fondo opaco de la cadena de ancestros.
+ * Corre axe y mide a mano, contra el primer fondo opaco de la cadena de ancestros, lo que axe
+ * declara fuera de su alcance.
  *
  * <p>La aritmetica es la de WCAG 2.1: luminancia relativa con la correccion de gamma sRGB, y el
  * minimo baja de 4,5 a 3 solo para texto grande -24 px, o 18,66 px en negrita-, que es
@@ -294,116 +259,89 @@ interface MedicionPropia {
  */
 async function correr(
   page: Page,
-  selectorConDegrade: string | null,
   selectoresAMano: readonly string[],
 ): Promise<{ axe: CorridaDeAxe; medidos: MedicionPropia[]; vacios: string[] }> {
-  return page.evaluate(
-    async ([selector, aMano]: [string | null, readonly string[]]) => {
-      const motor = (
-        window as unknown as { axe: { run: (ctx: unknown, op: unknown) => Promise<unknown> } }
-      ).axe;
+  return page.evaluate(async (aMano: readonly string[]) => {
+    const motor = (
+      window as unknown as { axe: { run: (ctx: unknown, op: unknown) => Promise<unknown> } }
+    ).axe;
 
-      const resultado = (await motor.run(document, {
-        // Solo la regla que esta etapa existe para medir. Las demas ya las cubre la suite de
-        // jsdom, que SI puede decidirlas; correrlas de nuevo aca agregaria las reglas de pagina
-        // completa (`region`, `landmark-one-main`) y convertiria un gate de contraste en una
-        // auditoria de accesibilidad entera con otro alcance y otro dueno.
-        runOnly: { type: 'rule', values: ['color-contrast'] },
-        resultTypes: ['violations', 'incomplete', 'passes'],
-      })) as {
-        violations: { id: string; nodes: { target: string[]; html: string; any: unknown[] }[] }[];
-        incomplete: { id: string; nodes: { target: string[]; html: string; any: unknown[] }[] }[];
-        passes: { id: string; nodes: { target: string[] }[] }[];
+    const resultado = (await motor.run(document, {
+      // Solo la regla que esta etapa existe para medir. Las demas ya las cubre la suite de
+      // jsdom, que SI puede decidirlas; correrlas de nuevo aca agregaria las reglas de pagina
+      // completa (`region`, `landmark-one-main`) y convertiria un gate de contraste en una
+      // auditoria de accesibilidad entera con otro alcance y otro dueno.
+      runOnly: { type: 'rule', values: ['color-contrast'] },
+      resultTypes: ['violations', 'incomplete', 'passes'],
+    })) as {
+      violations: { id: string; nodes: { target: string[]; html: string; any: unknown[] }[] }[];
+      incomplete: { id: string; nodes: { target: string[]; html: string; any: unknown[] }[] }[];
+      passes: { id: string; nodes: { target: string[] }[] }[];
+    };
+
+    function canales(color: string): [number, number, number, number] {
+      const crudo = color.match(/[\d.]+/g) ?? ['0', '0', '0'];
+      const [r, g, b, a] = crudo.map(Number);
+      return [r, g, b, a === undefined ? 1 : a];
+    }
+
+    function luminancia([r, g, b]: [number, number, number, number]): number {
+      const lineal = [r, g, b].map((canal) => {
+        const v = canal / 255;
+        return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+      });
+      return 0.2126 * lineal[0] + 0.7152 * lineal[1] + 0.0722 * lineal[2];
+    }
+
+    /** El primer ancestro con un `background-color` totalmente opaco. La pagina siempre lo es. */
+    function fondoOpaco(desde: Element): string {
+      let nodo: Element | null = desde;
+      while (nodo !== null) {
+        const color = getComputedStyle(nodo).backgroundColor;
+        if (canales(color)[3] === 1) {
+          return color;
+        }
+        nodo = nodo.parentElement;
+      }
+      return getComputedStyle(document.documentElement).backgroundColor;
+    }
+
+    const medidos: MedicionPropia[] = [];
+
+    function medir(elemento: Element, comoSeLlama: string): MedicionPropia {
+      const estilo = getComputedStyle(elemento);
+      const px = Number.parseFloat(estilo.fontSize);
+      const negrita = Number.parseInt(estilo.fontWeight, 10) >= 700;
+      const fondo = fondoOpaco(elemento);
+      const texto = luminancia(canales(estilo.color));
+      const superficie = luminancia(canales(fondo));
+
+      return {
+        selector: comoSeLlama,
+        ratio: (Math.max(texto, superficie) + 0.05) / (Math.min(texto, superficie) + 0.05),
+        // El umbral de WCAG para texto grande: 24 px, o 18,66 px en negrita. Es el mismo que
+        // aplica axe, para que las dos mediciones exijan lo mismo.
+        minimo: px >= 24 || (negrita && px >= 18.66) ? 3 : 4.5,
+        color: estilo.color,
+        fondo,
       };
+    }
 
-      function canales(color: string): [number, number, number, number] {
-        const crudo = color.match(/[\d.]+/g) ?? ['0', '0', '0'];
-        const [r, g, b, a] = crudo.map(Number);
-        return [r, g, b, a === undefined ? 1 : a];
+    // Lo que axe declara fuera de su alcance -hoy, los controles deshabilitados-.
+    const vacios: string[] = [];
+    for (const aMedir of aMano) {
+      const elementos = [...document.querySelectorAll(aMedir)];
+      if (elementos.length === 0) {
+        vacios.push(aMedir);
+        continue;
       }
-
-      function luminancia([r, g, b]: [number, number, number, number]): number {
-        const lineal = [r, g, b].map((canal) => {
-          const v = canal / 255;
-          return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
-        });
-        return 0.2126 * lineal[0] + 0.7152 * lineal[1] + 0.0722 * lineal[2];
+      for (const elemento of elementos) {
+        medidos.push(medir(elemento, aMedir));
       }
+    }
 
-      /** El primer ancestro con un `background-color` totalmente opaco. La pagina siempre lo es. */
-      function fondoOpaco(desde: Element): string {
-        let nodo: Element | null = desde;
-        while (nodo !== null) {
-          const color = getComputedStyle(nodo).backgroundColor;
-          if (canales(color)[3] === 1) {
-            return color;
-          }
-          nodo = nodo.parentElement;
-        }
-        return getComputedStyle(document.documentElement).backgroundColor;
-      }
-
-      const medidos: MedicionPropia[] = [];
-
-      function medir(
-        elemento: Element,
-        comoSeLlama: string,
-        origen: MedicionPropia['origen'],
-      ): MedicionPropia {
-        const estilo = getComputedStyle(elemento);
-        const px = Number.parseFloat(estilo.fontSize);
-        const negrita = Number.parseInt(estilo.fontWeight, 10) >= 700;
-        const fondo = fondoOpaco(elemento);
-        const texto = luminancia(canales(estilo.color));
-        const superficie = luminancia(canales(fondo));
-
-        return {
-          origen,
-          selector: comoSeLlama,
-          ratio: (Math.max(texto, superficie) + 0.05) / (Math.min(texto, superficie) + 0.05),
-          // El umbral de WCAG para texto grande: 24 px, o 18,66 px en negrita. Es el mismo que
-          // aplica axe, para que las dos mediciones exijan lo mismo.
-          minimo: px >= 24 || (negrita && px >= 18.66) ? 3 : 4.5,
-          color: estilo.color,
-          fondo,
-        };
-      }
-
-      // Lo que axe declara fuera de su alcance -hoy, los controles deshabilitados-.
-      const vacios: string[] = [];
-      for (const aMedir of aMano) {
-        const elementos = [...document.querySelectorAll(aMedir)];
-        if (elementos.length === 0) {
-          vacios.push(aMedir);
-          continue;
-        }
-        for (const elemento of elementos) {
-          medidos.push(medir(elemento, aMedir, 'fuera-del-alcance-de-axe'));
-        }
-      }
-
-      if (selector !== null) {
-        const pendientes = resultado.incomplete.flatMap((regla) => regla.nodes);
-        const sobreviven: typeof pendientes = [];
-
-        for (const nodo of pendientes) {
-          const elemento = document.querySelector(nodo.target.join(' '));
-          if (elemento === null || elemento.closest(selector) === null) {
-            sobreviven.push(nodo);
-            continue;
-          }
-
-          medidos.push(medir(elemento, nodo.target.join(' '), 'degrade'));
-        }
-
-        resultado.incomplete =
-          sobreviven.length > 0 ? [{ ...resultado.incomplete[0], nodes: sobreviven }] : [];
-      }
-
-      return { axe: resultado as unknown as CorridaDeAxe, medidos, vacios };
-    },
-    [selectorConDegrade, selectoresAMano] as [string | null, readonly string[]],
-  );
+    return { axe: resultado as unknown as CorridaDeAxe, medidos, vacios };
+  }, selectoresAMano);
 }
 
 /** Una linea por nodo, con el ratio medido y el minimo exigido: el reporte tiene que bastar. */
