@@ -38,6 +38,10 @@ export interface AutorizacionResponse {
      */
     consultorioId?: number;
     /**
+     * Alertas CONSUMO_A_REVISAR pendientes de esta autorizacion (DP-13, AKINE C-4). Es el mismo numero que consumosARevisar de GET /api/v1/autorizaciones/{autorizacionId}/saldo, calculado con la misma consulta; en el listado sale de UNA consulta agrupada para todas las filas. El saldo disponible ya viaja en saldo
+     */
+    consumosARevisar?: number;
+    /**
      * COPIA del codigo del convenio al registrar
      */
     convenioCodigo?: string;
