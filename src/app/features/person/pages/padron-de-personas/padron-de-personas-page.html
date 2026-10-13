@@ -285,37 +285,38 @@
     No hay personas que coincidan con la busqueda. Si es alguien nuevo, dala de alta.
   </p>
 } @else {
-  <table class="tabla">
-    <caption>
-      {{
-        totalPersonas()
-      }}
-      persona(s) en el padron segun los filtros aplicados
-    </caption>
-    <thead>
-      <tr>
-        <th scope="col">Persona</th>
-        <th scope="col">Documento</th>
-        <th scope="col">Contacto</th>
-        <th scope="col">Perfil</th>
-        <th scope="col">Estado</th>
-        <th scope="col">Acciones</th>
-      </tr>
-    </thead>
-    <tbody>
-      @for (persona of personas(); track persona.id) {
+  <div class="tabla-scroll" tabindex="0" role="region" aria-labelledby="caption-padron">
+    <table class="tabla">
+      <caption id="caption-padron">
+        {{
+          totalPersonas()
+        }}
+        persona(s) en el padron segun los filtros aplicados
+      </caption>
+      <thead>
         <tr>
-          <td>{{ nombreCompleto(persona) }}</td>
-          <td>{{ documentoEnUnaLinea(persona) }}</td>
-          <td>
-            {{ persona.telefono || persona.email || 'Sin contacto cargado' }}
-          </td>
-          <td>
-            <span class="etiqueta">{{ etiquetaDePerfil(persona) }}</span>
-          </td>
-          <td>{{ persona.estado === 'ACTIVO' ? 'Activa' : 'Dada de baja' }}</td>
-          <td>
-            <!--
+          <th scope="col">Persona</th>
+          <th scope="col">Documento</th>
+          <th scope="col">Contacto</th>
+          <th scope="col">Perfil</th>
+          <th scope="col">Estado</th>
+          <th scope="col">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (persona of personas(); track persona.id) {
+          <tr>
+            <td>{{ nombreCompleto(persona) }}</td>
+            <td>{{ documentoEnUnaLinea(persona) }}</td>
+            <td>
+              {{ persona.telefono || persona.email || 'Sin contacto cargado' }}
+            </td>
+            <td>
+              <span class="etiqueta">{{ etiquetaDePerfil(persona) }}</span>
+            </td>
+            <td>{{ persona.estado === 'ACTIVO' ? 'Activa' : 'Dada de baja' }}</td>
+            <td>
+              <!--
               Entrada a la ficha 360 (AKINE-03.02). Va PRIMERA y sin permiso detras: la lectura de
               una ficha se autoriza por pertenencia, igual que la del padron, y es desde ahi que se
               llega a coberturas, documentos y ordenes. Sin este enlace las cuatro pantallas de F3
@@ -324,177 +325,184 @@
               Se ofrece tambien sobre una ficha dada de baja, a diferencia de editar y de activar
               el perfil: el 360 de una ficha cerrada es justamente donde se consulta su historico.
             -->
-            <a class="enlace" [routerLink]="['/pacientes', persona.id]">Ver ficha</a>
+              <a class="enlace" [routerLink]="['/pacientes', persona.id]">Ver ficha</a>
 
-            @if (!personaInactiva(persona)) {
-              <button
-                type="button"
-                class="boton boton--secundario"
-                (click)="abrirEdicion(persona)"
-                *akinePermiso="permisoManage"
-              >
-                Editar
-              </button>
-              @if (!persona.esPaciente) {
+              @if (!personaInactiva(persona)) {
                 <button
                   type="button"
                   class="boton boton--secundario"
-                  (click)="abrirActivacion(persona)"
+                  (click)="abrirEdicion(persona)"
                   *akinePermiso="permisoManage"
                 >
-                  Activar perfil de paciente
+                  Editar
                 </button>
+                @if (!persona.esPaciente) {
+                  <button
+                    type="button"
+                    class="boton boton--secundario"
+                    (click)="abrirActivacion(persona)"
+                    *akinePermiso="permisoManage"
+                  >
+                    Activar perfil de paciente
+                  </button>
+                }
               }
-            }
 
-            <!--
+              <!--
               Entrada a la cuenta corriente (AKINE-07.01). Es un enlace y no un boton porque
               navega, y va detras de `cobro:register` porque es lo que el backend exige para
               leerla: ofrecerlo a quien no lo tiene termina en un 403 que no explica nada.
               La ruta vive en `billing`, pero esto es solo una URL —no hay import entre features—.
             -->
-            <a
-              class="enlace"
-              [routerLink]="['/pacientes', persona.id, 'cuenta-corriente']"
-              *akinePermiso="permisoCobro"
-            >
-              Cuenta corriente
-            </a>
-          </td>
-        </tr>
+              <a
+                class="enlace"
+                [routerLink]="['/pacientes', persona.id, 'cuenta-corriente']"
+                *akinePermiso="permisoCobro"
+              >
+                Cuenta corriente
+              </a>
+            </td>
+          </tr>
 
-        @if (esPanel(persona, 'editar')) {
-          <tr>
-            <td colspan="6">
-              <section aria-labelledby="titulo-edicion-{{ persona.id }}">
-                <h2 id="titulo-edicion-{{ persona.id }}">Editar a {{ nombreCompleto(persona) }}</h2>
-                <p class="ayuda">{{ perfilEnPalabras(persona) }}</p>
+          @if (esPanel(persona, 'editar')) {
+            <tr>
+              <td colspan="6">
+                <section aria-labelledby="titulo-edicion-{{ persona.id }}">
+                  <h2 id="titulo-edicion-{{ persona.id }}">
+                    Editar a {{ nombreCompleto(persona) }}
+                  </h2>
+                  <p class="ayuda">{{ perfilEnPalabras(persona) }}</p>
 
-                <form [formGroup]="formularioEdicion" (ngSubmit)="enviarEdicion()" novalidate>
-                  <div class="campo">
-                    <label for="edicion-apellido-{{ persona.id }}">Apellido</label>
-                    <input
-                      id="edicion-apellido-{{ persona.id }}"
-                      type="text"
-                      formControlName="apellido"
-                    />
-                  </div>
+                  <form [formGroup]="formularioEdicion" (ngSubmit)="enviarEdicion()" novalidate>
+                    <div class="campo">
+                      <label for="edicion-apellido-{{ persona.id }}">Apellido</label>
+                      <input
+                        id="edicion-apellido-{{ persona.id }}"
+                        type="text"
+                        formControlName="apellido"
+                      />
+                    </div>
 
-                  <div class="campo">
-                    <label for="edicion-nombre-{{ persona.id }}">Nombre</label>
-                    <input
-                      id="edicion-nombre-{{ persona.id }}"
-                      type="text"
-                      formControlName="nombre"
-                    />
-                  </div>
+                    <div class="campo">
+                      <label for="edicion-nombre-{{ persona.id }}">Nombre</label>
+                      <input
+                        id="edicion-nombre-{{ persona.id }}"
+                        type="text"
+                        formControlName="nombre"
+                      />
+                    </div>
 
-                  <div class="campo">
-                    <label for="edicion-tipo-{{ persona.id }}">Tipo de documento</label>
-                    <select id="edicion-tipo-{{ persona.id }}" formControlName="tipoDocumento">
-                      <option value="">Sin documento</option>
-                      @for (tipo of tiposDeDocumento; track tipo) {
-                        <option [value]="tipo">{{ etiquetaDeTipoDocumento(tipo) }}</option>
-                      }
-                    </select>
-                  </div>
+                    <div class="campo">
+                      <label for="edicion-tipo-{{ persona.id }}">Tipo de documento</label>
+                      <select id="edicion-tipo-{{ persona.id }}" formControlName="tipoDocumento">
+                        <option value="">Sin documento</option>
+                        @for (tipo of tiposDeDocumento; track tipo) {
+                          <option [value]="tipo">{{ etiquetaDeTipoDocumento(tipo) }}</option>
+                        }
+                      </select>
+                    </div>
 
-                  <div class="campo">
-                    <label for="edicion-numero-{{ persona.id }}">Numero de documento</label>
-                    <input
-                      id="edicion-numero-{{ persona.id }}"
-                      type="text"
-                      formControlName="numeroDocumento"
-                    />
-                  </div>
+                    <div class="campo">
+                      <label for="edicion-numero-{{ persona.id }}">Numero de documento</label>
+                      <input
+                        id="edicion-numero-{{ persona.id }}"
+                        type="text"
+                        formControlName="numeroDocumento"
+                      />
+                    </div>
 
-                  <div class="campo">
-                    <label for="edicion-nacimiento-{{ persona.id }}">Fecha de nacimiento</label>
-                    <input
-                      id="edicion-nacimiento-{{ persona.id }}"
-                      type="date"
-                      formControlName="fechaNacimiento"
-                    />
-                  </div>
+                    <div class="campo">
+                      <label for="edicion-nacimiento-{{ persona.id }}">Fecha de nacimiento</label>
+                      <input
+                        id="edicion-nacimiento-{{ persona.id }}"
+                        type="date"
+                        formControlName="fechaNacimiento"
+                      />
+                    </div>
 
-                  <div class="campo">
-                    <label for="edicion-email-{{ persona.id }}">Correo de contacto</label>
-                    <input
-                      id="edicion-email-{{ persona.id }}"
-                      type="email"
-                      formControlName="email"
-                    />
-                  </div>
+                    <div class="campo">
+                      <label for="edicion-email-{{ persona.id }}">Correo de contacto</label>
+                      <input
+                        id="edicion-email-{{ persona.id }}"
+                        type="email"
+                        formControlName="email"
+                      />
+                    </div>
 
-                  <div class="campo">
-                    <label for="edicion-telefono-{{ persona.id }}">Telefono</label>
-                    <input
-                      id="edicion-telefono-{{ persona.id }}"
-                      type="tel"
-                      formControlName="telefono"
-                    />
-                  </div>
+                    <div class="campo">
+                      <label for="edicion-telefono-{{ persona.id }}">Telefono</label>
+                      <input
+                        id="edicion-telefono-{{ persona.id }}"
+                        type="tel"
+                        formControlName="telefono"
+                      />
+                    </div>
 
-                  <div class="campo">
-                    <label for="edicion-notas-{{ persona.id }}"
-                      >Observaciones administrativas</label
-                    >
-                    <textarea
-                      id="edicion-notas-{{ persona.id }}"
-                      formControlName="notas"
-                      rows="3"
-                    ></textarea>
-                  </div>
+                    <div class="campo">
+                      <label for="edicion-notas-{{ persona.id }}"
+                        >Observaciones administrativas</label
+                      >
+                      <textarea
+                        id="edicion-notas-{{ persona.id }}"
+                        formControlName="notas"
+                        rows="3"
+                      ></textarea>
+                    </div>
 
-                  <p class="acciones">
-                    <button type="submit" class="boton" [disabled]="enviando()">
-                      {{ enviando() ? 'Guardando...' : 'Guardar cambios' }}
-                    </button>
-                    <button type="button" class="boton boton--secundario" (click)="cerrarPaneles()">
-                      Cancelar
-                    </button>
-                  </p>
-                </form>
+                    <p class="acciones">
+                      <button type="submit" class="boton" [disabled]="enviando()">
+                        {{ enviando() ? 'Guardando...' : 'Guardar cambios' }}
+                      </button>
+                      <button
+                        type="button"
+                        class="boton boton--secundario"
+                        (click)="cerrarPaneles()"
+                      >
+                        Cancelar
+                      </button>
+                    </p>
+                  </form>
+
+                  @if (errorAccion()) {
+                    <p class="estado estado--error" role="alert">{{ errorAccion() }}</p>
+                    @if (hayQueRecargar()) {
+                      <p class="acciones">
+                        <button type="button" class="boton" (click)="cargar()">
+                          Recargar el padron
+                        </button>
+                      </p>
+                    }
+                  }
+                </section>
+              </td>
+            </tr>
+          }
+
+          @if (esPanel(persona, 'activar-perfil')) {
+            <tr>
+              <td colspan="6">
+                <akine-confirmacion-con-motivo
+                  idCampo="activar-perfil-{{ persona.id }}"
+                  titulo="Activar el perfil de paciente de {{ nombreCompleto(persona) }}"
+                  etiqueta="Motivo (opcional)"
+                  [motivoObligatorio]="false"
+                  ayuda="Esto la habilita como paciente reutilizando su ficha: no se vuelve a cargar ningun dato. NO le crea historia clinica. Si ya tenia perfil, la accion no cambia nada."
+                  textoConfirmar="Activar perfil"
+                  [enviando]="enviando()"
+                  (confirmado)="confirmarActivacion($event)"
+                  (cancelado)="cerrarPaneles()"
+                />
 
                 @if (errorAccion()) {
                   <p class="estado estado--error" role="alert">{{ errorAccion() }}</p>
-                  @if (hayQueRecargar()) {
-                    <p class="acciones">
-                      <button type="button" class="boton" (click)="cargar()">
-                        Recargar el padron
-                      </button>
-                    </p>
-                  }
                 }
-              </section>
-            </td>
-          </tr>
+              </td>
+            </tr>
+          }
         }
-
-        @if (esPanel(persona, 'activar-perfil')) {
-          <tr>
-            <td colspan="6">
-              <akine-confirmacion-con-motivo
-                idCampo="activar-perfil-{{ persona.id }}"
-                titulo="Activar el perfil de paciente de {{ nombreCompleto(persona) }}"
-                etiqueta="Motivo (opcional)"
-                [motivoObligatorio]="false"
-                ayuda="Esto la habilita como paciente reutilizando su ficha: no se vuelve a cargar ningun dato. NO le crea historia clinica. Si ya tenia perfil, la accion no cambia nada."
-                textoConfirmar="Activar perfil"
-                [enviando]="enviando()"
-                (confirmado)="confirmarActivacion($event)"
-                (cancelado)="cerrarPaneles()"
-              />
-
-              @if (errorAccion()) {
-                <p class="estado estado--error" role="alert">{{ errorAccion() }}</p>
-              }
-            </td>
-          </tr>
-        }
-      }
-    </tbody>
-  </table>
+      </tbody>
+    </table>
+  </div>
 
   <akine-paginacion
     [paginaActual]="pagina()"

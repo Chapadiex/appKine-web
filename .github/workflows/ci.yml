@@ -250,6 +250,12 @@ jobs:
       - name: Auditar contraste, bordes, foco y teclado en modo claro y en modo oscuro
         run: npm run a11y:contraste
 
+      # 375 px con toque: sin scroll horizontal de pagina y objetivos de 24 px (WCAG 1.4.10 y
+      # 2.5.8). Tambien con la API simulada, asi que vive en este mismo job.
+      - name: Auditar el ancho de telefono
+        if: success() || failure()
+        run: npm run a11y:movil
+
       - name: Publicar reporte
         if: failure()
         uses: actions/upload-artifact@v7
