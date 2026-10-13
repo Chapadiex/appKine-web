@@ -823,7 +823,12 @@
                   <span class="etiqueta">{{ aviso }}</span>
                 }
               </td>
-              <td>{{ saldoEnPalabras(autorizacion) }}</td>
+              <td>
+                {{ saldoEnPalabras(autorizacion) }}
+                @if (consumosARevisar(autorizacion); as marca) {
+                  <span class="etiqueta">{{ marca }}</span>
+                }
+              </td>
               <td>{{ habilitaEnPalabras(autorizacion) }}</td>
               <td>{{ autorizacion.adjuntoId ? 'Vinculado' : 'Sin vincular' }}</td>
               <td>

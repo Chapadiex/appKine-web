@@ -326,6 +326,24 @@ describe('errorInterceptor', () => {
     expect(error.message).toBe('el almacenamiento perdio el binario');
   });
 
+  it('lee el ProblemDetail que viene como texto: la descarga de un CSV no pierde su tipo', async () => {
+    const capturado = esperarError(
+      http.get('/api/v1/consultorios/1/presentaciones/5/export', { responseType: 'text' }),
+    );
+
+    httpMock.expectOne('/api/v1/consultorios/1/presentaciones/5/export').flush(
+      JSON.stringify({
+        type: 'https://akine.app/problems/not-found',
+        detail: 'la presentacion no existe',
+      }),
+      { status: 404, statusText: 'Not Found' },
+    );
+
+    const error = await capturado;
+    expect(error.problemType).toBe('not-found');
+    expect(error.message).toBe('la presentacion no existe');
+  });
+
   it('si el Blob del error no se puede leer, igual sale un AkineHttpError', async () => {
     // Leer un Blob puede fallar -archivo detras del Blob ya no disponible-. Si esa promesa
     // rechazada subiera, la pantalla recibiria un error que no es un AkineHttpError y su

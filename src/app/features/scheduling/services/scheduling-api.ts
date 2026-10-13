@@ -1,7 +1,9 @@
 import { Injectable, inject } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 
 import { Agenda } from '../../../api/generated/model/agenda';
+import { CoberturaResponse } from '../../../api/generated/model/cobertura-response';
+import { CoberturasDelPacienteService } from '../../../api/generated/api/coberturas-del-paciente.service';
 import { AgendaService } from '../../../api/generated/api/agenda.service';
 import { EventoDeTurno } from '../../../api/generated/model/evento-de-turno';
 import { HabilitacionesResponse } from '../../../api/generated/model/habilitaciones-response';
@@ -65,6 +67,7 @@ export class SchedulingApi {
   private readonly recepcion = inject(RecepcionService);
   private readonly ofertas = inject(ServiciosYOfertasService);
   private readonly personas = inject(PersonasService);
+  private readonly coberturas = inject(CoberturasDelPacienteService);
 
   /**
    * Slots de una oferta entre dos fechas locales de la sede.
@@ -106,6 +109,7 @@ export class SchedulingApi {
       readonly inicio: string;
       readonly personaId: number;
       readonly profesionalId?: number;
+      readonly coberturaId?: number;
       readonly idempotencyKey: string;
     },
   ): Observable<Turno> {
@@ -116,9 +120,24 @@ export class SchedulingApi {
         inicio: cuerpo.inicio,
         personaId: cuerpo.personaId,
         profesionalId: cuerpo.profesionalId,
+        coberturaId: cuerpo.coberturaId,
         idempotencyKey: cuerpo.idempotencyKey,
       },
     });
+  }
+
+  /**
+   * Las coberturas que se pueden elegir al reservar: financiadas, activas y vigentes el dia del
+   * turno.
+   *
+   * <p>Es el mismo filtro con el que el backend valida `coberturaId` —fuera de el responde 404—,
+   * aplicado sobre `vigente`, que el servidor calcula contra `fecha`. Particular no se ofrece: es
+   * la ausencia de plan financiado y no una cobertura que se elija.
+   */
+  coberturasElegibles(personaId: number, fecha: string): Observable<CoberturaResponse[]> {
+    return this.coberturas
+      .listCoberturasDePaciente({ personaId, estado: 'ACTIVA', fecha })
+      .pipe(map((lista) => lista.filter((c) => c.vigente === true && c.tipo !== 'PARTICULAR')));
   }
 
   /**

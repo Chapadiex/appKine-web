@@ -226,6 +226,21 @@ export function saldoEnPalabras(autorizacion: AutorizacionResponse): string {
 }
 
 /**
+ * La marca de la fila cuando la autorizacion tiene consumos a revisar (DP-13, AKINE C-4), o
+ * `null` si no tiene ninguno.
+ *
+ * <p>El numero viaja en el listado mismo (`consumosARevisar`): marcar la fila no cuesta una
+ * lectura del saldo por autorizacion. Cero o ausente es "nada que revisar" y no se marca.
+ */
+export function consumosARevisarEnPalabras(autorizacion: AutorizacionResponse): string | null {
+  const pendientes = autorizacion.consumosARevisar ?? 0;
+  if (pendientes <= 0) {
+    return null;
+  }
+  return pendientes === 1 ? '1 consumo a revisar' : `${pendientes} consumos a revisar`;
+}
+
+/**
  * El veredicto completo: si esta autorizacion habilita a atender hoy.
  *
  * <p>Es `habilita` del backend —activa, APROBADA, vigente y con saldo, las cuatro— y consultarlo

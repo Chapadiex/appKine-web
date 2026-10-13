@@ -18,6 +18,7 @@ import {
   ordenInactiva,
   requisitoEnPalabras,
   saldoEnPalabras,
+  consumosARevisarEnPalabras,
   situacionDeOrden,
   vigenciaDeDocumento,
 } from './etiquetas-de-documento';
@@ -180,6 +181,13 @@ describe('etiquetas de ordenes y autorizaciones', () => {
     // Sin `saldo` explicito se calcula, y sin cantidad declarada no se inventa un numero.
     expect(saldoEnPalabras({ cantidadAutorizada: 10, cantidadConsumida: 4 })).toBe('6 de 10');
     expect(saldoEnPalabras({})).toBe('Sin cantidad declarada');
+  });
+
+  it('los consumos a revisar marcan la fila solo cuando hay alguno', () => {
+    expect(consumosARevisarEnPalabras({})).toBeNull();
+    expect(consumosARevisarEnPalabras({ consumosARevisar: 0 })).toBeNull();
+    expect(consumosARevisarEnPalabras({ consumosARevisar: 1 })).toBe('1 consumo a revisar');
+    expect(consumosARevisarEnPalabras({ consumosARevisar: 3 })).toBe('3 consumos a revisar');
   });
 
   it('el veredicto dice POR QUE no habilita, y no un "no" a secas', () => {

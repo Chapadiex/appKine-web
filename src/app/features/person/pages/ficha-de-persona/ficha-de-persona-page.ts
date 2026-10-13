@@ -2,6 +2,7 @@ import { Component, computed, effect, inject, input, signal, untracked } from '@
 import { RouterLink } from '@angular/router';
 
 import { ConfirmacionConMotivo } from '../../../../shared/components/confirmacion-con-motivo/confirmacion-con-motivo';
+import { DatosAdministrativosDeHistoria } from '../../components/datos-administrativos-de-historia/datos-administrativos-de-historia';
 import { HitoResponse } from '../../../../api/generated/model/hito-response';
 import { PERMISO_COBRO_REGISTER, PERMISO_PACIENTE_MANAGE } from '../../../../core/models/permisos';
 import { PermisoDirective } from '../../../../shared/directives/permiso.directive';
@@ -95,7 +96,7 @@ interface ConteoPorCategoria {
  */
 @Component({
   selector: 'app-ficha-de-persona-page',
-  imports: [RouterLink, ConfirmacionConMotivo, PermisoDirective],
+  imports: [RouterLink, ConfirmacionConMotivo, PermisoDirective, DatosAdministrativosDeHistoria],
   templateUrl: './ficha-de-persona-page.html',
   styleUrl: '../../person.css',
 })

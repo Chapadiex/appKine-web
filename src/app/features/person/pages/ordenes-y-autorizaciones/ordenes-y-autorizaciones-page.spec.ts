@@ -180,6 +180,19 @@ describe('OrdenesYAutorizacionesPage', () => {
     expect(texto(fixture)).toContain('20 de 20');
   });
 
+  it('marca la fila que tiene consumos a revisar, y solo esa', async () => {
+    const fixture = await montar({
+      autorizaciones: [PENDIENTE, { ...PENDIENTE, id: 99, numero: 'AUT-99', consumosARevisar: 2 }],
+    });
+
+    const filas = Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll('#caption-autorizaciones ~ tbody tr'),
+    ).map((fila) => fila.textContent ?? '');
+    expect(filas).toHaveLength(2);
+    expect(filas[0]).not.toContain('a revisar');
+    expect(filas[1]).toContain('2 consumos a revisar');
+  });
+
   // -------------------------------------------------------------------------------------
   // 2. Resolver: accion, no estado destino
   // -------------------------------------------------------------------------------------
