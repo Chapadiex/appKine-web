@@ -19,6 +19,7 @@ import { ReintegrarSaldoAFavorMedioEnum } from '../../../../api/generated/model/
 import { centavosDeTexto, deCentavos } from '../../models/dinero';
 import {
   MEDIOS_DE_REINTEGRO,
+  estaAnulado,
   motivoParaNoAnular,
   motivoParaNoReintegrar,
   nuevaClaveDeIntento,
@@ -107,6 +108,7 @@ export class CobrosPage {
   /** Anular y reintegrar: `*akinePermiso` acepta CUALQUIERA, asi que se anidan las dos. */
   protected readonly PERMISO_COBRO_REGISTER = PERMISO_COBRO_REGISTER;
   protected readonly PERMISO_CAJA_OPERATE = PERMISO_CAJA_OPERATE;
+  protected readonly estaAnulado = estaAnulado;
   protected readonly motivoParaNoAnular = motivoParaNoAnular;
   protected readonly motivoParaNoReintegrar = motivoParaNoReintegrar;
   protected readonly mediosDeReintegro = MEDIOS_DE_REINTEGRO;

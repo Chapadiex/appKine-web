@@ -18,10 +18,8 @@ import { Observable } from 'rxjs';
 import { Egreso } from '../../../../api/generated/model/egreso';
 import { JornadaCaja } from '../../../../api/generated/model/jornada-caja';
 import { PagoDeEgreso } from '../../../../api/generated/model/pago-de-egreso';
-import {
-  RegistrarEgresoCategoriaEnum,
-  RegistrarEgresoTipoBeneficiarioEnum,
-} from '../../../../api/generated/model/registrar-egreso';
+import { EditarEgresoCategoriaEnum } from '../../../../api/generated/model/editar-egreso';
+import { RegistrarEgresoCategoriaEnum } from '../../../../api/generated/model/registrar-egreso';
 import { RegistrarPagoDeEgresoMedioEnum } from '../../../../api/generated/model/registrar-pago-de-egreso';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { ConfirmacionConMotivo } from '../../../../shared/components/confirmacion-con-motivo/confirmacion-con-motivo';
@@ -126,7 +124,6 @@ export class EgresoDetallePage {
     categoria: [RegistrarEgresoCategoriaEnum.OTRO as string],
     concepto: ['', Validators.required],
     importe: ['', Validators.required],
-    moneda: ['ARS', [Validators.required, Validators.pattern(/^[A-Z]{3}$/)]],
     periodoDesde: [''],
     periodoHasta: [''],
     comprobanteTipo: [''],
@@ -229,6 +226,7 @@ export class EgresoDetallePage {
     if (
       ids === null ||
       egreso === null ||
+      egreso.version === undefined ||
       this.edicion.invalid ||
       centavos === null ||
       centavos <= 0 ||
@@ -237,19 +235,18 @@ export class EgresoDetallePage {
     ) {
       return;
     }
+    const version = egreso.version;
     const v = this.edicion.getRawValue();
     this.operar(
       'editar',
+      // Contrato 0.92.0: la correccion lleva la version leida y ya no manda beneficiario, moneda
+      // ni clave. Si otro lo cambio antes, el backend responde 409 `concurrent-modification` y no
+      // pisa nada.
       this.api.editar(ids.consultorioId, ids.egresoId, {
-        // El beneficiario no se edita: viaja tal cual se registro.
-        tipoBeneficiario: egreso.tipoBeneficiario as string as RegistrarEgresoTipoBeneficiarioEnum,
-        beneficiarioMembershipId: egreso.beneficiarioMembershipId,
-        beneficiarioNombre: egreso.beneficiarioNombre,
-        beneficiarioDocumento: egreso.beneficiarioDocumento,
-        categoria: v.categoria as RegistrarEgresoCategoriaEnum,
+        version,
+        categoria: v.categoria as EditarEgresoCategoriaEnum,
         concepto: v.concepto.trim(),
         importeTotal: deCentavos(centavos),
-        moneda: v.moneda,
         periodoDesde: v.periodoDesde || undefined,
         periodoHasta: v.periodoHasta || undefined,
         comprobanteTipo: v.comprobanteTipo.trim() || undefined,
@@ -365,7 +362,7 @@ export class EgresoDetallePage {
     return importeEnPalabras(jornada.saldoTeorico, jornada.moneda);
   }
 
-  protected campoDeEdicionInvalido(nombre: 'concepto' | 'importe' | 'moneda' | 'periodo'): boolean {
+  protected campoDeEdicionInvalido(nombre: 'concepto' | 'importe' | 'periodo'): boolean {
     if (!this.edicionIntentada()) {
       return false;
     }
@@ -403,7 +400,6 @@ export class EgresoDetallePage {
         categoria: egreso.categoria ?? RegistrarEgresoCategoriaEnum.OTRO,
         concepto: egreso.concepto ?? '',
         importe: textoDeCentavos(aCentavos(egreso.importeTotal) ?? 0),
-        moneda: egreso.moneda ?? 'ARS',
         periodoDesde: egreso.periodoDesde ?? '',
         periodoHasta: egreso.periodoHasta ?? '',
         comprobanteTipo: egreso.comprobanteTipo ?? '',
@@ -443,10 +439,15 @@ export class EgresoDetallePage {
     this.errorOperacion.set(null);
     this.aviso.set(null);
     pedido.subscribe({
-      next: () => {
+      next: (respuesta) => {
         this.operando.set(null);
         this.cerrarPaneles();
         this.aviso.set(exito);
+        if (operacion === 'editar') {
+          // La correccion devuelve el egreso con su version nueva: la proxima sale con esa.
+          this.aplicar(respuesta as Egreso);
+          return;
+        }
         this.recargar();
       },
       error: (error: unknown) => {

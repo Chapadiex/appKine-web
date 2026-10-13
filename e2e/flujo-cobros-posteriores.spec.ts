@@ -126,10 +126,13 @@ test.describe('Imputacion posterior, anulacion y reintegro de cobros contra el b
         .getByRole('status')
         .filter({ hasText: `Se anulo el comprobante N.º ${cobroA.comprobanteNumero}` }),
     ).toBeVisible();
-    // El cobro anulado sale del listado: `GET /cobros?personaId` filtra `deleted_at IS NULL`, asi que
-    // la rama "ya esta anulado" de la pantalla no se alcanza desde aca (reportado con este E2E). El
-    // comprobante sigue existiendo: se lee por id, ANULADO.
-    await expect(filaDeCobro(page, cobroA)).toHaveCount(0);
+    // Desde el contrato 0.90.0 el listado trae tambien los anulados: la fila queda, marcada como
+    // anulada, y la pantalla dice por que ya no se puede anular de nuevo.
+    const filaAnulada = filaDeCobro(page, cobroA);
+    await expect(filaAnulada).toBeVisible();
+    await expect(filaAnulada).toContainText('Anulado');
+    await expect(filaAnulada.getByRole('button', { name: 'Anular' })).toBeDisabled();
+    await expect(filaAnulada).toContainText('No se puede anular: ya esta anulado.');
     const anulado = await api.exigir<{ estado: string }>(
       'GET',
       `/api/v1/consultorios/${centro.consultorioId}/cobros/${cobroA.id}`,

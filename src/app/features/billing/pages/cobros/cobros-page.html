@@ -59,7 +59,16 @@
       <tbody>
         @for (cobro of cobros(); track cobro.id) {
           <tr>
-            <td>N.º {{ cobro.comprobanteNumero }}</td>
+            <td>
+              N.º {{ cobro.comprobanteNumero }}
+              <!--
+                Desde el contrato 0.90.0 el listado trae tambien los anulados: siguen siendo
+                comprobantes emitidos, y la fila lo dice en vez de desaparecer.
+              -->
+              @if (estaAnulado(cobro)) {
+                <span class="marca-estado marca-estado--revocada">Anulado</span>
+              }
+            </td>
             <td>{{ instanteEnPalabras(cobro.cobradoEn) }}</td>
             <td class="importe">{{ importe(cobro, cobro.total) }}</td>
             <td>{{ cobro.medios?.length }}</td>

@@ -160,18 +160,24 @@ describe('CobrosPage', () => {
 
     const pedido = httpMock.expectOne((p) => p.method === 'POST' && p.url === ANULAR);
     expect(pedido.request.body).toEqual({ motivo: 'Se cobro al paciente equivocado.' });
-    pedido.flush({
+    const anulado = {
       ...COBRO,
       estado: 'ANULADO',
       motivoAnulacion: 'Se cobro al paciente equivocado.',
-    });
+    };
+    pedido.flush(anulado);
     await estabilizar(fixture);
 
-    // Relee: un cobro anulado deja de aparecer en el listado por persona.
-    responder(httpMock.expectOne(esListado()), []);
+    // Relee: desde el contrato 0.90.0 el listado por persona trae tambien los anulados, y la fila
+    // queda marcada como tal en vez de desaparecer.
+    responder(httpMock.expectOne(esListado()), [anulado]);
     await estabilizar(fixture);
     expect(texto(fixture)).toContain('Se anulo el comprobante N.º 142');
     expect(texto(fixture)).toContain('no se borra nada');
+    expect(texto(fixture)).toContain('Anulado');
+    expect(texto(fixture)).not.toContain('no tiene ningun cobro');
+    expect(boton(fixture, 'Anular')?.disabled).toBe(true);
+    expect(texto(fixture)).toContain('No se puede anular: ya esta anulado.');
   });
 
   it('un cobro con reintegros no se puede anular, y lo dice', async () => {

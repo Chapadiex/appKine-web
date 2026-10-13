@@ -247,6 +247,7 @@ model/dia-de-agenda.ts
 model/dia-efectivo-response.ts
 model/disponibilidad-efectiva-response.ts
 model/editar-caso-clinico-request.ts
+model/editar-egreso.ts
 model/effective-permissions-response.ts
 model/egreso.ts
 model/elegibilidad-response.ts

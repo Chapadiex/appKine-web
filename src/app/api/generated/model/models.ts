@@ -128,6 +128,7 @@ export * from './dia-de-agenda';
 export * from './dia-efectivo-response';
 export * from './disponibilidad-efectiva-response';
 export * from './editar-caso-clinico-request';
+export * from './editar-egreso';
 export * from './effective-permissions-response';
 export * from './egreso';
 export * from './elegibilidad-response';

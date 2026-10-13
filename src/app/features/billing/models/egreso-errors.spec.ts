@@ -30,6 +30,7 @@ describe('traducirErrorEgreso', () => {
     ['caja-saldo-insuficiente', 409, 'caja', false],
     ['caja-moneda-distinta', 409, 'caja', false],
     ['movimiento-no-reversible', 409, 'pago-ya-anulado', true],
+    ['concurrent-modification', 409, 'version-vieja', true],
     ['idempotency-key-conflict', 409, 'clave-reusada', false],
   ])('%s se traduce a un mensaje propio', (tipo, status, causa, recargar) => {
     const traducido = traducirErrorEgreso(problema(tipo, status));

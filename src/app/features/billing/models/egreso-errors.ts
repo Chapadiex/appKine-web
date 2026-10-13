@@ -31,6 +31,7 @@ export type CausaEgreso =
   | 'clave-reusada'
   | 'datos-invalidos'
   | 'conflicto'
+  | 'version-vieja'
   | 'red'
   | 'otro';
 
@@ -173,6 +174,14 @@ export function traducirErrorEgreso(error: unknown): ErrorEgreso {
       return {
         mensaje: 'El movimiento de caja de ese pago ya fue revertido. Recarga el egreso.',
         causa: 'pago-ya-anulado',
+        recargar: true,
+      };
+    case 'concurrent-modification':
+      return {
+        mensaje:
+          'Alguien cambio este egreso despues de que lo abriste, asi que no guardamos la ' +
+          'correccion sobre datos viejos. No se piso nada: recarga el egreso y volve a corregirlo.',
+        causa: 'version-vieja',
         recargar: true,
       };
     case 'idempotency-key-conflict':

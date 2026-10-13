@@ -138,7 +138,7 @@ export class CobrosService extends BaseService implements CobrosServiceInterface
 
     /**
      * Cobros de un paciente
-     * Los cobros de un paciente en toda la organizacion, del mas reciente al mas viejo. Junto con las obligaciones forma su cuenta corriente.
+     * Los cobros de un paciente en toda la organizacion, del mas reciente al mas viejo, anulados incluidos: un cobro anulado se lista con estado ANULADO, porque su comprobante queda usado. Junto con las obligaciones forma su cuenta corriente.
      * @endpoint get /api/v1/consultorios/{consultorioId}/cobros
      * @param requestParameters
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.

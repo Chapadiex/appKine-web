@@ -199,7 +199,7 @@ export interface PresentacionesServiceInterface {
 
     /**
      * Prestaciones que se le pueden reclamar a un financiador
-     * Lista las deudas de financiador pendientes de un periodo (RF-M21-001).  Ya vienen filtradas: deja afuera las anuladas, las sin saldo y **las que ya estan vivas en otro lote**, de modo que armar el reclamo no pueda duplicar una prestacion (RN-M21-003).  Desde AKINE F-4 el cierre de una sesion con cobertura devenga, ademas de la del paciente, la obligacion del financiador con el convenio congelado, y es esa la que aparece aca. La lista vacia significa que en el periodo no hubo prestaciones con cobertura de ese financiador pendientes de reclamar.
+     * Lista las deudas de financiador pendientes de un periodo (RF-M21-001).  Ya vienen filtradas: deja afuera las anuladas, las sin saldo y **las que ya estan vivas en otro lote**, de modo que armar el reclamo no pueda duplicar una prestacion (RN-M21-003).  &#x60;desde&#x60; y &#x60;hasta&#x60; son **dias de la sede**, inclusivos: el devengamiento se compara en la zona horaria de la sede, la misma con la que se congela la fecha de prestacion del item.  Desde AKINE F-4 el cierre de una sesion con cobertura devenga, ademas de la del paciente, la obligacion del financiador con el convenio congelado, y es esa la que aparece aca. La lista vacia significa que en el periodo no hubo prestaciones con cobertura de ese financiador pendientes de reclamar.
      * @endpoint get /api/v1/consultorios/{consultorioId}/prestaciones-elegibles
 * @param requestParameters
      */
