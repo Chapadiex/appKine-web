@@ -1,4 +1,5 @@
 import { Injectable, inject } from '@angular/core';
+import { HttpResponse } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
 import { CuentaCorrienteDeFinanciador } from '../../../api/generated/model/cuenta-corriente-de-financiador';
@@ -53,6 +54,20 @@ export class PresentacionesApi {
 
   detalle(consultorioId: number, presentacionId: number): Observable<Presentacion> {
     return this.api.detalle({ consultorioId, presentacionId });
+  }
+
+  /**
+   * El lote como CSV, con la respuesta entera: el nombre del archivo viaja en
+   * `Content-Disposition`.
+   *
+   * <p><b>El `Accept` va fijo en `text/csv`.</b> Sin el, el cliente generado negocia
+   * `application/problem+json`, trata el archivo como JSON a parsear y la descarga falla con un
+   * error de parseo que no dice nada.
+   */
+  exportar(consultorioId: number, presentacionId: number): Observable<HttpResponse<string>> {
+    return this.api.exportarPresentacion({ consultorioId, presentacionId }, 'response', false, {
+      httpHeaderAccept: 'text/csv',
+    }) as Observable<HttpResponse<string>>;
   }
 
   elegibles(

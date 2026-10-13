@@ -56,6 +56,17 @@
     <dd class="importe">{{ importe(p.saldo) }}</dd>
   </dl>
 
+  <div class="acciones">
+    <button
+      type="button"
+      class="boton boton--secundario"
+      [disabled]="exportando()"
+      (click)="exportarCsv()"
+    >
+      {{ exportando() ? 'Exportando...' : 'Exportar CSV' }}
+    </button>
+  </div>
+
   <div aria-live="polite">
     @if (aviso(); as texto) {
       <p class="estado estado--ok" role="status">{{ texto }}</p>

@@ -249,6 +249,14 @@ export const errorInterceptor: HttpInterceptorFn = (request, next) => {
         );
       }
 
+      // Lo mismo con `responseType: 'text'`, que es como se baja un CSV: el cuerpo del error
+      // llega como string, y un string no es un ProblemDetail aunque adentro traiga uno.
+      if (typeof error.error === 'string') {
+        return throwError(
+          () => new AkineHttpError(error.status, problemDelTexto(error.error), esDeRed, espera),
+        );
+      }
+
       const problem = esProblemDetail(error.error) ? error.error : null;
 
       return throwError(() => new AkineHttpError(error.status, problem, esDeRed, espera));

@@ -148,6 +148,8 @@ describe('FichaDePersonaPage', () => {
   });
 
   afterEach(() => {
+    // La seccion de datos administrativos de la HC tiene su propio spec; aca solo se descarta.
+    httpMock.match((p) => p.url.endsWith('/datos-administrativos'));
     httpMock.verify();
   });
 

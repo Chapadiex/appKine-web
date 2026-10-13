@@ -1,3 +1,4 @@
+import { CoberturaResponse } from '../../../api/generated/model/cobertura-response';
 import { EventoDeTurno, EventoDeTurnoTipoEnum } from '../../../api/generated/model/evento-de-turno';
 import { TurnoEstadoEnum } from '../../../api/generated/model/turno';
 
@@ -157,4 +158,16 @@ function zonaValida(timezone: string): string {
   } catch {
     return 'UTC';
   }
+}
+
+/**
+ * Una cobertura del paciente en una linea, para elegirla al reservar: financiador y plan.
+ *
+ * <p>Vive aca y no se importa de `person` porque un feature no importa de otro (AGENT.md 4.4).
+ */
+export function coberturaParaReservar(cobertura: CoberturaResponse): string {
+  const financiador = cobertura.financiadorNombre ?? 'Financiador sin nombre';
+  const plan = cobertura.planNombre;
+  const nombre = plan === undefined || plan === '' ? financiador : `${financiador} — ${plan}`;
+  return cobertura.principal === true ? `${nombre} (principal)` : nombre;
 }

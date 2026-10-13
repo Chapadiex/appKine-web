@@ -21,6 +21,15 @@ const SIGUIENTE = '2026-09-15T12:45:00Z';
 const AGENDA = `/api/v1/consultorios/${CONSULTORIO}/ofertas/${OFERTA}/agenda`;
 const HABILITACIONES = `/api/v1/consultorios/${CONSULTORIO}/ofertas/${OFERTA}/habilitaciones`;
 const PERSONAS = '/api/v1/personas';
+const COBERTURAS = `/api/v1/personas/128/coberturas`;
+
+const OSDE = {
+  id: 412,
+  tipo: 'FINANCIADA',
+  financiadorNombre: 'OSDE Sintetica',
+  planNombre: '210',
+  vigente: true,
+};
 const RESERVAR = `/api/v1/consultorios/${CONSULTORIO}/turnos/ofertas/${OFERTA}`;
 
 const DIA = {
@@ -270,6 +279,56 @@ describe('ReservaDeTurnoPage', () => {
     fixture.detectChanges();
   });
 
+  it('ofrece solo las coberturas financiadas vigentes y manda la elegida al reservar', async () => {
+    const fixture = await montar();
+    await elegirPersona(fixture, [
+      OSDE,
+      { id: 413, tipo: 'FINANCIADA', financiadorNombre: 'Vencida', vigente: false },
+      { id: 414, tipo: 'PARTICULAR', vigente: true },
+    ]);
+
+    const select = (fixture.nativeElement as HTMLElement).querySelector(
+      '#reserva-cobertura',
+    ) as HTMLSelectElement;
+    const opciones = Array.from(select.options).map((o) => o.textContent?.trim());
+    expect(opciones).toEqual(['Sin elegir', 'OSDE Sintetica — 210']);
+
+    select.value = select.options[1].value;
+    select.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+
+    reservar(fixture);
+    const pedido = httpMock.expectOne(esReserva());
+    expect((pedido.request.body as { coberturaId?: number }).coberturaId).toBe(412);
+    pedido.flush({
+      id: 301,
+      estado: 'RESERVADO',
+      inicio: INICIO,
+      fin: SIGUIENTE,
+      coberturaId: 412,
+    });
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('OSDE Sintetica — 210');
+  });
+
+  it('sin elegir cobertura no la manda, y el turno lo dice', async () => {
+    const fixture = await montar();
+    await elegirPersona(fixture, [OSDE]);
+
+    reservar(fixture);
+    const pedido = httpMock.expectOne(esReserva());
+    expect((pedido.request.body as { coberturaId?: number }).coberturaId).toBeUndefined();
+    pedido.flush({ id: 301, estado: 'RESERVADO', inicio: INICIO, fin: SIGUIENTE });
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain(
+      'Ninguna: la recepcion usa la que aplique',
+    );
+  });
+
   it('despues de reservar ofrece confirmar, y no ofrece cancelar', async () => {
     const fixture = await montar();
     await elegirPersona(fixture);
@@ -303,6 +362,16 @@ describe('ReservaDeTurnoPage', () => {
     'no tiene violaciones de accesibilidad',
     async () => {
       const fixture = await montar();
+      await esperarSinViolaciones(fixture.nativeElement);
+    },
+    TIMEOUT_AXE,
+  );
+
+  it(
+    'no tiene violaciones de accesibilidad con el selector de cobertura a la vista',
+    async () => {
+      const fixture = await montar();
+      await elegirPersona(fixture, [OSDE]);
       await esperarSinViolaciones(fixture.nativeElement);
     },
     TIMEOUT_AXE,
@@ -372,7 +441,10 @@ describe('ReservaDeTurnoPage', () => {
     return new Promise((resolve) => setTimeout(resolve, 400));
   }
 
-  async function elegirPersona(fixture: ComponentFixture<ReservaDeTurnoPage>): Promise<void> {
+  async function elegirPersona(
+    fixture: ComponentFixture<ReservaDeTurnoPage>,
+    coberturas: object[] = [],
+  ): Promise<void> {
     const campo = (fixture.nativeElement as HTMLElement).querySelector(
       '#reserva-persona',
     ) as HTMLInputElement;
@@ -391,6 +463,15 @@ describe('ReservaDeTurnoPage', () => {
     fixture.detectChanges();
 
     clickear(fixture, 'Perez');
+
+    const pedido = httpMock.expectOne(
+      (p: HttpRequest<unknown>) => p.method === 'GET' && p.url === COBERTURAS,
+    );
+    // Las vigentes se piden contra el dia del turno, no contra hoy.
+    expect(pedido.request.params.get('fecha')).toBe(FECHA);
+    pedido.flush(coberturas);
+    await fixture.whenStable();
+    fixture.detectChanges();
   }
 
   async function montar(): Promise<ComponentFixture<ReservaDeTurnoPage>> {

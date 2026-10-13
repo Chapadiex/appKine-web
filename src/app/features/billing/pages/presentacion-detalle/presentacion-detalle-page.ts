@@ -15,6 +15,7 @@ import { RegistrarPagoDeFinanciadorMedioEnum } from '../../../../api/generated/m
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { ValidacionDePresentacion } from '../../../../api/generated/model/validacion-de-presentacion';
 import { nuevaClaveDeIntento } from '../../../../shared/utils/clave-de-intento';
+import { guardarComoArchivo, nombreDelEncabezado } from '../../../../shared/utils/descarga';
 import {
   ErrorPresentacion,
   errorSinContexto,
@@ -105,6 +106,7 @@ export class PresentacionDetallePage {
   protected readonly aviso = signal<string | null>(null);
 
   protected readonly anulando = signal(false);
+  protected readonly exportando = signal(false);
   protected readonly itemDebitando = signal<number | null>(null);
 
   protected readonly factura = this.fb.group({
@@ -320,6 +322,39 @@ export class PresentacionDetallePage {
       (c, p) => this.api.conciliar(c, p),
       'Lote cerrado. Cada prestacion aceptada salda su deuda por el importe presentado.',
     );
+  }
+
+  // ----------------------------------------------------------------------------------
+  // Exportar — listados exportables (AKINE-07.04)
+  // ----------------------------------------------------------------------------------
+
+  /**
+   * Descarga el lote como CSV. Es la misma vista que la pantalla, serializada por el backend: no
+   * se arma aca con lo que hay en memoria, que podria estar viejo.
+   *
+   * <p>El nombre sale de `Content-Disposition`; si no vino, se arma con el numero del lote o, en
+   * borrador, con su id.
+   */
+  protected exportarCsv(): void {
+    const ids = this.ids();
+    if (ids === null || this.exportando()) return;
+    const lote = this.lote();
+    const respaldo = `presentacion-${lote?.numero ?? ids.presentacionId}.csv`;
+    this.exportando.set(true);
+    this.errorOperacion.set(null);
+    this.api.exportar(ids.consultorioId, ids.presentacionId).subscribe({
+      next: (respuesta) => {
+        this.exportando.set(false);
+        guardarComoArchivo(
+          new Blob([respuesta.body ?? ''], { type: 'text/csv;charset=utf-8' }),
+          nombreDelEncabezado(respuesta.headers.get('Content-Disposition')) ?? respaldo,
+        );
+      },
+      error: (error: unknown) => {
+        this.exportando.set(false);
+        this.errorOperacion.set(traducirErrorPresentacion(error));
+      },
+    });
   }
 
   protected cerrarPaneles(): void {

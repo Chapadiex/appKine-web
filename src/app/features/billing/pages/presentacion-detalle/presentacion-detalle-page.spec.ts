@@ -246,6 +246,53 @@ describe('PresentacionDetallePage', () => {
     expect(contenido(fixture)).toContain('Quedan 12000.00 sin explicar.');
   });
 
+  it('exportar baja el CSV con el nombre de Content-Disposition y revoca el objectURL', async () => {
+    const fixture = await montarPresentada();
+    const urlGlobal = URL as unknown as Record<string, unknown>;
+    const crearPrevio = urlGlobal['createObjectURL'];
+    const revocarPrevio = urlGlobal['revokeObjectURL'];
+    const revocar = vi.fn();
+    urlGlobal['createObjectURL'] = vi.fn(() => 'blob:sintetico');
+    urlGlobal['revokeObjectURL'] = revocar;
+    const click = vi
+      .spyOn(HTMLAnchorElement.prototype, 'click')
+      .mockImplementation(() => undefined);
+    try {
+      apretar(fixture, 'Exportar CSV');
+      const pedido = httpMock.expectOne(`${DETALLE}/export`);
+      expect(pedido.request.headers.get('Accept')).toBe('text/csv');
+      pedido.flush('item;importe\n501;12000.00\n', {
+        headers: { 'Content-Disposition': 'attachment; filename="presentacion-12.csv"' },
+      });
+      await estabilizar(fixture);
+
+      const enlace = click.mock.contexts[0] as HTMLAnchorElement;
+      expect(enlace.download).toBe('presentacion-12.csv');
+      expect(revocar).toHaveBeenCalledWith('blob:sintetico');
+    } finally {
+      urlGlobal['createObjectURL'] = crearPrevio;
+      urlGlobal['revokeObjectURL'] = revocarPrevio;
+      click.mockRestore();
+    }
+  });
+
+  it('un error al exportar se muestra con el mensaje del servidor', async () => {
+    const fixture = await montarPresentada();
+
+    apretar(fixture, 'Exportar CSV');
+    httpMock.expectOne(`${DETALLE}/export`).flush(
+      JSON.stringify({
+        type: 'https://akine.app/problems/forbidden',
+        status: 403,
+        detail: 'Sin cobro:register en esa sede.',
+      }),
+      { status: 403, statusText: 'Forbidden' },
+    );
+    await estabilizar(fixture);
+
+    expect(contenido(fixture)).toContain('No se pudo completar la operacion');
+  });
+
   it(
     'no tiene violaciones de accesibilidad en un borrador con hallazgos',
     async () => {

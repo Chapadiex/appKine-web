@@ -45,6 +45,7 @@ import {
   ordenInactiva,
   requisitoEnPalabras,
   saldoEnPalabras,
+  consumosARevisarEnPalabras,
   sesionesDeOrden,
   situacionDeOrden,
   tipoDeEvento,
@@ -172,6 +173,7 @@ export class OrdenesYAutorizacionesPage {
   protected readonly autorizacionInactiva = autorizacionInactiva;
   protected readonly admiteResolucion = admiteResolucion;
   protected readonly saldoEnPalabras = saldoEnPalabras;
+  protected readonly consumosARevisar = consumosARevisarEnPalabras;
   protected readonly habilitaEnPalabras = habilitaEnPalabras;
   protected readonly requisitoEnPalabras = requisitoEnPalabras;
   protected readonly motivoDeElegibilidad = motivoDeElegibilidad;

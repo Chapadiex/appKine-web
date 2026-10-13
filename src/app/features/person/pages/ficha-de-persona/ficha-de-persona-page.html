@@ -97,6 +97,11 @@
     </p>
   </section>
 
+  <!-- Metadatos administrativos de la HC (matriz §32, ADMINISTRATIVO: Limitado). Sin contenido. -->
+  @if (ficha.esPaciente && ficha.id !== undefined) {
+    <app-datos-administrativos-de-historia [personaId]="ficha.id" />
+  }
+
   <!-- Secciones que aportaron los modulos que el usuario SI puede ver. -->
   @for (seccion of secciones(); track seccion.seccion) {
     <section class="tarjeta" aria-labelledby="titulo-seccion-{{ seccion.seccion }}">
