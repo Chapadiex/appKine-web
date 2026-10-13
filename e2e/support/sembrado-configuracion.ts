@@ -49,6 +49,7 @@ import {
 export const DIAS_CONFIGURACION = {
   espacioConTurno: 110,
   servicioSinCascada: 116,
+  desvinculacionConTurno: 122,
 } as const;
 
 /** Profesional propia de un spec: vinculo PROFESIONAL en la sede del centro, sin horario. */
