@@ -173,6 +173,7 @@ model/cancelar-clase.ts
 model/cancelar-inscripcion.ts
 model/cancelar-serie-de-turnos.ts
 model/cancelar-turno.ts
+model/caso-administrativo-response.ts
 model/caso-clinico.ts
 model/caso-evento.ts
 model/caso-profesional.ts
@@ -230,6 +231,7 @@ model/created-membership-response.ts
 model/cuenta-corriente-de-financiador.ts
 model/cupos.ts
 model/dar-de-baja-tratamiento.ts
+model/datos-administrativos-de-historia-response.ts
 model/deactivate-bloque-request.ts
 model/deactivate-catalogo-request.ts
 model/deactivate-cobertura-request.ts
@@ -247,6 +249,7 @@ model/dia-de-agenda.ts
 model/dia-efectivo-response.ts
 model/disponibilidad-efectiva-response.ts
 model/editar-caso-clinico-request.ts
+model/editar-egreso.ts
 model/effective-permissions-response.ts
 model/egreso.ts
 model/elegibilidad-response.ts

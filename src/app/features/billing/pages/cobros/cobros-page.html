@@ -53,6 +53,7 @@
           <th scope="col">Medios</th>
           <th scope="col">Deudas imputadas</th>
           <th scope="col">Saldo a favor</th>
+          <th scope="col">Estado</th>
           <th scope="col">Acciones</th>
         </tr>
       </thead>
@@ -65,6 +66,18 @@
             <td>{{ cobro.medios?.length }}</td>
             <td>{{ cobro.imputaciones?.length }}</td>
             <td class="importe">{{ importe(cobro, cobro.saldoAFavor ?? 0) }}</td>
+            <!--
+              Desde el contrato 0.90.0 el listado trae tambien los anulados: siguen siendo
+              comprobantes emitidos, y la fila lo dice en vez de desaparecer. Va en su propia
+              celda para que la del comprobante siga siendo solo el numero.
+            -->
+            <td>
+              @if (estaAnulado(cobro)) {
+                <span class="marca-estado marca-estado--revocada">Anulado</span>
+              } @else {
+                Vigente
+              }
+            </td>
             <td>
               <div class="acciones-fila">
                 @if (esElAbierto(cobro)) {
@@ -139,7 +152,7 @@
 
           @if (esElAbierto(cobro)) {
             <tr class="fila-panel">
-              <td colspan="7">
+              <td colspan="8">
                 @if (comprobante(); as detalle) {
                   <h3>Comprobante N.º {{ detalle.comprobanteNumero }}</h3>
                   <p class="ayuda">
@@ -190,7 +203,7 @@
           @switch (operacionSobre(cobro)) {
             @case ('anular') {
               <tr class="fila-panel">
-                <td colspan="7">
+                <td colspan="8">
                   <akine-confirmacion-con-motivo
                     [idCampo]="'anular-cobro-' + cobro.id"
                     [titulo]="
@@ -231,7 +244,7 @@
             }
             @case ('reintegrar') {
               <tr class="fila-panel">
-                <td colspan="7">
+                <td colspan="8">
                   <form class="tarjeta" (submit)="$event.preventDefault(); confirmarReintegro()">
                     <h3>
                       Reintegrar saldo a favor del comprobante N.º {{ cobro.comprobanteNumero }}

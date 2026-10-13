@@ -27,6 +27,7 @@ const BORRADOR = {
   saldoPendiente: 300000,
   moneda: 'ARS',
   pagos: [],
+  version: 3,
 };
 
 const CONFIRMADO = {
@@ -95,21 +96,38 @@ describe('EgresoDetallePage', () => {
     enviar(fixture, 0);
 
     const edicion = httpMock.expectOne((p) => p.method === 'PUT' && p.url === DETALLE);
-    expect(edicion.request.body).toMatchObject({
-      tipoBeneficiario: 'EXTERNO',
-      beneficiarioNombre: 'Inmobiliaria Sintetica',
-      beneficiarioDocumento: '30-00000000-1',
+    // EditarEgreso (contrato 0.92.0): la version leida, y nada de beneficiario, moneda ni clave.
+    expect(edicion.request.body).toEqual({
+      version: 3,
       categoria: 'ALQUILER',
+      concepto: 'Alquiler octubre',
       importeTotal: 300000,
       comprobanteTipo: 'Factura C',
       comprobanteNumero: '0001-00000042',
     });
-    edicion.flush({ ...BORRADOR, comprobanteTipo: 'Factura C', comprobanteNumero: '1' });
-    httpMock
-      .expectOne(DETALLE)
-      .flush({ ...BORRADOR, comprobanteTipo: 'Factura C', comprobanteNumero: '1' });
+    // La respuesta trae la version nueva y se aplica sin releer.
+    edicion.flush({
+      ...BORRADOR,
+      comprobanteTipo: 'Factura C',
+      comprobanteNumero: '1',
+      version: 4,
+    });
     await estabilizar(fixture);
     expect(contenido(fixture)).toContain('Cambios guardados');
+
+    // Una segunda correccion sale con la version de la respuesta, no con la leida al entrar.
+    escribir(fixture, '#edicion-concepto', 'Alquiler octubre corregido');
+    enviar(fixture, 0);
+    const segunda = httpMock.expectOne((p) => p.method === 'PUT' && p.url === DETALLE);
+    expect(segunda.request.body).toMatchObject({ version: 4 });
+    segunda.flush({
+      ...BORRADOR,
+      concepto: 'Alquiler octubre corregido',
+      comprobanteTipo: 'Factura C',
+      comprobanteNumero: '1',
+      version: 5,
+    });
+    await estabilizar(fixture);
 
     boton(fixture, 'Confirmar el egreso').click();
     httpMock
@@ -223,6 +241,29 @@ describe('EgresoDetallePage', () => {
 
     expect(contenido(fixture)).toContain('Egreso anulado');
     expect(contenido(fixture)).toContain('Cargado por error');
+  });
+
+  it('una correccion con version vieja avisa sin pisar nada y ofrece recargar', async () => {
+    const fixture = await montar(BORRADOR);
+    escribir(fixture, '#edicion-concepto', 'Alquiler octubre corregido');
+    enviar(fixture, 0);
+
+    httpMock
+      .expectOne((p) => p.method === 'PUT' && p.url === DETALLE)
+      .flush(...problema('concurrent-modification'));
+    await estabilizar(fixture);
+    expect(contenido(fixture)).toContain('Alguien cambio este egreso despues de que lo abriste');
+
+    boton(fixture, 'Recargar el egreso').click();
+    httpMock.expectOne(DETALLE).flush({ ...BORRADOR, concepto: 'Lo que guardo otro', version: 4 });
+    await estabilizar(fixture);
+    expect(campo<HTMLInputElement>(fixture, '#edicion-concepto').value).toBe('Lo que guardo otro');
+
+    enviar(fixture, 0);
+    const reintento = httpMock.expectOne((p) => p.method === 'PUT' && p.url === DETALLE);
+    expect(reintento.request.body).toMatchObject({ version: 4 });
+    reintento.flush({ ...BORRADOR, concepto: 'Lo que guardo otro', version: 5 });
+    await estabilizar(fixture);
   });
 
   it('un egreso que no existe muestra el error de carga', async () => {

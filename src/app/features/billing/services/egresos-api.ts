@@ -3,6 +3,7 @@ import { Observable, map } from 'rxjs';
 
 import { ColaboradoresService } from '../../../api/generated/api/colaboradores.service';
 import { EgresosService } from '../../../api/generated/api/egresos.service';
+import { EditarEgreso } from '../../../api/generated/model/editar-egreso';
 import { Egreso } from '../../../api/generated/model/egreso';
 import {
   MembershipResponse,
@@ -49,8 +50,8 @@ export class EgresosApi {
     return this.api.registrarEgreso({ consultorioId, registrarEgreso: egreso });
   }
 
-  editar(consultorioId: number, egresoId: number, egreso: RegistrarEgreso): Observable<Egreso> {
-    return this.api.editar({ consultorioId, egresoId, registrarEgreso: egreso });
+  editar(consultorioId: number, egresoId: number, egreso: EditarEgreso): Observable<Egreso> {
+    return this.api.editar({ consultorioId, egresoId, editarEgreso: egreso });
   }
 
   confirmar(consultorioId: number, egresoId: number): Observable<Egreso> {

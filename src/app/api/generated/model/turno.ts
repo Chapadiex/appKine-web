@@ -19,6 +19,10 @@ export interface Turno {
     ausenteEn?: string;
     canceladoEn?: string;
     /**
+     * Cobertura del paciente elegida al reservar. Ausente si no se eligio: la recepcion usa entonces la primera que aplique. Es una preferencia, no un veredicto: si el dia del turno ya no aplica, la recepcion queda OBSERVADA.
+     */
+    coberturaId?: number;
+    /**
      * Ausente mientras el turno no se confirme. Una reprogramacion lo vuelve a vaciar: lo confirmado era otro horario.
      */
     confirmadoEn?: string;

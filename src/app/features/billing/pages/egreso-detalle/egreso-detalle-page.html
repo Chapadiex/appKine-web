@@ -160,19 +160,8 @@
               <p class="campo__error" role="alert">Un importe mayor que cero.</p>
             }
           </div>
-          <div class="campo">
-            <label for="edicion-moneda">Moneda</label>
-            <input
-              id="edicion-moneda"
-              type="text"
-              maxlength="3"
-              formControlName="moneda"
-              [attr.aria-invalid]="campoDeEdicionInvalido('moneda') ? 'true' : null"
-            />
-            @if (campoDeEdicionInvalido('moneda')) {
-              <p class="campo__error" role="alert">Codigo ISO de tres letras.</p>
-            }
-          </div>
+          <!-- La moneda, como el beneficiario, queda la del alta: la correccion no la cambia. -->
+          <p class="ayuda">Moneda: {{ e.moneda }}. No se corrige en el borrador.</p>
         </div>
 
         <div class="campos-en-linea">
