@@ -330,6 +330,20 @@ jobs:
           test -n "$hash"
           curl -fsSI "http://localhost:8080/chunk-$hash" | grep -qi '^cache-control: public, max-age=31536000, immutable'
           curl -fsSI http://localhost:8080/ | grep -qi '^content-security-policy:'
+          # JS y CSS precomprimidos (AKINE-LCP): Brotli a quien lo pide, gzip a quien no, sin
+          # codificacion a quien no pide ninguna. Siempre con su Content-Type, la CSP y Vary.
+          br=$(curl -fsSI -H 'Accept-Encoding: gzip, deflate, br' "http://localhost:8080/$asset")
+          echo "$br" | grep -qi '^content-encoding: br'
+          echo "$br" | grep -qi '^content-type: application/javascript'
+          echo "$br" | grep -qi '^vary: accept-encoding'
+          echo "$br" | grep -qi '^content-security-policy:'
+          echo "$br" | grep -qi '^cache-control: public, max-age=31536000, immutable'
+          curl -fsSI -H 'Accept-Encoding: gzip' "http://localhost:8080/$asset" | grep -qi '^content-encoding: gzip'
+          ! curl -fsSI -H 'Accept-Encoding: identity' "http://localhost:8080/$asset" | grep -qi '^content-encoding:'
+          css=$(curl -fsS http://localhost:8080/ | grep -o 'styles-[A-Za-z0-9_-]*\.css' | head -1)
+          curl -fsSI -H 'Accept-Encoding: br' "http://localhost:8080/$css" | grep -qi '^content-type: text/css'
+          # El manifiesto de precarga de las pantallas viaja en el index.html (scripts/build-produccion.mjs).
+          curl -fsS http://localhost:8080/ | grep -q 'id="akine-precarga"'
           test "$(docker exec akine-web id -u)" != "0"
 
       - name: Logs del contenedor

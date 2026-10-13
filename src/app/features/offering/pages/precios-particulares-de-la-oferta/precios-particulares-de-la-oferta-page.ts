@@ -121,6 +121,9 @@ export class PreciosParticularesDeLaOfertaPage {
 
   protected readonly formularioAlta = this.formBuilder.nonNullable.group({
     importe: ['', [Validators.required, Validators.min(0)]],
+    // Obligatoria: el backend rechaza un precio sin moneda (`validation-error`) cuando la oferta
+    // no tiene precio de lista del que heredarla. Se propone la de la lista cuando la hay.
+    moneda: ['', [Validators.required, Validators.pattern(/^[A-Za-z]{3}$/)]],
     vigenciaDesde: ['', [Validators.required]],
     vigenciaHasta: [''],
   });
@@ -203,7 +206,12 @@ export class PreciosParticularesDeLaOfertaPage {
   protected abrirAlta(): void {
     this.cerrarPanel();
     this.exito.set(null);
-    this.formularioAlta.reset({ importe: '', vigenciaDesde: this.hoy, vigenciaHasta: '' });
+    this.formularioAlta.reset({
+      importe: '',
+      moneda: this.oferta()?.moneda ?? '',
+      vigenciaDesde: this.hoy,
+      vigenciaHasta: '',
+    });
     this.altaAbierta.set(true);
     afterNextRender(() => this.enfocar('#alta-precio-importe'), { injector: this.injector });
   }
@@ -232,7 +240,7 @@ export class PreciosParticularesDeLaOfertaPage {
     this.intentos.set(0);
   }
 
-  protected mostrarErrorAlta(campo: 'importe' | 'vigenciaDesde'): boolean {
+  protected mostrarErrorAlta(campo: 'importe' | 'moneda' | 'vigenciaDesde'): boolean {
     const control = this.formularioAlta.controls[campo];
     return control.invalid && (control.touched || this.intentos() > 0);
   }
@@ -250,12 +258,19 @@ export class PreciosParticularesDeLaOfertaPage {
     const importe = numeroDeclarado(valores.importe);
     if (this.formularioAlta.invalid || importe === null) {
       this.formularioAlta.markAllAsTouched();
-      this.enfocar(importe === null ? '#alta-precio-importe' : '#alta-precio-desde');
+      this.enfocar(
+        importe === null
+          ? '#alta-precio-importe'
+          : this.formularioAlta.controls.moneda.invalid
+            ? '#alta-precio-moneda'
+            : '#alta-precio-desde',
+      );
       return;
     }
 
     const cuerpo: CreatePrecioParticularRequest = {
       importe,
+      moneda: valores.moneda.trim().toUpperCase(),
       vigenciaDesde: valores.vigenciaDesde,
     };
     if (valores.vigenciaHasta !== '') {

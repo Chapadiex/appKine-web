@@ -11,6 +11,7 @@ import { provideRouter, withComponentInputBinding } from '@angular/router';
 import { provideApi } from './api/generated/provide-api';
 import { authInterceptor } from './core/interceptors/auth.interceptor';
 import { errorInterceptor } from './core/interceptors/error.interceptor';
+import { PrecargaDeModulos } from './core/services/precarga-de-modulos';
 import { SessionService } from './core/services/session.service';
 import { environment } from '../environments/environment';
 import { routes } from './app.routes';
@@ -50,5 +51,9 @@ export const appConfig: ApplicationConfig = {
     // precargan el componente de destino mientras tanto: ninguna ruta protegida decide con
     // la sesion a medio resolver, asi que una recarga sigue sin parpadear al login.
     provideAppInitializer(() => inject(SessionService).iniciarRestauracion()),
+
+    // Cada pantalla que el router empieza a bajar arrastra sus dependencias compartidas en la
+    // misma ida y vuelta, no en la siguiente (AKINE-LCP). Ver PrecargaDeModulos.
+    provideAppInitializer(() => inject(PrecargaDeModulos).escucharRouter()),
   ],
 };

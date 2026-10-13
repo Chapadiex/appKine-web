@@ -87,7 +87,7 @@ describe('PreciosParticularesDeLaOfertaPage', () => {
     expect(botones(fixture, 'Cambiar fin')).toHaveLength(1);
   });
 
-  it('el alta manda importe y vigencia, y el solapamiento explica como subir un precio', async () => {
+  it('el alta manda importe, moneda y vigencia, y el solapamiento explica como subir un precio', async () => {
     const fixture = await montar();
     botones(fixture, 'Cargar un precio')[0].click();
     fixture.detectChanges();
@@ -99,7 +99,12 @@ describe('PreciosParticularesDeLaOfertaPage', () => {
     const alta = httpMock.expectOne(
       (peticion: HttpRequest<unknown>) => peticion.method === 'POST' && peticion.url === PRECIOS,
     );
-    expect(alta.request.body).toEqual({ importe: 13500, vigenciaDesde: '2026-11-01' });
+    // La moneda se propone desde el precio de lista de la oferta.
+    expect(alta.request.body).toEqual({
+      importe: 13500,
+      moneda: 'ARS',
+      vigenciaDesde: '2026-11-01',
+    });
     alta.flush(
       { type: 'https://akine.app/problems/precio-particular-solapado', status: 409, detail: 'x' },
       { status: 409, statusText: 'Conflict' },
@@ -107,6 +112,36 @@ describe('PreciosParticularesDeLaOfertaPage', () => {
     await estabilizar(fixture);
 
     expect(texto(fixture)).toContain('cerrale la vigencia al actual el dia anterior');
+  });
+
+  it('sin precio de lista la moneda es obligatoria y viaja la que se escribe', async () => {
+    // El backend rechaza con 400 un precio sin moneda cuando la oferta no tiene de donde
+    // heredarla: antes la pantalla no tenia el campo y esa oferta no admitia ningun precio
+    // (encontrado por el E2E de servicios contra el backend real).
+    const fixture = await montar({ id: OFERTA, nombreComercial: 'Drenaje', estado: 'ACTIVO' });
+    botones(fixture, 'Cargar un precio')[0].click();
+    fixture.detectChanges();
+
+    escribir(fixture, '#alta-precio-importe', '9000');
+    escribir(fixture, '#alta-precio-desde', '2026-11-01');
+    enviar(fixture);
+    httpMock.expectNone((peticion: HttpRequest<unknown>) => peticion.method === 'POST');
+    expect(texto(fixture)).toContain('La moneda es obligatoria');
+
+    escribir(fixture, '#alta-precio-moneda', 'usd');
+    enviar(fixture);
+    const alta = httpMock.expectOne(
+      (peticion: HttpRequest<unknown>) => peticion.method === 'POST' && peticion.url === PRECIOS,
+    );
+    expect(alta.request.body).toEqual({
+      importe: 9000,
+      moneda: 'USD',
+      vigenciaDesde: '2026-11-01',
+    });
+    alta.flush({ id: 900, importe: 9000, moneda: 'USD', vigenciaDesde: '2026-11-01' });
+    responderCarga({ id: OFERTA, nombreComercial: 'Drenaje', estado: 'ACTIVO' });
+    await estabilizar(fixture);
+    expect(texto(fixture)).toContain('El precio quedo cargado');
   });
 
   it('el alta con el importe vacio no manda nada', async () => {
@@ -133,7 +168,7 @@ describe('PreciosParticularesDeLaOfertaPage', () => {
     // Ni el importe ni el inicio: no son editables.
     expect(cierre.request.body).toEqual({ expectedVersion: 4, vigenciaHasta: '2026-10-31' });
     cierre.flush({ ...VIGENTE, vigenciaHasta: '2026-10-31', version: 5 });
-    responderCarga();
+    responderCarga(PILATES);
     await estabilizar(fixture);
 
     botones(fixture, 'Cambiar fin')[0].click();
@@ -145,7 +180,7 @@ describe('PreciosParticularesDeLaOfertaPage', () => {
     );
     expect(reapertura.request.body).toEqual({ expectedVersion: 4 });
     reapertura.flush(VIGENTE);
-    responderCarga();
+    responderCarga(PILATES);
     await estabilizar(fixture);
     expect(texto(fixture)).toContain('sin fin previsto');
   });
@@ -163,7 +198,7 @@ describe('PreciosParticularesDeLaOfertaPage', () => {
     );
     expect(baja.request.body).toEqual({ reason: 'Mal cargado' });
     baja.flush(null, { status: 204, statusText: 'No Content' });
-    responderCarga();
+    responderCarga(PILATES);
     await estabilizar(fixture);
     expect(texto(fixture)).toContain('vuelve a regir el precio de lista');
   });
@@ -177,7 +212,9 @@ describe('PreciosParticularesDeLaOfertaPage', () => {
     TIMEOUT_AXE,
   );
 
-  async function montar(): Promise<ComponentFixture<PreciosParticularesDeLaOfertaPage>> {
+  async function montar(
+    oferta: Record<string, unknown> = PILATES,
+  ): Promise<ComponentFixture<PreciosParticularesDeLaOfertaPage>> {
     TestBed.inject(TenantContextStore).select({
       organizationId: 1,
       organizationName: 'Centro Belgrano',
@@ -191,12 +228,12 @@ describe('PreciosParticularesDeLaOfertaPage', () => {
 
     const fixture = TestBed.createComponent(PreciosParticularesDeLaOfertaPage);
     fixture.detectChanges();
-    responderCarga();
+    responderCarga(oferta);
     await estabilizar(fixture);
     return fixture;
   }
 
-  function responderCarga(): void {
+  function responderCarga(oferta: Record<string, unknown>): void {
     httpMock
       .expectOne(
         (peticion: HttpRequest<unknown>) => peticion.method === 'GET' && peticion.url === PRECIOS,
@@ -204,7 +241,7 @@ describe('PreciosParticularesDeLaOfertaPage', () => {
       .flush([DADO_DE_BAJA, VIGENTE]);
     httpMock
       .expectOne((peticion: HttpRequest<unknown>) => peticion.url === rutaOfertas(SEDE))
-      .flush([PILATES]);
+      .flush([oferta]);
   }
 });
 

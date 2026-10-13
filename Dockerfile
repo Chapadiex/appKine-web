@@ -65,6 +65,7 @@ USER root
 RUN rm -f /etc/nginx/conf.d/default.conf
 COPY docker/nginx/default.conf.template /etc/nginx/templates/default.conf.template
 COPY docker/nginx/security-headers.conf /etc/nginx/snippets/security-headers.conf
+COPY docker/nginx/precomprimido.conf /etc/nginx/snippets/precomprimido.conf
 
 COPY --from=build /build/dist/akine-web/browser/ /usr/share/nginx/html/
 

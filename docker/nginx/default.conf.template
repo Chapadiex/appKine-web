@@ -2,6 +2,21 @@
 # ${NGINX_LOCAL_RESOLVERS} al arrancar (filtrado por NGINX_ENVSUBST_FILTER, ver Dockerfile).
 # Las variables propias de nginx ($uri, $host...) no se tocan.
 
+# Precompresion (AKINE-LCP): ".br" si el navegador acepta Brotli. Ver el location de los archivos
+# con hash. El `map` va fuera del server porque solo se puede declarar a nivel http, y conf.d/
+# se incluye ahi.
+map $http_accept_encoding $akine_br {
+    default "";
+    "~*\bbr\b" ".br";
+}
+
+# Content-Encoding segun el archivo que `try_files` eligio de verdad, no segun lo que el
+# navegador pidio: si el `.br` no existiera, se sirve el original sin cabecera.
+map $request_filename $akine_content_encoding {
+    default "";
+    "~\.br$" "br";
+}
+
 server {
     listen 8080;
     server_name _;
@@ -56,6 +71,33 @@ server {
     # nombres de los perezosos traen minusculas, '-' y '_' (chunk-BM-JVWiQ.js,
     # chunk-D_ddHsUD.js). Con la clase vieja, [A-Z0-9], esos caian en el fallback de SPA: sin
     # cache inmutable y, si faltaban, index.html servido como JavaScript.
+    #
+    # JavaScript y CSS van precomprimidos desde el build (scripts/build-produccion.mjs genera un
+    # `.br` y un `.gz` de cada uno, al maximo de compresion). La imagen no trae el modulo de
+    # Brotli, asi que el `.br` se sirve como archivo estatico:
+    #   - `$akine_br` vale ".br" solo si el navegador anuncia `br` en Accept-Encoding (map de
+    #     arriba), y `try_files` prueba primero `chunk-X.js.br`;
+    #   - `types` del location hace que ese archivo salga con el Content-Type de su extension
+    #     original y no como application/octet-stream;
+    #   - `$akine_content_encoding` mira el archivo REALMENTE elegido: `br` solo si se sirvio el
+    #     `.br`. Si faltara, cae al original sin anunciar una codificacion que no tiene.
+    # Sin Brotli en el pedido, `gzip_static` sirve el `.gz` (con su propio Content-Encoding). La
+    # compresion al vuelo se apaga aca: el archivo ya viaja comprimido y no hay que gastar CPU
+    # en volver a hacerlo. `Vary: Accept-Encoding` va siempre: la misma URL tiene tres cuerpos.
+    location ~* "-[A-Za-z0-9_-]{8}\.js$" {
+        include /etc/nginx/snippets/security-headers.conf;
+        include /etc/nginx/snippets/precomprimido.conf;
+        types { application/javascript js br; }
+        try_files $uri$akine_br $uri =404;
+    }
+
+    location ~* "-[A-Za-z0-9_-]{8}\.css$" {
+        include /etc/nginx/snippets/security-headers.conf;
+        include /etc/nginx/snippets/precomprimido.conf;
+        types { text/css css br; }
+        try_files $uri$akine_br $uri =404;
+    }
+
     location ~* "-[A-Za-z0-9_-]{8}\.[a-z0-9]+$" {
         include /etc/nginx/snippets/security-headers.conf;
         add_header Cache-Control "public, max-age=31536000, immutable" always;
