@@ -14,7 +14,7 @@
  */
 export interface ValidarRecepcion { 
     /**
-     * Cobertura del paciente con la que se quiere atender. Si se omite, se usa la primera que aplique a la practica (la principal va primera).
+     * Cobertura del paciente con la que se quiere atender. Si se omite, se usa la elegida al reservar el turno y, si no se eligio ninguna, la primera que aplique a la practica (la principal va primera).
      */
     coberturaId?: number;
     /**

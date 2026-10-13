@@ -59,6 +59,7 @@ import {
     DebitarRequestParams,
     DetalleRequestParams,
     ElegiblesRequestParams,
+    ExportarPresentacionRequestParams,
     PagosDelLoteRequestParams,
     QuitarItemRequestParams,
     RegistrarFacturaRequestParams,
@@ -894,6 +895,72 @@ export class PresentacionesService extends BaseService implements Presentaciones
             {
                 context: localVarHttpContext,
                 params: localVarQueryParameters.toHttpParams(),
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * Exportar un lote a CSV
+     * El detalle del lote —cabecera con los cuatro importes y una fila por prestacion— como archivo CSV (AKINE-07.04, listados exportables).  Serializa **la misma vista** que el detalle: no tiene consulta propia, asi que el archivo y la pantalla no pueden decir cosas distintas.  **PHI minima** (RNF-M21-001): cada fila lleva el &#x60;personaId&#x60; y el concepto congelado, no el nombre ni el documento del paciente. Una celda que una planilla tomaria por formula sale con un apostrofo delante.
+     * @endpoint get /api/v1/consultorios/{consultorioId}/presentaciones/{presentacionId}/export
+     * @param requestParameters
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public exportarPresentacion(requestParameters: ExportarPresentacionRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/problem+json' | 'text/csv', context?: HttpContext, transferCache?: boolean}): Observable<string>;
+    public exportarPresentacion(requestParameters: ExportarPresentacionRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/problem+json' | 'text/csv', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<string>>;
+    public exportarPresentacion(requestParameters: ExportarPresentacionRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/problem+json' | 'text/csv', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<string>>;
+    public exportarPresentacion(requestParameters: ExportarPresentacionRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/problem+json' | 'text/csv', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        const consultorioId = requestParameters?.consultorioId;
+        if (consultorioId === null || consultorioId === undefined) {
+            throw new Error('Required parameter consultorioId was null or undefined when calling exportarPresentacion.');
+        }
+        const presentacionId = requestParameters?.presentacionId;
+        if (presentacionId === null || presentacionId === undefined) {
+            throw new Error('Required parameter presentacionId was null or undefined when calling exportarPresentacion.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/problem+json',
+            'text/csv'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/consultorios/${this.configuration.encodeParam({name: "consultorioId", value: consultorioId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/presentaciones/${this.configuration.encodeParam({name: "presentacionId", value: presentacionId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/export`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<string>('get', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
                 responseType: <any>responseType_,
                 ...(withCredentials ? { withCredentials } : {}),
                 headers: localVarHeaders,
