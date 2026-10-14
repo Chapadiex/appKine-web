@@ -16,6 +16,10 @@ import { Recepcion } from './recepcion';
  */
 export interface TurnoDelDia { 
     /**
+     * Cobertura del paciente elegida al reservar (AKINE-05.02). Ausente si no se eligio: la recepcion usa entonces la primera que aplique. Es la misma que `Turno.coberturaId` y es una preferencia, no un veredicto: la que se aplico la dice `recepcion.coberturaId`.
+     */
+    coberturaId?: number;
+    /**
      * Tipo y numero, para desambiguar homonimos. Ausente si la ficha no lo tiene.
      */
     documento?: string;
