@@ -14,6 +14,15 @@ describe('traducirErrorAtencion', () => {
     ['turno-no-atendible', 409, 'turno-no-atendible'],
     ['concurrent-modification', 409, 'version-vieja'],
     ['validation-error', 400, 'validacion'],
+    ['medicion-tipo-incompatible', 400, 'tipo-incompatible'],
+    ['medicion-definicion-inactiva', 409, 'definicion-inactiva'],
+    ['practica-no-utilizable', 409, 'practica-no-utilizable'],
+    ['practica-no-habilitada-en-oferta', 409, 'practica-no-utilizable'],
+    ['parametro-invalido', 400, 'parametro-invalido'],
+    ['enmienda-cambia-practicas', 409, 'enmienda-cambia-practicas'],
+    ['enmienda-sin-motivo', 400, 'enmienda-sin-motivo'],
+    ['caso-clinico-cerrado', 409, 'caso-no-activo'],
+    ['caso-no-activo', 409, 'caso-no-activo'],
   ])('mapea %s por problemType, no por el texto de detail', (tipo, status, causa) => {
     // El `detail` dice una cosa distinta a proposito: si el traductor lo mirara, fallaria aca.
     expect(traducirErrorAtencion(problema(tipo, status, 'texto que no dice nada')).causa).toBe(
@@ -106,6 +115,28 @@ describe('traducirErrorAtencion', () => {
 
     expect(traducido.causa).toBe('sesion-cerrada');
     expect(traducido.mensaje).toContain('enmienda');
+  });
+
+  it.each([
+    [{ minimo: 0, maximo: 180 }, 'de 0 a 180'],
+    [{ minimo: 10 }, 'desde 10'],
+    [{ maximo: 5 }, 'hasta 5'],
+    [{}, 'fuera del rango'],
+  ])('medicion-fuera-de-rango dice el rango que mando el servidor (%o)', (rango, esperado) => {
+    const error = new AkineHttpError(
+      400,
+      {
+        type: 'https://akine.app/problems/medicion-fuera-de-rango',
+        status: 400,
+        detail: 'Fuera de rango.',
+        properties: { codigo: 'ROM_RODILLA', valor: 200, ...rango },
+      },
+      false,
+    );
+
+    const traducido = traducirErrorAtencion(error);
+    expect(traducido.causa).toBe('fuera-de-rango');
+    expect(traducido.mensaje).toContain(esperado);
   });
 
   it('un 404 no distingue inexistente de ajeno, para no permitir enumerar sedes', () => {

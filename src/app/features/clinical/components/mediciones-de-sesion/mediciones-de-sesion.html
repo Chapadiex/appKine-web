@@ -1,0 +1,224 @@
+<section class="tarjeta" aria-labelledby="titulo-examen">
+  <h2 id="titulo-examen">Examen fisico</h2>
+
+  <p class="ayuda">
+    Mediciones del catalogo del centro. Ninguna es obligatoria: un seguimiento normal no exige
+    examen completo.
+    @if (cubiertas() !== null && disponibles() !== null) {
+      <b>{{ cubiertas() }} de {{ disponibles() }}</b> medidas del catalogo tomadas en esta sesion.
+      No impide cerrar.
+    }
+  </p>
+
+  @if (cargando()) {
+    <p class="estado estado--cargando">Leyendo las mediciones…</p>
+  }
+
+  @if (error(); as problema) {
+    <p class="estado estado--error" role="alert">{{ problema.mensaje }}</p>
+  }
+
+  @if (comparacion() !== null) {
+    <p class="ayuda">{{ baseline() }}</p>
+
+    @if (medidas().length === 0) {
+      <p class="ayuda">Todavia no hay mediciones en esta sesion.</p>
+    } @else {
+      <div class="tabla-scroll" role="region" aria-label="Mediciones de la sesion" tabindex="0">
+        <table class="tabla">
+          <caption class="visualmente-oculto">
+            Mediciones de esta sesion contra la sesion anterior
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">Medida</th>
+              <th scope="col">Lado</th>
+              <th scope="col">La vez pasada</th>
+              <th scope="col">Hoy</th>
+              <th scope="col">Cambio</th>
+              @if (editable()) {
+                <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
+              }
+            </tr>
+          </thead>
+          <tbody>
+            @for (
+              medida of medidas();
+              track (medida.definicionId ?? 0) + '-' + (medida.lateralidad ?? '')
+            ) {
+              <tr>
+                <th scope="row">{{ medida.nombre }}</th>
+                <td>{{ ladoLegible(medida.lateralidad) }}</td>
+                <td>{{ valorLegible(medida.anterior) || 'Sin dato' }}</td>
+                <td>{{ valorLegible(medida.actual) || 'Todavia no' }}</td>
+                <td>
+                  @if (medida.unidadesDifieren) {
+                    Unidades distintas: no se resta
+                  } @else {
+                    {{ deltaLegible(medida.delta) || '—' }}
+                  }
+                </td>
+                @if (editable()) {
+                  <td>
+                    @if (medida.actual) {
+                      <button
+                        type="button"
+                        class="boton boton--secundario"
+                        [disabled]="guardando()"
+                        (click)="quitar(medida)"
+                      >
+                        Quitar<span class="visualmente-oculto">
+                          {{ medida.nombre }}, {{ ladoLegible(medida.lateralidad) }}</span
+                        >
+                      </button>
+                    } @else {
+                      <button
+                        type="button"
+                        class="boton boton--secundario"
+                        [disabled]="guardando()"
+                        (click)="volverATomar(medida)"
+                      >
+                        Volver a tomar<span class="visualmente-oculto">
+                          {{ medida.nombre }}, {{ ladoLegible(medida.lateralidad) }}</span
+                        >
+                      </button>
+                    }
+                  </td>
+                }
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  }
+
+  @if (editable()) {
+    <fieldset class="grupo">
+      <legend>Registrar una medicion</legend>
+
+      @if (definiciones().length === 0) {
+        <p class="ayuda">
+          El catalogo de medidas esta vacio: las definiciones las carga quien administra el centro.
+        </p>
+      } @else {
+        <div class="campo">
+          <label for="medicion-definicion">Medida</label>
+          <select
+            id="medicion-definicion"
+            name="medicion-definicion"
+            (change)="elegirDefinicion($any($event.target).value)"
+          >
+            <option value="" [selected]="definicionId() === null">Elegi una medida</option>
+            @for (opcion of definiciones(); track opcion.id) {
+              <option [value]="opcion.id" [selected]="definicionId() === opcion.id">
+                {{ opcion.name }}{{ opcion.unidad ? ' (' + opcion.unidad + ')' : '' }}
+              </option>
+            }
+          </select>
+        </div>
+
+        <div class="campo">
+          <label for="medicion-lado">Lado</label>
+          <select
+            id="medicion-lado"
+            name="medicion-lado"
+            aria-describedby="ayuda-medicion-lado"
+            (change)="elegirLado($any($event.target).value)"
+          >
+            @for (opcion of lados; track opcion.valor) {
+              <option [value]="opcion.valor" [selected]="lado() === opcion.valor">
+                {{ opcion.etiqueta }}
+              </option>
+            }
+          </select>
+          <p id="ayuda-medicion-lado" class="ayuda">
+            Una medicion de los dos lados son dos mediciones, una por lado: sus valores son
+            distintos y eso es lo que se mide.
+          </p>
+        </div>
+
+        @if (definicion(); as elegida) {
+          @if (esNumerica()) {
+            <div class="campo">
+              <label for="medicion-valor">
+                Valor{{ elegida.unidad ? ' en ' + elegida.unidad : '' }}
+              </label>
+              <input
+                id="medicion-valor"
+                name="medicion-valor"
+                type="text"
+                inputmode="decimal"
+                aria-describedby="ayuda-medicion-valor"
+                [value]="valorNumero()"
+                (input)="valorNumero.set($any($event.target).value)"
+              />
+              <p id="ayuda-medicion-valor" class="ayuda">{{ rango() }}</p>
+            </div>
+          } @else if (elegida.tipo === Tipo.BOOLEANO) {
+            <fieldset class="grupo">
+              <legend>Presente</legend>
+              <label class="opcion-radio">
+                <input
+                  id="medicion-valor"
+                  type="radio"
+                  name="medicion-si-no"
+                  [checked]="valorSiNo() === true"
+                  (change)="elegirSiNo(true)"
+                />
+                Si
+              </label>
+              <label class="opcion-radio">
+                <input
+                  type="radio"
+                  name="medicion-si-no"
+                  [checked]="valorSiNo() === false"
+                  (change)="elegirSiNo(false)"
+                />
+                No
+              </label>
+            </fieldset>
+          } @else {
+            <div class="campo">
+              <label for="medicion-valor">Hallazgo</label>
+              <input
+                id="medicion-valor"
+                name="medicion-valor"
+                type="text"
+                maxlength="500"
+                [value]="valorTexto()"
+                (input)="valorTexto.set($any($event.target).value)"
+              />
+            </div>
+          }
+
+          <div class="campo">
+            <label for="medicion-nota">
+              Como se tomo <span class="campo__opcional">(opcional)</span>
+            </label>
+            <input
+              id="medicion-nota"
+              name="medicion-nota"
+              type="text"
+              maxlength="500"
+              aria-describedby="ayuda-medicion-nota"
+              [value]="nota()"
+              (input)="nota.set($any($event.target).value)"
+            />
+            <p id="ayuda-medicion-nota" class="ayuda">
+              No reemplaza al valor y no entra en ninguna comparacion.
+            </p>
+          </div>
+        }
+
+        <div class="acciones">
+          <button type="button" class="boton" [disabled]="guardando()" (click)="registrar()">
+            Registrar la medicion
+          </button>
+        </div>
+      }
+    </fieldset>
+  }
+
+  <p class="ayuda" role="status">{{ aviso() }}</p>
+</section>
