@@ -6,8 +6,11 @@ import {
 } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+import { of } from 'rxjs';
 
 import { FichaDePersonaPage } from './ficha-de-persona-page';
+import { PrecargaDeFicha } from '../../services/precarga-de-ficha';
+import { ResumenDePersonaResponse } from '../../../../api/generated/model/resumen-de-persona-response';
 import { PERMISO_PACIENTE_MANAGE } from '../../../../core/models/permisos';
 import { PermissionsStore } from '../../../../core/services/permissions.store';
 import { RUTA_PERMISOS_EFECTIVOS } from '../../../../core/testing/rutas-api';
@@ -15,6 +18,7 @@ import { TIMEOUT_AXE, esperarSinViolaciones } from '../../../../core/testing/axe
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { errorInterceptor } from '../../../../core/interceptors/error.interceptor';
 import { provideApi } from '../../../../api/generated/provide-api';
+import { CoberturaDelHitoResponseEstadoCredencialEnum } from '../../../../api/generated/model/cobertura-del-hito-response';
 
 const PERSONA = 7;
 const RESUMEN = `/api/v1/personas/${PERSONA}/resumen`;
@@ -57,10 +61,48 @@ const RESUMEN_COMPLETO = {
       ],
     },
     {
+      // Forma real del contribuyente de B-5: la principal primero, afiliado ya enmascarado.
       seccion: 'coberturas',
-      indicadores: [],
-      hitos: [],
+      indicadores: [
+        { clave: 'coberturas-vigentes', etiqueta: 'Coberturas vigentes', cantidad: 2 },
+        { clave: 'credenciales-vencidas', etiqueta: 'Credenciales vencidas', cantidad: 1 },
+      ],
+      hitos: [
+        {
+          seccion: 'coberturas',
+          tipo: 'COBERTURA_PRINCIPAL',
+          ocurrioEn: '2026-03-01T00:00:00Z',
+          titulo: 'OSDE · 310 · Afiliado ···4567 · hasta 2026-12-31',
+          estado: 'VIGENTE',
+          referencia: 11,
+          // Desde 0.70.0 los datos viajan como campos: la pantalla no parte el titulo.
+          cobertura: {
+            tipo: 'FINANCIADA',
+            financiadorId: 7,
+            financiadorNombre: 'OSDE',
+            planId: 70,
+            planNombre: '310',
+            afiliadoEnmascarado: '···4567',
+            vigenciaDesde: '2026-03-01',
+            vigenciaHasta: '2026-12-31',
+            principal: true,
+            estadoCredencial: CoberturaDelHitoResponseEstadoCredencialEnum.VIGENTE,
+            credencialVigenciaHasta: '2027-02-28',
+          },
+        },
+        {
+          // Sin `cobertura`: un backend anterior a 0.70.0. Se degrada al titulo entero.
+          seccion: 'coberturas',
+          tipo: 'COBERTURA',
+          ocurrioEn: '2026-01-15T00:00:00Z',
+          titulo: 'IOSFA · General · Afiliado ··· · sin vencimiento',
+          estado: 'CREDENCIAL_VENCIDA',
+          referencia: 12,
+        },
+      ],
     },
+    // Seccion de un contribuyente que el frontend no conoce, vacia: se pinta con la forma generica.
+    { seccion: 'clases', indicadores: [], hitos: [] },
   ],
   seccionesOmitidas: [{ seccion: 'economia', permisoRequerido: 'cobro:register' }],
 };
@@ -106,6 +148,8 @@ describe('FichaDePersonaPage', () => {
   });
 
   afterEach(() => {
+    // La seccion de datos administrativos de la HC tiene su propio spec; aca solo se descarta.
+    httpMock.match((p) => p.url.endsWith('/datos-administrativos'));
     httpMock.verify();
   });
 
@@ -144,6 +188,30 @@ describe('FichaDePersonaPage', () => {
     expect(titulos).toContain('Situacion economica — sin permiso');
   });
 
+  it('en la primera carga toma el resumen que la ruta ya pidio, sin volver a la red', async () => {
+    // AKINE-LCP: la ruta lo pide apenas vuelve el refresh (PrecargaDeFicha).
+    const tomar = vi
+      .spyOn(TestBed.inject(PrecargaDeFicha), 'tomar')
+      .mockReturnValue(of(RESUMEN_COMPLETO as ResumenDePersonaResponse));
+    tenantContext.select({
+      organizationId: 1,
+      organizationName: 'Centro Belgrano',
+      consultorioId: 3,
+      consultorioName: 'Sede Centro',
+    });
+    permisos.cargar().subscribe();
+    httpMock.expectOne(RUTA_PERMISOS_EFECTIVOS).flush({ permissions: [PERMISO_PACIENTE_MANAGE] });
+
+    const fixture = TestBed.createComponent(FichaDePersonaPage);
+    fixture.componentRef.setInput('personaId', String(PERSONA));
+    fixture.detectChanges();
+    await estabilizar(fixture);
+
+    expect(tomar).toHaveBeenCalledWith(PERSONA);
+    httpMock.expectNone(RESUMEN);
+    expect(texto(fixture)).toContain('Sin movimientos registrados');
+  });
+
   // -------------------------------------------------------------------------------------
   // 2. Indicadores e hitos
   // -------------------------------------------------------------------------------------
@@ -155,6 +223,46 @@ describe('FichaDePersonaPage', () => {
     expect(contenido).toContain('Turnos futuros');
     expect(contenido).toContain('Turno');
     expect(contenido).toContain('CONFIRMADO');
+  });
+
+  // -------------------------------------------------------------------------------------
+  // 2b. Coberturas vigentes (B-5)
+  // -------------------------------------------------------------------------------------
+
+  it('la seccion de coberturas muestra financiador, plan, afiliado enmascarado, vigencia y la credencial vencida', async () => {
+    const fixture = await montar(RESUMEN_COMPLETO);
+    const raiz = fixture.nativeElement as HTMLElement;
+    const seccion = raiz.querySelector('[aria-labelledby="titulo-seccion-coberturas"]');
+    const contenido = seccion?.textContent ?? '';
+
+    expect(contenido).toContain('Coberturas vigentes');
+    // Con campos: financiador y plan, afiliado enmascarado y vigencia salen de `cobertura`.
+    expect(contenido).toContain('OSDE — 310');
+    expect(contenido).not.toContain('OSDE · 310');
+    expect(contenido).toContain('Afiliado ···4567');
+    expect(contenido).toContain('Vigente desde el 01/03/2026 hasta el 31/12/2026 inclusive');
+    expect(contenido).toContain('Credencial vigente hasta el 28/02/2027');
+    expect(contenido).toContain('Principal');
+    // Sin campos se degrada al titulo con las fechas legibles, y la vigencia sale de `ocurrioEn`:
+    // medianoche UTC del 15 de enero es una fecha, no un instante, y no puede leerse como el 14.
+    expect(contenido).toContain('IOSFA · General · Afiliado ··· · sin vencimiento');
+    expect(contenido).toContain('Vigente desde el 15/01/2026');
+    expect(contenido).toContain('Credencial vencida');
+    expect(contenido).not.toContain('CREDENCIAL_VENCIDA');
+    expect(
+      seccion?.querySelector(`a[href="/pacientes/${PERSONA}/coberturas"]`)?.textContent,
+    ).toContain('Ver coberturas del paciente');
+  });
+
+  it('sin coberturas vigentes dice que se atiende como particular, no "sin movimientos"', async () => {
+    const fixture = await montar({
+      ...RESUMEN_COMPLETO,
+      secciones: [{ seccion: 'coberturas', indicadores: [], hitos: [] }],
+    });
+    const contenido = texto(fixture);
+
+    expect(contenido).toContain('No tiene coberturas vigentes hoy: se atiende como particular');
+    expect(contenido).not.toContain('Sin movimientos registrados');
   });
 
   it('un indicador de dinero se formatea con su moneda y no se suma con ningun otro', async () => {

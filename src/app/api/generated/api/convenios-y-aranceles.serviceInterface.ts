@@ -17,6 +17,8 @@ import { ConvenioResponse } from '../model/models';
 import { CreateArancelRequest } from '../model/models';
 import { CreateConvenioRequest } from '../model/models';
 import { DeactivateContractingRequest } from '../model/models';
+import { ImportacionArancelesResponse } from '../model/models';
+import { ImportarArancelesRequest } from '../model/models';
 import { ProblemDetail } from '../model/models';
 import { UpdateArancelRequest } from '../model/models';
 import { UpdateConvenioRequest } from '../model/models';
@@ -55,6 +57,12 @@ export interface GetConvenioRequestParams {
     fecha?: string;
 }
 
+export interface ImportArancelesDeConvenioRequestParams {
+    consultorioId: number;
+    convenioId: number;
+    importarArancelesRequest: ImportarArancelesRequest;
+}
+
 export interface ListArancelesRequestParams {
     consultorioId: number;
     convenioId: number;
@@ -74,6 +82,7 @@ export interface ResolveArancelEfectivoRequestParams {
     planId: number;
     practicaId: number;
     fecha?: string;
+    ofertaId?: number;
 }
 
 export interface UpdateArancelRequestParams {
@@ -96,7 +105,7 @@ export interface ConveniosYArancelesServiceInterface {
 
     /**
      * Definir el arancel de una practica bajo un convenio
-     * Exige convenio:manage sobre la sede de la ruta.  DOS ARANCELES DE LA MISMA PRACTICA EN EL MISMO CONVENIO NO PUEDEN SOLAPARSE: 409 arancel-solapado, con el id y el periodo del que choca en el cuerpo del problema. Dos aranceles de la misma practica SI conviven —el de 2026 y el de 2027— y esa convivencia es el caso normal.  LOS TRES IMPORTES TIENEN QUE CUADRAR: importeFinanciador + coseguro &#x3D; importeTotal, exactamente. No hay porcentaje de cobertura a proposito: un porcentaje obliga a redondear, y el redondeo de un arancel es la diferencia de un centavo que aparece seis meses despues en una presentacion rechazada.  La moneda NO viaja en el cuerpo: la hereda del convenio.  La vigencia del arancel tiene que estar CONTENIDA en la del convenio. Fuera de ella nunca podria resolver, porque la resolucion exige primero un convenio aplicable.  La practica puede ser global de plataforma o propia de la organizacion; una de otro tenant responde 404.
+     * Exige convenio:manage sobre la sede de la ruta.  DOS ARANCELES DE LA MISMA PRACTICA EN EL MISMO CONVENIO NO PUEDEN SOLAPARSE: 409 arancel-solapado, con el id y el periodo del que choca en el cuerpo del problema. Dos aranceles de la misma practica SI conviven —el de 2026 y el de 2027— y esa convivencia es el caso normal.  LOS TRES IMPORTES TIENEN QUE CUADRAR: importeFinanciador + coseguro &#x3D; importeTotal, exactamente. No hay porcentaje de cobertura a proposito: un porcentaje obliga a redondear, y el redondeo de un arancel es la diferencia de un centavo que aparece seis meses despues en una presentacion rechazada.  La moneda NO viaja en el cuerpo: la hereda del convenio.  La vigencia del arancel tiene que estar CONTENIDA en la del convenio. Fuera de ella nunca podria resolver, porque la resolucion exige primero un convenio aplicable.  La practica puede ser global de plataforma o propia de la organizacion; una de otro tenant responde 404.  ARANCEL POR OFERTA (RF-M16-008): con ofertaId, el arancel es el de esa practica cuando se presta dentro de esa oferta, y al resolver con esa oferta manda sobre el general. El general y el de cada oferta conviven en el mismo periodo; dos de la misma oferta no. La oferta tiene que ser de esta sede (404), admitir obra social (409 oferta-sin-obra-social) y declarar la practica (409 practica-no-habilitada-en-oferta).
      * @endpoint post /api/v1/consultorios/{consultorioId}/convenios/{convenioId}/aranceles
 * @param requestParameters
      */
@@ -133,6 +142,14 @@ export interface ConveniosYArancelesServiceInterface {
 * @param requestParameters
      */
     getConvenio(requestParameters: GetConvenioRequestParams, extraHttpRequestParams?: any): Observable<ConvenioResponse>;
+
+    /**
+     * Previsualizar o confirmar una importacion masiva de aranceles
+     * RF-M16-007. Exige convenio:manage sobre la sede de la ruta, en los dos modos.  Cada fila se valida con LAS MISMAS reglas que el alta unitaria de un arancel: practica visible para el tenant (por practicaId o por codigoPractica), importes que cuadran, vigencia contenida en la del convenio, oferta de la sede que admite obra social y declara la practica, y que no se pise con un arancel vigente del mismo grupo (convenio, practica, oferta). Ademas, dos filas del mismo lote tampoco pueden pisarse entre si.  PREVIEW responde 200 con el desenlace de cada fila: ALTA, o RECHAZADA con el problemType que daria el alta unitaria. No escribe nada ni toma el lock: es una prediccion, no una reserva.  CONFIRMAR es TODO O NADA. Revalida el lote entero bajo el lock del convenio —lo que se cargo despues del preview cuenta— y, si todas las filas entran, las inserta y responde 200 con aplicada &#x3D; true y el arancelId de cada una. Si una sola no entra, 409 importacion-aranceles-rechazada con el desenlace de cada fila en la propiedad filas, y ninguna fila escrita.  Reintentar una confirmacion ya aplicada no duplica nada: sus filas chocan contra los aranceles que ella misma creo y responde 409.
+     * @endpoint post /api/v1/consultorios/{consultorioId}/convenios/{convenioId}/aranceles/importacion
+* @param requestParameters
+     */
+    importArancelesDeConvenio(requestParameters: ImportArancelesDeConvenioRequestParams, extraHttpRequestParams?: any): Observable<ImportacionArancelesResponse>;
 
     /**
      * Listar los aranceles de un convenio

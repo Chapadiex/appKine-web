@@ -11,6 +11,7 @@ import { TIMEOUT_AXE, esperarSinViolaciones } from '../../../../core/testing/axe
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { errorInterceptor } from '../../../../core/interceptors/error.interceptor';
 import { provideApi } from '../../../../api/generated/provide-api';
+import { fijarReloj, soltarReloj } from '../../../../core/testing/reloj';
 
 const CONSULTORIO = 3;
 const OFERTA = 42;
@@ -113,7 +114,45 @@ describe('CicloDeTurnoPage', () => {
   });
 
   afterEach(() => {
+    soltarReloj();
     httpMock.verify();
+  });
+
+  /**
+   * Sin `?fecha=` el destino de la reprogramacion arranca hoy, y hoy es el de la SEDE: a las 21:25
+   * de Cordoba un navegador en UTC ya esta en el 10/10. La agenda trae la zona y el dia se corrige.
+   */
+  it('sin `?fecha=` el dia destino es hoy en la sede, no en el navegador', async () => {
+    fijarReloj('2026-10-10T00:25:00Z', { navegadorEnUtc: true });
+    tenantContext.select({
+      organizationId: 1,
+      organizationName: 'Centro Belgrano',
+      consultorioId: CONSULTORIO,
+      consultorioName: 'Sede Centro',
+    });
+    permisos.cargar().subscribe();
+    httpMock
+      .expectOne(RUTA_PERMISOS_EFECTIVOS)
+      .flush({ permissions: [PERMISO_TURNO_READ, PERMISO_TURNO_MANAGE] });
+    const fixture = TestBed.createComponent(CicloDeTurnoPage);
+    fixture.componentRef.setInput('turnoId', String(TURNO));
+    fixture.componentRef.setInput('version', '0');
+    fixture.componentRef.setInput('ofertaId', String(OFERTA));
+    // Lo que hace el router con un query param ausente.
+    fixture.componentRef.setInput('fecha', undefined);
+    fixture.detectChanges();
+
+    responderLectura(false);
+    httpMock.expectOne(HISTORIAL).flush(EVENTOS);
+    const provisoria = httpMock.expectOne(esAgenda());
+    expect(provisoria.request.params.get('desde')).toBe('2026-10-10');
+    provisoria.flush(DIA);
+
+    const deLaSede = httpMock.expectOne(esAgenda());
+    expect(deLaSede.request.params.get('desde')).toBe('2026-10-09');
+    expect(deLaSede.request.params.get('hasta')).toBe('2026-10-10');
+    deLaSede.flush(DIA);
+    await asentar(fixture);
   });
 
   it('reconstruye estado y horario desde el historial, que es la unica lectura que hay', async () => {
@@ -125,6 +164,27 @@ describe('CicloDeTurnoPage', () => {
     expect(texto).toContain('09:00');
     expect(texto).toContain('America/Argentina/Cordoba');
     expect(texto).toContain('Se reservo el turno');
+    expect(enlaceCon(fixture, 'Es parte de una serie')).toBeNull();
+  });
+
+  it('un turno de una serie enlaza a la serie', async () => {
+    const fixture = await montar({ serieId: 7 });
+    expect(enlaceCon(fixture, 'Es parte de una serie')?.getAttribute('href')).toBe(
+      '/agenda/series/7',
+    );
+  });
+
+  it('muestra el prepago pendiente del turno antes de la llegada (E-8), sin bloquear nada', async () => {
+    const fixture = await montar({
+      leido: {
+        ...TURNO_LEIDO,
+        prepago: { estado: 'PENDIENTE', importeSugerido: 15000, moneda: 'ARS' },
+      },
+    });
+
+    const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(texto).toContain('Prepago pendiente si se atiende como particular');
+    expect(texto).toMatch(/sugerido \$\s?15\.000,00/);
   });
 
   it('la ausencia sale con el motivo VACIO: el contrato lo declara opcional', async () => {
@@ -257,6 +317,99 @@ describe('CicloDeTurnoPage', () => {
     httpMock.expectOne(HISTORIAL).flush(EVENTOS);
     httpMock.expectOne(esAgenda()).flush(DIA);
     await asentar(fixture);
+  });
+
+  /**
+   * Encontrado por el E2E contra el backend real (AKINE E-2). Despues de una transicion hecha
+   * desde esta pantalla, la respuesta de esa transicion le ganaba para siempre a cualquier
+   * relectura: si otra persona movia el turno, "Releer el turno" traia la version nueva pero la
+   * pantalla seguia mostrando el estado viejo y mandando la version vieja. El 409 no tenia salida.
+   */
+  it('releer despues de un 409 reemplaza lo que dejo la ultima transicion', async () => {
+    const fixture = await montar();
+
+    clickear(fixture, 'Confirmar el turno');
+    httpMock
+      .expectOne(CONFIRMACION)
+      .flush({ id: TURNO, estado: 'CONFIRMADO', version: 1, inicio: INICIO, fin: SIGUIENTE });
+    await asentar(fixture);
+    httpMock.expectOne(HISTORIAL).flush(EVENTOS);
+    await asentar(fixture);
+
+    // Mientras tanto otra persona lo reprogramo (version 2): cancelar con la 1 rebota.
+    clickear(fixture, 'Cancelar el turno');
+    escribirMotivo(fixture, 'Con la version vieja');
+    enviarPanel(fixture);
+    httpMock
+      .expectOne(CANCELACION)
+      .flush(
+        { type: 'https://akine.app/problems/conflict', status: 409, detail: 'Version vieja.' },
+        { status: 409, statusText: 'Conflict' },
+      );
+    await asentar(fixture);
+
+    clickear(fixture, 'Releer el turno');
+    httpMock
+      .expectOne((p: HttpRequest<unknown>) => p.method === 'GET' && p.url === TURNO_URL)
+      .flush({ ...TURNO_LEIDO, estado: 'RESERVADO', version: 2 });
+    httpMock.expectOne(HISTORIAL).flush(EVENTOS);
+    httpMock.expectOne(esAgenda()).flush(DIA);
+    await asentar(fixture);
+
+    expect(textoDe(fixture)).toContain('Reservado');
+
+    // El panel de cancelar sigue abierto: releer no tira lo que la persona ya escribio.
+    escribirMotivo(fixture, 'Con la version vigente');
+    enviarPanel(fixture);
+    const vigente = httpMock.expectOne(CANCELACION);
+    expect(vigente.request.body).toEqual({
+      motivo: 'Con la version vigente',
+      expectedVersion: 2,
+    });
+    vigente.flush({ id: TURNO, estado: 'CANCELADO', version: 3, inicio: INICIO, fin: SIGUIENTE });
+    await asentar(fixture);
+    httpMock.expectOne(HISTORIAL).flush(EVENTOS);
+  });
+
+  /** La otra cara del caso anterior, y tambien la vio el E2E: el orden de llegada no manda. */
+  it('la lectura de la apertura que vuelve tarde no pisa una transicion mas nueva', async () => {
+    tenantContext.select({
+      organizationId: 1,
+      organizationName: 'Centro Belgrano',
+      consultorioId: CONSULTORIO,
+      consultorioName: 'Sede Centro',
+    });
+    permisos.cargar().subscribe();
+    httpMock
+      .expectOne(RUTA_PERMISOS_EFECTIVOS)
+      .flush({ permissions: [PERMISO_TURNO_READ, PERMISO_TURNO_MANAGE] });
+    const fixture = TestBed.createComponent(CicloDeTurnoPage);
+    fixture.componentRef.setInput('turnoId', String(TURNO));
+    fixture.componentRef.setInput('version', '0');
+    fixture.componentRef.setInput('ofertaId', String(OFERTA));
+    fixture.componentRef.setInput('fecha', FECHA);
+    fixture.detectChanges();
+
+    // La lectura de la apertura queda en vuelo mientras la persona confirma.
+    const apertura = httpMock.expectOne(
+      (p: HttpRequest<unknown>) => p.method === 'GET' && p.url === TURNO_URL,
+    );
+    httpMock.expectOne(HISTORIAL).flush(EVENTOS);
+    httpMock.expectOne(esAgenda()).flush(DIA);
+    await asentar(fixture);
+
+    clickear(fixture, 'Confirmar el turno');
+    httpMock
+      .expectOne(CONFIRMACION)
+      .flush({ id: TURNO, estado: 'CONFIRMADO', version: 1, inicio: INICIO, fin: SIGUIENTE });
+    await asentar(fixture);
+    httpMock.expectOne(HISTORIAL).flush(EVENTOS);
+
+    apertura.flush(TURNO_LEIDO);
+    await asentar(fixture);
+
+    expect(textoDe(fixture)).toContain('Confirmado');
+    expect(textoDe(fixture)).not.toContain('Reservado —');
   });
 
   /**
@@ -401,19 +554,25 @@ describe('CicloDeTurnoPage', () => {
    * de la query — que es el camino que existia antes de que hubiera lectura, y que sigue
    * teniendo que funcionar.
    */
-  function responderLectura(falla: boolean): void {
+  function responderLectura(falla: boolean, leido: object = TURNO_LEIDO): void {
     const pedido = httpMock.expectOne(
       (p: HttpRequest<unknown>) => p.method === 'GET' && p.url === TURNO_URL,
     );
     if (falla) {
       pedido.flush(null, { status: 500, statusText: 'Server Error' });
     } else {
-      pedido.flush(TURNO_LEIDO);
+      pedido.flush(leido);
     }
   }
 
   async function montar(
-    opciones: { version?: string; permisos?: string[]; lecturaFalla?: boolean } = {},
+    opciones: {
+      version?: string;
+      permisos?: string[];
+      lecturaFalla?: boolean;
+      leido?: object;
+      serieId?: number;
+    } = {},
   ): Promise<ComponentFixture<CicloDeTurnoPage>> {
     tenantContext.select({
       organizationId: 1,
@@ -434,7 +593,13 @@ describe('CicloDeTurnoPage', () => {
     fixture.componentRef.setInput('fecha', FECHA);
     fixture.detectChanges();
 
-    responderLectura(opciones.lecturaFalla === true);
+    responderLectura(
+      opciones.lecturaFalla === true,
+      opciones.leido ??
+        (opciones.serieId === undefined
+          ? TURNO_LEIDO
+          : { ...TURNO_LEIDO, serieId: opciones.serieId }),
+    );
     httpMock.expectOne(HISTORIAL).flush(EVENTOS);
     httpMock.expectOne(esAgenda()).flush(DIA);
     await asentar(fixture);

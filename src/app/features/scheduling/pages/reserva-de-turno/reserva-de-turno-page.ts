@@ -1,7 +1,11 @@
 import { Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
+import { PERMISO_PACIENTE_READ } from '../../../../core/models/permisos';
+import { PermisoDirective } from '../../../../shared/directives/permiso.directive';
+
 import { Agenda } from '../../../../api/generated/model/agenda';
+import { CoberturaResponse } from '../../../../api/generated/model/cobertura-response';
 import { PersonaResponse } from '../../../../api/generated/model/persona-response';
 import { ProfesionalHabilitado } from '../../../../api/generated/model/profesional-habilitado';
 import { SlotDisponible } from '../../../../api/generated/model/slot-disponible';
@@ -17,6 +21,7 @@ import {
   sumarDias,
   textoDeCupo,
 } from '../../models/etiquetas-de-agenda';
+import { coberturaParaReservar } from '../../models/etiquetas-de-turno';
 
 /** Cuanto se espera despues de la ultima tecla antes de consultar el padron. */
 const ESPERA_DE_BUSQUEDA_MS = 300;
@@ -60,11 +65,13 @@ const ESPERA_DE_BUSQUEDA_MS = 300;
  */
 @Component({
   selector: 'app-reserva-de-turno-page',
-  imports: [RouterLink],
+  imports: [RouterLink, PermisoDirective],
   templateUrl: './reserva-de-turno-page.html',
   styleUrl: '../../agenda.css',
 })
 export class ReservaDeTurnoPage {
+  protected readonly PERMISO_PACIENTE_READ = PERMISO_PACIENTE_READ;
+
   private readonly api = inject(SchedulingApi);
   private readonly tenantContext = inject(TenantContextStore);
 
@@ -76,6 +83,7 @@ export class ReservaDeTurnoPage {
 
   protected readonly fechaEnPalabras = fechaEnPalabras;
   protected readonly textoDeCupo = textoDeCupo;
+  protected readonly coberturaParaReservar = coberturaParaReservar;
 
   protected readonly agenda = signal<Agenda | null>(null);
   protected readonly profesionales = signal<readonly ProfesionalHabilitado[]>([]);
@@ -86,6 +94,13 @@ export class ReservaDeTurnoPage {
 
   protected readonly persona = signal<PersonaResponse | null>(null);
   protected readonly candidatas = signal<readonly PersonaResponse[]>([]);
+
+  /**
+   * Coberturas que se pueden elegir para este turno (AKINE E, `ReservarTurno.coberturaId`).
+   * Elegir es opcional: sin eleccion, la recepcion usa la primera que aplique.
+   */
+  protected readonly coberturas = signal<readonly CoberturaResponse[]>([]);
+  protected readonly coberturaId = signal<number | null>(null);
 
   /** Timer del debounce de la busqueda de personas. Ver buscarPersona. */
   private busquedaPendiente: ReturnType<typeof setTimeout> | undefined;
@@ -158,6 +173,8 @@ export class ReservaDeTurnoPage {
         this.instante.set(inicio);
         this.persona.set(null);
         this.candidatas.set([]);
+        this.coberturas.set([]);
+        this.coberturaId.set(null);
         this.turno.set(null);
         this.claveDeIntento.set('');
         this.error.set(null);
@@ -246,6 +263,48 @@ export class ReservaDeTurnoPage {
     // reusarla seria exactamente el 409 `idempotency-key-conflict`.
     this.claveDeIntento.set('');
     this.error.set(null);
+    this.cargarCoberturas(persona);
+  }
+
+  /**
+   * La cobertura elegida para el turno, o ninguna. Otra cobertura es otro intento: el backend
+   * compara el contenido del pedido contra la clave, asi que la clave anterior se descarta.
+   */
+  protected elegirCobertura(valor: string): void {
+    const id = Number(valor);
+    this.coberturaId.set(valor !== '' && Number.isFinite(id) && id > 0 ? id : null);
+    this.claveDeIntento.set('');
+  }
+
+  /** Nombre de la cobertura con la que quedo el turno, si la pantalla la conoce. */
+  protected coberturaDelTurno(coberturaId: number | undefined): string {
+    if (coberturaId === undefined) {
+      return '';
+    }
+    const elegida = this.coberturas().find((c) => c.id === coberturaId);
+    return elegida === undefined ? `#${coberturaId}` : coberturaParaReservar(elegida);
+  }
+
+  /**
+   * Las coberturas vigentes el dia del turno. Es accesorio: si la lectura falla —por ejemplo,
+   * quien reserva no puede leer coberturas— la reserva sigue funcionando sin elegir ninguna.
+   */
+  private cargarCoberturas(persona: PersonaResponse): void {
+    this.coberturas.set([]);
+    this.coberturaId.set(null);
+    const fecha = this.fecha();
+    if (persona.id === undefined || fecha === '') {
+      return;
+    }
+    this.api.coberturasElegibles(persona.id, fecha).subscribe({
+      next: (lista) => {
+        // La respuesta de una persona anterior no pisa la eleccion de la actual.
+        if (this.persona()?.id === persona.id) {
+          this.coberturas.set(lista);
+        }
+      },
+      error: () => this.coberturas.set([]),
+    });
   }
 
   // -------------------------------------------------------------------------------------
@@ -274,6 +333,7 @@ export class ReservaDeTurnoPage {
         inicio: instante,
         personaId: persona.id,
         profesionalId: this.profesionalDelSlot() ?? undefined,
+        coberturaId: this.coberturaId() ?? undefined,
         idempotencyKey: this.claveDelIntento(),
       })
       .subscribe({

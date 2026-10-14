@@ -68,7 +68,7 @@ describe('arnes de axe-core', () => {
    *
    * <p>Ademas de `violations` y `passes`, axe devuelve `incomplete`: "no pude comprobarlo". El
    * arnes lo pedia en `resultTypes` desde AKINE-01.02 y nadie lo leyo nunca, asi que cuarenta
-   * auditorias venian pasando en verde con el contraste sin medir. Estos tres casos son el
+   * auditorias venian pasando en verde con el contraste sin medir. Estos casos son el
    * guard que impide que eso vuelva a ocurrir en silencio, con cualquier regla.
    */
   describe('reglas sin veredicto', () => {
@@ -89,15 +89,25 @@ describe('arnes de axe-core', () => {
      * Fija el contenido exacto del mapa, que es lo que lo vuelve una decision y no un tramite:
      * tolerar una regla nueva obliga a pasar por este test y a escribir el porque.
      */
-    it('declara una sola regla tolerada, y dice donde se mide de verdad', () => {
-      expect([...REGLAS_SIN_VEREDICTO_EN_JSDOM.keys()]).toEqual(['color-contrast']);
-      expect(REGLAS_SIN_VEREDICTO_EN_JSDOM.get('color-contrast')).toContain(
-        'e2e/contraste.spec.ts',
-      );
+    it('declara solo las dos reglas que jsdom no puede decidir, y dice donde se miden', () => {
+      expect([...REGLAS_SIN_VEREDICTO_EN_JSDOM.keys()]).toEqual([
+        'color-contrast',
+        'label-content-name-mismatch',
+      ]);
+      for (const motivo of REGLAS_SIN_VEREDICTO_EN_JSDOM.values()) {
+        expect(motivo).toContain('e2e/contraste.spec.ts');
+      }
+      // WCAG 2.5.3 no queda sin medir: el motivo nombra el canvas que falta y el gate que la cubre.
+      expect(REGLAS_SIN_VEREDICTO_EN_JSDOM.get('label-content-name-mismatch')).toContain('canvas');
     });
 
-    it('deja pasar la regla declarada', () => {
-      expect(reglasSinVeredictoNoDeclaradas([indecisa('color-contrast')])).toEqual([]);
+    it('deja pasar las reglas declaradas', () => {
+      expect(
+        reglasSinVeredictoNoDeclaradas([
+          indecisa('color-contrast'),
+          indecisa('label-content-name-mismatch'),
+        ]),
+      ).toEqual([]);
     });
 
     it('delata cualquier otra regla que axe no haya podido decidir', () => {
@@ -107,16 +117,18 @@ describe('arnes de axe-core', () => {
     });
 
     /**
-     * El censo vivo. Hoy `color-contrast` es la unica regla que jsdom no puede decidir sobre las
-     * cinco etiquetas exigidas —medido sobre los 110 archivos de spec—. Si una version futura de
-     * axe suma otra, esto lo dice aca en vez de repartir el fallo por cuarenta specs ajenos.
+     * El censo vivo. Hoy `color-contrast` y `label-content-name-mismatch` (activa desde axe-core
+     * 4.14) son las unicas reglas que jsdom no puede decidir sobre las cinco etiquetas exigidas.
+     * Si una version futura de axe suma otra, esto lo dice aca en vez de repartir el fallo por
+     * cuarenta specs ajenos. El boton con `aria-label` y texto visible ejerce la regla nueva.
      */
     it(
       'hoy ninguna regla fuera de la declarada se queda sin veredicto',
       async () => {
         const contenedor = conHtml(
           '<p style="color: #767676; background: #fff">Texto sobre fondo claro</p>' +
-            '<label for="c">Email</label><input id="c" type="email" />',
+            '<label for="c">Email</label><input id="c" type="email" />' +
+            '<button type="button" aria-label="Guardar cambios">Guardar</button>',
         );
 
         const resultado = await auditar(contenedor);

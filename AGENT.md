@@ -193,7 +193,9 @@ comparabilidad con sesiones anteriores, mínimo ruido administrativo visible.
 
 - Sin secretos en el bundle. Nada de credenciales en `environment.ts`.
 - `environment.apiBaseUrl` está vacío a propósito: las peticiones son relativas y el proxy
-  de dev las resuelve. Así no hay URL de localhost que se pueda commitear por accidente.
+  de dev las resuelve. Así no hay URL de localhost que se pueda commitear por accidente. En la
+  imagen Docker las resuelve nginx como proxy inverso hacia `AKINE_API_URL`, en runtime: ver
+  `docs/imagen-docker.md`.
 - No confiar en ningún dato del cliente para decidir permisos.
 - Datos de prueba: **exclusivamente sintéticos.** Nunca datos reales de pacientes.
 
@@ -210,11 +212,15 @@ Los E2E corren con backend y frontend **en la misma rama**. Ver `.claude/qa-conf
 
 ## 11. Estado actual
 
+> **Al 07/10/2026.** Cliente generado en **0.69.0**, igual que el contrato del backend. Doce
+> features en `src/app/features/` —`reporting` es la última— con pantallas hasta F5 y F7: agenda,
+> recepción, series, cobros, caja, presentaciones, reportes, consola de plataforma. Imagen Docker
+> propia (`docs/imagen-docker.md`). El estado medido, los números de tests y lo que falta están en
+> `CLAUDE.md` §7: este archivo no los repite para no desactualizarse.
+
+Lo de abajo es la foto de AKINE-00.01, y queda como historia.
+
 **AKINE-00.01 completada y verificada.** Angular 21.2.6, build OK, 4 tests unitarios y
 5 E2E en verde contra el stack real.
-
-Existe hoy: el shell accesible, la infraestructura de `core/` (token store, contexto tenant,
-interceptores), el cliente generado y el pipeline. **No hay pantallas funcionales** — se
-construyen en las etapas M01–M29.
 
 Rutas reales, comandos y decisiones: `CLAUDE.md` §7.

@@ -43,6 +43,10 @@ const TEXTOS_SIN_SLOTS: Readonly<Record<DiaDeAgendaMotivoSinSlotsEnum, string>> 
     'entra ningun turno completo.',
   [DiaDeAgendaMotivoSinSlotsEnum.COMPLETO]:
     'Todos los turnos de este dia ya estan reservados. La agenda esta bien: se lleno.',
+  [DiaDeAgendaMotivoSinSlotsEnum.FUERA_DE_HORARIO_SEDE]:
+    'La sede no atiende en las horas del profesional este dia. El horario general de la sede se edita desde Horarios.',
+  [DiaDeAgendaMotivoSinSlotsEnum.PASADO]:
+    'Este dia ya no tiene turnos por delante: los horarios que quedaban ya empezaron.',
 };
 
 /**
@@ -147,12 +151,12 @@ export function sumarDias(fecha: string, dias: number): string {
   return dia.toISOString().slice(0, 10);
 }
 
-/** Hoy, en fecha local del navegador. Es el default del buscador, no una regla de negocio. */
-export function hoy(): string {
-  const ahora = new Date();
-  const local = new Date(ahora.getTime() - ahora.getTimezoneOffset() * 60_000);
-  return local.toISOString().slice(0, 10);
-}
+/**
+ * `hoy` (dia del navegador, provisorio) y `hoyEnZona` viven en `core/services/dia-de-la-sede`,
+ * que es de donde los toma el resto de las pantallas. La agenda arranca con
+ * `DiaDeLaSede.hoy()` y, si una respuesta trae otra zona, corrige una vez al dia de esa zona.
+ */
+export { hoyDelNavegador as hoy, hoyEnZona } from '../../../core/services/dia-de-la-sede';
 
 /**
  * La zona de la respuesta, o UTC si vino vacia o no la conoce el navegador.

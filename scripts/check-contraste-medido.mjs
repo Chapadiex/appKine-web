@@ -24,12 +24,13 @@
  * 2. Que `playwright.config.ts` declare un proyecto por tema, claro y oscuro, cada uno con su
  *    `colorScheme`: un contraste que pasa en claro puede fallar en oscuro.
  * 3. Que `package.json` exponga `a11y:contraste` corriendo **los dos** proyectos.
- * 4. Que el arnes de jsdom no tolere mas `incomplete` que el de `color-contrast`.
+ * 4. Que el arnes de jsdom no tolere mas `incomplete` que los de `color-contrast` y
+ *    `label-content-name-mismatch`, y que cada una se siga corriendo en el arnes de Chromium.
  *
  * Se encadena en `npm run test:ci`, detras del gate de cobertura: la suite de jsdom es la que se
  * beneficia de la excusa, asi que es la que tiene que pagar por sostenerla.
  */
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join, resolve } from 'node:path';
 
@@ -38,6 +39,9 @@ const raizRepo = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const SPEC_DE_CONTRASTE = 'e2e/contraste.spec.ts';
 const ARNES_JSDOM = 'src/app/core/testing/axe.ts';
 const PROYECTOS = ['contraste-claro', 'contraste-oscuro'];
+const ARNES_CHROMIUM = 'e2e/support/contraste.ts';
+/** Reglas cuyo `incomplete` jsdom puede tolerar porque el arnes de Chromium las corre. */
+const TOLERADAS_CON_COBERTURA = ['color-contrast', 'label-content-name-mismatch'];
 
 const fallas = [];
 
@@ -111,7 +115,19 @@ if (bloque === null) {
   );
 } else {
   const toleradas = [...bloque[1].matchAll(/^\s*\[\s*'([a-z0-9-]+)'/gm)].map((m) => m[1]);
-  const inesperadas = toleradas.filter((regla) => regla !== 'color-contrast');
+  const inesperadas = toleradas.filter((regla) => !TOLERADAS_CON_COBERTURA.includes(regla));
+
+  // Tolerar una regla en jsdom es remitirla a Chromium: si el arnes de Chromium deja de correrla,
+  // la remision apunta a un lugar que ya no la mide y la regla queda sin medir en ningun lado.
+  const arnesChromium = leer(ARNES_CHROMIUM) ?? '';
+  for (const regla of toleradas.filter((r) => TOLERADAS_CON_COBERTURA.includes(r))) {
+    if (!arnesChromium.includes(`values: ['${regla}']`)) {
+      fallas.push(
+        `El arnes de jsdom tolera el incomplete de \`${regla}\` remitiendo a ${ARNES_CHROMIUM}, y ` +
+          'ese arnes ya no corre la regla: quedaria sin medir en ningun lado.',
+      );
+    }
+  }
 
   if (inesperadas.length > 0) {
     fallas.push(
@@ -120,6 +136,63 @@ if (bloque === null) {
         'haberla podido comprobar. Si la incorporacion es deliberada, se actualiza este gate ' +
         'diciendo donde se mide esa regla de verdad.',
     );
+  }
+}
+
+// 5. Contraste no textual, foco y teclado (AKINE-G-7) ---------------------------------------------
+//
+// `contraste-no-textual.spec.ts` mide lo que axe no mide: bordes de control y anillo de foco a 3:1
+// (WCAG 1.4.11), hover y recorrido por teclado. Corre en los MISMOS dos proyectos de tema; si el
+// `testMatch` deja de alcanzarlo, el spec existe y no corre nunca, que es el regreso silencioso que
+// este gate existe para impedir.
+
+const SPEC_NO_TEXTUAL = 'e2e/contraste-no-textual.spec.ts';
+if (leer(SPEC_NO_TEXTUAL) === null) {
+  fallas.push(
+    `No existe ${SPEC_NO_TEXTUAL}. Es el unico lugar donde se miden el borde de los controles, el ` +
+      'anillo de foco y el recorrido por teclado: axe no tiene regla automatica para ninguno.',
+  );
+}
+const matchers = [...configPlaywright.matchAll(/testMatch:\s*(\/.+?\/)\s*,/g)].map((m) => m[1]);
+const alcanzado = matchers.some((literal) => {
+  const regex = new RegExp(literal.slice(1, -1));
+  return regex.test('contraste-no-textual.spec.ts') && regex.test('contraste.spec.ts');
+});
+if (matchers.length < PROYECTOS.length || !alcanzado) {
+  fallas.push(
+    `Los proyectos de contraste no alcanzan a ${SPEC_NO_TEXTUAL} en su \`testMatch\`: el spec ` +
+      'existiria y no correria en ningun tema.',
+  );
+}
+
+// 6. Ningun `outline: none` sin reemplazo ---------------------------------------------------------
+//
+// Quitar el anillo de foco deja al teclado sin saber donde esta (WCAG 2.4.7). La unica excepcion
+// es el `main` del layout: es el destino del skip link, tiene `tabindex="-1"` y el Tab no lo
+// alcanza nunca, asi que no hay indicador que mostrar.
+
+const OUTLINE_PERMITIDO = new Set(['src/app/app.css::.contenido:focus']);
+
+function hojas(directorio) {
+  return readdirSync(join(raizRepo, directorio), { withFileTypes: true }).flatMap((entrada) => {
+    const ruta = `${directorio}/${entrada.name}`;
+    if (entrada.isDirectory()) return ruta.endsWith('api/generated') ? [] : hojas(ruta);
+    return entrada.name.endsWith('.css') ? [ruta] : [];
+  });
+}
+
+for (const hoja of hojas('src')) {
+  const css = leer(hoja) ?? '';
+  for (const regla of css.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+    if (!/outline(-style)?\s*:\s*(none|0)\s*[;}]?/.test(regla[2])) continue;
+    const selector = regla[1].replace(/\/\*[\s\S]*?\*\//g, '').trim();
+    if (!OUTLINE_PERMITIDO.has(`${hoja}::${selector}`)) {
+      fallas.push(
+        `${hoja}: \`${selector}\` quita el outline. Sin anillo de foco el teclado no sabe donde ` +
+          'esta (WCAG 2.4.7): reemplazalo por el anillo del sistema de diseno o justifica la ' +
+          'excepcion en OUTLINE_PERMITIDO.',
+      );
+    }
   }
 }
 
@@ -135,5 +208,7 @@ if (fallas.length > 0) {
 
 console.log(
   `[contraste:check] El contraste se mide en ${SPEC_DE_CONTRASTE}, en modo claro y oscuro ` +
-    '(`npm run a11y:contraste`). El arnes de jsdom solo tolera el `incomplete` de color-contrast.',
+    '(`npm run a11y:contraste`), junto con el contraste no textual, el foco y el teclado de ' +
+    `${SPEC_NO_TEXTUAL}. El arnes de jsdom solo tolera el incomplete de color-contrast y ` +
+    'de label-content-name-mismatch (WCAG 2.5.3), las dos medidas en Chromium.',
 );

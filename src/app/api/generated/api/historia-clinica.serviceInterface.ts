@@ -14,6 +14,7 @@ import { Observable }                                        from 'rxjs';
 import { ActualizarResumenRequest } from '../model/models';
 import { AntecedenteResponse } from '../model/models';
 import { BajaDeAntecedenteRequest } from '../model/models';
+import { DatosAdministrativosDeHistoriaResponse } from '../model/models';
 import { HistoriaClinicaResponse } from '../model/models';
 import { ProblemDetail } from '../model/models';
 import { RegistrarAntecedenteRequest } from '../model/models';
@@ -51,6 +52,10 @@ export interface RegistrarAntecedenteClinicoRequestParams {
     personaId: number;
     registrarAntecedenteRequest: RegistrarAntecedenteRequest;
     xJustificacionAcceso?: string;
+}
+
+export interface VerDatosAdministrativosDeHistoriaClinicaRequestParams {
+    personaId: number;
 }
 
 export interface VerHistoriaClinicaRequestParams {
@@ -102,6 +107,14 @@ export interface HistoriaClinicaServiceInterface {
 * @param requestParameters
      */
     registrarAntecedenteClinico(requestParameters: RegistrarAntecedenteClinicoRequestParams, extraHttpRequestParams?: any): Observable<AntecedenteResponse>;
+
+    /**
+     * Ver los datos administrativos de la Historia Clinica de una persona
+     * Matriz de permisos §32, \&quot;Ver Historia Clinica\&quot; del ADMINISTRATIVO: Limitado, que la matriz define como solo metadatos administrativos y NUNCA contenido clinico. Devuelve si la persona tiene historia, cuando se abrio, sus casos (numero, estado, oferta, fechas) y el equipo tratante vigente de cada uno. No trae resumen, antecedentes, diagnostico, objetivo ni motivo de cierre.  Exige paciente:read (lo tiene el personal, no el rol PACIENTE). No pide justificacion de acceso y no se audita como acceso clinico: no expone contenido clinico. Una persona propia sin historia responde 200 con tieneHistoriaClinica &#x3D; false; una persona de otra organizacion, o sin perfil de paciente vigente, 404.
+     * @endpoint get /api/v1/historias-clinicas/por-persona/{personaId}/datos-administrativos
+* @param requestParameters
+     */
+    verDatosAdministrativosDeHistoriaClinica(requestParameters: VerDatosAdministrativosDeHistoriaClinicaRequestParams, extraHttpRequestParams?: any): Observable<DatosAdministrativosDeHistoriaResponse>;
 
     /**
      * Ver la Historia Clinica de una persona

@@ -404,7 +404,10 @@ describe('ConveniosDeLaSedePage', () => {
           peticion.method === 'PUT' && peticion.url === `${CONVENIOS}/7`,
       )
       .flush(
-        { type: 'https://akine.app/problems/conflict', detail: 'la version quedo vieja' },
+        {
+          type: 'https://akine.app/problems/concurrent-modification',
+          detail: 'la version quedo vieja',
+        },
         { status: 409, statusText: 'Conflict' },
       );
     fixture.detectChanges();

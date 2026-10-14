@@ -118,6 +118,32 @@ describe('RegisterPage', () => {
     segundo.flush({ message: 'ok' }, { status: 202, statusText: 'Accepted' });
   });
 
+  it('ante idempotency-key-conflict lo explica y el reintento sale con otra clave', async () => {
+    const fixture = crear();
+    completarMinimo(fixture);
+
+    enviar(fixture);
+    const primero = httpMock.expectOne(URL_REGISTRO);
+    const clave = primero.request.headers.get('Idempotency-Key');
+    primero.flush(
+      {
+        type: 'https://akine.app/problems/idempotency-key-conflict',
+        status: 409,
+        detail: 'detalle',
+      },
+      { status: 409, statusText: 'Conflict' },
+    );
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(texto(fixture)).toContain('Ya hay un registro en curso con otros datos');
+
+    enviar(fixture);
+    const segundo = httpMock.expectOne(URL_REGISTRO);
+    expect(segundo.request.headers.get('Idempotency-Key')).not.toBe(clave);
+    segundo.flush({ message: 'ok' }, { status: 202, statusText: 'Accepted' });
+  });
+
   it('muestra EXACTAMENTE el mismo texto exista o no la cuenta', async () => {
     // El backend responde 202 con el mismo cuerpo en los dos casos (ADR-0018). Si la
     // pantalla los distinguiera, el atacante enumeraria clientes igual.

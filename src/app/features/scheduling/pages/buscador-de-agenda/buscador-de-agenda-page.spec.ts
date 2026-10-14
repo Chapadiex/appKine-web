@@ -11,6 +11,7 @@ import { TIMEOUT_AXE, esperarSinViolaciones } from '../../../../core/testing/axe
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { errorInterceptor } from '../../../../core/interceptors/error.interceptor';
 import { provideApi } from '../../../../api/generated/provide-api';
+import { fijarReloj, soltarReloj } from '../../../../core/testing/reloj';
 
 const CONSULTORIO = 3;
 const OFERTA = 42;
@@ -69,6 +70,9 @@ describe('BuscadorDeAgendaPage', () => {
   let permisos: PermissionsStore;
 
   beforeEach(async () => {
+    // Mediodia en UTC y en Cordoba: sin reloj fijo, corrido de noche en un CI en UTC el dia del
+    // navegador ya no es el de la sede y la pantalla —con razon— corrige la ventana y pide de nuevo.
+    fijarReloj('2026-09-15T15:00:00Z', { navegadorEnUtc: true });
     await TestBed.configureTestingModule({
       imports: [BuscadorDeAgendaPage],
       providers: [
@@ -85,7 +89,56 @@ describe('BuscadorDeAgendaPage', () => {
   });
 
   afterEach(() => {
+    soltarReloj();
     httpMock.verify();
+  });
+
+  /**
+   * Lo que tumbo el E2E del PR #42: a las 21:25 de Cordoba un navegador en UTC ya esta en el 10/10,
+   * la ventana arrancaba un dia tarde y el recorte a 62 dias terminaba un dia despues. La primera
+   * agenda trae la zona de la sede: la ventana por defecto se corre a su dia y se vuelve a pedir.
+   */
+  it('la ventana por defecto arranca el dia de la SEDE aunque el navegador ya este en el siguiente', async () => {
+    fijarReloj('2026-10-10T00:25:00Z', { navegadorEnUtc: true });
+    const fixture = await montar();
+
+    elegirOferta(fixture);
+    httpMock.expectOne(esHabilitaciones()).flush({ profesionales: [] });
+    const provisoria = httpMock.expectOne(esAgenda());
+    expect(provisoria.request.params.get('desde')).toBe('2026-10-10');
+    provisoria.flush(AGENDA_CON_TRES_DIAS);
+
+    const deLaSede = httpMock.expectOne(esAgenda());
+    expect(deLaSede.request.params.get('desde')).toBe('2026-10-09');
+    expect(deLaSede.request.params.get('hasta')).toBe('2026-10-16');
+    deLaSede.flush(AGENDA_CON_TRES_DIAS);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const raiz = fixture.nativeElement as HTMLElement;
+    expect((raiz.querySelector('#agenda-desde') as HTMLInputElement).value).toBe('2026-10-09');
+    expect(raiz.querySelectorAll('.dia').length).toBe(3);
+  });
+
+  it('un `hasta` elegido a mano se respeta al correr la ventana al dia de la sede', async () => {
+    fijarReloj('2026-10-10T00:25:00Z', { navegadorEnUtc: true });
+    const fixture = await montar();
+    elegirOferta(fixture);
+    httpMock.expectOne(esHabilitaciones()).flush({ profesionales: [] });
+    const raiz = fixture.nativeElement as HTMLElement;
+
+    // El usuario cambia `hasta` antes de que vuelva la primera respuesta, que queda cancelada.
+    const hasta = raiz.querySelector('#agenda-hasta') as HTMLInputElement;
+    hasta.value = '2026-10-30';
+    hasta.dispatchEvent(new Event('change'));
+    const [vieja, nueva] = httpMock.match(esAgenda());
+    expect(vieja.cancelled).toBe(true);
+    nueva.flush(AGENDA_CON_TRES_DIAS);
+
+    const deLaSede = httpMock.expectOne(esAgenda());
+    expect(deLaSede.request.params.get('desde')).toBe('2026-10-09');
+    expect(deLaSede.request.params.get('hasta')).toBe('2026-10-30');
+    deLaSede.flush(AGENDA_CON_TRES_DIAS);
   });
 
   it('ningun dia de la ventana se omite: el dia sin turnos muestra su motivo', async () => {
@@ -154,6 +207,38 @@ describe('BuscadorDeAgendaPage', () => {
     const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
     expect(texto).toContain('Lo recortamos');
     expect((fixture.nativeElement as HTMLElement).querySelectorAll('.dia').length).toBe(3);
+  });
+
+  /**
+   * Encontrado por el E2E contra el backend real (AKINE E-2): con dos consultas en vuelo, la que
+   * volvia ULTIMA pisaba la grilla, aunque fuera la mas vieja. Cambiar `hasta` y enseguida `desde`
+   * dejaba los campos en una ventana y la grilla en otra — y la ventana mas ancha es justamente la
+   * que tarda mas.
+   */
+  it('una consulta nueva cancela la anterior: la grilla nunca muestra una ventana vieja', async () => {
+    const fixture = await montarConAgenda();
+    const raiz = fixture.nativeElement as HTMLElement;
+
+    const cambiarFecha = (id: string, valor: string): void => {
+      const campo = raiz.querySelector(id) as HTMLInputElement;
+      campo.value = valor;
+      campo.dispatchEvent(new Event('change'));
+    };
+    cambiarFecha('#agenda-hasta', '2026-10-30');
+    cambiarFecha('#agenda-desde', '2026-10-20');
+
+    const [vieja, nueva] = httpMock.match(esAgenda());
+    expect(vieja.cancelled).toBe(true);
+    expect(nueva.request.params.get('desde')).toBe('2026-10-20');
+
+    nueva.flush({
+      ...AGENDA_CON_TRES_DIAS,
+      dias: [{ fecha: '2026-10-20', motivoSinSlots: 'FERIADO', slots: [] }],
+    });
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(raiz.querySelectorAll('.dia').length).toBe(1);
   });
 
   it(

@@ -1,0 +1,232 @@
+<h1>Reportes</h1>
+
+<p class="descripcion">
+  Cada numero dice de donde sale y con que fecha se corto el periodo. <b>No se suman entre si</b>:
+  una deuda, un cobro y un movimiento de caja pueden ser la misma plata contada en tres lugares.
+</p>
+
+<!-- ================================ Filtros =================================== -->
+
+<section class="tarjeta" aria-labelledby="titulo-filtros-reporte">
+  <h2 id="titulo-filtros-reporte">Que reporte y que periodo</h2>
+  <form [formGroup]="filtro" (ngSubmit)="generar()" novalidate>
+    <div class="campos-en-linea">
+      <div class="campo">
+        <label for="reporte-codigo">Reporte</label>
+        <select id="reporte-codigo" formControlName="reporte">
+          @for (opcion of opciones(); track opcion.codigo) {
+            <option [value]="opcion.codigo">{{ opcion.nombre }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="campo">
+        <label for="reporte-desde">Desde</label>
+        <input
+          id="reporte-desde"
+          type="date"
+          formControlName="desde"
+          [attr.aria-invalid]="problemaDeRango() ? 'true' : null"
+          aria-describedby="ayuda-rango"
+        />
+      </div>
+
+      <div class="campo">
+        <label for="reporte-hasta">Hasta</label>
+        <input
+          id="reporte-hasta"
+          type="date"
+          formControlName="hasta"
+          [attr.aria-invalid]="problemaDeRango() ? 'true' : null"
+          aria-describedby="ayuda-rango"
+        />
+      </div>
+    </div>
+
+    <p id="ayuda-rango" class="ayuda">
+      Los dos dias se incluyen. Como maximo {{ maximoDias }} dias, en la zona horaria de la sede.
+    </p>
+    @if (problemaDeRango(); as problema) {
+      <p class="campo__error" role="alert">{{ problema }}</p>
+    }
+
+    @if (seccionesPrevistas().length > 0) {
+      <div class="previstas">
+        <h3 class="previstas__titulo">Este reporte trae</h3>
+        <ul class="previstas__lista">
+          @for (s of seccionesPrevistas(); track s.seccion) {
+            <li>
+              {{ s.titulo || s.seccion }}
+              @if (s.faltaPermiso) {
+                <span class="ayuda">
+                  — no la vas a ver: hace falta {{ permisoEnPalabras(s.permisoRequerido) }}</span
+                >
+              }
+              @if (s.clinica) {
+                <span class="ayuda"> — consultarla queda auditada</span>
+              }
+            </li>
+          }
+        </ul>
+      </div>
+    }
+
+    <div class="acciones">
+      <button type="submit" class="boton" [disabled]="estado().tipo === 'cargando'">
+        Generar reporte
+      </button>
+    </div>
+  </form>
+</section>
+
+<!-- ================================ Resultado ================================= -->
+
+@if (estado().tipo === 'cargando') {
+  <p class="estado estado--cargando">Calculando el reporte…</p>
+}
+
+@if (error(); as fallo) {
+  <section class="tarjeta" role="alert" aria-labelledby="titulo-error-reporte">
+    <h2 id="titulo-error-reporte">No se pudo generar el reporte</h2>
+    <p class="estado estado--error">{{ fallo.mensaje }}</p>
+    @if (fallo.causa === 'sin-contexto') {
+      <div class="acciones">
+        <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto</a>
+      </div>
+    }
+  </section>
+}
+
+@if (reporte(); as r) {
+  <section class="tarjeta" aria-labelledby="titulo-reporte">
+    <h2 id="titulo-reporte">{{ nombreDeReporte(r.reporte) }}</h2>
+    <p class="ayuda">
+      Del {{ fecha(r.desde) }} al {{ fecha(r.hasta) }}
+      @if (r.zona) {
+        <span>(zona {{ r.zona }})</span>
+      }
+      . Un periodo que incluye hoy puede cambiar entre consultas.
+    </p>
+
+    @if (actividadPropia()) {
+      <p class="aviso" role="note">
+        <b>Ves solo tu propia actividad.</b> Los turnos, sesiones y casos de este reporte son los
+        que atendiste o te asignaron, no los de toda la sede.
+      </p>
+    }
+
+    @if (r.omitidas && r.omitidas.length > 0) {
+      <div class="aviso" role="note" aria-labelledby="titulo-omitidas">
+        <h3 id="titulo-omitidas" class="aviso__titulo">Secciones que no se muestran</h3>
+        <ul>
+          @for (o of r.omitidas; track o.seccion) {
+            <li>
+              {{ tituloDeSeccion(o.seccion) }}: hace falta
+              {{ permisoEnPalabras(o.permisoRequerido) }}.
+            </li>
+          }
+        </ul>
+      </div>
+    }
+
+    @if (advertencias().length > 0) {
+      <div class="aviso" role="note" aria-labelledby="titulo-advertencias">
+        <h3 id="titulo-advertencias" class="aviso__titulo">Para leer bien estos numeros</h3>
+        <ul>
+          @for (a of advertencias(); track $index) {
+            <li>
+              @if (a.seccion) {
+                <b>{{ tituloDeSeccion(a.seccion) }}:</b>
+              }
+              {{ a.detalle || a.codigo }}
+            </li>
+          }
+        </ul>
+      </div>
+    }
+
+    <div class="acciones">
+      <button
+        type="button"
+        class="boton boton--secundario"
+        (click)="exportar()"
+        [disabled]="exportando()"
+      >
+        {{ exportando() ? 'Preparando el archivo…' : 'Descargar CSV' }}
+      </button>
+    </div>
+    @if (errorExport(); as fallo) {
+      <p class="estado estado--error" role="alert">{{ fallo.mensaje }}</p>
+    }
+  </section>
+
+  @if (!r.secciones || r.secciones.length === 0) {
+    <p class="estado estado--vacio">Este reporte no tiene ninguna seccion que puedas ver.</p>
+  }
+
+  @for (seccion of r.secciones ?? []; track seccion.seccion; let i = $index) {
+    <section class="tarjeta" [attr.aria-labelledby]="'titulo-seccion-' + i">
+      <h2 [id]="'titulo-seccion-' + i">{{ tituloDeSeccion(seccion.seccion, seccion.titulo) }}</h2>
+
+      @if (seccion.indicadores && seccion.indicadores.length > 0) {
+        <ul class="indicadores">
+          @for (ind of seccion.indicadores; track ind.clave) {
+            <li class="indicador">
+              <span class="indicador__etiqueta">{{ ind.etiqueta || ind.clave }}</span>
+              <span class="indicador__valor">{{ valor(ind) }}</span>
+              @if (ind.fuente || ind.criterioDeFecha) {
+                <dl class="indicador__origen">
+                  @if (ind.fuente) {
+                    <dt>Fuente</dt>
+                    <dd>{{ ind.fuente }}</dd>
+                  }
+                  @if (ind.criterioDeFecha) {
+                    <dt>Fecha de corte</dt>
+                    <dd>{{ ind.criterioDeFecha }}</dd>
+                  }
+                </dl>
+              }
+            </li>
+          }
+        </ul>
+      } @else {
+        <p class="estado estado--vacio">Sin indicadores en esta seccion.</p>
+      }
+
+      @if (seccion.columnas && seccion.columnas.length > 0) {
+        @if (seccion.filas && seccion.filas.length > 0) {
+          <div
+            class="tabla-scroll"
+            tabindex="0"
+            role="region"
+            [attr.aria-labelledby]="'titulo-detalle-' + i"
+          >
+            <h3 [id]="'titulo-detalle-' + i" class="visualmente-oculto">
+              Detalle de {{ tituloDeSeccion(seccion.seccion, seccion.titulo) }}
+            </h3>
+            <table class="tabla">
+              <thead>
+                <tr>
+                  @for (columna of seccion.columnas; track $index) {
+                    <th scope="col">{{ columna }}</th>
+                  }
+                </tr>
+              </thead>
+              <tbody>
+                @for (fila of seccion.filas; track $index) {
+                  <tr>
+                    @for (celda of fila; track $index) {
+                      <td>{{ celda }}</td>
+                    }
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        } @else {
+          <p class="estado estado--vacio">Sin detalle en el periodo.</p>
+        }
+      }
+    </section>
+  }
+}

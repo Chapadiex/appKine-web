@@ -25,6 +25,8 @@ import { CreateAutorizacionRequest } from '../model/create-autorizacion-request'
 // @ts-ignore
 import { DeactivateDocumentoRequest } from '../model/deactivate-documento-request';
 // @ts-ignore
+import { HistorialDeAutorizacionResponse } from '../model/historial-de-autorizacion-response';
+// @ts-ignore
 import { ProblemDetail } from '../model/problem-detail';
 // @ts-ignore
 import { ResolverAutorizacionRequest } from '../model/resolver-autorizacion-request';
@@ -42,6 +44,7 @@ import {
     CreateAutorizacionRequestParams,
     DeactivateAutorizacionRequestParams,
     GetAutorizacionRequestParams,
+    GetHistorialDeAutorizacionRequestParams,
     ListAutorizacionesDePacienteRequestParams,
     ListAutorizacionesElegiblesRequestParams,
     ResolverAutorizacionRequestParams,
@@ -281,6 +284,105 @@ export class AutorizacionesService extends BaseService implements Autorizaciones
         let localVarPath = `/api/v1/personas/${this.configuration.encodeParam({name: "personaId", value: personaId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/autorizaciones/${this.configuration.encodeParam({name: "autorizacionId", value: autorizacionId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}`;
         const { basePath, withCredentials } = this.configuration;
         return this.httpClient.request<AutorizacionResponse>('get', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                params: localVarQueryParameters.toHttpParams(),
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * Historial de estados de una autorizacion
+     * DP-23. Los hechos de la autorizacion, del mas viejo al mas nuevo: ALTA, APROBACION, OBSERVACION, RECHAZO, MODIFICACION, DOCUMENTO, CONSUMO, REVERSION_DE_CONSUMO y ANULACION, cada uno con estado anterior y nuevo, actor, momento y motivo. Vive en una tabla propia append-only, escrita en la misma transaccion que cada mutacion: no se arma leyendo la auditoria.  EL VENCIMIENTO NO ES UN EVENTO. Vencer es funcion del reloj y nada lo escribe: viaja CALCULADO contra fecha en vencida y vencidaDesde.  Las autorizaciones cargadas antes del historial (V85) traen un solo ALTA reconstruido con el estado que tenian ese dia, declarado en detalle.  Mismo permiso que leer la autorizacion: pertenencia al tenant.
+     * @endpoint get /api/v1/personas/{personaId}/autorizaciones/{autorizacionId}/historial
+     * @param requestParameters
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public getHistorialDeAutorizacion(requestParameters: GetHistorialDeAutorizacionRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HistorialDeAutorizacionResponse>;
+    public getHistorialDeAutorizacion(requestParameters: GetHistorialDeAutorizacionRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<HistorialDeAutorizacionResponse>>;
+    public getHistorialDeAutorizacion(requestParameters: GetHistorialDeAutorizacionRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<HistorialDeAutorizacionResponse>>;
+    public getHistorialDeAutorizacion(requestParameters: GetHistorialDeAutorizacionRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        const personaId = requestParameters?.personaId;
+        if (personaId === null || personaId === undefined) {
+            throw new Error('Required parameter personaId was null or undefined when calling getHistorialDeAutorizacion.');
+        }
+        const autorizacionId = requestParameters?.autorizacionId;
+        if (autorizacionId === null || autorizacionId === undefined) {
+            throw new Error('Required parameter autorizacionId was null or undefined when calling getHistorialDeAutorizacion.');
+        }
+        const page = requestParameters?.page;
+        const size = requestParameters?.size;
+        const fecha = requestParameters?.fecha;
+
+        let localVarQueryParameters = new OpenApiHttpParams(this.encoder);
+
+        localVarQueryParameters = this.addToHttpParams(
+            localVarQueryParameters,
+            'page',
+            <any>page,
+            QueryParamStyle.Form,
+            true,
+        );
+
+
+        localVarQueryParameters = this.addToHttpParams(
+            localVarQueryParameters,
+            'size',
+            <any>size,
+            QueryParamStyle.Form,
+            true,
+        );
+
+
+        localVarQueryParameters = this.addToHttpParams(
+            localVarQueryParameters,
+            'fecha',
+            <any>fecha,
+            QueryParamStyle.Form,
+            true,
+        );
+
+
+        let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/personas/${this.configuration.encodeParam({name: "personaId", value: personaId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/autorizaciones/${this.configuration.encodeParam({name: "autorizacionId", value: autorizacionId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/historial`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<HistorialDeAutorizacionResponse>('get', `${basePath}${localVarPath}`,
             {
                 context: localVarHttpContext,
                 params: localVarQueryParameters.toHttpParams(),

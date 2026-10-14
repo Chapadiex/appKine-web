@@ -64,8 +64,6 @@
   --color-superficie-sutil: #f4f7fa;
   --color-superficie-atenuada: #f7f8fa;
   --color-superficie-codigo: #eef2f6;
-  /* La superficie con alfa 0, para el degrade que anuncia el desborde de la tabla. */
-  --color-superficie-fade: rgb(255 255 255 / 0);
 
   /* --- Texto -------------------------------------------------------------------------- */
   --color-texto: #10263f;
@@ -98,6 +96,12 @@
   --color-accion-texto: #fff;
   --color-enlace: #10263f;
   --color-foco: #1b3a5c;
+  /*
+   * Anillo de foco SOBRE LA BARRA DE MARCA. `--color-foco` es casi el mismo azul que la barra:
+   * ahi daba 1,2:1 y el teclado no veia donde estaba parado (medido en AKINE-G-7). Es el celeste
+   * del marcador de seccion, que ya estaba elegido para verse sobre la barra: 6,8:1 en claro.
+   */
+  --color-foco-sobre-marca: #7fb6ea;
 
   /* --- Estados ------------------------------------------------------------------------ */
   --color-exito: #1d6b3f;
@@ -110,10 +114,9 @@
   --color-peligro-fondo: #fdeded;
   --color-peligro-texto: #7d1717;
 
-  /* --- Sombras ------------------------------------------------------------------------ */
-  /* La unica sombra que el sistema dibuja hoy: el borde de la tabla desplazable. */
-  --sombra-scroll: rgb(16 38 63 / 0.22);
-  --sombra-scroll-fade: rgb(16 38 63 / 0);
+  /* --- Desborde ---------------------------------------------------------------------- */
+  /* Barra lateral de la tabla desplazable que anuncia contenido escondido. Grafico: 3:1. */
+  --color-desborde: var(--color-borde-control);
 
   /* --- Tipografia --------------------------------------------------------------------- */
   --fuente-base: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
@@ -174,7 +177,6 @@
     --color-superficie-sutil: #17242f;
     --color-superficie-atenuada: #131e29;
     --color-superficie-codigo: #1b2a38;
-    --color-superficie-fade: rgb(15 26 38 / 0);
 
     --color-texto: #e6edf3;
     --color-texto-fuerte: #f4f8fb;
@@ -200,6 +202,7 @@
     --color-accion-texto: #06121c;
     --color-enlace: #7fb6ea;
     --color-foco: #7fb6ea;
+    --color-foco-sobre-marca: #7fb6ea;
 
     --color-exito: #4cc38a;
     --color-exito-fondo: #10291d;
@@ -210,12 +213,31 @@
     --color-peligro: #f2777a;
     --color-peligro-fondo: #2b1416;
     --color-peligro-texto: #ffb3b3;
-
-    /* La sombra del desborde deja de ser el azul de la marca: sobre fondo oscuro no se ve.
-       Negro puro, que es lo unico mas oscuro que la superficie. */
-    --sombra-scroll: rgb(0 0 0 / 0.5);
-    --sombra-scroll-fade: rgb(0 0 0 / 0);
   }
+}
+
+/* --- Foco visible --------------------------------------------------------------------- */
+
+/*
+ * Anillo de foco de TODO elemento operable (WCAG 2.4.7 y 1.4.11, ADR-0005).
+ *
+ * Vivia en `app.css`, que es la hoja de un componente: la encapsulacion de Angular la ataba a la
+ * plantilla del layout y no alcanzaba a ninguna pantalla. Los controles sin regla propia -los
+ * enlaces de la navegacion, "Cambiar" contexto- quedaban con el anillo por defecto del navegador,
+ * que sobre la barra de marca media 1,2:1. Aca es global y es el piso: las reglas de componente
+ * que ya pintan el mismo anillo siguen valiendo, y ninguna puede quedar sin indicador.
+ *
+ * `e2e/contraste-no-textual.spec.ts` recorre las pantallas con Tab y falla si un elemento
+ * enfocado no tiene un anillo solido de 2 px o mas que llegue a 3:1 contra su fondo.
+ */
+:focus-visible {
+  outline: var(--foco-grosor) solid var(--color-foco);
+  outline-offset: var(--foco-offset);
+}
+
+/* Sobre la barra de marca el anillo cambia de color: `--color-foco` ahi no se ve. */
+.cabecera :focus-visible {
+  outline-color: var(--color-foco-sobre-marca);
 }
 
 /* --- Tipografia de pagina ------------------------------------------------------------- */
@@ -328,8 +350,16 @@ h1 {
   background: var(--color-superficie-sutil);
 }
 
+/*
+ * El `padding-block` lleva la caja de un enlace a 24 px de alto o mas: es el objetivo de toque
+ * minimo de WCAG 2.5.8 (AA). El alto del texto depende de la fuente del sistema -20-21 px en
+ * Windows, 18-19 en el Linux del CI-, asi que el relleno se elige para el caso mas bajo. En un elemento en linea el padding vertical agranda la zona que
+ * se toca sin mover el renglon, asi que un enlace dentro de un parrafo no cambia de lugar. Medido a
+ * 375 px por `e2e/movil.spec.ts`.
+ */
 .enlace {
   color: var(--color-enlace);
+  padding-block: var(--esp-2);
 }
 
 /* Foco visible: nunca se quita el outline sin reemplazo (ADR-0005). */
@@ -341,11 +371,17 @@ h1 {
 
 /* --- Formularios ---------------------------------------------------------------------- */
 
+/*
+ * `min-width: 0` porque un `.campo` suele ser item de una fila flexible de filtros, y ahi el
+ * minimo automatico es el ancho intrinseco del control: un `select` con una opcion larga (el
+ * nombre de un financiador, una practica) empujaba la PAGINA a 470-670 px en un telefono de 375.
+ */
 .campo {
   display: flex;
   flex-direction: column;
   gap: var(--esp-2);
   margin-bottom: var(--esp-6);
+  min-width: 0;
 }
 
 .campo label {
@@ -353,18 +389,24 @@ h1 {
   font-weight: var(--peso-semi);
 }
 
+/* `textarea` entra con los otros dos desde AKINE-G-7: sin regla quedaba con el borde y el anillo
+   del navegador, distinto del resto del formulario en el que vive. */
 .campo input,
-.campo select {
+.campo select,
+.campo textarea {
   padding: var(--esp-4) 0.625rem;
   border: var(--borde-fino) solid var(--color-borde-control);
   border-radius: var(--radio-md);
   background: var(--color-superficie);
   color: var(--color-texto);
   font: inherit;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .campo input:focus-visible,
-.campo select:focus-visible {
+.campo select:focus-visible,
+.campo textarea:focus-visible {
   outline: var(--foco-grosor) solid var(--color-foco);
   outline-offset: 1px;
 }
@@ -372,7 +414,8 @@ h1 {
 /* El estado invalido se dice tambien con el borde, no solo con el texto del error: el color
    nunca es el unico portador de informacion (WCAG 1.4.1), y el grosor cambia con el. */
 .campo input[aria-invalid='true'],
-.campo select[aria-invalid='true'] {
+.campo select[aria-invalid='true'],
+.campo textarea[aria-invalid='true'] {
   border-color: var(--color-peligro);
   border-width: var(--borde-medio);
 }
@@ -465,28 +508,59 @@ h1 {
 }
 
 /*
- * Sombra en el borde por el que hay contenido escondido.
+ * Indicador de desborde: una barra en el borde por el que queda contenido escondido.
  *
- * Puro CSS: dos capas de fondo fijas a los extremos del contenedor tapan a dos capas
- * `local` que viajan con el scroll. Cuando no queda nada para desplazar de ese lado, la capa
- * blanca tapa a la sombra y la sombra desaparece sola. Sin JavaScript, sin `ResizeObserver`
- * y sin una bandera que alguien se olvide de actualizar: el desborde se anuncia solo.
+ * <b>Por que no es una sombra.</b> Hasta el 12/10/2026 eran cuatro degrades en el `background`
+ * del contenedor: dos capas `local` que viajaban con el scroll tapaban a dos sombras fijas en los
+ * extremos. Funcionaba sin JavaScript, pero la sombra se pintaba DEBAJO del texto: en la franja de
+ * ~14 px donde oscurecia, `--color-texto-suave` caia a ~4,16:1 contra 4,5 (WCAG 1.4.3), y como el
+ * fondo era un `background-image` axe no podia medir NINGUNA celda de las tablas del producto.
+ *
+ * Ahora el indicador vive en el BORDE del contenedor, que esta afuera de la caja de padding donde
+ * el contenido se recorta: nunca se superpone a una letra. Cada borde lateral se pinta con
+ * `--color-desborde` mientras haya algo escondido de ese lado, y lo decide una animacion atada al
+ * propio scroll horizontal (`animation-timeline: scroll(self inline)`):
+ *
+ * - sin desborde, la linea de tiempo esta inactiva, la animacion no aplica y los dos bordes quedan
+ *   transparentes;
+ * - al principio del recorrido solo se pinta el final; al final, solo el principio; en el medio,
+ *   los dos.
+ *
+ * Es un indicador grafico, asi que va a 3:1 (WCAG 1.4.11): el token es el del borde de un control.
+ * Un navegador sin scroll-driven animations (Firefox, hoy) se queda con la barra de desplazamiento
+ * nativa como unica senal: es la degradacion aceptada, y nunca oscurece el texto.
+ *
+ * `position: relative` no es decorativo: convierte al contenedor en el bloque contenedor de lo que
+ * va posicionado adentro. Sin eso, un `.visualmente-oculto` dentro de una celda —el nombre largo de
+ * un enlace "Abrir"— se ubicaba contra la pagina y no contra el scroll, escapaba del recorte y le
+ * daba a la PAGINA un scroll horizontal (841 px en un telefono de 375, medido en egresos).
  */
 .tabla-scroll {
-  background:
-    linear-gradient(to right, var(--color-superficie) 30%, var(--color-superficie-fade)) left center,
-    linear-gradient(to left, var(--color-superficie) 30%, var(--color-superficie-fade)) right center,
-    radial-gradient(farthest-side at 0 50%, var(--sombra-scroll), var(--sombra-scroll-fade)) left
-      center,
-    radial-gradient(farthest-side at 100% 50%, var(--sombra-scroll), var(--sombra-scroll-fade))
-      right center;
-  background-repeat: no-repeat;
-  background-size:
-    3rem 100%,
-    3rem 100%,
-    0.875rem 100%,
-    0.875rem 100%;
-  background-attachment: local, local, scroll, scroll;
+  position: relative;
+  border-inline: var(--borde-acento) solid transparent;
+}
+
+@supports (animation-timeline: scroll()) {
+  .tabla-scroll {
+    animation: tabla-desborde linear both;
+    animation-timeline: scroll(self inline);
+  }
+}
+
+@keyframes tabla-desborde {
+  0% {
+    border-inline-start-color: transparent;
+    border-inline-end-color: var(--color-desborde);
+  }
+  2%,
+  98% {
+    border-inline-start-color: var(--color-desborde);
+    border-inline-end-color: var(--color-desborde);
+  }
+  100% {
+    border-inline-start-color: var(--color-desborde);
+    border-inline-end-color: transparent;
+  }
 }
 
 .tabla {

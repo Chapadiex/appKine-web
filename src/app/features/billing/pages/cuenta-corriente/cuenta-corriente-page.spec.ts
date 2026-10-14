@@ -21,6 +21,25 @@ const PERSONA = 128;
 
 const OBLIGACIONES = `/api/v1/consultorios/${CONSULTORIO}/obligaciones?personaId=${PERSONA}`;
 const FICHA = `/api/v1/personas/${PERSONA}`;
+const COBROS = `/api/v1/consultorios/${CONSULTORIO}/cobros?personaId=${PERSONA}`;
+const ANTICIPO_ID = 5002;
+const IMPUTAR = `/api/v1/consultorios/${CONSULTORIO}/cobros/${ANTICIPO_ID}/imputaciones`;
+
+/** Un anticipo puro de 5.000 sin imputar (F-3). */
+const ANTICIPO = {
+  id: ANTICIPO_ID,
+  comprobanteNumero: 150,
+  consultorioId: CONSULTORIO,
+  personaId: PERSONA,
+  moneda: 'ARS',
+  total: 5000,
+  saldoAFavor: 5000,
+  estado: 'VIGENTE',
+  cobradoEn: '2026-09-10T13:00:00Z',
+  medios: [{ medio: 'EFECTIVO', importe: 5000 }],
+  imputaciones: [],
+  version: 0,
+};
 
 const PENDIENTE = {
   id: 9001,
@@ -76,6 +95,9 @@ describe('CuentaCorrientePage', () => {
   });
 
   afterEach(() => {
+    // Cada `cargar()` relee tambien los cobros (saldo a favor). Las relecturas que un test no
+    // mira se responden vacias aca.
+    httpMock.match(esCobros()).forEach((pedido) => pedido.flush([]));
     httpMock.verify();
   });
 
@@ -111,6 +133,39 @@ describe('CuentaCorrientePage', () => {
     // Sin la aclaracion, alguien "corrige" una deuda vieja que esta bien porque la oferta hoy vale
     // otra cosa.
     expect(texto(fixture)).toContain('Precio al devengar');
+  });
+
+  it('dice el concepto de cada deuda, avisa la practica no habilitada y manda la parte de la obra social a presentaciones', async () => {
+    const fixture = await montar([
+      { ...PENDIENTE, id: 9001, concepto: 'PARTICULAR' },
+      {
+        ...PENDIENTE,
+        id: 9002,
+        concepto: 'COSEGURO',
+        practicaId: 77,
+        alertaPracticaNoHabilitada: true,
+        convenio: { convenioNombre: 'OSDE 210' },
+      },
+    ]);
+
+    const contenido = texto(fixture);
+    expect(contenido).toContain('Particular');
+    expect(contenido).toContain('Coseguro');
+    expect(contenido).toContain('Convenio OSDE 210');
+    expect(contenido).not.toContain('COSEGURO');
+    expect(contenido).toContain('la practica facturada no esta habilitada en la oferta');
+    const enlace = (fixture.nativeElement as HTMLElement).querySelector(
+      'a[href="/presentaciones"]',
+    );
+    expect(enlace?.textContent).toContain('Ir a presentaciones');
+  });
+
+  it('sin coseguros no habla de la obra social ni avisa nada', async () => {
+    const fixture = await montar([{ ...PENDIENTE, concepto: 'PARTICULAR' }]);
+
+    const contenido = texto(fixture);
+    expect(contenido).not.toContain('presentaciones a financiadores');
+    expect(contenido).not.toContain('Revisar:');
   });
 
   it('una lista vacia no es un error, y dice de donde salen las deudas', async () => {
@@ -262,13 +317,81 @@ describe('CuentaCorrientePage', () => {
   });
 
   // -------------------------------------------------------------------------------------
+  // 4. Saldo a favor e imputacion posterior (F-3)
+  // -------------------------------------------------------------------------------------
+
+  it('imputa el saldo a favor solo a deudas de la misma sede, una por pedido, y relee', async () => {
+    const otraSede = { ...PENDIENTE, id: 9100, consultorioId: 99, snapshotNombre: 'Otra sede' };
+    const fixture = await montar([PENDIENTE, otraSede], [ANTICIPO]);
+
+    expect(texto(fixture)).toContain('Saldo a favor');
+    expect(texto(fixture)).toContain('5.000,00');
+
+    apretar(fixture, 'Imputar a deudas');
+    // La deuda de otra sede no se ofrece: el backend exige la misma sede que el cobro.
+    expect(fixture.nativeElement.querySelector(`#imputar-${ANTICIPO_ID}-9100`)).toBeNull();
+
+    escribirEn(fixture, `#imputar-${ANTICIPO_ID}-${PENDIENTE.id}`, '3000');
+    fixture.detectChanges();
+    apretar(fixture, 'Imputar');
+
+    const pedido = httpMock.expectOne(esImputar());
+    const cuerpo = pedido.request.body as Record<string, unknown>;
+    expect(cuerpo['obligacionId']).toBe(PENDIENTE.id);
+    expect(cuerpo['importe']).toBe(3000);
+    expect(typeof cuerpo['idempotencyKey']).toBe('string');
+    pedido.flush({ ...ANTICIPO, saldoAFavor: 2000 });
+    await estabilizar(fixture);
+
+    // Relee deuda y cobros: los saldos cambiaron de los dos lados.
+    httpMock.expectOne(FICHA).flush({ id: PERSONA, apellido: 'Gomez', nombre: 'Ana' });
+    httpMock.expectOne(esCobros()).flush([{ ...ANTICIPO, saldoAFavor: 2000 }]);
+    responderListado(httpMock.expectOne(esListado()), [{ ...PENDIENTE, saldo: 5500.5 }]);
+    await estabilizar(fixture);
+
+    expect(texto(fixture)).toContain('No se movio la caja');
+    expect(texto(fixture)).toContain('2.000,00');
+  });
+
+  it('no manda la imputacion si supera el saldo a favor', async () => {
+    const fixture = await montar([PENDIENTE], [{ ...ANTICIPO, saldoAFavor: 1000 }]);
+
+    apretar(fixture, 'Imputar a deudas');
+    escribirEn(fixture, `#imputar-${ANTICIPO_ID}-${PENDIENTE.id}`, '1000,01');
+    fixture.detectChanges();
+    apretar(fixture, 'Imputar');
+    await estabilizar(fixture);
+
+    httpMock.expectNone(esImputar());
+    expect(texto(fixture)).toContain('suman mas que el saldo a favor');
+  });
+
+  it('ante saldo-a-favor-insuficiente explica que otro lo uso y ofrece recargar', async () => {
+    const fixture = await montar([PENDIENTE], [ANTICIPO]);
+
+    apretar(fixture, 'Imputar a deudas');
+    escribirEn(fixture, `#imputar-${ANTICIPO_ID}-${PENDIENTE.id}`, '3000');
+    fixture.detectChanges();
+    apretar(fixture, 'Imputar');
+    rechazar(httpMock.expectOne(esImputar()), 'saldo-a-favor-insuficiente', {
+      disponible: 0,
+      importeIntentado: 3000,
+    });
+    await estabilizar(fixture);
+
+    expect(texto(fixture)).toContain('ya no alcanza');
+    expect(rotulosDeBoton(fixture)).toContain('Recargar la cuenta corriente');
+  });
+
+  // -------------------------------------------------------------------------------------
   // Accesibilidad
   // -------------------------------------------------------------------------------------
 
   it(
     'no tiene violaciones de accesibilidad',
     async () => {
-      const fixture = await montar([PENDIENTE]);
+      const fixture = await montar([PENDIENTE], [ANTICIPO]);
+      apretar(fixture, 'Imputar a deudas');
       await esperarSinViolaciones(fixture.nativeElement as HTMLElement);
     },
     TIMEOUT_AXE,
@@ -278,7 +401,10 @@ describe('CuentaCorrientePage', () => {
   // Apoyo
   // -------------------------------------------------------------------------------------
 
-  async function montar(obligaciones: object[]): Promise<ComponentFixture<CuentaCorrientePage>> {
+  async function montar(
+    obligaciones: object[],
+    cobros: object[] = [],
+  ): Promise<ComponentFixture<CuentaCorrientePage>> {
     tenantContext.select({
       organizationId: 1,
       organizationName: 'Centro Belgrano',
@@ -297,6 +423,7 @@ describe('CuentaCorrientePage', () => {
 
     // La ficha es el encabezado: se responde para que la pantalla diga de quien es la deuda.
     httpMock.expectOne(FICHA).flush({ id: PERSONA, apellido: 'Gomez', nombre: 'Ana' });
+    httpMock.expectOne(esCobros()).flush(cobros);
     responderListado(httpMock.expectOne(esListado()), obligaciones);
     await estabilizar(fixture);
     return fixture;
@@ -368,6 +495,14 @@ describe('CuentaCorrientePage', () => {
 
   function esListado() {
     return (p: HttpRequest<unknown>) => p.method === 'GET' && p.urlWithParams === OBLIGACIONES;
+  }
+
+  function esCobros() {
+    return (p: HttpRequest<unknown>) => p.method === 'GET' && p.urlWithParams === COBROS;
+  }
+
+  function esImputar() {
+    return (p: HttpRequest<unknown>) => p.method === 'POST' && p.url === IMPUTAR;
   }
 
   function esAnular() {

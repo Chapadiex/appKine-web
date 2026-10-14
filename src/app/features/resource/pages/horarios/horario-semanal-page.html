@@ -9,7 +9,7 @@
 
 <p class="acciones">
   <a class="enlace" [routerLink]="rutas.excepciones">Cierres y aperturas</a>
-  <a class="enlace" [routerLink]="rutas.calendario">Feriados de la sede</a>
+  <a class="enlace" [routerLink]="rutas.calendario">Horario general y feriados de la sede</a>
   <a class="enlace" [routerLink]="rutas.efectivo">Horario efectivo del profesional</a>
 </p>
 
@@ -96,6 +96,11 @@
 <div aria-live="polite">
   @if (exito(); as mensaje) {
     <p class="estado estado--ok">{{ mensaje }}</p>
+  }
+  @if (avisoTurnos(); as aviso) {
+    <div class="aviso-apertura">
+      <p><b>Turnos para revisar.</b> {{ aviso }}</p>
+    </div>
   }
 </div>
 
@@ -446,9 +451,17 @@
                             Quitar el fin de vigencia y dejarlo sin fin previsto
                           </label>
 
+                          <p class="ayuda">
+                            Si el cambio quita horario, los turnos pendientes que caian ahi quedan
+                            en conflicto: no se cancelan ni se mueven. Antes de guardar se calcula
+                            cuantos son; si hay alguno, te los mostramos y te pedimos que confirmes.
+                          </p>
+
+                          <app-impacto-previo [estado]="impacto()" />
+
                           <div class="acciones">
                             <button type="submit" class="boton" [disabled]="enviando()">
-                              Guardar los cambios
+                              {{ edicionConImpacto() ? 'Guardar igual' : 'Guardar los cambios' }}
                             </button>
                             <button
                               type="button"
@@ -484,7 +497,7 @@
                             ' de ' +
                             rangoHorario(bloque.horaDesde, bloque.horaHasta)
                           "
-                          [enviando]="enviando()"
+                          [enviando]="enviando() || impacto()?.tipo === 'consultando'"
                           (confirmado)="enviarBaja($event)"
                           (cancelado)="cerrarPanel()"
                         >
@@ -498,6 +511,7 @@
                             del bloque. Asi el horario historico sigue explicando los turnos que ya
                             se dieron.
                           </p>
+                          <app-impacto-previo [estado]="impacto()" />
                         </akine-confirmacion-con-motivo>
 
                         <div aria-live="polite">

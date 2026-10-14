@@ -4,13 +4,18 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 
 import { RecepcionDelDiaPage } from './recepcion-del-dia-page';
-import { PERMISO_TURNO_MANAGE, PERMISO_TURNO_READ } from '../../../../core/models/permisos';
+import {
+  PERMISO_COBRO_REGISTER,
+  PERMISO_TURNO_MANAGE,
+  PERMISO_TURNO_READ,
+} from '../../../../core/models/permisos';
 import { PermissionsStore } from '../../../../core/services/permissions.store';
 import { RUTA_PERMISOS_EFECTIVOS } from '../../../../core/testing/rutas-api';
 import { TIMEOUT_AXE, esperarSinViolaciones } from '../../../../core/testing/axe';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { errorInterceptor } from '../../../../core/interceptors/error.interceptor';
 import { provideApi } from '../../../../api/generated/provide-api';
+import { fijarReloj, soltarReloj } from '../../../../core/testing/reloj';
 
 const CONSULTORIO = 3;
 const OFERTA = 42;
@@ -18,12 +23,15 @@ const FECHA = '2026-09-15';
 
 const TURNOS = `/api/v1/consultorios/${CONSULTORIO}/turnos`;
 const AGENDA = `/api/v1/consultorios/${CONSULTORIO}/ofertas/${OFERTA}/agenda`;
-const llegada = (turnoId: number) => `${TURNOS}/${turnoId}/llegada`;
+const recepcion = (turnoId: number, paso = '') =>
+  `${TURNOS}/${turnoId}/recepcion${paso === '' ? '' : `/${paso}`}`;
 
 /**
- * Tres filas sinteticas que cubren los tres comportamientos distintos de la pantalla: una por
- * llegar, una que ya llego y una cancelada. Sin ningun dato clinico, porque la respuesta tampoco
- * lo trae.
+ * Cuatro filas sinteticas: una por llegar, una en la sala de espera, una cancelada y una que llego
+ * y todavia no se valido. Sin ningun dato clinico, porque la respuesta tampoco lo trae.
+ *
+ * <p>Ninguna lleva `EN_ESPERA` en el estado del TURNO: desde 0.63.0 el servidor no lo emite y la
+ * espera es de la recepcion (DP-16).
  */
 const DEL_DIA = [
   {
@@ -39,15 +47,23 @@ const DEL_DIA = [
   },
   {
     id: 302,
-    estado: 'EN_ESPERA',
+    estado: 'RESERVADO',
     inicio: '2026-09-15T13:00:00Z',
     fin: '2026-09-15T13:45:00Z',
     llegadaEn: '2026-09-15T12:51:00Z',
+    recepcion: {
+      id: 902,
+      turnoId: 302,
+      estado: 'EN_ESPERA',
+      llegadaEn: '2026-09-15T12:51:00Z',
+      modalidad: 'COBERTURA',
+      version: 4,
+    },
     personaNombre: 'Sosa, Bruno',
     documento: 'DNI 30111222',
     ofertaId: OFERTA,
     ofertaNombre: 'Kinesiologia deportiva',
-    version: 5,
+    version: 6,
   },
   {
     id: 303,
@@ -61,27 +77,42 @@ const DEL_DIA = [
     ofertaNombre: 'Kinesiologia deportiva',
     version: 3,
   },
+  {
+    id: 304,
+    estado: 'RESERVADO',
+    inicio: '2026-09-15T15:00:00Z',
+    fin: '2026-09-15T15:45:00Z',
+    llegadaEn: '2026-09-15T14:55:00Z',
+    recepcion: {
+      id: 904,
+      turnoId: 304,
+      estado: 'LLEGO',
+      llegadaEn: '2026-09-15T14:55:00Z',
+      version: 1,
+    },
+    personaNombre: 'Ibarra, Dario',
+    documento: 'DNI 35666777',
+    ofertaId: OFERTA,
+    ofertaNombre: 'Kinesiologia deportiva',
+    version: 4,
+  },
 ];
 
 const ZONA = 'America/Argentina/Cordoba';
 
 /**
- * Spec de la recepcion del dia (M13, AKINE-05.04).
+ * Spec de la recepcion del dia (M13, AKINE-05.04 y E-4).
  *
- * <p>Cubre <b>cinco cosas que deciden comportamiento</b> y ninguna del andamiaje:
+ * <p>Cubre lo que decide comportamiento:
  *
  * <ol>
- *   <li><b>Los cancelados se muestran, con su motivo y sin acciones de llegada.</b> Es el caso que
- *       la etapa pidio explicitamente que no se filtrara, y el que un "arreglo" bienintencionado
- *       rompe primero.</li>
- *   <li><b>Las horas salen en la zona de la SEDE.</b> Con la del navegador la pantalla no falla:
- *       miente, que es peor.</li>
- *   <li><b>Marcar la llegada dos veces no es un error.</b> El check-in es idempotente y el doble
- *       click del mostrador es el caso normal.</li>
- *   <li><b>Deshacer lo ya deshecho se explica.</b> No es idempotente, responde 409, y ese 409 no
- *       puede aparecer como "error inesperado".</li>
- *   <li><b>`EN_ESPERA` no dice que lo esten atendiendo.</b> Si el texto sugiere lo contrario, la
- *       pantalla fusiono Recepcion con Sesion, que es lo que DP-05 separa.</li>
+ *   <li><b>Los cancelados se muestran, con su motivo y sin acciones.</b></li>
+ *   <li><b>Las horas salen en la zona de la SEDE.</b></li>
+ *   <li><b>El check-in va a la Recepcion, no al turno</b>, y registrar dos veces no es error.</li>
+ *   <li><b>Una validacion observada no es un error</b> y deja seguir (RN-M13-003).</li>
+ *   <li><b>Particular exige motivo</b> (RF-M13-005).</li>
+ *   <li><b>Anular lo ya anulado se explica</b> y la fila se corrige sola.</li>
+ *   <li><b>Llamar no dice que lo esten atendiendo</b>: eso es la Sesion (DP-05).</li>
  * </ol>
  */
 describe('RecepcionDelDiaPage', () => {
@@ -106,6 +137,8 @@ describe('RecepcionDelDiaPage', () => {
   });
 
   afterEach(() => {
+    soltarReloj();
+    // Tambien prueba que nada pega contra los `/llegada` deprecados: seria un pedido sin atender.
     httpMock.verify();
   });
 
@@ -119,68 +152,75 @@ describe('RecepcionDelDiaPage', () => {
     // 12:00Z son las 09:00 en Cordoba. Con la zona del navegador este numero cambia y nada falla.
     expect(texto).toContain('09:00 a 09:45');
     expect(texto).toContain('America/Argentina/Cordoba');
-    // La hora de llegada es la del servidor, tambien en la zona de la sede: 12:51Z -> 09:51.
+    // La hora de llegada es la de la recepcion, tambien en la zona de la sede: 12:51Z -> 09:51.
     expect(texto).toContain('09:51');
     expect(texto).toContain('Todavia no llego');
+    // La espera se cuenta por la recepcion, no por el estado del turno.
+    expect(texto).toContain('1 en espera');
+    expect(texto).toContain('aguarda ser llamado');
   });
 
-  it('muestra los cancelados con su motivo y SIN acciones de llegada', async () => {
+  it('muestra los cancelados con su motivo y SIN acciones', async () => {
     const fixture = await montar();
 
-    // No se filtran: alguien se presenta al mostrador con un turno cancelado y hay que poder
-    // decirle por que.
     expect(textoDe(fixture)).toContain('Vega, Carla');
     expect(textoDe(fixture)).toContain('El profesional pidio el dia');
-
-    // Y ninguna fila cancelada ofrece marcar la llegada: el backend tambien la rechazaria.
     expect(botonesDeLaFila(fixture, 'Vega, Carla')).toEqual([]);
   });
 
-  it('marcar la llegada manda un POST sin cuerpo y deja al paciente EN ESPERA, no atendido', async () => {
+  it('registrar la llegada abre la RECEPCION con un POST sin cuerpo y relee el turno', async () => {
     const fixture = await montar();
 
-    clickearEnLaFila(fixture, 'Ramirez, Ana', 'Marcar la llegada');
+    clickearEnLaFila(fixture, 'Ramirez, Ana', 'Registrar la llegada');
 
-    const pedido = httpMock.expectOne(llegada(301));
+    const pedido = httpMock.expectOne(recepcion(301));
     expect(pedido.request.method).toBe('POST');
     // Sin cuerpo: la hora la pone el servidor, que es lo que la hace la hora REAL de llegada.
     expect(pedido.request.body).toBeNull();
-    pedido.flush({ id: 301, estado: 'EN_ESPERA', llegadaEn: '2026-09-15T11:40:00Z', version: 3 });
+    pedido.flush({
+      id: 901,
+      turnoId: 301,
+      estado: 'LLEGO',
+      llegadaEn: '2026-09-15T11:40:00Z',
+      version: 0,
+    });
+    await asentar(fixture);
+
+    // El check-in avanza la version del TURNO aunque no cambie su estado: la fila se relee para
+    // que el enlace al ciclo del turno no lleve una version vieja.
+    httpMock.expectOne(`${TURNOS}/301`).flush({
+      ...DEL_DIA[0],
+      llegadaEn: '2026-09-15T11:40:00Z',
+      recepcion: { id: 901, estado: 'LLEGO', llegadaEn: '2026-09-15T11:40:00Z', version: 0 },
+      version: 3,
+    });
     await asentar(fixture);
 
     const texto = textoDe(fixture);
-    expect(texto).toContain('Queda en espera: llego y aguarda');
-    // La prestacion la registra la Sesion (DP-05). El estado dice que AGUARDA ser atendido, que
-    // es lo contrario de estar siendo atendido: si alguna vez dice lo segundo, la pantalla fusiono
-    // Recepcion con Sesion.
-    expect(texto).toContain('aguarda ser atendido');
+    expect(texto).toContain('Llegada registrada');
     expect(texto).not.toContain('atendiendo');
-    expect(texto).not.toContain('En atencion');
-    // La fila se acomodo con lo que devolvio el servidor: 11:40Z -> 08:40 en Cordoba.
+    // 11:40Z -> 08:40 en Cordoba.
     expect(texto).toContain('08:40');
-    // Y ahora ofrece lo contrario.
-    expect(botonesDeLaFila(fixture, 'Ramirez, Ana')).toContain('Deshacer la llegada');
+    expect(botonesDeLaFila(fixture, 'Ramirez, Ana')).toEqual([
+      'Validar cobertura',
+      'Atender como Particular',
+      'Anular la llegada',
+    ]);
   });
 
-  it('marcar dos veces NO es un error: el check-in es idempotente', async () => {
+  it('registrar dos veces NO es un error: el check-in es idempotente', async () => {
     const fixture = await montar();
 
-    // Dos clicks seguidos, sin dejar que la pantalla se redibuje entre medio: es literalmente el
-    // doble click del mostrador, y es el caso normal, no un error del que haya que defenderse.
-    const boton = botonDeLaFila(fixture, 'Ramirez, Ana', 'Marcar la llegada');
+    const boton = botonDeLaFila(fixture, 'Ramirez, Ana', 'Registrar la llegada');
     boton?.click();
     boton?.click();
 
-    const pedidos = httpMock.match(llegada(301));
-    const respuesta = {
-      id: 301,
-      estado: 'EN_ESPERA',
-      llegadaEn: '2026-09-15T11:40:00Z',
-      version: 3,
-    };
-    // El servidor contesta 200 a los dos, con la MISMA hora: no la mueve ni registra un segundo
-    // evento.
-    pedidos.forEach((p) => p.flush(respuesta));
+    const respuesta = { id: 901, estado: 'LLEGO', llegadaEn: '2026-09-15T11:40:00Z', version: 0 };
+    httpMock.match(recepcion(301)).forEach((p) => p.flush(respuesta));
+    await asentar(fixture);
+    httpMock
+      .match(`${TURNOS}/301`)
+      .forEach((p) => p.flush({ ...DEL_DIA[0], recepcion: respuesta }));
     await asentar(fixture);
 
     const texto = textoDe(fixture);
@@ -188,18 +228,150 @@ describe('RecepcionDelDiaPage', () => {
     expect(texto).not.toContain('No se pudo completar la operacion');
   });
 
-  it('deshacer lo ya deshecho se explica, y la fila se corrige sola', async () => {
+  it('una validacion OBSERVADA no es un error: muestra la observacion y deja seguir', async () => {
     const fixture = await montar();
 
-    clickearEnLaFila(fixture, 'Sosa, Bruno', 'Deshacer la llegada');
+    clickearEnLaFila(fixture, 'Ibarra, Dario', 'Validar cobertura');
 
-    // Deshacer NO es idempotente, al reves que marcar. El backend responde 409 con su motivo.
-    httpMock.expectOne(llegada(302)).flush(
+    const pedido = httpMock.expectOne(recepcion(304, 'validacion'));
+    expect(pedido.request.method).toBe('POST');
+    // La version es la de la RECEPCION (1), no la del turno (4).
+    expect(pedido.request.body).toEqual({ expectedVersion: 1 });
+    pedido.flush({
+      ...DEL_DIA[3].recepcion,
+      estado: 'OBSERVADA',
+      observacion: 'SIN_COBERTURA_APLICABLE: no tiene cobertura para esta practica',
+      version: 2,
+    });
+    await asentar(fixture);
+
+    const texto = textoDe(fixture);
+    expect(texto).toContain('quedo observada');
+    expect(texto).toContain('SIN_COBERTURA_APLICABLE');
+    expect(texto).not.toContain('No se pudo completar la operacion');
+    expect(botonesDeLaFila(fixture, 'Ibarra, Dario')).toEqual([
+      'Validar cobertura',
+      'Atender como Particular',
+      'Pasar a espera',
+      'Anular la llegada',
+    ]);
+  });
+
+  it('Particular exige motivo: vacio no manda nada, con motivo manda la version de la recepcion', async () => {
+    const fixture = await montar();
+
+    clickearEnLaFila(fixture, 'Ibarra, Dario', 'Atender como Particular');
+    const raiz = fixture.nativeElement as HTMLElement;
+    const confirmar = (): void => {
+      (raiz.querySelector('section form button[type="submit"]') as HTMLButtonElement).click();
+      fixture.detectChanges();
+    };
+
+    confirmar();
+    expect(textoDe(fixture)).toContain('es obligatorio');
+    httpMock.expectNone(recepcion(304, 'particular'));
+
+    const campo = raiz.querySelector('#recepcion-motivo-particular') as HTMLInputElement;
+    campo.value = 'No trajo la orden y prefiere abonar';
+    campo.dispatchEvent(new Event('input'));
+    confirmar();
+
+    const pedido = httpMock.expectOne(recepcion(304, 'particular'));
+    expect(pedido.request.body).toEqual({
+      expectedVersion: 1,
+      motivo: 'No trajo la orden y prefiere abonar',
+    });
+    pedido.flush({
+      ...DEL_DIA[3].recepcion,
+      estado: 'VALIDADA',
+      modalidad: 'PARTICULAR',
+      version: 2,
+    });
+    await asentar(fixture);
+
+    expect(textoDe(fixture)).toContain('se atiende como Particular');
+    expect(botonesDeLaFila(fixture, 'Ibarra, Dario')).toEqual([
+      'Pasar a espera',
+      'Anular la llegada',
+    ]);
+  });
+
+  it('llamar a quien espera no dice que lo esten atendiendo', async () => {
+    const fixture = await montar();
+
+    clickearEnLaFila(fixture, 'Sosa, Bruno', 'Llamar');
+
+    const pedido = httpMock.expectOne(recepcion(302, 'llamado'));
+    expect(pedido.request.body).toEqual({ expectedVersion: 4 });
+    pedido.flush({ ...DEL_DIA[1].recepcion, estado: 'LLAMADA', version: 5 });
+    await asentar(fixture);
+
+    const texto = textoDe(fixture);
+    expect(texto).toContain('Llamar no registra la atencion');
+    expect(texto).toContain('la atencion es otro registro');
+    expect(texto).toContain('0 en espera');
+    expect(botonesDeLaFila(fixture, 'Sosa, Bruno')).toEqual(['Anular la llegada']);
+  });
+
+  it('pasar a espera manda la version de la recepcion', async () => {
+    const fixture = await montar({
+      turnos: [{ ...DEL_DIA[3], recepcion: { ...DEL_DIA[3].recepcion, estado: 'VALIDADA' } }],
+    });
+
+    clickearEnLaFila(fixture, 'Ibarra, Dario', 'Pasar a espera');
+
+    const pedido = httpMock.expectOne(recepcion(304, 'espera'));
+    expect(pedido.request.body).toEqual({ expectedVersion: 1 });
+    pedido.flush({ ...DEL_DIA[3].recepcion, estado: 'EN_ESPERA', version: 2 });
+    await asentar(fixture);
+
+    expect(textoDe(fixture)).toContain('paso a la sala de espera');
+    expect(botonesDeLaFila(fixture, 'Ibarra, Dario')).toEqual(['Llamar', 'Anular la llegada']);
+  });
+
+  it('anular deja la fila sin recepcion y vuelve a ofrecer el check-in', async () => {
+    const fixture = await montar();
+
+    clickearEnLaFila(fixture, 'Ibarra, Dario', 'Anular la llegada');
+    // El motivo es opcional: se confirma vacio.
+    (
+      (fixture.nativeElement as HTMLElement).querySelector(
+        'section form button[type="submit"]',
+      ) as HTMLButtonElement
+    ).click();
+    fixture.detectChanges();
+
+    const pedido = httpMock.expectOne(recepcion(304, 'anulacion'));
+    expect(pedido.request.body).toEqual({ expectedVersion: 1 });
+    pedido.flush({ ...DEL_DIA[3].recepcion, estado: 'ANULADA', version: 2 });
+    await asentar(fixture);
+    // Sin recepcion vigente, el prepago "antes del check-in" lo recalcula el servidor (E-8).
+    httpMock
+      .expectOne(`${TURNOS}/304`)
+      .flush({ ...DEL_DIA[3], recepcion: undefined, llegadaEn: undefined, version: 5 });
+    await asentar(fixture);
+
+    expect(textoDe(fixture)).toContain('anulada');
+    expect(botonesDeLaFila(fixture, 'Ibarra, Dario')).toEqual(['Registrar la llegada']);
+  });
+
+  it('anular lo ya anulado se explica, y la fila se corrige sola', async () => {
+    const fixture = await montar();
+
+    clickearEnLaFila(fixture, 'Sosa, Bruno', 'Anular la llegada');
+    (
+      (fixture.nativeElement as HTMLElement).querySelector(
+        'section form button[type="submit"]',
+      ) as HTMLButtonElement
+    ).click();
+    fixture.detectChanges();
+
+    httpMock.expectOne(recepcion(302, 'anulacion')).flush(
       {
-        type: 'https://akine.app/problems/turno-transicion-no-permitida',
+        type: 'https://akine.app/problems/recepcion-transicion-no-permitida',
         status: 409,
         detail: 'Rechazado.',
-        motivo: 'no esta en espera: no hay ninguna llegada que deshacer',
+        motivo: 'no hay recepcion abierta: no hay ninguna llegada que anular',
       },
       { status: 409, statusText: 'Conflict' },
     );
@@ -207,22 +379,20 @@ describe('RecepcionDelDiaPage', () => {
 
     const texto = textoDe(fixture);
     expect(texto).toContain('idempotente');
-    expect(texto).toContain('no hay ninguna llegada que deshacer');
+    expect(texto).toContain('no hay ninguna llegada que anular');
     expect(texto).not.toContain('No pudimos completar la operacion');
 
-    // Y relee ESA fila sola, no el dia entero: recargar todo le mueve la lista bajo el dedo a
-    // quien esta atendiendo a alguien.
+    // Relee ESA fila sola, no el dia entero.
     httpMock.expectNone(esDelDia());
     httpMock.expectOne(`${TURNOS}/302`).flush({
       ...DEL_DIA[1],
-      estado: 'CONFIRMADO',
       llegadaEn: undefined,
-      version: 6,
+      recepcion: undefined,
+      version: 7,
     });
     await asentar(fixture);
 
-    // La fila quedo con lo que dice el servidor: ya no ofrece deshacer, ofrece marcar.
-    expect(botonesDeLaFila(fixture, 'Sosa, Bruno')).toEqual(['Marcar la llegada']);
+    expect(botonesDeLaFila(fixture, 'Sosa, Bruno')).toEqual(['Registrar la llegada']);
   });
 
   it('sin `turno:manage` la pantalla es de lectura y no esconde que lo es', async () => {
@@ -241,6 +411,83 @@ describe('RecepcionDelDiaPage', () => {
     expect(textoDe(fixture)).toContain('no tiene ningun turno agendado');
     // Sin turnos no hay oferta de donde sacar la zona, y no se inventa una peticion.
     httpMock.expectNone(esAgenda());
+  });
+
+  /**
+   * Encontrado por el E2E contra el backend real (AKINE E-2). El unico enlace a esta pantalla
+   * —"Ver la recepcion del dia", desde la agenda— no lleva `?fecha=`, y `withComponentInputBinding`
+   * no deja el input en su default cuando falta el parametro: lo pone en `undefined`. La pantalla
+   * llamaba al cliente generado con `fecha` indefinida, que lanza antes de salir a la red, y
+   * quedaba en blanco: sin lista, sin error y con el campo de fecha vacio.
+   */
+  it('sin `?fecha=` en la URL abre el dia de hoy, que es lo que pasa al entrar desde la agenda', async () => {
+    // Mediodia en UTC y en Cordoba: el dia del navegador y el de la sede coinciden.
+    fijarReloj('2026-09-15T15:00:00Z', { navegadorEnUtc: true });
+    tenantContext.select({
+      organizationId: 1,
+      organizationName: 'Centro Belgrano',
+      consultorioId: CONSULTORIO,
+      consultorioName: 'Sede Centro',
+    });
+    permisos.cargar().subscribe();
+    httpMock.expectOne(RUTA_PERMISOS_EFECTIVOS).flush({ permissions: [PERMISO_TURNO_READ] });
+
+    const fixture = TestBed.createComponent(RecepcionDelDiaPage);
+    // Lo que hace el router con un query param ausente.
+    fixture.componentRef.setInput('fecha', undefined);
+    fixture.detectChanges();
+
+    const pedido = httpMock.expectOne(esDelDia());
+    expect(pedido.request.params.get('fecha')).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    pedido.flush({ fecha: pedido.request.params.get('fecha'), timezone: ZONA, turnos: [] });
+    await asentar(fixture);
+
+    expect(textoDe(fixture)).toContain('no tiene ningun turno agendado');
+  });
+
+  /**
+   * Lo que tumbo el E2E del PR #42: a las 21:25 de Cordoba un navegador en UTC ya esta en el dia
+   * siguiente. "Hoy" es el de la sede: la primera respuesta trae su zona, el dia se corrige y se
+   * vuelve a pedir, y la respuesta del dia equivocado se descarta.
+   */
+  it('sin `?fecha=` abre el dia de la SEDE aunque el navegador ya este en el dia siguiente', async () => {
+    fijarReloj('2026-10-10T00:25:00Z', { navegadorEnUtc: true });
+    tenantContext.select({
+      organizationId: 1,
+      organizationName: 'Centro Belgrano',
+      consultorioId: CONSULTORIO,
+      consultorioName: 'Sede Centro',
+    });
+    permisos.cargar().subscribe();
+    httpMock.expectOne(RUTA_PERMISOS_EFECTIVOS).flush({ permissions: [PERMISO_TURNO_READ] });
+
+    const fixture = TestBed.createComponent(RecepcionDelDiaPage);
+    fixture.componentRef.setInput('fecha', undefined);
+    fixture.detectChanges();
+
+    const provisorio = httpMock.expectOne(esDelDia());
+    expect(provisorio.request.params.get('fecha')).toBe('2026-10-10');
+    provisorio.flush({ fecha: '2026-10-10', timezone: ZONA, turnos: [] });
+
+    const deLaSede = httpMock.expectOne(esDelDia());
+    expect(deLaSede.request.params.get('fecha')).toBe('2026-10-09');
+    deLaSede.flush({ fecha: '2026-10-09', timezone: ZONA, turnos: [DEL_DIA[0]] });
+    await asentar(fixture);
+
+    expect(textoDe(fixture)).toContain('Ramirez, Ana');
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector<HTMLInputElement>('input[type="date"]')
+        ?.value,
+    ).toBe('2026-10-09');
+  });
+
+  it('un dia que vino en la URL no se corrige aunque no sea hoy en la sede', async () => {
+    fijarReloj('2026-10-10T00:25:00Z', { navegadorEnUtc: true });
+    // `montar` abre FECHA desde la URL y espera UN solo pedido: `verify` del afterEach falla si
+    // la pantalla pidiera otro dia.
+    const fixture = await montar();
+
+    expect(textoDe(fixture)).toContain('Ramirez, Ana');
   });
 
   it('cambiar la fecha vuelve a pedir ESE dia', async () => {
@@ -267,6 +514,121 @@ describe('RecepcionDelDiaPage', () => {
     // El contrato no publica el `timezone` en la respuesta del dia. Rotular UTC es lo unico
     // honesto: la zona del navegador correria las horas del mostrador sin que nada falle.
     expect(textoDe(fixture)).toContain('no se pudo averiguar la zona horaria');
+  });
+
+  describe('prepago (E-6 y E-8)', () => {
+    const PREPAGO_PENDIENTE = { estado: 'PENDIENTE', importeSugerido: 15000, moneda: 'ARS' };
+    const PREPAGO_REGISTRADO = { estado: 'REGISTRADO', cobroId: 9, importe: 15000, moneda: 'ARS' };
+    // Con recepcion vigente el servidor manda el mismo prepago en el turno y en la recepcion.
+    const PENDIENTE = {
+      ...DEL_DIA[3],
+      personaId: 501,
+      prepago: PREPAGO_PENDIENTE,
+      recepcion: { ...DEL_DIA[3].recepcion, estado: 'VALIDADA', prepago: PREPAGO_PENDIENTE },
+    };
+
+    it('PENDIENTE avisa con el sugerido, no bloquea y lleva al cobro con el turno', async () => {
+      const fixture = await montar({
+        permisos: [PERMISO_TURNO_READ, PERMISO_TURNO_MANAGE, PERMISO_COBRO_REGISTER],
+        turnos: [PENDIENTE],
+      });
+
+      const texto = fila(fixture, 'Ibarra, Dario').textContent ?? '';
+      expect(texto).toContain('Prepago pendiente');
+      expect(texto).not.toContain('si se atiende como particular');
+      expect(texto).toMatch(/sugerido \$\s?15\.000,00/);
+      // Avisa y no bloquea: pasar a espera sigue disponible.
+      expect(botonesDeLaFila(fixture, 'Ibarra, Dario')).toContain('Pasar a espera');
+
+      const enlace = Array.from(fila(fixture, 'Ibarra, Dario').querySelectorAll('a')).find((a) =>
+        (a.textContent ?? '').includes('Registrar prepago'),
+      ) as HTMLAnchorElement;
+      expect(enlace.getAttribute('href')).toBe(
+        `/pacientes/501/cuenta-corriente/cobrar?turnoId=304&fecha=${FECHA}` +
+          '&importeSugerido=15000&monedaSugerida=ARS',
+      );
+    });
+
+    it('pasar a espera con el prepago pendiente se permite y lo dice', async () => {
+      const fixture = await montar({ turnos: [PENDIENTE] });
+
+      // Sin `cobro:register` no se ofrece cobrar, pero el aviso sigue a la vista.
+      expect(textoDe(fixture)).not.toContain('Registrar prepago');
+      clickearEnLaFila(fixture, 'Ibarra, Dario', 'Pasar a espera');
+      httpMock
+        .expectOne(recepcion(304, 'espera'))
+        .flush({ ...PENDIENTE.recepcion, estado: 'EN_ESPERA', version: 2 });
+      await asentar(fixture);
+
+      expect(textoDe(fixture)).toContain('Paso sin el prepago que exige la prestacion');
+    });
+
+    it('REGISTRADO muestra el anticipo y no ofrece cobrar de nuevo', async () => {
+      const fixture = await montar({
+        permisos: [PERMISO_TURNO_READ, PERMISO_TURNO_MANAGE, PERMISO_COBRO_REGISTER],
+        turnos: [
+          {
+            ...PENDIENTE,
+            prepago: PREPAGO_REGISTRADO,
+            recepcion: { ...PENDIENTE.recepcion, prepago: PREPAGO_REGISTRADO },
+          },
+        ],
+      });
+
+      expect(textoDe(fixture)).toContain('Prepago registrado por');
+      expect(textoDe(fixture)).not.toContain('Registrar prepago');
+    });
+
+    it('antes del check-in avisa "si se atiende como particular" y ofrece cobrar igual', async () => {
+      const fixture = await montar({
+        permisos: [PERMISO_TURNO_READ, PERMISO_TURNO_MANAGE, PERMISO_COBRO_REGISTER],
+        turnos: [{ ...DEL_DIA[0], personaId: 500, prepago: PREPAGO_PENDIENTE }],
+      });
+
+      const texto = fila(fixture, 'Ramirez, Ana').textContent ?? '';
+      expect(texto).toContain('Sin recepcion');
+      expect(texto).toContain('Prepago pendiente si se atiende como particular');
+      expect(botonesDeLaFila(fixture, 'Ramirez, Ana')).toContain('Registrar la llegada');
+      const enlace = Array.from(fila(fixture, 'Ramirez, Ana').querySelectorAll('a')).find((a) =>
+        (a.textContent ?? '').includes('Registrar prepago'),
+      ) as HTMLAnchorElement;
+      expect(enlace.getAttribute('href')).toBe(
+        `/pacientes/500/cuenta-corriente/cobrar?turnoId=301&fecha=${FECHA}` +
+          '&importeSugerido=15000&monedaSugerida=ARS',
+      );
+    });
+
+    it('un turno cancelado con anticipo lo muestra para reintegrar, sin ofrecer cobrar', async () => {
+      const fixture = await montar({
+        permisos: [PERMISO_TURNO_READ, PERMISO_TURNO_MANAGE, PERMISO_COBRO_REGISTER],
+        turnos: [{ ...DEL_DIA[2], personaId: 502, prepago: PREPAGO_REGISTRADO }],
+      });
+
+      const texto = fila(fixture, 'Vega, Carla').textContent ?? '';
+      expect(texto).toContain('para un turno que no se va a atender');
+      expect(texto).toContain('reintegrarlo');
+      expect(texto).not.toContain('Registrar prepago');
+    });
+
+    it('al validar con cobertura la fila toma el prepago de la recepcion devuelta', async () => {
+      const fixture = await montar({
+        permisos: [PERMISO_TURNO_READ, PERMISO_TURNO_MANAGE, PERMISO_COBRO_REGISTER],
+        turnos: [{ ...PENDIENTE, recepcion: { ...PENDIENTE.recepcion, estado: 'LLEGO' } }],
+      });
+
+      clickearEnLaFila(fixture, 'Ibarra, Dario', 'Validar cobertura');
+      httpMock.expectOne(recepcion(304, 'validacion')).flush({
+        ...PENDIENTE.recepcion,
+        estado: 'VALIDADA',
+        modalidad: 'COBERTURA',
+        prepago: { estado: 'NO_EXIGIDO' },
+        version: 2,
+      });
+      await asentar(fixture);
+
+      expect(fila(fixture, 'Ibarra, Dario').textContent).not.toContain('Prepago pendiente');
+      expect(textoDe(fixture)).not.toContain('Registrar prepago');
+    });
   });
 
   it(

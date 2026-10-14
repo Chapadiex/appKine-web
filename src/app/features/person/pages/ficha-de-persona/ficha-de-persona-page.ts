@@ -2,10 +2,12 @@ import { Component, computed, effect, inject, input, signal, untracked } from '@
 import { RouterLink } from '@angular/router';
 
 import { ConfirmacionConMotivo } from '../../../../shared/components/confirmacion-con-motivo/confirmacion-con-motivo';
+import { DatosAdministrativosDeHistoria } from '../../components/datos-administrativos-de-historia/datos-administrativos-de-historia';
 import { HitoResponse } from '../../../../api/generated/model/hito-response';
 import { PERMISO_COBRO_REGISTER, PERMISO_PACIENTE_MANAGE } from '../../../../core/models/permisos';
 import { PermisoDirective } from '../../../../shared/directives/permiso.directive';
 import { PersonApi } from '../../services/person-api';
+import { PrecargaDeFicha } from '../../services/precarga-de-ficha';
 import { PersonaResponse } from '../../../../api/generated/model/persona-response';
 import { ResumenDePersonaResponse } from '../../../../api/generated/model/resumen-de-persona-response';
 import { SeccionResponse } from '../../../../api/generated/model/seccion-response';
@@ -26,6 +28,7 @@ import {
   omisionEnPalabras,
   valorDeIndicador,
 } from '../../models/etiquetas-de-ficha';
+import { SECCION_COBERTURAS, coberturaDelResumen } from '../../models/etiquetas-de-cobertura';
 
 /** Confirmacion abierta sobre la ficha. Solo una a la vez. */
 type TipoDeBaja = 'persona' | 'perfil';
@@ -93,12 +96,13 @@ interface ConteoPorCategoria {
  */
 @Component({
   selector: 'app-ficha-de-persona-page',
-  imports: [RouterLink, ConfirmacionConMotivo, PermisoDirective],
+  imports: [RouterLink, ConfirmacionConMotivo, PermisoDirective, DatosAdministrativosDeHistoria],
   templateUrl: './ficha-de-persona-page.html',
   styleUrl: '../../person.css',
 })
 export class FichaDePersonaPage {
   private readonly api = inject(PersonApi);
+  private readonly precarga = inject(PrecargaDeFicha);
   private readonly tenantContext = inject(TenantContextStore);
 
   /** De la ruta. `withComponentInputBinding` lo liga solo. */
@@ -118,6 +122,9 @@ export class FichaDePersonaPage {
   protected readonly hitoEnPalabras = hitoEnPalabras;
   protected readonly nombreDeCategoria = nombreDeCategoria;
   protected readonly fechaEnPalabras = fechaEnPalabras;
+  /** La seccion de coberturas (B-5) se pinta con forma propia; las demas, con la generica. */
+  protected readonly seccionCoberturas = SECCION_COBERTURAS;
+  protected readonly coberturaDelResumen = coberturaDelResumen;
 
   protected readonly resumen = signal<ResumenDePersonaResponse | null>(null);
   protected readonly cargando = signal(true);
@@ -201,7 +208,8 @@ export class FichaDePersonaPage {
     this.errorDeCarga.set(null);
     this.faltaContexto.set(false);
 
-    this.api.resumen(id).subscribe({
+    // En la primera carga el resumen ya puede venir pedido desde la ruta (AKINE-LCP).
+    (this.precarga.tomar(id) ?? this.api.resumen(id)).subscribe({
       next: (resumen) => {
         this.resumen.set(resumen);
         this.cargando.set(false);

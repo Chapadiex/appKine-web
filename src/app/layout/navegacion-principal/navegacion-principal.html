@@ -2,7 +2,7 @@
   Navegacion principal. Va dentro del `header` del layout raiz, que ya es el landmark
   `banner`: un `nav` anidado ahi sigue siendo un landmark propio y axe lo exige nombrado.
 -->
-@if (hayContexto()) {
+@if (sesionResuelta() && hayContexto()) {
   <div class="barra">
     <nav class="nav" aria-label="Secciones de AKINE">
       <ul class="nav__lista">
@@ -20,6 +20,18 @@
               #activo="routerLinkActive"
               [attr.aria-current]="activo.isActive ? 'page' : null"
               >{{ seccion.etiqueta }}</a
+            >
+          </li>
+        }
+        @if (esAdminDePlataforma()) {
+          <li>
+            <a
+              class="nav__enlace"
+              [routerLink]="rutaPlataforma"
+              routerLinkActive="nav__enlace--actual"
+              #activoPlataforma="routerLinkActive"
+              [attr.aria-current]="activoPlataforma.isActive ? 'page' : null"
+              >Plataforma</a
             >
           </li>
         }
@@ -42,7 +54,7 @@
       </p>
     }
   </div>
-} @else if (faltaContexto()) {
+} @else if (sesionResuelta() && faltaContexto()) {
   <!--
     Autenticado sin contexto: con un token `pre_context` ninguna seccion responde, asi que el
     unico enlace util es el que resuelve eso.
@@ -50,4 +62,13 @@
   <p class="contexto">
     <a class="contexto__cambiar" [routerLink]="rutaSelector">Elegi donde vas a trabajar</a>
   </p>
+  <!--
+    Un administrador de plataforma no es miembro de ningun centro: este es su unico camino a la
+    consola (AKINE-A-7).
+  -->
+  @if (esAdminDePlataforma()) {
+    <p class="contexto">
+      <a class="contexto__cambiar" [routerLink]="rutaPlataforma">Consola de plataforma</a>
+    </p>
+  }
 }

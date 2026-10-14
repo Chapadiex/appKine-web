@@ -39,11 +39,10 @@ describe('traducirErrorContracting', () => {
     ])[] = [
       [403, 'missing-tenant-context', 'convenio', 'sin-contexto'],
       [409, 'subscription-suspended', 'financiador', 'suscripcion-suspendida'],
-      [409, 'conflict', 'financiador', 'concurrencia'],
-      // `concurrent-modification` no lo emite `contracting` hoy —la version vieja sale como
-      // `conflict`—. Se reconoce igual, y esto lo fija: si algun dia se unifican los dos tipos
-      // en todos los modulos, estas pantallas no se enteran.
+      // DP-21: la version vieja es `concurrent-modification`; `conflict` es de negocio y gana
+      // el `detail` del servidor.
       [409, 'concurrent-modification', 'convenio', 'concurrencia'],
+      [409, 'conflict', 'financiador', 'conflicto'],
       [400, 'validation-error', 'arancel', 'validacion'],
 
       [409, 'financiador-codigo-taken', 'financiador', 'codigo-repetido'],
@@ -57,6 +56,8 @@ describe('traducirErrorContracting', () => {
       // del que ya esta— y separarlos daria dos mensajes que dicen lo mismo con otras palabras.
       [409, 'convenio-solapado', 'convenio', 'solapamiento'],
       [409, 'arancel-solapado', 'arancel', 'solapamiento'],
+      [409, 'oferta-sin-obra-social', 'arancel', 'oferta-sin-obra-social'],
+      [409, 'practica-no-habilitada-en-oferta', 'arancel', 'practica-fuera-de-la-oferta'],
 
       [409, 'financiador-inactivo', 'plan', 'referencia-inactiva'],
       [409, 'plan-cobertura-inactivo', 'convenio', 'referencia-inactiva'],
@@ -88,6 +89,12 @@ describe('traducirErrorContracting', () => {
     expect(mensajes[2]).toContain('no es de esta sede');
     expect(mensajes[3]).toContain('grilla del convenio');
     expect(new Set(mensajes).size).toBe(4);
+
+    // B-3: el alta con oferta habla de la oferta, no de un arancel que todavia no existe.
+    const deOferta = traducirErrorContracting(problema(404, 'not-found'), 'arancel-de-oferta');
+    expect(deOferta.causa).toBe('no-encontrado');
+    expect(deOferta.mensaje).toContain('oferta elegida');
+    expect(deOferta.mensaje).not.toContain('grilla del convenio');
 
     // Y el resto NO cambia con el ambito: si cambiara, harian falta cuatro traductores.
     const permiso = (['financiador', 'convenio'] as const).map(

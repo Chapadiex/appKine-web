@@ -92,6 +92,11 @@ export interface ElegiblesRequestParams {
     desplazamiento?: number;
 }
 
+export interface ExportarPresentacionRequestParams {
+    consultorioId: number;
+    presentacionId: number;
+}
+
 export interface PagosDelLoteRequestParams {
     consultorioId: number;
     presentacionId: number;
@@ -199,11 +204,19 @@ export interface PresentacionesServiceInterface {
 
     /**
      * Prestaciones que se le pueden reclamar a un financiador
-     * Lista las deudas de financiador pendientes de un periodo (RF-M21-001).  Ya vienen filtradas: deja afuera las anuladas, las sin saldo y **las que ya estan vivas en otro lote**, de modo que armar el reclamo no pueda duplicar una prestacion (RN-M21-003).  &gt; **Hoy devuelve lista vacia en cualquier despliegue real**, y no es un defecto de esta operacion. No existe ninguna obligacion con responsable &#x60;FINANCIADOR&#x60; porque el devengado nunca se recableo contra convenios y aranceles. Es la reserva declarada en el design challenge de AKINE-07.04.
+     * Lista las deudas de financiador pendientes de un periodo (RF-M21-001).  Ya vienen filtradas: deja afuera las anuladas, las sin saldo y **las que ya estan vivas en otro lote**, de modo que armar el reclamo no pueda duplicar una prestacion (RN-M21-003).  &#x60;desde&#x60; y &#x60;hasta&#x60; son **dias de la sede**, inclusivos: el devengamiento se compara en la zona horaria de la sede, la misma con la que se congela la fecha de prestacion del item.  Desde AKINE F-4 el cierre de una sesion con cobertura devenga, ademas de la del paciente, la obligacion del financiador con el convenio congelado, y es esa la que aparece aca. La lista vacia significa que en el periodo no hubo prestaciones con cobertura de ese financiador pendientes de reclamar.
      * @endpoint get /api/v1/consultorios/{consultorioId}/prestaciones-elegibles
 * @param requestParameters
      */
     elegibles(requestParameters: ElegiblesRequestParams, extraHttpRequestParams?: any): Observable<Array<Obligacion>>;
+
+    /**
+     * Exportar un lote a CSV
+     * El detalle del lote —cabecera con los cuatro importes y una fila por prestacion— como archivo CSV (AKINE-07.04, listados exportables).  Serializa **la misma vista** que el detalle: no tiene consulta propia, asi que el archivo y la pantalla no pueden decir cosas distintas.  **PHI minima** (RNF-M21-001): cada fila lleva el &#x60;personaId&#x60; y el concepto congelado, no el nombre ni el documento del paciente. Una celda que una planilla tomaria por formula sale con un apostrofo delante.
+     * @endpoint get /api/v1/consultorios/{consultorioId}/presentaciones/{presentacionId}/export
+* @param requestParameters
+     */
+    exportarPresentacion(requestParameters: ExportarPresentacionRequestParams, extraHttpRequestParams?: any): Observable<string>;
 
     /**
      * Los pagos de un lote
@@ -239,7 +252,7 @@ export interface PresentacionesServiceInterface {
 
     /**
      * Revisar el lote antes de confirmarlo
-     * Devuelve las prestaciones que no se pueden reclamar, con el motivo de cada una (RF-M21-003).  **Es una lectura: no cambia estado y no bloquea nada.** Lo que bloquea es confirmar, que la vuelve a correr del lado del servidor — el frontend nunca es autoridad. Tenerla aparte permite mostrar los problemas **mientras se arma** el lote, en vez de descubrirlos todos juntos al apretar el boton.  &gt; **Todavia no valida orden, autorizacion ni credencial.** Esos tres requisitos viven en el arancel congelado del convenio y el devengado no los copia a la obligacion. Misma causa que la bandeja de elegibles vacia.
+     * Devuelve las prestaciones que no se pueden reclamar, con el motivo de cada una (RF-M21-003).  **Es una lectura: no cambia estado y no bloquea nada.** Lo que bloquea es confirmar, que la vuelve a correr del lado del servidor — el frontend nunca es autoridad. Tenerla aparte permite mostrar los problemas **mientras se arma** el lote, en vez de descubrirlos todos juntos al apretar el boton.  &gt; **Todavia no valida orden, autorizacion ni credencial.** Desde AKINE F-4 esos tres requisitos viajan congelados en cada obligacion del financiador, pero decidir si cada faltante bloquea el lote o solo avisa sigue abierto.
      * @endpoint get /api/v1/consultorios/{consultorioId}/presentaciones/{presentacionId}/validacion
 * @param requestParameters
      */

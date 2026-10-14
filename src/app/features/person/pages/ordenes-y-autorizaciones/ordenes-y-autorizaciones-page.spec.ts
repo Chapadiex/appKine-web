@@ -180,6 +180,19 @@ describe('OrdenesYAutorizacionesPage', () => {
     expect(texto(fixture)).toContain('20 de 20');
   });
 
+  it('marca la fila que tiene consumos a revisar, y solo esa', async () => {
+    const fixture = await montar({
+      autorizaciones: [PENDIENTE, { ...PENDIENTE, id: 99, numero: 'AUT-99', consumosARevisar: 2 }],
+    });
+
+    const filas = Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll('#caption-autorizaciones ~ tbody tr'),
+    ).map((fila) => fila.textContent ?? '');
+    expect(filas).toHaveLength(2);
+    expect(filas[0]).not.toContain('a revisar');
+    expect(filas[1]).toContain('2 consumos a revisar');
+  });
+
   // -------------------------------------------------------------------------------------
   // 2. Resolver: accion, no estado destino
   // -------------------------------------------------------------------------------------
@@ -589,6 +602,119 @@ describe('OrdenesYAutorizacionesPage', () => {
     expect(texto(fixture)).toContain('no tiene ninguna cobertura activa cargada');
     expect(enlaces(fixture)).toContain('Cargar una cobertura');
   });
+
+  // -------------------------------------------------------------------------------------
+  // B-4 (DP-23): situacion de la orden e historial de la autorizacion
+  // -------------------------------------------------------------------------------------
+
+  it('la orden muestra la situacion que deriva el backend y las sesiones consumidas', async () => {
+    const fixture = await montar({
+      ordenes: [{ ...ORDEN, situacion: 'EN_CURSO', sesionesConsumidas: 3 }],
+    });
+    const contenido = texto(fixture);
+
+    expect(contenido).toContain('En curso: ya tiene sesiones consumidas');
+    expect(contenido).toContain('3 de 10 consumidas');
+  });
+
+  it(
+    'el historial se lee paginado, del mas viejo al mas nuevo, y dice si esta vencida',
+    async () => {
+      const fixture = await montar({ autorizaciones: [PENDIENTE] });
+
+      apretar(fixture, 'Historial');
+      const primera = httpMock.expectOne(esHistorial(PENDIENTE.id));
+      expect(primera.request.params.get('page')).toBe('0');
+      expect(primera.request.params.get('size')).toBe('20');
+      primera.flush({
+        autorizacionId: PENDIENTE.id,
+        estadoActual: 'APROBADA',
+        activa: true,
+        vencida: true,
+        vencidaDesde: '2027-01-01',
+        page: 0,
+        size: 20,
+        totalElements: 21,
+        totalPages: 2,
+        content: [
+          {
+            id: 1,
+            tipo: 'ALTA',
+            estadoNuevo: 'PENDIENTE',
+            ocurridoEn: '2026-08-01T13:00:00Z',
+            detalle: 'Reconstruido al crear el historial',
+          },
+          {
+            id: 2,
+            tipo: 'CONSUMO',
+            estadoAnterior: 'APROBADA',
+            estadoNuevo: 'APROBADA',
+            cantidad: 1,
+            actorCuentaId: 42,
+            ocurridoEn: '2026-08-10T13:00:00Z',
+          },
+        ],
+      });
+      await estabilizar(fixture);
+
+      const contenido = texto(fixture);
+      expect(contenido).toContain('Historial de la autorizacion AUT-1');
+      expect(contenido).toContain('Nace como pendiente de respuesta');
+      expect(contenido).toContain('Reconstruido al crear el historial');
+      expect(contenido).toContain('Consumo de una sesion');
+      expect(contenido).toContain('Cantidad: 1');
+      expect(contenido).toContain('Cuenta 42');
+      expect(contenido).toContain('Vencida');
+      expect(contenido).toContain('Pagina 1 de 2');
+      await esperarSinViolaciones(fixture.nativeElement as HTMLElement);
+
+      apretar(fixture, 'Hechos siguientes');
+      const segunda = httpMock.expectOne(esHistorial(PENDIENTE.id));
+      expect(segunda.request.params.get('page')).toBe('1');
+      segunda.flush({ page: 1, size: 20, totalElements: 21, totalPages: 2, content: [] });
+      await estabilizar(fixture);
+
+      apretar(fixture, 'Cerrar el historial');
+      expect(texto(fixture)).not.toContain('Historial de la autorizacion AUT-1');
+    },
+    TIMEOUT_AXE,
+  );
+
+  it('el saldo y los consumos se abren por fila y una reversion relee solo el listado', async () => {
+    const fixture = await montar({ autorizaciones: [PENDIENTE] });
+    const base = `/api/v1/autorizaciones/${PENDIENTE.id}`;
+
+    apretar(fixture, 'Saldo y consumos');
+    httpMock.expectOne(esListado(`${base}/saldo`)).flush({ cantidadAutorizada: 20, saldo: 19 });
+    httpMock
+      .expectOne(esListado(`${base}/movimientos`))
+      .flush([{ id: 1, tipo: 'CONSUMO', tipoOrigen: 'SESION', referenciaOrigen: 70 }]);
+    httpMock.expectOne(esListado(`${base}/alertas`)).flush([]);
+    await estabilizar(fixture);
+    expect(texto(fixture)).toContain('Saldo y consumos de la autorizacion AUT-1');
+
+    apretar(fixture, 'Revertir el consumo #1');
+    escribirEn(fixture, '#revertir-consumo-1', 'Error de carga');
+    apretar(fixture, 'Confirmar la reversion');
+    httpMock
+      .expectOne((p) => p.method === 'POST' && p.url === `${base}/reversiones`)
+      .flush({ id: 2, tipo: 'REVERSION', movimientoOrigenId: 1 });
+    httpMock.expectOne(esListado(`${base}/saldo`)).flush({ cantidadAutorizada: 20, saldo: 20 });
+    httpMock.expectOne(esListado(`${base}/movimientos`)).flush([]);
+    httpMock.expectOne(esListado(`${base}/alertas`)).flush([]);
+    // Solo el listado de autorizaciones: la pantalla no vuelve a "cargando" y el panel sigue abierto.
+    httpMock.expectOne(esListado(AUTORIZACIONES)).flush([{ ...PENDIENTE, saldo: 20 }]);
+    await estabilizar(fixture);
+    expect(texto(fixture)).toContain('Se revirtio el consumo #1');
+
+    apretar(fixture, 'Cerrar el saldo');
+    expect(texto(fixture)).not.toContain('Saldo y consumos de la autorizacion AUT-1');
+  });
+
+  function esHistorial(autorizacionId: number) {
+    return (p: HttpRequest<unknown>) =>
+      p.method === 'GET' && p.url === `${AUTORIZACIONES}/${autorizacionId}/historial`;
+  }
 
   // -------------------------------------------------------------------------------------
   // Accesibilidad

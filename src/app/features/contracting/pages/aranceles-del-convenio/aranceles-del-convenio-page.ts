@@ -11,7 +11,8 @@ import {
 } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { catchError, of } from 'rxjs';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { catchError, forkJoin, map, of } from 'rxjs';
 
 import { ArancelResponse } from '../../../../api/generated/model/arancel-response';
 import { CatalogoClinicoService } from '../../../../api/generated/api/catalogo-clinico.service';
@@ -22,12 +23,14 @@ import { ConveniosApi } from '../../services/convenios-api';
 import { CreateArancelRequest } from '../../../../api/generated/model/create-arancel-request';
 import { EstadoDeListado } from '../../../../shared/utils/estado-de-listado';
 import { FiltroEstado } from '../../services/contracting-api';
+import { OfertaResponse } from '../../../../api/generated/model/oferta-response';
 import { PERMISO_CONVENIO_MANAGE } from '../../../../core/models/permisos';
 import { PermisoDirective } from '../../../../shared/directives/permiso.directive';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { UpdateArancelRequest } from '../../../../api/generated/model/update-arancel-request';
 import { numeroDeclarado } from '../../../../shared/utils/numero-declarado';
 import {
+  AmbitoContracting,
   CausaContracting,
   hayQueRecargar,
   traducirErrorContracting,
@@ -35,10 +38,10 @@ import {
 import { importeEnPalabras, importesCuadran } from '../../models/etiquetas-de-contracting';
 import {
   SituacionDeVigencia,
-  hoyLocal,
   situacionDeVigencia,
   ventanaEnPalabras,
 } from '../../models/vigencia-de-contracting';
+import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 
 /** Operacion abierta sobre una fila. Solo una a la vez. */
 type TipoAccion = 'editar' | 'baja';
@@ -98,6 +101,7 @@ type TipoAccion = 'editar' | 'baja';
 })
 export class ArancelesDelConvenioPage {
   private readonly api = inject(ConveniosApi);
+  private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly catalogoClinico = inject(CatalogoClinicoService);
   private readonly ruta = inject(ActivatedRoute);
   private readonly tenantContext = inject(TenantContextStore);
@@ -113,7 +117,7 @@ export class ArancelesDelConvenioPage {
   protected readonly convenioId = Number(this.ruta.snapshot.paramMap.get('convenioId'));
 
   /** Dia contra el que el backend calcula `vigente`. No filtra. */
-  protected readonly fecha = signal(hoyLocal());
+  protected readonly fecha = signal(this.diaDeLaSede.hoy());
 
   protected readonly estado = signal<EstadoDeListado<readonly ArancelResponse[]>>({
     tipo: 'cargando',
@@ -160,6 +164,15 @@ export class ArancelesDelConvenioPage {
 
   protected readonly filtroEstado = signal<FiltroEstado>('ACTIVO');
 
+  /**
+   * Ofertas de la sede, para el arancel por oferta (RF-M16-008) y para nombrar el alcance de cada
+   * fila. Incluye las dadas de baja: un arancel viejo puede ser de una oferta que ya no esta.
+   */
+  protected readonly ofertas = signal<readonly OfertaResponse[]>([]);
+
+  /** Practicas activas que declara cada oferta que admite obra social. */
+  private readonly practicasPorOferta = signal<ReadonlyMap<number, ReadonlySet<number>>>(new Map());
+
   protected readonly panel = signal<{ readonly id: number; readonly tipo: TipoAccion } | null>(
     null,
   );
@@ -170,6 +183,7 @@ export class ArancelesDelConvenioPage {
   protected readonly errorAccion = signal<string | null>(null);
   protected readonly causaAccion = signal<CausaContracting | null>(null);
   protected readonly exito = signal<string | null>(null);
+  private importacionAnunciada = false;
   protected readonly intentos = signal(0);
 
   protected readonly hayQueRecargar = computed(() => hayQueRecargar(this.causaAccion()));
@@ -181,6 +195,32 @@ export class ArancelesDelConvenioPage {
     coseguro: ['', [Validators.required]],
     vigenciaDesde: ['', [Validators.required]],
     vigenciaHasta: [''],
+    // Vacio = arancel GENERAL de la practica en el convenio, que es todo lo que existia antes.
+    ofertaId: [''],
+  });
+
+  private readonly practicaElegida = toSignal(
+    this.formularioAlta.controls.practicaId.valueChanges,
+    { initialValue: '' },
+  );
+
+  /**
+   * Ofertas a las que se puede atar el arancel: activas, que admiten obra social y que declaran la
+   * practica elegida. Son las tres condiciones que el backend valida; ofrecer otra seria empujar
+   * al usuario a un 409.
+   */
+  protected readonly ofertasCandidatas = computed<readonly OfertaResponse[]>(() => {
+    const practica = Number(this.practicaElegida());
+    if (!practica) {
+      return [];
+    }
+    const declaradas = this.practicasPorOferta();
+    return this.ofertas().filter(
+      (oferta) =>
+        oferta.estado === 'ACTIVO' &&
+        oferta.admiteObraSocial === true &&
+        (declaradas.get(oferta.id ?? 0)?.has(practica) ?? false),
+    );
   });
 
   /** Sin practica ni convenio: cambiarlos no seria editar este arancel, seria inventar otro. */
@@ -193,15 +233,28 @@ export class ArancelesDelConvenioPage {
   });
 
   constructor() {
+    // Fechas por defecto tomadas antes de conocer la zona de la sede: se corrigen al llegar.
+    this.diaDeLaSede.alinear(this.fecha, (hoy) => {
+      this.fecha.set(hoy);
+      this.cargar();
+    });
+
     effect(() => {
       this.tenantContext.contextEpoch();
       untracked(() => {
         this.reiniciar();
+        this.anunciarImportacion();
         this.cargar();
         this.cargarConvenio();
         this.cargarPracticas();
+        this.cargarOfertas();
       });
     });
+
+    // Cambiar la practica invalida la oferta elegida: la oferta tenia que declarar la anterior.
+    this.formularioAlta.controls.practicaId.valueChanges
+      .pipe(takeUntilDestroyed())
+      .subscribe(() => this.formularioAlta.controls.ofertaId.setValue('', { emitEvent: false }));
   }
 
   protected cargar(): void {
@@ -247,6 +300,20 @@ export class ArancelesDelConvenioPage {
     return codigo === '' ? (practica.name ?? '') : `${practica.name ?? ''} (${codigo})`;
   }
 
+  /**
+   * Si el arancel es el general de la practica o el de una oferta.
+   *
+   * <p>Los dos conviven en el mismo periodo y no es un duplicado: al resolver con esa oferta manda
+   * el suyo, y sin oferta (o en cualquier otra) rige el general.
+   */
+  protected alcanceDelArancel(arancel: ArancelResponse): string {
+    if (arancel.ofertaId === undefined || arancel.ofertaId === null) {
+      return 'General del convenio';
+    }
+    const oferta = this.ofertas().find((candidata) => candidata.id === arancel.ofertaId);
+    return `Solo en la oferta ${oferta?.nombreComercial ?? `#${arancel.ofertaId}`}`;
+  }
+
   protected cambiarFecha(valor: string): void {
     if (valor === '') {
       return;
@@ -282,6 +349,7 @@ export class ArancelesDelConvenioPage {
       // usuario a un 400.
       vigenciaDesde: this.arranqueSugerido(),
       vigenciaHasta: '',
+      ofertaId: '',
     });
     this.altaAbierta.set(true);
     afterNextRender(() => this.enfocar('#alta-arancel-practica'), { injector: this.injector });
@@ -372,6 +440,9 @@ export class ArancelesDelConvenioPage {
     if (valores.vigenciaHasta !== '') {
       cuerpo.vigenciaHasta = valores.vigenciaHasta;
     }
+    if (valores.ofertaId !== '') {
+      cuerpo.ofertaId = Number(valores.ofertaId);
+    }
 
     this.empezarEnvio();
 
@@ -384,7 +455,8 @@ export class ArancelesDelConvenioPage {
         );
         this.cargar();
       },
-      error: (error: unknown) => this.fallar(error),
+      error: (error: unknown) =>
+        this.fallar(error, cuerpo.ofertaId === undefined ? 'arancel' : 'arancel-de-oferta'),
     });
   }
 
@@ -543,8 +615,8 @@ export class ArancelesDelConvenioPage {
       });
   }
 
-  private fallar(error: unknown): void {
-    const traducido = traducirErrorContracting(error, 'arancel');
+  private fallar(error: unknown, ambito: AmbitoContracting = 'arancel'): void {
+    const traducido = traducirErrorContracting(error, ambito);
     this.enviando.set(false);
     this.errorAccion.set(traducido.mensaje);
     this.causaAccion.set(traducido.causa);
@@ -559,7 +631,7 @@ export class ArancelesDelConvenioPage {
 
   /** Fecha inicial sugerida para el alta: el inicio del convenio si todavia no arranco. */
   private arranqueSugerido(): string {
-    const hoy = hoyLocal();
+    const hoy = this.diaDeLaSede.hoy();
     const desde = this.convenio()?.vigenciaDesde ?? '';
     return desde !== '' && desde > hoy ? desde : hoy;
   }
@@ -599,13 +671,78 @@ export class ArancelesDelConvenioPage {
       .subscribe((pagina) => this.practicas.set(pagina?.content ?? []));
   }
 
+  /**
+   * Ofertas de la sede y, de las que admiten obra social, las practicas que declaran.
+   *
+   * <p>Un fallo aca no rompe nada: el selector de oferta queda vacio y el alta sigue cargando
+   * aranceles generales, que es lo que existia antes de RF-M16-008.
+   */
+  private cargarOfertas(): void {
+    const consultorioId = this.tenantContext.consultorioId();
+    if (consultorioId === null) {
+      return;
+    }
+
+    this.api
+      .ofertasDeLaSede(consultorioId)
+      .pipe(catchError(() => of([] as OfertaResponse[])))
+      .subscribe((ofertas) => {
+        this.ofertas.set(ofertas);
+        const conObraSocial = ofertas.filter(
+          (oferta) => oferta.estado === 'ACTIVO' && oferta.admiteObraSocial === true,
+        );
+        if (conObraSocial.length === 0) {
+          return;
+        }
+        forkJoin(
+          conObraSocial.map((oferta) =>
+            this.api.practicasDeOferta(consultorioId, oferta.id ?? 0).pipe(
+              map(
+                (respuesta) =>
+                  [
+                    oferta.id ?? 0,
+                    new Set(
+                      (respuesta.practicas ?? [])
+                        .filter((practica) => practica.estado === 'ACTIVO')
+                        .map((practica) => practica.practicaId ?? 0),
+                    ),
+                  ] as const,
+              ),
+              catchError(() => of([oferta.id ?? 0, new Set<number>()] as const)),
+            ),
+          ),
+        ).subscribe((pares) => this.practicasPorOferta.set(new Map(pares)));
+      });
+  }
+
+  /**
+   * Al volver de una importacion confirmada (AKINE-B-7), la grilla dice cuantos aranceles entraron.
+   *
+   * <p>Solo la primera vez: si despues cambia el contexto, el anuncio ya no describe esta sede.
+   */
+  private anunciarImportacion(): void {
+    if (this.importacionAnunciada) {
+      return;
+    }
+    this.importacionAnunciada = true;
+    const importados = Number(this.ruta.snapshot.queryParamMap?.get('importados') ?? '');
+    if (Number.isInteger(importados) && importados > 0) {
+      this.exito.set(
+        `Se importaron ${importados} aranceles. La grilla ya los muestra; la moneda es la del ` +
+          'convenio.',
+      );
+    }
+  }
+
   private reiniciar(): void {
     this.cerrarPanel();
     this.exito.set(null);
     this.filtroEstado.set('ACTIVO');
-    this.fecha.set(hoyLocal());
+    this.fecha.set(this.diaDeLaSede.hoy());
     this.convenio.set(null);
     this.practicas.set([]);
+    this.ofertas.set([]);
+    this.practicasPorOferta.set(new Map());
   }
 
   private enfocar(selector: string): void {

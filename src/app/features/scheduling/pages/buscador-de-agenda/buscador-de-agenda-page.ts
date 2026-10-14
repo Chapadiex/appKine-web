@@ -1,10 +1,11 @@
 import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
+import { Subscription } from 'rxjs';
 
 import { Agenda } from '../../../../api/generated/model/agenda';
 import { DiaDeAgenda } from '../../../../api/generated/model/dia-de-agenda';
 import { OfertaResponse } from '../../../../api/generated/model/oferta-response';
-import { PERMISO_TURNO_MANAGE } from '../../../../core/models/permisos';
+import { PERMISO_TURNO_MANAGE, PERMISO_TURNO_READ } from '../../../../core/models/permisos';
 import { PermissionsStore } from '../../../../core/services/permissions.store';
 import { ProfesionalHabilitado } from '../../../../api/generated/model/profesional-habilitado';
 import { SlotDisponible } from '../../../../api/generated/model/slot-disponible';
@@ -14,13 +15,14 @@ import { recortarVentana, traducirErrorAgenda } from '../../models/agenda-errors
 import {
   diaSinSlots,
   fechaEnPalabras,
-  hoy,
+  hoyEnZona,
   rangoEnZona,
   slotCompleto,
   sumarDias,
   textoDeCupo,
   textoSinSlots,
 } from '../../models/etiquetas-de-agenda';
+import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 
 /** Ventana por defecto: una semana. `hasta` es exclusivo. */
 const DIAS_POR_DEFECTO = 7;
@@ -73,6 +75,7 @@ const DIAS_POR_DEFECTO = 7;
 })
 export class BuscadorDeAgendaPage {
   private readonly api = inject(SchedulingApi);
+  private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly tenantContext = inject(TenantContextStore);
   private readonly router = inject(Router);
 
@@ -85,6 +88,8 @@ export class BuscadorDeAgendaPage {
    * o un texto, <b>nunca</b> para esconderlo.
    */
   protected readonly puedeReservar = computed(() => this.permisos.tiene(PERMISO_TURNO_MANAGE));
+  /** La bandeja de series pide `turno:read` (E-8). UX: el backend rechaza igual. */
+  protected readonly puedeVerSeries = computed(() => this.permisos.tiene(PERMISO_TURNO_READ));
   protected readonly diaSinSlots = diaSinSlots;
   protected readonly fechaEnPalabras = fechaEnPalabras;
   protected readonly slotCompleto = slotCompleto;
@@ -96,8 +101,28 @@ export class BuscadorDeAgendaPage {
 
   protected readonly ofertaId = signal<number | null>(null);
   protected readonly profesionalId = signal<number | null>(null);
-  protected readonly desde = signal(hoy());
-  protected readonly hasta = signal(sumarDias(hoy(), DIAS_POR_DEFECTO));
+  protected readonly desde = signal(this.diaDeLaSede.hoy());
+  protected readonly hasta = signal(sumarDias(this.diaDeLaSede.hoy(), DIAS_POR_DEFECTO));
+
+  /**
+   * `true` mientras el borde sigue siendo el default calculado con el dia del NAVEGADOR.
+   *
+   * <p>El dia que vale es el de la sede, y su zona recien llega con la primera agenda. Entre las
+   * 21:00 y las 24:00 de Cordoba un navegador en UTC ya esta en el dia siguiente: la ventana
+   * arrancaba un dia tarde y el recorte a 62 dias terminaba un dia despues (lo destapo el E2E del
+   * CI, que corre en UTC). Con la primera respuesta los bordes que nadie toco se mueven al dia de la
+   * sede y se vuelve a pedir; los que el usuario eligio no se tocan.
+   */
+  private desdePorDefecto = true;
+  private hastaPorDefecto = true;
+
+  /**
+   * La consulta de agenda en vuelo. Cada consulta nueva cancela la anterior: sin esto gana la
+   * respuesta que llega ULTIMA y no la del pedido mas nuevo, y la ventana mas ancha —la que tarda
+   * mas— pisaba la grilla de la que el usuario acababa de pedir. Lo destapo el E2E contra el
+   * backend real (AKINE E-2).
+   */
+  private consultaEnVuelo: Subscription | null = null;
 
   protected readonly agenda = signal<Agenda | null>(null);
   protected readonly cargando = signal(false);
@@ -203,12 +228,14 @@ export class BuscadorDeAgendaPage {
    */
   protected cambiarDesde(valor: string): void {
     this.avisoDeRecorte.set(null);
+    this.desdePorDefecto = false;
     this.desde.set(valor);
     this.buscar();
   }
 
   protected cambiarHasta(valor: string): void {
     this.avisoDeRecorte.set(null);
+    this.hastaPorDefecto = false;
     this.hasta.set(valor);
     this.buscar();
   }
@@ -228,7 +255,8 @@ export class BuscadorDeAgendaPage {
     this.error.set(null);
     this.faltaContexto.set(false);
 
-    this.api
+    this.consultaEnVuelo?.unsubscribe();
+    this.consultaEnVuelo = this.api
       .buscarAgenda(consultorioId, ofertaId, {
         desde: this.desde(),
         hasta: this.hasta(),
@@ -236,6 +264,9 @@ export class BuscadorDeAgendaPage {
       })
       .subscribe({
         next: (agenda) => {
+          if (this.corregirAlDiaDeLaSede(agenda.timezone ?? '')) {
+            return;
+          }
           this.agenda.set(agenda);
           this.cargando.set(false);
         },
@@ -260,6 +291,28 @@ export class BuscadorDeAgendaPage {
           this.faltaContexto.set(traducido.causa === 'sin-contexto');
         },
       });
+  }
+
+  /**
+   * Mueve al dia de la sede los bordes que siguen en su default del navegador y vuelve a pedir.
+   * Devuelve `true` cuando la respuesta en mano es de otra ventana y hay que tirarla.
+   */
+  private corregirAlDiaDeLaSede(timezone: string): boolean {
+    if (!this.desdePorDefecto || timezone === '') {
+      return false;
+    }
+    this.desdePorDefecto = false;
+    const deLaSede = hoyEnZona(timezone);
+    if (deLaSede === this.desde()) {
+      return false;
+    }
+    this.desde.set(deLaSede);
+    // Un `hasta` elegido a mano se respeta, salvo que la ventana corrida quede vacia o invertida.
+    if (this.hastaPorDefecto || this.hasta() <= deLaSede) {
+      this.hasta.set(sumarDias(deLaSede, DIAS_POR_DEFECTO));
+    }
+    this.buscar();
+    return true;
   }
 
   /** Navega a la reserva con todo lo que esa pantalla necesita para rearmar el resumen. */

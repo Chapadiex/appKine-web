@@ -37,10 +37,10 @@ import {
 import {
   SituacionDeVigencia,
   enPalabras,
-  hoyLocal,
   situacionDeVigencia,
 } from '../../models/situacion-de-vigencia';
 import { textoRequerido } from '../../../../shared/validators/texto-requerido';
+import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 
 /** Operacion abierta sobre una fila. Solo una a la vez. */
 type TipoAccion = 'editar' | 'baja';
@@ -112,6 +112,7 @@ type Heredable = '' | 'true' | 'false';
 })
 export class OfertasDeLaSedePage {
   private readonly api = inject(OfferingApi);
+  private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly tenantContext = inject(TenantContextStore);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly formBuilder = inject(FormBuilder);
@@ -132,7 +133,10 @@ export class OfertasDeLaSedePage {
    * <p>Solo se usa para <b>redactar</b> el motivo de una fila que no esta vigente. La decision de
    * si esta vigente o no la toma el backend, en la zona de la sede.
    */
-  private readonly hoy = hoyLocal();
+  /** Lee el signal de la zona: lo que dependa de esto se actualiza cuando la zona llega. */
+  private get hoy(): string {
+    return this.diaDeLaSede.hoy();
+  }
 
   /**
    * Estado del listado. `GET /consultorios/{cid}/ofertas` <b>no pagina</b>: el contrato devuelve
@@ -207,6 +211,11 @@ export class OfertasDeLaSedePage {
   protected readonly intentos = signal(0);
 
   protected readonly hayQueRecargar = computed(() => hayQueRecargar(this.causaAccion()));
+
+  /** Oferta cuya politica de prepago se esta guardando, o `null` (E-6). */
+  protected readonly prepagoEnVuelo = signal<number | null>(null);
+  /** Rechazo del ultimo cambio de politica de prepago. Vive aparte: no es un panel. */
+  protected readonly errorPrepago = signal<string | null>(null);
 
   /** `true` si el alta eligio modalidad grupal. Ver {@link marcarModalidadDelAlta}. */
   protected readonly altaEsGrupal = signal(false);
@@ -624,6 +633,61 @@ export class OfertasDeLaSedePage {
         this.cargar();
       },
       error: (error: unknown) => this.fallar(error),
+    });
+  }
+
+  /**
+   * Activa o desactiva "exige prepago" (E-6, DP-06 / ADR-0013).
+   *
+   * <p>La politica <b>alerta</b> en la recepcion del dia cuando el paciente llega sin anticipo;
+   * nunca impide atenderlo. Viaja con la `version` leida: ante un 409 de concurrencia no se
+   * reintenta a ciegas —otro puesto cambio la oferta— sino que se relee el listado y se explica.
+   */
+  protected alternarPrepago(oferta: OfertaResponse): void {
+    const consultorioId = this.tenantContext.consultorioId();
+    if (
+      consultorioId === null ||
+      oferta.id === undefined ||
+      oferta.version === undefined ||
+      this.prepagoEnVuelo() !== null
+    ) {
+      return;
+    }
+    const exigir = !(oferta.exigePrepago ?? false);
+    this.prepagoEnVuelo.set(oferta.id);
+    this.errorPrepago.set(null);
+    this.exito.set(null);
+
+    this.api.fijarPoliticaDePrepago(consultorioId, oferta.id, exigir, oferta.version).subscribe({
+      next: (actualizada) => {
+        this.prepagoEnVuelo.set(null);
+        this.exito.set(
+          exigir
+            ? `"${oferta.nombreComercial}" exige prepago: la recepcion avisa cuando alguien llega ` +
+                'sin anticipo. Es un aviso, no impide atenderlo.'
+            : `"${oferta.nombreComercial}" ya no exige prepago.`,
+        );
+        this.estado.update((actual) =>
+          actual.tipo === 'listo'
+            ? {
+                tipo: 'listo',
+                pagina: actual.pagina.map((fila) =>
+                  fila.id === actualizada.id ? actualizada : fila,
+                ),
+              }
+            : actual,
+        );
+      },
+      error: (error: unknown) => {
+        this.prepagoEnVuelo.set(null);
+        const traducido = traducirErrorOffering(error, 'oferta');
+        this.errorPrepago.set(traducido.mensaje);
+        // Concurrencia: la version leida quedo vieja. Se relee para que el proximo clic lleve la
+        // nueva y el operador vea lo que el otro puesto dejo antes de decidir de nuevo.
+        if (traducido.causa === 'concurrencia' || hayQueRecargar(traducido.causa)) {
+          this.cargar();
+        }
+      },
     });
   }
 

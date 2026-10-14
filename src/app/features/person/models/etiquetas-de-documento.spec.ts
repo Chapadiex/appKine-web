@@ -1,5 +1,8 @@
 import { AutorizacionResponseEstadoEnum as CicloAut } from '../../../api/generated/model/autorizacion-response';
-import { OrdenResponseEstadoEnum as CicloOrden } from '../../../api/generated/model/orden-response';
+import {
+  OrdenResponseEstadoEnum as CicloOrden,
+  OrdenResponseSituacionEnum as Situacion,
+} from '../../../api/generated/model/orden-response';
 import { AutorizacionResponseEstadoAutorizacionEnum as EstadoAut } from '../../../api/generated/model/autorizacion-response';
 import { ElegibilidadResponseMotivoEnum as MotivoElegibilidad } from '../../../api/generated/model/elegibilidad-response';
 import { RequisitoResponseTipoEnum as TipoRequisito } from '../../../api/generated/model/requisito-response';
@@ -15,6 +18,7 @@ import {
   ordenInactiva,
   requisitoEnPalabras,
   saldoEnPalabras,
+  consumosARevisarEnPalabras,
   situacionDeOrden,
   vigenciaDeDocumento,
 } from './etiquetas-de-documento';
@@ -102,6 +106,15 @@ describe('etiquetas de ordenes y autorizaciones', () => {
     expect(ordenInactiva({ estado: CicloOrden.INACTIVA })).toBe(true);
   });
 
+  it('la situacion derivada del backend manda sobre la cuenta por vigencia (B-4)', () => {
+    expect(
+      situacionDeOrden({ estado: CicloOrden.ACTIVA, vigente: true, situacion: Situacion.CUMPLIDA }),
+    ).toBe('Cumplida: se consumieron las sesiones prescriptas');
+    expect(
+      situacionDeOrden({ estado: CicloOrden.ACTIVA, situacion: Situacion.SIN_AUTORIZACION }),
+    ).toBe('Sin autorizacion cargada');
+  });
+
   it('el aviso de vencimiento solo aparece cuando hay algo que avisar', () => {
     expect(avisoDeVencimiento(0)).toBe('Vence hoy');
     expect(avisoDeVencimiento(1)).toBe('Vence manana');
@@ -168,6 +181,13 @@ describe('etiquetas de ordenes y autorizaciones', () => {
     // Sin `saldo` explicito se calcula, y sin cantidad declarada no se inventa un numero.
     expect(saldoEnPalabras({ cantidadAutorizada: 10, cantidadConsumida: 4 })).toBe('6 de 10');
     expect(saldoEnPalabras({})).toBe('Sin cantidad declarada');
+  });
+
+  it('los consumos a revisar marcan la fila solo cuando hay alguno', () => {
+    expect(consumosARevisarEnPalabras({})).toBeNull();
+    expect(consumosARevisarEnPalabras({ consumosARevisar: 0 })).toBeNull();
+    expect(consumosARevisarEnPalabras({ consumosARevisar: 1 })).toBe('1 consumo a revisar');
+    expect(consumosARevisarEnPalabras({ consumosARevisar: 3 })).toBe('3 consumos a revisar');
   });
 
   it('el veredicto dice POR QUE no habilita, y no un "no" a secas', () => {

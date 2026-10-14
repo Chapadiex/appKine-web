@@ -1,0 +1,79 @@
+@if (estado().tipo !== 'oculto') {
+  <section class="tarjeta" aria-labelledby="titulo-historia-administrativa">
+    <h2 id="titulo-historia-administrativa">Historia clinica: datos administrativos</h2>
+    <p class="ayuda">
+      Si tiene historia, desde cuando, sus casos y quien la atiende. Nada clinico: el contenido se
+      consulta desde el modulo clinico, con su permiso y su justificacion.
+    </p>
+
+    @if (estado().tipo === 'cargando') {
+      <p class="estado estado--cargando">Cargando los datos de la historia…</p>
+    }
+    @if (mensajeError(); as mensaje) {
+      <p class="estado estado--error">{{ mensaje }}</p>
+      <div class="acciones">
+        <button type="button" class="boton boton--secundario" (click)="reintentar()">
+          Reintentar
+        </button>
+      </div>
+    }
+
+    @if (lectura(); as l) {
+      @if (!l.datos.tieneHistoriaClinica) {
+        <p class="estado">Esta persona todavia no tiene historia clinica.</p>
+      } @else {
+        <dl class="detalle">
+          <dt>Historia abierta el</dt>
+          <dd>{{ fecha(l.datos.abiertaEn) || 'Sin fecha registrada' }}</dd>
+        </dl>
+
+        @if ((l.datos.casos ?? []).length === 0) {
+          <p class="estado">La historia no tiene casos abiertos ni cerrados.</p>
+        } @else {
+          <div
+            class="tabla-scroll"
+            tabindex="0"
+            role="region"
+            aria-labelledby="caption-casos-administrativos"
+          >
+            <table class="tabla">
+              <caption id="caption-casos-administrativos">
+                Casos de la historia
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col">Caso</th>
+                  <th scope="col">Estado</th>
+                  <th scope="col">Oferta</th>
+                  <th scope="col">Abierto</th>
+                  <th scope="col">Cerrado</th>
+                  <th scope="col">Equipo vigente</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (caso of l.datos.casos; track caso.id) {
+                  <tr>
+                    <td>N.º {{ caso.numeroCaso }}</td>
+                    <td>{{ caso.estado === 'ACTIVO' ? 'Activo' : 'Cerrado' }}</td>
+                    <td>{{ nombreDeOferta(caso) }}</td>
+                    <td>{{ fecha(caso.abiertoEn) }}</td>
+                    <td>{{ fecha(caso.cerradoEn) || '—' }}</td>
+                    <td>
+                      @for (miembro of equipoVigente(caso); track miembro.id; let ultimo = $last) {
+                        {{ nombreDeProfesional(miembro) }} ({{ rolEnPalabras(miembro) }}){{
+                          ultimo ? '' : ', '
+                        }}
+                      } @empty {
+                        Sin equipo vigente
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      }
+    }
+  </section>
+}

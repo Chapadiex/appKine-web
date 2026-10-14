@@ -18,7 +18,7 @@ export interface CatalogoSolicitudResponse {
      */
     codigoPropuesto?: string;
     /**
-     * Concepto global creado al aprobar, si se creo. Aprobar NO crea el concepto automaticamente: la plataforma lo publica por el alta normal
+     * Concepto global publicado al aprobar, del tipo de la solicitud. null mientras esta PENDIENTE, si se rechazo, o si se aprobo antes del contrato 0.64.0, cuando aprobar no publicaba el concepto
      */
     conceptoId?: number;
     /**

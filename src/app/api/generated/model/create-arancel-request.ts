@@ -26,6 +26,10 @@ export interface CreateArancelRequest {
      */
     importeTotal: number;
     /**
+     * Opcional (RF-M16-008). Sin oferta, el arancel es el GENERAL de la practica. Con oferta, es el arancel de la practica cuando se presta dentro de esa oferta, y al resolver con esa oferta manda sobre el general. La oferta tiene que ser de la misma sede, admitir obra social y declarar la practica (A-9)
+     */
+    ofertaId?: number;
+    /**
      * Practica del catalogo clinico que se arancela
      */
     practicaId: number;

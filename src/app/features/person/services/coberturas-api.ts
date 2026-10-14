@@ -1,11 +1,15 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
+import { CoberturaParaOfertaResponse } from '../../../api/generated/model/cobertura-para-oferta-response';
 import { CoberturaResponse } from '../../../api/generated/model/cobertura-response';
 import { CoberturasDelPacienteService } from '../../../api/generated/api/coberturas-del-paciente.service';
 import { CreateCoberturaRequest } from '../../../api/generated/model/create-cobertura-request';
 import { FinanciadorResponse } from '../../../api/generated/model/financiador-response';
 import { FinanciadoresYPlanesService } from '../../../api/generated/api/financiadores-y-planes.service';
+import { OfertaResponse } from '../../../api/generated/model/oferta-response';
+import { PracticasDeOfertaResponse } from '../../../api/generated/model/practicas-de-oferta-response';
+import { ServiciosYOfertasService } from '../../../api/generated/api/servicios-y-ofertas.service';
 import { PlanCoberturaResponse } from '../../../api/generated/model/plan-cobertura-response';
 import { UpdateCoberturaRequest } from '../../../api/generated/model/update-cobertura-request';
 
@@ -66,6 +70,38 @@ export type FiltroDeCoberturas = 'ACTIVA' | 'INACTIVA' | 'TODAS';
 export class CoberturasApi {
   private readonly api = inject(CoberturasDelPacienteService);
   private readonly catalogo = inject(FinanciadoresYPlanesService);
+  private readonly ofertasApi = inject(ServiciosYOfertasService);
+
+  /**
+   * Que cobertura vigente aplica a una oferta de la sede, y por que no las otras (RF-M08-006).
+   *
+   * <p>Solo lectura y sin auditoria. La sede sale del token: sin sede el backend responde 403,
+   * nunca "particular". La fecha vacia viaja como `undefined`: el backend usa el dia de la sede.
+   */
+  coberturaAplicable(
+    personaId: number,
+    ofertaId: number,
+    fecha: string | undefined,
+  ): Observable<CoberturaParaOfertaResponse> {
+    return this.api.resolverCoberturaAplicablePorOferta({
+      personaId,
+      ofertaId,
+      fecha: fecha === '' ? undefined : fecha,
+    });
+  }
+
+  /** Ofertas activas de la sede, para elegir contra cual preguntar. */
+  ofertasDeLaSede(consultorioId: number): Observable<OfertaResponse[]> {
+    return this.ofertasApi.listOfertas({ consultorioId, estado: 'ACTIVO' });
+  }
+
+  /** Las practicas que declara la oferta: dan nombre a los `practicaId` de la respuesta. */
+  practicasDeOferta(
+    consultorioId: number,
+    ofertaId: number,
+  ): Observable<PracticasDeOfertaResponse> {
+    return this.ofertasApi.getPracticasDeOferta({ consultorioId, ofertaId });
+  }
 
   /**
    * El historial completo: vigentes, vencidas y dadas de baja, mas nuevas primero.

@@ -17,6 +17,8 @@ import { Observable }                                        from 'rxjs';
 import { OpenApiHttpParams, QueryParamStyle } from '../query.params';
 
 // @ts-ignore
+import { CoberturaParaOfertaResponse } from '../model/cobertura-para-oferta-response';
+// @ts-ignore
 import { CoberturaResponse } from '../model/cobertura-response';
 // @ts-ignore
 import { CreateCoberturaRequest } from '../model/create-cobertura-request';
@@ -41,6 +43,7 @@ import {
     DeactivateCoberturaDePacienteRequestParams,
     ListCoberturasDePacienteRequestParams,
     MarcarCoberturaPrincipalRequestParams,
+    ResolverCoberturaAplicablePorOfertaRequestParams,
     ResolverCoberturaParaAtencionRequestParams,
     UpdateCoberturaDePacienteRequestParams
 } from './coberturas-del-paciente.serviceInterface';
@@ -366,6 +369,94 @@ export class CoberturasDelPacienteService extends BaseService implements Cobertu
             {
                 context: localVarHttpContext,
                 body: marcarCoberturaPrincipalRequest,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * Que cubre la obra social de la persona para esta oferta
+     * RF-M08-006 y RF-M08-007. Para cada cobertura FINANCIADA vigente de la persona dice si aplica a la oferta, con que practica y con que arancel; si no aplica, por que. Y sugiere la condicion: COBERTURA si alguna aplica, PARTICULAR si no, con el precio particular que rige ese dia.  LA OFERTA MANDA ANTES QUE LA COBERTURA (RN-M08-005): si la oferta no admite obra social, ninguna cobertura aplica y el paciente paga particular aunque tenga obra social (CA-M08-006-06, Pilates). Tener la cobertura no alcanza.  CON VARIAS PRACTICAS en la oferta (A-9), se prueban en el orden de DP-11 —la principal primero— y la cobertura aplica con la primera que resuelve. El detalle por practica explica las demas. El arancel especifico de la oferta (RF-M16-008) manda sobre el general de la practica: arancel.ofertaId lo dice.  NO DECIDE NADA. Atender como particular aunque haya cobertura es decision del operador en la recepcion (RF-M13-005) y no toca la cobertura del paciente (CA-M08-007-06). No persiste, no consume y es idempotente.  Exige consultorio en el contexto: la oferta y el convenio son de la sede. Se autoriza por pertenencia, como la lista de coberturas. El numero de afiliado no viaja.
+     * @endpoint get /api/v1/personas/{personaId}/cobertura-aplicable
+     * @param requestParameters
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public resolverCoberturaAplicablePorOferta(requestParameters: ResolverCoberturaAplicablePorOfertaRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<CoberturaParaOfertaResponse>;
+    public resolverCoberturaAplicablePorOferta(requestParameters: ResolverCoberturaAplicablePorOfertaRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<CoberturaParaOfertaResponse>>;
+    public resolverCoberturaAplicablePorOferta(requestParameters: ResolverCoberturaAplicablePorOfertaRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<CoberturaParaOfertaResponse>>;
+    public resolverCoberturaAplicablePorOferta(requestParameters: ResolverCoberturaAplicablePorOfertaRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        const personaId = requestParameters?.personaId;
+        if (personaId === null || personaId === undefined) {
+            throw new Error('Required parameter personaId was null or undefined when calling resolverCoberturaAplicablePorOferta.');
+        }
+        const ofertaId = requestParameters?.ofertaId;
+        if (ofertaId === null || ofertaId === undefined) {
+            throw new Error('Required parameter ofertaId was null or undefined when calling resolverCoberturaAplicablePorOferta.');
+        }
+        const fecha = requestParameters?.fecha;
+
+        let localVarQueryParameters = new OpenApiHttpParams(this.encoder);
+
+        localVarQueryParameters = this.addToHttpParams(
+            localVarQueryParameters,
+            'ofertaId',
+            <any>ofertaId,
+            QueryParamStyle.Form,
+            true,
+        );
+
+
+        localVarQueryParameters = this.addToHttpParams(
+            localVarQueryParameters,
+            'fecha',
+            <any>fecha,
+            QueryParamStyle.Form,
+            true,
+        );
+
+
+        let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/personas/${this.configuration.encodeParam({name: "personaId", value: personaId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/cobertura-aplicable`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<CoberturaParaOfertaResponse>('get', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                params: localVarQueryParameters.toHttpParams(),
                 responseType: <any>responseType_,
                 ...(withCredentials ? { withCredentials } : {}),
                 headers: localVarHeaders,

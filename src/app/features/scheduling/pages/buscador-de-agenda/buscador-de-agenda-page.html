@@ -12,6 +12,10 @@
   pregunta que el buscador: aca se busca cuando hay lugar, alla se ve quien viene hoy.
 -->
 <p><a class="enlace" routerLink="/agenda/recepcion">Ver la recepcion del dia</a></p>
+<!-- Bandeja de series (E-8): misma razon que la recepcion para no ir al menu principal. -->
+@if (puedeVerSeries()) {
+  <p><a class="enlace" routerLink="/agenda/series">Ver las series de turnos de la sede</a></p>
+}
 
 <section class="tarjeta" aria-labelledby="titulo-busqueda-agenda">
   <h2 id="titulo-busqueda-agenda">Que buscar</h2>

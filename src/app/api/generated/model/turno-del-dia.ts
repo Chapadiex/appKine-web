@@ -7,12 +7,18 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { PrepagoDeRecepcion } from './prepago-de-recepcion';
+import { Recepcion } from './recepcion';
 
 
 /**
  * Turno de la agenda del dia de una sede, con el paciente resuelto. PHI minima: no lleva ningun dato clinico.
  */
 export interface TurnoDelDia { 
+    /**
+     * Cobertura del paciente elegida al reservar (AKINE-05.02). Ausente si no se eligio: la recepcion usa entonces la primera que aplique. Es la misma que `Turno.coberturaId` y es una preferencia, no un veredicto: la que se aplico la dice `recepcion.coberturaId`.
+     */
+    coberturaId?: number;
     /**
      * Tipo y numero, para desambiguar homonimos. Ausente si la ficha no lo tiene.
      */
@@ -22,7 +28,7 @@ export interface TurnoDelDia {
      */
     espacioId?: number;
     /**
-     * `EN_ESPERA` significa que el paciente llego y aguarda. No significa que lo esten atendiendo: la prestacion la registra la Sesion.
+     * Estado de la RESERVA. **`EN_ESPERA` esta deprecado desde 0.63.0 y el servidor ya no lo emite**: si el paciente llego lo dice `recepcion` (DP-16). Se conserva declarado una version para no romper al cliente.
      */
     estado?: TurnoDelDiaEstadoEnum;
     /**
@@ -35,7 +41,7 @@ export interface TurnoDelDia {
      */
     inicio?: string;
     /**
-     * Hora REAL de llegada, puesta por el servidor. Ausente si no llego.
+     * Hora REAL de llegada, puesta por el servidor, leida de la recepcion vigente. Ausente si no llego. Es la misma que `recepcion.llegadaEn`.
      */
     llegadaEn?: string;
     /**
@@ -50,9 +56,21 @@ export interface TurnoDelDia {
      */
     personaNombre?: string;
     /**
+     * Estado del prepago del turno, calculado al leer (AKINE E-8), **tambien antes del check-in**: la agenda sabe si la oferta lo exige sin esperar a que haya recepcion. Sin recepcion, `PENDIENTE` quiere decir \"si se atiende como particular\" —la cobertura la resuelve la validacion— y un turno cancelado o ausente es `NO_EXIGIDO` salvo que tenga un anticipo vigente (`REGISTRADO`). Con recepcion vigente es el mismo que `recepcion.prepago`. Es una alerta: no bloquea nada (DP-06).
+     */
+    prepago?: PrepagoDeRecepcion;
+    /**
      * Membership del profesional. Ausente si la oferta no lo requiere.
      */
     profesionalId?: number;
+    /**
+     * La recepcion vigente del turno (M13, DP-16): llegada, validacion, espera y llamado. Ausente si nadie registro la llegada.
+     */
+    recepcion?: Recepcion;
+    /**
+     * Serie que genero el turno (AKINE E-3). Ausente en un turno suelto: la pantalla lo usa para ofrecer el alcance al cancelar o mover.
+     */
+    serieId?: number;
     /**
      * Version para el control optimista de las transiciones
      */

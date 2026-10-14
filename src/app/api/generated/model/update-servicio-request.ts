@@ -18,7 +18,7 @@ export interface UpdateServicioRequest {
      */
     descripcion?: string;
     /**
-     * Version que el cliente cree estar editando. Si la fila avanzo desde entonces, responde 409 conflict y no pisa nada
+     * Version que el cliente cree estar editando. Si la fila avanzo desde entonces, responde 409 concurrent-modification y no pisa nada
      */
     expectedVersion: number;
     /**

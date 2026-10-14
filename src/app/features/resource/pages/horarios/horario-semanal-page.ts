@@ -17,6 +17,7 @@ import {
   Validators,
 } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { catchError, of } from 'rxjs';
 
 import { BloqueResponse } from '../../../../api/generated/model/bloque-response';
@@ -36,7 +37,14 @@ import { TEXTO_MODO_LECTURA, modoLectura } from '../../models/modo-lectura';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { UpdateBloqueRequest } from '../../../../api/generated/model/update-bloque-request';
 import { BloqueEnConflicto, CausaBloque, traducirErrorBloque } from '../../models/bloque-errors';
-import { DIAS_DE_LA_SEMANA, etiquetaDeDia } from '../../models/dias-de-la-semana';
+import { DIAS_DE_LA_SEMANA, etiquetaDeDia } from '../../../../shared/utils/dias-de-la-semana';
+import {
+  ImpactoPrevio,
+  avisoDeTurnosAfectados,
+  turnosPrevistos,
+} from '../../models/turnos-afectados';
+import { ImpactoPrevioPanel } from '../../components/impacto-previo/impacto-previo';
+import { SimularEdicionBloqueRequest } from '../../../../api/generated/model/simular-edicion-bloque-request';
 import {
   TEXTO_LISTA_INCOMPLETA,
   TOPE_DE_VINCULOS,
@@ -50,7 +58,7 @@ import {
   esHoraDePared,
   minutosDeHora,
   rangoHorario,
-} from '../../models/horas-de-pared';
+} from '../../../../shared/utils/horas-de-pared';
 
 /** Operacion abierta sobre un bloque. Solo una a la vez, y nunca junto con el alta. */
 type TipoAccion = 'editar' | 'baja';
@@ -97,7 +105,13 @@ interface DiaConBloques {
  */
 @Component({
   selector: 'app-horario-semanal-page',
-  imports: [ReactiveFormsModule, RouterLink, PermisoDirective, ConfirmacionConMotivo],
+  imports: [
+    ReactiveFormsModule,
+    RouterLink,
+    PermisoDirective,
+    ConfirmacionConMotivo,
+    ImpactoPrevioPanel,
+  ],
   templateUrl: './horario-semanal-page.html',
   styleUrl: '../../resource.css',
 })
@@ -223,6 +237,33 @@ export class HorarioSemanalPage {
   protected readonly intentos = signal(0);
 
   /**
+   * Turnos que la ultima edicion o baja pudo dejar fuera de horario, ya redactado, o `null`.
+   *
+   * <p>Vive al lado de {@link exito} y se limpia con el: es la otra mitad del mismo resultado.
+   * El numero es el de la respuesta de la mutacion, no el de la consulta previa: ver
+   * `turnos-afectados.ts`.
+   */
+  protected readonly avisoTurnos = signal<string | null>(null);
+
+  /**
+   * Consulta previa de impacto del panel abierto (A-11), o `null` si todavia no se pidio.
+   *
+   * <p>En la baja se pide al abrir el panel: no hay nada que escribir antes. En la edicion se
+   * pide al enviar, con los cambios escritos; si no deja ningun turno afuera la edicion sigue
+   * de largo, y si deja alguno el panel muestra cuales y espera un segundo "Guardar igual".
+   */
+  protected readonly impacto = signal<ImpactoPrevio | null>(null);
+
+  /** Los cambios (sin `version`) sobre los que se calculo {@link impacto}, serializados. */
+  private claveDelImpacto: string | null = null;
+
+  /** Si la edicion ya mostro su impacto y el proximo envio confirma. */
+  protected readonly edicionConImpacto = computed(() => {
+    const tipo = this.impacto()?.tipo;
+    return tipo === 'listo' || tipo === 'error';
+  });
+
+  /**
    * El otro bloque del ultimo solapamiento, o `null`.
    *
    * <p>Es lo que permite marcar <b>la fila</b> del bloque con el que se choca. Se limpia al
@@ -247,6 +288,14 @@ export class HorarioSemanalPage {
   protected readonly formularioEdicion = this.nuevoFormulario();
 
   constructor() {
+    // Lo que se calculo ya no describe lo que esta escrito: el proximo envio vuelve a consultar.
+    this.formularioEdicion.valueChanges.pipe(takeUntilDestroyed()).subscribe(() => {
+      if (this.panel()?.tipo === 'editar' && this.impacto()?.tipo !== 'consultando') {
+        this.impacto.set(null);
+        this.claveDelImpacto = null;
+      }
+    });
+
     effect(() => {
       // Dependencia explicita: cualquier cambio de contexto invalida todo lo que hay abierto.
       this.tenantContext.contextEpoch();
@@ -257,6 +306,7 @@ export class HorarioSemanalPage {
         this.cerrarPanel();
         this.altaAbierta.set(false);
         this.exito.set(null);
+        this.avisoTurnos.set(null);
         this.membershipElegido.set(inicial);
         this.estado.set({ tipo: 'inicial' });
         this.cargarProfesionales();
@@ -327,6 +377,7 @@ export class HorarioSemanalPage {
     this.cerrarPanel();
     this.altaAbierta.set(false);
     this.exito.set(null);
+    this.avisoTurnos.set(null);
 
     if (valor === '' || !Number.isFinite(membershipId)) {
       this.membershipElegido.set(null);
@@ -377,6 +428,7 @@ export class HorarioSemanalPage {
   protected abrirAlta(): void {
     this.cerrarPanel();
     this.exito.set(null);
+    this.avisoTurnos.set(null);
     this.formularioAlta.reset({
       diaSemana: '1',
       horaDesde: '',
@@ -405,6 +457,7 @@ export class HorarioSemanalPage {
     this.cerrarPanel();
     this.altaAbierta.set(false);
     this.exito.set(null);
+    this.avisoTurnos.set(null);
     this.panel.set({ id, tipo });
 
     if (tipo === 'editar') {
@@ -420,6 +473,8 @@ export class HorarioSemanalPage {
         limpiarVigenciaHasta: false,
       });
       afterNextRender(() => this.enfocar('#editar-bloque-dia'), { injector: this.injector });
+    } else {
+      this.consultarImpactoDeBaja(id);
     }
   }
 
@@ -431,6 +486,8 @@ export class HorarioSemanalPage {
     this.causaAccion.set(null);
     this.conflicto.set(null);
     this.intentos.set(0);
+    this.impacto.set(null);
+    this.claveDelImpacto = null;
   }
 
   protected cerrarAlta(): void {
@@ -530,19 +587,80 @@ export class HorarioSemanalPage {
       return;
     }
 
+    const clave = claveDeCambios(cambios);
+    if (this.edicionConImpacto() && this.claveDelImpacto === clave) {
+      this.guardarEdicion(panel.id, consultorioId, membershipId, cambios);
+      return;
+    }
+
+    this.consultarImpactoDeEdicion(panel.id, consultorioId, membershipId, cambios, clave);
+  }
+
+  /**
+   * Consulta sin efectos de la edicion escrita. Si no deja ningun turno afuera, guarda.
+   *
+   * <p>El cuerpo es el mismo de la edicion sin `version`: la consulta no compara versiones
+   * (diseno A-11, decision 3), la mutacion si.
+   */
+  private consultarImpactoDeEdicion(
+    bloqueId: number,
+    consultorioId: number,
+    membershipId: number,
+    cambios: UpdateBloqueRequest,
+    clave: string,
+  ): void {
+    this.empezarEnvio();
+    this.impacto.set({ tipo: 'consultando' });
+    this.claveDelImpacto = clave;
+
+    this.disponibilidad
+      .simularImpactoEdicionBloque({
+        consultorioId,
+        membershipId,
+        bloqueId,
+        simularEdicionBloqueRequest: sinVersion(cambios),
+      })
+      .subscribe({
+        next: (impacto) => {
+          if (this.panel()?.id !== bloqueId || this.claveDelImpacto !== clave) {
+            return;
+          }
+          this.impacto.set({ tipo: 'listo', impacto });
+          if ((impacto.turnosAfectados ?? 0) <= 0) {
+            this.guardarEdicion(bloqueId, consultorioId, membershipId, cambios);
+            return;
+          }
+          this.enviando.set(false);
+        },
+        error: (error: unknown) => {
+          if (this.panel()?.id === bloqueId) {
+            this.fallarConsulta(error);
+          }
+        },
+      });
+  }
+
+  private guardarEdicion(
+    bloqueId: number,
+    consultorioId: number,
+    membershipId: number,
+    cambios: UpdateBloqueRequest,
+  ): void {
+    const previsto = turnosPrevistos(this.impacto());
     this.empezarEnvio();
 
     this.disponibilidad
       .updateBloqueDisponibilidad({
         consultorioId,
         membershipId,
-        bloqueId: panel.id,
+        bloqueId,
         updateBloqueRequest: cambios,
       })
       .subscribe({
-        next: () => {
+        next: (bloque) => {
           this.cerrarPanel();
           this.exito.set('Los cambios del bloque quedaron guardados.');
+          this.avisoTurnos.set(avisoDeTurnosAfectados(bloque.turnosAfectados, previsto));
           this.cargar();
         },
         error: (error: unknown) => this.fallar(error),
@@ -567,6 +685,7 @@ export class HorarioSemanalPage {
       return;
     }
 
+    const previsto = turnosPrevistos(this.impacto());
     this.empezarEnvio();
 
     this.disponibilidad
@@ -577,16 +696,63 @@ export class HorarioSemanalPage {
         deactivateBloqueRequest: { reason: motivo },
       })
       .subscribe({
-        next: () => {
+        next: (bloque) => {
           this.cerrarPanel();
           this.exito.set(
             'El bloque quedo dado de baja. La fila no se borra: sobrevive con su motivo y su ' +
               'autor en la auditoria.',
           );
+          this.avisoTurnos.set(avisoDeTurnosAfectados(bloque.turnosAfectados, previsto));
           this.cargar();
         },
         error: (error: unknown) => this.fallar(error),
       });
+  }
+
+  /** Consulta sin efectos de la baja, al abrir el panel: no hay nada que escribir antes. */
+  private consultarImpactoDeBaja(bloqueId: number): void {
+    const consultorioId = this.tenantContext.consultorioId();
+    const membershipId = this.membershipElegido();
+    if (consultorioId === null || membershipId === null) {
+      return;
+    }
+
+    this.impacto.set({ tipo: 'consultando' });
+
+    this.disponibilidad
+      .simularImpactoBajaBloque({ consultorioId, membershipId, bloqueId })
+      .subscribe({
+        next: (impacto) => {
+          if (this.panelAbierto(bloqueId, 'baja')) {
+            this.impacto.set({ tipo: 'listo', impacto });
+          }
+        },
+        error: (error: unknown) => {
+          if (this.panelAbierto(bloqueId, 'baja')) {
+            this.fallarConsulta(error);
+          }
+        },
+      });
+  }
+
+  /**
+   * Fallo de una consulta previa.
+   *
+   * <p>Si la mutacion fallaria por lo mismo —el bloque ya esta dado de baja (`409`), no existe,
+   * el cuerpo es invalido, falta contexto o permiso— se informa como el error de la operacion:
+   * dejar confirmar algo que ya sabemos que va a rebotar es gastarle un viaje al usuario.
+   * Cualquier otra falla no frena: se dice que no se pudo calcular y se deja confirmar igual,
+   * porque la consulta informa y no decide (ADR-0011).
+   */
+  private fallarConsulta(error: unknown): void {
+    if (FRENAN_LA_MUTACION.has(traducirErrorBloque(error).causa)) {
+      this.impacto.set(null);
+      this.claveDelImpacto = null;
+      this.fallar(error);
+      return;
+    }
+    this.enviando.set(false);
+    this.impacto.set({ tipo: 'error' });
   }
 
   private armarCambios(): UpdateBloqueRequest | null {
@@ -643,6 +809,7 @@ export class HorarioSemanalPage {
     this.causaAccion.set(null);
     this.conflicto.set(null);
     this.exito.set(null);
+    this.avisoTurnos.set(null);
   }
 
   /**
@@ -691,6 +858,28 @@ export class HorarioSemanalPage {
       { validators: [validadorDeRango] },
     );
   }
+}
+
+/** Causas de falla de la consulta previa que la mutacion tendria igual. */
+const FRENAN_LA_MUTACION: ReadonlySet<CausaBloque> = new Set<CausaBloque>([
+  'bloque-inactivo',
+  'ya-inactivo',
+  'no-encontrado',
+  'validacion',
+  'sin-contexto',
+  'sin-permiso',
+]);
+
+/** El cuerpo de la consulta previa: el de la edicion sin `version`. */
+function sinVersion(cambios: UpdateBloqueRequest): SimularEdicionBloqueRequest {
+  const simulacion: SimularEdicionBloqueRequest & { version?: number } = { ...cambios };
+  delete simulacion.version;
+  return simulacion;
+}
+
+/** Identidad de lo escrito, para saber si el impacto mostrado sigue describiendolo. */
+function claveDeCambios(cambios: UpdateBloqueRequest): string {
+  return JSON.stringify(sinVersion(cambios));
 }
 
 /** Ordena por hora de inicio. `24:00` compara como 1440, sin ningun caso especial. */

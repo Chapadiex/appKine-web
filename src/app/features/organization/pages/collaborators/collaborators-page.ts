@@ -1,4 +1,4 @@
-import { Component, ElementRef, effect, inject, signal, untracked } from '@angular/core';
+import { Component, ElementRef, computed, effect, inject, signal, untracked } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Observable } from 'rxjs';
 import { RouterLink } from '@angular/router';
@@ -12,17 +12,24 @@ import { ConfirmacionConMotivo } from '../../../../shared/components/confirmacio
 import { MembershipGrantResponse } from '../../../../api/generated/model/membership-grant-response';
 import { MembershipPageResponse } from '../../../../api/generated/model/membership-page-response';
 import { MembershipResponse } from '../../../../api/generated/model/membership-response';
-import { PERMISOS_F1, PERMISO_COLABORADOR_MANAGE } from '../../../../core/models/permisos';
+import { PERMISO_COLABORADOR_MANAGE } from '../../../../core/models/permisos';
 import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
 import { PermisoDirective } from '../../../../shared/directives/permiso.directive';
 import { ETIQUETA_DE_ESTADO, ROLES_DE_VINCULO, etiquetaDeRol } from '../../models/roles';
+import { ImpactoDeDesvinculacion, resumenDeImpacto } from '../../models/impacto-de-desvinculacion';
 import { SedesDelContexto } from '../../services/sedes-del-contexto';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
-import { traducirErrorColaborador } from '../../models/colaborador-errors';
+import { traducirErrorColaborador, traducirErrorGrant } from '../../models/colaborador-errors';
 import { textoRequerido } from '../../../../shared/validators/texto-requerido';
 
 /** Operacion abierta sobre una fila. Solo una a la vez. */
 type TipoAccion = 'editar' | 'suspender' | 'reactivar' | 'revocar' | 'permisos';
+
+/** Codigos que el rol del vinculo abierto admite como permiso adicional. */
+type Otorgables =
+  | { readonly tipo: 'cargando' }
+  | { readonly tipo: 'listo'; readonly codigos: readonly string[] }
+  | { readonly tipo: 'error' };
 
 /**
  * Cuantos colaboradores se piden por pagina.
@@ -76,7 +83,6 @@ export class CollaboratorsPage {
 
   protected readonly permisoManage = PERMISO_COLABORADOR_MANAGE;
   protected readonly roles = ROLES_DE_VINCULO;
-  protected readonly permisosOtorgables = PERMISOS_F1;
   protected readonly etiquetaDeRol = etiquetaDeRol;
 
   protected readonly estado = signal<EstadoDeListado<MembershipPageResponse>>({
@@ -93,9 +99,12 @@ export class CollaboratorsPage {
   protected readonly paginaActual = signal(0);
 
   /** Fila y operacion abiertas, o `null` si no hay ninguna. Solo una a la vez. */
-  protected readonly panel = signal<{ readonly id: number; readonly tipo: TipoAccion } | null>(
-    null,
-  );
+  protected readonly panel = signal<{
+    readonly id: number;
+    readonly tipo: TipoAccion;
+    /** Rol del vinculo al abrir el panel: redacta el rechazo de la matriz al otorgar. */
+    readonly rol?: string;
+  } | null>(null);
   protected readonly enviando = signal(false);
   protected readonly errorAccion = signal<string | null>(null);
   protected readonly exito = signal<string | null>(null);
@@ -103,6 +112,35 @@ export class CollaboratorsPage {
 
   /** Permisos adicionales de la fila abierta en el panel `permisos`. `null` mientras carga. */
   protected readonly grants = signal<readonly MembershipGrantResponse[] | null>(null);
+
+  /**
+   * Lo que el selector ofrece al otorgar, segun el rol del vinculo abierto (contrato 0.84.0).
+   *
+   * <p>Sale de `listPermisosOtorgablesDelRol`, que el backend calcula con la misma regla que
+   * valida el alta: ofrecer el catalogo entero dejaba elegir permisos que la matriz rechaza con
+   * 400. <b>No se filtran los que el rol ya tiene por base</b>: la pantalla no conoce los
+   * permisos base de cada rol, y el backend los incluye porque los admite como redundantes. Si
+   * la consulta falla el selector queda vacio: replicar la matriz aca seria una segunda fuente
+   * de verdad.
+   */
+  protected readonly otorgables = signal<Otorgables>({ tipo: 'cargando' });
+  protected readonly codigosOtorgables = computed(() => {
+    const otorgables = this.otorgables();
+    return otorgables.tipo === 'listo' ? otorgables.codigos : [];
+  });
+
+  /**
+   * Que quedaria pendiente si se revoca el vinculo abierto, o `null` si no hay revocacion abierta.
+   *
+   * <p>Se consulta al abrir el panel y no al confirmar: sirve para decidir, y quien decide tiene
+   * que verlo antes de escribir el motivo. No bloquea el boton: RN-M05-004 pide que los turnos
+   * queden visibles para resolucion, no que impidan la desvinculacion.
+   */
+  protected readonly impacto = signal<ImpactoDeDesvinculacion | null>(null);
+  protected readonly resumenDelImpacto = computed(() => {
+    const impacto = this.impacto();
+    return impacto?.tipo === 'listo' ? resumenDeImpacto(impacto.respuesta) : null;
+  });
 
   /**
    * Cambio de rol y/o de alcance.
@@ -235,7 +273,7 @@ export class CollaboratorsPage {
 
     this.cerrarPanel();
     this.exito.set(null);
-    this.panel.set({ id, tipo });
+    this.panel.set({ id, tipo, rol: colaborador.roleCode });
 
     if (tipo === 'editar') {
       // El rol arranca en el que ya tiene: el usuario ve de donde parte, y dejarlo asi manda
@@ -250,12 +288,19 @@ export class CollaboratorsPage {
 
     if (tipo === 'permisos') {
       this.cargarGrants(id);
+      this.cargarOtorgables(id, colaborador.roleCode);
+    }
+
+    if (tipo === 'revocar') {
+      this.cargarImpacto(id);
     }
   }
 
   protected cerrarPanel(): void {
     this.panel.set(null);
     this.grants.set(null);
+    this.otorgables.set({ tipo: 'cargando' });
+    this.impacto.set(null);
     this.enviando.set(false);
     this.errorAccion.set(null);
     this.intentos.set(0);
@@ -387,6 +432,49 @@ export class CollaboratorsPage {
       .subscribe((respuesta) => this.grants.set(respuesta));
   }
 
+  private cargarOtorgables(membershipId: number, roleCode: string | undefined): void {
+    const orgId = this.tenantContext.organizationId();
+    if (orgId === null || roleCode === undefined) {
+      this.otorgables.set({ tipo: 'error' });
+      return;
+    }
+
+    this.colaboradores
+      .listPermisosOtorgablesDelRol({ orgId, roleCode })
+      .pipe(catchError(() => of(null)))
+      .subscribe((respuesta) => {
+        // Misma guarda que el impacto: la lista de otro rol no puede quedar en este selector.
+        if (!this.panelAbierto(membershipId, 'permisos')) {
+          return;
+        }
+        this.otorgables.set(
+          respuesta === null
+            ? { tipo: 'error' }
+            : { tipo: 'listo', codigos: respuesta.permissionCodes ?? [] },
+        );
+      });
+  }
+
+  private cargarImpacto(membershipId: number): void {
+    const orgId = this.tenantContext.organizationId();
+    if (orgId === null) {
+      return;
+    }
+
+    this.impacto.set({ tipo: 'cargando' });
+    this.colaboradores
+      .getDesvinculacionImpacto({ orgId, membershipId })
+      .pipe(catchError(() => of(null)))
+      .subscribe((respuesta) => {
+        // La respuesta puede llegar con el panel ya cerrado o abierto sobre otra fila: pintarla
+        // ahi le atribuiria a una persona lo pendiente de otra.
+        if (!this.panelAbierto(membershipId, 'revocar')) {
+          return;
+        }
+        this.impacto.set(respuesta === null ? { tipo: 'error' } : { tipo: 'listo', respuesta });
+      });
+  }
+
   protected asignarGrant(): void {
     const panel = this.panel();
     const orgId = this.tenantContext.organizationId();
@@ -430,7 +518,10 @@ export class CollaboratorsPage {
           this.formularioGrant.reset({ permissionCode: '', reason: '', validUntil: '' });
           this.cargarGrants(panel.id);
         },
-        error: (error: unknown) => this.fallar(error),
+        error: (error: unknown) => {
+          this.enviando.set(false);
+          this.errorAccion.set(traducirErrorGrant(error, etiquetaDeRol(panel.rol)).mensaje);
+        },
       });
   }
 

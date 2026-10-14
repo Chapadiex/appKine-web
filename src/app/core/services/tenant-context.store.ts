@@ -48,6 +48,28 @@ export class TenantContextStore {
     this.epoch.update((value) => value + 1);
   }
 
+  /**
+   * Corrige los NOMBRES del contexto activo sin invalidar el estado de las features (AKINE-LCP).
+   *
+   * <p>Al recargar, el token trae solo ids y la sesion fija el contexto con un rotulo provisorio;
+   * los nombres llegan despues, con `/me/contexts`. Si eso pasara por {@link select}, la epoca
+   * avanzaria y todo lo que se cargo con el contexto provisorio —los permisos efectivos, que el
+   * menu ya pidio en paralelo— se descartaria y se volveria a pedir, aunque la organizacion y
+   * la sede sean las mismas. Con otros ids no es un renombre: delega en {@link select}.
+   */
+  renombrar(context: TenantContext): void {
+    const actual = this.current();
+    if (
+      actual === null ||
+      actual.organizationId !== context.organizationId ||
+      actual.consultorioId !== context.consultorioId
+    ) {
+      this.select(context);
+      return;
+    }
+    this.current.set(context);
+  }
+
   clear(): void {
     this.current.set(null);
     this.epoch.update((value) => value + 1);

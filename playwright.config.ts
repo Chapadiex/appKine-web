@@ -15,6 +15,39 @@ import { defineConfig, devices } from '@playwright/test';
  * Regla innegociable: ambos repos en la MISMA rama. Si no, se prueban dos versiones
  * distintas y el resultado no vale.
  */
+/**
+ * Frontend contra el que corren los E2E. Por defecto el `npm start` de siempre; se cambia para
+ * correr una segunda pila al lado de la de desarrollo sin pisarla (ver `docs/e2e-ci.md`).
+ */
+const WEB = process.env['AKINE_E2E_WEB'] ?? 'http://localhost:4200';
+
+/**
+ * Zona horaria del NAVEGADOR en los proyectos que corren contra el backend real.
+ *
+ * <p>Nunca la de la sede, y elegida para que el dia del navegador sea OTRO que el de la sede en el
+ * momento en que arranca la corrida. "Hoy" en AKINE es el dia de la sede (su `timezone`), no el del
+ * navegador; un `new Date()` que se cuela en una pantalla o en un helper da el dia equivocado solo
+ * cuando las dos fechas difieren. Con el navegador en la zona del runner eso pasaba entre las 21:00 y
+ * las 24:00 de Cordoba, cuando el CI —que corre en UTC— ya esta en el dia siguiente: el job E2E del
+ * PR #42 se cayo asi, y de dia el mismo defecto pasaba en verde.
+ *
+ * <p>Ninguna zona fija difiere de la sede las 24 horas, asi que se elige al cargar la config: Kiritimati
+ * (UTC+14, 17 horas por delante de Cordoba) ya esta en manana desde las 07:00 de Cordoba, y Pago Pago
+ * (UTC-11, 8 horas por detras) sigue en ayer hasta las 08:00. Entre las dos cubren el dia entero.
+ * `AKINE_E2E_TIMEZONE` la fija a mano para reproducir algo puntual.
+ */
+const ZONA_DE_LA_SEDE = process.env['AKINE_E2E_ZONA_SEDE'] ?? 'America/Argentina/Cordoba';
+const ZONA_DEL_NAVEGADOR = process.env['AKINE_E2E_TIMEZONE'] ?? zonaConOtroDia(ZONA_DE_LA_SEDE);
+
+function zonaConOtroDia(sede: string, ahora = new Date()): string {
+  const fecha = (zona: string) =>
+    new Intl.DateTimeFormat('en-CA', { timeZone: zona, dateStyle: 'short' }).format(ahora);
+  const candidata = ['Pacific/Kiritimati', 'Pacific/Pago_Pago'].find(
+    (z) => fecha(z) !== fecha(sede),
+  );
+  return candidata ?? 'Pacific/Kiritimati';
+}
+
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: true,
@@ -28,7 +61,7 @@ export default defineConfig({
   reporter: process.env['CI'] ? [['html'], ['github']] : [['html']],
 
   use: {
-    baseURL: 'http://localhost:4200',
+    baseURL: WEB,
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
@@ -37,11 +70,50 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      use: { ...devices['Desktop Chrome'], timezoneId: ZONA_DEL_NAVEGADOR },
       // La auditoria de contraste tiene sus propios dos proyectos, uno por tema. Sin esto
       // correria una tercera vez con el `colorScheme` que traiga el sistema del runner, que es
       // justamente el dato que no se puede dejar al azar.
-      testIgnore: /contraste\.spec\.ts/,
+      testIgnore: [/contraste(-no-textual)?\.spec\.ts/, /agenda[-.]/, /flujo-/, /movil\.spec\.ts/],
+      // Casi todos estos tests dan de alta una o dos cuentas, y el alta esta espaciada a 4 por
+      // minuto (`esperarCupoDeRegistro`, por el limite del backend). Corridos uno detras de otro
+      // —como en el CI— la espera sola se come los 30 s por defecto. Se alarga el plazo; el
+      // limite no se apaga (AKINE G-9).
+      timeout: 120_000,
+    },
+
+    /*
+     * Agenda, ciclo del turno y recepcion contra el backend REAL (AKINE E-2).
+     *
+     * `agenda-setup` siembra por la API un centro con su profesional y su disponibilidad; el
+     * proyecto `agenda` lo declara como dependencia, asi que `--project=agenda` arrastra el
+     * sembrado solo y `npm run a11y:contraste` no lo toca.
+     *
+     * `workers: 2` no es timidez: login y refresh comparten un limite de 30 por minuto y por IP
+     * (`akine.security.rate-limit`), cada test ingresa por pantalla y cada `page.goto` canjea el
+     * refresh. Con todos los nucleos de una maquina de desarrollo el limite se pasa y los tests
+     * fallan con 429, que es el limite funcionando y no el producto fallando.
+     *
+     * Los `flujo-*.spec.ts` (caja, cobro, presentaciones, series y prepago) viven en este mismo
+     * proyecto porque trabajan sobre el MISMO centro sembrado: un segundo centro serian dos altas
+     * mas contra un limite de 4 por minuto, y el CI ya corre `--project=agenda`.
+     */
+    {
+      name: 'agenda-setup',
+      testMatch: /agenda\.setup\.ts/,
+    },
+    {
+      name: 'agenda',
+      testMatch: /(agenda|flujo)-.*\.spec\.ts/,
+      dependencies: ['agenda-setup'],
+      workers: 2,
+      // Cada paso espera una vuelta real al backend, a veces dos. Los 5 s por defecto alcanzan en
+      // una maquina tranquila y no con el backend compilando o atendiendo otra corrida.
+      expect: { timeout: 10_000 },
+      // Un test de recepcion o de ciclo encadena una docena de vueltas al backend: 30 s alcanzan
+      // en una maquina tranquila y no cuando el backend o el dev server compiten por CPU.
+      timeout: 90_000,
+      use: { ...devices['Desktop Chrome'], timezoneId: ZONA_DEL_NAVEGADOR },
     },
 
     /*
@@ -55,22 +127,42 @@ export default defineConfig({
      *
      * A diferencia del proyecto `chromium`, estos NO necesitan el backend: la API se simula con
      * `route.fulfill`. Corren en cualquier maquina y en CI.
+     *
+     * Desde AKINE-G-7 corren tambien `contraste-no-textual.spec.ts`: contorno de controles y
+     * anillo de foco a 3:1 (WCAG 1.4.11), hover y recorrido por teclado. Los bordes y el foco
+     * cambian de token entre temas igual que el texto, asi que necesitan los mismos dos proyectos.
      */
     {
       name: 'contraste-claro',
-      testMatch: /contraste\.spec\.ts/,
+      testMatch: /contraste(-no-textual)?\.spec\.ts/,
       use: { ...devices['Desktop Chrome'], colorScheme: 'light' },
     },
     {
       name: 'contraste-oscuro',
-      testMatch: /contraste\.spec\.ts/,
+      testMatch: /contraste(-no-textual)?\.spec\.ts/,
       use: { ...devices['Desktop Chrome'], colorScheme: 'dark' },
+    },
+
+    /*
+     * Ancho de telefono (WCAG 1.4.10 y 2.5.8): 375 px con toque. Sin backend, como el contraste:
+     * la API se simula con `route.fulfill` (`e2e/support/movil.ts`). `npm run a11y:movil`.
+     */
+    {
+      name: 'movil',
+      testMatch: /movil\.spec\.ts/,
+      use: {
+        ...devices['Desktop Chrome'],
+        viewport: { width: 375, height: 812 },
+        isMobile: true,
+        hasTouch: true,
+        deviceScaleFactor: 2,
+      },
     },
   ],
 
   webServer: {
     command: 'npm start',
-    url: 'http://localhost:4200',
+    url: WEB,
     reuseExistingServer: !process.env['CI'],
     timeout: 120_000,
   },

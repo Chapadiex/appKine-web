@@ -7,12 +7,17 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { CoberturaDelHitoResponse } from './cobertura-del-hito-response';
 
 
 /**
  * Un hecho datado del resumen
  */
 export interface HitoResponse { 
+    /**
+     * Datos estructurados de la cobertura. Solo en los hitos de la seccion coberturas; en los demas viene nulo. Son los mismos datos del titulo, como campos: el titulo es para leer, no para partir
+     */
+    cobertura?: CoberturaDelHitoResponse;
     /**
      * Estado en que quedo
      */

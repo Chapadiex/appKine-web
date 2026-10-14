@@ -19,6 +19,10 @@ export interface Turno {
     ausenteEn?: string;
     canceladoEn?: string;
     /**
+     * Cobertura del paciente elegida al reservar. Ausente si no se eligio: la recepcion usa entonces la primera que aplique. Es una preferencia, no un veredicto: si el dia del turno ya no aplica, la recepcion queda OBSERVADA.
+     */
+    coberturaId?: number;
+    /**
      * Ausente mientras el turno no se confirme. Una reprogramacion lo vuelve a vaciar: lo confirmado era otro horario.
      */
     confirmadoEn?: string;
@@ -28,7 +32,7 @@ export interface Turno {
      */
     espacioId?: number;
     /**
-     * Estado de la RESERVA. Nunca dice que la atencion ocurrio: eso lo dice la Sesion. `CANCELADO` libera el lugar; `AUSENTE` **no**, porque la hora se consumio igual.
+     * Estado de la RESERVA. Nunca dice que la atencion ocurrio: eso lo dice la Sesion. `CANCELADO` libera el lugar; `AUSENTE` **no**, porque la hora se consumio igual. **`EN_ESPERA` esta deprecado desde 0.63.0 y el servidor ya no lo emite**: la llegada y la espera son de la Recepcion (DP-16). Se conserva declarado una version para no romper al cliente generado.
      */
     estado?: TurnoEstadoEnum;
     /**
@@ -41,7 +45,8 @@ export interface Turno {
      */
     inicio?: string;
     /**
-     * Hora REAL de llegada del paciente al centro, puesta por el servidor (M13). Ausente mientras no llego, y se vacia si se deshace el check-in: un check-in deshecho no dejo una llegada, dejo un error corregido.
+     * **Deprecado desde 0.63.0.** La llegada es de la Recepcion (DP-16): leerla de `TurnoDelDia.recepcion`. Solo lo completa el `POST /{turnoId}/llegada` deprecado; en cualquier otra respuesta viaja ausente.
+     * @deprecated
      */
     llegadaEn?: string;
     /**
@@ -62,6 +67,10 @@ export interface Turno {
      */
     reprogramadoEn?: string;
     reservadoEn?: string;
+    /**
+     * Serie que genero este turno (AKINE E-3). Ausente en un turno suelto. Un turno de una serie conserva identidad, estado e historial propios: se cancela o se mueve solo, o junto con otros por `/series-de-turnos/{serieId}`.
+     */
+    serieId?: number;
     /**
      * Version para el control optimista. Se envia al cancelar, mover o marcar ausencia.
      */

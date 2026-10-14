@@ -19,6 +19,8 @@ import { OpenApiHttpParams, QueryParamStyle } from '../query.params';
 // @ts-ignore
 import { AnularEgreso } from '../model/anular-egreso';
 // @ts-ignore
+import { EditarEgreso } from '../model/editar-egreso';
+// @ts-ignore
 import { Egreso } from '../model/egreso';
 // @ts-ignore
 import { PagoDeEgreso } from '../model/pago-de-egreso';
@@ -222,7 +224,7 @@ export class EgresosService extends BaseService implements EgresosServiceInterfa
 
     /**
      * Consultar egresos
-     * Lista y filtra por fecha, categoria, beneficiario y estado (RF-M22-004).  **Sin los pagos de cada fila**: traerlos seria el N+1 del primer listado que lo use. El detalle los tiene.  **Los periodos superpuestos no se impiden, se muestran.** Dos liquidaciones del mismo profesional para el mismo mes son legitimas —una correccion, un segundo concepto—, y un unique sobre el periodo convertiria un caso normal en un error. Filtrar por beneficiario las pone una al lado de la otra, que es la unica respuesta honesta.
+     * Lista y filtra por fecha, categoria, beneficiario y estado (RF-M22-004).  &#x60;desde&#x60; y &#x60;hasta&#x60; son **dias de la sede**, inclusivos: se comparan contra el instante de registro en la zona horaria de la sede, asi que un egreso cargado a las 22:30 de Cordoba es de ese dia y no del siguiente.  **Sin los pagos de cada fila**: traerlos seria el N+1 del primer listado que lo use. El detalle los tiene.  **Los periodos superpuestos no se impiden, se muestran.** Dos liquidaciones del mismo profesional para el mismo mes son legitimas —una correccion, un segundo concepto—, y un unique sobre el periodo convertiria un caso normal en un error. Filtrar por beneficiario las pone una al lado de la otra, que es la unica respuesta honesta.
      * @endpoint get /api/v1/consultorios/{consultorioId}/egresos
      * @param requestParameters
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
@@ -423,7 +425,7 @@ export class EgresosService extends BaseService implements EgresosServiceInterfa
 
     /**
      * Corregir el borrador
-     * Reemplaza los datos editables **mientras el egreso siga en &#x60;BORRADOR&#x60;** (RF-M22-001).  **El beneficiario no se edita**: cambiarlo seria otro egreso, no una correccion de este.  Una vez confirmado, 409 &#x60;egreso-no-editable&#x60;. Un importe que cambiara debajo de pagos ya asentados haria que el saldo dejara de reconciliar con el ledger de caja **sin que nada fallara**, que es la peor forma de romperse.
+     * Reemplaza los datos editables **mientras el egreso siga en &#x60;BORRADOR&#x60;** (RF-M22-001).  **El beneficiario no se edita**: cambiarlo seria otro egreso, no una correccion de este.  Una vez confirmado, 409 &#x60;egreso-no-editable&#x60;. Un importe que cambiara debajo de pagos ya asentados haria que el saldo dejara de reconciliar con el ledger de caja **sin que nada fallara**, que es la peor forma de romperse.  **Control optimista (cambio incompatible desde 0.91.0).** El cuerpo es &#x60;EditarEgreso&#x60; y lleva la &#x60;version&#x60; leida, **requerida**: si otro la cambio antes, 409 &#x60;concurrent-modification&#x60; y hay que releer. Antes el cuerpo era &#x60;RegistrarEgreso&#x60;, sin version, y dos correcciones simultaneas se pisaban en silencio. La respuesta trae la version nueva para encadenar la siguiente correccion.
      * @endpoint put /api/v1/consultorios/{consultorioId}/egresos/{egresoId}
      * @param requestParameters
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
@@ -442,9 +444,9 @@ export class EgresosService extends BaseService implements EgresosServiceInterfa
         if (egresoId === null || egresoId === undefined) {
             throw new Error('Required parameter egresoId was null or undefined when calling editar.');
         }
-        const registrarEgreso = requestParameters?.registrarEgreso;
-        if (registrarEgreso === null || registrarEgreso === undefined) {
-            throw new Error('Required parameter registrarEgreso was null or undefined when calling editar.');
+        const editarEgreso = requestParameters?.editarEgreso;
+        if (editarEgreso === null || editarEgreso === undefined) {
+            throw new Error('Required parameter editarEgreso was null or undefined when calling editar.');
         }
 
         let localVarHeaders = this.defaultHeaders;
@@ -490,7 +492,7 @@ export class EgresosService extends BaseService implements EgresosServiceInterfa
         return this.httpClient.request<Egreso>('put', `${basePath}${localVarPath}`,
             {
                 context: localVarHttpContext,
-                body: registrarEgreso,
+                body: editarEgreso,
                 responseType: <any>responseType_,
                 ...(withCredentials ? { withCredentials } : {}),
                 headers: localVarHeaders,

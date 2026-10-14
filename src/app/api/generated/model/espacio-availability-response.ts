@@ -22,7 +22,7 @@ export interface EspacioAvailabilityResponse {
      */
     desde?: string;
     /**
-     * Si el espacio se puede ofrecer para esa ventana. Hoy equivale a estar en servicio: la ocupacion real llega con el modulo de agenda
+     * Si el espacio se puede ofrecer para esa ventana: esta en servicio durante toda la ventana y le queda al menos un lugar libre
      */
     disponible?: boolean;
     /**
@@ -34,7 +34,7 @@ export interface EspacioAvailabilityResponse {
      */
     hasta?: string;
     /**
-     * Lugares ya comprometidos en la ventana. SIEMPRE 0 en esta version del contrato: no existe todavia ningun modulo que reserve
+     * Pico de turnos pendientes del espacio que se cruzan en un mismo instante, desde el inicio de la ventana en adelante (no solo dentro de ella). Es una cota conservadora
      */
     lugaresComprometidos?: number;
     /**

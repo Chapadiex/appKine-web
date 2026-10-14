@@ -7,6 +7,8 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { MedicionEnmendada } from './medicion-enmendada';
+import { TratamientoEnmendado } from './tratamiento-enmendado';
 
 
 /**
@@ -38,6 +40,10 @@ export interface EnmendarSesion {
      */
     limitacionFuncional?: string;
     /**
+     * Las mediciones como tienen que quedar (C-6), identificadas por `definicionId` + `lateralidad`. **Lista completa**: lo que no aparece se quita. **Ausente significa \"no se tocan\"**. Una medicion nueva exige definicion activa; una existente se corrige aunque la definicion se haya dado de baja. La version anterior conserva los valores de antes.
+     */
+    mediciones?: Array<MedicionEnmendada>;
+    /**
      * **Por que se corrige. Obligatorio.** Sin esto una enmienda es indistinguible de una correccion de tipeo y el historial deja de servir para lo unico que sirve, que es entender por que cambio el registro (RN-M14-006).
      */
     motivo: string;
@@ -65,6 +71,10 @@ export interface EnmendarSesion {
      * Como tolero lo que se le hizo
      */
     tolerancia?: EnmendarSesionToleranciaEnum;
+    /**
+     * Los tratamientos realizados como tienen que quedar (C-6). **Lista completa**: un item con `tratamientoId` corrige ese tratamiento, uno sin `tratamientoId` agrega uno, y un tratamiento vigente que no aparece se da de baja con el motivo de la enmienda. **Ausente significa \"no se tocan\"**; lista vacia significa \"no queda ninguno\". **No puede cambiar el conjunto de practicas realizadas** (409 `enmienda-cambia-practicas`): esas practicas eligieron al cierre que autorizacion se consumio. La version anterior conserva lo que habia.
+     */
+    tratamientos?: Array<TratamientoEnmendado>;
     /**
      * Version de la SESION que el cliente leyo, para el bloqueo optimista. Si alguien la enmendo en el medio, esto responde 409 en vez de apilar una version sobre un contenido que el autor nunca vio. **No es `ultimoNumeroVersion`.**
      */

@@ -306,6 +306,102 @@ describe('SessionService', () => {
     expect(session.contextoActivo()?.organizationId).toBe(7);
   });
 
+  // --- Restauracion sin bloquear el arranque (AKINE-LCP) ---------------------------
+
+  it('iniciarRestauracion no espera: marca restaurando y lo baja al terminar refresh y nombres', async () => {
+    expect(session.restaurando()).toBe(false);
+
+    session.iniciarRestauracion();
+    expect(session.restaurando()).toBe(true);
+
+    let termino = false;
+    session.esperarRestauracion().subscribe(() => (termino = true));
+
+    httpMock.expectOne('/api/v1/auth/refresh').flush({
+      accessToken: 'jwt-ctx',
+      scope: 'context',
+      organizationId: 1,
+      consultorioId: 10,
+    });
+    // Con el token ya aplicado, la restauracion todavia espera los nombres: quien decide con
+    // la sesion (los guards) no puede ver la organizacion con su rotulo provisorio.
+    expect(session.estado()).toBe('activa');
+    expect(termino).toBe(false);
+    expect(session.restaurando()).toBe(true);
+
+    httpMock
+      .expectOne('/api/v1/me/contexts')
+      .flush([{ organizationId: 1, organizationName: 'Centro Norte', consultorioId: 10 }]);
+
+    expect(termino).toBe(true);
+    expect(session.restaurando()).toBe(false);
+    expect(session.contextoActivo()?.organizationName).toBe('Centro Norte');
+  });
+
+  it('los nombres que llegan con la restauracion no invalidan lo cargado con el contexto', () => {
+    session.iniciarRestauracion();
+    httpMock.expectOne('/api/v1/auth/refresh').flush({
+      accessToken: 'jwt-ctx',
+      scope: 'context',
+      organizationId: 1,
+      consultorioId: 10,
+    });
+    // Con el token aplicado el menu ya pidio los permisos para esta epoca.
+    const epoca = tenantStore.contextEpoch();
+
+    httpMock
+      .expectOne('/api/v1/me/contexts')
+      .flush([{ organizationId: 1, organizationName: 'Centro Norte', consultorioId: 10 }]);
+
+    expect(tenantStore.contextEpoch()).toBe(epoca);
+    expect(tenantStore.context()?.organizationName).toBe('Centro Norte');
+  });
+
+  it('iniciarRestauracion es idempotente: con una en vuelo no vuelve a salir a la red', () => {
+    session.iniciarRestauracion();
+    session.iniciarRestauracion();
+
+    // `expectOne` falla si hubo dos refrescos.
+    httpMock
+      .expectOne('/api/v1/auth/refresh')
+      .flush(
+        { type: 'https://akine.app/problems/invalid-refresh' },
+        { status: 401, statusText: 'Unauthorized' },
+      );
+    expect(session.restaurando()).toBe(false);
+    expect(session.estado()).toBe('anonimo');
+  });
+
+  it('esperarRestauracion sin nada en vuelo emite en el acto', () => {
+    let termino = false;
+    session.esperarRestauracion().subscribe(() => (termino = true));
+
+    expect(termino).toBe(true);
+    httpMock.expectNone('/api/v1/auth/refresh');
+  });
+
+  it('un login con la restauracion en vuelo sale recien cuando esta termina', async () => {
+    session.iniciarRestauracion();
+    const terminado = primerValor(session.login('kine@akine.test', 'clave-sintetica'));
+
+    // Sin esperar, la respuesta tardia del refresh podria pisar el token del login.
+    httpMock.expectNone('/api/v1/auth/login');
+    httpMock
+      .expectOne('/api/v1/auth/refresh')
+      .flush(
+        { type: 'https://akine.app/problems/invalid-refresh' },
+        { status: 401, statusText: 'Unauthorized' },
+      );
+
+    httpMock
+      .expectOne('/api/v1/auth/login')
+      .flush({ accessToken: 'jwt-pre', scope: 'pre_context', expiresIn: 600 });
+    await terminado;
+
+    expect(tokenStore.token()).toBe('jwt-pre');
+    expect(session.estado()).toBe('sin-contexto');
+  });
+
   // --- Cierre ----------------------------------------------------------------------
 
   it('el logout limpia todo el estado local', async () => {

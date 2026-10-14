@@ -1,0 +1,437 @@
+<p><a class="enlace" routerLink="/egresos">Volver a los egresos</a></p>
+
+<h1>Egreso</h1>
+
+@if (carga().tipo === 'cargando') {
+  <p class="estado estado--cargando">Cargando el egreso…</p>
+}
+
+@if (carga(); as estado) {
+  @if (estado.tipo === 'error') {
+    <section class="tarjeta" role="alert" aria-labelledby="titulo-error-carga">
+      <h2 id="titulo-error-carga">No se pudo cargar el egreso</h2>
+      <p class="estado estado--error">{{ estado.error.mensaje }}</p>
+      <div class="acciones">
+        @if (estado.error.causa === 'sin-contexto') {
+          <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto</a>
+        } @else {
+          <button type="button" class="boton boton--secundario" (click)="cargar()">
+            Reintentar
+          </button>
+        }
+      </div>
+    </section>
+  }
+}
+
+<div aria-live="polite">
+  @if (aviso(); as texto) {
+    <p class="estado estado--ok" role="status">{{ texto }}</p>
+  }
+  @if (errorOperacion(); as fallo) {
+    <section class="tarjeta" aria-labelledby="titulo-rechazo">
+      <h2 id="titulo-rechazo">No se pudo completar la operacion</h2>
+      <p class="estado estado--error">{{ fallo.mensaje }}</p>
+      <div class="acciones">
+        @if (fallo.irACaja) {
+          <a class="boton" routerLink="/caja">Ir a la caja</a>
+        }
+        @if (fallo.recargar) {
+          <button type="button" class="boton boton--secundario" (click)="recargar()">
+            Recargar el egreso
+          </button>
+        }
+      </div>
+    </section>
+  }
+</div>
+
+@if (egreso(); as e) {
+  <!-- ================================ Resumen ================================ -->
+
+  <section class="tarjeta" aria-labelledby="titulo-resumen">
+    <h2 id="titulo-resumen">{{ e.concepto }}</h2>
+    <dl class="detalle">
+      <dt>Estado</dt>
+      <dd>
+        <span [class]="claseDeEstado(e.estado)">{{ estadoEnPalabras(e.estado) }}</span>
+      </dd>
+
+      <dt>Beneficiario</dt>
+      <dd>
+        {{ e.beneficiarioNombre }}
+        @if (e.beneficiarioDocumento) {
+          <span class="ayuda">({{ e.beneficiarioDocumento }})</span>
+        }
+        <span class="ayuda">
+          — {{ e.tipoBeneficiario === 'COLABORADOR' ? 'colaborador' : 'externo' }}</span
+        >
+      </dd>
+
+      <dt>Categoria</dt>
+      <dd>{{ categoriaEnPalabras(e.categoria) }}</dd>
+
+      @if (e.periodoDesde) {
+        <dt>Periodo liquidado</dt>
+        <dd>{{ fecha(e.periodoDesde) }} al {{ fecha(e.periodoHasta) }}</dd>
+      }
+
+      <dt>Comprobante</dt>
+      <dd>
+        @if (e.comprobanteTipo || e.comprobanteNumero) {
+          {{ e.comprobanteTipo }} {{ e.comprobanteNumero }}
+          @if (e.comprobanteFecha) {
+            del {{ fecha(e.comprobanteFecha) }}
+          }
+        } @else {
+          Sin cargar
+        }
+      </dd>
+
+      <dt>Total</dt>
+      <dd class="importe">{{ importe(e.importeTotal) }}</dd>
+
+      <dt>Ya pagado</dt>
+      <dd class="importe">{{ importe(yaPagado()) }}</dd>
+
+      <dt>Saldo pendiente</dt>
+      <dd class="importe">
+        <b>{{ importe(e.saldoPendiente) }}</b>
+      </dd>
+
+      <dt>Registrado</dt>
+      <dd>{{ instante(e.registradoEn) }}</dd>
+
+      @if (e.confirmadoEn) {
+        <dt>Confirmado</dt>
+        <dd>{{ instante(e.confirmadoEn) }}</dd>
+      }
+
+      @if (e.anuladoEn) {
+        <dt>Anulado</dt>
+        <dd>{{ instante(e.anuladoEn) }} — {{ e.motivoAnulacion }}</dd>
+      }
+    </dl>
+  </section>
+
+  <!-- ================================ Borrador ================================ -->
+
+  @if (esBorrador()) {
+    <section class="tarjeta" aria-labelledby="titulo-edicion">
+      <h2 id="titulo-edicion">Corregir el borrador</h2>
+      <p class="ayuda">
+        El beneficiario no se cambia: seria otro egreso. Una vez confirmado ya no se corrige.
+      </p>
+      <form [formGroup]="edicion" (ngSubmit)="guardar()" novalidate>
+        <div class="campos-en-linea">
+          <div class="campo">
+            <label for="edicion-categoria">Categoria</label>
+            <select id="edicion-categoria" formControlName="categoria">
+              @for (opcion of categorias; track opcion) {
+                <option [value]="opcion">{{ categoriaEnPalabras(opcion) }}</option>
+              }
+            </select>
+          </div>
+          <div class="campo">
+            <label for="edicion-concepto">Concepto</label>
+            <input
+              id="edicion-concepto"
+              type="text"
+              autocomplete="off"
+              maxlength="200"
+              formControlName="concepto"
+              [attr.aria-invalid]="campoDeEdicionInvalido('concepto') ? 'true' : null"
+            />
+            @if (campoDeEdicionInvalido('concepto')) {
+              <p class="campo__error" role="alert">El concepto es obligatorio.</p>
+            }
+          </div>
+          <div class="campo">
+            <label for="edicion-importe">Importe total</label>
+            <input
+              id="edicion-importe"
+              type="text"
+              inputmode="decimal"
+              autocomplete="off"
+              formControlName="importe"
+              [attr.aria-invalid]="campoDeEdicionInvalido('importe') ? 'true' : null"
+            />
+            @if (campoDeEdicionInvalido('importe')) {
+              <p class="campo__error" role="alert">Un importe mayor que cero.</p>
+            }
+          </div>
+          <!-- La moneda, como el beneficiario, queda la del alta: la correccion no la cambia. -->
+          <p class="ayuda">Moneda: {{ e.moneda }}. No se corrige en el borrador.</p>
+        </div>
+
+        <div class="campos-en-linea">
+          <div class="campo">
+            <label for="edicion-periodo-desde">Periodo liquidado desde</label>
+            <input id="edicion-periodo-desde" type="date" formControlName="periodoDesde" />
+          </div>
+          <div class="campo">
+            <label for="edicion-periodo-hasta">Periodo liquidado hasta</label>
+            <input
+              id="edicion-periodo-hasta"
+              type="date"
+              formControlName="periodoHasta"
+              [attr.aria-invalid]="campoDeEdicionInvalido('periodo') ? 'true' : null"
+            />
+            @if (campoDeEdicionInvalido('periodo')) {
+              <p class="campo__error" role="alert">
+                El periodo va completo y no puede terminar antes de empezar.
+              </p>
+            }
+          </div>
+        </div>
+
+        <fieldset class="grupo">
+          <legend>Comprobante</legend>
+          <div class="campos-en-linea">
+            <div class="campo">
+              <label for="edicion-comprobante-tipo">Tipo</label>
+              <input
+                id="edicion-comprobante-tipo"
+                type="text"
+                autocomplete="off"
+                maxlength="40"
+                formControlName="comprobanteTipo"
+              />
+            </div>
+            <div class="campo">
+              <label for="edicion-comprobante-numero">Numero</label>
+              <input
+                id="edicion-comprobante-numero"
+                type="text"
+                autocomplete="off"
+                maxlength="40"
+                formControlName="comprobanteNumero"
+              />
+            </div>
+            <div class="campo">
+              <label for="edicion-comprobante-fecha">Fecha</label>
+              <input
+                id="edicion-comprobante-fecha"
+                type="date"
+                formControlName="comprobanteFecha"
+              />
+            </div>
+          </div>
+        </fieldset>
+
+        <div class="acciones">
+          <button type="submit" class="boton boton--secundario" [disabled]="operando() !== null">
+            Guardar los cambios
+          </button>
+        </div>
+      </form>
+    </section>
+
+    <section class="tarjeta" aria-labelledby="titulo-confirmacion">
+      <h2 id="titulo-confirmacion">Confirmar</h2>
+      <p class="ayuda">
+        Confirmar no mueve plata: deja el egreso firme y habilita los pagos. Exige el tipo y el
+        numero de comprobante guardados.
+      </p>
+      @if (faltaComprobante()) {
+        <p class="ayuda" id="ayuda-falta-comprobante">
+          Todavia falta el comprobante: cargalo arriba y guarda los cambios.
+        </p>
+      }
+      <div class="acciones">
+        <button
+          type="button"
+          class="boton"
+          [disabled]="operando() !== null || faltaComprobante()"
+          [attr.aria-describedby]="faltaComprobante() ? 'ayuda-falta-comprobante' : null"
+          (click)="confirmar()"
+        >
+          Confirmar el egreso
+        </button>
+      </div>
+    </section>
+  }
+
+  <!-- ================================ Pago ================================ -->
+
+  @if (admitePago()) {
+    <section class="tarjeta" aria-labelledby="titulo-pago">
+      <h2 id="titulo-pago">Registrar un pago</h2>
+      <p class="ayuda">
+        Puede ser parcial: varios pagos van llevando el saldo a cero. Un medio por pago; mitad
+        efectivo y mitad transferencia son dos pagos.
+      </p>
+      <form [formGroup]="pago" (ngSubmit)="pagar()" novalidate>
+        <div class="campos-en-linea">
+          <div class="campo">
+            <label for="pago-importe">Importe del pago</label>
+            <input
+              id="pago-importe"
+              type="text"
+              inputmode="decimal"
+              autocomplete="off"
+              formControlName="importe"
+              [attr.aria-invalid]="importeDePagoInvalido() ? 'true' : null"
+            />
+            @if (importeDePagoInvalido()) {
+              <p class="campo__error" role="alert">Un importe mayor que cero.</p>
+            }
+          </div>
+          <div class="campo">
+            <label for="pago-medio">Medio</label>
+            <select id="pago-medio" formControlName="medio">
+              @for (opcion of medios; track opcion) {
+                <option [value]="opcion">{{ medioEnPalabras(opcion) }}</option>
+              }
+            </select>
+          </div>
+          <div class="campo">
+            <label for="pago-referencia">Referencia (transferencia o recibo)</label>
+            <input
+              id="pago-referencia"
+              type="text"
+              autocomplete="off"
+              maxlength="80"
+              formControlName="referencia"
+            />
+          </div>
+        </div>
+
+        @if (medioElegido() === EFECTIVO) {
+          <div class="ayuda" role="status">
+            @if (caja(); as situacion) {
+              @if (situacion.abierta) {
+                El efectivo sale del cajon. Caja abierta: deberia haber
+                <b>{{ importeDeCaja(situacion.jornada) }}</b> en el cajon, y no puede quedar en
+                negativo.
+              } @else {
+                El efectivo sale del cajon, y <b>la caja de esta sede esta cerrada</b>. Abrila antes
+                de pagar en efectivo, o elegi otro medio.
+                <a class="enlace" routerLink="/caja">Ir a la caja</a>
+              }
+            } @else {
+              El efectivo sale del cajon y exige la caja abierta.
+            }
+          </div>
+        } @else {
+          <p class="ayuda">
+            Este medio queda asentado en la operatoria del dia pero no toca el cajon.
+          </p>
+        }
+
+        <div class="acciones">
+          <button type="submit" class="boton" [disabled]="operando() !== null">
+            Registrar el pago
+          </button>
+        </div>
+      </form>
+    </section>
+  }
+
+  <!-- ================================ Pagos ================================ -->
+
+  <h2 id="titulo-tabla-pagos">Pagos</h2>
+  @if (pagos().length === 0) {
+    <p class="estado estado--vacio">Todavia no hay pagos de este egreso.</p>
+  } @else {
+    <div class="tabla-scroll" tabindex="0" role="region" aria-labelledby="titulo-tabla-pagos">
+      <table class="tabla">
+        <thead>
+          <tr>
+            <th scope="col">Pagado</th>
+            <th scope="col">Medio</th>
+            <th scope="col">Referencia</th>
+            <th scope="col">Importe</th>
+            <th scope="col">Estado</th>
+            <th scope="col">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (p of pagos(); track p.id) {
+            <tr [class.fila--revocada]="!pagoVigente(p)">
+              <td>{{ instante(p.pagadoEn) }}</td>
+              <td>{{ medioEnPalabras(p.medio) }}</td>
+              <td>{{ p.referencia }}</td>
+              <td class="importe">{{ importe(p.importe) }}</td>
+              <td>
+                @if (pagoVigente(p)) {
+                  Vigente
+                } @else {
+                  Anulado
+                  @if (p.motivoAnulacion) {
+                    <span class="ayuda">({{ p.motivoAnulacion }})</span>
+                  }
+                }
+              </td>
+              <td>
+                <div class="acciones-fila">
+                  @if (pagoVigente(p) && pagoAnulando() !== p.id) {
+                    <button
+                      type="button"
+                      class="boton boton--secundario"
+                      [id]="'anular-pago-' + p.id"
+                      (click)="pedirAnulacionDePago(p)"
+                    >
+                      Anular el pago<span class="visualmente-oculto"> {{ p.id }}</span>
+                    </button>
+                  }
+                </div>
+              </td>
+            </tr>
+            @if (pagoAnulando() === p.id) {
+              <tr class="fila-panel">
+                <td colspan="6">
+                  <app-confirmacion-con-motivo
+                    [idCampo]="'motivo-anular-pago-' + p.id"
+                    titulo="Anular el pago"
+                    etiqueta="Motivo de la anulacion"
+                    ayuda="No se borra: el pago queda anulado, la plata vuelve al cajon como reversion en la jornada de hoy y el saldo vuelve al egreso. Un pago se anula una sola vez."
+                    textoConfirmar="Anular el pago"
+                    [enviando]="operando() === 'anular-pago'"
+                    (confirmado)="anularPago($event)"
+                    (cancelado)="cancelarAnulacionDePago()"
+                  />
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+  <!-- ================================ Anulacion ================================ -->
+
+  @if (e.estado !== 'ANULADO') {
+    <section class="tarjeta" aria-labelledby="titulo-anulacion">
+      <h2 id="titulo-anulacion">Anular el egreso</h2>
+      @if (conPagosVigentes()) {
+        <p class="ayuda">
+          Tiene pagos vigentes. Anula primero cada pago —eso devuelve la plata— y despues el egreso.
+        </p>
+      } @else if (anulando()) {
+        <app-confirmacion-con-motivo
+          idCampo="motivo-anular-egreso"
+          titulo="Anular el egreso"
+          etiqueta="Motivo de la anulacion"
+          ayuda="Anular no borra: el egreso queda en el historial con su motivo. No toca la caja."
+          textoConfirmar="Anular el egreso"
+          [enviando]="operando() === 'anular'"
+          (confirmado)="anular($event)"
+          (cancelado)="cancelarAnulacion()"
+        />
+      } @else if (admiteAnulacion()) {
+        <div class="acciones">
+          <button
+            id="anular-egreso"
+            type="button"
+            class="boton boton--secundario"
+            (click)="pedirAnulacion()"
+          >
+            Anular el egreso
+          </button>
+        </div>
+      }
+    </section>
+  }
+}

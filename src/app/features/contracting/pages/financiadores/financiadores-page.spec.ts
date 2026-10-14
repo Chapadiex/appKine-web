@@ -204,10 +204,13 @@ describe('FinanciadoresPage', () => {
         (peticion: HttpRequest<unknown>) =>
           peticion.method === 'PUT' && peticion.url === `${RUTA_FINANCIADORES}/10`,
       )
-      // `conflict`, NO `concurrent-modification`: es lo que emite este modulo para el bloqueo
-      // optimista. Ver `contracting-errors.ts`.
+      // `concurrent-modification` (DP-21): es lo que emite el backend para el bloqueo optimista.
+      // Ver `contracting-errors.ts`.
       .flush(
-        { type: 'https://akine.app/problems/conflict', detail: 'la version quedo vieja' },
+        {
+          type: 'https://akine.app/problems/concurrent-modification',
+          detail: 'la version quedo vieja',
+        },
         { status: 409, statusText: 'Conflict' },
       );
     fixture.detectChanges();

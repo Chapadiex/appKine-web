@@ -1,0 +1,43 @@
+<div class="campo">
+  <label [for]="idDia()">Dia destino</label>
+  <input
+    [id]="idDia()"
+    type="date"
+    [value]="fecha()"
+    (change)="diaCambiado.emit($any($event.target).value)"
+  />
+</div>
+
+<fieldset>
+  <legend>Horario destino — {{ fechaEnPalabras(fecha()) }}</legend>
+  @if (slots().length === 0) {
+    <p class="estado estado--vacio">
+      Ese dia no tiene ningun horario disponible para esta oferta. Proba otro dia.
+    </p>
+  } @else {
+    <ul class="slots">
+      @for (slot of slots(); track slot.desde) {
+        <li>
+          <button
+            type="button"
+            class="slot"
+            [class.slot--completo]="slotCompleto(slot)"
+            [disabled]="slotCompleto(slot)"
+            [attr.aria-pressed]="esElElegido(slot)"
+            (click)="slotElegido.emit(slot)"
+          >
+            <span class="slot__hora">{{ rango(slot) }}</span>
+            @if (slotCompleto(slot)) {
+              <span class="slot__nota">completo</span>
+            } @else if (esElElegido(slot)) {
+              <span class="slot__nota">elegido</span>
+            }
+          </button>
+        </li>
+      }
+    </ul>
+  }
+  @if (faltaHorario()) {
+    <p class="campo__error">{{ textoFaltaHorario() }}</p>
+  }
+</fieldset>

@@ -24,10 +24,18 @@
   left: 0;
 }
 
-/* Foco visible en todo elemento interactivo. Nunca usar outline: none sin reemplazo. */
-:focus-visible {
-  outline: var(--foco-grosor) solid var(--color-acento-claro);
-  outline-offset: var(--foco-offset);
+/*
+  El anillo del skip link va HACIA ADENTRO, sobre su propio fondo de marca. Aparece pegado a la
+  esquina superior izquierda: un anillo exterior caeria la mitad fuera de la pantalla y la otra
+  mitad sobre la cabecera, que es del mismo azul que el boton. Adentro se mide contra un solo
+  fondo, y con el celeste de foco sobre marca da 6,8:1 en claro.
+
+  El anillo de foco del resto de la aplicacion ya no vive aca: era una regla de componente y la
+  encapsulacion la dejaba sin efecto fuera de esta plantilla. Esta en `src/design-system.css`.
+*/
+.skip-link:focus-visible {
+  outline: var(--foco-grosor) solid var(--color-foco-sobre-marca);
+  outline-offset: calc(-1 * (var(--foco-grosor) + var(--foco-offset)));
 }
 
 /*
@@ -89,4 +97,32 @@
 
 .contenido:focus {
   outline: none;
+}
+
+/*
+ * Aviso de servicio no disponible (503). Tokens de aviso del design system: el mismo par
+ * fondo/texto que ya mide `a11y:contraste` en las pantallas que lo usan.
+ */
+.aviso-servicio {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--esp-4);
+  padding: var(--esp-4) var(--esp-8);
+  background: var(--color-aviso-fondo);
+  color: var(--color-aviso-texto);
+  border-bottom: 1px solid var(--color-aviso);
+}
+
+.aviso-servicio__texto {
+  margin: 0;
+}
+
+.aviso-servicio__cerrar {
+  background: transparent;
+  color: var(--color-aviso-texto);
+  border: 1px solid var(--color-aviso);
+  padding: var(--esp-2) var(--esp-4);
+  cursor: pointer;
 }

@@ -10,8 +10,9 @@ import {
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Subject, catchError, debounceTime, of } from 'rxjs';
+import { Subject, Subscription, catchError, debounceTime, of } from 'rxjs';
 
+import { PlatformRoleStore } from '../../../../core/services/platform-role.store';
 import { ConfirmacionConMotivo } from '../../../../shared/components/confirmacion-con-motivo/confirmacion-con-motivo';
 import { CreateServicioRequest } from '../../../../api/generated/model/create-servicio-request';
 import { EstadoDeListado } from '../../../../shared/utils/estado-de-listado';
@@ -51,39 +52,22 @@ const ESPERA_DE_BUSQUEDA = 250;
  * hay dos poblaciones como en el catalogo clinico, asi que no hay ninguna columna de alcance:
  * todas las filas son de la plataforma.
  *
- * <h2>La decision incomoda: quien puede administrar esto</h2>
+ * <h2>Quien puede administrar esto</h2>
  *
- * <p>Leer el catalogo alcanza con estar autenticado. <b>Mutarlo exige rol de plataforma.</b> Y
- * hoy <b>ningun endpoint le dice al frontend si el usuario tiene ese rol</b>: es el hueco que
- * RF-M06-005 dejo abierto en 02.05 y que el diseno de esta etapa (seccion 8) vuelve a listar
- * como pendiente, con destino "consola de plataforma, etapa propia".
+ * <p>Leer el catalogo alcanza con estar autenticado. <b>Mutarlo exige rol de plataforma</b>, y
+ * desde A-7 el frontend lo sabe: `PlatformRoleStore` pregunta una vez por sesion a
+ * `GET /me/platform-role`. Las acciones de alta, edicion y baja se muestran <b>solo</b> a quien
+ * tiene ese rol; a los demas la nota de arriba les dice por que no estan y los manda a las
+ * ofertas de la sede, que es lo que su centro si administra.
  *
- * <p>Habia dos salidas honestas y esta pantalla elige <b>mostrar las acciones y dejar que el
- * `403` del servidor sea la respuesta</b>, con un mensaje que explica que administrar el
- * catalogo global es de la plataforma y que lo que si administra el centro son sus ofertas.
- * Los motivos:
+ * <p>Hasta A-7 la pantalla hacia lo contrario —mostrar las acciones a todos y dejar que el
+ * `403` del servidor fuera la respuesta— porque ocultarlas sin saber el rol era adivinar, y
+ * adivinar en contra le escondia el boton a la unica persona que tenia que apretarlo.
  *
- * <ol>
- *   <li><b>La alternativa deja la funcionalidad inalcanzable para todos.</b> Esconder las
- *       mutaciones detras de una constante en `false` significa que <b>nadie</b> —tampoco quien
- *       si tiene el rol— puede dar de alta un servicio desde la aplicacion. No es "ocultar de
- *       mas": es no construir la pantalla.</li>
- *   <li><b>No es el mismo caso que el catalogo clinico.</b> Alli las filas globales no traen
- *       acciones, y con razon: el frontend <b>sabe</b> cuales son globales —lo dice el campo
- *       `alcance` de cada fila— asi que puede ocultar con precision. Aca no sabe nada del
- *       usuario, y ocultar seria adivinar. Adivinar en contra es esconderle el boton
- *       justamente a la unica persona que tiene que apretarlo.</li>
- *   <li><b>La doctrina del repositorio ya dice cual es la autoridad.</b> AGENT.md 6: los guards
- *       y el ocultamiento son UX, nunca seguridad; el backend rechaza igual. Un `403` con un
- *       mensaje que explica la situacion no es una falla, es la respuesta correcta y ademas
- *       ensena la distincion Servicio/Oferta a quien todavia no la tiene clara.</li>
- * </ol>
- *
- * <p><b>Que la destraba.</b> Cuando exista el endpoint que declare el rol de plataforma —o el
- * `GET /me/permissions` empiece a emitir un codigo para el— estas acciones pasan a ir detras de
- * `*akinePermiso`, igual que las de la pantalla de ofertas, y la nota de la plantilla que
- * anticipa el rechazo se borra. No hay ningun otro cambio necesario: el traductor de errores ya
- * distingue el `403` del catalogo global del de una sede.
+ * <p><b>Ocultar es UX, no seguridad</b> (AGENT.md 1): el backend verifica el rol en cada
+ * request. Por eso el manejo del `403` (`rechazadoPorRol`) se queda: un rol revocado a mitad
+ * de sesion, o una consulta del rol que fallo y se resolvio como "no", siguen terminando en una
+ * explicacion y no en un error mudo.
  *
  * <p><b>La `expectedVersion` viaja en cada edicion.</b> Si quedo vieja el backend responde
  * `409 conflict` —<b>no</b> `concurrent-modification`, ver `offering-errors.ts`— y no se pisa
@@ -101,6 +85,16 @@ export class CatalogoDeServiciosPage {
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly formBuilder = inject(FormBuilder);
   private readonly injector = inject(Injector);
+  private readonly rolDePlataforma = inject(PlatformRoleStore);
+
+  /** `true` solo si la cuenta tiene rol de plataforma. Ver el javadoc de la clase. */
+  protected readonly puedeAdministrar = this.rolDePlataforma.esAdminDePlataforma;
+
+  /**
+   * `true` cuando ya se sabe la respuesta —incluida una consulta fallida, que el store resuelve
+   * como "no"—. Mientras es `false` la nota no afirma nada sobre la cuenta de quien mira.
+   */
+  protected readonly rolConsultado = signal(false);
 
   protected readonly naturalezas = NATURALEZAS;
   protected readonly modalidades = MODALIDADES;
@@ -166,6 +160,8 @@ export class CatalogoDeServiciosPage {
 
   /** Lo que el usuario tipea, antes del debounce. Ver {@link ESPERA_DE_BUSQUEDA}. */
   private readonly tecleado = new Subject<string>();
+  /** La consulta del listado en curso, para cancelarla si llega otra. Ver {@link cargar}. */
+  private cargaEnVuelo: Subscription | null = null;
 
   protected readonly formularioAlta = this.formBuilder.nonNullable.group({
     codigo: ['', [textoRequerido]],
@@ -189,6 +185,11 @@ export class CatalogoDeServiciosPage {
   constructor() {
     this.cargar();
 
+    this.rolDePlataforma
+      .resolver()
+      .pipe(takeUntilDestroyed())
+      .subscribe(() => this.rolConsultado.set(true));
+
     this.tecleado
       .pipe(debounceTime(ESPERA_DE_BUSQUEDA), takeUntilDestroyed())
       .subscribe((texto) => {
@@ -207,7 +208,12 @@ export class CatalogoDeServiciosPage {
   protected cargar(): void {
     this.estado.set({ tipo: 'cargando' });
 
-    this.api
+    // Una sola consulta en vuelo: la nueva cancela la anterior. Sin esto ganaba la que llegaba
+    // ULTIMA, y despues de una baja —que relee con "Solo los activos"— cambiar enseguida a "Solo
+    // los dados de baja" podia terminar mostrando la lista de activos bajo el filtro de bajas
+    // (encontrado por el E2E de servicios contra el backend real).
+    this.cargaEnVuelo?.unsubscribe();
+    this.cargaEnVuelo = this.api
       .listarServicios({ texto: this.busqueda(), estado: this.filtroEstado() })
       .pipe(catchError((error: unknown) => of(error instanceof Error ? error : new Error(''))))
       .subscribe((respuesta) => {

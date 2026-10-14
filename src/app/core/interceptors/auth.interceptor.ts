@@ -52,7 +52,8 @@ const RUTAS_SIN_REINTENTO = ['/api/v1/auth/refresh', '/api/v1/auth/login', '/api
  * "falta contexto de tenant" o "no tenes permiso": la sesion es perfectamente valida.
  * Borrar el token ahi manda al login a alguien que ya estaba logueado, y como despues del
  * login vuelve a la misma pantalla que da 403, queda en un bucle. Este interceptor no
- * mira 403 en ningun lado, y es a proposito.
+ * mira 403 en ningun lado, y es a proposito. <b>Tampoco ante 503</b>: si el refresh responde
+ * `service-unavailable` el backend no rechazo la sesion, solo no pudo atenderla.
  *
  * <p>El token que se adjunta es el acotado al contexto (Organizacion + Consultorio), no el
  * que devuelve el login. Ver {@link TenantContextStore}.
@@ -81,7 +82,14 @@ export const authInterceptor: HttpInterceptorFn = (request, next) => {
       // Todos los 401 concurrentes entran aca y reciben EL MISMO observable de refresh:
       // sale una sola peticion a /auth/refresh y el resto queda encolado esperandola.
       return session.refrescar().pipe(
-        catchError(() => {
+        catchError((errorDelRefresh: unknown) => {
+          // 503: el backend no pudo atender el refresh -perdio la base-, no lo rechazo. La
+          // sesion sigue viva del lado del servidor y la cookie esta intacta: borrarla aca
+          // repetiria el deslogueo que el 503 vino a evitar. Se propaga el 503, que el
+          // `errorInterceptor` ya convirtio en el aviso global.
+          if (statusDe(errorDelRefresh) === 503) {
+            return throwError(() => errorDelRefresh);
+          }
           // El refresh fallo: la sesion murio de verdad (vencida, revocada o reusada) y el
           // backend ya borro la cookie. Se limpia el estado local y se manda afuera.
           session.limpiarSesion();

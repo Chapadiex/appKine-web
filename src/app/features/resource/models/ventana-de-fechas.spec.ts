@@ -3,7 +3,6 @@ import {
   diasEntre,
   esFechaDeCalendario,
   etiquetaDeFecha,
-  hoyLocal,
   sumarDias,
 } from './ventana-de-fechas';
 
@@ -52,18 +51,6 @@ describe('ventana-de-fechas', () => {
     expect(esFechaDeCalendario('2026-6-1')).toBe(false);
     expect(esFechaDeCalendario('01/06/2026')).toBe(false);
     expect(esFechaDeCalendario('')).toBe(false);
-  });
-
-  /**
-   * `hoyLocal` usa los componentes locales.
-   *
-   * <p>El atajo `toISOString().slice(0, 10)` daria el dia UTC: en Argentina, cualquier momento
-   * despues de las 21:00 se guardaria como el dia siguiente.
-   */
-  it('hoy es el dia local, no el dia UTC', () => {
-    // 1 de junio de 2026, 23:30 hora local: en UTC ya es el dia 2.
-    expect(hoyLocal(new Date(2026, 5, 1, 23, 30))).toBe('2026-06-01');
-    expect(hoyLocal(new Date(2026, 0, 5, 0, 15))).toBe('2026-01-05');
   });
 
   /**

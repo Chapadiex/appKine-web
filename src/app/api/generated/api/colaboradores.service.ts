@@ -35,6 +35,8 @@ import { MembershipReasonRequest } from '../model/membership-reason-request';
 // @ts-ignore
 import { MembershipResponse } from '../model/membership-response';
 // @ts-ignore
+import { PermisosOtorgablesResponse } from '../model/permisos-otorgables-response';
+// @ts-ignore
 import { ProblemDetail } from '../model/problem-detail';
 
 // @ts-ignore
@@ -50,6 +52,7 @@ import {
     GetMembershipRequestParams,
     ListMembershipGrantsRequestParams,
     ListMembershipsRequestParams,
+    ListPermisosOtorgablesDelRolRequestParams,
     ReactivateMembershipRequestParams,
     RevokeMembershipRequestParams,
     RevokeMembershipGrantRequestParams,
@@ -69,7 +72,7 @@ export class ColaboradoresService extends BaseService implements ColaboradoresSe
 
     /**
      * Otorgar un permiso adicional a un colaborador
-     * Requiere colaborador:manage y motivo obligatorio. El catalogo de codigos otorgables es cerrado: un permiso que existe pero no es otorgable en esta fase se rechaza con 400, no se escribe.  Otorgar dos veces el mismo permiso responde 409 grant-already-active, y esa decision la toma la clave unica de la base y no un chequeo previo: dos administradores otorgando a la vez leerian los dos que no existe.
+     * Requiere colaborador:manage y motivo obligatorio. Lo otorgable depende del rol del vinculo (matriz de permisos, G-5): un permiso del catalogo que la matriz no admite para ese rol se rechaza con 400 permiso-no-otorgable-al-rol, con roleCode y permissionCode en propiedades, y no se escribe. Antes de 0.84.0 salia como validation-error. Un codigo que no existe sigue siendo validation-error. La lista de lo otorgable a cada rol la da listPermisosOtorgablesDelRol.  Otorgar dos veces el mismo permiso responde 409 grant-already-active, y esa decision la toma la clave unica de la base y no un chequeo previo: dos administradores otorgando a la vez leerian los dos que no existe.
      * @endpoint post /api/v1/organizations/{orgId}/memberships/{membershipId}/grants
      * @param requestParameters
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
@@ -301,7 +304,7 @@ export class ColaboradoresService extends BaseService implements ColaboradoresSe
 
     /**
      * Que quedaria pendiente si se desvincula a este colaborador
-     * Requiere colaborador:read, y no colaborador:manage: sirve para DECIDIR, y quien decide suele mirar antes de tener el permiso de ejecutar.  ESTO NO BLOQUEA NADA. RN-M05-004 pide que los turnos futuros queden visibles para resolucion, no que impidan la desvinculacion: cuando alguien renuncia, renuncio. Es la diferencia con la baja de una sede, donde las operaciones vigentes si la impiden.  Hoy responde siempre count&#x3D;0: M12 (agenda) no existe todavia y no hay ninguna sonda enchufada. La operacion se publica igual para que la pantalla de desvinculacion se escriba una sola vez y el numero aparezca el dia que la agenda exista, sin cambiar el contrato.
+     * Requiere colaborador:read, y no colaborador:manage: sirve para DECIDIR, y quien decide suele mirar antes de tener el permiso de ejecutar.  ESTO NO BLOQUEA NADA. RN-M05-004 pide que los turnos futuros queden visibles para resolucion, no que impidan la desvinculacion: cuando alguien renuncia, renuncio. Es la diferencia con la baja de una sede, donde las operaciones vigentes si la impiden.  Si el profesional tiene turnos pendientes en cualquier sede de la organizacion (reservados, confirmados o en espera, y que todavia no terminaron), responde tipo&#x3D;turnos con cuantos son y el instante del primero. Si no tiene turnos pero si bloques o excepciones de disponibilidad vigentes, responde esos. Se informa uno solo, el primero con contenido en ese orden, nunca la suma: turnos y bloques no se cuentan en la misma unidad. count&#x3D;0 cuando no queda nada pendiente.
      * @endpoint get /api/v1/organizations/{orgId}/memberships/{membershipId}/desvinculacion-impacto
      * @param requestParameters
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
@@ -572,6 +575,72 @@ export class ColaboradoresService extends BaseService implements ColaboradoresSe
             {
                 context: localVarHttpContext,
                 params: localVarQueryParameters.toHttpParams(),
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * Permisos que se le pueden otorgar como adicionales a un rol
+     * Requiere colaborador:manage, el mismo permiso que otorgar. Devuelve los codigos que la matriz admite como permiso adicional para ese rol, calculados con la misma regla que valida el alta del grant: lo que no esta en la lista se rechaza con 400 permiso-no-otorgable-al-rol.  Incluye los otorgables que el rol ya tiene por base (paciente:manage del CONSULTORIO_ADMIN, por ejemplo): la regla los admite porque son redundantes e inocuos y rechazarlos romperia un grant previo a un cambio de rol.  La organizacion de la ruta tiene que ser la del contexto activo: distinta es 404, sin contexto es 403. PLATFORM_ADMIN no es un rol de membership y responde 400, igual que un rol que no existe.
+     * @endpoint get /api/v1/organizations/{orgId}/roles/{roleCode}/permisos-otorgables
+     * @param requestParameters
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public listPermisosOtorgablesDelRol(requestParameters: ListPermisosOtorgablesDelRolRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<PermisosOtorgablesResponse>;
+    public listPermisosOtorgablesDelRol(requestParameters: ListPermisosOtorgablesDelRolRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<PermisosOtorgablesResponse>>;
+    public listPermisosOtorgablesDelRol(requestParameters: ListPermisosOtorgablesDelRolRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<PermisosOtorgablesResponse>>;
+    public listPermisosOtorgablesDelRol(requestParameters: ListPermisosOtorgablesDelRolRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        const orgId = requestParameters?.orgId;
+        if (orgId === null || orgId === undefined) {
+            throw new Error('Required parameter orgId was null or undefined when calling listPermisosOtorgablesDelRol.');
+        }
+        const roleCode = requestParameters?.roleCode;
+        if (roleCode === null || roleCode === undefined) {
+            throw new Error('Required parameter roleCode was null or undefined when calling listPermisosOtorgablesDelRol.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/organizations/${this.configuration.encodeParam({name: "orgId", value: orgId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/roles/${this.configuration.encodeParam({name: "roleCode", value: roleCode, in: "path", style: "simple", explode: false, dataType: "string", dataFormat: undefined})}/permisos-otorgables`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<PermisosOtorgablesResponse>('get', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
                 responseType: <any>responseType_,
                 ...(withCredentials ? { withCredentials } : {}),
                 headers: localVarHeaders,

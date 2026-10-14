@@ -21,6 +21,8 @@ import { AuthorizedContextResponse } from '../model/authorized-context-response'
 // @ts-ignore
 import { EffectivePermissionsResponse } from '../model/effective-permissions-response';
 // @ts-ignore
+import { MyPlatformRoleResponse } from '../model/my-platform-role-response';
+// @ts-ignore
 import { ProblemDetail } from '../model/problem-detail';
 
 // @ts-ignore
@@ -87,6 +89,63 @@ export class MiCuentaService extends BaseService implements MiCuentaServiceInter
         let localVarPath = `/api/v1/me/permissions`;
         const { basePath, withCredentials } = this.configuration;
         return this.httpClient.request<EffectivePermissionsResponse>('get', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * Si la cuenta administra la plataforma
+     * Responde si la cuenta autenticada tiene un rol de plataforma vigente. Es lo que el frontend consulta para decidir si muestra la consola de plataforma (bandeja de solicitudes de catalogo, catalogo global) o el selector de contexto.  El rol NO sale del token: se revalida contra la base en este mismo request, asi que un rol revocado hace un minuto ya responde false aunque el access token siga vigente.  No requiere contexto de tenant: se consulta con el token pre_context, antes de elegir donde trabajar. Con sesion responde siempre 200 —false no es un error—. No se audita: es la cuenta preguntando por si misma.  Es insumo de UX, no un mecanismo de seguridad: cada endpoint de plataforma verifica el rol por su cuenta.
+     * @endpoint get /api/v1/me/platform-role
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public getMyPlatformRole(observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<MyPlatformRoleResponse>;
+    public getMyPlatformRole(observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<MyPlatformRoleResponse>>;
+    public getMyPlatformRole(observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<MyPlatformRoleResponse>>;
+    public getMyPlatformRole(observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+
+        let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/me/platform-role`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<MyPlatformRoleResponse>('get', `${basePath}${localVarPath}`,
             {
                 context: localVarHttpContext,
                 responseType: <any>responseType_,

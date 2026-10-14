@@ -89,3 +89,19 @@
 .lista-comprobante li {
   margin-bottom: var(--esp-3);
 }
+
+/*
+ * Presentaciones a financiadores (M21): filtros y formularios cortos en fila.
+ *
+ * Los campos de un filtro se completan de corrido y se leen juntos; apilados obligan a recorrer
+ * la pantalla entera para cambiar una fecha. En pantalla angosta envuelven solos.
+ */
+.campos-en-linea {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--esp-5);
+}
+
+.campos-en-linea > .campo {
+  flex: 1 1 12rem;
+}

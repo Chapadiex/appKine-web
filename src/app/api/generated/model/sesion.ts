@@ -32,7 +32,7 @@ export interface Sesion {
     cierre?: CierreDeSesion;
     consultorioId?: number;
     /**
-     * Estado de la ATENCION, no del turno ni del cobro
+     * Estado de la ATENCION, no del turno ni del cobro. `BORRADOR` mientras se carga; `CERRADA` desde el cierre clinico, y sigue `CERRADA` despues de cada enmienda.
      */
     estado?: SesionEstadoEnum;
     /**
@@ -81,7 +81,8 @@ export interface Sesion {
     version?: number;
 }
 export enum SesionEstadoEnum {
-    BORRADOR = 'BORRADOR'
+    BORRADOR = 'BORRADOR',
+    CERRADA = 'CERRADA'
 };
 
 

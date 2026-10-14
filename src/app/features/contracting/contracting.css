@@ -122,3 +122,30 @@
   padding-top: var(--esp-4);
   border-top: var(--borde-fino) solid var(--color-borde-sutil);
 }
+
+/*
+ * La planilla de ejemplo y el area donde se pega la planilla de la importacion (AKINE-B-7).
+ *
+ * Monoespaciada para que las columnas separadas por `;` se lean alineadas y un separador de mas
+ * se vea. El ejemplo hace scroll horizontal propio en vez de romper el ancho de la pagina en un
+ * telefono (WCAG 1.4.10).
+ */
+.ejemplo-planilla,
+#importacion-texto {
+  font-family: var(--fuente-mono);
+  font-size: var(--tipo-sm);
+}
+
+.ejemplo-planilla {
+  overflow-x: auto;
+  margin: 0 0 var(--esp-5);
+  padding: var(--esp-4);
+  border: var(--borde-fino) solid var(--color-borde-sutil);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie-sutil);
+}
+
+.errores-de-planilla {
+  margin: var(--esp-4) 0 0;
+  padding-left: var(--esp-6);
+}

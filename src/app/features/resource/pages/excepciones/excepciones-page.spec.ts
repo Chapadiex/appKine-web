@@ -274,8 +274,9 @@ describe('ExcepcionesPage', () => {
     // Un "estas seguro" generico no serviria: hay que ver que se le cambia el dia a N personas.
     expect(aviso).not.toContain('Estas seguro');
 
-    // Recien la confirmacion explicita crea la excepcion.
+    // Recien la confirmacion explicita sigue: consulta el impacto y, sin turnos afectados, crea.
     abrir(fixture, 'Entiendo: cargar igual');
+    sinImpacto();
 
     const alta = httpMock.expectOne(
       (peticion: HttpRequest<unknown>) =>
@@ -340,6 +341,8 @@ describe('ExcepcionesPage', () => {
     httpMock.expectNone(
       (peticion: HttpRequest<unknown>) => peticion.method === 'GET' && peticion.url === CALENDARIO,
     );
+    // La consulta de impacto tambien va con el cuerpo de AHORA.
+    expect(sinImpacto().membershipId).toBe(ANA_ID);
 
     const alta = httpMock.expectOne(
       (peticion: HttpRequest<unknown>) =>
@@ -393,6 +396,7 @@ describe('ExcepcionesPage', () => {
 
     revision.flush({ consultorioId: SEDE, pais: 'AR', cierraPorFeriado: true, feriados: [] });
     await estabilizar(fixture);
+    sinImpacto();
 
     const alta = httpMock.expectOne(
       (peticion: HttpRequest<unknown>) =>
@@ -507,6 +511,7 @@ describe('ExcepcionesPage', () => {
     await estabilizar(fixture);
 
     expect(texto(fixture)).not.toContain('le cambia el dia a toda la sede');
+    sinImpacto();
 
     const alta = httpMock.expectOne(
       (peticion: HttpRequest<unknown>) =>
@@ -564,6 +569,7 @@ describe('ExcepcionesPage', () => {
     httpMock.expectNone(
       (peticion: HttpRequest<unknown>) => peticion.method === 'GET' && peticion.url === CALENDARIO,
     );
+    sinImpacto();
 
     const alta = httpMock.expectOne(
       (peticion: HttpRequest<unknown>) =>
@@ -583,6 +589,62 @@ describe('ExcepcionesPage', () => {
     await estabilizar(fixture);
 
     expect(texto(fixture)).toContain('El cierre quedo cargado');
+    expect(texto(fixture)).not.toContain('Turnos para revisar');
+  });
+
+  it('un cierre de sede que deja turnos afuera nombra a cada profesional y espera confirmacion', async () => {
+    const fixture = await montar();
+
+    abrir(fixture, 'Cargar un cierre o una apertura');
+    escribir(fixture, '#alta-excepcion-desde', '2026-10-01');
+    escribir(fixture, '#alta-excepcion-hasta', '2026-10-02');
+    enviar(fixture, '#form-alta-excepcion');
+
+    const consulta = httpMock.expectOne(
+      (peticion: HttpRequest<unknown>) =>
+        peticion.method === 'POST' && peticion.url === `${EXCEPCIONES}/impacto-de-alta`,
+    );
+    consulta.flush({
+      turnosAfectados: 2,
+      turnos: [
+        {
+          turnoId: 1,
+          membershipId: ANA_ID,
+          inicio: '2026-10-01T12:00:00Z',
+          fin: '2026-10-01T12:30:00Z',
+        },
+        {
+          turnoId: 2,
+          membershipId: BETO.id,
+          inicio: '2026-10-01T13:00:00Z',
+          fin: '2026-10-01T13:30:00Z',
+        },
+      ],
+      evaluadoHasta: '2026-10-02',
+    });
+    await estabilizar(fixture);
+
+    // No se crea nada: la excepcion de sede alcanza a todos y la lista dice de quien es cada turno.
+    httpMock.expectNone(
+      (peticion: HttpRequest<unknown>) =>
+        peticion.method === 'POST' && peticion.url === EXCEPCIONES,
+    );
+    const contenido = texto(fixture);
+    expect(contenido).toContain('Turnos afectados: 2.');
+    expect(contenido).toContain('Ana Kine');
+    expect(contenido).toContain('Beto Fisio');
+
+    abrir(fixture, 'Cargar igual');
+    const alta = httpMock.expectOne(
+      (peticion: HttpRequest<unknown>) =>
+        peticion.method === 'POST' && peticion.url === EXCEPCIONES,
+    );
+    alta.flush(CIERRE_DE_SEDE, { status: 201, statusText: 'Created' });
+    listado().flush(VIGENTES);
+    await estabilizar(fixture);
+
+    // ExcepcionResponse no trae la cuenta: el aviso la atribuye a la consulta previa.
+    expect(texto(fixture)).toContain('Segun la consulta previa, 2 turnos pendientes quedaban');
   });
 
   it('las fechas incoherentes y la franja a medias no salen a la red', async () => {
@@ -623,6 +685,13 @@ describe('ExcepcionesPage', () => {
     const fixture = await montar();
 
     abrir(fixture, 'Dar de baja');
+
+    // La consulta previa sale al abrir el panel.
+    httpMock
+      .expectOne(`${EXCEPCIONES}/${CIERRE_DE_SEDE.id}/impacto-de-baja`)
+      .flush({ turnosAfectados: 0, turnos: [], evaluadoHasta: null });
+    await estabilizar(fixture);
+    expect(texto(fixture)).toContain('Ningun turno pendiente queda fuera de horario');
 
     // Sin motivo no sale a la red: el backend lo exige igual.
     enviar(fixture, 'akine-confirmacion-con-motivo form');
@@ -878,6 +947,16 @@ describe('ExcepcionesPage', () => {
   }
 
   /** El `GET` del listado de excepciones, que siempre lleva la ventana en la query string. */
+  /** Responde la consulta de impacto del alta sin turnos afectados y devuelve su cuerpo. */
+  function sinImpacto(): { membershipId?: number } {
+    const consulta = httpMock.expectOne(
+      (peticion: HttpRequest<unknown>) =>
+        peticion.method === 'POST' && peticion.url === `${EXCEPCIONES}/impacto-de-alta`,
+    );
+    consulta.flush({ turnosAfectados: 0, turnos: [], evaluadoHasta: '2026-12-31' });
+    return consulta.request.body as { membershipId?: number };
+  }
+
   function listado() {
     return httpMock.expectOne(
       (peticion: HttpRequest<unknown>) => peticion.method === 'GET' && peticion.url === EXCEPCIONES,

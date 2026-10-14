@@ -61,12 +61,11 @@ describe('traducirErrorPersona', () => {
     expect(traducido.mensaje).toContain('sesion sigue abierta');
   });
 
-  it('el 409 de concurrencia llega como conflict, y tambien se reconoce el otro tipo', () => {
-    expect(traducirErrorPersona(problema('conflict', 409, {})).causa).toBe('concurrencia');
-    // `person` no emite `concurrent-modification` hoy. Se reconoce por si algun dia se unifican.
+  it('DP-21: la version vieja es concurrent-modification y conflict es de negocio', () => {
     expect(traducirErrorPersona(problema('concurrent-modification', 409, {})).causa).toBe(
       'concurrencia',
     );
+    expect(traducirErrorPersona(problema('conflict', 409, {})).causa).toBe('conflicto');
   });
 
   it('un 403 sin tipo conocido es falta de permiso, y un 404 es no encontrado', () => {
@@ -124,6 +123,22 @@ describe('traducirErrorPersona', () => {
 
     expect(traducido.causa).toBe('suscripcion-suspendida');
     expect(traducido.mensaje).toContain('suscripcion');
+  });
+
+  it('C-4: la reversion repetida pide releer y la reversion sin motivo es validacion', () => {
+    const repetida = traducirErrorPersona(problema('movimiento-ya-revertido', 409, {}));
+    expect(repetida.causa).toBe('consumo-ya-revertido');
+    expect(repetida.mensaje).toContain('ya estaba revertido');
+    expect(hayQueRecargar(repetida.causa)).toBe(true);
+
+    const sinMotivo = traducirErrorPersona(problema('reversion-sin-motivo', 400, {}));
+    expect(sinMotivo.causa).toBe('validacion');
+    expect(sinMotivo.mensaje).toContain('motivo');
+
+    const divergente = traducirErrorPersona(problema('autorizacion-sin-saldo', 409, {}));
+    expect(divergente.causa).toBe('saldo-divergente');
+    expect(divergente.mensaje).toContain('No lo reintentes');
+    expect(hayQueRecargar(divergente.causa)).toBe(true);
   });
 
   it('hayQueRecargar solo pide recargar donde recargar sirve', () => {

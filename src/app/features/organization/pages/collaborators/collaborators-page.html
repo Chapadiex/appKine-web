@@ -304,6 +304,39 @@
                               este listado con quien lo revoco y por que, porque los historicos que
                               lo referencian tienen que seguir siendo legibles.
                             </p>
+                            <div class="impacto-desvinculacion" aria-live="polite">
+                              @switch (impacto()?.tipo) {
+                                @case ('cargando') {
+                                  <p class="estado estado--cargando">
+                                    Consultando que queda pendiente a su nombre&hellip;
+                                  </p>
+                                }
+                                @case ('error') {
+                                  <p class="banner banner--suspendida">
+                                    No pudimos consultar que queda pendiente a su nombre. Podes
+                                    revocar igual, pero revisa su agenda antes.
+                                  </p>
+                                }
+                                @case ('listo') {
+                                  @if (resumenDelImpacto(); as resumen) {
+                                    <div class="banner banner--suspendida">
+                                      <h3>Antes de revocar</h3>
+                                      <p>{{ resumen }}</p>
+                                      <p>
+                                        Revocar no los cancela ni los reasigna: quedan visibles para
+                                        que alguien los resuelva. El aviso muestra una sola fuente:
+                                        si tiene turnos pendientes, no suma ademas sus bloques de
+                                        horario ni sus excepciones.
+                                      </p>
+                                    </div>
+                                  } @else {
+                                    <p class="estado estado--ok">
+                                      No queda nada pendiente a su nombre.
+                                    </p>
+                                  }
+                                }
+                              }
+                            </div>
                           }
                         </akine-confirmacion-con-motivo>
 
@@ -326,6 +359,11 @@
                           Se suman a los que ya trae el rol. Solo se listan los vigentes: los dados
                           de baja quedan en la auditoria.
                         </p>
+                        <p class="ayuda">
+                          La matriz de permisos decide cuales admite cada rol: uno que no admite se
+                          rechaza al otorgarlo, y si el rol cambia, un permiso que el rol nuevo no
+                          admite deja de conceder acceso aunque siga en esta lista.
+                        </p>
 
                         <div aria-live="polite">
                           @if (grants() === null) {
@@ -342,10 +380,27 @@
                                   @if (grant.validUntil) {
                                     <span class="ayuda">vence {{ grant.validUntil }}</span>
                                   }
+                                  @if (grant.vigenteConElRolActual === false) {
+                                    <span class="marca-estado marca-estado--suspendida">
+                                      No vigente con el rol actual
+                                    </span>
+                                    <p
+                                      class="ayuda grant__no-vigente"
+                                      [id]="'grant-no-vigente-' + grant.id"
+                                    >
+                                      El rol actual del colaborador no admite este permiso: sigue
+                                      registrado pero no concede acceso. Podes darlo de baja.
+                                    </p>
+                                  }
                                   <button
                                     type="button"
                                     class="boton boton--secundario"
                                     [disabled]="enviando()"
+                                    [attr.aria-describedby]="
+                                      grant.vigenteConElRolActual === false
+                                        ? 'grant-no-vigente-' + grant.id
+                                        : null
+                                    "
                                     (click)="revocarGrant(grant.permissionCode)"
                                   >
                                     Dar de baja
@@ -365,15 +420,43 @@
                               [attr.aria-invalid]="mostrarErrorGrant('permissionCode')"
                               [attr.aria-describedby]="
                                 mostrarErrorGrant('permissionCode')
-                                  ? 'grant-permissionCode-error'
-                                  : null
+                                  ? 'grant-permissionCode-ayuda grant-permissionCode-error'
+                                  : 'grant-permissionCode-ayuda'
                               "
                             >
-                              <option value="">Elegi un permiso</option>
-                              @for (permiso of permisosOtorgables; track permiso) {
+                              <option value="">
+                                {{
+                                  otorgables().tipo === 'cargando'
+                                    ? 'Cargando los permisos otorgables...'
+                                    : 'Elegi un permiso'
+                                }}
+                              </option>
+                              @for (permiso of codigosOtorgables(); track permiso) {
                                 <option [value]="permiso">{{ permiso }}</option>
                               }
                             </select>
+                            <p class="ayuda" id="grant-permissionCode-ayuda">
+                              @switch (otorgables().tipo) {
+                                @case ('error') {
+                                  No pudimos consultar que permisos admite el rol
+                                  {{ etiquetaDeRol(colaborador.roleCode) }}. Cerra el panel y volve
+                                  a abrirlo para reintentar.
+                                }
+                                @case ('listo') {
+                                  @if (codigosOtorgables().length === 0) {
+                                    El rol {{ etiquetaDeRol(colaborador.roleCode) }} no admite
+                                    permisos adicionales.
+                                  } @else {
+                                    Solo se ofrecen los que la matriz admite para el rol
+                                    {{ etiquetaDeRol(colaborador.roleCode) }}, incluidos los que ya
+                                    trae por base.
+                                  }
+                                }
+                                @default {
+                                  Consultando los permisos que admite el rol&hellip;
+                                }
+                              }
+                            </p>
                             @if (mostrarErrorGrant('permissionCode')) {
                               <p class="campo__error" id="grant-permissionCode-error">
                                 Elegi el permiso que queres otorgar.

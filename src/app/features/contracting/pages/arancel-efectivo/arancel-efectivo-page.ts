@@ -9,6 +9,7 @@ import { CatalogoConceptoResponse } from '../../../../api/generated/model/catalo
 import { ContractingApi } from '../../services/contracting-api';
 import { ConveniosApi } from '../../services/convenios-api';
 import { FinanciadorResponse } from '../../../../api/generated/model/financiador-response';
+import { OfertaResponse } from '../../../../api/generated/model/oferta-response';
 import { PlanCoberturaResponse } from '../../../../api/generated/model/plan-cobertura-response';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { traducirErrorContracting } from '../../models/contracting-errors';
@@ -19,7 +20,8 @@ import {
   explicarSinArancel,
   importeEnPalabras,
 } from '../../models/etiquetas-de-contracting';
-import { enPalabras, hoyLocal } from '../../models/vigencia-de-contracting';
+import { enPalabras } from '../../models/vigencia-de-contracting';
+import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 
 /**
  * Consulta del arancel efectivo de una practica para una fecha (M16, RF-M16-006 y RF-M16-010).
@@ -72,6 +74,7 @@ import { enPalabras, hoyLocal } from '../../models/vigencia-de-contracting';
 })
 export class ArancelEfectivoPage {
   private readonly api = inject(ConveniosApi);
+  private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly catalogo = inject(ContractingApi);
   private readonly catalogoClinico = inject(CatalogoClinicoService);
   private readonly tenantContext = inject(TenantContextStore);
@@ -85,6 +88,21 @@ export class ArancelEfectivoPage {
   protected readonly financiadores = signal<readonly FinanciadorResponse[]>([]);
   protected readonly planes = signal<readonly PlanCoberturaResponse[]>([]);
   protected readonly practicas = signal<readonly CatalogoConceptoResponse[]>([]);
+
+  /**
+   * Ofertas de la sede por las que se puede filtrar (B-3, RF-M16-008): activas y que admiten obra
+   * social, que son las unicas que pueden tener arancel propio del convenio. No se filtran por la
+   * practica: consultar con una oferta que no la declara devuelve el general, y eso es la verdad.
+   */
+  protected readonly ofertas = signal<readonly OfertaResponse[]>([]);
+
+  /**
+   * La oferta con la que salio la ultima consulta, o `null` si fue sin oferta.
+   *
+   * <p>Se congela al enviar y no se lee del formulario: si el usuario cambia el selector despues,
+   * el resultado en pantalla sigue siendo el de la consulta que se hizo.
+   */
+  private readonly ofertaConsultada = signal<number | null>(null);
 
   /** `true` mientras la consulta esta en vuelo. */
   protected readonly consultando = signal(false);
@@ -115,22 +133,56 @@ export class ArancelEfectivoPage {
     return explicarSinArancel(respuesta.motivo);
   });
 
+  /**
+   * De donde salio el importe: el arancel propio de la oferta o el general del convenio.
+   *
+   * <p>La distincion importa cuando se consulto CON oferta y volvio el general: no es un error,
+   * es que esa oferta no tiene precio propio para la practica y rige el del convenio.
+   */
+  protected readonly origen = computed<string | null>(() => {
+    const respuesta = this.resultado();
+    if (respuesta === null || respuesta.resuelto !== true) {
+      return null;
+    }
+    if (respuesta.ofertaId !== undefined && respuesta.ofertaId !== null) {
+      return `Arancel propio de la oferta ${this.nombreDeOferta(respuesta.ofertaId)}.`;
+    }
+    const consultada = this.ofertaConsultada();
+    if (consultada !== null) {
+      return (
+        `Arancel general del convenio: la oferta ${this.nombreDeOferta(consultada)} no tiene ` +
+        'precio propio para esta practica, asi que rige el general.'
+      );
+    }
+    return 'Arancel general del convenio: vale para cualquier oferta que no tenga precio propio.';
+  });
+
   protected readonly formulario = this.formBuilder.nonNullable.group({
     financiadorId: ['', [Validators.required]],
     planId: ['', [Validators.required]],
     practicaId: ['', [Validators.required]],
-    fecha: [hoyLocal(), [Validators.required]],
+    fecha: [this.diaDeLaSede.hoy(), [Validators.required]],
+    // Vacio = sin oferta: resuelve el arancel general, que es lo que existia antes de B-3.
+    ofertaId: [''],
   });
 
   protected readonly intentos = signal(0);
 
   constructor() {
+    // Fechas por defecto tomadas antes de conocer la zona de la sede: se corrigen al llegar.
+    const fecha = this.formulario.controls.fecha;
+    this.diaDeLaSede.alinear(
+      () => fecha.value,
+      (hoy) => fecha.setValue(hoy),
+    );
+
     effect(() => {
       this.tenantContext.contextEpoch();
       untracked(() => {
         this.reiniciar();
         this.cargarFinanciadores();
         this.cargarPracticas();
+        this.cargarOfertas();
       });
     });
   }
@@ -191,6 +243,8 @@ export class ArancelEfectivoPage {
     this.error.set(null);
     this.faltaContexto.set(false);
     this.resultado.set(null);
+    const ofertaId = valores.ofertaId === '' ? null : Number(valores.ofertaId);
+    this.ofertaConsultada.set(ofertaId);
 
     this.api
       .resolverArancelEfectivo(consultorioId, {
@@ -198,6 +252,7 @@ export class ArancelEfectivoPage {
         planId: Number(valores.planId),
         practicaId: Number(valores.practicaId),
         fecha: valores.fecha,
+        ...(ofertaId === null ? {} : { ofertaId }),
       })
       .subscribe({
         next: (respuesta) => {
@@ -219,6 +274,29 @@ export class ArancelEfectivoPage {
     const id = Number(this.formulario.getRawValue().practicaId);
     const practica = this.practicas().find((candidata) => candidata.id === id);
     return practica === undefined ? 'la practica' : (practica.name ?? 'la practica');
+  }
+
+  private nombreDeOferta(id: number): string {
+    const oferta = this.ofertas().find((candidata) => candidata.id === id);
+    return oferta?.nombreComercial ?? `#${id}`;
+  }
+
+  /** Un fallo aca no rompe nada: el selector queda solo con "sin oferta" y se consulta el general. */
+  private cargarOfertas(): void {
+    const consultorioId = this.tenantContext.consultorioId();
+    if (consultorioId === null) {
+      return;
+    }
+    this.api
+      .ofertasDeLaSede(consultorioId)
+      .pipe(catchError(() => of([] as OfertaResponse[])))
+      .subscribe((ofertas) =>
+        this.ofertas.set(
+          ofertas.filter(
+            (oferta) => oferta.estado === 'ACTIVO' && oferta.admiteObraSocial === true,
+          ),
+        ),
+      );
   }
 
   private cargarFinanciadores(): void {
@@ -252,6 +330,14 @@ export class ArancelEfectivoPage {
     this.financiadores.set([]);
     this.planes.set([]);
     this.practicas.set([]);
-    this.formulario.reset({ financiadorId: '', planId: '', practicaId: '', fecha: hoyLocal() });
+    this.ofertas.set([]);
+    this.ofertaConsultada.set(null);
+    this.formulario.reset({
+      financiadorId: '',
+      planId: '',
+      practicaId: '',
+      fecha: this.diaDeLaSede.hoy(),
+      ofertaId: '',
+    });
   }
 }

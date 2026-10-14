@@ -10,9 +10,13 @@ import { CatalogoConceptoResponse } from '../../../../api/generated/model/catalo
 import { CoberturaResponse } from '../../../../api/generated/model/cobertura-response';
 import { CoberturasApi } from '../../services/coberturas-api';
 import { ConfirmacionConMotivo } from '../../../../shared/components/confirmacion-con-motivo/confirmacion-con-motivo';
+import { ConsumoDeAutorizacion } from '../../components/consumo-de-autorizacion/consumo-de-autorizacion';
+import { SelectorDeAutorizacion } from '../../components/selector-de-autorizacion/selector-de-autorizacion';
 import { CreateAutorizacionRequest } from '../../../../api/generated/model/create-autorizacion-request';
 import { CreateOrdenRequest } from '../../../../api/generated/model/create-orden-request';
 import { ElegibilidadResponse } from '../../../../api/generated/model/elegibilidad-response';
+import { HistorialDeAutorizacionResponse } from '../../../../api/generated/model/historial-de-autorizacion-response';
+import { formatearInstante } from '../../../../shared/utils/instantes';
 import { OrdenResponse } from '../../../../api/generated/model/orden-response';
 import { PERMISO_PACIENTE_MANAGE } from '../../../../core/models/permisos';
 import { PermisoDirective } from '../../../../shared/directives/permiso.directive';
@@ -29,9 +33,11 @@ import { fechaEnPalabras } from '../../models/etiquetas-de-ficha';
 import { nombreCompleto } from '../../models/etiquetas-de-person';
 import { numeroDeclarado } from '../../../../shared/utils/numero-declarado';
 import {
+  actorDeEvento,
   admiteResolucion,
   autorizacionInactiva,
   avisoDeVencimiento,
+  cambioDeEstado,
   emisorEnPalabras,
   estadoDeAutorizacion,
   habilitaEnPalabras,
@@ -39,7 +45,10 @@ import {
   ordenInactiva,
   requisitoEnPalabras,
   saldoEnPalabras,
+  consumosARevisarEnPalabras,
+  sesionesDeOrden,
   situacionDeOrden,
+  tipoDeEvento,
   vigenciaDeDocumento,
 } from '../../models/etiquetas-de-documento';
 import { textoRequerido } from '../../../../shared/validators/texto-requerido';
@@ -48,7 +57,16 @@ import { textoRequerido } from '../../../../shared/validators/texto-requerido';
 type PanelDeOrden = 'editar' | 'baja' | 'documento';
 
 /** Panel abierto sobre una autorizacion. */
-type PanelDeAutorizacion = 'editar' | 'baja' | 'documento' | 'resolver';
+type PanelDeAutorizacion = 'editar' | 'baja' | 'documento' | 'resolver' | 'historial' | 'consumo';
+
+/** Eventos por pagina del historial de una autorizacion. Tiene decenas de hechos, no miles. */
+const TAMANO_DE_HISTORIAL = 20;
+
+/** Lectura del historial del panel abierto. */
+type EstadoDeHistorial =
+  | { readonly tipo: 'cargando' }
+  | { readonly tipo: 'listo'; readonly respuesta: HistorialDeAutorizacionResponse }
+  | { readonly tipo: 'error'; readonly mensaje: string };
 
 /** Que panel esta abierto, sobre que fila y de cual de las dos entidades. */
 interface PanelAbierto {
@@ -120,7 +138,14 @@ interface PanelAbierto {
  */
 @Component({
   selector: 'app-ordenes-y-autorizaciones-page',
-  imports: [ReactiveFormsModule, RouterLink, ConfirmacionConMotivo, PermisoDirective],
+  imports: [
+    ReactiveFormsModule,
+    RouterLink,
+    ConfirmacionConMotivo,
+    PermisoDirective,
+    ConsumoDeAutorizacion,
+    SelectorDeAutorizacion,
+  ],
   templateUrl: './ordenes-y-autorizaciones-page.html',
   styleUrl: '../../person.css',
 })
@@ -148,9 +173,15 @@ export class OrdenesYAutorizacionesPage {
   protected readonly autorizacionInactiva = autorizacionInactiva;
   protected readonly admiteResolucion = admiteResolucion;
   protected readonly saldoEnPalabras = saldoEnPalabras;
+  protected readonly consumosARevisar = consumosARevisarEnPalabras;
   protected readonly habilitaEnPalabras = habilitaEnPalabras;
   protected readonly requisitoEnPalabras = requisitoEnPalabras;
   protected readonly motivoDeElegibilidad = motivoDeElegibilidad;
+  protected readonly sesionesDeOrden = sesionesDeOrden;
+  protected readonly tipoDeEvento = tipoDeEvento;
+  protected readonly cambioDeEstado = cambioDeEstado;
+  protected readonly actorDeEvento = actorDeEvento;
+  protected readonly formatearInstante = formatearInstante;
 
   protected readonly cargando = signal(true);
   protected readonly errorDeCarga = signal<string | null>(null);
@@ -167,6 +198,17 @@ export class OrdenesYAutorizacionesPage {
   protected readonly consultandoElegibilidad = signal(false);
 
   protected readonly panel = signal<PanelAbierto | null>(null);
+
+  /** Historial de la autorizacion del panel abierto, o `null` si no hay ninguno abierto. */
+  protected readonly historial = signal<EstadoDeHistorial | null>(null);
+  protected readonly historialListo = computed(() => {
+    const estado = this.historial();
+    return estado?.tipo === 'listo' ? estado.respuesta : null;
+  });
+  protected readonly mensajeDeHistorial = computed(() => {
+    const estado = this.historial();
+    return estado?.tipo === 'error' ? estado.mensaje : '';
+  });
   protected readonly altaDeOrden = signal(false);
   protected readonly altaDeAutorizacion = signal(false);
 
@@ -188,6 +230,9 @@ export class OrdenesYAutorizacionesPage {
    * que. La pantalla lo dice y enlaza a donde se resuelve.
    */
   protected readonly sinCoberturas = computed(() => this.coberturas().length === 0);
+
+  /** El id de la persona como numero, para los componentes hijos. `null` si la URL no lo es. */
+  protected readonly identificadorNumerico = computed(() => this.identificador());
 
   protected readonly rutaFicha = computed(() => `/pacientes/${this.personaId()}` as const);
   protected readonly rutaCoberturas = computed(
@@ -631,6 +676,94 @@ export class OrdenesYAutorizacionesPage {
   }
 
   // -------------------------------------------------------------------------------------
+  // Historial (B-4, DP-23)
+  // -------------------------------------------------------------------------------------
+
+  /**
+   * Abre el historial de la autorizacion, o lo cierra si ya estaba abierto.
+   *
+   * <p>Es una lectura: no pide `paciente:manage` y se ofrece tambien sobre una autorizacion dada
+   * de baja, que es justamente cuando mas se pregunta que paso.
+   */
+  protected alternarHistorial(autorizacion: AutorizacionResponse): void {
+    if (this.esPanelDeAutorizacion(autorizacion, 'historial')) {
+      this.cerrarPaneles();
+      return;
+    }
+    const id = autorizacion.id;
+    if (id === undefined) {
+      return;
+    }
+    this.cerrarPaneles();
+    this.panel.set({ entidad: 'autorizacion', id, tipo: 'historial' });
+    this.leerHistorial(id, 0);
+  }
+
+  protected paginaDeHistorial(pagina: number): void {
+    const abierto = this.panel();
+    if (abierto?.tipo !== 'historial') {
+      return;
+    }
+    this.leerHistorial(abierto.id, pagina);
+  }
+
+  private leerHistorial(autorizacionId: number, pagina: number): void {
+    const personaId = this.identificador();
+    if (personaId === null) {
+      return;
+    }
+    this.historial.set({ tipo: 'cargando' });
+    this.api
+      .historialDeAutorizacion(personaId, autorizacionId, pagina, TAMANO_DE_HISTORIAL)
+      .subscribe({
+        next: (respuesta) => {
+          // Una respuesta que llega con el panel ya cerrado o movido a otra fila se descarta.
+          const abierto = this.panel();
+          if (abierto?.tipo === 'historial' && abierto.id === autorizacionId) {
+            this.historial.set({ tipo: 'listo', respuesta });
+          }
+        },
+        error: (error: unknown) => {
+          const abierto = this.panel();
+          if (abierto?.tipo === 'historial' && abierto.id === autorizacionId) {
+            this.historial.set({ tipo: 'error', mensaje: traducirErrorPersona(error).mensaje });
+          }
+        },
+      });
+  }
+
+  // -------------------------------------------------------------------------------------
+  // Saldo, ledger y alertas (C-4, D-f)
+  // -------------------------------------------------------------------------------------
+
+  /** Abre el saldo explicable de la autorizacion, o lo cierra. Es lectura: no pide permiso. */
+  protected alternarConsumo(autorizacion: AutorizacionResponse): void {
+    if (this.esPanelDeAutorizacion(autorizacion, 'consumo')) {
+      this.cerrarPaneles();
+      return;
+    }
+    this.cerrarPaneles();
+    this.abrirPanel('autorizacion', autorizacion.id, 'consumo');
+  }
+
+  /**
+   * Relee solo el listado de autorizaciones despues de una reversion.
+   *
+   * <p>No pasa por {@link cargar}: esa pone la pantalla en "cargando" y destruiria el panel que el
+   * operador esta mirando justo cuando acaba de ver aparecer la reversion en el ledger.
+   */
+  protected releerAutorizaciones(): void {
+    const id = this.identificador();
+    if (id === null) {
+      return;
+    }
+    this.api.listarAutorizaciones(id, 'TODAS', undefined).subscribe({
+      next: (autorizaciones) => this.autorizaciones.set(autorizaciones),
+      error: (error: unknown) => this.fallo(error),
+    });
+  }
+
+  // -------------------------------------------------------------------------------------
   // Vinculo de documentos
   // -------------------------------------------------------------------------------------
 
@@ -724,6 +857,7 @@ export class OrdenesYAutorizacionesPage {
 
   protected cerrarPaneles(): void {
     this.panel.set(null);
+    this.historial.set(null);
     this.altaDeOrden.set(false);
     this.altaDeAutorizacion.set(false);
     this.originalOrden.set(null);
@@ -793,6 +927,7 @@ export class OrdenesYAutorizacionesPage {
       return;
     }
     this.limpiarAvisos();
+    this.historial.set(null);
     this.panel.set({ entidad, id, tipo });
   }
 
@@ -804,6 +939,7 @@ export class OrdenesYAutorizacionesPage {
   private terminar(mensaje: string): void {
     this.enviando.set(false);
     this.panel.set(null);
+    this.historial.set(null);
     this.altaDeOrden.set(false);
     this.altaDeAutorizacion.set(false);
     this.exito.set(mensaje);

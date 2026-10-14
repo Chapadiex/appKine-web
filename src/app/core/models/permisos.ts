@@ -32,14 +32,23 @@ export const PERMISO_AUDITORIA_READ_CLINICA = 'auditoria:read-clinica';
  * Gestionar paciente (F3, etapa AKINE-03.01).
  *
  * <p>Gobierna las MUTACIONES del padron: dar de alta una persona, editarla y activarle el perfil
- * clinico. <b>No hay permiso de lectura</b>: consultar el padron se autoriza por pertenencia, y
- * por eso ninguna pantalla pregunta por un `paciente:read` que la matriz no declara.
+ * clinico. La lectura es {@link PERMISO_PACIENTE_READ}.
  *
  * <p>Esta fuera de {@link PERMISOS_F1} a proposito: esa lista es la de la Fase 1 y este codigo es
  * de F3. Que no este ahi no cambia nada para la directiva `*akinePermiso`, que recibe un string
  * cualquiera; la lista es documental.
  */
 export const PERMISO_PACIENTE_MANAGE = 'paciente:manage';
+
+/**
+ * Consultar el padron de personas (DU-6 / DP-22, contrato 0.80.0).
+ *
+ * <p>Hasta DP-22 la lectura del padron se autorizaba por pertenencia, y una membership con rol
+ * `PACIENTE` leia el padron entero de su organizacion. Ahora toda lectura de personas exige
+ * `paciente:read`: el staff lo tiene y el paciente no. En el frontend es UX —esconde la seccion
+ * y los enlaces a la ficha—; el backend rechaza igual a quien llegue por URL.
+ */
+export const PERMISO_PACIENTE_READ = 'paciente:read';
 
 /**
  * Permisos que el frontend conoce hoy.
@@ -111,3 +120,23 @@ export const PERMISO_TURNO_MANAGE = 'turno:manage';
  * dos sedes, pero quien la mira lo hace parado en un mostrador.
  */
 export const PERMISO_COBRO_REGISTER = 'cobro:register';
+
+/**
+ * Operar la caja diaria de la sede (F7, etapa AKINE-07.03, M20).
+ *
+ * <p>Gobierna abrir y cerrar la jornada, registrar y revertir movimientos manuales y consultar la
+ * operatoria. El contrato no declara un `caja:read` aparte: quien arquea es quien mira.
+ *
+ * <p><b>Es de la sede, no de la organizacion.</b> La caja es un cajon fisico en un mostrador:
+ * cada consultorio tiene la suya y el backend evalua el permiso contra `{consultorioId}`.
+ */
+export const PERMISO_CAJA_OPERATE = 'caja:operate';
+
+/**
+ * Ver reportes de la sede (F8, M23, AKINE-07.06; repartido por DP-15 / G-1).
+ *
+ * <p>Abre la pantalla; <b>no</b> decide que se ve adentro. Cada seccion del reporte pide ademas el
+ * permiso de su fuente, y la que falta llega declarada en `omitidas`. Al `PROFESIONAL` el backend
+ * se lo da con alcance de actividad propia y lo avisa con una advertencia.
+ */
+export const PERMISO_REPORTE_READ = 'reporte:read';

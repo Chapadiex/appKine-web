@@ -38,6 +38,10 @@ export interface SaldoAutorizacionResponse {
      */
     consumidaSegunElLedger?: number;
     /**
+     * Alertas \'consumo a revisar\' PENDIENTES: consumos de sesiones cuya obligacion se anulo (DP-13). No mueven el saldo; se resuelven revirtiendo el consumo. El detalle esta en GET /alertas
+     */
+    consumosARevisar?: number;
+    /**
      * Dias que faltan para vencer. Null si no vence
      */
     diasParaVencer?: number;

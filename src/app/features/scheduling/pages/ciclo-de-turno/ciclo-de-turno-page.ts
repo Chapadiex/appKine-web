@@ -13,14 +13,9 @@ import { TurnoDelDia } from '../../../../api/generated/model/turno-del-dia';
 import { Turno } from '../../../../api/generated/model/turno';
 import { ConfirmacionConMotivo } from '../../../../shared/components/confirmacion-con-motivo/confirmacion-con-motivo';
 import { SchedulingApi } from '../../services/scheduling-api';
+import { SelectorDeHorario } from '../../components/selector-de-horario/selector-de-horario';
 import { AccionSugerida, ErrorAgenda, traducirErrorAgenda } from '../../models/agenda-errors';
-import {
-  fechaEnPalabras,
-  hoy,
-  rangoEnZona,
-  slotCompleto,
-  sumarDias,
-} from '../../models/etiquetas-de-agenda';
+import { hoyEnZona, sumarDias } from '../../models/etiquetas-de-agenda';
 import {
   esTerminal,
   estadoSegunHistorial,
@@ -29,6 +24,9 @@ import {
   textoDeEstado,
   textoDeEvento,
 } from '../../models/etiquetas-de-turno';
+import { recepcionAbierta, textoDePrepago } from '../../models/etiquetas-de-recepcion';
+import { PrepagoDeRecepcionEstadoEnum } from '../../../../api/generated/model/prepago-de-recepcion';
+import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 
 /** Panel abierto. Uno solo a la vez: son tres confirmaciones sobre el mismo turno. */
 type Panel = 'ninguno' | 'cancelar' | 'ausencia' | 'reprogramar';
@@ -88,12 +86,13 @@ type Panel = 'ninguno' | 'cancelar' | 'ausencia' | 'reprogramar';
  */
 @Component({
   selector: 'app-ciclo-de-turno-page',
-  imports: [RouterLink, ConfirmacionConMotivo],
+  imports: [RouterLink, ConfirmacionConMotivo, SelectorDeHorario],
   templateUrl: './ciclo-de-turno-page.html',
   styleUrl: '../../agenda.css',
 })
 export class CicloDeTurnoPage {
   private readonly api = inject(SchedulingApi);
+  private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly tenantContext = inject(TenantContextStore);
   private readonly permisos = inject(PermissionsStore);
   private readonly location = inject(Location);
@@ -106,7 +105,6 @@ export class CicloDeTurnoPage {
   readonly ofertaId = input<string>('');
   readonly fecha = input<string>('');
 
-  protected readonly fechaEnPalabras = fechaEnPalabras;
   protected readonly textoDeEstado = textoDeEstado;
   protected readonly textoDeEvento = textoDeEvento;
 
@@ -132,6 +130,13 @@ export class CicloDeTurnoPage {
   /** Agenda del dia destino, para el selector de horarios de la reprogramacion. */
   protected readonly agendaDestino = signal<Agenda | null>(null);
   protected readonly fechaDestino = signal('');
+
+  /**
+   * `true` mientras {@link fechaDestino} es el hoy provisorio del navegador. La primera agenda trae
+   * la zona de la sede y, si el dia no coincide, se corrige y se vuelve a pedir: de noche un
+   * navegador en UTC ya esta en el dia siguiente al de la sede.
+   */
+  private destinoPorDefecto = false;
   protected readonly instanteDestino = signal('');
   protected readonly faltaHorario = signal(false);
 
@@ -181,6 +186,9 @@ export class CicloDeTurnoPage {
    * seguir operando. Antes de 0.23.0 era la unica fuente, y por eso una URL pegada a mano dejaba
    * la pantalla a medias.
    */
+  /** Serie que genero el turno (E-3), para enlazarla. `undefined` en un turno suelto. */
+  protected readonly serieId = computed(() => this.turno()?.serieId ?? this.turnoLeido()?.serieId);
+
   protected readonly versionConocida = computed<number | null>(() => {
     const deLaTransicion = this.turno()?.version;
     if (deLaTransicion !== undefined) {
@@ -196,6 +204,26 @@ export class CicloDeTurnoPage {
 
   protected readonly puedeOperar = computed(() => this.permisos.tiene(PERMISO_TURNO_MANAGE));
   protected readonly cicloCerrado = computed(() => esTerminal(this.estado()));
+
+  /**
+   * Lo que se sabe del prepago (E-8), o vacio. Solo de lectura: cobrarlo es de la recepcion del dia.
+   *
+   * <p>Sale de la lectura del turno, porque las transiciones devuelven un `Turno` sin prepago. Un
+   * `PENDIENTE` leido deja de valer si el turno se cancelo o quedo ausente despues —el servidor lo
+   * recalcularia como `NO_EXIGIDO`—, asi que no se muestra; un `REGISTRADO` sigue siendo cierto.
+   */
+  protected readonly textoDePrepago = computed(() => {
+    const leido = this.turnoLeido();
+    const prepago = leido?.prepago;
+    const caido = this.cicloCerrado();
+    if (caido && prepago?.estado === PrepagoDeRecepcionEstadoEnum.PENDIENTE) {
+      return '';
+    }
+    return textoDePrepago(prepago, {
+      antesDelCheckin: !recepcionAbierta(leido?.recepcion),
+      turnoCaido: caido,
+    });
+  });
 
   /** Las tres transiciones con version, disponibles solo cuando hay todo lo que necesitan. */
   protected readonly puedeTransicionar = computed(
@@ -229,7 +257,10 @@ export class CicloDeTurnoPage {
         this.exito.set(null);
         this.panel.set('ninguno');
         this.instanteDestino.set('');
-        this.fechaDestino.set(fecha === '' ? hoy() : fecha);
+        // `!fecha` y no `=== ''`: con `withComponentInputBinding` un query param ausente llega
+        // como `undefined`, igual que en la recepcion.
+        this.destinoPorDefecto = !fecha;
+        this.fechaDestino.set(fecha ? fecha : this.diaDeLaSede.hoy());
         this.cargarTurnoYHistorial();
         this.cargarDestino();
       });
@@ -264,7 +295,20 @@ export class CicloDeTurnoPage {
     const sabiaLaOferta = this.numeroDeOferta() !== null;
     this.api.verTurno(consultorioId, turnoId).subscribe({
       next: (turno) => {
-        this.turnoLeido.set(turno);
+        // Gana la version mas nueva, venga de donde venga. Una lectura que vuelve con una
+        // version MAYOR que la de la ultima transicion reemplaza a esa transicion, que
+        // `estado` y `versionConocida` prefieren: sin esto, despues de un 409 por un turno que
+        // otra persona movio, releer traia la version nueva y la pantalla seguia mostrando y
+        // mandando la vieja, un 409 sin salida. Y una lectura que vuelve con una version MENOR
+        // —la de la apertura, que llego despues de un "Confirmar" rapido— no puede pisar lo que
+        // la transicion ya devolvio. Las dos cosas las destapo el E2E contra el backend real
+        // (AKINE E-2).
+        const deLaTransicion = this.turno()?.version;
+        if (deLaTransicion === undefined || (turno.version ?? -1) >= deLaTransicion) {
+          this.turno.set(null);
+          this.turnoLeido.set(turno);
+          this.fijarVersionEnLaUrl(turno.version);
+        }
         if (!sabiaLaOferta && this.numeroDeOferta() !== null) {
           this.cargarDestino();
         }
@@ -321,12 +365,33 @@ export class CicloDeTurnoPage {
     this.api
       .buscarAgenda(consultorioId, ofertaId, { desde, hasta: sumarDias(desde, 1) })
       .subscribe({
-        next: (agenda) => this.agendaDestino.set(agenda),
+        next: (agenda) => {
+          if (this.corregirAlDiaDeLaSede(agenda.timezone ?? '')) {
+            return;
+          }
+          this.agendaDestino.set(agenda);
+        },
         error: () => this.agendaDestino.set(null),
       });
   }
 
+  /** Igual que en la recepcion: el hoy del navegador se corrige una vez al de la sede. */
+  private corregirAlDiaDeLaSede(timezone: string): boolean {
+    if (!this.destinoPorDefecto || timezone === '') {
+      return false;
+    }
+    this.destinoPorDefecto = false;
+    const deLaSede = hoyEnZona(timezone);
+    if (deLaSede === this.fechaDestino()) {
+      return false;
+    }
+    this.fechaDestino.set(deLaSede);
+    this.cargarDestino();
+    return true;
+  }
+
   protected cambiarDiaDestino(fecha: string): void {
+    this.destinoPorDefecto = false;
     this.fechaDestino.set(fecha);
     this.instanteDestino.set('');
     this.cargarDestino();
@@ -442,16 +507,6 @@ export class CicloDeTurnoPage {
 
   protected instanteEnZona(instante: string | undefined): string {
     return fechaHoraEnZona(instante, this.timezone());
-  }
-
-  protected rangoDelSlot(slot: SlotDisponible): string {
-    return rangoEnZona(slot, this.timezone());
-  }
-
-  protected slotCompleto = slotCompleto;
-
-  protected esElDestino(slot: SlotDisponible): boolean {
-    return slot.desde === this.instanteDestino() && this.instanteDestino() !== '';
   }
 
   /**

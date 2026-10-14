@@ -2,6 +2,7 @@ import { Component, ElementRef, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 
+import { AkineHttpError } from '../../../../core/interceptors/error.interceptor';
 import { EstadoFormulario, traducirYEsperar } from '../../models/auth-errors';
 import { RegisterAccountRequest } from '../../../../api/generated/model/register-account-request';
 import { RegistroYActivacionService } from '../../../../api/generated/api/registro-y-activacion.service';
@@ -22,6 +23,10 @@ const CAMPOS = [
 ] as const;
 
 type Campo = (typeof CAMPOS)[number];
+
+/** `409 idempotency-key-conflict`: la clave del intento ya se uso con otros datos. */
+const MENSAJE_CLAVE_REUSADA =
+  'Ya hay un registro en curso con otros datos. Recarga la pagina e intenta de nuevo.';
 
 /**
  * Alta self-service de cuenta, organizacion y primer consultorio (M02, AKINE-01.02).
@@ -166,6 +171,14 @@ export class RegisterPage {
   }
 
   private fallar(error: unknown): void {
+    if (error instanceof AkineHttpError && error.problemType === 'idempotency-key-conflict') {
+      // La clave ya quedo atada a otro cuerpo en el backend (contrato 0.91.0). No se reusa: el
+      // proximo envio sale con una nueva, y el mensaje no delata nada de la cuenta.
+      this.clave = null;
+      this.payloadDeLaClave = null;
+      this.estado.set({ tipo: 'error', mensaje: MENSAJE_CLAVE_REUSADA, causa: 'otro' });
+      return;
+    }
     const traducido = traducirYEsperar(error, this.espera);
     this.estado.set({ tipo: 'error', mensaje: traducido.mensaje, causa: traducido.causa });
   }

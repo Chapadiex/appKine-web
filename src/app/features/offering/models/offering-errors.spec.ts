@@ -34,14 +34,20 @@ describe('traducirErrorOffering', () => {
       [403, 'missing-tenant-context', 'oferta', 'sin-contexto'],
       [403, 'missing-tenant-context', 'servicio', 'sin-contexto'],
       [409, 'subscription-suspended', 'oferta', 'suscripcion-suspendida'],
-      [409, 'conflict', 'oferta', 'concurrencia'],
-      // `concurrent-modification` no lo emite `offering` hoy. Se reconoce igual, y esto lo fija:
-      // si algun dia se unifican los dos tipos, esta pantalla no se entera.
+      // DP-21: la version vieja es `concurrent-modification`; `conflict` es de negocio.
       [409, 'concurrent-modification', 'oferta', 'concurrencia'],
+      [409, 'conflict', 'oferta', 'conflicto'],
       [400, 'validation-error', 'oferta', 'validacion'],
       [409, 'oferta-nombre-comercial-taken', 'oferta', 'conflicto'],
-      [409, 'servicio-inactivo', 'oferta', 'conflicto'],
-      [409, 'servicio-codigo-taken', 'servicio', 'conflicto'],
+      [409, 'servicio-inactivo', 'oferta', 'servicio-inactivo'],
+      [409, 'servicio-codigo-taken', 'servicio', 'servicio-duplicado'],
+      [409, 'servicio-nombre-taken', 'servicio', 'servicio-duplicado'],
+      [409, 'oferta-already-inactive', 'oferta', 'oferta-ya-inactiva'],
+      [409, 'precio-particular-solapado', 'oferta', 'precio-solapado'],
+      [409, 'precio-particular-inactivo', 'oferta', 'precio-inactivo'],
+      [409, 'practica-no-utilizable', 'oferta', 'practica-no-utilizable'],
+      [409, 'oferta-inactiva', 'oferta', 'oferta-inactiva'],
+      [409, 'consultorio-no-operable', 'oferta', 'consultorio-no-operable'],
       [500, null, 'oferta', 'otro'],
     ];
 
@@ -133,6 +139,9 @@ describe('hayQueRecargar', () => {
   it('solo pide recargar donde releer es lo unico que resuelve', () => {
     expect(hayQueRecargar('no-encontrado')).toBe(true);
     expect(hayQueRecargar('conflicto')).toBe(true);
+    expect(hayQueRecargar('servicio-inactivo')).toBe(true);
+    expect(hayQueRecargar('oferta-ya-inactiva')).toBe(true);
+    expect(hayQueRecargar('servicio-duplicado')).toBe(false);
 
     // La concurrencia NO esta: esa pantalla ya releyo sola y dejo el panel abierto. Pedirle al
     // usuario que recargue encima le borraria lo que estaba por confirmar.

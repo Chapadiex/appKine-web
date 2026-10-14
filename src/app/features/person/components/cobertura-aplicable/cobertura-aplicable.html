@@ -1,0 +1,139 @@
+<div aria-live="polite">
+  @switch (estado().tipo) {
+    @case ('sin-oferta') {
+      <p class="estado estado--vacio">Elegi una oferta para ver que cobertura aplica.</p>
+    }
+
+    @case ('cargando') {
+      <p class="estado" role="status">Resolviendo la cobertura&hellip;</p>
+    }
+
+    @case ('error') {
+      <p class="estado estado--error" role="alert">{{ mensajeError() }}</p>
+      <button type="button" class="boton" (click)="reintentar()">Reintentar</button>
+    }
+
+    @case ('listo') {
+      @if (respuesta(); as resultado) {
+        <p>
+          @if (resultado.condicionSugerida === 'COBERTURA') {
+            Sugerencia: <b>atender con cobertura</b>
+            @if (resultado.aplicables?.[0]; as primera) {
+              — {{ primera.financiadorNombre }}
+              @if (primera.planNombre) {
+                {{ primera.planNombre }}
+              }
+            }
+          } @else {
+            Sugerencia: <b>atender como particular</b>
+          }
+          @if (resultado.fecha) {
+            <span class="ayuda"> (al {{ fechaEnPalabras(resultado.fecha) }})</span>
+          }
+        </p>
+
+        <p>
+          Precio particular del dia:
+          @if (resultado.precioParticular !== undefined && resultado.precioParticular !== null) {
+            <b>{{ importe(resultado.precioParticular) }}</b>
+          } @else {
+            <b>la oferta no tiene precio cargado</b>
+          }
+          <span class="ayuda">
+            Particular siempre esta disponible, aunque alguna cobertura aplique.
+          </span>
+        </p>
+
+        @if (resultado.admiteObraSocial === false) {
+          <p class="ayuda">Esta oferta no admite obra social.</p>
+        }
+
+        @if ((resultado.aplicables?.length ?? 0) > 0) {
+          <h3>Aplican</h3>
+          <ul class="lista-cobertura">
+            @for (aplicable of resultado.aplicables; track aplicable.coberturaId) {
+              <li>
+                <b>{{ aplicable.financiadorNombre }}</b>
+                @if (aplicable.planNombre) {
+                  — {{ aplicable.planNombre }}
+                }
+                @if (aplicable.principal) {
+                  <span class="etiqueta">Principal</span>
+                }
+                @if (aplicable.arancel; as arancel) {
+                  <p>
+                    {{ nombreDePractica(aplicable.practicaId) }}: total
+                    {{ importe(arancel.importeTotal) }} · financiador
+                    {{ importe(arancel.importeFinanciador) }} · coseguro
+                    {{ importe(arancel.coseguro) }}.
+                  </p>
+                  <p class="ayuda">{{ origenDelArancel(arancel) }}. {{ requisitos(arancel) }}</p>
+                }
+                @if (aplicable.credencialVencida) {
+                  <p class="ayuda">
+                    <b>La credencial esta vencida</b>
+                    @if (aplicable.credencialVigenciaHasta) {
+                      (vencio el {{ fechaEnPalabras(aplicable.credencialVigenciaHasta) }})
+                    }
+                    .
+                  </p>
+                }
+                @if (detalleUtil(aplicable.practicas)) {
+                  <ul class="ayuda">
+                    @for (practica of aplicable.practicas; track practica.practicaId) {
+                      <li>
+                        {{ nombreDePractica(practica.practicaId) }}:
+                        @if (practica.arancel; as arancel) {
+                          total {{ importe(arancel.importeTotal) }}
+                        } @else {
+                          {{ motivoDeNoAplicable(practica.motivo) }}
+                        }
+                      </li>
+                    }
+                  </ul>
+                }
+              </li>
+            }
+          </ul>
+        }
+
+        @if ((resultado.noAplicables?.length ?? 0) > 0) {
+          <h3>No aplican</h3>
+          <ul class="lista-cobertura">
+            @for (noAplicable of resultado.noAplicables; track noAplicable.coberturaId) {
+              <li>
+                <b>{{ noAplicable.financiadorNombre }}</b>
+                @if (noAplicable.planNombre) {
+                  — {{ noAplicable.planNombre }}
+                }
+                @if (noAplicable.principal) {
+                  <span class="etiqueta">Principal</span>
+                }
+                <p>{{ motivoDeNoAplicable(noAplicable.motivo) }}</p>
+                @if (detalleUtil(noAplicable.practicas)) {
+                  <ul class="ayuda">
+                    @for (practica of noAplicable.practicas; track practica.practicaId) {
+                      <li>
+                        {{ nombreDePractica(practica.practicaId) }}:
+                        {{ motivoDeNoAplicable(practica.motivo) }}
+                      </li>
+                    }
+                  </ul>
+                }
+              </li>
+            }
+          </ul>
+        }
+
+        @if (
+          (resultado.aplicables?.length ?? 0) === 0 && (resultado.noAplicables?.length ?? 0) === 0
+        ) {
+          <p class="estado estado--vacio">
+            El paciente no tiene coberturas financiadas vigentes ese dia: se atiende como
+            particular.
+          </p>
+        }
+      }
+    }
+  }
+</div>

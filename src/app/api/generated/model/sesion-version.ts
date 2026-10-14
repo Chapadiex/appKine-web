@@ -7,6 +7,8 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { TratamientoEnVersion } from './tratamiento-en-version';
+import { MedicionEnVersion } from './medicion-en-version';
 
 
 /**
@@ -22,6 +24,10 @@ export interface SesionVersion {
     evolucion?: SesionVersionEvolucionEnum;
     indicaciones?: string;
     limitacionFuncional?: string;
+    /**
+     * Las mediciones **de esta version**. Foto inmutable (C-6)
+     */
+    mediciones?: Array<MedicionEnVersion>;
     /**
      * No es un diagnostico
      */
@@ -47,6 +53,10 @@ export interface SesionVersion {
     registradaPor?: number;
     respuestaTratamiento?: string;
     tolerancia?: SesionVersionToleranciaEnum;
+    /**
+     * Los tratamientos **vigentes en esta version**, en orden cronologico. Foto inmutable: una enmienda posterior que los corrija no cambia lo que dice esta version (C-6)
+     */
+    tratamientos?: Array<TratamientoEnVersion>;
 }
 export enum SesionVersionDolorLateralidadEnum {
     IZQUIERDA = 'IZQUIERDA',

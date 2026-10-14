@@ -1,5 +1,5 @@
 import { Injectable, Signal, computed, inject, signal } from '@angular/core';
-import { Observable, finalize, map, tap } from 'rxjs';
+import { Observable, finalize, map, shareReplay, tap } from 'rxjs';
 
 import { MiCuentaService } from '../../api/generated/api/mi-cuenta.service';
 import { TenantContextStore } from './tenant-context.store';
@@ -50,6 +50,17 @@ export class PermissionsStore {
    * ignorar a mano, y no habilita nada que aca haga falta.
    */
   private cargaEnVuelo = false;
+
+  /**
+   * Peticion de {@link cargar} en vuelo, con la epoca en la que salio (AKINE-LCP).
+   *
+   * <p>En la primera carga de una pantalla con `permissionGuard` piden los permisos a la vez
+   * el menu y el guard; con la latencia de un movil eran dos `GET /me/permissions` iguales
+   * peleando el ancho de banda con el codigo de la pantalla. Mientras la epoca no cambie, el
+   * segundo se suma al primero.
+   */
+  private peticionEnVuelo: { readonly epoca: number; readonly flujo: Observable<void> } | null =
+    null;
 
   /** El cache, pero solo si sigue perteneciendo al contexto activo. */
   private readonly vigente = computed(() => {
@@ -121,8 +132,11 @@ export class PermissionsStore {
    */
   cargar(): Observable<void> {
     const epoca = this.tenant.contextEpoch();
+    if (this.peticionEnVuelo !== null && this.peticionEnVuelo.epoca === epoca) {
+      return this.peticionEnVuelo.flujo;
+    }
 
-    return this.cuenta.getMyPermissions().pipe(
+    const flujo = this.cuenta.getMyPermissions().pipe(
       tap((respuesta) => {
         if (this.tenant.contextEpoch() !== epoca) {
           return;
@@ -130,7 +144,16 @@ export class PermissionsStore {
         this.cache.set({ epoca, permisos: new Set(respuesta.permissions ?? []) });
       }),
       map(() => undefined),
+      finalize(() => {
+        if (this.peticionEnVuelo?.flujo === flujo) {
+          this.peticionEnVuelo = null;
+        }
+      }),
+      shareReplay({ bufferSize: 1, refCount: false }),
     );
+
+    this.peticionEnVuelo = { epoca, flujo };
+    return flujo;
   }
 
   /**

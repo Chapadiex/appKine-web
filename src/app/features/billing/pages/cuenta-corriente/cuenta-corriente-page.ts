@@ -1,11 +1,21 @@
 import { Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { catchError, of } from 'rxjs';
+import { catchError, concat, of, tap } from 'rxjs';
 
 import { BillingApi } from '../../services/billing-api';
 import { ConfirmacionConMotivo } from '../../../../shared/components/confirmacion-con-motivo/confirmacion-con-motivo';
-import { Obligacion } from '../../../../api/generated/model/obligacion';
-import { PERMISO_COBRO_REGISTER } from '../../../../core/models/permisos';
+import { Cobro } from '../../../../api/generated/model/cobro';
+import { Obligacion, ObligacionConceptoEnum } from '../../../../api/generated/model/obligacion';
+import { ErrorCobro, traducirErrorCobro } from '../../models/cobro-errors';
+import { aCentavos, centavosDeTexto, deCentavos, sumaDeCentavos } from '../../models/dinero';
+import { instanteEnPalabras } from '../../models/etiquetas-de-cobro';
+import {
+  deudasImputables,
+  estaAnulado,
+  nuevaClaveDeIntento,
+  saldoAFavorEnCentavos,
+} from '../../models/operaciones-de-cobro';
+import { PERMISO_COBRO_REGISTER, PERMISO_PACIENTE_READ } from '../../../../core/models/permisos';
 import { PermisoDirective } from '../../../../shared/directives/permiso.directive';
 import { PersonaResponse } from '../../../../api/generated/model/persona-response';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
@@ -17,6 +27,7 @@ import {
 } from '../../models/obligacion-errors';
 import {
   claseDeEstado,
+  conceptoEnPalabras,
   estadoEnPalabras,
   fechaEnPalabras,
   importeEnPalabras,
@@ -88,6 +99,7 @@ export class CuentaCorrientePage {
   readonly personaId = input.required<string>();
 
   protected readonly PERMISO_COBRO_REGISTER = PERMISO_COBRO_REGISTER;
+  protected readonly PERMISO_PACIENTE_READ = PERMISO_PACIENTE_READ;
 
   /**
    * Las dos rutas hermanas de esta pantalla, absolutas.
@@ -104,6 +116,7 @@ export class CuentaCorrientePage {
 
   protected readonly estadoEnPalabras = estadoEnPalabras;
   protected readonly claseDeEstado = claseDeEstado;
+  protected readonly conceptoEnPalabras = conceptoEnPalabras;
   protected readonly fechaEnPalabras = fechaEnPalabras;
   protected readonly sePuedeAnular = sePuedeAnular;
 
@@ -134,6 +147,11 @@ export class CuentaCorrientePage {
     return actual.tipo === 'error' && actual.faltaContexto;
   });
 
+  /** `true` si alguna deuda es un coseguro: la parte del financiador vive en otra pantalla. */
+  protected readonly hayCoseguros = computed(() =>
+    this.obligaciones().some((o) => o.concepto === ObligacionConceptoEnum.COSEGURO),
+  );
+
   protected readonly vacia = computed(
     () => this.estado().tipo === 'listo' && this.obligaciones().length === 0,
   );
@@ -154,6 +172,78 @@ export class CuentaCorrientePage {
     () => this.errorAccion()?.causa ?? null,
   );
 
+  // -------------------------------------------------------------------------------------
+  // F-3: saldo a favor e imputacion posterior
+  // -------------------------------------------------------------------------------------
+
+  protected readonly instanteEnPalabras = instanteEnPalabras;
+  protected readonly importeEnPalabras = importeEnPalabras;
+
+  /**
+   * Los cobros de la persona, o `null` si no cargaron. Su fallo no voltea la cuenta corriente:
+   * la deuda se sigue viendo y la seccion de saldo a favor dice que no se pudo leer.
+   */
+  private readonly cobros = signal<readonly Cobro[] | null>([]);
+  protected readonly cobrosNoCargaron = computed(() => this.cobros() === null);
+
+  /** Solo los cobros vigentes que todavia tienen algo a favor. */
+  protected readonly conSaldoAFavor = computed<readonly Cobro[]>(() =>
+    (this.cobros() ?? []).filter((c) => !estaAnulado(c) && saldoAFavorEnCentavos(c) > 0),
+  );
+
+  /** El cobro cuyo saldo se esta imputando, o `null`. */
+  protected readonly imputando = signal<Cobro | null>(null);
+  /** Importe tipeado por deuda, por id de obligacion. Vacio = esa deuda no se toca. */
+  protected readonly importesDeImputacion = signal<Readonly<Record<number, string>>>({});
+  protected readonly imputacionIntentada = signal(false);
+  protected readonly enviandoImputacion = signal(false);
+  protected readonly errorImputacion = signal<ErrorCobro | null>(null);
+  /** Cuantas imputaciones entraron antes del rechazo. Es un pedido por deuda: puede ser parcial. */
+  protected readonly imputadasAntesDelRechazo = signal(0);
+  /**
+   * Clave por deuda. Se descarta la de una deuda cuando se edita su importe; las demas se reusan,
+   * asi reintentar despues de un fallo a mitad de camino no imputa dos veces las que ya entraron.
+   */
+  private clavesDeImputacion = new Map<number, string>();
+
+  protected readonly deudasDelImputando = computed<readonly Obligacion[]>(() => {
+    const cobro = this.imputando();
+    return cobro === null ? [] : deudasImputables(cobro, this.obligaciones());
+  });
+
+  /** Las lineas con importe, ya en centavos. `null` en el importe si no se entiende. */
+  private readonly lineasDeImputacion = computed(() => {
+    const importes = this.importesDeImputacion();
+    return this.deudasDelImputando()
+      .filter((d) => d.id !== undefined && (importes[d.id] ?? '').trim() !== '')
+      .map((d) => ({ deuda: d, centavos: centavosDeTexto(importes[d.id as number]) }));
+  });
+
+  /** Por que la imputacion no se puede mandar, o `null`. Todo en centavos enteros. */
+  protected readonly problemaDeImputacion = computed<string | null>(() => {
+    const cobro = this.imputando();
+    if (cobro === null) {
+      return null;
+    }
+    const lineas = this.lineasDeImputacion();
+    if (lineas.length === 0) {
+      return 'Escribi el importe a imputar en al menos una deuda.';
+    }
+    for (const { deuda, centavos } of lineas) {
+      if (centavos === null || centavos <= 0) {
+        return `El importe para "${deuda.snapshotNombre ?? 'la deuda'}" tiene que ser mayor que cero, con hasta dos decimales.`;
+      }
+      if (centavos > (aCentavos(deuda.saldo) ?? 0)) {
+        return `El importe para "${deuda.snapshotNombre ?? 'la deuda'}" supera su saldo (${this.importe(deuda, deuda.saldo)}).`;
+      }
+    }
+    const total = sumaDeCentavos(lineas.map((l) => l.centavos ?? 0));
+    if (total > saldoAFavorEnCentavos(cobro)) {
+      return `Entre todas suman mas que el saldo a favor del cobro (${importeEnPalabras(cobro.saldoAFavor, cobro.moneda)}).`;
+    }
+    return null;
+  });
+
   constructor() {
     effect(() => {
       // Depende de la ruta y del contexto: cambiar de sede o de organizacion invalida todo lo que
@@ -162,6 +252,7 @@ export class CuentaCorrientePage {
       this.tenantContext.contextEpoch();
       untracked(() => {
         this.cerrarPanel();
+        this.cerrarImputacion();
         this.cargar();
       });
     });
@@ -192,6 +283,12 @@ export class CuentaCorrientePage {
       .verPersona(personaId)
       .pipe(catchError(() => of(null)))
       .subscribe((ficha) => this.persona.set(ficha));
+
+    // Los cobros, para el saldo a favor. Tambien en paralelo y sin voltear la deuda si fallan.
+    this.api
+      .cobrosDeLaPersona(consultorioId, personaId)
+      .pipe(catchError(() => of(null)))
+      .subscribe((cobros) => this.cobros.set(cobros));
 
     this.api.deLaPersona(consultorioId, personaId).subscribe({
       next: (obligaciones) => this.estado.set({ tipo: 'listo', obligaciones }),
@@ -245,6 +342,7 @@ export class CuentaCorrientePage {
 
   protected abrirAnulacion(obligacion: Obligacion): void {
     this.cerrarPanel();
+    this.cerrarImputacion();
     this.objetivo.set(obligacion);
   }
 
@@ -292,6 +390,110 @@ export class CuentaCorrientePage {
     this.objetivo.set(null);
     this.errorAccion.set(null);
     this.exito.set(null);
+  }
+
+  // -------------------------------------------------------------------------------------
+  // Imputacion posterior del saldo a favor (F-3)
+  // -------------------------------------------------------------------------------------
+
+  protected abrirImputacion(cobro: Cobro): void {
+    this.cerrarPanel();
+    this.cerrarImputacion();
+    this.imputando.set(cobro);
+  }
+
+  protected esElImputando(cobro: Cobro): boolean {
+    const abierto = this.imputando();
+    return abierto !== null && cobro.id !== undefined && abierto.id === cobro.id;
+  }
+
+  protected cerrarImputacion(): void {
+    this.imputando.set(null);
+    this.importesDeImputacion.set({});
+    this.imputacionIntentada.set(false);
+    this.errorImputacion.set(null);
+    this.imputadasAntesDelRechazo.set(0);
+    this.clavesDeImputacion = new Map();
+  }
+
+  protected importeTipeado(deuda: Obligacion): string {
+    return deuda.id === undefined ? '' : (this.importesDeImputacion()[deuda.id] ?? '');
+  }
+
+  protected cambiarImporteDeImputacion(deuda: Obligacion, texto: string): void {
+    if (deuda.id === undefined) {
+      return;
+    }
+    this.importesDeImputacion.update((actual) => ({ ...actual, [deuda.id as number]: texto }));
+    this.clavesDeImputacion.delete(deuda.id);
+    this.errorImputacion.set(null);
+  }
+
+  /**
+   * Imputa el saldo a favor, una deuda por pedido y en serie.
+   *
+   * <p>En serie y no en paralelo: el backend toma el lock del cobro en cada pedido, asi que en
+   * paralelo se pelearian por el mismo saldo. Si uno falla, los siguientes no salen y la pantalla
+   * dice cuantos entraron.
+   */
+  protected confirmarImputacion(): void {
+    const consultorioId = this.tenantContext.consultorioId();
+    const cobro = this.imputando();
+    this.imputacionIntentada.set(true);
+    if (
+      consultorioId === null ||
+      cobro === null ||
+      cobro.id === undefined ||
+      this.problemaDeImputacion() !== null
+    ) {
+      return;
+    }
+    const cobroId = cobro.id;
+
+    const pedidos = this.lineasDeImputacion().map(({ deuda, centavos }) => {
+      const obligacionId = deuda.id as number;
+      let clave = this.clavesDeImputacion.get(obligacionId);
+      if (clave === undefined) {
+        clave = nuevaClaveDeIntento();
+        this.clavesDeImputacion.set(obligacionId, clave);
+      }
+      return this.api
+        .imputarSaldoAFavor(consultorioId, cobroId, {
+          obligacionId,
+          importe: deCentavos(centavos ?? 0),
+          idempotencyKey: clave,
+        })
+        .pipe(tap(() => this.imputadasAntesDelRechazo.update((n) => n + 1)));
+    });
+
+    this.enviandoImputacion.set(true);
+    this.errorImputacion.set(null);
+    this.imputadasAntesDelRechazo.set(0);
+    this.exito.set(null);
+
+    concat(...pedidos).subscribe({
+      error: (error: unknown) => {
+        this.enviandoImputacion.set(false);
+        this.errorImputacion.set(traducirErrorCobro(error, 'imputar'));
+      },
+      complete: () => {
+        this.enviandoImputacion.set(false);
+        const cuantas = pedidos.length;
+        this.cerrarImputacion();
+        this.exito.set(
+          `Se imputo el saldo a favor del comprobante N.º ${cobro.comprobanteNumero} a ` +
+            `${cuantas === 1 ? 'una deuda' : `${cuantas} deudas`}. No se movio la caja: la plata ` +
+            'entro cuando se cobro.',
+        );
+        this.cargar();
+      },
+    });
+  }
+
+  /** Despues de un rechazo: cerrar y releer deuda y cobros, que pudieron cambiar a medias. */
+  protected recargarTrasImputacion(): void {
+    this.cerrarImputacion();
+    this.cargar();
   }
 
   private numeroDePersona(): number | null {

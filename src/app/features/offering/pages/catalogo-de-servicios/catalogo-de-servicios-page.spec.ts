@@ -2,12 +2,15 @@ import { HttpRequest, provideHttpClient, withInterceptors } from '@angular/commo
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+import { signal } from '@angular/core';
+import { of } from 'rxjs';
 
 import { CatalogoDeServiciosPage } from './catalogo-de-servicios-page';
 import { RUTA_SERVICIOS } from '../../../../core/testing/rutas-api';
 import { TIMEOUT_AXE, esperarSinViolaciones } from '../../../../core/testing/axe';
 import { errorInterceptor } from '../../../../core/interceptors/error.interceptor';
 import { provideApi } from '../../../../api/generated/provide-api';
+import { PlatformRoleStore } from '../../../../core/services/platform-role.store';
 
 const KINE = {
   id: 1,
@@ -47,6 +50,12 @@ const PILATES = {
 describe('CatalogoDeServiciosPage', () => {
   let httpMock: HttpTestingController;
 
+  /**
+   * Rol de plataforma de la cuenta que mira. Por defecto `true`: casi todos los casos ejercitan
+   * las mutaciones, que solo se muestran con ese rol. El store real tiene su propio spec.
+   */
+  const esAdmin = signal(true);
+
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [CatalogoDeServiciosPage],
@@ -55,6 +64,13 @@ describe('CatalogoDeServiciosPage', () => {
         provideHttpClientTesting(),
         provideRouter([]),
         provideApi(''),
+        {
+          provide: PlatformRoleStore,
+          useValue: {
+            esAdminDePlataforma: esAdmin.asReadonly(),
+            resolver: () => of(esAdmin()),
+          },
+        },
       ],
     }).compileComponents();
 
@@ -62,11 +78,12 @@ describe('CatalogoDeServiciosPage', () => {
   });
 
   afterEach(() => {
+    esAdmin.set(true);
     vi.useRealTimers();
     httpMock.verify();
   });
 
-  it('lista el catalogo y avisa que administrarlo es de la plataforma', async () => {
+  it('con rol de plataforma lista el catalogo con sus acciones', async () => {
     const fixture = await montar();
     const anfitrion = fixture.nativeElement as HTMLElement;
 
@@ -74,15 +91,37 @@ describe('CatalogoDeServiciosPage', () => {
     expect(anfitrion.textContent).toContain('Kinesiologia respiratoria');
     expect(anfitrion.textContent).toContain('Bienestar');
 
-    // La decision de la pantalla: las acciones SE MUESTRAN aunque hoy no haya forma de saber si
-    // el usuario tiene rol de plataforma, y la nota lo anticipa. Ver el javadoc del componente.
-    expect(anfitrion.textContent).toContain('rol de plataforma');
+    expect(anfitrion.textContent).toContain('Tu cuenta lo tiene');
+    expect(anfitrion.textContent).toContain('Dar de alta un servicio');
     const acciones = [...anfitrion.querySelectorAll('tbody button')].map((boton) =>
       (boton.textContent ?? '').trim(),
     );
     expect(acciones).toEqual(['Editar', 'Dar de baja', 'Editar', 'Dar de baja']);
 
     // Y hay salida hacia lo que el centro SI administra.
+    expect(anfitrion.querySelector('a[href="/servicios/ofertas"]')).not.toBeNull();
+  });
+
+  it('sin rol de plataforma no ofrece alta, edicion ni baja, y explica por que', async () => {
+    esAdmin.set(false);
+    const fixture = await montar();
+    const anfitrion = fixture.nativeElement as HTMLElement;
+
+    // El listado se ve igual: leer el catalogo alcanza con estar autenticado.
+    expect(anfitrion.querySelectorAll('tbody tr').length).toBe(2);
+
+    const botones = [...anfitrion.querySelectorAll('button')].map((boton) =>
+      (boton.textContent ?? '').trim(),
+    );
+    expect(botones).not.toContain('Dar de alta un servicio');
+    expect(anfitrion.querySelectorAll('tbody button').length).toBe(0);
+    // Sin columna vacia de acciones.
+    const encabezados = [...anfitrion.querySelectorAll('thead th')].map((celda) =>
+      (celda.textContent ?? '').trim(),
+    );
+    expect(encabezados).not.toContain('Acciones');
+
+    expect(anfitrion.textContent).toContain('Tu cuenta no lo tiene');
     expect(anfitrion.querySelector('a[href="/servicios/ofertas"]')).not.toBeNull();
   });
 
@@ -98,6 +137,27 @@ describe('CatalogoDeServiciosPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain(
+      'No hay servicios que coincidan',
+    );
+  });
+
+  it('cambiar el filtro con una consulta en vuelo la cancela: no gana la que llega ultima', async () => {
+    const fixture = await montar();
+
+    elegir(fixture, '#filtro-estado-servicio', 'TODOS');
+    const vieja = httpMock.expectOne(
+      (peticion: HttpRequest<unknown>) => peticion.params.get('estado') === 'TODOS',
+    );
+    elegir(fixture, '#filtro-estado-servicio', 'INACTIVO');
+    const nueva = httpMock.expectOne(
+      (peticion: HttpRequest<unknown>) => peticion.params.get('estado') === 'INACTIVO',
+    );
+
+    expect(vieja.cancelled).toBe(true);
+    nueva.flush([]);
+    await fixture.whenStable();
+    fixture.detectChanges();
     expect((fixture.nativeElement as HTMLElement).textContent).toContain(
       'No hay servicios que coincidan',
     );
@@ -162,10 +222,13 @@ describe('CatalogoDeServiciosPage', () => {
       nombre: 'Kinesiologia respiratoria adultos',
     });
 
-    // El tipo es `conflict`, NO `concurrent-modification`: es lo que emite el handler global
-    // para el bloqueo optimista de este modulo. Ver `offering-errors.ts`.
+    // El tipo es `concurrent-modification` (DP-21): es lo que emite el handler global para
+    // el bloqueo optimista. Ver `offering-errors.ts`.
     edicion.flush(
-      { type: 'https://akine.app/problems/conflict', detail: 'la version quedo vieja' },
+      {
+        type: 'https://akine.app/problems/concurrent-modification',
+        detail: 'la version quedo vieja',
+      },
       { status: 409, statusText: 'Conflict' },
     );
     fixture.detectChanges();
@@ -193,10 +256,9 @@ describe('CatalogoDeServiciosPage', () => {
   );
 
   it('el 403 de una mutacion explica que el catalogo es de la plataforma, y no cierra sesion', async () => {
-    // Es el caso que sostiene la decision de la pantalla: las acciones se muestran porque hoy
-    // ningun endpoint dice si quien mira tiene rol de plataforma, y el rechazo lo da el
-    // servidor. Si el mensaje no explicara de quien es el catalogo, el usuario leeria el 403
-    // como un error suyo.
+    // Ocultar es UX: con el boton a la vista (rol revocado a mitad de sesion, por ejemplo) el
+    // backend igual rechaza, y el mensaje tiene que explicar de quien es el catalogo para que
+    // el usuario no lea el 403 como un error suyo.
     const fixture = await montar();
 
     abrir(fixture, 'Dar de alta un servicio');
@@ -430,7 +492,7 @@ describe('CatalogoDeServiciosPage', () => {
     httpMock
       .expectOne((peticion: HttpRequest<unknown>) => peticion.method === 'PUT')
       .flush(
-        { type: 'https://akine.app/problems/conflict', detail: 'version vieja' },
+        { type: 'https://akine.app/problems/concurrent-modification', detail: 'version vieja' },
         { status: 409, statusText: 'Conflict' },
       );
     fixture.detectChanges();

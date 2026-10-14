@@ -8,7 +8,9 @@
  * ninguna pantalla los deriva de un `Date`.
  *
  * <p>Lo usan las cuatro pantallas de horarios de AKINE-02.04 —semanal, excepciones, efectivo
- * y calendario de sede—: el rotulo de un dia no puede decir "martes" en una y "Mar" en otra.
+ * y calendario de sede— y, desde A-8, el editor de franjas del alta de sede: vive en `shared/`
+ * porque `organization` y `resource` lo comparten. El rotulo de un dia no puede decir "martes" en
+ * una y "Mar" en otra.
  */
 export interface DiaDeLaSemana {
   /** Numero ISO-8601: lunes = 1 .. domingo = 7. Es lo que viaja en el contrato. */

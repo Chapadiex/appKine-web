@@ -51,6 +51,19 @@
       Ese horario ya no figura en la agenda de este dia. Volve al buscador y elegi otro.
     </p>
   }
+
+  <!-- Serie de turnos (AKINE E-3): el mismo slot viaja por la query, como llego aca. -->
+  @if (!reservado()) {
+    <p>
+      <a
+        class="enlace"
+        [routerLink]="['/agenda', 'ofertas', ofertaId(), 'reservar-serie']"
+        [queryParams]="{ fecha: fecha(), inicio: instante(), profesionalId: profesionalId() }"
+      >
+        Reservar una serie semanal desde este horario
+      </a>
+    </p>
+  }
 </section>
 
 @if (!reservado()) {
@@ -90,6 +103,28 @@
         Ninguna persona del padron coincide con esa busqueda. Si es alguien nuevo, cargala primero
         en el padron.
       </p>
+    }
+
+    @if (persona() !== null && coberturas().length > 0) {
+      <div class="campo">
+        <label for="reserva-cobertura">Cobertura con la que se piensa atender (opcional)</label>
+        <select
+          id="reserva-cobertura"
+          aria-describedby="reserva-cobertura-ayuda"
+          (change)="elegirCobertura($any($event.target).value)"
+        >
+          <option value="" [selected]="coberturaId() === null">Sin elegir</option>
+          @for (cobertura of coberturas(); track cobertura.id) {
+            <option [value]="cobertura.id" [selected]="coberturaId() === cobertura.id">
+              {{ coberturaParaReservar(cobertura) }}
+            </option>
+          }
+        </select>
+        <p class="ayuda" id="reserva-cobertura-ayuda">
+          Solo las vigentes el dia del turno. Sin elegir, la recepcion usa la primera que aplique;
+          lo elegido es una preferencia que la recepcion revisa al validar.
+        </p>
+      </div>
     }
   </section>
 }
@@ -145,7 +180,7 @@
           </div>
         }
         @case ('activar-perfil') {
-          <div class="acciones">
+          <div class="acciones" *akinePermiso="PERMISO_PACIENTE_READ">
             <a class="boton" routerLink="/pacientes">Activar el perfil de paciente</a>
           </div>
         }
@@ -191,6 +226,10 @@
       <dd>{{ reserva.id }}</dd>
       <dt>Horario</dt>
       <dd>{{ hora(reserva.inicio) }} a {{ hora(reserva.fin) }} ({{ timezone() }})</dd>
+      <dt>Cobertura elegida</dt>
+      <dd>
+        {{ coberturaDelTurno(reserva.coberturaId) || 'Ninguna: la recepcion usa la que aplique' }}
+      </dd>
       @if (reserva.espacioId) {
         <dt>Box</dt>
         <dd>#{{ reserva.espacioId }} — lo elige el servidor al reservar</dd>

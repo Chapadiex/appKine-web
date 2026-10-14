@@ -7,6 +7,7 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { HorarioGeneralFranjaRequest } from './horario-general-franja-request';
 
 
 /**
@@ -17,6 +18,10 @@ export interface UpdateCalendarioRequest {
      * Si la sede cierra los feriados de ese pais. OMITIRLO lo deja como estaba: null NO es false. Apagarlo abre de golpe todos los feriados del calendario para todos los profesionales de la sede, por eso el cambio se audita aunque sea un solo flag
      */
     cierraPorFeriado?: boolean;
+    /**
+     * Horario general de la sede (RF-M03-003). OMITIRLO lo deja como estaba; una lista vacia lo borra; una lista lo REEMPLAZA entero. Lo reemplazado no se borra: queda como historia. Informativo: no sustituye la disponibilidad de cada profesional (RN-M03-004). Dos franjas del mismo dia que se pisan son 400
+     */
+    horarioGeneral?: Array<HorarioGeneralFranjaRequest>;
     /**
      * Pais cuyo calendario de feriados usa la sede. Omitirlo lo deja como estaba; el valor por defecto de una sede nueva es AR
      */

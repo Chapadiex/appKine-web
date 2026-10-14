@@ -33,9 +33,9 @@ export type CausaEspacio =
   | 'concurrencia'
   /** 409 consultorio-inactive: la sede esta dada de baja y no origina hechos nuevos. */
   | 'sede-inactiva'
-  /** 409 espacio-capacity-below-occupancy: RESERVADO, hoy no llega. */
+  /** 409 espacio-capacity-below-occupancy: la capacidad no alcanza para los turnos pendientes. */
   | 'capacidad-comprometida'
-  /** 409 espacio-has-active-references: RESERVADO, hoy no llega. */
+  /** 409 espacio-has-active-references: el espacio tiene turnos pendientes. */
   | 'con-referencias'
   /** 409 subscription-suspended: lo emite el filtro, antes del controller. */
   | 'suscripcion-suspendida'
@@ -127,7 +127,7 @@ function mensajeDeCapacidadComprometida(error: AkineHttpError): string {
   const que = error.extension('occupancyType');
 
   if (pedida !== null && ocupada !== null) {
-    const detalle = typeof que === 'string' ? ` (${que})` : '';
+    const detalle = typeof que === 'string' ? ` (${etiquetaDeReferencia(que, ocupada)})` : '';
     return (
       `No se puede bajar la capacidad a ${pedida}: este espacio ya tiene ${ocupada} lugares ` +
       `comprometidos${detalle}. Lo mas bajo que admite ahora es ${ocupada}. Para reducirla mas, ` +
@@ -141,7 +141,24 @@ function mensajeDeCapacidadComprometida(error: AkineHttpError): string {
 }
 
 /**
- * Hay cosas vigentes que dependen del espacio. <b>Codigo reservado</b>, igual que el anterior.
+ * Pone en palabras el vocabulario que el backend manda en `referenceType` / `occupancyType`.
+ *
+ * <p>El backend manda un identificador estable, no un texto: hoy el unico es `turnos-futuros`
+ * (`EspacioOcupadoPorTurnos.TIPO`), los turnos reservados, confirmados o en espera que todavia no
+ * terminaron. Mostrarlo tal cual dejaba en pantalla "tiene 1 turnos-futuros sin resolver"
+ * (encontrado por el E2E de espacios contra el backend real: los specs unitarios inventaban
+ * `'turnos futuros'` con espacio y nunca lo vieron). Un tipo desconocido se muestra sin guiones.
+ */
+function etiquetaDeReferencia(tipo: string, cantidad: number): string {
+  if (tipo === 'turnos-futuros') {
+    return cantidad === 1 ? 'turno pendiente' : 'turnos pendientes';
+  }
+  return tipo.replaceAll('-', ' ');
+}
+
+/**
+ * Hay cosas vigentes que dependen del espacio. Lo emite el backend desde E-1, cuando el espacio
+ * tiene turnos pendientes.
  *
  * <p>Es el unico `409` del modulo donde lo accionable <b>no</b> esta en esta pantalla: hay
  * que ir a resolver lo que bloquea. Por eso se nombra que es y cuanto hay -`referenceType` y
@@ -155,7 +172,8 @@ function mensajeDeReferenciasActivas(error: AkineHttpError): string {
 
   if (typeof tipo === 'string' && cantidad !== null) {
     return (
-      `No se puede dar de baja este espacio porque todavia tiene ${cantidad} ${tipo} sin ` +
+      `No se puede dar de baja este espacio porque todavia tiene ${cantidad} ` +
+      `${etiquetaDeReferencia(tipo, cantidad)} sin ` +
       'resolver. Resolvelos primero y volve a intentar.'
     );
   }

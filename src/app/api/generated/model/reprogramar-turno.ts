@@ -26,7 +26,7 @@ export interface ReprogramarTurno {
      */
     motivo: string;
     /**
-     * Membership del profesional en el horario nuevo. **Puede ser otro**: mover un turno porque el profesional se ausento es el caso mas frecuente.
+     * Membership del profesional en el horario nuevo. **Puede ser otro**: mover un turno porque el profesional se ausento es el caso mas frecuente. Si se omite, el turno conserva el profesional que ya tenia.
      */
     profesionalId?: number;
 }

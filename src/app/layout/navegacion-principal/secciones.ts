@@ -1,5 +1,8 @@
 import { RUTA_HORARIOS } from '../../features/resource/models/rutas-de-horarios';
-import { PERMISO_COLABORADOR_READ } from '../../core/models/permisos';
+import { PERMISO_CAJA_OPERATE, PERMISO_COLABORADOR_READ } from '../../core/models/permisos';
+import { PERMISO_COBRO_REGISTER as PERMISO_PRESENTACIONES } from '../../core/models/permisos';
+import { PERMISO_REPORTE_READ } from '../../core/models/permisos';
+import { PERMISO_PACIENTE_READ } from '../../core/models/permisos';
 
 /** Una entrada de la navegacion principal. */
 export interface Seccion {
@@ -34,15 +37,15 @@ export interface Seccion {
  *   <li><b>Agenda</b> — `scheduling.routes.ts`: solo `contextGuard`. Consultar la agenda lo
  *       hace cualquiera que atienda; `turno:manage` gobierna el boton de reservar y eso lo
  *       resuelve la pantalla, no este menu.</li>
- *   <li><b>Pacientes</b> — `person.routes.ts`: solo `contextGuard`. La lectura del padron se
- *       autoriza por pertenencia y `paciente:read` no existe; `paciente:manage` gobierna el
- *       alta, que tambien es de la pantalla.</li>
+ *   <li><b>Pacientes</b> — `person.routes.ts`: `permissionGuard(PERMISO_PACIENTE_READ)` en todas
+ *       las rutas (DP-22): la lectura de personas exige `paciente:read`, que el staff tiene y el
+ *       paciente no. `paciente:manage` gobierna el alta, que es de la pantalla.</li>
  *   <li><b>Espacios</b> — `resource.routes.ts`: el listado NO lleva `permissionGuard`
  *       (`GET .../espacios` exige solo ser miembro). El alta si, con
  *       `consultorio:manage`.</li>
  *   <li><b>Horarios</b> — `horarios.routes.ts`: las <b>cuatro</b> rutas llevan
- *       `permissionGuard(PERMISO_COLABORADOR_READ)`, la ruta vacia incluida. Es la unica
- *       seccion de esta lista con permiso, y por eso es la unica con `permisos`.</li>
+ *       `permissionGuard(PERMISO_COLABORADOR_READ)`, la ruta vacia incluida, y por eso lleva
+ *       `permisos`.</li>
  *   <li><b>Catalogo</b> — `catalog.routes.ts`: ninguna lleva `permissionGuard`; consultar que
  *       practicas existen es lo que necesita cualquiera que registre una sesion.</li>
  *   <li><b>Servicios</b> — `offering.routes.ts`: ninguna lleva `permissionGuard`.</li>
@@ -57,6 +60,11 @@ export interface Seccion {
  *       Esconder la seccion entera por un permiso que solo hace falta tres clicks mas
  *       adelante le sacaria a un profesional la pantalla de su propia organizacion, que si
  *       puede ver.</li>
+ *   <li><b>Caja</b> — `caja.routes.ts`: la unica ruta lleva
+ *       `permissionGuard(PERMISO_CAJA_OPERATE)`. Todo lo que hay en la pantalla, incluso leer
+ *       la jornada, lo autoriza `caja:operate`, asi que sin el no queda nada que mirar.</li>
+ *   <li><b>Egresos</b> — `egresos.routes.ts`: las dos rutas llevan
+ *       `permissionGuard(PERMISO_CAJA_OPERATE)`, el permiso que el backend exige en M22.</li>
  * </ul>
  *
  * <p><b>Esconder no es autorizar.</b> Esta lista es exclusivamente UX: evita ofrecer un enlace
@@ -68,7 +76,7 @@ export interface Seccion {
  */
 export const SECCIONES: readonly Seccion[] = [
   { etiqueta: 'Agenda', ruta: '/agenda' },
-  { etiqueta: 'Pacientes', ruta: '/pacientes' },
+  { etiqueta: 'Pacientes', ruta: '/pacientes', permisos: [PERMISO_PACIENTE_READ] },
   { etiqueta: 'Espacios', ruta: '/espacios' },
   { etiqueta: 'Horarios', ruta: RUTA_HORARIOS, permisos: [PERMISO_COLABORADOR_READ] },
   { etiqueta: 'Catalogo', ruta: '/catalogo' },
@@ -77,6 +85,14 @@ export const SECCIONES: readonly Seccion[] = [
   // despues con quien se acordo cobrarlo. "Contratacion" y no "Convenios" porque la seccion
   // tambien incluye el catalogo de financiadores, que no es un convenio.
   { etiqueta: 'Contratacion', ruta: '/contratacion' },
+  // La caja es de la sede y la opera recepcion. Sin `caja:operate` no hay nada que mirar.
+  { etiqueta: 'Caja', ruta: '/caja', permisos: [PERMISO_CAJA_OPERATE] },
+  // Egresos y pagos (M22). El backend los autoriza con `caja:operate` (DU-10 sigue abierta).
+  { etiqueta: 'Egresos', ruta: '/egresos', permisos: [PERMISO_CAJA_OPERATE] },
+  // Presentaciones a financiadores (M21). El permiso es `cobro:register`: lo decidio el backend.
+  { etiqueta: 'Presentaciones', ruta: '/presentaciones', permisos: [PERMISO_PRESENTACIONES] },
+  // Reportes (M23). `reporting.routes.ts` exige `reporte:read`; adentro cada seccion pide el suyo.
+  { etiqueta: 'Reportes', ruta: '/reportes', permisos: [PERMISO_REPORTE_READ] },
   { etiqueta: 'Organizacion', ruta: '/organizacion' },
 ];
 

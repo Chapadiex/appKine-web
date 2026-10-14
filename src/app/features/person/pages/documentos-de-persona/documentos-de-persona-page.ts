@@ -6,6 +6,7 @@ import { AdjuntoPageResponse } from '../../../../api/generated/model/adjunto-pag
 import { AdjuntoResponse } from '../../../../api/generated/model/adjunto-response';
 import { ConfirmacionConMotivo } from '../../../../shared/components/confirmacion-con-motivo/confirmacion-con-motivo';
 import { EstadoDeListado } from '../../../../shared/utils/estado-de-listado';
+import { guardarComoArchivo, nombreDelEncabezado } from '../../../../shared/utils/descarga';
 import { PERMISO_PACIENTE_MANAGE } from '../../../../core/models/permisos';
 import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
 import { PermisoDirective } from '../../../../shared/directives/permiso.directive';
@@ -345,18 +346,12 @@ export class DocumentosDePersonaPage {
         if (contenido === null) {
           return;
         }
-        const url = URL.createObjectURL(contenido);
-        try {
-          const enlace = document.createElement('a');
-          enlace.href = url;
-          enlace.download =
-            nombreDelEncabezado(respuesta.headers.get('Content-Disposition')) ??
+        guardarComoArchivo(
+          contenido,
+          nombreDelEncabezado(respuesta.headers.get('Content-Disposition')) ??
             adjunto.nombreArchivo ??
-            'documento';
-          enlace.click();
-        } finally {
-          URL.revokeObjectURL(url);
-        }
+            'documento',
+        );
       },
       error: (error: unknown) => this.fallo(error),
     });
@@ -489,29 +484,4 @@ export class DocumentosDePersonaPage {
     this.filtro.set('VIGENTES');
     this.pagina.set(0);
   }
-}
-
-/**
- * El nombre del archivo declarado en `Content-Disposition`, o `null`.
- *
- * <p>Se leen las dos formas —`filename*=UTF-8''...` primero, `filename="..."` despues— porque un
- * nombre con acentos viaja en la primera y en la segunda queda transliterado o roto. Si ninguna
- * casa se devuelve `null` y quien llama usa el nombre de la metadata: inventar uno seria peor.
- */
-function nombreDelEncabezado(encabezado: string | null): string | null {
-  if (encabezado === null) {
-    return null;
-  }
-
-  const extendido = /filename\*=UTF-8''([^;]+)/i.exec(encabezado);
-  if (extendido !== null) {
-    try {
-      return decodeURIComponent(extendido[1]);
-    } catch {
-      // Porcentaje mal formado. Se sigue con la forma simple en vez de tirar la descarga.
-    }
-  }
-
-  const simple = /filename="?([^";]+)"?/i.exec(encabezado);
-  return simple === null ? null : simple[1];
 }

@@ -11,6 +11,7 @@ import { provideRouter, withComponentInputBinding } from '@angular/router';
 import { provideApi } from './api/generated/provide-api';
 import { authInterceptor } from './core/interceptors/auth.interceptor';
 import { errorInterceptor } from './core/interceptors/error.interceptor';
+import { PrecargaDeModulos } from './core/services/precarga-de-modulos';
 import { SessionService } from './core/services/session.service';
 import { environment } from '../environments/environment';
 import { routes } from './app.routes';
@@ -39,16 +40,20 @@ export const appConfig: ApplicationConfig = {
     // local, asi que nunca hay una URL de localhost horneada en el bundle.
     provideApi(environment.apiBaseUrl),
 
-    // Recupera la sesion antes de que el router active la primera ruta.
+    // Arranca la recuperacion de la sesion, SIN esperarla.
     //
     // El access token vive en memoria y muere con la pestania, asi que toda recarga
-    // arranca "anonima" hasta que la cookie httpOnly se canjea por un token nuevo.
-    // Devolver el Observable hace que Angular ESPERE: sin esa espera, los guards correrian
-    // con la sesion todavia sin resolver y toda recarga de una pantalla interna
-    // parpadearia al login antes de volver sola.
-    //
-    // `restaurarSesion()` no falla nunca -devuelve `false` cuando no hay cookie, que es el
-    // caso normal de un visitante-, asi que el arranque no puede quedar colgado por esto.
-    provideAppInitializer(() => inject(SessionService).restaurarSesion()),
+    // arranca "anonima" hasta que la cookie httpOnly se canjea por un token nuevo. Hasta
+    // AKINE-LCP este inicializador devolvia el Observable y Angular ESPERABA: el router no
+    // empezaba a bajar la pantalla hasta que volvieran el refresh y los contextos, dos idas
+    // y vueltas en serie que en un movil 4G eran ~400 ms de LCP. Ahora la restauracion corre
+    // en paralelo y la espera la hacen los guards (`trasRestaurarSesion`), que ademas
+    // precargan el componente de destino mientras tanto: ninguna ruta protegida decide con
+    // la sesion a medio resolver, asi que una recarga sigue sin parpadear al login.
+    provideAppInitializer(() => inject(SessionService).iniciarRestauracion()),
+
+    // Cada pantalla que el router empieza a bajar arrastra sus dependencias compartidas en la
+    // misma ida y vuelta, no en la siguiente (AKINE-LCP). Ver PrecargaDeModulos.
+    provideAppInitializer(() => inject(PrecargaDeModulos).escucharRouter()),
   ],
 };

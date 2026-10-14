@@ -1,7 +1,9 @@
-import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
-import { catchError, from, of, switchMap, throwError } from 'rxjs';
+import { HttpErrorResponse, HttpInterceptorFn, HttpResponse } from '@angular/common/http';
+import { inject } from '@angular/core';
+import { catchError, from, of, switchMap, tap, throwError } from 'rxjs';
 
 import { ProblemType } from '../../api/generated/model/problem-type';
+import { ServicioNoDisponibleStore } from '../services/servicio-no-disponible.store';
 
 /**
  * Formato de error del backend: RFC 7807 Problem Details.
@@ -82,7 +84,7 @@ export class AkineHttpError extends Error {
     readonly status: number,
     readonly problem: ProblemDetail | null,
     readonly esDeRed: boolean,
-    /** Segundos que pide esperar el backend en un 429, o `null` si no lo dijo. */
+    /** Segundos de `Retry-After` (429 o 503), o `null` si el backend no lo dijo. */
     readonly reintentarEnSegundos: number | null = null,
   ) {
     super(problem?.detail ?? problem?.title ?? 'Error de comunicacion con el servidor');
@@ -176,6 +178,16 @@ export class AkineHttpError extends Error {
     return tipo === 'invalid-refresh' || tipo === 'invalid-token' || tipo === 'unauthorized';
   }
 
+  /**
+   * `true` cuando el backend perdio la base o no puede atender (`503 service-unavailable`).
+   *
+   * <p>Es transitorio y NO dice nada de la sesion: hasta el contrato 0.85.0 esta misma caida
+   * salia como `401` y deslogueaba. Ver {@link ServicioNoDisponibleStore}.
+   */
+  get esServicioNoDisponible(): boolean {
+    return this.problemType === 'service-unavailable' || this.status === 503;
+  }
+
   /** `true` cuando el backend pidio bajar el ritmo. Ver `reintentarEnSegundos`. */
   get esRateLimited(): boolean {
     return this.problemType === 'rate-limited' || this.status === 429;
@@ -194,8 +206,16 @@ export class AkineHttpError extends Error {
  * <p>Corolario de la regla dura: aca tampoco hay ninguna rama por 403. Un 403 es "falta
  * contexto" o "no tenes permiso" y la sesion sigue siendo valida.
  */
-export const errorInterceptor: HttpInterceptorFn = (request, next) =>
-  next(request).pipe(
+export const errorInterceptor: HttpInterceptorFn = (request, next) => {
+  const servicio = inject(ServicioNoDisponibleStore);
+
+  return next(request).pipe(
+    // Una respuesta exitosa prueba que el servicio volvio: el aviso del 503 ya no es cierto.
+    tap((evento) => {
+      if (evento instanceof HttpResponse) {
+        servicio.descartar();
+      }
+    }),
     catchError((error: unknown) => {
       if (!(error instanceof HttpErrorResponse)) {
         return throwError(() => error);
@@ -205,6 +225,12 @@ export const errorInterceptor: HttpInterceptorFn = (request, next) =>
       // No es lo mismo que un error del servidor y la UI debe distinguirlo.
       const esDeRed = error.status === 0;
       const espera = leerRetryAfter(error);
+
+      // 503: aviso global y NO destructivo. Aca no se toca el token ni se navega -eso es del
+      // `authInterceptor`, y solo ante 401-; la pantalla recibe igual su error y decide.
+      if (error.status === 503) {
+        servicio.avisar(espera);
+      }
 
       // Una peticion binaria -`responseType: 'blob'`, que es como se descarga un adjunto- recibe
       // el cuerpo del ERROR tambien como Blob. Un Blob es un objeto no nulo, asi que pasaba por
@@ -223,11 +249,20 @@ export const errorInterceptor: HttpInterceptorFn = (request, next) =>
         );
       }
 
+      // Lo mismo con `responseType: 'text'`, que es como se baja un CSV: el cuerpo del error
+      // llega como string, y un string no es un ProblemDetail aunque adentro traiga uno.
+      if (typeof error.error === 'string') {
+        return throwError(
+          () => new AkineHttpError(error.status, problemDelTexto(error.error), esDeRed, espera),
+        );
+      }
+
       const problem = esProblemDetail(error.error) ? error.error : null;
 
       return throwError(() => new AkineHttpError(error.status, problem, esDeRed, espera));
     }),
   );
+};
 
 function esProblemDetail(cuerpo: unknown): cuerpo is ProblemDetail {
   return typeof cuerpo === 'object' && cuerpo !== null;
@@ -254,10 +289,10 @@ function problemDelTexto(texto: string): ProblemDetail | null {
 }
 
 /**
- * Segundos del header `Retry-After` de un 429.
+ * Segundos del header `Retry-After` de un 429 o de un 503.
  *
  * <p>Se propaga a la UI para que pueda decir "reintenta en 45 segundos" en vez de un
- * "demasiados intentos" que no dice cuanto esperar. Solo se acepta la forma numerica: el
+ * "demasiados intentos" o un "no disponible" que no dicen cuanto esperar. Solo se acepta la forma numerica: el
  * RFC admite tambien una fecha HTTP, que el `RateLimitFilter` del backend no usa, y
  * parsear una fecha que nunca llega es codigo muerto con una rama que nadie prueba.
  *

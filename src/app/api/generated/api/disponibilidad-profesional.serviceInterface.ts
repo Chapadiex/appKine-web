@@ -15,7 +15,9 @@ import { BloqueResponse } from '../model/models';
 import { CreateBloqueRequest } from '../model/models';
 import { DeactivateBloqueRequest } from '../model/models';
 import { DisponibilidadEfectivaResponse } from '../model/models';
+import { ImpactoDisponibilidadResponse } from '../model/models';
 import { ProblemDetail } from '../model/models';
+import { SimularEdicionBloqueRequest } from '../model/models';
 import { UpdateBloqueRequest } from '../model/models';
 
 
@@ -47,6 +49,19 @@ export interface ListBloquesDisponibilidadRequestParams {
     membershipId: number;
 }
 
+export interface SimularImpactoBajaBloqueRequestParams {
+    consultorioId: number;
+    membershipId: number;
+    bloqueId: number;
+}
+
+export interface SimularImpactoEdicionBloqueRequestParams {
+    consultorioId: number;
+    membershipId: number;
+    bloqueId: number;
+    simularEdicionBloqueRequest: SimularEdicionBloqueRequest;
+}
+
 export interface UpdateBloqueDisponibilidadRequestParams {
     consultorioId: number;
     membershipId: number;
@@ -69,7 +84,7 @@ export interface DisponibilidadProfesionalServiceInterface {
 
     /**
      * Baja logica de un bloque de disponibilidad
-     * Da de baja el bloque con MOTIVO OBLIGATORIO en el cuerpo. NO borra nada: la fila queda INACTIVA con su motivo, su autor y su instante (RN-M05-003). Una baja sin motivo no se puede revisar seis meses despues, que es exactamente cuando se la revisa.  El motivo va en el CUERPO y no en la query string a proposito: un motivo en la URL queda en los logs de acceso de cualquier proxy intermedio.  Devuelve el bloque dado de baja, no un 204 vacio, porque el cuerpo trae turnosAfectados: la baja QUITA disponibilidad y los turnos que caian ahi quedan en conflicto (RN-M05-004). El impacto se INFORMA, no bloquea —ADR-0011 prohibe decidir en cascada por el usuario—, y hoy vale siempre 0 porque el modulo de agenda no existe.  Se permite aunque la sede este dada de baja y aunque el profesional ya se haya desvinculado: son las operaciones con las que se ordena el horario de un centro que se esta cerrando, y prohibirlas lo dejarian congelado.  No hay reactivacion. Un bloque que vuelve es una regla nueva.  Dar de baja dos veces es 409 bloque-already-inactive: \&quot;ya estaba dado de baja\&quot; es informacion distinta de \&quot;no existe\&quot;, y es la unica que le sirve al administrador que apreto el boton dos veces.  Exige consultorio:manage sobre esa sede.
+     * Da de baja el bloque con MOTIVO OBLIGATORIO en el cuerpo. NO borra nada: la fila queda INACTIVA con su motivo, su autor y su instante (RN-M05-003). Una baja sin motivo no se puede revisar seis meses despues, que es exactamente cuando se la revisa.  El motivo va en el CUERPO y no en la query string a proposito: un motivo en la URL queda en los logs de acceso de cualquier proxy intermedio.  Devuelve el bloque dado de baja, no un 204 vacio, porque el cuerpo trae turnosAfectados: la baja QUITA disponibilidad y los turnos que caian ahi quedan en conflicto (RN-M05-004). El impacto se INFORMA, no bloquea —ADR-0011 prohibe decidir en cascada por el usuario—. Cuenta los turnos pendientes de ese profesional en esa sede desde ahora hasta el fin de vigencia del bloque (noventa dias si no tiene fin) que la baja deja fuera de la disponibilidad efectiva: desde 0.70.0 un turno cubierto por otro bloque suyo no cuenta. Para saberlo antes de confirmar: GET .../impacto-de-baja.  Se permite aunque la sede este dada de baja y aunque el profesional ya se haya desvinculado: son las operaciones con las que se ordena el horario de un centro que se esta cerrando, y prohibirlas lo dejarian congelado.  No hay reactivacion. Un bloque que vuelve es una regla nueva.  Dar de baja dos veces es 409 bloque-already-inactive: \&quot;ya estaba dado de baja\&quot; es informacion distinta de \&quot;no existe\&quot;, y es la unica que le sirve al administrador que apreto el boton dos veces.  Exige consultorio:manage sobre esa sede.
      * @endpoint delete /api/v1/consultorios/{consultorioId}/profesionales/{membershipId}/disponibilidad/{bloqueId}
 * @param requestParameters
      */
@@ -77,7 +92,7 @@ export interface DisponibilidadProfesionalServiceInterface {
 
     /**
      * Disponibilidad efectiva del profesional, dia por dia
-     * Resuelve que dias y horas CONCRETAS atiende el profesional en esa sede durante la ventana pedida, aplicando todo junto: la vigencia de cada bloque, las excepciones de la sede, las del profesional, la vigencia de su vinculo y la politica de feriados de la sede.  LEER ESTO ANTES DE ESCRIBIR LA PANTALLA. franja.origen, franja.recortadoPor y dia.razonVacio NO son extras: son el criterio de aceptacion de la etapa —\&quot;la disponibilidad efectiva explica que regla la afecta\&quot;—. Una pantalla que dibuje las franjas y descarte esos tres campos deja al administrador sin poder saber por que un dia esta en blanco, que es justamente donde no puede adivinarlo.  razonVacio tiene CUATRO valores y confundir dos de ellos manda a alguien a buscar algo que no existe: FERIADO, CIERRE, VINCULO —el vinculo del profesional no estaba vigente ese dia— y null. \&quot;No atiende ese dia\&quot; y \&quot;ya no trabaja aca\&quot; necesitan textos distintos.  NUNCA se omite un dia de [desde, hasta), ni siquiera si el profesional ya no trabaja en el centro: la pantalla dibuja una grilla de fechas y un dia faltante la correria.  Las franjas viajan en INSTANTES UTC y no en horas de pared: la hora local ya esta en la lectura de las REGLAS, y lo que consume un resultado de disponibilidad es una agenda, que compara instantes. timezone viaja aparte para poder rotular. Una franja que llega al fin del dia trae el INICIO DEL DIA SIGUIENTE, no las 23:59:59.999999999.  La ventana es semiabierta: hasta es EXCLUSIVO. hasta &#x3D;&#x3D; desde es 400, no \&quot;un dia\&quot;. El maximo es de 366 dias —un ano completo, aunque sea bisiesto—: sin tope, una ventana enorme es un scan, porque la disponibilidad efectiva no esta materializada y se resuelve un dia por iteracion. El error de ventana demasiado amplia trae maximoDias en el cuerpo para que la pantalla recorte sola.  Exige colaborador:read sobre esa sede.
+     * Resuelve que dias y horas CONCRETAS atiende el profesional en esa sede durante la ventana pedida, aplicando todo junto: la vigencia de cada bloque, las excepciones de la sede, las del profesional, la vigencia de su vinculo y la politica de feriados de la sede.  LEER ESTO ANTES DE ESCRIBIR LA PANTALLA. franja.origen, franja.recortadoPor y dia.razonVacio NO son extras: son el criterio de aceptacion de la etapa —\&quot;la disponibilidad efectiva explica que regla la afecta\&quot;—. Una pantalla que dibuje las franjas y descarte esos tres campos deja al administrador sin poder saber por que un dia esta en blanco, que es justamente donde no puede adivinarlo.  razonVacio tiene CINCO valores y confundir dos de ellos manda a alguien a buscar algo que no existe: FERIADO, CIERRE, VINCULO —el vinculo del profesional no estaba vigente ese dia—, HORARIO_SEDE —el horario general de la sede no abre en esas horas, desde 0.74.0— y null. \&quot;No atiende ese dia\&quot; y \&quot;ya no trabaja aca\&quot; necesitan textos distintos.  NUNCA se omite un dia de [desde, hasta), ni siquiera si el profesional ya no trabaja en el centro: la pantalla dibuja una grilla de fechas y un dia faltante la correria.  Las franjas viajan en INSTANTES UTC y no en horas de pared: la hora local ya esta en la lectura de las REGLAS, y lo que consume un resultado de disponibilidad es una agenda, que compara instantes. timezone viaja aparte para poder rotular. Una franja que llega al fin del dia trae el INICIO DEL DIA SIGUIENTE, no las 23:59:59.999999999.  La ventana es semiabierta: hasta es EXCLUSIVO. hasta &#x3D;&#x3D; desde es 400, no \&quot;un dia\&quot;. El maximo es de 366 dias —un ano completo, aunque sea bisiesto—: sin tope, una ventana enorme es un scan, porque la disponibilidad efectiva no esta materializada y se resuelve un dia por iteracion. El error de ventana demasiado amplia trae maximoDias en el cuerpo para que la pantalla recorte sola.  Exige colaborador:read sobre esa sede.
      * @endpoint get /api/v1/consultorios/{consultorioId}/profesionales/{membershipId}/disponibilidad/efectiva
 * @param requestParameters
      */
@@ -92,8 +107,24 @@ export interface DisponibilidadProfesionalServiceInterface {
     listBloquesDisponibilidad(requestParameters: ListBloquesDisponibilidadRequestParams, extraHttpRequestParams?: any): Observable<Array<BloqueResponse>>;
 
     /**
+     * Turnos que dejaria afuera la baja de un bloque, sin aplicarla
+     * Consulta previa SIN EFECTOS (A-11, RN-M05-004): los turnos pendientes que quedarian fuera de la disponibilidad efectiva si el bloque se diera de baja. Misma cuenta exacta que la consulta previa de edicion; la ventana va de ahora al fin de vigencia del bloque, con un horizonte de noventa dias. Exige consultorio:manage sobre esa sede, igual que la baja.
+     * @endpoint get /api/v1/consultorios/{consultorioId}/profesionales/{membershipId}/disponibilidad/{bloqueId}/impacto-de-baja
+* @param requestParameters
+     */
+    simularImpactoBajaBloque(requestParameters: SimularImpactoBajaBloqueRequestParams, extraHttpRequestParams?: any): Observable<ImpactoDisponibilidadResponse>;
+
+    /**
+     * Turnos que dejaria afuera una edicion, sin aplicarla
+     * Consulta previa SIN EFECTOS (A-11, RN-M05-004): evalua la edicion propuesta y devuelve los turnos pendientes que quedarian fuera de la disponibilidad efectiva si se aplicara. No modifica el bloque, no toma locks y no audita. Es POST porque la edicion propuesta viaja en el cuerpo, no porque cree algo.  Cuenta EXACTA dentro de la ventana: un turno cuenta si la disponibilidad lo cubria antes del cambio y no despues. Uno que cae en otro bloque vigente del mismo profesional sigue cubierto y no cuenta. La ventana va de ahora al fin de vigencia mas lejano entre el bloque actual y el editado, con un horizonte de noventa dias; evaluadoHasta dice hasta donde se miro.  El cuerpo es el de la edicion sin version. Un turno reservado entre esta consulta y el PUT lo informa igual la respuesta del PUT. Exige consultorio:manage sobre esa sede, igual que la edicion.
+     * @endpoint post /api/v1/consultorios/{consultorioId}/profesionales/{membershipId}/disponibilidad/{bloqueId}/impacto-de-edicion
+* @param requestParameters
+     */
+    simularImpactoEdicionBloque(requestParameters: SimularImpactoEdicionBloqueRequestParams, extraHttpRequestParams?: any): Observable<ImpactoDisponibilidadResponse>;
+
+    /**
      * Edicion de un bloque de disponibilidad
-     * Cambia dia, horas o ventana de vigencia de un bloque vigente (RF-M05-005). Los campos omitidos NO se tocan; para dejar el bloque sin fin de vigencia se manda limpiarVigenciaHasta&#x3D;true, porque un null no puede expresar la diferencia entre \&quot;no toques el fin\&quot; y \&quot;saca el fin\&quot;.  El PROFESIONAL no se puede cambiar: reasignar un bloque a otra persona no es una edicion sino un bloque nuevo (RN-M05-001), y permitirlo dejaria la autoria historica apuntando a quien nunca atendio en esa franja.  version es obligatoria y se compara ANTES de mutar: si quedo vieja, 409 con type conflict —el generico, NO concurrent-modification, que es el que emite organization para el mismo hecho— y el cliente recarga. Sin eso dos ediciones simultaneas se pisan y el segundo en guardar borra el cambio del primero sin que nadie se entere.  AVISO AL CLIENTE: la respuesta trae turnosAfectados, y una edicion que QUITA disponibilidad deja en conflicto los turnos que caian ahi (RN-M05-004). El impacto se INFORMA, no bloquea: quien decide que hacer con esos turnos es la pantalla. Hoy ese numero es siempre 0 porque el modulo de agenda no existe; va a dejar de serlo sin cambiar este contrato.  Un bloque dado de baja no se puede editar: 409 bloque-inactivo.
+     * Cambia dia, horas o ventana de vigencia de un bloque vigente (RF-M05-005). Los campos omitidos NO se tocan; para dejar el bloque sin fin de vigencia se manda limpiarVigenciaHasta&#x3D;true, porque un null no puede expresar la diferencia entre \&quot;no toques el fin\&quot; y \&quot;saca el fin\&quot;.  El PROFESIONAL no se puede cambiar: reasignar un bloque a otra persona no es una edicion sino un bloque nuevo (RN-M05-001), y permitirlo dejaria la autoria historica apuntando a quien nunca atendio en esa franja.  version es obligatoria y se compara ANTES de mutar: si quedo vieja, 409 concurrent-modification —el mismo type en todos los modulos— y el cliente recarga. Sin eso dos ediciones simultaneas se pisan y el segundo en guardar borra el cambio del primero sin que nadie se entere.  AVISO AL CLIENTE: la respuesta trae turnosAfectados, y una edicion que QUITA disponibilidad deja en conflicto los turnos que caian ahi (RN-M05-004). El impacto se INFORMA, no bloquea: quien decide que hacer con esos turnos es la pantalla, y para saberlo ANTES de confirmar esta POST .../impacto-de-edicion. Cuenta los turnos pendientes de ese profesional en esa sede, entre ahora y el fin de vigencia mas lejano entre el bloque anterior y el editado (horizonte de noventa dias), que la disponibilidad efectiva cubria antes del cambio y no cubre despues. Desde 0.70.0 es la cuenta exacta: un turno que cae en otro bloque vigente del mismo profesional ya no cuenta.  Un bloque dado de baja no se puede editar: 409 bloque-inactivo.
      * @endpoint put /api/v1/consultorios/{consultorioId}/profesionales/{membershipId}/disponibilidad/{bloqueId}
 * @param requestParameters
      */

@@ -26,13 +26,13 @@ import { AkineHttpError } from '../../../core/interceptors/error.interceptor';
  * enumerado vuelve como `null`, asi que un codigo escrito de memoria <b>no falla</b>, cae en la
  * rama por defecto y esconde para siempre el mensaje que deberia mostrar.
  *
- * <h2>El 409 de concurrencia llega como `conflict`, NO como `concurrent-modification`</h2>
+ * <h2>El 409 de concurrencia llega como `concurrent-modification` (DP-21)</h2>
  *
- * <p>El registro de cierre de 03.05 lo declara: "la version desactualizada sale como `conflict`,
- * igual que en 03.03". `concurrent-modification` lo emite solo `OrganizationProblemHandler`.
- * Ramificar unicamente por ese tipo daria una rama muerta. Se reconocen <b>los dos</b> por si
- * algun dia se unifican —es una de las decisiones de contrato transversales abiertas del
- * workspace—, pero la rama que hoy se ejercita es `conflict`.
+ * <p>Desde el contrato 0.80.0 toda version vieja responde `concurrent-modification` en todos los
+ * modulos, y `conflict` queda solo para conflictos de negocio. Hasta entonces `contracting`
+ * emitia `conflict` para la version desactualizada y esta pantalla lo trataba como "recargar";
+ * ya no: un `conflict` cae en {@link CausaContracting `conflicto`}, con el `detail` del servidor,
+ * que nombra el conflicto concreto.
  */
 export type CausaContracting =
   /** 403 missing-tenant-context: hay sesion, pero no hay sede elegida. NUNCA cerrar sesion. */
@@ -43,7 +43,7 @@ export type CausaContracting =
   | 'validacion'
   /** 404: no existe, o es de otro tenant. Los dos responden igual a proposito. */
   | 'no-encontrado'
-  /** 409 conflict: la `expectedVersion` enviada quedo vieja. Ver el javadoc de arriba. */
+  /** 409 concurrent-modification: la `expectedVersion` enviada quedo vieja. Ver arriba. */
   | 'concurrencia'
   /** 409 subscription-suspended: lo emite el filtro, antes del controller. */
   | 'suscripcion-suspendida'
@@ -64,6 +64,10 @@ export type CausaContracting =
   | 'referencia-inactiva'
   /** 409 *-already-inactive: la baja ya se hizo. No es un fallo del usuario. */
   | 'ya-dada-de-baja'
+  /** 409 oferta-sin-obra-social: el arancel por oferta exige una oferta que admita obra social. */
+  | 'oferta-sin-obra-social'
+  /** 409 practica-no-habilitada-en-oferta: la oferta no declara la practica del arancel. */
+  | 'practica-fuera-de-la-oferta'
   /** Cualquier otro 409. Gana el `detail` del backend, que nombra el conflicto concreto. */
   | 'conflicto'
   /** 429: hay que esperar. Ver `segundosDeEspera`. */
@@ -87,7 +91,15 @@ export interface ErrorContracting {
  * El resto de los mensajes es identico para las cuatro entidades, y por eso no hay cuatro
  * traductores.
  */
-export type AmbitoContracting = 'financiador' | 'plan' | 'convenio' | 'arancel';
+export type AmbitoContracting =
+  | 'financiador'
+  | 'plan'
+  | 'convenio'
+  | 'arancel'
+  // B-3: el alta de un arancel atado a una oferta. El 404 que mas probablemente produce es la
+  // OFERTA —dada de baja o de otra sede—, y decirle "ese arancel ya no existe" a quien todavia no
+  // lo creo manda a recargar una grilla que no tiene nada que ver.
+  | 'arancel-de-oferta';
 
 const MENSAJE_GENERICO = 'No pudimos completar la operacion. Volve a intentar en un momento.';
 const MENSAJE_DE_RED = 'No se pudo contactar al servidor. Revisa tu conexion y volve a intentar.';
@@ -126,6 +138,10 @@ const MENSAJE_NO_ENCONTRADO: Readonly<Record<AmbitoContracting, string>> = {
     'Ese convenio ya no existe, o no es de esta sede. Recarga el listado para ver los que hay ' +
     'ahora.',
   arancel: 'Ese arancel ya no existe. Recarga la grilla del convenio para ver los que hay ahora.',
+  'arancel-de-oferta':
+    'No encontramos la oferta elegida en esta sede: puede haberse dado de baja o ser de otra ' +
+    'sede. Recarga la pagina para ver las ofertas vigentes, o deja el arancel como general del ' +
+    'convenio.',
 };
 
 /**
@@ -191,6 +207,19 @@ const MENSAJE_REFERENCIA_INACTIVA =
   'lo unico que se impide es lo nuevo. Si hace falta volver a operar con ella, se da de alta otra ' +
   'ficha; no hay reactivacion.';
 
+/**
+ * El arancel por oferta (RF-M16-008) sobre una oferta que no admite obra social.
+ *
+ * <p>Ese arancel nunca resolveria: la cobertura aplicable corta antes, en la oferta.
+ */
+const MENSAJE_OFERTA_SIN_OBRA_SOCIAL =
+  'Esa oferta no admite obra social, asi que un arancel del convenio para ella nunca se usaria. ' +
+  'Carga el arancel como general, o habilita la obra social en la oferta primero.';
+
+const MENSAJE_PRACTICA_FUERA_DE_LA_OFERTA =
+  'Esa oferta no declara la practica de este arancel. Agregale la practica a la oferta, o elegi ' +
+  'otra oferta, o dejalo como arancel general del convenio.';
+
 const MENSAJE_YA_DADA_DE_BAJA =
   'Esto ya estaba dado de baja, asi que no hay nada que hacer. Recarga el listado para verlo con ' +
   'su estado actual.';
@@ -236,10 +265,6 @@ export function traducirErrorContracting(
       return base(MENSAJE_SIN_CONTEXTO, 'sin-contexto');
     case 'subscription-suspended':
       return base(MENSAJE_SUSCRIPCION_SUSPENDIDA, 'suscripcion-suspendida');
-    case 'conflict':
-    // `concurrent-modification` no lo emite `contracting` hoy. Se reconoce igual por si algun
-    // dia se unifican los dos tipos: ver el javadoc de `CausaContracting`.
-    // falls through
     case 'concurrent-modification':
       return base(MENSAJE_CONCURRENCIA, 'concurrencia');
 
@@ -270,6 +295,12 @@ export function traducirErrorContracting(
     case 'convenio-already-inactive':
     case 'arancel-already-inactive':
       return base(MENSAJE_YA_DADA_DE_BAJA, 'ya-dada-de-baja');
+
+    case 'oferta-sin-obra-social':
+      return base(MENSAJE_OFERTA_SIN_OBRA_SOCIAL, 'oferta-sin-obra-social');
+
+    case 'practica-no-habilitada-en-oferta':
+      return base(MENSAJE_PRACTICA_FUERA_DE_LA_OFERTA, 'practica-fuera-de-la-oferta');
 
     default:
       break;

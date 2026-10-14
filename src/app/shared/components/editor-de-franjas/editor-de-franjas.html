@@ -1,0 +1,72 @@
+@if (filas().length === 0) {
+  <p class="ayuda">Sin franjas cargadas.</p>
+}
+
+@for (franja of filas(); track franja; let i = $index) {
+  <fieldset class="grupo" [formGroup]="franja">
+    <legend>Franja {{ i + 1 }}</legend>
+
+    <div class="franja">
+      <div class="campo">
+        <label [for]="idBase() + '-dia-' + i">Dia</label>
+        <select [id]="idBase() + '-dia-' + i" formControlName="diaSemana">
+          @for (dia of dias; track dia.numero) {
+            <option [ngValue]="dia.numero">{{ dia.etiqueta }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="campo">
+        <label [for]="idBase() + '-desde-' + i">Abre (HH:MM)</label>
+        <input
+          [id]="idBase() + '-desde-' + i"
+          type="text"
+          inputmode="numeric"
+          autocomplete="off"
+          placeholder="09:00"
+          [attr.pattern]="patronHora"
+          formControlName="horaDesde"
+          [attr.aria-invalid]="mensajeDeFila(franja, i) !== null"
+          [attr.aria-describedby]="
+            mensajeDeFila(franja, i) !== null ? idBase() + '-error-' + i : null
+          "
+        />
+      </div>
+
+      <div class="campo">
+        <label [for]="idBase() + '-hasta-' + i">Cierra (HH:MM)</label>
+        <input
+          [id]="idBase() + '-hasta-' + i"
+          type="text"
+          inputmode="numeric"
+          autocomplete="off"
+          placeholder="18:00"
+          [attr.pattern]="patronHora"
+          formControlName="horaHasta"
+          [attr.aria-invalid]="mensajeDeFila(franja, i) !== null"
+          [attr.aria-describedby]="
+            mensajeDeFila(franja, i) !== null ? idBase() + '-error-' + i : null
+          "
+        />
+      </div>
+
+      <button type="button" class="boton boton--secundario" (click)="quitar(i)">
+        Quitar la franja {{ i + 1 }}
+      </button>
+    </div>
+
+    @if (mensajeDeFila(franja, i); as mensaje) {
+      <p class="campo__error" [id]="idBase() + '-error-' + i">{{ mensaje }}</p>
+    }
+  </fieldset>
+}
+
+<div class="acciones">
+  @if (filas().length < maximo) {
+    <button type="button" class="boton boton--secundario" (click)="agregar()">
+      Agregar una franja
+    </button>
+  } @else {
+    <p class="ayuda">Llegaste al maximo de {{ maximo }} franjas.</p>
+  }
+</div>

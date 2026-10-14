@@ -9,6 +9,7 @@ import {
   RUTA_FINANCIADORES,
   RUTA_PERMISOS_EFECTIVOS,
   rutaArancelEfectivo,
+  rutaOfertas,
   rutaPlanes,
 } from '../../../../core/testing/rutas-api';
 import { TIMEOUT_AXE, esperarSinViolaciones } from '../../../../core/testing/axe';
@@ -23,6 +24,21 @@ const RUTA_PRACTICAS = '/api/v1/catalogos/practicas';
 const OSDE = { id: 10, codigo: '410', nombre: 'OSDE', tipo: 'PREPAGA', estado: 'ACTIVO' };
 const PLAN = { id: 100, financiadorId: 10, codigo: '210', nombre: 'Plan 210', estado: 'ACTIVO' };
 const PRACTICA = { id: 55, codigo: 'KIN-01', name: 'Sesion de kinesiologia', tipo: 'PRACTICA' };
+
+/** Activa y con obra social: aparece en el selector. */
+const PILATES = {
+  id: 31,
+  nombreComercial: 'Pilates terapeutico',
+  estado: 'ACTIVO',
+  admiteObraSocial: true,
+};
+/** No admite obra social: nunca puede tener arancel del convenio, asi que no se ofrece. */
+const GIMNASIO = {
+  id: 32,
+  nombreComercial: 'Gimnasio libre',
+  estado: 'ACTIVO',
+  admiteObraSocial: false,
+};
 
 const RESUELTO = {
   resuelto: true,
@@ -107,6 +123,40 @@ describe('ArancelEfectivoPage', () => {
 
     // Y los requisitos se declaran como lo que son: algo que verifica una persona.
     expect(texto).toContain('no los hace cumplir todavia');
+  });
+
+  it('sin oferta no manda ofertaId y dice que el arancel es el general del convenio', async () => {
+    const fixture = await montar();
+    const peticion = await consultar(fixture, RESUELTO);
+
+    expect(peticion.request.params.has('ofertaId')).toBe(false);
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain(
+      'Arancel general del convenio: vale para cualquier oferta',
+    );
+  });
+
+  it('el selector solo ofrece ofertas con obra social, y la elegida viaja como ofertaId', async () => {
+    const fixture = await montar();
+    const opciones = [
+      ...(fixture.nativeElement as HTMLElement).querySelectorAll('#consulta-oferta option'),
+    ].map((opcion) => (opcion.textContent ?? '').trim());
+    expect(opciones).toEqual(['Sin oferta: arancel general del convenio', 'Pilates terapeutico']);
+
+    const peticion = await consultar(fixture, { ...RESUELTO, ofertaId: 31 }, '2026-03-15', '31');
+    expect(peticion.request.params.get('ofertaId')).toBe('31');
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain(
+      'Arancel propio de la oferta Pilates terapeutico',
+    );
+  });
+
+  it('con oferta pero sin arancel propio, explica que rige el general', async () => {
+    // El backend cae al general y lo dice con `ofertaId` nulo: no es un error, es la regla.
+    const fixture = await montar();
+    await consultar(fixture, RESUELTO, '2026-03-15', '31');
+
+    const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(texto).toContain('la oferta Pilates terapeutico no tiene precio propio');
+    expect(texto).not.toContain('Arancel propio de la oferta');
   });
 
   it('SIN_CONVENIO_VIGENTE no es un error: manda a cobrar como particular', async () => {
@@ -288,6 +338,7 @@ describe('ArancelEfectivoPage', () => {
     fixture: ComponentFixture<ArancelEfectivoPage>,
     respuesta: Record<string, unknown>,
     fecha = '2026-03-15',
+    oferta = '',
   ) {
     elegir(fixture, '#consulta-financiador', '10');
     httpMock
@@ -299,6 +350,7 @@ describe('ArancelEfectivoPage', () => {
     elegir(fixture, '#consulta-plan', '100');
     elegir(fixture, '#consulta-practica', '55');
     escribir(fixture, '#consulta-fecha', fecha);
+    elegir(fixture, '#consulta-oferta', oferta);
     enviar(fixture, 'form[novalidate]');
 
     const peticion = httpMock.expectOne(
@@ -328,6 +380,9 @@ describe('ArancelEfectivoPage', () => {
     httpMock
       .expectOne((p: HttpRequest<unknown>) => p.url === RUTA_PRACTICAS)
       .flush({ content: [PRACTICA] });
+    httpMock
+      .expectOne((p: HttpRequest<unknown>) => p.url === rutaOfertas(SEDE))
+      .flush([PILATES, GIMNASIO]);
     await fixture.whenStable();
     fixture.detectChanges();
 

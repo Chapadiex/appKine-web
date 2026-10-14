@@ -325,10 +325,144 @@ describe('CalendarioSedePage', () => {
     expect(fixture.nativeElement.querySelector('a[href="/seleccionar-contexto"]')).not.toBeNull();
   });
 
+  describe('horario general (A-8, RF-M03-003)', () => {
+    const CON_HORARIO = {
+      ...POLITICA,
+      horarioGeneral: [{ diaSemana: 1, horaDesde: '09:00', horaHasta: '18:00' }],
+    };
+
+    it('guardar manda SOLO el horario, reemplazandolo, y no pisa los feriados', async () => {
+      const fixture = await montar(CON_HORARIO);
+
+      expect(texto(fixture)).toContain('Limita la agenda');
+      expect(valor(fixture, '#calendario-horario-hasta-0')).toBe('18:00');
+
+      escribir(fixture, '#calendario-horario-hasta-0', '24:00');
+      expect(texto(fixture)).toContain('Hay cambios sin guardar en el horario');
+      enviar(fixture, '#form-horario-general');
+
+      const put = httpMock.expectOne(
+        (peticion: HttpRequest<unknown>) =>
+          peticion.method === 'PUT' && peticion.url === CALENDARIO,
+      );
+      // Ni `pais` ni `cierraPorFeriado`: omitidos quedan como estaban.
+      expect(put.request.body).toEqual({
+        horarioGeneral: [{ diaSemana: 1, horaDesde: '09:00', horaHasta: '24:00' }],
+      });
+      put.flush({
+        ...POLITICA,
+        feriados: [],
+        horarioGeneral: [{ diaSemana: 1, horaDesde: '09:00', horaHasta: '24:00' }],
+      });
+      await estabilizar(fixture);
+
+      expect(texto(fixture)).toContain('el horario general quedo guardado');
+      expect(texto(fixture)).not.toContain('Hay cambios sin guardar en el horario');
+      expect(texto(fixture)).toContain('Navidad');
+      // Sin impacto en la respuesta no hay aviso: en cero no se muestra nada.
+      expect(texto(fixture)).not.toContain('fuera del horario');
+    });
+
+    it('si el horario nuevo deja turnos afuera lo dice, con la lista y sin cancelarlos', async () => {
+      const fixture = await montar(CON_HORARIO);
+
+      escribir(fixture, '#calendario-horario-hasta-0', '17:00');
+      enviar(fixture, '#form-horario-general');
+
+      httpMock
+        .expectOne((peticion: HttpRequest<unknown>) => peticion.method === 'PUT')
+        .flush({
+          ...POLITICA,
+          feriados: [],
+          horarioGeneral: [{ diaSemana: 1, horaDesde: '09:00', horaHasta: '17:00' }],
+          impactoDelHorario: {
+            turnosAfectados: 3,
+            primerTurnoAfectado: '2026-10-12T20:00:00Z',
+            evaluadoHasta: '2027-01-10',
+            turnos: [
+              {
+                turnoId: 71,
+                membershipId: 5,
+                inicio: '2026-10-12T20:00:00Z',
+                fin: '2026-10-12T20:30:00Z',
+              },
+              {
+                turnoId: 72,
+                membershipId: 6,
+                inicio: '2026-10-19T20:00:00Z',
+                fin: '2026-10-19T20:30:00Z',
+              },
+            ],
+          },
+        });
+      await estabilizar(fixture);
+
+      const contenido = texto(fixture);
+      expect(contenido).toContain('3 turnos quedan fuera del horario; revisalos en la agenda');
+      expect(contenido).toContain('Se muestran los primeros 2 de 3');
+      expect(
+        fixture.nativeElement.querySelectorAll('ul[aria-label="Turnos fuera del horario"] li')
+          .length,
+      ).toBe(2);
+      expect(fixture.nativeElement.querySelector('a[href="/agenda"]')).not.toBeNull();
+    });
+
+    it('borrar manda una lista vacia, que no es lo mismo que omitir el campo', async () => {
+      const fixture = await montar(CON_HORARIO);
+
+      botonConTexto(fixture, 'Borrar el horario general').click();
+      fixture.detectChanges();
+
+      const put = httpMock.expectOne(
+        (peticion: HttpRequest<unknown>) =>
+          peticion.method === 'PUT' && peticion.url === CALENDARIO,
+      );
+      expect(put.request.body).toEqual({ horarioGeneral: [] });
+      put.flush({ ...POLITICA, feriados: [], horarioGeneral: [] });
+      await estabilizar(fixture);
+
+      expect(texto(fixture)).toContain('ya no tiene horario general declarado');
+      expect(fixture.nativeElement.querySelector('#calendario-horario-desde-0')).toBeNull();
+    });
+
+    it('un 400 sobre una franja la marca junto a la fila', async () => {
+      const fixture = await montar(CON_HORARIO);
+
+      escribir(fixture, '#calendario-horario-desde-0', '08:00');
+      enviar(fixture, '#form-horario-general');
+
+      httpMock
+        .expectOne((peticion: HttpRequest<unknown>) => peticion.method === 'PUT')
+        .flush(
+          {
+            type: 'https://akine.app/problems/validation-error',
+            detail: 'La solicitud contiene campos invalidos',
+            errors: { 'horarioGeneral[0].horaDesde': 'La hora de apertura tiene que ser HH:mm' },
+          },
+          { status: 400, statusText: 'Bad Request' },
+        );
+      await estabilizar(fixture);
+
+      expect(
+        fixture.nativeElement.querySelector('#calendario-horario-error-0')?.textContent,
+      ).toContain('La hora de apertura tiene que ser HH:mm');
+    });
+
+    it('sin consultorio:manage se lee el horario pero no hay editor', async () => {
+      const fixture = await montar(CON_HORARIO, []);
+
+      expect(texto(fixture)).toContain('Lunes: 09:00 a 18:00');
+      expect(fixture.nativeElement.querySelector('#form-horario-general')).toBeNull();
+    });
+  });
+
   it(
     'la pantalla no tiene violaciones de accesibilidad',
     async () => {
-      const fixture = await montar();
+      const fixture = await montar({
+        ...POLITICA,
+        horarioGeneral: [{ diaSemana: 2, horaDesde: '09:00', horaHasta: '13:00' }],
+      });
       await esperarSinViolaciones(fixture.nativeElement);
     },
     TIMEOUT_AXE,
@@ -336,6 +470,7 @@ describe('CalendarioSedePage', () => {
 
   async function montar(
     politica: Record<string, unknown> = POLITICA,
+    permisosEfectivos: string[] = [PERMISO_CONSULTORIO_MANAGE],
   ): Promise<ComponentFixture<CalendarioSedePage>> {
     tenantContext.select({
       organizationId: ORG,
@@ -345,9 +480,7 @@ describe('CalendarioSedePage', () => {
     });
 
     permisos.cargar().subscribe();
-    httpMock
-      .expectOne(RUTA_PERMISOS_EFECTIVOS)
-      .flush({ permissions: [PERMISO_CONSULTORIO_MANAGE] });
+    httpMock.expectOne(RUTA_PERMISOS_EFECTIVOS).flush({ permissions: permisosEfectivos });
 
     const fixture = TestBed.createComponent(CalendarioSedePage);
     fixture.detectChanges();
@@ -398,6 +531,23 @@ function abrir(fixture: { nativeElement: HTMLElement; detectChanges(): void }, e
   }
   boton.click();
   fixture.detectChanges();
+}
+
+function valor(fixture: { nativeElement: HTMLElement }, selector: string): string | undefined {
+  return fixture.nativeElement.querySelector<HTMLInputElement>(selector)?.value;
+}
+
+function botonConTexto(
+  fixture: { nativeElement: HTMLElement },
+  etiqueta: string,
+): HTMLButtonElement {
+  const boton = Array.from(
+    fixture.nativeElement.querySelectorAll<HTMLButtonElement>('button'),
+  ).find((candidato) => candidato.textContent?.includes(etiqueta));
+  if (boton === undefined) {
+    throw new Error(`No existe el boton "${etiqueta}"`);
+  }
+  return boton;
 }
 
 function escribir(

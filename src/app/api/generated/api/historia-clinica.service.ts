@@ -23,6 +23,8 @@ import { AntecedenteResponse } from '../model/antecedente-response';
 // @ts-ignore
 import { BajaDeAntecedenteRequest } from '../model/baja-de-antecedente-request';
 // @ts-ignore
+import { DatosAdministrativosDeHistoriaResponse } from '../model/datos-administrativos-de-historia-response';
+// @ts-ignore
 import { HistoriaClinicaResponse } from '../model/historia-clinica-response';
 // @ts-ignore
 import { ProblemDetail } from '../model/problem-detail';
@@ -40,6 +42,7 @@ import {
     DarDeBajaAntecedenteClinicoRequestParams,
     ListarAntecedentesClinicosRequestParams,
     RegistrarAntecedenteClinicoRequestParams,
+    VerDatosAdministrativosDeHistoriaClinicaRequestParams,
     VerHistoriaClinicaRequestParams
 } from './historia-clinica.serviceInterface';
 
@@ -443,6 +446,68 @@ export class HistoriaClinicaService extends BaseService implements HistoriaClini
             {
                 context: localVarHttpContext,
                 body: registrarAntecedenteRequest,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * Ver los datos administrativos de la Historia Clinica de una persona
+     * Matriz de permisos §32, \&quot;Ver Historia Clinica\&quot; del ADMINISTRATIVO: Limitado, que la matriz define como solo metadatos administrativos y NUNCA contenido clinico. Devuelve si la persona tiene historia, cuando se abrio, sus casos (numero, estado, oferta, fechas) y el equipo tratante vigente de cada uno. No trae resumen, antecedentes, diagnostico, objetivo ni motivo de cierre.  Exige paciente:read (lo tiene el personal, no el rol PACIENTE). No pide justificacion de acceso y no se audita como acceso clinico: no expone contenido clinico. Una persona propia sin historia responde 200 con tieneHistoriaClinica &#x3D; false; una persona de otra organizacion, o sin perfil de paciente vigente, 404.
+     * @endpoint get /api/v1/historias-clinicas/por-persona/{personaId}/datos-administrativos
+     * @param requestParameters
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public verDatosAdministrativosDeHistoriaClinica(requestParameters: VerDatosAdministrativosDeHistoriaClinicaRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<DatosAdministrativosDeHistoriaResponse>;
+    public verDatosAdministrativosDeHistoriaClinica(requestParameters: VerDatosAdministrativosDeHistoriaClinicaRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<DatosAdministrativosDeHistoriaResponse>>;
+    public verDatosAdministrativosDeHistoriaClinica(requestParameters: VerDatosAdministrativosDeHistoriaClinicaRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<DatosAdministrativosDeHistoriaResponse>>;
+    public verDatosAdministrativosDeHistoriaClinica(requestParameters: VerDatosAdministrativosDeHistoriaClinicaRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        const personaId = requestParameters?.personaId;
+        if (personaId === null || personaId === undefined) {
+            throw new Error('Required parameter personaId was null or undefined when calling verDatosAdministrativosDeHistoriaClinica.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/historias-clinicas/por-persona/${this.configuration.encodeParam({name: "personaId", value: personaId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/datos-administrativos`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<DatosAdministrativosDeHistoriaResponse>('get', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
                 responseType: <any>responseType_,
                 ...(withCredentials ? { withCredentials } : {}),
                 headers: localVarHeaders,

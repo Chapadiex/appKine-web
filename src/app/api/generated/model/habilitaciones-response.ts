@@ -36,6 +36,10 @@ export interface HabilitacionesResponse {
      */
     ofertaId?: number;
     /**
+     * Version de la OFERTA que hay que mandar como expectedVersion en el proximo reemplazo. En la lectura es la vigente; en la respuesta de un reemplazo es la que la oferta queda teniendo despues de ese reemplazo, asi que dos reemplazos se encadenan sin releer
+     */
+    ofertaVersion?: number;
+    /**
      * Habilitaciones de profesional, activas e inactivas
      */
     profesionales?: Array<ProfesionalHabilitado>;

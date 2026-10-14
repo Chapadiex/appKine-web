@@ -74,9 +74,17 @@ export interface OrdenResponse {
      */
     profesionalEmisor?: string;
     /**
+     * Sesiones consumidas en las autorizaciones activas y APROBADAS que usan esta orden
+     */
+    sesionesConsumidas?: number;
+    /**
      * Sesiones indicadas. Informativa
      */
     sesionesPrescriptas?: number;
+    /**
+     * Estado de la orden DERIVADO de su vigencia y de las autorizaciones activas que la usan, calculado contra la fecha consultada. No se guarda. Precedencia: ANULADA (dada de baja), CUMPLIDA (las sesiones prescriptas ya se consumieron), VENCIDA, EN_CURSO (hay consumo), AUTORIZADA (alguna APROBADA), EN_TRAMITE (alguna PENDIENTE u OBSERVADA), RECHAZADA (todas rechazadas), SIN_AUTORIZACION (ninguna la usa; normal si la prestacion no exige autorizacion)
+     */
+    situacion?: OrdenResponseSituacionEnum;
     /**
      * Ya paso su fin de vigencia. Vencida NO es dada de baja: la orden sigue siendo consultable y editable
      */
@@ -101,6 +109,16 @@ export interface OrdenResponse {
 export enum OrdenResponseEstadoEnum {
     ACTIVA = 'ACTIVA',
     INACTIVA = 'INACTIVA'
+};
+export enum OrdenResponseSituacionEnum {
+    ANULADA = 'ANULADA',
+    CUMPLIDA = 'CUMPLIDA',
+    VENCIDA = 'VENCIDA',
+    EN_CURSO = 'EN_CURSO',
+    AUTORIZADA = 'AUTORIZADA',
+    EN_TRAMITE = 'EN_TRAMITE',
+    RECHAZADA = 'RECHAZADA',
+    SIN_AUTORIZACION = 'SIN_AUTORIZACION'
 };
 
 

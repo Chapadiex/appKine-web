@@ -26,12 +26,11 @@ import { AkineHttpError } from '../../../core/interceptors/error.interceptor';
  * utiles: en el primero hay una ficha concreta que abrir, y en el segundo hay una decision que el
  * operador puede tomar sin salir de la pantalla.
  *
- * <h2>El 409 de concurrencia llega como `conflict`, NO como `concurrent-modification`</h2>
+ * <h2>El 409 de concurrencia llega como `concurrent-modification` (DP-21)</h2>
  *
- * <p>`person` lanza el `OptimisticLockingFailureException` plano y lo mapea el handler global,
- * igual que `offering`. Se reconocen los dos por si algun dia se unifican —es una de las
- * decisiones transversales abiertas del workspace—, pero la rama que hoy se ejercita es
- * `conflict`.
+ * <p>Desde el contrato 0.80.0 toda version vieja responde `concurrent-modification` en todos los
+ * modulos, y `conflict` queda solo para conflictos de negocio: cae en `conflicto`, con el
+ * `detail` del servidor.
  */
 export type CausaPersona =
   /** 403 missing-tenant-context: hay sesion, pero no hay contexto de trabajo. NUNCA cerrar sesion. */
@@ -118,7 +117,20 @@ export type CausaPersona =
   | 'transicion-no-permitida'
   /** 409 documento-numero-taken: ya hay una orden o autorizacion vigente con ese numero. */
   | 'numero-en-uso'
-  /** 409 conflict: la `expectedVersion` enviada quedo vieja. */
+  /**
+   * 409 movimiento-ya-revertido: ese consumo ya tiene su reversion (RF-M17-005).
+   *
+   * <p>Es la segunda de dos reversiones del mismo consumo —dos operadores, o un doble click—, y lo
+   * que corresponde es releer el ledger: la unidad ya volvio una vez.
+   */
+  | 'consumo-ya-revertido'
+  /**
+   * 409 autorizacion-sin-saldo al revertir: el ledger dice que la unidad se consumio y el saldo
+   * materializado no tiene nada que devolver. Las dos fuentes divergieron; reintentar no lo
+   * arregla, y el backend corta en vez de escribir una reversion que lo empeoraria.
+   */
+  | 'saldo-divergente'
+  /** 409 concurrent-modification: la `expectedVersion` enviada quedo vieja (DP-21). */
   | 'concurrencia'
   /** 409 subscription-suspended: lo emite el filtro, antes del controller. */
   | 'suscripcion-suspendida'
@@ -312,6 +324,19 @@ const MENSAJE_AUTORIZACION_SUPERPUESTA =
   'El paciente ya tiene una autorizacion aprobada de esa practica vigente en ese periodo, y dos que ' +
   'se pisan contarian el saldo dos veces. Dos consecutivas —renovar— si conviven: revisa las fechas.';
 
+const MENSAJE_CONSUMO_YA_REVERTIDO =
+  'Ese consumo ya estaba revertido: la unidad volvio al saldo una vez y no vuelve dos. Recarga los ' +
+  'movimientos para ver la reversion que ya existe.';
+
+const MENSAJE_SALDO_DIVERGENTE =
+  'No se revirtió el consumo: el saldo de la autorización no coincide con sus movimientos, así ' +
+  'que no hay una unidad que devolver. No lo reintentes. Recargá los movimientos y avisale a ' +
+  'quien administra el sistema para que revise esa autorización.';
+
+const MENSAJE_REVERSION_SIN_MOTIVO =
+  'Para revertir un consumo hay que declarar el motivo: sin el, quien audite no puede distinguir un ' +
+  'error de carga de otra cosa.';
+
 const MENSAJE_NUMERO_EN_USO =
   'Ya hay un documento vigente con ese numero. Revisa si no lo cargaste antes: el numero de uno ' +
   'dado de baja si se puede volver a usar.';
@@ -411,10 +436,12 @@ export function traducirErrorPersona(error: unknown): ErrorPersona {
       return base(conDetalle(error, MENSAJE_CONFLICTO), 'transicion-no-permitida');
     case 'documento-numero-taken':
       return base(MENSAJE_NUMERO_EN_USO, 'numero-en-uso');
-    case 'conflict':
-    // `concurrent-modification` no lo emite `person` hoy. Se reconoce igual por si algun dia se
-    // unifican los dos tipos: ver el javadoc de `CausaPersona`.
-    // falls through
+    case 'movimiento-ya-revertido':
+      return base(MENSAJE_CONSUMO_YA_REVERTIDO, 'consumo-ya-revertido');
+    case 'autorizacion-sin-saldo':
+      return base(MENSAJE_SALDO_DIVERGENTE, 'saldo-divergente');
+    case 'reversion-sin-motivo':
+      return base(MENSAJE_REVERSION_SIN_MOTIVO, 'validacion');
     case 'concurrent-modification':
       return base(MENSAJE_CONCURRENCIA, 'concurrencia');
     default:
@@ -458,7 +485,9 @@ export function hayQueRecargar(causa: CausaPersona | null): boolean {
     causa === 'cobertura-ya-inactiva' ||
     causa === 'orden-ya-inactiva' ||
     causa === 'autorizacion-ya-inactiva' ||
-    causa === 'transicion-no-permitida'
+    causa === 'transicion-no-permitida' ||
+    causa === 'consumo-ya-revertido' ||
+    causa === 'saldo-divergente'
   );
 }
 

@@ -99,6 +99,25 @@
     </div>
 
     <div class="campo">
+      <label for="consulta-oferta">Oferta (opcional)</label>
+      <select
+        id="consulta-oferta"
+        formControlName="ofertaId"
+        aria-describedby="consulta-oferta-ayuda"
+      >
+        <option value="">Sin oferta: arancel general del convenio</option>
+        @for (oferta of ofertas(); track oferta.id) {
+          <option [value]="oferta.id">{{ oferta.nombreComercial }}</option>
+        }
+      </select>
+      <p class="ayuda" id="consulta-oferta-ayuda">
+        Si la practica se presta dentro de una oferta, elegila: manda el arancel propio de esa
+        oferta y, si no tiene, el general del convenio. Solo aparecen las ofertas activas que
+        admiten obra social.
+      </p>
+    </div>
+
+    <div class="campo">
       <label for="consulta-fecha">Fecha de la prestacion</label>
       <input
         id="consulta-fecha"
@@ -191,6 +210,9 @@
         -->
         <div class="resultado__derivacion">
           <h3>De donde sale este precio</h3>
+          <p class="ayuda">
+            <b>{{ origen() }}</b>
+          </p>
           <p class="ayuda">
             Convenio <b>{{ respuesta.convenioNombre }}</b> ({{ respuesta.convenioCodigo }}), vigente
             del {{ enPalabras(respuesta.convenioVigenciaDesde ?? '') }}

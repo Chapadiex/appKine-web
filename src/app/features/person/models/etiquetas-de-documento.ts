@@ -1,6 +1,13 @@
 import { AutorizacionResponse } from '../../../api/generated/model/autorizacion-response';
 import { ElegibilidadResponse } from '../../../api/generated/model/elegibilidad-response';
-import { OrdenResponse } from '../../../api/generated/model/orden-response';
+import {
+  EventoDeAutorizacionResponse,
+  EventoDeAutorizacionResponseTipoEnum,
+} from '../../../api/generated/model/evento-de-autorizacion-response';
+import {
+  OrdenResponse,
+  OrdenResponseSituacionEnum,
+} from '../../../api/generated/model/orden-response';
 import { RequisitoResponse } from '../../../api/generated/model/requisito-response';
 import { fechaEnPalabras } from './etiquetas-de-ficha';
 
@@ -30,6 +37,11 @@ export function ordenInactiva(orden: OrdenResponse): boolean {
  * frecuente de todos.
  */
 export function situacionDeOrden(orden: OrdenResponse): string {
+  // Desde 0.79.0 (B-4) el backend deriva la situacion juntando vigencia y autorizaciones activas;
+  // la vieja cuenta por vigencia queda como respaldo de una respuesta que no la traiga.
+  if (orden.situacion !== undefined) {
+    return NOMBRES_DE_SITUACION[orden.situacion];
+  }
   if (ordenInactiva(orden)) {
     return 'Dada de baja';
   }
@@ -37,6 +49,39 @@ export function situacionDeOrden(orden: OrdenResponse): string {
     return 'Vencida';
   }
   return orden.vigente === true ? 'Vigente' : 'Todavia no vigente';
+}
+
+/**
+ * La situacion derivada de la orden (B-4), con la precedencia del backend: ANULADA > CUMPLIDA >
+ * VENCIDA > EN_CURSO > AUTORIZADA > EN_TRAMITE > RECHAZADA > SIN_AUTORIZACION. No se guarda: la
+ * mueven el reloj, el financiador y las sesiones.
+ */
+const NOMBRES_DE_SITUACION: Record<OrdenResponseSituacionEnum, string> = {
+  ANULADA: 'Dada de baja',
+  CUMPLIDA: 'Cumplida: se consumieron las sesiones prescriptas',
+  VENCIDA: 'Vencida',
+  EN_CURSO: 'En curso: ya tiene sesiones consumidas',
+  AUTORIZADA: 'Autorizada, sin sesiones consumidas todavia',
+  EN_TRAMITE: 'En tramite con el financiador',
+  RECHAZADA: 'Rechazada por el financiador',
+  SIN_AUTORIZACION: 'Sin autorizacion cargada',
+};
+
+/**
+ * Las sesiones de la orden: consumidas contra prescriptas.
+ *
+ * <p>Lo consumido sale de las autorizaciones <b>activas y APROBADAS</b> que usan la orden; las
+ * prescriptas son informativas. Sin ninguno de los dos datos se dice con un guion.
+ */
+export function sesionesDeOrden(orden: OrdenResponse): string {
+  const prescriptas = orden.sesionesPrescriptas;
+  const consumidas = orden.sesionesConsumidas;
+  if (consumidas === undefined) {
+    return prescriptas === undefined ? '—' : `${prescriptas} prescriptas`;
+  }
+  return prescriptas === undefined
+    ? `${consumidas} consumidas`
+    : `${consumidas} de ${prescriptas} consumidas`;
 }
 
 /**
@@ -90,6 +135,57 @@ export function estadoDeAutorizacion(autorizacion: AutorizacionResponse): string
   return estado === undefined ? 'Sin estado' : (NOMBRES_DE_ESTADO[estado] ?? estado);
 }
 
+// -----------------------------------------------------------------------------------------
+// Historial de la autorizacion (B-4, DP-23)
+// -----------------------------------------------------------------------------------------
+
+const NOMBRES_DE_EVENTO: Record<EventoDeAutorizacionResponseTipoEnum, string> = {
+  ALTA: 'Alta',
+  APROBACION: 'Aprobacion del financiador',
+  OBSERVACION: 'Observacion del financiador',
+  RECHAZO: 'Rechazo del financiador',
+  MODIFICACION: 'Correccion',
+  DOCUMENTO: 'Comprobante',
+  CONSUMO: 'Consumo de una sesion',
+  REVERSION_DE_CONSUMO: 'Reversion de un consumo',
+  ANULACION: 'Baja',
+};
+
+/** Que paso, en palabras. */
+export function tipoDeEvento(evento: EventoDeAutorizacionResponse): string {
+  return evento.tipo === undefined ? 'Hecho sin tipo' : NOMBRES_DE_EVENTO[evento.tipo];
+}
+
+/**
+ * El cambio de estado del hecho, o cadena vacia cuando el hecho no movio el estado.
+ *
+ * <p>Solo el ALTA viaja sin estado anterior. Modificar, vincular, consumir, revertir y anular dejan
+ * el estado igual: repetirlo en cada fila seria ruido.
+ */
+export function cambioDeEstado(evento: EventoDeAutorizacionResponse): string {
+  const nuevo = evento.estadoNuevo === undefined ? null : NOMBRES_DE_ESTADO[evento.estadoNuevo];
+  if (nuevo === null) {
+    return '';
+  }
+  if (evento.estadoAnterior === undefined) {
+    return `Nace como ${nuevo.toLowerCase()}`;
+  }
+  if ((evento.estadoAnterior as string) === evento.estadoNuevo) {
+    return '';
+  }
+  return `De ${NOMBRES_DE_ESTADO[evento.estadoAnterior].toLowerCase()} a ${nuevo.toLowerCase()}`;
+}
+
+/**
+ * Quien lo hizo. El contrato trae solo la cuenta, sin nombre: se dice el numero de cuenta, y
+ * "el sistema" cuando viene vacio.
+ */
+export function actorDeEvento(evento: EventoDeAutorizacionResponse): string {
+  return evento.actorCuentaId === undefined || evento.actorCuentaId === null
+    ? 'El sistema'
+    : `Cuenta ${evento.actorCuentaId}`;
+}
+
 /** `true` cuando la autorizacion esta dada de baja. Distinto de rechazada y de vencida. */
 export function autorizacionInactiva(autorizacion: AutorizacionResponse): boolean {
   return autorizacion.estado === 'INACTIVA';
@@ -127,6 +223,21 @@ export function saldoEnPalabras(autorizacion: AutorizacionResponse): string {
   const consumidas = autorizacion.cantidadConsumida ?? 0;
   const saldo = autorizacion.saldo ?? autorizadas - consumidas;
   return `${saldo} de ${autorizadas}`;
+}
+
+/**
+ * La marca de la fila cuando la autorizacion tiene consumos a revisar (DP-13, AKINE C-4), o
+ * `null` si no tiene ninguno.
+ *
+ * <p>El numero viaja en el listado mismo (`consumosARevisar`): marcar la fila no cuesta una
+ * lectura del saldo por autorizacion. Cero o ausente es "nada que revisar" y no se marca.
+ */
+export function consumosARevisarEnPalabras(autorizacion: AutorizacionResponse): string | null {
+  const pendientes = autorizacion.consumosARevisar ?? 0;
+  if (pendientes <= 0) {
+    return null;
+  }
+  return pendientes === 1 ? '1 consumo a revisar' : `${pendientes} consumos a revisar`;
 }
 
 /**

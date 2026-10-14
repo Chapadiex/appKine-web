@@ -8,8 +8,13 @@ import { ConveniosYArancelesService } from '../../../api/generated/api/convenios
 import { CreateArancelRequest } from '../../../api/generated/model/create-arancel-request';
 import { CreateConvenioRequest } from '../../../api/generated/model/create-convenio-request';
 import { DeactivateContractingRequest } from '../../../api/generated/model/deactivate-contracting-request';
+import { ImportacionArancelesResponse } from '../../../api/generated/model/importacion-aranceles-response';
+import { ImportarArancelesRequest } from '../../../api/generated/model/importar-aranceles-request';
 import { UpdateArancelRequest } from '../../../api/generated/model/update-arancel-request';
 import { UpdateConvenioRequest } from '../../../api/generated/model/update-convenio-request';
+import { OfertaResponse } from '../../../api/generated/model/oferta-response';
+import { PracticasDeOfertaResponse } from '../../../api/generated/model/practicas-de-oferta-response';
+import { ServiciosYOfertasService } from '../../../api/generated/api/servicios-y-ofertas.service';
 import { FiltroEstado } from './contracting-api';
 
 /**
@@ -41,6 +46,23 @@ import { FiltroEstado } from './contracting-api';
 @Injectable({ providedIn: 'root' })
 export class ConveniosApi {
   private readonly api = inject(ConveniosYArancelesService);
+
+  // El arancel por oferta (RF-M16-008) necesita saber que ofertas tiene la sede y que practicas
+  // declara cada una. Se lee del servicio generado y no de `features/offering`: un feature no
+  // importa de otro (AGENT.md 4.4).
+  private readonly ofertas = inject(ServiciosYOfertasService);
+
+  /** Todas las ofertas de la sede, tambien las dadas de baja: nombran aranceles viejos. */
+  ofertasDeLaSede(consultorioId: number): Observable<OfertaResponse[]> {
+    return this.ofertas.listOfertas({ consultorioId, estado: 'TODOS' });
+  }
+
+  practicasDeOferta(
+    consultorioId: number,
+    ofertaId: number,
+  ): Observable<PracticasDeOfertaResponse> {
+    return this.ofertas.getPracticasDeOferta({ consultorioId, ofertaId });
+  }
 
   /**
    * Convenios de una sede, ordenados por nombre.
@@ -243,6 +265,10 @@ export class ConveniosApi {
    * <p><b>`fecha` es el dia de la PRESTACION, no el de hoy.</b> Consultar una fecha pasada
    * devuelve el arancel que regia entonces, que es lo que hace que una atencion retroactiva se
    * cobre bien. Si se omite, el backend usa hoy.
+   *
+   * <p><b>`ofertaId` es opcional (B-3, RF-M16-008).</b> Con oferta, manda el arancel propio de esa
+   * oferta y, si no tiene, el general de la practica; la respuesta trae `ofertaId` solo cuando
+   * salio el propio. Sin oferta resuelve siempre el general, como antes de B-3.
    */
   resolverArancelEfectivo(
     consultorioId: number,
@@ -251,6 +277,7 @@ export class ConveniosApi {
       readonly planId: number;
       readonly practicaId: number;
       readonly fecha?: string;
+      readonly ofertaId?: number;
     },
   ): Observable<ArancelEfectivoResponse> {
     return this.api.resolveArancelEfectivo({
@@ -259,6 +286,26 @@ export class ConveniosApi {
       planId: clave.planId,
       practicaId: clave.practicaId,
       fecha: clave.fecha,
+      ofertaId: clave.ofertaId,
+    });
+  }
+
+  /**
+   * Vista previa o confirmacion de una importacion masiva de aranceles (RF-M16-007, AKINE-B-7).
+   *
+   * <p>Una sola operacion con `modo`: el preview y la confirmacion reciben <b>el mismo cuerpo</b>,
+   * y la pantalla manda el mismo lote dos veces cambiando una palabra. La confirmacion es todo o
+   * nada: si una fila no entra responde `409 importacion-aranceles-rechazada` y no escribe nada.
+   */
+  importarAranceles(
+    consultorioId: number,
+    convenioId: number,
+    cuerpo: ImportarArancelesRequest,
+  ): Observable<ImportacionArancelesResponse> {
+    return this.api.importArancelesDeConvenio({
+      consultorioId,
+      convenioId,
+      importarArancelesRequest: cuerpo,
     });
   }
 }

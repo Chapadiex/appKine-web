@@ -1,4 +1,5 @@
 import { Component, ElementRef, computed, effect, inject, signal, untracked } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 
@@ -12,16 +13,30 @@ import { etiquetaDeZona, zonasHorarias } from '../../models/zonas-horarias';
 import { nuevaClaveDeIntento } from '../../../../shared/utils/clave-de-intento';
 import { numeroDeclarado } from '../../../../shared/utils/numero-declarado';
 import { textoRequerido } from '../../../../shared/validators/texto-requerido';
+import { AkineHttpError } from '../../../../core/interceptors/error.interceptor';
+import { EditorDeFranjas } from '../../../../shared/components/editor-de-franjas/editor-de-franjas';
+import { etiquetaDeDia } from '../../../../shared/utils/dias-de-la-semana';
+import { rangoHorario } from '../../../../shared/utils/horas-de-pared';
+import {
+  crearFranjasForm,
+  erroresDeFranjasDelServidor,
+  franjasDelFormulario,
+} from '../../../../shared/utils/franjas-semanales';
 
 /** Estado del alta. Los cuatro casos exigen pantalla distinta (ADR-0005). */
 type EstadoAlta =
   | { readonly tipo: 'editando' }
   | { readonly tipo: 'enviando' }
-  | { readonly tipo: 'ok'; readonly nombre: string }
+  | {
+      readonly tipo: 'ok';
+      readonly nombre: string;
+      readonly conBox: boolean;
+      readonly conHorario: boolean;
+    }
   | { readonly tipo: 'error'; readonly mensaje: string; readonly causa: CausaConsultorio };
 
 /** Campos del paso 1, en el orden en que se enfoca el primero invalido tras un submit. */
-const CAMPOS_PASO_1 = ['name', 'slotMinutes'] as const;
+const CAMPOS_PASO_1 = ['name', 'slotMinutes', 'boxCapacidad'] as const;
 
 /**
  * Alta de una sede adicional, en dos pasos (M01, AKINE-02.01).
@@ -62,7 +77,7 @@ const CAMPOS_PASO_1 = ['name', 'slotMinutes'] as const;
  */
 @Component({
   selector: 'app-new-consultorio-page',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, EditorDeFranjas],
   templateUrl: './new-consultorio-page.html',
   styleUrl: '../../organization.css',
 })
@@ -87,7 +102,23 @@ export class NewConsultorioPage {
     addressLine: [''],
     phone: [''],
     contactEmail: ['', [Validators.email]],
+    // Primer box (A-8, RF-M03-002). Vacio = la sede se crea sin box, como antes.
+    boxNombre: [''],
+    boxCapacidad: ['', [Validators.min(1)]],
   });
+
+  /**
+   * Horario general de la sede (A-8). Lista vacia = el campo se omite del alta. Fuera de
+   * `formulario` porque el editor de franjas es de `shared/` y trabaja sobre su propio
+   * `FormArray`.
+   */
+  protected readonly horario = crearFranjasForm();
+
+  /** Errores de franja del ultimo `400`, por indice. Se limpian al editar el horario. */
+  protected readonly erroresHorario = signal<ReadonlyMap<number, string>>(new Map());
+
+  /** Error del primer box en el ultimo `400` (`primerBox.name`, `primerBox.capacidad`). */
+  protected readonly errorPrimerBox = signal<string | null>(null);
 
   protected readonly paso = signal<1 | 2>(1);
   protected readonly estado = signal<EstadoAlta>({ tipo: 'editando' });
@@ -128,18 +159,41 @@ export class NewConsultorioPage {
     () => this.enviando() || this.hecho() || this.espera.activa(),
   );
 
-  /** Resumen del paso 2: lo que se va a crear, para confirmar sin volver atras. */
-  protected readonly resumen = computed(() => {
+  protected readonly conBoxCreado = computed(() => {
+    const estado = this.estado();
+    return estado.tipo === 'ok' && estado.conBox;
+  });
+
+  protected readonly conHorarioCreado = computed(() => {
+    const estado = this.estado();
+    return estado.tipo === 'ok' && estado.conHorario;
+  });
+
+  /**
+   * Resumen del paso 2: lo que se va a crear, para confirmar sin volver atras.
+   *
+   * <p>Metodo y no `computed`: lee el formulario, que no es un signal, y un `computed` sin
+   * dependencias reactivas se calcula una vez y queda congelado. Volver al paso 1, cambiar el
+   * nombre y avanzar mostraba el nombre viejo.
+   */
+  protected resumen() {
     const valores = this.formulario.getRawValue();
+    const box = valores.boxNombre.trim();
+    const capacidad = numeroDeclarado(valores.boxCapacidad);
     return {
       nombre: valores.name.trim(),
       zona: valores.timezone === '' ? 'La misma que la organizacion' : valores.timezone,
       turno:
-        valores.slotMinutes === ''
+        numeroDeclarado(valores.slotMinutes) === null
           ? '30 minutos (el valor por defecto)'
           : `${valores.slotMinutes} minutos`,
+      box: box === '' ? 'Sin box por ahora' : `${box} (capacidad ${capacidad ?? 1})`,
+      horario: franjasDelFormulario(this.horario).map(
+        (franja) =>
+          `${etiquetaDeDia(franja.diaSemana)}: ${rangoHorario(franja.horaDesde, franja.horaHasta)}`,
+      ),
     };
-  });
+  }
 
   constructor() {
     effect(() => {
@@ -154,7 +208,12 @@ export class NewConsultorioPage {
           addressLine: '',
           phone: '',
           contactEmail: '',
+          boxNombre: '',
+          boxCapacidad: '',
         });
+        this.horario.clear();
+        this.erroresHorario.set(new Map());
+        this.errorPrimerBox.set(null);
         this.paso.set(1);
         this.estado.set({ tipo: 'editando' });
         this.intentos.set(0);
@@ -163,9 +222,18 @@ export class NewConsultorioPage {
         this.intento.set(null);
       });
     });
+
+    // Un error del servidor describe el horario que se mando, no el que se esta editando.
+    this.horario.valueChanges.pipe(takeUntilDestroyed()).subscribe(() => {
+      if (this.erroresHorario().size > 0) {
+        this.erroresHorario.set(new Map());
+      }
+    });
   }
 
-  protected mostrarError(nombre: 'name' | 'slotMinutes' | 'contactEmail'): boolean {
+  protected mostrarError(
+    nombre: 'name' | 'slotMinutes' | 'contactEmail' | 'boxCapacidad',
+  ): boolean {
     const control = this.formulario.controls[nombre];
     return control.invalid && (control.touched || this.intentos() > 0);
   }
@@ -177,6 +245,12 @@ export class NewConsultorioPage {
     if (invalido !== undefined) {
       this.formulario.markAllAsTouched();
       this.enfocar(`#sede-${invalido}`);
+      return;
+    }
+
+    if (this.horario.invalid) {
+      this.horario.markAllAsTouched();
+      this.enfocar('#titulo-horario-general');
       return;
     }
 
@@ -195,8 +269,14 @@ export class NewConsultorioPage {
   protected enviar(): void {
     this.intentos.update((valor) => valor + 1);
 
-    if (this.formulario.invalid) {
+    if (this.formulario.invalid || this.horario.invalid) {
       this.formulario.markAllAsTouched();
+      if (this.formulario.controls.contactEmail.valid && this.formulario.controls.name.valid) {
+        // Lo invalido esta en el paso 1 —el box o el horario—: se vuelve a donde se corrige.
+        this.horario.markAllAsTouched();
+        this.paso.set(1);
+        return;
+      }
       this.enfocar(
         this.formulario.controls.contactEmail.invalid ? '#sede-contactEmail' : '#sede-name',
       );
@@ -212,6 +292,8 @@ export class NewConsultorioPage {
     const clave = this.claveParaElCuerpo(cuerpo);
 
     this.estado.set({ tipo: 'enviando' });
+    this.erroresHorario.set(new Map());
+    this.errorPrimerBox.set(null);
 
     this.consultorios
       .createConsultorio({ orgId, idempotencyKey: clave, createConsultorioRequest: cuerpo })
@@ -222,7 +304,12 @@ export class NewConsultorioPage {
           // existe. El intento se cierra aca.
           this.intento.set(null);
           this.sedes.invalidar();
-          this.estado.set({ tipo: 'ok', nombre: sede.name ?? cuerpo.name });
+          this.estado.set({
+            tipo: 'ok',
+            nombre: sede.name ?? cuerpo.name,
+            conBox: cuerpo.primerBox !== undefined,
+            conHorario: (cuerpo.horarioGeneral?.length ?? 0) > 0,
+          });
         },
         error: (error: unknown) => this.fallar(error),
       });
@@ -279,6 +366,18 @@ export class NewConsultorioPage {
       }
     }
 
+    // El box y el horario viajan solo si se cargaron: omitirlos da de alta la sede sola, y el
+    // backend calcula el hash de idempotencia sin ellos, igual que antes de A-8.
+    const box = valores.boxNombre.trim();
+    if (box !== '') {
+      const capacidad = numeroDeclarado(valores.boxCapacidad);
+      cuerpo.primerBox = capacidad === null ? { name: box } : { name: box, capacidad };
+    }
+
+    if (this.horario.length > 0) {
+      cuerpo.horarioGeneral = franjasDelFormulario(this.horario);
+    }
+
     return cuerpo;
   }
 
@@ -303,6 +402,20 @@ export class NewConsultorioPage {
 
     if (traducido.causa === 'limite') {
       this.espera.iniciar(traducido.segundosDeEspera);
+    }
+
+    if (traducido.causa === 'validacion' && error instanceof AkineHttpError) {
+      // El alta es atomica: un box o una franja invalidos rechazan todo con 400 y no queda
+      // nada creado. Lo que falla se marca junto al campo, en el paso 1, que es donde se
+      // corrige; un cartel "la franja 3 es invalida" obligaria a contar filas.
+      const campos = error.erroresPorCampo;
+      const franjas = erroresDeFranjasDelServidor(campos);
+      const box = Object.entries(campos).find(([campo]) => campo.startsWith('primerBox'));
+      this.erroresHorario.set(franjas);
+      this.errorPrimerBox.set(box === undefined ? null : box[1]);
+      if (franjas.size > 0 || box !== undefined) {
+        this.paso.set(1);
+      }
     }
 
     this.estado.set({ tipo: 'error', mensaje: traducido.mensaje, causa: traducido.causa });

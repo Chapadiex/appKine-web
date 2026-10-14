@@ -1,4 +1,8 @@
-import { Obligacion, ObligacionEstadoEnum } from '../../../api/generated/model/obligacion';
+import {
+  Obligacion,
+  ObligacionConceptoEnum,
+  ObligacionEstadoEnum,
+} from '../../../api/generated/model/obligacion';
 
 /**
  * Textos y formateo de la cuenta corriente (M18, AKINE-07.01).
@@ -75,6 +79,28 @@ export function estadoEnPalabras(estado: string | undefined): string {
       return 'Anulada';
     default:
       return estado ?? '';
+  }
+}
+
+/**
+ * Rotulo del concepto de la deuda (AKINE F-4): que parte de la prestacion es.
+ *
+ * <p>`FINANCIADOR` no deberia llegar a la cuenta corriente —el listado por persona trae solo lo
+ * que debe el paciente— pero tiene su texto igual: si un dia aparece, que se lea como la parte de
+ * la obra social y no como un codigo crudo.
+ *
+ * <p>Sin concepto (deudas devengadas antes de F-4) devuelve vacio: no se inventa uno.
+ */
+export function conceptoEnPalabras(concepto: string | undefined): string {
+  switch (concepto) {
+    case ObligacionConceptoEnum.PARTICULAR:
+      return 'Particular';
+    case ObligacionConceptoEnum.COSEGURO:
+      return 'Coseguro';
+    case ObligacionConceptoEnum.FINANCIADOR:
+      return 'A cargo de la obra social';
+    default:
+      return concepto ?? '';
   }
 }
 

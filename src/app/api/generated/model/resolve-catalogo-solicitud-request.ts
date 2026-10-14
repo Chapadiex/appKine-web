@@ -10,13 +10,29 @@
 
 
 /**
- * Aprobacion o rechazo de una solicitud de catalogo
+ * Aprobacion o rechazo de una solicitud de catalogo. Aprobar publica el concepto global en el mismo acto
  */
 export interface ResolveCatalogoSolicitudRequest { 
+    /**
+     * Solo al aprobar: codigo con el que se publica el concepto global. Si falta, el propuesto; si tampoco hay propuesto, 400
+     */
+    codigo?: string;
+    /**
+     * Solo al aprobar: descripcion del concepto publicado
+     */
+    descripcion?: string;
+    /**
+     * Solo al aprobar una PRACTICA, y obligatorio en ese caso: especialidad GLOBAL de la que cuelga
+     */
+    especialidadId?: number;
     /**
      * Desenlace. PENDIENTE no es una resolucion y se rechaza con 400
      */
     estado: ResolveCatalogoSolicitudRequestEstadoEnum;
+    /**
+     * Solo al aprobar: nombre con el que se publica. Si falta, el propuesto
+     */
+    nombre?: string;
     /**
      * Motivo de la decision
      */

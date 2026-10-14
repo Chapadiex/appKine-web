@@ -42,6 +42,8 @@ const REVOCADA = {
 
 const PAGINA = { content: [ACTIVA, REVOCADA], page: 0, size: 20, totalElements: 2, totalPages: 1 };
 
+const URL_OTORGABLES = '/api/v1/organizations/1/roles/PROFESIONAL/permisos-otorgables';
+
 /**
  * Spec de la pantalla de colaboradores (M05, AKINE-01.03).
  *
@@ -171,6 +173,7 @@ describe('CollaboratorsPage', () => {
   it('un conflicto del backend se muestra con su mensaje y deja el panel abierto', async () => {
     const fixture = await montar();
     abrirPanel(fixture, 'Revocar');
+    responderImpacto({ tipo: null, count: 0, desde: null });
     escribir(fixture, '#panel-motivo', 'Fin de contrato');
     enviar(fixture, 'form');
 
@@ -195,13 +198,51 @@ describe('CollaboratorsPage', () => {
     expect(texto(fixture)).toContain('Revocar el vinculo de la cuenta 100');
   });
 
+  it('revocar muestra antes de confirmar lo que queda pendiente, sin bloquear el envio', async () => {
+    const fixture = await montar();
+    abrirPanel(fixture, 'Revocar');
+    expect(texto(fixture)).toContain('Consultando que queda pendiente');
+
+    responderImpacto({ tipo: 'turnos', count: 4, desde: '2026-10-20T13:00:00Z' });
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    // La cantidad y el tipo salen tal cual del backend, y el aviso declara su limite: una sola
+    // fuente, nunca la suma de turnos y bloques.
+    expect(texto(fixture)).toContain('Quedan 4 turnos a su nombre, el primero el');
+    expect(texto(fixture)).toContain('una sola fuente');
+
+    // RN-M05-004: el impacto informa, no impide. La revocacion sale igual.
+    escribir(fixture, '#panel-motivo', 'Renuncia');
+    enviar(fixture, 'form');
+    httpMock
+      .expectOne(
+        (peticion: HttpRequest<unknown>) =>
+          peticion.url === '/api/v1/organizations/1/memberships/10/revoke',
+      )
+      .flush({ ...ACTIVA, estado: 'REVOCADA' });
+    httpMock.expectOne(esListado(1)).flush(PAGINA);
+  });
+
+  it('si la sonda de impacto falla lo dice y deja revocar igual', async () => {
+    const fixture = await montar();
+    abrirPanel(fixture, 'Revocar');
+
+    httpMock
+      .expectOne('/api/v1/organizations/1/memberships/10/desvinculacion-impacto')
+      .flush({ type: 'about:blank' }, { status: 500, statusText: 'Server Error' });
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(texto(fixture)).toContain('No pudimos consultar que queda pendiente');
+    expect(texto(fixture)).toContain('Revocar el vinculo de la cuenta 100');
+  });
+
   it('los permisos adicionales se otorgan y se dan de baja con el motivo en la URL', async () => {
     const fixture = await montar();
     abrirPanel(fixture, 'Permisos adicionales');
 
-    httpMock
-      .expectOne('/api/v1/organizations/1/memberships/10/grants')
-      .flush([{ id: 5, membershipId: 10, permissionCode: 'auditoria:read', active: true }]);
+    responderGrants([{ id: 5, membershipId: 10, permissionCode: 'auditoria:read', active: true }]);
     await fixture.whenStable();
     fixture.detectChanges();
 
@@ -407,7 +448,7 @@ describe('CollaboratorsPage', () => {
       '2026-10-31T23:59:59.000Z',
     );
     alta.flush({ id: 6, membershipId: 10, permissionCode: PERMISO_COLABORADOR_MANAGE });
-    responderGrants([]);
+    httpMock.expectOne('/api/v1/organizations/1/memberships/10/grants').flush([]);
     await fixture.whenStable();
     fixture.detectChanges();
   });
@@ -467,6 +508,94 @@ describe('CollaboratorsPage', () => {
     expect(texto(fixture)).toContain('Ese permiso ya esta vigente sobre el vinculo');
   });
 
+  it('un permiso-no-otorgable-al-rol al otorgar nombra el permiso y el rol del backend', async () => {
+    const fixture = await montar();
+    abrirPanel(fixture, 'Permisos adicionales');
+    responderGrants([]);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    elegir(fixture, '#grant-permissionCode', PERMISO_COLABORADOR_MANAGE);
+    escribir(fixture, '#grant-reason', 'Cubre licencia');
+    enviar(fixture, 'form');
+
+    httpMock
+      .expectOne((peticion: HttpRequest<unknown>) => peticion.method === 'POST')
+      .flush(
+        {
+          type: 'https://akine.app/problems/permiso-no-otorgable-al-rol',
+          detail: 'no admitido',
+          roleCode: 'PROFESIONAL',
+          permissionCode: PERMISO_COLABORADOR_MANAGE,
+        },
+        { status: 400, statusText: 'Bad Request' },
+      );
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(texto(fixture)).toContain(
+      `El permiso ${PERMISO_COLABORADOR_MANAGE} no se puede otorgar a un colaborador con rol Profesional`,
+    );
+  });
+
+  it('el selector ofrece solo lo otorgable al rol y marca los grants sin efecto', async () => {
+    const fixture = await montar();
+    abrirPanel(fixture, 'Permisos adicionales');
+
+    // Se pide la lista del rol de ESA membership, no el catalogo entero.
+    responderGrants(
+      [
+        {
+          id: 5,
+          membershipId: 10,
+          permissionCode: 'hc:write',
+          active: true,
+          vigenteConElRolActual: false,
+        },
+        {
+          id: 6,
+          membershipId: 10,
+          permissionCode: 'auditoria:read',
+          active: true,
+          vigenteConElRolActual: true,
+        },
+      ],
+      ['auditoria:read'],
+    );
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const raiz: HTMLElement = fixture.nativeElement;
+    const opciones = [
+      ...raiz.querySelectorAll<HTMLOptionElement>('#grant-permissionCode option'),
+    ].map((opcion) => opcion.value);
+    expect(opciones).toEqual(['', 'auditoria:read']);
+
+    // El grant sin efecto se muestra -para poder revocarlo- con la marca y su explicacion
+    // asociada al boton de baja.
+    const marcas = fixture.nativeElement.querySelectorAll('.lista-grants .marca-estado');
+    expect(marcas.length).toBe(1);
+    expect(marcas[0].closest('li')?.textContent).toContain('hc:write');
+    expect(texto(fixture)).toContain('No vigente con el rol actual');
+    const baja = marcas[0].closest('li')?.querySelector('button');
+    expect(baja?.getAttribute('aria-describedby')).toBe('grant-no-vigente-5');
+    expect(fixture.nativeElement.querySelector('#grant-no-vigente-5')).not.toBeNull();
+  });
+
+  it('si la lista de otorgables falla, el selector queda vacio y lo explica', async () => {
+    const fixture = await montar();
+    abrirPanel(fixture, 'Permisos adicionales');
+    httpMock.expectOne('/api/v1/organizations/1/memberships/10/grants').flush([]);
+    httpMock
+      .expectOne(URL_OTORGABLES)
+      .flush({ type: 'about:blank' }, { status: 500, statusText: 'Server Error' });
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelectorAll('#grant-permissionCode option').length).toBe(1);
+    expect(texto(fixture)).toContain('No pudimos consultar que permisos admite el rol Profesional');
+  });
+
   /** Monta la pantalla con contexto, permisos de gestion y una pagina de dos vinculos. */
   async function montar() {
     return montarCon((pedido) => pedido.flush(PAGINA));
@@ -493,8 +622,21 @@ describe('CollaboratorsPage', () => {
     return fixture;
   }
 
-  function responderGrants(grants: object[]): void {
+  function responderImpacto(impacto: object): void {
+    httpMock
+      .expectOne('/api/v1/organizations/1/memberships/10/desvinculacion-impacto')
+      .flush(impacto);
+  }
+
+  /** Responde los grants del vinculo 10 y la lista de lo otorgable a su rol (PROFESIONAL). */
+  function responderGrants(
+    grants: object[],
+    otorgables: readonly string[] = [PERMISO_COLABORADOR_MANAGE, 'auditoria:read'],
+  ): void {
     httpMock.expectOne('/api/v1/organizations/1/memberships/10/grants').flush(grants);
+    httpMock
+      .expectOne(URL_OTORGABLES)
+      .flush({ roleCode: 'PROFESIONAL', permissionCodes: otorgables });
   }
 
   /** El selector de sede se puebla con una peticion aparte; sin responderla `verify` falla. */
