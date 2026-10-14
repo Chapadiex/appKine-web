@@ -5,6 +5,7 @@ import { PERMISO_REPORTE_READ } from '../../core/models/permisos';
 import { PERMISO_PACIENTE_READ } from '../../core/models/permisos';
 import { PERMISO_CLASE_READ } from '../../core/models/permisos';
 import { RUTA_CLASES } from '../../features/activity/models/rutas-de-clases';
+import { PERMISO_INSCRIPCION_READ } from '../../core/models/permisos';
 
 /** Una entrada de la navegacion principal. */
 export interface Seccion {
@@ -83,6 +84,8 @@ export const SECCIONES: readonly Seccion[] = [
   { etiqueta: 'Pacientes', ruta: '/pacientes', permisos: [PERMISO_PACIENTE_READ] },
   // Clases grupales (M28). `activity.routes.ts` exige `clase:read` en la ruta vacia.
   { etiqueta: 'Clases', ruta: RUTA_CLASES, permisos: [PERMISO_CLASE_READ] },
+  // Asistencia a clases (F9). `asistencia.routes.ts` exige `inscripcion:read` en las dos rutas.
+  { etiqueta: 'Asistencia', ruta: '/asistencia', permisos: [PERMISO_INSCRIPCION_READ] },
   { etiqueta: 'Espacios', ruta: '/espacios' },
   { etiqueta: 'Horarios', ruta: RUTA_HORARIOS, permisos: [PERMISO_COLABORADOR_READ] },
   { etiqueta: 'Catalogo', ruta: '/catalogo' },

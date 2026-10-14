@@ -242,6 +242,12 @@
   @if (puedeVerParticipantes()) {
     <section class="tarjeta" aria-labelledby="titulo-participantes">
       <h2 id="titulo-participantes">Participantes</h2>
+      @if (actual.id) {
+        <p>
+          <a class="enlace" [routerLink]="['/asistencia', actual.id]">Tomar asistencia</a>
+          <span class="ayuda"> — iniciar la clase, registrar quien vino y cerrarla.</span>
+        </p>
+      }
       @if (participantes() === null) {
         <p class="estado estado--cargando">Leyendo los participantes…</p>
       } @else if (conLugar().length === 0) {

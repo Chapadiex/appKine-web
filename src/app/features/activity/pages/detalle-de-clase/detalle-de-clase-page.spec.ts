@@ -159,6 +159,9 @@ describe('DetalleDeClasePage', () => {
       expect(texto).toContain('(viaje)');
       expect(texto).toContain('Reprogramada');
       expect(texto).toContain('Inscribir a una persona');
+      expect(
+        (fixture.nativeElement as HTMLElement).querySelector('a[href="/asistencia/70"]'),
+      ).not.toBeNull();
       await esperarSinViolaciones(fixture.nativeElement);
     },
     TIMEOUT_AXE,
