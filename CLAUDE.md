@@ -224,7 +224,49 @@ Reglas innegociables del QA:
 
 ## 7. Estado actual
 
-### Estado al 11/10/2026, sobre `680b508`
+### Estado al 14/10/2026, sobre `dcfe064`
+
+> Esta subsección **supersede** a la del 11/10, que sigue abajo como historia, en cliente, tests,
+> E2E y próximo paso. Medido el 14/10 sobre `origin/main` y por la API de GitHub.
+
+`main` tiene **308 commits** y el último merge es `dcfe064` (PR #76). Desde el 11/10 entraron
+**los PR #60 a #76** salvo #70 (Dependabot); los seis checks del último merge (los cinco
+obligatorios más Sonar) están en verde. Siguen abiertos **#4** (historia clínica en pantalla) y Dependabot **#53, #55, #56, #57**
+(Angular 22) y **#70** (`@vitest/coverage-v8` 5).
+
+| | Valor |
+|---|---|
+| Cliente generado | **0.99.0** (`contractVersion` en los dos `environment`), igual que `appKine-api` `main`. Regenerado contra 0.85.0 (#61), 0.89.0 (#71), 0.98.0 (#73) y 0.99.0 (#76, `TurnoDelDia.coberturaId`) |
+| Tests | **142 archivos de spec / 1.523 tests, 0 fallos**, medidos con `npm ci && npm run test:ci` sobre `dcfe064` el 14/10. Cobertura st **91,11 %** · rama **82,76 %** · fn **87,12 %** · ln **92,10 %**, sobre el piso de 80 % en las cuatro; el chequeo de cableado del contraste pasa |
+| E2E | **34 specs** en `e2e/` (`ls e2e/*.spec.ts`). El job "E2E Playwright contra el backend real" pasó en `dcfe064`. No se corrieron localmente para este documento |
+
+Lo que entró desde el 11/10, con su PR:
+
+| Qué | PR |
+|---|---|
+| Fechas por defecto con "hoy" en la zona de la sede | #60 |
+| 503 `service-unavailable` y 16 `problemType` sin pantalla | #62 |
+| F-5: egresos y pagos de la sede (M22) | #63 |
+| ESLint prohíbe imports entre features (ADR-0004); servicios usa el rol de plataforma | #65 |
+| Tablas sin sombra bajo el texto y pantallas a 375 px sin desborde | #66 |
+| LCP móvil con margen: Brotli estático, precarga y resumen del 360 en paralelo | #69 |
+| Cliente 0.98.0: egresos con `version` y 409 `concurrent-modification`, 409 `idempotency-key-conflict` del alta, cobros anulados en el listado | #73 |
+| **Pantallas del contrato 0.98.0**: botón *Exportar CSV* del lote de presentación, cobertura elegida al reservar, marca "N consumos a revisar" por autorización y datos administrativos de la HC en el Paciente 360 (sin contenido clínico) | #74 |
+| **E2E contra el backend real** de esas cuatro pantallas: `flujo-presentacion-csv`, `flujo-cobertura-al-reservar`, `flujo-consumos-a-revisar`, `flujo-historia-administrativa` | #75 |
+
+Y los E2E de #64 (pantallas del 08 al 11/10), #67 (feriado de hoy en el sembrado), #68
+(configuración y padrón) y #72 (sedes y desvinculación con turnos, cierre de F2). El E2E de #75
+destapó que `TurnoDelDia` no traía la cobertura elegida: lo corrigió `appKine-api` #116 (0.99.0).
+
+#### Pendiente
+
+1. **Las pantallas clínicas del PR #4** (D-a, D-b, D-c, y lo que siga de D-d, D-g): se trabajan en
+   otro chat. `features/clinical` no se tocó en #74.
+2. **Dependabot de versión mayor**: Angular 22 (#53, #55, #56, #57) y `@vitest/coverage-v8` 5
+   (#70). Son saltos mayores; ver U-37 en `appKine-api/docs/fases/decisiones-pendientes.md`.
+3. **El QA manual del §6 de `appKine-api`**, que sigue siendo del usuario.
+
+### Estado al 11/10/2026, sobre `680b508` (histórico)
 
 > Esta subsección **supersede** a la del 07/10, que sigue abajo como historia, y al "Próximo paso"
 > del final de esta sección.
