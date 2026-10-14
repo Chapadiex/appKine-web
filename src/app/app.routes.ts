@@ -21,6 +21,7 @@ import { routes as rutasCaja } from './features/billing/caja.routes';
 import { routes as rutasPresentaciones } from './features/billing/presentaciones.routes';
 import { routes as rutasEgresos } from './features/billing/egresos.routes';
 import { routes as rutasReporting } from './features/reporting/reporting.routes';
+import { routes as rutasAsistencia } from './features/activity/asistencia.routes';
 
 /**
  * Rutas raiz de AKINE (estructura fijada en AKINE-00.02).
@@ -318,6 +319,14 @@ export const routes: Routes = [
     path: 'reportes',
     canActivate: [authGuard],
     children: rutasReporting,
+  },
+
+  // Asistencia a clases (F9, M28/M13, AKINE-08.03). `contextGuard` y el permiso los pone
+  // `asistencia.routes.ts`: la clase es de la sede.
+  {
+    path: 'asistencia',
+    canActivate: [authGuard],
+    children: rutasAsistencia,
   },
 
   {
