@@ -1,0 +1,171 @@
+/*
+ * Hoja de la Historia Clinica (D-a).
+ *
+ * `.boton`, `.campo`, `.tarjeta`, `.estado`, `.detalle`, `.acciones`, `.ayuda`, `.marca-estado` y
+ * `.visualmente-oculto` los aporta `src/design-system.css`, que es global. Aca solo lo propio:
+ * las dos columnas, el timeline y la vista previa. Ni un color literal: todo sale de los tokens,
+ * que ya traen su equivalente en modo oscuro.
+ *
+ * La comparten la pagina y sus componentes: cada uno la declara en `styleUrl`, y el
+ * encapsulamiento de Angular hace que cada copia solo alcance a su propia plantilla.
+ */
+
+/* Timeline a la izquierda, detalle y formularios a la derecha. En pantalla angosta, apilados. */
+.historia__columnas {
+  display: grid;
+  gap: var(--esp-6);
+  align-items: start;
+}
+
+@media (min-width: 64rem) {
+  .historia__columnas {
+    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  }
+}
+
+.historia__principal,
+.historia__lateral {
+  display: grid;
+  gap: var(--esp-6);
+  min-width: 0;
+}
+
+/* El texto clinico respeta los saltos de linea con que se escribio. */
+.historia__cuerpo {
+  margin: var(--esp-4) 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: var(--linea-base);
+}
+
+.historia__antecedentes {
+  margin: 0;
+  padding-left: var(--esp-6);
+}
+
+.historia__formulario {
+  margin-top: var(--esp-4);
+}
+
+/* --- Timeline ------------------------------------------------------------------------- */
+
+.timeline {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: var(--esp-3);
+}
+
+/*
+ * Cada hecho es un boton entero y no un enlace dentro de una fila: elegirlo no navega, abre el
+ * detalle al lado. Grilla de tres zonas para que la fecha quede alineada en todas las filas.
+ */
+.timeline__boton {
+  display: grid;
+  grid-template-columns: 7rem minmax(0, 1fr);
+  grid-template-areas:
+    'origen titulo'
+    'origen fecha';
+  gap: var(--esp-1) var(--esp-4);
+  width: 100%;
+  padding: var(--esp-4) var(--esp-5);
+  border: var(--borde-fino) solid var(--color-borde);
+  border-left: var(--borde-acento) solid var(--color-borde);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie);
+  color: var(--color-texto);
+  font-family: inherit;
+  font-size: var(--tipo-base);
+  text-align: left;
+}
+
+button.timeline__boton {
+  cursor: pointer;
+}
+
+button.timeline__boton:hover {
+  background: var(--color-superficie-sutil);
+}
+
+button.timeline__boton:focus-visible {
+  outline: var(--foco-grosor) solid var(--color-foco);
+  outline-offset: var(--foco-offset);
+}
+
+/* El elegido se marca por el borde Y por aria-pressed: el color solo no alcanza (WCAG 1.4.1). */
+.timeline__boton--elegido {
+  border-left-color: var(--color-acento);
+  background: var(--color-superficie-sutil);
+  font-weight: var(--peso-medio);
+}
+
+.timeline__boton--inerte {
+  color: var(--color-texto-suave);
+}
+
+.timeline__origen {
+  grid-area: origen;
+  align-self: center;
+  font-size: var(--tipo-sm);
+  font-weight: var(--peso-semi);
+  color: var(--color-texto-suave);
+}
+
+.timeline__titulo {
+  grid-area: titulo;
+}
+
+.timeline__tipo {
+  color: var(--color-texto-suave);
+}
+
+.timeline__fecha {
+  grid-area: fecha;
+  font-size: var(--tipo-sm);
+  color: var(--color-texto-suave);
+}
+
+/* --- Detalle --------------------------------------------------------------------------- */
+
+.historia__versiones {
+  margin: 0;
+  padding-left: var(--esp-6);
+  display: grid;
+  gap: var(--esp-5);
+}
+
+.historia__version-cabecera {
+  margin: 0;
+}
+
+/*
+ * La vista previa nunca desborda la columna. El PDF lleva alto fijo: un iframe no se ajusta a su
+ * contenido, y sin alto quedaria en 150 px.
+ */
+.historia__previa {
+  display: block;
+  max-width: 100%;
+  margin: var(--esp-4) 0;
+  border: var(--borde-fino) solid var(--color-borde);
+  border-radius: var(--radio-md);
+}
+
+.historia__previa--pdf {
+  width: 100%;
+  height: 32rem;
+}
+
+.historia__plegable {
+  margin-top: var(--esp-4);
+}
+
+.historia__plegable summary {
+  cursor: pointer;
+  font-weight: var(--peso-semi);
+}
+
+.historia__plegable summary:focus-visible {
+  outline: var(--foco-grosor) solid var(--color-foco);
+  outline-offset: var(--foco-offset);
+}

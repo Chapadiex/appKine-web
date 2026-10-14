@@ -140,3 +140,12 @@ export const PERMISO_CAJA_OPERATE = 'caja:operate';
  * se lo da con alcance de actividad propia y lo avisa con una advertencia.
  */
 export const PERMISO_REPORTE_READ = 'reporte:read';
+
+/**
+ * Lectura de la Historia Clinica (M09, AKINE-04.01).
+ *
+ * <p>Solo decide si se OFRECE el enlace a la historia. No alcanza para leerla: sin relacion
+ * asistencial el backend pide ademas un motivo declarado (DP-03), y eso lo resuelve la pantalla de
+ * la historia. Por eso no se usa en un `permissionGuard`.
+ */
+export const PERMISO_HC_READ = 'hc:read';

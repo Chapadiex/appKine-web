@@ -10,32 +10,6 @@
  */
 
 /*
- * El `textarea` de las notas.
- *
- * `.campo` del sistema estiliza `input` y `select` y no `textarea`, asi que se hereda lo mismo
- * en vez de inventar otro control. Redimensionable solo en vertical: horizontal desborda la
- * tarjeta.
- */
-.campo textarea {
-  width: 100%;
-  box-sizing: border-box;
-  padding: var(--esp-4) var(--esp-5);
-  border: var(--borde-fino) solid var(--color-borde-control);
-  border-radius: var(--radio-md);
-  background: var(--color-superficie);
-  color: var(--color-texto);
-  font-family: inherit;
-  font-size: var(--tipo-base);
-  line-height: var(--linea-base);
-  resize: vertical;
-}
-
-.campo textarea:focus-visible {
-  outline: var(--foco-grosor) solid var(--color-foco);
-  outline-offset: var(--foco-offset);
-}
-
-/*
  * La evaluacion previa, pegada al campo de dolor.
  *
  * Es la unica pieza de la pantalla que existe por una razon clinica y no de formulario: se
