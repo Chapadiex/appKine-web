@@ -172,3 +172,24 @@ chocar con otros PR que agregan al final), y sus bloques de dias en `DIAS_CONFIG
 - **Los specs de "hoy" fallan en un dia feriado**: `agenda-recepcion` y `flujo-prepago` reservan
   turnos de HOY, y el 12/10/2026 (feriado nacional) la agenda del dia viene `FERIADO`. No es de esta
   tanda; queda anotado porque se vio al correr la suite entera ese dia.
+
+## Las pantallas del contrato 0.98.0 (`e2e/flujo-*.spec.ts`, cuarta tanda)
+
+Lo que entro con web #74, en el mismo proyecto `agenda` y sobre el mismo centro. Helpers en
+`e2e/support/sembrado-pantallas-098.ts`, bloques de dias en `DIAS_PANTALLAS_098` (130 a 136).
+
+| Spec | Que recorre | Lo que afirma contra el backend real |
+|---|---|---|
+| `flujo-presentacion-csv` | Deuda del financiador (convenio + arancel + cobertura, sesion cerrada) → lote armado y confirmado por la API → "Exportar CSV" en el detalle | La descarga se llama como dice `Content-Disposition` (`presentacion-<financiador>-<numero>.csv`), el pedido sale con `Accept: text/csv`, el archivo trae cabecera del lote y una fila por la prestacion con `personaId`, y **ni el nombre ni el apellido** del paciente |
+| `flujo-cobertura-al-reservar` | Persona con cobertura FINANCIADA → reserva por pantalla eligiendola en el selector | El pedido lleva `coberturaId`, el turno reservado la muestra, y releido por la API (`POST .../confirmacion`, idempotente) la tiene guardada |
+| `flujo-consumos-a-revisar` | Autorizacion consumida por un cierre → anular el coseguro por la API → revertir el consumo por la API | La fila del listado no tiene marca, despues "1 consumo a revisar", y despues de la reversion vuelve a no tenerla con el saldo devuelto |
+| `flujo-historia-administrativa` | La profesional abre historia, antecedente y caso con diagnostico y objetivo de texto unico → cuenta nueva ADMINISTRATIVO en el 360 | Ve el caso, su oferta y el equipo vigente; ningun texto clinico ni en la pantalla ni en `datos-administrativos`; `GET` de la historia clinica le responde 403; una paciente sin historia muestra "todavia no tiene historia clinica" |
+
+- **`GET /turnos/{id}` no publica la cobertura elegida.** `TurnoDelDia` no tiene `coberturaId`; el
+  `Turno` entero lo devuelven la reserva y las transiciones. Por eso el spec relee con la
+  confirmacion, que es idempotente.
+- **Releer una pantalla pasando por otra** tiene que esperar a que la otra se dibuje: con dos
+  `navegar` seguidos el router descarta la intermedia, ve la misma URL y no relee.
+- **La cuenta ADMINISTRATIVO es un alta self-service mas** (dentro del cupo de
+  `esperarCupoDeRegistro`), activada por Mailpit: tiene dos contextos y elige el del centro en el
+  selector.
