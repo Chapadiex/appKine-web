@@ -21,6 +21,8 @@ import { routes as rutasCaja } from './features/billing/caja.routes';
 import { routes as rutasPresentaciones } from './features/billing/presentaciones.routes';
 import { routes as rutasEgresos } from './features/billing/egresos.routes';
 import { routes as rutasReporting } from './features/reporting/reporting.routes';
+import { routes as rutasActivity } from './features/activity/activity.routes';
+import { SEGMENTO_CLASES } from './features/activity/models/rutas-de-clases';
 
 /**
  * Rutas raiz de AKINE (estructura fijada en AKINE-00.02).
@@ -318,6 +320,18 @@ export const routes: Routes = [
     path: 'reportes',
     canActivate: [authGuard],
     children: rutasReporting,
+  },
+
+  // Clases grupales e inscripciones (M28, segunda entrega, AKINE-08.01 y 08.02).
+  //
+  // Raiz propia y NO bajo `agenda`: una clase es un evento grupal unico, no N turnos
+  // (CA-M28-001-06), con su propia maquina de estados y sus propios permisos (`clase:*`,
+  // `inscripcion:*`). La agenda del dia si las muestra, como proyeccion de lectura, y enlaza aca.
+  // `contextGuard` y `permissionGuard` los ponen las rutas hijas: `activity.routes.ts`.
+  {
+    path: SEGMENTO_CLASES,
+    canActivate: [authGuard],
+    children: rutasActivity,
   },
 
   {

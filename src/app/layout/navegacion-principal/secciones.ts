@@ -3,6 +3,8 @@ import { PERMISO_CAJA_OPERATE, PERMISO_COLABORADOR_READ } from '../../core/model
 import { PERMISO_COBRO_REGISTER as PERMISO_PRESENTACIONES } from '../../core/models/permisos';
 import { PERMISO_REPORTE_READ } from '../../core/models/permisos';
 import { PERMISO_PACIENTE_READ } from '../../core/models/permisos';
+import { PERMISO_CLASE_READ } from '../../core/models/permisos';
+import { RUTA_CLASES } from '../../features/activity/models/rutas-de-clases';
 
 /** Una entrada de la navegacion principal. */
 export interface Seccion {
@@ -63,6 +65,8 @@ export interface Seccion {
  *   <li><b>Caja</b> — `caja.routes.ts`: la unica ruta lleva
  *       `permissionGuard(PERMISO_CAJA_OPERATE)`. Todo lo que hay en la pantalla, incluso leer
  *       la jornada, lo autoriza `caja:operate`, asi que sin el no queda nada que mirar.</li>
+ *   <li><b>Clases</b> — `activity.routes.ts`: la ruta vacia lleva
+ *       `permissionGuard(PERMISO_CLASE_READ)`. Programar pide `clase:manage` y es de la pantalla.</li>
  *   <li><b>Egresos</b> — `egresos.routes.ts`: las dos rutas llevan
  *       `permissionGuard(PERMISO_CAJA_OPERATE)`, el permiso que el backend exige en M22.</li>
  * </ul>
@@ -77,6 +81,8 @@ export interface Seccion {
 export const SECCIONES: readonly Seccion[] = [
   { etiqueta: 'Agenda', ruta: '/agenda' },
   { etiqueta: 'Pacientes', ruta: '/pacientes', permisos: [PERMISO_PACIENTE_READ] },
+  // Clases grupales (M28). `activity.routes.ts` exige `clase:read` en la ruta vacia.
+  { etiqueta: 'Clases', ruta: RUTA_CLASES, permisos: [PERMISO_CLASE_READ] },
   { etiqueta: 'Espacios', ruta: '/espacios' },
   { etiqueta: 'Horarios', ruta: RUTA_HORARIOS, permisos: [PERMISO_COLABORADOR_READ] },
   { etiqueta: 'Catalogo', ruta: '/catalogo' },

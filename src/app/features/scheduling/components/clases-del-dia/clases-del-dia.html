@@ -1,0 +1,32 @@
+<section class="tarjeta" aria-labelledby="titulo-clases-del-dia">
+  <h2 id="titulo-clases-del-dia">Clases grupales del dia</h2>
+
+  @if (error(); as fallo) {
+    <p class="estado estado--error">{{ fallo.mensaje }}</p>
+    <div class="acciones">
+      <button type="button" class="boton boton--secundario" (click)="cargar()">
+        Volver a leer las clases
+      </button>
+    </div>
+  } @else if (clases() === null) {
+    <p class="estado estado--cargando">Leyendo las clases del dia…</p>
+  } @else if (clases()!.length === 0) {
+    <p class="estado estado--vacio">No hay clases que empiecen este dia.</p>
+  } @else {
+    <ul class="clases-del-dia">
+      @for (clase of clases(); track clase.eventoId) {
+        <li>
+          <b>{{ rango(clase) }}</b> — {{ nombre(clase) }} — {{ estado(clase) }} —
+          {{ clase.ocupados ?? 0 }} de {{ clase.capacidad ?? 0 }} lugares ocupados
+          @if (clase.eventoId) {
+            <a class="enlace" [routerLink]="['/clases', clase.eventoId]">
+              Ver clase<span class="visualmente-oculto">
+                {{ nombre(clase) }} de las {{ rango(clase) }}</span
+              >
+            </a>
+          }
+        </li>
+      }
+    </ul>
+  }
+</section>

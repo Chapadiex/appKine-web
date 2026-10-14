@@ -140,3 +140,19 @@ export const PERMISO_CAJA_OPERATE = 'caja:operate';
  * se lo da con alcance de actividad propia y lo avisa con una advertencia.
  */
 export const PERMISO_REPORTE_READ = 'reporte:read';
+
+/**
+ * Clases grupales (M28, AKINE-08.01). `clase:read` mira la grilla y los cupos —que no nombran a
+ * nadie—; `clase:manage` programa, reprograma y cancela. Son codigos propios y no `turno:*`
+ * (decision pendiente 9 del backend): una clase no es N turnos.
+ */
+export const PERMISO_CLASE_READ = 'clase:read';
+export const PERMISO_CLASE_MANAGE = 'clase:manage';
+
+/**
+ * Inscripciones a clases (M28, AKINE-08.02). <b>`inscripcion:read` no es `clase:read`</b>: la lista
+ * de participantes es la unica respuesta de M28 que lleva nombre y documento. `inscripcion:manage`
+ * inscribe, confirma y da de baja.
+ */
+export const PERMISO_INSCRIPCION_READ = 'inscripcion:read';
+export const PERMISO_INSCRIPCION_MANAGE = 'inscripcion:manage';

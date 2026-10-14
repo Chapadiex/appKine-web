@@ -478,6 +478,36 @@ function pagina(contenido: readonly unknown[]): unknown {
 // El router
 // ---------------------------------------------------------------------------------------------
 
+/** Una clase llena con una persona en espera: el estado con mas marcas de la pantalla. */
+export const CLASE = {
+  id: 70,
+  ofertaId: 42,
+  profesionalId: 55,
+  estado: 'PROGRAMADA',
+  inicio: '2026-10-20T21:00:00Z',
+  fin: '2026-10-20T22:00:00Z',
+  capacidad: 2,
+  capacidadEfectiva: 2,
+  ocupados: 2,
+  version: 0,
+} as const;
+
+const PARTICIPANTES_DE_CLASE = [
+  {
+    nombre: 'Ana',
+    apellido: 'Perez',
+    tipoDocumento: 'DNI',
+    numeroDocumento: '30111222',
+    inscripcion: { id: 501, estado: 'RESERVADA' },
+  },
+  { nombre: 'Luis', apellido: 'Gomez', inscripcion: { id: 502, estado: 'CONFIRMADA' } },
+  {
+    nombre: 'Eva',
+    apellido: 'Sosa',
+    inscripcion: { id: 503, estado: 'LISTA_ESPERA', posicionEspera: 1 },
+  },
+];
+
 /** Como responde el padron: con filas, vacio, o con un error de servidor. */
 export type ModoPadron = 'con-filas' | 'vacio' | 'error';
 
@@ -554,8 +584,47 @@ export async function instalarApiDeContraste(page: Page): Promise<ApiDeContraste
           'paciente:manage',
           'paciente:read',
           'turno:read',
+          'clase:read',
+          'clase:manage',
+          'inscripcion:read',
+          'inscripcion:manage',
         ],
       });
+    }
+
+    // --- Clases grupales (F9) ----------------------------------------------------------
+    const clases = `/api/v1/consultorios/${CONSULTORIO_ID}/clases`;
+    if (camino === clases && metodo === 'GET') {
+      return json([CLASE, { ...CLASE, id: 71, titulo: 'Yoga suave', estado: 'CANCELADA' }]);
+    }
+    if (camino === `${clases}/${CLASE.id}` && metodo === 'GET') {
+      return json(CLASE);
+    }
+    if (camino === `${clases}/${CLASE.id}/cupos`) {
+      return json({
+        claseId: CLASE.id,
+        capacidad: 2,
+        capacidadEfectiva: 2,
+        ocupados: 2,
+        disponibles: 0,
+        enEspera: 1,
+      });
+    }
+    if (camino === `${clases}/${CLASE.id}/historial`) {
+      return json([{ id: 1, tipo: 'CREACION', ocurridoEn: '2026-10-14T13:00:00Z' }]);
+    }
+    if (camino === `${clases}/${CLASE.id}/inscripciones` && metodo === 'GET') {
+      return json(PARTICIPANTES_DE_CLASE);
+    }
+    if (camino === `/api/v1/consultorios/${CONSULTORIO_ID}/ofertas` && metodo === 'GET') {
+      return json([
+        { id: CLASE.ofertaId, nombreComercial: 'Pilates reformer', modalidad: 'GRUPAL' },
+      ]);
+    }
+    if (
+      camino === `/api/v1/consultorios/${CONSULTORIO_ID}/ofertas/${CLASE.ofertaId}/habilitaciones`
+    ) {
+      return json({ profesionales: [{ membershipId: 55, nombre: 'Lic. Diaz' }] });
     }
 
     // --- Espacios ----------------------------------------------------------------------
