@@ -193,3 +193,19 @@ Lo que entro con web #74, en el mismo proyecto `agenda` y sobre el mismo centro.
 - **La cuenta ADMINISTRATIVO es un alta self-service mas** (dentro del cupo de
   `esperarCupoDeRegistro`), activada por Mailpit: tiene dos contextos y elige el del centro en el
   selector.
+
+## Asistencia de clases (F9, `e2e/flujo-asistencia.spec.ts`)
+
+En el proyecto `agenda`, sobre el mismo centro. Helpers en `e2e/support/sembrado-asistencia.ts`,
+bloque de dias en `DIAS_ASISTENCIA` (140). La clase es de una oferta `GRUPAL` sin profesional ni
+espacio, y es **futura** a proposito: inscribir a una clase que ya empezo es
+`clase-transicion-no-permitida` ("ya empezo"), e iniciar la asistencia no tiene restriccion de hora.
+
+| Spec | Que recorre | Lo que afirma contra el backend real |
+|---|---|---|
+| `flujo-asistencia` | Clase con cuatro inscriptas → `/asistencia` con la fecha de la clase → iniciar → con la pantalla abierta se cancela una inscripcion por la API → lote presente/tarde/ausente/cancelada → correccion sin motivo (bloqueada) y con motivo → historial → cerrar | El lote devuelve 3 exitosos y 1 fallido con `inscripcion-transicion-no-permitida`, sin deshacer los demas; la correccion viaja con su motivo; el historial guarda "Ausente a Presente"; el detalle final es `REALIZADA` con 3 presentes y 0 ausentes |
+
+- **El consumo de un pase y la derivacion clinica no tienen E2E** porque el backend no publica API
+  para ninguno de los dos (08.04 sin controller; 08.06 a 08.09 sin codigo sobre `V64`).
+- **`aceptaListaEspera` va explicito al inscribir:** el contrato lo declara opcional y el backend
+  responde 400 si falta (`boolean` primitivo en `InscribirRequest`).
