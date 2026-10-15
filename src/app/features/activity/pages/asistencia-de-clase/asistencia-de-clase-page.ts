@@ -1,4 +1,13 @@
-import { Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  input,
+  signal,
+  untracked,
+} from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { DetalleOperativoDeClase } from '../../../../api/generated/model/detalle-operativo-de-clase';
@@ -74,6 +83,7 @@ interface Historial {
 @Component({
   selector: 'app-asistencia-de-clase-page',
   imports: [RouterLink, Paginacion],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './asistencia-de-clase-page.html',
   styleUrl: '../../asistencia.css',
 })

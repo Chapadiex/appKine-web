@@ -49,13 +49,13 @@ con el mismo nombre en los dos repos** que usa el job `contrato` del CI.
 
 | Capa | Tecnología |
 |---|---|
-| Framework | Angular 21 |
+| Framework | Angular 22 · TypeScript 6.0 · Node `^22.22.3 || ^24.15.0 || >=26` (lo exige el CLI) |
 | Package manager | npm con `package-lock.json` |
 | Change detection | **Zoneless** — sin `zone.js`, signals |
-| Componentes | Standalone, `OnPush` por defecto |
+| Componentes | Standalone. `OnPush` es el default de Angular 22; los componentes anteriores a la migración declaran `ChangeDetectionStrategy.Eager` hasta pasarlos uno por uno |
 | HTTP | `HttpClient` (incluido de fábrica en v21) |
 | Cliente API | **Generado** desde `akine-api.yaml` → `src/app/api/generated/` |
-| Tests unit | Vitest (default de v21) |
+| Tests unit | Vitest 5 (builder `@angular/build:unit-test`) |
 | Tests E2E | Playwright — `e2e/` |
 | Accesibilidad | WCAG 2.1 AA |
 | CI/CD | GitHub Actions + SonarQube |
