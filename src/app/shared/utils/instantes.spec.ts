@@ -1,4 +1,11 @@
-import { aCampoLocal, aInstanteUtc, formatearInstante, mismoInstante } from './instantes';
+import {
+  aCampoLocal,
+  aInstanteUtc,
+  formatearFecha,
+  formatearHora,
+  formatearInstante,
+  mismoInstante,
+} from './instantes';
 
 /**
  * Spec de la conversion entre el instante UTC del contrato y el control del navegador.
@@ -47,5 +54,54 @@ describe('instantes', () => {
     // Ausente es igual a ausente, y distinto de cualquier instante.
     expect(mismoInstante(undefined, null)).toBe(true);
     expect(mismoInstante(undefined, '2026-09-01T00:00:00Z')).toBe(false);
+  });
+
+  /**
+   * 22:30 del 14/10 en Cordoba (UTC-3) son las 01:30 UTC del 15, y las 15:30 del 15 en Kiritimati
+   * (UTC+14). Con la zona de la sede, el resultado no depende de la zona del navegador: se prueba
+   * con las dos para que el spec diga lo mismo en el CI (UTC) que en una maquina de Cordoba.
+   */
+  describe('en la zona de la sede', () => {
+    const CORDOBA = 'America/Argentina/Cordoba';
+    const KIRITIMATI = 'Pacific/Kiritimati';
+    const NOCHE_EN_CORDOBA = '2026-10-15T01:30:00Z';
+
+    it('formatea el instante en el dia y la hora de la sede', () => {
+      expect(formatearFecha(NOCHE_EN_CORDOBA, CORDOBA)).toBe('14/10/2026');
+      expect(formatearFecha(NOCHE_EN_CORDOBA, KIRITIMATI)).toBe('15/10/2026');
+      expect(formatearInstante(NOCHE_EN_CORDOBA, CORDOBA)).toContain('14/10/2026');
+      expect(formatearInstante(NOCHE_EN_CORDOBA, CORDOBA)).toContain('22:30');
+      expect(formatearHora(NOCHE_EN_CORDOBA, CORDOBA)).toBe('22:30');
+      expect(formatearHora(undefined, CORDOBA)).toBeNull();
+    });
+
+    it('una fecha pura no se convierte, en ninguna zona', () => {
+      expect(formatearFecha('2026-10-14', CORDOBA)).toBe('14/10/2026');
+      expect(formatearFecha('2026-10-14', KIRITIMATI)).toBe('14/10/2026');
+      expect(formatearFecha('', CORDOBA)).toBe('');
+      expect(formatearFecha('no es fecha', CORDOBA)).toBe('');
+    });
+
+    it('el datetime-local se lee y se escribe en hora de la sede', () => {
+      expect(aCampoLocal(NOCHE_EN_CORDOBA, CORDOBA)).toBe('2026-10-14T22:30');
+      expect(aCampoLocal(NOCHE_EN_CORDOBA, KIRITIMATI)).toBe('2026-10-15T15:30');
+      expect(aInstanteUtc('2026-10-14T22:30', CORDOBA)).toBe('2026-10-15T01:30:00.000Z');
+      expect(aInstanteUtc('2026-10-15T15:30', KIRITIMATI)).toBe('2026-10-15T01:30:00.000Z');
+    });
+
+    it('respeta el cambio de horario de verano de la zona', () => {
+      // Nueva York pasa de EST (UTC-5) a EDT (UTC-4) el 08/03/2026: el desfase cambia en el dia.
+      expect(aInstanteUtc('2026-03-07T22:30', 'America/New_York')).toBe('2026-03-08T03:30:00.000Z');
+      expect(aInstanteUtc('2026-03-08T22:30', 'America/New_York')).toBe('2026-03-09T02:30:00.000Z');
+    });
+
+    it('sin zona o con una desconocida cae a la del navegador, como antes', () => {
+      expect(aCampoLocal(NOCHE_EN_CORDOBA, '')).toBe(aCampoLocal(NOCHE_EN_CORDOBA));
+      expect(aCampoLocal(NOCHE_EN_CORDOBA, 'Marte/Olympus')).toBe(aCampoLocal(NOCHE_EN_CORDOBA));
+      expect(aInstanteUtc('2026-10-14T22:30', 'Marte/Olympus')).toBe(
+        aInstanteUtc('2026-10-14T22:30'),
+      );
+      expect(formatearInstante(NOCHE_EN_CORDOBA, null)).toBe(formatearInstante(NOCHE_EN_CORDOBA));
+    });
   });
 });

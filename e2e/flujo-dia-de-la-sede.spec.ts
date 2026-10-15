@@ -77,5 +77,10 @@ test.describe('El dia de la sede, con el navegador en otra zona y cerca de media
     await expect(page.locator('#filtro-fecha-convenio')).toHaveValue(hoyDeLaSede);
     await page.getByRole('button', { name: 'Firmar un convenio' }).click();
     await expect(page.getByLabel('Vigente desde')).toHaveValue(hoyDeLaSede);
+
+    // Los `datetime-local` hablan en hora de la SEDE: la ventana propuesta arranca "ahora", que en
+    // la sede son las 23:30 del ultimo dia del mes y en el navegador las 16:30 del dia 1.
+    await navegar(page, '/espacios/disponibilidad');
+    await expect(page.locator('#ventana-desde')).toHaveValue(`${hoyDeLaSede}T23:30`);
   });
 });

@@ -3,6 +3,7 @@ import {
   ObligacionConceptoEnum,
   ObligacionEstadoEnum,
 } from '../../../api/generated/model/obligacion';
+import { formatearFecha } from '../../../shared/utils/instantes';
 
 /**
  * Textos y formateo de la cuenta corriente (M18, AKINE-07.01).
@@ -127,18 +128,14 @@ export function sePuedeAnular(obligacion: Obligacion): boolean {
   return obligacion.estado !== ObligacionEstadoEnum.ANULADA;
 }
 
-/** Fecha legible de un instante UTC, con la zona del navegador. */
-export function fechaEnPalabras(instante: string | undefined): string {
-  if (instante === undefined || instante === '') {
-    return '';
-  }
-  const fecha = new Date(instante);
-  if (Number.isNaN(fecha.getTime())) {
-    return '';
-  }
-  return new Intl.DateTimeFormat('es-AR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  }).format(fecha);
+/**
+ * Fecha de negocio legible, en la zona de la sede.
+ *
+ * <p>Un instante (`devengadaEn`, `registradoEn`) se muestra en `zona` —`DiaDeLaSede.zona()`—: una
+ * deuda devengada a las 22:30 del 14 en Cordoba es del 14 aunque el navegador ya este en el 15.
+ * Una fecha pura del contrato (`fechaNegocio`, `periodoDesde`) no se convierte. Ver
+ * `formatearFecha` en `shared/utils/instantes`.
+ */
+export function fechaEnPalabras(valor: string | undefined, zona = ''): string {
+  return formatearFecha(valor, zona);
 }

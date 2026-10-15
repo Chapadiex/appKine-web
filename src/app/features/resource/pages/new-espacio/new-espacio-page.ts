@@ -12,6 +12,7 @@ import { aInstanteUtc } from '../../../../shared/utils/instantes';
 import { crearEsperaPorLimite } from '../../../../shared/utils/espera-por-limite';
 import { numeroDeclarado } from '../../../../shared/utils/numero-declarado';
 import { textoRequerido } from '../../../../shared/validators/texto-requerido';
+import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 
 /** Estado del alta. Los cuatro casos exigen pantalla distinta (ADR-0005). */
 type EstadoAlta =
@@ -58,6 +59,7 @@ type EstadoAlta =
   styleUrl: '../../resource.css',
 })
 export class NewEspacioPage {
+  private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly espacios = inject(EspaciosService);
   private readonly tenantContext = inject(TenantContextStore);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
@@ -208,12 +210,12 @@ export class NewEspacioPage {
       cuerpo.notes = notas;
     }
 
-    const desde = aInstanteUtc(valores.validFrom);
+    const desde = aInstanteUtc(valores.validFrom, this.diaDeLaSede.zona());
     if (desde !== null) {
       cuerpo.validFrom = desde;
     }
 
-    const hasta = aInstanteUtc(valores.validUntil);
+    const hasta = aInstanteUtc(valores.validUntil, this.diaDeLaSede.zona());
     if (hasta !== null) {
       cuerpo.validUntil = hasta;
     }

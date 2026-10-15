@@ -33,6 +33,7 @@ import {
   importeEnPalabras,
   sePuedeAnular,
 } from '../../models/etiquetas-de-obligacion';
+import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 
 /** En cual de los tres estados esta el listado. No es paginado: el backend devuelve un array. */
 type EstadoCuenta =
@@ -92,6 +93,7 @@ type EstadoCuenta =
   styleUrl: '../../billing.css',
 })
 export class CuentaCorrientePage {
+  private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly api = inject(BillingApi);
   private readonly tenantContext = inject(TenantContextStore);
 
@@ -117,7 +119,8 @@ export class CuentaCorrientePage {
   protected readonly estadoEnPalabras = estadoEnPalabras;
   protected readonly claseDeEstado = claseDeEstado;
   protected readonly conceptoEnPalabras = conceptoEnPalabras;
-  protected readonly fechaEnPalabras = fechaEnPalabras;
+  protected readonly fechaEnPalabras = (valor: string | undefined): string =>
+    fechaEnPalabras(valor, this.diaDeLaSede.zona());
   protected readonly sePuedeAnular = sePuedeAnular;
 
   protected readonly estado = signal<EstadoCuenta>({ tipo: 'cargando' });
@@ -176,7 +179,8 @@ export class CuentaCorrientePage {
   // F-3: saldo a favor e imputacion posterior
   // -------------------------------------------------------------------------------------
 
-  protected readonly instanteEnPalabras = instanteEnPalabras;
+  protected readonly instanteEnPalabras = (valor: string | undefined): string =>
+    instanteEnPalabras(valor, this.diaDeLaSede.zona());
   protected readonly importeEnPalabras = importeEnPalabras;
 
   /**

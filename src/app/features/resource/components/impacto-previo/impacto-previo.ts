@@ -1,7 +1,8 @@
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 
 import { TurnoAfectadoPorDisponibilidadResponse } from '../../../../api/generated/model/turno-afectado-por-disponibilidad-response';
-import { formatearInstante } from '../../../../shared/utils/instantes';
+import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
+import { formatearHora, formatearInstante } from '../../../../shared/utils/instantes';
 import { etiquetaDeFecha, sumarDias } from '../../models/ventana-de-fechas';
 import {
   ImpactoPrevio,
@@ -69,6 +70,8 @@ import {
   `,
 })
 export class ImpactoPrevioPanel {
+  private readonly diaDeLaSede = inject(DiaDeLaSede);
+
   /** `null` no dibuja nada: todavia no se pidio la consulta. */
   readonly estado = input.required<ImpactoPrevio | null>();
 
@@ -105,19 +108,9 @@ export class ImpactoPrevioPanel {
   });
 
   protected franja(turno: TurnoAfectadoPorDisponibilidadResponse): string {
-    const inicio = formatearInstante(turno.inicio) ?? 'Sin fecha';
-    const fin = horaDe(turno.fin);
+    const zona = this.diaDeLaSede.zona();
+    const inicio = formatearInstante(turno.inicio, zona) ?? 'Sin fecha';
+    const fin = formatearHora(turno.fin, zona);
     return fin === null ? inicio : `${inicio} a ${fin}`;
   }
-}
-
-function horaDe(instante: string | undefined): string | null {
-  if (instante === undefined || instante === '') {
-    return null;
-  }
-  const fecha = new Date(instante);
-  if (Number.isNaN(fecha.getTime())) {
-    return null;
-  }
-  return fecha.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false });
 }

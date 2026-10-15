@@ -20,6 +20,7 @@ import {
 import { formatearInstante } from '../../../../shared/utils/instantes';
 import { textoRequerido } from '../../../../shared/validators/texto-requerido';
 import { CausaSolicitud, traducirErrorSolicitud } from '../../models/solicitud-errors';
+import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 
 type FiltroEstado = 'TODAS' | 'PENDIENTE' | 'APROBADA' | 'RECHAZADA';
 type Desenlace = 'APROBAR' | 'RECHAZAR';
@@ -58,12 +59,14 @@ type Especialidades =
   templateUrl: './solicitudes-catalogo-page.html',
 })
 export class SolicitudesCatalogoPage {
+  private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly catalogo = inject(CatalogoClinicoService);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly formBuilder = inject(FormBuilder);
   private readonly injector = inject(Injector);
 
-  protected readonly formatearInstante = formatearInstante;
+  protected readonly formatearInstante = (instante: string | undefined | null): string | null =>
+    formatearInstante(instante, this.diaDeLaSede.zona());
 
   protected readonly estado = signal<Estado>({ tipo: 'cargando' });
   protected readonly filtroEstado = signal<FiltroEstado>('PENDIENTE');

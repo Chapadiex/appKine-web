@@ -52,6 +52,7 @@ import {
   vigenciaDeDocumento,
 } from '../../models/etiquetas-de-documento';
 import { textoRequerido } from '../../../../shared/validators/texto-requerido';
+import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 
 /** Panel abierto sobre una orden. Solo uno a la vez en toda la pantalla. */
 type PanelDeOrden = 'editar' | 'baja' | 'documento';
@@ -150,6 +151,7 @@ interface PanelAbierto {
   styleUrl: '../../person.css',
 })
 export class OrdenesYAutorizacionesPage {
+  private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly api = inject(DocumentosApi);
   private readonly coberturasApi = inject(CoberturasApi);
   private readonly adjuntosApi = inject(AdjuntosApi);
@@ -163,7 +165,8 @@ export class OrdenesYAutorizacionesPage {
 
   protected readonly nombreCompleto = nombreCompleto;
   protected readonly coberturaEnUnaLinea = coberturaEnUnaLinea;
-  protected readonly fechaEnPalabras = fechaEnPalabras;
+  protected readonly fechaEnPalabras = (valor: string | undefined | null): string =>
+    fechaEnPalabras(valor, this.diaDeLaSede.zona());
   protected readonly situacionDeOrden = situacionDeOrden;
   protected readonly ordenInactiva = ordenInactiva;
   protected readonly emisorEnPalabras = emisorEnPalabras;
@@ -181,7 +184,8 @@ export class OrdenesYAutorizacionesPage {
   protected readonly tipoDeEvento = tipoDeEvento;
   protected readonly cambioDeEstado = cambioDeEstado;
   protected readonly actorDeEvento = actorDeEvento;
-  protected readonly formatearInstante = formatearInstante;
+  protected readonly formatearInstante = (instante: string | undefined | null): string | null =>
+    formatearInstante(instante, this.diaDeLaSede.zona());
 
   protected readonly cargando = signal(true);
   protected readonly errorDeCarga = signal<string | null>(null);

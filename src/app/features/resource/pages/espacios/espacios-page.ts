@@ -34,6 +34,7 @@ import {
 } from '../../../../shared/utils/instantes';
 import { textoRequerido } from '../../../../shared/validators/texto-requerido';
 import { numeroDeclarado } from '../../../../shared/utils/numero-declarado';
+import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 
 /** Filtro de estado del listado. Los tres valores son los del contrato. */
 type FiltroEstado = 'ACTIVO' | 'INACTIVO' | 'TODOS';
@@ -90,6 +91,7 @@ const POR_PAGINA = 20;
   styleUrl: '../../resource.css',
 })
 export class EspaciosPage {
+  private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly espacios = inject(EspaciosService);
   private readonly tenantContext = inject(TenantContextStore);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
@@ -99,7 +101,8 @@ export class EspaciosPage {
   protected readonly permisoManage = PERMISO_CONSULTORIO_MANAGE;
   protected readonly tipos = TIPOS_DE_ESPACIO;
   protected readonly etiquetaDeTipo = etiquetaDeTipo;
-  protected readonly formatearInstante = formatearInstante;
+  protected readonly formatearInstante = (instante: string | undefined | null): string | null =>
+    formatearInstante(instante, this.diaDeLaSede.zona());
 
   protected readonly nombreDeLaSede = computed(
     () => this.tenantContext.context()?.consultorioName ?? 'la sede activa',
@@ -240,7 +243,7 @@ export class EspaciosPage {
 
   /** Situacion de servicio de una fila, ya redactada. Ver {@link situacionDeServicio}. */
   protected situacion(espacio: EspacioResponse): SituacionDeServicio {
-    return situacionDeServicio(espacio, this.ahora());
+    return situacionDeServicio(espacio, this.ahora(), this.diaDeLaSede.zona());
   }
 
   protected cambiarFiltro(valor: string): void {
@@ -457,7 +460,7 @@ export class EspaciosPage {
     // La comparacion es por INSTANTE y no por texto: el valor que dio la vuelta por el control
     // del navegador vuelve con milisegundos y el del backend no, asi que comparar strings
     // concluiria que el usuario cambio la fecha en cada guardado. Ver `mismoInstante`.
-    const desde = aInstanteUtc(valores.validFrom);
+    const desde = aInstanteUtc(valores.validFrom, this.diaDeLaSede.zona());
     if (desde !== null && !mismoInstante(desde, original.validFrom)) {
       cambios.validFrom = desde;
     }
@@ -465,7 +468,7 @@ export class EspaciosPage {
     if (valores.clearValidUntil) {
       cambios.clearValidUntil = true;
     } else {
-      const hasta = aInstanteUtc(valores.validUntil);
+      const hasta = aInstanteUtc(valores.validUntil, this.diaDeLaSede.zona());
       if (hasta !== null && !mismoInstante(hasta, original.validUntil)) {
         cambios.validUntil = hasta;
       }
@@ -480,8 +483,8 @@ export class EspaciosPage {
       tipo: espacio.tipo ?? '',
       capacidad: espacio.capacidad === undefined ? '' : String(espacio.capacidad),
       notes: espacio.notes ?? '',
-      validFrom: aCampoLocal(espacio.validFrom),
-      validUntil: aCampoLocal(espacio.validUntil),
+      validFrom: aCampoLocal(espacio.validFrom, this.diaDeLaSede.zona()),
+      validUntil: aCampoLocal(espacio.validUntil, this.diaDeLaSede.zona()),
       clearValidUntil: false,
     });
   }

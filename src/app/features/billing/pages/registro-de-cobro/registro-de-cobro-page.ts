@@ -19,6 +19,7 @@ import {
   sumaDeCentavos,
   textoDeCentavos,
 } from '../../models/dinero';
+import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 
 /** Un medio de pago que se esta cargando. `id` es solo para el `track` del `@for`. */
 interface LineaDeMedio {
@@ -96,6 +97,7 @@ type EstadoDeuda =
   styleUrl: '../../billing.css',
 })
 export class RegistroDeCobroPage {
+  private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly api = inject(BillingApi);
   private readonly tenantContext = inject(TenantContextStore);
 
@@ -125,7 +127,8 @@ export class RegistroDeCobroPage {
 
   protected readonly mediosDisponibles = MEDIOS_DE_COBRO;
   protected readonly medioEnPalabras = medioEnPalabras;
-  protected readonly fechaEnPalabras = fechaEnPalabras;
+  protected readonly fechaEnPalabras = (valor: string | undefined): string =>
+    fechaEnPalabras(valor, this.diaDeLaSede.zona());
 
   protected readonly estado = signal<EstadoDeuda>({ tipo: 'cargando' });
   protected readonly persona = signal<PersonaResponse | null>(null);
