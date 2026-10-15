@@ -16,6 +16,7 @@ export const HOY = '2026-10-14';
 
 export const URL_CLASES = `/api/v1/consultorios/${CONSULTORIO}/clases`;
 export const URL_OFERTAS = `/api/v1/consultorios/${CONSULTORIO}/ofertas`;
+export const URL_ESPACIOS = `/api/v1/organizations/${ORGANIZACION}/consultorios/${CONSULTORIO}/espacios`;
 
 /**
  * `DiaDeLaSede` con la zona ya resuelta. El real la pide al listado de sedes cuando `contextGuard`
