@@ -140,3 +140,14 @@ export const PERMISO_CAJA_OPERATE = 'caja:operate';
  * se lo da con alcance de actividad propia y lo avisa con una advertencia.
  */
 export const PERMISO_REPORTE_READ = 'reporte:read';
+
+/**
+ * Asistencia de clases (F9, AKINE-08.03). Copiados de `activity.domain.PermissionCodes`.
+ *
+ * <p>Tres codigos y no uno, porque el backend los separa: tomar lista es `asistencia:manage`, ver
+ * quien esta anotado es `inscripcion:read` —que no es `clase:read`: quien mira la grilla del dia
+ * no necesita saber quien esta inscripto— e iniciar o cerrar la clase es `clase:manage`.
+ */
+export const PERMISO_ASISTENCIA_MANAGE = 'asistencia:manage';
+export const PERMISO_INSCRIPCION_READ = 'inscripcion:read';
+export const PERMISO_CLASE_MANAGE = 'clase:manage';

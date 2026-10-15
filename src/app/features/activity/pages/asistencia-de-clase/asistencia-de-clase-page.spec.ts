@@ -1,0 +1,295 @@
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
+
+import { AsistenciaDeClasePage } from './asistencia-de-clase-page';
+import { TIMEOUT_AXE, esperarSinViolaciones } from '../../../../core/testing/axe';
+import { TenantContextStore } from '../../../../core/services/tenant-context.store';
+import { errorInterceptor } from '../../../../core/interceptors/error.interceptor';
+import { provideApi } from '../../../../api/generated/provide-api';
+
+const CONSULTORIO = 3;
+const CLASE = 7;
+const BASE = `/api/v1/consultorios/${CONSULTORIO}/clases/${CLASE}`;
+
+function detalle(estado: string, extra: Record<string, unknown> = {}) {
+  return {
+    claseId: CLASE,
+    titulo: 'Pilates grupal',
+    estado,
+    inicio: '2026-10-20T13:00:00Z',
+    fin: '2026-10-20T14:00:00Z',
+    presentes: 1,
+    ausentes: 0,
+    sinResolver: 2,
+    ocupados: 3,
+    capacidadEfectiva: 6,
+    enEspera: 0,
+    page: 0,
+    totalPages: 1,
+    content: [
+      {
+        apellido: 'Gomez',
+        nombre: 'Ana',
+        numeroDocumento: '30111222',
+        tipoDocumento: 'DNI',
+        inscripcion: { id: 1, estado: 'CONFIRMADA' },
+      },
+      {
+        apellido: 'Lopez',
+        nombre: 'Bea',
+        inscripcion: { id: 2, estado: 'ASISTIO' },
+        asistencia: { id: 20, resultado: 'PRESENTE', correcciones: 1 },
+      },
+      { apellido: 'Ruiz', nombre: 'Caro', inscripcion: { id: 3, estado: 'CONFIRMADA' } },
+      { apellido: 'Paz', nombre: 'Dora', inscripcion: { id: 4, estado: 'LISTA_ESPERA' } },
+    ],
+    ...extra,
+  };
+}
+
+/**
+ * Asistencia de una clase: el ciclo (iniciar, cerrar), el lote no atomico con fallos por item, la
+ * correccion que exige motivo antes de salir a la red y el historial.
+ */
+describe('AsistenciaDeClasePage', () => {
+  let httpMock: HttpTestingController;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [AsistenciaDeClasePage],
+      providers: [
+        provideHttpClient(withInterceptors([errorInterceptor])),
+        provideHttpClientTesting(),
+        provideRouter([]),
+        provideApi(''),
+      ],
+    }).compileComponents();
+    httpMock = TestBed.inject(HttpTestingController);
+    TestBed.inject(TenantContextStore).select({
+      organizationId: 1,
+      organizationName: 'Centro',
+      consultorioId: CONSULTORIO,
+      consultorioName: 'Sede',
+    });
+  });
+
+  afterEach(() => httpMock.verify());
+
+  const el = (f: ComponentFixture<AsistenciaDeClasePage>) => f.nativeElement as HTMLElement;
+  const texto = (f: ComponentFixture<AsistenciaDeClasePage>) => el(f).textContent ?? '';
+
+  async function estabilizar(fixture: ComponentFixture<AsistenciaDeClasePage>) {
+    await fixture.whenStable();
+    fixture.detectChanges();
+  }
+
+  async function responderDetalle(
+    fixture: ComponentFixture<AsistenciaDeClasePage>,
+    cuerpo: object,
+  ) {
+    httpMock.expectOne((p) => p.url === `${BASE}/detalle-operativo`).flush(cuerpo);
+    await estabilizar(fixture);
+  }
+
+  async function montar(estado: string) {
+    const fixture = TestBed.createComponent(AsistenciaDeClasePage);
+    fixture.componentRef.setInput('claseId', String(CLASE));
+    fixture.detectChanges();
+    await responderDetalle(fixture, detalle(estado));
+    return fixture;
+  }
+
+  function boton(fixture: ComponentFixture<AsistenciaDeClasePage>, rotulo: string) {
+    const encontrado = [...el(fixture).querySelectorAll('button')].find((b) =>
+      (b.textContent ?? '').includes(rotulo),
+    );
+    if (!encontrado) {
+      throw new Error(`No hay boton "${rotulo}"`);
+    }
+    return encontrado as HTMLButtonElement;
+  }
+
+  function radio(fixture: ComponentFixture<AsistenciaDeClasePage>, id: number, valor: string) {
+    const input = el(fixture).querySelector(
+      `input[name="asistencia-${id}"][value="${valor}"]`,
+    ) as HTMLInputElement;
+    input.checked = true;
+    input.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+  }
+
+  it(
+    'una clase programada se inicia antes de marcar',
+    async () => {
+      const fixture = await montar('PROGRAMADA');
+      expect(texto(fixture)).toContain('iniciala para empezar');
+      expect(el(fixture).querySelector('input[type="radio"]')).toBeNull();
+      await esperarSinViolaciones(fixture.nativeElement);
+
+      boton(fixture, 'Iniciar clase').click();
+      httpMock.expectOne(`${BASE}/inicio`).flush({ id: CLASE, estado: 'EN_CURSO' });
+      await responderDetalle(fixture, detalle('EN_CURSO'));
+      expect(texto(fixture)).toContain('En curso');
+      expect(el(fixture).querySelector('input[name="asistencia-1"]')).not.toBeNull();
+      // La de lista de espera no se marca.
+      expect(el(fixture).querySelector('input[name="asistencia-4"]')).toBeNull();
+    },
+    TIMEOUT_AXE,
+  );
+
+  it(
+    'el lote manda solo lo cambiado y muestra los fallos sin deshacer los exitos',
+    async () => {
+      const fixture = await montar('EN_CURSO');
+      boton(fixture, 'Marcar presentes a los sin marcar').click();
+      fixture.detectChanges();
+      radio(fixture, 3, 'AUSENTE');
+      await esperarSinViolaciones(fixture.nativeElement);
+
+      boton(fixture, 'Guardar asistencia').click();
+      const pedido = httpMock.expectOne(`${BASE}/asistencias/lote`);
+      expect(pedido.request.body).toEqual({
+        items: [
+          { inscripcionId: 1, resultado: 'PRESENTE' },
+          { inscripcionId: 3, resultado: 'AUSENTE' },
+        ],
+      });
+      pedido.flush({
+        exitosos: 1,
+        fallidos: 1,
+        items: [
+          { inscripcionId: 1, resultado: { registrada: true } },
+          {
+            inscripcionId: 3,
+            problemType: 'https://akine.app/problems/inscripcion-transicion-no-permitida',
+            detalle: 'La inscripcion esta cancelada',
+          },
+        ],
+      });
+      await responderDetalle(fixture, detalle('EN_CURSO'));
+
+      expect(texto(fixture)).toContain('Se guardaron 1 participante.');
+      expect(texto(fixture)).toContain('Ruiz, Caro: La inscripcion esta cancelada');
+      // La fallida sigue pendiente para reintentar; la exitosa ya no.
+      expect(boton(fixture, 'Guardar asistencia').textContent).toContain('(1)');
+    },
+    TIMEOUT_AXE,
+  );
+
+  it('una correccion sin motivo no sale a la red; con motivo, si', async () => {
+    const fixture = await montar('REALIZADA');
+    expect(texto(fixture)).toContain('La clase ya cerro');
+    expect(texto(fixture)).toContain('Corregida 1 vez');
+    radio(fixture, 2, 'AUSENTE');
+    expect(el(fixture).querySelector('#motivo-2')).not.toBeNull();
+
+    boton(fixture, 'Guardar asistencia').click();
+    fixture.detectChanges();
+    httpMock.expectNone(`${BASE}/asistencias/lote`);
+    expect(texto(fixture)).toContain('Escribi por que se corrige.');
+    expect(el(fixture).querySelector('#motivo-2')?.getAttribute('aria-invalid')).toBe('true');
+
+    const motivo = el(fixture).querySelector('#motivo-2') as HTMLInputElement;
+    motivo.value = 'Se fue a los diez minutos';
+    motivo.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    boton(fixture, 'Guardar asistencia').click();
+    const pedido = httpMock.expectOne(`${BASE}/asistencias/lote`);
+    expect(pedido.request.body).toEqual({
+      items: [{ inscripcionId: 2, resultado: 'AUSENTE', motivo: 'Se fue a los diez minutos' }],
+    });
+    pedido.flush({ exitosos: 1, fallidos: 0, items: [{ inscripcionId: 2, resultado: {} }] });
+    await responderDetalle(fixture, detalle('REALIZADA'));
+    expect(texto(fixture)).toContain('Se guardaron 1 participante.');
+  });
+
+  it('descartar limpia las marcas pendientes', async () => {
+    const fixture = await montar('EN_CURSO');
+    radio(fixture, 1, 'PRESENTE_TARDE');
+    boton(fixture, 'Descartar cambios').click();
+    fixture.detectChanges();
+    expect(boton(fixture, 'Guardar asistencia').disabled).toBe(true);
+  });
+
+  it('muestra el historial de una asistencia', async () => {
+    const fixture = await montar('REALIZADA');
+    boton(fixture, 'Historial').click();
+    fixture.detectChanges();
+    expect(texto(fixture)).toContain('Cargando el historial');
+    httpMock.expectOne(`${BASE}/asistencias/20/historial`).flush([
+      { id: 1, tipo: 'REGISTRO', resultadoNuevo: 'AUSENTE', ocurridoEn: '2026-10-20T13:05:00Z' },
+      {
+        id: 2,
+        tipo: 'CORRECCION',
+        resultadoAnterior: 'AUSENTE',
+        resultadoNuevo: 'PRESENTE',
+        motivo: 'Llego tarde',
+        ocurridoEn: '2026-10-20T13:30:00Z',
+      },
+    ]);
+    await estabilizar(fixture);
+    expect(texto(fixture)).toContain('Historial de Lopez, Bea');
+    expect(texto(fixture)).toContain('Ausente a Presente');
+    expect(texto(fixture)).toContain('motivo: Llego tarde');
+    boton(fixture, 'Cerrar historial').click();
+    fixture.detectChanges();
+    expect(el(fixture).querySelector('#titulo-historial')).toBeNull();
+  });
+
+  it('un historial que falla lo dice', async () => {
+    const fixture = await montar('REALIZADA');
+    boton(fixture, 'Historial').click();
+    httpMock
+      .expectOne(`${BASE}/asistencias/20/historial`)
+      .flush({ type: 'https://akine.app/problems/not-found' }, { status: 404, statusText: 'NF' });
+    await estabilizar(fixture);
+    expect(texto(fixture)).toContain('no existen');
+  });
+
+  it('cerrar la clase informa los ausentes que dejo el cierre', async () => {
+    const fixture = await montar('EN_CURSO');
+    boton(fixture, 'Cerrar clase').click();
+    httpMock
+      .expectOne(`${BASE}/cierre`)
+      .flush({ cerroAhora: true, ausentados: [{ id: 1 }, { id: 2 }], esperaCancelada: 1 });
+    await responderDetalle(fixture, detalle('REALIZADA'));
+    expect(texto(fixture)).toContain(
+      'Se marcaron ausentes 2 sin resolver y se cancelaron 1 de la lista de espera.',
+    );
+  });
+
+  it('un cierre rechazado muestra el motivo del servidor y relee', async () => {
+    const fixture = await montar('EN_CURSO');
+    boton(fixture, 'Cerrar clase').click();
+    httpMock.expectOne(`${BASE}/cierre`).flush(
+      {
+        type: 'https://akine.app/problems/clase-transicion-no-permitida',
+        detail: 'La clase esta cancelada',
+      },
+      { status: 409, statusText: 'Conflict' },
+    );
+    await responderDetalle(fixture, detalle('CANCELADA'));
+    expect(texto(fixture)).toContain('La clase esta cancelada');
+    expect(texto(fixture)).toContain('no tuvo asistentes');
+  });
+
+  it('un detalle que falla ofrece reintentar', async () => {
+    const fixture = TestBed.createComponent(AsistenciaDeClasePage);
+    fixture.componentRef.setInput('claseId', String(CLASE));
+    fixture.detectChanges();
+    httpMock
+      .expectOne((p) => p.url === `${BASE}/detalle-operativo`)
+      .error(new ProgressEvent('error'));
+    await estabilizar(fixture);
+    expect(texto(fixture)).toContain('No se pudo contactar al servidor');
+    boton(fixture, 'Reintentar').click();
+    await responderDetalle(fixture, detalle('EN_CURSO', { totalPages: 2 }));
+    expect(texto(fixture)).toContain('Pagina 1 de 2');
+    boton(fixture, 'Siguiente').click();
+    const pagina = httpMock.expectOne((p) => p.url === `${BASE}/detalle-operativo`);
+    expect(pagina.request.params.get('page')).toBe('1');
+    pagina.flush(detalle('EN_CURSO', { totalPages: 2, page: 1 }));
+  });
+});

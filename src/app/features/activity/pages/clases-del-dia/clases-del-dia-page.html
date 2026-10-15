@@ -1,0 +1,81 @@
+<h1>Asistencia a clases</h1>
+
+<p class="descripcion">
+  Elegi la clase para tomar lista. Marcar a alguien presente registra que estuvo en la clase:
+  <b>no abre una atencion clinica</b> ni genera deuda.
+</p>
+
+<section class="tarjeta" aria-labelledby="titulo-dia-clases">
+  <h2 id="titulo-dia-clases">Dia</h2>
+  <div class="campo">
+    <label for="clases-fecha">Fecha</label>
+    <input
+      id="clases-fecha"
+      type="date"
+      [value]="fecha()"
+      (change)="cambiarFecha($any($event.target).value)"
+      aria-describedby="ayuda-fecha-clases"
+    />
+    <p id="ayuda-fecha-clases" class="ayuda">En la zona horaria de la sede.</p>
+  </div>
+</section>
+
+@switch (estado().tipo) {
+  @case ('cargando') {
+    <p class="estado estado--cargando" role="status">Cargando las clases…</p>
+  }
+  @case ('error') {
+    @if (error(); as fallo) {
+      <section class="tarjeta" role="alert" aria-labelledby="titulo-error-clases">
+        <h2 id="titulo-error-clases">No se pudieron cargar las clases</h2>
+        <p class="estado estado--error">{{ fallo.mensaje }}</p>
+        <div class="acciones">
+          <button type="button" class="boton boton--secundario" (click)="cargar()">
+            Reintentar
+          </button>
+        </div>
+      </section>
+    }
+  }
+  @case ('listo') {
+    @if (clases().length === 0) {
+      <p class="estado estado--vacio">No hay clases programadas para ese dia.</p>
+    } @else {
+      <div class="tabla-scroll" tabindex="0" role="region" aria-labelledby="titulo-tabla-clases">
+        <table class="tabla">
+          <caption id="titulo-tabla-clases">
+            Clases del dia
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">Horario</th>
+              <th scope="col">Clase</th>
+              <th scope="col">Estado</th>
+              <th scope="col">Lugares</th>
+              <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (clase of clases(); track clase.eventoId) {
+              <tr>
+                <td>{{ hora(clase.inicio, zona()) }} a {{ hora(clase.fin, zona()) }}</td>
+                <td>{{ clase.titulo || clase.ofertaNombre || 'Clase ' + clase.eventoId }}</td>
+                <td>{{ etiquetaDeEstado(clase.estado) }}</td>
+                <td>{{ clase.ocupados ?? 0 }} de {{ clase.capacidad ?? '—' }}</td>
+                <td>
+                  <a class="enlace" [routerLink]="['/asistencia', clase.eventoId]">
+                    Tomar asistencia
+                    <span class="visualmente-oculto">
+                      de {{ clase.titulo || clase.ofertaNombre }} a las
+                      {{ hora(clase.inicio, zona()) }}</span
+                    >
+                  </a>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  }
+}

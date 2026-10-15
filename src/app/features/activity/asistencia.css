@@ -1,0 +1,32 @@
+/* Estilos de la asistencia de clases (AKINE-08.03). Los tokens salen de `design-system.css`. */
+
+.contadores {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp-5, 1rem);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.marcas {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp-4, 0.5rem);
+}
+
+.marcas .opcion-radio {
+  margin-bottom: 0;
+}
+
+.motivo-correccion {
+  margin-top: var(--esp-4, 0.5rem);
+}
+
+.historial {
+  margin: 0;
+  padding-left: 1.25rem;
+}
