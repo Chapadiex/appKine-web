@@ -8,6 +8,7 @@ import {
   inject,
   signal,
   untracked,
+  ChangeDetectionStrategy,
 } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -87,6 +88,7 @@ const POR_PAGINA = 20;
   selector: 'app-espacios-page',
   imports: [ReactiveFormsModule, RouterLink, PermisoDirective, Paginacion, ConfirmacionConMotivo],
   templateUrl: './espacios-page.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: '../../resource.css',
 })
 export class EspaciosPage {

@@ -8,6 +8,7 @@ import {
   inject,
   signal,
   untracked,
+  ChangeDetectionStrategy,
 } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -80,6 +81,7 @@ const ROLES = [
   selector: 'app-invitaciones-page',
   imports: [ReactiveFormsModule, RouterLink, PermisoDirective, ConfirmacionConMotivo],
   templateUrl: './invitaciones-page.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: '../../organization.css',
 })
 export class InvitacionesPage {

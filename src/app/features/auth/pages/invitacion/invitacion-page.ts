@@ -1,4 +1,11 @@
-import { Component, ElementRef, computed, inject, signal } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  computed,
+  inject,
+  signal,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { catchError, of } from 'rxjs';
@@ -55,6 +62,7 @@ type Estado =
   selector: 'app-invitacion-page',
   imports: [ReactiveFormsModule, RouterLink],
   templateUrl: './invitacion-page.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: '../../auth.css',
 })
 export class InvitacionPage {

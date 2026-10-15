@@ -1,4 +1,11 @@
-import { Component, ElementRef, computed, inject, signal } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  computed,
+  inject,
+  signal,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 
@@ -22,6 +29,7 @@ export const MENSAJE_UNIFORME_ACTIVACION =
   selector: 'app-resend-activation-page',
   imports: [ReactiveFormsModule, RouterLink],
   templateUrl: './resend-activation-page.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: '../../auth.css',
 })
 export class ResendActivationPage {

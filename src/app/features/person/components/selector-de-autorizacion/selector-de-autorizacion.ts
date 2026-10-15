@@ -1,4 +1,13 @@
-import { Component, DestroyRef, computed, effect, inject, input, signal } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  computed,
+  effect,
+  inject,
+  input,
+  signal,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 
@@ -44,6 +53,7 @@ type Estado =
   selector: 'app-selector-de-autorizacion',
   imports: [ReactiveFormsModule],
   templateUrl: './selector-de-autorizacion.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: '../../person.css',
 })
 export class SelectorDeAutorizacion {

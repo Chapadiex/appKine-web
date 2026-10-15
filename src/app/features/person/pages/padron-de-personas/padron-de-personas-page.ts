@@ -1,4 +1,12 @@
-import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
+import {
+  Component,
+  computed,
+  effect,
+  inject,
+  signal,
+  untracked,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { catchError, forkJoin, of } from 'rxjs';
 
@@ -91,6 +99,7 @@ const TAMANO_DE_PAGINA = 20;
   selector: 'app-padron-de-personas-page',
   imports: [ReactiveFormsModule, PermisoDirective, ConfirmacionConMotivo, Paginacion, RouterLink],
   templateUrl: './padron-de-personas-page.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: '../../person.css',
 })
 export class PadronDePersonasPage {

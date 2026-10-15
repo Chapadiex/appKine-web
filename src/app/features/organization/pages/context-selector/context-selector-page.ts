@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { catchError, of } from 'rxjs';
 
@@ -58,6 +58,7 @@ type EstadoContextos =
 @Component({
   selector: 'app-context-selector-page',
   templateUrl: './context-selector-page.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: '../../organization.css',
 })
 export class ContextSelectorPage {

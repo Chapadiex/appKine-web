@@ -1,4 +1,13 @@
-import { Component, ElementRef, computed, effect, inject, signal, untracked } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  computed,
+  effect,
+  inject,
+  signal,
+  untracked,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -79,6 +88,7 @@ const CAMPOS_PASO_1 = ['name', 'slotMinutes', 'boxCapacidad'] as const;
   selector: 'app-new-consultorio-page',
   imports: [ReactiveFormsModule, RouterLink, EditorDeFranjas],
   templateUrl: './new-consultorio-page.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: '../../organization.css',
 })
 export class NewConsultorioPage {

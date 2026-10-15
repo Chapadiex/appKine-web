@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import { CausaError, traducirYEsperar } from '../../models/auth-errors';
@@ -32,6 +32,7 @@ type EstadoActivacion =
   selector: 'app-activate-page',
   imports: [RouterLink],
   templateUrl: './activate-page.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: '../../auth.css',
 })
 export class ActivatePage {

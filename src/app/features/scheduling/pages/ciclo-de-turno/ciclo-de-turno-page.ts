@@ -1,5 +1,14 @@
 import { Location } from '@angular/common';
-import { Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
+import {
+  Component,
+  computed,
+  effect,
+  inject,
+  input,
+  signal,
+  untracked,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Observable } from 'rxjs';
 
@@ -88,6 +97,7 @@ type Panel = 'ninguno' | 'cancelar' | 'ausencia' | 'reprogramar';
   selector: 'app-ciclo-de-turno-page',
   imports: [RouterLink, ConfirmacionConMotivo, SelectorDeHorario],
   templateUrl: './ciclo-de-turno-page.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: '../../agenda.css',
 })
 export class CicloDeTurnoPage {

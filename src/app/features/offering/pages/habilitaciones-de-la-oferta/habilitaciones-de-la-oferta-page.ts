@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import { EstadoDeListado } from '../../../../shared/utils/estado-de-listado';
@@ -60,6 +60,7 @@ interface Candidato {
   selector: 'app-habilitaciones-de-la-oferta-page',
   imports: [RouterLink, PermisoDirective],
   templateUrl: './habilitaciones-de-la-oferta-page.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: '../../offering.css',
 })
 export class HabilitacionesDeLaOfertaPage {

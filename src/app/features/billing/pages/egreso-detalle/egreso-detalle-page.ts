@@ -9,6 +9,7 @@ import {
   input,
   signal,
   untracked,
+  ChangeDetectionStrategy,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -84,6 +85,7 @@ type Operacion = 'editar' | 'confirmar' | 'pagar' | 'anular' | 'anular-pago';
   selector: 'app-egreso-detalle-page',
   imports: [ReactiveFormsModule, RouterLink, ConfirmacionConMotivo],
   templateUrl: './egreso-detalle-page.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: '../../billing.css',
 })
 export class EgresoDetallePage {

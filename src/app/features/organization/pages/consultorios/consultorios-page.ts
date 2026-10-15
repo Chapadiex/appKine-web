@@ -1,4 +1,12 @@
-import { Component, ElementRef, effect, inject, signal, untracked } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  effect,
+  inject,
+  signal,
+  untracked,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { catchError, of } from 'rxjs';
@@ -80,6 +88,7 @@ const POR_PAGINA = 20;
   selector: 'app-consultorios-page',
   imports: [ReactiveFormsModule, RouterLink, PermisoDirective, Paginacion, ConfirmacionConMotivo],
   templateUrl: './consultorios-page.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: '../../organization.css',
 })
 export class ConsultoriosPage {

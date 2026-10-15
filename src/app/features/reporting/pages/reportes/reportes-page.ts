@@ -1,4 +1,12 @@
-import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
+import {
+  Component,
+  computed,
+  effect,
+  inject,
+  signal,
+  untracked,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { ReporteResponse } from '../../../../api/generated/model/reporte-response';
 import { NonNullableFormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -50,6 +58,7 @@ type EstadoReporte =
   selector: 'app-reportes-page',
   imports: [ReactiveFormsModule, RouterLink],
   templateUrl: './reportes-page.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: '../../reporting.css',
 })
 export class ReportesPage {

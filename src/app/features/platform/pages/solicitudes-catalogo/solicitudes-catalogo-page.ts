@@ -6,6 +6,7 @@ import {
   computed,
   inject,
   signal,
+  ChangeDetectionStrategy,
 } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { catchError, map, of } from 'rxjs';
@@ -55,6 +56,7 @@ type Especialidades =
 @Component({
   selector: 'app-solicitudes-catalogo-page',
   imports: [ReactiveFormsModule],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './solicitudes-catalogo-page.html',
 })
 export class SolicitudesCatalogoPage {

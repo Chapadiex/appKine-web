@@ -1,4 +1,13 @@
-import { Component, ElementRef, computed, effect, inject, signal, untracked } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  computed,
+  effect,
+  inject,
+  signal,
+  untracked,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 
@@ -52,6 +61,7 @@ type EstadoAlta =
   selector: 'app-new-collaborator-page',
   imports: [ReactiveFormsModule, RouterLink],
   templateUrl: './new-collaborator-page.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: '../../organization.css',
 })
 export class NewCollaboratorPage {

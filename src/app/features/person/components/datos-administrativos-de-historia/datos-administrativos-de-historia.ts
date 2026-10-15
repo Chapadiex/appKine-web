@@ -7,6 +7,7 @@ import {
   input,
   signal,
   untracked,
+  ChangeDetectionStrategy,
 } from '@angular/core';
 import { Observable, Subscription, catchError, forkJoin, map, of, switchMap } from 'rxjs';
 
@@ -47,6 +48,7 @@ type Estado =
 @Component({
   selector: 'app-datos-administrativos-de-historia',
   templateUrl: './datos-administrativos-de-historia.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: '../../person.css',
 })
 export class DatosAdministrativosDeHistoria {

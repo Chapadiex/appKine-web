@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { catchError, of } from 'rxjs';
 
 import { PlatformService } from '../../../../api/generated/api/platform.service';
@@ -30,6 +30,7 @@ type EstadoBackend =
 @Component({
   selector: 'app-estado',
   templateUrl: './estado.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './estado.css',
 })
 export class Estado {

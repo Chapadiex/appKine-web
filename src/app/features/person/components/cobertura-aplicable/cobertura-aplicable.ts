@@ -7,6 +7,7 @@ import {
   input,
   signal,
   untracked,
+  ChangeDetectionStrategy,
 } from '@angular/core';
 import { Subscription, catchError, forkJoin, of } from 'rxjs';
 
@@ -45,6 +46,7 @@ type EstadoDeConsulta =
 @Component({
   selector: 'app-cobertura-aplicable',
   templateUrl: './cobertura-aplicable.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: '../../person.css',
 })
 export class CoberturaAplicable {

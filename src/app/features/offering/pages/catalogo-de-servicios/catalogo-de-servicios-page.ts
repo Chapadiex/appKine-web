@@ -6,6 +6,7 @@ import {
   computed,
   inject,
   signal,
+  ChangeDetectionStrategy,
 } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -78,6 +79,7 @@ const ESPERA_DE_BUSQUEDA = 250;
   selector: 'app-catalogo-de-servicios-page',
   imports: [ReactiveFormsModule, RouterLink, ConfirmacionConMotivo],
   templateUrl: './catalogo-de-servicios-page.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: '../../offering.css',
 })
 export class CatalogoDeServiciosPage {

@@ -1,4 +1,12 @@
-import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
+import {
+  Component,
+  computed,
+  effect,
+  inject,
+  signal,
+  untracked,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { catchError, of } from 'rxjs';
 
@@ -41,6 +49,7 @@ type EstadoOrganizacion =
   selector: 'app-organization-page',
   imports: [RouterLink],
   templateUrl: './organization-page.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: '../../organization.css',
 })
 export class OrganizationPage {

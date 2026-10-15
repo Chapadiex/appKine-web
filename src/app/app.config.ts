@@ -5,7 +5,7 @@ import {
   provideBrowserGlobalErrorListeners,
   provideZonelessChangeDetection,
 } from '@angular/core';
-import { provideHttpClient, withInterceptors } from '@angular/common/http';
+import { provideHttpClient, withInterceptors, withXhr } from '@angular/common/http';
 import { provideRouter, withComponentInputBinding } from '@angular/router';
 
 import { provideApi } from './api/generated/provide-api';
@@ -34,7 +34,7 @@ export const appConfig: ApplicationConfig = {
 
     provideRouter(routes, withComponentInputBinding()),
 
-    provideHttpClient(withInterceptors([authInterceptor, errorInterceptor])),
+    provideHttpClient(withXhr(), withInterceptors([authInterceptor, errorInterceptor])),
 
     // Base del cliente generado. Vacia en dev: el proxy resuelve /api contra el backend
     // local, asi que nunca hay una URL de localhost horneada en el bundle.

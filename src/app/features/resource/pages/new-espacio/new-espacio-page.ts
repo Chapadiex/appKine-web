@@ -1,4 +1,13 @@
-import { Component, ElementRef, computed, effect, inject, signal, untracked } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  computed,
+  effect,
+  inject,
+  signal,
+  untracked,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 
@@ -55,6 +64,7 @@ type EstadoAlta =
   selector: 'app-new-espacio-page',
   imports: [ReactiveFormsModule, RouterLink],
   templateUrl: './new-espacio-page.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: '../../resource.css',
 })
 export class NewEspacioPage {

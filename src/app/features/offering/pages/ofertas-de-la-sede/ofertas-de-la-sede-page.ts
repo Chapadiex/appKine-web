@@ -8,6 +8,7 @@ import {
   inject,
   signal,
   untracked,
+  ChangeDetectionStrategy,
 } from '@angular/core';
 import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -108,6 +109,7 @@ type Heredable = '' | 'true' | 'false';
   selector: 'app-ofertas-de-la-sede-page',
   imports: [ReactiveFormsModule, RouterLink, PermisoDirective, ConfirmacionConMotivo],
   templateUrl: './ofertas-de-la-sede-page.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: '../../offering.css',
 })
 export class OfertasDeLaSedePage {

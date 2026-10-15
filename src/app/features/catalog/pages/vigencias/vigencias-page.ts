@@ -9,6 +9,7 @@ import {
   input,
   signal,
   untracked,
+  ChangeDetectionStrategy,
 } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -69,6 +70,7 @@ const TOPE_DE_PRACTICAS = 100;
   selector: 'app-vigencias-page',
   imports: [ReactiveFormsModule, RouterLink, PermisoDirective, ConfirmacionConMotivo],
   templateUrl: './vigencias-page.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: '../../catalog.css',
 })
 export class VigenciasPage {

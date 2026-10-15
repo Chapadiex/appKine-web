@@ -1,5 +1,14 @@
 import { Location } from '@angular/common';
-import { Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
+import {
+  Component,
+  computed,
+  effect,
+  inject,
+  input,
+  signal,
+  untracked,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { catchError, forkJoin, of } from 'rxjs';
 
@@ -70,6 +79,7 @@ interface PersonaFiltrada {
   selector: 'app-bandeja-de-series-page',
   imports: [RouterLink, Paginacion],
   templateUrl: './bandeja-de-series-page.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: '../../agenda.css',
 })
 export class BandejaDeSeriesPage {

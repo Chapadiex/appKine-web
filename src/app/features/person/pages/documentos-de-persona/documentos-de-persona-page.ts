@@ -1,4 +1,13 @@
-import { Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
+import {
+  Component,
+  computed,
+  effect,
+  inject,
+  input,
+  signal,
+  untracked,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 
@@ -91,6 +100,7 @@ type TipoAccion = 'reclasificar' | 'baja';
   selector: 'app-documentos-de-persona-page',
   imports: [ReactiveFormsModule, RouterLink, ConfirmacionConMotivo, Paginacion, PermisoDirective],
   templateUrl: './documentos-de-persona-page.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: '../../person.css',
 })
 export class DocumentosDePersonaPage {

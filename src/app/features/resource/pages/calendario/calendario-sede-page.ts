@@ -1,4 +1,13 @@
-import { DestroyRef, Component, computed, effect, inject, signal, untracked } from '@angular/core';
+import {
+  DestroyRef,
+  Component,
+  computed,
+  effect,
+  inject,
+  signal,
+  untracked,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { catchError, of } from 'rxjs';
@@ -78,6 +87,7 @@ const DIAS_PROPUESTOS = 365;
   selector: 'app-calendario-sede-page',
   imports: [ReactiveFormsModule, RouterLink, PermisoDirective, EditorDeFranjas],
   templateUrl: './calendario-sede-page.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: '../../resource.css',
 })
 export class CalendarioSedePage {

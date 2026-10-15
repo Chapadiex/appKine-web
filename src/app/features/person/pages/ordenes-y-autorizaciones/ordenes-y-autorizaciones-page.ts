@@ -1,4 +1,13 @@
-import { Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
+import {
+  Component,
+  computed,
+  effect,
+  inject,
+  input,
+  signal,
+  untracked,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { Observable, forkJoin } from 'rxjs';
@@ -147,6 +156,7 @@ interface PanelAbierto {
     SelectorDeAutorizacion,
   ],
   templateUrl: './ordenes-y-autorizaciones-page.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: '../../person.css',
 })
 export class OrdenesYAutorizacionesPage {

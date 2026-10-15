@@ -8,6 +8,7 @@ import {
   inject,
   signal,
   untracked,
+  ChangeDetectionStrategy,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { forkJoin, of, switchMap } from 'rxjs';
@@ -77,6 +78,7 @@ const PAGINA_DE_MOVIMIENTOS = 50;
   selector: 'app-caja-page',
   imports: [RouterLink],
   templateUrl: './caja-page.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: '../../billing.css',
 })
 export class CajaPage {

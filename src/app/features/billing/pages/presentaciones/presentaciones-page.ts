@@ -1,4 +1,12 @@
-import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
+import {
+  Component,
+  computed,
+  effect,
+  inject,
+  signal,
+  untracked,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 
@@ -39,6 +47,7 @@ type EstadoListado =
   selector: 'app-presentaciones-page',
   imports: [ReactiveFormsModule, RouterLink],
   templateUrl: './presentaciones-page.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: '../../billing.css',
 })
 export class PresentacionesPage {

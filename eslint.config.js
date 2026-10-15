@@ -126,6 +126,18 @@ module.exports = defineConfig([
         { type: 'element', prefix: 'app', style: 'kebab-case' },
       ],
 
+      // Angular 22 cambia el default de deteccion de cambios a OnPush y `ng update` le puso
+      // `ChangeDetectionStrategy.Eager` a los 72 componentes que no declaraban estrategia,
+      // para que se comporten EXACTAMENTE igual que en Angular 21. angular-eslint 22 trae en
+      // `tsRecommended` esta regla, que marca cada uno de esos Eager como error.
+      //
+      // Se apaga a proposito, y es deuda declarada: pasar un componente a OnPush puede dejar
+      // de refrescar una vista que hoy depende de un campo plano mutado fuera de un signal, y
+      // eso no lo detecta el compilador sino un test o un usuario. La migracion de framework
+      // va sola; el pase a OnPush se hace por feature, con sus specs y E2E, en otro PR.
+      // Cuando no quede ningun Eager, esta linea se borra.
+      '@angular-eslint/prefer-on-push-component-change-detection': 'off',
+
       // --- Reglas propias de AKINE ---------------------------------------------------
 
       // El access token vive UNICAMENTE en memoria (ADR-0008 del frontend). AKINE maneja

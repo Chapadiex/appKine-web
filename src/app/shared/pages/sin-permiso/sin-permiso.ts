@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, ChangeDetectionStrategy } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { TenantContextStore } from '../../../core/services/tenant-context.store';
@@ -31,6 +31,7 @@ import { TenantContextStore } from '../../../core/services/tenant-context.store'
   selector: 'app-sin-permiso',
   imports: [RouterLink],
   templateUrl: './sin-permiso.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './sin-permiso.css',
 })
 export class SinPermiso {

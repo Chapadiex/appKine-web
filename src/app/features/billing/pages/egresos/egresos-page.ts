@@ -1,4 +1,12 @@
-import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
+import {
+  Component,
+  computed,
+  effect,
+  inject,
+  signal,
+  untracked,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
@@ -64,6 +72,7 @@ const PAGINA = 50;
   selector: 'app-egresos-page',
   imports: [ReactiveFormsModule, RouterLink],
   templateUrl: './egresos-page.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: '../../billing.css',
 })
 export class EgresosPage {

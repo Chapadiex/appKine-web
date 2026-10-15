@@ -1,4 +1,11 @@
-import { Component, ElementRef, computed, inject, signal } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  computed,
+  inject,
+  signal,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
@@ -29,6 +36,7 @@ const DESTINO_POR_DEFECTO = '/organizacion';
   selector: 'app-login-page',
   imports: [ReactiveFormsModule, RouterLink],
   templateUrl: './login-page.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: '../../auth.css',
 })
 export class LoginPage {

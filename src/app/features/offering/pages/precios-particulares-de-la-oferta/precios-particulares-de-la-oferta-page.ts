@@ -8,6 +8,7 @@ import {
   inject,
   signal,
   untracked,
+  ChangeDetectionStrategy,
 } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -58,6 +59,7 @@ interface SituacionDelPrecio {
   selector: 'app-precios-particulares-de-la-oferta-page',
   imports: [ReactiveFormsModule, RouterLink, PermisoDirective, ConfirmacionConMotivo],
   templateUrl: './precios-particulares-de-la-oferta-page.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: '../../offering.css',
 })
 export class PreciosParticularesDeLaOfertaPage {

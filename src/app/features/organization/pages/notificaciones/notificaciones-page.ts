@@ -1,4 +1,12 @@
-import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
+import {
+  Component,
+  computed,
+  effect,
+  inject,
+  signal,
+  untracked,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { AkineHttpError } from '../../../../core/interceptors/error.interceptor';
@@ -41,6 +49,7 @@ const POR_PAGINA = 20;
   selector: 'app-notificaciones-page',
   imports: [RouterLink, Paginacion],
   templateUrl: './notificaciones-page.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: '../../organization.css',
 })
 export class NotificacionesPage {

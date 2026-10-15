@@ -9,6 +9,7 @@ import {
   input,
   signal,
   untracked,
+  ChangeDetectionStrategy,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
@@ -80,6 +81,7 @@ interface OperacionAbierta {
   selector: 'app-cobros-page',
   imports: [RouterLink, ConfirmacionConMotivo, PermisoDirective],
   templateUrl: './cobros-page.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: '../../billing.css',
 })
 export class CobrosPage {

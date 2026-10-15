@@ -1,4 +1,13 @@
-import { Component, ElementRef, computed, effect, inject, signal, untracked } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  computed,
+  effect,
+  inject,
+  signal,
+  untracked,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { catchError, of } from 'rxjs';
@@ -54,6 +63,7 @@ const MILISEGUNDOS_POR_DIA = 24 * 60 * 60 * 1000;
   selector: 'app-disponibilidad-page',
   imports: [ReactiveFormsModule, RouterLink],
   templateUrl: './disponibilidad-page.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: '../../resource.css',
 })
 export class DisponibilidadPage {

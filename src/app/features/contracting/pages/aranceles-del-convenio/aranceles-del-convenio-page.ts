@@ -8,6 +8,7 @@ import {
   inject,
   signal,
   untracked,
+  ChangeDetectionStrategy,
 } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -97,6 +98,7 @@ type TipoAccion = 'editar' | 'baja';
   selector: 'app-aranceles-del-convenio-page',
   imports: [ReactiveFormsModule, RouterLink, PermisoDirective, ConfirmacionConMotivo],
   templateUrl: './aranceles-del-convenio-page.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: '../../contracting.css',
 })
 export class ArancelesDelConvenioPage {
