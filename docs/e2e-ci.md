@@ -254,3 +254,52 @@ y el consumo exige que este vigente el dia de la clase.
 | Spec          | Que recorre                                                                                                                                                            | Lo que afirma contra el backend real                                                                                                                                                                                        |
 | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `flujo-pases` | `/productos`: alta del producto de 2 creditos → `/pacientes/:id/pases`: venta → `/asistencia/:claseId`: iniciar y marcar presente → ledger del pase → cuenta corriente | El alta es 201; la venta es 201 con la deuda `PENDIENTE` y el pase en 2 de 2; el lote devuelve `consumoDeCredito` `CONSUMIDO` con saldo 1; el ledger tiene compra +2 y consumo -1; la deuda sin sesion dice "Venta de pase" |
+
+## Las pantallas de mas riesgo, con centro propio (`e2e/riesgo-*.spec.ts`)
+
+Dinero, permisos y concurrencia. Corren en el proyecto `chromium` (no se llaman `flujo-*`) y **cada
+archivo siembra su propio centro** en `beforeAll` con `sembrarCentroPropio`
+(`e2e/support/centro-propio.ts`, sobre `altaDeCentro` de `sembrado.ts`): abren y cierran la caja,
+anulan lotes y otorgan permisos, que es estado de la SEDE. Sobre el centro compartido le cambiarian
+el estado a los `flujo-*`, y sumarle miembros a un centro BASICO lo lleva a `plan-limit-exceeded`.
+Son dos altas por archivo dentro del cupo de `esperarCupoDeRegistro`. Ninguno usa `route.fulfill`.
+
+| Spec                                    | Que recorre                                                                                                                                                                          | Lo que afirma contra el backend real                                                                                                                                                                               |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `riesgo-cobro-efectivo-anulado`         | Cobro en EFECTIVO por pantalla → anularlo desde `/cobros` → arqueo. Despues: anular un cobro en efectivo con la caja cerrada, con la caja vacia y con la plata en el cajon           | La deuda vuelve a PENDIENTE entera, el teorico vuelve al saldo inicial y el arqueo cierra sin diferencia; `cobro-anulado` al repetir; `caja-no-abierta` y `caja-saldo-insuficiente` sin tocar la deuda             |
+| `riesgo-presentacion-debito-y-descarte` | Borrador con dos deudas → quitar una → descartar con motivo. Lote presentado → debito excedido → debito total de una → factura → pago → conciliar → borrador nuevo                   | Quitar y descartar liberan la deuda; un lote presentado no se descarta (`presentacion-no-editable`); `validation-error` con `importePresentado`; `item-no-debitable`; la debitada sigue PENDIENTE y re-presentable |
+| `riesgo-egreso-concurrente`             | Borrador corregido por otro operador mientras la pantalla lo muestra → guardar. Pago registrado por otro operador → "Anular el egreso" en la pantalla vieja → anular el pago primero | `concurrent-modification` sin pisar lo del otro; `egreso-con-pagos`; la pantalla recargada esconde la anulacion y ofrece anular el pago                                                                            |
+| `riesgo-permisos-de-la-plata`           | Una PROFESIONAL del centro: caja, presentaciones, egresos, cobros por la API y por URL; grant `paciente:manage` otorgado y quitado                                                   | `forbidden` en todo lo economico, `/sin-permiso` en cada pantalla, la cuenta corriente dice por que no muestra nada; `caja:operate` no otorgable; el grant vale y deja de valer con el MISMO token                 |
+| `riesgo-autorizacion-ultima-unidad`     | Autorizacion de UNA unidad, dos sesiones de la misma practica cerradas a la vez por la profesional                                                                                   | Los dos cierres entran, la autorizacion consume una vez (Consumidas 1, Disponibles 0) y el ledger tiene un solo consumo                                                                                            |
+
+- **Defecto del backend, test en `fixme`:** `riesgo-egreso-concurrente` › "un pago y una anulacion a
+  la vez...". Con un pago en efectivo y la anulacion del egreso en paralelo, en 9 de 12 carreras los
+  dos responden con exito y el egreso queda `ANULADO` con un pago vigente. El comentario del test
+  tiene el pedido, la respuesta y la causa probable (`descontarSaldo` nativo sin `@Version`).
+- **El debito parcial** deja hoy la deuda entera pendiente (U-11, conocido y aceptado): el spec
+  debita el total, que es la regla que no depende de esa decision.
+- **`cobro:register` no es otorgable a PROFESIONAL** (`permisos-otorgables` devuelve `hc:read`,
+  `hc:write`, `paciente:manage`), aunque la matriz §2 dice "No por defecto" en esa celda. La §16.1
+  no la lista; el spec usa `paciente:manage` y no afirma nada sobre `cobro:register`.
+
+### Inventario de pantallas de riesgo y su E2E contra el backend real (15/10/2026)
+
+| Pantalla                                                        | Cubierta | Spec                                                                                                              |
+| --------------------------------------------------------------- | -------- | ----------------------------------------------------------------------------------------------------------------- |
+| `/caja`: apertura, movimiento, reversion, cierre con arqueo     | Si       | `flujo-caja`                                                                                                      |
+| `/pacientes/:id/cuenta-corriente`: deudas y anular una deuda    | Si       | `flujo-autorizaciones`, `flujo-cuenta-corriente-concepto`                                                         |
+| `/cuenta-corriente/cobrar`                                      | Si       | `flujo-caja`, `flujo-prepago`, `riesgo-cobro-efectivo-anulado`                                                    |
+| `/cuenta-corriente/cobros`: anular, reintegrar, imputar         | Si       | `flujo-cobros-posteriores` (transferencia), `riesgo-cobro-efectivo-anulado` (efectivo)                            |
+| `/presentaciones` y detalle: armar, confirmar, pagar, conciliar | Si       | `flujo-presentaciones`, `flujo-presentacion-csv`                                                                  |
+| `/presentaciones/:id`: quitar, descartar, debito                | Si       | `riesgo-presentacion-debito-y-descarte`                                                                           |
+| `/egresos` y detalle: alta, confirmar, pagar, anular el pago    | Si       | `flujo-caja`                                                                                                      |
+| `/egresos/:id`: corregir, anular el egreso, dos operadores      | Si       | `riesgo-egreso-concurrente` (la carrera pago/anulacion en `fixme`)                                                |
+| `/pacientes/:id/coberturas` y `/autorizaciones`                 | Si       | `cobertura-autorizacion`, `flujo-autorizaciones`, `flujo-consumos-a-revisar`, `riesgo-autorizacion-ultima-unidad` |
+| `/historia-clinica/personas/:id`: motivo de acceso              | Si       | `historia-clinica`, `acceso-clinico`, `flujo-auditoria-clinica`                                                   |
+| Permisos por rol sobre la plata (PROFESIONAL)                   | Si       | `riesgo-permisos-de-la-plata`                                                                                     |
+| Permisos por rol sobre lo clinico (ADMINISTRATIVO)              | Si       | `flujo-historia-administrativa`, `acceso-clinico`                                                                 |
+| Permisos adicionales de un colaborador                          | Si       | `flujo-colaboradores`                                                                                             |
+| `/catalogo/nomencladores/:id/vigencias`                         | No       | Ver la tabla de la quinta tanda                                                                                   |
+| `/auth/sesion-expirada`, aceptar `/auth/invitacion`             | No       | Ver la tabla de la quinta tanda                                                                                   |
+
+La atencion clinica, las clases y los pases/abonos los cubren sus propios PR y no entran aca.
