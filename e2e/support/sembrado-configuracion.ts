@@ -18,6 +18,7 @@ import {
   Oferta,
   crearOferta,
   deAUnLogin,
+  esperaDel429,
   fechaLocal,
   ingresarComoPlataforma,
   sumarDias,
@@ -185,9 +186,30 @@ export async function plataformaDisponible(): Promise<string | null> {
 export async function paginaDePlataforma(browser: Browser): Promise<Page> {
   const contexto = await browser.newContext();
   const page = await contexto.newPage();
-  await deAUnLogin(async () => {
-    await ingresarPorPantalla(page, EMAIL_PLATAFORMA);
-    await expect(page).not.toHaveURL(/\/auth\//, { timeout: 15_000 });
-  });
-  return page;
+  // Igual que `ingresar` del centro: un 429 del login no es el producto fallando sino el limite de
+  // 30 por minuto y por IP que comparten login y refresh de toda la corrida. Se espera lo que pide
+  // `Retry-After` FUERA del cerrojo y se vuelve a ingresar, hasta tres intentos. Antes este helper
+  // esperaba 15 s a que la URL saliera de /auth/ y fallaba en `flujo-catalogo` sin decir por que.
+  for (let intento = 1; ; intento++) {
+    const espera = await deAUnLogin(async () => {
+      const login = page.waitForResponse(
+        (r) => r.request().method() === 'POST' && new URL(r.url()).pathname.endsWith('/auth/login'),
+      );
+      await ingresarPorPantalla(page, EMAIL_PLATAFORMA);
+      const respuesta = await login;
+      if (respuesta.status() === 429 && intento < 3) {
+        return esperaDel429(respuesta);
+      }
+      expect(
+        respuesta.status(),
+        `login de plataforma por pantalla: ${await respuesta.text()}`,
+      ).toBe(200);
+      await expect(page).not.toHaveURL(/\/auth\//, { timeout: 15_000 });
+      return 0;
+    });
+    if (espera === 0) {
+      return page;
+    }
+    await page.waitForTimeout(espera * 1_000);
+  }
 }
