@@ -25,6 +25,8 @@ test.describe('Plan de tratamiento (D-c)', () => {
   let casoId: number;
 
   test.beforeAll(async ({ request }) => {
+    // Dos altas por sembrado contra un limite de 5 por minuto: la espera de cupo puede ser larga.
+    test.setTimeout(300_000);
     sembrada = await sembrarHistoria(request);
     const profesional = await ApiAkine.como(sembrada.email, {
       organizationId: sembrada.organizationId,

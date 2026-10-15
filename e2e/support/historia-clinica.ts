@@ -97,7 +97,7 @@ export async function sembrarHistoria(request: APIRequestContext): Promise<Histo
     const oferta = await crearOfertaClinica(admin, consultorioId, membershipId);
     const persona = await crearPaciente(request, emailAdmin, organizationId, consultorioId);
 
-    const profesional = await ApiAkine.como(email, { organizationId });
+    const profesional = await comoMiembroNuevo(email, organizationId);
     try {
       const conMotivo = { 'X-Justificacion-Acceso': MOTIVO_DE_ACCESO };
       const historia = await exigirClinico<{ id: number }>(
@@ -135,6 +135,22 @@ export async function sembrarHistoria(request: APIRequestContext): Promise<Histo
     }
   } finally {
     await admin.cerrar();
+  }
+}
+
+/**
+ * Ingresa como la profesional recien vinculada. La membership nace con `valid_from` = ahora, y el
+ * login que la sigue en el mismo segundo a veces todavia no la ve como contexto: se reintenta unos
+ * segundos en vez de fallar por una carrera del sembrado.
+ */
+async function comoMiembroNuevo(email: string, organizationId: number): Promise<ApiAkine> {
+  for (let intento = 1; ; intento++) {
+    try {
+      return await ApiAkine.como(email, { organizationId });
+    } catch (error) {
+      if (intento === 5) throw error;
+      await new Promise((resolver) => setTimeout(resolver, 2_000));
+    }
   }
 }
 
@@ -256,13 +272,13 @@ async function tokenDe(
  */
 export async function entrarConContexto(page: Page, sembrada: HistoriaSembrada): Promise<void> {
   await ingresarPorPantalla(page, sembrada.email);
-  await expect(page).toHaveURL(/\/seleccionar-contexto/, { timeout: 15_000 });
+  await expect(page).toHaveURL(/\/seleccionar-contexto/, { timeout: 45_000 });
   await page
     .getByRole('button', {
       name: new RegExp(sembrada.organizacion.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')),
     })
     .click();
-  await expect(page).not.toHaveURL(/\/(auth|seleccionar-contexto)/, { timeout: 15_000 });
+  await expect(page).not.toHaveURL(/\/(auth|seleccionar-contexto)/, { timeout: 45_000 });
 }
 
 /** Ingresa por pantalla como la administradora: un solo contexto, el selector elige solo. */
