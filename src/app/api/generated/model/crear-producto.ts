@@ -10,7 +10,7 @@
 
 
 /**
- * Alta de un producto de pack sobre una oferta de la sede que declara `esquemaCobro = POR_PACK`. **No crea saldo a nadie** (CA-M29-001-06).
+ * Alta de un producto sobre una oferta de la sede: un pack exige `esquemaCobro = POR_PACK` y un abono `POR_ABONO`. **No crea saldo a nadie** (CA-M29-001-06).
  */
 export interface CrearProducto { 
     /**
@@ -38,6 +38,10 @@ export interface CrearProducto {
      */
     precio: number;
     /**
+     * `PACK` (por defecto) o `ABONO` (desde 0.109.0, RF-M29-007). En un abono `creditos` son las asistencias que permite cada periodo y `vigenciaDias` la duracion maxima del periodo
+     */
+    tipo?: CrearProductoTipoEnum;
+    /**
      * Desde cuando se puede vender
      */
     vigenciaDesde: string;
@@ -50,4 +54,10 @@ export interface CrearProducto {
      */
     vigenciaHasta?: string;
 }
+export enum CrearProductoTipoEnum {
+    PACK = 'PACK',
+    ABONO = 'ABONO'
+};
+
+
 

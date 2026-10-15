@@ -193,17 +193,20 @@
 
       <div class="campo">
         <label for="alta-oferta-esquema">Esquema de cobro (opcional)</label>
-        <input
+        <select
           id="alta-oferta-esquema"
-          type="text"
           formControlName="esquemaCobro"
-          autocomplete="off"
           aria-describedby="alta-oferta-esquema-ayuda"
-        />
+        >
+          <option value="">Sin esquema</option>
+          @for (esquema of esquemasDeCobro; track esquema) {
+            <option [value]="esquema">{{ esquema }}</option>
+          }
+        </select>
         <p class="ayuda" id="alta-oferta-esquema-ayuda">
-          Uno de <b>POR_SESION</b>, <b>POR_PACK</b> o <b>POR_ABONO</b>; otro valor se rechaza.
-          <b>POR_PACK</b> es el que deja armar productos de pack sobre la oferta y hace que cada
-          asistencia a una clase consuma un credito del pase de la persona.
+          <b>POR_SESION</b>, <b>POR_PACK</b> o <b>POR_ABONO</b>. <b>POR_PACK</b> es el que deja
+          armar productos de pack sobre la oferta y hace que cada asistencia a una clase consuma un
+          credito del pase de la persona.
         </p>
       </div>
 
@@ -637,13 +640,16 @@
 
                           <div class="campo">
                             <label for="editar-oferta-esquema">Esquema de cobro</label>
-                            <input
+                            <select
                               id="editar-oferta-esquema"
-                              type="text"
                               formControlName="esquemaCobro"
-                              autocomplete="off"
                               aria-describedby="editar-oferta-esquema-ayuda"
-                            />
+                            >
+                              <option value="">Sin cambios</option>
+                              @for (esquema of esquemasDeCobro; track esquema) {
+                                <option [value]="esquema">{{ esquema }}</option>
+                              }
+                            </select>
                             <p class="ayuda" id="editar-oferta-esquema-ayuda">
                               POR_SESION, POR_PACK o POR_ABONO.
                             </p>

@@ -402,6 +402,12 @@ export enum ProblemType {
 
     HTTPS___AKINE_APP_PROBLEMS_PRODUCTO_NOMBRE_EN_USO = 'https://akine.app/problems/producto-nombre-en-uso',
 
+    HTTPS___AKINE_APP_PROBLEMS_ABONO_PERIODO_SUPERPUESTO = 'https://akine.app/problems/abono-periodo-superpuesto',
+
+    HTTPS___AKINE_APP_PROBLEMS_PASE_NO_AJUSTABLE = 'https://akine.app/problems/pase-no-ajustable',
+
+    HTTPS___AKINE_APP_PROBLEMS_PASE_CON_COBROS = 'https://akine.app/problems/pase-con-cobros',
+
     HTTPS___AKINE_APP_PROBLEMS_OFERTA_NO_CLINICA = 'https://akine.app/problems/oferta-no-clinica',
 
     HTTPS___AKINE_APP_PROBLEMS_PARTICIPACION_SIN_ASISTENCIA = 'https://akine.app/problems/participacion-sin-asistencia',

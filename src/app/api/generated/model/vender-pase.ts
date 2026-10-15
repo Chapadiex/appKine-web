@@ -18,6 +18,14 @@ export interface VenderPase {
      */
     idempotencyKey?: string;
     /**
+     * Solo abonos (desde 0.109.0): primer dia del periodo que cubre. Obligatorio para un abono y prohibido para un pack
+     */
+    periodoDesde?: string;
+    /**
+     * Solo abonos: ultimo dia del periodo, inclusive. Ausente: el periodo dura los `vigenciaDias` del producto. No puede durar mas que eso ni haber terminado
+     */
+    periodoHasta?: string;
+    /**
      * Titular, del padron de la organizacion
      */
     personaId?: number;

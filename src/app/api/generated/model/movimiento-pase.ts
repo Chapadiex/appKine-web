@@ -23,7 +23,7 @@ export interface MovimientoPase {
     motivo?: string;
     ocurridoEn?: string;
     /**
-     * Para VENTA, el pase; para ASISTENCIA, el evento de asistencia
+     * Para VENTA, el pase; para ASISTENCIA, el evento de asistencia; para CANCELACION, la clase cancelada; para AJUSTE_MANUAL y VENCIMIENTO, la version del pase sobre la que se aplico
      */
     origenId?: number;
     origenTipo?: MovimientoPaseOrigenTipoEnum;
