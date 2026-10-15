@@ -12,17 +12,16 @@
 }
 
 <!--
-  El caso se elige ANTES de iniciar: el backend solo lo toma al crear la sesion, y no hay forma de
-  cambiarlo despues. Si el paciente no tiene casos activos esta seccion no aparece y la atencion
-  arranca sola.
+  El caso se elige ANTES de iniciar: iniciar es idempotente y solo toma el caso al crear la sesion.
+  Si el paciente no tiene casos activos esta seccion no aparece y la atencion arranca sola. Con la
+  atencion abierta el caso se puede cambiar desde la tarjeta de la atencion.
 -->
 @if (eligiendoCaso()) {
   <section class="tarjeta" aria-labelledby="titulo-caso">
     <h2 id="titulo-caso">Antes de empezar: caso clinico</h2>
     <p class="ayuda">
       El paciente tiene casos clinicos activos. Elegi a cual pertenece esta atencion, o segui sin
-      caso. <b>No se puede cambiar despues de iniciar</b>, y si la atencion ya estaba iniciada
-      conserva el caso con el que empezo.
+      caso. Mientras la atencion siga abierta lo vas a poder cambiar; una vez cerrada, no.
     </p>
     <fieldset class="grupo">
       <legend>Caso de esta atencion</legend>
@@ -162,8 +161,58 @@
     @if (casoIgnorado()) {
       <p class="ayuda" role="status">
         Esta atencion ya estaba iniciada, asi que conserva el caso con el que empezo y no el que
-        elegiste.
+        elegiste. Si corresponde otro, cambialo aca abajo.
       </p>
+    }
+
+    <!--
+      Cambiar el caso de la atencion abierta (contrato 0.102.0). Es una escritura sobre la version
+      de la sesion: se bloquea mientras otra escritura viaja con esa misma version.
+    -->
+    @if (!cerrada() && puedeCambiarCaso()) {
+      <div class="campo">
+        <label for="atencion-caso">Caso clinico de esta atencion</label>
+        <select
+          id="atencion-caso"
+          [disabled]="cambiandoCaso()"
+          (change)="elegirCasoNuevo($any($event.target).value)"
+        >
+          <option value="" [selected]="casoNuevo() === null">Sin caso</option>
+          @if (casoActualFueraDeLista(); as actual) {
+            <option [value]="actual" [selected]="casoNuevo() === actual" disabled>
+              {{ numeroDeCaso(actual) }} (ya no esta activo)
+            </option>
+          }
+          @for (caso of casos(); track caso.id) {
+            <option [value]="caso.id" [selected]="casoNuevo() === caso.id">
+              {{ rotuloDeCaso(caso) }}
+            </option>
+          }
+        </select>
+      </div>
+      <div class="acciones">
+        <button
+          type="button"
+          class="boton boton--secundario"
+          [disabled]="
+            casoSinCambios() ||
+            cambiandoCaso() ||
+            guardando() ||
+            tratamientoEnVuelo() ||
+            hayConflicto()
+          "
+          (click)="cambiarCaso()"
+        >
+          @if (cambiandoCaso()) {
+            Guardando el caso…
+          } @else {
+            Guardar el caso
+          }
+        </button>
+      </div>
+      @if (avisoCaso(); as aviso) {
+        <p class="ayuda" role="status">{{ aviso }}</p>
+      }
     }
 
     @if (!cerrada()) {
@@ -452,7 +501,7 @@
       [sesionId]="b.sesionId"
       [ofertaId]="b.ofertaId"
       [version]="version()"
-      [ocupado]="guardando() || hayConflicto()"
+      [ocupado]="guardando() || cambiandoCaso() || hayConflicto()"
       (versionCambio)="adoptarVersion($event)"
       (enVuelo)="tratamientoEnVuelo.set($event)"
       (problema)="problemaDeBloque($event)"

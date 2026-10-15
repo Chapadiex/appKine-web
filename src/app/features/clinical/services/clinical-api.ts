@@ -142,6 +142,26 @@ export class ClinicalApi {
     });
   }
 
+  /**
+   * Asocia, cambia o quita (`casoId` nulo) el Caso Clinico de una atencion abierta (04.03).
+   *
+   * <p>Hace avanzar la `version` de la sesion: la respuesta es la sesion entera y la pantalla toma
+   * de ella la version nueva, igual que despues de un autosave. Un caso cerrado es 409
+   * `caso-clinico-cerrado`; uno de otra historia, 404.
+   */
+  cambiarCaso(
+    consultorioId: number,
+    sesionId: number,
+    casoId: number | null,
+    version: number,
+  ): Observable<Sesion> {
+    return this.sesiones.cambiarCasoDeSesion({
+      consultorioId,
+      sesionId,
+      cambiarCasoDeSesion: { casoId: casoId ?? undefined, version },
+    });
+  }
+
   /** Evaluacion tipada. Mismo control de version que el borrador. */
   evaluar(
     consultorioId: number,
@@ -258,8 +278,9 @@ export class ClinicalApi {
   }
 
   /**
-   * Baja logica con motivo. Responde 204 <b>sin la version nueva</b> de la sesion, asi que quien
-   * llama tiene que releerla (pedido al backend: devolver `sesionVersion` como el alta).
+   * Baja logica con motivo. Desde el contrato 0.102.0 responde 200 con la intervencion dada de baja
+   * (`vigente: false`) y la `sesionVersion` nueva, igual que el alta: quien llama la adopta y no
+   * relee la sesion.
    */
   darDeBajaTratamiento(
     consultorioId: number,
@@ -267,7 +288,7 @@ export class ClinicalApi {
     tratamientoId: number,
     motivo: string,
     version: number,
-  ): Observable<unknown> {
+  ): Observable<Tratamiento> {
     return this.tratamientos.darDeBaja({
       consultorioId,
       sesionId,

@@ -51,7 +51,8 @@ const V1 = {
 const V2 = {
   numeroVersion: 2,
   registradaEn: '2026-09-16T10:00:00Z',
-  registradaPor: 41,
+  registradaPor: 52,
+  registradaPorNombre: 'Lucia Fernandez',
   motivoEnmienda: 'La intensidad era otra',
   notaDeCierre: 'Original.',
   dolorEva: 7,
@@ -109,6 +110,19 @@ describe('VersionesPage', () => {
     expect(filas.find((f) => f[0] === 'Nota de cierre')?.[3]).toBe('Igual');
     expect(texto(fixture)).toContain('Cambiaron 2 campos');
     expect(texto(fixture)).toContain('La intensidad era otra');
+  });
+
+  it('muestra quien registro cada version, y el numero de cuenta si el nombre no vino', async () => {
+    const fixture = await montar();
+
+    const resumenes = Array.from(
+      fixture.nativeElement.querySelectorAll('summary') as NodeListOf<HTMLElement>,
+    ).map((s) => s.textContent?.replace(/s+/g, ' ').trim() ?? '');
+    expect(resumenes[0]).toContain('por Lucia Fernandez');
+    expect(resumenes[1]).not.toContain(' por ');
+    expect(texto(fixture)).toContain('(enmendada por Lucia Fernandez)');
+    expect(texto(fixture)).toContain('Cuenta numero 41');
+    expect(texto(fixture)).not.toContain('Cuenta numero 52');
   });
 
   it('elegir la misma version de los dos lados dice que no cambio nada', async () => {

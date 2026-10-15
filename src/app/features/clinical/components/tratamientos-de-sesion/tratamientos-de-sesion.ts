@@ -136,8 +136,8 @@ export function parametrosParaEnviar(
  *
  * <h2>Baja con motivo, nunca borrado</h2>
  *
- * <p>Dar de baja exige motivo y no libera el orden. La respuesta es un 204 sin la version nueva,
- * asi que despues se relee la sesion para tomarla.
+ * <p>Dar de baja exige motivo y no libera el orden. La respuesta trae la version nueva de la
+ * sesion, igual que el alta.
  */
 @Component({
   selector: 'app-tratamientos-de-sesion',
@@ -352,7 +352,11 @@ export class TratamientosDeSesion {
     this.motivoBaja.set('');
   }
 
-  /** Baja logica con motivo. Despues relee la sesion: el 204 no trae la version nueva. */
+  /**
+   * Baja logica con motivo. La respuesta trae la `sesionVersion` nueva (contrato 0.102.0) y se
+   * adopta como la del alta: releer la sesion era un segundo viaje que ademas dejaba una ventana
+   * en la que el autosave salia con la version vieja.
+   */
   protected confirmarBaja(): void {
     const tratamientoId = this.dandoDeBaja();
     const motivo = this.motivoBaja().trim();
@@ -364,23 +368,24 @@ export class TratamientosDeSesion {
       return;
     }
 
-    const consultorioId = this.consultorioId();
-    const sesionId = this.sesionId();
     this.empezar();
     this.api
-      .darDeBajaTratamiento(consultorioId, sesionId, tratamientoId, motivo, this.version())
+      .darDeBajaTratamiento(
+        this.consultorioId(),
+        this.sesionId(),
+        tratamientoId,
+        motivo,
+        this.version(),
+      )
       .subscribe({
-        next: () => {
+        next: (baja) => {
+          this.terminar();
+          if (baja.sesionVersion !== undefined) {
+            this.versionCambio.emit(baja.sesionVersion);
+          }
           this.tratamientos.update((lista) => lista.filter((t) => t.id !== tratamientoId));
           this.cancelarBaja();
           this.aviso.set('Tratamiento dado de baja.');
-          this.api.ver(consultorioId, sesionId).subscribe({
-            next: (sesion) => {
-              this.terminar();
-              this.versionCambio.emit(sesion.version ?? 0);
-            },
-            error: (error: unknown) => this.fallo(error),
-          });
         },
         error: (error: unknown) => this.fallo(error),
       });
