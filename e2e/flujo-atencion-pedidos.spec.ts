@@ -121,7 +121,9 @@ test.describe('Pedidos de la atencion clinica contra el backend real', () => {
     await expect(tratamiento.getByRole('status')).toContainText('Tratamiento registrado');
 
     await tratamiento.getByRole('button', { name: /^Dar de baja/ }).click();
-    await tratamiento.getByLabel(/^Por que se da de baja/).fill('Se cargo en la sesion equivocada');
+    await tratamiento
+      .getByRole('textbox', { name: /Por que se da de baja/ })
+      .fill('Se cargo en la sesion equivocada');
     const baja = respuestaDe(page, 'DELETE', /\/tratamientos\/\d+$/);
     await tratamiento.getByRole('button', { name: 'Confirmar la baja' }).click();
     const respuestaBaja = await baja;
