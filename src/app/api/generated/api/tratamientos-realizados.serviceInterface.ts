@@ -52,11 +52,11 @@ export interface TratamientosRealizadosServiceInterface {
 
     /**
      * Dar de baja una intervencion
-     * **Baja LOGICA con motivo obligatorio**, nunca un borrado (regla maestra 10).  El motivo es el mismo un dato clinico —\&quot;se suspendio la electroterapia porque el paciente refirio molestia\&quot;— y sin el la auditoria no responde por que seis meses despues.  **El &#x60;orden&#x60; no se libera**: la proxima intervencion sigue tomando el siguiente numero. Es idempotente: dar de baja dos veces no cambia el motivo ni el instante originales.
+     * **Baja LOGICA con motivo obligatorio**, nunca un borrado (regla maestra 10).  El motivo es el mismo un dato clinico —\&quot;se suspendio la electroterapia porque el paciente refirio molestia\&quot;— y sin el la auditoria no responde por que seis meses despues.  **El &#x60;orden&#x60; no se libera**: la proxima intervencion sigue tomando el siguiente numero. Es idempotente: dar de baja dos veces no cambia el motivo ni el instante originales.  **Responde 200 con la intervencion dada de baja** (&#x60;vigente: false&#x60;) y la &#x60;sesionVersion&#x60; nueva, igual que el alta y el reemplazo: la baja hace avanzar la version de la sesion y la pantalla no necesita releerla. Hasta el contrato 0.99.0 respondia 204 sin cuerpo; un cliente que ignore el cuerpo sigue funcionando igual.
      * @endpoint delete /api/v1/consultorios/{consultorioId}/sesiones/{sesionId}/tratamientos/{tratamientoId}
 * @param requestParameters
      */
-    darDeBaja(requestParameters: DarDeBajaRequestParams, extraHttpRequestParams?: any): Observable<{}>;
+    darDeBaja(requestParameters: DarDeBajaRequestParams, extraHttpRequestParams?: any): Observable<Tratamiento>;
 
     /**
      * Listar las intervenciones de la atencion
