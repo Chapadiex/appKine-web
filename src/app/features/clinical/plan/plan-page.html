@@ -1,0 +1,428 @@
+<h1>Plan de tratamiento</h1>
+
+<p>
+  <a class="enlace" [routerLink]="visita.rutaCaso(idDelCaso())">Volver al caso</a>
+  ·
+  <a class="enlace" [routerLink]="visita.rutaHistoria()">Volver a la historia clinica</a>
+</p>
+
+@switch (estado().tipo) {
+  @case ('cargando') {
+    <p class="estado estado--cargando" role="status">Cargando el plan…</p>
+  }
+
+  @case ('requiere-justificacion') {
+    <app-pedido-de-motivo que="el plan de tratamiento" accion="Ver el plan" />
+  }
+
+  @case ('error') {
+    @if (estado(); as e) {
+      @if (e.tipo === 'error') {
+        <section class="tarjeta" role="alert" aria-labelledby="titulo-error-plan">
+          <h2 id="titulo-error-plan">No se pudo abrir el plan</h2>
+          <p class="estado estado--error">{{ e.error.mensaje }}</p>
+          @if (e.error.causa !== 'sin-permiso' && e.error.causa !== 'no-encontrado') {
+            <div class="acciones">
+              <button type="button" class="boton boton--secundario" (click)="releer()">
+                Reintentar
+              </button>
+            </div>
+          }
+        </section>
+      }
+    }
+  }
+
+  @case ('listo') {
+    @if (caso(); as c) {
+      <p class="descripcion">
+        Caso {{ c.numeroCaso }}: {{ c.diagnosticoPresuntivo }}.
+        @if (!casoActivo()) {
+          <b>El caso esta cerrado:</b> para planificar hay que reabrirlo desde el caso.
+        }
+      </p>
+    }
+
+    <p class="estado estado--ok" role="status">{{ aviso() }}</p>
+    @if (errorDeOperacion(); as problema) {
+      <div class="tarjeta" role="alert">
+        <p class="estado estado--error">{{ problema.mensaje }}</p>
+        <div class="acciones">
+          @if (problema.planQueOcupaId; as otro) {
+            <button type="button" class="boton boton--secundario" (click)="irAlPlan(otro)">
+              Ir al plan que ocupa el lugar
+            </button>
+          }
+          @if (
+            problema.causa === 'version-vieja' ||
+            problema.causa === 'transicion-invalida' ||
+            problema.causa === 'conflicto'
+          ) {
+            <button type="button" class="boton boton--secundario" (click)="releer()">
+              Releer el plan
+            </button>
+          }
+        </div>
+      </div>
+    }
+
+    @if (planes().length === 0) {
+      <section class="tarjeta" aria-labelledby="titulo-sin-plan">
+        <h2 id="titulo-sin-plan">Este caso todavia no tiene plan</h2>
+        <p class="estado estado--vacio">
+          El plan define objetivos, frecuencia y cantidades estimadas. Nace en borrador: activarlo
+          es una decision aparte. No agenda turnos.
+        </p>
+      </section>
+    } @else {
+      <div class="campo">
+        <label for="plan-elegido">Plan</label>
+        <select
+          id="plan-elegido"
+          [value]="planId() ?? ''"
+          (change)="elegirPlan($any($event.target).value)"
+        >
+          @for (p of planes(); track p.id) {
+            <option [value]="p.id">Plan {{ p.numeroPlan }} · {{ rotuloDeEstado(p.estado) }}</option>
+          }
+        </select>
+      </div>
+    }
+
+    @if (casoActivo() && !hayPlanVivo() && editor() === null) {
+      <div class="acciones">
+        <button type="button" class="boton" (click)="crear()">Crear un plan</button>
+      </div>
+    }
+
+    @if (plan(); as p) {
+      <div class="historia__columnas">
+        <div class="historia__principal">
+          <section class="tarjeta" aria-labelledby="titulo-plan">
+            <h2 id="titulo-plan">Plan {{ p.numeroPlan }}</h2>
+            <dl class="detalle">
+              <dt>Estado</dt>
+              <dd data-testid="plan-estado">{{ rotuloDeEstado(p.estado) }}</dd>
+              <dt>Version vigente</dt>
+              <dd>{{ p.versionVigente?.numeroVersion }}</dd>
+              @if (p.activadoEn) {
+                <dt>Activado</dt>
+                <dd>{{ fechaYHora(p.activadoEn) }}</dd>
+              }
+              @if (p.estado === 'SUSPENDIDO' && p.motivoSuspension) {
+                <dt>Motivo de la suspension</dt>
+                <dd class="historia__cuerpo">{{ p.motivoSuspension }}</dd>
+              }
+              @if (p.motivoFinalizacion) {
+                <dt>Motivo de la finalizacion</dt>
+                <dd class="historia__cuerpo">{{ p.motivoFinalizacion }}</dd>
+              }
+              @if (p.versionVigente?.frecuenciaSemanal) {
+                <dt>Frecuencia propuesta</dt>
+                <dd>{{ p.versionVigente?.frecuenciaSemanal }} por semana</dd>
+              }
+              @if (p.versionVigente?.duracionSemanas) {
+                <dt>Duracion estimada</dt>
+                <dd>{{ p.versionVigente?.duracionSemanas }} semanas</dd>
+              }
+            </dl>
+            <h3>Objetivos</h3>
+            <p class="historia__cuerpo">{{ p.versionVigente?.objetivos }}</p>
+            @if (p.versionVigente?.indicaciones) {
+              <h3>Indicaciones</h3>
+              <p class="historia__cuerpo">{{ p.versionVigente?.indicaciones }}</p>
+            }
+          </section>
+
+          @if (advertencias().length > 0) {
+            <section class="tarjeta" aria-labelledby="titulo-avisos">
+              <h2 id="titulo-avisos">Avisos</h2>
+              <ul data-testid="plan-avisos">
+                @for (aviso of advertencias(); track aviso) {
+                  <li>{{ aviso }}</li>
+                }
+              </ul>
+            </section>
+          }
+
+          <section class="tarjeta" aria-labelledby="titulo-avance">
+            <h2 id="titulo-avance">Avance</h2>
+            @if (avance(); as a) {
+              <p class="ayuda">
+                De la version {{ a.numeroVersion }}. Lo realizado se cuenta de las sesiones cerradas
+                del caso, por oferta: no se carga a mano.
+              </p>
+              @if ((a.items ?? []).length === 0) {
+                <p class="estado estado--vacio">El plan no tiene items planificados.</p>
+              } @else {
+                <ul class="casos" aria-label="Avance por item">
+                  @for (item of a.items; track $index) {
+                    <li class="casos__item">
+                      <b>{{ nombreDeOferta(item.ofertaId, item.ofertaNombre) }}</b>
+                      <progress
+                        class="avance__barra"
+                        [attr.aria-label]="
+                          'Avance de ' + nombreDeOferta(item.ofertaId, item.ofertaNombre)
+                        "
+                        [value]="item.realizadas ?? 0"
+                        [max]="item.planificadas || 1"
+                      ></progress>
+                      <p class="ayuda">{{ resumenDeAvance(item) }}</p>
+                    </li>
+                  }
+                </ul>
+              }
+            } @else {
+              <p class="estado estado--cargando">Calculando el avance…</p>
+            }
+          </section>
+
+          <section class="tarjeta" aria-labelledby="titulo-versiones">
+            <h2 id="titulo-versiones">Versiones</h2>
+            <p class="ayuda">
+              Modificar un plan activo deja una version nueva: la anterior sigue consultable y su
+              avance tambien.
+            </p>
+            <ol class="casos" aria-label="Versiones del plan">
+              @for (v of versiones(); track v.id) {
+                <li class="casos__item">
+                  <b>Version {{ v.numeroVersion }}</b> · {{ fechaYHora(v.registradaEn) }}
+                  @if (v.motivoModificacion) {
+                    <p class="historia__cuerpo">Motivo: {{ v.motivoModificacion }}</p>
+                  }
+                  <ul>
+                    @for (i of v.items ?? []; track i.id) {
+                      <li>
+                        {{ nombreDeOferta(i.ofertaId, i.ofertaNombre) }}:
+                        {{ i.cantidadPlanificada }} planificadas
+                        @if (i.cantidadAutorizada !== undefined && i.cantidadAutorizada !== null) {
+                          · {{ i.cantidadAutorizada }} autorizadas
+                        }
+                      </li>
+                    }
+                  </ul>
+                  <button
+                    type="button"
+                    class="boton boton--secundario"
+                    (click)="verAvanceDe(v.numeroVersion)"
+                  >
+                    Ver el avance de la version {{ v.numeroVersion }}
+                  </button>
+                </li>
+              }
+            </ol>
+          </section>
+        </div>
+
+        <div class="historia__lateral">
+          @if (p.estado !== 'FINALIZADO' && casoActivo()) {
+            <section class="tarjeta" aria-labelledby="titulo-transiciones">
+              <h2 id="titulo-transiciones">Estado del plan</h2>
+              <div class="acciones">
+                @if (p.estado === 'BORRADOR') {
+                  <button type="button" class="boton" [disabled]="enVuelo()" (click)="activar()">
+                    Activar el plan
+                  </button>
+                }
+                @if (p.estado === 'SUSPENDIDO') {
+                  <button type="button" class="boton" [disabled]="enVuelo()" (click)="reanudar()">
+                    Reanudar el plan
+                  </button>
+                }
+                @if (editor() === null) {
+                  <button type="button" class="boton boton--secundario" (click)="modificar()">
+                    {{ p.estado === 'BORRADOR' ? 'Editar el borrador' : 'Modificar el plan' }}
+                  </button>
+                }
+              </div>
+
+              @if (p.estado === 'ACTIVO' || p.estado === 'SUSPENDIDO') {
+                <form (submit)="$event.preventDefault()">
+                  <div class="campo">
+                    <label for="plan-motivo-transicion">Motivo para suspender o finalizar</label>
+                    <textarea
+                      id="plan-motivo-transicion"
+                      rows="2"
+                      [value]="motivoTransicion()"
+                      [attr.aria-invalid]="intentoTransicion() && faltaMotivoTransicion()"
+                      [attr.aria-describedby]="
+                        intentoTransicion() && faltaMotivoTransicion() ? 'plan-motivo-error' : null
+                      "
+                      (input)="motivoTransicion.set($any($event.target).value)"
+                    ></textarea>
+                    @if (intentoTransicion() && faltaMotivoTransicion()) {
+                      <p id="plan-motivo-error" class="campo__error">El motivo es obligatorio.</p>
+                    }
+                  </div>
+                  <div class="acciones">
+                    @if (p.estado === 'ACTIVO') {
+                      <button
+                        type="button"
+                        class="boton boton--secundario"
+                        [disabled]="enVuelo()"
+                        (click)="suspender()"
+                      >
+                        Suspender
+                      </button>
+                    }
+                    <button
+                      type="button"
+                      class="boton boton--secundario"
+                      [disabled]="enVuelo()"
+                      (click)="finalizar()"
+                    >
+                      Finalizar
+                    </button>
+                  </div>
+                </form>
+              }
+            </section>
+          }
+        </div>
+      </div>
+    }
+
+    @if (editor(); as e) {
+      <section class="tarjeta" aria-labelledby="titulo-editor">
+        <h2 id="titulo-editor">
+          {{ e.modo === 'crear' ? 'Crear un plan' : 'Modificar el plan' }}
+        </h2>
+        <form (submit)="$event.preventDefault(); guardar()">
+          <div class="campo">
+            <label for="plan-objetivos">Objetivos</label>
+            <textarea
+              id="plan-objetivos"
+              rows="3"
+              [value]="objetivos()"
+              [attr.aria-invalid]="intentoGuardar() && faltaObjetivos()"
+              [attr.aria-describedby]="
+                intentoGuardar() && faltaObjetivos() ? 'plan-objetivos-error' : null
+              "
+              (input)="objetivos.set($any($event.target).value)"
+            ></textarea>
+            @if (intentoGuardar() && faltaObjetivos()) {
+              <p id="plan-objetivos-error" class="campo__error">Los objetivos son obligatorios.</p>
+            }
+          </div>
+          <div class="campo">
+            <label for="plan-indicaciones">Indicaciones (opcional)</label>
+            <textarea
+              id="plan-indicaciones"
+              rows="2"
+              [value]="indicaciones()"
+              (input)="indicaciones.set($any($event.target).value)"
+            ></textarea>
+          </div>
+          <div class="fila-editable">
+            <div class="campo">
+              <label for="plan-frecuencia">Sesiones por semana (propuesta)</label>
+              <input
+                id="plan-frecuencia"
+                type="number"
+                min="1"
+                inputmode="numeric"
+                [value]="frecuencia()"
+                (input)="frecuencia.set($any($event.target).value)"
+              />
+            </div>
+            <div class="campo">
+              <label for="plan-duracion">Duracion estimada (semanas)</label>
+              <input
+                id="plan-duracion"
+                type="number"
+                min="1"
+                inputmode="numeric"
+                [value]="duracion()"
+                (input)="duracion.set($any($event.target).value)"
+              />
+            </div>
+          </div>
+
+          <fieldset>
+            <legend>Items a planificar</legend>
+            <p class="ayuda">
+              Por oferta habilitada hoy en la sede. Lo autorizado es aparte de lo planificado: se
+              declara si ya se conoce.
+            </p>
+            @for (fila of filas(); track $index; let i = $index) {
+              <div class="fila-editable">
+                <div class="campo">
+                  <label [for]="'item-oferta-' + i">Oferta del item {{ i + 1 }}</label>
+                  <select
+                    [id]="'item-oferta-' + i"
+                    [value]="fila.ofertaId ?? ''"
+                    (change)="editarFila(i, 'ofertaId', $any($event.target).value)"
+                  >
+                    <option value="">Elegi una oferta</option>
+                    @for (oferta of elegibles(); track oferta.id) {
+                      <option [value]="oferta.id">{{ oferta.nombreComercial }}</option>
+                    }
+                  </select>
+                </div>
+                <div class="campo">
+                  <label [for]="'item-planificadas-' + i">Sesiones planificadas</label>
+                  <input
+                    [id]="'item-planificadas-' + i"
+                    type="number"
+                    min="1"
+                    inputmode="numeric"
+                    [value]="fila.planificadas"
+                    (input)="editarFila(i, 'planificadas', $any($event.target).value)"
+                  />
+                </div>
+                <div class="campo">
+                  <label [for]="'item-autorizadas-' + i">Autorizadas (opcional)</label>
+                  <input
+                    [id]="'item-autorizadas-' + i"
+                    type="number"
+                    min="0"
+                    inputmode="numeric"
+                    [value]="fila.autorizadas"
+                    (input)="editarFila(i, 'autorizadas', $any($event.target).value)"
+                  />
+                </div>
+                <button
+                  type="button"
+                  class="boton boton--secundario"
+                  [attr.aria-label]="'Quitar el item ' + (i + 1)"
+                  (click)="quitarFila(i)"
+                >
+                  Quitar
+                </button>
+              </div>
+            }
+            @if (intentoGuardar() && filasInvalidas()) {
+              <p class="campo__error" role="alert">
+                Cada item necesita una oferta y una cantidad planificada mayor que cero.
+              </p>
+            }
+            <button type="button" class="boton boton--secundario" (click)="agregarFila()">
+              Agregar un item
+            </button>
+          </fieldset>
+
+          @if (e.modo === 'modificar' && plan()?.estado !== 'BORRADOR') {
+            <div class="campo">
+              <label for="plan-motivo-modificacion">Motivo de la modificacion (opcional)</label>
+              <input
+                id="plan-motivo-modificacion"
+                type="text"
+                [value]="motivoModificacion()"
+                (input)="motivoModificacion.set($any($event.target).value)"
+              />
+            </div>
+          }
+
+          <div class="acciones">
+            <button type="submit" class="boton" [disabled]="enVuelo()">
+              {{ e.modo === 'crear' ? 'Crear el plan' : 'Guardar los cambios' }}
+            </button>
+            <button type="button" class="boton boton--secundario" (click)="cerrarEditor()">
+              Cancelar
+            </button>
+          </div>
+        </form>
+      </section>
+    }
+  }
+}

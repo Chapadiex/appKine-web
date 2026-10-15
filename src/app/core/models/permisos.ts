@@ -142,6 +142,15 @@ export const PERMISO_CAJA_OPERATE = 'caja:operate';
 export const PERMISO_REPORTE_READ = 'reporte:read';
 
 /**
+ * Lectura de la Historia Clinica (M09, AKINE-04.01).
+ *
+ * <p>Solo decide si se OFRECE el enlace a la historia. No alcanza para leerla: sin relacion
+ * asistencial el backend pide ademas un motivo declarado (DP-03), y eso lo resuelve la pantalla de
+ * la historia. Por eso no se usa en un `permissionGuard`.
+ */
+export const PERMISO_HC_READ = 'hc:read';
+
+/**
  * Clases grupales (M28, AKINE-08.01). `clase:read` mira la grilla y los cupos —que no nombran a
  * nadie—; `clase:manage` programa, reprograma y cancela. Son codigos propios y no `turno:*`
  * (decision pendiente 9 del backend): una clase no es N turnos.
