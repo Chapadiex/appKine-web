@@ -79,6 +79,8 @@ api/ordenes-medicas.service.ts
 api/ordenes-medicas.serviceInterface.ts
 api/organizaciones.service.ts
 api/organizaciones.serviceInterface.ts
+api/pases.service.ts
+api/pases.serviceInterface.ts
 api/personas.service.ts
 api/personas.serviceInterface.ts
 api/planes-de-tratamiento.service.ts
@@ -167,8 +169,10 @@ model/baja-de-antecedente-request.ts
 model/baja-de-entrada-clinica-request.ts
 model/baja-de-perfil-paciente-request.ts
 model/baja-de-persona-request.ts
+model/baja-de-producto.ts
 model/bloque-response.ts
 model/calendario-sede-response.ts
+model/cambiar-caso-de-sesion.ts
 model/cambiar-fin-precio-particular-request.ts
 model/cancel-invitacion-request.ts
 model/cancelar-clase.ts
@@ -202,10 +206,12 @@ model/cobro.ts
 model/comparacion-de-mediciones.ts
 model/consultorio-page-response.ts
 model/consultorio-response.ts
+model/consumo-de-credito.ts
 model/convenio-aplicado.ts
 model/convenio-response.ts
 model/crear-plan-tratamiento-request.ts
 model/crear-presentacion.ts
+model/crear-producto.ts
 model/crear-serie-de-turnos.ts
 model/create-arancel-request.ts
 model/create-autorizacion-request.ts
@@ -250,11 +256,13 @@ model/derivaciones-de-participante.ts
 model/derivar-participante.ts
 model/desvinculacion-impacto-response.ts
 model/detalle-operativo-de-clase.ts
+model/deuda-de-venta.ts
 model/dia-de-agenda.ts
 model/dia-efectivo-response.ts
 model/disponibilidad-efectiva-response.ts
 model/editar-caso-clinico-request.ts
 model/editar-egreso.ts
+model/editar-producto.ts
 model/effective-permissions-response.ts
 model/egreso.ts
 model/elegibilidad-clinica-de-participante.ts
@@ -331,6 +339,7 @@ model/models.ts
 model/modificar-plan-tratamiento-request.ts
 model/motivo-de-rechazo.ts
 model/movimiento-de-caja.ts
+model/movimiento-pase.ts
 model/movimiento-response.ts
 model/my-platform-role-response.ts
 model/notification-page-response.ts
@@ -345,6 +354,8 @@ model/parametro-de-tratamiento-leido.ts
 model/parametro-de-tratamiento.ts
 model/participante-operativo.ts
 model/participante.ts
+model/pase-detalle.ts
+model/pase.ts
 model/password-reset-confirm-request.ts
 model/password-reset-request.ts
 model/permisos-otorgables-response.ts
@@ -369,6 +380,7 @@ model/presentacion-item.ts
 model/presentacion.ts
 model/problem-detail.ts
 model/problem-type.ts
+model/producto.ts
 model/profesional-habilitado.ts
 model/programar-clase.ts
 model/reabrir-caso-clinico-request.ts
@@ -409,6 +421,7 @@ model/resultado-de-cancelacion.ts
 model/resultado-de-cierre-de-clase.ts
 model/resultado-de-inscripcion.ts
 model/resultado-de-lote-de-asistencia.ts
+model/resultado-de-venta.ts
 model/resumen-de-persona-response.ts
 model/revertir-consumo-request.ts
 model/revertir-derivacion.ts
@@ -466,6 +479,7 @@ model/update-servicio-request.ts
 model/validacion-de-oferta-response.ts
 model/validacion-de-presentacion.ts
 model/validar-recepcion.ts
+model/vender-pase.ts
 model/version-response.ts
 model/vincular-autorizacion-request.ts
 model/vincular-documento-request.ts

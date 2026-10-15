@@ -11,6 +11,7 @@ import { HttpHeaders }                                       from '@angular/comm
 
 import { Observable }                                        from 'rxjs';
 
+import { CambiarCasoDeSesion } from '../model/models';
 import { CerrarSesion } from '../model/models';
 import { EnmendarSesion } from '../model/models';
 import { GuardarBorrador } from '../model/models';
@@ -22,6 +23,12 @@ import { SesionVersion } from '../model/models';
 
 import { Configuration }                                     from '../configuration';
 
+
+export interface CambiarCasoDeSesionRequestParams {
+    consultorioId: number;
+    sesionId: number;
+    cambiarCasoDeSesion: CambiarCasoDeSesion;
+}
 
 export interface CerrarSesionRequestParams {
     consultorioId: number;
@@ -69,6 +76,14 @@ export interface SesionesServiceInterface {
     configuration: Configuration;
 
     /**
+     * Asociar, cambiar o quitar el caso clinico de una atencion abierta
+     * Deja en la sesion el caso que viene en &#x60;casoId&#x60;, o ninguno si viene nulo. Es la unica forma de corregir el caso despues de iniciar: el inicio es idempotente y devuelve la sesion con el caso que ya tenia.  **Solo con la sesion abierta.** Una sesion cerrada ya tiene su numero dentro del caso, y cambiarlo seria renumerar historia clinica (409 &#x60;sesion-cerrada&#x60;).  El caso tiene que ser **activo y de la misma historia clinica**: uno de otro paciente responde 404 —indistinguible de \&quot;no existe\&quot;— y uno cerrado 409 &#x60;caso-clinico-cerrado&#x60;. Quitar el caso siempre se puede: el caso no es obligatorio (RF-M14-002).  **Hay que mandar la &#x60;version&#x60; que se leyo**, y **solo el profesional de la sesion puede cambiarlo**: escribir en la atencion ajena es 409, no 403. Deja evento de auditoria. Pedir el caso que ya tiene no escribe ni avanza la version.
+     * @endpoint put /api/v1/consultorios/{consultorioId}/sesiones/{sesionId}/caso
+* @param requestParameters
+     */
+    cambiarCasoDeSesion(requestParameters: CambiarCasoDeSesionRequestParams, extraHttpRequestParams?: any): Observable<Sesion>;
+
+    /**
      * Cerrar la atencion
      * Cierra la sesion y le asigna su **correlativo por historia clinica** — \&quot;la sesion numero 8 de este paciente\&quot;.  **Es idempotente.** Cerrar dos veces devuelve el mismo resultado con el mismo numero y no renumera: apretar dos veces \&quot;cerrar\&quot; es el caso normal, y renumerar una sesion cerrada seria reescribir historia clinica. La idempotencia se evalua ANTES de pedir un numero, para que un reintento no consuma un correlativo que despues nadie usa y deje huecos que parecen sesiones borradas.  **Cerrar no cobra.** DP-06: el cierre clinico no depende del pago. La deuda (obligacion del paciente y, si hay convenio, del financiador) se devenga en la misma transaccion del cierre.  **Pero toda prestacion cerrada genera deuda** (DP-17). Si el paciente asistio y su deuda es el precio particular —recepcion resuelta como Particular, oferta que no admite obra social, o sin cobertura con convenio y arancel aplicables— y la oferta no tiene precio vigente el dia del cierre (en la zona de la sede), responde **409 &#x60;oferta-sin-precio&#x60;** con &#x60;ofertaId&#x60;, &#x60;dia&#x60; y &#x60;motivo&#x60;. La sesion sigue abierta, sin numero y sin nada consumido: se carga el precio en la oferta y se reintenta. Con cobertura el coseguro sale del arancel y no hace falta precio particular.  **Una sesion cerrada no se edita: se enmienda.** Corregirla exige motivo y deja una version en el historial (&#x60;POST .../enmiendas&#x60;). El cierre ademas **inaugura ese historial**: la version 1 es lo que se acaba de asentar.
      * @endpoint post /api/v1/consultorios/{consultorioId}/sesiones/{sesionId}/cierre
@@ -94,7 +109,7 @@ export interface SesionesServiceInterface {
 
     /**
      * Guardar el borrador de la atencion
-     * Guarda el contenido parcial de la atencion. Pensado para llamarse seguido, desde el autosave de la pantalla.  **Hay que mandar la &#x60;version&#x60; que se leyo.** Dos pestanas del mismo profesional sobre la misma sesion son el caso normal; sin la version la segunda pisa a la primera en silencio y el profesional pierde lo que escribio. Un 409 &#x60;concurrent-modification&#x60; significa recargar.  **Solo el profesional de la sesion puede guardar.** No es cuestion de permiso —dos profesionales de la misma sede tienen el mismo &#x60;sesion:register&#x60;— sino de propiedad de esa atencion, y por eso el rechazo es 409 y no 403.  El contenido es **opaco**: que campos tiene una evaluacion lo define AKINE-06.02. Esta etapa garantiza que se guarda, se versiona y no se pierde.
+     * Guarda el contenido parcial de la atencion. Pensado para llamarse seguido, desde el autosave de la pantalla.  **Hay que mandar la &#x60;version&#x60; que se leyo.** Dos pestanas del mismo profesional sobre la misma sesion son el caso normal; sin la version la segunda pisa a la primera en silencio y el profesional pierde lo que escribio. Un 409 &#x60;concurrent-modification&#x60; significa recargar.  **Solo el profesional de la sesion puede guardar.** No es cuestion de permiso —dos profesionales de la misma sede tienen el mismo &#x60;sesion:register&#x60;— sino de propiedad de esa atencion, y por eso el rechazo es 409 y no 403.  El contenido es **opaco**: que campos tiene una evaluacion lo define AKINE-06.02. Esta etapa garantiza que se guarda, se versiona y no se pierde.  **Lo unico que se exige es que sea JSON.** Un &#x60;contenido&#x60; que no parsea, vacio o anidado mas alla de 99 niveles responde **400 &#x60;validation-error&#x60;** con &#x60;errors.contenido&#x60;; reintentar el mismo cuerpo falla igual. &#x60;null&#x60; vacia el borrador.
      * @endpoint put /api/v1/consultorios/{consultorioId}/sesiones/{sesionId}/borrador
 * @param requestParameters
      */
@@ -102,7 +117,7 @@ export interface SesionesServiceInterface {
 
     /**
      * Iniciar la atencion de un turno
-     * Abre la atencion, o **devuelve la que ya estaba abierta**.  El doble inicio es idempotente a proposito: un profesional que aprieta dos veces o recarga la pantalla es el caso normal, y un 409 le exigiria a la pantalla distinguir dos situaciones que para el usuario son la misma (RN-M14-001, un turno produce como mucho una sesion).  La Historia Clinica del paciente **se crea si no existia**. Exige perfil de paciente vigente: una atencion sobre alguien que solo es \&quot;persona\&quot; falla, y                no se crea historia clinica a nombre de quien no es paciente.                 Quien atiende es el profesional del turno. Si el turno tiene uno asignado y no es quien inicia, es 409: dejar que otro abra la sesion de un turno ajeno rompe la propiedad antes de que la sesion exista.  EL CASO CLINICO ES OPCIONAL (04.03). Sin casoId la atencion se registra igual: RF-M14-002 admite atencion sin caso y ninguna sesion anterior a 04.03 lo tiene. Exigirlo es RF-M10-007, que necesita su propia ventana de migracion. Cuando viene, tiene que ser un caso ACTIVO de la MISMA historia clinica: uno de otro paciente responde 404 —indistinguible de \&quot;no existe\&quot;, para no poder censar casos ajenos probando ids— y uno cerrado responde 409, porque lleva a otra accion, que es reabrirlo.  LA IDEMPOTENCIA MANDA SOBRE EL CASO: si la sesion del turno ya existe se devuelve tal cual, con el caso que tenga, aunque esta llamada traiga otro. Reasignar el caso de una atencion ya empezada no es \&quot;iniciar\&quot;.
+     * Abre la atencion, o **devuelve la que ya estaba abierta**.  El doble inicio es idempotente a proposito: un profesional que aprieta dos veces o recarga la pantalla es el caso normal, y un 409 le exigiria a la pantalla distinguir dos situaciones que para el usuario son la misma (RN-M14-001, un turno produce como mucho una sesion).  La Historia Clinica del paciente **se crea si no existia**. Exige perfil de paciente vigente: una atencion sobre alguien que solo es \&quot;persona\&quot; falla, y                no se crea historia clinica a nombre de quien no es paciente.                 Quien atiende es el profesional del turno. Si el turno tiene uno asignado y no es quien inicia, es 409: dejar que otro abra la sesion de un turno ajeno rompe la propiedad antes de que la sesion exista.  EL CASO CLINICO ES OPCIONAL (04.03). Sin casoId la atencion se registra igual: RF-M14-002 admite atencion sin caso y ninguna sesion anterior a 04.03 lo tiene. Exigirlo es RF-M10-007, que necesita su propia ventana de migracion. Cuando viene, tiene que ser un caso ACTIVO de la MISMA historia clinica: uno de otro paciente responde 404 —indistinguible de \&quot;no existe\&quot;, para no poder censar casos ajenos probando ids— y uno cerrado responde 409, porque lleva a otra accion, que es reabrirlo.  LA IDEMPOTENCIA MANDA SOBRE EL CASO: si la sesion del turno ya existe se devuelve tal cual, con el caso que tenga, aunque esta llamada traiga otro. Reasignar el caso de una atencion ya empezada no es \&quot;iniciar\&quot;: es &#x60;PUT .../sesiones/{sesionId}/caso&#x60;.
      * @endpoint post /api/v1/consultorios/{consultorioId}/sesiones/turnos/{turnoId}
 * @param requestParameters
      */

@@ -51,6 +51,14 @@ export interface Obligacion {
      */
     motivoAnulacion?: string;
     ofertaId?: number;
+    /**
+     * Que hecho devengo la deuda: una atencion (`SESION`) o la venta de un pack o pase (`VENTA_PASE`, RF-M18-009). Devengar no es cobrar: la deuda de una venta se paga con `POST /cobros` como cualquier otra.
+     */
+    origen?: ObligacionOrigenEnum;
+    /**
+     * Pase vendido que la genero. Presente solo con `origen = VENTA_PASE`.
+     */
+    paseId?: number;
     personaId?: number;
     /**
      * Practica facturada (DP-11: la realizada, o la principal de la oferta si la sesion cerro sin tratamientos). Ausente en `PARTICULAR`.
@@ -65,7 +73,7 @@ export interface Obligacion {
      */
     saldo?: number;
     /**
-     * Atencion que la genero. Es lo que la hace trazable.
+     * Atencion que la genero, cuando `origen` es `SESION`. **Ausente** cuando la deuda nace de la venta de un pase (`origen = VENTA_PASE`, desde 0.102.0).
      */
     sesionId?: number;
     /**
@@ -91,6 +99,11 @@ export enum ObligacionEstadoEnum {
     PARCIAL = 'PARCIAL',
     PAGADA = 'PAGADA',
     ANULADA = 'ANULADA'
+};
+export enum ObligacionOrigenEnum {
+    SESION = 'SESION',
+    VENTA_PASE = 'VENTA_PASE',
+    VENTA_ABONO = 'VENTA_ABONO'
 };
 export enum ObligacionResponsableEnum {
     PACIENTE = 'PACIENTE',

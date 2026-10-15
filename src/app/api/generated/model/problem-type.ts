@@ -396,6 +396,10 @@ export enum ProblemType {
 
     HTTPS___AKINE_APP_PROBLEMS_INSCRIPCION_TRANSICION_NO_PERMITIDA = 'https://akine.app/problems/inscripcion-transicion-no-permitida',
 
+    HTTPS___AKINE_APP_PROBLEMS_PRODUCTO_NO_VENDIBLE = 'https://akine.app/problems/producto-no-vendible',
+
+    HTTPS___AKINE_APP_PROBLEMS_PRODUCTO_NOMBRE_EN_USO = 'https://akine.app/problems/producto-nombre-en-uso',
+
     HTTPS___AKINE_APP_PROBLEMS_OFERTA_NO_CLINICA = 'https://akine.app/problems/oferta-no-clinica',
 
     HTTPS___AKINE_APP_PROBLEMS_PARTICIPACION_SIN_ASISTENCIA = 'https://akine.app/problems/participacion-sin-asistencia',

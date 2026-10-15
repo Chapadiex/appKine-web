@@ -25,6 +25,10 @@ export interface Clase {
     consultorioId?: number;
     espacioId?: number;
     /**
+     * Nombre del box, leido al responder. Ausente si la clase no tiene box o ya no se puede resolver.
+     */
+    espacioNombre?: string;
+    /**
      * PROGRAMADA o CANCELADA
      */
     estado?: string;
@@ -37,7 +41,15 @@ export interface Clase {
      */
     ocupados?: number;
     ofertaId?: number;
+    /**
+     * Nombre comercial de la oferta, leido al responder. Ausente si la oferta ya no se puede resolver.
+     */
+    ofertaNombre?: string;
     profesionalId?: number;
+    /**
+     * Nombre del profesional o instructor, leido al responder. Ausente si la clase no tiene profesional o su vinculo ya no se puede resolver.
+     */
+    profesionalNombre?: string;
     titulo?: string;
     /**
      * Se manda de vuelta al reprogramar
