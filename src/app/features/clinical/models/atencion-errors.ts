@@ -284,6 +284,31 @@ export function traducirErrorAtencion(error: unknown): ErrorAtencion {
 }
 
 /**
+ * Traduce un error del autosave de las notas (`PUT .../borrador`).
+ *
+ * <p>Desde el contrato 0.102.0 un borrador que la columna JSON no acepta es 400 `validation-error`
+ * con `errors.contenido`, y no el 409 generico de integridad que llegaba antes. El mensaje generico
+ * de validacion habla de dolor y lateralidad, que no tienen nada que ver con las notas: aca se dice
+ * que fueron las notas, lo que respondio el servidor, y que lo escrito no se perdio. Cualquier otro
+ * error se traduce como el resto de la pantalla.
+ */
+export function traducirErrorDeBorrador(error: unknown): ErrorAtencion {
+  if (error instanceof AkineHttpError && error.problemType === 'validation-error') {
+    const contenido = error.erroresPorCampo['contenido'];
+    if (contenido) {
+      return {
+        mensaje:
+          `Las notas no se guardaron: ${contenido}. Lo que escribiste sigue en pantalla y no se ` +
+          'perdio; revisalo y volve a guardar.',
+        causa: 'validacion',
+        motivo: '',
+      };
+    }
+  }
+  return traducirErrorAtencion(error);
+}
+
+/**
  * `oferta-sin-precio` explicado: toda prestacion cerrada genera deuda (DP-17), y la de esta es el
  * precio particular, que la oferta no tiene cargado para ese dia. Lo que importa decir es que no
  * se perdio nada —la sesion sigue abierta— y cual es la salida: cargar el precio y volver a cerrar.
