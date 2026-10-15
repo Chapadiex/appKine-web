@@ -1,4 +1,5 @@
 import {
+  ChangeDetectionStrategy,
   Component,
   computed,
   effect,
@@ -141,6 +142,7 @@ export function parametrosParaEnviar(
  */
 @Component({
   selector: 'app-tratamientos-de-sesion',
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './tratamientos-de-sesion.html',
   styleUrl: '../../atencion.css',
 })

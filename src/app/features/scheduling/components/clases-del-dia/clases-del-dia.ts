@@ -1,4 +1,12 @@
-import { Component, effect, inject, input, signal, untracked } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  effect,
+  inject,
+  input,
+  signal,
+  untracked,
+} from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { EventoDeAgenda } from '../../../../api/generated/model/evento-de-agenda';
@@ -26,6 +34,7 @@ const ESTADOS: Readonly<Record<string, string>> = {
  */
 @Component({
   selector: 'app-clases-del-dia',
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [RouterLink],
   templateUrl: './clases-del-dia.html',
 })
