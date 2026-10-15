@@ -45,6 +45,14 @@ updates:
         update-types:
           - version-update:semver-major
           - version-update:semver-minor
+      # Las mayores de Vitest y de su cobertura se hacen juntas y a mano, con la migración a
+      # Angular 22 (web #84). Se saca esta regla al hacer esa migración.
+      - dependency-name: vitest
+        update-types:
+          - version-update:semver-major
+      - dependency-name: "@vitest/*"
+        update-types:
+          - version-update:semver-major
 
   - package-ecosystem: github-actions
     directory: /
