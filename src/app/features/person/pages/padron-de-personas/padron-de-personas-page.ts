@@ -6,7 +6,11 @@ import { ConfirmacionConMotivo } from '../../../../shared/components/confirmacio
 import { CreatePersonaRequest } from '../../../../api/generated/model/create-persona-request';
 import { EstadoDeListado } from '../../../../shared/utils/estado-de-listado';
 import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
-import { PERMISO_COBRO_REGISTER, PERMISO_PACIENTE_MANAGE } from '../../../../core/models/permisos';
+import {
+  PERMISO_COBRO_REGISTER,
+  PERMISO_PACIENTE_MANAGE,
+  PERMISO_PASE_READ,
+} from '../../../../core/models/permisos';
 import { PermisoDirective } from '../../../../shared/directives/permiso.directive';
 import { RouterLink } from '@angular/router';
 import { PersonaPageResponse } from '../../../../api/generated/model/persona-page-response';
@@ -107,6 +111,8 @@ export class PadronDePersonasPage {
    * que corregirle el telefono, y quien hace una cosa no necesariamente hace la otra.
    */
   protected readonly permisoCobro = PERMISO_COBRO_REGISTER;
+  /** Los pases de la persona (M29) viven en `activity`; aca es solo una URL. */
+  protected readonly permisoPase = PERMISO_PASE_READ;
   protected readonly tiposDeDocumento = TIPOS_DE_DOCUMENTO;
   protected readonly documentoEnUnaLinea = documentoEnUnaLinea;
   protected readonly etiquetaDePerfil = etiquetaDePerfil;

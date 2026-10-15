@@ -178,6 +178,35 @@ describe('AsistenciaDeClasePage', () => {
     TIMEOUT_AXE,
   );
 
+  it('informa el credito consumido y la falta de pase sin tratarla como fallo', async () => {
+    const fixture = await montar('EN_CURSO');
+    radio(fixture, 1, 'PRESENTE');
+    radio(fixture, 3, 'PRESENTE');
+    boton(fixture, 'Guardar asistencia').click();
+    httpMock.expectOne(`${BASE}/asistencias/lote`).flush({
+      exitosos: 2,
+      fallidos: 0,
+      items: [
+        {
+          inscripcionId: 1,
+          resultado: { registrada: true, consumoDeCredito: { efecto: 'CONSUMIDO', saldo: 7 } },
+        },
+        {
+          inscripcionId: 3,
+          resultado: { registrada: true, consumoDeCredito: { efecto: 'SIN_PASE_ELEGIBLE' } },
+        },
+      ],
+    });
+    await responderDetalle(fixture, detalle('EN_CURSO'));
+
+    expect(texto(fixture)).toContain('Se guardaron 2 participantes.');
+    expect(texto(fixture)).toContain(
+      'Gomez, Ana: consumio un credito del pase; le quedan 7 creditos.',
+    );
+    expect(texto(fixture)).toContain('Ruiz, Caro: no tiene un pase vigente con creditos');
+    expect(texto(fixture)).not.toContain('no se pudieron guardar');
+  });
+
   it('una correccion sin motivo no sale a la red; con motivo, si', async () => {
     const fixture = await montar('REALIZADA');
     expect(texto(fixture)).toContain('La clase ya cerro');

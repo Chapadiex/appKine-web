@@ -59,7 +59,7 @@
 @if (vacia()) {
   <p class="estado estado--vacio">
     Esta persona no tiene ninguna deuda registrada. Las obligaciones se generan al cerrar una
-    atencion: no se cargan a mano.
+    atencion o al vender un pase: no se cargan a mano.
   </p>
 }
 
@@ -83,7 +83,12 @@
         @for (obligacion of obligaciones(); track obligacion.id) {
           <tr [class.fila--revocada]="!sePuedeAnular(obligacion)">
             <td>{{ fechaEnPalabras(obligacion.devengadaEn) }}</td>
-            <td>{{ obligacion.snapshotNombre }}</td>
+            <td>
+              {{ obligacion.snapshotNombre }}
+              @if (origenEnPalabras(obligacion.origen); as origen) {
+                <div class="ayuda">{{ origen }}</div>
+              }
+            </td>
             <td>
               {{ conceptoEnPalabras(obligacion.concepto) }}
               @if (obligacion.convenio?.convenioNombre; as convenio) {

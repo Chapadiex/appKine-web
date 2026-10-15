@@ -103,6 +103,17 @@
                 }
               </ul>
             }
+            @if (resumen.consumos.length > 0) {
+              <h3>Pases</h3>
+              <ul>
+                @for (consumo of resumen.consumos; track consumo.inscripcionId) {
+                  <li>
+                    <b>{{ consumo.nombre }}</b
+                    >: {{ consumo.texto }}
+                  </li>
+                }
+              </ul>
+            }
           </section>
         }
       </div>

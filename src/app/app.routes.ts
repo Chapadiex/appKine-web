@@ -24,6 +24,11 @@ import { routes as rutasReporting } from './features/reporting/reporting.routes'
 import { routes as rutasActivity } from './features/activity/activity.routes';
 import { SEGMENTO_CLASES } from './features/activity/models/rutas-de-clases';
 import { routes as rutasAsistencia } from './features/activity/asistencia.routes';
+import { rutasPasesDePersona, rutasProductos } from './features/activity/pases.routes';
+import {
+  PATRON_PASES_DE_PERSONA,
+  SEGMENTO_PRODUCTOS,
+} from './features/activity/models/rutas-de-pases';
 
 /**
  * Rutas raiz de AKINE (estructura fijada en AKINE-00.02).
@@ -242,6 +247,15 @@ export const routes: Routes = [
     children: rutasBilling,
   },
 
+  // Pases de una persona (F9, M29, AKINE-08.06). Cuelga del padron por lo mismo que la cuenta
+  // corriente —se llega buscando a la persona— y por lo mismo va ANTES que `pacientes`. La
+  // feature es `activity`, no `person`: un pase es un saldo de creditos, no un dato del padron.
+  {
+    path: PATRON_PASES_DE_PERSONA,
+    canActivate: [authGuard],
+    children: rutasPasesDePersona,
+  },
+
   {
     path: 'pacientes',
     canActivate: [authGuard],
@@ -353,6 +367,14 @@ export const routes: Routes = [
     path: 'asistencia',
     canActivate: [authGuard],
     children: rutasAsistencia,
+  },
+
+  // Catalogo de productos de pack (F9, M29, AKINE-08.06). `contextGuard` y `producto:read` los
+  // pone `pases.routes.ts`: el producto es de la sede.
+  {
+    path: SEGMENTO_PRODUCTOS,
+    canActivate: [authGuard],
+    children: rutasProductos,
   },
 
   {
