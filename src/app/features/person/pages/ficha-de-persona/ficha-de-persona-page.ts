@@ -6,6 +6,7 @@ import { DatosAdministrativosDeHistoria } from '../../components/datos-administr
 import { HitoResponse } from '../../../../api/generated/model/hito-response';
 import {
   PERMISO_COBRO_REGISTER,
+  PERMISO_PASE_READ,
   PERMISO_HC_READ,
   PERMISO_PACIENTE_MANAGE,
 } from '../../../../core/models/permisos';
@@ -116,6 +117,7 @@ export class FichaDePersonaPage {
 
   protected readonly permisoManage = PERMISO_PACIENTE_MANAGE;
   protected readonly permisoCobro = PERMISO_COBRO_REGISTER;
+  protected readonly permisoPase = PERMISO_PASE_READ;
   protected readonly permisoHistoria = PERMISO_HC_READ;
 
   protected readonly documentoEnUnaLinea = documentoEnUnaLinea;
@@ -191,6 +193,8 @@ export class FichaDePersonaPage {
   protected readonly rutaCuentaCorriente = computed(
     () => `/pacientes/${this.personaId()}/cuenta-corriente` as const,
   );
+  /** Pases de la persona (M29): ruta de `activity`, aca solo la URL. */
+  protected readonly rutaPases = computed(() => `/pacientes/${this.personaId()}/pases` as const);
 
   constructor() {
     effect(() => {

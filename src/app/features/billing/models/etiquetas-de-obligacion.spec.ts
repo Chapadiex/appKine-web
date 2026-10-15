@@ -1,4 +1,13 @@
-import { conceptoEnPalabras, importeEnPalabras } from './etiquetas-de-obligacion';
+import { conceptoEnPalabras, importeEnPalabras, origenEnPalabras } from './etiquetas-de-obligacion';
+
+describe('origenEnPalabras', () => {
+  it('rotula las ventas (sin sesion) y deja vacio el caso normal', () => {
+    expect(origenEnPalabras('VENTA_PASE')).toBe('Venta de pase');
+    expect(origenEnPalabras('VENTA_ABONO')).toBe('Venta de abono');
+    expect(origenEnPalabras('SESION')).toBe('');
+    expect(origenEnPalabras(undefined)).toBe('');
+  });
+});
 
 describe('conceptoEnPalabras', () => {
   it('traduce los tres conceptos de F-4 y no inventa uno cuando no vino', () => {

@@ -174,3 +174,17 @@ export const PERMISO_INSCRIPCION_MANAGE = 'inscripcion:manage';
  * no necesita saber quien esta inscripto— e iniciar o cerrar la clase es `clase:manage`.
  */
 export const PERMISO_ASISTENCIA_MANAGE = 'asistencia:manage';
+
+/**
+ * Productos de pack y pases (F9, M29, AKINE-08.06). Copiados de `activity.domain.PermissionCodes`.
+ *
+ * <p>La matriz §32 no tiene fila de productos ni de pases; el backend tomo las mas cercanas:
+ * `producto:manage` como `convenio:manage` (ORG_ADMIN y CONSULTORIO_ADMIN), `pase:manage` como
+ * `cobro:register` (tambien ADMINISTRATIVO). <b>El PROFESIONAL no tiene ninguno</b>: el precio y el
+ * saldo son datos comerciales. El consumo de un credito no tiene permiso propio: lo dispara tomar
+ * lista, que pide `asistencia:manage`.
+ */
+export const PERMISO_PRODUCTO_READ = 'producto:read';
+export const PERMISO_PRODUCTO_MANAGE = 'producto:manage';
+export const PERMISO_PASE_READ = 'pase:read';
+export const PERMISO_PASE_MANAGE = 'pase:manage';

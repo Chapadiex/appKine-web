@@ -34,6 +34,7 @@ import {
   nombreDeParticipante,
   tieneLugar,
 } from '../../models/etiquetas-de-asistencia';
+import { avisoDeConsumo } from '../../models/etiquetas-de-pases';
 import { AsistenciaApi } from '../../services/asistencia-api';
 
 type EstadoCarga =
@@ -45,6 +46,13 @@ interface FalloDeItem {
   readonly inscripcionId: number;
   readonly nombre: string;
   readonly mensaje: string;
+}
+
+/** Lo que la asistencia hizo con el pase de un participante (M29, RN-M29-005). */
+interface ConsumoDeItem {
+  readonly inscripcionId: number;
+  readonly nombre: string;
+  readonly texto: string;
 }
 
 interface Historial {
@@ -68,8 +76,11 @@ interface Historial {
  * <p><b>Corregir no borra.</b> Cambiar un resultado ya registrado exige motivo y el anterior queda
  * en el historial (RN-M28-009), que se abre por participante.
  *
- * <p>No muestra nada clinico ni economico: el detalle operativo no lo trae (privacidad de quien
- * toma lista) y la asistencia no consume pases ni genera deuda en el backend actual.
+ * <p>No muestra nada clinico ni deuda: el detalle operativo no lo trae (privacidad de quien toma
+ * lista). Lo unico economico que aparece es lo que el backend devuelve al guardar: si la
+ * asistencia consumio o devolvio un credito del pase de la persona, o si no tenia un pase con
+ * creditos para la clase (M29, RN-M29-005). Eso <b>no es un error</b>: la asistencia se registra
+ * igual (CA-M19-009-06).
  */
 @Component({
   selector: 'app-asistencia-de-clase-page',
@@ -103,9 +114,11 @@ export class AsistenciaDeClasePage {
   protected readonly enviando = signal(false);
   protected readonly errorAccion = signal<ErrorAsistencia | null>(null);
   protected readonly faltanMotivos = signal<readonly number[]>([]);
-  protected readonly lote = signal<{ exitosos: number; fallos: readonly FalloDeItem[] } | null>(
-    null,
-  );
+  protected readonly lote = signal<{
+    exitosos: number;
+    fallos: readonly FalloDeItem[];
+    consumos: readonly ConsumoDeItem[];
+  } | null>(null);
   protected readonly avisoCierre = signal<string | null>(null);
   protected readonly historial = signal<Historial | null>(null);
 
@@ -389,7 +402,7 @@ export class AsistenciaDeClasePage {
 function resumirLote(
   resultado: ResultadoDeLoteDeAsistencia,
   nombres: ReadonlyMap<number, string>,
-): { exitosos: number; fallos: FalloDeItem[] } {
+): { exitosos: number; fallos: FalloDeItem[]; consumos: ConsumoDeItem[] } {
   const fallos = (resultado.items ?? [])
     .filter((item) => !item.resultado)
     .map((item) => ({
@@ -397,5 +410,12 @@ function resumirLote(
       nombre: nombres.get(item.inscripcionId ?? -1) ?? `Inscripcion ${item.inscripcionId}`,
       mensaje: traducirFalloDeItem(item.problemType, item.detalle).mensaje,
     }));
-  return { exitosos: resultado.exitosos ?? 0, fallos };
+  const consumos = (resultado.items ?? []).flatMap((item) => {
+    const texto = avisoDeConsumo(item.resultado?.consumoDeCredito);
+    const id = item.inscripcionId ?? -1;
+    return texto === null
+      ? []
+      : [{ inscripcionId: id, nombre: nombres.get(id) ?? `Inscripcion ${id}`, texto }];
+  });
+  return { exitosos: resultado.exitosos ?? 0, fallos, consumos };
 }

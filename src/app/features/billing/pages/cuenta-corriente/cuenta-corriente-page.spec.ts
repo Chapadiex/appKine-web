@@ -160,6 +160,24 @@ describe('CuentaCorrientePage', () => {
     expect(enlace?.textContent).toContain('Ir a presentaciones');
   });
 
+  it('una deuda de venta de pase, sin sesion, se lista con su origen', async () => {
+    const fixture = await montar([
+      {
+        ...PENDIENTE,
+        sesionId: undefined,
+        origen: 'VENTA_PASE',
+        paseId: 77,
+        concepto: 'PARTICULAR',
+        snapshotNombre: 'Pack Pilates 8',
+      },
+    ]);
+
+    const contenido = texto(fixture);
+    expect(contenido).toContain('Pack Pilates 8');
+    expect(contenido).toContain('Venta de pase');
+    expect(contenido).toContain('Anular');
+  });
+
   it('sin coseguros no habla de la obra social ni avisa nada', async () => {
     const fixture = await montar([{ ...PENDIENTE, concepto: 'PARTICULAR' }]);
 

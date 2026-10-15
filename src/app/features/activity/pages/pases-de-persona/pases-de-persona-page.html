@@ -1,0 +1,201 @@
+<h1>Pases de {{ nombre() }}</h1>
+
+<p class="descripcion">
+  Los packs de creditos que esta persona compro en esta sede. Cada asistencia a una clase de la
+  oferta del pase consume un credito; si la asistencia se corrige a ausente, el credito vuelve. El
+  saldo se explica con los movimientos de cada pase.
+</p>
+
+<p class="acciones">
+  <a class="enlace" routerLink="/pacientes">Volver al padron</a>
+  <a class="enlace" [routerLink]="rutaCuentaCorriente()" *akinePermiso="permisoCobro">
+    Cuenta corriente
+  </a>
+</p>
+
+@if (puedeVender()) {
+  <section class="tarjeta" aria-labelledby="titulo-vender">
+    <h2 id="titulo-vender">Vender un pase</h2>
+    <p class="ayuda">
+      Vender crea el pase con sus creditos y una deuda a nombre de la persona. No cobra: el pago se
+      registra despues, desde la cuenta corriente.
+    </p>
+
+    @if (errorProductos(); as fallo) {
+      <p class="estado estado--error">{{ fallo.mensaje }}</p>
+    } @else if (productos().length === 0) {
+      <p class="estado estado--vacio">
+        Esta sede no tiene productos de pack vigentes para vender. Se crean en Productos de pack.
+      </p>
+    } @else {
+      <div class="filtros">
+        <div class="campo">
+          <label for="vender-producto">Producto</label>
+          <select
+            id="vender-producto"
+            [value]="productoElegido()"
+            (change)="elegirProducto($any($event.target).value)"
+          >
+            <option value="">Elegi un producto</option>
+            @for (producto of productos(); track producto.id) {
+              <option [value]="producto.id">
+                {{ producto.nombre }} — {{ creditos(producto.creditos) }},
+                {{ importe(producto.precio, producto.moneda) }}
+              </option>
+            }
+          </select>
+          @if (productoDeLaVenta(); as producto) {
+            <p class="ayuda">
+              Vale {{ producto.vigenciaDias }} dias desde hoy, contando el dia de hoy.
+            </p>
+          }
+        </div>
+        <div class="acciones">
+          <button type="button" class="boton" [disabled]="enviando()" (click)="vender()">
+            {{ enviando() ? 'Vendiendo…' : 'Vender pase' }}
+          </button>
+        </div>
+      </div>
+    }
+
+    <div aria-live="polite">
+      @if (errorVenta(); as fallo) {
+        <p class="estado estado--error" role="alert">{{ fallo.mensaje }}</p>
+      }
+      @if (venta(); as resultado) {
+        <p class="estado estado--ok">
+          {{ resultado.creada === false ? 'Esa venta ya estaba registrada' : 'Se vendio' }}
+          "{{ resultado.pase?.nombre }}": {{ creditos(resultado.pase?.creditosDisponibles) }} hasta
+          el {{ fecha(resultado.pase?.vigenciaHasta) }}.
+          @if (resultado.deuda; as deuda) {
+            Quedo una deuda de {{ importe(deuda.importe, deuda.moneda) }} a nombre de la persona.
+          }
+        </p>
+        <p *akinePermiso="permisoCobro">
+          <a class="enlace" [routerLink]="rutaCuentaCorriente()"
+            >Cobrar desde la cuenta corriente</a
+          >
+        </p>
+      }
+    </div>
+  </section>
+}
+
+<div aria-live="polite">
+  @if (error(); as fallo) {
+    <section class="tarjeta conflicto" aria-labelledby="titulo-error-pases">
+      <h2 id="titulo-error-pases">No se pudieron leer los pases</h2>
+      <p class="estado estado--error">{{ fallo.mensaje }}</p>
+      <div class="acciones">
+        @if (fallo.causa === 'sin-contexto') {
+          <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto de trabajo</a>
+        } @else {
+          <button type="button" class="boton boton--secundario" (click)="cargar()">
+            Reintentar
+          </button>
+        }
+      </div>
+    </section>
+  }
+</div>
+
+@if (pases() === null && !error()) {
+  <p class="estado estado--cargando" aria-live="polite">Leyendo los pases…</p>
+} @else if (pases()?.length === 0 && !error()) {
+  <p class="estado estado--vacio">Esta persona no compro ningun pase en esta sede.</p>
+} @else if (pases(); as lista) {
+  @if (lista.length > 0) {
+    <div class="tabla-scroll" tabindex="0" role="region" aria-labelledby="titulo-tabla-pases">
+      <h2 id="titulo-tabla-pases" class="visualmente-oculto">Pases de la persona</h2>
+      <table class="tabla">
+        <thead>
+          <tr>
+            <th scope="col">Pase</th>
+            <th scope="col">Saldo</th>
+            <th scope="col">Vigencia</th>
+            <th scope="col">Precio</th>
+            <th scope="col">Estado</th>
+            <th scope="col">Movimientos</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (pase of lista; track pase.id) {
+            <tr>
+              <td>
+                {{ pase.nombre }}
+                <div class="ayuda">Vendido el {{ instante(pase.vendidoEn) }}</div>
+              </td>
+              <td>{{ pase.creditosDisponibles }} de {{ pase.creditosIniciales }}</td>
+              <td>{{ vigencia(pase) }}</td>
+              <td class="importe">{{ importe(pase.precio, pase.moneda) }}</td>
+              <td>
+                <span [class]="claseDeEstado(pase)">{{ estadoDePase(pase) }}</span>
+              </td>
+              <td>
+                <button
+                  type="button"
+                  class="boton boton--secundario"
+                  [attr.aria-label]="'Movimientos de ' + pase.nombre"
+                  [attr.aria-expanded]="detalle()?.paseId === pase.id"
+                  (click)="verMovimientos(pase)"
+                >
+                  Ver movimientos
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+}
+
+@if (detalle(); as actual) {
+  <section class="tarjeta" role="region" aria-labelledby="titulo-movimientos">
+    <h2 id="titulo-movimientos">Movimientos de {{ actual.datos?.pase?.nombre ?? 'el pase' }}</h2>
+    @if (actual.error; as fallo) {
+      <p class="estado estado--error">{{ fallo.mensaje }}</p>
+    } @else if (actual.datos === null) {
+      <p class="estado estado--cargando" aria-live="polite">Leyendo los movimientos…</p>
+    } @else {
+      <p>
+        Saldo actual: <b>{{ creditos(actual.datos.pase?.creditosDisponibles) }}</b> de
+        {{ actual.datos.pase?.creditosIniciales }}.
+      </p>
+      <div class="tabla-scroll" tabindex="0" role="region" aria-label="Movimientos del pase">
+        <table class="tabla">
+          <thead>
+            <tr>
+              <th scope="col">Fecha</th>
+              <th scope="col">Movimiento</th>
+              <th scope="col">Creditos</th>
+              <th scope="col">Saldo</th>
+              <th scope="col">Detalle</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (mov of actual.datos.movimientos ?? []; track mov.id) {
+              <tr>
+                <td>{{ instante(mov.ocurridoEn) }}</td>
+                <td>{{ movimiento(mov) }}</td>
+                <td class="importe">{{ conSigno(mov.cantidad) }}</td>
+                <td class="importe">{{ mov.saldoResultante }}</td>
+                <td>
+                  {{ origen(mov) }}
+                  @if (mov.motivo) {
+                    <div class="ayuda">Motivo: {{ mov.motivo }}</div>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+    <div class="acciones">
+      <button type="button" class="boton boton--secundario" (click)="cerrarMovimientos()">
+        Cerrar movimientos
+      </button>
+    </div>
+  </section>
+}
