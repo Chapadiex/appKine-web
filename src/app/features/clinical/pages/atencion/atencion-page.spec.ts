@@ -26,6 +26,7 @@ const VER = `/api/v1/consultorios/${CONSULTORIO}/sesiones/${SESION}`;
 const BORRADOR = `${VER}/borrador`;
 const EVALUACION = `${VER}/evaluacion`;
 const CIERRE = `${VER}/cierre`;
+const CASO = `${VER}/caso`;
 const TURNO_URL = `/api/v1/consultorios/${CONSULTORIO}/turnos/${TURNO}`;
 const PERSONA = 9;
 const DATOS_ADMIN = `/api/v1/historias-clinicas/por-persona/${PERSONA}/datos-administrativos`;
@@ -619,6 +620,115 @@ describe('AtencionPage', () => {
   });
 
   // -------------------------------------------------------------------------------------
+  // Caso clinico con la atencion abierta (contrato 0.102.0)
+  // -------------------------------------------------------------------------------------
+
+  /** Inicia con dos casos activos y la sesion asociada al primero. */
+  async function abiertaConCaso(): Promise<ComponentFixture<AtencionPage>> {
+    const fixture = crearSinMontar();
+    responderCasos([CASO_RODILLA, CASO_HOMBRO]);
+    await estabilizar(fixture);
+    apretar(fixture, 'Iniciar la atencion');
+    httpMock.expectOne(esIniciar()).flush({ ...ABIERTA, casoId: 31 });
+    await estabilizar(fixture);
+    responderBloques();
+    await estabilizar(fixture);
+    return fixture;
+  }
+
+  it('cambia el caso de la atencion abierta y el proximo autosave usa la version nueva', async () => {
+    const fixture = await abiertaConCaso();
+    const selector = fixture.nativeElement.querySelector('#atencion-caso') as HTMLSelectElement;
+    expect(selector.value).toBe('31');
+    expect(botonCaso(fixture).disabled).toBe(true);
+
+    elegir(fixture, '#atencion-caso', '32');
+    fixture.detectChanges();
+    apretar(fixture, 'Guardar el caso');
+
+    const cambio = httpMock.expectOne((p) => p.method === 'PUT' && p.url === CASO);
+    expect(cambio.request.body).toEqual({ casoId: 32, version: 3 });
+    cambio.flush({ ...ABIERTA, casoId: 32, version: 4 });
+    await estabilizar(fixture);
+
+    expect(texto(fixture)).toContain('quedo asociada al Caso 2');
+    expect(texto(fixture)).not.toContain('Ultimo guardado');
+    guardarAhora(fixture);
+    const guardado = httpMock.expectOne(esBorrador());
+    expect((guardado.request.body as { version: number }).version).toBe(4);
+    guardado.flush({ ...ABIERTA, casoId: 32, version: 5 });
+  });
+
+  it('"Sin caso" quita el caso: el casoId no viaja', async () => {
+    const fixture = await abiertaConCaso();
+
+    elegir(fixture, '#atencion-caso', '');
+    fixture.detectChanges();
+    apretar(fixture, 'Guardar el caso');
+
+    const cambio = httpMock.expectOne((p) => p.method === 'PUT' && p.url === CASO);
+    expect(cambio.request.body).toEqual({ version: 3 });
+    cambio.flush({ ...ABIERTA, version: 4 });
+    await estabilizar(fixture);
+    expect(texto(fixture)).toContain('La atencion quedo sin caso');
+  });
+
+  it('un caso que se cerro mientras se elegia lo dice y vuelve el selector al caso actual', async () => {
+    const fixture = await abiertaConCaso();
+
+    elegir(fixture, '#atencion-caso', '32');
+    fixture.detectChanges();
+    apretar(fixture, 'Guardar el caso');
+    httpMock
+      .expectOne((p) => p.method === 'PUT' && p.url === CASO)
+      .flush(
+        { type: 'https://akine.app/problems/caso-clinico-cerrado', status: 409 },
+        { status: 409, statusText: 'Conflict' },
+      );
+    await estabilizar(fixture);
+
+    expect(texto(fixture)).toContain('ya no esta activo');
+    expect((fixture.nativeElement.querySelector('#atencion-caso') as HTMLSelectElement).value).toBe(
+      '31',
+    );
+  });
+
+  it('sin casos activos ni caso asociado no ofrece el selector', async () => {
+    const fixture = await montar();
+    expect(fixture.nativeElement.querySelector('#atencion-caso')).toBeNull();
+  });
+
+  it('una sesion cerrada no ofrece cambiar el caso', async () => {
+    const fixture = await montar({ ...CERRADA, casoId: 31 });
+    expect(fixture.nativeElement.querySelector('#atencion-caso')).toBeNull();
+  });
+
+  // -------------------------------------------------------------------------------------
+  // Borrador rechazado por el validador (contrato 0.102.0)
+  // -------------------------------------------------------------------------------------
+
+  it('un 400 del borrador con errors.contenido dice que fueron las notas y no las pierde', async () => {
+    const fixture = await montar();
+    escribirNotas(fixture, 'Texto que el servidor rechaza.');
+    guardarAhora(fixture);
+
+    httpMock.expectOne(esBorrador()).flush(
+      {
+        type: 'https://akine.app/problems/validation-error',
+        status: 400,
+        detail: 'La solicitud tiene errores de validacion.',
+        errors: { contenido: 'no es un JSON valido' },
+      },
+      { status: 400, statusText: 'Bad Request' },
+    );
+    await estabilizar(fixture);
+
+    expect(texto(fixture)).toContain('Las notas no se guardaron: no es un JSON valido');
+    expect(texto(fixture)).not.toContain('El dolor va de 0 a 10');
+    expect(notas(fixture).value).toBe('Texto que el servidor rechaza.');
+  });
+
+  // -------------------------------------------------------------------------------------
   // Bloques de examen y tratamientos
   // -------------------------------------------------------------------------------------
 
@@ -903,6 +1013,12 @@ describe('AtencionPage', () => {
     const campo = fixture.nativeElement.querySelector(selector) as HTMLSelectElement;
     campo.value = valor;
     campo.dispatchEvent(new Event('change'));
+  }
+
+  function botonCaso(fixture: ComponentFixture<AtencionPage>): HTMLButtonElement {
+    return Array.from(
+      fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>,
+    ).find((b) => (b.textContent ?? '').trim() === 'Guardar el caso') as HTMLButtonElement;
   }
 
   function esCierre() {

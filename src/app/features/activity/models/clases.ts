@@ -1,4 +1,5 @@
 import { Clase } from '../../../api/generated/model/clase';
+import { HabilitacionesResponse } from '../../../api/generated/model/habilitaciones-response';
 import { Inscripcion } from '../../../api/generated/model/inscripcion';
 
 /**
@@ -201,6 +202,26 @@ export function diasDeLaSemana(lunes: string): readonly string[] {
 export function lugaresLibres(clase: Clase): number {
   const capacidad = clase.capacidadEfectiva ?? clase.capacidad ?? 0;
   return Math.max(0, capacidad - (clase.ocupados ?? 0));
+}
+
+/** Un box que se puede elegir para la clase. Opcion de pantalla, no un DTO del contrato. */
+export interface OpcionDeEspacio {
+  readonly espacioId: number;
+  readonly nombre: string;
+}
+
+/** Habilitaciones de espacio de la oferta que hoy pueden sostener una clase. */
+export function espaciosHabilitadosEnServicio(
+  habilitaciones: HabilitacionesResponse,
+): readonly OpcionDeEspacio[] {
+  return (habilitaciones.espacios ?? [])
+    .filter((e) => e.estado === 'ACTIVO' && e.enServicio !== false && e.espacioId !== undefined)
+    .map((e) => ({ espacioId: e.espacioId as number, nombre: e.nombre || `Box #${e.espacioId}` }));
+}
+
+/** Nombre de la clase: su titulo y, sin el, el de la oferta. */
+export function nombreDeClase(clase: Clase | null | undefined): string {
+  return clase?.titulo || clase?.ofertaNombre || `Clase #${clase?.id ?? ''}`;
 }
 
 function dos(n: number): string {

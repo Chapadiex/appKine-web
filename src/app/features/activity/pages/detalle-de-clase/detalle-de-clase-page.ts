@@ -1,7 +1,7 @@
 import { Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { catchError, forkJoin, of } from 'rxjs';
+import { catchError, forkJoin, of, switchMap } from 'rxjs';
 
 import { Clase } from '../../../../api/generated/model/clase';
 import { Cupos } from '../../../../api/generated/model/cupos';
@@ -31,6 +31,8 @@ import {
   textoDeEstadoDeClase,
   textoDeEstadoDeInscripcion,
   textoDeEventoDeClase,
+  nombreDeClase,
+  OpcionDeEspacio,
 } from '../../models/clases';
 import { RUTA_CLASES } from '../../models/rutas-de-clases';
 import { ActivityApi } from '../../services/activity-api';
@@ -94,8 +96,8 @@ export class DetalleDeClasePage {
   protected readonly cupos = signal<Cupos | null>(null);
   protected readonly historial = signal<readonly EventoDeClase[]>([]);
   protected readonly participantes = signal<readonly Participante[] | null>(null);
-  protected readonly nombreDeOferta = signal('');
-  protected readonly nombreDeProfesional = signal('');
+  /** Boxes que ofrece la reprogramacion; se leen al abrirla, no al cargar la clase. */
+  protected readonly espacios = signal<readonly OpcionDeEspacio[]>([]);
 
   protected readonly cargando = signal(false);
   protected readonly errorDeLectura = signal<ErrorActividad | null>(null);
@@ -147,6 +149,7 @@ export class DetalleDeClasePage {
     horaInicio: ['', Validators.required],
     horaFin: ['', Validators.required],
     capacidad: [1, [Validators.required, Validators.min(1)]],
+    espacioId: [''],
   });
 
   constructor() {
@@ -197,7 +200,6 @@ export class DetalleDeClasePage {
         this.clase.set(clase);
         this.cupos.set(cupos);
         this.historial.set(historial);
-        this.resolverNombres(consultorioId, clase);
         if (this.participantes() !== null) {
           this.cargarParticipantes();
         }
@@ -242,8 +244,7 @@ export class DetalleDeClasePage {
   }
 
   protected titulo(): string {
-    const clase = this.clase();
-    return clase?.titulo || this.nombreDeOferta() || `Clase #${clase?.id ?? ''}`;
+    return nombreDeClase(this.clase());
   }
 
   protected nombreDe(participante: Participante | undefined): string {
@@ -277,9 +278,14 @@ export class DetalleDeClasePage {
       horaInicio: horaDeSede(clase.inicio, zona),
       horaFin: horaDeSede(clase.fin, zona),
       capacidad: clase.capacidad ?? 1,
+      espacioId: clase.espacioId !== undefined ? String(clase.espacioId) : '',
     });
     this.errorDeAccion.set(null);
     this.panel.set({ tipo: 'reprogramar' });
+    const consultorioId = this.tenant.consultorioId();
+    if (consultorioId !== null) {
+      this.cargarEspacios(consultorioId, clase);
+    }
   }
 
   protected abrirCancelacion(): void {
@@ -320,6 +326,7 @@ export class DetalleDeClasePage {
         fin,
         capacidad: Number(valor.capacidad),
         profesionalId: clase.profesionalId,
+        espacioId: valor.espacioId === '' ? undefined : Number(valor.espacioId),
         version: clase.version ?? 0,
       })
       .subscribe({
@@ -517,37 +524,42 @@ export class DetalleDeClasePage {
     this.cupos.set(null);
     this.historial.set([]);
     this.participantes.set(null);
-    this.nombreDeOferta.set('');
-    this.nombreDeProfesional.set('');
+    this.espacios.set([]);
     this.errorDeAccion.set(null);
     this.aviso.set('');
     this.persona.set(null);
     this.panel.set({ tipo: 'ninguno' });
   }
 
-  private resolverNombres(consultorioId: number, clase: Clase): void {
+  /**
+   * Boxes para reprogramar. El actual va siempre primero, aunque ya no figure entre los elegibles:
+   * conservarlo es lo que el contrato pide mandar, y si dejo de servir el 409 lo dice.
+   */
+  private cargarEspacios(consultorioId: number, clase: Clase): void {
+    const actual: OpcionDeEspacio[] =
+      clase.espacioId !== undefined
+        ? [{ espacioId: clase.espacioId, nombre: clase.espacioNombre || `Box #${clase.espacioId}` }]
+        : [];
+    this.espacios.set(actual);
     const ofertaId = clase.ofertaId;
-    if (ofertaId === undefined || this.nombreDeOferta() !== '') {
+    if (ofertaId === undefined) {
       return;
     }
-    this.api
-      .ofertasGrupales(consultorioId)
-      .pipe(catchError(() => of([])))
-      .subscribe((ofertas) =>
-        this.nombreDeOferta.set(ofertas.find((o) => o.id === ofertaId)?.nombreComercial ?? ''),
-      );
-    if (clase.profesionalId === undefined) {
-      return;
-    }
+    const claseId = clase.id;
     this.api
       .habilitaciones(consultorioId, ofertaId)
-      .pipe(catchError(() => of(null)))
-      .subscribe((respuesta) =>
-        this.nombreDeProfesional.set(
-          respuesta?.profesionales?.find((p) => p.membershipId === clase.profesionalId)?.nombre ??
-            '',
+      .pipe(
+        catchError(() => of(null)),
+        switchMap((habilitaciones) =>
+          this.api.espaciosElegibles(this.tenant.organizationId(), consultorioId, habilitaciones),
         ),
-      );
+      )
+      .subscribe((elegibles) => {
+        if (this.clase()?.id !== claseId) {
+          return;
+        }
+        this.espacios.set([...actual, ...elegibles.filter((e) => e.espacioId !== clase.espacioId)]);
+      });
   }
 }
 

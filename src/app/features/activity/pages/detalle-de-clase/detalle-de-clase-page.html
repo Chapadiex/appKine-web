@@ -39,17 +39,17 @@
           — {{ actual.motivoCancelacion }}
         }
       </dd>
-      @if (nombreDeOferta()) {
+      @if (actual.ofertaNombre) {
         <dt>Oferta</dt>
-        <dd>{{ nombreDeOferta() }}</dd>
+        <dd>{{ actual.ofertaNombre }}</dd>
       }
       @if (actual.profesionalId) {
         <dt>Profesional</dt>
-        <dd>{{ nombreDeProfesional() || 'Profesional #' + actual.profesionalId }}</dd>
+        <dd>{{ actual.profesionalNombre || 'Profesional #' + actual.profesionalId }}</dd>
       }
       @if (actual.espacioId) {
         <dt>Box</dt>
-        <dd>Box #{{ actual.espacioId }}, asignado por el sistema</dd>
+        <dd>{{ actual.espacioNombre || 'Box #' + actual.espacioId }}</dd>
       }
     </dl>
 
@@ -135,6 +135,23 @@
           <label for="reprogramar-capacidad">Cupo</label>
           <input id="reprogramar-capacidad" type="number" min="1" formControlName="capacidad" />
         </div>
+      </div>
+      <div class="campo">
+        <label for="reprogramar-espacio">Box</label>
+        <select
+          id="reprogramar-espacio"
+          formControlName="espacioId"
+          aria-describedby="reprogramar-espacio-ayuda"
+        >
+          <option value="">Que el sistema elija uno libre</option>
+          @for (espacio of espacios(); track espacio.espacioId) {
+            <option [value]="espacio.espacioId">{{ espacio.nombre }}</option>
+          }
+        </select>
+        <p class="ayuda" id="reprogramar-espacio-ayuda">
+          Si dejas que el sistema elija, toma el primer box libre, que puede no ser el actual. Un
+          box elegido se valida tal cual: si no esta libre, la clase no se mueve.
+        </p>
       </div>
       <div class="acciones">
         <button type="submit" class="boton" [disabled]="enviando()">Guardar el cambio</button>

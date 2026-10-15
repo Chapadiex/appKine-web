@@ -12,13 +12,17 @@ import {
 
 /**
  * E2E de las clases grupales (F9, AKINE-08.01 y 08.02) contra el backend REAL:
- * programar la clase por pantalla → inscribir hasta llenar el cupo → la tercera persona choca con
+ * programar la clase por pantalla, eligiendo el box → inscribir hasta llenar el cupo → la tercera persona choca con
  * `clase-completa` y entra a la lista de espera → la baja de una inscripta promueve a la que
  * esperaba → la clase aparece en la semana y en la recepcion del dia.
  *
  * <p>La clase ocupa al profesional del centro de 20:00 a 21:00 de su propio bloque de dias
  * ({@link DIAS}.clases): ningun otro spec reserva ahi. El dia se elige con una oferta individual
  * auxiliar, para esquivar feriados igual que el resto de los flujos.
+ *
+ * <p>El box es propio del spec y es el unico habilitado para la oferta: elegirlo por pantalla
+ * prueba que `espacioId` viaja y que la clase vuelve con `espacioNombre` y `profesionalNombre`
+ * (appKine-api #128), sin lecturas extra para resolverlos.
  */
 
 const CUPO = 2;
@@ -37,6 +41,7 @@ test.describe('Clases grupales contra el backend real', () => {
   let oferta: Oferta;
   let personas: Persona[];
   let fecha: string;
+  let box: { readonly id: number; readonly nombre: string };
   /** Clase creada por el test. Se cancela al final aunque falle: un reintento choca con ella. */
   let claseCreada: number | null = null;
 
@@ -61,6 +66,18 @@ test.describe('Clases grupales contra el backend real', () => {
       duracionMinutos: 60,
       extra: { modalidad: 'GRUPAL', capacidad: 6 },
     });
+    const nombreDelBox = `Sala E2E ${Date.now()}`;
+    const { id: espacioId } = await api.exigir<{ id: number }>(
+      'POST',
+      `/api/v1/organizations/${centro.organizationId}/consultorios/${centro.consultorioId}/espacios`,
+      { name: nombreDelBox, capacidad: 6, tipo: 'SALA_GRUPAL' },
+    );
+    box = { id: espacioId, nombre: nombreDelBox };
+    await api.exigir(
+      'PUT',
+      `/api/v1/consultorios/${centro.consultorioId}/ofertas/${oferta.id}/habilitaciones/espacios`,
+      { expectedVersion: oferta.version, ids: [box.id] },
+    );
     personas = [
       await crearPersona(api, { nombre: 'Ana' }),
       await crearPersona(api, { nombre: 'Bruno' }),
@@ -78,6 +95,12 @@ test.describe('Clases grupales contra el backend real', () => {
       );
       claseCreada = null;
     }
+    // El box es del spec: se da de baja para no dejarlo en la sede de los demas flujos.
+    await api.pedir(
+      'POST',
+      `/api/v1/organizations/${centro.organizationId}/consultorios/${centro.consultorioId}/espacios/${box.id}/deactivate`,
+      { reason: 'Limpieza del E2E de clases' },
+    );
   });
 
   test('alta → cupo lleno → lista de espera → la baja promueve a quien esperaba', async ({
@@ -94,6 +117,7 @@ test.describe('Clases grupales contra el backend real', () => {
     await page.getByLabel('Oferta grupal').selectOption({ label: oferta.nombre });
     expect((await habilitaciones).status()).toBe(200);
     await page.getByLabel('Profesional a cargo').selectOption({ label: centro.profesional.nombre });
+    await page.getByLabel('Box').selectOption({ label: box.nombre });
     await page.getByLabel('Hora de inicio').fill('20:00');
     await page.getByLabel('Hora de fin').fill('21:00');
     await page.getByLabel('Cupo').fill(String(CUPO));
@@ -101,12 +125,30 @@ test.describe('Clases grupales contra el backend real', () => {
     await page.getByRole('button', { name: 'Programar clase' }).click();
     const respuesta = await programada;
     expect(respuesta.status(), await respuesta.text()).toBe(201);
-    const { id: claseId } = (await respuesta.json()) as { id: number };
+    const programadaComo = (await respuesta.json()) as {
+      id: number;
+      espacioId?: number;
+      espacioNombre?: string;
+      profesionalNombre?: string;
+      ofertaNombre?: string;
+    };
+    const claseId = programadaComo.id;
+    expect(programadaComo).toEqual(
+      expect.objectContaining({
+        espacioId: box.id,
+        espacioNombre: box.nombre,
+        ofertaNombre: oferta.nombre,
+        profesionalNombre: centro.profesional.nombre,
+      }),
+    );
     claseCreada = claseId;
 
     await expect(page).toHaveURL(new RegExp(`/clases/${claseId}$`));
     await expect(page.getByRole('heading', { name: oferta.nombre, level: 1 })).toBeVisible();
     await expect(page.getByText('Programada', { exact: true })).toBeVisible();
+    const datos = page.getByRole('region', { name: 'La clase', exact: true });
+    await expect(datos).toContainText(box.nombre);
+    await expect(datos).toContainText(centro.profesional.nombre);
 
     // 2. Inscribir hasta llenar el cupo.
     for (const persona of personas.slice(0, CUPO)) {
@@ -172,6 +214,7 @@ test.describe('Clases grupales contra el backend real', () => {
     await expect(
       page.getByRole('link', { name: new RegExp(`Ver clase ${oferta.nombre}`) }),
     ).toBeVisible();
+    await expect(page.getByText(`${centro.profesional.nombre} · ${box.nombre}`)).toBeVisible();
     await navegar(page, `/agenda/recepcion?fecha=${fecha}`);
     const delDia = page.getByRole('region', { name: 'Clases grupales del dia' });
     await expect(delDia).toContainText(oferta.nombre);

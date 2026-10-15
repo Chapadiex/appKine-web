@@ -28,6 +28,7 @@ import {
 import {
   claseDeEstado,
   conceptoEnPalabras,
+  origenEnPalabras,
   estadoEnPalabras,
   fechaEnPalabras,
   importeEnPalabras,
@@ -119,6 +120,7 @@ export class CuentaCorrientePage {
   protected readonly estadoEnPalabras = estadoEnPalabras;
   protected readonly claseDeEstado = claseDeEstado;
   protected readonly conceptoEnPalabras = conceptoEnPalabras;
+  protected readonly origenEnPalabras = origenEnPalabras;
   protected readonly fechaEnPalabras = (valor: string | undefined): string =>
     fechaEnPalabras(valor, this.diaDeLaSede.zona());
   protected readonly sePuedeAnular = sePuedeAnular;

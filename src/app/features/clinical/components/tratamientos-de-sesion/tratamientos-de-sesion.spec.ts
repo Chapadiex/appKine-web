@@ -58,7 +58,7 @@ const REGISTRADO = {
  * Spec de los tratamientos realizados (AKINE-06.04).
  *
  * <p>Lo que decide comportamiento: la escritura manda la version que la pantalla le pasa y le
- * devuelve la nueva, cada parametro viaja con su tipo, la baja exige motivo y relee la version, y
+ * devuelve la nueva, cada parametro viaja con su tipo, la baja exige motivo y adopta la version que devuelve, y
  * los conflictos de la atencion se le pasan a la pantalla en vez de resolverse aca.
  */
 describe('TratamientosDeSesion', () => {
@@ -174,10 +174,12 @@ describe('TratamientosDeSesion', () => {
     expect(fixture.nativeElement.querySelector('#parametro-clave-0')).toBeNull();
   });
 
-  it('la baja exige motivo, y despues relee la sesion para tomar la version nueva', async () => {
+  it('la baja exige motivo y adopta la version que devuelve, sin releer la sesion', async () => {
     const fixture = await montar(true, [REGISTRADO]);
     const versiones: number[] = [];
+    const enVuelo: boolean[] = [];
     fixture.componentInstance.versionCambio.subscribe((v) => versiones.push(v));
+    fixture.componentInstance.enVuelo.subscribe((v) => enVuelo.push(v));
 
     apretar(fixture, 'Dar de baja');
     apretar(fixture, 'Confirmar la baja');
@@ -188,13 +190,12 @@ describe('TratamientosDeSesion', () => {
     apretar(fixture, 'Confirmar la baja');
     const baja = httpMock.expectOne((p) => p.method === 'DELETE' && p.url === `${BASE}/900`);
     expect(baja.request.body).toEqual({ motivo: 'El paciente refirio molestia', version: 7 });
-    baja.flush(null, { status: 204, statusText: 'No Content' });
-    httpMock
-      .expectOne((p) => p.method === 'GET' && p.url === VER)
-      .flush({ id: SESION, version: 9 });
+    baja.flush({ ...REGISTRADO, vigente: false, sesionVersion: 9 });
     await estabilizar(fixture);
 
+    httpMock.expectNone((p) => p.method === 'GET' && p.url === VER);
     expect(versiones).toEqual([9]);
+    expect(enVuelo).toEqual([true, false]);
     expect(texto(fixture)).not.toContain('1. Electroterapia');
     expect(texto(fixture)).toContain('dado de baja');
   });

@@ -482,6 +482,10 @@ function pagina(contenido: readonly unknown[]): unknown {
 export const CLASE = {
   id: 70,
   ofertaId: 42,
+  ofertaNombre: 'Pilates reformer',
+  profesionalNombre: 'Lic. Diaz',
+  espacioId: 9,
+  espacioNombre: 'Sala grande',
   profesionalId: 55,
   estado: 'PROGRAMADA',
   inicio: '2026-10-20T21:00:00Z',
@@ -509,6 +513,52 @@ const PARTICIPANTES_DE_CLASE = [
 ];
 
 /** Como responde el padron: con filas, vacio, o con un error de servidor. */
+/** Productos de pack (M29): uno vigente y uno dado de baja, que pinta la fila atenuada. */
+const PRODUCTOS_DE_PACK = [
+  {
+    id: 9,
+    ofertaId: CLASE.ofertaId,
+    nombre: 'Pack Pilates 8',
+    creditos: 8,
+    precio: 40000,
+    moneda: 'ARS',
+    vigenciaDias: 60,
+    vigenciaDesde: '2026-10-01',
+    active: true,
+  },
+  {
+    id: 8,
+    ofertaId: CLASE.ofertaId,
+    nombre: 'Pack Pilates 4',
+    creditos: 4,
+    precio: 22000,
+    moneda: 'ARS',
+    vigenciaDias: 30,
+    vigenciaDesde: '2026-01-01',
+    vigenciaHasta: '2026-09-30',
+    active: false,
+    deactivationReason: 'Se discontinua',
+  },
+];
+
+export const PERSONA_CON_PASES = 512;
+
+/** Los pases de una persona con las tres marcas de estado: activo, agotado y vencido. */
+const PASES_DE_PERSONA = [
+  { estado: 'ACTIVO', vigente: true, creditosDisponibles: 5, id: 77 },
+  { estado: 'AGOTADO', vigente: true, creditosDisponibles: 0, id: 76 },
+  { estado: 'ACTIVO', vigente: false, creditosDisponibles: 2, id: 75 },
+].map((pase) => ({
+  ...pase,
+  nombre: 'Pack Pilates 8',
+  creditosIniciales: 8,
+  vigenciaDesde: '2026-08-01',
+  vigenciaHasta: '2026-11-29',
+  precio: 40000,
+  moneda: 'ARS',
+  vendidoEn: '2026-08-01T13:00:00Z',
+}));
+
 export type ModoPadron = 'con-filas' | 'vacio' | 'error';
 
 export interface ApiDeContraste {
@@ -588,6 +638,10 @@ export async function instalarApiDeContraste(page: Page): Promise<ApiDeContraste
           'clase:manage',
           'inscripcion:read',
           'inscripcion:manage',
+          'producto:read',
+          'producto:manage',
+          'pase:read',
+          'pase:manage',
         ],
       });
     }
@@ -625,6 +679,17 @@ export async function instalarApiDeContraste(page: Page): Promise<ApiDeContraste
       camino === `/api/v1/consultorios/${CONSULTORIO_ID}/ofertas/${CLASE.ofertaId}/habilitaciones`
     ) {
       return json({ profesionales: [{ membershipId: 55, nombre: 'Lic. Diaz' }] });
+    }
+
+    // --- Productos de pack y pases (F9, M29) -------------------------------------------
+    if (camino === `/api/v1/consultorios/${CONSULTORIO_ID}/productos` && metodo === 'GET') {
+      return json(PRODUCTOS_DE_PACK);
+    }
+    if (camino === `/api/v1/consultorios/${CONSULTORIO_ID}/personas/${PERSONA_CON_PASES}/pases`) {
+      return json(PASES_DE_PERSONA);
+    }
+    if (camino === `/api/v1/personas/${PERSONA_CON_PASES}`) {
+      return json({ id: PERSONA_CON_PASES, apellido: 'Sosa', nombre: 'Eva' });
     }
 
     // --- Espacios ----------------------------------------------------------------------

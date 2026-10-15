@@ -201,9 +201,9 @@
           aria-describedby="alta-oferta-esquema-ayuda"
         />
         <p class="ayuda" id="alta-oferta-esquema-ayuda">
-          Se <b>guarda y se muestra</b>, pero todavia nadie lo interpreta: las reglas economicas
-          dependen de convenios y aranceles que se construyen mas adelante. Anota aca lo que el
-          centro necesite recordar.
+          Uno de <b>POR_SESION</b>, <b>POR_PACK</b> o <b>POR_ABONO</b>; otro valor se rechaza.
+          <b>POR_PACK</b> es el que deja armar productos de pack sobre la oferta y hace que cada
+          asistencia a una clase consuma un credito del pase de la persona.
         </p>
       </div>
 
@@ -642,7 +642,11 @@
                               type="text"
                               formControlName="esquemaCobro"
                               autocomplete="off"
+                              aria-describedby="editar-oferta-esquema-ayuda"
                             />
+                            <p class="ayuda" id="editar-oferta-esquema-ayuda">
+                              POR_SESION, POR_PACK o POR_ABONO.
+                            </p>
                           </div>
 
                           <div class="campo limpiar">

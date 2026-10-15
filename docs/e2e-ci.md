@@ -239,10 +239,21 @@ espacio, y es **futura** a proposito: inscribir a una clase que ya empezo es
 | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `flujo-asistencia` | Clase con cuatro inscriptas → `/asistencia` con la fecha de la clase → iniciar → con la pantalla abierta se cancela una inscripcion por la API → lote presente/tarde/ausente/cancelada → correccion sin motivo (bloqueada) y con motivo → historial → cerrar | El lote devuelve 3 exitosos y 1 fallido con `inscripcion-transicion-no-permitida`, sin deshacer los demas; la correccion viaja con su motivo; el historial guarda "Ausente a Presente"; el detalle final es `REALIZADA` con 3 presentes y 0 ausentes |
 
-- **El consumo de un pase y la derivacion clinica no tienen E2E** porque el backend no publica API
-  para ninguno de los dos (08.04 sin controller; 08.06 a 08.09 sin codigo sobre `V64`).
+- **La derivacion clinica no tiene E2E** porque el backend no publica API para ella (08.04 sin
+  controller). El consumo de un pase si: ver la seccion siguiente.
 - **`aceptaListaEspera` va explicito al inscribir:** el contrato lo declara opcional y el backend
   responde 400 si falta (`boolean` primitivo en `InscribirRequest`).
+
+## Pases y productos de pack (F9, `e2e/flujo-pases.spec.ts`)
+
+En el proyecto `agenda`, sobre el mismo centro. Helpers en `e2e/support/sembrado-pases.ts`. La
+oferta es `GRUPAL` con `esquemaCobro = POR_PACK` y la clase cae en el primer dia programable de
+`DIAS_PASES` (4 a 10 dias desde hoy): **cercana a proposito**, porque el pase vale 60 dias desde hoy
+y el consumo exige que este vigente el dia de la clase.
+
+| Spec          | Que recorre                                                                                                                                                            | Lo que afirma contra el backend real                                                                                                                                                                                        |
+| ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `flujo-pases` | `/productos`: alta del producto de 2 creditos → `/pacientes/:id/pases`: venta → `/asistencia/:claseId`: iniciar y marcar presente → ledger del pase → cuenta corriente | El alta es 201; la venta es 201 con la deuda `PENDIENTE` y el pase en 2 de 2; el lote devuelve `consumoDeCredito` `CONSUMIDO` con saldo 1; el ledger tiene compra +2 y consumo -1; la deuda sin sesion dice "Venta de pase" |
 
 ## Las pantallas de mas riesgo, con centro propio (`e2e/riesgo-*.spec.ts`)
 

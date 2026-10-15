@@ -1,7 +1,6 @@
 import { Location } from '@angular/common';
 import { Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { catchError, of } from 'rxjs';
 
 import { Clase } from '../../../../api/generated/model/clase';
 import { PERMISO_CLASE_MANAGE } from '../../../../core/models/permisos';
@@ -17,6 +16,7 @@ import {
   instanteDesdeHoraDeSede,
   lugaresLibres,
   lunesDeLaSemana,
+  nombreDeClase,
   sumarDiasAFecha,
   textoDeEstadoDeClase,
 } from '../../models/clases';
@@ -61,6 +61,7 @@ export class ClasesDeLaSemanaPage {
   protected readonly diaEnPalabras = diaEnPalabras;
   protected readonly textoDeEstado = textoDeEstadoDeClase;
   protected readonly lugaresLibres = lugaresLibres;
+  protected readonly nombre = nombreDeClase;
 
   /** Semana elegida con los botones. Mientras no se elija, manda la URL y, sin ella, hoy. */
   private readonly elegido = signal<string | null>(null);
@@ -77,7 +78,6 @@ export class ClasesDeLaSemanaPage {
   protected readonly clases = signal<readonly Clase[] | null>(null);
   protected readonly cargando = signal(false);
   protected readonly error = signal<ErrorActividad | null>(null);
-  private readonly nombresDeOferta = signal<ReadonlyMap<number, string>>(new Map());
 
   protected readonly zona = computed(() => this.diaDeLaSede.zona());
 
@@ -105,10 +105,6 @@ export class ClasesDeLaSemanaPage {
         this.clases.set(null);
         this.cargar();
       });
-    });
-    effect(() => {
-      this.tenant.contextEpoch();
-      untracked(() => this.cargarOfertas());
     });
   }
 
@@ -161,11 +157,9 @@ export class ClasesDeLaSemanaPage {
     return `${horaDeSede(clase.inicio, zona)} a ${horaDeSede(clase.fin, zona)}`;
   }
 
-  protected nombre(clase: Clase): string {
-    if (clase.titulo) {
-      return clase.titulo;
-    }
-    return this.nombresDeOferta().get(clase.ofertaId ?? -1) ?? `Clase #${clase.id}`;
+  /** "Lic. Diaz · Box 2": quien y donde, con lo que el contrato pudo resolver. */
+  protected quienYDonde(clase: Clase): string {
+    return [clase.profesionalNombre, clase.espacioNombre].filter(Boolean).join(' · ');
   }
 
   protected ocupacion(clase: Clase): string {
@@ -176,25 +170,6 @@ export class ClasesDeLaSemanaPage {
   private irA(lunes: string): void {
     this.elegido.set(lunes);
     this.location.replaceState(RUTA_CLASES, `semana=${lunes}`);
-  }
-
-  private cargarOfertas(): void {
-    const consultorioId = this.tenant.consultorioId();
-    if (consultorioId === null) {
-      return;
-    }
-    this.api
-      .ofertasGrupales(consultorioId)
-      .pipe(catchError(() => of([])))
-      .subscribe((ofertas) => {
-        const nombres = new Map<number, string>();
-        for (const oferta of ofertas) {
-          if (oferta.id !== undefined && oferta.nombreComercial) {
-            nombres.set(oferta.id, oferta.nombreComercial);
-          }
-        }
-        this.nombresDeOferta.set(nombres);
-      });
   }
 
   protected readonly domingo = computed(() => sumarDiasAFecha(this.lunes(), 6));

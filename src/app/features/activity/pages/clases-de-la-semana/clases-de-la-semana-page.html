@@ -82,6 +82,9 @@
                 <li class="clase">
                   <span class="clase__hora">{{ rango(clase) }}</span>
                   <span>{{ nombre(clase) }}</span>
+                  @if (quienYDonde(clase); as detalle) {
+                    <span class="ayuda">{{ detalle }}</span>
+                  }
                   <span
                     class="marca-estado"
                     [class.marca-estado--activa]="clase.estado === 'PROGRAMADA'"

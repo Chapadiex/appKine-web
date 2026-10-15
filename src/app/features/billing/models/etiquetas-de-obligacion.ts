@@ -2,6 +2,7 @@ import {
   Obligacion,
   ObligacionConceptoEnum,
   ObligacionEstadoEnum,
+  ObligacionOrigenEnum,
 } from '../../../api/generated/model/obligacion';
 import { formatearFecha } from '../../../shared/utils/instantes';
 
@@ -102,6 +103,25 @@ export function conceptoEnPalabras(concepto: string | undefined): string {
       return 'A cargo de la obra social';
     default:
       return concepto ?? '';
+  }
+}
+
+/**
+ * De donde salio la deuda (M29, contrato 0.102.0): una sesion cerrada o la venta de un pase o un
+ * abono. Una venta <b>no tiene sesion</b> —`sesionId` viene vacio— y la pantalla no lo usa para
+ * nada, asi que no se rompe: solo lo dice.
+ *
+ * <p>`SESION` y la ausencia de origen (deudas anteriores a M29) devuelven vacio: es el caso
+ * normal y rotularlo en cada fila seria ruido.
+ */
+export function origenEnPalabras(origen: string | undefined): string {
+  switch (origen) {
+    case ObligacionOrigenEnum.VENTA_PASE:
+      return 'Venta de pase';
+    case ObligacionOrigenEnum.VENTA_ABONO:
+      return 'Venta de abono';
+    default:
+      return '';
   }
 }
 

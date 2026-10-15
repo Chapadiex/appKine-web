@@ -101,6 +101,9 @@
           <p>
             <b>Motivo de la version {{ posterior.numeroVersion }}:</b>
             {{ posterior.motivoEnmienda }}
+            @if (posterior.registradaPorNombre) {
+              (enmendada por {{ posterior.registradaPorNombre }})
+            }
           </p>
         }
       }
@@ -158,6 +161,9 @@
           <summary>
             <b>Version {{ version.numeroVersion }}</b>
             — {{ instanteEnPalabras(version.registradaEn) }}
+            @if (version.registradaPorNombre) {
+              por {{ version.registradaPorNombre }}
+            }
             @if (version.numeroVersion === 1) {
               (original, al cerrar)
             }
@@ -167,7 +173,15 @@
               <dt>Motivo de la enmienda</dt>
               <dd>{{ version.motivoEnmienda }}</dd>
             }
-            @if (version.registradaPor !== undefined) {
+            <!--
+              Quien la escribio es por version: quien enmienda no suele ser quien cerro. El nombre lo
+              resuelve el backend; si la cuenta ya no se puede resolver queda el numero, que sigue
+              siendo trazable en la auditoria.
+            -->
+            @if (version.registradaPorNombre) {
+              <dt>Registrada por</dt>
+              <dd>{{ version.registradaPorNombre }}</dd>
+            } @else if (version.registradaPor !== undefined) {
               <dt>Registrada por</dt>
               <dd>Cuenta numero {{ version.registradaPor }}</dd>
             }
