@@ -22,6 +22,10 @@ export interface AuthorizedContextResponse {
      */
     consultorioName?: string;
     /**
+     * true en el ultimo contexto que la cuenta eligio con POST /api/v1/auth/context, si sigue habilitado: es el que conviene preseleccionar al volver a entrar. A lo sumo un elemento lo trae en true; ninguno si la cuenta nunca eligio o si el elegido dejo de estar habilitado
+     */
+    lastSelected?: boolean;
+    /**
      * Identificador de la organizacion
      */
     organizationId?: number;

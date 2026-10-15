@@ -247,6 +247,7 @@ export * from './plan-response';
 export * from './plan-tratamiento';
 export * from './plan-tratamiento-version';
 export * from './platform-role-response';
+export * from './platform-subscription-response';
 export * from './politica-de-prepago-request';
 export * from './practica-de-oferta';
 export * from './practicas-de-oferta-response';
