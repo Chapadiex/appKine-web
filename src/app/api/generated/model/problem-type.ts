@@ -272,6 +272,8 @@ export enum ProblemType {
 
     HTTPS___AKINE_APP_PROBLEMS_ENMIENDA_SIN_MOTIVO = 'https://akine.app/problems/enmienda-sin-motivo',
 
+    HTTPS___AKINE_APP_PROBLEMS_JUSTIFICACION_DE_ACCESO_REQUERIDA = 'https://akine.app/problems/justificacion-de-acceso-requerida',
+
     HTTPS___AKINE_APP_PROBLEMS_ADJUNTO_CLINICO_NO_ACCESIBLE = 'https://akine.app/problems/adjunto-clinico-no-accesible',
 
     HTTPS___AKINE_APP_PROBLEMS_ADJUNTO_CLINICO_INACTIVO = 'https://akine.app/problems/adjunto-clinico-inactivo',

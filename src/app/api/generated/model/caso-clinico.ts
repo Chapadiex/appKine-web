@@ -65,6 +65,10 @@ export interface CasoClinico {
      */
     ofertaId?: number;
     /**
+     * Nombre comercial de la oferta, resuelto al leer contra su sede (0.107.0). No se guarda en el caso: si la oferta se renombra, el caso muestra el nombre nuevo. Ausente si la oferta ya no resuelve; ahi la pantalla muestra el id
+     */
+    ofertaNombre?: string;
+    /**
      * Devolvela al editar, cerrar, reabrir o cambiar el equipo. Dos profesionales del equipo sobre el mismo caso son el caso normal
      */
     version?: number;

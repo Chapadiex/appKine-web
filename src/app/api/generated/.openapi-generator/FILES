@@ -371,6 +371,7 @@ model/plan-response.ts
 model/plan-tratamiento-version.ts
 model/plan-tratamiento.ts
 model/platform-role-response.ts
+model/platform-subscription-response.ts
 model/politica-de-prepago-request.ts
 model/practica-de-oferta.ts
 model/practicas-de-oferta-response.ts

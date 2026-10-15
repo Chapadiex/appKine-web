@@ -23,6 +23,9 @@ export interface VerTimelineClinicoRequestParams {
     cursor?: string;
     limite?: number;
     casoId?: number;
+    origen?: Array<'ENTRADA_CLINICA' | 'ADJUNTO_CLINICO' | 'ANTECEDENTE_CLINICO' | 'SESION'>;
+    desde?: string;
+    hasta?: string;
     xJustificacionAcceso?: string;
 }
 
