@@ -43,6 +43,8 @@ api/convenios-y-aranceles.service.ts
 api/convenios-y-aranceles.serviceInterface.ts
 api/definiciones-de-medicion.service.ts
 api/definiciones-de-medicion.serviceInterface.ts
+api/derivacion-clinica-de-participantes.service.ts
+api/derivacion-clinica-de-participantes.serviceInterface.ts
 api/disponibilidad-profesional.service.ts
 api/disponibilidad-profesional.serviceInterface.ts
 api/egresos.service.ts
@@ -243,6 +245,9 @@ model/deactivate-excepcion-request.ts
 model/deactivate-medicion-definicion-request.ts
 model/deactivate-offering-request.ts
 model/decline-invitacion-request.ts
+model/derivacion-de-participante.ts
+model/derivaciones-de-participante.ts
+model/derivar-participante.ts
 model/desvinculacion-impacto-response.ts
 model/detalle-operativo-de-clase.ts
 model/dia-de-agenda.ts
@@ -252,6 +257,7 @@ model/editar-caso-clinico-request.ts
 model/editar-egreso.ts
 model/effective-permissions-response.ts
 model/egreso.ts
+model/elegibilidad-clinica-de-participante.ts
 model/elegibilidad-response.ts
 model/enmendar-entrada-clinica-request.ts
 model/enmendar-sesion.ts
@@ -405,6 +411,7 @@ model/resultado-de-inscripcion.ts
 model/resultado-de-lote-de-asistencia.ts
 model/resumen-de-persona-response.ts
 model/revertir-consumo-request.ts
+model/revertir-derivacion.ts
 model/revertir-movimiento-de-caja.ts
 model/saldo-autorizacion-response.ts
 model/seccion-de-reporte-response.ts

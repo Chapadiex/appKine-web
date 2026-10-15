@@ -14,7 +14,7 @@
  */
 export interface Inscribir { 
     /**
-     * Si no hay lugar: true la deja en la lista de espera, false responde clase-completa sin anotarla.
+     * Si no hay lugar: true la deja en la lista de espera, false responde clase-completa sin anotarla. Opcional: si no viene, vale false.
      */
     aceptaListaEspera?: boolean;
     /**
