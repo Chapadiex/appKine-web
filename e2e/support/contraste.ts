@@ -482,6 +482,10 @@ function pagina(contenido: readonly unknown[]): unknown {
 export const CLASE = {
   id: 70,
   ofertaId: 42,
+  ofertaNombre: 'Pilates reformer',
+  profesionalNombre: 'Lic. Diaz',
+  espacioId: 9,
+  espacioNombre: 'Sala grande',
   profesionalId: 55,
   estado: 'PROGRAMADA',
   inicio: '2026-10-20T21:00:00Z',

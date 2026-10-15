@@ -9,7 +9,6 @@ import { PERMISO_CLASE_MANAGE, PERMISO_CLASE_READ } from '../../../../core/model
 import { TIMEOUT_AXE, esperarSinViolaciones } from '../../../../core/testing/axe';
 import {
   URL_CLASES,
-  URL_OFERTAS,
   asentar,
   clickear,
   elegirSede,
@@ -22,6 +21,9 @@ import { ClasesDeLaSemanaPage } from './clases-de-la-semana-page';
 const CLASE = {
   id: 70,
   ofertaId: 42,
+  ofertaNombre: 'Pilates reformer',
+  profesionalNombre: 'Lic. Diaz',
+  espacioNombre: 'Sala grande',
   estado: 'PROGRAMADA',
   inicio: '2026-10-14T21:00:00Z',
   fin: '2026-10-14T22:00:00Z',
@@ -64,15 +66,6 @@ describe('ClasesDeLaSemanaPage', () => {
     return httpMock.expectOne((p: HttpRequest<unknown>) => p.url === URL_CLASES);
   }
 
-  function responderOfertas(): void {
-    httpMock
-      .expectOne((p) => p.url === URL_OFERTAS)
-      .flush([
-        { id: 42, nombreComercial: 'Pilates reformer', modalidad: 'GRUPAL' },
-        { id: 43, nombreComercial: 'Kinesio individual', modalidad: 'INDIVIDUAL' },
-      ]);
-  }
-
   it(
     'pide la semana de la sede en UTC, pinta los siete dias y marca la clase completa',
     async () => {
@@ -87,7 +80,6 @@ describe('ClasesDeLaSemanaPage', () => {
         '2026-10-19T03:00:00.000Z',
       );
       pedido.flush([CLASE]);
-      responderOfertas();
       await asentar(fixture);
 
       const texto = textoDe(fixture);
@@ -95,6 +87,9 @@ describe('ClasesDeLaSemanaPage', () => {
       expect(texto).toContain('1 clase en la semana');
       expect(texto).toContain('18:00 a 19:00');
       expect(texto).toContain('Pilates reformer');
+      expect(texto).toContain('Lic. Diaz · Sala grande');
+      // Los nombres vienen en la clase: no se releen las ofertas.
+      httpMock.expectNone((p) => p.url.endsWith('/ofertas'));
       expect(texto).toContain('8 de 8 lugares ocupados — completa');
       expect(texto).toContain('Programar una clase');
       expect((fixture.nativeElement as HTMLElement).querySelectorAll('.dia')).toHaveLength(7);
@@ -114,7 +109,6 @@ describe('ClasesDeLaSemanaPage', () => {
       '2026-09-28T03:00:00.000Z',
     );
     primero.flush([]);
-    responderOfertas();
     await asentar(fixture);
     expect(textoDe(fixture)).toContain('0 clases en la semana');
     expect(textoDe(fixture)).not.toContain('Programar una clase');
@@ -160,7 +154,6 @@ describe('ClasesDeLaSemanaPage', () => {
       { type: 'https://akine.app/problems/forbidden', status: 403, detail: 'No' },
       { status: 403, statusText: 'Forbidden' },
     );
-    responderOfertas();
     await asentar(fixture);
     expect(textoDe(fixture)).toContain('No se pudieron leer las clases');
     expect(textoDe(fixture)).toContain('clase:read');

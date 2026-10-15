@@ -4,6 +4,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router, RouterLink } from '@angular/router';
 import { catchError, of } from 'rxjs';
 
+import { HabilitacionesResponse } from '../../../../api/generated/model/habilitaciones-response';
 import { OfertaResponse } from '../../../../api/generated/model/oferta-response';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
@@ -13,7 +14,7 @@ import {
   errorSinContextoDeActividad,
   traducirErrorActividad,
 } from '../../models/actividad-errors';
-import { instanteDesdeHoraDeSede } from '../../models/clases';
+import { OpcionDeEspacio, instanteDesdeHoraDeSede } from '../../models/clases';
 import { RUTA_CLASES, rutaDeClase } from '../../models/rutas-de-clases';
 import { ActivityApi } from '../../services/activity-api';
 
@@ -34,8 +35,9 @@ const DURACION_POR_DEFECTO = 60;
  * atendiendo, cupo que entre en la oferta y en el box, y que ni el profesional ni el box tengan un
  * turno u otra clase que se cruce—, y cada rechazo vuelve con su tipo.
  *
- * <p><b>No hay recurrencia</b>: el contrato programa una clase por vez. <b>El box no se elige</b>:
- * si la oferta lo requiere, el backend toma uno habilitado y libre.
+ * <p><b>No hay recurrencia</b>: el contrato programa una clase por vez. <b>El box es opcional</b>
+ * (contrato 0.102.0): sin elegirlo, si la oferta lo requiere el backend toma uno habilitado y
+ * libre; elegido, el backend valida ese y no cae a otro.
  *
  * <p>Fecha y hora son de pared de la SEDE y viajan como instante UTC. La clave de idempotencia es
  * una por intento: un doble click o un reintento por red devuelven la misma clase.
@@ -61,6 +63,7 @@ export class AltaDeClasePage {
   protected readonly formulario = this.fb.group({
     ofertaId: ['', Validators.required],
     profesionalId: [''],
+    espacioId: [''],
     fecha: [this.diaDeLaSede.hoy(), Validators.required],
     horaInicio: [HORA_POR_DEFECTO, Validators.required],
     horaFin: [sumarMinutos(HORA_POR_DEFECTO, DURACION_POR_DEFECTO), Validators.required],
@@ -70,6 +73,7 @@ export class AltaDeClasePage {
 
   protected readonly ofertas = signal<readonly OfertaResponse[] | null>(null);
   protected readonly profesionales = signal<readonly OpcionDeProfesional[]>([]);
+  protected readonly espacios = signal<readonly OpcionDeEspacio[]>([]);
   protected readonly ofertaElegida = signal<OfertaResponse | null>(null);
   protected readonly enviando = signal(false);
   protected readonly error = signal<ErrorActividad | null>(null);
@@ -101,6 +105,7 @@ export class AltaDeClasePage {
         this.formulario.controls.ofertaId.setValue('');
         this.ofertaElegida.set(null);
         this.profesionales.set([]);
+        this.espacios.set([]);
         this.cargarOfertas();
       });
     });
@@ -172,6 +177,7 @@ export class AltaDeClasePage {
         fin,
         capacidad: Number(valor.capacidad),
         profesionalId: valor.profesionalId !== '' && profesionalId > 0 ? profesionalId : undefined,
+        espacioId: valor.espacioId === '' ? undefined : Number(valor.espacioId),
         titulo: valor.titulo.trim() === '' ? undefined : valor.titulo.trim(),
         idempotencyKey: this.clave,
       })
@@ -197,7 +203,9 @@ export class AltaDeClasePage {
     const oferta = (this.ofertas() ?? []).find((o) => String(o.id) === id) ?? null;
     this.ofertaElegida.set(oferta);
     this.profesionales.set([]);
+    this.espacios.set([]);
     this.formulario.controls.profesionalId.setValue('');
+    this.formulario.controls.espacioId.setValue('');
     const consultorioId = this.tenant.consultorioId();
     if (oferta === null || oferta.id === undefined || consultorioId === null) {
       return;
@@ -210,15 +218,16 @@ export class AltaDeClasePage {
         sumarMinutos(this.formulario.controls.horaInicio.value, oferta.duracionMinutos),
       );
     }
-    if (!oferta.requiereProfesional) {
-      return;
-    }
     const ofertaId = oferta.id;
     this.api
       .habilitaciones(consultorioId, ofertaId)
       .pipe(catchError(() => of(null)))
       .subscribe((respuesta) => {
         if (this.ofertaElegida()?.id !== ofertaId) {
+          return;
+        }
+        this.cargarEspacios(ofertaId, consultorioId, respuesta);
+        if (!oferta.requiereProfesional) {
           return;
         }
         if (respuesta?.restringidaPorProfesional) {
@@ -233,6 +242,20 @@ export class AltaDeClasePage {
           return;
         }
         this.cargarProfesionalesDeLaOrganizacion(ofertaId);
+      });
+  }
+
+  private cargarEspacios(
+    ofertaId: number,
+    consultorioId: number,
+    habilitaciones: HabilitacionesResponse | null,
+  ): void {
+    this.api
+      .espaciosElegibles(this.tenant.organizationId(), consultorioId, habilitaciones)
+      .subscribe((espacios) => {
+        if (this.ofertaElegida()?.id === ofertaId) {
+          this.espacios.set(espacios);
+        }
       });
   }
 
