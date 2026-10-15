@@ -12,9 +12,8 @@ import { uriDeProblema } from './support/sembrado';
  * inscripcion se cancela por la API con la pantalla abierta: el lote no es atomico y ese item
  * tiene que volver con su `problemType`, sin deshacer a los demas.
  *
- * <p><b>Lo que este E2E no puede recorrer</b>: el consumo de un pase y su saldo, y la derivacion
- * clinica de un participante. El backend no publica API para ninguno de los dos (08.04 sin
- * controller, 08.06–08.09 sin codigo sobre `V64`).
+ * <p><b>Lo que este E2E no recorre</b>: la derivacion clinica de un participante, que el backend no
+ * publica (08.04 sin controller). El consumo de un pase lo recorre `flujo-pases.spec.ts`.
  */
 
 const DETALLE = /\/clases\/\d+\/detalle-operativo$/;

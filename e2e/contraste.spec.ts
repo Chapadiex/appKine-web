@@ -1,6 +1,11 @@
 import { expect, test } from '@playwright/test';
 
-import { CLASE, auditarContraste, instalarApiDeContraste } from './support/contraste';
+import {
+  CLASE,
+  PERSONA_CON_PASES,
+  auditarContraste,
+  instalarApiDeContraste,
+} from './support/contraste';
 import {
   FECHA,
   NOMBRE_OFERTA,
@@ -273,6 +278,23 @@ test.describe('Contraste de color', () => {
       await expect(page.getByText('Sosa, Eva — posicion 1')).toBeVisible();
 
       await auditarContraste(page, 'detalle de una clase llena con lista de espera');
+    });
+
+    /** Productos de pack y pases (F9, M29): la fila dada de baja y las tres marcas de estado. */
+    test('los productos de pack con uno dado de baja', async ({ page }) => {
+      await instalarApiDeContraste(page);
+      await page.goto('/productos');
+      await expect(page.getByText('Pack Pilates 4', { exact: true })).toBeVisible();
+
+      await auditarContraste(page, 'productos de pack con uno dado de baja');
+    });
+
+    test('los pases de una persona: activo, agotado y vencido', async ({ page }) => {
+      await instalarApiDeContraste(page);
+      await page.goto(`/pacientes/${PERSONA_CON_PASES}/pases`);
+      await expect(page.getByText('Agotado', { exact: true })).toBeVisible();
+
+      await auditarContraste(page, 'pases de una persona con las tres marcas');
     });
 
     test('el padron sin ninguna fila', async ({ page }) => {

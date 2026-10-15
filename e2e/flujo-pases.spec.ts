@@ -101,7 +101,7 @@ test.describe('Pases contra el backend real', () => {
     // ---- Ledger: compra +2, consumo -1, saldo 1.
     await navegar(page, `/pacientes/${persona.id}/pases`);
     await expect(filaDe(page, producto)).toContainText('1 de 2');
-    await page.getByRole('button', { name: `Movimientos de ${producto}` }).click();
+    await page.getByRole('button', { name: `Ver movimientos de ${producto}` }).click();
     const movimientos = page.getByRole('region', { name: 'Movimientos del pase' });
     await expect(movimientos.getByRole('row')).toHaveCount(3);
     await expect(filaDe(page, 'Compra')).toContainText('+2');
