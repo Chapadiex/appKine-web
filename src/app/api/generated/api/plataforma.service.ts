@@ -23,6 +23,8 @@ import { GrantSupportAccessRequest } from '../model/grant-support-access-request
 // @ts-ignore
 import { PlatformRoleResponse } from '../model/platform-role-response';
 // @ts-ignore
+import { PlatformSubscriptionResponse } from '../model/platform-subscription-response';
+// @ts-ignore
 import { ProblemDetail } from '../model/problem-detail';
 // @ts-ignore
 import { SupportAccessResponse } from '../model/support-access-response';
@@ -33,6 +35,7 @@ import { Configuration }                                     from '../configurat
 import { BaseService } from '../api.base.service';
 import {
     PlataformaServiceInterface,
+    GetPlatformSubscriptionRequestParams,
     GrantPlatformRoleRequestParams,
     GrantSupportAccessRequestParams,
     ListSupportAccessRequestParams,
@@ -49,6 +52,68 @@ export class PlataformaService extends BaseService implements PlataformaServiceI
 
     constructor(protected httpClient: HttpClient, @Optional() @Inject(BASE_PATH) basePath: string|string[], @Optional() configuration?: Configuration) {
         super(basePath, configuration);
+    }
+
+    /**
+     * Suscripcion de un centro, para la administracion de plataforma
+     * Devuelve el plan contratado, el estado, la version y las transiciones posibles de la suscripcion del centro. La version es la expectedVersion que pide el cambio de plan.  No trae el consumo de los limites: eso es dato del centro y sigue en GET /organizations/{orgId}/subscription, que para la plataforma exige un acceso de soporte vigente.  Reservado a la administracion de plataforma, igual que el cambio de plan y las transiciones. Una organizacion inexistente o dada de baja es 404.
+     * @endpoint get /api/v1/platform/organizations/{orgId}/subscription
+     * @param requestParameters
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public getPlatformSubscription(requestParameters: GetPlatformSubscriptionRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<PlatformSubscriptionResponse>;
+    public getPlatformSubscription(requestParameters: GetPlatformSubscriptionRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<PlatformSubscriptionResponse>>;
+    public getPlatformSubscription(requestParameters: GetPlatformSubscriptionRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<PlatformSubscriptionResponse>>;
+    public getPlatformSubscription(requestParameters: GetPlatformSubscriptionRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        const orgId = requestParameters?.orgId;
+        if (orgId === null || orgId === undefined) {
+            throw new Error('Required parameter orgId was null or undefined when calling getPlatformSubscription.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/platform/organizations/${this.configuration.encodeParam({name: "orgId", value: orgId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/subscription`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<PlatformSubscriptionResponse>('get', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
     }
 
     /**

@@ -14,12 +14,17 @@ import { Observable }                                        from 'rxjs';
 import { GrantPlatformRoleRequest } from '../model/models';
 import { GrantSupportAccessRequest } from '../model/models';
 import { PlatformRoleResponse } from '../model/models';
+import { PlatformSubscriptionResponse } from '../model/models';
 import { ProblemDetail } from '../model/models';
 import { SupportAccessResponse } from '../model/models';
 
 
 import { Configuration }                                     from '../configuration';
 
+
+export interface GetPlatformSubscriptionRequestParams {
+    orgId: number;
+}
 
 export interface GrantPlatformRoleRequestParams {
     grantPlatformRoleRequest: GrantPlatformRoleRequest;
@@ -47,6 +52,14 @@ export interface RevokeSupportAccessRequestParams {
 export interface PlataformaServiceInterface {
     defaultHeaders: HttpHeaders;
     configuration: Configuration;
+
+    /**
+     * Suscripcion de un centro, para la administracion de plataforma
+     * Devuelve el plan contratado, el estado, la version y las transiciones posibles de la suscripcion del centro. La version es la expectedVersion que pide el cambio de plan.  No trae el consumo de los limites: eso es dato del centro y sigue en GET /organizations/{orgId}/subscription, que para la plataforma exige un acceso de soporte vigente.  Reservado a la administracion de plataforma, igual que el cambio de plan y las transiciones. Una organizacion inexistente o dada de baja es 404.
+     * @endpoint get /api/v1/platform/organizations/{orgId}/subscription
+* @param requestParameters
+     */
+    getPlatformSubscription(requestParameters: GetPlatformSubscriptionRequestParams, extraHttpRequestParams?: any): Observable<PlatformSubscriptionResponse>;
 
     /**
      * Otorgar el rol de plataforma a una cuenta
