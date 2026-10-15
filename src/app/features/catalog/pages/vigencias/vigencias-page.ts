@@ -26,6 +26,7 @@ import { esGlobal, etiquetaDeAlcance } from '../../models/tipos-de-catalogo';
 import { aInstanteUtc, formatearInstante } from '../../../../shared/utils/instantes';
 import { textoRequerido } from '../../../../shared/validators/texto-requerido';
 import { numeroDeclarado } from '../../../../shared/utils/numero-declarado';
+import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 
 /** Filtro de estado del listado. Los tres valores son los del contrato. */
 type FiltroEstado = 'ACTIVO' | 'INACTIVO' | 'TODOS';
@@ -75,6 +76,7 @@ export class VigenciasPage {
   /** Id del nomenclador, del segmento `:nomencladorId` de la ruta. */
   readonly nomencladorId = input.required<string>();
 
+  private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly catalogo = inject(CatalogoClinicoService);
   private readonly tenantContext = inject(TenantContextStore);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
@@ -83,7 +85,8 @@ export class VigenciasPage {
 
   protected readonly permisoManage = PERMISO_CONSULTORIO_MANAGE;
   protected readonly etiquetaDeAlcance = etiquetaDeAlcance;
-  protected readonly formatearInstante = formatearInstante;
+  protected readonly formatearInstante = (instante: string | undefined | null): string | null =>
+    formatearInstante(instante, this.diaDeLaSede.zona());
 
   protected readonly estado = signal<Estado>({ tipo: 'cargando' });
 
@@ -317,12 +320,12 @@ export class VigenciasPage {
       cuerpo.valorReferencia = valor;
     }
 
-    const desde = aInstanteUtc(valores.validFrom);
+    const desde = aInstanteUtc(valores.validFrom, this.diaDeLaSede.zona());
     if (desde !== null) {
       cuerpo.validFrom = desde;
     }
 
-    const hasta = aInstanteUtc(valores.validUntil);
+    const hasta = aInstanteUtc(valores.validUntil, this.diaDeLaSede.zona());
     if (hasta !== null) {
       cuerpo.validUntil = hasta;
     }

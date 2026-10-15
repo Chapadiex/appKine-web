@@ -159,6 +159,33 @@ describe('ReportesPage', () => {
     expect(crear).toHaveBeenCalled();
     expect(click).toHaveBeenCalled();
     expect(revocar).toHaveBeenCalledWith('blob:x');
+    // Sin Content-Disposition, el nombre armado aca queda de respaldo.
+    expect((click.mock.contexts.at(-1) as HTMLAnchorElement).download).toMatch(/\.csv$/);
+    click.mockRestore();
+  });
+
+  it('el CSV se guarda con el nombre que decide el servidor en Content-Disposition', async () => {
+    const fixture = await generado();
+    Object.assign(URL, { createObjectURL: vi.fn(() => 'blob:y'), revokeObjectURL: vi.fn() });
+    const click = vi
+      .spyOn(HTMLAnchorElement.prototype, 'click')
+      .mockImplementation(() => undefined);
+
+    boton(fixture, 'Descargar CSV').click();
+    httpMock
+      .expectOne(`${BASE}/OPERATIVO/export?desde=2026-09-01&hasta=2026-09-30`)
+      .flush('seccion,clave,valor\n', {
+        headers: {
+          'Content-Disposition':
+            'attachment; filename="reporte-operativo-2026-09-01_2026-09-30.csv"',
+        },
+      });
+    await estabilizar(fixture);
+
+    expect((click.mock.contexts.at(-1) as HTMLAnchorElement).download).toBe(
+      'reporte-operativo-2026-09-01_2026-09-30.csv',
+    );
+    click.mockRestore();
   });
 
   it('sin sede en el contexto no pide nada y manda al selector', async () => {

@@ -32,6 +32,7 @@ import { TenantContextStore } from '../../../../core/services/tenant-context.sto
 import { ErrorCobro, OperacionDeCobro, traducirErrorCobro } from '../../models/cobro-errors';
 import { instanteEnPalabras, medioEnPalabras } from '../../models/etiquetas-de-cobro';
 import { importeEnPalabras } from '../../models/etiquetas-de-obligacion';
+import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 
 /** En cual de los tres estados esta el listado. No es paginado: el backend devuelve un array. */
 type EstadoCobros =
@@ -83,6 +84,7 @@ interface OperacionAbierta {
   styleUrl: '../../billing.css',
 })
 export class CobrosPage {
+  private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly api = inject(BillingApi);
   private readonly tenantContext = inject(TenantContextStore);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
@@ -92,7 +94,8 @@ export class CobrosPage {
   readonly personaId = input.required<string>();
 
   protected readonly medioEnPalabras = medioEnPalabras;
-  protected readonly instanteEnPalabras = instanteEnPalabras;
+  protected readonly instanteEnPalabras = (valor: string | undefined): string =>
+    instanteEnPalabras(valor, this.diaDeLaSede.zona());
 
   protected readonly estado = signal<EstadoCobros>({ tipo: 'cargando' });
 

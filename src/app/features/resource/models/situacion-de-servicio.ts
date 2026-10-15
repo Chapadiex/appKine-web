@@ -66,7 +66,11 @@ const NO_APARECE = 'no aparece en los selectores de reserva.';
  * <p>El `ahora` entra por parametro y no se lee de `Date.now()` adentro: asi la funcion es
  * pura y su test no depende del reloj de la maquina que lo corre.
  */
-export function situacionDeServicio(espacio: EspacioResponse, ahora: Date): SituacionDeServicio {
+export function situacionDeServicio(
+  espacio: EspacioResponse,
+  ahora: Date,
+  zona = '',
+): SituacionDeServicio {
   if (espacio.estado === 'INACTIVO') {
     return {
       clave: 'dado-de-baja',
@@ -91,7 +95,7 @@ export function situacionDeServicio(espacio: EspacioResponse, ahora: Date): Situ
       clave: 'aun-no',
       resumen: 'Activo, todavia sin servicio',
       explicacion:
-        `Entra en servicio el ${formatearInstante(espacio.validFrom)}, y hasta entonces ` +
+        `Entra en servicio el ${formatearInstante(espacio.validFrom, zona)}, y hasta entonces ` +
         NO_APARECE,
       atenuada: true,
     };
@@ -103,7 +107,7 @@ export function situacionDeServicio(espacio: EspacioResponse, ahora: Date): Situ
       clave: 'ya-no',
       resumen: 'Activo, fuera de servicio',
       explicacion:
-        `Sigue activo, pero su vigencia termino el ${formatearInstante(espacio.validUntil)}, ` +
+        `Sigue activo, pero su vigencia termino el ${formatearInstante(espacio.validUntil, zona)}, ` +
         `asi que ${NO_APARECE} Si volvio a estar disponible, edita el fin de vigencia en vez ` +
         'de darlo de alta de nuevo.',
       atenuada: true,

@@ -25,6 +25,7 @@ import {
   traducirErrorInvitacion,
 } from '../../../../core/models/invitacion-errors';
 import { formatearInstante } from '../../../../shared/utils/instantes';
+import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 
 /** Filtro del listado. Los cuatro estados del contrato, mas "todas". */
 type FiltroEstado = 'TODAS' | 'PENDIENTE' | 'ACEPTADA' | 'RECHAZADA' | 'CANCELADA';
@@ -83,6 +84,7 @@ const ROLES = [
   styleUrl: '../../organization.css',
 })
 export class InvitacionesPage {
+  private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly invitaciones = inject(InvitacionesService);
   private readonly tenantContext = inject(TenantContextStore);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
@@ -91,7 +93,8 @@ export class InvitacionesPage {
 
   protected readonly permisoManage = PERMISO_COLABORADOR_MANAGE;
   protected readonly roles = ROLES;
-  protected readonly formatearInstante = formatearInstante;
+  protected readonly formatearInstante = (instante: string | undefined | null): string | null =>
+    formatearInstante(instante, this.diaDeLaSede.zona());
 
   protected readonly estado = signal<Estado>({ tipo: 'cargando' });
   protected readonly filtro = signal<FiltroEstado>('PENDIENTE');

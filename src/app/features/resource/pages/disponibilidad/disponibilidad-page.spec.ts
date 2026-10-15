@@ -4,6 +4,8 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 
 import { DisponibilidadPage } from './disponibilidad-page';
+import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
+import { fijarReloj, soltarReloj } from '../../../../core/testing/reloj';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { errorInterceptor } from '../../../../core/interceptors/error.interceptor';
 import { provideApi } from '../../../../api/generated/provide-api';
@@ -61,7 +63,10 @@ describe('DisponibilidadPage', () => {
     tenantContext = TestBed.inject(TenantContextStore);
   });
 
-  afterEach(() => httpMock.verify());
+  afterEach(() => {
+    soltarReloj();
+    httpMock.verify();
+  });
 
   it('rechaza la ventana de mas de 31 dias sin salir a la red y muestra capacidad, no ocupacion', async () => {
     tenantContext.select({
@@ -116,6 +121,39 @@ describe('DisponibilidadPage', () => {
     // Ni "libre" ni "disponible" aplicados al box: esta consulta responde si esta EN SERVICIO.
     expect(contenido).not.toMatch(/lugares? libres?/i);
     expect(contenido).not.toMatch(/\bdisponibles?\b/i);
+  });
+
+  it('lee y escribe la ventana en la hora de la sede, no en la del navegador', async () => {
+    // 22:30 del 14/10 en Cordoba son las 01:30 UTC del 15, este donde este el navegador.
+    fijarReloj('2026-10-15T01:30:00Z', { zonaDelNavegador: 'Pacific/Kiritimati' });
+    vi.spyOn(TestBed.inject(DiaDeLaSede), 'zona').mockReturnValue('America/Argentina/Cordoba');
+    tenantContext.select({
+      organizationId: 1,
+      organizationName: 'Belgrano',
+      consultorioId: 3,
+      consultorioName: 'Sede Centro',
+    });
+    const fixture = TestBed.createComponent(DisponibilidadPage);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    escribir(fixture, '#ventana-desde', '2026-10-14T22:30');
+    escribir(fixture, '#ventana-hasta', '2026-10-15T00:30');
+    enviar(fixture);
+
+    const consulta = httpMock.expectOne((peticion) => peticion.url === DISPONIBILIDAD);
+    expect(decodeURIComponent(consulta.request.params.get('desde') ?? '')).toBe(
+      '2026-10-15T01:30:00.000Z',
+    );
+    expect(decodeURIComponent(consulta.request.params.get('hasta') ?? '')).toBe(
+      '2026-10-15T03:30:00.000Z',
+    );
+    consulta.flush([BOX_1]);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    // Y el encabezado del resultado vuelve a decir la hora de la sede.
+    expect(texto(fixture)).toContain('22:30');
   });
 });
 

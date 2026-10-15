@@ -21,6 +21,7 @@ import { SedesDelContexto } from '../../services/sedes-del-contexto';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { traducirErrorColaborador, traducirErrorGrant } from '../../models/colaborador-errors';
 import { textoRequerido } from '../../../../shared/validators/texto-requerido';
+import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 
 /** Operacion abierta sobre una fila. Solo una a la vez. */
 type TipoAccion = 'editar' | 'suspender' | 'reactivar' | 'revocar' | 'permisos';
@@ -74,6 +75,7 @@ const POR_PAGINA = 20;
   styleUrl: '../../organization.css',
 })
 export class CollaboratorsPage {
+  private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly colaboradores = inject(ColaboradoresService);
   private readonly tenantContext = inject(TenantContextStore);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
@@ -139,7 +141,9 @@ export class CollaboratorsPage {
   protected readonly impacto = signal<ImpactoDeDesvinculacion | null>(null);
   protected readonly resumenDelImpacto = computed(() => {
     const impacto = this.impacto();
-    return impacto?.tipo === 'listo' ? resumenDeImpacto(impacto.respuesta) : null;
+    return impacto?.tipo === 'listo'
+      ? resumenDeImpacto(impacto.respuesta, this.diaDeLaSede.zona())
+      : null;
   });
 
   /**

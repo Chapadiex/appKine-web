@@ -186,7 +186,8 @@ export class CalendarioSedePage {
     const impacto = this.impactoHorario();
     return impacto === null ? null : notaDeListaRecortada(impacto);
   });
-  protected readonly formatearInstante = formatearInstante;
+  protected readonly formatearInstante = (instante: string | undefined | null): string | null =>
+    formatearInstante(instante, this.diaDeLaSede.zona());
 
   /** El horario guardado, redactado: lo que ve quien no puede editarlo. */
   protected readonly horarioGuardado = computed(() =>

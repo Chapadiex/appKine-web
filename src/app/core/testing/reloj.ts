@@ -1,5 +1,12 @@
 import { vi } from 'vitest';
 
+/** El `process.env` de Node que corre los specs; el tsconfig de specs no trae los tipos de Node. */
+const entorno = (globalThis as unknown as { process: { env: Record<string, string | undefined> } })
+  .process.env;
+
+/** Zona del proceso antes de que un spec la cambiara, para devolverla en {@link soltarReloj}. */
+let zonaOriginal: string | undefined | null = null;
+
 /**
  * Reloj fijo para los specs que dependen de "hoy".
  *
@@ -8,21 +15,43 @@ import { vi } from 'vitest';
  * importar la zona de la maquina que corre los tests —la del CI es UTC y la de desarrollo
  * Cordoba—: el dia "del navegador" (`getTimezoneOffset`) sale entonces del instante en UTC.
  *
+ * <p>Con `zonaDelNavegador` se cambia la zona del PROCESO (`process.env.TZ`), que Node aplica en
+ * caliente a `Date` y a `Intl`: el formateo sin zona explicita sale en esa zona, igual que en un
+ * navegador que corre en otro huso. Es lo que prueba que una pantalla formatea en la zona de la
+ * sede y no en la del navegador, sea cual sea la maquina que corre el spec.
+ *
  * <p>Por que hace falta: a las 00:25 UTC del 10/10 en Cordoba todavia son las 21:25 del 09/10. Un
  * spec sin reloj fijo pasa o falla segun la hora a la que se corre, que es justamente el defecto
  * que se esta probando.
  *
  * <p>Se deshace con {@link soltarReloj} en el `afterEach`.
  */
-export function fijarReloj(instante: string, opciones: { navegadorEnUtc?: boolean } = {}): void {
+export function fijarReloj(
+  instante: string,
+  opciones: { navegadorEnUtc?: boolean; zonaDelNavegador?: string } = {},
+): void {
   vi.useFakeTimers({ toFake: ['Date'] });
   vi.setSystemTime(new Date(instante));
   if (opciones.navegadorEnUtc === true) {
     vi.spyOn(Date.prototype, 'getTimezoneOffset').mockReturnValue(0);
+  }
+  if (opciones.zonaDelNavegador !== undefined) {
+    if (zonaOriginal === null) {
+      zonaOriginal = entorno['TZ'];
+    }
+    entorno['TZ'] = opciones.zonaDelNavegador;
   }
 }
 
 export function soltarReloj(): void {
   vi.useRealTimers();
   vi.restoreAllMocks();
+  if (zonaOriginal !== null) {
+    if (zonaOriginal === undefined) {
+      delete entorno['TZ'];
+    } else {
+      entorno['TZ'] = zonaOriginal;
+    }
+    zonaOriginal = null;
+  }
 }

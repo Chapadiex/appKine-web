@@ -26,6 +26,7 @@ import {
   situacionEnPalabras,
   vigenciaEnPalabras,
 } from '../../models/etiquetas-de-cobertura';
+import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 
 /** Operacion abierta sobre una fila. Solo una a la vez. */
 type TipoAccion = 'editar' | 'baja';
@@ -101,6 +102,7 @@ type EstadoDeCoberturas =
   styleUrl: '../../person.css',
 })
 export class CoberturasDelPacientePage {
+  private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly api = inject(CoberturasApi);
   private readonly personas = inject(PersonApi);
   private readonly tenantContext = inject(TenantContextStore);
@@ -117,7 +119,8 @@ export class CoberturasDelPacientePage {
   protected readonly credencialEnPalabras = credencialEnPalabras;
   protected readonly coberturaOperable = coberturaOperable;
   protected readonly importeEnPalabras = importeEnPalabras;
-  protected readonly fechaEnPalabras = fechaEnPalabras;
+  protected readonly fechaEnPalabras = (valor: string | undefined | null): string =>
+    fechaEnPalabras(valor, this.diaDeLaSede.zona());
 
   protected readonly estado = signal<EstadoDeCoberturas>({ tipo: 'cargando' });
   protected readonly persona = signal<PersonaResponse | null>(null);

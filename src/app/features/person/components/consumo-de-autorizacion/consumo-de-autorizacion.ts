@@ -30,6 +30,7 @@ import {
   tipoDeMovimiento,
   veredictoDeSaldo,
 } from '../../models/etiquetas-de-consumo';
+import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 
 interface Lectura {
   readonly saldo: SaldoAutorizacionResponse;
@@ -69,6 +70,7 @@ type Estado =
   styleUrl: '../../person.css',
 })
 export class ConsumoDeAutorizacion {
+  private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly api = inject(ConsumosApi);
 
   readonly autorizacionId = input.required<number>();
@@ -83,9 +85,12 @@ export class ConsumoDeAutorizacion {
   protected readonly tipoDeMovimiento = tipoDeMovimiento;
   protected readonly origenDeMovimiento = origenDeMovimiento;
   protected readonly efectoEnPalabras = efectoEnPalabras;
-  protected readonly alertaEnPalabras = alertaEnPalabras;
-  protected readonly resolucionDeAlerta = resolucionDeAlerta;
-  protected readonly formatearInstante = formatearInstante;
+  protected readonly alertaEnPalabras = (alerta: AlertaDeAutorizacionResponse): string =>
+    alertaEnPalabras(alerta, this.diaDeLaSede.zona());
+  protected readonly resolucionDeAlerta = (alerta: AlertaDeAutorizacionResponse): string =>
+    resolucionDeAlerta(alerta, this.diaDeLaSede.zona());
+  protected readonly formatearInstante = (instante: string | undefined | null): string | null =>
+    formatearInstante(instante, this.diaDeLaSede.zona());
 
   protected readonly estado = signal<Estado>({ tipo: 'cargando' });
   protected readonly lectura = computed(() => {

@@ -20,13 +20,16 @@ export type ImpactoDeDesvinculacion =
  * se usa tal cual y no se traduce aca, para no inventar una lista de valores que el contrato no
  * declara.
  */
-export function resumenDeImpacto(respuesta: DesvinculacionImpactoResponse): string | null {
+export function resumenDeImpacto(
+  respuesta: DesvinculacionImpactoResponse,
+  zona = '',
+): string | null {
   const cantidad = respuesta.count ?? 0;
   if (cantidad <= 0) {
     return null;
   }
   const que = respuesta.tipo?.trim() || 'pendientes';
-  const desde = formatearInstante(respuesta.desde);
+  const desde = formatearInstante(respuesta.desde, zona);
   return desde === null
     ? `Quedan ${cantidad} ${que} a su nombre.`
     : `Quedan ${cantidad} ${que} a su nombre, el primero el ${desde}.`;

@@ -32,6 +32,7 @@ import {
   medioEnPalabras,
 } from '../../models/etiquetas-de-cobro';
 import { fechaEnPalabras, importeEnPalabras } from '../../models/etiquetas-de-obligacion';
+import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 
 type EstadoCaja =
   | { readonly tipo: 'cargando' }
@@ -80,6 +81,7 @@ const PAGINA_DE_MOVIMIENTOS = 50;
   styleUrl: '../../billing.css',
 })
 export class CajaPage {
+  private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly api = inject(CajaApi);
   private readonly tenantContext = inject(TenantContextStore);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
@@ -87,8 +89,10 @@ export class CajaPage {
 
   protected readonly medioEnPalabras = medioEnPalabras;
   protected readonly tipoEnPalabras = tipoDeMovimientoEnPalabras;
-  protected readonly instanteEnPalabras = instanteEnPalabras;
-  protected readonly fechaEnPalabras = fechaEnPalabras;
+  protected readonly instanteEnPalabras = (valor: string | undefined): string =>
+    instanteEnPalabras(valor, this.diaDeLaSede.zona());
+  protected readonly fechaEnPalabras = (valor: string | undefined): string =>
+    fechaEnPalabras(valor, this.diaDeLaSede.zona());
   protected readonly mediosDisponibles = MEDIOS_DE_COBRO;
   protected readonly tiposManuales = [
     RegistrarMovimientoDeCajaTipoEnum.INGRESO,

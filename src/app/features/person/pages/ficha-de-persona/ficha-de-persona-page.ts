@@ -33,6 +33,7 @@ import {
   valorDeIndicador,
 } from '../../models/etiquetas-de-ficha';
 import { SECCION_COBERTURAS, coberturaDelResumen } from '../../models/etiquetas-de-cobertura';
+import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 
 /** Confirmacion abierta sobre la ficha. Solo una a la vez. */
 type TipoDeBaja = 'persona' | 'perfil';
@@ -105,6 +106,7 @@ interface ConteoPorCategoria {
   styleUrl: '../../person.css',
 })
 export class FichaDePersonaPage {
+  private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly api = inject(PersonApi);
   private readonly precarga = inject(PrecargaDeFicha);
   private readonly tenantContext = inject(TenantContextStore);
@@ -124,9 +126,11 @@ export class FichaDePersonaPage {
   protected readonly omisionEnPalabras = omisionEnPalabras;
   protected readonly etiquetaDeIndicador = etiquetaDeIndicador;
   protected readonly valorDeIndicador = valorDeIndicador;
-  protected readonly hitoEnPalabras = hitoEnPalabras;
+  protected readonly hitoEnPalabras = (hito: HitoResponse): string =>
+    hitoEnPalabras(hito, this.diaDeLaSede.zona());
   protected readonly nombreDeCategoria = nombreDeCategoria;
-  protected readonly fechaEnPalabras = fechaEnPalabras;
+  protected readonly fechaEnPalabras = (valor: string | undefined | null): string =>
+    fechaEnPalabras(valor, this.diaDeLaSede.zona());
   /** La seccion de coberturas (B-5) se pinta con forma propia; las demas, con la generica. */
   protected readonly seccionCoberturas = SECCION_COBERTURAS;
   protected readonly coberturaDelResumen = coberturaDelResumen;

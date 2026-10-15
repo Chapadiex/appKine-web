@@ -78,7 +78,8 @@ export class EgresosPage {
   protected readonly estadoEnPalabras = estadoDeEgresoEnPalabras;
   protected readonly claseDeEstado = claseDeEstadoDeEgreso;
   protected readonly categoriaEnPalabras = categoriaEnPalabras;
-  protected readonly fecha = fechaEnPalabras;
+  protected readonly fecha = (valor: string | undefined): string =>
+    fechaEnPalabras(valor, this.diaDeLaSede.zona());
   protected readonly COLABORADOR = RegistrarEgresoTipoBeneficiarioEnum.COLABORADOR;
   protected readonly EXTERNO = RegistrarEgresoTipoBeneficiarioEnum.EXTERNO;
 

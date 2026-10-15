@@ -47,6 +47,7 @@ import { importeEnPalabras } from '../../models/etiquetas-de-obligacion';
 import { fechaIsoEnPalabras } from '../../models/etiquetas-de-presentacion';
 import { CajaApi } from '../../services/caja-api';
 import { EgresosApi } from '../../services/egresos-api';
+import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 
 type EstadoCarga =
   | { readonly tipo: 'cargando' }
@@ -87,6 +88,7 @@ type Operacion = 'editar' | 'confirmar' | 'pagar' | 'anular' | 'anular-pago';
   styleUrl: '../../billing.css',
 })
 export class EgresoDetallePage {
+  private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly api = inject(EgresosApi);
   private readonly cajaApi = inject(CajaApi);
   private readonly tenantContext = inject(TenantContextStore);
@@ -103,7 +105,8 @@ export class EgresoDetallePage {
   protected readonly categorias = CATEGORIAS_DE_EGRESO;
   protected readonly medios = MEDIOS_DE_PAGO_DE_EGRESO;
   protected readonly medioEnPalabras = medioEnPalabras;
-  protected readonly instante = instanteEnPalabras;
+  protected readonly instante = (valor: string | undefined): string =>
+    instanteEnPalabras(valor, this.diaDeLaSede.zona());
   protected readonly fecha = fechaIsoEnPalabras;
   protected readonly pagoVigente = pagoVigente;
   protected readonly EFECTIVO = RegistrarPagoDeEgresoMedioEnum.EFECTIVO;

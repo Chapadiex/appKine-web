@@ -45,6 +45,7 @@ import {
   mismoInstante,
 } from '../../../../shared/utils/instantes';
 import { textoRequerido } from '../../../../shared/validators/texto-requerido';
+import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 
 /** Filtro de estado del listado. Los tres valores son los del contrato. */
 type FiltroEstado = 'ACTIVO' | 'INACTIVO' | 'TODOS';
@@ -117,6 +118,7 @@ export class CatalogosPage {
    */
   readonly tipo = input.required<string>();
 
+  private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly catalogo = inject(CatalogoClinicoService);
   private readonly tenantContext = inject(TenantContextStore);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
@@ -127,7 +129,8 @@ export class CatalogosPage {
   protected readonly tipos = TIPOS_DE_CATALOGO;
   protected readonly etiquetaDeAlcance = etiquetaDeAlcance;
   protected readonly esGlobal = esGlobal;
-  protected readonly formatearInstante = formatearInstante;
+  protected readonly formatearInstante = (instante: string | undefined | null): string | null =>
+    formatearInstante(instante, this.diaDeLaSede.zona());
 
   /** Datos del tipo pedido, o `null` si el segmento de la URL no es ninguno de los tres. */
   protected readonly datos = computed<DatosDeTipo | null>(() => datosDeTipo(this.tipo()));
@@ -386,8 +389,8 @@ export class CatalogosPage {
       this.formularioEdicion.reset({
         name: concepto.name ?? '',
         descripcion: concepto.descripcion ?? '',
-        validFrom: aCampoLocal(concepto.validFrom),
-        validUntil: aCampoLocal(concepto.validUntil),
+        validFrom: aCampoLocal(concepto.validFrom, this.diaDeLaSede.zona()),
+        validUntil: aCampoLocal(concepto.validUntil, this.diaDeLaSede.zona()),
         clearValidUntil: false,
       });
       // El foco se va con el panel: sin esto, quien navega por teclado aprieta "Editar" y el
@@ -464,12 +467,12 @@ export class CatalogosPage {
       }
     }
 
-    const desde = aInstanteUtc(valores.validFrom);
+    const desde = aInstanteUtc(valores.validFrom, this.diaDeLaSede.zona());
     if (desde !== null) {
       cuerpo.validFrom = desde;
     }
 
-    const hasta = aInstanteUtc(valores.validUntil);
+    const hasta = aInstanteUtc(valores.validUntil, this.diaDeLaSede.zona());
     if (hasta !== null) {
       cuerpo.validUntil = hasta;
     }
@@ -614,7 +617,7 @@ export class CatalogosPage {
 
     // La comparacion es por INSTANTE y no por texto: el valor que dio la vuelta por el control
     // del navegador vuelve con milisegundos y el del backend no. Ver `mismoInstante`.
-    const desde = aInstanteUtc(valores.validFrom);
+    const desde = aInstanteUtc(valores.validFrom, this.diaDeLaSede.zona());
     if (desde !== null && !mismoInstante(desde, original.validFrom)) {
       cambios.validFrom = desde;
     }
@@ -622,7 +625,7 @@ export class CatalogosPage {
     if (valores.clearValidUntil) {
       cambios.clearValidUntil = true;
     } else {
-      const hasta = aInstanteUtc(valores.validUntil);
+      const hasta = aInstanteUtc(valores.validUntil, this.diaDeLaSede.zona());
       if (hasta !== null && !mismoInstante(hasta, original.validUntil)) {
         cambios.validUntil = hasta;
       }

@@ -30,6 +30,7 @@ import {
   nombreDeCategoria,
   tamanoEnPalabras,
 } from '../../models/etiquetas-de-ficha';
+import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 
 const TAMANO_DE_PAGINA = 20;
 
@@ -94,6 +95,7 @@ type TipoAccion = 'reclasificar' | 'baja';
   styleUrl: '../../person.css',
 })
 export class DocumentosDePersonaPage {
+  private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly api = inject(AdjuntosApi);
   private readonly personas = inject(PersonApi);
   private readonly tenantContext = inject(TenantContextStore);
@@ -111,7 +113,8 @@ export class DocumentosDePersonaPage {
   protected readonly adjuntoInactivo = adjuntoInactivo;
   protected readonly adjuntoNoDisponible = adjuntoNoDisponible;
   protected readonly tamanoEnPalabras = tamanoEnPalabras;
-  protected readonly fechaEnPalabras = fechaEnPalabras;
+  protected readonly fechaEnPalabras = (valor: string | undefined | null): string =>
+    fechaEnPalabras(valor, this.diaDeLaSede.zona());
 
   protected readonly estado = signal<EstadoDeListado<AdjuntoPageResponse>>({ tipo: 'cargando' });
   protected readonly persona = signal<PersonaResponse | null>(null);

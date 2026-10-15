@@ -78,7 +78,8 @@ test.describe('Reportes contra el backend real', () => {
     expect(consulta.get('hasta')).toBe(fecha);
 
     const archivo = await descarga;
-    expect(archivo.suggestedFilename()).toBe(`reporte-turnos-${fecha}-a-${fecha}.csv`);
+    // El nombre lo decide el servidor en Content-Disposition (ReporteController).
+    expect(archivo.suggestedFilename()).toBe(`reporte-turnos-${fecha}_${fecha}.csv`);
     const filas = leerCsv(nodeFs.readFileSync((await archivo.path())!, 'utf8'));
     expect(filas).toContainEqual(['Reporte', 'TURNOS']);
     expect(filas).toContainEqual(['Desde', fecha]);

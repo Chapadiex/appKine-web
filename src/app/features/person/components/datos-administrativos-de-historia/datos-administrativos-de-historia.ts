@@ -17,6 +17,7 @@ import { TenantContextStore } from '../../../../core/services/tenant-context.sto
 import { HistoriaAdministrativaApi } from '../../services/historia-administrativa-api';
 import { fechaEnPalabras } from '../../models/etiquetas-de-ficha';
 import { traducirErrorPersona } from '../../models/person-errors';
+import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 
 /** Lo que se lee junto: los datos y los nombres con los que se muestran. */
 interface Lectura {
@@ -50,12 +51,14 @@ type Estado =
   styleUrl: '../../person.css',
 })
 export class DatosAdministrativosDeHistoria {
+  private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly api = inject(HistoriaAdministrativaApi);
   private readonly contexto = inject(TenantContextStore);
 
   readonly personaId = input.required<number>();
 
-  protected readonly fecha = fechaEnPalabras;
+  protected readonly fecha = (valor: string | undefined | null): string =>
+    fechaEnPalabras(valor, this.diaDeLaSede.zona());
   protected readonly estado = signal<Estado>({ tipo: 'cargando' });
 
   protected readonly lectura = computed(() => {
