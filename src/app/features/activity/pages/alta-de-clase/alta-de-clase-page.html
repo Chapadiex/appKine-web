@@ -1,0 +1,128 @@
+<h1>Programar una clase</h1>
+
+<p class="descripcion">
+  Una clase es un evento grupal unico sobre una oferta grupal, con su cupo. No genera un turno por
+  persona: las inscripciones se hacen despues, desde el detalle de la clase. Cada clase se programa
+  por separado; si la oferta necesita un box, el sistema elige uno libre.
+</p>
+
+<p><a class="enlace" [routerLink]="RUTA_CLASES">Volver a las clases de la semana</a></p>
+
+<form class="tarjeta" [formGroup]="formulario" (ngSubmit)="programar()" novalidate>
+  <h2>Datos de la clase</h2>
+
+  @if (ofertas() === null) {
+    <p class="estado estado--cargando" aria-live="polite">Leyendo las ofertas grupales…</p>
+  } @else if (ofertas()!.length === 0 && !error()) {
+    <p class="estado estado--vacio">
+      Esta sede no tiene ofertas grupales activas. Una clase necesita una oferta de modalidad
+      grupal: se crea en Servicios.
+    </p>
+  }
+
+  <div class="campo">
+    <label for="clase-oferta">Oferta grupal</label>
+    <select
+      id="clase-oferta"
+      formControlName="ofertaId"
+      [attr.aria-invalid]="invalido('ofertaId')"
+      [attr.aria-describedby]="invalido('ofertaId') ? 'clase-oferta-error' : null"
+    >
+      <option value="">Elegi una oferta</option>
+      @for (oferta of ofertas() ?? []; track oferta.id) {
+        <option [value]="oferta.id">{{ oferta.nombreComercial }}</option>
+      }
+    </select>
+    @if (invalido('ofertaId')) {
+      <p class="estado estado--error" id="clase-oferta-error">Elegi la oferta de la clase.</p>
+    }
+  </div>
+
+  @if (exigeProfesional()) {
+    <div class="campo">
+      <label for="clase-profesional">Profesional a cargo</label>
+      <select id="clase-profesional" formControlName="profesionalId">
+        <option value="">Elegi un profesional</option>
+        @for (profesional of profesionales(); track profesional.membershipId) {
+          <option [value]="profesional.membershipId">{{ profesional.nombre }}</option>
+        }
+      </select>
+      <p class="ayuda">
+        La oferta exige profesional. Tiene que estar habilitado y atender en ese horario.
+      </p>
+    </div>
+  }
+
+  <div class="filtros">
+    <div class="campo">
+      <label for="clase-fecha">Fecha</label>
+      <input
+        id="clase-fecha"
+        type="date"
+        formControlName="fecha"
+        [attr.aria-invalid]="invalido('fecha')"
+      />
+    </div>
+    <div class="campo">
+      <label for="clase-inicio">Hora de inicio</label>
+      <input
+        id="clase-inicio"
+        type="time"
+        formControlName="horaInicio"
+        [attr.aria-invalid]="invalido('horaInicio')"
+      />
+    </div>
+    <div class="campo">
+      <label for="clase-fin">Hora de fin</label>
+      <input
+        id="clase-fin"
+        type="time"
+        formControlName="horaFin"
+        [attr.aria-invalid]="invalido('horaFin')"
+      />
+    </div>
+    <div class="campo">
+      <label for="clase-capacidad">Cupo</label>
+      <input
+        id="clase-capacidad"
+        type="number"
+        min="1"
+        formControlName="capacidad"
+        [attr.aria-invalid]="invalido('capacidad')"
+        aria-describedby="clase-capacidad-ayuda"
+      />
+      <p class="ayuda" id="clase-capacidad-ayuda">
+        No puede superar la capacidad de la oferta ni la del box.
+      </p>
+      @if (errorDelServidor('capacidad'); as mensaje) {
+        <p class="estado estado--error">{{ mensaje }}</p>
+      }
+    </div>
+  </div>
+  <p class="ayuda">Fecha y horas en la zona de la sede.</p>
+
+  <div class="campo">
+    <label for="clase-titulo">Titulo (opcional)</label>
+    <input id="clase-titulo" type="text" maxlength="120" formControlName="titulo" />
+  </div>
+
+  <div aria-live="polite">
+    @if (error(); as fallo) {
+      <div class="conflicto tarjeta" role="alert">
+        <p class="estado estado--error">{{ fallo.mensaje }}</p>
+        @if (fallo.motivo) {
+          <p class="ayuda">Detalle: {{ fallo.motivo }}</p>
+        }
+        @if (fallo.accion === 'elegir-contexto') {
+          <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto de trabajo</a>
+        }
+      </div>
+    }
+  </div>
+
+  <div class="acciones">
+    <button type="submit" class="boton" [disabled]="enviando()">
+      {{ enviando() ? 'Programando…' : 'Programar clase' }}
+    </button>
+  </div>
+</form>

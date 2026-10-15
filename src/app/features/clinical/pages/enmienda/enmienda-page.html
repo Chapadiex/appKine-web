@@ -1,0 +1,462 @@
+<h1>Enmendar una atencion</h1>
+
+<p class="descripcion">
+  Una atencion cerrada no se edita: se enmienda. La correccion queda como una version nueva, con su
+  motivo, su autor y su fecha, y la anterior se sigue pudiendo leer.
+</p>
+
+@if (sesion(); as atencion) {
+  <p>
+    @if (atencion.turnoId !== undefined) {
+      <a class="enlace" [routerLink]="['/atencion', 'turnos', atencion.turnoId]">
+        Volver a la atencion
+      </a>
+    }
+    —
+    <a class="enlace" [routerLink]="['/atencion', 'sesiones', atencion.id, 'versiones']">
+      Ver las versiones
+    </a>
+  </p>
+}
+
+@if (cargando()) {
+  <p class="estado estado--cargando">Leyendo la ultima version…</p>
+}
+
+@if (error(); as problema) {
+  <section class="tarjeta" role="alert" aria-labelledby="titulo-problema-enmienda">
+    <h2 id="titulo-problema-enmienda">
+      @if (hayConflicto()) {
+        Alguien enmendo esta atencion mientras la corregias
+      } @else {
+        No se pudo enmendar
+      }
+    </h2>
+    <p class="estado estado--error">{{ problema.mensaje }}</p>
+    @if (hayConflicto()) {
+      <p class="ayuda">
+        No se guardo nada. Al releer, el formulario vuelve a cargarse con la version nueva —lo que
+        corregiste se reemplaza— y el motivo que escribiste se conserva.
+      </p>
+    }
+    <div class="acciones">
+      <button type="button" class="boton boton--secundario" (click)="cargar()">
+        @if (hayConflicto()) {
+          Releer la ultima version
+        } @else {
+          Reintentar
+        }
+      </button>
+    </div>
+  </section>
+}
+
+@if (sesion() && !cerrada()) {
+  <section class="tarjeta" aria-labelledby="titulo-abierta">
+    <h2 id="titulo-abierta">Esta atencion sigue abierta</h2>
+    <p class="ayuda">
+      Solo una atencion cerrada se enmienda. Mientras esta abierta se corrige desde la atencion
+      misma.
+    </p>
+  </section>
+}
+
+@if (cerrada() && base(); as version) {
+  <section class="tarjeta" aria-labelledby="titulo-motivo">
+    <h2 id="titulo-motivo">Por que se corrige</h2>
+    <p class="ayuda">
+      Partis de la version {{ version.numeroVersion }}, registrada el
+      {{ instanteEnPalabras(version.registradaEn) }}. Lo que mandes reemplaza el contenido entero:
+      un campo que dejes vacio queda vacio.
+    </p>
+    <div class="campo">
+      <label for="enmienda-motivo">Motivo de la enmienda</label>
+      <textarea
+        id="enmienda-motivo"
+        name="enmienda-motivo"
+        rows="3"
+        maxlength="1000"
+        aria-describedby="ayuda-enmienda-motivo"
+        [attr.aria-invalid]="aviso() !== '' && motivo().trim() === ''"
+        [value]="motivo()"
+        (input)="motivo.set($any($event.target).value)"
+      ></textarea>
+      <p id="ayuda-enmienda-motivo" class="ayuda">
+        Obligatorio. Es lo que el historial muestra para explicar por que cambio el registro.
+      </p>
+    </div>
+    <p class="ayuda">
+      <b>No se puede enmendar</b> la asistencia, los numeros de sesion, la oferta, el profesional ni
+      las fechas. Si el paciente figura ausente y vino, se deja escrito en la nota con este motivo.
+    </p>
+  </section>
+
+  <section class="tarjeta" aria-labelledby="titulo-enmienda-evaluacion">
+    <h2 id="titulo-enmienda-evaluacion">Evaluacion</h2>
+
+    <div class="campo">
+      <label for="enmienda-dolor">Dolor (0 a 10)</label>
+      <select
+        id="enmienda-dolor"
+        name="enmienda-dolor"
+        (change)="elegirDolor($any($event.target).value)"
+      >
+        <option value="" [selected]="dolorEva() === null">Sin cargar</option>
+        @for (valor of escala; track valor) {
+          <option [value]="valor" [selected]="dolorEva() === valor">{{ valor }}</option>
+        }
+      </select>
+    </div>
+
+    <div class="campo">
+      <label for="enmienda-zona">Zona del dolor</label>
+      <input
+        id="enmienda-zona"
+        type="text"
+        maxlength="120"
+        [value]="dolorZona()"
+        (input)="dolorZona.set($any($event.target).value)"
+      />
+    </div>
+
+    <div class="campo">
+      <label for="enmienda-lateralidad">Lateralidad</label>
+      <select id="enmienda-lateralidad" (change)="dolorLateralidad.set($any($event.target).value)">
+        <option value="" [selected]="dolorLateralidad() === ''">Sin cargar</option>
+        @for (opcion of lateralidades; track opcion.valor) {
+          <option [value]="opcion.valor" [selected]="dolorLateralidad() === opcion.valor">
+            {{ opcion.etiqueta }}
+          </option>
+        }
+      </select>
+    </div>
+
+    <div class="campo">
+      <label for="enmienda-evolucion">Evolucion</label>
+      <select id="enmienda-evolucion" (change)="evolucion.set($any($event.target).value)">
+        <option value="" [selected]="evolucion() === ''">Sin cargar</option>
+        @for (opcion of evoluciones; track opcion.valor) {
+          <option [value]="opcion.valor" [selected]="evolucion() === opcion.valor">
+            {{ opcion.etiqueta }}
+          </option>
+        }
+      </select>
+    </div>
+
+    <div class="campo">
+      <label for="enmienda-objetivo">Objetivo de la sesion</label>
+      <input
+        id="enmienda-objetivo"
+        type="text"
+        maxlength="500"
+        [value]="objetivoSesion()"
+        (input)="objetivoSesion.set($any($event.target).value)"
+      />
+    </div>
+
+    <div class="campo">
+      <label for="enmienda-motivo-clinico">Motivo clinico</label>
+      <input
+        id="enmienda-motivo-clinico"
+        type="text"
+        maxlength="500"
+        [value]="motivoClinico()"
+        (input)="motivoClinico.set($any($event.target).value)"
+      />
+    </div>
+
+    <div class="campo">
+      <label for="enmienda-limitacion">Limitacion funcional</label>
+      <input
+        id="enmienda-limitacion"
+        type="text"
+        maxlength="500"
+        [value]="limitacionFuncional()"
+        (input)="limitacionFuncional.set($any($event.target).value)"
+      />
+    </div>
+  </section>
+
+  <section class="tarjeta" aria-labelledby="titulo-enmienda-cierre">
+    <h2 id="titulo-enmienda-cierre">Resultado de la sesion</h2>
+
+    <div class="campo">
+      <label for="enmienda-nota">Nota de cierre</label>
+      <textarea
+        id="enmienda-nota"
+        rows="4"
+        maxlength="2000"
+        aria-describedby="ayuda-enmienda-nota"
+        [value]="notaDeCierre()"
+        (input)="notaDeCierre.set($any($event.target).value)"
+      ></textarea>
+      <p id="ayuda-enmienda-nota" class="ayuda">
+        @if (presente()) {
+          El paciente vino: la nota no puede quedar vacia.
+        } @else {
+          El paciente no vino.
+        }
+      </p>
+    </div>
+
+    <div class="campo">
+      <label for="enmienda-respuesta">Respuesta al tratamiento</label>
+      <input
+        id="enmienda-respuesta"
+        type="text"
+        maxlength="500"
+        [value]="respuestaTratamiento()"
+        (input)="respuestaTratamiento.set($any($event.target).value)"
+      />
+    </div>
+
+    <div class="campo">
+      <label for="enmienda-tolerancia">Tolerancia</label>
+      <select id="enmienda-tolerancia" (change)="tolerancia.set($any($event.target).value)">
+        <option value="" [selected]="tolerancia() === ''">Sin cargar</option>
+        @for (opcion of tolerancias; track opcion.valor) {
+          <option [value]="opcion.valor" [selected]="tolerancia() === opcion.valor">
+            {{ opcion.etiqueta }}
+          </option>
+        }
+      </select>
+    </div>
+
+    <div class="campo">
+      <label for="enmienda-indicaciones">Indicaciones</label>
+      <textarea
+        id="enmienda-indicaciones"
+        rows="3"
+        maxlength="1000"
+        [value]="indicaciones()"
+        (input)="indicaciones.set($any($event.target).value)"
+      ></textarea>
+    </div>
+
+    <div class="campo">
+      <label for="enmienda-conducta">Proxima conducta</label>
+      <select id="enmienda-conducta" (change)="proximaConducta.set($any($event.target).value)">
+        <option value="" [selected]="proximaConducta() === ''">Sin cargar</option>
+        @for (opcion of conductas; track opcion.valor) {
+          <option [value]="opcion.valor" [selected]="proximaConducta() === opcion.valor">
+            {{ opcion.etiqueta }}
+          </option>
+        }
+      </select>
+    </div>
+  </section>
+
+  @if (tratamientos().length > 0) {
+    <section class="tarjeta" aria-labelledby="titulo-enmienda-tratamientos">
+      <h2 id="titulo-enmienda-tratamientos">Tratamientos</h2>
+      <p class="ayuda">
+        Se corrige como se hizo cada uno, no cual se hizo: las practicas realizadas no cambian. Si
+        no tocas nada de esta seccion, los tratamientos quedan como estaban.
+      </p>
+
+      <ol class="lista-tratamientos">
+        @for (t of tratamientos(); track t.tratamientoId ?? $index; let i = $index) {
+          <li class="tratamiento">
+            <p class="tratamiento__titulo">
+              <b>{{ t.orden }}. {{ t.practicaNombre }}</b>
+            </p>
+
+            <label class="opcion-radio">
+              <input
+                type="checkbox"
+                [checked]="t.quitado"
+                (change)="cambiarTratamiento(i, { quitado: $any($event.target).checked })"
+              />
+              Quitar {{ t.practicaNombre }} de la sesion
+            </label>
+
+            @if (!t.quitado) {
+              <div class="campo">
+                <label [for]="'enmienda-tecnica-' + i">Tecnica de {{ t.practicaNombre }}</label>
+                <input
+                  [id]="'enmienda-tecnica-' + i"
+                  type="text"
+                  maxlength="200"
+                  [value]="t.tecnica"
+                  (input)="cambiarTratamiento(i, { tecnica: $any($event.target).value })"
+                />
+              </div>
+              <div class="campo">
+                <label [for]="'enmienda-zona-trat-' + i">Zona de {{ t.practicaNombre }}</label>
+                <input
+                  [id]="'enmienda-zona-trat-' + i"
+                  type="text"
+                  maxlength="120"
+                  [value]="t.zona"
+                  (input)="cambiarTratamiento(i, { zona: $any($event.target).value })"
+                />
+              </div>
+              <div class="campo">
+                <label [for]="'enmienda-lado-trat-' + i">Lado de {{ t.practicaNombre }}</label>
+                <select
+                  [id]="'enmienda-lado-trat-' + i"
+                  (change)="cambiarTratamiento(i, { lateralidad: $any($event.target).value })"
+                >
+                  <option value="" [selected]="t.lateralidad === ''">Sin cargar</option>
+                  @for (opcion of lateralidades; track opcion.valor) {
+                    <option [value]="opcion.valor" [selected]="t.lateralidad === opcion.valor">
+                      {{ opcion.etiqueta }}
+                    </option>
+                  }
+                </select>
+              </div>
+              <div class="campo">
+                <label [for]="'enmienda-duracion-' + i">
+                  Duracion de {{ t.practicaNombre }}, en minutos
+                </label>
+                <input
+                  [id]="'enmienda-duracion-' + i"
+                  type="text"
+                  inputmode="numeric"
+                  [value]="t.duracion"
+                  (input)="cambiarTratamiento(i, { duracion: $any($event.target).value })"
+                />
+              </div>
+              @for (p of t.parametros; track $index; let j = $index) {
+                <div class="parametro">
+                  @if (p.tipoDato === TipoParametro.BOOLEANO) {
+                    <div class="campo">
+                      <label [for]="'enmienda-param-' + i + '-' + j">{{ p.clave }}</label>
+                      <select
+                        [id]="'enmienda-param-' + i + '-' + j"
+                        (change)="
+                          cambiarParametro(i, j, {
+                            valorSiNo:
+                              $any($event.target).value === ''
+                                ? null
+                                : $any($event.target).value === 'si',
+                          })
+                        "
+                      >
+                        <option value="" [selected]="p.valorSiNo === null">Sin elegir</option>
+                        <option value="si" [selected]="p.valorSiNo === true">Si</option>
+                        <option value="no" [selected]="p.valorSiNo === false">No</option>
+                      </select>
+                    </div>
+                  } @else {
+                    <div class="campo">
+                      <label [for]="'enmienda-param-' + i + '-' + j">
+                        {{ p.clave }}{{ p.unidad ? ' (' + p.unidad + ')' : '' }}
+                      </label>
+                      <input
+                        [id]="'enmienda-param-' + i + '-' + j"
+                        type="text"
+                        maxlength="200"
+                        [value]="p.valor"
+                        (input)="cambiarParametro(i, j, { valor: $any($event.target).value })"
+                      />
+                    </div>
+                  }
+                  <div class="acciones">
+                    <button
+                      type="button"
+                      class="boton boton--secundario"
+                      (click)="quitarParametro(i, j)"
+                    >
+                      Quitar el parametro {{ p.clave }}
+                    </button>
+                  </div>
+                </div>
+              }
+              <div class="campo">
+                <label [for]="'enmienda-observacion-' + i">
+                  Observacion de {{ t.practicaNombre }}
+                </label>
+                <input
+                  [id]="'enmienda-observacion-' + i"
+                  type="text"
+                  maxlength="500"
+                  [value]="t.observacion"
+                  (input)="cambiarTratamiento(i, { observacion: $any($event.target).value })"
+                />
+              </div>
+            }
+          </li>
+        }
+      </ol>
+    </section>
+  }
+
+  @if (mediciones().length > 0) {
+    <section class="tarjeta" aria-labelledby="titulo-enmienda-mediciones">
+      <h2 id="titulo-enmienda-mediciones">Examen fisico</h2>
+      <p class="ayuda">
+        Si no tocas nada de esta seccion, las mediciones quedan como estaban. Una medida que se
+        quita sigue en la version anterior.
+      </p>
+
+      @for (m of mediciones(); track m.definicionId + '-' + m.lateralidad; let i = $index) {
+        <fieldset class="grupo">
+          <legend>{{ m.nombre }} ({{ ladoLegible(m.lateralidad) }})</legend>
+          <label class="opcion-radio">
+            <input
+              type="checkbox"
+              [checked]="m.quitada"
+              (change)="cambiarMedicion(i, { quitada: $any($event.target).checked })"
+            />
+            Quitar esta medicion
+          </label>
+          @if (!m.quitada) {
+            @if (m.tipo === 'BOOLEANO') {
+              <div class="campo">
+                <label [for]="'enmienda-medicion-' + i">Presente</label>
+                <select
+                  [id]="'enmienda-medicion-' + i"
+                  (change)="
+                    cambiarMedicion(i, {
+                      valorSiNo:
+                        $any($event.target).value === ''
+                          ? null
+                          : $any($event.target).value === 'si',
+                    })
+                  "
+                >
+                  <option value="" [selected]="m.valorSiNo === null">Sin elegir</option>
+                  <option value="si" [selected]="m.valorSiNo === true">Si</option>
+                  <option value="no" [selected]="m.valorSiNo === false">No</option>
+                </select>
+              </div>
+            } @else {
+              <div class="campo">
+                <label [for]="'enmienda-medicion-' + i">
+                  Valor{{ m.unidad ? ' en ' + m.unidad : '' }}
+                </label>
+                <input
+                  [id]="'enmienda-medicion-' + i"
+                  type="text"
+                  [attr.inputmode]="esNumerica(m) ? 'decimal' : null"
+                  [value]="m.valor"
+                  (input)="cambiarMedicion(i, { valor: $any($event.target).value })"
+                />
+              </div>
+            }
+          }
+        </fieldset>
+      }
+    </section>
+  }
+
+  <section class="tarjeta" aria-labelledby="titulo-enviar-enmienda">
+    <h2 id="titulo-enviar-enmienda">Registrar la enmienda</h2>
+    <p class="ayuda">
+      Enmendar no vuelve a cobrar nada ni consume autorizaciones: ninguno de estos campos los
+      afecta.
+    </p>
+    <p role="status" [class]="aviso() ? 'estado estado--error' : 'ayuda'">{{ aviso() }}</p>
+    <div class="acciones">
+      <button
+        type="button"
+        class="boton"
+        [disabled]="enviando() || hayConflicto()"
+        (click)="enmendar()"
+      >
+        Registrar la enmienda
+      </button>
+    </div>
+  </section>
+}

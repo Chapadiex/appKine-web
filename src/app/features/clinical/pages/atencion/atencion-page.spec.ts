@@ -5,9 +5,13 @@ import {
   provideHttpClientTesting,
 } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { provideRouter } from '@angular/router';
 
 import { AtencionPage } from './atencion-page';
+import { MedicionesDeSesion } from '../../components/mediciones-de-sesion/mediciones-de-sesion';
+import { TratamientosDeSesion } from '../../components/tratamientos-de-sesion/tratamientos-de-sesion';
+import { AkineHttpError } from '../../../../core/interceptors/error.interceptor';
 import { TIMEOUT_AXE, esperarSinViolaciones } from '../../../../core/testing/axe';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { errorInterceptor } from '../../../../core/interceptors/error.interceptor';
@@ -22,6 +26,9 @@ const VER = `/api/v1/consultorios/${CONSULTORIO}/sesiones/${SESION}`;
 const BORRADOR = `${VER}/borrador`;
 const EVALUACION = `${VER}/evaluacion`;
 const CIERRE = `${VER}/cierre`;
+const TURNO_URL = `/api/v1/consultorios/${CONSULTORIO}/turnos/${TURNO}`;
+const PERSONA = 9;
+const DATOS_ADMIN = `/api/v1/historias-clinicas/por-persona/${PERSONA}/datos-administrativos`;
 
 const ABIERTA = {
   id: SESION,
@@ -86,6 +93,9 @@ describe('AtencionPage', () => {
   });
 
   afterEach(() => {
+    // Los bloques de examen y tratamientos se vuelven a montar al pasar a lectura: sus lecturas
+    // no son lo que estos tests miran.
+    responderBloques();
     httpMock.verify();
   });
 
@@ -178,7 +188,9 @@ describe('AtencionPage', () => {
     guardarAhora(fixture);
     const reintento = httpMock.expectOne(esBorrador());
     expect((reintento.request.body as { version: number }).version).toBe(9);
-    expect((reintento.request.body as { contenido: string }).contenido).toBe('Lo mio.');
+    expect((reintento.request.body as { contenido: string }).contenido).toBe(
+      JSON.stringify({ notas: 'Lo mio.' }),
+    );
     reintento.flush({ ...ABIERTA, version: 10, borrador: 'Lo mio.' });
     await estabilizar(fixture);
   });
@@ -233,6 +245,7 @@ describe('AtencionPage', () => {
     fixture.componentRef.setInput('turnoId', String(TURNO));
     fixture.detectChanges();
 
+    responderCasos([]);
     httpMock.expectOne(esIniciar()).flush(
       {
         type: 'https://akine.app/problems/turno-no-atendible',
@@ -497,9 +510,207 @@ describe('AtencionPage', () => {
     expect(rotulosDeBoton(fixture)).not.toContain('Reintentar');
   });
 
+  it('las notas viajan como el JSON que pide el contrato, y se leen de vuelta como texto', async () => {
+    const fixture = await montar({
+      ...ABIERTA,
+      borrador: JSON.stringify({ notas: 'Ya escrito.' }),
+    });
+    expect(notas(fixture).value).toBe('Ya escrito.');
+
+    const escrito = 'Con "comillas" y saltos\nde linea.';
+    escribirNotas(fixture, escrito);
+    guardarAhora(fixture);
+    const guardado = httpMock.expectOne(esBorrador());
+    const contenido = (guardado.request.body as { contenido: string }).contenido;
+    expect(JSON.parse(contenido)).toEqual({ notas: escrito });
+    guardado.flush({ ...ABIERTA, version: 4 });
+  });
+
+  // -------------------------------------------------------------------------------------
+  // Caso clinico (04.03): se elige ANTES de iniciar
+  // -------------------------------------------------------------------------------------
+
+  const CASO_RODILLA = { id: 31, numeroCaso: 1, estado: 'ACTIVO', ofertaId: 4 };
+  const CASO_HOMBRO = { id: 32, numeroCaso: 2, estado: 'ACTIVO', ofertaId: 5 };
+
+  it('con casos activos pregunta antes de iniciar, sugiere el de la oferta y lo manda', async () => {
+    const fixture = crearSinMontar();
+
+    responderCasos([CASO_RODILLA, CASO_HOMBRO, { id: 33, numeroCaso: 3, estado: 'CERRADO' }]);
+    await estabilizar(fixture);
+
+    // Nada se inicio todavia: el caso solo cuenta al crear la sesion.
+    httpMock.expectNone(esIniciar());
+    expect(texto(fixture)).toContain('Antes de empezar: caso clinico');
+    expect(texto(fixture)).not.toContain('Caso 3');
+    const elegido = fixture.nativeElement.querySelector(
+      'input[name="caso"]:checked',
+    ) as HTMLInputElement;
+    expect(elegido.value).toBe('31');
+
+    apretar(fixture, 'Iniciar la atencion');
+    const inicio = httpMock.expectOne(esIniciar());
+    expect(inicio.request.params.get('casoId')).toBe('31');
+    inicio.flush({ ...ABIERTA, casoId: 31 });
+    await estabilizar(fixture);
+    responderBloques();
+
+    expect(texto(fixture)).toContain('Caso 1');
+    expect(texto(fixture)).not.toContain('conserva el caso con el que empezo');
+  });
+
+  it('"Sin caso" inicia sin casoId', async () => {
+    const fixture = crearSinMontar();
+    responderCasos([CASO_RODILLA]);
+    await estabilizar(fixture);
+
+    apretarRadio(fixture, '');
+    apretar(fixture, 'Iniciar la atencion');
+    const sinCaso = httpMock.expectOne(esIniciar());
+    expect(sinCaso.request.params.has('casoId')).toBe(false);
+    sinCaso.flush(ABIERTA);
+    await estabilizar(fixture);
+    responderBloques();
+    expect(texto(fixture)).toContain('Sin caso');
+    expect(texto(fixture)).not.toContain('conserva el caso con el que empezo');
+  });
+
+  it('si la sesion ya existia con otro caso, conserva ese y lo dice', async () => {
+    const fixture = crearSinMontar();
+    responderCasos([CASO_RODILLA, CASO_HOMBRO], 5);
+    await estabilizar(fixture);
+
+    apretar(fixture, 'Iniciar la atencion');
+    httpMock.expectOne(esIniciar()).flush({ ...ABIERTA, casoId: 31 });
+    await estabilizar(fixture);
+    responderBloques();
+
+    expect(texto(fixture)).toContain('conserva el caso con el que empezo');
+    expect(texto(fixture)).toContain('Caso 1');
+  });
+
+  it('un caso que se cerro mientras se elegia vuelve a preguntar', async () => {
+    const fixture = crearSinMontar();
+    responderCasos([CASO_RODILLA]);
+    await estabilizar(fixture);
+
+    apretar(fixture, 'Iniciar la atencion');
+    httpMock
+      .expectOne(esIniciar())
+      .flush(
+        { type: 'https://akine.app/problems/caso-clinico-cerrado', status: 409 },
+        { status: 409, statusText: 'Conflict' },
+      );
+    await estabilizar(fixture);
+
+    expect(texto(fixture)).toContain('ya no esta activo');
+    expect(texto(fixture)).toContain('Antes de empezar: caso clinico');
+  });
+
+  it('si no se pueden leer los casos, inicia igual sin caso', async () => {
+    const fixture = crearSinMontar();
+    httpMock
+      .expectOne((p) => p.method === 'GET' && p.url === TURNO_URL)
+      .flush({}, { status: 500, statusText: 'Server Error' });
+    const inicio = httpMock.expectOne(esIniciar());
+    expect(inicio.request.params.has('casoId')).toBe(false);
+    inicio.flush(ABIERTA);
+    await estabilizar(fixture);
+  });
+
+  // -------------------------------------------------------------------------------------
+  // Bloques de examen y tratamientos
+  // -------------------------------------------------------------------------------------
+
+  it('la version que devuelve un tratamiento es la que usa el proximo autosave', async () => {
+    const fixture = await montar();
+    const bloque = fixture.debugElement.query(By.directive(TratamientosDeSesion))
+      .componentInstance as TratamientosDeSesion;
+
+    bloque.versionCambio.emit(9);
+    guardarAhora(fixture);
+
+    const guardado = httpMock.expectOne(esBorrador());
+    expect((guardado.request.body as { version: number }).version).toBe(9);
+    guardado.flush({ ...ABIERTA, version: 10 });
+  });
+
+  it('con un tratamiento en vuelo el autosave espera, en vez de competir por la version', async () => {
+    const fixture = await montar();
+    const bloque = fixture.debugElement.query(By.directive(TratamientosDeSesion))
+      .componentInstance as TratamientosDeSesion;
+
+    vi.useFakeTimers();
+    try {
+      bloque.enVuelo.emit(true);
+      escribirNotas(fixture, 'Mientras se guarda un tratamiento.');
+      vi.advanceTimersByTime(5_000);
+      httpMock.expectNone(esBorrador());
+
+      bloque.enVuelo.emit(false);
+      vi.advanceTimersByTime(2_000);
+      httpMock.expectOne(esBorrador()).flush(ABIERTA);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('un conflicto detectado por un bloque abre el mismo panel de releer y comparar', async () => {
+    const fixture = await montar();
+    const bloque = fixture.debugElement.query(By.directive(MedicionesDeSesion))
+      .componentInstance as MedicionesDeSesion;
+
+    bloque.problema.emit(
+      new AkineHttpError(
+        409,
+        { type: 'https://akine.app/problems/concurrent-modification', status: 409 },
+        false,
+      ),
+    );
+    fixture.detectChanges();
+
+    expect(texto(fixture)).toContain('Otra pestaña guardo antes que vos');
+  });
+
+  it('una sesion cerrada ofrece enmendar y ver las versiones', async () => {
+    const fixture = await montar({ ...CERRADA, fueEnmendada: true });
+
+    const enlaces = Array.from(
+      fixture.nativeElement.querySelectorAll('a') as NodeListOf<HTMLAnchorElement>,
+    ).map((a) => [a.textContent?.trim(), a.getAttribute('href')]);
+    expect(enlaces).toContainEqual([
+      'Enmendar esta atencion',
+      `/atencion/sesiones/${SESION}/enmienda`,
+    ]);
+    expect(enlaces).toContainEqual(['Ver las versiones', `/atencion/sesiones/${SESION}/versiones`]);
+    expect(texto(fixture)).toContain('ya fue enmendada');
+  });
+
   // -------------------------------------------------------------------------------------
   // Accesibilidad
   // -------------------------------------------------------------------------------------
+
+  it('cada paso de la escala se anuncia empezando por el numero que se ve (WCAG 2.5.3)', async () => {
+    const fixture = await montar();
+    const pasos = Array.from(
+      fixture.nativeElement.querySelectorAll('.escala__paso') as NodeListOf<HTMLButtonElement>,
+    );
+    for (const paso of pasos) {
+      const visible = (paso.textContent ?? '').trim();
+      expect(paso.getAttribute('aria-label')?.startsWith(visible)).toBe(true);
+    }
+  });
+
+  it(
+    'la pregunta del caso no tiene violaciones de accesibilidad',
+    async () => {
+      const fixture = crearSinMontar();
+      responderCasos([CASO_RODILLA, CASO_HOMBRO]);
+      await estabilizar(fixture);
+      await esperarSinViolaciones(fixture.nativeElement as HTMLElement);
+    },
+    TIMEOUT_AXE,
+  );
 
   it(
     'la vista de lectura de una sesion cerrada no tiene violaciones de accesibilidad',
@@ -535,9 +746,63 @@ describe('AtencionPage', () => {
     fixture.componentRef.setInput('turnoId', String(TURNO));
     fixture.detectChanges();
 
+    responderCasos([]);
     httpMock.expectOne(esIniciar()).flush(sesion);
     await estabilizar(fixture);
+    responderBloques();
+    await estabilizar(fixture);
     return fixture;
+  }
+
+  /** Crea la pantalla con la sede elegida, sin responder ninguna lectura. */
+  function crearSinMontar(): ComponentFixture<AtencionPage> {
+    tenantContext.select({
+      organizationId: 1,
+      organizationName: 'Centro Belgrano',
+      consultorioId: CONSULTORIO,
+      consultorioName: 'Sede Centro',
+    });
+    const fixture = TestBed.createComponent(AtencionPage);
+    fixture.componentRef.setInput('turnoId', String(TURNO));
+    fixture.detectChanges();
+    return fixture;
+  }
+
+  /** El turno y los casos activos del paciente, que la pantalla lee antes de iniciar. */
+  function responderCasos(casos: object[], ofertaId = 4): void {
+    httpMock
+      .expectOne((p) => p.method === 'GET' && p.url === TURNO_URL)
+      .flush({ id: TURNO, personaId: PERSONA, ofertaId });
+    httpMock
+      .expectOne((p) => p.method === 'GET' && p.url === DATOS_ADMIN)
+      .flush({ personaId: PERSONA, tieneHistoriaClinica: casos.length > 0, casos });
+  }
+
+  /** Responde vacias las lecturas de los bloques de examen y tratamientos. */
+  function responderBloques(): void {
+    for (const pedido of httpMock.match((p) => p.method === 'GET' && esDeBloque(p.url))) {
+      pedido.flush(cuerpoVacio(pedido.request.url));
+    }
+  }
+
+  function esDeBloque(url: string): boolean {
+    return /\/(mediciones|tratamientos|practicas|espacios)(\/|$)/.test(url);
+  }
+
+  function cuerpoVacio(url: string): object {
+    if (url.endsWith('/tratamientos')) {
+      return [];
+    }
+    if (url.endsWith('/comparacion')) {
+      return { medidas: [] };
+    }
+    if (url.endsWith('/practicas')) {
+      return { practicas: [] };
+    }
+    if (url.endsWith('/mediciones')) {
+      return { mediciones: [], definicionesCubiertas: 0, definicionesDisponibles: 0 };
+    }
+    return { content: [] };
   }
 
   async function estabilizar(fixture: ComponentFixture<AtencionPage>): Promise<void> {
