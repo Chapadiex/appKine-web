@@ -120,3 +120,30 @@
   white-space: pre-wrap;
   word-break: break-word;
 }
+
+/*
+ * Tratamientos realizados y parametros (AKINE-06.04). Una lista ordenada porque el orden es la
+ * secuencia cronologica de la visita, no una preferencia de presentacion.
+ */
+.lista-tratamientos {
+  margin: 0 0 var(--esp-6);
+  padding: 0;
+  list-style: none;
+}
+
+.tratamiento,
+.parametro {
+  margin: 0 0 var(--esp-5);
+  padding: var(--esp-5);
+  border: var(--borde-fino) solid var(--color-borde);
+  border-radius: var(--radio-md);
+}
+
+.tratamiento__titulo {
+  margin: 0 0 var(--esp-3);
+}
+
+/* En la comparacion de versiones, lo que cambio se dice con palabras y ademas se marca. */
+.cambio {
+  font-weight: 600;
+}

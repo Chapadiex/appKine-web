@@ -85,6 +85,8 @@ export const DIAS = {
   autorizacion: 96,
   cobrosPosteriores: 99,
   notificacion: 102,
+  // Clases grupales (F9): la clase ocupa al profesional del centro en su horario.
+  clases: 105,
 } as const;
 
 /** Cada test busca su dia dentro de su bloque: ver {@link diaDeTrabajo}. */

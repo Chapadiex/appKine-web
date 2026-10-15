@@ -334,3 +334,11 @@
     </section>
   }
 }
+
+<!--
+  Las clases grupales del dia (RF-M12-013). No pasan por la recepcion de turnos: van en un bloque
+  propio, y solo con `clase:read`, que es lo que exige el detalle al que enlazan.
+-->
+@if (puedeVerClases() && consultorioId(); as sede) {
+  <app-clases-del-dia [consultorioId]="sede" [fecha]="dia()" />
+}

@@ -15,6 +15,8 @@ import { RecepcionService } from '../../../api/generated/api/recepcion.service';
 import { ServiciosYOfertasService } from '../../../api/generated/api/servicios-y-ofertas.service';
 import { Turno } from '../../../api/generated/model/turno';
 import { AgendaDelDia } from '../../../api/generated/model/agenda-del-dia';
+import { AgendaUnificadaService } from '../../../api/generated/api/agenda-unificada.service';
+import { EventoDeAgenda } from '../../../api/generated/model/evento-de-agenda';
 import { TurnoDelDia } from '../../../api/generated/model/turno-del-dia';
 import { TurnosService } from '../../../api/generated/api/turnos.service';
 
@@ -63,6 +65,7 @@ import { TurnosService } from '../../../api/generated/api/turnos.service';
 @Injectable({ providedIn: 'root' })
 export class SchedulingApi {
   private readonly agenda = inject(AgendaService);
+  private readonly agendaUnificada = inject(AgendaUnificadaService);
   private readonly turnos = inject(TurnosService);
   private readonly recepcion = inject(RecepcionService);
   private readonly ofertas = inject(ServiciosYOfertasService);
@@ -266,6 +269,26 @@ export class SchedulingApi {
    */
   turnosDelDia(consultorioId: number, fecha: string): Observable<AgendaDelDia> {
     return this.turnos.delDiaTurno({ consultorioId, fecha });
+  }
+
+  /**
+   * Las CLASES grupales que empiezan ese dia, de la agenda unificada (M12, RF-M12-013, 08.01).
+   *
+   * <p>La agenda unificada es una union discriminada por `tipo` (`TURNO` o `CLASE`); los turnos ya
+   * los trae {@link turnosDelDia} con su recepcion, asi que de aca solo se toman las clases. El id
+   * no es unico entre tipos: una clase 7 y un turno 7 conviven. Exige `turno:read`. Las clases no
+   * exponen participantes.
+   */
+  clasesDelDia(
+    consultorioId: number,
+    fecha: string,
+  ): Observable<{ readonly timezone: string; readonly clases: readonly EventoDeAgenda[] }> {
+    return this.agendaUnificada.delDiaAgendaUnificada({ consultorioId, fecha }).pipe(
+      map((agenda) => ({
+        timezone: agenda.timezone ?? '',
+        clases: (agenda.eventos ?? []).filter((evento) => evento.tipo === 'CLASE'),
+      })),
+    );
   }
 
   /**
