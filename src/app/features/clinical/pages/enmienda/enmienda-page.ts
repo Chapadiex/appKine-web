@@ -1,4 +1,13 @@
-import { Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  input,
+  signal,
+  untracked,
+} from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
 
@@ -100,6 +109,7 @@ interface MedicionEnEdicion {
  */
 @Component({
   selector: 'app-enmienda-page',
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [RouterLink],
   templateUrl: './enmienda-page.html',
   styleUrl: '../../atencion.css',

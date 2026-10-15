@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import { CatalogoConceptoResponse } from '../../../../api/generated/model/catalogo-concepto-response';
@@ -49,6 +49,7 @@ interface FilaPractica {
   selector: 'app-practicas-de-la-oferta-page',
   imports: [RouterLink, PermisoDirective],
   templateUrl: './practicas-de-la-oferta-page.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: '../../offering.css',
 })
 export class PracticasDeLaOfertaPage {

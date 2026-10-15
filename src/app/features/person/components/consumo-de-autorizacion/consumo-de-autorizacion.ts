@@ -8,6 +8,7 @@ import {
   output,
   signal,
   untracked,
+  ChangeDetectionStrategy,
 } from '@angular/core';
 import { Subscription, forkJoin } from 'rxjs';
 
@@ -66,6 +67,7 @@ type Estado =
   selector: 'app-consumo-de-autorizacion',
   imports: [ConfirmacionConMotivo, PermisoDirective],
   templateUrl: './consumo-de-autorizacion.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: '../../person.css',
 })
 export class ConsumoDeAutorizacion {

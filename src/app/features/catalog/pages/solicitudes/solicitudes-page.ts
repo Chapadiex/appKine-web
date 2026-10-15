@@ -8,6 +8,7 @@ import {
   inject,
   signal,
   untracked,
+  ChangeDetectionStrategy,
 } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -58,6 +59,7 @@ type Estado =
   selector: 'app-solicitudes-page',
   imports: [ReactiveFormsModule, RouterLink, PermisoDirective],
   templateUrl: './solicitudes-page.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: '../../catalog.css',
 })
 export class SolicitudesPage {

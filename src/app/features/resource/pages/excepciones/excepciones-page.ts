@@ -9,6 +9,7 @@ import {
   inject,
   signal,
   untracked,
+  ChangeDetectionStrategy,
 } from '@angular/core';
 import {
   AbstractControl,
@@ -157,6 +158,7 @@ const MOTIVOS: readonly {
     ImpactoPrevioPanel,
   ],
   templateUrl: './excepciones-page.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: '../../resource.css',
 })
 export class ExcepcionesPage {

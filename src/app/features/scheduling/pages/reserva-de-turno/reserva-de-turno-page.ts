@@ -1,4 +1,13 @@
-import { Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
+import {
+  Component,
+  computed,
+  effect,
+  inject,
+  input,
+  signal,
+  untracked,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { PERMISO_PACIENTE_READ } from '../../../../core/models/permisos';
@@ -67,6 +76,7 @@ const ESPERA_DE_BUSQUEDA_MS = 300;
   selector: 'app-reserva-de-turno-page',
   imports: [RouterLink, PermisoDirective],
   templateUrl: './reserva-de-turno-page.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: '../../agenda.css',
 })
 export class ReservaDeTurnoPage {

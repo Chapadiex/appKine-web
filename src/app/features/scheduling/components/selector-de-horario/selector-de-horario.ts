@@ -1,4 +1,4 @@
-import { Component, input, output } from '@angular/core';
+import { Component, input, output, ChangeDetectionStrategy } from '@angular/core';
 
 import { SlotDisponible } from '../../../../api/generated/model/slot-disponible';
 import { fechaEnPalabras, rangoEnZona, slotCompleto } from '../../models/etiquetas-de-agenda';
@@ -17,6 +17,7 @@ import { fechaEnPalabras, rangoEnZona, slotCompleto } from '../../models/etiquet
 @Component({
   selector: 'app-selector-de-horario',
   templateUrl: './selector-de-horario.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: '../../agenda.css',
 })
 export class SelectorDeHorario {

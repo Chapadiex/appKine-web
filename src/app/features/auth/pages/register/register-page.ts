@@ -1,4 +1,11 @@
-import { Component, ElementRef, computed, inject, signal } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  computed,
+  inject,
+  signal,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 
@@ -47,6 +54,7 @@ const MENSAJE_CLAVE_REUSADA =
   selector: 'app-register-page',
   imports: [ReactiveFormsModule, RouterLink],
   templateUrl: './register-page.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: '../../auth.css',
 })
 export class RegisterPage {

@@ -8,6 +8,7 @@ import {
   inject,
   signal,
   untracked,
+  ChangeDetectionStrategy,
 } from '@angular/core';
 import {
   AbstractControl,
@@ -113,6 +114,7 @@ interface DiaConBloques {
     ImpactoPrevioPanel,
   ],
   templateUrl: './horario-semanal-page.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: '../../resource.css',
 })
 export class HorarioSemanalPage {

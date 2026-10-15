@@ -1,4 +1,12 @@
-import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
+import {
+  Component,
+  computed,
+  effect,
+  inject,
+  signal,
+  untracked,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { catchError, of } from 'rxjs';
@@ -70,6 +78,7 @@ import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
   selector: 'app-arancel-efectivo-page',
   imports: [ReactiveFormsModule, RouterLink],
   templateUrl: './arancel-efectivo-page.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: '../../contracting.css',
 })
 export class ArancelEfectivoPage {

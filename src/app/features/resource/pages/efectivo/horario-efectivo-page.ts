@@ -1,4 +1,13 @@
-import { DestroyRef, Component, computed, effect, inject, signal, untracked } from '@angular/core';
+import {
+  DestroyRef,
+  Component,
+  computed,
+  effect,
+  inject,
+  signal,
+  untracked,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { catchError, of } from 'rxjs';
@@ -81,6 +90,7 @@ const DIAS_PROPUESTOS = 7;
   selector: 'app-horario-efectivo-page',
   imports: [ReactiveFormsModule, RouterLink],
   templateUrl: './horario-efectivo-page.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: '../../resource.css',
 })
 export class HorarioEfectivoPage {

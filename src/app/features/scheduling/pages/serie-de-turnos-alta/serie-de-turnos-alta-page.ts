@@ -1,4 +1,13 @@
-import { Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
+import {
+  Component,
+  computed,
+  effect,
+  inject,
+  input,
+  signal,
+  untracked,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { PERMISO_PACIENTE_READ } from '../../../../core/models/permisos';
@@ -64,6 +73,7 @@ type ModoDeFin = 'cantidad' | 'fecha';
   selector: 'app-serie-de-turnos-alta-page',
   imports: [RouterLink, PermisoDirective],
   templateUrl: './serie-de-turnos-alta-page.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: '../../agenda.css',
 })
 export class SerieDeTurnosAltaPage {

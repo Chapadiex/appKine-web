@@ -1,4 +1,13 @@
-import { Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
+import {
+  Component,
+  computed,
+  effect,
+  inject,
+  input,
+  signal,
+  untracked,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { Agenda } from '../../../../api/generated/model/agenda';
@@ -87,6 +96,7 @@ interface Resultado {
   selector: 'app-serie-de-turnos-page',
   imports: [RouterLink, ConfirmacionConMotivo, SelectorDeHorario],
   templateUrl: './serie-de-turnos-page.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: '../../agenda.css',
 })
 export class SerieDeTurnosPage {

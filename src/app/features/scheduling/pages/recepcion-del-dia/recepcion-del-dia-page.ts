@@ -1,5 +1,14 @@
 import { Location } from '@angular/common';
-import { Component, computed, effect, inject, signal, untracked, input } from '@angular/core';
+import {
+  Component,
+  computed,
+  effect,
+  inject,
+  signal,
+  untracked,
+  input,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Observable } from 'rxjs';
 
@@ -121,6 +130,7 @@ const CAUSAS_QUE_RELEEN: ReadonlySet<CausaAgenda> = new Set<CausaAgenda>([
   selector: 'app-recepcion-del-dia-page',
   imports: [RouterLink, ConfirmacionConMotivo, ClasesDelDia],
   templateUrl: './recepcion-del-dia-page.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: '../../agenda.css',
 })
 export class RecepcionDelDiaPage {

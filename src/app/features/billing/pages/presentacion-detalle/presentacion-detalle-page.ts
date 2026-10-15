@@ -1,4 +1,13 @@
-import { Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
+import {
+  Component,
+  computed,
+  effect,
+  inject,
+  input,
+  signal,
+  untracked,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { Observable, forkJoin, of } from 'rxjs';
@@ -73,6 +82,7 @@ interface Lectura {
   selector: 'app-presentacion-detalle-page',
   imports: [ReactiveFormsModule, RouterLink, ConfirmacionConMotivo],
   templateUrl: './presentacion-detalle-page.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: '../../billing.css',
 })
 export class PresentacionDetallePage {

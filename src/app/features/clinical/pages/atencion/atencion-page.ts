@@ -7,6 +7,7 @@ import {
   input,
   signal,
   untracked,
+  ChangeDetectionStrategy,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
@@ -147,6 +148,7 @@ const ESPERA_AUTOSAVE = 1_500;
   selector: 'app-atencion-page',
   imports: [RouterLink, MedicionesDeSesion, TratamientosDeSesion],
   templateUrl: './atencion-page.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: '../../atencion.css',
 })
 export class AtencionPage {

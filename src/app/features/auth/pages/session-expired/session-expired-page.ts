@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, ChangeDetectionStrategy } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import { PARAM_VOLVER_A, destinoInterno } from '../../../../core/models/rutas';
@@ -22,6 +22,7 @@ import { PARAM_VOLVER_A, destinoInterno } from '../../../../core/models/rutas';
   selector: 'app-session-expired-page',
   imports: [RouterLink],
   templateUrl: './session-expired-page.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: '../../auth.css',
 })
 export class SessionExpiredPage {

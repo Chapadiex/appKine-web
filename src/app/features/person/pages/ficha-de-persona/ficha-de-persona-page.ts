@@ -1,4 +1,13 @@
-import { Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
+import {
+  Component,
+  computed,
+  effect,
+  inject,
+  input,
+  signal,
+  untracked,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { ConfirmacionConMotivo } from '../../../../shared/components/confirmacion-con-motivo/confirmacion-con-motivo';
@@ -98,6 +107,7 @@ interface ConteoPorCategoria {
   selector: 'app-ficha-de-persona-page',
   imports: [RouterLink, ConfirmacionConMotivo, PermisoDirective, DatosAdministrativosDeHistoria],
   templateUrl: './ficha-de-persona-page.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: '../../person.css',
 })
 export class FichaDePersonaPage {

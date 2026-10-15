@@ -1,4 +1,12 @@
-import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
+import {
+  Component,
+  computed,
+  effect,
+  inject,
+  signal,
+  untracked,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { Subscription } from 'rxjs';
 
@@ -71,6 +79,7 @@ const DIAS_POR_DEFECTO = 7;
   selector: 'app-buscador-de-agenda-page',
   imports: [RouterLink],
   templateUrl: './buscador-de-agenda-page.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: '../../agenda.css',
 })
 export class BuscadorDeAgendaPage {

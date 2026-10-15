@@ -1,4 +1,13 @@
-import { Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  input,
+  signal,
+  untracked,
+} from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
 
@@ -26,6 +35,7 @@ import { TenantContextStore } from '../../../../core/services/tenant-context.sto
  */
 @Component({
   selector: 'app-versiones-page',
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [RouterLink],
   templateUrl: './versiones-page.html',
   styleUrl: '../../atencion.css',

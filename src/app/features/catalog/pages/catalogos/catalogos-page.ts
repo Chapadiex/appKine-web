@@ -9,6 +9,7 @@ import {
   input,
   signal,
   untracked,
+  ChangeDetectionStrategy,
 } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -105,6 +106,7 @@ const TOPE_DE_ESPECIALIDADES = 100;
   selector: 'app-catalogos-page',
   imports: [ReactiveFormsModule, RouterLink, PermisoDirective, Paginacion, ConfirmacionConMotivo],
   templateUrl: './catalogos-page.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: '../../catalog.css',
 })
 export class CatalogosPage {

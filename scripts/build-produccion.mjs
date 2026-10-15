@@ -17,6 +17,13 @@
  * activarlo: no tiene opcion en `angular.json`. Por eso el build pasa por aca y no por
  * `ng build` a secas.
  *
+ * Desde Angular 22 ese optimizador corre por defecto sobre rolldown, que NO funde el codigo
+ * inicial: deja el `main` mas ocho chunks importados en forma estatica (medido el 14/10/2026,
+ * 371,69 kB en 10 archivos contra 359,56 kB en uno solo con Angular 21). `NG_BUILD_CHUNKS_ROLLDOWN=0`
+ * vuelve al optimizador de rollup, el mismo que usaba Angular 21, y por eso `rollup` es una
+ * dependencia de desarrollo explicita: el builder la pide y no la instala. Si una version futura
+ * de Angular quita ese camino, el gate de abajo lo dice.
+ *
  * Despues del build de produccion verifica que el resultado siga siendo UNA sola ida y vuelta
  * de JavaScript inicial: si una version de Angular renombra la variable o deja de fundir los
  * chunks, el build falla en vez de devolver la cascada en silencio. El tamano lo cuidan los
@@ -37,7 +44,11 @@ const argumentos = process.argv.slice(2);
 const build = spawnSync(process.execPath, [ng, 'build', ...argumentos], {
   cwd: raizRepo,
   stdio: 'inherit',
-  env: { ...process.env, NG_BUILD_OPTIMIZE_CHUNKS: process.env.NG_BUILD_OPTIMIZE_CHUNKS ?? '1' },
+  env: {
+    ...process.env,
+    NG_BUILD_OPTIMIZE_CHUNKS: process.env.NG_BUILD_OPTIMIZE_CHUNKS ?? '1',
+    NG_BUILD_CHUNKS_ROLLDOWN: process.env.NG_BUILD_CHUNKS_ROLLDOWN ?? '0',
+  },
 });
 if (build.status !== 0) {
   process.exit(build.status ?? 1);

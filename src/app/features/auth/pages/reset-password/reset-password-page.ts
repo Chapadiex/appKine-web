@@ -1,4 +1,11 @@
-import { Component, ElementRef, computed, inject, signal } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  computed,
+  inject,
+  signal,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import {
   AbstractControl,
   FormBuilder,
@@ -33,6 +40,7 @@ function contrasenasIguales(grupo: AbstractControl): ValidationErrors | null {
   selector: 'app-reset-password-page',
   imports: [ReactiveFormsModule, RouterLink],
   templateUrl: './reset-password-page.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: '../../auth.css',
 })
 export class ResetPasswordPage {

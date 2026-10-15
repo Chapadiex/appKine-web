@@ -1,4 +1,4 @@
-import { Component, computed, effect, inject } from '@angular/core';
+import { Component, computed, effect, inject, ChangeDetectionStrategy } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 
 import { PermissionsStore } from '../../core/services/permissions.store';
@@ -55,6 +55,7 @@ import { TenantContextStore } from '../../core/services/tenant-context.store';
   selector: 'app-navegacion-principal',
   imports: [RouterLink, RouterLinkActive],
   templateUrl: './navegacion-principal.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './navegacion-principal.css',
 })
 export class NavegacionPrincipal {

@@ -8,6 +8,7 @@ import {
   inject,
   signal,
   untracked,
+  ChangeDetectionStrategy,
 } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -94,6 +95,7 @@ type TipoAccion = 'editar' | 'baja';
   selector: 'app-planes-del-financiador-page',
   imports: [ReactiveFormsModule, RouterLink, PermisoDirective, ConfirmacionConMotivo],
   templateUrl: './planes-del-financiador-page.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: '../../contracting.css',
 })
 export class PlanesDelFinanciadorPage {

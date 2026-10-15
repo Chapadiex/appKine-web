@@ -1,4 +1,5 @@
 import {
+  ChangeDetectionStrategy,
   Component,
   Injector,
   afterNextRender,
@@ -59,6 +60,7 @@ const CAUSAS_DE_LA_ATENCION = new Set(['version-vieja', 'sesion-cerrada', 'sesio
  */
 @Component({
   selector: 'app-mediciones-de-sesion',
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './mediciones-de-sesion.html',
   styleUrl: '../../atencion.css',
 })

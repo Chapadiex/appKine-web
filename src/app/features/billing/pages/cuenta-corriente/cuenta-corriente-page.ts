@@ -1,4 +1,13 @@
-import { Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
+import {
+  Component,
+  computed,
+  effect,
+  inject,
+  input,
+  signal,
+  untracked,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { catchError, concat, of, tap } from 'rxjs';
 
@@ -89,6 +98,7 @@ type EstadoCuenta =
   selector: 'app-cuenta-corriente-page',
   imports: [RouterLink, ConfirmacionConMotivo, PermisoDirective],
   templateUrl: './cuenta-corriente-page.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: '../../billing.css',
 })
 export class CuentaCorrientePage {

@@ -1,5 +1,14 @@
 import { Location } from '@angular/common';
-import { Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  input,
+  signal,
+  untracked,
+} from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { catchError, of } from 'rxjs';
 
@@ -43,6 +52,7 @@ interface DiaDeClases {
  */
 @Component({
   selector: 'app-clases-de-la-semana-page',
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [RouterLink, PermisoDirective],
   templateUrl: './clases-de-la-semana-page.html',
   styleUrl: '../../activity.css',

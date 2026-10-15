@@ -1,4 +1,12 @@
-import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
+import {
+  Component,
+  computed,
+  effect,
+  inject,
+  signal,
+  untracked,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { catchError, of } from 'rxjs';
 
@@ -70,6 +78,7 @@ interface Desenlace {
   selector: 'app-importar-aranceles-page',
   imports: [RouterLink, PermisoDirective],
   templateUrl: './importar-aranceles-page.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: '../../contracting.css',
 })
 export class ImportarArancelesPage {

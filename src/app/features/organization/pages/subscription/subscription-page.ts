@@ -1,4 +1,12 @@
-import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
+import {
+  Component,
+  computed,
+  effect,
+  inject,
+  signal,
+  untracked,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Observable, catchError, map, of, switchMap } from 'rxjs';
 
@@ -60,6 +68,7 @@ const HECHOS_A_REVISAR = 20;
   selector: 'app-subscription-page',
   imports: [RouterLink],
   templateUrl: './subscription-page.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: '../../organization.css',
 })
 export class SubscriptionPage {

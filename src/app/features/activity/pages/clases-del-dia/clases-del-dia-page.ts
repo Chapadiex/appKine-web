@@ -1,4 +1,12 @@
-import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  signal,
+  untracked,
+} from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { EventoDeAgenda } from '../../../../api/generated/model/evento-de-agenda';
@@ -27,6 +35,7 @@ type Estado =
 @Component({
   selector: 'app-clases-del-dia-page',
   imports: [RouterLink],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './clases-del-dia-page.html',
   styleUrl: '../../asistencia.css',
 })
