@@ -1,0 +1,58 @@
+<form
+  #formulario
+  class="historia__formulario"
+  (submit)="$event.preventDefault(); subir(formulario)"
+>
+  <div class="campo">
+    <label for="adjunto-categoria">Categoria</label>
+    <select
+      id="adjunto-categoria"
+      [value]="categoria()"
+      (change)="elegirCategoria($any($event.target).value)"
+    >
+      @for (opcion of categorias; track opcion[0]) {
+        <option [value]="opcion[0]">{{ opcion[1] }}</option>
+      }
+    </select>
+  </div>
+
+  <div class="campo">
+    <label for="adjunto-titulo">Titulo <span class="campo__opcional">(opcional)</span></label>
+    <input
+      id="adjunto-titulo"
+      type="text"
+      [value]="titulo()"
+      (input)="titulo.set($any($event.target).value)"
+    />
+  </div>
+
+  <div class="campo">
+    <label for="adjunto-archivo">Archivo</label>
+    <input
+      #selector
+      id="adjunto-archivo"
+      type="file"
+      [attr.aria-invalid]="intentoEnviar() && faltaArchivo()"
+      [attr.aria-describedby]="intentoEnviar() && faltaArchivo() ? 'adjunto-archivo-error' : null"
+      (change)="elegirArchivo(selector)"
+    />
+    @if (intentoEnviar() && faltaArchivo()) {
+      <p id="adjunto-archivo-error" class="campo__error">Elegí el archivo que queres adjuntar.</p>
+    }
+  </div>
+
+  @if (error(); as problema) {
+    <p class="estado estado--error" role="alert">{{ problema.mensaje }}</p>
+  }
+  <p class="visualmente-oculto" aria-live="polite">{{ aviso() }}</p>
+
+  <div class="acciones">
+    <button type="submit" class="boton" [disabled]="enviando()">
+      @if (enviando()) {
+        Subiendo…
+      } @else {
+        Subir adjunto
+      }
+    </button>
+  </div>
+</form>

@@ -158,29 +158,8 @@ export function adjuntoNoDisponible(adjunto: AdjuntoResponse): boolean {
   return adjunto.estado === 'NO_DISPONIBLE';
 }
 
-/**
- * El tamano en unidades que se leen de un vistazo.
- *
- * <p>Base 1024 y una sola decimal. No es una medicion: es para que alguien decida si un escaneo de
- * "8,4 MB" conviene rehacerlo mas liviano, y para eso la precision exacta no aporta nada.
- */
-export function tamanoEnPalabras(bytes: number | undefined): string {
-  if (bytes === undefined || !Number.isFinite(bytes) || bytes < 0) {
-    return '';
-  }
-  if (bytes < 1024) {
-    return `${bytes} B`;
-  }
-  const kb = bytes / 1024;
-  if (kb < 1024) {
-    return `${redondear(kb)} kB`;
-  }
-  return `${redondear(kb / 1024)} MB`;
-}
-
-function redondear(valor: number): string {
-  return new Intl.NumberFormat('es-AR', { maximumFractionDigits: 1 }).format(valor);
-}
+/** Vive en `shared/utils/archivos`: lo comparten personas y adjuntos clinicos. */
+export { tamanoEnPalabras } from '../../../shared/utils/archivos';
 
 // -----------------------------------------------------------------------------------------
 // Fechas e importes
