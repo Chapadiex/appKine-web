@@ -177,7 +177,7 @@ export class CasosDeLaHistoria {
           this.guardando.set(false);
           this.cambiaron.emit();
           if (caso.id !== undefined) {
-            void this.router.navigateByUrl(this.visita.rutaCaso(caso.id));
+            this.router.navigateByUrl(this.visita.rutaCaso(caso.id));
           }
         },
         error: (error: unknown) => {
