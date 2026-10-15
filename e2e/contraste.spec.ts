@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-import { auditarContraste, instalarApiDeContraste } from './support/contraste';
+import { CLASE, auditarContraste, instalarApiDeContraste } from './support/contraste';
 import {
   FECHA,
   NOMBRE_OFERTA,
@@ -256,6 +256,23 @@ test.describe('Contraste de color', () => {
         pintura.bordeIzquierdo,
         'el indicador ocupa el borde, afuera de la caja donde se recorta el contenido',
       ).toBeGreaterThan(0);
+    });
+
+    /** Clases grupales (F9): la semana con una clase cancelada y el detalle con lista de espera. */
+    test('la semana de clases con una cancelada', async ({ page }) => {
+      await instalarApiDeContraste(page);
+      await page.goto('/clases?semana=2026-10-20');
+      await expect(page.getByText('Yoga suave', { exact: true })).toBeVisible();
+
+      await auditarContraste(page, 'semana de clases con una cancelada');
+    });
+
+    test('el detalle de una clase llena con lista de espera', async ({ page }) => {
+      await instalarApiDeContraste(page);
+      await page.goto(`/clases/${CLASE.id}`);
+      await expect(page.getByText('Sosa, Eva — posicion 1')).toBeVisible();
+
+      await auditarContraste(page, 'detalle de una clase llena con lista de espera');
     });
 
     test('el padron sin ninguna fila', async ({ page }) => {

@@ -1,0 +1,350 @@
+<section class="tarjeta" aria-labelledby="titulo-tratamientos">
+  <h2 id="titulo-tratamientos">Tratamiento aplicado</h2>
+
+  <p class="ayuda">
+    Lo que se hizo realmente en esta visita, en el orden en que se hizo.
+    <b>Registrarlo no mueve el plan de tratamiento</b>: planificado no es realizado.
+  </p>
+
+  @if (cargando()) {
+    <p class="estado estado--cargando">Leyendo los tratamientos…</p>
+  }
+
+  @if (error(); as problema) {
+    <p class="estado estado--error" role="alert">{{ problema.mensaje }}</p>
+  }
+
+  @if (!cargando() && tratamientos().length === 0) {
+    <p class="ayuda">Todavia no hay tratamientos registrados en esta sesion.</p>
+  }
+
+  @if (tratamientos().length > 0) {
+    <ol class="lista-tratamientos">
+      @for (tratamiento of tratamientos(); track tratamiento.id) {
+        <li class="tratamiento">
+          <p class="tratamiento__titulo">
+            <b>{{ tratamiento.orden }}. {{ tratamiento.practicaNombre }}</b>
+            @if (tratamiento.practicaCodigo) {
+              <span class="ayuda"> ({{ tratamiento.practicaCodigo }})</span>
+            }
+          </p>
+          <dl class="detalle">
+            @if (tratamiento.tecnica) {
+              <dt>Tecnica</dt>
+              <dd>{{ tratamiento.tecnica }}</dd>
+            }
+            @if (tratamiento.zona) {
+              <dt>Zona</dt>
+              <dd>
+                {{ tratamiento.zona }}
+                @if (tratamiento.lateralidad) {
+                  — {{ etiquetaDeLateralidad(tratamiento.lateralidad) }}
+                }
+              </dd>
+            }
+            @if (tratamiento.duracionMinutos) {
+              <dt>Duracion</dt>
+              <dd>{{ tratamiento.duracionMinutos }} minutos</dd>
+            }
+            @if (tratamiento.espacioNombre) {
+              <dt>Espacio</dt>
+              <dd>{{ tratamiento.espacioNombre }}</dd>
+            }
+            @for (parametro of tratamiento.parametros ?? []; track $index) {
+              <dt>{{ parametro.clave }}</dt>
+              <dd>{{ valorLegible(parametro) }}</dd>
+            }
+            @if (tratamiento.observacion) {
+              <dt>Observacion</dt>
+              <dd>{{ tratamiento.observacion }}</dd>
+            }
+          </dl>
+
+          @if (editable()) {
+            @if (dandoDeBaja() === tratamiento.id) {
+              <div class="campo">
+                <label [for]="'baja-motivo-' + tratamiento.id">
+                  Por que se da de baja {{ tratamiento.practicaNombre }}
+                </label>
+                <textarea
+                  [id]="'baja-motivo-' + tratamiento.id"
+                  rows="2"
+                  maxlength="500"
+                  [value]="motivoBaja()"
+                  (input)="motivoBaja.set($any($event.target).value)"
+                ></textarea>
+              </div>
+              <div class="acciones">
+                <button
+                  type="button"
+                  class="boton"
+                  [disabled]="bloqueado()"
+                  (click)="confirmarBaja()"
+                >
+                  Confirmar la baja
+                </button>
+                <button type="button" class="boton boton--secundario" (click)="cancelarBaja()">
+                  No dar de baja
+                </button>
+              </div>
+            } @else {
+              <div class="acciones">
+                <button
+                  type="button"
+                  class="boton boton--secundario"
+                  [disabled]="bloqueado()"
+                  (click)="pedirBaja(tratamiento.id)"
+                >
+                  Dar de baja<span class="visualmente-oculto">
+                    {{ tratamiento.orden }}. {{ tratamiento.practicaNombre }}</span
+                  >
+                </button>
+              </div>
+            }
+          }
+        </li>
+      }
+    </ol>
+  }
+
+  @if (editable()) {
+    <fieldset class="grupo">
+      <legend>Registrar un tratamiento</legend>
+
+      @if (practicas().length === 0) {
+        <p class="ayuda">
+          La oferta de este turno no declara practicas, asi que no hay ninguna que asentar. Las
+          practicas de una oferta las configura quien administra el centro.
+        </p>
+      } @else {
+        <div class="campo">
+          <label for="tratamiento-practica">Practica</label>
+          <select
+            id="tratamiento-practica"
+            name="tratamiento-practica"
+            (change)="elegirPractica($any($event.target).value)"
+          >
+            <option value="" [selected]="practicaId() === null">Elegi una practica</option>
+            @for (opcion of practicas(); track opcion.practicaId) {
+              <option [value]="opcion.practicaId" [selected]="practicaId() === opcion.practicaId">
+                {{ opcion.nombre }}{{ opcion.codigo ? ' (' + opcion.codigo + ')' : '' }}
+              </option>
+            }
+          </select>
+        </div>
+
+        <div class="campo">
+          <label for="tratamiento-tecnica">
+            Tecnica o maniobra <span class="campo__opcional">(opcional)</span>
+          </label>
+          <input
+            id="tratamiento-tecnica"
+            name="tratamiento-tecnica"
+            type="text"
+            maxlength="200"
+            [value]="tecnica()"
+            (input)="tecnica.set($any($event.target).value)"
+          />
+        </div>
+
+        <div class="campo">
+          <label for="tratamiento-zona">
+            Zona tratada <span class="campo__opcional">(opcional)</span>
+          </label>
+          <input
+            id="tratamiento-zona"
+            name="tratamiento-zona"
+            type="text"
+            maxlength="120"
+            aria-describedby="ayuda-tratamiento-zona"
+            [value]="zona()"
+            (input)="zona.set($any($event.target).value)"
+          />
+          <p id="ayuda-tratamiento-zona" class="ayuda">
+            @if (faltaZona()) {
+              <b>Elegiste un lado sin decir de que zona, y el servidor va a rechazarlo.</b>
+            }
+          </p>
+        </div>
+
+        <div class="campo">
+          <label for="tratamiento-lateralidad">
+            Lado <span class="campo__opcional">(opcional)</span>
+          </label>
+          <select
+            id="tratamiento-lateralidad"
+            name="tratamiento-lateralidad"
+            (change)="elegirLateralidad($any($event.target).value)"
+          >
+            <option value="" [selected]="lateralidad() === null">Sin cargar</option>
+            @for (opcion of lateralidades; track opcion.valor) {
+              <option [value]="opcion.valor" [selected]="lateralidad() === opcion.valor">
+                {{ opcion.etiqueta }}
+              </option>
+            }
+          </select>
+        </div>
+
+        <div class="campo">
+          <label for="tratamiento-duracion">
+            Duracion en minutos <span class="campo__opcional">(opcional)</span>
+          </label>
+          <input
+            id="tratamiento-duracion"
+            name="tratamiento-duracion"
+            type="text"
+            inputmode="numeric"
+            [value]="duracion()"
+            (input)="duracion.set($any($event.target).value)"
+          />
+        </div>
+
+        @if (espacios().length > 0) {
+          <div class="campo">
+            <label for="tratamiento-espacio">
+              Espacio utilizado <span class="campo__opcional">(opcional)</span>
+            </label>
+            <select
+              id="tratamiento-espacio"
+              name="tratamiento-espacio"
+              aria-describedby="ayuda-tratamiento-espacio"
+              (change)="elegirEspacio($any($event.target).value)"
+            >
+              <option value="" [selected]="espacioId() === null">Sin cargar</option>
+              @for (opcion of espacios(); track opcion.id) {
+                <option [value]="opcion.id" [selected]="espacioId() === opcion.id">
+                  {{ opcion.name }}
+                </option>
+              }
+            </select>
+            <p id="ayuda-tratamiento-espacio" class="ayuda">
+              El que se uso de verdad, aunque no sea el reservado en el turno.
+            </p>
+          </div>
+        }
+
+        <fieldset class="grupo">
+          <legend>Parametros <span class="campo__opcional">(opcional)</span></legend>
+          <p class="ayuda">
+            Intensidad, series, tiempo: cada parametro con su tipo. La unidad va solo en los
+            numeros.
+          </p>
+          <datalist id="tratamiento-claves">
+            @for (clave of claves; track clave) {
+              <option [value]="clave"></option>
+            }
+          </datalist>
+
+          @for (parametro of parametros(); track $index; let i = $index) {
+            <div class="parametro">
+              <div class="campo">
+                <label [for]="'parametro-clave-' + i">Nombre del parametro {{ i + 1 }}</label>
+                <input
+                  [id]="'parametro-clave-' + i"
+                  type="text"
+                  list="tratamiento-claves"
+                  maxlength="80"
+                  [value]="parametro.clave"
+                  (input)="cambiarParametro(i, { clave: $any($event.target).value })"
+                />
+              </div>
+              <div class="campo">
+                <label [for]="'parametro-tipo-' + i">Tipo del parametro {{ i + 1 }}</label>
+                <select
+                  [id]="'parametro-tipo-' + i"
+                  (change)="elegirTipoDeParametro(i, $any($event.target).value)"
+                >
+                  @for (opcion of tipos; track opcion.valor) {
+                    <option [value]="opcion.valor" [selected]="parametro.tipoDato === opcion.valor">
+                      {{ opcion.etiqueta }}
+                    </option>
+                  }
+                </select>
+              </div>
+              @if (parametro.tipoDato === Tipo.BOOLEANO) {
+                <div class="campo">
+                  <label [for]="'parametro-valor-' + i">Valor del parametro {{ i + 1 }}</label>
+                  <select
+                    [id]="'parametro-valor-' + i"
+                    (change)="
+                      cambiarParametro(i, {
+                        valorSiNo:
+                          $any($event.target).value === ''
+                            ? null
+                            : $any($event.target).value === 'si',
+                      })
+                    "
+                  >
+                    <option value="" [selected]="parametro.valorSiNo === null">Sin elegir</option>
+                    <option value="si" [selected]="parametro.valorSiNo === true">Si</option>
+                    <option value="no" [selected]="parametro.valorSiNo === false">No</option>
+                  </select>
+                </div>
+              } @else {
+                <div class="campo">
+                  <label [for]="'parametro-valor-' + i">Valor del parametro {{ i + 1 }}</label>
+                  <input
+                    [id]="'parametro-valor-' + i"
+                    type="text"
+                    maxlength="200"
+                    [attr.inputmode]="parametro.tipoDato === Tipo.NUMERICO ? 'decimal' : null"
+                    [value]="parametro.valor"
+                    (input)="cambiarParametro(i, { valor: $any($event.target).value })"
+                  />
+                </div>
+              }
+              @if (parametro.tipoDato === Tipo.NUMERICO) {
+                <div class="campo">
+                  <label [for]="'parametro-unidad-' + i">
+                    Unidad del parametro {{ i + 1 }}
+                    <span class="campo__opcional">(opcional)</span>
+                  </label>
+                  <input
+                    [id]="'parametro-unidad-' + i"
+                    type="text"
+                    maxlength="20"
+                    [value]="parametro.unidad"
+                    (input)="cambiarParametro(i, { unidad: $any($event.target).value })"
+                  />
+                </div>
+              }
+              <div class="acciones">
+                <button type="button" class="boton boton--secundario" (click)="quitarParametro(i)">
+                  Quitar el parametro {{ i + 1 }}
+                </button>
+              </div>
+            </div>
+          }
+
+          <div class="acciones">
+            <button type="button" class="boton boton--secundario" (click)="agregarParametro()">
+              Agregar un parametro
+            </button>
+          </div>
+        </fieldset>
+
+        <div class="campo">
+          <label for="tratamiento-observacion">
+            Observacion <span class="campo__opcional">(opcional)</span>
+          </label>
+          <input
+            id="tratamiento-observacion"
+            name="tratamiento-observacion"
+            type="text"
+            maxlength="500"
+            [value]="observacion()"
+            (input)="observacion.set($any($event.target).value)"
+          />
+        </div>
+
+        <div class="acciones">
+          <button type="button" class="boton" [disabled]="bloqueado()" (click)="registrar()">
+            Registrar el tratamiento
+          </button>
+        </div>
+      }
+    </fieldset>
+  }
+
+  <p class="ayuda" role="status">{{ aviso() }}</p>
+</section>

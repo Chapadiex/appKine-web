@@ -205,3 +205,38 @@ export function resumenDePrevia(previa: EvaluacionPrevia | undefined): string {
 function enCatalogo<T extends string>(valor: unknown, catalogo: readonly Opcion<T>[]): T | null {
   return catalogo.find((opcion) => opcion.valor === valor)?.valor ?? null;
 }
+
+/**
+ * Las notas libres de la atencion, como el JSON que el contrato pide para el borrador.
+ *
+ * <p>`GuardarBorrador.contenido` es "como JSON" y la columna es `JSON` en MySQL: mandar el texto
+ * crudo hacia que <b>todo</b> guardado de notas fallara con un 409 generico (la base rechazaba el
+ * valor y el backend lo informaba como conflicto). Lo destapo el E2E contra el backend real; con
+ * `HttpTestingController` nunca podia verse.
+ */
+export function borradorDeNotas(notas: string): string {
+  return JSON.stringify({ notas });
+}
+
+/**
+ * Las notas que trae un borrador. Tolera lo que pudiera haber quedado de otra forma —un JSON que
+ * es un texto, o un valor que no es JSON—: mostrarlo tal cual es preferible a perderlo.
+ */
+export function notasDelBorrador(borrador: string | undefined | null): string {
+  if (borrador === undefined || borrador === null || borrador === '') {
+    return '';
+  }
+  try {
+    const leido: unknown = JSON.parse(borrador);
+    if (typeof leido === 'string') {
+      return leido;
+    }
+    if (typeof leido === 'object' && leido !== null && 'notas' in leido) {
+      const notas = (leido as { notas: unknown }).notas;
+      return typeof notas === 'string' ? notas : '';
+    }
+    return borrador;
+  } catch {
+    return borrador;
+  }
+}

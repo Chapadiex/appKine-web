@@ -11,6 +11,50 @@
   <p class="estado estado--cargando">Abriendo la atencion de este turno…</p>
 }
 
+<!--
+  El caso se elige ANTES de iniciar: el backend solo lo toma al crear la sesion, y no hay forma de
+  cambiarlo despues. Si el paciente no tiene casos activos esta seccion no aparece y la atencion
+  arranca sola.
+-->
+@if (eligiendoCaso()) {
+  <section class="tarjeta" aria-labelledby="titulo-caso">
+    <h2 id="titulo-caso">Antes de empezar: caso clinico</h2>
+    <p class="ayuda">
+      El paciente tiene casos clinicos activos. Elegi a cual pertenece esta atencion, o segui sin
+      caso. <b>No se puede cambiar despues de iniciar</b>, y si la atencion ya estaba iniciada
+      conserva el caso con el que empezo.
+    </p>
+    <fieldset class="grupo">
+      <legend>Caso de esta atencion</legend>
+      @for (caso of casos(); track caso.id) {
+        <label class="opcion-radio">
+          <input
+            type="radio"
+            name="caso"
+            [value]="caso.id"
+            [checked]="casoElegido() === caso.id"
+            (change)="elegirCaso($any($event.target).value)"
+          />
+          {{ rotuloDeCaso(caso) }}
+        </label>
+      }
+      <label class="opcion-radio">
+        <input
+          type="radio"
+          name="caso"
+          value=""
+          [checked]="casoElegido() === null"
+          (change)="elegirCaso('')"
+        />
+        Sin caso
+      </label>
+    </fieldset>
+    <div class="acciones">
+      <button type="button" class="boton" (click)="iniciar()">Iniciar la atencion</button>
+    </div>
+  </section>
+}
+
 @if (error(); as problema) {
   <section class="tarjeta" role="alert" aria-labelledby="titulo-problema">
     <h2 id="titulo-problema">
@@ -101,7 +145,26 @@
         <dt>Estado</dt>
         <dd>{{ atencion.estado }}</dd>
       }
+
+      <dt>Caso clinico</dt>
+      <dd>
+        @if (atencion.casoId !== undefined) {
+          {{ numeroDeCaso(atencion.casoId) }}
+          @if (atencion.numeroEnCaso !== undefined) {
+            — sesion numero {{ atencion.numeroEnCaso }} del caso
+          }
+        } @else {
+          Sin caso
+        }
+      </dd>
     </dl>
+
+    @if (casoIgnorado()) {
+      <p class="ayuda" role="status">
+        Esta atencion ya estaba iniciada, asi que conserva el caso con el que empezo y no el que
+        elegiste.
+      </p>
+    }
 
     @if (!cerrada()) {
       <fieldset class="grupo">
@@ -145,9 +208,24 @@
     <h2 id="titulo-cerrada">Lo que quedo registrado</h2>
 
     <p class="ayuda">
-      Esta atencion ya no admite cambios. Corregir una sesion cerrada es una enmienda, con su propio
-      actor y su propio motivo, y todavia no se puede hacer desde el sistema.
+      Esta atencion ya no se edita. Corregirla es una <b>enmienda</b>: con un motivo obligatorio, y
+      dejando la version anterior intacta y consultable.
+      @if (atencion.fueEnmendada) {
+        <b>Esta atencion ya fue enmendada</b>: lo que se ve aca es la ultima version.
+      }
     </p>
+
+    <div class="acciones">
+      <a class="boton" [routerLink]="['/atencion', 'sesiones', atencion.id, 'enmienda']">
+        Enmendar esta atencion
+      </a>
+      <a
+        class="boton boton--secundario"
+        [routerLink]="['/atencion', 'sesiones', atencion.id, 'versiones']"
+      >
+        Ver las versiones
+      </a>
+    </div>
 
     @if (atencion.cierre; as cierre) {
       <dl class="detalle">
@@ -177,11 +255,24 @@
       </dl>
     }
 
-    @if (atencion.borrador) {
+    @if (notasDelBorrador(atencion.borrador); as notasGuardadas) {
       <h3 class="panel__titulo">Notas de la atencion</h3>
-      <pre class="comparacion">{{ atencion.borrador }}</pre>
+      <pre class="comparacion">{{ notasGuardadas }}</pre>
     }
   </section>
+
+  @if (bloques(); as b) {
+    <app-mediciones-de-sesion
+      [consultorioId]="b.consultorioId"
+      [sesionId]="b.sesionId"
+      [editable]="false"
+    />
+    <app-tratamientos-de-sesion
+      [consultorioId]="b.consultorioId"
+      [sesionId]="b.sesionId"
+      [editable]="false"
+    />
+  }
 }
 
 @if (!cerrada() && sesion()) {
@@ -210,7 +301,7 @@
             type="button"
             class="escala__paso"
             [attr.aria-pressed]="dolorEva() === valor"
-            [attr.aria-label]="'Dolor ' + valor + ' de 10'"
+            [attr.aria-label]="valor + ' de 10'"
             (click)="elegirDolor(valor)"
           >
             {{ valor }}
@@ -338,11 +429,35 @@
     }
 
     <div class="acciones">
-      <button type="button" class="boton" [disabled]="guardando()" (click)="guardarEvaluacion()">
+      <button
+        type="button"
+        class="boton"
+        [disabled]="guardando() || tratamientoEnVuelo()"
+        (click)="guardarEvaluacion()"
+      >
         Guardar evaluacion
       </button>
     </div>
   </section>
+
+  @if (bloques(); as b) {
+    <app-mediciones-de-sesion
+      [consultorioId]="b.consultorioId"
+      [sesionId]="b.sesionId"
+      (problema)="problemaDeBloque($event)"
+    />
+    <app-tratamientos-de-sesion
+      [consultorioId]="b.consultorioId"
+      [organizationId]="organizationId()"
+      [sesionId]="b.sesionId"
+      [ofertaId]="b.ofertaId"
+      [version]="version()"
+      [ocupado]="guardando() || hayConflicto()"
+      (versionCambio)="adoptarVersion($event)"
+      (enVuelo)="tratamientoEnVuelo.set($event)"
+      (problema)="problemaDeBloque($event)"
+    />
+  }
 
   <section class="tarjeta" aria-labelledby="titulo-notas">
     <h2 id="titulo-notas">Notas de la atencion</h2>
@@ -371,7 +486,7 @@
       <button
         type="button"
         class="boton boton--secundario"
-        [disabled]="guardando()"
+        [disabled]="guardando() || tratamientoEnVuelo()"
         (click)="guardarBorrador()"
       >
         Guardar ahora
