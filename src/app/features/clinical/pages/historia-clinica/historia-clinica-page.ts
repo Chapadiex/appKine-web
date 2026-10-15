@@ -1,13 +1,4 @@
-import {
-  Component,
-  DestroyRef,
-  computed,
-  effect,
-  inject,
-  input,
-  signal,
-  untracked,
-} from '@angular/core';
+import { Component, DestroyRef, computed, effect, inject, signal, untracked } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Subscription } from 'rxjs';
 
@@ -15,6 +6,8 @@ import { AntecedenteResponse } from '../../../../api/generated/model/antecedente
 import { EventoClinicoResponse } from '../../../../api/generated/model/evento-clinico-response';
 import { HistoriaClinicaResponse } from '../../../../api/generated/model/historia-clinica-response';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
+import { CasosDeLaHistoria } from '../../casos/components/casos-de-la-historia';
+import { PedidoDeMotivo } from '../../components/pedido-de-motivo';
 import {
   TIPOS_DE_ANTECEDENTE,
   etiquetaDeOrigen,
@@ -22,7 +15,8 @@ import {
   rotulo,
 } from '../../models/etiquetas-de-historia';
 import { ErrorHistoria, errorDeCausa, traducirErrorHistoria } from '../../models/historia-errors';
-import { HistoriaClinicaApi, Justificacion } from '../../services/historia-clinica-api';
+import { HistoriaClinicaApi } from '../../services/historia-clinica-api';
+import { VisitaClinica } from '../../services/visita-clinica';
 import { DetalleDeEntrada } from './components/detalle-de-entrada';
 import { NuevaEntrada } from './components/nueva-entrada';
 import { NuevoAdjunto } from './components/nuevo-adjunto';
@@ -37,15 +31,17 @@ type Estado =
   | { readonly tipo: 'error'; readonly error: ErrorHistoria };
 
 /**
- * La Historia Clinica de una persona: cabecera, timeline y detalle (D-a, RF-M09-001/003, RF-M25).
+ * La Historia Clinica de una persona: cabecera, casos, timeline y detalle (D-a, D-b,
+ * RF-M09-001/003, RF-M25).
  *
  * <h2>El motivo de acceso es de esta visita</h2>
  *
  * <p>DP-03: quien no tiene relacion asistencial con la persona declara un motivo, y cada lectura
  * se audita con el. La pantalla pide primero sin motivo —el backend sabe si hace falta, el cliente
- * no— y solo ante el 403 con `requiereJustificacion` muestra el formulario. El motivo vive en un
- * signal: recargar, cambiar de contexto o volver a entrar lo vuelve a pedir. Recordarlo entre
- * visitas convertiria el control en un formalismo.
+ * no— y solo ante el 403 con `requiereJustificacion` muestra el formulario. El motivo vive en
+ * {@link VisitaClinica}, que comparten la historia, sus casos y sus planes: ir y volver entre ellos
+ * es la misma visita. Recargar, cambiar de contexto o volver a entrar desde la ficha lo vuelve a
+ * pedir. Recordarlo entre visitas convertiria el control en un formalismo.
  *
  * <h2>Cambiar de contexto vacia la pantalla</h2>
  *
@@ -62,6 +58,8 @@ type Estado =
     VisorDeAdjunto,
     NuevaEntrada,
     NuevoAdjunto,
+    PedidoDeMotivo,
+    CasosDeLaHistoria,
   ],
   templateUrl: './historia-clinica-page.html',
   styleUrl: './historia-clinica.css',
@@ -69,16 +67,13 @@ type Estado =
 export class HistoriaClinicaPage {
   private readonly api = inject(HistoriaClinicaApi);
   private readonly tenantContext = inject(TenantContextStore);
-
-  readonly personaId = input.required<string>();
+  private readonly visita = inject(VisitaClinica);
 
   protected readonly fechaYHora = fechaYHora;
   protected readonly etiquetaDeOrigen = etiquetaDeOrigen;
 
   protected readonly estado = signal<Estado>({ tipo: 'cargando' });
-  protected readonly justificacion = signal<Justificacion>(null);
-  protected readonly motivoEscrito = signal('');
-  protected readonly intentoJustificar = signal(false);
+  protected readonly justificacion = this.visita.motivo;
   protected readonly abriendo = signal(false);
   protected readonly errorAlAbrir = signal<ErrorHistoria | null>(null);
 
@@ -86,7 +81,7 @@ export class HistoriaClinicaPage {
   protected readonly recargas = signal(0);
 
   /** La ficha administrativa de la misma persona (D-e): el camino de ida y vuelta es uno solo. */
-  protected readonly rutaFicha = computed(() => `/pacientes/${this.personaId()}`);
+  protected readonly rutaFicha = this.visita.rutaFicha;
 
   protected readonly historia = computed(() => {
     const estado = this.estado();
@@ -98,7 +93,6 @@ export class HistoriaClinicaPage {
     return estado.tipo === 'error' ? estado.error : null;
   });
 
-  protected readonly faltaMotivo = computed(() => this.motivoEscrito().trim() === '');
   protected readonly claveElegida = computed(() => {
     const evento = this.seleccion();
     return evento === null ? null : claveDe(evento);
@@ -118,13 +112,12 @@ export class HistoriaClinicaPage {
   constructor() {
     inject(DestroyRef).onDestroy(() => this.pedido?.unsubscribe());
 
+    // Otra persona, otro contexto o un motivo recien declarado: se relee todo desde cero.
     effect(() => {
-      this.personaId();
+      this.visita.personaId();
+      this.visita.motivo();
       this.tenantContext.contextEpoch();
       untracked(() => {
-        this.justificacion.set(null);
-        this.motivoEscrito.set('');
-        this.intentoJustificar.set(false);
         this.seleccion.set(null);
         this.cargar();
       });
@@ -133,15 +126,6 @@ export class HistoriaClinicaPage {
 
   protected rotuloDeAntecedente(antecedente: AntecedenteResponse): string {
     return rotulo(TIPOS_DE_ANTECEDENTE, antecedente.tipo);
-  }
-
-  protected justificar(): void {
-    this.intentoJustificar.set(true);
-    if (this.faltaMotivo()) {
-      return;
-    }
-    this.justificacion.set(this.motivoEscrito().trim());
-    this.cargar();
   }
 
   protected reintentar(): void {
@@ -184,14 +168,18 @@ export class HistoriaClinicaPage {
   }
 
   private cargar(): void {
-    if (!Number.isSafeInteger(this.idDePersona()) || this.idDePersona() <= 0) {
+    if (this.visita.personaId() === null) {
+      return; // El marco todavia no leyo la URL: se sigue en "cargando".
+    }
+    const personaId = this.idDePersona();
+    if (!Number.isSafeInteger(personaId) || personaId <= 0) {
       this.estado.set({ tipo: 'error', error: errorDeCausa('no-encontrado') });
       return;
     }
     this.estado.set({ tipo: 'cargando' });
     this.errorAlAbrir.set(null);
     this.pedido?.unsubscribe();
-    this.pedido = this.api.ver(this.idDePersona(), this.justificacion()).subscribe({
+    this.pedido = this.api.ver(personaId, this.justificacion()).subscribe({
       next: (historia) => this.estado.set({ tipo: 'lista', historia }),
       error: (error: unknown) => {
         const traducido = traducirErrorHistoria(error, 'historia');
@@ -210,6 +198,6 @@ export class HistoriaClinicaPage {
   }
 
   private idDePersona(): number {
-    return Number(this.personaId());
+    return this.visita.personaId() ?? Number.NaN;
   }
 }

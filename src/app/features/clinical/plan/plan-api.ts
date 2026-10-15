@@ -4,73 +4,122 @@ import { Observable } from 'rxjs';
 import { PlanesDeTratamientoService } from '../../../api/generated/api/planes-de-tratamiento.service';
 import { AvanceDelPlan } from '../../../api/generated/model/avance-del-plan';
 import { CrearPlanTratamientoRequest } from '../../../api/generated/model/crear-plan-tratamiento-request';
-import { FinalizarPlanTratamientoRequest } from '../../../api/generated/model/finalizar-plan-tratamiento-request';
 import { ModificarPlanTratamientoRequest } from '../../../api/generated/model/modificar-plan-tratamiento-request';
 import { PlanTratamiento } from '../../../api/generated/model/plan-tratamiento';
 import { PlanTratamientoVersion } from '../../../api/generated/model/plan-tratamiento-version';
-import { SuspenderPlanTratamientoRequest } from '../../../api/generated/model/suspender-plan-tratamiento-request';
+import { Justificacion, motivoDeAcceso } from '../services/historia-clinica-api';
 
 /**
- * Unico punto de la feature de plan de tratamiento que toca el cliente generado.
+ * Unico punto del Plan de Tratamiento que toca el cliente generado (D-c, M11).
  *
- * <p>Mismo criterio que `ClinicalApi`: la pantalla depende de esta clase y de los tipos del
- * contrato, nunca del servicio generado directo. Las transiciones mandan `expectedVersion`: sin
- * ella dos pestañas se pisan en silencio. Las reglas de negocio (p. ej. no activar sin items)
- * son del backend; aca no se reimplementan.
+ * <p>Cada metodo lleva el motivo de acceso de la visita (DP-03): el plan es contenido clinico y su
+ * lectura se audita. Las transiciones mandan `expectedVersion`: sin ella dos pestañas se pisan en
+ * silencio. Las reglas (no activar sin items, un solo plan vivo por caso) son del backend.
  */
 @Injectable({ providedIn: 'root' })
 export class PlanApi {
   private readonly planes = inject(PlanesDeTratamientoService);
 
-  listar(casoClinicoId: number): Observable<PlanTratamiento[]> {
-    return this.planes.listarPlanesTratamiento({ casoClinicoId });
-  }
-
-  ver(planId: number): Observable<PlanTratamiento> {
-    return this.planes.verPlanTratamiento({ planId });
+  /** Todos los planes del caso, incluidos los finalizados: son el recorrido terapeutico. */
+  listar(casoClinicoId: number, justificacion: Justificacion): Observable<PlanTratamiento[]> {
+    return this.planes.listarPlanesTratamiento({
+      casoClinicoId,
+      ...motivoDeAcceso(justificacion),
+    });
   }
 
   crear(
     casoClinicoId: number,
     crearPlanTratamientoRequest: CrearPlanTratamientoRequest,
+    justificacion: Justificacion,
   ): Observable<PlanTratamiento> {
-    return this.planes.crearPlanTratamiento({ casoClinicoId, crearPlanTratamientoRequest });
+    return this.planes.crearPlanTratamiento({
+      casoClinicoId,
+      crearPlanTratamientoRequest,
+      ...motivoDeAcceso(justificacion),
+    });
   }
 
+  /** En BORRADOR edita en el lugar; en ACTIVO o SUSPENDIDO crea una version nueva. */
   modificar(
     planId: number,
     modificarPlanTratamientoRequest: ModificarPlanTratamientoRequest,
+    justificacion: Justificacion,
   ): Observable<PlanTratamiento> {
-    return this.planes.modificarPlanTratamiento({ planId, modificarPlanTratamientoRequest });
+    return this.planes.modificarPlanTratamiento({
+      planId,
+      modificarPlanTratamientoRequest,
+      ...motivoDeAcceso(justificacion),
+    });
   }
 
-  activar(planId: number, expectedVersion: number): Observable<PlanTratamiento> {
-    return this.planes.activarPlanTratamiento({ planId, transicionDePlan: { expectedVersion } });
+  activar(
+    planId: number,
+    expectedVersion: number,
+    justificacion: Justificacion,
+  ): Observable<PlanTratamiento> {
+    return this.planes.activarPlanTratamiento({
+      planId,
+      transicionDePlan: { expectedVersion },
+      ...motivoDeAcceso(justificacion),
+    });
+  }
+
+  reanudar(
+    planId: number,
+    expectedVersion: number,
+    justificacion: Justificacion,
+  ): Observable<PlanTratamiento> {
+    return this.planes.reanudarPlanTratamiento({
+      planId,
+      transicionDePlan: { expectedVersion },
+      ...motivoDeAcceso(justificacion),
+    });
   }
 
   suspender(
     planId: number,
-    suspenderPlanTratamientoRequest: SuspenderPlanTratamientoRequest,
+    motivo: string,
+    expectedVersion: number,
+    justificacion: Justificacion,
   ): Observable<PlanTratamiento> {
-    return this.planes.suspenderPlanTratamiento({ planId, suspenderPlanTratamientoRequest });
-  }
-
-  reanudar(planId: number, expectedVersion: number): Observable<PlanTratamiento> {
-    return this.planes.reanudarPlanTratamiento({ planId, transicionDePlan: { expectedVersion } });
+    return this.planes.suspenderPlanTratamiento({
+      planId,
+      suspenderPlanTratamientoRequest: { motivo, expectedVersion },
+      ...motivoDeAcceso(justificacion),
+    });
   }
 
   finalizar(
     planId: number,
-    finalizarPlanTratamientoRequest: FinalizarPlanTratamientoRequest,
+    motivo: string,
+    expectedVersion: number,
+    justificacion: Justificacion,
   ): Observable<PlanTratamiento> {
-    return this.planes.finalizarPlanTratamiento({ planId, finalizarPlanTratamientoRequest });
+    return this.planes.finalizarPlanTratamiento({
+      planId,
+      finalizarPlanTratamientoRequest: { motivo, expectedVersion },
+      ...motivoDeAcceso(justificacion),
+    });
   }
 
-  versiones(planId: number): Observable<PlanTratamientoVersion[]> {
-    return this.planes.listarVersionesDePlanTratamiento({ planId });
+  versiones(planId: number, justificacion: Justificacion): Observable<PlanTratamientoVersion[]> {
+    return this.planes.listarVersionesDePlanTratamiento({
+      planId,
+      ...motivoDeAcceso(justificacion),
+    });
   }
 
-  avance(planId: number): Observable<AvanceDelPlan> {
-    return this.planes.verAvanceDePlanTratamiento({ planId });
+  /** Sin `numeroVersion`, el de la vigente. Todo lo que trae es derivado (RN-M11-001). */
+  avance(
+    planId: number,
+    numeroVersion: number | null,
+    justificacion: Justificacion,
+  ): Observable<AvanceDelPlan> {
+    return this.planes.verAvanceDePlanTratamiento({
+      planId,
+      ...(numeroVersion === null ? {} : { numeroVersion }),
+      ...motivoDeAcceso(justificacion),
+    });
   }
 }

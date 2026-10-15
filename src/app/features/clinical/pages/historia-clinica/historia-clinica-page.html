@@ -13,41 +13,7 @@
   }
 
   @case ('requiere-justificacion') {
-    <section class="tarjeta" aria-labelledby="titulo-justificacion">
-      <h2 id="titulo-justificacion">Declara el motivo del acceso</h2>
-      <p class="ayuda">
-        No figura que atiendas a esta persona en esta sede. Para ver su historia clinica tenes que
-        declarar por que la abris. El motivo queda registrado junto con cada lectura que hagas en
-        esta visita, y se vuelve a pedir la proxima vez que entres.
-      </p>
-
-      <form class="historia__formulario" (submit)="$event.preventDefault(); justificar()">
-        <div class="campo">
-          <label for="motivo-acceso">Motivo del acceso</label>
-          <input
-            id="motivo-acceso"
-            type="text"
-            [value]="motivoEscrito()"
-            [attr.aria-invalid]="intentoJustificar() && faltaMotivo()"
-            [attr.aria-describedby]="
-              intentoJustificar() && faltaMotivo() ? 'motivo-acceso-error' : 'motivo-acceso-ayuda'
-            "
-            (input)="motivoEscrito.set($any($event.target).value)"
-          />
-          <p id="motivo-acceso-ayuda" class="ayuda">
-            Por ejemplo: "interconsulta pedida por el profesional tratante".
-          </p>
-          @if (intentoJustificar() && faltaMotivo()) {
-            <p id="motivo-acceso-error" class="campo__error">
-              Sin motivo no se puede abrir la historia.
-            </p>
-          }
-        </div>
-        <div class="acciones">
-          <button type="submit" class="boton">Ver la historia clinica</button>
-        </div>
-      </form>
-    </section>
+    <app-pedido-de-motivo />
   }
 
   @case ('sin-historia') {
@@ -127,6 +93,8 @@
           <p class="estado estado--vacio">Sin antecedentes registrados.</p>
         }
       </section>
+
+      <app-casos-de-la-historia [historiaClinicaId]="hc.id!" (cambiaron)="huboCambios()" />
 
       <div class="historia__columnas">
         <div class="historia__principal">

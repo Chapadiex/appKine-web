@@ -635,7 +635,7 @@ const SERVICIO_E2E = {
  * administrador de plataforma (ver {@link ingresarComoPlataforma}). Es idempotente: un 409 de
  * codigo repetido significa que otra corrida ya lo creo, y se vuelve a leer el catalogo.
  */
-async function servicioAgendable(api: ApiAkine): Promise<number> {
+export async function servicioAgendable(api: ApiAkine): Promise<number> {
   const servicios = await api.exigir<{ id: number }[]>('GET', '/api/v1/servicios');
   if (servicios.length > 0) {
     return servicios[0].id;

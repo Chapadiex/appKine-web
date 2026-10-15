@@ -32,9 +32,29 @@ describe('traducirErrorCaso', () => {
     expect(r.mensaje.length).toBeGreaterThan(0);
   });
 
-  it('un 409 sin problemType propio es caso-cerrado: no se reintenta', () => {
-    const r = traducirErrorCaso(akine(409));
+  it('caso-clinico-cerrado es caso-cerrado: se ofrece reabrir, no reintentar', () => {
+    const r = traducirErrorCaso(akine(409, 'caso-clinico-cerrado'));
     expect(r.causa).toBe('caso-cerrado');
+  });
+
+  it('el 403 con requiereJustificacion pide el motivo, no dice sin permiso', () => {
+    const r = traducirErrorCaso(
+      new AkineHttpError(
+        403,
+        {
+          type: 'https://akine.app/problems/forbidden',
+          status: 403,
+          requiereJustificacion: true,
+        } as ProblemDetail,
+        false,
+      ),
+    );
+    expect(r.causa).toBe('requiere-justificacion');
+  });
+
+  it('un 409 sin problemType propio es conflicto', () => {
+    const r = traducirErrorCaso(akine(409));
+    expect(r.causa).toBe('conflicto');
     expect(r.mensaje.length).toBeGreaterThan(0);
   });
 

@@ -169,3 +169,47 @@ button.timeline__boton:focus-visible {
   outline: var(--foco-grosor) solid var(--color-foco);
   outline-offset: var(--foco-offset);
 }
+
+/* --- Casos y plan (D-b, D-c) ------------------------------------------------------------ */
+
+.casos {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: var(--esp-3);
+}
+
+.casos__item {
+  padding: var(--esp-4) var(--esp-5);
+  border: var(--borde-fino) solid var(--color-borde);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie);
+}
+
+.casos__titulo {
+  font-weight: var(--peso-semi);
+}
+
+.casos__diagnostico {
+  margin: var(--esp-2) 0;
+}
+
+/* Filas del editor del equipo o de los items del plan: se apilan en pantalla angosta. */
+.fila-editable {
+  display: grid;
+  gap: var(--esp-3);
+  align-items: end;
+  margin-bottom: var(--esp-3);
+}
+
+@media (min-width: 40rem) {
+  .fila-editable {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) auto;
+  }
+}
+
+.avance__barra {
+  width: 100%;
+  max-width: 20rem;
+}

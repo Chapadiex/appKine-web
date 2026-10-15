@@ -8,6 +8,7 @@ import { provideApi } from '../../../../api/generated/provide-api';
 import { errorInterceptor } from '../../../../core/interceptors/error.interceptor';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { TIMEOUT_AXE, esperarSinViolaciones } from '../../../../core/testing/axe';
+import { VisitaClinica } from '../../services/visita-clinica';
 
 const PERSONA = 12;
 const HC = 88;
@@ -62,6 +63,7 @@ describe('HistoriaClinicaPage', () => {
         provideHttpClientTesting(),
         provideRouter([]),
         provideApi(''),
+        VisitaClinica,
       ],
     }).compileComponents();
 
@@ -74,7 +76,11 @@ describe('HistoriaClinicaPage', () => {
     });
   });
 
-  afterEach(() => httpMock.verify());
+  afterEach(() => {
+    // Las ofertas de la sede son accesorias (nombres en los casos): se contestan vacias.
+    httpMock.match((r) => r.url.endsWith('/ofertas')).forEach((r) => r.flush([]));
+    httpMock.verify();
+  });
 
   it('sin relacion asistencial pide motivo, y despues lo manda en cada pedido de la visita', async () => {
     const fixture = await montar();
@@ -89,7 +95,7 @@ describe('HistoriaClinicaPage', () => {
     enviarMotivo(fixture, '   ');
     await estabilizar(fixture);
     httpMock.expectNone((r) => r.url === HISTORIA_POR_PERSONA);
-    expect(texto(fixture)).toContain('Sin motivo no se puede abrir la historia.');
+    expect(texto(fixture)).toContain('Sin motivo no se puede seguir.');
 
     enviarMotivo(fixture, 'Interconsulta');
     const conMotivo = httpMock.expectOne((r) => r.url === HISTORIA_POR_PERSONA);
@@ -99,11 +105,14 @@ describe('HistoriaClinicaPage', () => {
 
     // El timeline y los casos del filtro tambien llevan el motivo: cada lectura se audita.
     const timeline = httpMock.expectOne((r: HttpRequest<unknown>) => r.url === TIMELINE);
-    const casos = httpMock.expectOne((r: HttpRequest<unknown>) => r.url === CASOS);
+    const casos = httpMock.match((r: HttpRequest<unknown>) => r.url === CASOS);
     expect(timeline.request.headers.get(HEADER)).toBe('Interconsulta');
-    expect(casos.request.headers.get(HEADER)).toBe('Interconsulta');
+    expect(casos.length).toBeGreaterThan(0);
+    for (const pedido of casos) {
+      expect(pedido.request.headers.get(HEADER)).toBe('Interconsulta');
+      pedido.flush([]);
+    }
     timeline.flush(PAGINA);
-    casos.flush([]);
     await estabilizar(fixture);
 
     expect(texto(fixture)).toContain('Prueba, Lucia');
@@ -126,7 +135,7 @@ describe('HistoriaClinicaPage', () => {
     httpMock.expectOne((r) => r.url === HISTORIA_POR_PERSONA && r.method === 'PUT').flush(HISTORIA);
     await estabilizar(fixture);
     httpMock.expectOne((r) => r.url === TIMELINE).flush({ eventos: [] });
-    httpMock.expectOne((r) => r.url === CASOS).flush([]);
+    httpMock.match((r) => r.url === CASOS).forEach((r) => r.flush([]));
     await estabilizar(fixture);
 
     expect(texto(fixture)).toContain('Prueba, Lucia');
@@ -154,7 +163,7 @@ describe('HistoriaClinicaPage', () => {
       httpMock.expectOne((r) => r.url === HISTORIA_POR_PERSONA).flush(HISTORIA);
       await estabilizar(fixture);
       httpMock.expectOne((r) => r.url === TIMELINE).flush(PAGINA);
-      httpMock.expectOne((r) => r.url === CASOS).flush([]);
+      httpMock.match((r) => r.url === CASOS).forEach((r) => r.flush([]));
       await estabilizar(fixture);
 
       await esperarSinViolaciones(fixture.nativeElement as HTMLElement);
@@ -164,7 +173,7 @@ describe('HistoriaClinicaPage', () => {
 
   async function montar(): Promise<ComponentFixture<HistoriaClinicaPage>> {
     const fixture = TestBed.createComponent(HistoriaClinicaPage);
-    fixture.componentRef.setInput('personaId', String(PERSONA));
+    TestBed.inject(VisitaClinica).iniciar(PERSONA);
     fixture.detectChanges();
     await fixture.whenStable();
     return fixture;

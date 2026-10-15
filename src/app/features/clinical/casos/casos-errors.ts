@@ -1,145 +1,118 @@
 import { AkineHttpError } from '../../../core/interceptors/error.interceptor';
+import { requiereJustificacion } from '../models/historia-errors';
 
 /**
- * Motivo por el que fallo una operacion sobre casos clinicos.
+ * Por que fallo un pedido de casos clinicos (D-b, M10).
  *
- * <p>Se ramifica por `problemType` y <b>nunca</b> por el texto de `detail`, igual que en el resto de
- * las features: `detail` es prosa y cambia cuando alguien corrige una redaccion.
- *
- * <ul>
- *   <li><b>`version-vieja`</b> (409 `concurrent-modification`): otra pestaña guardo antes. No se
- *       pierde nada: la salida es releer el caso (`ver`) y reintentar.</li>
- *   <li><b>`posible-duplicado`</b> (409 `caso-clinico-posible-duplicado`): ya hay un caso parecido
- *       abierto. Se resuelve confirmando con `confirmaPosibleDuplicado: true`.</li>
- *   <li><b>`caso-cerrado`</b> (409): el caso ya esta cerrado y no admite la operacion. <b>No se
- *       reintenta</b>: no hay version con la que vaya a pasar.</li>
- * </ul>
+ * <p>Cada causa lleva a una accion distinta: `requiere-justificacion` pide el motivo de la visita,
+ * `posible-duplicado` ofrece confirmar, `version-vieja` pide releer, `caso-cerrado` ofrece reabrir.
+ * Por eso no se colapsan en un "error" generico.
  */
 export type CausaCaso =
-  /** 400: un dato del caso no es valido. */
+  | 'requiere-justificacion'
   | 'validacion'
-  /** 403 missing-tenant-context: hay sesion, pero no hay sede elegida. */
   | 'sin-contexto'
-  /** 403 forbidden: falta el permiso en esta sede. */
   | 'sin-permiso'
-  /** 404: el caso o la historia clinica no existen, o son de otro tenant. */
   | 'no-encontrado'
-  /** 409 `concurrent-modification`: otra pestaña guardo antes. Releer y reintentar. */
   | 'version-vieja'
-  /** 409: el caso ya esta cerrado. No hay nada que reintentar. */
   | 'caso-cerrado'
-  /** 409 `caso-clinico-posible-duplicado`: ya hay un caso parecido. Confirmar para seguir. */
   | 'posible-duplicado'
-  /** 409 subscription-suspended: lo emite el filtro, antes del controller. */
+  | 'oferta-no-vigente'
   | 'suscripcion-suspendida'
-  /** Cualquier otro 409. Gana el `detail` del backend. */
   | 'conflicto'
-  /** 429: hay que esperar. */
   | 'limite'
-  /** El request nunca llego: sin red, CORS o servidor caido. */
   | 'red'
   | 'otro';
 
-/** Error ya traducido a algo mostrable. */
 export interface ErrorCaso {
   readonly causa: CausaCaso;
   readonly mensaje: string;
 }
 
-const MENSAJE_GENERICO = 'No pudimos completar la operacion. Volve a intentar en un momento.';
-const MENSAJE_DE_RED =
-  'No se pudo contactar al servidor, asi que lo ultimo que hiciste todavia no esta guardado. ' +
-  'Revisa la conexion y volve a intentar.';
-const MENSAJE_LIMITE = 'Demasiados intentos seguidos. Espera un momento y volve a intentar.';
+const MENSAJES: Readonly<Record<CausaCaso, string>> = {
+  'requiere-justificacion':
+    'No figura que atiendas a esta persona en esta sede: para ver o cambiar sus casos tenes que ' +
+    'declarar el motivo del acceso.',
+  validacion: 'El servidor rechazo un dato del caso clinico. Revisa los campos y volve a intentar.',
+  'sin-contexto':
+    'Para trabajar con casos clinicos hay que saber en que sede estas. Eligi una organizacion y un ' +
+    'consultorio, y volve a entrar. Tu sesion sigue abierta.',
+  'sin-permiso':
+    'No tenes permiso para esta operacion en esta sede. Pediselo a quien administra el centro.',
+  'no-encontrado':
+    'Ese caso no existe o no es de esta organizacion. Volve a la historia clinica para ver los casos.',
+  'version-vieja':
+    'Alguien cambio este caso despues de que lo abriste. No pisamos nada y no perdimos lo que ' +
+    'escribiste: relee el caso y volve a intentar sobre la version nueva.',
+  'caso-cerrado':
+    'Este caso esta cerrado y no admite cambios. Si hay que retomarlo, primero reabrilo con motivo.',
+  'posible-duplicado':
+    'Ya hay un caso activo de la misma oferta para esta persona. Revisalo antes de crear otro: si ' +
+    'de todas formas corresponde uno nuevo, confirma para seguir.',
+  'oferta-no-vigente':
+    'Esa oferta no esta vigente hoy en esta sede, asi que no puede motivar un caso. Elegi otra.',
+  'suscripcion-suspendida':
+    'La suscripcion de la organizacion esta suspendida, asi que no se pueden gestionar casos clinicos.',
+  conflicto:
+    'El servidor rechazo la operacion por un conflicto con lo que ya hay guardado. Relee el caso ' +
+    'para ver el estado actual.',
+  limite: 'Demasiados intentos seguidos. Espera un momento y volve a intentar.',
+  red:
+    'No se pudo contactar al servidor, asi que lo ultimo que hiciste todavia no esta guardado. ' +
+    'Revisa la conexion y volve a intentar.',
+  otro: 'No pudimos completar la operacion. Volve a intentar en un momento.',
+};
 
-const MENSAJE_SIN_CONTEXTO =
-  'Para trabajar con casos clinicos hay que saber en que sede estas. Eligi una organizacion y un ' +
-  'consultorio, y volve a entrar. Tu sesion sigue abierta.';
+/** Las causas en las que el `detail` del backend dice mas que el mensaje de la pantalla. */
+const CON_DETALLE: ReadonlySet<CausaCaso> = new Set(['validacion', 'conflicto']);
 
-const MENSAJE_SIN_PERMISO =
-  'No tenes permiso para esta operacion en esta sede. Pediselo a quien administra el centro.';
-
-const MENSAJE_NO_ENCONTRADO =
-  'Ese caso o esa historia clinica no existen, o no son de esta sede. Volve a entrar de nuevo.';
-
-const MENSAJE_VERSION_VIEJA =
-  'Otra pestaña guardo este caso despues de que vos lo abriste. No pisamos nada y no perdimos lo ' +
-  'que hiciste. Volve a abrir el caso para ver el estado actual y reintenta.';
-
-const MENSAJE_POSIBLE_DUPLICADO =
-  'Ya hay un caso clinico parecido abierto para esta persona. Revisalo antes de crear otro: si de ' +
-  'todas formas corresponde uno nuevo, confirma para seguir.';
-
-const MENSAJE_CASO_CERRADO =
-  'Este caso clinico ya esta cerrado, asi que no admite esta operacion. Si hay que retomarlo, ' +
-  'primero hay que reabrirlo.';
-
-const MENSAJE_SUSCRIPCION_SUSPENDIDA =
-  'La suscripcion de la organizacion esta suspendida, asi que no se pueden gestionar casos clinicos.';
-
-const MENSAJE_CONFLICTO =
-  'El servidor rechazo la operacion por un conflicto con lo que ya hay guardado. Volve a abrir ' +
-  'el caso para ver el estado actual.';
-
-const MENSAJE_VALIDACION =
-  'El servidor rechazo un dato del caso clinico. Revisa los campos y volve a intentar.';
-
-/** Traduce cualquier error de una operacion de casos clinicos. */
 export function traducirErrorCaso(error: unknown): ErrorCaso {
-  if (!(error instanceof AkineHttpError)) {
-    return { mensaje: MENSAJE_GENERICO, causa: 'otro' };
-  }
+  const causa = causaDe(error);
+  const detalle =
+    CON_DETALLE.has(causa) && error instanceof AkineHttpError && error.problem !== null
+      ? error.mensaje
+      : undefined;
+  return { causa, mensaje: detalle ?? MENSAJES[causa] };
+}
 
-  if (error.esDeRed) {
-    return { mensaje: MENSAJE_DE_RED, causa: 'red' };
-  }
+/** El error de una causa conocida sin pasar por HTTP, con su mensaje de siempre. */
+export function errorDeCausaCaso(causa: CausaCaso): ErrorCaso {
+  return { causa, mensaje: MENSAJES[causa] };
+}
 
-  if (error.esRateLimited) {
-    return { mensaje: MENSAJE_LIMITE, causa: 'limite' };
-  }
+function causaDe(error: unknown): CausaCaso {
+  if (!(error instanceof AkineHttpError)) return 'otro';
+  if (error.esDeRed) return 'red';
+  if (error.esRateLimited) return 'limite';
+  if (requiereJustificacion(error)) return 'requiere-justificacion';
 
   switch (error.problemType) {
     case 'missing-tenant-context':
-      return { mensaje: MENSAJE_SIN_CONTEXTO, causa: 'sin-contexto' };
+      return 'sin-contexto';
     case 'subscription-suspended':
-      return { mensaje: MENSAJE_SUSCRIPCION_SUSPENDIDA, causa: 'suscripcion-suspendida' };
+      return 'suscripcion-suspendida';
     case 'concurrent-modification':
-      return { mensaje: MENSAJE_VERSION_VIEJA, causa: 'version-vieja' };
+      return 'version-vieja';
     case 'caso-clinico-posible-duplicado':
-      return { mensaje: MENSAJE_POSIBLE_DUPLICADO, causa: 'posible-duplicado' };
+      return 'posible-duplicado';
+    case 'caso-clinico-cerrado':
+      return 'caso-cerrado';
+    case 'caso-clinico-no-accesible':
+    case 'not-found':
+      // Inexistente y de otro tenant responden igual a proposito: distinguirlos permitiria
+      // enumerar casos ajenos probando ids.
+      return 'no-encontrado';
+    case 'oferta-no-vigente':
+      return 'oferta-no-vigente';
     case 'caso-sin-motivo-de-cierre':
-      return { mensaje: conDetalle(error, MENSAJE_VALIDACION), causa: 'validacion' };
+    case 'validation-error':
+      return 'validacion';
     default:
       break;
   }
-
-  if (error.status === 403) {
-    return { mensaje: MENSAJE_SIN_PERMISO, causa: 'sin-permiso' };
-  }
-
-  if (error.status === 404) {
-    // Inexistente y de otro tenant responden igual a proposito: distinguirlos permitiria
-    // enumerar casos ajenos probando ids.
-    return { mensaje: MENSAJE_NO_ENCONTRADO, causa: 'no-encontrado' };
-  }
-
-  if (error.status === 409) {
-    if (error.problemType) {
-      // Cualquier otro 409 con problemType no reconocido. Gana el detail del backend.
-      return { mensaje: conDetalle(error, MENSAJE_CONFLICTO), causa: 'conflicto' };
-    }
-    // El 409 de caso cerrado no trae un problemType propio: cae aca. No se reintenta.
-    return { mensaje: conDetalle(error, MENSAJE_CASO_CERRADO), causa: 'caso-cerrado' };
-  }
-
-  if (error.status === 400) {
-    return { mensaje: conDetalle(error, MENSAJE_VALIDACION), causa: 'validacion' };
-  }
-
-  return { mensaje: conDetalle(error, MENSAJE_GENERICO), causa: 'otro' };
-}
-
-/** El mensaje del backend, o el de respaldo si el cuerpo no traia `ProblemDetail`. */
-function conDetalle(error: AkineHttpError, respaldo: string): string {
-  return error.problem === null ? respaldo : error.mensaje;
+  if (error.status === 403) return 'sin-permiso';
+  if (error.status === 404) return 'no-encontrado';
+  if (error.status === 409) return 'conflicto';
+  if (error.status === 400) return 'validacion';
+  return 'otro';
 }

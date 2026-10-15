@@ -1,53 +1,39 @@
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
-import {
-  HttpTestingController,
-  TestRequest,
-  provideHttpClientTesting,
-} from '@angular/common/http/testing';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 
 import { PlanPage } from './plan-page';
+import { provideApi } from '../../../api/generated/provide-api';
 import { errorInterceptor } from '../../../core/interceptors/error.interceptor';
 import { TenantContextStore } from '../../../core/services/tenant-context.store';
-import { provideApi } from '../../../api/generated/provide-api';
+import { TIMEOUT_AXE, esperarSinViolaciones } from '../../../core/testing/axe';
+import { VisitaClinica } from '../services/visita-clinica';
 
-const CASO = 12;
-const PLAN = 40;
+const CASO = '/api/v1/casos-clinicos/9';
+const PLANES = `${CASO}/planes`;
+const PLAN = '/api/v1/planes-tratamiento/5';
 
-const LISTA = `/api/v1/casos-clinicos/${CASO}/planes`;
-const VER = `/api/v1/planes-tratamiento/${PLAN}`;
-
-const ITEM = {
-  id: 1,
-  ofertaId: 9,
-  ofertaNombre: 'Kinesiologia',
-  cantidadPlanificada: 10,
+const BORRADOR = {
+  id: 5,
+  numeroPlan: 1,
+  estado: 'BORRADOR',
+  version: 2,
+  versionVigente: {
+    numeroVersion: 1,
+    objetivos: 'Fortalecer',
+    items: [{ id: 1, ofertaId: 14, cantidadPlanificada: 10 }],
+  },
 };
 
-function plan(estado: string, version = 2, items: object[] = [ITEM]) {
-  return {
-    id: PLAN,
-    casoClinicoId: CASO,
-    numeroPlan: 1,
-    estado,
-    version,
-    versionVigente: {
-      id: 7,
-      numeroVersion: 1,
-      objetivos: 'Recuperar flexion',
-      items,
-    },
-  };
-}
-
 /**
- * Spec del plan de tratamiento. Cubre lo que decide comportamiento: que se vea el plan con sus
- * items, que las transiciones manden la version leida, y que los 409 del backend se muestren sin
- * que la pantalla reimplemente la regla (activar sin items, conflicto de version).
+ * El plan de tratamiento (D-c). Lo que el E2E no aisla: que el editor mande exactamente lo que el
+ * contrato pide —la oferta elegida, las cantidades como numeros, sin campos vacios—, que cada
+ * transicion lleve la version leida y que `plan-vivo-en-el-caso` ofrezca ir al plan que ocupa el
+ * lugar.
  */
 describe('PlanPage', () => {
   let httpMock: HttpTestingController;
-  let tenantContext: TenantContextStore;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
@@ -55,168 +41,142 @@ describe('PlanPage', () => {
       providers: [
         provideHttpClient(withInterceptors([errorInterceptor])),
         provideHttpClientTesting(),
+        provideRouter([]),
         provideApi(''),
+        VisitaClinica,
       ],
     }).compileComponents();
-
     httpMock = TestBed.inject(HttpTestingController);
-    tenantContext = TestBed.inject(TenantContextStore);
+    TestBed.inject(TenantContextStore).select({
+      organizationId: 1,
+      organizationName: 'Centro',
+      consultorioId: 3,
+      consultorioName: 'Sede',
+    });
+    TestBed.inject(VisitaClinica).iniciar(12);
   });
 
   afterEach(() => {
+    httpMock.match((r) => r.url.startsWith('/api/v1/organizations')).forEach((r) => r.flush([]));
     httpMock.verify();
   });
 
-  it('muestra el plan con sus items, versiones y avance', async () => {
-    const fixture = await montar(plan('BORRADOR'));
+  it('crear manda el contenido del editor con numeros y sin campos vacios', async () => {
+    const fixture = await montar([]);
+    clic(fixture, 'Crear un plan');
+    escribir(fixture, '#plan-objetivos', 'Fortalecer cuadriceps');
+    escribir(fixture, '#plan-duracion', '6');
+    elegir(fixture, '#item-oferta-0', '14');
+    escribir(fixture, '#item-planificadas-0', '10');
+    clic(fixture, 'Crear el plan');
 
-    expect(texto(fixture)).toContain('BORRADOR');
-    expect(texto(fixture)).toContain('Kinesiologia');
-    expect(texto(fixture)).toContain('Plan en curso.');
-    expect(fixture.nativeElement.querySelectorAll('#plan-versiones li').length).toBe(1);
-    expect(boton(fixture, '#plan-activar')).not.toBeNull();
-  });
-
-  it('sin plan ofrece crearlo y manda el caso de la ruta', async () => {
-    const fixture = await montar(null);
-
-    expect(texto(fixture)).toContain('Crear plan');
-    escribir(fixture, '#plan-objetivos', 'Marcha sin dolor');
-    boton(fixture, '#plan-guardar')!.click();
-
-    const pedido = httpMock.expectOne((r) => r.method === 'POST' && r.url === LISTA);
-    expect((pedido.request.body as { objetivos: string }).objetivos).toBe('Marcha sin dolor');
-    pedido.flush(plan('BORRADOR', 1, []));
-    await recargar(fixture, plan('BORRADOR', 1, []));
-
-    expect(texto(fixture)).toContain('El plan todavia no tiene items.');
-  });
-
-  it('activar sin items muestra el 409 del backend tal cual, sin reglas propias', async () => {
-    const fixture = await montar(plan('BORRADOR', 2, []));
-
-    boton(fixture, '#plan-activar')!.click();
-    const pedido = httpMock.expectOne(`${VER}/activacion`);
-    expect((pedido.request.body as { expectedVersion: number }).expectedVersion).toBe(2);
-    problema(pedido, 409, 'plan-sin-items', 'No se puede activar un plan sin items.');
+    const alta = httpMock.expectOne((r) => r.url === PLANES && r.method === 'POST');
+    expect(alta.request.body).toEqual({
+      objetivos: 'Fortalecer cuadriceps',
+      duracionSemanas: 6,
+      items: [{ ofertaId: 14, cantidadPlanificada: 10 }],
+    });
+    alta.flush(BORRADOR);
     await estabilizar(fixture);
-
-    expect(texto(fixture)).toContain('No se puede activar un plan sin items.');
-    expect(fixture.nativeElement.querySelector('[data-causa="conflicto"]')).not.toBeNull();
+    responderCarga(fixture, [BORRADOR]);
+    await estabilizar(fixture);
+    expect(texto(fixture)).toContain('Se creo el plan en borrador.');
   });
 
-  it('suspender manda motivo y version, y exige el motivo', async () => {
-    const fixture = await montar(plan('ACTIVO', 5));
-
-    expect(boton(fixture, '#plan-suspender')!.disabled).toBe(true);
-    escribir(fixture, '#plan-motivo', 'Viaje del paciente');
-    expect(boton(fixture, '#plan-suspender')!.disabled).toBe(false);
-    boton(fixture, '#plan-suspender')!.click();
-
-    const pedido = httpMock.expectOne(`${VER}/suspension`);
-    expect(pedido.request.body).toEqual({ expectedVersion: 5, motivo: 'Viaje del paciente' });
-    pedido.flush(plan('SUSPENDIDO', 6));
-    await recargar(fixture, plan('SUSPENDIDO', 6));
-
-    expect(texto(fixture)).toContain('SUSPENDIDO');
-    expect(boton(fixture, '#plan-reanudar')).not.toBeNull();
-  });
-
-  it('un conflicto de version avisa y ofrece releer sin perder lo tipeado', async () => {
-    const fixture = await montar(plan('ACTIVO', 3));
-
-    escribir(fixture, '#plan-objetivos', 'Objetivo nuevo');
-    boton(fixture, '#plan-guardar')!.click();
-    problema(
-      httpMock.expectOne((r) => r.method === 'PATCH' && r.url === VER),
-      409,
-      'concurrent-modification',
-      'Version vieja.',
+  it('activar manda la version leida; plan-vivo ofrece ir al que ocupa el lugar', async () => {
+    const fixture = await montar([BORRADOR]);
+    clic(fixture, 'Activar el plan');
+    const activacion = httpMock.expectOne(`${PLAN}/activacion`);
+    expect(activacion.request.body).toEqual({ expectedVersion: 2 });
+    activacion.flush(
+      {
+        type: 'https://akine.app/problems/plan-vivo-en-el-caso',
+        status: 409,
+        planQueOcupaId: 4,
+      },
+      { status: 409, statusText: 'C' },
     );
     await estabilizar(fixture);
-
-    expect(texto(fixture)).toContain('Otra pestaña modifico este plan');
-    expect(editor(fixture, '#plan-objetivos').value).toBe('Objetivo nuevo');
-    expect(boton(fixture, '#plan-releer')).not.toBeNull();
+    expect(texto(fixture)).toContain('otro plan vigente');
+    expect(botones(fixture)).toContain('Ir al plan que ocupa el lugar');
   });
 
-  it('un plan finalizado queda en lectura: sin editor ni transiciones', async () => {
-    const fixture = await montar(plan('FINALIZADO', 9));
+  it(
+    'con un plan cargado no tiene violaciones de accesibilidad',
+    async () => {
+      const fixture = await montar([BORRADOR]);
+      await esperarSinViolaciones(fixture.nativeElement as HTMLElement);
+    },
+    TIMEOUT_AXE,
+  );
 
-    expect(fixture.nativeElement.querySelector('#plan-guardar')).toBeNull();
-    expect(fixture.nativeElement.querySelector('#plan-finalizar')).toBeNull();
-  });
-
-  // -------------------------------------------------------------------------------------
-
-  /** Monta la pantalla y resuelve la carga inicial con `inicial` (null = el caso no tiene plan). */
-  async function montar(
-    inicial: ReturnType<typeof plan> | null,
-  ): Promise<ComponentFixture<PlanPage>> {
-    tenantContext.select({
-      organizationId: 1,
-      organizationName: 'Centro Belgrano',
-      consultorioId: 3,
-      consultorioName: 'Sede Centro',
-    });
+  async function montar(planes: unknown[]): Promise<ComponentFixture<PlanPage>> {
     const fixture = TestBed.createComponent(PlanPage);
-    fixture.componentRef.setInput('casoId', String(CASO));
-    fixture.detectChanges();
-
+    fixture.componentRef.setInput('casoId', '9');
+    await estabilizar(fixture);
     httpMock
-      .expectOne((r) => r.method === 'GET' && r.url === LISTA)
-      .flush(inicial ? [inicial] : []);
-    if (inicial) {
-      await resolverPlan(inicial);
-    }
+      .match((r) => r.url === '/api/v1/consultorios/3/ofertas')
+      .forEach((r) =>
+        r.flush([{ id: 14, nombreComercial: 'Kinesiologia', estado: 'ACTIVO', vigenteHoy: true }]),
+      );
+    responderCarga(fixture, planes);
     await estabilizar(fixture);
     return fixture;
   }
 
-  /** Tras una escritura exitosa la pantalla relee todo. */
-  async function recargar(fixture: ComponentFixture<PlanPage>, nuevo: ReturnType<typeof plan>) {
-    await resolverPlan(nuevo);
-    await estabilizar(fixture);
-  }
-
-  async function resolverPlan(p: ReturnType<typeof plan>): Promise<void> {
-    httpMock.expectOne((r) => r.method === 'GET' && r.url === VER).flush(p);
+  function responderCarga(fixture: ComponentFixture<PlanPage>, planes: unknown[]): void {
     httpMock
-      .expectOne(`${VER}/versiones`)
-      .flush([{ id: 7, numeroVersion: 1, objetivos: 'Recuperar flexion' }]);
-    httpMock
-      .expectOne((r) => r.url === `${VER}/avance`)
-      .flush({ planTratamientoId: PLAN, completo: false, items: [] });
+      .expectOne(CASO)
+      .flush({ id: 9, numeroCaso: 1, estado: 'ACTIVO', diagnosticoPresuntivo: 'Tendinopatia' });
+    httpMock.expectOne((r) => r.url === PLANES && r.method === 'GET').flush(planes);
+    fixture.detectChanges();
+    if (planes.length > 0) {
+      httpMock.expectOne(`${PLAN}/versiones`).flush([BORRADOR.versionVigente]);
+      httpMock
+        .expectOne(`${PLAN}/avance`)
+        .flush({ numeroVersion: 1, items: [{ ofertaId: 14, planificadas: 10, realizadas: 0 }] });
+    }
   }
 
   async function estabilizar(fixture: ComponentFixture<PlanPage>): Promise<void> {
+    fixture.detectChanges();
     await fixture.whenStable();
     fixture.detectChanges();
-  }
-
-  function problema(pedido: TestRequest, status: number, tipo: string, detail: string): void {
-    pedido.flush(
-      { type: `https://akine.app/problems/${tipo}`, status, detail },
-      { status, statusText: 'Conflict' },
-    );
   }
 
   function texto(fixture: ComponentFixture<PlanPage>): string {
     return (fixture.nativeElement as HTMLElement).textContent ?? '';
   }
 
-  function boton(fixture: ComponentFixture<PlanPage>, selector: string): HTMLButtonElement | null {
-    return fixture.nativeElement.querySelector(selector);
+  function botones(fixture: ComponentFixture<PlanPage>): string[] {
+    return Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('button')).map(
+      (b) => b.textContent?.trim() ?? '',
+    );
   }
 
-  function editor(fixture: ComponentFixture<PlanPage>, selector: string): HTMLTextAreaElement {
-    return fixture.nativeElement.querySelector(selector) as HTMLTextAreaElement;
+  function clic(fixture: ComponentFixture<PlanPage>, rotulo: string): void {
+    const boton = Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll('button'),
+    ).find((b) => b.textContent?.trim() === rotulo);
+    if (!boton) throw new Error(`No hay boton "${rotulo}"`);
+    boton.click();
+    fixture.detectChanges();
   }
 
   function escribir(fixture: ComponentFixture<PlanPage>, selector: string, valor: string): void {
-    const campo = editor(fixture, selector);
+    const campo = (fixture.nativeElement as HTMLElement).querySelector(selector) as
+      HTMLInputElement | HTMLTextAreaElement;
     campo.value = valor;
     campo.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+  }
+
+  function elegir(fixture: ComponentFixture<PlanPage>, selector: string, valor: string): void {
+    const select = (fixture.nativeElement as HTMLElement).querySelector(
+      selector,
+    ) as HTMLSelectElement;
+    select.value = valor;
+    select.dispatchEvent(new Event('change'));
     fixture.detectChanges();
   }
 });

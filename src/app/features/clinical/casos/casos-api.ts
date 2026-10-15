@@ -1,82 +1,112 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
+import { CasosClinicosService } from '../../../api/generated/api/casos-clinicos.service';
+import { AbrirCasoClinicoRequest } from '../../../api/generated/model/abrir-caso-clinico-request';
 import { CasoClinico } from '../../../api/generated/model/caso-clinico';
 import { CasoEvento } from '../../../api/generated/model/caso-evento';
-import { AbrirCasoClinicoRequest } from '../../../api/generated/model/abrir-caso-clinico-request';
 import { EditarCasoClinicoRequest } from '../../../api/generated/model/editar-caso-clinico-request';
-import { CerrarCasoClinicoRequest } from '../../../api/generated/model/cerrar-caso-clinico-request';
-import { ReabrirCasoClinicoRequest } from '../../../api/generated/model/reabrir-caso-clinico-request';
-import { EquipoDelCasoRequest } from '../../../api/generated/model/equipo-del-caso-request';
-import { CasosClinicosService } from '../../../api/generated/api/casos-clinicos.service';
+import { IntegranteDelEquipo } from '../../../api/generated/model/integrante-del-equipo';
+import { Justificacion, motivoDeAcceso } from '../services/historia-clinica-api';
 
 /**
- * Unico punto de la feature `clinical` que toca el cliente generado para casos clinicos.
+ * Unico punto de los casos clinicos que toca el cliente generado (D-b, M10).
  *
- * <p>Mismo criterio que `ClinicalApi`: la pantalla depende de esta clase y de los tipos del contrato,
- * nunca del servicio generado directo.
+ * <p>Cada metodo recibe el motivo de acceso de la visita (DP-03): un caso es contenido clinico
+ * —diagnostico, objetivo, motivo de cierre— y su lectura se audita igual que la de la historia.
+ * Tenerlo en la firma hace imposible que una llamada nueva se olvide de mandarlo.
  */
 @Injectable({ providedIn: 'root' })
 export class CasosApi {
-  private readonly casosClinicosService = inject(CasosClinicosService);
+  private readonly casos = inject(CasosClinicosService);
 
-  listar(historiaClinicaId: number, soloActivos?: boolean): Observable<CasoClinico[]> {
-    return this.casosClinicosService.listarCasosClinicos({
+  /** Activos y cerrados, mas recientes primero: un caso cerrado se sigue leyendo entero. */
+  listar(historiaClinicaId: number, justificacion: Justificacion): Observable<CasoClinico[]> {
+    return this.casos.listarCasosClinicos({
       historiaClinicaId,
-      soloActivos,
+      soloActivos: false,
+      ...motivoDeAcceso(justificacion),
     });
   }
 
-  abrir(historiaClinicaId: number, body: AbrirCasoClinicoRequest): Observable<CasoClinico> {
-    return this.casosClinicosService.abrirCasoClinico({
+  abrir(
+    historiaClinicaId: number,
+    abrirCasoClinicoRequest: AbrirCasoClinicoRequest,
+    justificacion: Justificacion,
+  ): Observable<CasoClinico> {
+    return this.casos.abrirCasoClinico({
       historiaClinicaId,
-      abrirCasoClinicoRequest: body,
+      abrirCasoClinicoRequest,
+      ...motivoDeAcceso(justificacion),
     });
   }
 
-  ver(casoClinicoId: number): Observable<CasoClinico> {
-    return this.casosClinicosService.verCasoClinico({
+  ver(casoClinicoId: number, justificacion: Justificacion): Observable<CasoClinico> {
+    return this.casos.verCasoClinico({ casoClinicoId, ...motivoDeAcceso(justificacion) });
+  }
+
+  eventos(casoClinicoId: number, justificacion: Justificacion): Observable<CasoEvento[]> {
+    return this.casos.verEventosDeCasoClinico({
       casoClinicoId,
+      ...motivoDeAcceso(justificacion),
     });
   }
 
-  editar(casoClinicoId: number, body: EditarCasoClinicoRequest): Observable<CasoClinico> {
-    return this.casosClinicosService.editarCasoClinico({
+  editar(
+    casoClinicoId: number,
+    editarCasoClinicoRequest: EditarCasoClinicoRequest,
+    justificacion: Justificacion,
+  ): Observable<CasoClinico> {
+    return this.casos.editarCasoClinico({
       casoClinicoId,
-      editarCasoClinicoRequest: body,
+      editarCasoClinicoRequest,
+      ...motivoDeAcceso(justificacion),
     });
   }
 
-  cerrar(casoClinicoId: number, body: CerrarCasoClinicoRequest): Observable<CasoClinico> {
-    return this.casosClinicosService.cerrarCasoClinico({
+  /** El motivo es obligatorio: queda en el historial del caso (RF-M10-005). */
+  cerrar(
+    casoClinicoId: number,
+    motivo: string,
+    expectedVersion: number,
+    justificacion: Justificacion,
+  ): Observable<CasoClinico> {
+    return this.casos.cerrarCasoClinico({
       casoClinicoId,
-      cerrarCasoClinicoRequest: body,
+      cerrarCasoClinicoRequest: { motivo, expectedVersion },
+      ...motivoDeAcceso(justificacion),
     });
   }
 
-  reabrir(casoClinicoId: number, body: ReabrirCasoClinicoRequest): Observable<CasoClinico> {
-    return this.casosClinicosService.reabrirCasoClinico({
+  /** Vuelve a ACTIVO y deja el cierre anterior en el historial (RF-M10-006). */
+  reabrir(
+    casoClinicoId: number,
+    motivo: string,
+    expectedVersion: number,
+    justificacion: Justificacion,
+  ): Observable<CasoClinico> {
+    return this.casos.reabrirCasoClinico({
       casoClinicoId,
-      reabrirCasoClinicoRequest: body,
+      reabrirCasoClinicoRequest: { motivo, expectedVersion },
+      ...motivoDeAcceso(justificacion),
     });
   }
 
   /**
-   * Cambia el equipo responsable del caso.
-   *
-   * <p><b>Devuelve la version LEIDA, no la nueva.</b> Encadenar dos cambios de equipo genera un 409
-   * de `concurrent-modification`: releer el caso y reintentar.
+   * Reemplazo completo del equipo. Desde `appKine-api` #109 la respuesta trae la version NUEVA
+   * (`leida + 1`): un segundo cambio encadenado sobre esa respuesta pasa, y uno concurrente desde
+   * otra pestaña recibe `concurrent-modification`.
    */
-  cambiarEquipo(casoClinicoId: number, body: EquipoDelCasoRequest): Observable<CasoClinico> {
-    return this.casosClinicosService.cambiarEquipoDeCasoClinico({
+  cambiarEquipo(
+    casoClinicoId: number,
+    integrantes: IntegranteDelEquipo[],
+    expectedVersion: number,
+    justificacion: Justificacion,
+  ): Observable<CasoClinico> {
+    return this.casos.cambiarEquipoDeCasoClinico({
       casoClinicoId,
-      equipoDelCasoRequest: body,
-    });
-  }
-
-  eventos(casoClinicoId: number): Observable<CasoEvento[]> {
-    return this.casosClinicosService.verEventosDeCasoClinico({
-      casoClinicoId,
+      equipoDelCasoRequest: { integrantes, expectedVersion },
+      ...motivoDeAcceso(justificacion),
     });
   }
 }

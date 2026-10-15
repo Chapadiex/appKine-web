@@ -1,10 +1,12 @@
-import { Page, expect, test } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
 import { sql } from './support/akine';
+import { navegar } from './support/agenda-real';
 import {
   HistoriaSembrada,
   MOTIVO_DE_ACCESO,
   TEXTO_DE_LA_ENTRADA,
+  abrirHistoriaConMotivo,
   entrarConContexto,
   sembrarHistoria,
 } from './support/historia-clinica';
@@ -18,22 +20,14 @@ import {
  * siempre declarar el motivo.
  */
 
-/** Entra, abre la historia sembrada y declara el motivo: la cuenta no tiene relacion asistencial. */
-async function abrirHistoriaConMotivo(page: Page, sembrada: HistoriaSembrada): Promise<void> {
-  await entrarConContexto(page, sembrada);
-  await page.goto(`/historia-clinica/personas/${sembrada.personaId}`);
-  await page.getByRole('textbox', { name: 'Motivo del acceso' }).fill(MOTIVO_DE_ACCESO);
-  await page.getByRole('button', { name: 'Ver la historia clinica' }).click();
-}
-
 test.describe('Historia clinica - timeline (D-a)', () => {
-  // Cada test siembra una organizacion, y el alta esta limitada a 5 por minuto: el helper espera
-  // turno (`esperarCupoDeRegistro`), y esa espera no puede comerse los 30 s por defecto.
-  test.describe.configure({ timeout: 120_000 });
+  // Se siembra UNA vez para el archivo: el alta esta limitada a 5 por minuto y cada sembrado da de
+  // alta dos cuentas. Los tests no dependen del orden: el que cuenta hechos cuenta antes y despues.
+  test.describe.configure({ mode: 'default', timeout: 120_000 });
 
   let sembrada: HistoriaSembrada;
 
-  test.beforeEach(async ({ request }) => {
+  test.beforeAll(async ({ request }) => {
     sembrada = await sembrarHistoria(request);
   });
 
@@ -41,12 +35,12 @@ test.describe('Historia clinica - timeline (D-a)', () => {
     page,
   }) => {
     await entrarConContexto(page, sembrada);
-    await page.goto(`/historia-clinica/personas/${sembrada.personaId}`);
+    await navegar(page, `/historia-clinica/personas/${sembrada.personaId}`);
 
     await expect(page.getByRole('heading', { name: 'Declara el motivo del acceso' })).toBeVisible();
     // Sin motivo no se manda nada: el campo obligatorio frena el envio.
     await page.getByRole('button', { name: 'Ver la historia clinica' }).click();
-    await expect(page.getByText('Sin motivo no se puede abrir la historia.')).toBeVisible();
+    await expect(page.getByText('Sin motivo no se puede seguir.')).toBeVisible();
 
     await page.getByRole('textbox', { name: 'Motivo del acceso' }).fill(MOTIVO_DE_ACCESO);
     await page.getByRole('button', { name: 'Ver la historia clinica' }).click();
@@ -120,7 +114,8 @@ test.describe('Historia clinica - timeline (D-a)', () => {
     await abrirHistoriaConMotivo(page, sembrada);
 
     const timeline = page.getByRole('list', { name: /Hechos clinicos/ });
-    await expect(timeline.getByRole('listitem')).toHaveCount(2);
+    await expect(timeline.getByRole('listitem').first()).toBeVisible();
+    const antes = await timeline.getByRole('listitem').count();
 
     await page.getByText('Nueva entrada clinica').click();
     await page.getByRole('combobox', { name: 'Tipo de entrada' }).selectOption('INDICACION');
@@ -129,7 +124,7 @@ test.describe('Historia clinica - timeline (D-a)', () => {
       .fill('Ejercicios de movilidad, 3 series diarias.');
     await page.getByRole('button', { name: 'Registrar entrada' }).click();
 
-    await expect(timeline.getByRole('listitem')).toHaveCount(3);
+    await expect(timeline.getByRole('listitem')).toHaveCount(antes + 1);
     await expect(timeline.getByRole('button', { name: /Indicacion/ })).toBeVisible();
   });
 });

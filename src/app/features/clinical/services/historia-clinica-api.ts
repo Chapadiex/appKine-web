@@ -47,12 +47,15 @@ export class HistoriaClinicaApi {
 
   /** La historia de la persona. 404 si no tiene: leer no la abre. */
   ver(personaId: number, justificacion: Justificacion): Observable<HistoriaClinicaResponse> {
-    return this.historias.verHistoriaClinica({ personaId, ...motivo(justificacion) });
+    return this.historias.verHistoriaClinica({ personaId, ...motivoDeAcceso(justificacion) });
   }
 
   /** Abre la historia o devuelve la que ya tenia. Idempotente: un doble click no duplica nada. */
   abrir(personaId: number, justificacion: Justificacion): Observable<HistoriaClinicaResponse> {
-    return this.historias.abrirOObtenerHistoriaClinica({ personaId, ...motivo(justificacion) });
+    return this.historias.abrirOObtenerHistoriaClinica({
+      personaId,
+      ...motivoDeAcceso(justificacion),
+    });
   }
 
   /**
@@ -70,7 +73,7 @@ export class HistoriaClinicaApi {
       limite: TAMANO_DE_PAGINA,
       ...(cursor === null ? {} : { cursor }),
       ...(casoId === null ? {} : { casoId }),
-      ...motivo(justificacion),
+      ...motivoDeAcceso(justificacion),
     });
   }
 
@@ -79,7 +82,7 @@ export class HistoriaClinicaApi {
     return this.casos.listarCasosClinicos({
       historiaClinicaId,
       soloActivos: false,
-      ...motivo(justificacion),
+      ...motivoDeAcceso(justificacion),
     });
   }
 
@@ -87,7 +90,7 @@ export class HistoriaClinicaApi {
     entradaClinicaId: number,
     justificacion: Justificacion,
   ): Observable<EntradaClinicaResponse> {
-    return this.entradas.verEntradaClinica({ entradaClinicaId, ...motivo(justificacion) });
+    return this.entradas.verEntradaClinica({ entradaClinicaId, ...motivoDeAcceso(justificacion) });
   }
 
   versiones(
@@ -96,7 +99,7 @@ export class HistoriaClinicaApi {
   ): Observable<EntradaClinicaVersionResponse[]> {
     return this.entradas.verVersionesDeEntradaClinica({
       entradaClinicaId,
-      ...motivo(justificacion),
+      ...motivoDeAcceso(justificacion),
     });
   }
 
@@ -109,7 +112,7 @@ export class HistoriaClinicaApi {
     return this.entradas.registrarEntradaClinica({
       historiaClinicaId,
       registrarEntradaClinicaRequest: { tipo, cuerpo },
-      ...motivo(justificacion),
+      ...motivoDeAcceso(justificacion),
     });
   }
 
@@ -129,7 +132,7 @@ export class HistoriaClinicaApi {
     return this.entradas.enmendarEntradaClinica({
       entradaClinicaId,
       enmendarEntradaClinicaRequest: { cuerpo, motivo: motivoDeEnmienda, expectedVersion },
-      ...motivo(justificacion),
+      ...motivoDeAcceso(justificacion),
     });
   }
 
@@ -144,7 +147,7 @@ export class HistoriaClinicaApi {
     justificacion: Justificacion,
   ): Observable<HttpResponse<Blob>> {
     return this.adjuntos.descargarAdjuntoClinico(
-      { historiaClinicaId, adjuntoId, ...motivo(justificacion) },
+      { historiaClinicaId, adjuntoId, ...motivoDeAcceso(justificacion) },
       'response',
       false,
       { httpHeaderAccept: 'application/octet-stream' },
@@ -163,12 +166,12 @@ export class HistoriaClinicaApi {
       categoria,
       archivo,
       ...(titulo === '' ? {} : { titulo }),
-      ...motivo(justificacion),
+      ...motivoDeAcceso(justificacion),
     });
   }
 }
 
 /** El header va solo si hay motivo: mandarlo vacio no es "sin motivo", es un motivo invalido. */
-function motivo(justificacion: Justificacion): { xJustificacionAcceso?: string } {
+export function motivoDeAcceso(justificacion: Justificacion): { xJustificacionAcceso?: string } {
   return justificacion === null ? {} : { xJustificacionAcceso: justificacion };
 }
