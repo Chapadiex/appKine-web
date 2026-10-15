@@ -3,6 +3,7 @@ import { PERMISO_CAJA_OPERATE, PERMISO_COLABORADOR_READ } from '../../core/model
 import { PERMISO_COBRO_REGISTER as PERMISO_PRESENTACIONES } from '../../core/models/permisos';
 import { PERMISO_REPORTE_READ } from '../../core/models/permisos';
 import { PERMISO_PACIENTE_READ } from '../../core/models/permisos';
+import { PERMISO_INSCRIPCION_READ } from '../../core/models/permisos';
 
 /** Una entrada de la navegacion principal. */
 export interface Seccion {
@@ -77,6 +78,8 @@ export interface Seccion {
 export const SECCIONES: readonly Seccion[] = [
   { etiqueta: 'Agenda', ruta: '/agenda' },
   { etiqueta: 'Pacientes', ruta: '/pacientes', permisos: [PERMISO_PACIENTE_READ] },
+  // Asistencia a clases (F9). `asistencia.routes.ts` exige `inscripcion:read` en las dos rutas.
+  { etiqueta: 'Asistencia', ruta: '/asistencia', permisos: [PERMISO_INSCRIPCION_READ] },
   { etiqueta: 'Espacios', ruta: '/espacios' },
   { etiqueta: 'Horarios', ruta: RUTA_HORARIOS, permisos: [PERMISO_COLABORADOR_READ] },
   { etiqueta: 'Catalogo', ruta: '/catalogo' },

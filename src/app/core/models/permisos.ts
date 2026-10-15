@@ -149,3 +149,14 @@ export const PERMISO_REPORTE_READ = 'reporte:read';
  * la historia. Por eso no se usa en un `permissionGuard`.
  */
 export const PERMISO_HC_READ = 'hc:read';
+
+/**
+ * Asistencia de clases (F9, AKINE-08.03). Copiados de `activity.domain.PermissionCodes`.
+ *
+ * <p>Tres codigos y no uno, porque el backend los separa: tomar lista es `asistencia:manage`, ver
+ * quien esta anotado es `inscripcion:read` —que no es `clase:read`: quien mira la grilla del dia
+ * no necesita saber quien esta inscripto— e iniciar o cerrar la clase es `clase:manage`.
+ */
+export const PERMISO_ASISTENCIA_MANAGE = 'asistencia:manage';
+export const PERMISO_INSCRIPCION_READ = 'inscripcion:read';
+export const PERMISO_CLASE_MANAGE = 'clase:manage';
