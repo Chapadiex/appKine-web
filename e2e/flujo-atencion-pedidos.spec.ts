@@ -67,7 +67,12 @@ test.describe('Pedidos de la atencion clinica contra el backend real', () => {
           profesional,
           'POST',
           `/api/v1/historias-clinicas/${historia.id}/casos`,
-          { ofertaId: oferta.id, diagnosticoPresuntivo: diagnostico },
+          // El segundo comparte oferta con el primero: se declara que es otro problema.
+          {
+            ofertaId: oferta.id,
+            diagnosticoPresuntivo: diagnostico,
+            confirmaPosibleDuplicado: casos.length > 0,
+          },
           JUSTIFICACION,
         ),
       );
@@ -84,7 +89,7 @@ test.describe('Pedidos de la atencion clinica contra el backend real', () => {
     const inicio = respuestaDe(page, 'POST', /\/sesiones\/turnos\/\d+$/);
     await page.getByRole('button', { name: 'Iniciar la atencion' }).click();
     const sesion = (await (await inicio).json()) as { id: number; casoId?: number };
-    expect(sesion.casoId).toBeUndefined();
+    expect(sesion.casoId ?? null).toBeNull();
     await expect(page.getByRole('heading', { name: 'Atencion en curso' })).toBeVisible();
 
     // --- Se asocia un caso con la atencion abierta, y despues se cambia ------------------
