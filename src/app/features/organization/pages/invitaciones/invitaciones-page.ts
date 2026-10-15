@@ -11,7 +11,7 @@ import {
 } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { catchError, of } from 'rxjs';
+import { Subscription, catchError, of } from 'rxjs';
 
 import { ConfirmacionConMotivo } from '../../../../shared/components/confirmacion-con-motivo/confirmacion-con-motivo';
 import { CreateInvitacionRequest } from '../../../../api/generated/model/create-invitacion-request';
@@ -156,7 +156,16 @@ export class InvitacionesPage {
     });
   }
 
+  /**
+   * El listado en vuelo. Una relectura nueva lo cancela: con dos en vuelo —cancelar una invitacion
+   * relee las pendientes y enseguida se elige otro filtro— ganaba la respuesta que llegaba ULTIMA, y
+   * la pantalla mostraba las pendientes bajo el filtro de canceladas (lo destapo el E2E contra el
+   * backend real, `flujo-invitaciones`).
+   */
+  private listado: Subscription | null = null;
+
   protected cargar(): void {
+    this.listado?.unsubscribe();
     const orgId = this.tenantContext.organizationId();
     if (orgId === null) {
       this.estado.set({ tipo: 'sin-contexto' });
@@ -166,7 +175,7 @@ export class InvitacionesPage {
     this.estado.set({ tipo: 'cargando' });
     const filtro = this.filtro();
 
-    this.invitaciones
+    this.listado = this.invitaciones
       .listColaboradorInvitaciones({
         orgId,
         estado: filtro === 'TODAS' ? undefined : filtro,

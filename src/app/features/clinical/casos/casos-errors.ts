@@ -1,0 +1,118 @@
+import { AkineHttpError } from '../../../core/interceptors/error.interceptor';
+import { requiereJustificacion } from '../models/historia-errors';
+
+/**
+ * Por que fallo un pedido de casos clinicos (D-b, M10).
+ *
+ * <p>Cada causa lleva a una accion distinta: `requiere-justificacion` pide el motivo de la visita,
+ * `posible-duplicado` ofrece confirmar, `version-vieja` pide releer, `caso-cerrado` ofrece reabrir.
+ * Por eso no se colapsan en un "error" generico.
+ */
+export type CausaCaso =
+  | 'requiere-justificacion'
+  | 'validacion'
+  | 'sin-contexto'
+  | 'sin-permiso'
+  | 'no-encontrado'
+  | 'version-vieja'
+  | 'caso-cerrado'
+  | 'posible-duplicado'
+  | 'oferta-no-vigente'
+  | 'suscripcion-suspendida'
+  | 'conflicto'
+  | 'limite'
+  | 'red'
+  | 'otro';
+
+export interface ErrorCaso {
+  readonly causa: CausaCaso;
+  readonly mensaje: string;
+}
+
+const MENSAJES: Readonly<Record<CausaCaso, string>> = {
+  'requiere-justificacion':
+    'No figura que atiendas a esta persona en esta sede: para ver o cambiar sus casos tenes que ' +
+    'declarar el motivo del acceso.',
+  validacion: 'El servidor rechazo un dato del caso clinico. Revisa los campos y volve a intentar.',
+  'sin-contexto':
+    'Para trabajar con casos clinicos hay que saber en que sede estas. Eligi una organizacion y un ' +
+    'consultorio, y volve a entrar. Tu sesion sigue abierta.',
+  'sin-permiso':
+    'No tenes permiso para esta operacion en esta sede. Pediselo a quien administra el centro.',
+  'no-encontrado':
+    'Ese caso no existe o no es de esta organizacion. Volve a la historia clinica para ver los casos.',
+  'version-vieja':
+    'Alguien cambio este caso despues de que lo abriste. No pisamos nada y no perdimos lo que ' +
+    'escribiste: relee el caso y volve a intentar sobre la version nueva.',
+  'caso-cerrado':
+    'Este caso esta cerrado y no admite cambios. Si hay que retomarlo, primero reabrilo con motivo.',
+  'posible-duplicado':
+    'Ya hay un caso activo de la misma oferta para esta persona. Revisalo antes de crear otro: si ' +
+    'de todas formas corresponde uno nuevo, confirma para seguir.',
+  'oferta-no-vigente':
+    'Esa oferta no esta vigente hoy en esta sede, asi que no puede motivar un caso. Elegi otra.',
+  'suscripcion-suspendida':
+    'La suscripcion de la organizacion esta suspendida, asi que no se pueden gestionar casos clinicos.',
+  conflicto:
+    'El servidor rechazo la operacion por un conflicto con lo que ya hay guardado. Relee el caso ' +
+    'para ver el estado actual.',
+  limite: 'Demasiados intentos seguidos. Espera un momento y volve a intentar.',
+  red:
+    'No se pudo contactar al servidor, asi que lo ultimo que hiciste todavia no esta guardado. ' +
+    'Revisa la conexion y volve a intentar.',
+  otro: 'No pudimos completar la operacion. Volve a intentar en un momento.',
+};
+
+/** Las causas en las que el `detail` del backend dice mas que el mensaje de la pantalla. */
+const CON_DETALLE: ReadonlySet<CausaCaso> = new Set(['validacion', 'conflicto']);
+
+export function traducirErrorCaso(error: unknown): ErrorCaso {
+  const causa = causaDe(error);
+  const detalle =
+    CON_DETALLE.has(causa) && error instanceof AkineHttpError && error.problem !== null
+      ? error.mensaje
+      : undefined;
+  return { causa, mensaje: detalle ?? MENSAJES[causa] };
+}
+
+/** El error de una causa conocida sin pasar por HTTP, con su mensaje de siempre. */
+export function errorDeCausaCaso(causa: CausaCaso): ErrorCaso {
+  return { causa, mensaje: MENSAJES[causa] };
+}
+
+function causaDe(error: unknown): CausaCaso {
+  if (!(error instanceof AkineHttpError)) return 'otro';
+  if (error.esDeRed) return 'red';
+  if (error.esRateLimited) return 'limite';
+  if (requiereJustificacion(error)) return 'requiere-justificacion';
+
+  switch (error.problemType) {
+    case 'missing-tenant-context':
+      return 'sin-contexto';
+    case 'subscription-suspended':
+      return 'suscripcion-suspendida';
+    case 'concurrent-modification':
+      return 'version-vieja';
+    case 'caso-clinico-posible-duplicado':
+      return 'posible-duplicado';
+    case 'caso-clinico-cerrado':
+      return 'caso-cerrado';
+    case 'caso-clinico-no-accesible':
+    case 'not-found':
+      // Inexistente y de otro tenant responden igual a proposito: distinguirlos permitiria
+      // enumerar casos ajenos probando ids.
+      return 'no-encontrado';
+    case 'oferta-no-vigente':
+      return 'oferta-no-vigente';
+    case 'caso-sin-motivo-de-cierre':
+    case 'validation-error':
+      return 'validacion';
+    default:
+      break;
+  }
+  if (error.status === 403) return 'sin-permiso';
+  if (error.status === 404) return 'no-encontrado';
+  if (error.status === 409) return 'conflicto';
+  if (error.status === 400) return 'validacion';
+  return 'otro';
+}

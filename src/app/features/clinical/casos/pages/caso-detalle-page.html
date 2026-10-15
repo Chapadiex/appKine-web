@@ -1,0 +1,275 @@
+<h1>Caso clinico</h1>
+
+<p><a class="enlace" [routerLink]="visita.rutaHistoria()">Volver a la historia clinica</a></p>
+
+@switch (estado().tipo) {
+  @case ('cargando') {
+    <p class="estado estado--cargando" role="status">Cargando el caso…</p>
+  }
+
+  @case ('requiere-justificacion') {
+    <app-pedido-de-motivo que="este caso clinico" accion="Ver el caso" />
+  }
+
+  @case ('error') {
+    <section class="tarjeta" role="alert" aria-labelledby="titulo-error-caso">
+      @if (estado(); as e) {
+        @if (e.tipo === 'error') {
+          <h2 id="titulo-error-caso">No se pudo abrir el caso</h2>
+          <p class="estado estado--error">{{ e.error.mensaje }}</p>
+          @if (e.error.causa !== 'sin-permiso' && e.error.causa !== 'no-encontrado') {
+            <div class="acciones">
+              <button type="button" class="boton boton--secundario" (click)="releer()">
+                Reintentar
+              </button>
+            </div>
+          }
+        }
+      }
+    </section>
+  }
+
+  @case ('listo') {
+    @if (caso(); as c) {
+      <section class="tarjeta" aria-labelledby="titulo-caso">
+        <h2 id="titulo-caso">Caso {{ c.numeroCaso }} · {{ nombreDeOferta() }}</h2>
+        <dl class="detalle">
+          <dt>Estado</dt>
+          <dd data-testid="caso-estado">{{ estadoEnPalabras() }}</dd>
+          <dt>Abierto</dt>
+          <dd>{{ fechaYHora(c.abiertoEn) }}</dd>
+          @if (c.cerradoEn) {
+            <dt>Cerrado</dt>
+            <dd>{{ fechaYHora(c.cerradoEn) }}</dd>
+          }
+          @if (c.motivoCierre) {
+            <dt>Motivo del cierre</dt>
+            <dd class="historia__cuerpo">{{ c.motivoCierre }}</dd>
+          }
+        </dl>
+
+        <h3>Diagnostico presuntivo</h3>
+        <p class="historia__cuerpo">{{ c.diagnosticoPresuntivo }}</p>
+        <h3>Objetivo terapeutico</h3>
+        @if (c.objetivoTerapeutico) {
+          <p class="historia__cuerpo">{{ c.objetivoTerapeutico }}</p>
+        } @else {
+          <p class="estado estado--vacio">Sin objetivo cargado.</p>
+        }
+
+        <div class="acciones">
+          <a class="boton boton--secundario" [routerLink]="visita.rutaPlan(c.id!)">
+            Ver el plan de tratamiento
+          </a>
+        </div>
+      </section>
+
+      <p class="estado estado--ok" role="status">{{ aviso() }}</p>
+      @if (errorDeOperacion(); as problema) {
+        <div class="tarjeta" role="alert">
+          <p class="estado estado--error">{{ problema.mensaje }}</p>
+          @if (problema.causa === 'version-vieja' || problema.causa === 'conflicto') {
+            <div class="acciones">
+              <button type="button" class="boton boton--secundario" (click)="releer()">
+                Releer el caso
+              </button>
+            </div>
+          }
+        </div>
+      }
+
+      <div class="historia__columnas">
+        <div class="historia__principal">
+          <section class="tarjeta" aria-labelledby="titulo-equipo">
+            <h2 id="titulo-equipo">Equipo tratante</h2>
+            <p class="ayuda">
+              El rol no da ni quita permisos: dice quien responde por el caso. Quien sale del equipo
+              sigue figurando en el historial, porque trato el caso.
+            </p>
+            @if (equipo().length === 0) {
+              <p class="estado estado--vacio">El caso no tiene equipo asignado.</p>
+            } @else {
+              <ul class="casos" aria-label="Integrantes del equipo">
+                @for (integrante of equipo(); track integrante.membershipId) {
+                  <li class="casos__item fila-editable">
+                    <span>{{ nombreDe(integrante.membershipId) }}</span>
+                    @if (activo()) {
+                      <select
+                        [attr.aria-label]="'Rol de ' + nombreDe(integrante.membershipId)"
+                        [value]="integrante.rol"
+                        (change)="cambiarRol(integrante.membershipId, $any($event.target).value)"
+                      >
+                        @for (rol of roles; track rol) {
+                          <option [value]="rol">{{ rotuloDeRol(rol) }}</option>
+                        }
+                      </select>
+                      <button
+                        type="button"
+                        class="boton boton--secundario"
+                        [attr.aria-label]="'Quitar a ' + nombreDe(integrante.membershipId)"
+                        (click)="quitar(integrante.membershipId)"
+                      >
+                        Quitar
+                      </button>
+                    } @else {
+                      <span>{{ rotuloDeRol(integrante.rol) }}</span>
+                    }
+                  </li>
+                }
+              </ul>
+            }
+
+            @if (activo()) {
+              <div class="fila-editable">
+                <div class="campo">
+                  <label for="equipo-nuevo">Sumar un profesional</label>
+                  <select
+                    id="equipo-nuevo"
+                    [value]="nuevoIntegrante() ?? ''"
+                    (change)="elegirNuevoIntegrante($any($event.target).value)"
+                  >
+                    <option value="">Elegi un profesional habilitado</option>
+                    @for (p of candidatos(); track p.membershipId) {
+                      <option [value]="p.membershipId">{{ p.nombre }}</option>
+                    }
+                  </select>
+                </div>
+                <div class="campo">
+                  <label for="equipo-rol">Rol</label>
+                  <select
+                    id="equipo-rol"
+                    [value]="nuevoRol()"
+                    (change)="elegirNuevoRol($any($event.target).value)"
+                  >
+                    @for (rol of roles; track rol) {
+                      <option [value]="rol">{{ rotuloDeRol(rol) }}</option>
+                    }
+                  </select>
+                </div>
+                <button
+                  type="button"
+                  class="boton boton--secundario"
+                  [disabled]="nuevoIntegrante() === null"
+                  (click)="sumar()"
+                >
+                  Sumar
+                </button>
+              </div>
+              <div class="acciones">
+                <button
+                  type="button"
+                  class="boton"
+                  [disabled]="!equipoCambiado() || enVuelo() !== null"
+                  (click)="guardarEquipo()"
+                >
+                  @if (enVuelo() === 'equipo') {
+                    Guardando…
+                  } @else {
+                    Guardar el equipo
+                  }
+                </button>
+              </div>
+            }
+          </section>
+
+          <section class="tarjeta" aria-labelledby="titulo-historial-caso">
+            <h2 id="titulo-historial-caso">Historial del caso</h2>
+            @if (eventos().length === 0) {
+              <p class="estado estado--vacio">Sin movimientos registrados.</p>
+            } @else {
+              <ol class="casos" aria-label="Movimientos del caso">
+                @for (evento of eventos(); track evento.id) {
+                  <li class="casos__item">
+                    <b>{{ rotuloDeEvento(evento.tipo) }}</b> · {{ fechaYHora(evento.ocurrioEn) }}
+                    @if (evento.motivo) {
+                      <p class="historia__cuerpo">Motivo: {{ evento.motivo }}</p>
+                    }
+                  </li>
+                }
+              </ol>
+            }
+          </section>
+        </div>
+
+        <div class="historia__lateral">
+          @if (activo()) {
+            <section class="tarjeta" aria-labelledby="titulo-editar-caso">
+              <h2 id="titulo-editar-caso">Editar el caso</h2>
+              <form (submit)="$event.preventDefault(); guardarEdicion()">
+                <div class="campo">
+                  <label for="caso-editar-diagnostico">Diagnostico presuntivo</label>
+                  <textarea
+                    id="caso-editar-diagnostico"
+                    rows="3"
+                    [value]="diagnostico()"
+                    [attr.aria-invalid]="faltaDiagnostico()"
+                    (input)="diagnostico.set($any($event.target).value)"
+                  ></textarea>
+                  @if (faltaDiagnostico()) {
+                    <p class="campo__error">El diagnostico presuntivo es obligatorio.</p>
+                  }
+                </div>
+                <div class="campo">
+                  <label for="caso-editar-objetivo">Objetivo terapeutico</label>
+                  <textarea
+                    id="caso-editar-objetivo"
+                    rows="3"
+                    [value]="objetivo()"
+                    (input)="objetivo.set($any($event.target).value)"
+                  ></textarea>
+                </div>
+                <div class="acciones">
+                  <button
+                    type="submit"
+                    class="boton boton--secundario"
+                    [disabled]="enVuelo() !== null || faltaDiagnostico()"
+                  >
+                    Guardar cambios
+                  </button>
+                </div>
+              </form>
+            </section>
+          }
+
+          <section class="tarjeta" aria-labelledby="titulo-cierre">
+            <h2 id="titulo-cierre">{{ activo() ? 'Cerrar el caso' : 'Reabrir el caso' }}</h2>
+            <p class="ayuda">
+              @if (activo()) {
+                Cerrar no borra nada: el caso sigue en la historia y se puede reabrir. El motivo
+                queda en el historial.
+              } @else {
+                Reabrir vuelve el caso a activo. La numeracion de sesiones continua donde quedo y el
+                cierre anterior sigue en el historial.
+              }
+            </p>
+            <form (submit)="$event.preventDefault(); cerrarOReabrir()">
+              <div class="campo">
+                <label for="caso-motivo">
+                  {{ activo() ? 'Motivo del cierre' : 'Motivo de la reapertura' }}
+                </label>
+                <textarea
+                  id="caso-motivo"
+                  rows="2"
+                  [value]="motivo()"
+                  [attr.aria-invalid]="intentoMotivo() && faltaMotivo()"
+                  [attr.aria-describedby]="
+                    intentoMotivo() && faltaMotivo() ? 'caso-motivo-error' : null
+                  "
+                  (input)="motivo.set($any($event.target).value)"
+                ></textarea>
+                @if (intentoMotivo() && faltaMotivo()) {
+                  <p id="caso-motivo-error" class="campo__error">El motivo es obligatorio.</p>
+                }
+              </div>
+              <div class="acciones">
+                <button type="submit" class="boton" [disabled]="enVuelo() !== null">
+                  {{ activo() ? 'Cerrar el caso' : 'Reabrir el caso' }}
+                </button>
+              </div>
+            </form>
+          </section>
+        </div>
+      </div>
+    }
+  }
+}
