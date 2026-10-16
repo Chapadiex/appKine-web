@@ -7,11 +7,11 @@ import {
   AtencionDeParticipanteEstadoEnum,
 } from '../../../../api/generated/model/atencion-de-participante';
 import { AtencionGrupal } from '../../../../api/generated/model/atencion-grupal';
+import { Clase } from '../../../../api/generated/model/clase';
 import {
   DerivacionDeParticipante,
   DerivacionDeParticipanteEstadoEnum,
 } from '../../../../api/generated/model/derivacion-de-participante';
-import { DetalleOperativoDeClase } from '../../../../api/generated/model/detalle-operativo-de-clase';
 import { ParticipanteEnAtencionGrupal } from '../../../../api/generated/model/participante-en-atencion-grupal';
 import { ResultadoDeAtencionGrupal } from '../../../../api/generated/model/resultado-de-atencion-grupal';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
@@ -30,10 +30,10 @@ type EstadoCarga =
   | {
       readonly tipo: 'listo';
       readonly panel: AtencionGrupal;
-      readonly clase: DetalleOperativoDeClase | null;
+      readonly clase: Clase | null;
     };
 
-/** Un participante del panel, con el nombre que trae el detalle operativo. */
+/** Un participante del panel, con el nombre que el panel trae del padron. */
 export interface FilaDeAtencion {
   readonly inscripcionId: number;
   readonly nombre: string;
@@ -48,8 +48,15 @@ interface ResultadoDeLote {
     readonly inscripcionId: number;
     readonly nombre: string;
     readonly mensaje: string;
+    /**
+     * Solo con `derivacion-ambigua`: las derivaciones vigentes entre las que hay que elegir. Se
+     * elige ahi mismo, en el resultado, sin volver a iniciar al participante de a uno.
+     */
+    readonly derivacionIds: readonly number[];
   }[];
 }
+
+type FalloDeLote = ResultadoDeLote['fallos'][number];
 
 interface Derivaciones {
   readonly fila: FilaDeAtencion;
@@ -57,7 +64,15 @@ interface Derivaciones {
   readonly error: ErrorAtencionGrupal | null;
   /** Por que se abrio: el participante tiene varias derivaciones y hay que elegir una. */
   readonly porAmbiguedad: boolean;
+  /**
+   * Si se abrio desde un fallo del lote, las derivaciones que ofrecio el backend: la eleccion se
+   * muestra en el resultado del lote, no abajo. `null` si se abrio desde la tabla.
+   */
+  readonly desdeLote: readonly number[] | null;
 }
+
+/** Lo que se muestra cuando el padron no resolvio el nombre: nunca el id. */
+export const SIN_NOMBRE = 'Participante sin nombre';
 
 const ETIQUETAS_DE_ASISTENCIA: Readonly<Record<string, string>> = {
   PRESENTE: 'Presente',
@@ -133,7 +148,7 @@ export class AtencionGrupalPage {
   protected readonly clinica = computed(() => this.listo()?.panel.clinica === true);
   protected readonly titulo = computed(() => {
     const listo = this.listo();
-    return listo?.clase?.titulo || `Clase ${this.claseId()}`;
+    return listo?.clase?.titulo || listo?.clase?.ofertaNombre || `Clase ${this.claseId()}`;
   });
 
   protected readonly filas = computed<readonly FilaDeAtencion[]>(() => {
@@ -141,19 +156,19 @@ export class AtencionGrupalPage {
     if (listo === null) {
       return [];
     }
-    const nombres = new Map(
-      (listo.clase?.content ?? []).map((p) => [
-        p.inscripcion?.id ?? -1,
-        [p.apellido, p.nombre].filter(Boolean).join(', '),
-      ]),
-    );
-    return (listo.panel.participantes ?? []).map((p) => aFila(p, nombres));
+    return (listo.panel.participantes ?? []).map(aFila);
   });
 
   /** Los que estuvieron y todavia no tienen ninguna atencion: lo que "Iniciar para todos" manda. */
   protected readonly pendientes = computed(() =>
     this.filas().filter((fila) => fila.estuvo && fila.atenciones.length === 0),
   );
+
+  /** Las derivaciones abiertas en la tarjeta de abajo; las del lote se eligen en el resultado. */
+  protected readonly derivacionesAbajo = computed(() => {
+    const panel = this.derivaciones();
+    return panel?.desdeLote === null ? panel : null;
+  });
 
   /** Respuesta mas nueva pedida: una vieja que llega tarde no pisa a la nueva. */
   private pedido = 0;
@@ -307,7 +322,11 @@ export class AtencionGrupalPage {
 
   // ------------------------------------------------------------------ derivaciones
 
-  protected verDerivaciones(fila: FilaDeAtencion, porAmbiguedad = false): void {
+  protected verDerivaciones(
+    fila: FilaDeAtencion,
+    porAmbiguedad = false,
+    desdeLote: readonly number[] | null = null,
+  ): void {
     const ids = this.ids();
     if (ids === null) {
       return;
@@ -318,7 +337,7 @@ export class AtencionGrupalPage {
     this.revirtiendo.set(null);
     this.motivoDeReversion.set('');
     this.faltaMotivoDeReversion.set(false);
-    this.derivaciones.set({ fila, lista: null, error: null, porAmbiguedad });
+    this.derivaciones.set({ fila, lista: null, error: null, porAmbiguedad, desdeLote });
     this.api
       .derivacionesDe(ids.consultorioId, ids.claseId, fila.inscripcionId, this.motivo())
       .subscribe({
@@ -329,20 +348,107 @@ export class AtencionGrupalPage {
               lista: respuesta.derivaciones ?? [],
               error: null,
               porAmbiguedad,
+              desdeLote,
             });
           }
         },
         error: (error: unknown) => {
           const traducido = traducirErrorAtencionGrupal(error);
-          if (this.pedirMotivoSi(traducido, () => this.verDerivaciones(fila, porAmbiguedad))) {
+          if (
+            this.pedirMotivoSi(traducido, () =>
+              this.verDerivaciones(fila, porAmbiguedad, desdeLote),
+            )
+          ) {
             this.derivaciones.set(null);
             return;
           }
           if (this.derivaciones()?.fila.inscripcionId === fila.inscripcionId) {
-            this.derivaciones.set({ fila, lista: null, error: traducido, porAmbiguedad });
+            this.derivaciones.set({
+              fila,
+              lista: null,
+              error: traducido,
+              porAmbiguedad,
+              desdeLote,
+            });
           }
         },
       });
+  }
+
+  /** La eleccion de derivacion abierta para un fallo del lote, o `null`. */
+  protected eleccionEnLote(inscripcionId: number): Derivaciones | null {
+    const panel = this.derivaciones();
+    return panel !== null && panel.desdeLote !== null && panel.fila.inscripcionId === inscripcionId
+      ? panel
+      : null;
+  }
+
+  /** Las vigentes de entre las que el backend ofrecio para elegir. */
+  protected elegibles(panel: Derivaciones): readonly DerivacionDeParticipante[] {
+    const ofrecidas = new Set(panel.desdeLote ?? []);
+    return (panel.lista ?? []).filter(
+      (derivacion) =>
+        this.vigente(derivacion) && derivacion.id !== undefined && ofrecidas.has(derivacion.id),
+    );
+  }
+
+  /**
+   * Un participante del lote fallo con `derivacion-ambigua`: lee sus derivaciones —lectura
+   * clinica, auditada— para elegir ahi mismo entre las que el backend ofrecio.
+   */
+  protected elegirEnLote(fallo: FalloDeLote): void {
+    const fila = this.filas().find((f) => f.inscripcionId === fallo.inscripcionId);
+    if (fila !== undefined) {
+      this.verDerivaciones(fila, true, fallo.derivacionIds);
+    }
+  }
+
+  /**
+   * Abre la atencion elegida para un fallo del lote. A diferencia de {@link iniciar} no navega:
+   * puede haber otros participantes del lote por resolver, y el resultado se actualiza en su lugar.
+   */
+  protected iniciarDesdeLote(fila: FilaDeAtencion, derivacion: DerivacionDeParticipante): void {
+    const ids = this.ids();
+    const derivacionId = derivacion.id;
+    if (ids === null || derivacionId === undefined || this.enVuelo() !== null) {
+      return;
+    }
+    this.enVuelo.set(fila.inscripcionId);
+    this.errorDeAccion.set(null);
+    this.api
+      .iniciar(ids.consultorioId, ids.claseId, fila.inscripcionId, derivacionId, this.motivo())
+      .subscribe({
+        next: () => {
+          this.enVuelo.set(null);
+          const resumen = this.lote();
+          if (resumen !== null) {
+            this.lote.set({
+              exitosos: resumen.exitosos + 1,
+              fallos: resumen.fallos.filter((f) => f.inscripcionId !== fila.inscripcionId),
+            });
+          }
+          this.cerrarDerivaciones();
+          this.cargar();
+        },
+        error: (error: unknown) => {
+          this.enVuelo.set(null);
+          const traducido = traducirErrorAtencionGrupal(error);
+          if (this.pedirMotivoSi(traducido, () => this.iniciarDesdeLote(fila, derivacion))) {
+            return;
+          }
+          const actual = this.derivaciones();
+          if (actual !== null) {
+            this.derivaciones.set({ ...actual, error: traducido });
+          }
+        },
+      });
+  }
+
+  /** El numero visible del Caso ("caso 3"), nunca su id. */
+  protected numeroDeCaso(derivacion: DerivacionDeParticipante): string {
+    return derivacion.numeroCaso === undefined
+      ? 'Caso clinico sin numero'
+      : `Caso clinico ${derivacion.numeroCaso}`;
   }
 
   protected cerrarDerivaciones(): void {
@@ -463,14 +569,10 @@ export class AtencionGrupalPage {
   }
 }
 
-function aFila(
-  participante: ParticipanteEnAtencionGrupal,
-  nombres: ReadonlyMap<number, string>,
-): FilaDeAtencion {
-  const inscripcionId = participante.inscripcionId ?? -1;
+function aFila(participante: ParticipanteEnAtencionGrupal): FilaDeAtencion {
   return {
-    inscripcionId,
-    nombre: nombres.get(inscripcionId) || `Inscripcion ${inscripcionId}`,
+    inscripcionId: participante.inscripcionId ?? -1,
+    nombre: [participante.apellido, participante.nombre].filter(Boolean).join(', ') || SIN_NOMBRE,
     asistencia: ETIQUETAS_DE_ASISTENCIA[participante.resultadoAsistencia ?? ''] ?? 'Sin registrar',
     estuvo: participante.estuvo === true,
     atenciones: participante.atenciones ?? [],
@@ -485,10 +587,12 @@ function resumirLote(
     .filter((item) => item.atencion === undefined)
     .map((item) => {
       const id = item.inscripcionId ?? -1;
+      const fallo = traducirFalloDeAtencion(item.problemType, item.detalle);
       return {
         inscripcionId: id,
-        nombre: nombres.get(id) ?? `Inscripcion ${id}`,
-        mensaje: traducirFalloDeAtencion(item.problemType, item.detalle).mensaje,
+        nombre: nombres.get(id) ?? SIN_NOMBRE,
+        mensaje: fallo.mensaje,
+        derivacionIds: fallo.causa === 'derivacion-ambigua' ? (item.derivacionIds ?? []) : [],
       };
     });
   return { exitosos: resultado.exitosos ?? 0, fallos };

@@ -28,6 +28,10 @@ export interface DerivacionDeParticipante {
     motivo?: string;
     motivoReversion?: string;
     /**
+     * Numero visible del Caso dentro de la historia (\"caso 3\"), el que la pantalla muestra en lugar del id. Ausente solo si el Caso no se pudo resolver
+     */
+    numeroCaso?: number;
+    /**
      * Oferta clinica que justifico la derivacion, congelada
      */
     ofertaId?: number;

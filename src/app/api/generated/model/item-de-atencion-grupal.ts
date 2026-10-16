@@ -19,6 +19,10 @@ export interface ItemDeAtencionGrupal {
      */
     atencion?: AtencionDeParticipante;
     /**
+     * Solo con `derivacion-ambigua`: las derivaciones vigentes entre las que hay que elegir, las mismas que trae el Problem Detail de la operacion individual. Se reintenta el item con una de ellas como `derivacionId`. Ausente en cualquier otro caso
+     */
+    derivacionIds?: Array<number>;
+    /**
      * Explicacion del fallo de este participante
      */
     detalle?: string;

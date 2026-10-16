@@ -19,6 +19,8 @@ import { PasesDePersonaPage } from './pases-de-persona-page';
 
 const PERSONA = 512;
 const BASE = `/api/v1/consultorios/${CONSULTORIO}`;
+/** El ajuste del pase 77, con o sin parametros de consulta. */
+const AJUSTES = (r: { url: string }) => r.url === `${BASE}/pases/77/ajustes`;
 const URL_PASES = `${BASE}/personas/${PERSONA}/pases`;
 
 const PASE = {
@@ -393,8 +395,10 @@ describe('PasesDePersonaPage', () => {
       expect(textoDe(fixture)).toContain('El saldo quedaria en 0 de 8.');
       escribir(fixture, '#ajuste-motivo', ' Cortesia ');
       clickear(fixture, 'Ajustar saldo');
-      const pedido = httpMock.expectOne(`${BASE}/pases/77/ajustes`);
+      const pedido = httpMock.expectOne(AJUSTES);
       expect(pedido.request.body).toEqual({ cantidad: -5, motivo: 'Cortesia', version: 4 });
+      // La pantalla relee la pagina del ledger: el ledger entero en la respuesta sobra (0.117.0).
+      expect(pedido.request.params.get('sinMovimientos')).toBe('true');
       const ajuste = {
         id: 9,
         tipo: 'AJUSTE',
@@ -403,9 +407,10 @@ describe('PasesDePersonaPage', () => {
         origenTipo: 'AJUSTE_MANUAL',
         motivo: 'Cortesia',
       };
+      // Con sinMovimientos la respuesta trae la lista vacia, y eso no quiere decir que no haya.
       pedido.flush({
         pase: { ...PASE, creditosDisponibles: 0, version: 5 },
-        movimientos: [ajuste],
+        movimientos: [],
       });
       // El ledger abierto se relee en la pagina del movimiento nuevo.
       pedirMovimientos().flush(pagina([ajuste]));
@@ -425,7 +430,7 @@ describe('PasesDePersonaPage', () => {
     escribir(fixture, '#ajuste-cantidad', '1');
     escribir(fixture, '#ajuste-motivo', 'Error de carga');
     clickear(fixture, 'Ajustar saldo');
-    httpMock.expectOne(`${BASE}/pases/77/ajustes`).flush(
+    httpMock.expectOne(AJUSTES).flush(
       ...conflicto('pase-no-ajustable', {
         causa: 'FUERA_DE_VIGENCIA',
         motivo: 'su vigencia termino el 2026-10-10',
@@ -436,7 +441,7 @@ describe('PasesDePersonaPage', () => {
     expect(textoDe(fixture)).not.toContain('2026-10-10');
 
     clickear(fixture, 'Ajustar saldo');
-    httpMock.expectOne(`${BASE}/pases/77/ajustes`).flush(...conflicto('concurrent-modification'));
+    httpMock.expectOne(AJUSTES).flush(...conflicto('concurrent-modification'));
     responderPases();
     await asentar(fixture);
     expect(textoDe(fixture)).toContain('Alguien lo modifico mientras lo editabas');
@@ -615,7 +620,7 @@ describe('PasesDePersonaPage', () => {
     escribir(fixture, '#ajuste-motivo', 'Cortesia');
     clickear(fixture, 'Ajustar saldo');
     httpMock
-      .expectOne(`${BASE}/pases/77/ajustes`)
+      .expectOne(AJUSTES)
       .flush({ pase: { ...PASE, creditosDisponibles: 6, version: 5 }, movimientos: [] });
     // 20 + 1 movimientos: el nuevo es el primero de la segunda pagina.
     pedirMovimientos(1).flush(pagina(movimientosDe(21, 1), 1, 21));
@@ -727,9 +732,18 @@ describe('PasesDePersonaPage', () => {
   it(
     'la cadena de renovaciones se lee en los dos sentidos y el motivo de una omision se muestra',
     async () => {
-      const fixture = await montar([ABONO_NOV, ABONO_OCT, ABONO_OMITIDO, ABONO_SIN, PASE]);
+      const fixture = await montar([
+        { ...ABONO_NOV, renovacionAutorizadaPor: 'Lucia Sintetica' },
+        { ...ABONO_OCT, renovadoPorPaseId: 21, renovacionAutorizadaPor: 'Lucia Sintetica' },
+        ABONO_OMITIDO,
+        ABONO_SIN,
+        PASE,
+      ]);
       const texto = textoDe(fixture);
       expect(texto).toContain('Ya se renovo: sigue en el periodo del 01/11/2026 al 30/11/2026');
+      expect(texto).toContain(
+        'Se renueva solo al terminar el periodo. La renovacion la autorizo Lucia Sintetica.',
+      );
       expect(texto).toContain(
         'Renovado automaticamente desde el periodo del 01/10/2026 al 31/10/2026',
       );
@@ -754,6 +768,23 @@ describe('PasesDePersonaPage', () => {
     },
     TIMEOUT_AXE,
   );
+
+  it('el periodo siguiente sale de renovadoPorPaseId, no de deducirlo de la lista', async () => {
+    // Renovado por un periodo que no esta cargado: lo dice sin enlace y no ofrece configurar.
+    const fixture = await montar([
+      { ...ABONO_SIN, renovadoPorPaseId: 999, renovacionAutorizadaPor: 'Lucia Sintetica' },
+    ]);
+    const texto = textoDe(fixture);
+    expect(texto).toContain('Ya se renovo: sigue en otro periodo.');
+    expect(texto).toContain('La renovacion la autorizo Lucia Sintetica.');
+    expect(boton(fixture, 'Activar la renovacion automatica de Abono yoga')).toBeNull();
+  });
+
+  it('sin renovadoPorPaseId no da por renovado al anterior aunque otro diga renovarlo', async () => {
+    const fixture = await montar([ABONO_NOV, ABONO_OCT]);
+    expect(textoDe(fixture)).not.toContain('Ya se renovo');
+    expect(boton(fixture, 'Activar la renovacion automatica de Abono mensual')).not.toBeNull();
+  });
 
   it('un periodo que renueva a otro que no esta en la lista lo dice sin enlace', async () => {
     const fixture = await montar([{ ...ABONO_NOV, renuevaPaseId: 999 }]);
@@ -792,7 +823,10 @@ describe('PasesDePersonaPage', () => {
     httpMock
       .expectOne(`${BASE}/pases/31/renovacion`)
       .flush(...conflicto('pase-no-ajustable', { causa: 'YA_RENOVADO' }));
-    responderPases([ABONO_SIN, { ...ABONO_NOV, renuevaPaseId: 31 }]);
+    responderPases([
+      { ...ABONO_SIN, renovadoPorPaseId: 21 },
+      { ...ABONO_NOV, renuevaPaseId: 31 },
+    ]);
     await asentar(fixture);
     const texto = textoDe(fixture);
     expect(texto).toContain('este periodo del abono ya se renovo');

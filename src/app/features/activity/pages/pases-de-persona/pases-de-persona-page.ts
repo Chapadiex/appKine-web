@@ -194,17 +194,6 @@ export class PasesDePersonaPage {
     return pase !== null && saldo !== null && (saldo < 0 || saldo > (pase.creditosIniciales ?? 0));
   });
 
-  /** Cada periodo renovado, por el id del periodo que renueva: la cadena se lee en los dos sentidos. */
-  private readonly renovadoPorId = computed(() => {
-    const mapa = new Map<number, Pase>();
-    for (const pase of this.pases() ?? []) {
-      if (pase.renuevaPaseId !== undefined) {
-        mapa.set(pase.renuevaPaseId, pase);
-      }
-    }
-    return mapa;
-  });
-
   private pedido = 0;
   private pedidoMovimientos = 0;
   private clave = nuevaClaveDeIntento();
@@ -415,9 +404,14 @@ export class PasesDePersonaPage {
 
   // ------------------------------------------------------------------ renovacion de abonos
 
-  /** El periodo que renovo a este, si ya se vendio. */
+  /**
+   * El periodo que renovo a este, si esta en la lista. Lo dice el backend (`renovadoPorPaseId`,
+   * 0.117.0): deducirlo de la lista fallaba cuando el periodo siguiente no estaba cargado.
+   */
   protected renovadoPor(pase: Pase): Pase | undefined {
-    return pase.id === undefined ? undefined : this.renovadoPorId().get(pase.id);
+    return pase.renovadoPorPaseId === undefined
+      ? undefined
+      : (this.pases() ?? []).find((p) => p.id === pase.renovadoPorPaseId);
   }
 
   /** El periodo que este renueva, si esta en la lista. */
@@ -432,7 +426,7 @@ export class PasesDePersonaPage {
    * backend responde `YA_RENOVADO`, porque la renovacion paso al periodo nuevo.
    */
   protected renovacionConfigurable(pase: Pase): boolean {
-    return esAbono(pase) && pase.estado !== 'ANULADO' && this.renovadoPor(pase) === undefined;
+    return esAbono(pase) && pase.estado !== 'ANULADO' && pase.renovadoPorPaseId === undefined;
   }
 
   /** Lleva el foco a la fila de otro periodo de la cadena, sin navegar. */

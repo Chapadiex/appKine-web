@@ -132,7 +132,10 @@ test.describe('Atencion clinica grupal contra el backend real', () => {
     // --- La Sesion abre en la pantalla de atencion, como de la clase -----------------------
     await expect(page).toHaveURL(new RegExp(`/atencion/sesiones/${atencion.sesionId}$`));
     await expect(page.getByRole('heading', { name: 'Atencion en curso' })).toBeVisible();
-    await expect(page.getByText('Participante de una clase grupal')).toBeVisible();
+    // De que clase viene, por su titulo (Sesion.claseTitulo, 0.118.0), no por su id.
+    await expect(
+      page.locator('dd').filter({ hasText: 'Participante de la clase grupal' }),
+    ).toContainText(titulo);
     await expect(page.getByLabel('Caso clinico de esta atencion')).toHaveCount(0);
 
     // --- De vuelta en el panel: la atencion en curso, y la derivacion ya no se revierte ------

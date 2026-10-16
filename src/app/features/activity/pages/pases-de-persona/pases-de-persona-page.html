@@ -325,19 +325,31 @@
                   </div>
                 }
                 @if (abono(pase)) {
-                  @if (renovadoPor(pase); as siguiente) {
+                  @if (pase.renovadoPorPaseId !== undefined) {
                     <div class="ayuda">
-                      Ya se renovo: sigue en el
-                      <a
-                        class="enlace"
-                        [href]="'#pase-' + siguiente.id"
-                        (click)="irAPase($event, siguiente.id)"
-                        >periodo del {{ fecha(siguiente.vigenciaDesde) }} al
-                        {{ fecha(siguiente.vigenciaHasta) }}</a
-                      >
+                      @if (renovadoPor(pase); as siguiente) {
+                        Ya se renovo: sigue en el
+                        <a
+                          class="enlace"
+                          [href]="'#pase-' + siguiente.id"
+                          (click)="irAPase($event, siguiente.id)"
+                          >periodo del {{ fecha(siguiente.vigenciaDesde) }} al
+                          {{ fecha(siguiente.vigenciaHasta) }}</a
+                        >
+                      } @else {
+                        Ya se renovo: sigue en otro periodo.
+                      }
+                      @if (pase.renovacionAutorizadaPor) {
+                        La renovacion la autorizo {{ pase.renovacionAutorizadaPor }}.
+                      }
                     </div>
                   } @else if (pase.renovacionAutomatica) {
-                    <div class="ayuda">Se renueva solo al terminar el periodo.</div>
+                    <div class="ayuda">
+                      Se renueva solo al terminar el periodo.
+                      @if (pase.renovacionAutorizadaPor) {
+                        La renovacion la autorizo {{ pase.renovacionAutorizadaPor }}.
+                      }
+                    </div>
                   } @else if (pase.renovacionOmitidaMotivo) {
                     <div class="ayuda">
                       No se pudo renovar: {{ pase.renovacionOmitidaMotivo }}. La renovacion
