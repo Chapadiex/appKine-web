@@ -126,6 +126,46 @@ button.timeline__boton:focus-visible {
   color: var(--color-texto-suave);
 }
 
+/* Filtros del timeline: origenes en linea y el rango de dias, que se apilan en pantalla angosta. */
+.timeline__filtros {
+  display: grid;
+  gap: var(--esp-3);
+  margin-block: var(--esp-4);
+}
+
+.timeline__origenes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--esp-2) var(--esp-4);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.timeline__origenes legend {
+  padding: 0;
+  margin-bottom: var(--esp-2);
+  font-weight: var(--peso-semi);
+}
+
+.timeline__origenes .ayuda {
+  flex-basis: 100%;
+  margin: 0;
+}
+
+.timeline__origen-opcion {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--esp-2);
+}
+
+.timeline__fechas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp-4);
+}
+
 /* --- Detalle --------------------------------------------------------------------------- */
 
 .historia__versiones {
@@ -212,4 +252,10 @@ button.timeline__boton:focus-visible {
 .avance__barra {
   width: 100%;
   max-width: 20rem;
+}
+
+/* Vigencia de la autorizacion de un item del plan. La vencida lo dice en el texto; el color suma. */
+.plan__vigencia--vencida {
+  color: var(--color-peligro);
+  font-weight: var(--peso-semi);
 }

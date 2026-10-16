@@ -61,8 +61,6 @@ export class CasosDeLaHistoria {
   protected readonly error = signal<ErrorCaso | null>(null);
   private readonly ofertas = signal<readonly OfertaResponse[]>([]);
   protected readonly profesionales = signal<readonly ProfesionalHabilitado[]>([]);
-  /** Nombres de profesionales ya resueltos, por membership, para el equipo de cada caso. */
-  private readonly nombres = signal<ReadonlyMap<number, string>>(new Map());
 
   protected readonly activos = computed(() => this.casos().filter((c) => c.estado !== 'CERRADO'));
   protected readonly cerrados = computed(() => this.casos().filter((c) => c.estado === 'CERRADO'));
@@ -109,10 +107,13 @@ export class CasosDeLaHistoria {
     });
   }
 
-  protected nombreDeOferta(ofertaId: number | undefined): string {
-    if (ofertaId === undefined) return 'Sin oferta';
-    const oferta = this.ofertas().find((o) => o.id === ofertaId);
-    return oferta?.nombreComercial ?? `Oferta #${ofertaId}`;
+  /**
+   * El nombre lo trae el caso desde 0.107.0 (`appKine-api` #132), resuelto contra la sede de la
+   * oferta: sirve tambien para un caso de otra sede, que el listado de esta no conoce.
+   */
+  protected nombreDeOferta(caso: CasoClinico): string {
+    if (caso.ofertaNombre) return caso.ofertaNombre;
+    return caso.ofertaId === undefined ? 'Sin oferta' : `Oferta #${caso.ofertaId}`;
   }
 
   protected estadoDe(caso: CasoClinico): string {
@@ -203,7 +204,6 @@ export class CasosDeLaHistoria {
       next: (casos) => {
         this.casos.set(casos);
         this.cargando.set(false);
-        this.resolverNombres(casos);
       },
       error: (error: unknown) => {
         this.casos.set([]);
@@ -213,30 +213,15 @@ export class CasosDeLaHistoria {
     });
   }
 
+  /**
+   * El nombre viene en el integrante desde 0.107.0, resuelto por la membership en la organizacion:
+   * sirve aunque el profesional ya no este habilitado. Antes se pedian las habilitaciones de cada
+   * oferta solo para esto.
+   */
   private nombreDe(integrante: CasoProfesional): string {
+    if (integrante.profesionalNombre) return integrante.profesionalNombre;
     const id = integrante.profesionalMembershipId;
-    if (id === undefined) return 'Profesional sin identificar';
-    return this.nombres().get(id) ?? `Profesional #${id}`;
-  }
-
-  /** Los nombres del equipo salen de las habilitaciones de cada oferta de la sede actual. */
-  private resolverNombres(casos: readonly CasoClinico[]): void {
-    const consultorioId = this.contexto.consultorioId();
-    if (consultorioId === null) return;
-    const ofertas = new Set(
-      casos
-        .filter((c) => c.ofertaConsultorioId === consultorioId && c.ofertaId !== undefined)
-        .map((c) => c.ofertaId as number),
-    );
-    for (const ofertaId of ofertas) {
-      this.sede.profesionales$(consultorioId, ofertaId).subscribe((lista) => {
-        const nombres = new Map(this.nombres());
-        for (const p of lista) {
-          if (p.membershipId !== undefined && p.nombre) nombres.set(p.membershipId, p.nombre);
-        }
-        this.nombres.set(nombres);
-      });
-    }
+    return id === undefined ? 'Profesional sin identificar' : `Profesional #${id}`;
   }
 
   private candidatosDe(error: unknown): readonly CasoClinico[] {

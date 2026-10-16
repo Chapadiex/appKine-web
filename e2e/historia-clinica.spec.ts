@@ -129,4 +129,37 @@ test.describe('Historia clinica - timeline (D-a)', () => {
     await expect(timeline.getByRole('listitem')).toHaveCount(antes + 1);
     await expect(timeline.getByRole('button', { name: /Indicacion/ })).toBeVisible();
   });
+
+  test('los filtros de origen y de fechas los resuelve el servidor y viajan en cada pagina', async ({
+    page,
+  }) => {
+    await abrirHistoriaConMotivo(page, sembrada);
+    const timeline = page.getByRole('list', { name: /Hechos clinicos/ });
+    await expect(timeline.getByRole('button', { name: /Entrada clinica/ }).first()).toBeVisible();
+
+    // Solo adjuntos: el servidor recibe el origen y no devuelve entradas.
+    const filtrada = page.waitForResponse(
+      (r) => r.url().includes('/timeline') && r.url().includes('origen=ADJUNTO_CLINICO'),
+    );
+    await page.getByRole('checkbox', { name: 'Adjuntos' }).check();
+    expect((await filtrada).status()).toBe(200);
+    await expect(timeline.getByRole('button', { name: /Adjunto clinico/ })).toBeVisible();
+    await expect(timeline.getByRole('button', { name: /Entrada clinica/ })).toHaveCount(0);
+
+    // Un rango que empieza en el futuro no trae nada, con el mensaje de los filtros.
+    const conRango = page.waitForResponse(
+      (r) => r.url().includes('/timeline') && r.url().includes('desde='),
+    );
+    await page.getByLabel('Desde el dia').fill('2099-01-01');
+    expect((await conRango).status()).toBe(200);
+    await expect(page.getByText('Ningun hecho clinico coincide con los filtros.')).toBeVisible();
+
+    // Un rango invertido no sale: el backend lo rechazaria con 400.
+    await page.getByLabel('Hasta el dia (inclusive)').fill('2098-12-31');
+    await expect(page.getByText(/tiene que ser el mismo dia que/)).toBeVisible();
+
+    await page.getByRole('button', { name: 'Quitar los filtros' }).click();
+    await expect(timeline.getByRole('button', { name: /Entrada clinica/ }).first()).toBeVisible();
+    await expect(timeline.getByRole('button', { name: /Adjunto clinico/ })).toBeVisible();
+  });
 });

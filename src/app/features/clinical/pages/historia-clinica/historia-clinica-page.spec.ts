@@ -40,8 +40,9 @@ const PAGINA = {
   ],
 };
 
+// La forma de 0.107.0: tipo propio, y la extension de antes que el backend sigue mandando.
 const SIN_RELACION = {
-  type: 'https://akine.app/problems/forbidden',
+  type: 'https://akine.app/problems/justificacion-de-acceso-requerida',
   status: 403,
   detail: 'Hace falta declarar el motivo del acceso.',
   requiereJustificacion: true,

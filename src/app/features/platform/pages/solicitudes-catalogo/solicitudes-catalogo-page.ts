@@ -8,6 +8,7 @@ import {
   signal,
 } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { catchError, map, of } from 'rxjs';
 
 import { CatalogoClinicoService } from '../../../../api/generated/api/catalogo-clinico.service';
@@ -19,6 +20,7 @@ import {
 } from '../../../../api/generated/model/resolve-catalogo-solicitud-request';
 import { formatearInstante } from '../../../../shared/utils/instantes';
 import { textoRequerido } from '../../../../shared/validators/texto-requerido';
+import { RUTA_SUSCRIPCIONES_DE_PLATAFORMA } from '../../models/rutas-de-plataforma';
 import { CausaSolicitud, traducirErrorSolicitud } from '../../models/solicitud-errors';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 
@@ -55,7 +57,7 @@ type Especialidades =
  */
 @Component({
   selector: 'app-solicitudes-catalogo-page',
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, RouterLink],
   templateUrl: './solicitudes-catalogo-page.html',
 })
 export class SolicitudesCatalogoPage {
@@ -68,6 +70,7 @@ export class SolicitudesCatalogoPage {
   protected readonly formatearInstante = (instante: string | undefined | null): string | null =>
     formatearInstante(instante, this.diaDeLaSede.zona());
 
+  protected readonly rutaSuscripciones = RUTA_SUSCRIPCIONES_DE_PLATAFORMA;
   protected readonly estado = signal<Estado>({ tipo: 'cargando' });
   protected readonly filtroEstado = signal<FiltroEstado>('PENDIENTE');
   protected readonly seleccionada = signal<CatalogoSolicitudResponse | null>(null);

@@ -110,7 +110,51 @@ describe('PlanPage', () => {
     TIMEOUT_AXE,
   );
 
-  async function montar(planes: unknown[]): Promise<ComponentFixture<PlanPage>> {
+  it('cada item muestra la vigencia de su autorizacion y marca la vencida', async () => {
+    const version = {
+      ...BORRADOR.versionVigente,
+      items: [
+        {
+          id: 1,
+          ofertaId: 14,
+          ofertaNombre: 'Kinesiologia',
+          cantidadPlanificada: 10,
+          autorizacionId: 3,
+          autorizacionVigenciaDesde: '2020-01-01',
+          autorizacionVigenciaHasta: '2020-01-31',
+        },
+        {
+          id: 2,
+          ofertaId: 15,
+          ofertaNombre: 'Hidroterapia',
+          cantidadPlanificada: 4,
+          autorizacionId: 4,
+          autorizacionVigenciaDesde: '2020-01-01',
+          autorizacionVigenciaHasta: '2099-12-31',
+        },
+        { id: 3, ofertaId: 16, ofertaNombre: 'Masoterapia', cantidadPlanificada: 2 },
+      ],
+    };
+    const fixture = await montar([{ ...BORRADOR, versionVigente: version }], [version]);
+
+    const marcas = Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll(
+        '[data-testid="plan-vigencia-autorizacion"]',
+      ),
+    );
+    // El item sin autorizacion no dice nada: no hay vigencia que mostrar.
+    expect(marcas.map((m) => m.textContent?.trim())).toEqual([
+      'autorizacion vencida el 31/01/2020',
+      'autorizacion vigente hasta el 31/12/2099 inclusive',
+    ]);
+    expect(marcas[0].classList).toContain('plan__vigencia--vencida');
+    expect(marcas[1].classList).not.toContain('plan__vigencia--vencida');
+  });
+
+  async function montar(
+    planes: unknown[],
+    versiones: unknown[] = [BORRADOR.versionVigente],
+  ): Promise<ComponentFixture<PlanPage>> {
     const fixture = TestBed.createComponent(PlanPage);
     fixture.componentRef.setInput('casoId', '9');
     await estabilizar(fixture);
@@ -119,19 +163,23 @@ describe('PlanPage', () => {
       .forEach((r) =>
         r.flush([{ id: 14, nombreComercial: 'Kinesiologia', estado: 'ACTIVO', vigenteHoy: true }]),
       );
-    responderCarga(fixture, planes);
+    responderCarga(fixture, planes, versiones);
     await estabilizar(fixture);
     return fixture;
   }
 
-  function responderCarga(fixture: ComponentFixture<PlanPage>, planes: unknown[]): void {
+  function responderCarga(
+    fixture: ComponentFixture<PlanPage>,
+    planes: unknown[],
+    versiones: unknown[] = [BORRADOR.versionVigente],
+  ): void {
     httpMock
       .expectOne(CASO)
       .flush({ id: 9, numeroCaso: 1, estado: 'ACTIVO', diagnosticoPresuntivo: 'Tendinopatia' });
     httpMock.expectOne((r) => r.url === PLANES && r.method === 'GET').flush(planes);
     fixture.detectChanges();
     if (planes.length > 0) {
-      httpMock.expectOne(`${PLAN}/versiones`).flush([BORRADOR.versionVigente]);
+      httpMock.expectOne(`${PLAN}/versiones`).flush(versiones);
       httpMock
         .expectOne(`${PLAN}/avance`)
         .flush({ numeroVersion: 1, items: [{ ofertaId: 14, planificadas: 10, realizadas: 0 }] });
