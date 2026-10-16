@@ -58,6 +58,7 @@ describe('traducirErrorPase', () => {
       ['FUERA_DE_VIGENCIA', 'la vigencia del pase ya termino'],
       ['FUERA_DE_RANGO', 'por debajo de 0 o por encima de los creditos comprados'],
       ['CREDITOS_USADOS', 'ya tiene creditos usados'],
+      ['YA_RENOVADO', 'este periodo del abono ya se renovo'],
     ]) {
       // La causa manda; el texto de `motivo` no se lee.
       const porCausa = traducirErrorPase(
@@ -87,8 +88,15 @@ describe('traducirErrorPase', () => {
     );
   });
 
+  it('YA_RENOVADO (0.116.0) manda a configurar la renovacion sobre el periodo nuevo', () => {
+    const r = traducirErrorPase(error(409, 'pase-no-ajustable', { causa: 'YA_RENOVADO' }));
+    expect(r.causa).toBe('pase-no-ajustable');
+    expect(r.mensaje).toContain('hacelo sobre el periodo siguiente');
+  });
+
   it('403, 404, red, sin contexto y desconocido', () => {
     expect(traducirErrorPase(error(403, null)).causa).toBe('sin-permiso');
+    expect(traducirErrorPase(error(403, null)).mensaje).toContain('cambiar la renovacion');
     expect(traducirErrorPase(error(404, null)).causa).toBe('no-encontrado');
     expect(traducirErrorPase(new AkineHttpError(0, null, true)).causa).toBe('red');
     expect(traducirErrorPase(new Error('x')).causa).toBe('otro');

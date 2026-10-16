@@ -7,6 +7,7 @@ import { ServiciosYOfertasService } from '../../../api/generated/api/servicios-y
 import { CrearProducto } from '../../../api/generated/model/crear-producto';
 import { EditarProducto } from '../../../api/generated/model/editar-producto';
 import { OfertaResponse } from '../../../api/generated/model/oferta-response';
+import { PaginaDeMovimientosDePase } from '../../../api/generated/model/pagina-de-movimientos-de-pase';
 import { Pase } from '../../../api/generated/model/pase';
 import { PaseDetalle } from '../../../api/generated/model/pase-detalle';
 import { PersonaPageResponse } from '../../../api/generated/model/persona-page-response';
@@ -20,11 +21,19 @@ export const ESQUEMA_POR_PACK = 'POR_PACK';
 /** El unico esquema de cobro que admite abonos (RF-M29-007, desde 0.109.0). */
 export const ESQUEMA_POR_ABONO = 'POR_ABONO';
 
+/** Movimientos por pagina del ledger: el default del backend, que acota a 100. */
+export const MOVIMIENTOS_POR_PAGINA = 20;
+
 /** El periodo de un abono. Un pack no lo lleva: el contrato lo prohibe. */
 export interface PeriodoDeAbono {
   readonly desde: string;
   /** Vacio: el periodo dura los `vigenciaDias` del producto. */
   readonly hasta?: string;
+  /**
+   * Que el sistema venda solo el periodo siguiente al acercarse el fin de este (0.116.0). Solo se
+   * manda en `true`: ausente es no renovar, y en un pack el backend responde 400.
+   */
+  readonly renovacionAutomatica?: boolean;
 }
 
 /**
@@ -93,9 +102,35 @@ export class PasesApi {
     return this.pases.listarPasesDePersona({ consultorioId, personaId });
   }
 
-  /** El pase con su ledger, del movimiento mas viejo al mas nuevo (RF-M29-009). */
-  verPase(consultorioId: number, paseId: number): Observable<PaseDetalle> {
-    return this.pases.verPase({ consultorioId, paseId });
+  /**
+   * El ledger de a paginas, del movimiento mas viejo al mas nuevo (RF-M29-009, 0.116.0): el orden en
+   * que se lee `saldoResultante`. `page` en base cero.
+   */
+  movimientos(
+    consultorioId: number,
+    paseId: number,
+    page: number,
+    size = MOVIMIENTOS_POR_PAGINA,
+  ): Observable<PaginaDeMovimientosDePase> {
+    return this.pases.listarMovimientosDePase({ consultorioId, paseId, page, size });
+  }
+
+  /**
+   * Prende o apaga la renovacion automatica de un abono (08.08, 0.116.0). Pide `pase:manage`
+   * —prenderla es autorizar ventas a nombre de quien la prende— y la `version` leida. Idempotente
+   * por estado. Apagarla no anula un periodo ya renovado.
+   */
+  configurarRenovacion(
+    consultorioId: number,
+    paseId: number,
+    activa: boolean,
+    version: number,
+  ): Observable<Pase> {
+    return this.pases.configurarRenovacionDeAbono({
+      consultorioId,
+      paseId,
+      configuracionDeRenovacionDeAbono: { activa, version },
+    });
   }
 
   /**
@@ -119,6 +154,7 @@ export class PasesApi {
           ? {
               periodoDesde: periodo.desde,
               ...(periodo.hasta ? { periodoHasta: periodo.hasta } : {}),
+              ...(periodo.renovacionAutomatica ? { renovacionAutomatica: true } : {}),
             }
           : {}),
       },
