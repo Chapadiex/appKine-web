@@ -113,7 +113,9 @@ test.describe('Atencion clinica grupal contra el backend real', () => {
     await fila.getByRole('button', { name: /Iniciar atencion/ }).click();
     let respuesta = await inicio;
     if (respuesta.status() === 403) {
-      await page.getByLabel('Motivo del acceso').fill(JUSTIFICACION['X-Justificacion-Acceso']);
+      await page
+        .getByRole('textbox', { name: 'Motivo del acceso' })
+        .fill(JUSTIFICACION['X-Justificacion-Acceso']);
       const reintento = respuestaDe(page, 'POST', /\/inscripciones\/\d+\/atencion-clinica$/);
       await page.getByRole('button', { name: 'Declarar y seguir' }).click();
       respuesta = await reintento;
@@ -143,7 +145,9 @@ test.describe('Atencion clinica grupal contra el backend real', () => {
     const lectura = respuestaDe(page, 'GET', /\/inscripciones\/\d+\/derivaciones$/);
     await filaDespues.getByRole('button', { name: /Derivaciones/ }).click();
     if ((await lectura).status() === 403) {
-      await page.getByLabel('Motivo del acceso').fill(JUSTIFICACION['X-Justificacion-Acceso']);
+      await page
+        .getByRole('textbox', { name: 'Motivo del acceso' })
+        .fill(JUSTIFICACION['X-Justificacion-Acceso']);
       await page.getByRole('button', { name: 'Declarar y seguir' }).click();
     }
     const derivaciones = page.getByRole('region', { name: /Derivaciones de/ });
