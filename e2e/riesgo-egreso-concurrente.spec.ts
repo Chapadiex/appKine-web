@@ -142,26 +142,16 @@ test.describe('Egresos con dos operadores a la vez contra el backend real', () =
   });
 
   /*
-   * DEFECTO DEL BACKEND, sin corregir (appKine-api `main` a707f3d, contrato 0.104.0). Medido el
-   * 15/10/2026 contra MySQL real: en 9 de 12 carreras el pago y la anulacion responden los DOS con
-   * exito y el egreso queda ANULADO, `saldoPendiente = 0`, con un pago en EFECTIVO vigente: la plata
-   * salio del cajon por un compromiso que ya no existe, y nada lo marca.
-   *
-   *   POST /api/v1/consultorios/{c}/egresos/{e}/pagos  {importe:1000, medio:"EFECTIVO", ...}
-   *     -> 201 {"id":17,"egresoId":28,"importe":1000,"medio":"EFECTIVO","estado":"CONFIRMADO",...}
-   *   POST /api/v1/consultorios/{c}/egresos/{e}/anulacion  {motivo:"..."}   (en paralelo)
-   *     -> 200
-   *   GET  /api/v1/consultorios/{c}/egresos/{e}
-   *     -> estado=ANULADO, saldoPendiente=0, pagos=[{id:17, estado:CONFIRMADO}]
-   *
-   * Causa probable: `EgresoService.anular` lee el egreso, valida `saldoPendiente == importeTotal`
-   * en Java y lo guarda por JPA con `@Version`; `PagoEgresoService` descuenta con un UPDATE nativo
-   * (`EgresoRepository.descontarSaldo`) que NO incrementa `version`. El `@Version` no ve el pago que
-   * entro en el medio y la anulacion pisa `saldo_pendiente`. Es el mismo patron que el defecto 5 del
-   * 29/09 (`descontarSaldo` de autorizaciones sin `@Version`). Anular el pago despues devuelve la
-   * plata (200), pero hay que saber que hace falta. Al corregirlo en el backend, sacar el `fixme`.
+   * La carrera de verdad: un pago en efectivo y la anulacion del mismo egreso a la vez. Hasta
+   * appKine-api #136 el pago (UPDATE nativo de `descontarSaldo`, sin `@Version`) y la anulacion
+   * (lectura + `@Version`) no se veian: en 9 de 12 carreras ganaban los dos y el egreso quedaba
+   * ANULADO con un pago EFECTIVO vigente. Hoy `anular` toma el egreso con `FOR UPDATE`, asi que las
+   * dos operaciones se serializan y exactamente una gana:
+   *   - gana el pago (201): la anulacion recibe 409 `egreso-con-pagos`;
+   *   - gana la anulacion (200): el pago recibe 409 `egreso-no-pagable`.
+   * Nunca queda un egreso ANULADO con un pago vigente.
    */
-  test.fixme('un pago y una anulacion a la vez nunca dejan un egreso anulado con un pago vigente', async () => {
+  test('un pago y una anulacion a la vez: gana uno, el otro recibe 409, y nunca queda anulado con pago vigente', async () => {
     test.slow();
     const { api, centro } = propio;
     const sede = `/api/v1/consultorios/${centro.consultorioId}`;
@@ -184,9 +174,18 @@ test.describe('Egresos con dos operadores a la vez contra el backend real', () =
           motivo: 'Carrera sintetica de los E2E',
         }),
       ]);
-      // Cada uno gana o pierde con un 409 de negocio: nunca un 500.
-      expect([201, 409], `pago: ${await pago.text()}`).toContain(pago.status());
-      expect([200, 409], `anulacion: ${await anulacion.text()}`).toContain(anulacion.status());
+      // Exactamente uno gana; el otro pierde con el 409 de negocio que le corresponde, nunca un 500.
+      const pagoTexto = await pago.text();
+      const anulacionTexto = await anulacion.text();
+      const resumen = `pago ${pago.status()} ${pagoTexto} | anulacion ${anulacion.status()} ${anulacionTexto}`;
+      const ganoElPago = pago.status() === 201 && anulacion.status() === 409;
+      const ganoLaAnulacion = anulacion.status() === 200 && pago.status() === 409;
+      expect(ganoElPago || ganoLaAnulacion, `exactamente uno gana: ${resumen}`).toBe(true);
+      const tipoPerdedor = (JSON.parse(ganoElPago ? anulacionTexto : pagoTexto) as { type: string })
+        .type;
+      expect(tipoPerdedor, resumen).toBe(
+        uriDeProblema(ganoElPago ? 'egreso-con-pagos' : 'egreso-no-pagable'),
+      );
 
       const final = await api.exigir<Egreso>('GET', `${sede}/egresos/${egreso.id}`);
       const vigentes = (final.pagos ?? []).filter((p) => p.estado !== 'ANULADO');
