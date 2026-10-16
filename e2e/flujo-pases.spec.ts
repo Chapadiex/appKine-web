@@ -150,7 +150,7 @@ test.describe('Pases contra el backend real', () => {
 
     // ---- Ajuste: fuera de rango lo frena la pantalla; -1 con motivo lo registra el backend.
     await filaDe(page, producto)
-      .getByRole('button', { name: `Ajustar el saldo de ${producto}` })
+      .getByRole('button', { name: `Ajustar saldo de ${producto}` })
       .click();
     await page.getByLabel('Creditos a sumar o restar').fill('1');
     await expect(page.getByText('El saldo tiene que quedar entre 0 y 3.')).toBeVisible();

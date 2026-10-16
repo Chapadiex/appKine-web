@@ -280,6 +280,7 @@
         <thead>
           <tr>
             <th scope="col">Producto</th>
+            <th scope="col">Tipo</th>
             <th scope="col">Oferta</th>
             <th scope="col">Creditos</th>
             <th scope="col">Precio</th>
@@ -296,11 +297,11 @@
             <tr [class.fila--revocada]="producto.active === false">
               <td>
                 {{ producto.nombre }}
-                <div class="ayuda">{{ tipoDeProducto(producto) }}</div>
                 @if (producto.descripcion) {
                   <div class="ayuda">{{ producto.descripcion }}</div>
                 }
               </td>
+              <td>{{ tipoDeProducto(producto) }}</td>
               <td>{{ nombreDeOferta(producto) }}</td>
               <td>{{ creditos(producto.creditos) }}</td>
               <td class="importe">{{ importe(producto.precio, producto.moneda) }}</td>
