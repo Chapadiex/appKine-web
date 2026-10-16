@@ -1,4 +1,14 @@
 <p><a class="enlace" routerLink="/asistencia">Volver a las clases del dia</a></p>
+@if (puedeAtender()) {
+  <p>
+    <a class="enlace" [routerLink]="['/atencion/clases', claseId()]"
+      >Atencion clinica de la clase</a
+    >
+    <span class="ayuda">
+      — la atencion de cada participante que estuvo y fue derivado a un caso.</span
+    >
+  </p>
+}
 
 @switch (estado().tipo) {
   @case ('cargando') {

@@ -5,10 +5,14 @@
   distintas y esta pantalla registra la segunda.
 </p>
 
-<p><a class="enlace" routerLink="/agenda">Volver a la agenda</a></p>
+@if (rutaDeLaClase(); as rutaClase) {
+  <p><a class="enlace" [routerLink]="rutaClase">Volver a la atencion clinica de la clase</a></p>
+} @else {
+  <p><a class="enlace" routerLink="/agenda">Volver a la agenda</a></p>
+}
 
 @if (abriendo()) {
-  <p class="estado estado--cargando">Abriendo la atencion de este turno…</p>
+  <p class="estado estado--cargando">Abriendo la atencion…</p>
 }
 
 <!--
@@ -125,6 +129,20 @@
     </h2>
 
     <dl class="detalle">
+      <!--
+        Atencion de un participante de una clase (AKINE-08.05). Sin turno: Turno no es Clase. Su
+        caso lo fijo la derivacion clinica y no se cambia desde aca.
+      -->
+      @if (esGrupal()) {
+        <dt>Origen</dt>
+        <dd>
+          Participante de una clase grupal
+          @if (atencion.claseId !== undefined) {
+            (clase {{ atencion.claseId }})
+          }
+        </dd>
+      }
+
       <dt>Iniciada</dt>
       <dd>{{ instanteEnPalabras(atencion.iniciadaEn) }}</dd>
 
@@ -169,6 +187,15 @@
       Cambiar el caso de la atencion abierta (contrato 0.102.0). Es una escritura sobre la version
       de la sesion: se bloquea mientras otra escritura viaja con esa misma version.
     -->
+    @if (esGrupal() && !cerrada()) {
+      <p class="ayuda">
+        El caso de esta atencion lo fijo la derivacion del participante en la clase, y no se cambia
+        desde aca. Con la atencion abierta la derivacion ya no se puede revertir: si el caso era
+        otro, cerra esta atencion con lo que paso (ausente, si no hubo atencion) y deriva al
+        participante al caso que corresponde.
+      </p>
+    }
+
     @if (!cerrada() && puedeCambiarCaso()) {
       <div class="campo">
         <label for="atencion-caso">Caso clinico de esta atencion</label>

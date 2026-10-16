@@ -13,6 +13,7 @@ import {
   PERMISO_CLASE_MANAGE,
   PERMISO_INSCRIPCION_MANAGE,
   PERMISO_INSCRIPCION_READ,
+  PERMISO_SESION_REGISTER,
 } from '../../../../core/models/permisos';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { PermissionsStore } from '../../../../core/services/permissions.store';
@@ -125,6 +126,8 @@ export class DetalleDeClasePage {
   protected readonly puedeVerParticipantes = computed(() =>
     this.permisos.tiene(PERMISO_INSCRIPCION_READ),
   );
+  /** Ofrece la atencion clinica de la clase (AKINE-08.05). UX: el backend decide igual. */
+  protected readonly puedeAtender = computed(() => this.permisos.tiene(PERMISO_SESION_REGISTER));
   protected readonly puedeOperarInscripciones = computed(() =>
     this.permisos.tiene(PERMISO_INSCRIPCION_MANAGE),
   );

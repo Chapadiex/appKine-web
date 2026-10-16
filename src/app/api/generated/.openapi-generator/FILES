@@ -210,6 +210,7 @@ model/cobertura-para-oferta-response.ts
 model/cobertura-response.ts
 model/cobro.ts
 model/comparacion-de-mediciones.ts
+model/configuracion-de-renovacion-de-abono.ts
 model/consultorio-page-response.ts
 model/consultorio-response.ts
 model/consumo-de-credito.ts
@@ -358,6 +359,7 @@ model/obligacion.ts
 model/oferta-response.ts
 model/orden-response.ts
 model/organization-response.ts
+model/pagina-de-movimientos-de-pase.ts
 model/pago-de-egreso.ts
 model/pago-de-financiador.ts
 model/parametro-de-tratamiento-leido.ts

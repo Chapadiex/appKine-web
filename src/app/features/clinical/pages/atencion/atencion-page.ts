@@ -163,8 +163,13 @@ export class AtencionPage {
   private readonly tenantContext = inject(TenantContextStore);
   private readonly destroyRef = inject(DestroyRef);
 
-  /** De la ruta. `withComponentInputBinding` lo liga solo. */
-  readonly turnoId = input.required<string>();
+  /**
+   * De la ruta. `withComponentInputBinding` lo liga solo. Viene uno de los dos: `turnoId` en la
+   * atencion de un turno, que se inicia al entrar, y `sesionId` en la de un participante de una
+   * clase (AKINE-08.05), que ya se inicio desde el panel de la clase y aca solo se lee.
+   */
+  readonly turnoId = input<string>();
+  readonly sesionId = input<string>();
 
   protected readonly escala = ESCALA_EVA;
   protected readonly evoluciones = EVOLUCIONES;
@@ -207,8 +212,24 @@ export class AtencionPage {
    * ninguno de los dos el selector solo ofreceria "Sin caso", que es lo que ya hay.
    */
   protected readonly puedeCambiarCaso = computed(
-    () => this.casos().length > 0 || this.sesion()?.casoId !== undefined,
+    () => !this.esGrupal() && (this.casos().length > 0 || this.sesion()?.casoId !== undefined),
   );
+
+  /**
+   * `true` si la atencion es de un participante de una clase (AKINE-08.05). Su caso lo fijo la
+   * derivacion y no se cambia —el backend responde 409 `caso-de-atencion-grupal`—, asi que el
+   * selector de caso no se ofrece y la pantalla dice de que clase viene.
+   */
+  protected readonly esGrupal = computed(() => {
+    const sesion = this.sesion();
+    return sesion?.derivacionId !== undefined || sesion?.claseId !== undefined;
+  });
+
+  /** Panel de la clase de la que viene la atencion grupal, o `null`. */
+  protected readonly rutaDeLaClase = computed(() => {
+    const claseId = this.sesion()?.claseId;
+    return claseId === undefined ? null : `/atencion/clases/${claseId}`;
+  });
 
   /** El caso asociado cuando ya no esta entre los activos (se cerro despues de asociarlo). */
   protected readonly casoActualFueraDeLista = computed(() => {
@@ -316,6 +337,7 @@ export class AtencionPage {
       // Depende de la ruta y del contexto: cambiar de sede invalida el turno, que es de la
       // sede anterior.
       this.turnoId();
+      this.sesionId();
       this.tenantContext.contextEpoch();
       untracked(() => this.abrir());
     });
@@ -337,11 +359,57 @@ export class AtencionPage {
    */
   protected abrir(): void {
     const consultorioId = this.tenantContext.consultorioId();
+    const sesionId = this.numeroDeSesion();
     const turnoId = this.numeroDeTurno();
-    if (consultorioId === null || turnoId === null) {
+    if (consultorioId === null) {
+      return;
+    }
+    if (sesionId !== null) {
+      this.limpiarApertura();
+      this.abrirSesion(consultorioId, sesionId);
+      return;
+    }
+    if (turnoId === null) {
       return;
     }
 
+    this.limpiarApertura();
+    this.api.casosDelTurno(consultorioId, turnoId).subscribe(({ ofertaId, casos }) => {
+      this.casos.set(casos);
+      if (casos.length === 0) {
+        this.iniciar();
+        return;
+      }
+      // Se sugiere el caso de la misma oferta solo si es uno: con dos, elegir por el profesional
+      // seria adivinar de cual de los dos tratamientos es esta sesion.
+      const deLaOferta = casos.filter((caso) => caso.ofertaId === ofertaId);
+      this.casoElegido.set(deLaOferta.length === 1 ? (deLaOferta[0].id ?? null) : null);
+      this.abriendo.set(false);
+      this.eligiendoCaso.set(true);
+    });
+  }
+
+  /**
+   * Abre por su id una atencion que ya existe (AKINE-08.05): la de un participante de una clase.
+   * La inicio el panel de la clase, que es donde se elige la derivacion —y con ella el caso—, asi
+   * que aca no hay nada que iniciar ni que preguntar.
+   */
+  private abrirSesion(consultorioId: number, sesionId: number): void {
+    this.api.ver(consultorioId, sesionId).subscribe({
+      next: (sesion) => {
+        this.abriendo.set(false);
+        this.adoptar(sesion);
+      },
+      error: (error: unknown) => {
+        this.abriendo.set(false);
+        this.sesion.set(null);
+        this.error.set(traducirErrorAtencion(error));
+      },
+    });
+  }
+
+  /** Deja la pantalla como recien entrada: nada de la atencion anterior queda a la vista. */
+  private limpiarApertura(): void {
     this.cancelarAutosave();
     this.abriendo.set(true);
     this.error.set(null);
@@ -360,20 +428,6 @@ export class AtencionPage {
     this.casoElegido.set(null);
     this.casoIgnorado.set(false);
     this.avisoCaso.set('');
-
-    this.api.casosDelTurno(consultorioId, turnoId).subscribe(({ ofertaId, casos }) => {
-      this.casos.set(casos);
-      if (casos.length === 0) {
-        this.iniciar();
-        return;
-      }
-      // Se sugiere el caso de la misma oferta solo si es uno: con dos, elegir por el profesional
-      // seria adivinar de cual de los dos tratamientos es esta sesion.
-      const deLaOferta = casos.filter((caso) => caso.ofertaId === ofertaId);
-      this.casoElegido.set(deLaOferta.length === 1 ? (deLaOferta[0].id ?? null) : null);
-      this.abriendo.set(false);
-      this.eligiendoCaso.set(true);
-    });
   }
 
   protected elegirCaso(valor: string): void {
@@ -847,9 +901,18 @@ export class AtencionPage {
   }
 
   private numeroDeTurno(): number | null {
-    const id = Number(this.turnoId());
-    return Number.isFinite(id) && id > 0 ? id : null;
+    return idPositivo(this.turnoId());
   }
+
+  private numeroDeSesion(): number | null {
+    return idPositivo(this.sesionId());
+  }
+}
+
+/** El id de la ruta, o `null` si falta o no es un entero positivo. */
+function idPositivo(valor: string | undefined): number | null {
+  const id = Number(valor);
+  return valor !== undefined && Number.isInteger(id) && id > 0 ? id : null;
 }
 
 /** Texto recortado, o `undefined` para que la clave no viaje. */

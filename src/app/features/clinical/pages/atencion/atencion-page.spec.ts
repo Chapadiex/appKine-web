@@ -844,6 +844,64 @@ describe('AtencionPage', () => {
   // Apoyo
   // -------------------------------------------------------------------------------------
 
+  // -------------------------------------------------------------------------------------
+  // Atencion de un participante de una clase (AKINE-08.05)
+  // -------------------------------------------------------------------------------------
+
+  describe('abierta por id, desde el panel de una clase', () => {
+    const GRUPAL = {
+      ...ABIERTA,
+      turnoId: undefined,
+      claseId: 40,
+      derivacionId: 30,
+      casoId: 7,
+    };
+
+    function abrirPorId(): ComponentFixture<AtencionPage> {
+      tenantContext.select({
+        organizationId: 1,
+        organizationName: 'Centro Belgrano',
+        consultorioId: CONSULTORIO,
+        consultorioName: 'Sede Centro',
+      });
+      const fixture = TestBed.createComponent(AtencionPage);
+      fixture.componentRef.setInput('sesionId', String(SESION));
+      fixture.detectChanges();
+      return fixture;
+    }
+
+    it('la lee sin iniciar nada, dice de que clase viene y no ofrece cambiar el caso', async () => {
+      const fixture = abrirPorId();
+      // Ni el turno, ni sus casos, ni un POST de inicio: la atencion ya existe.
+      httpMock.expectNone((p) => p.method === 'POST');
+      httpMock.expectNone(TURNO_URL);
+      const lectura = httpMock.expectOne((p) => p.method === 'GET' && p.url === VER);
+      lectura.flush(GRUPAL);
+      await estabilizar(fixture);
+      responderBloques();
+      await estabilizar(fixture);
+
+      expect(texto(fixture)).toContain('Atencion en curso');
+      expect(texto(fixture)).toContain('Participante de una clase grupal');
+      expect(texto(fixture)).toContain('lo fijo la derivacion');
+      expect(fixture.nativeElement.querySelector('#atencion-caso')).toBeNull();
+      expect(fixture.nativeElement.querySelector('a[href="/atencion/clases/40"]')).not.toBeNull();
+    });
+
+    it('si no se puede leer, lo dice', async () => {
+      const fixture = abrirPorId();
+      httpMock
+        .expectOne((p) => p.method === 'GET' && p.url === VER)
+        .flush(
+          { type: 'https://akine.app/problems/not-found', status: 404 },
+          { status: 404, statusText: 'Not Found' },
+        );
+      await estabilizar(fixture);
+      expect(texto(fixture)).toContain('no existen');
+      expect(texto(fixture)).not.toContain('Atencion en curso');
+    });
+  });
+
   async function montar(sesion: object = ABIERTA): Promise<ComponentFixture<AtencionPage>> {
     tenantContext.select({
       organizationId: 1,

@@ -1,0 +1,162 @@
+import { randomUUID } from 'node:crypto';
+
+import { nonce } from './support/akine';
+import { expect, navegar, respuestaDe, test } from './support/agenda-real';
+import {
+  ApiAkine,
+  comoProfesional,
+  crearOferta,
+  crearPersona,
+  fechaLocal,
+} from './support/sembrado';
+import { instanteEnZona } from './support/sembrado-asistencia';
+import { JUSTIFICACION, exigirCon, ingresarAlCentro } from './support/sembrado-pantallas-098';
+
+/**
+ * E2E de la atencion clinica grupal (AKINE-08.05) contra el backend REAL.
+ *
+ * <p>Clase de una oferta grupal que genera registro clinico, con una participante presente y
+ * derivada a su Caso → panel de atencion clinica de la clase → "Iniciar atencion" → la Sesion
+ * abre en la pantalla de atencion de siempre, marcada como de la clase y sin selector de caso →
+ * de vuelta en el panel, la atencion figura en curso y la derivacion explica que ya no se revierte.
+ *
+ * <p>Lo que estos pasos prueban y los unitarios no pueden: que el backend abra la Sesion desde la
+ * derivacion con el Caso de la derivacion, que `verSesion` devuelva `claseId`/`derivacionId` para
+ * que la pantalla la reconozca como grupal, y que el panel la liste despues.
+ *
+ * <p>Ingresa por pantalla como la <b>profesional</b>: `sesion:register` es suyo y la Sesion es de
+ * quien la abre.
+ */
+test.describe.configure({ mode: 'default' });
+
+/** Bloque de dias propio (ver `DIAS` en `support/sembrado.ts`): lejos de los demas specs. */
+const DIA_ATENCION_GRUPAL = 153;
+
+test.describe('Atencion clinica grupal contra el backend real', () => {
+  test('panel de la clase, iniciar la atencion de una participante y abrir su Sesion', async ({
+    page,
+    api,
+    centro,
+  }) => {
+    test.setTimeout(180_000);
+    const base = `/api/v1/consultorios/${centro.consultorioId}`;
+
+    // --- Sembrado por la API ------------------------------------------------------------
+    const oferta = await crearOferta(api, centro, {
+      nombre: `Rehabilitacion grupal E2E ${nonce()}`,
+      habilitarProfesional: false,
+      extra: {
+        modalidad: 'GRUPAL',
+        capacidad: 8,
+        requiereProfesional: false,
+        generaRegistroClinico: true,
+      },
+    });
+    const fecha = fechaLocal(centro.timezone, DIA_ATENCION_GRUPAL);
+    const minuto = String(Math.floor(Math.random() * 6) * 10).padStart(2, '0');
+    const titulo = `Rehabilitacion de rodilla ${nonce()}`;
+    const clase = await api.exigir<{ id: number }>('POST', `${base}/clases/ofertas/${oferta.id}`, {
+      titulo,
+      capacidad: 6,
+      inicio: instanteEnZona(fecha, `15:${minuto}`, centro.timezone),
+      fin: instanteEnZona(fecha, `16:${minuto}`, centro.timezone),
+      idempotencyKey: randomUUID(),
+    });
+    const persona = await crearPersona(api, { nombre: 'Marta' });
+    const { inscripcion } = await api.exigir<{ inscripcion: { id: number } }>(
+      'POST',
+      `${base}/clases/${clase.id}/inscripciones`,
+      { personaId: persona.id, aceptaListaEspera: false, idempotencyKey: randomUUID() },
+    );
+    await api.exigir('POST', `${base}/clases/${clase.id}/inicio`);
+    await api.exigir('POST', `${base}/clases/${clase.id}/asistencias/lote`, {
+      items: [{ inscripcionId: inscripcion.id, resultado: 'PRESENTE' }],
+    });
+
+    // La profesional abre la historia, el Caso, y deriva a la participante a ese Caso.
+    const profesional: ApiAkine = await comoProfesional(centro);
+    const historia = await exigirCon<{ id: number }>(
+      profesional,
+      'PUT',
+      `/api/v1/historias-clinicas/por-persona/${persona.id}`,
+      undefined,
+      JUSTIFICACION,
+    );
+    const caso = await exigirCon<{ id: number }>(
+      profesional,
+      'POST',
+      `/api/v1/historias-clinicas/${historia.id}/casos`,
+      { ofertaId: oferta.id, diagnosticoPresuntivo: 'Gonalgia sintetica de los E2E' },
+      JUSTIFICACION,
+    );
+    const derivacion = await exigirCon<{ id: number }>(
+      profesional,
+      'POST',
+      `${base}/clases/${clase.id}/inscripciones/${inscripcion.id}/derivaciones`,
+      { casoClinicoId: caso.id, motivo: 'Derivacion sintetica de los E2E' },
+      JUSTIFICACION,
+    );
+
+    // --- Pantalla: el panel de la clase ---------------------------------------------------
+    await ingresarAlCentro(page, centro.emailProfesional, centro);
+    const panel = respuestaDe(page, 'GET', /\/clases\/\d+\/atencion-clinica$/);
+    await navegar(page, `/atencion/clases/${clase.id}`);
+    expect((await panel).status()).toBe(200);
+    await expect(page.getByRole('heading', { level: 1 })).toContainText(titulo);
+
+    const fila = page.getByRole('row').filter({ hasText: persona.apellido });
+    await expect(fila).toContainText('Presente');
+    await expect(fila).toContainText('Sin atencion');
+
+    // --- Iniciar la atencion: sin relacion asistencial el backend puede pedir motivo ---------
+    const inicio = respuestaDe(page, 'POST', /\/inscripciones\/\d+\/atencion-clinica$/);
+    await fila.getByRole('button', { name: /Iniciar atencion/ }).click();
+    let respuesta = await inicio;
+    if (respuesta.status() === 403) {
+      await page.getByLabel('Motivo del acceso').fill(JUSTIFICACION['X-Justificacion-Acceso']);
+      const reintento = respuestaDe(page, 'POST', /\/inscripciones\/\d+\/atencion-clinica$/);
+      await page.getByRole('button', { name: 'Declarar y seguir' }).click();
+      respuesta = await reintento;
+    }
+    expect(respuesta.status()).toBe(201);
+    const atencion = (await respuesta.json()) as {
+      sesionId: number;
+      casoId: number;
+      derivacionId: number;
+    };
+    expect(atencion.casoId).toBe(caso.id);
+    expect(atencion.derivacionId).toBe(derivacion.id);
+
+    // --- La Sesion abre en la pantalla de atencion, como de la clase -----------------------
+    await expect(page).toHaveURL(new RegExp(`/atencion/sesiones/${atencion.sesionId}$`));
+    await expect(page.getByRole('heading', { name: 'Atencion en curso' })).toBeVisible();
+    await expect(page.getByText('Participante de una clase grupal')).toBeVisible();
+    await expect(page.getByLabel('Caso clinico de esta atencion')).toHaveCount(0);
+
+    // --- De vuelta en el panel: la atencion en curso, y la derivacion ya no se revierte ------
+    await page.getByRole('link', { name: 'Volver a la atencion clinica de la clase' }).click();
+    const filaDespues = page.getByRole('row').filter({ hasText: persona.apellido });
+    await expect(filaDespues).toContainText('Atencion en curso');
+    await expect(filaDespues.getByRole('button', { name: /Iniciar atencion/ })).toHaveCount(0);
+
+    // Leer las derivaciones es lectura clinica: la pantalla nueva no recuerda el motivo declarado.
+    const lectura = respuestaDe(page, 'GET', /\/inscripciones\/\d+\/derivaciones$/);
+    await filaDespues.getByRole('button', { name: /Derivaciones/ }).click();
+    if ((await lectura).status() === 403) {
+      await page.getByLabel('Motivo del acceso').fill(JUSTIFICACION['X-Justificacion-Acceso']);
+      await page.getByRole('button', { name: 'Declarar y seguir' }).click();
+    }
+    const derivaciones = page.getByRole('region', { name: /Derivaciones de/ });
+    await expect(derivaciones).toContainText('la derivacion no se puede revertir');
+
+    // Y el backend lo confirma: revertir es 409 derivacion-con-sesion.
+    const reversion = await profesional.pedir(
+      'POST',
+      `${base}/clases/${clase.id}/inscripciones/${inscripcion.id}/derivaciones/${derivacion.id}/reversion`,
+      { motivo: 'Intento del E2E' },
+      JUSTIFICACION,
+    );
+    expect(reversion.status()).toBe(409);
+    expect(((await reversion.json()) as { type: string }).type).toContain('derivacion-con-sesion');
+  });
+});

@@ -151,6 +151,13 @@ export const PERMISO_REPORTE_READ = 'reporte:read';
 export const PERMISO_HC_READ = 'hc:read';
 
 /**
+ * Registrar atenciones clinicas (M14). Solo decide si se OFRECE el enlace a la atencion clinica de
+ * una clase (AKINE-08.05): escribir en una atencion es ademas de quien la lleva, y eso lo decide el
+ * backend (409 `sesion-ajena`).
+ */
+export const PERMISO_SESION_REGISTER = 'sesion:register';
+
+/**
  * Clases grupales (M28, AKINE-08.01). `clase:read` mira la grilla y los cupos —que no nombran a
  * nadie—; `clase:manage` programa, reprograma y cancela. Son codigos propios y no `turno:*`
  * (decision pendiente 9 del backend): una clase no es N turnos.

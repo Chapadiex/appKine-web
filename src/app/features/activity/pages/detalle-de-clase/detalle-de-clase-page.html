@@ -264,6 +264,14 @@
           <a class="enlace" [routerLink]="['/asistencia', actual.id]">Tomar asistencia</a>
           <span class="ayuda"> — iniciar la clase, registrar quien vino y cerrarla.</span>
         </p>
+        @if (puedeAtender()) {
+          <p>
+            <a class="enlace" [routerLink]="['/atencion/clases', actual.id]">Atencion clinica</a>
+            <span class="ayuda">
+              — abrir la atencion de cada participante que estuvo y fue derivado a un caso.</span
+            >
+          </p>
+        }
       }
       @if (participantes() === null) {
         <p class="estado estado--cargando">Leyendo los participantes…</p>

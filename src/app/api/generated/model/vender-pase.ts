@@ -33,5 +33,9 @@ export interface VenderPase {
      * Producto vigente de la sede
      */
     productoId?: number;
+    /**
+     * Solo abonos (desde 0.116.0): que el sistema venda solo el periodo siguiente, con su obligacion, cuando este se acerque a su fin. Ausente o false: no se renueva. En un pack es 400
+     */
+    renovacionAutomatica?: boolean;
 }
 
