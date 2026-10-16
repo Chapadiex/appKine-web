@@ -28,6 +28,7 @@ import {
 import {
   claseDeEstado,
   conceptoEnPalabras,
+  esDeVenta,
   origenEnPalabras,
   estadoEnPalabras,
   fechaEnPalabras,
@@ -116,6 +117,12 @@ export class CuentaCorrientePage {
   protected readonly rutaCobros = computed(
     () => `/pacientes/${this.personaId()}/cuenta-corriente/cobros`,
   );
+  /**
+   * Los pases de la persona (`features/activity`), donde se anula la deuda de una venta: anular el
+   * pase anula pase y deuda juntos (contrato 0.114.0). La ruta va escrita y no importada, porque
+   * un feature no importa de otro (ADR-0004).
+   */
+  protected readonly rutaPases = computed(() => `/pacientes/${this.personaId()}/pases`);
 
   protected readonly estadoEnPalabras = estadoEnPalabras;
   protected readonly claseDeEstado = claseDeEstado;
@@ -124,6 +131,7 @@ export class CuentaCorrientePage {
   protected readonly fechaEnPalabras = (valor: string | undefined): string =>
     fechaEnPalabras(valor, this.diaDeLaSede.zona());
   protected readonly sePuedeAnular = sePuedeAnular;
+  protected readonly esDeVenta = esDeVenta;
 
   protected readonly estado = signal<EstadoCuenta>({ tipo: 'cargando' });
   protected readonly persona = signal<PersonaResponse | null>(null);

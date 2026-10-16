@@ -174,6 +174,8 @@ export enum ProblemType {
 
     HTTPS___AKINE_APP_PROBLEMS_OBLIGACION_CON_COBROS = 'https://akine.app/problems/obligacion-con-cobros',
 
+    HTTPS___AKINE_APP_PROBLEMS_OBLIGACION_DE_VENTA = 'https://akine.app/problems/obligacion-de-venta',
+
     HTTPS___AKINE_APP_PROBLEMS_COBRO_NO_CUADRA = 'https://akine.app/problems/cobro-no-cuadra',
 
     HTTPS___AKINE_APP_PROBLEMS_SALDO_INSUFICIENTE = 'https://akine.app/problems/saldo-insuficiente',

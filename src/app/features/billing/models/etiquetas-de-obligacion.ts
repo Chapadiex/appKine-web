@@ -149,6 +149,19 @@ export function sePuedeAnular(obligacion: Obligacion): boolean {
 }
 
 /**
+ * `true` si la deuda salio de la venta de un pase o un abono y no de una sesion (contrato
+ * 0.114.0).
+ *
+ * <p>Esa deuda <b>no se anula sola</b>: `DELETE /obligaciones/{id}` responde 409
+ * `obligacion-de-venta`, porque dejaria el pase `ACTIVO` con sus creditos y sin deuda que lo
+ * respalde. Se anula el pase, que anula las dos cosas juntas. Misma regla que el backend: todo
+ * origen distinto de `SESION`. Sin origen (deudas anteriores a M29) es una sesion.
+ */
+export function esDeVenta(obligacion: Obligacion): boolean {
+  return (obligacion.origen ?? ObligacionOrigenEnum.SESION) !== ObligacionOrigenEnum.SESION;
+}
+
+/**
  * Fecha de negocio legible, en la zona de la sede.
  *
  * <p>Un instante (`devengadaEn`, `registradoEn`) se muestra en `zona` —`DiaDeLaSede.zona()`—: una

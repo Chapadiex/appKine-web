@@ -21,6 +21,10 @@ import { AkineHttpError } from '../../../core/interceptors/error.interceptor';
  *   <li><b>`concurrent-modification`</b> (409): la version quedo vieja porque la deuda cambio
  *       entre que se leyo y que se aprieta anular. Nada se pisa, y la salida tambien es
  *       recargar.</li>
+ *   <li><b>`obligacion-de-venta`</b> (409, contrato 0.114.0): la deuda salio de la venta de un
+ *       pase o un abono. Anularla sola dejaria el pase activo con sus creditos; lo que corresponde
+ *       es anular <b>el pase</b>, que anula pase y deuda juntos. La pantalla ya no ofrece el boton
+ *       en esas filas, y esto cubre el caso de que el rechazo llegue igual.</li>
  * </ul>
  */
 export type CausaObligacion =
@@ -34,6 +38,8 @@ export type CausaObligacion =
   | 'falta-motivo'
   /** 409 `obligacion-con-cobros`: hay plata imputada. Corresponde una devolucion. */
   | 'con-cobros'
+  /** 409 `obligacion-de-venta`: es la deuda de una venta. Se anula el pase, no la deuda. */
+  | 'de-venta'
   /** 409 `obligacion-already-anulada`: ya estaba anulada. */
   | 'ya-anulada'
   /** 409 `concurrent-modification`: la version quedo vieja. Recargar. */
@@ -116,6 +122,17 @@ const MENSAJE_CON_COBROS =
   'plata en la caja sin ninguna deuda que la justifique y el arqueo del dia no cerraria. Lo que ' +
   'corresponde es registrar una devolucion.';
 
+/**
+ * `obligacion-de-venta`: no es un "no se puede", es "se hace desde otro lado".
+ *
+ * <p>Nombra la pantalla donde se anula, para que el administrativo no se quede con una deuda que
+ * cree que no tiene salida.
+ */
+const MENSAJE_DE_VENTA =
+  'Esta deuda es de la venta de un pase o un abono, y no se anula sola: dejaria el pase activo ' +
+  'con sus creditos. Lo que corresponde es anular el pase desde los pases de la persona, que ' +
+  'anula el pase y esta deuda juntos.';
+
 /** Traduce cualquier error de la cuenta corriente. */
 export function traducirErrorObligacion(error: unknown): ErrorObligacion {
   if (!(error instanceof AkineHttpError)) {
@@ -145,6 +162,8 @@ export function traducirErrorObligacion(error: unknown): ErrorObligacion {
         causa: 'con-cobros',
         yaCobrado: error.numeroDeExtension('yaCobrado'),
       };
+    case 'obligacion-de-venta':
+      return { mensaje: MENSAJE_DE_VENTA, causa: 'de-venta', yaCobrado: null };
     case 'obligacion-already-anulada':
       return { mensaje: MENSAJE_YA_ANULADA, causa: 'ya-anulada', yaCobrado: null };
     case 'concurrent-modification':
