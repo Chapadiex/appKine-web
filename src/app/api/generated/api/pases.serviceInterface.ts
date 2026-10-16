@@ -11,6 +11,8 @@ import { HttpHeaders }                                       from '@angular/comm
 
 import { Observable }                                        from 'rxjs';
 
+import { AjusteDeSaldoDePase } from '../model/models';
+import { AnulacionDePase } from '../model/models';
 import { BajaDeProducto } from '../model/models';
 import { CrearProducto } from '../model/models';
 import { EditarProducto } from '../model/models';
@@ -18,12 +20,25 @@ import { Pase } from '../model/models';
 import { PaseDetalle } from '../model/models';
 import { ProblemDetail } from '../model/models';
 import { Producto } from '../model/models';
+import { ResultadoDeAnulacionDePase } from '../model/models';
 import { ResultadoDeVenta } from '../model/models';
 import { VenderPase } from '../model/models';
 
 
 import { Configuration }                                     from '../configuration';
 
+
+export interface AjustarSaldoDePaseRequestParams {
+    consultorioId: number;
+    paseId: number;
+    ajusteDeSaldoDePase: AjusteDeSaldoDePase;
+}
+
+export interface AnularPaseRequestParams {
+    consultorioId: number;
+    paseId: number;
+    anulacionDePase: AnulacionDePase;
+}
 
 export interface CrearProductoRequestParams {
     consultorioId: number;
@@ -73,8 +88,24 @@ export interface PasesServiceInterface {
     configuration: Configuration;
 
     /**
-     * Crear un producto de pack
-     * Define un pack de creditos sobre una oferta de la sede: cantidad, precio y vigencia en dias. La oferta tiene que declarar &#x60;esquemaCobro &#x3D; POR_PACK&#x60;, que es la politica que despues hace que una asistencia consuma credito (RN-M29-005). **No crea saldo a nadie** (CA-M29-001-06).
+     * Ajustar a mano el saldo de un pase
+     * Suma o resta creditos con motivo obligatorio (RF-M29-005). Deja un movimiento &#x60;AJUSTE&#x60; en el ledger con actor y motivo y lo audita (CA-M29-005-06). **No toca la deuda ni la caja**: un credito no es plata (RN-M29-006).  El saldo final no puede ser negativo (RN-M29-008) ni superar los creditos comprados, y el pase tiene que estar &#x60;ACTIVO&#x60; o &#x60;AGOTADO&#x60; y dentro de su vigencia. &#x60;version&#x60; es la que el cliente leyo: un consumo que entro en el medio la movio y la respuesta es 409 &#x60;concurrent-modification&#x60;. Reenviar el mismo ajuste con la misma version devuelve el estado actual sin ajustar dos veces.
+     * @endpoint post /api/v1/consultorios/{consultorioId}/pases/{paseId}/ajustes
+* @param requestParameters
+     */
+    ajustarSaldoDePase(requestParameters: AjustarSaldoDePaseRequestParams, extraHttpRequestParams?: any): Observable<PaseDetalle>;
+
+    /**
+     * Anular un pase vendido por error
+     * Pasa el pase a &#x60;ANULADO&#x60; con motivo, descarta su saldo con un movimiento &#x60;AJUSTE&#x60; y **anula la deuda de la venta** en la misma transaccion: la obligacion no se borra, queda &#x60;ANULADA&#x60; con su motivo. Idempotente: anular uno anulado devuelve 200 sin escribir (&#x60;anulado &#x3D; false&#x60;).  Solo un pase **sin creditos usados** —con consumos, anularlo regalaria las clases tomadas; para descartar el resto se ajusta el saldo— y con una deuda **sin cobros**: con plata imputada primero se anula o reintegra el cobro (RF-M19-010). En los dos casos no se escribe nada.
+     * @endpoint post /api/v1/consultorios/{consultorioId}/pases/{paseId}/anulacion
+* @param requestParameters
+     */
+    anularPase(requestParameters: AnularPaseRequestParams, extraHttpRequestParams?: any): Observable<ResultadoDeAnulacionDePase>;
+
+    /**
+     * Crear un producto de pack o de abono
+     * Define un pack de creditos sobre una oferta de la sede: cantidad, precio y vigencia en dias. La oferta tiene que declarar &#x60;esquemaCobro &#x3D; POR_PACK&#x60;, que es la politica que despues hace que una asistencia consuma credito (RN-M29-005). **No crea saldo a nadie** (CA-M29-001-06).  Con &#x60;tipo &#x3D; ABONO&#x60; (desde 0.109.0, RF-M29-007) define un abono: la oferta tiene que declarar &#x60;POR_ABONO&#x60;, &#x60;creditos&#x60; son las asistencias que permite cada periodo y &#x60;vigenciaDias&#x60; la duracion maxima del periodo, que se elige al vender.
      * @endpoint post /api/v1/consultorios/{consultorioId}/productos
 * @param requestParameters
      */
@@ -114,7 +145,7 @@ export interface PasesServiceInterface {
 
     /**
      * Vender un pase a una persona
-     * Crea el pase con el snapshot del producto y su saldo inicial, el movimiento &#x60;COMPRA&#x60; del ledger y **una obligacion** a nombre de la persona, en una sola transaccion (RF-M29-002, RF-M18-009). **No cobra** (DP-06): la deuda se paga con &#x60;POST /cobros&#x60;. La persona no se convierte en paciente.  Con &#x60;idempotencyKey&#x60;, un reintento con el mismo pedido devuelve la venta existente con 200 sin duplicar pase, creditos ni deuda (CA-M29-002-06).
+     * Crea el pase con el snapshot del producto y su saldo inicial, el movimiento &#x60;COMPRA&#x60; del ledger y **una obligacion** a nombre de la persona, en una sola transaccion (RF-M29-002, RF-M18-009). **No cobra** (DP-06): la deuda se paga con &#x60;POST /cobros&#x60;. La persona no se convierte en paciente.  Con &#x60;idempotencyKey&#x60;, un reintento con el mismo pedido devuelve la venta existente con 200 sin duplicar pase, creditos ni deuda (CA-M29-002-06).  **Abono** (desde 0.109.0, RF-M29-007, RF-M18-010): si el producto es &#x60;ABONO&#x60;, &#x60;periodoDesde&#x60; es obligatorio y el pase cubre ese periodo; la obligacion nace con &#x60;origen &#x3D; VENTA_ABONO&#x60;. Un periodo, una obligacion: un abono del mismo producto para la misma persona con periodo superpuesto es 409 &#x60;abono-periodo-superpuesto&#x60;. Renovar es vender el periodo siguiente.
      * @endpoint post /api/v1/consultorios/{consultorioId}/pases
 * @param requestParameters
      */

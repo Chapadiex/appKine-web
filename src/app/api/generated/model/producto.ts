@@ -28,7 +28,7 @@ export interface Producto {
     ofertaId?: number;
     precio?: number;
     /**
-     * Hoy solo `PACK`; `ABONO` es de 08.08
+     * `PACK`: creditos que valen `vigenciaDias` desde la compra. `ABONO` (desde 0.109.0): `creditos` son las asistencias que permite cada periodo y `vigenciaDias` la duracion maxima de un periodo, que se elige al vender
      */
     tipo?: ProductoTipoEnum;
     /**

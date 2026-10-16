@@ -17,6 +17,10 @@ import { Observable }                                        from 'rxjs';
 import { OpenApiHttpParams, QueryParamStyle } from '../query.params';
 
 // @ts-ignore
+import { AjusteDeSaldoDePase } from '../model/ajuste-de-saldo-de-pase';
+// @ts-ignore
+import { AnulacionDePase } from '../model/anulacion-de-pase';
+// @ts-ignore
 import { BajaDeProducto } from '../model/baja-de-producto';
 // @ts-ignore
 import { CrearProducto } from '../model/crear-producto';
@@ -31,6 +35,8 @@ import { ProblemDetail } from '../model/problem-detail';
 // @ts-ignore
 import { Producto } from '../model/producto';
 // @ts-ignore
+import { ResultadoDeAnulacionDePase } from '../model/resultado-de-anulacion-de-pase';
+// @ts-ignore
 import { ResultadoDeVenta } from '../model/resultado-de-venta';
 // @ts-ignore
 import { VenderPase } from '../model/vender-pase';
@@ -41,6 +47,8 @@ import { Configuration }                                     from '../configurat
 import { BaseService } from '../api.base.service';
 import {
     PasesServiceInterface,
+    AjustarSaldoDePaseRequestParams,
+    AnularPaseRequestParams,
     CrearProductoRequestParams,
     DarDeBajaProductoRequestParams,
     EditarProductoRequestParams,
@@ -63,8 +71,168 @@ export class PasesService extends BaseService implements PasesServiceInterface {
     }
 
     /**
-     * Crear un producto de pack
-     * Define un pack de creditos sobre una oferta de la sede: cantidad, precio y vigencia en dias. La oferta tiene que declarar &#x60;esquemaCobro &#x3D; POR_PACK&#x60;, que es la politica que despues hace que una asistencia consuma credito (RN-M29-005). **No crea saldo a nadie** (CA-M29-001-06).
+     * Ajustar a mano el saldo de un pase
+     * Suma o resta creditos con motivo obligatorio (RF-M29-005). Deja un movimiento &#x60;AJUSTE&#x60; en el ledger con actor y motivo y lo audita (CA-M29-005-06). **No toca la deuda ni la caja**: un credito no es plata (RN-M29-006).  El saldo final no puede ser negativo (RN-M29-008) ni superar los creditos comprados, y el pase tiene que estar &#x60;ACTIVO&#x60; o &#x60;AGOTADO&#x60; y dentro de su vigencia. &#x60;version&#x60; es la que el cliente leyo: un consumo que entro en el medio la movio y la respuesta es 409 &#x60;concurrent-modification&#x60;. Reenviar el mismo ajuste con la misma version devuelve el estado actual sin ajustar dos veces.
+     * @endpoint post /api/v1/consultorios/{consultorioId}/pases/{paseId}/ajustes
+     * @param requestParameters
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public ajustarSaldoDePase(requestParameters: AjustarSaldoDePaseRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<PaseDetalle>;
+    public ajustarSaldoDePase(requestParameters: AjustarSaldoDePaseRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<PaseDetalle>>;
+    public ajustarSaldoDePase(requestParameters: AjustarSaldoDePaseRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<PaseDetalle>>;
+    public ajustarSaldoDePase(requestParameters: AjustarSaldoDePaseRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        const consultorioId = requestParameters?.consultorioId;
+        if (consultorioId === null || consultorioId === undefined) {
+            throw new Error('Required parameter consultorioId was null or undefined when calling ajustarSaldoDePase.');
+        }
+        const paseId = requestParameters?.paseId;
+        if (paseId === null || paseId === undefined) {
+            throw new Error('Required parameter paseId was null or undefined when calling ajustarSaldoDePase.');
+        }
+        const ajusteDeSaldoDePase = requestParameters?.ajusteDeSaldoDePase;
+        if (ajusteDeSaldoDePase === null || ajusteDeSaldoDePase === undefined) {
+            throw new Error('Required parameter ajusteDeSaldoDePase was null or undefined when calling ajustarSaldoDePase.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        // to determine the Content-Type header
+        const consumes: string[] = [
+            'application/json'
+        ];
+        const httpContentTypeSelected: string | undefined = this.configuration.selectHeaderContentType(consumes);
+        if (httpContentTypeSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Content-Type', httpContentTypeSelected);
+        }
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/consultorios/${this.configuration.encodeParam({name: "consultorioId", value: consultorioId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/pases/${this.configuration.encodeParam({name: "paseId", value: paseId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/ajustes`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<PaseDetalle>('post', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                body: ajusteDeSaldoDePase,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * Anular un pase vendido por error
+     * Pasa el pase a &#x60;ANULADO&#x60; con motivo, descarta su saldo con un movimiento &#x60;AJUSTE&#x60; y **anula la deuda de la venta** en la misma transaccion: la obligacion no se borra, queda &#x60;ANULADA&#x60; con su motivo. Idempotente: anular uno anulado devuelve 200 sin escribir (&#x60;anulado &#x3D; false&#x60;).  Solo un pase **sin creditos usados** —con consumos, anularlo regalaria las clases tomadas; para descartar el resto se ajusta el saldo— y con una deuda **sin cobros**: con plata imputada primero se anula o reintegra el cobro (RF-M19-010). En los dos casos no se escribe nada.
+     * @endpoint post /api/v1/consultorios/{consultorioId}/pases/{paseId}/anulacion
+     * @param requestParameters
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public anularPase(requestParameters: AnularPaseRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<ResultadoDeAnulacionDePase>;
+    public anularPase(requestParameters: AnularPaseRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<ResultadoDeAnulacionDePase>>;
+    public anularPase(requestParameters: AnularPaseRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<ResultadoDeAnulacionDePase>>;
+    public anularPase(requestParameters: AnularPaseRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        const consultorioId = requestParameters?.consultorioId;
+        if (consultorioId === null || consultorioId === undefined) {
+            throw new Error('Required parameter consultorioId was null or undefined when calling anularPase.');
+        }
+        const paseId = requestParameters?.paseId;
+        if (paseId === null || paseId === undefined) {
+            throw new Error('Required parameter paseId was null or undefined when calling anularPase.');
+        }
+        const anulacionDePase = requestParameters?.anulacionDePase;
+        if (anulacionDePase === null || anulacionDePase === undefined) {
+            throw new Error('Required parameter anulacionDePase was null or undefined when calling anularPase.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        // to determine the Content-Type header
+        const consumes: string[] = [
+            'application/json'
+        ];
+        const httpContentTypeSelected: string | undefined = this.configuration.selectHeaderContentType(consumes);
+        if (httpContentTypeSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Content-Type', httpContentTypeSelected);
+        }
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/consultorios/${this.configuration.encodeParam({name: "consultorioId", value: consultorioId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/pases/${this.configuration.encodeParam({name: "paseId", value: paseId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/anulacion`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<ResultadoDeAnulacionDePase>('post', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                body: anulacionDePase,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * Crear un producto de pack o de abono
+     * Define un pack de creditos sobre una oferta de la sede: cantidad, precio y vigencia en dias. La oferta tiene que declarar &#x60;esquemaCobro &#x3D; POR_PACK&#x60;, que es la politica que despues hace que una asistencia consuma credito (RN-M29-005). **No crea saldo a nadie** (CA-M29-001-06).  Con &#x60;tipo &#x3D; ABONO&#x60; (desde 0.109.0, RF-M29-007) define un abono: la oferta tiene que declarar &#x60;POR_ABONO&#x60;, &#x60;creditos&#x60; son las asistencias que permite cada periodo y &#x60;vigenciaDias&#x60; la duracion maxima del periodo, que se elige al vender.
      * @endpoint post /api/v1/consultorios/{consultorioId}/productos
      * @param requestParameters
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
@@ -441,7 +609,7 @@ export class PasesService extends BaseService implements PasesServiceInterface {
 
     /**
      * Vender un pase a una persona
-     * Crea el pase con el snapshot del producto y su saldo inicial, el movimiento &#x60;COMPRA&#x60; del ledger y **una obligacion** a nombre de la persona, en una sola transaccion (RF-M29-002, RF-M18-009). **No cobra** (DP-06): la deuda se paga con &#x60;POST /cobros&#x60;. La persona no se convierte en paciente.  Con &#x60;idempotencyKey&#x60;, un reintento con el mismo pedido devuelve la venta existente con 200 sin duplicar pase, creditos ni deuda (CA-M29-002-06).
+     * Crea el pase con el snapshot del producto y su saldo inicial, el movimiento &#x60;COMPRA&#x60; del ledger y **una obligacion** a nombre de la persona, en una sola transaccion (RF-M29-002, RF-M18-009). **No cobra** (DP-06): la deuda se paga con &#x60;POST /cobros&#x60;. La persona no se convierte en paciente.  Con &#x60;idempotencyKey&#x60;, un reintento con el mismo pedido devuelve la venta existente con 200 sin duplicar pase, creditos ni deuda (CA-M29-002-06).  **Abono** (desde 0.109.0, RF-M29-007, RF-M18-010): si el producto es &#x60;ABONO&#x60;, &#x60;periodoDesde&#x60; es obligatorio y el pase cubre ese periodo; la obligacion nace con &#x60;origen &#x3D; VENTA_ABONO&#x60;. Un periodo, una obligacion: un abono del mismo producto para la misma persona con periodo superpuesto es 409 &#x60;abono-periodo-superpuesto&#x60;. Renovar es vender el periodo siguiente.
      * @endpoint post /api/v1/consultorios/{consultorioId}/pases
      * @param requestParameters
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.

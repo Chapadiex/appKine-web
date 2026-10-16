@@ -14,7 +14,10 @@ import { RouterLink } from '@angular/router';
 import { catchError, of } from 'rxjs';
 
 import { ConfirmacionConMotivo } from '../../../../shared/components/confirmacion-con-motivo/confirmacion-con-motivo';
-import { CreateOfertaRequest } from '../../../../api/generated/model/create-oferta-request';
+import {
+  CreateOfertaRequest,
+  CreateOfertaRequestEsquemaCobroEnum as EsquemaCobro,
+} from '../../../../api/generated/model/create-oferta-request';
 import { EstadoDeListado } from '../../../../shared/utils/estado-de-listado';
 import { OfertaResponse } from '../../../../api/generated/model/oferta-response';
 import { PERMISO_CONSULTORIO_MANAGE } from '../../../../core/models/permisos';
@@ -120,6 +123,7 @@ export class OfertasDeLaSedePage {
 
   protected readonly permisoManage = PERMISO_CONSULTORIO_MANAGE;
   protected readonly modalidades = MODALIDADES;
+  protected readonly esquemasDeCobro = Object.values(EsquemaCobro);
   protected readonly etiquetaDeModalidad = etiquetaDeModalidad;
   protected readonly etiquetaDeNaturaleza = etiquetaDeNaturaleza;
   protected readonly modalidadConCapacidad = modalidadConCapacidad;
@@ -540,9 +544,9 @@ export class OfertasDeLaSedePage {
       cuerpo.moneda = moneda;
     }
 
-    const esquema = valores.esquemaCobro.trim();
-    if (esquema !== '') {
-      cuerpo.esquemaCobro = esquema;
+    const esquema = esquemaDeCobro(valores.esquemaCobro);
+    if (esquema !== null) {
+      cuerpo.esquemaCobro = esquema as CreateOfertaRequest['esquemaCobro'];
     }
 
     if (valores.vigenciaDesde !== '') {
@@ -759,12 +763,12 @@ export class OfertasDeLaSedePage {
     if (valores.limpiarEsquemaCobro) {
       cambios.limpiarEsquemaCobro = true;
     } else {
-      const esquema = valores.esquemaCobro.trim();
+      const esquema = esquemaDeCobro(valores.esquemaCobro);
       // Vaciar el campo NO es como se quita el esquema: para eso esta `limpiarEsquemaCobro`, que
       // es la casilla de al lado. Mandar `esquemaCobro: ''` seria pedir un esquema llamado cadena
       // vacia.
-      if (esquema !== '' && esquema !== (original.esquemaCobro ?? '')) {
-        cambios.esquemaCobro = esquema;
+      if (esquema !== null && esquema !== ((original.esquemaCobro as string | undefined) ?? null)) {
+        cambios.esquemaCobro = esquema as UpdateOfertaRequest['esquemaCobro'];
       }
     }
 
@@ -878,6 +882,14 @@ export class OfertasDeLaSedePage {
 }
 
 /** `'true'` / `'false'` / `''` -&gt; booleano o `null` cuando se eligio heredar. */
+/** El valor del selector, o null si no se eligio ninguno de los que publica el contrato. */
+function esquemaDeCobro(valor: string): `${EsquemaCobro}` | null {
+  const limpio = valor.trim();
+  return (Object.values(EsquemaCobro) as string[]).includes(limpio)
+    ? (limpio as `${EsquemaCobro}`)
+    : null;
+}
+
 function comoBooleano(valor: Heredable): boolean | null {
   if (valor === 'true') {
     return true;

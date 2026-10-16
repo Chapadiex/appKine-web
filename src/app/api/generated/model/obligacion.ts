@@ -52,11 +52,11 @@ export interface Obligacion {
     motivoAnulacion?: string;
     ofertaId?: number;
     /**
-     * Que hecho devengo la deuda: una atencion (`SESION`) o la venta de un pack o pase (`VENTA_PASE`, RF-M18-009). Devengar no es cobrar: la deuda de una venta se paga con `POST /cobros` como cualquier otra.
+     * Que hecho devengo la deuda: una atencion (`SESION`) o la venta de un pack o pase (`VENTA_PASE`, RF-M18-009) o de un periodo de abono (`VENTA_ABONO`, RF-M18-010). Devengar no es cobrar: la deuda de una venta se paga con `POST /cobros` como cualquier otra.
      */
     origen?: ObligacionOrigenEnum;
     /**
-     * Pase vendido que la genero. Presente solo con `origen = VENTA_PASE`.
+     * Pase vendido que la genero. Presente con `origen = VENTA_PASE` o `VENTA_ABONO`.
      */
     paseId?: number;
     personaId?: number;
@@ -73,7 +73,7 @@ export interface Obligacion {
      */
     saldo?: number;
     /**
-     * Atencion que la genero, cuando `origen` es `SESION`. **Ausente** cuando la deuda nace de la venta de un pase (`origen = VENTA_PASE`, desde 0.102.0).
+     * Atencion que la genero, cuando `origen` es `SESION`. **Ausente** cuando la deuda nace de la venta de un pase o de un abono (`origen = VENTA_PASE` o `VENTA_ABONO`, desde 0.102.0).
      */
     sesionId?: number;
     /**

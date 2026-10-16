@@ -13,6 +13,14 @@
  * Pase comprado por una Persona (RF-M29-002). Nombre, precio, moneda, creditos y oferta son el **snapshot de la venta**: editar el producto no los cambia.
  */
 export interface Pase { 
+    /**
+     * Cuando se anulo. Presente solo con `estado = ANULADO`
+     */
+    anuladoEn?: string;
+    /**
+     * Quien lo anulo
+     */
+    anuladoPorCuentaId?: number;
     consultorioId?: number;
     /**
      * Saldo vigente. Nunca negativo (RN-M29-008)
@@ -22,6 +30,10 @@ export interface Pase {
     estado?: PaseEstadoEnum;
     id?: number;
     moneda?: string;
+    /**
+     * Por que se anulo
+     */
+    motivoAnulacion?: string;
     nombre?: string;
     /**
      * La oferta cuyas clases consumen estos creditos
@@ -30,8 +42,15 @@ export interface Pase {
     personaId?: number;
     precio?: number;
     productoId?: number;
+    /**
+     * `PACK` o `ABONO` (desde 0.109.0). Un abono cubre el periodo `vigenciaDesde`..`vigenciaHasta` elegido al venderlo
+     */
+    tipo?: PaseTipoEnum;
     vendidoEn?: string;
     vendidoPorCuentaId?: number;
+    /**
+     * Version para el control optimista del ajuste y la anulacion
+     */
     version?: number;
     vigenciaDesde?: string;
     /**
@@ -48,6 +67,10 @@ export enum PaseEstadoEnum {
     AGOTADO = 'AGOTADO',
     VENCIDO = 'VENCIDO',
     ANULADO = 'ANULADO'
+};
+export enum PaseTipoEnum {
+    PACK = 'PACK',
+    ABONO = 'ABONO'
 };
 
 

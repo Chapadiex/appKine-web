@@ -141,11 +141,13 @@ model/agenda-del-dia.ts
 model/agenda-unificada.ts
 model/agenda.ts
 model/agregar-item-a-presentacion.ts
+model/ajuste-de-saldo-de-pase.ts
 model/alcance-de-serie.ts
 model/alerta-de-autorizacion-response.ts
 model/alta-sede-franja-horaria-request.ts
 model/alta-sede-primer-box-request.ts
 model/antecedente-response.ts
+model/anulacion-de-pase.ts
 model/anular-cobro.ts
 model/anular-egreso.ts
 model/anular-obligacion.ts
@@ -417,6 +419,7 @@ model/resend-activation-request.ts
 model/reservar-turno.ts
 model/resolve-catalogo-solicitud-request.ts
 model/resolver-autorizacion-request.ts
+model/resultado-de-anulacion-de-pase.ts
 model/resultado-de-asistencia.ts
 model/resultado-de-cancelacion.ts
 model/resultado-de-cierre-de-clase.ts
