@@ -13,6 +13,7 @@ import { Observable }                                        from 'rxjs';
 
 import { GrantPlatformRoleRequest } from '../model/models';
 import { GrantSupportAccessRequest } from '../model/models';
+import { PlatformOrganizationPageResponse } from '../model/models';
 import { PlatformRoleResponse } from '../model/models';
 import { PlatformSubscriptionResponse } from '../model/models';
 import { ProblemDetail } from '../model/models';
@@ -33,6 +34,13 @@ export interface GrantPlatformRoleRequestParams {
 export interface GrantSupportAccessRequestParams {
     orgId: number;
     grantSupportAccessRequest: GrantSupportAccessRequest;
+}
+
+export interface ListPlatformOrganizationsRequestParams {
+    q?: string;
+    status?: 'ACTIVA' | 'SUSPENDIDA' | 'CANCELADA';
+    page?: number;
+    size?: number;
 }
 
 export interface ListSupportAccessRequestParams {
@@ -76,6 +84,14 @@ export interface PlataformaServiceInterface {
 * @param requestParameters
      */
     grantSupportAccess(requestParameters: GrantSupportAccessRequestParams, extraHttpRequestParams?: any): Observable<SupportAccessResponse>;
+
+    /**
+     * Listado de centros, para la administracion de plataforma
+     * Listado paginado de las organizaciones vigentes con el estado y el plan de su suscripcion, ordenado por nombre. Es el insumo para elegir el centro cuya suscripcion se opera. Las dadas de baja no aparecen. No trae miembros, sedes, consumo de limites ni datos de pacientes. Reservado a la administracion de plataforma, igual que la lectura y el cambio del plan. El tamano de pagina se acota a 100: pedir mas devuelve ese maximo, no un error.
+     * @endpoint get /api/v1/platform/organizations
+* @param requestParameters
+     */
+    listPlatformOrganizations(requestParameters: ListPlatformOrganizationsRequestParams, extraHttpRequestParams?: any): Observable<PlatformOrganizationPageResponse>;
 
     /**
      * Roles de plataforma vigentes
