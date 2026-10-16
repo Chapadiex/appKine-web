@@ -15,6 +15,12 @@ import { AkineHttpError } from '../../../core/interceptors/error.interceptor';
  *       cual, y es lo que se muestra.</li>
  *   <li><b>`concurrent-modification`</b>: la version del producto quedo vieja.</li>
  *   <li><b>`idempotency-key-conflict`</b>: un bug del cliente; se resuelve con una clave nueva.</li>
+ *   <li><b>`abono-periodo-superpuesto`</b> (08.08): la persona ya tiene ese abono en un periodo que se
+ *       pisa con el elegido.</li>
+ *   <li><b>`pase-no-ajustable`</b> (08.07): anulado, vencido, saldo final fuera de `[0, comprados]` o,
+ *       al anular, creditos ya usados. Viaja con `motivo`, que completa la frase.</li>
+ *   <li><b>`pase-con-cobros`</b> (08.07): la deuda de la venta tiene cobros, asi que no se anula —ni
+ *       ella ni el pase—. Viaja con `obligacionId` y `cobrado`.</li>
  * </ul>
  */
 export type CausaPase =
@@ -26,6 +32,9 @@ export type CausaPase =
   | 'nombre-en-uso'
   | 'version-vieja'
   | 'clave-reusada'
+  | 'abono-superpuesto'
+  | 'pase-no-ajustable'
+  | 'pase-con-cobros'
   | 'conflicto'
   | 'red'
   | 'otro';
@@ -35,6 +44,8 @@ export interface ErrorPase {
   readonly causa: CausaPase;
   /** Campo -> mensaje, solo en `validacion`. */
   readonly campos: Readonly<Record<string, string>>;
+  /** Lo ya cobrado de la deuda, solo en `pase-con-cobros`. */
+  readonly cobrado?: number;
 }
 
 const MENSAJE_GENERICO = 'No pudimos completar la operacion. Volve a intentar en un momento.';
@@ -44,20 +55,24 @@ const MENSAJE_SIN_CONTEXTO =
   'entrar. Tu sesion sigue abierta.';
 const MENSAJE_SIN_PERMISO =
   'No tenes permiso para esto en esta sede: el catalogo pide producto:read (y producto:manage para ' +
-  'cambiarlo), y los pases pase:read (y pase:manage para venderlos). Pediselo a quien administra ' +
-  'el centro.';
+  'cambiarlo), y los pases pase:read (pase:manage para venderlos y pase:adjust para ajustar el ' +
+  'saldo o anularlos). Pediselo a quien administra el centro.';
 const MENSAJE_NO_ENCONTRADO = 'El producto, el pase o la persona no existe, o no es de esta sede.';
 const MENSAJE_NO_VENDIBLE =
   'Ese producto no se puede vender hoy: esta fuera de su ventana comercial. Revisa sus fechas en ' +
   'el catalogo.';
 const MENSAJE_NOMBRE = 'Ya hay un producto vigente con ese nombre en esta sede. Elegi otro nombre.';
 const MENSAJE_VERSION_VIEJA =
-  'Alguien modifico el producto mientras lo editabas. No se cambio nada: volve a leerlo y repeti ' +
-  'el cambio.';
+  'Alguien lo modifico mientras lo editabas. No se cambio nada: volve a leerlo y repeti el cambio.';
 const MENSAJE_CLAVE_REUSADA =
   'Hubo un problema tecnico con este intento. No se vendio nada y no es un error tuyo: volve a ' +
   'intentarlo.';
 const MENSAJE_VALIDACION = 'Revisa los datos marcados.';
+const MENSAJE_ABONO_SUPERPUESTO =
+  'Esta persona ya tiene ese abono en un periodo que se superpone con el elegido. No se vendio ' +
+  'nada: elegi un periodo que empiece despues de que termine el que ya tiene.';
+const MENSAJE_NO_AJUSTABLE =
+  'El pase no admite esa operacion. No se cambio nada: volve a leerlo para ver su estado y su saldo.';
 
 function armar(causa: CausaPase, mensaje: string): ErrorPase {
   return { mensaje, causa, campos: {} };
@@ -93,6 +108,12 @@ export function traducirErrorPase(error: unknown): ErrorPase {
       return armar('version-vieja', MENSAJE_VERSION_VIEJA);
     case 'idempotency-key-conflict':
       return armar('clave-reusada', MENSAJE_CLAVE_REUSADA);
+    case 'abono-periodo-superpuesto':
+      return armar('abono-superpuesto', MENSAJE_ABONO_SUPERPUESTO);
+    case 'pase-no-ajustable':
+      return armar('pase-no-ajustable', mensajeNoAjustable(error.extension('motivo')));
+    case 'pase-con-cobros':
+      return conCobros(error.numeroDeExtension('cobrado'));
     case 'conflict':
       return armar('conflicto', detalle || MENSAJE_GENERICO);
     default:
@@ -105,4 +126,35 @@ export function traducirErrorPase(error: unknown): ErrorPase {
     return armar('no-encontrado', MENSAJE_NO_ENCONTRADO);
   }
   return armar('otro', detalle || MENSAJE_GENERICO);
+}
+
+/** El `motivo` del backend completa "el pase ...": "esta vencido", "el saldo quedaria en 9 y ...". */
+function mensajeNoAjustable(motivo: unknown): string {
+  if (typeof motivo !== 'string' || motivo.trim() === '') {
+    return MENSAJE_NO_AJUSTABLE;
+  }
+  return `No se puede: el pase ${motivo.trim()}. No se cambio nada.`;
+}
+
+/**
+ * Una deuda con cobros no se anula (RF-M19-010): lo que corresponde es anular o reintegrar el cobro
+ * desde la cuenta corriente. Hasta entonces el pase sigue como estaba.
+ */
+function conCobros(cobrado: number | null): ErrorPase {
+  const cuanto = cobrado === null ? '' : ` (${importeSinMoneda(cobrado)} cobrados)`;
+  return {
+    ...armar(
+      'pase-con-cobros',
+      `No se puede anular: la deuda de esta venta ya tiene cobros${cuanto}. Primero hay que anular ` +
+        'o reintegrar el cobro desde la cuenta corriente; el pase y su deuda siguen como estaban.',
+    ),
+    ...(cobrado === null ? {} : { cobrado }),
+  };
+}
+
+function importeSinMoneda(valor: number): string {
+  return new Intl.NumberFormat('es-AR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(valor);
 }

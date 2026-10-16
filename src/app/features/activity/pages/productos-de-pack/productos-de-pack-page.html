@@ -1,10 +1,11 @@
-<h1>Productos de pack</h1>
+<h1>Productos de pack y abonos</h1>
 
 <p class="descripcion">
-  Los packs de creditos que vende esta sede: cuantas clases, a que precio y cuantos dias valen desde
-  la compra. Crear un producto no le da saldo a nadie; el saldo nace al vender un pase a una
+  Los packs de creditos y los abonos que vende esta sede. Un <b>pack</b> son clases que valen una
+  cantidad de dias desde la compra, sobre ofertas que cobran <b>POR_PACK</b>. Un <b>abono</b> cubre
+  un periodo que se elige al venderlo, con un tope de asistencias, sobre ofertas que cobran
+  <b>POR_ABONO</b>. Crear un producto no le da saldo a nadie; el saldo nace al vender un pase a una
   persona, desde <a class="enlace" routerLink="/pacientes">Pacientes</a>, en la fila de la persona.
-  Solo se pueden armar sobre ofertas activas cuyo esquema de cobro es <b>POR_PACK</b>.
 </p>
 
 <div class="filtros">
@@ -49,7 +50,7 @@
 
 @if (formularioAbierto()) {
   <form class="tarjeta" [formGroup]="formulario" (ngSubmit)="guardar()" novalidate>
-    <h2>{{ enEdicion() ? 'Editar ' + enEdicion()!.nombre : 'Nuevo producto de pack' }}</h2>
+    <h2>{{ enEdicion() ? 'Editar ' + enEdicion()!.nombre : 'Nuevo producto' }}</h2>
     @if (enEdicion()) {
       <p class="ayuda">
         Los pases ya vendidos no cambian: cada uno conserva los creditos, el precio y la vigencia
@@ -59,10 +60,24 @@
 
     @if (enEdicion(); as producto) {
       <p>
-        Oferta: <b>{{ nombreDeOferta(producto) }}</b
-        >. La oferta de un producto no se cambia.
+        {{ tipoDeProducto(producto) }} sobre la oferta <b>{{ nombreDeOferta(producto) }}</b
+        >. El tipo y la oferta de un producto no se cambian.
       </p>
     } @else {
+      <div class="campo">
+        <label for="producto-tipo">Tipo</label>
+        <select id="producto-tipo" formControlName="tipo" aria-describedby="producto-tipo-ayuda">
+          <option value="PACK">Pack de creditos</option>
+          <option value="ABONO">Abono por periodo</option>
+        </select>
+        <p class="ayuda" id="producto-tipo-ayuda">
+          @if (tipoElegido() === 'ABONO') {
+            Cubre un periodo que se elige al vender; los creditos son las asistencias que permite.
+          } @else {
+            Creditos que valen una cantidad de dias desde la compra.
+          }
+        </p>
+      </div>
       <div class="campo">
         <label for="producto-oferta">Oferta</label>
         <select
@@ -72,16 +87,16 @@
           aria-describedby="producto-oferta-ayuda"
         >
           <option value="">Elegi una oferta</option>
-          @for (oferta of ofertasDePack(); track oferta.id) {
+          @for (oferta of ofertasDelTipo(); track oferta.id) {
             <option [value]="oferta.id">{{ oferta.nombreComercial }}</option>
           }
         </select>
         <p class="ayuda" id="producto-oferta-ayuda">
-          @if (ofertasDePack().length === 0) {
-            Esta sede no tiene ofertas activas con esquema de cobro POR_PACK. Se declara en
-            Servicios, en la oferta.
+          @if (ofertasDelTipo().length === 0) {
+            Esta sede no tiene ofertas activas con esquema de cobro {{ esquemaDelTipo() }}. Se
+            declara en Servicios, en la oferta.
           } @else {
-            Solo aparecen las ofertas activas que cobran POR_PACK.
+            Solo aparecen las ofertas activas que cobran {{ esquemaDelTipo() }}.
           }
         </p>
         @if (invalido('ofertaId')) {
@@ -121,7 +136,9 @@
 
     <div class="filtros">
       <div class="campo">
-        <label for="producto-creditos">Creditos</label>
+        <label for="producto-creditos">{{
+          tipoElegido() === 'ABONO' ? 'Asistencias por periodo' : 'Creditos'
+        }}</label>
         <input
           id="producto-creditos"
           type="number"
@@ -161,7 +178,9 @@
         <p class="ayuda" id="producto-moneda-ayuda">Tres letras, como ARS o USD.</p>
       </div>
       <div class="campo">
-        <label for="producto-vigencia-dias">Dias de vigencia</label>
+        <label for="producto-vigencia-dias">{{
+          tipoElegido() === 'ABONO' ? 'Dias maximos del periodo' : 'Dias de vigencia'
+        }}</label>
         <input
           id="producto-vigencia-dias"
           type="number"
@@ -171,7 +190,11 @@
           aria-describedby="producto-vigencia-dias-ayuda"
         />
         <p class="ayuda" id="producto-vigencia-dias-ayuda">
-          Dias corridos desde la compra, contando el de la compra.
+          @if (tipoElegido() === 'ABONO') {
+            Lo mas largo que puede durar el periodo de un abono; al vender se puede elegir menos.
+          } @else {
+            Dias corridos desde la compra, contando el de la compra.
+          }
         </p>
         @if (invalido('vigenciaDias')) {
           <p class="estado estado--error">Tiene que ser al menos 1.</p>
@@ -247,12 +270,12 @@
   <p class="estado estado--cargando" aria-live="polite">Leyendo los productos…</p>
 } @else if (productos()?.length === 0 && !error()) {
   <p class="estado estado--vacio">
-    Esta sede no tiene productos de pack{{ incluirBajas() ? '' : ' vigentes' }}.
+    Esta sede no tiene productos{{ incluirBajas() ? '' : ' vigentes' }}.
   </p>
 } @else if (productos(); as lista) {
   @if (lista.length > 0) {
     <div class="tabla-scroll" tabindex="0" role="region" aria-labelledby="titulo-tabla-productos">
-      <h2 id="titulo-tabla-productos" class="visualmente-oculto">Productos de pack de la sede</h2>
+      <h2 id="titulo-tabla-productos" class="visualmente-oculto">Productos de la sede</h2>
       <table class="tabla">
         <thead>
           <tr>
@@ -273,6 +296,7 @@
             <tr [class.fila--revocada]="producto.active === false">
               <td>
                 {{ producto.nombre }}
+                <div class="ayuda">{{ tipoDeProducto(producto) }}</div>
                 @if (producto.descripcion) {
                   <div class="ayuda">{{ producto.descripcion }}</div>
                 }
@@ -280,7 +304,9 @@
               <td>{{ nombreDeOferta(producto) }}</td>
               <td>{{ creditos(producto.creditos) }}</td>
               <td class="importe">{{ importe(producto.precio, producto.moneda) }}</td>
-              <td>{{ producto.vigenciaDias }} dias</td>
+              <td>
+                {{ abono(producto) ? 'Periodo de hasta ' : '' }}{{ producto.vigenciaDias }} dias
+              </td>
               <td>{{ ventana(producto) }}</td>
               <td>
                 @if (producto.active === false) {

@@ -1,9 +1,9 @@
 <h1>Pases de {{ nombre() }}</h1>
 
 <p class="descripcion">
-  Los packs de creditos que esta persona compro en esta sede. Cada asistencia a una clase de la
-  oferta del pase consume un credito; si la asistencia se corrige a ausente, el credito vuelve. El
-  saldo se explica con los movimientos de cada pase.
+  Los packs de creditos y los abonos que esta persona compro en esta sede. Cada asistencia a una
+  clase de la oferta del pase consume un credito; si la asistencia se corrige a ausente o la clase
+  se cancela, el credito vuelve. El saldo se explica con los movimientos de cada pase.
 </p>
 
 <p class="acciones">
@@ -25,7 +25,7 @@
       <p class="estado estado--error">{{ fallo.mensaje }}</p>
     } @else if (productos().length === 0) {
       <p class="estado estado--vacio">
-        Esta sede no tiene productos de pack vigentes para vender. Se crean en Productos de pack.
+        Esta sede no tiene productos vigentes para vender. Se crean en Productos de pack.
       </p>
     } @else {
       <div class="filtros">
@@ -39,17 +39,50 @@
             <option value="">Elegi un producto</option>
             @for (producto of productos(); track producto.id) {
               <option [value]="producto.id">
-                {{ producto.nombre }} — {{ creditos(producto.creditos) }},
-                {{ importe(producto.precio, producto.moneda) }}
+                {{ producto.nombre }} — {{ abono(producto) ? 'abono, ' : ''
+                }}{{ creditos(producto.creditos) }}, {{ importe(producto.precio, producto.moneda) }}
               </option>
             }
           </select>
           @if (productoDeLaVenta(); as producto) {
-            <p class="ayuda">
-              Vale {{ producto.vigenciaDias }} dias desde hoy, contando el dia de hoy.
-            </p>
+            @if (abono(producto)) {
+              <p class="ayuda">
+                Abono: cubre {{ creditos(producto.creditos) }} en un periodo de hasta
+                {{ producto.vigenciaDias }} dias, que se elige ahora.
+              </p>
+            } @else {
+              <p class="ayuda">
+                Vale {{ producto.vigenciaDias }} dias desde hoy, contando el dia de hoy.
+              </p>
+            }
           }
         </div>
+        @if (productoDeLaVenta(); as producto) {
+          @if (abono(producto)) {
+            <div class="campo">
+              <label for="vender-periodo-desde">Periodo desde</label>
+              <input
+                id="vender-periodo-desde"
+                type="date"
+                [value]="periodoDesde()"
+                (input)="cambiarPeriodo('desde', $any($event.target).value)"
+              />
+            </div>
+            <div class="campo">
+              <label for="vender-periodo-hasta">Periodo hasta (opcional)</label>
+              <input
+                id="vender-periodo-hasta"
+                type="date"
+                [value]="periodoHasta()"
+                aria-describedby="vender-periodo-hasta-ayuda"
+                (input)="cambiarPeriodo('hasta', $any($event.target).value)"
+              />
+              <p class="ayuda" id="vender-periodo-hasta-ayuda">
+                Vacio: dura los {{ producto.vigenciaDias }} dias del producto.
+              </p>
+            </div>
+          }
+        }
         <div class="acciones">
           <button type="button" class="boton" [disabled]="enviando()" (click)="vender()">
             {{ enviando() ? 'Vendiendo…' : 'Vender pase' }}
@@ -65,8 +98,13 @@
       @if (venta(); as resultado) {
         <p class="estado estado--ok">
           {{ resultado.creada === false ? 'Esa venta ya estaba registrada' : 'Se vendio' }}
-          "{{ resultado.pase?.nombre }}": {{ creditos(resultado.pase?.creditosDisponibles) }} hasta
-          el {{ fecha(resultado.pase?.vigenciaHasta) }}.
+          "{{ resultado.pase?.nombre }}": {{ creditos(resultado.pase?.creditosDisponibles) }}
+          @if (resultado.pase && abono(resultado.pase)) {
+            del {{ fecha(resultado.pase.vigenciaDesde) }} al
+            {{ fecha(resultado.pase.vigenciaHasta) }}.
+          } @else {
+            hasta el {{ fecha(resultado.pase?.vigenciaHasta) }}.
+          }
           @if (resultado.deuda; as deuda) {
             Quedo una deuda de {{ importe(deuda.importe, deuda.moneda) }} a nombre de la persona.
           }
@@ -97,7 +135,124 @@
       </div>
     </section>
   }
+  @if (avisoAccion(); as texto) {
+    <p class="estado estado--ok">{{ texto }}</p>
+  }
+  @if (anulacion(); as resultado) {
+    <p class="estado estado--ok">
+      @if (resultado.anulado === false) {
+        "{{ resultado.pase?.nombre }}" ya estaba anulado: no se cambio nada.
+      } @else {
+        Se anulo "{{ resultado.pase?.nombre }}" y su saldo se descarto.
+      }
+      @if (resultado.deuda; as deuda) {
+        La deuda de la venta, {{ importe(deuda.importe, deuda.moneda) }}, quedo anulada: no se
+        borra, sigue en la cuenta corriente como anulada y con el motivo.
+      } @else {
+        La venta no tenia deuda.
+      }
+    </p>
+  }
 </div>
+
+@if (enAjuste(); as pase) {
+  <section class="tarjeta" aria-labelledby="titulo-ajuste">
+    <h2 id="titulo-ajuste">Ajustar el saldo de {{ pase.nombre }}</h2>
+    <p class="ayuda">
+      Tiene {{ creditos(pase.creditosDisponibles) }} de {{ pase.creditosIniciales }}. El ajuste suma
+      o resta creditos sin tocar la deuda ni la caja, y queda en los movimientos con el motivo y
+      quien lo hizo. El saldo tiene que quedar entre 0 y los {{ pase.creditosIniciales }}
+      comprados.
+    </p>
+    <div class="filtros">
+      <div class="campo">
+        <label for="ajuste-cantidad">Creditos a sumar o restar</label>
+        <input
+          id="ajuste-cantidad"
+          type="text"
+          inputmode="numeric"
+          autocomplete="off"
+          [value]="ajusteCantidad()"
+          [attr.aria-invalid]="
+            ajusteIntentado() && (cantidadDelAjuste() === null || ajusteFueraDeRango())
+          "
+          aria-describedby="ajuste-cantidad-ayuda"
+          (input)="ajusteCantidad.set($any($event.target).value)"
+        />
+        <p class="ayuda" id="ajuste-cantidad-ayuda">
+          @if (saldoResultante() !== null) {
+            El saldo quedaria en {{ saldoResultante() }} de {{ pase.creditosIniciales }}.
+          } @else {
+            Con signo: 2 suma dos creditos, -1 resta uno.
+          }
+        </p>
+        @if (ajusteFueraDeRango()) {
+          <p class="estado estado--error">
+            El saldo tiene que quedar entre 0 y {{ pase.creditosIniciales }}.
+          </p>
+        } @else if (ajusteIntentado() && cantidadDelAjuste() === null) {
+          <p class="estado estado--error">Un numero entero distinto de cero.</p>
+        }
+      </div>
+      <div class="campo">
+        <label for="ajuste-motivo">Motivo</label>
+        <input
+          id="ajuste-motivo"
+          type="text"
+          maxlength="500"
+          autocomplete="off"
+          [value]="ajusteMotivo()"
+          [attr.aria-invalid]="ajusteIntentado() && ajusteMotivo().trim() === ''"
+          (input)="ajusteMotivo.set($any($event.target).value)"
+        />
+        @if (ajusteIntentado() && ajusteMotivo().trim() === '') {
+          <p class="estado estado--error">El motivo es obligatorio: queda en el ledger.</p>
+        }
+      </div>
+    </div>
+    <div aria-live="polite">
+      @if (errorAccion(); as fallo) {
+        <p class="estado estado--error" role="alert">{{ fallo.mensaje }}</p>
+      }
+    </div>
+    <div class="acciones">
+      <button type="button" class="boton" [disabled]="enviando()" (click)="ajustar()">
+        {{ enviando() ? 'Ajustando…' : 'Ajustar saldo' }}
+      </button>
+      <button type="button" class="boton boton--secundario" (click)="cerrarAccion()">
+        Cancelar
+      </button>
+    </div>
+  </section>
+}
+
+@if (enAnulacion(); as pase) {
+  <section class="tarjeta">
+    <akine-confirmacion-con-motivo
+      idCampo="anulacion-motivo"
+      [titulo]="'Anular ' + pase.nombre"
+      etiqueta="Motivo de la anulacion"
+      ayuda="El pase pasa a Anulado y su saldo se descarta. La deuda de la venta queda anulada, no
+        borrada: sigue en la cuenta corriente como anulada, con este motivo. Solo se anula un pase
+        sin creditos usados y cuya deuda no tenga cobros."
+      textoError="El motivo es obligatorio para anular un pase."
+      textoConfirmar="Anular pase"
+      [enviando]="enviando()"
+      (confirmado)="confirmarAnulacion($event)"
+      (cancelado)="cerrarAccion()"
+    />
+    <div aria-live="polite">
+      @if (errorAccion(); as fallo) {
+        <p class="estado estado--error" role="alert">{{ fallo.mensaje }}</p>
+        @if (fallo.causa === 'pase-con-cobros') {
+          <p *akinePermiso="permisoCobro">
+            <a class="enlace" [routerLink]="rutaCuentaCorriente()">Ir a la cuenta corriente</a>
+          </p>
+        }
+      }
+    </div>
+  </section>
+}
 
 @if (pases() === null && !error()) {
   <p class="estado estado--cargando" aria-live="polite">Leyendo los pases…</p>
@@ -115,32 +270,69 @@
             <th scope="col">Vigencia</th>
             <th scope="col">Precio</th>
             <th scope="col">Estado</th>
-            <th scope="col">Movimientos</th>
+            <th scope="col">Acciones</th>
           </tr>
         </thead>
         <tbody>
           @for (pase of lista; track pase.id) {
-            <tr>
+            <tr [class.fila--revocada]="pase.estado === 'ANULADO'">
               <td>
                 {{ pase.nombre }}
-                <div class="ayuda">Vendido el {{ instante(pase.vendidoEn) }}</div>
+                <div class="ayuda">
+                  {{ tipoDePase(pase) }} · vendido el {{ instante(pase.vendidoEn) }}
+                </div>
               </td>
               <td>{{ pase.creditosDisponibles }} de {{ pase.creditosIniciales }}</td>
               <td>{{ vigencia(pase) }}</td>
               <td class="importe">{{ importe(pase.precio, pase.moneda) }}</td>
               <td>
                 <span [class]="claseDeEstado(pase)">{{ estadoDePase(pase) }}</span>
+                @if (avisoDeVigencia(pase); as aviso) {
+                  <div class="ayuda">{{ aviso }}</div>
+                }
+                @if (pase.estado === 'ANULADO') {
+                  <div class="ayuda">
+                    El {{ instante(pase.anuladoEn) }}
+                    @if (pase.motivoAnulacion) {
+                      — Motivo: {{ pase.motivoAnulacion }}
+                    }
+                  </div>
+                }
               </td>
               <td>
-                <button
-                  type="button"
-                  class="boton boton--secundario"
-                  [attr.aria-label]="'Ver movimientos de ' + pase.nombre"
-                  [attr.aria-expanded]="detalle()?.paseId === pase.id"
-                  (click)="verMovimientos(pase)"
-                >
-                  Ver movimientos
-                </button>
+                <div class="acciones-fila">
+                  <button
+                    type="button"
+                    class="boton boton--secundario"
+                    [attr.aria-label]="'Ver movimientos de ' + pase.nombre"
+                    [attr.aria-expanded]="detalle()?.paseId === pase.id"
+                    (click)="verMovimientos(pase)"
+                  >
+                    Ver movimientos
+                  </button>
+                  @if (puedeAjustar()) {
+                    @if (ajustable(pase)) {
+                      <button
+                        type="button"
+                        class="boton boton--secundario"
+                        [attr.aria-label]="'Ajustar el saldo de ' + pase.nombre"
+                        (click)="abrirAjuste(pase)"
+                      >
+                        Ajustar saldo
+                      </button>
+                    }
+                    @if (anulable(pase)) {
+                      <button
+                        type="button"
+                        class="boton boton--secundario"
+                        [attr.aria-label]="'Anular ' + pase.nombre"
+                        (click)="abrirAnulacion(pase)"
+                      >
+                        Anular
+                      </button>
+                    }
+                  }
+                </div>
               </td>
             </tr>
           }
@@ -162,35 +354,39 @@
         Saldo actual: <b>{{ creditos(actual.datos.pase?.creditosDisponibles) }}</b> de
         {{ actual.datos.pase?.creditosIniciales }}.
       </p>
-      <div class="tabla-scroll" tabindex="0" role="region" aria-label="Movimientos del pase">
-        <table class="tabla">
-          <thead>
-            <tr>
-              <th scope="col">Fecha</th>
-              <th scope="col">Movimiento</th>
-              <th scope="col">Creditos</th>
-              <th scope="col">Saldo</th>
-              <th scope="col">Detalle</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (mov of actual.datos.movimientos ?? []; track mov.id) {
+      @if ((actual.datos.movimientos ?? []).length === 0) {
+        <p class="estado estado--vacio">El pase no tiene movimientos.</p>
+      } @else {
+        <div class="tabla-scroll" tabindex="0" role="region" aria-label="Movimientos del pase">
+          <table class="tabla">
+            <thead>
               <tr>
-                <td>{{ instante(mov.ocurridoEn) }}</td>
-                <td>{{ movimiento(mov) }}</td>
-                <td class="importe">{{ conSigno(mov.cantidad) }}</td>
-                <td class="importe">{{ mov.saldoResultante }}</td>
-                <td>
-                  {{ origen(mov) }}
-                  @if (mov.motivo) {
-                    <div class="ayuda">Motivo: {{ mov.motivo }}</div>
-                  }
-                </td>
+                <th scope="col">Fecha</th>
+                <th scope="col">Movimiento</th>
+                <th scope="col">Creditos</th>
+                <th scope="col">Saldo</th>
+                <th scope="col">Detalle</th>
               </tr>
-            }
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              @for (mov of actual.datos.movimientos ?? []; track mov.id) {
+                <tr>
+                  <td>{{ instante(mov.ocurridoEn) }}</td>
+                  <td>{{ movimiento(mov) }}</td>
+                  <td class="importe">{{ conSigno(mov.cantidad) }}</td>
+                  <td class="importe">{{ mov.saldoResultante }}</td>
+                  <td>
+                    {{ origen(mov) }}
+                    @if (mov.motivo) {
+                      <div class="ayuda">Motivo: {{ mov.motivo }}</div>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
     }
     <div class="acciones">
       <button type="button" class="boton boton--secundario" (click)="cerrarMovimientos()">
