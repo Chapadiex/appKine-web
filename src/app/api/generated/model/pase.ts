@@ -55,9 +55,17 @@ export interface Pase {
      */
     renovacionAutomatica?: boolean;
     /**
+     * Solo abonos: nombre de quien activo por ultima vez la renovacion automatica. Se conserva al apagarla y el periodo que vende el job lo hereda. Resuelto al leer (el nombre de hoy); ausente si nunca se activo o la cuenta no resuelve. Aditivo desde 0.117.0
+     */
+    renovacionAutorizadaPor?: string;
+    /**
      * Por que el sistema no pudo renovar este periodo (producto de baja, persona de baja, periodo ocupado). Ausente si no se intento o se renovo. Aditivo desde 0.116.0
      */
     renovacionOmitidaMotivo?: string;
+    /**
+     * El periodo de abono siguiente que renovo a este (la reciproca de `renuevaPaseId`); ausente si no se renovo. Calculado al leer. Puede estar `ANULADO`. Aditivo desde 0.117.0
+     */
+    renovadoPorPaseId?: number;
     /**
      * El periodo de abono que este renueva; ausente si lo vendio una persona. Aditivo desde 0.116.0
      */
