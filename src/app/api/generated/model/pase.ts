@@ -14,6 +14,10 @@
  */
 export interface Pase { 
     /**
+     * true si `POST .../anulacion` lo aceptaria hoy: no esta `ANULADO`, no tiene creditos usados y la deuda de su venta no tiene cobros imputados. Es la misma regla con la que la anulacion responde `pase-no-ajustable` (`causa = CREDITOS_USADOS`) o `pase-con-cobros`, calculada al leer. Aditivo desde 0.111.0
+     */
+    anulable?: boolean;
+    /**
      * Cuando se anulo. Presente solo con `estado = ANULADO`
      */
     anuladoEn?: string;
@@ -27,6 +31,10 @@ export interface Pase {
      */
     creditosDisponibles?: number;
     creditosIniciales?: number;
+    /**
+     * Creditos tomados por asistencias: el neto de los `CONSUMO` y `DEVOLUCION` del ledger; los ajustes manuales no cuentan. Calculado al leer. Aditivo desde 0.111.0
+     */
+    creditosUsados?: number;
     estado?: PaseEstadoEnum;
     id?: number;
     moneda?: string;

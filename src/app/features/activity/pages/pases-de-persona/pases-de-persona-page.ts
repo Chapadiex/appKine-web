@@ -265,9 +265,18 @@ export class PasesDePersonaPage {
     return pase.estado === 'ACTIVO' || pase.estado === 'AGOTADO';
   }
 
-  /** Lo que no se ve desde aca —creditos usados, deuda con cobros— lo responde el backend. */
+  /**
+   * Lo decide el backend al leer (`Pase.anulable`, 0.111.0): no anulado, sin creditos usados y con la
+   * deuda de la venta sin cobros. La pantalla no lo deduce del estado: un pase activo con una
+   * asistencia ya no se anula, y ofrecer el boton solo llevaba a un 409.
+   */
   protected anulable(pase: Pase): boolean {
-    return pase.estado !== undefined && pase.estado !== 'ANULADO';
+    return pase.anulable === true;
+  }
+
+  /** Los creditos tomados por asistencias, junto al saldo (`Pase.creditosUsados`, 0.111.0). */
+  protected usados(creditosUsados: number): string {
+    return creditosUsados === 1 ? '1 usado' : `${creditosUsados} usados`;
   }
 
   protected instante(valor: string | undefined): string {

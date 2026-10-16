@@ -1,4 +1,5 @@
 import { AkineHttpError } from '../../../core/interceptors/error.interceptor';
+import { importeDePase } from './etiquetas-de-pases';
 
 /**
  * Errores de productos de pack y pases (M29, AKINE-08.06).
@@ -18,9 +19,12 @@ import { AkineHttpError } from '../../../core/interceptors/error.interceptor';
  *   <li><b>`abono-periodo-superpuesto`</b> (08.08): la persona ya tiene ese abono en un periodo que se
  *       pisa con el elegido.</li>
  *   <li><b>`pase-no-ajustable`</b> (08.07): anulado, vencido, saldo final fuera de `[0, comprados]` o,
- *       al anular, creditos ya usados. Viaja con `motivo`, que completa la frase.</li>
+ *       al anular, creditos ya usados. Desde 0.111.0 viaja con `causa` (`ESTADO`,
+ *       `FUERA_DE_VIGENCIA`, `FUERA_DE_RANGO`, `CREDITOS_USADOS`): el mensaje se arma por esa
+ *       causa, nunca leyendo el texto de `motivo`, que queda solo como respaldo si `causa` falta.</li>
  *   <li><b>`pase-con-cobros`</b> (08.07): la deuda de la venta tiene cobros, asi que no se anula —ni
- *       ella ni el pase—. Viaja con `obligacionId` y `cobrado`.</li>
+ *       ella ni el pase—. Viaja con `obligacionId`, `cobrado` y, desde 0.111.0, `moneda`
+ *       (ISO 4217), para decir el importe con su moneda.</li>
  * </ul>
  */
 export type CausaPase =
@@ -73,6 +77,19 @@ const MENSAJE_ABONO_SUPERPUESTO =
   'nada: elegi un periodo que empiece despues de que termine el que ya tiene.';
 const MENSAJE_NO_AJUSTABLE =
   'El pase no admite esa operacion. No se cambio nada: volve a leerlo para ver su estado y su saldo.';
+/** La extension `causa` de `pase-no-ajustable` (0.111.0), un valor estable para el cliente. */
+const MENSAJES_NO_AJUSTABLE: Readonly<Record<string, string>> = {
+  ESTADO:
+    'No se puede: el pase esta anulado o vencido, y en ese estado su saldo ya no se toca. No se ' +
+    'cambio nada.',
+  FUERA_DE_VIGENCIA:
+    'No se puede: la vigencia del pase ya termino, aunque todavia figure activo. No se cambio nada.',
+  FUERA_DE_RANGO:
+    'No se puede: el saldo quedaria por debajo de 0 o por encima de los creditos comprados. No se ' +
+    'cambio nada: revisa la cantidad.',
+  CREDITOS_USADOS:
+    'No se puede anular: el pase ya tiene creditos usados en asistencias. No se cambio nada.',
+};
 
 function armar(causa: CausaPase, mensaje: string): ErrorPase {
   return { mensaje, causa, campos: {} };
@@ -111,9 +128,12 @@ export function traducirErrorPase(error: unknown): ErrorPase {
     case 'abono-periodo-superpuesto':
       return armar('abono-superpuesto', MENSAJE_ABONO_SUPERPUESTO);
     case 'pase-no-ajustable':
-      return armar('pase-no-ajustable', mensajeNoAjustable(error.extension('motivo')));
+      return armar(
+        'pase-no-ajustable',
+        mensajeNoAjustable(error.extension('causa'), error.extension('motivo')),
+      );
     case 'pase-con-cobros':
-      return conCobros(error.numeroDeExtension('cobrado'));
+      return conCobros(error.numeroDeExtension('cobrado'), error.extension('moneda'));
     case 'conflict':
       return armar('conflicto', detalle || MENSAJE_GENERICO);
     default:
@@ -128,8 +148,14 @@ export function traducirErrorPase(error: unknown): ErrorPase {
   return armar('otro', detalle || MENSAJE_GENERICO);
 }
 
-/** El `motivo` del backend completa "el pase ...": "esta vencido", "el saldo quedaria en 9 y ...". */
-function mensajeNoAjustable(motivo: unknown): string {
+/**
+ * Por `causa`. Sin ella (un backend anterior a 0.111.0, o una causa nueva que este cliente no
+ * conoce) el `motivo` completa "el pase ...", tal como llega, sin interpretarlo.
+ */
+function mensajeNoAjustable(causa: unknown, motivo: unknown): string {
+  if (typeof causa === 'string' && Object.hasOwn(MENSAJES_NO_AJUSTABLE, causa)) {
+    return MENSAJES_NO_AJUSTABLE[causa];
+  }
   if (typeof motivo !== 'string' || motivo.trim() === '') {
     return MENSAJE_NO_AJUSTABLE;
   }
@@ -140,8 +166,11 @@ function mensajeNoAjustable(motivo: unknown): string {
  * Una deuda con cobros no se anula (RF-M19-010): lo que corresponde es anular o reintegrar el cobro
  * desde la cuenta corriente. Hasta entonces el pase sigue como estaba.
  */
-function conCobros(cobrado: number | null): ErrorPase {
-  const cuanto = cobrado === null ? '' : ` (${importeSinMoneda(cobrado)} cobrados)`;
+function conCobros(cobrado: number | null, moneda: unknown): ErrorPase {
+  const cuanto =
+    cobrado === null
+      ? ''
+      : ` (${importeDePase(cobrado, typeof moneda === 'string' ? moneda : undefined)} cobrados)`;
   return {
     ...armar(
       'pase-con-cobros',
@@ -150,11 +179,4 @@ function conCobros(cobrado: number | null): ErrorPase {
     ),
     ...(cobrado === null ? {} : { cobrado }),
   };
-}
-
-function importeSinMoneda(valor: number): string {
-  return new Intl.NumberFormat('es-AR', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(valor);
 }
