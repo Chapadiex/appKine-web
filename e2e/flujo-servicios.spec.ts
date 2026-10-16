@@ -38,7 +38,7 @@ test.describe('Servicios y ofertas contra el backend real', () => {
     const nombreDeLaOferta = `Drenaje de la sede ${sufijo}`;
 
     let ofertaId = 0;
-    let servicioId = 0;
+    let servicioId: number;
     const plataforma = await paginaDePlataforma(browser);
     try {
       // --- La plataforma da de alta el servicio global ---

@@ -363,10 +363,11 @@ export class ApiAkine {
       buscado === undefined
         ? disponibles[0]
         : disponibles.find((c) => c.organizationId === buscado);
-    expect(
-      contexto,
-      `${this.email} tiene un contexto de trabajo${buscado === undefined ? '' : ` en ${buscado}`}`,
-    ).toBeDefined();
+    if (contexto === undefined) {
+      throw new Error(
+        `${this.email} no tiene un contexto de trabajo${buscado === undefined ? '' : ` en ${buscado}`}`,
+      );
+    }
 
     const elegido = await this.http.post('/api/v1/auth/context', {
       headers: { authorization: `Bearer ${preContexto}` },
