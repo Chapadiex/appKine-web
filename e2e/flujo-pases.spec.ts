@@ -20,6 +20,9 @@ import { ClaseDePack, claseDePackConUnaInscripta } from './support/sembrado-pase
  * <p>Desde 08.07/08.08 (contrato 0.109.0) tambien: ajuste manual del saldo y anulacion del pase con
  * su deuda (la administradora del centro tiene `pase:adjust`), y el abono por periodo con el 409
  * `abono-periodo-superpuesto` al venderlo dos veces.
+ *
+ * <p>Desde 08.08 (contrato 0.116.0): la venta de un abono con renovacion automatica, apagarla desde
+ * la fila, y el ledger paginado de un pase con mas movimientos que una pagina.
  */
 
 const PRODUCTOS = /\/consultorios\/\d+\/productos$/;
@@ -27,6 +30,8 @@ const VENTA = /\/consultorios\/\d+\/pases$/;
 const LOTE = /\/clases\/\d+\/asistencias\/lote$/;
 const AJUSTE = /\/pases\/\d+\/ajustes$/;
 const ANULACION = /\/pases\/\d+\/anulacion$/;
+const RENOVACION = /\/pases\/\d+\/renovacion$/;
+const MOVIMIENTOS = /\/pases\/\d+\/movimientos(\?|$)/;
 
 function filaDe(page: Page, texto: string) {
   return page.getByRole('row').filter({ hasText: texto });
@@ -267,5 +272,133 @@ test.describe('Pases contra el backend real', () => {
     );
     await expect(page.getByText('ya tiene ese abono en un periodo que se superpone')).toBeVisible();
     await expect(filaDe(page, abono)).toHaveCount(1);
+  });
+
+  test('abono con renovacion automatica: venderlo pidiendola y apagarla (08.08)', async ({
+    page,
+    api,
+    centro,
+  }) => {
+    const oferta = await crearOferta(api, centro, {
+      nombre: `Gimnasio renovable E2E ${nonce()}`,
+      habilitarProfesional: false,
+      extra: {
+        modalidad: 'GRUPAL',
+        capacidad: 8,
+        requiereProfesional: false,
+        esquemaCobro: 'POR_ABONO',
+      },
+    });
+    const abono = `Abono renovable ${nonce()}`;
+    await api.exigir('POST', `/api/v1/consultorios/${centro.consultorioId}/productos`, {
+      ofertaId: oferta.id,
+      tipo: 'ABONO',
+      nombre: abono,
+      creditos: 8,
+      precio: 20000,
+      moneda: 'ARS',
+      vigenciaDias: 30,
+      vigenciaDesde: fechaLocal(centro.timezone),
+    });
+
+    const { persona } = clase;
+    await navegar(page, `/pacientes/${persona.id}/pases`);
+    const selector = page.getByLabel('Producto');
+    const valor = await selector.locator('option', { hasText: abono }).getAttribute('value');
+    await selector.selectOption(valor ?? '');
+    const casilla = page.getByLabel('Renovar automaticamente');
+    await expect(casilla).not.toBeChecked();
+    await casilla.check();
+    const venta = respuestaDe(page, 'POST', VENTA);
+    await page.getByRole('button', { name: 'Vender pase' }).click();
+    const respuestaVenta = await venta;
+    expect(respuestaVenta.status()).toBe(201);
+    expect(respuestaVenta.request().postDataJSON()).toEqual(
+      expect.objectContaining({ renovacionAutomatica: true }),
+    );
+    const vendida = (await respuestaVenta.json()) as {
+      pase: { renovacionAutomatica?: boolean };
+    };
+    expect(vendida.pase.renovacionAutomatica).toBe(true);
+    await expect(
+      page.getByText('Se va a renovar solo al terminar el periodo.').first(),
+    ).toBeVisible();
+    await expect(filaDe(page, abono)).toContainText('Se renueva solo al terminar el periodo.');
+
+    // ---- Apagarla desde la fila: PUT con la version leida, y la fila lo dice.
+    const renovacion = respuestaDe(page, 'PUT', RENOVACION);
+    await filaDe(page, abono)
+      .getByRole('button', { name: `Desactivar la renovacion automatica de ${abono}` })
+      .click();
+    const respuestaRenovacion = await renovacion;
+    expect(respuestaRenovacion.status()).toBe(200);
+    expect(respuestaRenovacion.request().postDataJSON()).toEqual(
+      expect.objectContaining({ activa: false }),
+    );
+    await expect(page.getByText(`"${abono}" ya no se renueva solo.`)).toBeVisible();
+    await expect(filaDe(page, abono)).toContainText('No se renueva solo.');
+    await expect(
+      filaDe(page, abono).getByRole('button', {
+        name: `Activar la renovacion automatica de ${abono}`,
+      }),
+    ).toBeVisible();
+  });
+
+  test('el ledger de un pase con mas de una pagina de movimientos (08.08)', async ({
+    page,
+    api,
+    centro,
+  }) => {
+    const producto = `Pack largo ${nonce()}`;
+    const { persona } = clase;
+    const base = `/api/v1/consultorios/${centro.consultorioId}`;
+    const creado = await api.exigir<{ id: number }>('POST', `${base}/productos`, {
+      ofertaId: clase.ofertaId,
+      nombre: producto,
+      creditos: 10,
+      precio: 9000,
+      moneda: 'ARS',
+      vigenciaDias: 30,
+      vigenciaDesde: fechaLocal(centro.timezone),
+    });
+    const vendido = await api.exigir<{ pase: { id: number; version: number } }>(
+      'POST',
+      `${base}/pases`,
+      { productoId: creado.id, personaId: persona.id, idempotencyKey: randomUUID() },
+    );
+    // Compra + 21 ajustes = 22 movimientos: una pagina de 20 y otra de 2.
+    let version = vendido.pase.version;
+    for (let i = 0; i < 21; i++) {
+      const ajustado = await api.exigir<{ pase: { version: number } }>(
+        'POST',
+        `${base}/pases/${vendido.pase.id}/ajustes`,
+        { cantidad: i % 2 === 0 ? -1 : 1, motivo: `Ajuste E2E ${i + 1}`, version },
+      );
+      version = ajustado.pase.version;
+    }
+
+    await navegar(page, `/pacientes/${persona.id}/pases`);
+    const primera = respuestaDe(page, 'GET', MOVIMIENTOS);
+    await page.getByRole('button', { name: `Ver movimientos de ${producto}` }).click();
+    expect((await primera).status()).toBe(200);
+    const movimientos = page.getByRole('region', { name: 'Movimientos del pase' });
+    await expect(
+      page.getByText('Movimientos 1 a 20 de 22, del mas viejo al mas nuevo.'),
+    ).toBeVisible();
+    // Encabezado + 20 filas; la primera es la compra, la mas vieja.
+    await expect(movimientos.getByRole('row')).toHaveCount(21);
+    await expect(movimientos.getByRole('row').nth(1)).toContainText('Compra');
+    const paginas = page.getByRole('navigation', { name: 'Paginas de movimientos del pase' });
+    await expect(paginas).toContainText('Pagina 1 de 2');
+
+    const segunda = respuestaDe(page, 'GET', MOVIMIENTOS);
+    await paginas.getByRole('button', { name: 'Siguiente' }).click();
+    expect((await segunda).status()).toBe(200);
+    await expect(
+      page.getByText('Movimientos 21 a 22 de 22, del mas viejo al mas nuevo.'),
+    ).toBeVisible();
+    await expect(movimientos.getByRole('row')).toHaveCount(3);
+    await expect(movimientos).toContainText('Motivo: Ajuste E2E 21');
+    await expect(paginas.getByRole('button', { name: 'Siguiente' })).toBeDisabled();
   });
 });

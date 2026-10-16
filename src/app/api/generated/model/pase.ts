@@ -51,13 +51,25 @@ export interface Pase {
     precio?: number;
     productoId?: number;
     /**
+     * Solo abonos (desde 0.116.0): true si el sistema va a vender el periodo siguiente al acercarse el fin de este. Se apaga cuando se renueva (el periodo nuevo la hereda) o cuando no se pudo renovar (`renovacionOmitidaMotivo`). Aditivo
+     */
+    renovacionAutomatica?: boolean;
+    /**
+     * Por que el sistema no pudo renovar este periodo (producto de baja, persona de baja, periodo ocupado). Ausente si no se intento o se renovo. Aditivo desde 0.116.0
+     */
+    renovacionOmitidaMotivo?: string;
+    /**
+     * El periodo de abono que este renueva; ausente si lo vendio una persona. Aditivo desde 0.116.0
+     */
+    renuevaPaseId?: number;
+    /**
      * `PACK` o `ABONO` (desde 0.109.0). Un abono cubre el periodo `vigenciaDesde`..`vigenciaHasta` elegido al venderlo
      */
     tipo?: PaseTipoEnum;
     vendidoEn?: string;
     vendidoPorCuentaId?: number;
     /**
-     * Version para el control optimista del ajuste y la anulacion
+     * Version para el control optimista del ajuste, la anulacion y la renovacion
      */
     version?: number;
     vigenciaDesde?: string;

@@ -1,8 +1,9 @@
+import { DOCUMENT } from '@angular/common';
 import { Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { Pase } from '../../../../api/generated/model/pase';
-import { PaseDetalle } from '../../../../api/generated/model/pase-detalle';
+import { PaginaDeMovimientosDePase } from '../../../../api/generated/model/pagina-de-movimientos-de-pase';
 import { PersonaResponse } from '../../../../api/generated/model/persona-response';
 import { Producto } from '../../../../api/generated/model/producto';
 import { ResultadoDeAnulacionDePase } from '../../../../api/generated/model/resultado-de-anulacion-de-pase';
@@ -16,6 +17,7 @@ import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { PermissionsStore } from '../../../../core/services/permissions.store';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { ConfirmacionConMotivo } from '../../../../shared/components/confirmacion-con-motivo/confirmacion-con-motivo';
+import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
 import { PermisoDirective } from '../../../../shared/directives/permiso.directive';
 import { nuevaClaveDeIntento } from '../../../../shared/utils/clave-de-intento';
 import { formatearFecha, formatearInstante } from '../../../../shared/utils/instantes';
@@ -32,11 +34,20 @@ import {
   origenDeMovimiento,
 } from '../../models/etiquetas-de-pases';
 import { ErrorPase, errorSinContextoDePase, traducirErrorPase } from '../../models/pase-errors';
-import { PasesApi } from '../../services/pases-api';
+import { MOVIMIENTOS_POR_PAGINA, PasesApi } from '../../services/pases-api';
 
+/**
+ * El ledger abierto, de a paginas (0.116.0). Mientras llega otra pagina se sigue mostrando la
+ * anterior: si la tabla desapareciera, el foco del boton "Siguiente" se perderia con ella.
+ */
 interface Detalle {
   readonly paseId: number;
-  readonly datos: PaseDetalle | null;
+  /** El pase tal como se leyo: nombre y saldo del encabezado. */
+  readonly pase: Pase;
+  /** Pagina pedida, base cero. */
+  readonly numero: number;
+  readonly pagina: PaginaDeMovimientosDePase | null;
+  readonly cargando: boolean;
   readonly error: ErrorPase | null;
 }
 
@@ -67,10 +78,19 @@ const ENTERO_CON_SIGNO = /^[+-]?\d+$/;
  * <p><b>Ajuste y anulacion</b> (AKINE-08.07, RF-M29-005, RN-M29-002) piden `pase:adjust` y viajan
  * con la `version` del pase leido. Anular anula tambien la deuda de la venta: queda ANULADA en la
  * cuenta corriente, no se borra.
+ *
+ * <p><b>Renovacion automatica de abonos</b> (AKINE-08.08, 0.116.0): se pide al vender o despues, abono
+ * por abono, con `pase:manage` —prenderla es autorizar que el sistema venda el periodo siguiente, con
+ * su deuda, a nombre de quien la prende—. Cada periodo renovado es un pase propio que apunta al
+ * anterior (`renuevaPaseId`), y la pantalla enlaza los dos. Si el sistema no pudo renovar, la
+ * renovacion queda apagada y el motivo se muestra.
+ *
+ * <p><b>El ledger se lee de a paginas</b> (RF-M29-009, 0.116.0), del movimiento mas viejo al mas
+ * nuevo: un pase con historia larga no viaja entero.
  */
 @Component({
   selector: 'app-pases-de-persona-page',
-  imports: [RouterLink, PermisoDirective, ConfirmacionConMotivo],
+  imports: [RouterLink, PermisoDirective, ConfirmacionConMotivo, Paginacion],
   templateUrl: './pases-de-persona-page.html',
   styleUrl: '../../activity.css',
 })
@@ -79,6 +99,7 @@ export class PasesDePersonaPage {
   private readonly tenant = inject(TenantContextStore);
   private readonly permisos = inject(PermissionsStore);
   private readonly diaDeLaSede = inject(DiaDeLaSede);
+  private readonly documento = inject(DOCUMENT);
 
   /** De la ruta. `withComponentInputBinding` lo liga solo. */
   readonly personaId = input.required<string>();
@@ -109,6 +130,11 @@ export class PasesDePersonaPage {
   protected readonly venta = signal<ResultadoDeVenta | null>(null);
   protected readonly periodoDesde = signal('');
   protected readonly periodoHasta = signal('');
+  protected readonly renovarAlVender = signal(false);
+
+  /** El pase cuya renovacion se esta cambiando, para deshabilitar solo ese boton. */
+  protected readonly renovando = signal<number | null>(null);
+  protected readonly errorRenovacion = signal<ErrorPase | null>(null);
 
   protected readonly accion = signal<Accion | null>(null);
   protected readonly ajusteCantidad = signal('');
@@ -168,7 +194,19 @@ export class PasesDePersonaPage {
     return pase !== null && saldo !== null && (saldo < 0 || saldo > (pase.creditosIniciales ?? 0));
   });
 
+  /** Cada periodo renovado, por el id del periodo que renueva: la cadena se lee en los dos sentidos. */
+  private readonly renovadoPorId = computed(() => {
+    const mapa = new Map<number, Pase>();
+    for (const pase of this.pases() ?? []) {
+      if (pase.renuevaPaseId !== undefined) {
+        mapa.set(pase.renuevaPaseId, pase);
+      }
+    }
+    return mapa;
+  });
+
   private pedido = 0;
+  private pedidoMovimientos = 0;
   private clave = nuevaClaveDeIntento();
 
   constructor() {
@@ -185,6 +223,9 @@ export class PasesDePersonaPage {
         this.productoElegido.set('');
         this.periodoDesde.set('');
         this.periodoHasta.set('');
+        this.renovarAlVender.set(false);
+        this.renovando.set(null);
+        this.errorRenovacion.set(null);
         this.cerrarAccion();
         this.avisoAccion.set(null);
         this.anulacion.set(null);
@@ -286,28 +327,158 @@ export class PasesDePersonaPage {
   // ------------------------------------------------------------------ ledger
 
   protected verMovimientos(pase: Pase): void {
+    this.cargarMovimientos(pase, 0);
+  }
+
+  protected irAPaginaDeMovimientos(numero: number): void {
+    const actual = this.detalle();
+    if (actual !== null) {
+      this.cargarMovimientos(actual.pase, numero);
+    }
+  }
+
+  /** "Movimientos 21 a 40 de 45": la posicion dicha con texto, no solo con los botones. */
+  protected rangoDeMovimientos(pagina: PaginaDeMovimientosDePase): string {
+    const total = pagina.totalElements ?? 0;
+    const cantidad = (pagina.content ?? []).length;
+    if (total <= cantidad) {
+      return `${total === 1 ? '1 movimiento' : `${total} movimientos`}, del mas viejo al mas nuevo.`;
+    }
+    const desde = (pagina.page ?? 0) * (pagina.size ?? MOVIMIENTOS_POR_PAGINA) + 1;
+    return `Movimientos ${desde} a ${desde + cantidad - 1} de ${total}, del mas viejo al mas nuevo.`;
+  }
+
+  /**
+   * Pide una pagina del ledger. Con `alFinal` (despues de un ajuste o una anulacion, que agregan
+   * el movimiento mas nuevo) termina en la ultima pagina, que es donde quedo. Una pagina que ya no
+   * existe —el pase tenia menos movimientos de los que se creia— tambien lleva a la ultima.
+   */
+  private cargarMovimientos(pase: Pase, numero: number, alFinal = false): void {
     const ids = this.ids();
     const paseId = pase.id;
     if (ids === null || paseId === undefined) {
       return;
     }
-    this.detalle.set({ paseId, datos: null, error: null });
-    this.api.verPase(ids.consultorioId, paseId).subscribe({
-      next: (datos) => {
-        if (this.detalle()?.paseId === paseId) {
-          this.detalle.set({ paseId, datos, error: null });
+    const pedido = ++this.pedidoMovimientos;
+    const anterior = this.detalle();
+    this.detalle.set({
+      paseId,
+      pase,
+      numero,
+      pagina: anterior?.paseId === paseId ? anterior.pagina : null,
+      cargando: true,
+      error: null,
+    });
+    this.api.movimientos(ids.consultorioId, paseId, numero).subscribe({
+      next: (pagina) => {
+        if (pedido !== this.pedidoMovimientos) {
+          return;
         }
+        const ultima = Math.max((pagina.totalPages ?? 0) - 1, 0);
+        const fueraDeRango = numero > 0 && (pagina.content ?? []).length === 0;
+        if ((alFinal || fueraDeRango) && numero !== ultima) {
+          this.cargarMovimientos(pase, ultima);
+          return;
+        }
+        this.detalle.set({ paseId, pase, numero, pagina, cargando: false, error: null });
       },
       error: (error: unknown) => {
-        if (this.detalle()?.paseId === paseId) {
-          this.detalle.set({ paseId, datos: null, error: traducirErrorPase(error) });
+        if (pedido === this.pedidoMovimientos) {
+          this.detalle.set({
+            paseId,
+            pase,
+            numero,
+            pagina: null,
+            cargando: false,
+            error: traducirErrorPase(error),
+          });
         }
       },
     });
   }
 
+  /** Despues de una escritura, el ledger abierto se relee en la pagina del movimiento nuevo. */
+  private releerMovimientos(pase: Pase): void {
+    const actual = this.detalle();
+    if (actual === null || actual.paseId !== pase.id) {
+      return;
+    }
+    const total = (actual.pagina?.totalElements ?? 0) + 1;
+    const tamano = actual.pagina?.size ?? MOVIMIENTOS_POR_PAGINA;
+    this.cargarMovimientos(pase, Math.floor((total - 1) / tamano), true);
+  }
+
   protected cerrarMovimientos(): void {
+    this.pedidoMovimientos++;
     this.detalle.set(null);
+  }
+
+  // ------------------------------------------------------------------ renovacion de abonos
+
+  /** El periodo que renovo a este, si ya se vendio. */
+  protected renovadoPor(pase: Pase): Pase | undefined {
+    return pase.id === undefined ? undefined : this.renovadoPorId().get(pase.id);
+  }
+
+  /** El periodo que este renueva, si esta en la lista. */
+  protected periodoAnterior(pase: Pase): Pase | undefined {
+    return pase.renuevaPaseId === undefined
+      ? undefined
+      : (this.pases() ?? []).find((p) => p.id === pase.renuevaPaseId);
+  }
+
+  /**
+   * Se configura sobre un abono no anulado que todavia no se renovo: sobre uno ya renovado el
+   * backend responde `YA_RENOVADO`, porque la renovacion paso al periodo nuevo.
+   */
+  protected renovacionConfigurable(pase: Pase): boolean {
+    return esAbono(pase) && pase.estado !== 'ANULADO' && this.renovadoPor(pase) === undefined;
+  }
+
+  /** Lleva el foco a la fila de otro periodo de la cadena, sin navegar. */
+  protected irAPase(evento: Event, paseId: number | undefined): void {
+    evento.preventDefault();
+    const fila = this.documento.getElementById(`pase-${paseId}`);
+    fila?.focus();
+    fila?.scrollIntoView?.({ block: 'nearest' });
+  }
+
+  protected cambiarRenovacion(pase: Pase, activa: boolean): void {
+    const ids = this.ids();
+    if (ids === null) {
+      this.errorRenovacion.set(errorSinContextoDePase());
+      return;
+    }
+    if (pase.id === undefined || this.renovando() !== null) {
+      return;
+    }
+    const paseId = pase.id;
+    this.renovando.set(paseId);
+    this.errorRenovacion.set(null);
+    this.avisoAccion.set(null);
+    this.anulacion.set(null);
+    this.api.configurarRenovacion(ids.consultorioId, paseId, activa, pase.version ?? 0).subscribe({
+      next: (actualizado) => {
+        this.renovando.set(null);
+        this.avisoAccion.set(
+          actualizado.renovacionAutomatica
+            ? `"${actualizado.nombre}" se va a renovar solo: unos dias antes del ` +
+                `${formatearFecha(actualizado.vigenciaHasta)} el sistema vende el periodo ` +
+                'siguiente, con el precio del producto de ese momento y su propia deuda. No cobra.'
+            : `"${actualizado.nombre}" ya no se renueva solo. El periodo actual sigue como estaba.`,
+        );
+        this.cargar();
+      },
+      error: (error: unknown) => {
+        this.renovando.set(null);
+        const traducido = traducirErrorPase(error);
+        this.errorRenovacion.set(traducido);
+        // Version vieja o ya renovado: el pase en pantalla no es el del servidor.
+        if (traducido.causa === 'version-vieja' || traducido.causa === 'pase-no-ajustable') {
+          this.cargar();
+        }
+      },
+    });
   }
 
   // ------------------------------------------------------------------ venta
@@ -319,6 +490,7 @@ export class PasesDePersonaPage {
     const producto = this.productoDeLaVenta();
     this.periodoDesde.set(producto && esAbono(producto) ? this.diaDeLaSede.hoy() : '');
     this.periodoHasta.set('');
+    this.renovarAlVender.set(false);
     // Otro producto es otro pedido: la clave anterior ya no lo identifica.
     this.clave = nuevaClaveDeIntento();
   }
@@ -326,6 +498,13 @@ export class PasesDePersonaPage {
   /** Otro periodo es otro pedido: con la clave anterior el backend responderia 409. */
   protected cambiarPeriodo(campo: 'desde' | 'hasta', valor: string): void {
     (campo === 'desde' ? this.periodoDesde : this.periodoHasta).set(valor);
+    this.errorVenta.set(null);
+    this.clave = nuevaClaveDeIntento();
+  }
+
+  /** Pedir o no la renovacion es otro pedido: con la clave anterior el backend responderia 409. */
+  protected cambiarRenovacionAlVender(valor: boolean): void {
+    this.renovarAlVender.set(valor);
     this.errorVenta.set(null);
     this.clave = nuevaClaveDeIntento();
   }
@@ -362,7 +541,9 @@ export class PasesDePersonaPage {
       );
       return;
     }
-    const periodo = deAbono ? { desde, hasta: hasta || undefined } : undefined;
+    const periodo = deAbono
+      ? { desde, hasta: hasta || undefined, renovacionAutomatica: this.renovarAlVender() }
+      : undefined;
     this.enviando.set(true);
     this.errorVenta.set(null);
     this.venta.set(null);
@@ -373,6 +554,7 @@ export class PasesDePersonaPage {
         this.productoElegido.set('');
         this.periodoDesde.set('');
         this.periodoHasta.set('');
+        this.renovarAlVender.set(false);
         this.clave = nuevaClaveDeIntento();
         this.cargar();
       },
@@ -439,10 +621,8 @@ export class PasesDePersonaPage {
               `${creditosEnPalabras(ajustado.creditosDisponibles)} de ` +
               `${ajustado.creditosIniciales}. El ajuste queda en los movimientos con su motivo.`,
           );
-          // La respuesta trae el ledger: si estaba abierto, se muestra el nuevo sin otra lectura.
-          if (this.detalle()?.paseId === paseId) {
-            this.detalle.set({ paseId, datos, error: null });
-          }
+          // El ledger abierto se relee en la pagina donde quedo el ajuste.
+          this.releerMovimientos(ajustado);
           this.cargar();
         },
         error: (error: unknown) => this.fallaDeAccion(error),
@@ -467,9 +647,7 @@ export class PasesDePersonaPage {
         this.enviando.set(false);
         this.cerrarAccion();
         this.anulacion.set(resultado);
-        if (this.detalle()?.paseId === paseId) {
-          this.verMovimientos(resultado.pase ?? pase);
-        }
+        this.releerMovimientos(resultado.pase ?? pase);
         this.cargar();
       },
       error: (error: unknown) => this.fallaDeAccion(error),
