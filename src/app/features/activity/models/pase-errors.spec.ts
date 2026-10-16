@@ -53,6 +53,31 @@ describe('traducirErrorPase', () => {
     expect(traducirErrorPase(error(409, 'pase-no-ajustable')).mensaje).toContain(
       'no admite esa operacion',
     );
+    for (const [causa, frase] of [
+      ['ESTADO', 'esta anulado o vencido'],
+      ['FUERA_DE_VIGENCIA', 'la vigencia del pase ya termino'],
+      ['FUERA_DE_RANGO', 'por debajo de 0 o por encima de los creditos comprados'],
+      ['CREDITOS_USADOS', 'ya tiene creditos usados'],
+    ]) {
+      // La causa manda; el texto de `motivo` no se lee.
+      const porCausa = traducirErrorPase(
+        error(409, 'pase-no-ajustable', { causa, motivo: 'texto libre del servidor' }),
+      );
+      expect(porCausa.mensaje).toContain(frase);
+      expect(porCausa.mensaje).not.toContain('texto libre');
+    }
+    // Una causa que este cliente no conoce cae al motivo, tal como llega.
+    expect(
+      traducirErrorPase(error(409, 'pase-no-ajustable', { causa: 'OTRA', motivo: 'esta raro' }))
+        .mensaje,
+    ).toBe('No se puede: el pase esta raro. No se cambio nada.');
+    expect(
+      traducirErrorPase(error(409, 'pase-no-ajustable', { causa: 'toString' })).mensaje,
+    ).toContain('no admite esa operacion');
+    const conMoneda = traducirErrorPase(
+      error(409, 'pase-con-cobros', { cobrado: 1500.5, moneda: 'USD' }),
+    );
+    expect(conMoneda.mensaje.replace(/\s+/g, ' ')).toContain('(US$ 1.500,50 cobrados)');
     const cobros = traducirErrorPase(error(409, 'pase-con-cobros', { cobrado: 1500.5 }));
     expect(cobros.causa).toBe('pase-con-cobros');
     expect(cobros.cobrado).toBe(1500.5);

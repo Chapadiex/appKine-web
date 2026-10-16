@@ -21,6 +21,8 @@ import { GrantPlatformRoleRequest } from '../model/grant-platform-role-request';
 // @ts-ignore
 import { GrantSupportAccessRequest } from '../model/grant-support-access-request';
 // @ts-ignore
+import { PlatformOrganizationPageResponse } from '../model/platform-organization-page-response';
+// @ts-ignore
 import { PlatformRoleResponse } from '../model/platform-role-response';
 // @ts-ignore
 import { PlatformSubscriptionResponse } from '../model/platform-subscription-response';
@@ -38,6 +40,7 @@ import {
     GetPlatformSubscriptionRequestParams,
     GrantPlatformRoleRequestParams,
     GrantSupportAccessRequestParams,
+    ListPlatformOrganizationsRequestParams,
     ListSupportAccessRequestParams,
     RevokePlatformRoleRequestParams,
     RevokeSupportAccessRequestParams
@@ -254,6 +257,107 @@ export class PlataformaService extends BaseService implements PlataformaServiceI
             {
                 context: localVarHttpContext,
                 body: grantSupportAccessRequest,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * Listado de centros, para la administracion de plataforma
+     * Listado paginado de las organizaciones vigentes con el estado y el plan de su suscripcion, ordenado por nombre. Es el insumo para elegir el centro cuya suscripcion se opera. Las dadas de baja no aparecen. No trae miembros, sedes, consumo de limites ni datos de pacientes. Reservado a la administracion de plataforma, igual que la lectura y el cambio del plan. El tamano de pagina se acota a 100: pedir mas devuelve ese maximo, no un error.
+     * @endpoint get /api/v1/platform/organizations
+     * @param requestParameters
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public listPlatformOrganizations(requestParameters?: ListPlatformOrganizationsRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<PlatformOrganizationPageResponse>;
+    public listPlatformOrganizations(requestParameters?: ListPlatformOrganizationsRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<PlatformOrganizationPageResponse>>;
+    public listPlatformOrganizations(requestParameters?: ListPlatformOrganizationsRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<PlatformOrganizationPageResponse>>;
+    public listPlatformOrganizations(requestParameters?: ListPlatformOrganizationsRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        const q = requestParameters?.q;
+        const status = requestParameters?.status;
+        const page = requestParameters?.page;
+        const size = requestParameters?.size;
+
+        let localVarQueryParameters = new OpenApiHttpParams(this.encoder);
+
+        localVarQueryParameters = this.addToHttpParams(
+            localVarQueryParameters,
+            'q',
+            <any>q,
+            QueryParamStyle.Form,
+            true,
+        );
+
+
+        localVarQueryParameters = this.addToHttpParams(
+            localVarQueryParameters,
+            'status',
+            <any>status,
+            QueryParamStyle.Form,
+            true,
+        );
+
+
+        localVarQueryParameters = this.addToHttpParams(
+            localVarQueryParameters,
+            'page',
+            <any>page,
+            QueryParamStyle.Form,
+            true,
+        );
+
+
+        localVarQueryParameters = this.addToHttpParams(
+            localVarQueryParameters,
+            'size',
+            <any>size,
+            QueryParamStyle.Form,
+            true,
+        );
+
+
+        let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/platform/organizations`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<PlatformOrganizationPageResponse>('get', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                params: localVarQueryParameters.toHttpParams(),
                 responseType: <any>responseType_,
                 ...(withCredentials ? { withCredentials } : {}),
                 headers: localVarHeaders,

@@ -282,7 +282,12 @@
                   {{ tipoDePase(pase) }} · vendido el {{ instante(pase.vendidoEn) }}
                 </div>
               </td>
-              <td>{{ pase.creditosDisponibles }} de {{ pase.creditosIniciales }}</td>
+              <td>
+                {{ pase.creditosDisponibles }} de {{ pase.creditosIniciales }}
+                @if (pase.creditosUsados !== undefined) {
+                  <div class="ayuda">{{ usados(pase.creditosUsados) }}</div>
+                }
+              </td>
               <td>{{ vigencia(pase) }}</td>
               <td class="importe">{{ importe(pase.precio, pase.moneda) }}</td>
               <td>

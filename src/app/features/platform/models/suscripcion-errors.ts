@@ -5,7 +5,7 @@ import { AkineHttpError } from '../../../core/interceptors/error.interceptor';
  * pre-QA del 14/10, `appKine-api` #133).
  *
  * <p>Cada causa pide otra cosa: `version-vieja` se resuelve releyendo (la pantalla lo hace sola),
- * `suspendida` no se resuelve desde aca y `no-encontrada` es revisar el numero.
+ * `suspendida` no se resuelve desde aca y `no-encontrada` es volver a buscar el centro.
  */
 export type CausaSuscripcion =
   /** 409 concurrent-modification: otro cambio movio la version entre la lectura y el envio. */
@@ -34,7 +34,7 @@ const MENSAJES: Readonly<Record<CausaSuscripcion, string>> = {
     'La suscripcion no esta activa, y el plan solo se cambia con la suscripcion activa. ' +
     'Reactivala primero.',
   'no-encontrada':
-    'No hay una organizacion vigente con ese numero, o el plan elegido ya no es contratable.',
+    'El centro ya no esta vigente (pudo darse de baja), o el plan elegido ya no es contratable.',
   'sin-permiso':
     'Tu cuenta ya no administra la plataforma, asi que no puede ver ni cambiar suscripciones.',
   validacion: 'El servidor rechazo el pedido. Revisa el plan elegido.',

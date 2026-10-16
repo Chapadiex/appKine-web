@@ -10,29 +10,104 @@
   <h2 id="titulo-buscar-centro">Centro</h2>
   <form (submit)="$event.preventDefault(); buscar()">
     <div class="campo">
-      <label for="suscripcion-organizacion">Numero de organizacion</label>
+      <label for="suscripcion-busqueda">Nombre o identificador del centro</label>
       <input
-        id="suscripcion-organizacion"
-        type="text"
-        inputmode="numeric"
+        id="suscripcion-busqueda"
+        type="search"
         autocomplete="off"
-        [value]="organizacion()"
-        [attr.aria-invalid]="intentoBuscar() && organizacionInvalida()"
-        [attr.aria-describedby]="
-          intentoBuscar() && organizacionInvalida() ? 'suscripcion-organizacion-error' : null
-        "
-        (input)="organizacion.set($any($event.target).value)"
+        aria-describedby="suscripcion-busqueda-ayuda"
+        [value]="busqueda()"
+        (input)="busqueda.set($any($event.target).value)"
       />
-      @if (intentoBuscar() && organizacionInvalida()) {
-        <p id="suscripcion-organizacion-error" class="campo__error">
-          Escribi el numero de la organizacion, un entero mayor que cero.
-        </p>
-      }
+      <p id="suscripcion-busqueda-ayuda" class="ayuda">
+        Busca en el nombre y en el slug del centro. Vacio, lista todos.
+      </p>
+    </div>
+    <div class="campo">
+      <label for="suscripcion-filtro-estado">Estado de la suscripcion</label>
+      <select
+        id="suscripcion-filtro-estado"
+        [value]="filtroDeEstado()"
+        (change)="filtroDeEstado.set($any($event.target).value)"
+      >
+        <option value="">Todos</option>
+        <option value="ACTIVA">Activa</option>
+        <option value="SUSPENDIDA">Suspendida</option>
+        <option value="CANCELADA">Cancelada</option>
+      </select>
     </div>
     <div class="acciones">
-      <button type="submit" class="boton">Ver la suscripcion</button>
+      <button type="submit" class="boton">Buscar centros</button>
     </div>
   </form>
+
+  <div aria-live="polite">
+    @switch (listado().tipo) {
+      @case ('cargando') {
+        <p class="estado estado--cargando">Buscando centros&hellip;</p>
+      }
+      @case ('error') {
+        <p class="estado estado--error" role="alert">{{ errorDeListado()?.mensaje }}</p>
+        <button type="button" class="boton" (click)="buscar()">Reintentar</button>
+      }
+    }
+    @if (paginaDeCentros(); as p) {
+      @if (p.centros.length === 0) {
+        <p class="estado estado--vacio">Ningun centro coincide con la busqueda.</p>
+      } @else {
+        <p class="ayuda" data-testid="suscripcion-total-centros">
+          {{ p.total === 1 ? '1 centro' : p.total + ' centros' }}
+        </p>
+        <div class="tabla-scroll" tabindex="0" role="region" aria-label="Centros encontrados">
+          <table class="tabla">
+            <caption class="visualmente-oculto">
+              Centros de la plataforma, con su slug, el plan y el estado de la suscripcion y la
+              fecha de alta.
+            </caption>
+            <thead>
+              <tr>
+                <th scope="col">Centro</th>
+                <th scope="col">Slug</th>
+                <th scope="col">Plan</th>
+                <th scope="col">Suscripcion</th>
+                <th scope="col">Alta</th>
+                <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (c of p.centros; track c.id) {
+                <tr [attr.aria-current]="esElegido(c) ? 'true' : null">
+                  <th scope="row">{{ c.name }}</th>
+                  <td>{{ c.slug }}</td>
+                  <td>{{ c.planName ?? nombreDePlan(c.planCode) }}</td>
+                  <td>
+                    <span class="marca-estado">{{ c.status }}</span>
+                  </td>
+                  <td>{{ fechaDeAlta(c) }}</td>
+                  <td class="acciones-fila">
+                    <button
+                      type="button"
+                      class="boton boton--secundario"
+                      [attr.aria-label]="'Ver la suscripcion de ' + c.name"
+                      (click)="elegir(c)"
+                    >
+                      Ver la suscripcion
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <app-paginacion
+          [paginaActual]="p.pagina"
+          [totalPaginas]="p.totalPaginas"
+          etiqueta="Paginas de centros"
+          (cambioDePagina)="irAPagina($event)"
+        />
+      }
+    }
+  </div>
 </section>
 
 @switch (estado().tipo) {
@@ -70,7 +145,10 @@
 
 @if (suscripcion(); as s) {
   <section class="tarjeta" aria-labelledby="titulo-suscripcion">
-    <h2 id="titulo-suscripcion">Organizacion {{ s.organizationId }}</h2>
+    <h2 id="titulo-suscripcion">{{ centro()?.name ?? 'Suscripcion del centro' }}</h2>
+    @if (centro()?.slug; as slug) {
+      <p class="ayuda">{{ slug }}</p>
+    }
     <dl class="detalle">
       <dt>Plan</dt>
       <dd data-testid="suscripcion-plan">{{ s.planName ?? nombreDePlan(s.planCode) }}</dd>

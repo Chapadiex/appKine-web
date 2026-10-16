@@ -110,6 +110,11 @@ test.describe('Pases contra el backend real', () => {
     // ---- Ledger: compra +2, consumo -1, saldo 1.
     await navegar(page, `/pacientes/${persona.id}/pases`);
     await expect(filaDe(page, producto)).toContainText('1 de 2');
+    // 0.111.0: los creditos usados se ven junto al saldo, y un pase con asistencias no se anula.
+    await expect(filaDe(page, producto)).toContainText('1 usado');
+    await expect(
+      filaDe(page, producto).getByRole('button', { name: `Anular ${producto}` }),
+    ).toHaveCount(0);
     await page.getByRole('button', { name: `Ver movimientos de ${producto}` }).click();
     const movimientos = page.getByRole('region', { name: 'Movimientos del pase' });
     await expect(movimientos.getByRole('row')).toHaveCount(3);
@@ -162,6 +167,8 @@ test.describe('Pases contra el backend real', () => {
     expect((await ajuste).status()).toBe(200);
     await expect(page.getByText(`Se ajusto el saldo de "${producto}"`)).toBeVisible();
     await expect(filaDe(page, producto)).toContainText('2 de 3');
+    // El ajuste manual no cuenta como credito usado: el pase sigue anulable.
+    await expect(filaDe(page, producto)).toContainText('0 usados');
 
     await page.getByRole('button', { name: `Ver movimientos de ${producto}` }).click();
     const movimientos = page.getByRole('region', { name: 'Movimientos del pase' });

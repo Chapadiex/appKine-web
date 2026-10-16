@@ -34,6 +34,8 @@ const PASE = {
   moneda: 'ARS',
   vendidoEn: '2026-10-01T13:00:00Z',
   version: 4,
+  creditosUsados: 0,
+  anulable: true,
 };
 
 const ABONO = {
@@ -414,13 +416,15 @@ describe('PasesDePersonaPage', () => {
     escribir(fixture, '#ajuste-cantidad', '1');
     escribir(fixture, '#ajuste-motivo', 'Error de carga');
     clickear(fixture, 'Ajustar saldo');
-    httpMock
-      .expectOne(`${BASE}/pases/77/ajustes`)
-      .flush(...conflicto('pase-no-ajustable', { motivo: 'su vigencia termino el 2026-10-10' }));
-    await asentar(fixture);
-    expect(textoDe(fixture)).toContain(
-      'No se puede: el pase su vigencia termino el 2026-10-10. No se cambio nada.',
+    httpMock.expectOne(`${BASE}/pases/77/ajustes`).flush(
+      ...conflicto('pase-no-ajustable', {
+        causa: 'FUERA_DE_VIGENCIA',
+        motivo: 'su vigencia termino el 2026-10-10',
+      }),
     );
+    await asentar(fixture);
+    expect(textoDe(fixture)).toContain('la vigencia del pase ya termino');
+    expect(textoDe(fixture)).not.toContain('2026-10-10');
 
     clickear(fixture, 'Ajustar saldo');
     httpMock.expectOne(`${BASE}/pases/77/ajustes`).flush(...conflicto('concurrent-modification'));
@@ -444,16 +448,17 @@ describe('PasesDePersonaPage', () => {
       expect(pedido.request.body).toEqual({ motivo: 'Vendido por error', version: 4 });
       pedido.flush({
         anulado: true,
-        pase: { ...PASE, estado: 'ANULADO', creditosDisponibles: 0 },
+        pase: { ...PASE, estado: 'ANULADO', creditosDisponibles: 0, anulable: false },
         deuda: { importe: 40000, moneda: 'ARS', estado: 'ANULADA' },
       });
-      responderPases([{ ...PASE, estado: 'ANULADO', creditosDisponibles: 0 }]);
+      responderPases([{ ...PASE, estado: 'ANULADO', creditosDisponibles: 0, anulable: false }]);
       await asentar(fixture);
       const texto = textoDe(fixture);
       expect(texto).toContain('Se anulo "Pack Pilates 8" y su saldo se descarto.');
       expect(texto).toContain('quedo anulada: no se borra, sigue en la cuenta corriente');
       // Un pase anulado ya no ofrece anularse ni ajustarse.
       expect(texto).not.toContain('Ajustar saldo');
+      expect(boton(fixture, 'Anular Pack Pilates 8')).toBeNull();
     },
     TIMEOUT_AXE,
   );
@@ -465,7 +470,7 @@ describe('PasesDePersonaPage', () => {
     clickear(fixture, 'Anular pase');
     httpMock
       .expectOne(`${BASE}/pases/77/anulacion`)
-      .flush({ anulado: false, pase: { ...PASE, estado: 'ANULADO' } });
+      .flush({ anulado: false, pase: { ...PASE, estado: 'ANULADO', anulable: false } });
     responderPases();
     await asentar(fixture);
     expect(textoDe(fixture)).toContain('ya estaba anulado: no se cambio nada');
@@ -479,10 +484,64 @@ describe('PasesDePersonaPage', () => {
     clickear(fixture, 'Anular pase');
     httpMock
       .expectOne(`${BASE}/pases/77/anulacion`)
-      .flush(...conflicto('pase-con-cobros', { obligacionId: 5, cobrado: 15000 }));
+      .flush(...conflicto('pase-con-cobros', { obligacionId: 5, cobrado: 15000, moneda: 'ARS' }));
     await asentar(fixture);
-    const texto = textoDe(fixture);
-    expect(texto).toContain('la deuda de esta venta ya tiene cobros (15.000,00 cobrados)');
+    const texto = textoDe(fixture).replace(/\s+/g, ' ');
+    expect(texto).toContain('la deuda de esta venta ya tiene cobros ($ 15.000,00 cobrados)');
     expect(texto).toContain('Ir a la cuenta corriente');
   });
+
+  it('ofrece anular solo lo que el backend marca anulable, y muestra los creditos usados', async () => {
+    const fixture = await montar(
+      [
+        { ...PASE, id: 1, nombre: 'Pack sin usar', creditosUsados: 0, anulable: true },
+        {
+          ...PASE,
+          id: 2,
+          nombre: 'Pack con asistencias',
+          creditosDisponibles: 6,
+          creditosUsados: 2,
+          anulable: false,
+        },
+        {
+          ...PASE,
+          id: 3,
+          nombre: 'Pack de lectura vieja',
+          creditosUsados: undefined,
+          anulable: undefined,
+        },
+      ],
+      PRODUCTOS,
+      ADMIN,
+    );
+    expect(boton(fixture, 'Anular Pack sin usar')).not.toBeNull();
+    expect(boton(fixture, 'Anular Pack con asistencias')).toBeNull();
+    expect(boton(fixture, 'Anular Pack de lectura vieja')).toBeNull();
+    // Activo con asistencias: se ajusta aunque ya no se anule.
+    expect(boton(fixture, 'Ajustar saldo de Pack con asistencias')).not.toBeNull();
+    const texto = textoDe(fixture);
+    expect(texto).toContain('0 usados');
+    expect(texto).toContain('2 usados');
+  });
+
+  it('una anulacion rechazada por creditos usados se explica por la causa', async () => {
+    const fixture = await montar([PASE], PRODUCTOS, ADMIN);
+    clickear(fixture, 'Anular');
+    escribir(fixture, '#anulacion-motivo', 'Vendido por error');
+    clickear(fixture, 'Anular pase');
+    httpMock
+      .expectOne(`${BASE}/pases/77/anulacion`)
+      .flush(
+        ...conflicto('pase-no-ajustable', { causa: 'CREDITOS_USADOS', motivo: 'tiene 1 usado' }),
+      );
+    await asentar(fixture);
+    expect(textoDe(fixture)).toContain('ya tiene creditos usados en asistencias');
+  });
+
+  function boton(
+    fixture: Awaited<ReturnType<typeof montar>>,
+    etiqueta: string,
+  ): HTMLButtonElement | null {
+    return (fixture.nativeElement as HTMLElement).querySelector(`button[aria-label="${etiqueta}"]`);
+  }
 });

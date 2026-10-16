@@ -248,6 +248,8 @@ export * from './plan-limit-response';
 export * from './plan-response';
 export * from './plan-tratamiento';
 export * from './plan-tratamiento-version';
+export * from './platform-organization-page-response';
+export * from './platform-organization-response';
 export * from './platform-role-response';
 export * from './platform-subscription-response';
 export * from './politica-de-prepago-request';
