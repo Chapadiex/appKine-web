@@ -6,9 +6,17 @@ import {
   HistoriaSembrada,
   MOTIVO_DE_ACCESO,
   abrirHistoriaConMotivo,
+  entrarConContexto,
   sembrarHistoria,
 } from './support/historia-clinica';
-import { ApiAkine } from './support/sembrado';
+import {
+  ApiAkine,
+  crearFinanciador,
+  darCobertura,
+  fechaLocal,
+  practicaGlobal,
+  sumarDias,
+} from './support/sembrado';
 
 /**
  * E2E del Plan de Tratamiento (D-c, RF-M11-001..006) contra el backend real.
@@ -138,5 +146,105 @@ test.describe('Plan de tratamiento (D-c)', () => {
     await page.getByRole('textbox', { name: 'Motivo del acceso' }).fill(MOTIVO_DE_ACCESO);
     await page.getByRole('button', { name: 'Ver el plan' }).click();
     await expect(page.getByTestId('plan-estado')).toHaveText('Finalizado');
+  });
+
+  test('cada item muestra la vigencia de la autorizacion que lo respalda (0.107.0)', async ({
+    page,
+  }) => {
+    // Una autorizacion APROBADA real de M17, de la misma persona, atada a un item del plan. El
+    // vinculo exige que habilite hoy, asi que lo que se ve aca es la vigente; la vencida la cubre
+    // el spec unitario de `vigenciaDeAutorizacion`.
+    const desde = sumarDias(fechaLocal('America/Argentina/Cordoba'), -30);
+    const hasta = sumarDias(desde, 240);
+    const conMotivo = { 'X-Justificacion-Acceso': MOTIVO_DE_ACCESO };
+
+    const admin = await ApiAkine.como(sembrada.emailAdmin, {
+      organizationId: sembrada.organizationId,
+    });
+    let autorizacionId: number;
+    try {
+      const financiador = await crearFinanciador(admin, desde);
+      const persona = { id: sembrada.personaId, nombre: '', apellido: '' };
+      const coberturaId = await darCobertura(admin, persona, financiador, desde);
+      const practicaId = await practicaGlobal(admin, 'KIN_SESION');
+      const creada = await admin.exigir<{ id: number }>(
+        'POST',
+        `/api/v1/personas/${sembrada.personaId}/autorizaciones`,
+        {
+          coberturaId,
+          practicaId,
+          numero: `AUT-PLAN-${Date.now()}`,
+          estadoInicial: 'APROBADA',
+          cantidadAutorizada: 6,
+          vigenciaDesde: desde,
+          vigenciaHasta: hasta,
+        },
+      );
+      autorizacionId = creada.id;
+    } finally {
+      await admin.cerrar();
+    }
+
+    const profesional = await ApiAkine.como(sembrada.email, {
+      organizationId: sembrada.organizationId,
+    });
+    let otroCaso: number;
+    try {
+      // Otro caso del mismo paciente y la misma oferta: el primero ya tiene su plan finalizado.
+      const caso = await profesional.pedir(
+        'POST',
+        `/api/v1/historias-clinicas/${sembrada.historiaClinicaId}/casos`,
+        {
+          ofertaId: sembrada.oferta.id,
+          diagnosticoPresuntivo: 'Esguince de tobillo sintetico',
+          confirmaPosibleDuplicado: true,
+        },
+        conMotivo,
+      );
+      expect(caso.status(), await caso.text()).toBe(201);
+      otroCaso = ((await caso.json()) as { id: number }).id;
+
+      const plan = await profesional.pedir(
+        'POST',
+        `/api/v1/casos-clinicos/${otroCaso}/planes`,
+        {
+          objetivos: 'Estabilidad articular',
+          items: [{ ofertaId: sembrada.oferta.id, cantidadPlanificada: 8 }],
+        },
+        conMotivo,
+      );
+      expect(plan.status(), await plan.text()).toBe(201);
+      const creado = (await plan.json()) as {
+        id: number;
+        version: number;
+        versionVigente: { items: { id: number }[] };
+      };
+
+      const vinculo = await profesional.pedir(
+        'POST',
+        `/api/v1/planes-tratamiento/${creado.id}/autorizacion`,
+        {
+          planItemId: creado.versionVigente.items[0].id,
+          autorizacionId,
+          expectedVersion: creado.version,
+        },
+        conMotivo,
+      );
+      expect(vinculo.status(), await vinculo.text()).toBe(200);
+    } finally {
+      await profesional.cerrar();
+    }
+
+    await entrarConContexto(page, sembrada);
+    await navegar(page, `/historia-clinica/personas/${sembrada.personaId}/casos/${otroCaso}/plan`);
+    await page.getByRole('textbox', { name: 'Motivo del acceso' }).fill(MOTIVO_DE_ACCESO);
+    await page.getByRole('button', { name: 'Ver el plan' }).click();
+
+    const [anio, mes, dia] = hasta.split('-');
+    const vigencia = page.getByTestId('plan-vigencia-autorizacion');
+    await expect(vigencia).toHaveText(
+      `autorizacion vigente hasta el ${dia}/${mes}/${anio} inclusive`,
+    );
+    await expect(vigencia).not.toHaveClass(/plan__vigencia--vencida/);
   });
 });

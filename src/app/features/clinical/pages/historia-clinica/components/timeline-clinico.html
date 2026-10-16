@@ -22,75 +22,135 @@
     </div>
   }
 
-  <p class="visualmente-oculto" aria-live="polite">{{ aviso() }}</p>
-
-  @switch (estado().tipo) {
-    @case ('cargando') {
-      <p class="estado estado--cargando" role="status">Cargando el timeline…</p>
+  <div class="timeline__filtros">
+    <fieldset class="timeline__origenes">
+      <legend>Que hechos mostrar</legend>
+      @for (opcion of opcionesDeOrigen; track opcion.valor) {
+        <label class="timeline__origen-opcion">
+          <input
+            type="checkbox"
+            [checked]="incluyeOrigen(opcion.valor)"
+            (change)="alternarOrigen(opcion.valor, $any($event.target).checked)"
+          />
+          {{ opcion.rotulo }}
+        </label>
+      }
+      <p class="ayuda">Sin ninguno marcado se muestran todos.</p>
+    </fieldset>
+    <div class="timeline__fechas">
+      <div class="campo">
+        <label for="timeline-desde">Desde el dia</label>
+        <input
+          id="timeline-desde"
+          type="date"
+          [value]="desde()"
+          [attr.aria-invalid]="rangoInvalido()"
+          [attr.aria-describedby]="rangoInvalido() ? 'timeline-rango-error' : null"
+          (change)="desde.set($any($event.target).value)"
+        />
+      </div>
+      <div class="campo">
+        <label for="timeline-hasta">Hasta el dia (inclusive)</label>
+        <input
+          id="timeline-hasta"
+          type="date"
+          [value]="hasta()"
+          [attr.aria-invalid]="rangoInvalido()"
+          [attr.aria-describedby]="rangoInvalido() ? 'timeline-rango-error' : null"
+          (change)="hasta.set($any($event.target).value)"
+        />
+      </div>
+    </div>
+    @if (rangoInvalido()) {
+      <p id="timeline-rango-error" class="campo__error" role="alert">
+        "Desde" tiene que ser el mismo dia que "Hasta" o uno anterior.
+      </p>
     }
-    @case ('error') {
-      <div role="alert">
-        <p class="estado estado--error">{{ error()?.mensaje }}</p>
-        <div class="acciones">
-          <button type="button" class="boton boton--secundario" (click)="reintentar()">
-            Reintentar
-          </button>
-        </div>
+    @if (hayFiltros()) {
+      <div class="acciones">
+        <button type="button" class="boton boton--secundario" (click)="limpiarFiltros()">
+          Quitar los filtros
+        </button>
       </div>
     }
-    @case ('lista') {
-      @if (eventos().length === 0) {
-        <p class="estado estado--vacio">
-          @if (casoId() === null) {
-            Todavia no hay hechos clinicos registrados en esta historia.
-          } @else {
-            Este caso todavia no tiene hechos clinicos.
-          }
-        </p>
-      } @else {
-        <ol class="timeline" aria-label="Hechos clinicos, del mas reciente al mas antiguo">
-          @for (fila of filas(); track fila.clave) {
-            <li class="timeline__hecho">
-              @if (fila.conDetalle) {
-                <button
-                  type="button"
-                  class="timeline__boton"
-                  [class.timeline__boton--elegido]="seleccionado() === fila.clave"
-                  [attr.aria-pressed]="seleccionado() === fila.clave"
-                  (click)="elegido.emit(fila.evento)"
-                >
-                  <ng-container *ngTemplateOutlet="contenido; context: { $implicit: fila }" />
-                </button>
-              } @else {
-                <div class="timeline__boton timeline__boton--inerte">
-                  <ng-container *ngTemplateOutlet="contenido; context: { $implicit: fila }" />
-                </div>
-              }
-            </li>
-          }
-        </ol>
+  </div>
 
-        @if (errorAlCargarMas(); as problema) {
-          <p class="estado estado--error" role="alert">{{ problema.mensaje }}</p>
-        }
+  <p class="visualmente-oculto" aria-live="polite">{{ aviso() }}</p>
 
-        @if (hayMas()) {
+  <!-- Con el rango invertido el pedido no sale: no hay nada que listar y el error esta arriba. -->
+  @if (!rangoInvalido()) {
+    @switch (estado().tipo) {
+      @case ('cargando') {
+        <p class="estado estado--cargando" role="status">Cargando el timeline…</p>
+      }
+      @case ('error') {
+        <div role="alert">
+          <p class="estado estado--error">{{ error()?.mensaje }}</p>
           <div class="acciones">
-            <button
-              type="button"
-              class="boton boton--secundario"
-              [disabled]="cargandoMas()"
-              (click)="cargarMas()"
-            >
-              @if (cargandoMas()) {
-                Cargando…
-              } @else {
-                Cargar hechos anteriores
-              }
+            <button type="button" class="boton boton--secundario" (click)="reintentar()">
+              Reintentar
             </button>
           </div>
+        </div>
+      }
+      @case ('lista') {
+        @if (eventos().length === 0) {
+          <p class="estado estado--vacio">
+            @if (hayFiltros()) {
+              Ningun hecho clinico coincide con los filtros.
+            } @else if (casoId() === null) {
+              Todavia no hay hechos clinicos registrados en esta historia.
+            } @else {
+              Este caso todavia no tiene hechos clinicos.
+            }
+          </p>
         } @else {
-          <p class="ayuda">Ese es el primer hecho de la historia.</p>
+          <ol class="timeline" aria-label="Hechos clinicos, del mas reciente al mas antiguo">
+            @for (fila of filas(); track fila.clave) {
+              <li class="timeline__hecho">
+                @if (fila.conDetalle) {
+                  <button
+                    type="button"
+                    class="timeline__boton"
+                    [class.timeline__boton--elegido]="seleccionado() === fila.clave"
+                    [attr.aria-pressed]="seleccionado() === fila.clave"
+                    (click)="elegido.emit(fila.evento)"
+                  >
+                    <ng-container *ngTemplateOutlet="contenido; context: { $implicit: fila }" />
+                  </button>
+                } @else {
+                  <div class="timeline__boton timeline__boton--inerte">
+                    <ng-container *ngTemplateOutlet="contenido; context: { $implicit: fila }" />
+                  </div>
+                }
+              </li>
+            }
+          </ol>
+
+          @if (errorAlCargarMas(); as problema) {
+            <p class="estado estado--error" role="alert">{{ problema.mensaje }}</p>
+          }
+
+          @if (hayMas()) {
+            <div class="acciones">
+              <button
+                type="button"
+                class="boton boton--secundario"
+                [disabled]="cargandoMas()"
+                (click)="cargarMas()"
+              >
+                @if (cargandoMas()) {
+                  Cargando…
+                } @else {
+                  Cargar hechos anteriores
+                }
+              </button>
+            </div>
+          } @else if (hayFiltros()) {
+            <p class="ayuda">No hay hechos anteriores que coincidan con los filtros.</p>
+          } @else {
+            <p class="ayuda">Ese es el primer hecho de la historia.</p>
+          }
         }
       }
     }

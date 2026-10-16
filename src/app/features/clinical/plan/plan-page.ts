@@ -16,6 +16,7 @@ import { AvanceDeItem } from '../../../api/generated/model/avance-de-item';
 import { CasoClinico } from '../../../api/generated/model/caso-clinico';
 import { OfertaResponse } from '../../../api/generated/model/oferta-response';
 import { PlanItem } from '../../../api/generated/model/plan-item';
+import { PlanItemPlanificado } from '../../../api/generated/model/plan-item-planificado';
 import { PlanTratamiento } from '../../../api/generated/model/plan-tratamiento';
 import { PlanTratamientoVersion } from '../../../api/generated/model/plan-tratamiento-version';
 import { DiaDeLaSede } from '../../../core/services/dia-de-la-sede';
@@ -26,7 +27,7 @@ import { ESTADOS_DE_PLAN } from '../models/etiquetas-de-casos';
 import { fechaYHora, rotulo } from '../models/etiquetas-de-historia';
 import { SedeClinicaApi, ofertaElegible } from '../services/sede-clinica-api';
 import { VisitaClinica } from '../services/visita-clinica';
-import { advertenciasDelPlan } from './advertencias-del-plan';
+import { advertenciasDelPlan, vigenciaDeAutorizacion } from './advertencias-del-plan';
 import { PlanApi } from './plan-api';
 import { ErrorPlan, errorDeCausaPlan, traducirErrorPlan } from './plan-errors';
 
@@ -158,6 +159,11 @@ export class PlanPage {
     if (snapshot) return snapshot;
     if (ofertaId === undefined) return 'Sin oferta';
     return this.ofertas().find((o) => o.id === ofertaId)?.nombreComercial ?? `Oferta #${ofertaId}`;
+  }
+
+  /** Vigencia de la autorizacion del item contra el dia de la sede, o `null` si no tiene. */
+  protected vigenciaDe(item: PlanItemPlanificado) {
+    return vigenciaDeAutorizacion(item, this.dia.hoy());
   }
 
   protected resumenDeAvance(item: AvanceDeItem): string {

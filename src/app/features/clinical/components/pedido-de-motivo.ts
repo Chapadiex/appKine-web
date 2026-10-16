@@ -4,8 +4,8 @@ import { VisitaClinica } from '../services/visita-clinica';
 
 /**
  * El formulario del motivo de acceso (DP-03). Lo muestra cualquier pantalla de la visita cuando el
- * backend responde 403 con `requiereJustificacion`: la historia, un caso o un plan abiertos por
- * enlace directo.
+ * backend responde 403 `justificacion-de-acceso-requerida`: la historia, un caso o un plan
+ * abiertos por enlace directo.
  *
  * <p>Escribe en {@link VisitaClinica} y nada mas. Cada pantalla relee cuando el motivo cambia, asi
  * que este componente no necesita saber que se estaba pidiendo.

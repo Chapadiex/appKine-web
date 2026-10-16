@@ -19,9 +19,12 @@ const caso = (version: number, rol = 'RESPONSABLE') => ({
   estado: 'ACTIVO',
   ofertaId: 14,
   ofertaConsultorioId: 3,
+  ofertaNombre: 'Kinesiologia',
   diagnosticoPresuntivo: 'Lumbalgia',
   abiertoEn: '2026-10-01T12:00:00Z',
-  equipo: [{ id: 1, profesionalMembershipId: 31, rol, vigente: true }],
+  equipo: [
+    { id: 1, profesionalMembershipId: 31, profesionalNombre: 'Lopez, Maria', rol, vigente: true },
+  ],
   version,
 });
 
@@ -107,6 +110,14 @@ describe('CasoDetallePage', () => {
     expect(texto(fixture)).toContain('Se guardo el equipo del caso.');
   });
 
+  it('la oferta y el equipo se nombran con lo que trae el caso, sin pedir el listado de ofertas', async () => {
+    const fixture = await cargado();
+    expect(texto(fixture)).toContain('Caso 1 · Kinesiologia');
+    // El integrante guardado ya no esta habilitado: igual se lo ve por su nombre.
+    expect(texto(fixture)).toContain('Lopez, Maria');
+    httpMock.expectNone((r) => r.url === '/api/v1/consultorios/3/ofertas');
+  });
+
   it('una version vieja ofrece releer en vez de pisar', async () => {
     const fixture = await cargado();
     escribir(fixture, '#caso-motivo', 'Alta');
@@ -152,11 +163,8 @@ describe('CasoDetallePage', () => {
 
   function responderSede(): void {
     httpMock
-      .match((r) => r.url === '/api/v1/consultorios/3/ofertas')
-      .forEach((r) => r.flush([{ id: 14, nombreComercial: 'Kinesiologia' }]));
-    httpMock
       .match((r) => r.url === '/api/v1/consultorios/3/ofertas/14/habilitaciones')
-      .forEach((r) => r.flush({ profesionales: [{ membershipId: 31, nombre: 'Lopez, Maria' }] }));
+      .forEach((r) => r.flush({ profesionales: [{ membershipId: 40, nombre: 'Perez, Ana' }] }));
   }
 
   async function estabilizar(fixture: ComponentFixture<CasoDetallePage>): Promise<void> {

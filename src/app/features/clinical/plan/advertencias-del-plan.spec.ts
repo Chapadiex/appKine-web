@@ -1,4 +1,4 @@
-import { advertenciasDelPlan, finEstimado } from './advertencias-del-plan';
+import { advertenciasDelPlan, finEstimado, vigenciaDeAutorizacion } from './advertencias-del-plan';
 import {
   PlanTratamiento,
   PlanTratamientoEstadoEnum,
@@ -69,5 +69,58 @@ describe('advertenciasDelPlan', () => {
   it('sin activacion o sin duracion no hay fin estimado', () => {
     expect(finEstimado(plan({ activadoEn: undefined }))).toBeNull();
     expect(finEstimado(plan({ versionVigente: {} }))).toBeNull();
+  });
+
+  it('avisa la autorizacion de un item que vencio respecto del dia de la sede', () => {
+    const conAutorizacion = plan({
+      versionVigente: {
+        numeroVersion: 1,
+        items: [
+          {
+            ofertaId: 7,
+            ofertaNombre: 'Kinesio',
+            autorizacionId: 5,
+            autorizacionVigenciaDesde: '2026-09-01',
+            autorizacionVigenciaHasta: '2026-10-13',
+          },
+        ],
+      },
+    });
+    expect(advertenciasDelPlan(conAutorizacion, null, [vigente], HOY).join(' ')).toContain(
+      'Kinesio: la autorizacion vencio el 13/10/2026',
+    );
+    // El ultimo dia es inclusivo: el 13 todavia vale.
+    expect(advertenciasDelPlan(conAutorizacion, null, [vigente], '2026-10-13')).toEqual([]);
+  });
+});
+
+describe('vigenciaDeAutorizacion', () => {
+  const HOY = '2026-10-14';
+  const item = (desde?: string, hasta?: string) => ({
+    ofertaId: 7,
+    autorizacionId: 5,
+    autorizacionVigenciaDesde: desde,
+    autorizacionVigenciaHasta: hasta,
+  });
+
+  it('sin autorizacion no hay nada que mostrar', () => {
+    expect(
+      vigenciaDeAutorizacion({ ofertaId: 7, autorizacionVigenciaHasta: '2026-12-31' }, HOY),
+    ).toBeNull();
+  });
+
+  it('distingue vigente, vencida, futura, sin fin y dada de baja', () => {
+    expect(vigenciaDeAutorizacion(item('2026-10-01', '2026-10-14'), HOY)).toEqual({
+      estado: 'vigente',
+      texto: 'autorizacion vigente hasta el 14/10/2026 inclusive',
+    });
+    expect(vigenciaDeAutorizacion(item('2026-09-01', '2026-10-13'), HOY)?.texto).toBe(
+      'autorizacion vencida el 13/10/2026',
+    );
+    expect(vigenciaDeAutorizacion(item('2026-10-15', '2026-12-31'), HOY)?.estado).toBe('futura');
+    expect(vigenciaDeAutorizacion(item('2026-10-01'), HOY)?.texto).toBe(
+      'autorizacion vigente desde el 01/10/2026, sin vencimiento',
+    );
+    expect(vigenciaDeAutorizacion(item(), HOY)?.estado).toBe('no-disponible');
   });
 });

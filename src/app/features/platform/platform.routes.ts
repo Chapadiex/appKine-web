@@ -18,5 +18,13 @@ export const routes: Routes = [
     // Seis columnas con la de acciones: a 46rem "Revisar" queda detras del scroll horizontal.
     data: { [DATA_ANCHO]: ANCHO_AMPLIO },
   },
+  {
+    path: 'suscripciones',
+    loadComponent: () =>
+      import('./pages/suscripcion-de-centro/suscripcion-de-centro-page').then(
+        (m) => m.SuscripcionDeCentroPage,
+      ),
+    title: 'AKINE - Suscripcion de un centro',
+  },
   { path: '', pathMatch: 'full', redirectTo: 'solicitudes' },
 ];
