@@ -1,4 +1,10 @@
-import { conceptoEnPalabras, importeEnPalabras, origenEnPalabras } from './etiquetas-de-obligacion';
+import {
+  conceptoEnPalabras,
+  esDeVenta,
+  importeEnPalabras,
+  origenEnPalabras,
+} from './etiquetas-de-obligacion';
+import { Obligacion, ObligacionOrigenEnum } from '../../../api/generated/model/obligacion';
 
 describe('origenEnPalabras', () => {
   it('rotula las ventas (sin sesion) y deja vacio el caso normal', () => {
@@ -58,5 +64,17 @@ describe('importeEnPalabras', () => {
     // Vacio y no "0": el contrato declara los importes opcionales, y un cero inventado en una
     // deuda es un dato falso, no un dato faltante.
     expect(importeEnPalabras(undefined, 'ARS')).toBe('');
+  });
+});
+
+describe('esDeVenta', () => {
+  it('marca como de venta todo origen distinto de SESION, igual que el backend', () => {
+    const con = (origen: ObligacionOrigenEnum | undefined): Obligacion => ({ origen });
+
+    expect(esDeVenta(con(ObligacionOrigenEnum.VENTA_PASE))).toBe(true);
+    expect(esDeVenta(con(ObligacionOrigenEnum.VENTA_ABONO))).toBe(true);
+    expect(esDeVenta(con(ObligacionOrigenEnum.SESION))).toBe(false);
+    // Sin origen es una deuda anterior a M29, o sea de una sesion: se sigue anulando aca.
+    expect(esDeVenta(con(undefined))).toBe(false);
   });
 });

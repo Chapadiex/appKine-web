@@ -160,7 +160,7 @@ describe('CuentaCorrientePage', () => {
     expect(enlace?.textContent).toContain('Ir a presentaciones');
   });
 
-  it('una deuda de venta de pase, sin sesion, se lista con su origen', async () => {
+  it('una deuda de venta de pase se lista con su origen y no ofrece anularse sola: manda a los pases', async () => {
     const fixture = await montar([
       {
         ...PENDIENTE,
@@ -175,7 +175,37 @@ describe('CuentaCorrientePage', () => {
     const contenido = texto(fixture);
     expect(contenido).toContain('Pack Pilates 8');
     expect(contenido).toContain('Venta de pase');
-    expect(contenido).toContain('Anular');
+    // 0.114.0: DELETE /obligaciones/{id} sobre esta deuda responde 409 obligacion-de-venta.
+    // Ofrecer el boton seria ofrecer una accion que sabemos que falla.
+    expect(rotulosDeBoton(fixture)).not.toContain('Anular');
+    expect(enlaceA(fixture, `/pacientes/${PERSONA}/pases`)?.textContent).toContain(
+      'Anular desde los pases',
+    );
+    expect(contenido).toContain('Se anula el pase y esta deuda juntos.');
+  });
+
+  it('la deuda de una venta de abono tampoco se anula desde aca', async () => {
+    const fixture = await montar([
+      { ...PENDIENTE, sesionId: undefined, origen: 'VENTA_ABONO', paseId: 78 },
+    ]);
+
+    expect(rotulosDeBoton(fixture)).not.toContain('Anular');
+    expect(enlaceA(fixture, `/pacientes/${PERSONA}/pases`)).not.toBeNull();
+  });
+
+  it('una deuda de venta ya anulada muestra su motivo y no manda a los pases', async () => {
+    const fixture = await montar([
+      {
+        ...PENDIENTE,
+        origen: 'VENTA_PASE',
+        paseId: 77,
+        estado: 'ANULADA',
+        motivoAnulacion: 'Pase anulado: vendido por error.',
+      },
+    ]);
+
+    expect(enlaceA(fixture, `/pacientes/${PERSONA}/pases`)).toBeNull();
+    expect(texto(fixture)).toContain('Pase anulado: vendido por error.');
   });
 
   it('sin coseguros no habla de la obra social ni avisa nada', async () => {
@@ -260,6 +290,29 @@ describe('CuentaCorrientePage', () => {
     // moneda de ESA obligacion: el `ProblemDetail` no la trae.
     expect(contenido).toContain('3.000,00');
     expect(contenido).not.toContain('no se puede');
+  });
+
+  it('si obligacion-de-venta llega igual, explica que se anula el pase y enlaza a los pases', async () => {
+    // Una fila sin `origen` (p. ej. leida antes de que el backend lo informe) ofrece el boton; el
+    // backend es la autoridad y rechaza.
+    const fixture = await montar([PENDIENTE]);
+    anular(fixture, 'Vendido por error.');
+
+    rechazar(httpMock.expectOne(esAnular()), 'obligacion-de-venta', {
+      obligacionId: PENDIENTE.id,
+      paseId: 77,
+      origen: 'VENTA_PASE',
+    });
+    await estabilizar(fixture);
+
+    const contenido = texto(fixture);
+    expect(contenido).toContain('anular el pase');
+    expect(contenido).not.toContain('no se puede');
+    expect(enlaceA(fixture, `/pacientes/${PERSONA}/pases`)?.textContent).toContain(
+      'Ir a los pases de la persona',
+    );
+    // No es un dato viejo: recargar no lo destraba.
+    expect(rotulosDeBoton(fixture)).not.toContain('Recargar la cuenta corriente');
   });
 
   it('ante obligacion-already-anulada no lo trata como una falla, y ofrece recargar', async () => {
@@ -505,6 +558,13 @@ describe('CuentaCorrientePage', () => {
     return Array.from(
       fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>,
     ).map((boton) => (boton.textContent ?? '').trim());
+  }
+
+  function enlaceA(
+    fixture: ComponentFixture<CuentaCorrientePage>,
+    ruta: string,
+  ): HTMLAnchorElement | null {
+    return (fixture.nativeElement as HTMLElement).querySelector(`a[href="${ruta}"]`);
   }
 
   function texto(fixture: ComponentFixture<CuentaCorrientePage>): string {

@@ -125,6 +125,11 @@ test.describe('Pases contra el backend real', () => {
     // ---- Cuenta corriente: la deuda de la venta, sin sesion, se lista con su origen.
     await navegar(page, `/pacientes/${persona.id}/cuenta-corriente`);
     await expect(filaDe(page, producto)).toContainText('Venta de pase');
+    // 0.114.0: la deuda de una venta no se anula sola (409 obligacion-de-venta). La fila no ofrece
+    // "Anular" y manda a los pases, donde anular el pase anula las dos cosas.
+    await expect(filaDe(page, producto).getByRole('button', { name: 'Anular' })).toHaveCount(0);
+    await filaDe(page, producto).getByRole('link', { name: 'Anular desde los pases' }).click();
+    await expect(page).toHaveURL(new RegExp(`/pacientes/${persona.id}/pases$`));
   });
 
   test('ajuste manual del saldo y anulacion del pase con su deuda (08.07)', async ({

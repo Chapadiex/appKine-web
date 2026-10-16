@@ -42,7 +42,7 @@ export interface ObligacionesServiceInterface {
 
     /**
      * Anular una obligacion
-     * Anula la deuda con **motivo obligatorio**. No la borra: una deuda que desaparece de la base es una cuenta corriente que no cuadra y que nadie puede auditar despues.  **Una obligacion con cobros imputados no se anula.** Anular lo que ya se cobro dejaria plata en la caja sin ninguna deuda que la justifique, y el arqueo del dia no cerraria. Lo que corresponde en ese caso es una devolucion, que es M19 y tiene su propio registro.  Devuelve la obligacion anulada y no un 204, porque el cuerpo trae el estado y la version nueva que la pantalla necesita para seguir operando.
+     * Anula la deuda con **motivo obligatorio**. No la borra: una deuda que desaparece de la base es una cuenta corriente que no cuadra y que nadie puede auditar despues.  **Una obligacion con cobros imputados no se anula.** Anular lo que ya se cobro dejaria plata en la caja sin ninguna deuda que la justifique, y el arqueo del dia no cerraria. Lo que corresponde en ese caso es una devolucion, que es M19 y tiene su propio registro.  **La deuda de una venta no se anula por aca** (&#x60;origen &#x3D; VENTA_PASE&#x60; o &#x60;VENTA_ABONO&#x60;, desde 0.114.0): responde 409 &#x60;obligacion-de-venta&#x60; con el &#x60;paseId&#x60;. Anularla sola dejaria el pase vivo y consumible sin pagar; se anula con &#x60;POST /pases/{paseId}/anulacion&#x60;, que anula pase y deuda juntos.  Devuelve la obligacion anulada y no un 204, porque el cuerpo trae el estado y la version nueva que la pantalla necesita para seguir operando.
      * @endpoint delete /api/v1/consultorios/{consultorioId}/obligaciones/{obligacionId}
 * @param requestParameters
      */
