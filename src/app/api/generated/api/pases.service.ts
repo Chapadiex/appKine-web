@@ -23,9 +23,13 @@ import { AnulacionDePase } from '../model/anulacion-de-pase';
 // @ts-ignore
 import { BajaDeProducto } from '../model/baja-de-producto';
 // @ts-ignore
+import { ConfiguracionDeRenovacionDeAbono } from '../model/configuracion-de-renovacion-de-abono';
+// @ts-ignore
 import { CrearProducto } from '../model/crear-producto';
 // @ts-ignore
 import { EditarProducto } from '../model/editar-producto';
+// @ts-ignore
+import { PaginaDeMovimientosDePase } from '../model/pagina-de-movimientos-de-pase';
 // @ts-ignore
 import { Pase } from '../model/pase';
 // @ts-ignore
@@ -49,9 +53,11 @@ import {
     PasesServiceInterface,
     AjustarSaldoDePaseRequestParams,
     AnularPaseRequestParams,
+    ConfigurarRenovacionDeAbonoRequestParams,
     CrearProductoRequestParams,
     DarDeBajaProductoRequestParams,
     EditarProductoRequestParams,
+    ListarMovimientosDePaseRequestParams,
     ListarPasesDePersonaRequestParams,
     ListarProductosRequestParams,
     VenderPaseRequestParams,
@@ -220,6 +226,86 @@ export class PasesService extends BaseService implements PasesServiceInterface {
             {
                 context: localVarHttpContext,
                 body: anulacionDePase,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * Prender o apagar la renovacion automatica de un abono
+     * Con &#x60;activa &#x3D; true&#x60; el sistema vende el periodo siguiente del abono cuando este se acerca a su fin (desde 0.116.0): una venta mas, con el precio del producto de ese momento, su movimiento &#x60;COMPRA&#x60; y **su propia obligacion** &#x60;VENTA_ABONO&#x60;, a nombre de quien la prende. **No cobra** (DP-06). El periodo nuevo hereda la renovacion; el viejo queda con &#x60;renovacionAutomatica &#x3D; false&#x60; y el nuevo con &#x60;renuevaPaseId&#x60;. Si el periodo siguiente no se puede vender (producto de baja, persona de baja, periodo ya ocupado), la renovacion se apaga y el motivo queda en &#x60;renovacionOmitidaMotivo&#x60;.  Apagarla no anula un periodo ya renovado: para eso, &#x60;anularPase&#x60; sobre el nuevo. Idempotente: pedir lo que ya esta devuelve 200 sin escribir. Solo abonos.
+     * @endpoint put /api/v1/consultorios/{consultorioId}/pases/{paseId}/renovacion
+     * @param requestParameters
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public configurarRenovacionDeAbono(requestParameters: ConfigurarRenovacionDeAbonoRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<Pase>;
+    public configurarRenovacionDeAbono(requestParameters: ConfigurarRenovacionDeAbonoRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<Pase>>;
+    public configurarRenovacionDeAbono(requestParameters: ConfigurarRenovacionDeAbonoRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<Pase>>;
+    public configurarRenovacionDeAbono(requestParameters: ConfigurarRenovacionDeAbonoRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        const consultorioId = requestParameters?.consultorioId;
+        if (consultorioId === null || consultorioId === undefined) {
+            throw new Error('Required parameter consultorioId was null or undefined when calling configurarRenovacionDeAbono.');
+        }
+        const paseId = requestParameters?.paseId;
+        if (paseId === null || paseId === undefined) {
+            throw new Error('Required parameter paseId was null or undefined when calling configurarRenovacionDeAbono.');
+        }
+        const configuracionDeRenovacionDeAbono = requestParameters?.configuracionDeRenovacionDeAbono;
+        if (configuracionDeRenovacionDeAbono === null || configuracionDeRenovacionDeAbono === undefined) {
+            throw new Error('Required parameter configuracionDeRenovacionDeAbono was null or undefined when calling configurarRenovacionDeAbono.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        // to determine the Content-Type header
+        const consumes: string[] = [
+            'application/json'
+        ];
+        const httpContentTypeSelected: string | undefined = this.configuration.selectHeaderContentType(consumes);
+        if (httpContentTypeSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Content-Type', httpContentTypeSelected);
+        }
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/consultorios/${this.configuration.encodeParam({name: "consultorioId", value: consultorioId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/pases/${this.configuration.encodeParam({name: "paseId", value: paseId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/renovacion`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<Pase>('put', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                body: configuracionDeRenovacionDeAbono,
                 responseType: <any>responseType_,
                 ...(withCredentials ? { withCredentials } : {}),
                 headers: localVarHeaders,
@@ -467,6 +553,95 @@ export class PasesService extends BaseService implements PasesServiceInterface {
     }
 
     /**
+     * Ledger de un pase, paginado
+     * Los movimientos del pase del mas viejo al mas nuevo, de a paginas (RF-M29-009, desde 0.116.0): el orden en que se lee &#x60;saldoResultante&#x60;. &#x60;size&#x60; se acota a 100 por request. Para un pase con historia larga reemplaza al ledger entero que trae &#x60;verPase&#x60;, que no cambia.
+     * @endpoint get /api/v1/consultorios/{consultorioId}/pases/{paseId}/movimientos
+     * @param requestParameters
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public listarMovimientosDePase(requestParameters: ListarMovimientosDePaseRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<PaginaDeMovimientosDePase>;
+    public listarMovimientosDePase(requestParameters: ListarMovimientosDePaseRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<PaginaDeMovimientosDePase>>;
+    public listarMovimientosDePase(requestParameters: ListarMovimientosDePaseRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<PaginaDeMovimientosDePase>>;
+    public listarMovimientosDePase(requestParameters: ListarMovimientosDePaseRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        const consultorioId = requestParameters?.consultorioId;
+        if (consultorioId === null || consultorioId === undefined) {
+            throw new Error('Required parameter consultorioId was null or undefined when calling listarMovimientosDePase.');
+        }
+        const paseId = requestParameters?.paseId;
+        if (paseId === null || paseId === undefined) {
+            throw new Error('Required parameter paseId was null or undefined when calling listarMovimientosDePase.');
+        }
+        const page = requestParameters?.page;
+        const size = requestParameters?.size;
+
+        let localVarQueryParameters = new OpenApiHttpParams(this.encoder);
+
+        localVarQueryParameters = this.addToHttpParams(
+            localVarQueryParameters,
+            'page',
+            <any>page,
+            QueryParamStyle.Form,
+            true,
+        );
+
+
+        localVarQueryParameters = this.addToHttpParams(
+            localVarQueryParameters,
+            'size',
+            <any>size,
+            QueryParamStyle.Form,
+            true,
+        );
+
+
+        let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/consultorios/${this.configuration.encodeParam({name: "consultorioId", value: consultorioId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/pases/${this.configuration.encodeParam({name: "paseId", value: paseId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/movimientos`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<PaginaDeMovimientosDePase>('get', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                params: localVarQueryParameters.toHttpParams(),
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
      * Pases de una persona en la sede
      * Los que compro en esta sede, el que vence mas tarde primero. Una persona de otro tenant es 404.
      * @endpoint get /api/v1/consultorios/{consultorioId}/personas/{personaId}/pases
@@ -609,7 +784,7 @@ export class PasesService extends BaseService implements PasesServiceInterface {
 
     /**
      * Vender un pase a una persona
-     * Crea el pase con el snapshot del producto y su saldo inicial, el movimiento &#x60;COMPRA&#x60; del ledger y **una obligacion** a nombre de la persona, en una sola transaccion (RF-M29-002, RF-M18-009). **No cobra** (DP-06): la deuda se paga con &#x60;POST /cobros&#x60;. La persona no se convierte en paciente.  Con &#x60;idempotencyKey&#x60;, un reintento con el mismo pedido devuelve la venta existente con 200 sin duplicar pase, creditos ni deuda (CA-M29-002-06).  **Abono** (desde 0.109.0, RF-M29-007, RF-M18-010): si el producto es &#x60;ABONO&#x60;, &#x60;periodoDesde&#x60; es obligatorio y el pase cubre ese periodo; la obligacion nace con &#x60;origen &#x3D; VENTA_ABONO&#x60;. Un periodo, una obligacion: un abono del mismo producto para la misma persona con periodo superpuesto es 409 &#x60;abono-periodo-superpuesto&#x60;. Renovar es vender el periodo siguiente.
+     * Crea el pase con el snapshot del producto y su saldo inicial, el movimiento &#x60;COMPRA&#x60; del ledger y **una obligacion** a nombre de la persona, en una sola transaccion (RF-M29-002, RF-M18-009). **No cobra** (DP-06): la deuda se paga con &#x60;POST /cobros&#x60;. La persona no se convierte en paciente.  Con &#x60;idempotencyKey&#x60;, un reintento con el mismo pedido devuelve la venta existente con 200 sin duplicar pase, creditos ni deuda (CA-M29-002-06).  **Abono** (desde 0.109.0, RF-M29-007, RF-M18-010): si el producto es &#x60;ABONO&#x60;, &#x60;periodoDesde&#x60; es obligatorio y el pase cubre ese periodo; la obligacion nace con &#x60;origen &#x3D; VENTA_ABONO&#x60;. Un periodo, una obligacion: un abono del mismo producto para la misma persona con periodo superpuesto es 409 &#x60;abono-periodo-superpuesto&#x60;. Renovar es vender el periodo siguiente.  **Renovacion automatica** (desde 0.116.0): con &#x60;renovacionAutomatica &#x3D; true&#x60; en un abono, el sistema vende solo el periodo siguiente —con el precio del producto de ese momento y su propia obligacion— al acercarse el fin de este, a nombre de quien vendio. En un pack es 400.
      * @endpoint post /api/v1/consultorios/{consultorioId}/pases
      * @param requestParameters
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.

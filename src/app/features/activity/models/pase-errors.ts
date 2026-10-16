@@ -20,7 +20,8 @@ import { importeDePase } from './etiquetas-de-pases';
  *       pisa con el elegido.</li>
  *   <li><b>`pase-no-ajustable`</b> (08.07): anulado, vencido, saldo final fuera de `[0, comprados]` o,
  *       al anular, creditos ya usados. Desde 0.111.0 viaja con `causa` (`ESTADO`,
- *       `FUERA_DE_VIGENCIA`, `FUERA_DE_RANGO`, `CREDITOS_USADOS`): el mensaje se arma por esa
+ *       `FUERA_DE_VIGENCIA`, `FUERA_DE_RANGO`, `CREDITOS_USADOS` y, desde 0.116.0, `YA_RENOVADO` al
+ *       configurar la renovacion de un periodo ya renovado): el mensaje se arma por esa
  *       causa, nunca leyendo el texto de `motivo`, que queda solo como respaldo si `causa` falta.</li>
  *   <li><b>`pase-con-cobros`</b> (08.07): la deuda de la venta tiene cobros, asi que no se anula —ni
  *       ella ni el pase—. Viaja con `obligacionId`, `cobrado` y, desde 0.111.0, `moneda`
@@ -59,8 +60,8 @@ const MENSAJE_SIN_CONTEXTO =
   'entrar. Tu sesion sigue abierta.';
 const MENSAJE_SIN_PERMISO =
   'No tenes permiso para esto en esta sede: el catalogo pide producto:read (y producto:manage para ' +
-  'cambiarlo), y los pases pase:read (pase:manage para venderlos y pase:adjust para ajustar el ' +
-  'saldo o anularlos). Pediselo a quien administra el centro.';
+  'cambiarlo), y los pases pase:read (pase:manage para venderlos o cambiar la renovacion de un ' +
+  'abono, y pase:adjust para ajustar el saldo o anularlos). Pediselo a quien administra el centro.';
 const MENSAJE_NO_ENCONTRADO = 'El producto, el pase o la persona no existe, o no es de esta sede.';
 const MENSAJE_NO_VENDIBLE =
   'Ese producto no se puede vender hoy: esta fuera de su ventana comercial. Revisa sus fechas en ' +
@@ -89,6 +90,9 @@ const MENSAJES_NO_AJUSTABLE: Readonly<Record<string, string>> = {
     'cambio nada: revisa la cantidad.',
   CREDITOS_USADOS:
     'No se puede anular: el pase ya tiene creditos usados en asistencias. No se cambio nada.',
+  YA_RENOVADO:
+    'No se puede: este periodo del abono ya se renovo, y la renovacion paso al periodo nuevo. Si ' +
+    'queres cambiarla, hacelo sobre el periodo siguiente. No se cambio nada.',
 };
 
 function armar(causa: CausaPase, mensaje: string): ErrorPase {
