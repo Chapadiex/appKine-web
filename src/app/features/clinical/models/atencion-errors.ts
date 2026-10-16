@@ -69,6 +69,11 @@ export type CausaAtencion =
   | 'enmienda-sin-motivo'
   /** 409 `caso-clinico-cerrado` / `caso-no-activo`: el caso elegido ya no esta activo. */
   | 'caso-no-activo'
+  /**
+   * 409 `caso-de-atencion-grupal` (AKINE-08.05): la atencion es de un participante de una clase y
+   * su caso lo fijo la derivacion. No se cambia.
+   */
+  | 'caso-de-atencion-grupal'
   /** Cualquier otro 409. Gana el `detail` del backend. */
   | 'conflicto'
   /** 429: hay que esperar. */
@@ -163,6 +168,11 @@ const MENSAJE_CASO_NO_ACTIVO =
   'El caso elegido ya no esta activo. Elegi otro, o inicia la atencion sin caso y reabrilo desde ' +
   'la historia clinica si correspondia.';
 
+const MENSAJE_CASO_DE_ATENCION_GRUPAL =
+  'El caso de esta atencion no se puede cambiar: es la atencion de un participante de una clase, ' +
+  'y su caso lo fijo la derivacion clinica. Si correspondia otro caso, cerra esta atencion con lo ' +
+  'que paso y deriva al participante al caso correcto desde la clase.';
+
 const MENSAJE_SUSCRIPCION_SUSPENDIDA =
   'La suscripcion de la organizacion esta suspendida, asi que no se pueden registrar atenciones.';
 
@@ -255,6 +265,12 @@ export function traducirErrorAtencion(error: unknown): ErrorAtencion {
       };
     case 'enmienda-sin-motivo':
       return { mensaje: MENSAJE_ENMIENDA_SIN_MOTIVO, causa: 'enmienda-sin-motivo', motivo: '' };
+    case 'caso-de-atencion-grupal':
+      return {
+        mensaje: MENSAJE_CASO_DE_ATENCION_GRUPAL,
+        causa: 'caso-de-atencion-grupal',
+        motivo: '',
+      };
     case 'caso-clinico-cerrado':
     case 'caso-no-activo':
       return { mensaje: MENSAJE_CASO_NO_ACTIVO, causa: 'caso-no-activo', motivo: '' };

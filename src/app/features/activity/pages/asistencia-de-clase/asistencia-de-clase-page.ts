@@ -5,7 +5,11 @@ import { DetalleOperativoDeClase } from '../../../../api/generated/model/detalle
 import { EventoDeAsistencia } from '../../../../api/generated/model/evento-de-asistencia';
 import { ParticipanteOperativo } from '../../../../api/generated/model/participante-operativo';
 import { ResultadoDeLoteDeAsistencia } from '../../../../api/generated/model/resultado-de-lote-de-asistencia';
-import { PERMISO_ASISTENCIA_MANAGE, PERMISO_CLASE_MANAGE } from '../../../../core/models/permisos';
+import {
+  PERMISO_ASISTENCIA_MANAGE,
+  PERMISO_CLASE_MANAGE,
+  PERMISO_SESION_REGISTER,
+} from '../../../../core/models/permisos';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { PermissionsStore } from '../../../../core/services/permissions.store';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
@@ -141,6 +145,11 @@ export class AsistenciaDeClasePage {
   );
   protected readonly puedeMarcar = computed(
     () => !this.permisos.cargados() || this.permisos.tiene(PERMISO_ASISTENCIA_MANAGE),
+  );
+
+  /** Ofrece la atencion clinica de la clase (AKINE-08.05). Sin permisos cargados, se ofrece. */
+  protected readonly puedeAtender = computed(
+    () => !this.permisos.cargados() || this.permisos.tiene(PERMISO_SESION_REGISTER),
   );
 
   /** Respuesta mas nueva pedida: una vieja que llega tarde no pisa a la nueva. */

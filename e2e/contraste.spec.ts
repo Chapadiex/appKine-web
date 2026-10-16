@@ -280,6 +280,19 @@ test.describe('Contraste de color', () => {
       await auditarContraste(page, 'detalle de una clase llena con lista de espera');
     });
 
+    /** Atencion clinica de la clase (AKINE-08.05), con las derivaciones de una participante. */
+    test('la atencion clinica de una clase con las derivaciones abiertas', async ({ page }) => {
+      await instalarApiDeContraste(page);
+      await page.goto(`/atencion/clases/${CLASE.id}`);
+      await expect(page.getByText('Atencion cerrada', { exact: false })).toBeVisible();
+      await page.getByRole('button', { name: /Derivaciones de Perez, Ana/ }).click();
+      await expect(
+        page.getByText('Motivo de la reversion: Derivada al caso equivocado'),
+      ).toBeVisible();
+
+      await auditarContraste(page, 'atencion clinica de una clase con derivaciones');
+    });
+
     /** Productos de pack y pases (F9, M29): la fila dada de baja y las tres marcas de estado. */
     test('los productos de pack con uno dado de baja', async ({ page }) => {
       await instalarApiDeContraste(page);

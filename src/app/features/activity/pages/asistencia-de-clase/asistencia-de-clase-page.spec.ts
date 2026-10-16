@@ -234,6 +234,11 @@ describe('AsistenciaDeClasePage', () => {
     expect(texto(fixture)).toContain('Se guardaron 1 participante.');
   });
 
+  it('ofrece la atencion clinica de la clase (AKINE-08.05)', async () => {
+    const fixture = await montar('REALIZADA');
+    expect(el(fixture).querySelector(`a[href="/atencion/clases/${CLASE}"]`)).not.toBeNull();
+  });
+
   it('descartar limpia las marcas pendientes', async () => {
     const fixture = await montar('EN_CURSO');
     radio(fixture, 1, 'PRESENTE_TARDE');

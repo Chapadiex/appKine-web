@@ -34,6 +34,7 @@ export interface AjustarSaldoDePaseRequestParams {
     consultorioId: number;
     paseId: number;
     ajusteDeSaldoDePase: AjusteDeSaldoDePase;
+    sinMovimientos?: boolean;
 }
 
 export interface AnularPaseRequestParams {
@@ -104,7 +105,7 @@ export interface PasesServiceInterface {
 
     /**
      * Ajustar a mano el saldo de un pase
-     * Suma o resta creditos con motivo obligatorio (RF-M29-005). Deja un movimiento &#x60;AJUSTE&#x60; en el ledger con actor y motivo y lo audita (CA-M29-005-06). **No toca la deuda ni la caja**: un credito no es plata (RN-M29-006).  El saldo final no puede ser negativo (RN-M29-008) ni superar los creditos comprados, y el pase tiene que estar &#x60;ACTIVO&#x60; o &#x60;AGOTADO&#x60; y dentro de su vigencia. &#x60;version&#x60; es la que el cliente leyo: un consumo que entro en el medio la movio y la respuesta es 409 &#x60;concurrent-modification&#x60;. Reenviar el mismo ajuste con la misma version devuelve el estado actual sin ajustar dos veces.
+     * Suma o resta creditos con motivo obligatorio (RF-M29-005). Deja un movimiento &#x60;AJUSTE&#x60; en el ledger con actor y motivo y lo audita (CA-M29-005-06). **No toca la deuda ni la caja**: un credito no es plata (RN-M29-006).  El saldo final no puede ser negativo (RN-M29-008) ni superar los creditos comprados, y el pase tiene que estar &#x60;ACTIVO&#x60; o &#x60;AGOTADO&#x60; y dentro de su vigencia. &#x60;version&#x60; es la que el cliente leyo: un consumo que entro en el medio la movio y la respuesta es 409 &#x60;concurrent-modification&#x60;. Reenviar el mismo ajuste con la misma version devuelve el estado actual sin ajustar dos veces.  La respuesta trae el ledger **entero**. Desde 0.117.0, con &#x60;sinMovimientos&#x3D;true&#x60; trae el pase con &#x60;movimientos&#x60; vacio y sin leer el ledger: es para la pantalla que ya lo pagina con &#x60;listarMovimientosDePase&#x60;. Una lista vacia con ese parametro **no** significa que el pase no tenga movimientos. Aditivo: sin el parametro la respuesta es la de siempre.
      * @endpoint post /api/v1/consultorios/{consultorioId}/pases/{paseId}/ajustes
 * @param requestParameters
      */

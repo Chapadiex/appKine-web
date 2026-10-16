@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 
+import { ANCHO_AMPLIO, DATA_ANCHO } from '../../core/models/ancho-de-contenido';
 import { contextGuard } from '../../core/guards/context.guard';
 
 /**
@@ -47,6 +48,24 @@ export const routes: Routes = [
     canActivate: [contextGuard],
     loadComponent: () => import('./pages/atencion/atencion-page').then((m) => m.AtencionPage),
     title: 'AKINE - Atencion clinica',
+  },
+  {
+    // Atencion de un participante de una clase (AKINE-08.05): ya existe —la abrio el panel de la
+    // clase— y se abre por su id. Misma pantalla que la del turno.
+    path: 'sesiones/:sesionId',
+    canActivate: [contextGuard],
+    loadComponent: () => import('./pages/atencion/atencion-page').then((m) => m.AtencionPage),
+    title: 'AKINE - Atencion clinica',
+  },
+  {
+    // Panel de atencion clinica de una clase (AKINE-08.05): una atencion por participante y Caso.
+    // Sin `permissionGuard` por lo mismo que la atencion: lo decide el backend (sesion:register).
+    path: 'clases/:claseId',
+    canActivate: [contextGuard],
+    loadComponent: () =>
+      import('./pages/atencion-grupal/atencion-grupal-page').then((m) => m.AtencionGrupalPage),
+    title: 'AKINE - Atencion clinica de la clase',
+    data: { [DATA_ANCHO]: ANCHO_AMPLIO },
   },
   {
     path: 'sesiones/:sesionId/enmienda',

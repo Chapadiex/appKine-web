@@ -512,6 +512,24 @@ const PARTICIPANTES_DE_CLASE = [
   },
 ];
 
+/** El panel de atencion clinica de la clase (AKINE-08.05). */
+const ATENCION_GRUPAL = {
+  claseId: CLASE.id,
+  clinica: true,
+  participantes: [
+    { inscripcionId: 501, estuvo: true, resultadoAsistencia: 'PRESENTE' },
+    {
+      inscripcionId: 502,
+      estuvo: true,
+      resultadoAsistencia: 'PRESENTE_TARDE',
+      atenciones: [
+        { sesionId: 901, derivacionId: 31, estado: 'CERRADA', numeroEnCaso: 3, numeroSesion: 8 },
+      ],
+    },
+    { inscripcionId: 503, estuvo: false, resultadoAsistencia: 'AUSENTE' },
+  ],
+};
+
 /** Como responde el padron: con filas, vacio, o con un error de servidor. */
 /** Productos de pack (M29): uno vigente y uno dado de baja, que pinta la fila atenuada. */
 const PRODUCTOS_DE_PACK = [
@@ -654,6 +672,7 @@ export async function instalarApiDeContraste(page: Page): Promise<ApiDeContraste
           'pase:read',
           'pase:manage',
           'pase:adjust',
+          'sesion:register',
         ],
       });
     }
@@ -681,6 +700,31 @@ export async function instalarApiDeContraste(page: Page): Promise<ApiDeContraste
     }
     if (camino === `${clases}/${CLASE.id}/inscripciones` && metodo === 'GET') {
       return json(PARTICIPANTES_DE_CLASE);
+    }
+    // Atencion clinica de la clase (AKINE-08.05): una sin atencion, una cerrada y una ausente.
+    if (camino === `${clases}/${CLASE.id}/atencion-clinica` && metodo === 'GET') {
+      return json(ATENCION_GRUPAL);
+    }
+    if (camino === `${clases}/${CLASE.id}/detalle-operativo`) {
+      return json({
+        claseId: CLASE.id,
+        titulo: 'Pilates reformer',
+        inicio: CLASE.inicio,
+        content: PARTICIPANTES_DE_CLASE,
+      });
+    }
+    if (camino === `${clases}/${CLASE.id}/inscripciones/501/derivaciones`) {
+      return json({
+        derivaciones: [
+          { id: 30, casoClinicoId: 7, estado: 'VIGENTE', derivadaEn: '2026-10-20T21:05:00Z' },
+          {
+            id: 29,
+            casoClinicoId: 6,
+            estado: 'REVERTIDA',
+            motivoReversion: 'Derivada al caso equivocado',
+          },
+        ],
+      });
     }
     if (camino === `/api/v1/consultorios/${CONSULTORIO_ID}/ofertas` && metodo === 'GET') {
       return json([
