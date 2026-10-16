@@ -40,7 +40,7 @@
   },
   "devDependencies": {
     "@angular/build": "^21.2.26",
-    "@angular/cli": "^21.2.26",
+    "@angular/cli": "^22.2.2",
     "@angular/compiler-cli": "^21.2.25",
     "@eslint/js": "^10.0.1",
     "@openapitools/openapi-generator-cli": "^2.27.0",
