@@ -188,3 +188,8 @@ export const PERMISO_PRODUCTO_READ = 'producto:read';
 export const PERMISO_PRODUCTO_MANAGE = 'producto:manage';
 export const PERMISO_PASE_READ = 'pase:read';
 export const PERMISO_PASE_MANAGE = 'pase:manage';
+/**
+ * Ajustar el saldo de un pase o anularlo (AKINE-08.07). Reforzado: ORG_ADMIN y CONSULTORIO_ADMIN,
+ * no el mostrador (el ADMINISTRATIVO vende pero no corrige saldos).
+ */
+export const PERMISO_PASE_ADJUST = 'pase:adjust';

@@ -11,11 +11,21 @@ import { Pase } from '../../../api/generated/model/pase';
 import { PaseDetalle } from '../../../api/generated/model/pase-detalle';
 import { PersonaPageResponse } from '../../../api/generated/model/persona-page-response';
 import { PersonaResponse } from '../../../api/generated/model/persona-response';
+import { ResultadoDeAnulacionDePase } from '../../../api/generated/model/resultado-de-anulacion-de-pase';
 import { Producto } from '../../../api/generated/model/producto';
 import { ResultadoDeVenta } from '../../../api/generated/model/resultado-de-venta';
 
 /** El unico esquema de cobro que admite productos de pack (RN-M29-005). */
 export const ESQUEMA_POR_PACK = 'POR_PACK';
+/** El unico esquema de cobro que admite abonos (RF-M29-007, desde 0.109.0). */
+export const ESQUEMA_POR_ABONO = 'POR_ABONO';
+
+/** El periodo de un abono. Un pack no lo lleva: el contrato lo prohibe. */
+export interface PeriodoDeAbono {
+  readonly desde: string;
+  /** Vacio: el periodo dura los `vigenciaDias` del producto. */
+  readonly hasta?: string;
+}
 
 /**
  * Fachada de productos de pack y pases (M29, AKINE-08.06) sobre el cliente generado.
@@ -30,7 +40,10 @@ export const ESQUEMA_POR_PACK = 'POR_PACK';
  *       la cuenta corriente de la persona.</li>
  *   <li><b>El consumo no tiene operacion propia</b>: lo hace el backend al registrar la asistencia.
  *       Esta fachada solo lee el ledger.</li>
- *   <li><b>No hay ajuste manual, anulacion ni vencimiento programado</b> todavia (08.07).</li>
+ *   <li><b>Un abono es un pase con periodo</b> (08.08): se vende sobre una oferta `POR_ABONO` eligiendo
+ *       el periodo, y sus creditos son las asistencias que ese periodo permite.</li>
+ *   <li><b>Ajustar y anular piden `pase:adjust`</b> y la `version` leida (08.07). Anular el pase
+ *       anula tambien su deuda, que no se borra.</li>
  * </ul>
  */
 @Injectable({ providedIn: 'root' })
@@ -85,17 +98,59 @@ export class PasesApi {
     return this.pases.verPase({ consultorioId, paseId });
   }
 
-  /** `idempotencyKey` hace que un reintento no venda dos veces (CA-M29-002-06). */
+  /**
+   * `idempotencyKey` hace que un reintento no venda dos veces (CA-M29-002-06). `periodo` solo para
+   * un abono.
+   */
   vender(
     consultorioId: number,
     productoId: number,
     personaId: number,
     idempotencyKey: string,
+    periodo?: PeriodoDeAbono,
   ): Observable<ResultadoDeVenta> {
     return this.pases.venderPase({
       consultorioId,
-      venderPase: { productoId, personaId, idempotencyKey },
+      venderPase: {
+        productoId,
+        personaId,
+        idempotencyKey,
+        ...(periodo
+          ? {
+              periodoDesde: periodo.desde,
+              ...(periodo.hasta ? { periodoHasta: periodo.hasta } : {}),
+            }
+          : {}),
+      },
     });
+  }
+
+  /**
+   * Suma o resta creditos con motivo (RF-M29-005). `cantidad` lleva signo y nunca es cero; el saldo
+   * final tiene que quedar entre 0 y los creditos comprados. Exige `pase:adjust`.
+   */
+  ajustarSaldo(
+    consultorioId: number,
+    paseId: number,
+    cantidad: number,
+    motivo: string,
+    version: number,
+  ): Observable<PaseDetalle> {
+    return this.pases.ajustarSaldoDePase({
+      consultorioId,
+      paseId,
+      ajusteDeSaldoDePase: { cantidad, motivo, version },
+    });
+  }
+
+  /** Anula un pase sin creditos usados y su deuda, que queda ANULADA (no se borra). */
+  anular(
+    consultorioId: number,
+    paseId: number,
+    motivo: string,
+    version: number,
+  ): Observable<ResultadoDeAnulacionDePase> {
+    return this.pases.anularPase({ consultorioId, paseId, anulacionDePase: { motivo, version } });
   }
 
   verPersona(personaId: number): Observable<PersonaResponse> {

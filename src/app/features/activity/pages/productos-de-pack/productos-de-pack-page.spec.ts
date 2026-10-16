@@ -24,6 +24,7 @@ const URL_PRODUCTOS = `/api/v1/consultorios/${CONSULTORIO}/productos`;
 const OFERTAS = [
   { id: 42, nombreComercial: 'Pilates reformer', esquemaCobro: 'POR_PACK', estado: 'ACTIVO' },
   { id: 43, nombreComercial: 'Kinesio', esquemaCobro: 'POR_SESION', estado: 'ACTIVO' },
+  { id: 44, nombreComercial: 'Gimnasio libre', esquemaCobro: 'POR_ABONO', estado: 'ACTIVO' },
 ];
 
 const PACK = {
@@ -90,14 +91,47 @@ describe('ProductosDePackPage', () => {
     TIMEOUT_AXE,
   );
 
-  it('sin productos lo dice y el alta solo ofrece ofertas POR_PACK', async () => {
+  it('sin productos lo dice; el alta ofrece las ofertas del esquema de cada tipo', async () => {
     const fixture = await montar([]);
-    expect(textoDe(fixture)).toContain('no tiene productos de pack vigentes');
+    expect(textoDe(fixture)).toContain('no tiene productos vigentes');
     clickear(fixture, 'Nuevo producto');
-    const opciones = [
-      ...(fixture.nativeElement as HTMLElement).querySelectorAll('#producto-oferta option'),
-    ].map((o) => o.textContent?.trim());
-    expect(opciones).toEqual(['Elegi una oferta', 'Pilates reformer']);
+    const opciones = () =>
+      [...(fixture.nativeElement as HTMLElement).querySelectorAll('#producto-oferta option')].map(
+        (o) => o.textContent?.trim(),
+      );
+    expect(opciones()).toEqual(['Elegi una oferta', 'Pilates reformer']);
+    escribir(fixture, '#producto-oferta', '42');
+    escribir(fixture, '#producto-tipo', 'ABONO');
+    expect(opciones()).toEqual(['Elegi una oferta', 'Gimnasio libre']);
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector<HTMLSelectElement>('#producto-oferta')
+        ?.value,
+    ).toBe('');
+    expect(textoDe(fixture)).toContain('Asistencias por periodo');
+    expect(textoDe(fixture)).toContain('Dias maximos del periodo');
+  });
+
+  it('crea un abono sobre una oferta POR_ABONO (RF-M29-007)', async () => {
+    const fixture = await montar([]);
+    clickear(fixture, 'Nuevo producto');
+    escribir(fixture, '#producto-tipo', 'ABONO');
+    escribir(fixture, '#producto-oferta', '44');
+    escribir(fixture, '#producto-nombre', 'Abono mensual');
+    escribir(fixture, '#producto-creditos', '12');
+    escribir(fixture, '#producto-precio', '30000');
+    escribir(fixture, '#producto-vigencia-dias', '31');
+    clickear(fixture, 'Crear producto');
+    const pedido = httpMock.expectOne((r) => r.url === URL_PRODUCTOS && r.method === 'POST');
+    expect(pedido.request.body).toEqual(
+      expect.objectContaining({ tipo: 'ABONO', ofertaId: 44, creditos: 12, vigenciaDias: 31 }),
+    );
+    pedido.flush({ ...PACK, id: 11, nombre: 'Abono mensual', tipo: 'ABONO', ofertaId: 44 });
+    responder([{ ...PACK, id: 11, nombre: 'Abono mensual', tipo: 'ABONO', ofertaId: 44 }]);
+    await asentar(fixture);
+    const texto = textoDe(fixture);
+    expect(texto).toContain('Se creo "Abono mensual" (abono)');
+    expect(texto).toContain('Periodo de hasta 60 dias');
+    expect(texto).toContain('Abono');
   });
 
   it(
@@ -122,6 +156,7 @@ describe('ProductosDePackPage', () => {
         moneda: 'ARS',
         vigenciaDias: 30,
         vigenciaDesde: '2026-10-14',
+        tipo: 'PACK',
       });
       pedido.flush({ ...PACK, id: 10, nombre: 'Pack 4' });
       responder([PACK]);
@@ -162,7 +197,7 @@ describe('ProductosDePackPage', () => {
   it('edita con la version leida y limpia la fecha de fin vaciada', async () => {
     const fixture = await montar([{ ...PACK, vigenciaHasta: '2026-12-31' }]);
     clickear(fixture, 'Editar');
-    expect(textoDe(fixture)).toContain('La oferta de un producto no se cambia');
+    expect(textoDe(fixture)).toContain('El tipo y la oferta de un producto no se cambia');
     escribir(fixture, '#producto-precio', '45000');
     escribir(fixture, '#producto-hasta', '');
     clickear(fixture, 'Guardar cambios');

@@ -1,8 +1,12 @@
 import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 
-import { CrearProducto } from '../../../../api/generated/model/crear-producto';
+import {
+  CrearProducto,
+  CrearProductoTipoEnum,
+} from '../../../../api/generated/model/crear-producto';
 import { EditarProducto } from '../../../../api/generated/model/editar-producto';
 import { OfertaResponse } from '../../../../api/generated/model/oferta-response';
 import { Producto } from '../../../../api/generated/model/producto';
@@ -13,9 +17,20 @@ import { TenantContextStore } from '../../../../core/services/tenant-context.sto
 import { ConfirmacionConMotivo } from '../../../../shared/components/confirmacion-con-motivo/confirmacion-con-motivo';
 import { numeroDeclarado } from '../../../../shared/utils/numero-declarado';
 import { formatearFecha } from '../../../../shared/utils/instantes';
-import { creditosEnPalabras, importeDePase } from '../../models/etiquetas-de-pases';
+import {
+  creditosEnPalabras,
+  esAbono,
+  etiquetaDeTipoDePase,
+  importeDePase,
+} from '../../models/etiquetas-de-pases';
 import { ErrorPase, errorSinContextoDePase, traducirErrorPase } from '../../models/pase-errors';
-import { ESQUEMA_POR_PACK, PasesApi } from '../../services/pases-api';
+import { ESQUEMA_POR_ABONO, ESQUEMA_POR_PACK, PasesApi } from '../../services/pases-api';
+
+/** El esquema de cobro que exige cada tipo de producto (RN-M29-005, RF-M29-007). */
+const ESQUEMA_DEL_TIPO: Readonly<Record<CrearProductoTipoEnum, string>> = {
+  PACK: ESQUEMA_POR_PACK,
+  ABONO: ESQUEMA_POR_ABONO,
+};
 
 type Panel =
   | { readonly tipo: 'ninguno' }
@@ -34,6 +49,10 @@ const PRECIO_VALIDO = /^\d+([.,]\d{1,2})?$/;
  *
  * <p><b>Editar no cambia lo vendido</b>: cada pase lleva su snapshot. Y <b>la baja no cascadea</b>:
  * los pases ya vendidos conservan saldo y vigencia.
+ *
+ * <p><b>Abonos</b> (AKINE-08.08, RF-M29-007): un producto `ABONO` cuelga de una oferta `POR_ABONO`;
+ * sus creditos son las asistencias que permite cada periodo y `vigenciaDias` la duracion maxima de
+ * un periodo, que se elige al vender. El tipo se elige al crear y no se edita.
  */
 @Component({
   selector: 'app-productos-de-pack-page',
@@ -49,11 +68,21 @@ export class ProductosDePackPage {
   private readonly fb = inject(NonNullableFormBuilder);
 
   protected readonly creditos = creditosEnPalabras;
+  protected readonly tipoDeProducto = etiquetaDeTipoDePase;
+  protected readonly abono = esAbono;
   protected readonly importe = importeDePase;
   protected readonly fecha = formatearFecha;
 
   protected readonly productos = signal<readonly Producto[] | null>(null);
-  protected readonly ofertasDePack = signal<readonly OfertaResponse[]>([]);
+  /** Ofertas activas que admiten producto: `POR_PACK` o `POR_ABONO`. */
+  private readonly ofertasVendibles = signal<readonly OfertaResponse[]>([]);
+  /** El tipo elegido en el formulario, como signal: filtra las ofertas que se ofrecen. */
+  protected readonly tipoElegido = signal<CrearProductoTipoEnum>(CrearProductoTipoEnum.PACK);
+  protected readonly ofertasDelTipo = computed(() => {
+    const esquema = ESQUEMA_DEL_TIPO[this.tipoElegido()];
+    return this.ofertasVendibles().filter((o) => o.esquemaCobro === esquema);
+  });
+  protected readonly esquemaDelTipo = computed(() => ESQUEMA_DEL_TIPO[this.tipoElegido()]);
   private readonly nombresDeOferta = signal<ReadonlyMap<number, string>>(new Map());
   protected readonly incluirBajas = signal(false);
   protected readonly panel = signal<Panel>({ tipo: 'ninguno' });
@@ -77,6 +106,7 @@ export class ProductosDePackPage {
   });
 
   protected readonly formulario = this.fb.group({
+    tipo: [CrearProductoTipoEnum.PACK as CrearProductoTipoEnum],
     ofertaId: ['', Validators.required],
     nombre: ['', [Validators.required, Validators.maxLength(160)]],
     descripcion: ['', Validators.maxLength(500)],
@@ -92,6 +122,11 @@ export class ProductosDePackPage {
   private pedido = 0;
 
   constructor() {
+    // Otro tipo pide otra oferta: la elegida ya no sirve.
+    this.formulario.controls.tipo.valueChanges.pipe(takeUntilDestroyed()).subscribe((tipo) => {
+      this.tipoElegido.set(tipo);
+      this.formulario.controls.ofertaId.setValue('');
+    });
     effect(() => {
       this.tenant.contextEpoch();
       untracked(() => {
@@ -148,8 +183,9 @@ export class ProductosDePackPage {
           this.nombresDeOferta.set(
             new Map(ofertas.map((o) => [o.id ?? -1, o.nombreComercial ?? ''])),
           );
-          this.ofertasDePack.set(
-            ofertas.filter((o) => o.esquemaCobro === ESQUEMA_POR_PACK && o.estado === 'ACTIVO'),
+          const esquemas: readonly string[] = [ESQUEMA_POR_PACK, ESQUEMA_POR_ABONO];
+          this.ofertasVendibles.set(
+            ofertas.filter((o) => o.estado === 'ACTIVO' && esquemas.includes(o.esquemaCobro ?? '')),
           );
         }
       },
@@ -162,6 +198,7 @@ export class ProductosDePackPage {
   protected abrirAlta(): void {
     this.prepararPanel({ tipo: 'alta' });
     this.formulario.reset({
+      tipo: CrearProductoTipoEnum.PACK,
       ofertaId: '',
       nombre: '',
       descripcion: '',
@@ -173,11 +210,13 @@ export class ProductosDePackPage {
       vigenciaHasta: '',
     });
     this.formulario.controls.ofertaId.enable();
+    this.formulario.controls.tipo.enable();
   }
 
   protected abrirEdicion(producto: Producto): void {
     this.prepararPanel({ tipo: 'edicion', producto });
     this.formulario.reset({
+      tipo: esAbono(producto) ? CrearProductoTipoEnum.ABONO : CrearProductoTipoEnum.PACK,
       ofertaId: String(producto.ofertaId ?? ''),
       nombre: producto.nombre ?? '',
       descripcion: producto.descripcion ?? '',
@@ -190,6 +229,7 @@ export class ProductosDePackPage {
     });
     // La oferta y el tipo no se editan: el contrato no los acepta.
     this.formulario.controls.ofertaId.disable();
+    this.formulario.controls.tipo.disable();
   }
 
   protected abrirBaja(producto: Producto): void {
@@ -247,6 +287,7 @@ export class ProductosDePackPage {
       editado === null
         ? this.api.crearProducto(consultorioId, {
             ...comun,
+            tipo: v.tipo,
             ofertaId: Number(v.ofertaId),
             vigenciaHasta: hasta || undefined,
           } as CrearProducto)
@@ -261,7 +302,7 @@ export class ProductosDePackPage {
         this.enviando.set(false);
         this.aviso.set(
           editado === null
-            ? `Se creo "${producto.nombre}". Todavia nadie tiene saldo: se vende desde la ficha de la persona, en Pacientes.`
+            ? `Se creo "${producto.nombre}"${esAbono(producto) ? ' (abono)' : ''}. Todavia nadie tiene saldo: se vende desde la ficha de la persona, en Pacientes.`
             : `Se guardo "${producto.nombre}". Los pases ya vendidos no cambian.`,
         );
         this.cerrarPanel();

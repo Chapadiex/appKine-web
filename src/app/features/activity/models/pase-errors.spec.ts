@@ -41,6 +41,27 @@ describe('traducirErrorPase', () => {
     expect(v.campos['precio']).toBe('mayor a 0');
   });
 
+  it('los tipos de 08.07/08.08: abono superpuesto, no ajustable con motivo y con cobros', () => {
+    expect(traducirErrorPase(error(409, 'abono-periodo-superpuesto')).causa).toBe(
+      'abono-superpuesto',
+    );
+    const conMotivo = traducirErrorPase(
+      error(409, 'pase-no-ajustable', { motivo: 'esta vencido' }),
+    );
+    expect(conMotivo.causa).toBe('pase-no-ajustable');
+    expect(conMotivo.mensaje).toBe('No se puede: el pase esta vencido. No se cambio nada.');
+    expect(traducirErrorPase(error(409, 'pase-no-ajustable')).mensaje).toContain(
+      'no admite esa operacion',
+    );
+    const cobros = traducirErrorPase(error(409, 'pase-con-cobros', { cobrado: 1500.5 }));
+    expect(cobros.causa).toBe('pase-con-cobros');
+    expect(cobros.cobrado).toBe(1500.5);
+    expect(cobros.mensaje).toContain('(1.500,50 cobrados)');
+    expect(traducirErrorPase(error(409, 'pase-con-cobros')).mensaje).toContain(
+      'ya tiene cobros. Primero',
+    );
+  });
+
   it('403, 404, red, sin contexto y desconocido', () => {
     expect(traducirErrorPase(error(403, null)).causa).toBe('sin-permiso');
     expect(traducirErrorPase(error(404, null)).causa).toBe('no-encontrado');

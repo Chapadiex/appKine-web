@@ -543,11 +543,22 @@ const PRODUCTOS_DE_PACK = [
 
 export const PERSONA_CON_PASES = 512;
 
-/** Los pases de una persona con las tres marcas de estado: activo, agotado y vencido. */
+/**
+ * Los pases de una persona con las tres marcas de estado —activo, agotado y vencido (el que escribe
+ * el job desde 08.07)— y uno anulado, que pinta la fila atenuada con el motivo.
+ */
 const PASES_DE_PERSONA = [
   { estado: 'ACTIVO', vigente: true, creditosDisponibles: 5, id: 77 },
   { estado: 'AGOTADO', vigente: true, creditosDisponibles: 0, id: 76 },
-  { estado: 'ACTIVO', vigente: false, creditosDisponibles: 2, id: 75 },
+  { estado: 'VENCIDO', vigente: false, creditosDisponibles: 0, id: 75 },
+  {
+    estado: 'ANULADO',
+    vigente: false,
+    creditosDisponibles: 0,
+    id: 74,
+    anuladoEn: '2026-08-02T13:00:00Z',
+    motivoAnulacion: 'Vendido por error',
+  },
 ].map((pase) => ({
   ...pase,
   nombre: 'Pack Pilates 8',
@@ -642,6 +653,7 @@ export async function instalarApiDeContraste(page: Page): Promise<ApiDeContraste
           'producto:manage',
           'pase:read',
           'pase:manage',
+          'pase:adjust',
         ],
       });
     }

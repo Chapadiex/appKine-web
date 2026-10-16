@@ -1,5 +1,8 @@
 import {
   avisoDeConsumo,
+  avisoDeVigencia,
+  esAbono,
+  etiquetaDeTipoDePase,
   cantidadConSigno,
   claseDeEstadoDePase,
   creditosEnPalabras,
@@ -16,14 +19,34 @@ import {
 import { PaseEstadoEnum as Estado } from '../../../api/generated/model/pase';
 
 describe('etiquetas de pases', () => {
-  it('un pase ACTIVO fuera de vigencia se lee vencido', () => {
+  it('el estado es el que escribe el backend; VENCIDO lo pone el job (08.07)', () => {
     expect(etiquetaDeEstadoDePase({ estado: Estado.ACTIVO, vigente: true })).toBe('Activo');
-    expect(etiquetaDeEstadoDePase({ estado: Estado.ACTIVO, vigente: false })).toBe('Vencido');
+    expect(etiquetaDeEstadoDePase({ estado: Estado.ACTIVO, vigente: false })).toBe('Activo');
+    expect(etiquetaDeEstadoDePase({ estado: Estado.VENCIDO })).toBe('Vencido');
+    expect(etiquetaDeEstadoDePase({ estado: Estado.ANULADO })).toBe('Anulado');
     expect(etiquetaDeEstadoDePase({ estado: Estado.AGOTADO })).toBe('Agotado');
     expect(etiquetaDeEstadoDePase({})).toBe('Sin estado');
     expect(claseDeEstadoDePase({ estado: Estado.ACTIVO })).toContain('activa');
     expect(claseDeEstadoDePase({ estado: Estado.AGOTADO })).toContain('suspendida');
-    expect(claseDeEstadoDePase({ estado: Estado.ACTIVO, vigente: false })).toContain('revocada');
+    expect(claseDeEstadoDePase({ estado: Estado.VENCIDO })).toContain('revocada');
+  });
+
+  it('un ACTIVO que no cubre hoy explica por que', () => {
+    const hoy = '2026-10-14';
+    expect(avisoDeVigencia({ estado: Estado.ACTIVO, vigente: true }, hoy)).toBeNull();
+    expect(avisoDeVigencia({ estado: Estado.VENCIDO, vigente: false }, hoy)).toBeNull();
+    expect(
+      avisoDeVigencia({ estado: Estado.ACTIVO, vigente: false, vigenciaDesde: '2026-11-01' }, hoy),
+    ).toBe('Empieza el 01/11/2026');
+    expect(
+      avisoDeVigencia({ estado: Estado.ACTIVO, vigente: false, vigenciaHasta: '2026-10-13' }, hoy),
+    ).toContain('Termino su vigencia');
+    expect(avisoDeVigencia({ estado: Estado.ACTIVO, vigente: false }, hoy)).toBe(
+      'No cubre clases hoy',
+    );
+    expect(esAbono({ tipo: 'ABONO' })).toBe(true);
+    expect(etiquetaDeTipoDePase({})).toBe('Pack');
+    expect(etiquetaDeTipoDePase({ tipo: 'ABONO' })).toBe('Abono');
   });
 
   it('el movimiento se explica con tipo, signo y origen (CA-M29-009-06)', () => {

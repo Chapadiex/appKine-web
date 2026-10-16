@@ -19,18 +19,19 @@ const ESTADOS_DE_PASE: Readonly<Record<string, string>> = {
   ANULADO: 'Anulado',
 };
 
+/**
+ * El estado tal como lo escribe el backend. Desde 08.07 `VENCIDO` es real: lo pone el job de
+ * vencimiento junto con el movimiento que explica los creditos que se pierden (CA-M29-006-06). Un
+ * `ACTIVO` con `vigente = false` ya no se lee como vencido: puede ser un abono cuyo periodo todavia
+ * no empezo, o uno que vencio hace minutos y el job no paso. Eso lo dice {@link avisoDeVigencia}.
+ */
 export function etiquetaDeEstadoDePase(pase: Pase): string {
-  // El backend evalua el vencimiento por fecha y todavia no hay job que escriba `VENCIDO` (08.07):
-  // un pase ACTIVO fuera de vigencia se lee como vencido, que es lo que es.
-  if (pase.estado === 'ACTIVO' && pase.vigente === false) {
-    return 'Vencido';
-  }
   return (pase.estado && ESTADOS_DE_PASE[pase.estado]) || 'Sin estado';
 }
 
 /** Marca del design system para el estado. */
 export function claseDeEstadoDePase(pase: Pase): string {
-  if (pase.estado === 'ACTIVO' && pase.vigente !== false) {
+  if (pase.estado === 'ACTIVO') {
     return 'marca-estado marca-estado--activa';
   }
   if (pase.estado === 'AGOTADO') {
@@ -55,11 +56,52 @@ const ORIGENES_DE_MOVIMIENTO: Readonly<Record<string, string>> = {
   VENCIMIENTO: 'vencimiento',
 };
 
+/**
+ * Por que un pase ACTIVO no cubre clases hoy, o `null` si las cubre o no esta activo. `hoy` es el
+ * dia de la sede (AAAA-MM-DD).
+ */
+export function avisoDeVigencia(pase: Pase, hoy: string): string | null {
+  if (pase.estado !== 'ACTIVO' || pase.vigente !== false) {
+    return null;
+  }
+  if (pase.vigenciaDesde && pase.vigenciaDesde > hoy) {
+    return `Empieza el ${fechaCorta(pase.vigenciaDesde)}`;
+  }
+  if (pase.vigenciaHasta && pase.vigenciaHasta < hoy) {
+    return 'Termino su vigencia; el vencimiento se registra en la proxima hora';
+  }
+  return 'No cubre clases hoy';
+}
+
+function fechaCorta(iso: string): string {
+  const [anio, mes, dia] = iso.split('-');
+  return dia && mes && anio ? `${dia}/${mes}/${anio}` : iso;
+}
+
+/** Un abono cubre un periodo; un pack, dias desde la compra. Sin tipo (antes de 0.109.0): pack. */
+export function esAbono(pase: { readonly tipo?: string }): boolean {
+  return pase.tipo === 'ABONO';
+}
+
+export function etiquetaDeTipoDePase(pase: { readonly tipo?: string }): string {
+  return esAbono(pase) ? 'Abono' : 'Pack';
+}
+
 export function etiquetaDeMovimiento(movimiento: MovimientoPase): string {
   return (movimiento.tipo && TIPOS_DE_MOVIMIENTO[movimiento.tipo]) || 'Movimiento';
 }
 
+/**
+ * De donde salio el movimiento. Dos casos se explican con una frase entera, porque el origen solo no
+ * alcanza: la devolucion de una clase cancelada (RF-M29-004) y el vencimiento (RF-M29-006).
+ */
 export function origenDeMovimiento(movimiento: MovimientoPase): string {
+  if (movimiento.tipo === 'DEVOLUCION' && movimiento.origenTipo === 'CANCELACION') {
+    return 'se cancelo la clase: el credito vuelve al pase';
+  }
+  if (movimiento.tipo === 'VENCIMIENTO') {
+    return 'vencio el pase: los creditos que quedaban se pierden';
+  }
   return (movimiento.origenTipo && ORIGENES_DE_MOVIMIENTO[movimiento.origenTipo]) || '';
 }
 

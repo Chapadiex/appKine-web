@@ -1,7 +1,10 @@
+import { randomUUID } from 'node:crypto';
+
 import { Page } from '@playwright/test';
 
 import { nonce } from './support/akine';
 import { expect, ingresar, navegar, respuestaDe, test } from './support/agenda-real';
+import { crearOferta, fechaLocal } from './support/sembrado';
 import { ClaseDePack, claseDePackConUnaInscripta } from './support/sembrado-pases';
 
 /**
@@ -13,11 +16,17 @@ import { ClaseDePack, claseDePackConUnaInscripta } from './support/sembrado-pase
  *
  * <p>Los datos son del spec: oferta, clase, persona y producto con nonce. El producto se crea por
  * pantalla, que es lo que se prueba.
+ *
+ * <p>Desde 08.07/08.08 (contrato 0.109.0) tambien: ajuste manual del saldo y anulacion del pase con
+ * su deuda (la administradora del centro tiene `pase:adjust`), y el abono por periodo con el 409
+ * `abono-periodo-superpuesto` al venderlo dos veces.
  */
 
 const PRODUCTOS = /\/consultorios\/\d+\/productos$/;
 const VENTA = /\/consultorios\/\d+\/pases$/;
 const LOTE = /\/clases\/\d+\/asistencias\/lote$/;
+const AJUSTE = /\/pases\/\d+\/ajustes$/;
+const ANULACION = /\/pases\/\d+\/anulacion$/;
 
 function filaDe(page: Page, texto: string) {
   return page.getByRole('row').filter({ hasText: texto });
@@ -111,5 +120,140 @@ test.describe('Pases contra el backend real', () => {
     // ---- Cuenta corriente: la deuda de la venta, sin sesion, se lista con su origen.
     await navegar(page, `/pacientes/${persona.id}/cuenta-corriente`);
     await expect(filaDe(page, producto)).toContainText('Venta de pase');
+  });
+
+  test('ajuste manual del saldo y anulacion del pase con su deuda (08.07)', async ({
+    page,
+    api,
+    centro,
+  }) => {
+    const producto = `Pack 3 clases ${nonce()}`;
+    const { persona } = clase;
+    const base = `/api/v1/consultorios/${centro.consultorioId}`;
+    const creado = await api.exigir<{ id: number }>('POST', `${base}/productos`, {
+      ofertaId: clase.ofertaId,
+      nombre: producto,
+      creditos: 3,
+      precio: 9000,
+      moneda: 'ARS',
+      vigenciaDias: 30,
+      vigenciaDesde: fechaLocal(centro.timezone),
+    });
+    await api.exigir('POST', `${base}/pases`, {
+      productoId: creado.id,
+      personaId: persona.id,
+      idempotencyKey: randomUUID(),
+    });
+
+    await navegar(page, `/pacientes/${persona.id}/pases`);
+    await expect(filaDe(page, producto)).toContainText('3 de 3');
+
+    // ---- Ajuste: fuera de rango lo frena la pantalla; -1 con motivo lo registra el backend.
+    await filaDe(page, producto)
+      .getByRole('button', { name: `Ajustar saldo de ${producto}` })
+      .click();
+    await page.getByLabel('Creditos a sumar o restar').fill('1');
+    await expect(page.getByText('El saldo tiene que quedar entre 0 y 3.')).toBeVisible();
+    await page.getByLabel('Creditos a sumar o restar').fill('-1');
+    await expect(page.getByText('El saldo quedaria en 2 de 3.')).toBeVisible();
+    await page.getByLabel('Motivo', { exact: true }).fill('Clase de cortesia descontada');
+    const ajuste = respuestaDe(page, 'POST', AJUSTE);
+    await page.getByRole('button', { name: 'Ajustar saldo', exact: true }).click();
+    expect((await ajuste).status()).toBe(200);
+    await expect(page.getByText(`Se ajusto el saldo de "${producto}"`)).toBeVisible();
+    await expect(filaDe(page, producto)).toContainText('2 de 3');
+
+    await page.getByRole('button', { name: `Ver movimientos de ${producto}` }).click();
+    const movimientos = page.getByRole('region', { name: 'Movimientos del pase' });
+    await expect(movimientos.getByRole('row')).toHaveCount(3);
+    await expect(movimientos.getByRole('row').filter({ hasText: 'Ajuste' })).toContainText(
+      'Motivo: Clase de cortesia descontada',
+    );
+
+    // ---- Anulacion: sin creditos usados y sin cobros, anula el pase y su deuda.
+    await filaDe(page, producto)
+      .getByRole('button', { name: `Anular ${producto}` })
+      .click();
+    await expect(page.getByText('queda anulada, no borrada')).toBeVisible();
+    await page.getByLabel('Motivo de la anulacion').fill('Vendido por error');
+    const anulacion = respuestaDe(page, 'POST', ANULACION);
+    await page.getByRole('button', { name: 'Anular pase' }).click();
+    const respuesta = await anulacion;
+    expect(respuesta.status()).toBe(200);
+    const cuerpo = (await respuesta.json()) as {
+      anulado: boolean;
+      pase: { estado: string; creditosDisponibles: number };
+      deuda: { estado: string };
+    };
+    expect(cuerpo).toEqual(
+      expect.objectContaining({
+        anulado: true,
+        pase: expect.objectContaining({ estado: 'ANULADO', creditosDisponibles: 0 }),
+        deuda: expect.objectContaining({ estado: 'ANULADA' }),
+      }),
+    );
+    await expect(page.getByText(`Se anulo "${producto}" y su saldo se descarto.`)).toBeVisible();
+    await expect(filaDe(page, producto)).toContainText('Anulado');
+    await expect(filaDe(page, producto)).toContainText('Motivo: Vendido por error');
+    await expect(
+      filaDe(page, producto).getByRole('button', { name: `Anular ${producto}` }),
+    ).toHaveCount(0);
+  });
+
+  test('abono por periodo y el periodo superpuesto (08.08)', async ({ page, api, centro }) => {
+    const ofertaNombre = `Gimnasio abono E2E ${nonce()}`;
+    await crearOferta(api, centro, {
+      nombre: ofertaNombre,
+      habilitarProfesional: false,
+      extra: {
+        modalidad: 'GRUPAL',
+        capacidad: 8,
+        requiereProfesional: false,
+        esquemaCobro: 'POR_ABONO',
+      },
+    });
+    const abono = `Abono mensual ${nonce()}`;
+
+    // ---- Catalogo: el tipo ABONO solo ofrece ofertas POR_ABONO.
+    await navegar(page, '/productos');
+    await page.getByRole('button', { name: 'Nuevo producto' }).click();
+    await page.getByLabel('Tipo').selectOption('ABONO');
+    await page.getByLabel('Oferta').selectOption({ label: ofertaNombre });
+    await page.getByLabel('Nombre', { exact: true }).fill(abono);
+    await page.getByLabel('Asistencias por periodo').fill('8');
+    await page.getByLabel('Precio').fill('20000');
+    await page.getByLabel('Dias maximos del periodo').fill('30');
+    const alta = respuestaDe(page, 'POST', PRODUCTOS);
+    await page.getByRole('button', { name: 'Crear producto' }).click();
+    expect((await alta).status()).toBe(201);
+    await expect(filaDe(page, abono)).toContainText('Periodo de hasta 30 dias');
+
+    // ---- Venta del periodo que empieza hoy.
+    const { persona } = clase;
+    await navegar(page, `/pacientes/${persona.id}/pases`);
+    const selector = page.getByLabel('Producto');
+    const valor = await selector.locator('option', { hasText: abono }).getAttribute('value');
+    await selector.selectOption(valor ?? '');
+    await expect(page.getByLabel('Periodo desde')).toHaveValue(fechaLocal(centro.timezone));
+    const venta = respuestaDe(page, 'POST', VENTA);
+    await page.getByRole('button', { name: 'Vender pase' }).click();
+    const respuestaVenta = await venta;
+    expect(respuestaVenta.status()).toBe(201);
+    const vendida = (await respuestaVenta.json()) as { pase: { tipo: string } };
+    expect(vendida.pase.tipo).toBe('ABONO');
+    await expect(filaDe(page, abono)).toContainText('Abono');
+    await expect(filaDe(page, abono)).toContainText('8 de 8');
+
+    // ---- El mismo periodo otra vez: 409 abono-periodo-superpuesto, sin vender nada.
+    await selector.selectOption(valor ?? '');
+    const repetida = respuestaDe(page, 'POST', VENTA);
+    await page.getByRole('button', { name: 'Vender pase' }).click();
+    const respuestaRepetida = await repetida;
+    expect(respuestaRepetida.status()).toBe(409);
+    expect(((await respuestaRepetida.json()) as { type: string }).type).toMatch(
+      /abono-periodo-superpuesto$/,
+    );
+    await expect(page.getByText('ya tiene ese abono en un periodo que se superpone')).toBeVisible();
+    await expect(filaDe(page, abono)).toHaveCount(1);
   });
 });
