@@ -418,6 +418,14 @@ export enum ProblemType {
 
     HTTPS___AKINE_APP_PROBLEMS_DERIVACION_NO_ACCESIBLE = 'https://akine.app/problems/derivacion-no-accesible',
 
-    HTTPS___AKINE_APP_PROBLEMS_OFERTA_SIN_PRECIO = 'https://akine.app/problems/oferta-sin-precio'
+    HTTPS___AKINE_APP_PROBLEMS_OFERTA_SIN_PRECIO = 'https://akine.app/problems/oferta-sin-precio',
+
+    HTTPS___AKINE_APP_PROBLEMS_PARTICIPACION_SIN_DERIVACION = 'https://akine.app/problems/participacion-sin-derivacion',
+
+    HTTPS___AKINE_APP_PROBLEMS_DERIVACION_AMBIGUA = 'https://akine.app/problems/derivacion-ambigua',
+
+    HTTPS___AKINE_APP_PROBLEMS_DERIVACION_CON_SESION = 'https://akine.app/problems/derivacion-con-sesion',
+
+    HTTPS___AKINE_APP_PROBLEMS_CASO_DE_ATENCION_GRUPAL = 'https://akine.app/problems/caso-de-atencion-grupal'
 }
 

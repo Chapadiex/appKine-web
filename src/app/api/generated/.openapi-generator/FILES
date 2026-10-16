@@ -15,6 +15,8 @@ api/agenda.serviceInterface.ts
 api/api.ts
 api/asistencia-de-clases.service.ts
 api/asistencia-de-clases.serviceInterface.ts
+api/atencion-clinica-grupal.service.ts
+api/atencion-clinica-grupal.serviceInterface.ts
 api/auditoria.service.ts
 api/auditoria.serviceInterface.ts
 api/autorizaciones.service.ts
@@ -157,6 +159,8 @@ model/arancel-efectivo-response.ts
 model/arancel-response.ts
 model/asistencia.ts
 model/assign-grant-request.ts
+model/atencion-de-participante.ts
+model/atencion-grupal.ts
 model/atender-como-particular.ts
 model/audit-event-page-response.ts
 model/audit-event-response.ts
@@ -313,12 +317,16 @@ model/imputar-saldo-a-favor.ts
 model/indicador-de-reporte-response.ts
 model/indicador-response.ts
 model/ingreso-sin-inscripcion.ts
+model/iniciar-atencion-de-participante.ts
+model/iniciar-atencion-grupal-item.ts
+model/iniciar-atencion-grupal.ts
 model/inscribir.ts
 model/inscripcion.ts
 model/integrante-del-equipo.ts
 model/invitacion-preview-response.ts
 model/invitacion-response.ts
 model/invitacion-token-request.ts
+model/item-de-atencion-grupal.ts
 model/item-de-lote-de-asistencia.ts
 model/jornada-caja.ts
 model/limit-usage-response.ts
@@ -354,6 +362,7 @@ model/pago-de-egreso.ts
 model/pago-de-financiador.ts
 model/parametro-de-tratamiento-leido.ts
 model/parametro-de-tratamiento.ts
+model/participante-en-atencion-grupal.ts
 model/participante-operativo.ts
 model/participante.ts
 model/pase-detalle.ts
@@ -423,6 +432,7 @@ model/resolve-catalogo-solicitud-request.ts
 model/resolver-autorizacion-request.ts
 model/resultado-de-anulacion-de-pase.ts
 model/resultado-de-asistencia.ts
+model/resultado-de-atencion-grupal.ts
 model/resultado-de-cancelacion.ts
 model/resultado-de-cierre-de-clase.ts
 model/resultado-de-inscripcion.ts
