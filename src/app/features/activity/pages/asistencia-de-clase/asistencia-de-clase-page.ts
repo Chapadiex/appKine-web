@@ -51,6 +51,7 @@ import {
   nombreDeParticipante,
   tieneLugar,
 } from '../../models/etiquetas-de-asistencia';
+import { avisoDeDevengo } from '../../models/etiquetas-de-devengo';
 import { avisoDeConsumo } from '../../models/etiquetas-de-pases';
 import { AsistenciaApi } from '../../services/asistencia-api';
 
@@ -70,6 +71,14 @@ interface ConsumoDeItem {
   readonly inscripcionId: number;
   readonly nombre: string;
   readonly texto: string;
+}
+
+/**
+ * Lo que la asistencia hizo con la deuda de una clase `POR_CLASE` (U-39). `aviso` marca
+ * `CON_COBROS` y `SIN_PRECIO`: piden que alguien mire la cuenta corriente, pero no son fallos.
+ */
+interface DevengoDeItem extends ConsumoDeItem {
+  readonly aviso: boolean;
 }
 
 interface Historial {
@@ -96,8 +105,9 @@ interface Historial {
  * <p>No muestra nada clinico ni deuda: el detalle operativo no lo trae (privacidad de quien toma
  * lista). Lo unico economico que aparece es lo que el backend devuelve al guardar: si la
  * asistencia consumio o devolvio un credito del pase de la persona, o si no tenia un pase con
- * creditos para la clase (M29, RN-M29-005). Eso <b>no es un error</b>: la asistencia se registra
- * igual (CA-M19-009-06).
+ * creditos para la clase (M29, RN-M29-005), y en una oferta `POR_CLASE` que le hizo a la deuda de
+ * la clase (U-39). Nada de eso <b>es un error</b>: la asistencia se registra igual
+ * (CA-M19-009-06). Sin `pase:read` (U-46 c) llega solo el efecto, y se muestra solo el efecto.
  */
 @Component({
   selector: 'app-asistencia-de-clase-page',
@@ -126,6 +136,8 @@ export class AsistenciaDeClasePage {
   protected readonly tieneLugar = tieneLugar;
   protected readonly hora = horaEnZona;
   protected readonly fechaHora = fechaHoraEnZona;
+  /** Leyenda del campo de observaciones (U-46 d): el contrato las declara operativas. */
+  protected readonly avisoObservaciones = 'Operativas: no anotes datos de salud.';
 
   protected readonly estado = signal<EstadoCarga>({ tipo: 'cargando' });
   protected readonly pagina = signal(0);
@@ -137,6 +149,7 @@ export class AsistenciaDeClasePage {
     exitosos: number;
     fallos: readonly FalloDeItem[];
     consumos: readonly ConsumoDeItem[];
+    devengos: readonly DevengoDeItem[];
   } | null>(null);
   protected readonly avisoCierre = signal<string | null>(null);
   protected readonly historial = signal<Historial | null>(null);
@@ -321,6 +334,20 @@ export class AsistenciaDeClasePage {
     }
   }
 
+  protected escribirObservaciones(
+    participante: ParticipanteOperativo,
+    observaciones: string,
+  ): void {
+    const id = participante.inscripcion?.id;
+    const marca = id === undefined ? undefined : this.marcas().get(id);
+    if (id === undefined || marca === undefined) {
+      return;
+    }
+    const siguiente = new Map(this.marcas());
+    siguiente.set(id, { ...marca, observaciones });
+    this.marcas.set(siguiente);
+  }
+
   /** Marca presentes a los que tienen lugar y nadie resolvio todavia. No toca lo registrado. */
   protected presentesLosSinMarcar(): void {
     const siguiente = new Map(this.marcas());
@@ -451,7 +478,12 @@ export class AsistenciaDeClasePage {
 function resumirLote(
   resultado: ResultadoDeLoteDeAsistencia,
   nombres: ReadonlyMap<number, string>,
-): { exitosos: number; fallos: FalloDeItem[]; consumos: ConsumoDeItem[] } {
+): {
+  exitosos: number;
+  fallos: FalloDeItem[];
+  consumos: ConsumoDeItem[];
+  devengos: DevengoDeItem[];
+} {
   const fallos = (resultado.items ?? [])
     .filter((item) => !item.resultado)
     .map((item) => ({
@@ -466,5 +498,12 @@ function resumirLote(
       ? []
       : [{ inscripcionId: id, nombre: nombres.get(id) ?? `Inscripcion ${id}`, texto }];
   });
-  return { exitosos: resultado.exitosos ?? 0, fallos, consumos };
+  const devengos = (resultado.items ?? []).flatMap((item) => {
+    const aviso = avisoDeDevengo(item.resultado?.devengoDeClase);
+    const id = item.inscripcionId ?? -1;
+    return aviso === null
+      ? []
+      : [{ inscripcionId: id, nombre: nombres.get(id) ?? `Inscripcion ${id}`, ...aviso }];
+  });
+  return { exitosos: resultado.exitosos ?? 0, fallos, consumos, devengos };
 }

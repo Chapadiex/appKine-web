@@ -27,7 +27,9 @@ import {
 } from '../../models/obligacion-errors';
 import {
   claseDeEstado,
+  conceptoDeClase,
   conceptoEnPalabras,
+  esDeClase,
   esDeVenta,
   origenEnPalabras,
   estadoEnPalabras,
@@ -132,6 +134,17 @@ export class CuentaCorrientePage {
     fechaEnPalabras(valor, this.diaDeLaSede.zona());
   protected readonly sePuedeAnular = sePuedeAnular;
   protected readonly esDeVenta = esDeVenta;
+  protected readonly esDeClase = esDeClase;
+
+  /** Inicio de cada clase de las deudas `ASISTENCIA_CLASE`, por `claseId` (U-39). */
+  private readonly inicioDeClases = signal<Readonly<Record<number, string>>>({});
+
+  /** `Clase del 20/10`, o `Clase asistida` mientras la fecha no llega o si no se pudo leer. */
+  protected conceptoDeClase(obligacion: Obligacion): string {
+    const inicio =
+      obligacion.claseId === undefined ? undefined : this.inicioDeClases()[obligacion.claseId];
+    return conceptoDeClase(inicio, this.diaDeLaSede.zona());
+  }
 
   protected readonly estado = signal<EstadoCuenta>({ tipo: 'cargando' });
   protected readonly persona = signal<PersonaResponse | null>(null);
@@ -305,7 +318,10 @@ export class CuentaCorrientePage {
       .subscribe((cobros) => this.cobros.set(cobros));
 
     this.api.deLaPersona(consultorioId, personaId).subscribe({
-      next: (obligaciones) => this.estado.set({ tipo: 'listo', obligaciones }),
+      next: (obligaciones) => {
+        this.estado.set({ tipo: 'listo', obligaciones });
+        this.cargarFechasDeClases(consultorioId, obligaciones);
+      },
       error: (error: unknown) => {
         const traducido = traducirErrorObligacion(error);
         this.estado.set({
@@ -315,6 +331,21 @@ export class CuentaCorrientePage {
         });
       },
     });
+  }
+
+  /** La fecha de cada clase asistida que genero deuda. Su fallo no voltea nada: ver BillingApi. */
+  private cargarFechasDeClases(consultorioId: number, obligaciones: readonly Obligacion[]): void {
+    const claseIds = obligaciones
+      .filter(esDeClase)
+      .map((o) => o.claseId)
+      .filter((id): id is number => id !== undefined);
+    this.inicioDeClases.set({});
+    if (claseIds.length === 0) {
+      return;
+    }
+    this.api
+      .inicioDeClases(consultorioId, claseIds)
+      .subscribe((inicios) => this.inicioDeClases.set(inicios));
   }
 
   // -------------------------------------------------------------------------------------

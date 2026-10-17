@@ -124,6 +124,17 @@
                 }
               </ul>
             }
+            @if (resumen.devengos.length > 0) {
+              <h3>Deudas de la clase</h3>
+              <ul>
+                @for (devengo of resumen.devengos; track devengo.inscripcionId) {
+                  <li>
+                    <b>{{ devengo.aviso ? 'Revisar: ' : '' }}{{ devengo.nombre }}</b
+                    >: {{ devengo.texto }}
+                  </li>
+                }
+              </ul>
+            }
           </section>
         }
       </div>
@@ -234,6 +245,24 @@
                                   Escribi por que se corrige.
                                 </p>
                               }
+                            </div>
+                          }
+                          @if (marcaDe(p); as marca) {
+                            <div class="campo observaciones-asistencia">
+                              <label [for]="'observaciones-' + p.inscripcion?.id">
+                                Observaciones (opcional)
+                              </label>
+                              <input
+                                [id]="'observaciones-' + p.inscripcion?.id"
+                                type="text"
+                                maxlength="500"
+                                [value]="marca.observaciones ?? ''"
+                                [attr.aria-describedby]="'aviso-observaciones-' + p.inscripcion?.id"
+                                (input)="escribirObservaciones(p, $any($event.target).value)"
+                              />
+                              <p [id]="'aviso-observaciones-' + p.inscripcion?.id" class="ayuda">
+                                {{ avisoObservaciones }}
+                              </p>
                             </div>
                           }
                         } @else {

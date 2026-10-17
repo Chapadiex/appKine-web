@@ -243,6 +243,113 @@ describe('AsistenciaDeClasePage', () => {
     expect(texto(fixture)).toContain('Se guardaron 1 participante.');
   });
 
+  it('a quien no tiene pase:read le llega solo el efecto: no rompe ni muestra undefined (U-46 c)', async () => {
+    const fixture = await montar('EN_CURSO');
+    radio(fixture, 1, 'PRESENTE');
+    boton(fixture, 'Guardar asistencia').click();
+    httpMock.expectOne(`${BASE}/asistencias/lote`).flush({
+      exitosos: 1,
+      fallidos: 0,
+      items: [
+        {
+          inscripcionId: 1,
+          resultado: {
+            registrada: true,
+            consumoDeCredito: { efecto: 'CONSUMIDO' },
+            devengoDeClase: { efecto: 'DEVENGADA' },
+          },
+        },
+      ],
+    });
+    await responderDetalle(fixture, detalle('EN_CURSO'));
+
+    expect(texto(fixture)).toContain('Gomez, Ana: consumio un credito del pase.');
+    expect(texto(fixture)).toContain('Gomez, Ana: se genero la deuda de la clase.');
+    expect(texto(fixture)).not.toContain('undefined');
+    expect(texto(fixture)).not.toContain('0 creditos');
+  });
+
+  it('muestra la deuda de la clase por participante; con cobros o sin precio avisa, no falla (U-39)', async () => {
+    const fixture = await montar('EN_CURSO');
+    radio(fixture, 1, 'PRESENTE');
+    radio(fixture, 3, 'PRESENTE');
+    boton(fixture, 'Guardar asistencia').click();
+    httpMock.expectOne(`${BASE}/asistencias/lote`).flush({
+      exitosos: 2,
+      fallidos: 0,
+      items: [
+        {
+          inscripcionId: 1,
+          resultado: {
+            registrada: true,
+            devengoDeClase: {
+              efecto: 'DEVENGADA',
+              obligacionId: 9001,
+              importe: 6000,
+              moneda: 'ARS',
+              estado: 'PENDIENTE',
+              saldo: 6000,
+            },
+          },
+        },
+        {
+          inscripcionId: 3,
+          resultado: { registrada: true, devengoDeClase: { efecto: 'SIN_PRECIO' } },
+        },
+      ],
+    });
+    await responderDetalle(fixture, detalle('EN_CURSO'));
+
+    const contenido = texto(fixture);
+    expect(contenido).toContain('Deudas de la clase');
+    expect(contenido).toContain('Gomez, Ana: se genero la deuda de la clase por');
+    expect(contenido).toContain('6.000');
+    expect(contenido).toContain('Revisar: Ruiz, Caro: la oferta no tiene precio vigente');
+    expect(contenido).toContain('Se guardaron 2 participantes.');
+    expect(contenido).not.toContain('no se pudieron guardar');
+  });
+
+  it('la correccion a ausente con cobros deja la deuda viva y lo avisa (U-39)', async () => {
+    const fixture = await montar('REALIZADA');
+    radio(fixture, 2, 'AUSENTE');
+    const motivo = el(fixture).querySelector('#motivo-2') as HTMLInputElement;
+    motivo.value = 'No vino';
+    motivo.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    boton(fixture, 'Guardar asistencia').click();
+    httpMock.expectOne(`${BASE}/asistencias/lote`).flush({
+      exitosos: 1,
+      fallidos: 0,
+      items: [{ inscripcionId: 2, resultado: { devengoDeClase: { efecto: 'CON_COBROS' } } }],
+    });
+    await responderDetalle(fixture, detalle('REALIZADA'));
+
+    expect(texto(fixture)).toContain('la deuda de la clase ya tiene cobros y sigue vigente');
+    expect(texto(fixture)).toContain('Se guardaron 1 participante.');
+  });
+
+  it('las observaciones avisan que son operativas y viajan con la marca (U-46 d)', async () => {
+    const fixture = await montar('EN_CURSO');
+    expect(el(fixture).querySelector('#observaciones-1')).toBeNull();
+    radio(fixture, 1, 'PRESENTE');
+
+    const campo = el(fixture).querySelector('#observaciones-1') as HTMLInputElement;
+    expect(campo).not.toBeNull();
+    const aviso = el(fixture).querySelector(`#${campo.getAttribute('aria-describedby')}`);
+    expect(aviso?.textContent).toContain('Operativas: no anotes datos de salud');
+
+    campo.value = '  Llego a los 10 minutos ';
+    campo.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    boton(fixture, 'Guardar asistencia').click();
+    const pedido = httpMock.expectOne(`${BASE}/asistencias/lote`);
+    expect(pedido.request.body).toEqual({
+      items: [{ inscripcionId: 1, resultado: 'PRESENTE', observaciones: 'Llego a los 10 minutos' }],
+    });
+    pedido.flush({ exitosos: 1, fallidos: 0, items: [{ inscripcionId: 1, resultado: {} }] });
+    await responderDetalle(fixture, detalle('EN_CURSO'));
+  });
+
   it('ofrece la atencion clinica de la clase (AKINE-08.05)', async () => {
     const fixture = await montar('REALIZADA');
     expect(el(fixture).querySelector(`a[href="/atencion/clases/${CLASE}"]`)).not.toBeNull();

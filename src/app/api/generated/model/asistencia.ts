@@ -25,7 +25,7 @@ export interface Asistencia {
     id?: number;
     inscripcionId?: number;
     /**
-     * Nota operativa, **nunca clinica**
+     * Nota **operativa, nunca clinica**: la ve cualquiera con `inscripcion:read` y no debe llevar datos de salud (U-46 d).
      */
     observaciones?: string;
     /**

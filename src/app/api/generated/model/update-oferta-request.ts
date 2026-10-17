@@ -30,7 +30,7 @@ export interface UpdateOfertaRequest {
      */
     duracionMinutos?: number;
     /**
-     * Esquema de cobro nuevo. Null deja el actual. Mismo vocabulario que el alta: `POR_CLASE` responde 400 hasta decidir U-39
+     * Esquema de cobro nuevo. Null deja el actual. Mismo vocabulario que el alta
      */
     esquemaCobro?: UpdateOfertaRequestEsquemaCobroEnum;
     /**
@@ -92,6 +92,7 @@ export interface UpdateOfertaRequest {
 }
 export enum UpdateOfertaRequestEsquemaCobroEnum {
     POR_SESION = 'POR_SESION',
+    POR_CLASE = 'POR_CLASE',
     POR_PACK = 'POR_PACK',
     POR_ABONO = 'POR_ABONO'
 };

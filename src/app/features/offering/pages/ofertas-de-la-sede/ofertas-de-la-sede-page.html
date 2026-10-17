@@ -204,9 +204,11 @@
           }
         </select>
         <p class="ayuda" id="alta-oferta-esquema-ayuda">
-          <b>POR_SESION</b>, <b>POR_PACK</b> o <b>POR_ABONO</b>. <b>POR_PACK</b> es el que deja
-          armar productos de pack sobre la oferta y hace que cada asistencia a una clase consuma un
-          credito del pase de la persona.
+          <b>POR_SESION</b>, <b>POR_PACK</b>, <b>POR_ABONO</b> o <b>POR_CLASE</b>.
+          <b>POR_PACK</b> es el que deja armar productos de pack sobre la oferta y hace que cada
+          asistencia a una clase consuma un credito del pase de la persona. <b>POR_CLASE</b> devenga
+          una deuda por cada clase a la que la persona asiste (presente o con demora); la ausencia
+          no genera deuda.
         </p>
       </div>
 
@@ -651,7 +653,8 @@
                               }
                             </select>
                             <p class="ayuda" id="editar-oferta-esquema-ayuda">
-                              POR_SESION, POR_PACK o POR_ABONO.
+                              POR_SESION, POR_PACK, POR_ABONO o POR_CLASE. POR_CLASE devenga una
+                              deuda con cada asistencia a una clase; la ausencia no genera deuda.
                             </p>
                           </div>
 

@@ -8,6 +8,7 @@
  * Do not edit the class manually.
  */
 import { ConsumoDeCredito } from './consumo-de-credito';
+import { DevengoDeClase } from './devengo-de-clase';
 import { Asistencia } from './asistencia';
 import { Inscripcion } from './inscripcion';
 
@@ -25,6 +26,10 @@ export interface ResultadoDeAsistencia {
      * true si esta llamada corrigio un hecho previo
      */
     corregida?: boolean;
+    /**
+     * Que le hizo este registro a la deuda de la persona en una oferta `POR_CLASE` (U-39, RF-M18-008, desde 0.124.0). Ausente si el pedido repetia lo ya registrado y no se escribio nada.
+     */
+    devengoDeClase?: DevengoDeClase;
     /**
      * La reserva, con su estado ya proyectado a ASISTIO o AUSENTE
      */

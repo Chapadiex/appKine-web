@@ -237,6 +237,37 @@ describe('OfertasDeLaSedePage', () => {
     );
   });
 
+  it('el alta ofrece POR_CLASE, explica que devenga con la asistencia y lo manda (U-39)', async () => {
+    const fixture = await montar();
+
+    abrir(fixture, 'Dar de alta una oferta');
+    const host = fixture.nativeElement as HTMLElement;
+    const opciones = [...host.querySelectorAll('#alta-oferta-esquema option')].map(
+      (opcion) => (opcion as HTMLOptionElement).value,
+    );
+    expect(opciones).toContain('POR_CLASE');
+    const ayuda = host.querySelector('#alta-oferta-esquema-ayuda')?.textContent ?? '';
+    expect(ayuda).toContain('POR_CLASE');
+    expect(ayuda).toContain('asiste');
+    expect(ayuda).toContain('la ausencia no genera deuda');
+
+    elegir(fixture, '#alta-oferta-servicio', '1');
+    escribir(fixture, '#alta-oferta-nombre', 'Yoga por clase');
+    escribir(fixture, '#alta-oferta-duracion', '60');
+    elegir(fixture, '#alta-oferta-esquema', 'POR_CLASE');
+    enviar(fixture, 'form[novalidate]');
+
+    const alta = httpMock.expectOne(
+      (peticion: HttpRequest<unknown>) => peticion.method === 'POST' && peticion.url === OFERTAS,
+    );
+    expect((alta.request.body as Record<string, unknown>)['esquemaCobro']).toBe('POR_CLASE');
+
+    alta.flush({ ...VIGENTE, id: 14, esquemaCobro: 'POR_CLASE' });
+    httpMock.expectOne(esListado()).flush([VIGENTE, AUN_NO]);
+    await fixture.whenStable();
+    fixture.detectChanges();
+  });
+
   it('la casilla es la unica forma de sacar el fin de vigencia, y ademas vacia el campo', async () => {
     const fixture = await montar();
 

@@ -356,7 +356,7 @@ export class AsistenciaDeClasesService extends BaseService implements Asistencia
 
     /**
      * Marcar a un participante
-     * Registra el hecho de que la persona estuvo —o no— (RF-M28-007). **No crea una Sesion clinica** (RN-M28-007) y **no genera obligacion**.  **La idempotencia sale del hecho, no de una clave**: repetir el mismo resultado devuelve 200 sin escribir nada; mandar otro resultado es una **correccion**, que exige &#x60;motivo&#x60; y **apendea** el valor anterior en el historial en vez de borrarlo.  **El cupo no se mueve**: los cuatro estados involucrados consumen lugar.
+     * Registra el hecho de que la persona estuvo —o no— (RF-M28-007). **No crea una Sesion clinica** (RN-M28-007) y **no genera obligacion**.  **La idempotencia sale del hecho, no de una clave**: repetir el mismo resultado devuelve 200 sin escribir nada; mandar otro resultado es una **correccion**, que exige &#x60;motivo&#x60; y **apendea** el valor anterior en el historial en vez de borrarlo.  **El cupo no se mueve**: los cuatro estados involucrados consumen lugar.  **Sin &#x60;pase:read&#x60; en la sede**, &#x60;consumoDeCredito&#x60; viaja solo con su &#x60;efecto&#x60;: quien toma lista sabe si consumio un credito, pero no que pase era ni cuanto le queda (U-46 c). Vale igual para el lote y para el ingreso sin inscripcion.
      * @endpoint post /api/v1/consultorios/{consultorioId}/clases/{claseId}/asistencias
      * @param requestParameters
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
