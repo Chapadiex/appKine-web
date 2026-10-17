@@ -85,7 +85,9 @@
             <td>{{ fechaEnPalabras(obligacion.devengadaEn) }}</td>
             <td>
               {{ obligacion.snapshotNombre }}
-              @if (origenEnPalabras(obligacion.origen); as origen) {
+              @if (esDeClase(obligacion)) {
+                <div class="ayuda">{{ conceptoDeClase(obligacion) }}</div>
+              } @else if (origenEnPalabras(obligacion.origen); as origen) {
                 <div class="ayuda">{{ origen }}</div>
               }
             </td>

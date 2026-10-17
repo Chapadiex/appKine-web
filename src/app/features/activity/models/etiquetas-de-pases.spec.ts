@@ -79,4 +79,15 @@ describe('etiquetas de pases', () => {
     expect(avisoDeConsumo({ efecto: Efecto.NO_APLICA })).toBeNull();
     expect(avisoDeConsumo(undefined)).toBeNull();
   });
+
+  it('sin pase:read (U-46 c) llega solo el efecto: no inventa saldo ni escribe undefined', () => {
+    const consumio = avisoDeConsumo({ efecto: Efecto.CONSUMIDO });
+    const devolvio = avisoDeConsumo({ efecto: Efecto.DEVUELTO });
+    expect(consumio).toBe('consumio un credito del pase.');
+    expect(devolvio).toBe('se le devolvio el credito al pase.');
+    for (const texto of [consumio, devolvio]) {
+      expect(texto).not.toContain('undefined');
+      expect(texto).not.toContain('0 creditos');
+    }
+  });
 });

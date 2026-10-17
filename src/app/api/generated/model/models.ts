@@ -139,6 +139,7 @@ export * from './derivar-participante';
 export * from './desvinculacion-impacto-response';
 export * from './detalle-operativo-de-clase';
 export * from './deuda-de-venta';
+export * from './devengo-de-clase';
 export * from './dia-de-agenda';
 export * from './dia-efectivo-response';
 export * from './disponibilidad-efectiva-response';

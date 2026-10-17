@@ -1,5 +1,7 @@
 import {
   conceptoEnPalabras,
+  conceptoDeClase,
+  esDeClase,
   esDeVenta,
   importeEnPalabras,
   origenEnPalabras,
@@ -68,13 +70,37 @@ describe('importeEnPalabras', () => {
 });
 
 describe('esDeVenta', () => {
-  it('marca como de venta todo origen distinto de SESION, igual que el backend', () => {
+  it('marca como de venta solo los dos origenes de venta, igual que el backend', () => {
     const con = (origen: ObligacionOrigenEnum | undefined): Obligacion => ({ origen });
 
     expect(esDeVenta(con(ObligacionOrigenEnum.VENTA_PASE))).toBe(true);
     expect(esDeVenta(con(ObligacionOrigenEnum.VENTA_ABONO))).toBe(true);
     expect(esDeVenta(con(ObligacionOrigenEnum.SESION))).toBe(false);
+    // U-39: la deuda de una clase asistida se anula por DELETE /obligaciones, como la de sesion.
+    expect(esDeVenta(con(ObligacionOrigenEnum.ASISTENCIA_CLASE))).toBe(false);
     // Sin origen es una deuda anterior a M29, o sea de una sesion: se sigue anulando aca.
     expect(esDeVenta(con(undefined))).toBe(false);
+  });
+});
+
+describe('deuda de una clase asistida (U-39)', () => {
+  it('se reconoce por el origen y no es de venta', () => {
+    expect(esDeClase({ origen: ObligacionOrigenEnum.ASISTENCIA_CLASE })).toBe(true);
+    expect(esDeClase({ origen: ObligacionOrigenEnum.SESION })).toBe(false);
+    expect(esDeClase({})).toBe(false);
+    expect(origenEnPalabras('ASISTENCIA_CLASE')).toBe('Clase asistida');
+  });
+
+  it('el concepto lleva el dia de la clase en la zona de la sede, no el del navegador', () => {
+    // 01:30 UTC del 21 son las 22:30 del 20 en Cordoba.
+    expect(conceptoDeClase('2026-10-21T01:30:00Z', 'America/Argentina/Cordoba')).toBe(
+      'Clase del 20/10',
+    );
+    expect(conceptoDeClase('2026-10-21T01:30:00Z', 'UTC')).toBe('Clase del 21/10');
+  });
+
+  it('sin la fecha de la clase dice "Clase asistida" y no inventa una', () => {
+    expect(conceptoDeClase(undefined)).toBe('Clase asistida');
+    expect(conceptoDeClase('no-es-fecha')).toBe('Clase asistida');
   });
 });
