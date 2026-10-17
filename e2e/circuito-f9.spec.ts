@@ -56,8 +56,8 @@ import { JUSTIFICACION, exigirCon, ingresarAlCentro } from './support/sembrado-p
  * </ol>
  *
  * <p><b>Centro propio</b> (`support/centro-propio.ts`): abre y cierra la caja, que es una por sede.
- * La derivacion se hace por la API porque no tiene pantalla de alta (el panel de atencion grupal
- * solo las lista y las revierte).
+ * La derivacion se hace por pantalla, como la profesional, desde el panel de atencion grupal
+ * ("Derivar a un caso"): el Caso se abre por la API porque pide diagnostico presuntivo.
  */
 test.describe.configure({ mode: 'default' });
 
@@ -211,18 +211,17 @@ test.describe('Circuito de F9 de punta a punta contra el backend real', () => {
         expect.objectContaining({ efecto: 'CONSUMIDO', saldo: 1 }),
       );
     }
-    const inscriptaAna = await inscripcionDe(api, base, clase.id, ana);
 
     // --- 4 a 6. Derivacion, atencion grupal y cierre de la Sesion, como la profesional --------
     const caso = await casoDe(profesional, ana, oferta.id);
-    await exigirCon(
-      profesional,
-      'POST',
-      `${base}/clases/${clase.id}/inscripciones/${inscriptaAna}/derivaciones`,
-      { casoClinicoId: caso, motivo: 'Lumbalgia: seguimiento clinico en la clase' },
-      JUSTIFICACION,
+    const sesionId = await atenderYCerrar(
+      browser,
+      centro,
+      clase,
+      ana,
+      caso,
+      'Lumbalgia: seguimiento clinico en la clase',
     );
-    const sesionId = await atenderYCerrar(browser, centro, clase, ana, caso);
 
     // --- 7. La cuenta corriente: solo la venta del pase, la Sesion no devengo nada (U-42) -----
     const deudas = await deudasDe(api, base, ana);
@@ -313,14 +312,14 @@ test.describe('Circuito de F9 de punta a punta contra el backend real', () => {
 
     // --- Derivacion, atencion grupal y cierre, como la profesional ---------------------------
     const caso = await casoDe(profesional, dora, oferta.id);
-    await exigirCon(
-      profesional,
-      'POST',
-      `${base}/clases/${clase.id}/inscripciones/${inscripcion.id}/derivaciones`,
-      { casoClinicoId: caso, motivo: 'Gonartrosis: seguimiento clinico en la clase' },
-      JUSTIFICACION,
+    const sesionId = await atenderYCerrar(
+      browser,
+      centro,
+      clase,
+      dora,
+      caso,
+      'Gonartrosis: seguimiento clinico en la clase',
     );
-    const sesionId = await atenderYCerrar(browser, centro, clase, dora, caso);
 
     // --- La deuda: coseguro de la persona y parte del financiador, las dos de esta Sesion -----
     const deudas = await deudasDe(api, base, dora);
@@ -405,21 +404,6 @@ async function inscribir(page: Page, persona: Persona): Promise<void> {
   await page.getByRole('button', { name: 'Inscribir', exact: true }).click();
 }
 
-async function inscripcionDe(
-  api: ApiAkine,
-  base: string,
-  claseId: number,
-  persona: Persona,
-): Promise<number> {
-  const participantes = await api.exigir<{ inscripcion: { id: number; personaId: number } }[]>(
-    'GET',
-    `${base}/clases/${claseId}/inscripciones`,
-  );
-  const suya = participantes.find((p) => p.inscripcion.personaId === persona.id);
-  expect(suya, `${persona.apellido} esta inscripta`).toBeDefined();
-  return suya!.inscripcion.id;
-}
-
 /** La profesional abre la historia de la persona y un Caso de la oferta. Devuelve el Caso. */
 async function casoDe(profesional: ApiAkine, persona: Persona, ofertaId: number): Promise<number> {
   const historia = await exigirCon<{ id: number }>(
@@ -440,9 +424,9 @@ async function casoDe(profesional: ApiAkine, persona: Persona, ofertaId: number)
 }
 
 /**
- * La profesional, en su propio navegador: panel de atencion clinica de la clase → "Iniciar
- * atencion" de la participante → la Sesion abre desde la derivacion, con su Caso → la cierra con
- * asistencia. Devuelve el id de la Sesion.
+ * La profesional, en su propio navegador: panel de atencion clinica de la clase → "Derivar a un
+ * caso" de la participante, al Caso recien abierto (AKINE-08.04) → "Iniciar atencion" → la Sesion
+ * abre desde la derivacion, con su Caso → la cierra con asistencia. Devuelve el id de la Sesion.
  */
 async function atenderYCerrar(
   browser: Browser,
@@ -450,6 +434,7 @@ async function atenderYCerrar(
   clase: Clase,
   persona: Persona,
   casoId: number,
+  motivoDeDerivacion: string,
 ): Promise<number> {
   const contexto = await browser.newContext();
   try {
@@ -459,6 +444,28 @@ async function atenderYCerrar(
     await expect(pagina.getByRole('heading', { level: 1 })).toContainText(clase.titulo);
     const fila = pagina.getByRole('row').filter({ hasText: persona.apellido });
     await expect(fila).toContainText('Presente');
+
+    // Derivar por pantalla: el unico Caso activo queda elegido.
+    await fila.getByRole('button', { name: /Derivar a un caso/ }).click();
+    const tarjeta = pagina.getByRole('region', { name: /^Derivar a .* a un caso clinico$/ });
+    await expect(tarjeta.getByRole('radio', { name: /Caso clinico 1/ })).toBeChecked();
+    await tarjeta
+      .getByRole('textbox', { name: /Motivo de la derivacion/ })
+      .fill(motivoDeDerivacion);
+    const derivar = respuestaDe(pagina, 'POST', /\/inscripciones\/\d+\/derivaciones$/);
+    await tarjeta.getByRole('button', { name: 'Derivar al caso' }).click();
+    let derivada = await derivar;
+    if (derivada.status() === 403) {
+      await pagina
+        .getByRole('textbox', { name: 'Motivo del acceso' })
+        .fill(JUSTIFICACION['X-Justificacion-Acceso']);
+      const reintento = respuestaDe(pagina, 'POST', /\/inscripciones\/\d+\/derivaciones$/);
+      await pagina.getByRole('button', { name: 'Declarar y seguir' }).click();
+      derivada = await reintento;
+    }
+    expect(derivada.status()).toBe(201);
+    expect(((await derivada.json()) as { casoClinicoId: number }).casoClinicoId).toBe(casoId);
+    await expect(fila).toContainText('Derivada al caso clinico 1');
 
     const inicio = respuestaDe(pagina, 'POST', /\/inscripciones\/\d+\/atencion-clinica$/);
     await fila.getByRole('button', { name: /Iniciar atencion/ }).click();

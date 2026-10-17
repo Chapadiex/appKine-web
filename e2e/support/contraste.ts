@@ -744,6 +744,7 @@ export async function instalarApiDeContraste(page: Page): Promise<ApiDeContraste
           'pase:manage',
           'pase:adjust',
           'sesion:register',
+          'hc:write',
         ],
       });
     }
@@ -806,6 +807,41 @@ export async function instalarApiDeContraste(page: Page): Promise<ApiDeContraste
         eventos: [
           { ...EVENTO_DE_CLASE },
           { ...EVENTO_DE_CLASE, eventoId: 71, titulo: 'Yoga suave', estado: 'CANCELADA' },
+        ],
+      });
+    }
+    // Derivar a Ana (AKINE-08.04): derivable, paciente, con dos casos activos y uno cerrado.
+    if (camino === `${clases}/${CLASE.id}/inscripciones/501/elegibilidad-clinica`) {
+      return json({
+        inscripcionId: 501,
+        personaId: 601,
+        derivable: true,
+        ofertaClinica: true,
+        esPacienteVigente: true,
+        resultadoAsistencia: 'PRESENTE',
+        motivos: [],
+      });
+    }
+    if (camino === '/api/v1/historias-clinicas/por-persona/601/datos-administrativos') {
+      return json({
+        personaId: 601,
+        tieneHistoriaClinica: true,
+        casos: [
+          {
+            id: 7,
+            numeroCaso: 2,
+            estado: 'ACTIVO',
+            ofertaId: CLASE.ofertaId,
+            abiertoEn: '2026-10-01T13:00:00Z',
+          },
+          {
+            id: 6,
+            numeroCaso: 1,
+            estado: 'ACTIVO',
+            ofertaId: 999,
+            abiertoEn: '2026-09-01T13:00:00Z',
+          },
+          { id: 5, numeroCaso: 3, estado: 'CERRADO', ofertaId: 999 },
         ],
       });
     }

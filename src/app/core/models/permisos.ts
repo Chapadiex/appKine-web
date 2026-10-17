@@ -151,6 +151,13 @@ export const PERMISO_REPORTE_READ = 'reporte:read';
 export const PERMISO_HC_READ = 'hc:read';
 
 /**
+ * Escritura en la Historia Clinica (M09). Solo decide si se OFRECE derivar a un participante de una
+ * clase a un Caso (AKINE-08.04): el contrato exige ademas `inscripcion:read` —que ya pide la ruta
+ * del panel— y, sin relacion asistencial, un motivo declarado, que resuelve la pantalla.
+ */
+export const PERMISO_HC_WRITE = 'hc:write';
+
+/**
  * Registrar atenciones clinicas (M14). Solo decide si se OFRECE el enlace a la atencion clinica de
  * una clase (AKINE-08.05): escribir en una atencion es ademas de quien la lleva, y eso lo decide el
  * backend (409 `sesion-ajena`).

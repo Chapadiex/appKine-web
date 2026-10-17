@@ -1,0 +1,159 @@
+<section class="tarjeta" aria-labelledby="titulo-derivar-participante" akineFocoAlMontar>
+  <h2 id="titulo-derivar-participante">Derivar a {{ nombre() }} a un caso clinico</h2>
+  <p class="ayuda">
+    Derivar vincula su asistencia a esta clase con un caso clinico activo de su historia. No es
+    atender: la atencion se inicia despues, desde la tabla, y se numera dentro de ese caso.
+  </p>
+
+  @switch (elegibilidad().tipo) {
+    @case ('cargando') {
+      <p class="estado estado--cargando" role="status">Revisando si se puede derivar…</p>
+    }
+    @case ('error') {
+      @if (elegibilidad(); as carga) {
+        @if (carga.tipo === 'error') {
+          <p class="estado estado--error" role="alert">{{ carga.error.mensaje }}</p>
+          <div class="acciones">
+            <button type="button" class="boton boton--secundario" (click)="recargar()">
+              Reintentar
+            </button>
+          </div>
+        }
+      }
+    }
+    @case ('listo') {
+      @if (veredicto(); as v) {
+        <dl class="detalle">
+          <dt>Asistencia</dt>
+          <dd>{{ asistencia() }}</dd>
+          <dt>Paciente</dt>
+          <dd>{{ v.esPacienteVigente ? 'Si, con perfil de paciente' : 'Todavia no' }}</dd>
+          @if (casos(); as carga) {
+            @if (carga.tipo === 'listo') {
+              <dt>Historia clinica</dt>
+              <dd>
+                {{
+                  carga.valor.tieneHistoriaClinica
+                    ? carga.valor.casos.length === 1
+                      ? 'Con 1 caso activo'
+                      : 'Con ' + carga.valor.casos.length + ' casos activos'
+                    : 'Todavia no tiene'
+                }}
+              </dd>
+            }
+          }
+        </dl>
+
+        @if (v.derivable !== true) {
+          <h3>No se puede derivar</h3>
+          <ul>
+            @for (bloqueo of bloqueos(); track bloqueo) {
+              <li>{{ bloqueo }}</li>
+            } @empty {
+              <li>El servidor no la declara derivable.</li>
+            }
+          </ul>
+        } @else if (faltaPerfil()) {
+          <p class="estado estado--vacio">
+            Todavia no es paciente, asi que no tiene historia ni caso clinico donde derivarla. El
+            perfil de paciente se activa desde su ficha del padron; despues se le abre un caso en la
+            historia clinica.
+          </p>
+          @if (rutaDeLaFicha(); as ruta) {
+            <p><a class="enlace" [routerLink]="ruta">Ir a su ficha del padron</a></p>
+          }
+        } @else {
+          @if (casos(); as carga) {
+            @switch (carga.tipo) {
+              @case ('cargando') {
+                <p class="estado estado--cargando" role="status">Cargando sus casos activos…</p>
+              }
+              @case ('error') {
+                @if (carga.tipo === 'error') {
+                  <p class="estado estado--error" role="alert">{{ carga.error.mensaje }}</p>
+                  <div class="acciones">
+                    <button type="button" class="boton boton--secundario" (click)="recargar()">
+                      Reintentar
+                    </button>
+                  </div>
+                }
+              }
+              @case ('listo') {
+                @if (carga.tipo === 'listo') {
+                  @if (carga.valor.casos.length === 0) {
+                    <p class="estado estado--vacio">
+                      {{
+                        carga.valor.tieneHistoriaClinica
+                          ? 'No tiene ningun caso clinico activo.'
+                          : 'Todavia no tiene historia clinica.'
+                      }}
+                      Para derivarla hace falta un caso activo: se abre desde su historia clinica,
+                      con el diagnostico presuntivo, y despues se vuelve a esta clase.
+                    </p>
+                    @if (rutaDeLaHistoria(); as ruta) {
+                      <p>
+                        <a class="enlace" [routerLink]="ruta">Ir a su historia clinica</a>
+                      </p>
+                    }
+                  } @else {
+                    <form (submit)="$event.preventDefault(); derivar()" novalidate>
+                      <fieldset
+                        class="grupo"
+                        [attr.aria-describedby]="faltaCaso() ? 'derivar-caso-error' : null"
+                      >
+                        <legend>Caso clinico destino</legend>
+                        @for (caso of carga.valor.casos; track caso.id) {
+                          <label class="opcion-radio">
+                            <input
+                              type="radio"
+                              name="caso-destino"
+                              [checked]="casoElegido() === caso.id"
+                              (change)="elegir(caso.id)"
+                            />
+                            {{ etiquetaDeCaso(caso) }}
+                          </label>
+                        }
+                        @if (faltaCaso()) {
+                          <p id="derivar-caso-error" class="campo__error">
+                            Elegi a que caso se deriva.
+                          </p>
+                        }
+                      </fieldset>
+                      <div class="campo">
+                        <label for="derivar-motivo">Motivo de la derivacion (opcional)</label>
+                        <input
+                          id="derivar-motivo"
+                          type="text"
+                          autocomplete="off"
+                          maxlength="500"
+                          [value]="motivoDeDerivacion()"
+                          (input)="motivoDeDerivacion.set($any($event.target).value)"
+                        />
+                      </div>
+                      @if (error(); as fallo) {
+                        <p class="estado estado--error" role="alert">{{ fallo.mensaje }}</p>
+                      }
+                      <div class="acciones">
+                        <button type="submit" class="boton" [disabled]="enviando()">
+                          @if (enviando()) {
+                            Derivando…
+                          } @else {
+                            Derivar al caso
+                          }
+                        </button>
+                      </div>
+                    </form>
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  <div class="acciones">
+    <button type="button" class="boton boton--secundario" (click)="cerrar.emit()">Cerrar</button>
+  </div>
+</section>
