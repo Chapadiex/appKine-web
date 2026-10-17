@@ -33,7 +33,7 @@
       <dd>{{ solicitud.justificacion }}</dd>
       <dt>Centro</dt>
       <dd>
-        {{ nombreDeCentro(solicitud.organizationId) }}
+        {{ nombreDeCentro(solicitud) }}
         @if (solicitud.consultorioId) {
           (la pidio desde una de sus sedes)
         }
@@ -276,7 +276,7 @@
                       }
                     </th>
                     <td>{{ etiquetaDeTipo(solicitud.tipo) }}</td>
-                    <td>{{ nombreDeCentro(solicitud.organizationId) }}</td>
+                    <td>{{ nombreDeCentro(solicitud) }}</td>
                     <td>{{ formatearInstante(solicitud.createdAt) ?? 'Sin fecha' }}</td>
                     <td>
                       <span class="marca-estado">{{ etiquetaDeEstado(solicitud.estado) }}</span>

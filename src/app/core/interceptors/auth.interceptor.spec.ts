@@ -252,6 +252,50 @@ describe('authInterceptor', () => {
     expect(navegar).not.toHaveBeenCalled();
   });
 
+  it('un 401 que llega con la sesion expirada ya en pantalla no la saca de ahi', async () => {
+    const router = TestBed.inject(Router);
+    const navegarPorUrl = vi.spyOn(router, 'navigateByUrl').mockResolvedValue(true);
+    const navegar = vi.spyOn(router, 'navigate').mockResolvedValue(true);
+    // La pantalla que limpio la sesion volvio a pedir sus datos, ya sin token, y la respuesta
+    // llega cuando el usuario ya esta leyendo "Tu sesion se cerro" (e2e/sesion-expirada).
+    Object.defineProperty(router, 'url', {
+      get: () => '/auth/sesion-expirada?volverA=%2Fpacientes',
+      configurable: true,
+    });
+
+    const fallo = new Promise<unknown>((resolve) =>
+      http.get('/api/v1/personas').subscribe({ error: resolve }),
+    );
+    httpMock.expectOne('/api/v1/personas').flush(null, { status: 401, statusText: 'x' });
+    httpMock.expectOne('/api/v1/auth/refresh').flush(null, { status: 401, statusText: 'x' });
+
+    await fallo;
+    expect(navegarPorUrl).not.toHaveBeenCalled();
+    expect(navegar).not.toHaveBeenCalled();
+  });
+
+  it('un 401 que llega mientras se navega a la sesion expirada no reemplaza esa navegacion', async () => {
+    const router = TestBed.inject(Router);
+    const navegarPorUrl = vi.spyOn(router, 'navigateByUrl').mockResolvedValue(true);
+    const navegar = vi.spyOn(router, 'navigate').mockResolvedValue(true);
+    Object.defineProperty(router, 'url', { get: () => '/pacientes', configurable: true });
+    const destino = router.parseUrl('/auth/sesion-expirada?volverA=%2Fpacientes');
+    vi.spyOn(router, 'currentNavigation').mockReturnValue({
+      extractedUrl: destino,
+      finalUrl: destino,
+    } as ReturnType<Router['currentNavigation']>);
+
+    const fallo = new Promise<unknown>((resolve) =>
+      http.get('/api/v1/personas').subscribe({ error: resolve }),
+    );
+    httpMock.expectOne('/api/v1/personas').flush(null, { status: 401, statusText: 'x' });
+    httpMock.expectOne('/api/v1/auth/refresh').flush(null, { status: 401, statusText: 'x' });
+
+    await fallo;
+    expect(navegarPorUrl).not.toHaveBeenCalled();
+    expect(navegar).not.toHaveBeenCalled();
+  });
+
   it('un 401 del propio /auth/refresh NO dispara otro refresh', async () => {
     const session = TestBed.inject(SessionService);
     const fallo = new Promise<unknown>((resolve) =>

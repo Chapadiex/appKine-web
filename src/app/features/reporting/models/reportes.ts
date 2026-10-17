@@ -19,7 +19,7 @@ export const MAXIMO_DIAS_DE_REPORTE = 366;
  */
 export const ADVERTENCIA_ACTIVIDAD_PROPIA = 'alcance-actividad-propia';
 
-/** Los siete reportes (M23), en el orden en que se ofrecen. Uno por RF. */
+/** Los nueve reportes (M23), en el orden en que se ofrecen. Uno por RF. */
 export const REPORTES: readonly { readonly codigo: CodigoDeReporte; readonly nombre: string }[] = [
   { codigo: 'OPERATIVO', nombre: 'Operativo de la sede' },
   { codigo: 'TURNOS', nombre: 'Turnos' },
@@ -27,6 +27,8 @@ export const REPORTES: readonly { readonly codigo: CodigoDeReporte; readonly nom
   { codigo: 'ECONOMICO', nombre: 'Economico' },
   { codigo: 'FINANCIADORES', nombre: 'Financiadores' },
   { codigo: 'CLASES', nombre: 'Clases' },
+  { codigo: 'CONTINUIDAD', nombre: 'Continuidad del circuito de salud' },
+  { codigo: 'SERVICIOS', nombre: 'Ingresos por servicio' },
   { codigo: 'PASES', nombre: 'Pases' },
 ];
 
