@@ -62,3 +62,26 @@ El proyecto se llama `akine-web`. No vuelve a correr los tests: reusa el `lcov.i
 `build` en el artifact `coverage-report`. El cliente generado queda fuera del análisis y de la
 cobertura, igual que en `angular.json`. Con SonarCloud hace falta además
 `-Dsonar.organization=<org>` en los `args` del paso.
+
+## SAST — CodeQL, `.github/workflows/codeql.yml` (propuesta U-06)
+
+Corre en cada PR a `main`, en cada push a `main`, los lunes 09:00 UTC y a mano. **No bloquea
+todavía:** no está entre los checks obligatorios de `main`. El DAST (OWASP ZAP baseline) vive en
+`appKine-api` (`docs/calidad.md` §5): el frontend es estático detrás de nginx.
+
+- **Costo cero:** el repo es público, y para repos públicos code scanning con CodeQL es gratis y no
+  pide GitHub Advanced Security. Si pasara a privado, la alternativa sin costo es Semgrep OSS
+  (`semgrep scan --config p/typescript --config p/owasp-top-ten --sarif`, subido con
+  `github/codeql-action/upload-sarif`).
+- **Lenguajes:** `javascript-typescript` (sin compilar, `build-mode: none`) y `actions`, que analiza
+  los propios workflows. Suite `security-extended`. Se excluyen el cliente generado
+  (`src/app/api/generated`) y los artefactos de build y de reportes.
+- **Dónde se ven:** pestaña **Security › Code scanning**, y como anotaciones en el diff del PR.
+- **No convive con el "default setup"** de *Settings › Code security*: si se enciende, el upload de
+  este workflow se rechaza. Hoy está `not-configured`.
+
+**Volverlo bloqueante:** en *Settings › Rules › Rulesets* (o en la protección de `main`), agregar
+**Require code scanning results** con la herramienta `CodeQL` y el umbral deseado (p. ej. *Security
+alerts: High or higher*, *Alerts: Errors*). Un PR que **introduce** un hallazgo de ese nivel queda
+sin poder mergearse; lo que ya estaba en `main` no lo traba. Antes, revisar y cerrar (o descartar
+con motivo) lo que encuentre la primera corrida.
