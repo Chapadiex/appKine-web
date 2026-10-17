@@ -429,6 +429,28 @@ describe('AsistenciaDeClasePage', () => {
     expect(el(fixture).querySelector('input[name="asistencia-1"]')).not.toBeNull();
   });
 
+  it('un 503 del lote avisa cuanto esperar, no guarda nada y conserva lo marcado', async () => {
+    const fixture = await montar('EN_CURSO');
+    radio(fixture, 1, 'PRESENTE');
+    boton(fixture, 'Guardar asistencia').click();
+    httpMock
+      .expectOne(`${BASE}/asistencias/lote`)
+      .flush(
+        { type: 'https://akine.app/problems/service-unavailable', status: 503 },
+        { status: 503, statusText: 'Service Unavailable', headers: { 'Retry-After': '7' } },
+      );
+    await responderDetalle(fixture, detalle('EN_CURSO'));
+    expect(texto(fixture)).toContain(
+      'Hay muchos registros de asistencia en curso en esta sede. Probá de nuevo en 7 segundos.',
+    );
+    expect(texto(fixture)).toContain('No se guardó nada');
+    const radioMarcado = el(fixture).querySelector(
+      'input[name="asistencia-1"][value="PRESENTE"]',
+    ) as HTMLInputElement;
+    expect(radioMarcado.checked).toBe(true);
+    expect(boton(fixture, 'Guardar asistencia').disabled).toBe(false);
+  });
+
   it('un cierre rechazado muestra el motivo del servidor y relee', async () => {
     const fixture = await montar('EN_CURSO');
     boton(fixture, 'Cerrar clase').click();

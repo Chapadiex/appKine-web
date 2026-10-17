@@ -31,6 +31,7 @@ import {
   ErrorAsistencia,
   errorSinContexto,
   traducirErrorAsistencia,
+  traducirErrorDeLote,
   traducirFalloDeItem,
 } from '../../models/asistencia-errors';
 import {
@@ -409,7 +410,8 @@ export class AsistenciaDeClasePage {
         this.marcas.set(siguiente);
         this.terminarAccion();
       },
-      error: (error: unknown) => this.fallarAccion(error),
+      // Las marcas no se tocan: un 503 del lote no guardo nada y se reintenta con lo mismo.
+      error: (error: unknown) => this.fallarAccion(error, traducirErrorDeLote),
     });
   }
 
@@ -467,9 +469,12 @@ export class AsistenciaDeClasePage {
     this.cargar();
   }
 
-  private fallarAccion(error: unknown): void {
+  private fallarAccion(
+    error: unknown,
+    traducir: (error: unknown) => ErrorAsistencia = traducirErrorAsistencia,
+  ): void {
     this.enviando.set(false);
-    this.errorAccion.set(traducirErrorAsistencia(error));
+    this.errorAccion.set(traducir(error));
     // El estado de la clase pudo cambiar por otro operador: se relee para no mentir.
     this.cargar();
   }

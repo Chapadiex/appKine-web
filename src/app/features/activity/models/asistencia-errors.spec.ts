@@ -1,5 +1,9 @@
 import { AkineHttpError } from '../../../core/interceptors/error.interceptor';
-import { traducirErrorAsistencia, traducirFalloDeItem } from './asistencia-errors';
+import {
+  traducirErrorAsistencia,
+  traducirErrorDeLote,
+  traducirFalloDeItem,
+} from './asistencia-errors';
 
 function http(status: number, type?: string, detail?: string): AkineHttpError {
   const problem = type ? { type: `https://akine.app/problems/${type}`, status, detail } : null;
@@ -44,5 +48,26 @@ describe('asistencia-errors', () => {
       'no-encontrado',
     );
     expect(traducirFalloDeItem(undefined, 'raro')).toEqual({ mensaje: 'raro', causa: 'otro' });
+  });
+
+  it('un 503 del lote dice cuanto esperar y que no se guardo nada', () => {
+    const error = new AkineHttpError(
+      503,
+      { type: 'https://akine.app/problems/service-unavailable', status: 503 },
+      false,
+      12,
+    );
+    const traducido = traducirErrorDeLote(error);
+    expect(traducido.causa).toBe('lotes-saturados');
+    expect(traducido.mensaje).toContain(
+      'Hay muchos registros de asistencia en curso en esta sede. Probá de nuevo en 12 segundos.',
+    );
+    expect(traducido.mensaje).toContain('No se guardó nada');
+  });
+
+  it('un 503 sin Retry-After no inventa un plazo; otros errores siguen igual', () => {
+    const sin = traducirErrorDeLote(new AkineHttpError(503, null, false));
+    expect(sin.mensaje).toContain('en unos segundos');
+    expect(traducirErrorDeLote(http(403)).causa).toBe('sin-permiso');
   });
 });
