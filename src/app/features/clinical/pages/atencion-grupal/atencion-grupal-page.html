@@ -93,6 +93,61 @@
                   <li>
                     <b>{{ fallo.nombre }}</b
                     >: {{ fallo.mensaje }}
+                    @if (fallo.derivacionIds.length > 0) {
+                      @if (eleccionEnLote(fallo.inscripcionId); as eleccion) {
+                        @if (eleccion.error; as problema) {
+                          <p class="estado estado--error" role="alert">{{ problema.mensaje }}</p>
+                        }
+                        @if (eleccion.lista === null) {
+                          @if (eleccion.error === null) {
+                            <p class="estado estado--cargando" role="status">
+                              Cargando las derivaciones…
+                            </p>
+                          }
+                        } @else if (elegibles(eleccion).length === 0) {
+                          <p class="estado estado--vacio">
+                            Ya no tiene vigente ninguna de las derivaciones ofrecidas. Volve a
+                            cargar la clase.
+                          </p>
+                        } @else {
+                          <div class="acciones">
+                            @for (derivacion of elegibles(eleccion); track derivacion.id) {
+                              <button
+                                type="button"
+                                class="boton"
+                                [disabled]="enVuelo() !== null"
+                                (click)="iniciarDesdeLote(eleccion.fila, derivacion)"
+                              >
+                                Iniciar desde: {{ numeroDeCaso(derivacion)
+                                }}<span class="visualmente-oculto"> para {{ fallo.nombre }}</span>
+                              </button>
+                            }
+                          </div>
+                        }
+                        <div class="acciones">
+                          <button
+                            type="button"
+                            class="boton boton--secundario"
+                            (click)="cerrarDerivaciones()"
+                          >
+                            No elegir ahora
+                          </button>
+                        </div>
+                      } @else {
+                        <div class="acciones">
+                          <button
+                            type="button"
+                            class="boton boton--secundario"
+                            [disabled]="enVuelo() !== null"
+                            (click)="elegirEnLote(fallo)"
+                          >
+                            Elegir la derivacion<span class="visualmente-oculto">
+                              de {{ fallo.nombre }}</span
+                            >
+                          </button>
+                        </div>
+                      }
+                    }
                   </li>
                 }
               </ul>
@@ -211,7 +266,7 @@
         }
       </section>
 
-      @if (derivaciones(); as panel) {
+      @if (derivacionesAbajo(); as panel) {
         <section class="tarjeta" aria-labelledby="titulo-derivaciones">
           <h2 id="titulo-derivaciones">Derivaciones de {{ panel.fila.nombre }}</h2>
           @if (panel.porAmbiguedad) {
@@ -240,7 +295,7 @@
               @for (derivacion of panel.lista; track derivacion.id) {
                 <li>
                   <p>
-                    <b>Caso clinico {{ derivacion.casoClinicoId }}</b> ·
+                    <b>{{ numeroDeCaso(derivacion) }}</b> ·
                     {{ vigente(derivacion) ? 'Vigente' : 'Revertida' }}
                     @if (derivacion.derivadaEn) {
                       · derivada el {{ instante(derivacion.derivadaEn) }}

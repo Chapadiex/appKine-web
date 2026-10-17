@@ -853,6 +853,7 @@ describe('AtencionPage', () => {
       ...ABIERTA,
       turnoId: undefined,
       claseId: 40,
+      claseTitulo: 'Rehabilitacion de rodilla',
       derivacionId: 30,
       casoId: 7,
     };
@@ -882,7 +883,8 @@ describe('AtencionPage', () => {
       await estabilizar(fixture);
 
       expect(texto(fixture)).toContain('Atencion en curso');
-      expect(texto(fixture)).toContain('Participante de una clase grupal');
+      expect(texto(fixture)).toContain('Participante de la clase grupal Rehabilitacion de rodilla');
+      expect(texto(fixture)).not.toContain('clase 40');
       expect(texto(fixture)).toContain('lo fijo la derivacion');
       expect(fixture.nativeElement.querySelector('#atencion-caso')).toBeNull();
       expect(fixture.nativeElement.querySelector('a[href="/atencion/clases/40"]')).not.toBeNull();

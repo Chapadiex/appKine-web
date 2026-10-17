@@ -18,7 +18,6 @@ const CLASE = 40;
 const BASE = `/api/v1/consultorios/${CONSULTORIO}/clases/${CLASE}`;
 const PANEL = `${BASE}/atencion-clinica`;
 const LOTE = `${BASE}/atencion-clinica/lote`;
-const DETALLE = `${BASE}/detalle-operativo`;
 const MARIA = 71;
 const JUAN = 72;
 const ANA = 73;
@@ -34,6 +33,8 @@ const PANEL_CLINICO = {
       inscripcionId: MARIA,
       asistenciaId: 1,
       personaId: 501,
+      nombre: 'Maria',
+      apellido: 'Sintetica',
       estuvo: true,
       resultadoAsistencia: 'PRESENTE',
     },
@@ -41,6 +42,8 @@ const PANEL_CLINICO = {
       inscripcionId: JUAN,
       asistenciaId: 2,
       personaId: 502,
+      nombre: 'Juan',
+      apellido: 'Sintetico',
       estuvo: true,
       resultadoAsistencia: 'PRESENTE_TARDE',
       atenciones: [
@@ -57,22 +60,22 @@ const PANEL_CLINICO = {
       inscripcionId: ANA,
       asistenciaId: 3,
       personaId: 503,
+      nombre: 'Ana',
+      apellido: 'Sintetica',
       estuvo: false,
       resultadoAsistencia: 'AUSENTE',
     },
   ],
 };
 
-const DETALLE_CLASE = {
-  claseId: CLASE,
+/** La clase: titulo y horario. Los nombres ya vienen en el panel (contrato 0.118.0). */
+const CLASE_LEIDA = {
+  id: CLASE,
   titulo: 'Rehabilitacion de rodilla',
+  ofertaNombre: 'Kinesiologia grupal',
   inicio: '2026-10-20T13:00:00Z',
-  content: [
-    { nombre: 'Maria', apellido: 'Sintetica', inscripcion: { id: MARIA } },
-    { nombre: 'Juan', apellido: 'Sintetico', inscripcion: { id: JUAN } },
-    { nombre: 'Ana', apellido: 'Sintetica', inscripcion: { id: ANA } },
-  ],
 };
+const esLaClase = (r: { url: string; method: string }) => r.method === 'GET' && r.url === BASE;
 
 const ABIERTA = { sesionId: 900, derivacionId: 30, estado: 'BORRADOR', inscripcionId: MARIA };
 
@@ -125,16 +128,39 @@ describe('AtencionGrupalPage', () => {
     expect(boton(fixture, /Iniciar para todos/).textContent).toContain('(1)');
   });
 
-  it('sin el detalle operativo se usa el numero de inscripcion en lugar del nombre', async () => {
+  it('los nombres salen del panel: no pide el detalle operativo de la asistencia', async () => {
+    const fixture = await montar();
+    http.expectNone((r) => r.url.endsWith('/detalle-operativo'));
+    expect(texto(fixture)).toContain('Sintetico, Juan');
+  });
+
+  it('sin nombre resuelto muestra un texto neutro, nunca el id', async () => {
+    const fixture = TestBed.createComponent(AtencionGrupalPage);
+    fixture.componentRef.setInput('claseId', String(CLASE));
+    fixture.detectChanges();
+    http.expectOne(PANEL).flush({
+      ...PANEL_CLINICO,
+      participantes: [{ inscripcionId: MARIA, personaId: 501, estuvo: true }],
+    });
+    // Sin la clase el panel se sigue usando: el titulo cae a "Clase N".
+    http
+      .expectOne(esLaClase)
+      .flush({ type: 'x', status: 403 }, { status: 403, statusText: 'Forbidden' });
+    await estabilizar(fixture);
+    expect(texto(fixture)).toContain('Participante sin nombre');
+    expect(texto(fixture)).not.toContain(String(MARIA));
+    expect(texto(fixture)).not.toContain('501');
+    expect(texto(fixture)).toContain(`Atencion clinica: Clase ${CLASE}`);
+  });
+
+  it('una clase sin titulo se llama como su oferta', async () => {
     const fixture = TestBed.createComponent(AtencionGrupalPage);
     fixture.componentRef.setInput('claseId', String(CLASE));
     fixture.detectChanges();
     http.expectOne(PANEL).flush(PANEL_CLINICO);
-    http
-      .expectOne((r) => r.url === DETALLE)
-      .flush({ type: 'x', status: 403 }, { status: 403, statusText: 'Forbidden' });
+    http.expectOne(esLaClase).flush({ ...CLASE_LEIDA, titulo: undefined });
     await estabilizar(fixture);
-    expect(texto(fixture)).toContain(`Inscripcion ${MARIA}`);
+    expect(texto(fixture)).toContain('Atencion clinica: Kinesiologia grupal');
   });
 
   it('iniciar la atencion de un participante la abre y lleva a ella', async () => {
@@ -157,7 +183,7 @@ describe('AtencionGrupalPage', () => {
     });
     http.expectOne(derivacionesDe(MARIA)).flush({
       derivaciones: [
-        { id: 30, casoClinicoId: 7, estado: 'VIGENTE' },
+        { id: 30, casoClinicoId: 7, numeroCaso: 1, estado: 'VIGENTE' },
         { id: 32, casoClinicoId: 8, estado: 'VIGENTE' },
       ],
     });
@@ -165,8 +191,11 @@ describe('AtencionGrupalPage', () => {
     await estabilizar(fixture);
 
     expect(texto(fixture)).toContain('mas de una derivacion vigente');
-    expect(texto(fixture)).toContain('Caso clinico 7');
-    expect(texto(fixture)).toContain('Caso clinico 8');
+    // El numero visible del caso, no el id; sin numero, un texto neutro.
+    expect(texto(fixture)).toContain('Caso clinico 1');
+    expect(texto(fixture)).toContain('Caso clinico sin numero');
+    expect(texto(fixture)).not.toContain('Caso clinico 7');
+    expect(texto(fixture)).not.toContain('Caso clinico 8');
     expect(navegar).not.toHaveBeenCalled();
 
     botones(fixture, /Iniciar atencion desde esta derivacion/)[1].click();
@@ -218,6 +247,120 @@ describe('AtencionGrupalPage', () => {
     expect(resultado).toContain('1 no se pudieron abrir');
     expect(resultado).toMatch(/Sintetica, Ana\s*: No tiene una derivacion clinica vigente/);
     expect(navegar).not.toHaveBeenCalled();
+  });
+
+  it('un fallo derivacion-ambigua del lote se resuelve ahi mismo, sin iniciar de a uno', async () => {
+    const fixture = await montar({
+      ...PANEL_CLINICO,
+      participantes: PANEL_CLINICO.participantes.map((p) =>
+        p.inscripcionId === ANA ? { ...p, estuvo: true, resultadoAsistencia: 'PRESENTE' } : p,
+      ),
+    });
+    boton(fixture, /Iniciar para todos/).click();
+    http.expectOne(LOTE).flush({
+      exitosos: 1,
+      fallidos: 1,
+      items: [
+        { inscripcionId: MARIA, atencion: ABIERTA },
+        {
+          inscripcionId: ANA,
+          problemType: 'https://akine.app/problems/derivacion-ambigua',
+          derivacionIds: [40, 42],
+        },
+      ],
+    });
+    responderRecarga();
+    await estabilizar(fixture);
+    expect(texto(fixture)).toMatch(/Sintetica, Ana\s*: Tiene mas de una derivacion vigente/);
+    // La lectura de derivaciones es clinica: no se hace hasta que alguien elige.
+    http.expectNone(derivacionesDe(ANA));
+
+    boton(fixture, /^Elegir la derivacion/).click();
+    http.expectOne(derivacionesDe(ANA)).flush({
+      derivaciones: [
+        { id: 40, casoClinicoId: 17, numeroCaso: 2, estado: 'VIGENTE' },
+        { id: 41, casoClinicoId: 18, numeroCaso: 3, estado: 'REVERTIDA' },
+        { id: 42, casoClinicoId: 19, numeroCaso: 4, estado: 'VIGENTE' },
+      ],
+    });
+    await estabilizar(fixture);
+    // Solo las que el backend ofrecio, y en el resultado: la tarjeta de abajo no se abre.
+    expect(botones(fixture, /^Iniciar desde:/).map((b) => b.textContent?.trim())).toHaveLength(2);
+    expect(texto(fixture)).toContain('Iniciar desde: Caso clinico 2');
+    expect(texto(fixture)).toContain('Iniciar desde: Caso clinico 4');
+    expect(texto(fixture)).not.toContain('Caso clinico 3');
+    expect(fixture.nativeElement.querySelector('#titulo-derivaciones')).toBeNull();
+
+    botones(fixture, /^Iniciar desde: Caso clinico 4/)[0].click();
+    const pedido = http.expectOne(atencionDe(ANA));
+    expect(pedido.request.body).toEqual({ derivacionId: 42 });
+    pedido.flush({ ...ABIERTA, sesionId: 903, derivacionId: 42, inscripcionId: ANA });
+    responderRecarga();
+    await estabilizar(fixture);
+    // No navega: el resultado del lote se actualiza en su lugar.
+    expect(navegar).not.toHaveBeenCalled();
+    expect(texto(fixture)).toContain('Se abrieron 2 atenciones.');
+    expect(texto(fixture)).not.toContain('no se pudieron abrir');
+  });
+
+  it('elegir en el lote se puede postergar, y un error de inicio se muestra ahi', async () => {
+    const fixture = await montar();
+    boton(fixture, /Iniciar para todos/).click();
+    http.expectOne(LOTE).flush({
+      exitosos: 0,
+      fallidos: 1,
+      items: [
+        {
+          inscripcionId: MARIA,
+          problemType: 'https://akine.app/problems/derivacion-ambigua',
+          derivacionIds: [30, 32],
+        },
+      ],
+    });
+    responderRecarga();
+    await estabilizar(fixture);
+    boton(fixture, /^Elegir la derivacion/).click();
+    http.expectOne(derivacionesDe(MARIA)).flush({
+      derivaciones: [
+        { id: 30, numeroCaso: 1, estado: 'VIGENTE' },
+        { id: 32, numeroCaso: 2, estado: 'VIGENTE' },
+      ],
+    });
+    await estabilizar(fixture);
+    boton(fixture, /^Iniciar desde: Caso clinico 1/).click();
+    problema(http.expectOne(atencionDe(MARIA)), 409, 'caso-clinico-cerrado');
+    await estabilizar(fixture);
+    expect(alerta(fixture)).toContain('caso');
+    expect(texto(fixture)).toContain('1 no se pudieron abrir');
+
+    boton(fixture, /^No elegir ahora/).click();
+    await estabilizar(fixture);
+    expect(botones(fixture, /^Iniciar desde:/)).toHaveLength(0);
+    expect(botones(fixture, /^Elegir la derivacion/)).toHaveLength(1);
+  });
+
+  it('si ninguna de las ofrecidas sigue vigente lo dice', async () => {
+    const fixture = await montar();
+    boton(fixture, /Iniciar para todos/).click();
+    http.expectOne(LOTE).flush({
+      exitosos: 0,
+      fallidos: 1,
+      items: [
+        {
+          inscripcionId: MARIA,
+          problemType: 'https://akine.app/problems/derivacion-ambigua',
+          derivacionIds: [30, 32],
+        },
+      ],
+    });
+    responderRecarga();
+    await estabilizar(fixture);
+    boton(fixture, /^Elegir la derivacion/).click();
+    http.expectOne(derivacionesDe(MARIA)).flush({
+      derivaciones: [{ id: 30, numeroCaso: 1, estado: 'REVERTIDA' }],
+    });
+    await estabilizar(fixture);
+    expect(texto(fixture)).toContain('Ya no tiene vigente ninguna de las derivaciones ofrecidas');
   });
 
   it('si el backend pide motivo de acceso lo pide en pantalla y reintenta con el', async () => {
@@ -352,8 +495,8 @@ describe('AtencionGrupalPage', () => {
     fixture.componentRef.setInput('claseId', String(CLASE));
     fixture.detectChanges();
     problema(http.expectOne(PANEL), 403, 'forbidden');
-    // El detalle va en paralelo y el error del panel lo cancela.
-    http.match((r) => r.url === DETALLE);
+    // La clase va en paralelo y el error del panel la cancela.
+    http.match(esLaClase);
     await estabilizar(fixture);
     expect(alerta(fixture)).toContain('No tenes permiso');
     boton(fixture, /Reintentar/).click();
@@ -396,14 +539,14 @@ describe('AtencionGrupalPage', () => {
     fixture.componentRef.setInput('claseId', String(CLASE));
     fixture.detectChanges();
     http.expectOne(PANEL).flush(panel);
-    http.expectOne((r) => r.url === DETALLE).flush(DETALLE_CLASE);
+    http.expectOne(esLaClase).flush(CLASE_LEIDA);
     await estabilizar(fixture);
     return fixture;
   }
 
   function responderRecarga(): void {
     http.expectOne(PANEL).flush(PANEL_CLINICO);
-    http.expectOne((r) => r.url === DETALLE).flush(DETALLE_CLASE);
+    http.expectOne(esLaClase).flush(CLASE_LEIDA);
   }
 
   async function estabilizar(fixture: ComponentFixture<AtencionGrupalPage>): Promise<void> {

@@ -14,6 +14,10 @@ import { AtencionDeParticipante } from './atencion-de-participante';
  * Un participante con asistencia
  */
 export interface ParticipanteEnAtencionGrupal { 
+    /**
+     * Del padron, resuelto al leer. Ausente si la ficha no se resolvio
+     */
+    apellido?: string;
     asistenciaId?: number;
     /**
      * Una por derivacion atendida. Vacia si todavia no tiene
@@ -24,6 +28,10 @@ export interface ParticipanteEnAtencionGrupal {
      */
     estuvo?: boolean;
     inscripcionId?: number;
+    /**
+     * Del padron, resuelto al leer. Ausente si la ficha no se resolvio. Junto con `apellido` es lo unico de la persona que viaja: ni documento ni contacto
+     */
+    nombre?: string;
     personaId?: number;
     resultadoAsistencia?: ParticipanteEnAtencionGrupalResultadoAsistenciaEnum;
 }

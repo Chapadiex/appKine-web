@@ -136,9 +136,10 @@
       @if (esGrupal()) {
         <dt>Origen</dt>
         <dd>
-          Participante de una clase grupal
-          @if (atencion.claseId !== undefined) {
-            (clase {{ atencion.claseId }})
+          @if (atencion.claseTitulo) {
+            Participante de la clase grupal <b>{{ atencion.claseTitulo }}</b>
+          } @else {
+            Participante de una clase grupal
           }
         </dd>
       }

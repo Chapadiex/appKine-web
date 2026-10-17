@@ -164,6 +164,10 @@ export class PasesApi {
   /**
    * Suma o resta creditos con motivo (RF-M29-005). `cantidad` lleva signo y nunca es cero; el saldo
    * final tiene que quedar entre 0 y los creditos comprados. Exige `pase:adjust`.
+   *
+   * <p>Va con `sinMovimientos=true` (0.117.0): la pantalla relee la pagina del ledger por su
+   * cuenta, asi que el ledger entero en la respuesta era trabajo tirado. Con ese parametro los
+   * `movimientos` de la respuesta vienen vacios, y eso <b>no</b> quiere decir que no haya.
    */
   ajustarSaldo(
     consultorioId: number,
@@ -175,6 +179,7 @@ export class PasesApi {
     return this.pases.ajustarSaldoDePase({
       consultorioId,
       paseId,
+      sinMovimientos: true,
       ajusteDeSaldoDePase: { cantidad, motivo, version },
     });
   }

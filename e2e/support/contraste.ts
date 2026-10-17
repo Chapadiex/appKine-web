@@ -517,16 +517,30 @@ const ATENCION_GRUPAL = {
   claseId: CLASE.id,
   clinica: true,
   participantes: [
-    { inscripcionId: 501, estuvo: true, resultadoAsistencia: 'PRESENTE' },
+    {
+      inscripcionId: 501,
+      nombre: 'Ana',
+      apellido: 'Perez',
+      estuvo: true,
+      resultadoAsistencia: 'PRESENTE',
+    },
     {
       inscripcionId: 502,
+      nombre: 'Luis',
+      apellido: 'Gomez',
       estuvo: true,
       resultadoAsistencia: 'PRESENTE_TARDE',
       atenciones: [
         { sesionId: 901, derivacionId: 31, estado: 'CERRADA', numeroEnCaso: 3, numeroSesion: 8 },
       ],
     },
-    { inscripcionId: 503, estuvo: false, resultadoAsistencia: 'AUSENTE' },
+    {
+      inscripcionId: 503,
+      nombre: 'Eva',
+      apellido: 'Sosa',
+      estuvo: false,
+      resultadoAsistencia: 'AUSENTE',
+    },
   ],
 };
 
@@ -716,10 +730,17 @@ export async function instalarApiDeContraste(page: Page): Promise<ApiDeContraste
     if (camino === `${clases}/${CLASE.id}/inscripciones/501/derivaciones`) {
       return json({
         derivaciones: [
-          { id: 30, casoClinicoId: 7, estado: 'VIGENTE', derivadaEn: '2026-10-20T21:05:00Z' },
+          {
+            id: 30,
+            casoClinicoId: 7,
+            numeroCaso: 2,
+            estado: 'VIGENTE',
+            derivadaEn: '2026-10-20T21:05:00Z',
+          },
           {
             id: 29,
             casoClinicoId: 6,
+            numeroCaso: 1,
             estado: 'REVERTIDA',
             motivoReversion: 'Derivada al caso equivocado',
           },

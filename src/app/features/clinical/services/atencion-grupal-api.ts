@@ -1,19 +1,16 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable, catchError, of } from 'rxjs';
 
-import { AsistenciaDeClasesService } from '../../../api/generated/api/asistencia-de-clases.service';
 import { AtencionClinicaGrupalService } from '../../../api/generated/api/atencion-clinica-grupal.service';
+import { ClasesService } from '../../../api/generated/api/clases.service';
 import { DerivacionClinicaDeParticipantesService } from '../../../api/generated/api/derivacion-clinica-de-participantes.service';
 import { AtencionDeParticipante } from '../../../api/generated/model/atencion-de-participante';
 import { AtencionGrupal } from '../../../api/generated/model/atencion-grupal';
+import { Clase } from '../../../api/generated/model/clase';
 import { DerivacionDeParticipante } from '../../../api/generated/model/derivacion-de-participante';
 import { DerivacionesDeParticipante } from '../../../api/generated/model/derivaciones-de-participante';
-import { DetalleOperativoDeClase } from '../../../api/generated/model/detalle-operativo-de-clase';
 import { IniciarAtencionGrupalItem } from '../../../api/generated/model/iniciar-atencion-grupal-item';
 import { ResultadoDeAtencionGrupal } from '../../../api/generated/model/resultado-de-atencion-grupal';
-
-/** Tope de participantes por pagina del detalle operativo que acepta el backend. */
-const PARTICIPANTES_POR_PAGINA = 100;
 
 /** Motivo de acceso declarado (DP-03), o `null` si no se declaro ninguno. */
 export type MotivoDeAcceso = string | null;
@@ -32,7 +29,7 @@ export type MotivoDeAcceso = string | null;
 @Injectable({ providedIn: 'root' })
 export class AtencionGrupalApi {
   private readonly atencion = inject(AtencionClinicaGrupalService);
-  private readonly asistencia = inject(AsistenciaDeClasesService);
+  private readonly clases = inject(ClasesService);
   private readonly derivaciones = inject(DerivacionClinicaDeParticipantesService);
 
   /**
@@ -44,16 +41,14 @@ export class AtencionGrupalApi {
   }
 
   /**
-   * Titulo, horario y nombres de los participantes. El panel no nombra a nadie —solo ids—, y los
-   * nombres salen del detalle operativo de la asistencia (`inscripcion:read`).
+   * Titulo y horario de la clase (`clase:read`). Los nombres de los participantes ya vienen en el
+   * panel (contrato 0.118.0), asi que no hace falta el detalle operativo de la asistencia, que
+   * traia una pagina entera de personas solo para nombrarlas.
    *
-   * <p><b>Nunca falla</b>: sin el detalle el panel se sigue pudiendo usar, con el numero de
-   * inscripcion en lugar del nombre.
+   * <p><b>Nunca falla</b>: sin la clase el panel se sigue pudiendo usar, con "Clase N" de titulo.
    */
-  clase(consultorioId: number, claseId: number): Observable<DetalleOperativoDeClase | null> {
-    return this.asistencia
-      .detalleOperativo({ consultorioId, claseId, page: 0, size: PARTICIPANTES_POR_PAGINA })
-      .pipe(catchError(() => of(null)));
+  clase(consultorioId: number, claseId: number): Observable<Clase | null> {
+    return this.clases.verClase({ consultorioId, claseId }).pipe(catchError(() => of(null)));
   }
 
   /**

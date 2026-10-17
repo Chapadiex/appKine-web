@@ -174,7 +174,10 @@ test.describe('Pases contra el backend real', () => {
     await page.getByLabel('Motivo', { exact: true }).fill('Clase de cortesia descontada');
     const ajuste = respuestaDe(page, 'POST', AJUSTE);
     await page.getByRole('button', { name: 'Ajustar saldo', exact: true }).click();
-    expect((await ajuste).status()).toBe(200);
+    const respuestaAjuste = await ajuste;
+    expect(respuestaAjuste.status()).toBe(200);
+    // La pantalla relee la pagina del ledger: pide el ajuste sin el ledger entero (0.117.0).
+    expect(new URL(respuestaAjuste.url()).searchParams.get('sinMovimientos')).toBe('true');
     await expect(page.getByText(`Se ajusto el saldo de "${producto}"`)).toBeVisible();
     await expect(filaDe(page, producto)).toContainText('2 de 3');
     // El ajuste manual no cuenta como credito usado: el pase sigue anulable.
