@@ -1,5 +1,6 @@
 import { Page, expect, test } from '@playwright/test';
 
+import { CLASE, PERSONA_CON_PASES, instalarApiDeContraste } from './support/contraste';
 import { FECHA_MOVIL, PERSONA_ID, instalarApiMovil } from './support/movil';
 
 /**
@@ -29,6 +30,11 @@ interface Pantalla {
   readonly nombre: string;
   readonly ruta: string;
   readonly conSesion?: boolean;
+  /**
+   * Las pantallas de F9 (AKINE-09.02) usan la API simulada del contraste, que ya tiene clases,
+   * inscripciones, asistencia, atencion grupal, productos y pases.
+   */
+  readonly apiDeF9?: boolean;
   /** Algo que solo aparece cuando la pantalla ya pinto sus datos. */
   readonly listo: (page: Page) => Promise<void>;
 }
@@ -73,6 +79,62 @@ const PANTALLAS: readonly Pantalla[] = [
     nombre: 'ordenes y autorizaciones',
     ruta: `/pacientes/${PERSONA_ID}/autorizaciones`,
     listo: texto('AUT-OSDE-2026-99887766'),
+  },
+  // --- F9: clases, asistencia, atencion grupal, productos y pases (AKINE-09.02) -------------
+  {
+    nombre: 'clases de la semana',
+    ruta: '/clases?semana=2026-10-20',
+    apiDeF9: true,
+    listo: texto('Yoga suave'),
+  },
+  {
+    nombre: 'alta de clase',
+    ruta: '/clases/nueva',
+    apiDeF9: true,
+    listo: async (page) => {
+      await page.getByLabel('Oferta grupal').selectOption({ label: 'Pilates reformer' });
+      await expect(page.getByLabel('Cupo')).toBeVisible();
+    },
+  },
+  {
+    nombre: 'detalle de clase',
+    ruta: `/clases/${CLASE.id}`,
+    apiDeF9: true,
+    listo: texto('Sosa, Eva — posicion 1'),
+  },
+  {
+    nombre: 'clases del dia',
+    ruta: '/asistencia?fecha=2026-10-20',
+    apiDeF9: true,
+    listo: texto('Yoga suave'),
+  },
+  {
+    nombre: 'asistencia de clase con el resultado de un lote',
+    ruta: `/asistencia/${CLASE.id}`,
+    apiDeF9: true,
+    listo: async (page) => {
+      await page.getByRole('button', { name: 'Marcar presentes a los sin marcar' }).click();
+      await page.getByRole('button', { name: /Guardar asistencia/ }).click();
+      await expect(page.getByRole('region', { name: 'Resultado' })).toBeVisible();
+    },
+  },
+  {
+    nombre: 'atencion clinica de la clase',
+    ruta: `/atencion/clases/${CLASE.id}`,
+    apiDeF9: true,
+    listo: texto('Gomez, Luis'),
+  },
+  {
+    nombre: 'productos de pack',
+    ruta: '/productos',
+    apiDeF9: true,
+    listo: texto('Pack Pilates 8'),
+  },
+  {
+    nombre: 'pases de una persona',
+    ruta: `/pacientes/${PERSONA_CON_PASES}/pases`,
+    apiDeF9: true,
+    listo: texto('Agotado'),
   },
 ];
 
@@ -147,7 +209,11 @@ async function medir(page: Page) {
 test.describe('Ancho de telefono (375 px)', () => {
   for (const pantalla of PANTALLAS) {
     test(`${pantalla.nombre} no desborda y sus controles se pueden tocar`, async ({ page }) => {
-      await instalarApiMovil(page, { conSesion: pantalla.conSesion ?? true });
+      if (pantalla.apiDeF9) {
+        await instalarApiDeContraste(page);
+      } else {
+        await instalarApiMovil(page, { conSesion: pantalla.conSesion ?? true });
+      }
       await page.goto(pantalla.ruta);
       await pantalla.listo(page);
 

@@ -1,4 +1,14 @@
-import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  Injector,
+  afterNextRender,
+  computed,
+  effect,
+  inject,
+  signal,
+  untracked,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -15,6 +25,7 @@ import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { PermissionsStore } from '../../../../core/services/permissions.store';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { ConfirmacionConMotivo } from '../../../../shared/components/confirmacion-con-motivo/confirmacion-con-motivo';
+import { FocoAlMontar } from '../../../../shared/directives/foco-al-montar.directive';
 import { numeroDeclarado } from '../../../../shared/utils/numero-declarado';
 import { formatearFecha } from '../../../../shared/utils/instantes';
 import {
@@ -40,6 +51,9 @@ type Panel =
 
 const PRECIO_VALIDO = /^\d+([.,]\d{1,2})?$/;
 
+/** Tope de `vigenciaDias` del contrato 0.120.0 (`maximum: 3660`, diez anios). */
+const VIGENCIA_DIAS_MAXIMA = 3660;
+
 /**
  * Catalogo de productos de pack de la sede (M29, AKINE-08.06: RF-M29-001).
  *
@@ -56,7 +70,7 @@ const PRECIO_VALIDO = /^\d+([.,]\d{1,2})?$/;
  */
 @Component({
   selector: 'app-productos-de-pack-page',
-  imports: [ReactiveFormsModule, RouterLink, ConfirmacionConMotivo],
+  imports: [ReactiveFormsModule, RouterLink, ConfirmacionConMotivo, FocoAlMontar],
   templateUrl: './productos-de-pack-page.html',
   styleUrl: '../../activity.css',
 })
@@ -66,6 +80,8 @@ export class ProductosDePackPage {
   private readonly permisos = inject(PermissionsStore);
   private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly fb = inject(NonNullableFormBuilder);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly injector = inject(Injector);
 
   protected readonly creditos = creditosEnPalabras;
   protected readonly tipoDeProducto = etiquetaDeTipoDePase;
@@ -113,7 +129,11 @@ export class ProductosDePackPage {
     creditos: ['', [Validators.required, Validators.min(1)]],
     precio: ['', [Validators.required, Validators.pattern(PRECIO_VALIDO)]],
     moneda: ['ARS', [Validators.required, Validators.pattern(/^[A-Za-z]{3}$/)]],
-    vigenciaDias: ['', [Validators.required, Validators.min(1)]],
+    // Tope del contrato 0.120.0 (`maximum: 3660`, diez anios): el backend lo rechaza con 400.
+    vigenciaDias: [
+      '',
+      [Validators.required, Validators.min(1), Validators.max(VIGENCIA_DIAS_MAXIMA)],
+    ],
     vigenciaDesde: ['', Validators.required],
     vigenciaHasta: [''],
   });
@@ -242,6 +262,23 @@ export class ProductosDePackPage {
     this.intentado.set(false);
   }
 
+  /**
+   * "Cancelar" del formulario. El alta oculta "Nuevo producto" mientras esta abierta y lo vuelve a
+   * dibujar —un elemento nuevo— al cerrarse: el foco se lleva ahi a mano (WCAG 2.4.3). En la
+   * edicion, el "Editar" de la fila sigue en pantalla y la directiva del formulario le devuelve el
+   * foco sola.
+   */
+  protected cancelarFormulario(): void {
+    const eraAlta = this.panel().tipo === 'alta';
+    this.cerrarPanel();
+    if (eraAlta) {
+      afterNextRender(
+        () => this.host.nativeElement.querySelector<HTMLElement>('#boton-nuevo-producto')?.focus(),
+        { injector: this.injector },
+      );
+    }
+  }
+
   protected invalido(campo: keyof typeof this.formulario.controls): boolean {
     const control = this.formulario.controls[campo];
     return control.invalid && (control.touched || this.intentado());
@@ -249,6 +286,20 @@ export class ProductosDePackPage {
 
   protected errorDelServidor(campo: string): string {
     return this.errorAccion()?.campos[campo] ?? '';
+  }
+
+  /**
+   * `aria-describedby` de un campo: su ayuda, si tiene, y su error cuando lo hay —del formulario o
+   * del servidor—. Sin esto el lector de pantalla anunciaba "invalido" sin decir por que (WCAG
+   * 3.3.1, AKINE-09.02).
+   */
+  protected descritoPor(
+    campo: keyof typeof this.formulario.controls,
+    ayuda: string | null = null,
+  ): string | null {
+    const conError = this.invalido(campo) || this.errorDelServidor(campo) !== '';
+    const ids = [ayuda, conError ? `producto-${campo}-error` : null].filter((id) => id !== null);
+    return ids.length === 0 ? null : ids.join(' ');
   }
 
   protected guardar(): void {

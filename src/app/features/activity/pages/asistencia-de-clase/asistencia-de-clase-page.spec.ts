@@ -5,7 +5,9 @@ import { provideRouter } from '@angular/router';
 
 import { AsistenciaDeClasePage } from './asistencia-de-clase-page';
 import { TIMEOUT_AXE, esperarSinViolaciones } from '../../../../core/testing/axe';
+import { PermissionsStore } from '../../../../core/services/permissions.store';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
+import { RUTA_PERMISOS_EFECTIVOS } from '../../../../core/testing/rutas-api';
 import { errorInterceptor } from '../../../../core/interceptors/error.interceptor';
 import { provideApi } from '../../../../api/generated/provide-api';
 
@@ -132,6 +134,8 @@ describe('AsistenciaDeClasePage', () => {
       httpMock.expectOne(`${BASE}/inicio`).flush({ id: CLASE, estado: 'EN_CURSO' });
       await responderDetalle(fixture, detalle('EN_CURSO'));
       expect(texto(fixture)).toContain('En curso');
+      // "Iniciar clase" ya no esta: el foco queda en la clase, no en el body (WCAG 2.4.3).
+      expect(document.activeElement?.id).toBe('titulo-clase');
       expect(el(fixture).querySelector('input[name="asistencia-1"]')).not.toBeNull();
       // La de lista de espera no se marca.
       expect(el(fixture).querySelector('input[name="asistencia-4"]')).toBeNull();
@@ -172,6 +176,11 @@ describe('AsistenciaDeClasePage', () => {
 
       expect(texto(fixture)).toContain('Se guardaron 1 participante.');
       expect(texto(fixture)).toContain('Ruiz, Caro: La inscripcion esta cancelada');
+      // El resultado del lote se lleva el foco: el boton que lo disparo queda deshabilitado.
+      expect(document.activeElement?.getAttribute('aria-labelledby')).toBe('titulo-resultado-lote');
+      expect(
+        el(fixture).querySelector('[aria-live="polite"] #titulo-resultado-lote'),
+      ).not.toBeNull();
       // La fallida sigue pendiente para reintentar; la exitosa ya no.
       expect(boton(fixture, 'Guardar asistencia').textContent).toContain('(1)');
     },
@@ -245,10 +254,14 @@ describe('AsistenciaDeClasePage', () => {
     boton(fixture, 'Descartar cambios').click();
     fixture.detectChanges();
     expect(boton(fixture, 'Guardar asistencia').disabled).toBe(true);
+    // "Descartar cambios" desaparecio con las marcas: el foco vuelve a la lista.
+    expect(document.activeElement?.id).toBe('titulo-participantes');
   });
 
   it('muestra el historial de una asistencia', async () => {
     const fixture = await montar('REALIZADA');
+    // Un click de verdad enfoca el boton: es a donde vuelve el foco al cerrar el historial.
+    boton(fixture, 'Historial').focus();
     boton(fixture, 'Historial').click();
     fixture.detectChanges();
     expect(texto(fixture)).toContain('Cargando el historial');
@@ -265,11 +278,15 @@ describe('AsistenciaDeClasePage', () => {
     ]);
     await estabilizar(fixture);
     expect(texto(fixture)).toContain('Historial de Lopez, Bea');
+    expect(document.activeElement?.getAttribute('aria-labelledby')).toBe('titulo-historial');
     expect(texto(fixture)).toContain('Ausente a Presente');
     expect(texto(fixture)).toContain('motivo: Llego tarde');
     boton(fixture, 'Cerrar historial').click();
     fixture.detectChanges();
     expect(el(fixture).querySelector('#titulo-historial')).toBeNull();
+    await new Promise((resolve) => setTimeout(resolve));
+    expect(document.activeElement?.textContent).toContain('Historial');
+    expect(document.activeElement?.tagName).toBe('BUTTON');
   });
 
   it('un historial que falla lo dice', async () => {
@@ -292,6 +309,17 @@ describe('AsistenciaDeClasePage', () => {
     expect(texto(fixture)).toContain(
       'Se marcaron ausentes 2 sin resolver y se cancelaron 1 de la lista de espera.',
     );
+    expect(document.activeElement?.textContent).toContain('Clase cerrada');
+  });
+
+  it('sin inscripcion:manage no ofrece cerrar la clase: el backend la rechazaria (0.120.0)', async () => {
+    TestBed.inject(PermissionsStore).cargar().subscribe();
+    httpMock
+      .expectOne(RUTA_PERMISOS_EFECTIVOS)
+      .flush({ permissions: ['clase:manage', 'asistencia:manage', 'inscripcion:read'] });
+    const fixture = await montar('EN_CURSO');
+    expect(() => boton(fixture, 'Cerrar clase')).toThrow();
+    expect(el(fixture).querySelector('input[name="asistencia-1"]')).not.toBeNull();
   });
 
   it('un cierre rechazado muestra el motivo del servidor y relee', async () => {

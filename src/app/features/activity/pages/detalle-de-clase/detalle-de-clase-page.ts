@@ -1,4 +1,15 @@
-import { Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  Injector,
+  afterNextRender,
+  computed,
+  effect,
+  inject,
+  input,
+  signal,
+  untracked,
+} from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { catchError, forkJoin, of, switchMap } from 'rxjs';
@@ -19,6 +30,7 @@ import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { PermissionsStore } from '../../../../core/services/permissions.store';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { ConfirmacionConMotivo } from '../../../../shared/components/confirmacion-con-motivo/confirmacion-con-motivo';
+import { FocoAlMontar } from '../../../../shared/directives/foco-al-montar.directive';
 import { nuevaClaveDeIntento } from '../../../../shared/utils/clave-de-intento';
 import { ErrorActividad, traducirErrorActividad } from '../../models/actividad-errors';
 import {
@@ -73,7 +85,7 @@ type Panel =
  */
 @Component({
   selector: 'app-detalle-de-clase-page',
-  imports: [ReactiveFormsModule, RouterLink, ConfirmacionConMotivo],
+  imports: [ReactiveFormsModule, RouterLink, ConfirmacionConMotivo, FocoAlMontar],
   templateUrl: './detalle-de-clase-page.html',
   styleUrl: '../../activity.css',
 })
@@ -83,6 +95,8 @@ export class DetalleDeClasePage {
   private readonly permisos = inject(PermissionsStore);
   private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly fb = inject(NonNullableFormBuilder);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly injector = inject(Injector);
 
   readonly claseId = input('');
 
@@ -296,8 +310,35 @@ export class DetalleDeClasePage {
     this.panel.set({ tipo: 'cancelar' });
   }
 
+  /**
+   * Cierra el panel abierto. "Reprogramar" y "Cancelar la clase" se ocultan mientras hay un panel y
+   * vuelven a dibujarse —elementos nuevos— al cerrarlo: el foco se lleva al que lo abrio a mano
+   * (WCAG 2.4.3). La baja de un participante no lo necesita: su boton sigue en la fila y la
+   * confirmacion le devuelve el foco sola.
+   */
   protected cerrarPanel(): void {
+    const abierto = this.panel().tipo;
     this.panel.set({ tipo: 'ninguno' });
+    if (abierto === 'reprogramar') {
+      this.enfocarDespues('#boton-reprogramar');
+    } else if (abierto === 'cancelar') {
+      this.enfocarDespues('#boton-cancelar-clase');
+    }
+  }
+
+  /**
+   * El resultado de una accion, con el foco: el boton que la disparo suele desaparecer con ella
+   * (la persona elegida, la confirmacion de la fila, el panel) y el foco caeria al `body`.
+   */
+  private avisar(texto: string): void {
+    this.aviso.set(texto);
+    this.enfocarDespues('#aviso-clase');
+  }
+
+  private enfocarDespues(selector: string): void {
+    afterNextRender(() => this.host.nativeElement.querySelector<HTMLElement>(selector)?.focus(), {
+      injector: this.injector,
+    });
   }
 
   protected reprogramar(): void {
@@ -336,9 +377,7 @@ export class DetalleDeClasePage {
         next: () => {
           this.enviando.set(false);
           this.panel.set({ tipo: 'ninguno' });
-          this.aviso.set(
-            'Clase reprogramada. Si cambio el horario, los inscriptos reciben un aviso.',
-          );
+          this.avisar('Clase reprogramada. Si cambio el horario, los inscriptos reciben un aviso.');
           this.releer();
         },
         error: (error: unknown) => this.fallo(error),
@@ -357,7 +396,7 @@ export class DetalleDeClasePage {
       next: () => {
         this.enviando.set(false);
         this.panel.set({ tipo: 'ninguno' });
-        this.aviso.set(
+        this.avisar(
           'Clase cancelada. Las inscripciones quedaron canceladas y los inscriptos reciben un aviso.',
         );
         this.releer();
@@ -430,7 +469,7 @@ export class DetalleDeClasePage {
         next: (resultado) => {
           this.enviando.set(false);
           const nombre = [persona.apellido, persona.nombre].filter(Boolean).join(', ');
-          this.aviso.set(mensajeDeInscripcion(nombre, resultado.inscripcion));
+          this.avisar(mensajeDeInscripcion(nombre, resultado.inscripcion));
           this.persona.set(null);
           this.aceptaEspera.set(false);
           this.claveDeInscripcion = nuevaClaveDeIntento();
@@ -458,7 +497,7 @@ export class DetalleDeClasePage {
     this.api.confirmar(consultorioId, claseId, inscripcionId).subscribe({
       next: () => {
         this.enviando.set(false);
-        this.aviso.set(`Inscripcion de ${this.nombreDe(participante)} confirmada.`);
+        this.avisar(`Inscripcion de ${this.nombreDe(participante)} confirmada.`);
         this.releer();
       },
       error: (error: unknown) => this.fallo(error),
@@ -493,7 +532,7 @@ export class DetalleDeClasePage {
         const quien = (this.participantes() ?? []).find(
           (p) => p.inscripcion?.id !== undefined && p.inscripcion.id === promovida?.id,
         );
-        this.aviso.set(
+        this.avisar(
           `Se dio de baja a ${this.nombreDe(participante ?? undefined)}.` +
             (promovida
               ? ` ${this.nombreDe(quien) || `La persona #${promovida.personaId}`} entro desde la ` +
