@@ -9,10 +9,9 @@ import {
 } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { EMPTY, Subscription, catchError, expand, map, of, reduce } from 'rxjs';
+import { catchError, map, of } from 'rxjs';
 
 import { CatalogoClinicoService } from '../../../../api/generated/api/catalogo-clinico.service';
-import { PlataformaService } from '../../../../api/generated/api/plataforma.service';
 import { CatalogoConceptoResponse } from '../../../../api/generated/model/catalogo-concepto-response';
 import { CatalogoSolicitudResponse } from '../../../../api/generated/model/catalogo-solicitud-response';
 import {
@@ -24,9 +23,6 @@ import { textoRequerido } from '../../../../shared/validators/texto-requerido';
 import { RUTA_SUSCRIPCIONES_DE_PLATAFORMA } from '../../models/rutas-de-plataforma';
 import { CausaSolicitud, traducirErrorSolicitud } from '../../models/solicitud-errors';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
-
-/** Centros por pagina al nombrar los de la bandeja: el backend acota el tamano a 100. */
-const CENTROS_POR_PAGINA = 100;
 
 type FiltroEstado = 'TODAS' | 'PENDIENTE' | 'APROBADA' | 'RECHAZADA';
 type Desenlace = 'APROBAR' | 'RECHAZAR';
@@ -55,10 +51,9 @@ type Especialidades =
  * catalogo comun, la solicitud <b>sigue pendiente</b> y la pantalla lo dice en el campo que
  * choco: o se normaliza distinto, o se rechaza con una nota que diga que ya existe.
  *
- * <p><b>El centro por su nombre, no por su id</b> (RNF-M01-005). La solicitud trae solo el
- * `organizationId`; el nombre sale del listado de centros de la plataforma
- * (`listPlatformOrganizations`), recorrido por paginas hasta encontrar todos los de la bandeja. Un
- * centro dado de baja no figura en ese listado y se dice asi, sin mostrar el numero.
+ * <p><b>El centro por su nombre, no por su id</b> (RNF-M01-005). La solicitud trae
+ * `organizationName`, resuelto por el backend al leer; si viene `null` (el centro ya no se
+ * encuentra) se dice asi, sin mostrar el numero.
  *
  * <p><b>Sin contexto de tenant.</b> La bandeja es de todos los centros y el backend se la
  * entrega a la cuenta de plataforma con su token `pre_context`. Por eso esta pantalla no mira
@@ -72,7 +67,6 @@ type Especialidades =
 export class SolicitudesCatalogoPage {
   private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly catalogo = inject(CatalogoClinicoService);
-  private readonly plataforma = inject(PlataformaService);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly formBuilder = inject(FormBuilder);
   private readonly injector = inject(Injector);
@@ -86,11 +80,6 @@ export class SolicitudesCatalogoPage {
   protected readonly seleccionada = signal<CatalogoSolicitudResponse | null>(null);
   protected readonly desenlace = signal<Desenlace | null>(null);
   protected readonly especialidades = signal<Especialidades>({ tipo: 'cargando' });
-  /** Nombre de cada centro ya resuelto, por `organizationId`. */
-  private readonly nombresDeCentros = signal<ReadonlyMap<number, string>>(new Map());
-  /** `true` mientras se recorre el listado de centros para nombrar los de la bandeja. */
-  private readonly buscandoCentros = signal(false);
-  private pedidoDeCentros: Subscription | null = null;
 
   protected readonly enviando = signal(false);
   protected readonly intentos = signal(0);
@@ -137,7 +126,6 @@ export class SolicitudesCatalogoPage {
       .subscribe({
         next: (solicitudes) => {
           this.estado.set({ tipo: 'listo', solicitudes });
-          this.nombrarCentros(solicitudes);
         },
         error: (error: unknown) =>
           this.estado.set({ tipo: 'error', mensaje: traducirErrorSolicitud(error).mensaje }),
@@ -290,63 +278,12 @@ export class SolicitudesCatalogoPage {
       });
   }
 
-  /** El centro que pidio, por su nombre. Nunca el id crudo (RNF-M01-005). */
-  protected nombreDeCentro(organizationId: number | undefined): string {
-    const nombre =
-      organizationId === undefined ? undefined : this.nombresDeCentros().get(organizationId);
-    if (nombre !== undefined) {
-      return nombre;
-    }
-    return this.buscandoCentros() ? 'Buscando el centro…' : 'Centro dado de baja o no disponible';
-  }
-
   /**
-   * Resuelve el nombre de los centros de la bandeja que todavia no se conocen. Recorre el listado
-   * de la plataforma de a {@link CENTROS_POR_PAGINA} y corta en cuanto los encontro a todos. Si la
-   * lectura falla, la bandeja sigue funcionando: solo le falta el nombre.
+   * El centro que pidio, por su nombre. Nunca el id crudo (RNF-M01-005). Lo resuelve el backend al
+   * leer (`organizationName`, contrato 0.122.0); `null` solo si la organizacion ya no se encuentra.
    */
-  private nombrarCentros(solicitudes: readonly CatalogoSolicitudResponse[]): void {
-    const conocidos = this.nombresDeCentros();
-    const faltan = new Set(
-      solicitudes
-        .map((solicitud) => solicitud.organizationId)
-        .filter((id): id is number => id !== undefined && !conocidos.has(id)),
-    );
-    if (faltan.size === 0) {
-      return;
-    }
-    const pagina = (numero: number) =>
-      this.plataforma.listPlatformOrganizations({ page: numero, size: CENTROS_POR_PAGINA });
-
-    this.pedidoDeCentros?.unsubscribe();
-    this.buscandoCentros.set(true);
-    this.pedidoDeCentros = pagina(0)
-      .pipe(
-        expand((respuesta) => {
-          for (const centro of respuesta.content ?? []) {
-            faltan.delete(centro.id ?? -1);
-          }
-          const siguiente = (respuesta.page ?? 0) + 1;
-          return faltan.size > 0 && siguiente < (respuesta.totalPages ?? 0)
-            ? pagina(siguiente)
-            : EMPTY;
-        }),
-        reduce((nombres, respuesta) => {
-          for (const centro of respuesta.content ?? []) {
-            if (centro.id !== undefined && centro.name) {
-              nombres.set(centro.id, centro.name);
-            }
-          }
-          return nombres;
-        }, new Map(conocidos)),
-        catchError(() => of(null)),
-      )
-      .subscribe((nombres) => {
-        if (nombres !== null) {
-          this.nombresDeCentros.set(nombres);
-        }
-        this.buscandoCentros.set(false);
-      });
+  protected nombreDeCentro(solicitud: CatalogoSolicitudResponse): string {
+    return solicitud.organizationName || 'Centro dado de baja o no disponible';
   }
 
   protected etiquetaDeTipo(tipo: CatalogoSolicitudResponse['tipo']): string {
