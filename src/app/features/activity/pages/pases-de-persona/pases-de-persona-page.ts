@@ -19,6 +19,7 @@ import { TenantContextStore } from '../../../../core/services/tenant-context.sto
 import { ConfirmacionConMotivo } from '../../../../shared/components/confirmacion-con-motivo/confirmacion-con-motivo';
 import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
 import { PermisoDirective } from '../../../../shared/directives/permiso.directive';
+import { FocoAlMontar } from '../../../../shared/directives/foco-al-montar.directive';
 import { nuevaClaveDeIntento } from '../../../../shared/utils/clave-de-intento';
 import { formatearFecha, formatearInstante } from '../../../../shared/utils/instantes';
 import {
@@ -90,7 +91,7 @@ const ENTERO_CON_SIGNO = /^[+-]?\d+$/;
  */
 @Component({
   selector: 'app-pases-de-persona-page',
-  imports: [RouterLink, PermisoDirective, ConfirmacionConMotivo, Paginacion],
+  imports: [RouterLink, PermisoDirective, ConfirmacionConMotivo, Paginacion, FocoAlMontar],
   templateUrl: './pases-de-persona-page.html',
   styleUrl: '../../activity.css',
 })

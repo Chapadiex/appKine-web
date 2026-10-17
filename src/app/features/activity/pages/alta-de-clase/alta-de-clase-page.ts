@@ -1,4 +1,15 @@
-import { Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  Injector,
+  afterNextRender,
+  computed,
+  effect,
+  inject,
+  input,
+  signal,
+  untracked,
+} from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router, RouterLink } from '@angular/router';
@@ -54,6 +65,8 @@ export class AltaDeClasePage {
   private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly router = inject(Router);
   private readonly fb = inject(NonNullableFormBuilder);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly injector = inject(Injector);
 
   /** `?fecha=YYYY-MM-DD`: el dia desde el que se llego. */
   readonly fecha = input('', { transform: (valor: string | undefined) => valor ?? '' });
@@ -143,6 +156,13 @@ export class AltaDeClasePage {
     return this.error()?.campos[campo] ?? '';
   }
 
+  /** La ayuda del cupo siempre; el error, cuando lo hay (del formulario o del servidor). */
+  protected descripcionDeCapacidad(): string {
+    return this.invalido('capacidad') || this.errorDelServidor('capacidad') !== ''
+      ? 'clase-capacidad-ayuda clase-capacidad-error'
+      : 'clase-capacidad-ayuda';
+  }
+
   protected programar(): void {
     this.intentado.set(true);
     const consultorioId = this.tenant.consultorioId();
@@ -152,6 +172,11 @@ export class AltaDeClasePage {
     }
     if (this.formulario.invalid || this.enviando()) {
       this.formulario.markAllAsTouched();
+      // El foco al primer campo en error: el boton no dice que fallo (WCAG 3.3.1).
+      afterNextRender(
+        () => this.host.nativeElement.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus(),
+        { injector: this.injector },
+      );
       return;
     }
     const valor = this.formulario.getRawValue();

@@ -239,6 +239,8 @@ describe('DetalleDeClasePage', () => {
     httpMock.expectOne(INSCRIPCIONES).flush(PARTICIPANTES);
     await asentar(fixture);
     expect(textoDe(fixture)).toContain('Rios, Mara quedo inscripta con lugar');
+    // "Inscribir" desaparecio con la persona elegida: el foco queda en el resultado.
+    expect(document.activeElement?.id).toBe('aviso-clase');
   });
 
   it('la baja nombra a quien entro desde la espera', async () => {
@@ -298,6 +300,10 @@ describe('DetalleDeClasePage', () => {
     await asentar(fixture);
     const raiz = fixture.nativeElement as HTMLElement;
     expect((raiz.querySelector('#reprogramar-inicio') as HTMLInputElement).value).toBe('18:00');
+    // El formulario se abre con el foco en su primer campo.
+    expect(document.activeElement?.closest('form')?.getAttribute('aria-labelledby')).toBe(
+      'titulo-reprogramar',
+    );
     // El box actual queda elegido: reprogramar sin el dejaria que el servidor tome otro.
     const box = raiz.querySelector('#reprogramar-espacio') as HTMLSelectElement;
     expect(box.value).toBe('9');
@@ -326,6 +332,7 @@ describe('DetalleDeClasePage', () => {
     httpMock.expectOne(INSCRIPCIONES).flush(PARTICIPANTES);
     await asentar(fixture);
     expect(textoDe(fixture)).toContain('Clase reprogramada');
+    expect(document.activeElement?.id).toBe('aviso-clase');
 
     clickear(fixture, 'Cancelar la clase');
     escribir(fixture, '#clase-cancelar-motivo', 'Profesional enfermo');
@@ -346,6 +353,28 @@ describe('DetalleDeClasePage', () => {
     expect(texto).toContain('Clase cancelada');
     expect(texto).toContain('Cancelada — Profesional enfermo');
     expect(texto).not.toContain('Inscribir a una persona');
+  });
+
+  it('cerrar un panel sin cambios devuelve el foco al boton que lo abrio', async () => {
+    const fixture = await montar();
+    clickear(fixture, 'Reprogramar');
+    httpMock.expectOne(HABILITACIONES).flush({
+      restringidaPorEspacio: true,
+      espacios: [{ espacioId: 9, nombre: 'Sala grande', estado: 'ACTIVO', enServicio: true }],
+    });
+    await asentar(fixture);
+    clickear(fixture, 'Volver sin cambiar');
+    await asentar(fixture);
+    expect(document.activeElement?.id).toBe('boton-reprogramar');
+
+    clickear(fixture, 'Cancelar la clase');
+    await asentar(fixture);
+    const cancelar = Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll('button[type="button"]'),
+    ).find((b) => b.textContent?.trim() === 'Cancelar') as HTMLButtonElement;
+    cancelar.click();
+    await asentar(fixture);
+    expect(document.activeElement?.id).toBe('boton-cancelar-clase');
   });
 
   it('la version vieja al reprogramar se explica y relee', async () => {

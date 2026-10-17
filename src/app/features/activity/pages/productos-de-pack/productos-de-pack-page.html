@@ -22,14 +22,16 @@
   </div>
   @if (puedeGestionar() && panel().tipo === 'ninguno') {
     <div class="acciones">
-      <button type="button" class="boton" (click)="abrirAlta()">Nuevo producto</button>
+      <button id="boton-nuevo-producto" type="button" class="boton" (click)="abrirAlta()">
+        Nuevo producto
+      </button>
     </div>
   }
 </div>
 
 <div aria-live="polite">
   @if (aviso(); as texto) {
-    <p class="estado estado--ok">{{ texto }}</p>
+    <p class="estado estado--ok" akineFocoAlMontar>{{ texto }}</p>
   }
   @if (error(); as fallo) {
     <section class="tarjeta conflicto" aria-labelledby="titulo-error-productos">
@@ -49,7 +51,13 @@
 </div>
 
 @if (formularioAbierto()) {
-  <form class="tarjeta" [formGroup]="formulario" (ngSubmit)="guardar()" novalidate>
+  <form
+    class="tarjeta"
+    [formGroup]="formulario"
+    (ngSubmit)="guardar()"
+    novalidate
+    akineFocoAlMontar="campo"
+  >
     <h2>{{ enEdicion() ? 'Editar ' + enEdicion()!.nombre : 'Nuevo producto' }}</h2>
     @if (enEdicion()) {
       <p class="ayuda">
@@ -84,7 +92,7 @@
           id="producto-oferta"
           formControlName="ofertaId"
           [attr.aria-invalid]="invalido('ofertaId')"
-          aria-describedby="producto-oferta-ayuda"
+          [attr.aria-describedby]="descritoPor('ofertaId', 'producto-oferta-ayuda')"
         >
           <option value="">Elegi una oferta</option>
           @for (oferta of ofertasDelTipo(); track oferta.id) {
@@ -100,7 +108,9 @@
           }
         </p>
         @if (invalido('ofertaId')) {
-          <p class="estado estado--error">Elegi la oferta del producto.</p>
+          <p class="estado estado--error" id="producto-ofertaId-error">
+            Elegi la oferta del producto.
+          </p>
         }
       </div>
     }
@@ -114,12 +124,12 @@
         autocomplete="off"
         formControlName="nombre"
         [attr.aria-invalid]="invalido('nombre')"
+        [attr.aria-describedby]="descritoPor('nombre')"
       />
       @if (invalido('nombre')) {
-        <p class="estado estado--error">El nombre es obligatorio.</p>
-      }
-      @if (errorDelServidor('nombre'); as mensaje) {
-        <p class="estado estado--error">{{ mensaje }}</p>
+        <p class="estado estado--error" id="producto-nombre-error">El nombre es obligatorio.</p>
+      } @else if (errorDelServidor('nombre'); as mensaje) {
+        <p class="estado estado--error" id="producto-nombre-error">{{ mensaje }}</p>
       }
     </div>
 
@@ -145,9 +155,10 @@
           min="1"
           formControlName="creditos"
           [attr.aria-invalid]="invalido('creditos')"
+          [attr.aria-describedby]="descritoPor('creditos')"
         />
         @if (invalido('creditos')) {
-          <p class="estado estado--error">Tiene que ser al menos 1.</p>
+          <p class="estado estado--error" id="producto-creditos-error">Tiene que ser al menos 1.</p>
         }
       </div>
       <div class="campo">
@@ -159,9 +170,12 @@
           autocomplete="off"
           formControlName="precio"
           [attr.aria-invalid]="invalido('precio')"
+          [attr.aria-describedby]="descritoPor('precio')"
         />
         @if (invalido('precio')) {
-          <p class="estado estado--error">Un importe mayor que cero, con hasta dos decimales.</p>
+          <p class="estado estado--error" id="producto-precio-error">
+            Un importe mayor que cero, con hasta dos decimales.
+          </p>
         }
       </div>
       <div class="campo">
@@ -187,7 +201,7 @@
           min="1"
           formControlName="vigenciaDias"
           [attr.aria-invalid]="invalido('vigenciaDias')"
-          aria-describedby="producto-vigencia-dias-ayuda"
+          [attr.aria-describedby]="descritoPor('vigenciaDias', 'producto-vigencia-dias-ayuda')"
         />
         <p class="ayuda" id="producto-vigencia-dias-ayuda">
           @if (tipoElegido() === 'ABONO') {
@@ -197,7 +211,7 @@
           }
         </p>
         @if (invalido('vigenciaDias')) {
-          <p class="estado estado--error">Tiene que ser al menos 1.</p>
+          <p class="estado estado--error" id="producto-vigenciaDias-error">Entre 1 y 3660 dias.</p>
         }
       </div>
     </div>
@@ -210,9 +224,12 @@
           type="date"
           formControlName="vigenciaDesde"
           [attr.aria-invalid]="invalido('vigenciaDesde')"
+          [attr.aria-describedby]="descritoPor('vigenciaDesde')"
         />
         @if (invalido('vigenciaDesde')) {
-          <p class="estado estado--error">Indica desde cuando se vende.</p>
+          <p class="estado estado--error" id="producto-vigenciaDesde-error">
+            Indica desde cuando se vende.
+          </p>
         }
       </div>
       <div class="campo">
@@ -237,7 +254,7 @@
       <button type="submit" class="boton" [disabled]="enviando()">
         {{ enviando() ? 'Guardando…' : enEdicion() ? 'Guardar cambios' : 'Crear producto' }}
       </button>
-      <button type="button" class="boton boton--secundario" (click)="cerrarPanel()">
+      <button type="button" class="boton boton--secundario" (click)="cancelarFormulario()">
         Cancelar
       </button>
     </div>

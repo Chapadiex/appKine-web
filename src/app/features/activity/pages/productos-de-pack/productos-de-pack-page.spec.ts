@@ -166,12 +166,45 @@ describe('ProductosDePackPage', () => {
     TIMEOUT_AXE,
   );
 
+  it('el alta se abre con el foco adentro y "Cancelar" lo devuelve a "Nuevo producto"', async () => {
+    const fixture = await montar([]);
+    clickear(fixture, 'Nuevo producto');
+    await asentar(fixture);
+    expect(document.activeElement?.closest('form')).not.toBeNull();
+    expect(document.activeElement?.tagName).toMatch(/INPUT|SELECT/);
+
+    const cancelar = Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll('button[type="button"]'),
+    ).find((b) => b.textContent?.trim() === 'Cancelar') as HTMLButtonElement;
+    cancelar.click();
+    await asentar(fixture);
+    expect(document.activeElement?.id).toBe('boton-nuevo-producto');
+  });
+
   it('un formulario incompleto no sale a la red', async () => {
     const fixture = await montar([]);
     clickear(fixture, 'Nuevo producto');
     clickear(fixture, 'Crear producto');
     expect(textoDe(fixture)).toContain('Elegi la oferta del producto.');
     expect(textoDe(fixture)).toContain('El nombre es obligatorio.');
+    httpMock.expectNone((r) => r.method === 'POST');
+  });
+
+  it('una vigencia de mas de diez anios no sale a la red y el error queda asociado (0.120.0)', async () => {
+    const fixture = await montar([]);
+    clickear(fixture, 'Nuevo producto');
+    escribir(fixture, '#producto-vigencia-dias', '4000');
+    clickear(fixture, 'Crear producto');
+    expect(textoDe(fixture)).toContain('Entre 1 y 3660 dias.');
+    const campo = (fixture.nativeElement as HTMLElement).querySelector('#producto-vigencia-dias');
+    expect(campo?.getAttribute('aria-describedby')).toBe(
+      'producto-vigencia-dias-ayuda producto-vigenciaDias-error',
+    );
+    expect(
+      (fixture.nativeElement as HTMLElement)
+        .querySelector('#producto-nombre')
+        ?.getAttribute('aria-describedby'),
+    ).toBe('producto-nombre-error');
     httpMock.expectNone((r) => r.method === 'POST');
   });
 
@@ -229,6 +262,8 @@ describe('ProductosDePackPage', () => {
     responder();
     await asentar(fixture);
     expect(textoDe(fixture)).toContain('Los pases vendidos conservan su saldo');
+    // El aviso se lleva el foco: el panel de la baja ya no esta.
+    expect(document.activeElement?.textContent).toContain('Los pases vendidos conservan su saldo');
   });
 
   it('incluir bajas relee con el filtro y muestra el motivo', async () => {
