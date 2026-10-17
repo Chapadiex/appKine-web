@@ -221,13 +221,11 @@ simula el impacto de un cambio de horario, asi que no le mueven la cuenta a `flu
 - **`/espacios/disponibilidad` interpreta el `datetime-local` en la zona del navegador**, no en la de
   la sede (ver el PR). El spec pone las vigencias lejos de los bordes para no depender de eso.
 
-### Lo que sigue sin E2E contra el backend real
+### Lo que quedaba sin E2E contra el backend real
 
-| Pantalla                                | Por que                                                                |
-| --------------------------------------- | ---------------------------------------------------------------------- |
-| `/catalogo/nomencladores/:id/vigencias` | Necesita un nomenclador propio sembrado; queda para la proxima tanda   |
-| `/auth/sesion-expirada`                 | Exige vencer el refresh; hoy solo la cubre el unitario                 |
-| `/auth/invitacion` (aceptar)            | El spec abre y cancela; aceptar crea una cuenta (un alta mas del cupo) |
+Las tres pantallas que esta tanda dejo afuera (`/catalogo/nomencladores/:id/vigencias`,
+`/auth/sesion-expirada` y aceptar `/auth/invitacion`) tienen spec propio desde el 17/10/2026: ver
+"Los huecos del inventario, con centro propio" mas abajo.
 
 ## Asistencia de clases (F9, `e2e/flujo-asistencia.spec.ts`)
 
@@ -302,8 +300,8 @@ Son dos altas por archivo dentro del cupo de `esperarCupoDeRegistro`. Ninguno us
 | Permisos por rol sobre la plata (PROFESIONAL)                   | Si       | `riesgo-permisos-de-la-plata`                                                                                     |
 | Permisos por rol sobre lo clinico (ADMINISTRATIVO)              | Si       | `flujo-historia-administrativa`, `acceso-clinico`                                                                 |
 | Permisos adicionales de un colaborador                          | Si       | `flujo-colaboradores`                                                                                             |
-| `/catalogo/nomencladores/:id/vigencias`                         | No       | Ver la tabla de la quinta tanda                                                                                   |
-| `/auth/sesion-expirada`, aceptar `/auth/invitacion`             | No       | Ver la tabla de la quinta tanda                                                                                   |
+| `/catalogo/nomencladores/:id/vigencias`                         | Si       | `nomenclador-vigencias` (17/10)                                                                                   |
+| `/auth/sesion-expirada`, aceptar `/auth/invitacion`             | Si       | `sesion-expirada`, `invitacion-aceptada` (17/10)                                                                  |
 
 La atencion clinica, las clases y los pases/abonos los cubren sus propios PR y no entran aca: ver
 el inventario completo al final.
@@ -354,7 +352,31 @@ ningun spec por pantalla puede: que lo que deja un modulo sea lo que el siguient
 - **La profesional trabaja en un `browser.newContext()` propio**: la sesion del navegador de la
   administradora no se toca, y la rotacion del refresh no las cruza.
 
-## Inventario: que pantallas tienen E2E contra el backend real (16/10/2026)
+## Los huecos del inventario, con centro propio (17/10/2026)
+
+Las cuatro pantallas que el inventario del 16/10 daba sin cubrir. Proyecto `chromium`, sin
+`route.fulfill` ni esperas fijas; las tres que operan sobre una sede siembran su centro con
+`sembrarCentroPropio` (`e2e/support/centro-propio.ts`).
+
+| Spec                    | Que recorre                                                                                                                                                                           | Lo que afirma contra el backend real                                                                                                                                                                     |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `sesion-expirada`       | Cuenta propia adentro → la misma cuenta, desde otro cliente, cierra todas sus sesiones (`DELETE /auth/sessions`) → la proxima peticion de la pantalla → "Volver a iniciar sesion"     | El 401 de la peticion y el del refresh los emite el servidor; la pantalla conserva `volverA` y, tras ingresar, el usuario vuelve a `/pacientes`                                                          |
+| `invitacion-aceptada`   | Invitacion por la API a alguien sin cuenta → el enlace real de Mailpit → nombre y contrasena en `/auth/invitacion` → aceptar → ingresar con esa contrasena                            | `cuentaCreada: true` en la organizacion y la sede del centro; la invitacion figura `ACEPTADA` como PROFESIONAL; el mismo enlace ya no abre nada; la cuenta entra directo al centro                       |
+| `nomenclador-vigencias` | Nomenclador PROPIO por la API → por pantalla: una vigencia vieja y otra nueva del mismo codigo, una tercera que las pisa, baja de la vieja con motivo, filtro por codigo              | Las fechas `datetime-local` viajan como la hora de la SEDE (el navegador corre en otra zona); "Activa, fuera de ventana" y "Rige hoy"; `nomenclador-vigencia-overlap` en el campo; la baja con su motivo |
+| `clase-reprogramada`    | Clase futura con dos inscriptas → "Reprogramar" al dia siguiente, otro horario y otro cupo → despues, otro operador reprograma por la API mientras la pantalla tiene la version vieja | Misma clase y mismas inscripciones en el horario nuevo de la sede, "Reprogramada" en el historial; `concurrent-modification` sin pisar lo del otro operador                                              |
+
+- **El 401 del access token se provoca, la muerte de la sesion no.** El access token sigue valido
+  diez minutos despues de revocar (ADR-0017). `sesion-expirada` le rompe la firma a UNA peticion
+  con `route.continue` —la peticion igual viaja al backend real, que responde su 401—; el refresh
+  revocado lo rechaza el servidor de verdad.
+- **Defecto de pantalla encontrado y corregido:** al morir la sesion, `limpiarSesion()` cambia el
+  contexto y la pantalla (el padron, y casi todas por `contextEpoch`) vuelve a pedir sus datos
+  antes de que la navegacion la destruya. Esa peticion sale sin token, su refresh tambien da 401,
+  y como la sesion ya era `anonimo` el interceptor mandaba al login pelado: "Tu sesion se cerro"
+  duraba un instante y el `volverA` se perdia. Ahora el interceptor no navega si el usuario ya esta
+  en `/auth/` o yendo ahi (`yaEstaEnAuth`, con dos unitarios). El refresh de mas sigue saliendo.
+
+## Inventario: que pantallas tienen E2E contra el backend real (17/10/2026)
 
 Cuenta solo lo que corre contra el backend REAL, sin `route.fulfill` (los de contraste y movil
 simulan la API y no entran). Ruta → spec que la recorre.
@@ -363,8 +385,8 @@ simulan la API y no entran). Ruta → spec que la recorre.
 | ----------------------------------------------------------- | -------- | ----------------------------------------------------------------------------------------------- |
 | `/auth/ingresar`, `registro`, `activar`, `restablecer`      | Si       | `auth-flujo`, `cuenta-ciclo-real`                                                               |
 | `/auth/reenviar-activacion`                                 | Si       | `flujo-reenvio-y-vinculo`                                                                       |
-| `/auth/invitacion` (abrir; aceptar no)                      | Parcial  | `flujo-invitaciones`                                                                            |
-| `/auth/sesion-expirada`                                     | No       | Exige vencer el refresh; solo el unitario                                                       |
+| `/auth/invitacion` (abrir, cancelar, aceptar)               | Si       | `flujo-invitaciones`, `invitacion-aceptada`                                                     |
+| `/auth/sesion-expirada`                                     | Si       | `sesion-expirada`                                                                               |
 | `/seleccionar-contexto`                                     | Si       | `contexto-sin-fuga`, los que ingresan como profesional                                          |
 | `/organizacion`, `suscripcion`, `sedes`, `sedes/nueva`      | Si       | `flujo-suscripcion`, `flujo-sedes`                                                              |
 | `/organizacion/colaboradores` (alta, invitaciones, avisos)  | Si       | `flujo-colaboradores`, `flujo-invitaciones`, `flujo-notificaciones`, `flujo-desvinculacion`     |
@@ -372,7 +394,7 @@ simulan la API y no entran). Ruta → spec que la recorre.
 | `/espacios`, `nuevo`, `disponibilidad`                      | Si       | `flujo-espacios`, `flujo-disponibilidad-resuelta`                                               |
 | `/horarios`, `excepciones`, `efectivo`, `calendario`        | Si       | `flujo-horarios`, `flujo-disponibilidad-resuelta`                                               |
 | `/catalogo/:tipo`, `/catalogo/solicitudes`                  | Si       | `flujo-catalogo`                                                                                |
-| `/catalogo/nomencladores/:id/vigencias`                     | No       | Necesita un nomenclador propio sembrado                                                         |
+| `/catalogo/nomencladores/:id/vigencias`                     | Si       | `nomenclador-vigencias`                                                                         |
 | `/servicios/catalogo`, `ofertas`, `habilitaciones`          | Si       | `flujo-servicios`                                                                               |
 | `/servicios/ofertas/:id/practicas`, `precios`               | Si       | `flujo-practicas-y-aranceles`, `flujo-servicios`                                                |
 | `/contratacion/financiadores` y planes                      | Si       | `flujo-financiadores`                                                                           |
@@ -396,6 +418,6 @@ simulan la API y no entran). Ruta → spec que la recorre.
 | **F9** `/pacientes/:id/pases` (pases y abonos)              | Si       | `flujo-pases`, `circuito-f9`                                                                    |
 | **F9** `/atencion/clases/:claseId` (atencion grupal)        | Si       | `flujo-atencion-grupal`, `circuito-f9`                                                          |
 | **F9** derivacion de una participante a su Caso             | Si       | `flujo-atencion-grupal`, `circuito-f9` ("Derivar a un caso" en el panel de atencion grupal)     |
-| **F9** reprogramar una clase (`/clases/:id`, "Reprogramar") | No       | Ningun spec la recorre                                                                          |
+| **F9** reprogramar una clase (`/clases/:id`, "Reprogramar") | Si       | `clase-reprogramada`                                                                            |
 | **F9** renovacion automatica de abonos                      | Parcial  | `flujo-pases` enciende y apaga la marca; la renovacion la hace un job del backend               |
 | `/estado`, 404, `/sin-permiso`                              | Si       | `smoke`, `riesgo-permisos-de-la-plata`                                                          |
