@@ -1,3 +1,4 @@
+import { HttpResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { ReporteResponse } from '../../../api/generated/model/reporte-response';
 import { Observable } from 'rxjs';
@@ -32,15 +33,18 @@ export class ReportesApi {
    * <p><b>El `Accept` va fijo en `text/csv`.</b> Sin el, el cliente generado elige
    * `application/problem+json` —es el primer tipo JSON de la lista—, pide la respuesta como JSON
    * y el servidor, que produce CSV, contesta 406 antes de entrar al metodo.
+   *
+   * <p><b>Se pide la respuesta entera y no solo el cuerpo</b>: el nombre del archivo lo decide el
+   * servidor en `Content-Disposition`, igual que el CSV de una presentacion.
    */
   exportar(
     consultorioId: number,
     reporte: CodigoDeReporte,
     desde: string,
     hasta: string,
-  ): Observable<string> {
-    return this.api.exportarReporte({ consultorioId, reporte, desde, hasta }, 'body', false, {
+  ): Observable<HttpResponse<string>> {
+    return this.api.exportarReporte({ consultorioId, reporte, desde, hasta }, 'response', false, {
       httpHeaderAccept: 'text/csv',
-    });
+    }) as Observable<HttpResponse<string>>;
   }
 }

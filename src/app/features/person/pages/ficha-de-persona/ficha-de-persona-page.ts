@@ -4,7 +4,12 @@ import { RouterLink } from '@angular/router';
 import { ConfirmacionConMotivo } from '../../../../shared/components/confirmacion-con-motivo/confirmacion-con-motivo';
 import { DatosAdministrativosDeHistoria } from '../../components/datos-administrativos-de-historia/datos-administrativos-de-historia';
 import { HitoResponse } from '../../../../api/generated/model/hito-response';
-import { PERMISO_COBRO_REGISTER, PERMISO_PACIENTE_MANAGE } from '../../../../core/models/permisos';
+import {
+  PERMISO_COBRO_REGISTER,
+  PERMISO_PASE_READ,
+  PERMISO_HC_READ,
+  PERMISO_PACIENTE_MANAGE,
+} from '../../../../core/models/permisos';
 import { PermisoDirective } from '../../../../shared/directives/permiso.directive';
 import { PersonApi } from '../../services/person-api';
 import { PrecargaDeFicha } from '../../services/precarga-de-ficha';
@@ -29,6 +34,7 @@ import {
   valorDeIndicador,
 } from '../../models/etiquetas-de-ficha';
 import { SECCION_COBERTURAS, coberturaDelResumen } from '../../models/etiquetas-de-cobertura';
+import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 
 /** Confirmacion abierta sobre la ficha. Solo una a la vez. */
 type TipoDeBaja = 'persona' | 'perfil';
@@ -101,6 +107,7 @@ interface ConteoPorCategoria {
   styleUrl: '../../person.css',
 })
 export class FichaDePersonaPage {
+  private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly api = inject(PersonApi);
   private readonly precarga = inject(PrecargaDeFicha);
   private readonly tenantContext = inject(TenantContextStore);
@@ -110,6 +117,8 @@ export class FichaDePersonaPage {
 
   protected readonly permisoManage = PERMISO_PACIENTE_MANAGE;
   protected readonly permisoCobro = PERMISO_COBRO_REGISTER;
+  protected readonly permisoPase = PERMISO_PASE_READ;
+  protected readonly permisoHistoria = PERMISO_HC_READ;
 
   protected readonly documentoEnUnaLinea = documentoEnUnaLinea;
   protected readonly nombreCompleto = nombreCompleto;
@@ -119,9 +128,11 @@ export class FichaDePersonaPage {
   protected readonly omisionEnPalabras = omisionEnPalabras;
   protected readonly etiquetaDeIndicador = etiquetaDeIndicador;
   protected readonly valorDeIndicador = valorDeIndicador;
-  protected readonly hitoEnPalabras = hitoEnPalabras;
+  protected readonly hitoEnPalabras = (hito: HitoResponse): string =>
+    hitoEnPalabras(hito, this.diaDeLaSede.zona());
   protected readonly nombreDeCategoria = nombreDeCategoria;
-  protected readonly fechaEnPalabras = fechaEnPalabras;
+  protected readonly fechaEnPalabras = (valor: string | undefined | null): string =>
+    fechaEnPalabras(valor, this.diaDeLaSede.zona());
   /** La seccion de coberturas (B-5) se pinta con forma propia; las demas, con la generica. */
   protected readonly seccionCoberturas = SECCION_COBERTURAS;
   protected readonly coberturaDelResumen = coberturaDelResumen;
@@ -169,6 +180,10 @@ export class FichaDePersonaPage {
   protected readonly rutaDocumentos = computed(
     () => `/pacientes/${this.personaId()}/documentos` as const,
   );
+  /** La historia se pide por persona: es la misma URL tenga o no historia abierta todavia. */
+  protected readonly rutaHistoriaClinica = computed(
+    () => `/historia-clinica/personas/${this.personaId()}` as const,
+  );
   protected readonly rutaCoberturas = computed(
     () => `/pacientes/${this.personaId()}/coberturas` as const,
   );
@@ -178,6 +193,8 @@ export class FichaDePersonaPage {
   protected readonly rutaCuentaCorriente = computed(
     () => `/pacientes/${this.personaId()}/cuenta-corriente` as const,
   );
+  /** Pases de la persona (M29): ruta de `activity`, aca solo la URL. */
+  protected readonly rutaPases = computed(() => `/pacientes/${this.personaId()}/pases` as const);
 
   constructor() {
     effect(() => {

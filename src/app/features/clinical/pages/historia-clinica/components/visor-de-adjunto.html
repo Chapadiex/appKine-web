@@ -1,0 +1,51 @@
+@switch (estado().tipo) {
+  @case ('sin-abrir') {
+    <p class="ayuda">
+      El archivo no se abre solo: abrirlo es una lectura clinica y queda registrada.
+    </p>
+    <div class="acciones">
+      <button type="button" class="boton" (click)="abrir()">Abrir el archivo</button>
+    </div>
+  }
+  @case ('bajando') {
+    <p class="estado estado--cargando" role="status">Bajando el archivo…</p>
+  }
+  @case ('error') {
+    <div role="alert">
+      <p class="estado estado--error">{{ error()?.mensaje }}</p>
+      @if (error()?.causa !== 'adjunto-no-disponible') {
+        <div class="acciones">
+          <button type="button" class="boton boton--secundario" (click)="abrir()">
+            Reintentar
+          </button>
+        </div>
+      }
+    </div>
+  }
+  @case ('listo') {
+    @if (archivo(); as a) {
+      <p class="estado estado--ok" role="status">{{ a.nombre }} · {{ a.tamano }}</p>
+
+      @if (urlDeLaImagen(); as imagen) {
+        <img class="historia__previa" [src]="imagen" [alt]="'Vista previa de ' + a.nombre" />
+      } @else if (urlDelPdf(); as pdf) {
+        <iframe
+          class="historia__previa historia__previa--pdf"
+          [src]="pdf"
+          [title]="'Vista previa de ' + a.nombre"
+        ></iframe>
+      } @else {
+        <p class="ayuda">
+          Este tipo de archivo no se muestra en pantalla: por seguridad solo se previsualizan
+          imagenes y PDF. Podes descargarlo y abrirlo con el programa que corresponda.
+        </p>
+      }
+
+      <div class="acciones">
+        <a class="boton boton--secundario" [href]="a.urlDescarga" [attr.download]="a.nombre">
+          Descargar
+        </a>
+      </div>
+    }
+  }
+}

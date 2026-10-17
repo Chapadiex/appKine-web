@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, ElementRef, afterRenderEffect, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { catchError, of } from 'rxjs';
 
@@ -30,7 +30,12 @@ const DESTINO_POR_DEFECTO = '/organizacion';
  */
 type EstadoContextos =
   | { readonly tipo: 'cargando' }
-  | { readonly tipo: 'eligiendo'; readonly contextos: readonly TenantContext[] }
+  | {
+      readonly tipo: 'eligiendo';
+      readonly contextos: readonly TenantContext[];
+      /** El ultimo que la cuenta eligio (`lastSelected`), si sigue habilitado. Va primero. */
+      readonly preseleccionado: TenantContext | null;
+    }
   | { readonly tipo: 'vacio' }
   | { readonly tipo: 'entrando'; readonly contexto: TenantContext; readonly automatico: boolean }
   | { readonly tipo: 'error'; readonly mensaje: string; readonly esDeRed: boolean };
@@ -97,6 +102,19 @@ export class ContextSelectorPage {
     return estado.tipo === 'eligiendo' ? estado.contextos : null;
   });
 
+  /**
+   * El contexto que la cuenta eligio la ultima vez (`GET /me/contexts` → `lastSelected`, desde
+   * `appKine-api` #133), o `null`. Se ofrece primero, marcado y con el foco: entrar al de siempre
+   * es un Enter. No se entra solo: con varios contextos elegir sigue siendo del usuario, y el
+   * puntero puede ser de otra pestaña o de hace meses.
+   */
+  protected readonly preseleccionado = computed(() => {
+    const estado = this.estado();
+    return estado.tipo === 'eligiendo' ? estado.preseleccionado : null;
+  });
+
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+
   /** Contexto al que se esta entrando, o `null`. */
   protected readonly contextoEnCurso = computed(() => {
     const estado = this.estado();
@@ -126,6 +144,13 @@ export class ContextSelectorPage {
     }
 
     this.cargar();
+
+    // Despues de pintar: el boton no existe hasta que la lista se renderiza.
+    afterRenderEffect(() => {
+      if (this.preseleccionado() !== null) {
+        this.host.nativeElement.querySelector<HTMLButtonElement>('.opcion--ultima')?.focus();
+      }
+    });
   }
 
   protected cargar(): void {
@@ -254,9 +279,18 @@ export class ContextSelectorPage {
     // Todos los campos vienen opcionales del generador porque el contrato no los marca
     // required. Un elemento incompleto no es elegible: seleccionarlo produciria un contexto
     // invalido que fallaria recien en la pantalla siguiente.
-    const utilizables = respuesta
-      .map((elemento) => this.aContexto(elemento))
-      .filter((contexto): contexto is TenantContext => contexto !== null);
+    let preseleccionado: TenantContext | null = null;
+    const utilizables: TenantContext[] = [];
+    for (const elemento of respuesta) {
+      const contexto = this.aContexto(elemento);
+      if (contexto === null) continue;
+      if (elemento.lastSelected === true && preseleccionado === null) {
+        preseleccionado = contexto;
+      } else {
+        utilizables.push(contexto);
+      }
+    }
+    if (preseleccionado !== null) utilizables.unshift(preseleccionado);
 
     if (utilizables.length === 0) {
       this.estado.set({ tipo: 'vacio' });
@@ -268,7 +302,7 @@ export class ContextSelectorPage {
       return;
     }
 
-    this.estado.set({ tipo: 'eligiendo', contextos: utilizables });
+    this.estado.set({ tipo: 'eligiendo', contextos: utilizables, preseleccionado });
   }
 
   private aEstadoDeError(error: Error): EstadoContextos {

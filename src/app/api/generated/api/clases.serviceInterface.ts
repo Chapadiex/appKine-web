@@ -87,7 +87,7 @@ export interface ClasesServiceInterface {
 
     /**
      * Programar una clase
-     * Crea un evento grupal unico sobre una oferta **GRUPAL**. No genera un turno por participante: la clase existe una sola vez cualquiera sea el numero de inscriptos (CA-M28-001-06).  **El servidor revalida todo**: que la oferta sea grupal y siga vigente ese dia, que el profesional siga habilitado y atendiendo en ese horario, que el cupo pedido entre en la oferta y en el box, y que **ni el profesional ni el espacio tengan un turno o una clase que se cruce**.  Esa ultima revalidacion es el punto de la etapa. Una clase y un turno **se disputan la misma fila de bloqueo de la sede**, asi que dos escrituras concurrentes se serializan y una sola gana: no se puede reservar un turno encima de una clase.
+     * Crea un evento grupal unico sobre una oferta **GRUPAL**. No genera un turno por participante: la clase existe una sola vez cualquiera sea el numero de inscriptos (CA-M28-001-06).  **El servidor revalida todo**: que la oferta sea grupal y siga vigente ese dia, que el profesional siga habilitado y atendiendo en ese horario, que el cupo pedido entre en la oferta y en el box, y que **ni el profesional ni el espacio tengan un turno o una clase que se cruce**.  **El box** lo elige quien programa con &#x60;espacioId&#x60;; si no lo manda y la oferta exige espacio, lo elige el servidor (el primer box apto y libre).  Esa ultima revalidacion es el punto de la etapa. Una clase y un turno **se disputan la misma fila de bloqueo de la sede**, asi que dos escrituras concurrentes se serializan y una sola gana: no se puede reservar un turno encima de una clase.
      * @endpoint post /api/v1/consultorios/{consultorioId}/clases/ofertas/{ofertaId}
 * @param requestParameters
      */
@@ -95,7 +95,7 @@ export interface ClasesServiceInterface {
 
     /**
      * Reprogramar una clase
-     * Mueve horario, profesional, espacio o capacidad. **Conserva la clase y sus participantes**: es la misma fila, con el mismo id, y las inscripciones cuelgan de el (CA-M28-005-06).  Revalida lo mismo que programar, excluyendose a si misma del control de solapamiento — una clase que se corre media hora chocaria contra si misma.  **No permite bajar la capacidad por debajo de los participantes confirmados** (RF-M12-012).
+     * Cambia horario, profesional, capacidad y, si se indica &#x60;espacioId&#x60;, el box. **Conserva la clase y sus participantes**: es la misma fila, con el mismo id, y las inscripciones cuelgan de el (CA-M28-005-06).  **El box:** con &#x60;espacioId&#x60; se valida ese box (activo, de la sede, habilitado para la oferta y libre en la franja). **Sin &#x60;espacioId&#x60;**, si la oferta exige espacio el servidor elige el primer box apto y libre, que **puede no ser el actual**; si la oferta no lo exige, la clase queda sin box. Para conservar el box actual, manda su &#x60;espacioId&#x60;.  Revalida lo mismo que programar, excluyendose a si misma del control de solapamiento — una clase que se corre media hora chocaria contra si misma.  **No permite bajar la capacidad por debajo de los participantes confirmados** (RF-M12-012).
      * @endpoint post /api/v1/consultorios/{consultorioId}/clases/{claseId}/reprogramacion
 * @param requestParameters
      */

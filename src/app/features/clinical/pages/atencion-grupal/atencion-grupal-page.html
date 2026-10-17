@@ -1,0 +1,396 @@
+<p>
+  <a class="enlace" [routerLink]="'/asistencia/' + claseId()">Volver a la asistencia de la clase</a>
+</p>
+
+<h1>Atencion clinica: {{ titulo() }}</h1>
+
+<p class="descripcion">
+  Cada participante que estuvo y fue derivado a un caso clinico tiene <b>su propia atencion</b>, que
+  se registra y se cierra por separado. Esta pantalla las abre; lo clinico se carga en la atencion
+  de cada uno.
+</p>
+
+@switch (estado().tipo) {
+  @case ('cargando') {
+    <p class="estado estado--cargando" role="status">Cargando la clase…</p>
+  }
+  @case ('error') {
+    @if (error(); as fallo) {
+      <section class="tarjeta" role="alert" aria-labelledby="titulo-error-grupal">
+        <h2 id="titulo-error-grupal">No se pudo cargar la atencion de la clase</h2>
+        <p class="estado estado--error">{{ fallo.mensaje }}</p>
+        <div class="acciones">
+          <button type="button" class="boton boton--secundario" (click)="cargar()">
+            Reintentar
+          </button>
+        </div>
+      </section>
+    }
+  }
+  @case ('listo') {
+    @if (listo()?.clase; as clase) {
+      <p class="ayuda">{{ instante(clase.inicio) }}</p>
+    }
+
+    @if (!clinica()) {
+      <section class="tarjeta" aria-labelledby="titulo-no-clinica">
+        <h2 id="titulo-no-clinica">Esta clase no genera registro clinico</h2>
+        <p>
+          La oferta de esta clase no pide registro clinico, asi que sus participantes no tienen
+          atencion clinica que abrir. La asistencia se toma igual desde la clase.
+        </p>
+      </section>
+    } @else {
+      @if (pidiendoMotivo()) {
+        <section class="tarjeta" aria-labelledby="titulo-motivo-grupal">
+          <h2 id="titulo-motivo-grupal">Declara el motivo del acceso</h2>
+          <p class="ayuda">
+            No figura que atiendas a algun participante en esta sede. Para abrir su atencion o ver
+            sus derivaciones tenes que declarar el motivo. Queda registrado junto con cada operacion
+            que hagas en esta pantalla.
+          </p>
+          <form (submit)="$event.preventDefault(); declararMotivo()">
+            <div class="campo">
+              <label for="motivo-acceso-grupal">Motivo del acceso</label>
+              <input
+                id="motivo-acceso-grupal"
+                type="text"
+                autocomplete="off"
+                [value]="motivoEscrito()"
+                [attr.aria-invalid]="intentoMotivo() && motivoEscrito().trim() === ''"
+                [attr.aria-describedby]="
+                  intentoMotivo() && motivoEscrito().trim() === ''
+                    ? 'motivo-acceso-grupal-error'
+                    : null
+                "
+                (input)="motivoEscrito.set($any($event.target).value)"
+              />
+              @if (intentoMotivo() && motivoEscrito().trim() === '') {
+                <p id="motivo-acceso-grupal-error" class="campo__error">
+                  Sin motivo no se puede seguir.
+                </p>
+              }
+            </div>
+            <div class="acciones">
+              <button type="submit" class="boton">Declarar y seguir</button>
+            </div>
+          </form>
+        </section>
+      }
+
+      <div aria-live="polite">
+        @if (lote(); as resumen) {
+          <section class="tarjeta" aria-labelledby="titulo-resultado-atenciones">
+            <h2 id="titulo-resultado-atenciones">Resultado</h2>
+            <p class="estado estado--ok">
+              Se abrieron {{ resumen.exitosos }}
+              {{ resumen.exitosos === 1 ? 'atencion' : 'atenciones' }}.
+            </p>
+            @if (resumen.fallos.length > 0) {
+              <p class="estado estado--error">{{ resumen.fallos.length }} no se pudieron abrir:</p>
+              <ul>
+                @for (fallo of resumen.fallos; track fallo.inscripcionId) {
+                  <li>
+                    <b>{{ fallo.nombre }}</b
+                    >: {{ fallo.mensaje }}
+                    @if (fallo.derivacionIds.length > 0) {
+                      @if (eleccionEnLote(fallo.inscripcionId); as eleccion) {
+                        @if (eleccion.error; as problema) {
+                          <p class="estado estado--error" role="alert">{{ problema.mensaje }}</p>
+                        }
+                        @if (eleccion.lista === null) {
+                          @if (eleccion.error === null) {
+                            <p class="estado estado--cargando" role="status">
+                              Cargando las derivaciones…
+                            </p>
+                          }
+                        } @else if (elegibles(eleccion).length === 0) {
+                          <p class="estado estado--vacio">
+                            Ya no tiene vigente ninguna de las derivaciones ofrecidas. Volve a
+                            cargar la clase.
+                          </p>
+                        } @else {
+                          <div class="acciones">
+                            @for (derivacion of elegibles(eleccion); track derivacion.id) {
+                              <button
+                                type="button"
+                                class="boton"
+                                [disabled]="enVuelo() !== null"
+                                (click)="iniciarDesdeLote(eleccion.fila, derivacion)"
+                              >
+                                Iniciar desde: {{ numeroDeCaso(derivacion)
+                                }}<span class="visualmente-oculto"> para {{ fallo.nombre }}</span>
+                              </button>
+                            }
+                          </div>
+                        }
+                        <div class="acciones">
+                          <button
+                            type="button"
+                            class="boton boton--secundario"
+                            (click)="cerrarDerivaciones()"
+                          >
+                            No elegir ahora
+                          </button>
+                        </div>
+                      } @else {
+                        <div class="acciones">
+                          <button
+                            type="button"
+                            class="boton boton--secundario"
+                            [disabled]="enVuelo() !== null"
+                            (click)="elegirEnLote(fallo)"
+                          >
+                            Elegir la derivacion<span class="visualmente-oculto">
+                              de {{ fallo.nombre }}</span
+                            >
+                          </button>
+                        </div>
+                      }
+                    }
+                  </li>
+                }
+              </ul>
+            }
+          </section>
+        }
+      </div>
+      @if (errorDeAccion(); as fallo) {
+        <p class="estado estado--error" role="alert">{{ fallo.mensaje }}</p>
+      }
+
+      <section class="tarjeta" aria-labelledby="titulo-participantes-grupal">
+        <h2 id="titulo-participantes-grupal">Participantes</h2>
+
+        @if (filas().length === 0) {
+          <p class="estado estado--vacio">
+            Todavia no hay asistencia registrada. Se atiende a quien estuvo: primero se toma lista.
+          </p>
+        } @else {
+          <div class="acciones">
+            <button
+              type="button"
+              class="boton"
+              [disabled]="enVuelo() !== null || pendientes().length === 0"
+              aria-describedby="ayuda-iniciar-todos"
+              (click)="iniciarParaTodos()"
+            >
+              @if (enVuelo() === 'lote') {
+                Abriendo atenciones…
+              } @else {
+                Iniciar para todos ({{ pendientes().length }})
+              }
+            </button>
+            <p id="ayuda-iniciar-todos" class="ayuda">
+              Abre la atencion de cada participante que estuvo y todavia no tiene ninguna. Los que
+              no se puedan abrir se listan con su causa, sin deshacer a los demas.
+            </p>
+          </div>
+
+          <div
+            class="tabla-scroll"
+            tabindex="0"
+            role="region"
+            aria-labelledby="titulo-tabla-atenciones"
+          >
+            <table class="tabla">
+              <caption id="titulo-tabla-atenciones">
+                Atencion de cada participante
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col">Participante</th>
+                  <th scope="col">Asistencia</th>
+                  <th scope="col">Atencion</th>
+                  <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (fila of filas(); track fila.inscripcionId) {
+                  <tr>
+                    <td>{{ fila.nombre }}</td>
+                    <td>{{ fila.asistencia }}</td>
+                    <td>
+                      @if (fila.atenciones.length === 0) {
+                        Sin atencion
+                      } @else {
+                        <ul>
+                          @for (atencion of fila.atenciones; track atencion.sesionId) {
+                            <li>
+                              {{ etiquetaDeAtencion(atencion) }}
+                              @if (rutaDeAtencion(atencion); as ruta) {
+                                <br /><a class="enlace" [routerLink]="ruta"
+                                  >Abrir la atencion<span class="visualmente-oculto">
+                                    de {{ fila.nombre }}</span
+                                  ></a
+                                >
+                              }
+                            </li>
+                          }
+                        </ul>
+                      }
+                    </td>
+                    <td>
+                      <div class="acciones-fila">
+                        @if (fila.estuvo && fila.atenciones.length === 0) {
+                          <button
+                            type="button"
+                            class="boton"
+                            [disabled]="enVuelo() !== null"
+                            (click)="iniciar(fila)"
+                          >
+                            @if (enVuelo() === fila.inscripcionId) {
+                              Abriendo…
+                            } @else {
+                              Iniciar atencion<span class="visualmente-oculto">
+                                de {{ fila.nombre }}</span
+                              >
+                            }
+                          </button>
+                        }
+                        <button
+                          type="button"
+                          class="boton boton--secundario"
+                          [disabled]="enVuelo() !== null"
+                          (click)="verDerivaciones(fila)"
+                        >
+                          Derivaciones<span class="visualmente-oculto"> de {{ fila.nombre }}</span>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </section>
+
+      @if (derivacionesAbajo(); as panel) {
+        <section class="tarjeta" aria-labelledby="titulo-derivaciones">
+          <h2 id="titulo-derivaciones">Derivaciones de {{ panel.fila.nombre }}</h2>
+          @if (panel.porAmbiguedad) {
+            <p class="ayuda">
+              Tiene mas de una derivacion vigente: elegi desde cual se abre esta atencion. La
+              atencion se numera dentro del caso de la derivacion.
+            </p>
+          }
+          @if (panel.error; as fallo) {
+            <p class="estado estado--error" role="alert">{{ fallo.mensaje }}</p>
+          }
+          @if (avisoDeReversion(); as aviso) {
+            <p class="estado estado--ok" role="status">{{ aviso }}</p>
+          }
+          @if (panel.lista === null) {
+            @if (panel.error === null) {
+              <p class="estado estado--cargando" role="status">Cargando las derivaciones…</p>
+            }
+          } @else if (panel.lista.length === 0) {
+            <p class="estado estado--vacio">
+              No tiene derivaciones en esta clase. Sin derivacion a un caso clinico no hay atencion
+              que abrir.
+            </p>
+          } @else {
+            <ul>
+              @for (derivacion of panel.lista; track derivacion.id) {
+                <li>
+                  <p>
+                    <b>{{ numeroDeCaso(derivacion) }}</b> ·
+                    {{ vigente(derivacion) ? 'Vigente' : 'Revertida' }}
+                    @if (derivacion.derivadaEn) {
+                      · derivada el {{ instante(derivacion.derivadaEn) }}
+                    }
+                  </p>
+                  @if (!vigente(derivacion) && derivacion.motivoReversion) {
+                    <p class="ayuda">Motivo de la reversion: {{ derivacion.motivoReversion }}</p>
+                  }
+                  @if (vigente(derivacion)) {
+                    @if (atencionDe(panel.fila, derivacion); as atencion) {
+                      <p class="ayuda">
+                        Ya tiene una atencion abierta desde esta derivacion, asi que la derivacion
+                        no se puede revertir: la atencion no se borra. Si se abrio por error,
+                        cerrala con lo que paso (ausente, si no hubo atencion).
+                      </p>
+                      @if (rutaDeAtencion(atencion); as ruta) {
+                        <a class="enlace" [routerLink]="ruta">Abrir la atencion</a>
+                      }
+                    } @else {
+                      <div class="acciones">
+                        @if (panel.fila.estuvo) {
+                          <button
+                            type="button"
+                            class="boton"
+                            [disabled]="enVuelo() !== null"
+                            (click)="iniciar(panel.fila, derivacion.id ?? null)"
+                          >
+                            Iniciar atencion desde esta derivacion
+                          </button>
+                        }
+                      </div>
+                      @if (revirtiendo() === derivacion.id) {
+                        <div class="campo">
+                          <label [for]="'motivo-reversion-' + derivacion.id"
+                            >Motivo para revertir la derivacion</label
+                          >
+                          <input
+                            [id]="'motivo-reversion-' + derivacion.id"
+                            type="text"
+                            autocomplete="off"
+                            [value]="motivoDeReversion()"
+                            [attr.aria-invalid]="faltaMotivoDeReversion()"
+                            [attr.aria-describedby]="
+                              faltaMotivoDeReversion() ? 'motivo-reversion-error' : null
+                            "
+                            (input)="escribirMotivoDeReversion($any($event.target).value)"
+                          />
+                          @if (faltaMotivoDeReversion()) {
+                            <p id="motivo-reversion-error" class="campo__error">
+                              Escribi por que se revierte.
+                            </p>
+                          }
+                        </div>
+                        <div class="acciones">
+                          <button
+                            type="button"
+                            class="boton boton--secundario"
+                            [disabled]="enVuelo() !== null"
+                            (click)="revertir(panel.fila, derivacion)"
+                          >
+                            Confirmar la reversion
+                          </button>
+                          <button
+                            type="button"
+                            class="boton boton--secundario"
+                            (click)="revirtiendo.set(null)"
+                          >
+                            No revertir
+                          </button>
+                        </div>
+                      } @else {
+                        <div class="acciones">
+                          <button
+                            type="button"
+                            class="boton boton--secundario"
+                            [disabled]="enVuelo() !== null"
+                            (click)="empezarReversion(derivacion)"
+                          >
+                            Revertir la derivacion
+                          </button>
+                        </div>
+                      }
+                    }
+                  }
+                </li>
+              }
+            </ul>
+          }
+          <div class="acciones">
+            <button type="button" class="boton boton--secundario" (click)="cerrarDerivaciones()">
+              Cerrar
+            </button>
+          </div>
+        </section>
+      }
+    }
+  }
+}

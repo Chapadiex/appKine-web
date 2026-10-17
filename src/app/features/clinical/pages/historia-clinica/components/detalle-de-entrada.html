@@ -1,0 +1,152 @@
+<p class="visualmente-oculto" aria-live="polite">{{ aviso() }}</p>
+
+@switch (estado().tipo) {
+  @case ('cargando') {
+    <p class="estado estado--cargando" role="status">Abriendo la entrada…</p>
+  }
+  @case ('error') {
+    <div role="alert">
+      <p class="estado estado--error">{{ error()?.mensaje }}</p>
+      <div class="acciones">
+        <button type="button" class="boton boton--secundario" (click)="releer()">Reintentar</button>
+      </div>
+    </div>
+  }
+  @case ('lista') {
+    @if (entrada(); as e) {
+      <dl class="detalle">
+        <dt>Tipo</dt>
+        <dd>{{ tipo() }}</dd>
+
+        <dt>Ocurrio</dt>
+        <dd>{{ fechaYHora(e.ocurrioEn) }}</dd>
+
+        <dt>Version</dt>
+        <dd>
+          {{ e.numeroVersion }}
+          @if (e.enmendada) {
+            <span class="marca-estado marca-estado--suspendida">Enmendada</span>
+          }
+        </dd>
+
+        @if (e.enmendada && e.motivoEnmienda) {
+          <dt>Motivo de la ultima enmienda</dt>
+          <dd>{{ e.motivoEnmienda }}</dd>
+        }
+      </dl>
+
+      <p class="historia__cuerpo">{{ e.cuerpo }}</p>
+
+      @if (!enmendando()) {
+        <div class="acciones">
+          <button type="button" class="boton" (click)="empezarEnmienda()">Enmendar</button>
+          @if (versiones() === null) {
+            <button type="button" class="boton boton--secundario" (click)="verVersiones()">
+              Ver versiones
+            </button>
+          }
+        </div>
+      } @else {
+        <form class="historia__formulario" (submit)="$event.preventDefault(); enmendar()">
+          <p class="ayuda">
+            La enmienda no borra lo escrito: crea la version {{ (e.numeroVersion ?? 0) + 1 }} y la
+            anterior queda en el historial con su autor y su fecha.
+          </p>
+
+          <div class="campo">
+            <label for="enmienda-cuerpo">Texto corregido</label>
+            <textarea
+              id="enmienda-cuerpo"
+              rows="6"
+              [value]="cuerpoNuevo()"
+              [attr.aria-invalid]="intentoEnviar() && faltaCuerpo()"
+              [attr.aria-describedby]="
+                intentoEnviar() && faltaCuerpo() ? 'enmienda-cuerpo-error' : null
+              "
+              (input)="cuerpoNuevo.set($any($event.target).value)"
+            ></textarea>
+            @if (intentoEnviar() && faltaCuerpo()) {
+              <p id="enmienda-cuerpo-error" class="campo__error">El texto no puede quedar vacio.</p>
+            }
+          </div>
+
+          <div class="campo">
+            <label for="enmienda-motivo">Motivo de la enmienda</label>
+            <input
+              id="enmienda-motivo"
+              type="text"
+              [value]="motivo()"
+              [attr.aria-invalid]="intentoEnviar() && faltaMotivo()"
+              [attr.aria-describedby]="
+                intentoEnviar() && faltaMotivo() ? 'enmienda-motivo-error' : null
+              "
+              (input)="motivo.set($any($event.target).value)"
+            />
+            @if (intentoEnviar() && faltaMotivo()) {
+              <p id="enmienda-motivo-error" class="campo__error">
+                Decí por que se corrige: queda en el historial junto con la version.
+              </p>
+            }
+          </div>
+
+          @if (errorDeEnmienda(); as problema) {
+            <div role="alert">
+              <p class="estado estado--error">{{ problema.mensaje }}</p>
+              @if (conflicto()) {
+                <div class="acciones">
+                  <button
+                    type="button"
+                    class="boton boton--secundario"
+                    (click)="releerTrasConflicto()"
+                  >
+                    Releer la entrada
+                  </button>
+                </div>
+              }
+            </div>
+          }
+
+          <div class="acciones">
+            <button type="submit" class="boton" [disabled]="enviando()">
+              @if (enviando()) {
+                Guardando…
+              } @else {
+                Guardar enmienda
+              }
+            </button>
+            <button type="button" class="boton boton--secundario" (click)="cancelarEnmienda()">
+              Cancelar
+            </button>
+          </div>
+        </form>
+      }
+
+      @if (errorDeVersiones(); as problema) {
+        <p class="estado estado--error" role="alert">{{ problema.mensaje }}</p>
+      }
+
+      @if (versiones(); as lista) {
+        <h3>Versiones</h3>
+        <ol
+          class="historia__versiones"
+          aria-label="Versiones de la entrada, de la mas nueva a la original"
+        >
+          @for (version of lista; track version.numeroVersion) {
+            <li>
+              <p class="historia__version-cabecera">
+                <b>Version {{ version.numeroVersion }}</b> · {{ fechaYHora(version.registradaEn) }}
+                @if (version.numeroVersion === 1) {
+                  · original
+                }
+              </p>
+              @if (version.motivoEnmienda) {
+                <p class="ayuda">Motivo: {{ version.motivoEnmienda }}</p>
+              }
+              <p class="historia__cuerpo">{{ version.cuerpo }}</p>
+            </li>
+          }
+        </ol>
+      }
+    }
+  }
+}

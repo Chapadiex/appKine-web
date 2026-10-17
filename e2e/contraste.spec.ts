@@ -1,6 +1,11 @@
 import { expect, test } from '@playwright/test';
 
-import { auditarContraste, instalarApiDeContraste } from './support/contraste';
+import {
+  CLASE,
+  PERSONA_CON_PASES,
+  auditarContraste,
+  instalarApiDeContraste,
+} from './support/contraste';
 import {
   FECHA,
   NOMBRE_OFERTA,
@@ -256,6 +261,53 @@ test.describe('Contraste de color', () => {
         pintura.bordeIzquierdo,
         'el indicador ocupa el borde, afuera de la caja donde se recorta el contenido',
       ).toBeGreaterThan(0);
+    });
+
+    /** Clases grupales (F9): la semana con una clase cancelada y el detalle con lista de espera. */
+    test('la semana de clases con una cancelada', async ({ page }) => {
+      await instalarApiDeContraste(page);
+      await page.goto('/clases?semana=2026-10-20');
+      await expect(page.getByText('Yoga suave', { exact: true })).toBeVisible();
+
+      await auditarContraste(page, 'semana de clases con una cancelada');
+    });
+
+    test('el detalle de una clase llena con lista de espera', async ({ page }) => {
+      await instalarApiDeContraste(page);
+      await page.goto(`/clases/${CLASE.id}`);
+      await expect(page.getByText('Sosa, Eva — posicion 1')).toBeVisible();
+
+      await auditarContraste(page, 'detalle de una clase llena con lista de espera');
+    });
+
+    /** Atencion clinica de la clase (AKINE-08.05), con las derivaciones de una participante. */
+    test('la atencion clinica de una clase con las derivaciones abiertas', async ({ page }) => {
+      await instalarApiDeContraste(page);
+      await page.goto(`/atencion/clases/${CLASE.id}`);
+      await expect(page.getByText('Atencion cerrada', { exact: false })).toBeVisible();
+      await page.getByRole('button', { name: /Derivaciones de Perez, Ana/ }).click();
+      await expect(
+        page.getByText('Motivo de la reversion: Derivada al caso equivocado'),
+      ).toBeVisible();
+
+      await auditarContraste(page, 'atencion clinica de una clase con derivaciones');
+    });
+
+    /** Productos de pack y pases (F9, M29): la fila dada de baja y las tres marcas de estado. */
+    test('los productos de pack con uno dado de baja', async ({ page }) => {
+      await instalarApiDeContraste(page);
+      await page.goto('/productos');
+      await expect(page.getByText('Pack Pilates 4', { exact: true })).toBeVisible();
+
+      await auditarContraste(page, 'productos de pack con uno dado de baja');
+    });
+
+    test('los pases de una persona: activo, agotado y vencido', async ({ page }) => {
+      await instalarApiDeContraste(page);
+      await page.goto(`/pacientes/${PERSONA_CON_PASES}/pases`);
+      await expect(page.getByText('Agotado', { exact: true })).toBeVisible();
+
+      await auditarContraste(page, 'pases de una persona con las tres marcas');
     });
 
     test('el padron sin ninguna fila', async ({ page }) => {

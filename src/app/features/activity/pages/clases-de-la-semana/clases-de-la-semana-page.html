@@ -1,0 +1,117 @@
+<h1>Clases</h1>
+
+<p class="descripcion">
+  Las clases grupales de esta sede, semana por semana. Una clase es un evento unico con su cupo: no
+  es un turno por persona. Desde el detalle de cada una se inscribe, se ve la lista de espera y se
+  reprograma o cancela.
+</p>
+
+<p *akinePermiso="PERMISO_CLASE_MANAGE">
+  <a class="boton" [routerLink]="RUTA_NUEVA_CLASE">Programar una clase</a>
+</p>
+
+<section class="tarjeta" aria-labelledby="titulo-semana">
+  <h2 id="titulo-semana">
+    Semana del {{ diaEnPalabras(lunes()) }} al {{ diaEnPalabras(domingo()) }}
+  </h2>
+
+  <div class="filtros">
+    <div class="campo">
+      <label for="clases-fecha">Ir a la semana de</label>
+      <input
+        id="clases-fecha"
+        name="clases-fecha"
+        type="date"
+        [value]="lunes()"
+        (change)="elegirFecha($any($event.target).value)"
+        aria-describedby="clases-fecha-ayuda"
+      />
+      <p class="ayuda" id="clases-fecha-ayuda">
+        Fecha local de la sede
+        @if (zona()) {
+          ({{ zona() }})
+        }
+        . Los horarios tambien se muestran en esa zona.
+      </p>
+    </div>
+    <div class="acciones">
+      <button type="button" class="boton boton--secundario" (click)="moverSemana(-1)">
+        Semana anterior
+      </button>
+      <button type="button" class="boton boton--secundario" (click)="irAHoy()">Esta semana</button>
+      <button type="button" class="boton boton--secundario" (click)="moverSemana(1)">
+        Semana siguiente
+      </button>
+    </div>
+  </div>
+</section>
+
+<div aria-live="polite">
+  @if (cargando()) {
+    <p class="estado estado--cargando">Leyendo las clases de la semana…</p>
+  }
+
+  @if (error(); as fallo) {
+    <section class="tarjeta conflicto" aria-labelledby="titulo-error-clases">
+      <h2 id="titulo-error-clases">No se pudieron leer las clases</h2>
+      <p class="estado estado--error">{{ fallo.mensaje }}</p>
+      <div class="acciones">
+        @if (fallo.accion === 'elegir-contexto') {
+          <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto de trabajo</a>
+        } @else {
+          <button type="button" class="boton" (click)="cargar()">Reintentar</button>
+        }
+      </div>
+    </section>
+  }
+</div>
+
+@if (clases() !== null) {
+  <section class="tarjeta" aria-labelledby="titulo-dias">
+    <h2 id="titulo-dias">{{ total() }} {{ total() === 1 ? 'clase' : 'clases' }} en la semana</h2>
+
+    <ul class="dias">
+      @for (dia of dias(); track dia.fecha) {
+        <li class="dia">
+          <h3 class="dia__fecha">{{ diaEnPalabras(dia.fecha) }}</h3>
+          @if (dia.clases.length === 0) {
+            <p class="ayuda">Sin clases.</p>
+          } @else {
+            <ul class="clases">
+              @for (clase of dia.clases; track clase.id) {
+                <li class="clase">
+                  <span class="clase__hora">{{ rango(clase) }}</span>
+                  <span>{{ nombre(clase) }}</span>
+                  @if (quienYDonde(clase); as detalle) {
+                    <span class="ayuda">{{ detalle }}</span>
+                  }
+                  <span
+                    class="marca-estado"
+                    [class.marca-estado--activa]="clase.estado === 'PROGRAMADA'"
+                    [class.marca-estado--revocada]="clase.estado === 'CANCELADA'"
+                  >
+                    {{ textoDeEstado(clase.estado) }}
+                  </span>
+                  <span>
+                    {{ ocupacion(clase) }}
+                    @if (clase.estado === 'PROGRAMADA' && lugaresLibres(clase) === 0) {
+                      — completa
+                    }
+                  </span>
+                  @if (clase.id) {
+                    <a class="enlace" [routerLink]="['/clases', clase.id]">
+                      Ver clase<span class="visualmente-oculto">
+                        {{ nombre(clase) }} del {{ diaEnPalabras(dia.fecha) }} a las
+                        {{ rango(clase) }}</span
+                      >
+                    </a>
+                  }
+                </li>
+              }
+            </ul>
+          }
+        </li>
+      }
+    </ul>
+  </section>
+}

@@ -2,6 +2,7 @@ import { AdjuntoResponse } from '../../../api/generated/model/adjunto-response';
 import { HitoResponse } from '../../../api/generated/model/hito-response';
 import { IndicadorResponse } from '../../../api/generated/model/indicador-response';
 import { SeccionOmitidaResponse } from '../../../api/generated/model/seccion-omitida-response';
+import { formatearFecha } from '../../../shared/utils/instantes';
 import { CategoriaDeAdjunto } from '../services/adjuntos-api';
 
 /**
@@ -98,8 +99,8 @@ export function etiquetaDeIndicador(indicador: IndicadorResponse): string {
  * a conocer las maquinas de estado de `scheduling` y de `billing`, que es exactamente la
  * dependencia que la etapa invirtio para que el 360 crezca sin tocar `person`.
  */
-export function hitoEnPalabras(hito: HitoResponse): string {
-  const cuando = fechaEnPalabras(hito.ocurrioEn);
+export function hitoEnPalabras(hito: HitoResponse, zona = ''): string {
+  const cuando = fechaEnPalabras(hito.ocurrioEn, zona);
   const titulo = hito.titulo ?? hito.tipo ?? 'Hecho registrado';
   const estado = hito.estado === undefined || hito.estado === '' ? '' : ` — ${hito.estado}`;
   return cuando === '' ? `${titulo}${estado}` : `${cuando} — ${titulo}${estado}`;
@@ -158,29 +159,8 @@ export function adjuntoNoDisponible(adjunto: AdjuntoResponse): boolean {
   return adjunto.estado === 'NO_DISPONIBLE';
 }
 
-/**
- * El tamano en unidades que se leen de un vistazo.
- *
- * <p>Base 1024 y una sola decimal. No es una medicion: es para que alguien decida si un escaneo de
- * "8,4 MB" conviene rehacerlo mas liviano, y para eso la precision exacta no aporta nada.
- */
-export function tamanoEnPalabras(bytes: number | undefined): string {
-  if (bytes === undefined || !Number.isFinite(bytes) || bytes < 0) {
-    return '';
-  }
-  if (bytes < 1024) {
-    return `${bytes} B`;
-  }
-  const kb = bytes / 1024;
-  if (kb < 1024) {
-    return `${redondear(kb)} kB`;
-  }
-  return `${redondear(kb / 1024)} MB`;
-}
-
-function redondear(valor: number): string {
-  return new Intl.NumberFormat('es-AR', { maximumFractionDigits: 1 }).format(valor);
-}
+/** Vive en `shared/utils/archivos`: lo comparten personas y adjuntos clinicos. */
+export { tamanoEnPalabras } from '../../../shared/utils/archivos';
 
 // -----------------------------------------------------------------------------------------
 // Fechas e importes
@@ -195,28 +175,12 @@ function redondear(valor: number): string {
  * empieza el 15 mostrada como el 14 es un dato equivocado en la pantalla que decide si al paciente
  * se lo puede atender.
  *
- * <p>Los instantes con hora si van por `Date`: ahi la conversion al huso local es lo correcto,
- * porque el hecho ocurrio en un momento y se mira desde donde se lo mira.
+ * <p>Los instantes con hora si van por `Date`, y se muestran en `zona` —la de la sede,
+ * `DiaDeLaSede.zona()`—: un documento subido a las 22:30 del 14 en Cordoba es del 14 aunque el
+ * navegador ya este en el 15. Sin zona, la del navegador. Ver `formatearFecha`.
  */
-export function fechaEnPalabras(valor: string | undefined | null): string {
-  if (valor === undefined || valor === null || valor === '') {
-    return '';
-  }
-
-  const soloFecha = /^(\d{4})-(\d{2})-(\d{2})$/.exec(valor);
-  if (soloFecha !== null) {
-    return `${soloFecha[3]}/${soloFecha[2]}/${soloFecha[1]}`;
-  }
-
-  const instante = new Date(valor);
-  if (Number.isNaN(instante.getTime())) {
-    return '';
-  }
-  return new Intl.DateTimeFormat('es-AR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  }).format(instante);
+export function fechaEnPalabras(valor: string | undefined | null, zona = ''): string {
+  return formatearFecha(valor, zona);
 }
 
 /**

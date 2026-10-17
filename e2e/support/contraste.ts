@@ -478,7 +478,130 @@ function pagina(contenido: readonly unknown[]): unknown {
 // El router
 // ---------------------------------------------------------------------------------------------
 
+/** Una clase llena con una persona en espera: el estado con mas marcas de la pantalla. */
+export const CLASE = {
+  id: 70,
+  ofertaId: 42,
+  ofertaNombre: 'Pilates reformer',
+  profesionalNombre: 'Lic. Diaz',
+  espacioId: 9,
+  espacioNombre: 'Sala grande',
+  profesionalId: 55,
+  estado: 'PROGRAMADA',
+  inicio: '2026-10-20T21:00:00Z',
+  fin: '2026-10-20T22:00:00Z',
+  capacidad: 2,
+  capacidadEfectiva: 2,
+  ocupados: 2,
+  version: 0,
+} as const;
+
+const PARTICIPANTES_DE_CLASE = [
+  {
+    nombre: 'Ana',
+    apellido: 'Perez',
+    tipoDocumento: 'DNI',
+    numeroDocumento: '30111222',
+    inscripcion: { id: 501, estado: 'RESERVADA' },
+  },
+  { nombre: 'Luis', apellido: 'Gomez', inscripcion: { id: 502, estado: 'CONFIRMADA' } },
+  {
+    nombre: 'Eva',
+    apellido: 'Sosa',
+    inscripcion: { id: 503, estado: 'LISTA_ESPERA', posicionEspera: 1 },
+  },
+];
+
+/** El panel de atencion clinica de la clase (AKINE-08.05). */
+const ATENCION_GRUPAL = {
+  claseId: CLASE.id,
+  clinica: true,
+  participantes: [
+    {
+      inscripcionId: 501,
+      nombre: 'Ana',
+      apellido: 'Perez',
+      estuvo: true,
+      resultadoAsistencia: 'PRESENTE',
+    },
+    {
+      inscripcionId: 502,
+      nombre: 'Luis',
+      apellido: 'Gomez',
+      estuvo: true,
+      resultadoAsistencia: 'PRESENTE_TARDE',
+      atenciones: [
+        { sesionId: 901, derivacionId: 31, estado: 'CERRADA', numeroEnCaso: 3, numeroSesion: 8 },
+      ],
+    },
+    {
+      inscripcionId: 503,
+      nombre: 'Eva',
+      apellido: 'Sosa',
+      estuvo: false,
+      resultadoAsistencia: 'AUSENTE',
+    },
+  ],
+};
+
 /** Como responde el padron: con filas, vacio, o con un error de servidor. */
+/** Productos de pack (M29): uno vigente y uno dado de baja, que pinta la fila atenuada. */
+const PRODUCTOS_DE_PACK = [
+  {
+    id: 9,
+    ofertaId: CLASE.ofertaId,
+    nombre: 'Pack Pilates 8',
+    creditos: 8,
+    precio: 40000,
+    moneda: 'ARS',
+    vigenciaDias: 60,
+    vigenciaDesde: '2026-10-01',
+    active: true,
+  },
+  {
+    id: 8,
+    ofertaId: CLASE.ofertaId,
+    nombre: 'Pack Pilates 4',
+    creditos: 4,
+    precio: 22000,
+    moneda: 'ARS',
+    vigenciaDias: 30,
+    vigenciaDesde: '2026-01-01',
+    vigenciaHasta: '2026-09-30',
+    active: false,
+    deactivationReason: 'Se discontinua',
+  },
+];
+
+export const PERSONA_CON_PASES = 512;
+
+/**
+ * Los pases de una persona con las tres marcas de estado —activo, agotado y vencido (el que escribe
+ * el job desde 08.07)— y uno anulado, que pinta la fila atenuada con el motivo.
+ */
+const PASES_DE_PERSONA = [
+  { estado: 'ACTIVO', vigente: true, creditosDisponibles: 5, id: 77 },
+  { estado: 'AGOTADO', vigente: true, creditosDisponibles: 0, id: 76 },
+  { estado: 'VENCIDO', vigente: false, creditosDisponibles: 0, id: 75 },
+  {
+    estado: 'ANULADO',
+    vigente: false,
+    creditosDisponibles: 0,
+    id: 74,
+    anuladoEn: '2026-08-02T13:00:00Z',
+    motivoAnulacion: 'Vendido por error',
+  },
+].map((pase) => ({
+  ...pase,
+  nombre: 'Pack Pilates 8',
+  creditosIniciales: 8,
+  vigenciaDesde: '2026-08-01',
+  vigenciaHasta: '2026-11-29',
+  precio: 40000,
+  moneda: 'ARS',
+  vendidoEn: '2026-08-01T13:00:00Z',
+}));
+
 export type ModoPadron = 'con-filas' | 'vacio' | 'error';
 
 export interface ApiDeContraste {
@@ -554,8 +677,96 @@ export async function instalarApiDeContraste(page: Page): Promise<ApiDeContraste
           'paciente:manage',
           'paciente:read',
           'turno:read',
+          'clase:read',
+          'clase:manage',
+          'inscripcion:read',
+          'inscripcion:manage',
+          'producto:read',
+          'producto:manage',
+          'pase:read',
+          'pase:manage',
+          'pase:adjust',
+          'sesion:register',
         ],
       });
+    }
+
+    // --- Clases grupales (F9) ----------------------------------------------------------
+    const clases = `/api/v1/consultorios/${CONSULTORIO_ID}/clases`;
+    if (camino === clases && metodo === 'GET') {
+      return json([CLASE, { ...CLASE, id: 71, titulo: 'Yoga suave', estado: 'CANCELADA' }]);
+    }
+    if (camino === `${clases}/${CLASE.id}` && metodo === 'GET') {
+      return json(CLASE);
+    }
+    if (camino === `${clases}/${CLASE.id}/cupos`) {
+      return json({
+        claseId: CLASE.id,
+        capacidad: 2,
+        capacidadEfectiva: 2,
+        ocupados: 2,
+        disponibles: 0,
+        enEspera: 1,
+      });
+    }
+    if (camino === `${clases}/${CLASE.id}/historial`) {
+      return json([{ id: 1, tipo: 'CREACION', ocurridoEn: '2026-10-14T13:00:00Z' }]);
+    }
+    if (camino === `${clases}/${CLASE.id}/inscripciones` && metodo === 'GET') {
+      return json(PARTICIPANTES_DE_CLASE);
+    }
+    // Atencion clinica de la clase (AKINE-08.05): una sin atencion, una cerrada y una ausente.
+    if (camino === `${clases}/${CLASE.id}/atencion-clinica` && metodo === 'GET') {
+      return json(ATENCION_GRUPAL);
+    }
+    if (camino === `${clases}/${CLASE.id}/detalle-operativo`) {
+      return json({
+        claseId: CLASE.id,
+        titulo: 'Pilates reformer',
+        inicio: CLASE.inicio,
+        content: PARTICIPANTES_DE_CLASE,
+      });
+    }
+    if (camino === `${clases}/${CLASE.id}/inscripciones/501/derivaciones`) {
+      return json({
+        derivaciones: [
+          {
+            id: 30,
+            casoClinicoId: 7,
+            numeroCaso: 2,
+            estado: 'VIGENTE',
+            derivadaEn: '2026-10-20T21:05:00Z',
+          },
+          {
+            id: 29,
+            casoClinicoId: 6,
+            numeroCaso: 1,
+            estado: 'REVERTIDA',
+            motivoReversion: 'Derivada al caso equivocado',
+          },
+        ],
+      });
+    }
+    if (camino === `/api/v1/consultorios/${CONSULTORIO_ID}/ofertas` && metodo === 'GET') {
+      return json([
+        { id: CLASE.ofertaId, nombreComercial: 'Pilates reformer', modalidad: 'GRUPAL' },
+      ]);
+    }
+    if (
+      camino === `/api/v1/consultorios/${CONSULTORIO_ID}/ofertas/${CLASE.ofertaId}/habilitaciones`
+    ) {
+      return json({ profesionales: [{ membershipId: 55, nombre: 'Lic. Diaz' }] });
+    }
+
+    // --- Productos de pack y pases (F9, M29) -------------------------------------------
+    if (camino === `/api/v1/consultorios/${CONSULTORIO_ID}/productos` && metodo === 'GET') {
+      return json(PRODUCTOS_DE_PACK);
+    }
+    if (camino === `/api/v1/consultorios/${CONSULTORIO_ID}/personas/${PERSONA_CON_PASES}/pases`) {
+      return json(PASES_DE_PERSONA);
+    }
+    if (camino === `/api/v1/personas/${PERSONA_CON_PASES}`) {
+      return json({ id: PERSONA_CON_PASES, apellido: 'Sosa', nombre: 'Eva' });
     }
 
     // --- Espacios ----------------------------------------------------------------------

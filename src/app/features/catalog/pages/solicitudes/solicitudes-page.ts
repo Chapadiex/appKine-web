@@ -23,6 +23,7 @@ import { CausaCatalogo, traducirErrorCatalogo } from '../../models/catalogo-erro
 import { TIPOS_DE_CATALOGO } from '../../models/tipos-de-catalogo';
 import { formatearInstante } from '../../../../shared/utils/instantes';
 import { textoRequerido } from '../../../../shared/validators/texto-requerido';
+import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 
 /** Filtro de estado del listado. Los tres valores son los del contrato, mas "todas". */
 type FiltroEstado = 'TODAS' | 'PENDIENTE' | 'APROBADA' | 'RECHAZADA';
@@ -61,6 +62,7 @@ type Estado =
   styleUrl: '../../catalog.css',
 })
 export class SolicitudesPage {
+  private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly catalogo = inject(CatalogoClinicoService);
   private readonly tenantContext = inject(TenantContextStore);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
@@ -69,7 +71,8 @@ export class SolicitudesPage {
 
   protected readonly permisoManage = PERMISO_CONSULTORIO_MANAGE;
   protected readonly tipos = TIPOS_DE_CATALOGO;
-  protected readonly formatearInstante = formatearInstante;
+  protected readonly formatearInstante = (instante: string | undefined | null): string | null =>
+    formatearInstante(instante, this.diaDeLaSede.zona());
 
   protected readonly estado = signal<Estado>({ tipo: 'cargando' });
   protected readonly filtroEstado = signal<FiltroEstado>('TODAS');

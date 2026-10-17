@@ -140,3 +140,63 @@ export const PERMISO_CAJA_OPERATE = 'caja:operate';
  * se lo da con alcance de actividad propia y lo avisa con una advertencia.
  */
 export const PERMISO_REPORTE_READ = 'reporte:read';
+
+/**
+ * Lectura de la Historia Clinica (M09, AKINE-04.01).
+ *
+ * <p>Solo decide si se OFRECE el enlace a la historia. No alcanza para leerla: sin relacion
+ * asistencial el backend pide ademas un motivo declarado (DP-03), y eso lo resuelve la pantalla de
+ * la historia. Por eso no se usa en un `permissionGuard`.
+ */
+export const PERMISO_HC_READ = 'hc:read';
+
+/**
+ * Registrar atenciones clinicas (M14). Solo decide si se OFRECE el enlace a la atencion clinica de
+ * una clase (AKINE-08.05): escribir en una atencion es ademas de quien la lleva, y eso lo decide el
+ * backend (409 `sesion-ajena`).
+ */
+export const PERMISO_SESION_REGISTER = 'sesion:register';
+
+/**
+ * Clases grupales (M28, AKINE-08.01). `clase:read` mira la grilla y los cupos —que no nombran a
+ * nadie—; `clase:manage` programa, reprograma y cancela. Son codigos propios y no `turno:*`
+ * (decision pendiente 9 del backend): una clase no es N turnos.
+ */
+export const PERMISO_CLASE_READ = 'clase:read';
+export const PERMISO_CLASE_MANAGE = 'clase:manage';
+
+/**
+ * Inscripciones a clases (M28, AKINE-08.02). <b>`inscripcion:read` no es `clase:read`</b>: la lista
+ * de participantes es la unica respuesta de M28 que lleva nombre y documento. `inscripcion:manage`
+ * inscribe, confirma y da de baja.
+ */
+export const PERMISO_INSCRIPCION_READ = 'inscripcion:read';
+export const PERMISO_INSCRIPCION_MANAGE = 'inscripcion:manage';
+
+/**
+ * Asistencia de clases (F9, AKINE-08.03). Copiados de `activity.domain.PermissionCodes`.
+ *
+ * <p>Tres codigos y no uno, porque el backend los separa: tomar lista es `asistencia:manage`, ver
+ * quien esta anotado es `inscripcion:read` —que no es `clase:read`: quien mira la grilla del dia
+ * no necesita saber quien esta inscripto— e iniciar o cerrar la clase es `clase:manage`.
+ */
+export const PERMISO_ASISTENCIA_MANAGE = 'asistencia:manage';
+
+/**
+ * Productos de pack y pases (F9, M29, AKINE-08.06). Copiados de `activity.domain.PermissionCodes`.
+ *
+ * <p>La matriz §32 no tiene fila de productos ni de pases; el backend tomo las mas cercanas:
+ * `producto:manage` como `convenio:manage` (ORG_ADMIN y CONSULTORIO_ADMIN), `pase:manage` como
+ * `cobro:register` (tambien ADMINISTRATIVO). <b>El PROFESIONAL no tiene ninguno</b>: el precio y el
+ * saldo son datos comerciales. El consumo de un credito no tiene permiso propio: lo dispara tomar
+ * lista, que pide `asistencia:manage`.
+ */
+export const PERMISO_PRODUCTO_READ = 'producto:read';
+export const PERMISO_PRODUCTO_MANAGE = 'producto:manage';
+export const PERMISO_PASE_READ = 'pase:read';
+export const PERMISO_PASE_MANAGE = 'pase:manage';
+/**
+ * Ajustar el saldo de un pase o anularlo (AKINE-08.07). Reforzado: ORG_ADMIN y CONSULTORIO_ADMIN,
+ * no el mostrador (el ADMINISTRATIVO vende pero no corrige saldos).
+ */
+export const PERMISO_PASE_ADJUST = 'pase:adjust';

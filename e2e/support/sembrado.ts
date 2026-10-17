@@ -85,6 +85,8 @@ export const DIAS = {
   autorizacion: 96,
   cobrosPosteriores: 99,
   notificacion: 102,
+  // Clases grupales (F9): la clase ocupa al profesional del centro en su horario.
+  clases: 105,
 } as const;
 
 /** Cada test busca su dia dentro de su bloque: ver {@link diaDeTrabajo}. */
@@ -361,10 +363,11 @@ export class ApiAkine {
       buscado === undefined
         ? disponibles[0]
         : disponibles.find((c) => c.organizationId === buscado);
-    expect(
-      contexto,
-      `${this.email} tiene un contexto de trabajo${buscado === undefined ? '' : ` en ${buscado}`}`,
-    ).toBeDefined();
+    if (contexto === undefined) {
+      throw new Error(
+        `${this.email} no tiene un contexto de trabajo${buscado === undefined ? '' : ` en ${buscado}`}`,
+      );
+    }
 
     const elegido = await this.http.post('/api/v1/auth/context', {
       headers: { authorization: `Bearer ${preContexto}` },
@@ -477,12 +480,26 @@ export async function activarPorMailpit(http: APIRequestContext, email: string):
  * profesional no necesita activarse: nunca ingresa, solo atiende en la agenda.
  */
 export async function sembrarCentro(): Promise<Centro> {
+  const centro = await altaDeCentro('agenda', 'Agenda');
+  nodeFs.writeFileSync(ARCHIVO_DEL_CENTRO, JSON.stringify(centro));
+  return centro;
+}
+
+/**
+ * Da de alta un centro completo —administradora, profesional activada y vinculada, disponibilidad
+ * de 00:00 a 23:45 los siete dias— y lo devuelve SIN escribirlo en el archivo compartido.
+ *
+ * <p>Es lo que usan los specs de `support/centro-propio.ts`: un spec que suma miembros, abre la caja
+ * o arma lotes sobre el centro compartido le cambia el estado a los demas, y el plan BASICO tiene
+ * tope de miembros (`plan-limit-exceeded` ya rompio el CI asi).
+ */
+export async function altaDeCentro(etiqueta: string, nombre: string): Promise<Centro> {
   const http = await fabricaDeRequest.newContext({ baseURL: API });
   try {
     const sufijo = nonce();
-    const emailAdmin = emailUnico('e2e.agenda.admin');
-    const emailProfesional = emailUnico('e2e.agenda.profesional');
-    const nombreCentro = `Centro Agenda E2E ${sufijo}`;
+    const emailAdmin = emailUnico(`e2e.${etiqueta}.admin`);
+    const emailProfesional = emailUnico(`e2e.${etiqueta}.profesional`);
+    const nombreCentro = `Centro ${nombre} E2E ${sufijo}`;
 
     await registrar(http, {
       email: emailAdmin,
@@ -548,7 +565,6 @@ export async function sembrarCentro(): Promise<Centro> {
         servicioId: await servicioAgendable(api),
         profesional: { membershipId, nombre: `Pablo Kinesiologo ${sufijo}` },
       };
-      nodeFs.writeFileSync(ARCHIVO_DEL_CENTRO, JSON.stringify(centro));
       return centro;
     } finally {
       await api.cerrar();
@@ -635,7 +651,7 @@ const SERVICIO_E2E = {
  * administrador de plataforma (ver {@link ingresarComoPlataforma}). Es idempotente: un 409 de
  * codigo repetido significa que otra corrida ya lo creo, y se vuelve a leer el catalogo.
  */
-async function servicioAgendable(api: ApiAkine): Promise<number> {
+export async function servicioAgendable(api: ApiAkine): Promise<number> {
   const servicios = await api.exigir<{ id: number }[]>('GET', '/api/v1/servicios');
   if (servicios.length > 0) {
     return servicios[0].id;

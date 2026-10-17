@@ -21,6 +21,14 @@ import { routes as rutasCaja } from './features/billing/caja.routes';
 import { routes as rutasPresentaciones } from './features/billing/presentaciones.routes';
 import { routes as rutasEgresos } from './features/billing/egresos.routes';
 import { routes as rutasReporting } from './features/reporting/reporting.routes';
+import { routes as rutasActivity } from './features/activity/activity.routes';
+import { SEGMENTO_CLASES } from './features/activity/models/rutas-de-clases';
+import { routes as rutasAsistencia } from './features/activity/asistencia.routes';
+import { rutasPasesDePersona, rutasProductos } from './features/activity/pases.routes';
+import {
+  PATRON_PASES_DE_PERSONA,
+  SEGMENTO_PRODUCTOS,
+} from './features/activity/models/rutas-de-pases';
 
 /**
  * Rutas raiz de AKINE (estructura fijada en AKINE-00.02).
@@ -239,6 +247,15 @@ export const routes: Routes = [
     children: rutasBilling,
   },
 
+  // Pases de una persona (F9, M29, AKINE-08.06). Cuelga del padron por lo mismo que la cuenta
+  // corriente —se llega buscando a la persona— y por lo mismo va ANTES que `pacientes`. La
+  // feature es `activity`, no `person`: un pase es un saldo de creditos, no un dato del padron.
+  {
+    path: PATRON_PASES_DE_PERSONA,
+    canActivate: [authGuard],
+    children: rutasPasesDePersona,
+  },
+
   {
     path: 'pacientes',
     canActivate: [authGuard],
@@ -290,6 +307,18 @@ export const routes: Routes = [
     children: rutasCaja,
   },
 
+  // Historia Clinica (M09/M25, D-a).
+  //
+  // Raiz propia y NO bajo `atencion`: la historia es de la persona en la organizacion y la
+  // atencion es una sesion de una sede. HC != Sesion es la regla maestra 1. La URL lleva la
+  // persona porque la historia se pide por persona, y una persona sin historia tiene que tener
+  // donde mostrarse. El detalle esta en `historia-clinica.routes.ts`.
+  {
+    path: 'historia-clinica',
+    canActivate: [authGuard],
+    loadChildren: () => import('./features/clinical/historia-clinica.routes').then((m) => m.routes),
+  },
+
   // Pantalla de permiso insuficiente (AKINE-01.03). Es el destino de `permissionGuard`.
   //
   // Sin guards, y no por descuido: quien llega aca YA paso por `authGuard` y `contextGuard`
@@ -318,6 +347,34 @@ export const routes: Routes = [
     path: 'reportes',
     canActivate: [authGuard],
     children: rutasReporting,
+  },
+
+  // Clases grupales e inscripciones (M28, segunda entrega, AKINE-08.01 y 08.02).
+  //
+  // Raiz propia y NO bajo `agenda`: una clase es un evento grupal unico, no N turnos
+  // (CA-M28-001-06), con su propia maquina de estados y sus propios permisos (`clase:*`,
+  // `inscripcion:*`). La agenda del dia si las muestra, como proyeccion de lectura, y enlaza aca.
+  // `contextGuard` y `permissionGuard` los ponen las rutas hijas: `activity.routes.ts`.
+  {
+    path: SEGMENTO_CLASES,
+    canActivate: [authGuard],
+    children: rutasActivity,
+  },
+
+  // Asistencia a clases (F9, M28/M13, AKINE-08.03). `contextGuard` y el permiso los pone
+  // `asistencia.routes.ts`: la clase es de la sede.
+  {
+    path: 'asistencia',
+    canActivate: [authGuard],
+    children: rutasAsistencia,
+  },
+
+  // Catalogo de productos de pack (F9, M29, AKINE-08.06). `contextGuard` y `producto:read` los
+  // pone `pases.routes.ts`: el producto es de la sede.
+  {
+    path: SEGMENTO_PRODUCTOS,
+    canActivate: [authGuard],
+    children: rutasProductos,
   },
 
   {

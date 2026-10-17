@@ -11,7 +11,7 @@ import {
 } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { catchError, of } from 'rxjs';
+import { Subscription, catchError, of } from 'rxjs';
 
 import { ConfirmacionConMotivo } from '../../../../shared/components/confirmacion-con-motivo/confirmacion-con-motivo';
 import { CreateInvitacionRequest } from '../../../../api/generated/model/create-invitacion-request';
@@ -25,6 +25,7 @@ import {
   traducirErrorInvitacion,
 } from '../../../../core/models/invitacion-errors';
 import { formatearInstante } from '../../../../shared/utils/instantes';
+import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 
 /** Filtro del listado. Los cuatro estados del contrato, mas "todas". */
 type FiltroEstado = 'TODAS' | 'PENDIENTE' | 'ACEPTADA' | 'RECHAZADA' | 'CANCELADA';
@@ -83,6 +84,7 @@ const ROLES = [
   styleUrl: '../../organization.css',
 })
 export class InvitacionesPage {
+  private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly invitaciones = inject(InvitacionesService);
   private readonly tenantContext = inject(TenantContextStore);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
@@ -91,7 +93,8 @@ export class InvitacionesPage {
 
   protected readonly permisoManage = PERMISO_COLABORADOR_MANAGE;
   protected readonly roles = ROLES;
-  protected readonly formatearInstante = formatearInstante;
+  protected readonly formatearInstante = (instante: string | undefined | null): string | null =>
+    formatearInstante(instante, this.diaDeLaSede.zona());
 
   protected readonly estado = signal<Estado>({ tipo: 'cargando' });
   protected readonly filtro = signal<FiltroEstado>('PENDIENTE');
@@ -153,7 +156,16 @@ export class InvitacionesPage {
     });
   }
 
+  /**
+   * El listado en vuelo. Una relectura nueva lo cancela: con dos en vuelo —cancelar una invitacion
+   * relee las pendientes y enseguida se elige otro filtro— ganaba la respuesta que llegaba ULTIMA, y
+   * la pantalla mostraba las pendientes bajo el filtro de canceladas (lo destapo el E2E contra el
+   * backend real, `flujo-invitaciones`).
+   */
+  private listado: Subscription | null = null;
+
   protected cargar(): void {
+    this.listado?.unsubscribe();
     const orgId = this.tenantContext.organizationId();
     if (orgId === null) {
       this.estado.set({ tipo: 'sin-contexto' });
@@ -163,7 +175,7 @@ export class InvitacionesPage {
     this.estado.set({ tipo: 'cargando' });
     const filtro = this.filtro();
 
-    this.invitaciones
+    this.listado = this.invitaciones
       .listColaboradorInvitaciones({
         orgId,
         estado: filtro === 'TODAS' ? undefined : filtro,

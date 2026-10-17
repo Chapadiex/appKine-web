@@ -7,6 +7,7 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { ConsumoDeCredito } from './consumo-de-credito';
 import { Asistencia } from './asistencia';
 import { Inscripcion } from './inscripcion';
 
@@ -16,6 +17,10 @@ import { Inscripcion } from './inscripcion';
  */
 export interface ResultadoDeAsistencia { 
     asistencia?: Asistencia;
+    /**
+     * Que le hizo este registro al saldo de pases de la persona (AKINE-08.07). Ausente si el pedido repetia lo ya registrado y no se escribio nada.
+     */
+    consumoDeCredito?: ConsumoDeCredito;
     /**
      * true si esta llamada corrigio un hecho previo
      */

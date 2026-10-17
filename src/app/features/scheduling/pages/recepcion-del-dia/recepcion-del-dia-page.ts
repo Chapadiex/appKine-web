@@ -4,7 +4,12 @@ import { RouterLink } from '@angular/router';
 import { Observable } from 'rxjs';
 
 import { ConfirmacionConMotivo } from '../../../../shared/components/confirmacion-con-motivo/confirmacion-con-motivo';
-import { PERMISO_COBRO_REGISTER, PERMISO_TURNO_MANAGE } from '../../../../core/models/permisos';
+import {
+  PERMISO_CLASE_READ,
+  PERMISO_COBRO_REGISTER,
+  PERMISO_TURNO_MANAGE,
+} from '../../../../core/models/permisos';
+import { ClasesDelDia } from '../../components/clases-del-dia/clases-del-dia';
 import { PermissionsStore } from '../../../../core/services/permissions.store';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { PrepagoDeRecepcionEstadoEnum } from '../../../../api/generated/model/prepago-de-recepcion';
@@ -114,7 +119,7 @@ const CAUSAS_QUE_RELEEN: ReadonlySet<CausaAgenda> = new Set<CausaAgenda>([
  */
 @Component({
   selector: 'app-recepcion-del-dia-page',
-  imports: [RouterLink, ConfirmacionConMotivo],
+  imports: [RouterLink, ConfirmacionConMotivo, ClasesDelDia],
   templateUrl: './recepcion-del-dia-page.html',
   styleUrl: '../../agenda.css',
 })
@@ -169,6 +174,8 @@ export class RecepcionDelDiaPage {
 
   protected readonly puedeOperar = computed(() => this.permisos.tiene(PERMISO_TURNO_MANAGE));
   protected readonly puedeCobrar = computed(() => this.permisos.tiene(PERMISO_COBRO_REGISTER));
+  protected readonly puedeVerClases = computed(() => this.permisos.tiene(PERMISO_CLASE_READ));
+  protected readonly consultorioId = computed(() => this.tenantContext.consultorioId());
   protected readonly hayTurnos = computed(() => this.turnos().length > 0);
 
   /** Cuantos estan en la sala de espera. Es el numero que el mostrador mira sin leer la tabla. */

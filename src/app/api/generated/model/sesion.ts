@@ -30,7 +30,19 @@ export interface Sesion {
      * Cierre clinico. Ausente si la sesion sigue abierta.
      */
     cierre?: CierreDeSesion;
+    /**
+     * AKINE-08.05. Clase programada de la que salio una atencion de origen grupal. Ausente en las demas.
+     */
+    claseId?: number;
+    /**
+     * AKINE-08.05. Como se llama la clase de una atencion de origen grupal: su titulo, o el nombre comercial de la oferta si la clase no tiene titulo (el mismo criterio de la semana de clases). Calculado al leer. Ausente si la atencion no es grupal.
+     */
+    claseTitulo?: string;
     consultorioId?: number;
+    /**
+     * AKINE-08.05. Derivacion clinica de la que salio una atencion de **origen grupal** (participante de una clase clinica). Ausente en una atencion de turno o sin turno. Si viene, el caso no se puede cambiar (409 `caso-de-atencion-grupal`).
+     */
+    derivacionId?: number;
     /**
      * Estado de la ATENCION, no del turno ni del cobro. `BORRADOR` mientras se carga; `CERRADA` desde el cierre clinico, y sigue `CERRADA` despues de cada enmienda.
      */

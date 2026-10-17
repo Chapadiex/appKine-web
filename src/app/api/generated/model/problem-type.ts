@@ -174,6 +174,8 @@ export enum ProblemType {
 
     HTTPS___AKINE_APP_PROBLEMS_OBLIGACION_CON_COBROS = 'https://akine.app/problems/obligacion-con-cobros',
 
+    HTTPS___AKINE_APP_PROBLEMS_OBLIGACION_DE_VENTA = 'https://akine.app/problems/obligacion-de-venta',
+
     HTTPS___AKINE_APP_PROBLEMS_COBRO_NO_CUADRA = 'https://akine.app/problems/cobro-no-cuadra',
 
     HTTPS___AKINE_APP_PROBLEMS_SALDO_INSUFICIENTE = 'https://akine.app/problems/saldo-insuficiente',
@@ -271,6 +273,8 @@ export enum ProblemType {
     HTTPS___AKINE_APP_PROBLEMS_ENTRADA_CLINICA_INACTIVA = 'https://akine.app/problems/entrada-clinica-inactiva',
 
     HTTPS___AKINE_APP_PROBLEMS_ENMIENDA_SIN_MOTIVO = 'https://akine.app/problems/enmienda-sin-motivo',
+
+    HTTPS___AKINE_APP_PROBLEMS_JUSTIFICACION_DE_ACCESO_REQUERIDA = 'https://akine.app/problems/justificacion-de-acceso-requerida',
 
     HTTPS___AKINE_APP_PROBLEMS_ADJUNTO_CLINICO_NO_ACCESIBLE = 'https://akine.app/problems/adjunto-clinico-no-accesible',
 
@@ -396,6 +400,16 @@ export enum ProblemType {
 
     HTTPS___AKINE_APP_PROBLEMS_INSCRIPCION_TRANSICION_NO_PERMITIDA = 'https://akine.app/problems/inscripcion-transicion-no-permitida',
 
+    HTTPS___AKINE_APP_PROBLEMS_PRODUCTO_NO_VENDIBLE = 'https://akine.app/problems/producto-no-vendible',
+
+    HTTPS___AKINE_APP_PROBLEMS_PRODUCTO_NOMBRE_EN_USO = 'https://akine.app/problems/producto-nombre-en-uso',
+
+    HTTPS___AKINE_APP_PROBLEMS_ABONO_PERIODO_SUPERPUESTO = 'https://akine.app/problems/abono-periodo-superpuesto',
+
+    HTTPS___AKINE_APP_PROBLEMS_PASE_NO_AJUSTABLE = 'https://akine.app/problems/pase-no-ajustable',
+
+    HTTPS___AKINE_APP_PROBLEMS_PASE_CON_COBROS = 'https://akine.app/problems/pase-con-cobros',
+
     HTTPS___AKINE_APP_PROBLEMS_OFERTA_NO_CLINICA = 'https://akine.app/problems/oferta-no-clinica',
 
     HTTPS___AKINE_APP_PROBLEMS_PARTICIPACION_SIN_ASISTENCIA = 'https://akine.app/problems/participacion-sin-asistencia',
@@ -404,6 +418,14 @@ export enum ProblemType {
 
     HTTPS___AKINE_APP_PROBLEMS_DERIVACION_NO_ACCESIBLE = 'https://akine.app/problems/derivacion-no-accesible',
 
-    HTTPS___AKINE_APP_PROBLEMS_OFERTA_SIN_PRECIO = 'https://akine.app/problems/oferta-sin-precio'
+    HTTPS___AKINE_APP_PROBLEMS_OFERTA_SIN_PRECIO = 'https://akine.app/problems/oferta-sin-precio',
+
+    HTTPS___AKINE_APP_PROBLEMS_PARTICIPACION_SIN_DERIVACION = 'https://akine.app/problems/participacion-sin-derivacion',
+
+    HTTPS___AKINE_APP_PROBLEMS_DERIVACION_AMBIGUA = 'https://akine.app/problems/derivacion-ambigua',
+
+    HTTPS___AKINE_APP_PROBLEMS_DERIVACION_CON_SESION = 'https://akine.app/problems/derivacion-con-sesion',
+
+    HTTPS___AKINE_APP_PROBLEMS_CASO_DE_ATENCION_GRUPAL = 'https://akine.app/problems/caso-de-atencion-grupal'
 }
 

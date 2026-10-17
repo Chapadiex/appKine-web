@@ -21,6 +21,8 @@ export const TEXTO_TIPO: Readonly<Record<TipoNotificacion, string>> = {
   [TipoNotificacion.TURNO_RESERVADO]: 'Turno reservado',
   [TipoNotificacion.TURNO_CANCELADO]: 'Turno cancelado',
   [TipoNotificacion.TURNO_REPROGRAMADO]: 'Turno reprogramado',
+  [TipoNotificacion.PASE_POR_VENCER]: 'Pase o abono por vencer',
+  [TipoNotificacion.PASE_SALDO_BAJO]: 'Pase con pocos creditos',
 };
 
 export const TEXTO_ESTADO: Readonly<Record<EstadoNotificacion, string>> = {

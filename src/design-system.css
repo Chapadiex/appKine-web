@@ -420,6 +420,14 @@ h1 {
   border-width: var(--borde-medio);
 }
 
+/* El textarea ocupa el ancho y crece solo para abajo: horizontal desborda la tarjeta. */
+.campo textarea {
+  width: 100%;
+  box-sizing: border-box;
+  line-height: var(--linea-base);
+  resize: vertical;
+}
+
 .campo__opcional {
   font-weight: var(--peso-normal);
   color: var(--color-texto-suave);

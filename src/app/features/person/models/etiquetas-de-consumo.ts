@@ -93,10 +93,10 @@ export function veredictoDeSaldo(saldo: SaldoAutorizacionResponse): string {
 }
 
 /** La alerta "consumo a revisar" (DP-13), dicha como lo que es: una pregunta, no un error. */
-export function alertaEnPalabras(alerta: AlertaDeAutorizacionResponse): string {
+export function alertaEnPalabras(alerta: AlertaDeAutorizacionResponse, zona = ''): string {
   const sesion = alerta.sesionId != null ? `la sesion #${alerta.sesionId}` : 'una sesion';
   const obligacion = alerta.obligacionId != null ? ` (obligacion #${alerta.obligacionId})` : '';
-  const cuando = formatearInstante(alerta.generadaEn);
+  const cuando = formatearInstante(alerta.generadaEn, zona);
   return (
     `Se anulo la deuda de ${sesion}${obligacion}` +
     (cuando ? ` el ${cuando}` : '') +
@@ -104,8 +104,8 @@ export function alertaEnPalabras(alerta: AlertaDeAutorizacionResponse): string {
   );
 }
 
-export function resolucionDeAlerta(alerta: AlertaDeAutorizacionResponse): string {
-  const cuando = formatearInstante(alerta.resueltaEn);
+export function resolucionDeAlerta(alerta: AlertaDeAutorizacionResponse, zona = ''): string {
+  const cuando = formatearInstante(alerta.resueltaEn, zona);
   const como = alerta.resolucion === 'REVERTIDO' ? 'se revirtio el consumo' : 'resuelta';
   return `Resuelta: ${como}${cuando ? ` el ${cuando}` : ''}.`;
 }

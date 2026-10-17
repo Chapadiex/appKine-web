@@ -154,6 +154,27 @@ describe('ContextSelectorPage', () => {
     expect(tenantContext.context()).toBeNull();
   });
 
+  it('con varios contextos ofrece primero el ultimo elegido, con el foco, sin entrar solo', async () => {
+    const fixture = await pintar([
+      CONTEXTO_BELGRANO,
+      { ...CONTEXTO_CABALLITO, lastSelected: true },
+    ]);
+
+    const opciones = Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>('.opcion'),
+    );
+    expect(opciones.map((o) => o.querySelector('.opcion__organizacion')?.textContent)).toEqual([
+      'Centro Kinesico Caballito',
+      'Centro Kinesico Belgrano',
+    ]);
+    expect(opciones[0].textContent).toContain('El ultimo que elegiste');
+    expect(opciones[1].textContent).not.toContain('El ultimo que elegiste');
+    expect(document.activeElement).toBe(opciones[0]);
+    // Preseleccionar no es elegir: no hubo canje.
+    TestBed.inject(HttpTestingController).expectNone(URL_CANJE);
+    expect(tenantContext.context()).toBeNull();
+  });
+
   it('elegir una opcion canjea el token, fija el contexto y navega', async () => {
     const navegar = vi.spyOn(router, 'navigateByUrl').mockResolvedValue(true);
 

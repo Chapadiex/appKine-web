@@ -73,6 +73,16 @@
   color: var(--color-texto-suave);
 }
 
+/* El ultimo contexto elegido: borde de acento y la leyenda en texto (el color solo no alcanza). */
+.opcion--ultima {
+  border-left: var(--borde-acento) solid var(--color-acento);
+}
+
+.opcion__ultima {
+  font-size: var(--tipo-sm);
+  font-weight: var(--peso-semi);
+}
+
 /* --- Suscripcion ------------------------------------------------------------------ */
 
 .banner {

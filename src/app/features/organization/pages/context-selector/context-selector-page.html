@@ -42,10 +42,19 @@
         <ul class="lista">
           @for (contexto of contextos(); track $index) {
             <li>
-              <button type="button" class="opcion" (click)="seleccionar(contexto)">
+              <!-- El ultimo elegido va primero, con el foco y dicho en texto, no solo marcado. -->
+              <button
+                type="button"
+                class="opcion"
+                [class.opcion--ultima]="contexto === preseleccionado()"
+                (click)="seleccionar(contexto)"
+              >
                 <span class="opcion__organizacion">{{ contexto.organizationName }}</span>
                 @if (contexto.consultorioName) {
                   <span class="opcion__consultorio">{{ contexto.consultorioName }}</span>
+                }
+                @if (contexto === preseleccionado()) {
+                  <span class="opcion__ultima">El ultimo que elegiste</span>
                 }
               </button>
             </li>

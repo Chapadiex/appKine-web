@@ -18,6 +18,10 @@ export interface ProgramarClase {
      */
     capacidad: number;
     /**
+     * Box elegido. **Opcional**: sin el, el servidor elige el primer box apto y libre (solo si la oferta exige espacio). Con el, se valida ese y solo ese: activo, de esta sede, en servicio toda la franja, habilitado para la oferta y libre de turnos y de otras clases. No se cae a otro box: si no sirve es 409 `slot-no-disponible`, y si esta ocupado 409 `recurso-ocupado` con `recurso = espacio`. Se admite aunque la oferta no exija espacio.
+     */
+    espacioId?: number;
+    /**
      * Instante de fin, UTC y exclusivo
      */
     fin: string;

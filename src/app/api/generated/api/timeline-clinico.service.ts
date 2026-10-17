@@ -61,6 +61,9 @@ export class TimelineClinicoService extends BaseService implements TimelineClini
         const cursor = requestParameters?.cursor;
         const limite = requestParameters?.limite;
         const casoId = requestParameters?.casoId;
+        const origen = requestParameters?.origen;
+        const desde = requestParameters?.desde;
+        const hasta = requestParameters?.hasta;
         const xJustificacionAcceso = requestParameters?.xJustificacionAcceso;
 
         let localVarQueryParameters = new OpenApiHttpParams(this.encoder);
@@ -87,6 +90,33 @@ export class TimelineClinicoService extends BaseService implements TimelineClini
             localVarQueryParameters,
             'casoId',
             <any>casoId,
+            QueryParamStyle.Form,
+            true,
+        );
+
+
+        localVarQueryParameters = this.addToHttpParams(
+            localVarQueryParameters,
+            'origen',
+            <any>origen,
+            QueryParamStyle.Form,
+            true,
+        );
+
+
+        localVarQueryParameters = this.addToHttpParams(
+            localVarQueryParameters,
+            'desde',
+            <any>desde,
+            QueryParamStyle.Form,
+            true,
+        );
+
+
+        localVarQueryParameters = this.addToHttpParams(
+            localVarQueryParameters,
+            'hasta',
+            <any>hasta,
             QueryParamStyle.Form,
             true,
         );

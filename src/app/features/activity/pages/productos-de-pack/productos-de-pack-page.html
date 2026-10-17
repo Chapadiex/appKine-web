@@ -1,0 +1,352 @@
+<h1>Productos de pack y abonos</h1>
+
+<p class="descripcion">
+  Los packs de creditos y los abonos que vende esta sede. Un <b>pack</b> son clases que valen una
+  cantidad de dias desde la compra, sobre ofertas que cobran <b>POR_PACK</b>. Un <b>abono</b> cubre
+  un periodo que se elige al venderlo, con un tope de asistencias, sobre ofertas que cobran
+  <b>POR_ABONO</b>. Crear un producto no le da saldo a nadie; el saldo nace al vender un pase a una
+  persona, desde <a class="enlace" routerLink="/pacientes">Pacientes</a>, en la fila de la persona.
+</p>
+
+<div class="filtros">
+  <div class="campo">
+    <label class="opcion-casilla" for="productos-incluir-bajas">
+      <input
+        id="productos-incluir-bajas"
+        type="checkbox"
+        [checked]="incluirBajas()"
+        (change)="cambiarIncluirBajas($any($event.target).checked)"
+      />
+      Mostrar tambien los dados de baja
+    </label>
+  </div>
+  @if (puedeGestionar() && panel().tipo === 'ninguno') {
+    <div class="acciones">
+      <button type="button" class="boton" (click)="abrirAlta()">Nuevo producto</button>
+    </div>
+  }
+</div>
+
+<div aria-live="polite">
+  @if (aviso(); as texto) {
+    <p class="estado estado--ok">{{ texto }}</p>
+  }
+  @if (error(); as fallo) {
+    <section class="tarjeta conflicto" aria-labelledby="titulo-error-productos">
+      <h2 id="titulo-error-productos">No se pudieron leer los productos</h2>
+      <p class="estado estado--error">{{ fallo.mensaje }}</p>
+      <div class="acciones">
+        @if (fallo.causa === 'sin-contexto') {
+          <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto de trabajo</a>
+        } @else {
+          <button type="button" class="boton boton--secundario" (click)="cargar()">
+            Reintentar
+          </button>
+        }
+      </div>
+    </section>
+  }
+</div>
+
+@if (formularioAbierto()) {
+  <form class="tarjeta" [formGroup]="formulario" (ngSubmit)="guardar()" novalidate>
+    <h2>{{ enEdicion() ? 'Editar ' + enEdicion()!.nombre : 'Nuevo producto' }}</h2>
+    @if (enEdicion()) {
+      <p class="ayuda">
+        Los pases ya vendidos no cambian: cada uno conserva los creditos, el precio y la vigencia
+        con los que se vendio.
+      </p>
+    }
+
+    @if (enEdicion(); as producto) {
+      <p>
+        {{ tipoDeProducto(producto) }} sobre la oferta <b>{{ nombreDeOferta(producto) }}</b
+        >. El tipo y la oferta de un producto no se cambian.
+      </p>
+    } @else {
+      <div class="campo">
+        <label for="producto-tipo">Tipo</label>
+        <select id="producto-tipo" formControlName="tipo" aria-describedby="producto-tipo-ayuda">
+          <option value="PACK">Pack de creditos</option>
+          <option value="ABONO">Abono por periodo</option>
+        </select>
+        <p class="ayuda" id="producto-tipo-ayuda">
+          @if (tipoElegido() === 'ABONO') {
+            Cubre un periodo que se elige al vender; los creditos son las asistencias que permite.
+          } @else {
+            Creditos que valen una cantidad de dias desde la compra.
+          }
+        </p>
+      </div>
+      <div class="campo">
+        <label for="producto-oferta">Oferta</label>
+        <select
+          id="producto-oferta"
+          formControlName="ofertaId"
+          [attr.aria-invalid]="invalido('ofertaId')"
+          aria-describedby="producto-oferta-ayuda"
+        >
+          <option value="">Elegi una oferta</option>
+          @for (oferta of ofertasDelTipo(); track oferta.id) {
+            <option [value]="oferta.id">{{ oferta.nombreComercial }}</option>
+          }
+        </select>
+        <p class="ayuda" id="producto-oferta-ayuda">
+          @if (ofertasDelTipo().length === 0) {
+            Esta sede no tiene ofertas activas con esquema de cobro {{ esquemaDelTipo() }}. Se
+            declara en Servicios, en la oferta.
+          } @else {
+            Solo aparecen las ofertas activas que cobran {{ esquemaDelTipo() }}.
+          }
+        </p>
+        @if (invalido('ofertaId')) {
+          <p class="estado estado--error">Elegi la oferta del producto.</p>
+        }
+      </div>
+    }
+
+    <div class="campo">
+      <label for="producto-nombre">Nombre</label>
+      <input
+        id="producto-nombre"
+        type="text"
+        maxlength="160"
+        autocomplete="off"
+        formControlName="nombre"
+        [attr.aria-invalid]="invalido('nombre')"
+      />
+      @if (invalido('nombre')) {
+        <p class="estado estado--error">El nombre es obligatorio.</p>
+      }
+      @if (errorDelServidor('nombre'); as mensaje) {
+        <p class="estado estado--error">{{ mensaje }}</p>
+      }
+    </div>
+
+    <div class="campo">
+      <label for="producto-descripcion">Descripcion (opcional)</label>
+      <input
+        id="producto-descripcion"
+        type="text"
+        maxlength="500"
+        autocomplete="off"
+        formControlName="descripcion"
+      />
+    </div>
+
+    <div class="filtros">
+      <div class="campo">
+        <label for="producto-creditos">{{
+          tipoElegido() === 'ABONO' ? 'Asistencias por periodo' : 'Creditos'
+        }}</label>
+        <input
+          id="producto-creditos"
+          type="number"
+          min="1"
+          formControlName="creditos"
+          [attr.aria-invalid]="invalido('creditos')"
+        />
+        @if (invalido('creditos')) {
+          <p class="estado estado--error">Tiene que ser al menos 1.</p>
+        }
+      </div>
+      <div class="campo">
+        <label for="producto-precio">Precio</label>
+        <input
+          id="producto-precio"
+          type="text"
+          inputmode="decimal"
+          autocomplete="off"
+          formControlName="precio"
+          [attr.aria-invalid]="invalido('precio')"
+        />
+        @if (invalido('precio')) {
+          <p class="estado estado--error">Un importe mayor que cero, con hasta dos decimales.</p>
+        }
+      </div>
+      <div class="campo">
+        <label for="producto-moneda">Moneda</label>
+        <input
+          id="producto-moneda"
+          type="text"
+          maxlength="3"
+          autocomplete="off"
+          formControlName="moneda"
+          [attr.aria-invalid]="invalido('moneda')"
+          aria-describedby="producto-moneda-ayuda"
+        />
+        <p class="ayuda" id="producto-moneda-ayuda">Tres letras, como ARS o USD.</p>
+      </div>
+      <div class="campo">
+        <label for="producto-vigencia-dias">{{
+          tipoElegido() === 'ABONO' ? 'Dias maximos del periodo' : 'Dias de vigencia'
+        }}</label>
+        <input
+          id="producto-vigencia-dias"
+          type="number"
+          min="1"
+          formControlName="vigenciaDias"
+          [attr.aria-invalid]="invalido('vigenciaDias')"
+          aria-describedby="producto-vigencia-dias-ayuda"
+        />
+        <p class="ayuda" id="producto-vigencia-dias-ayuda">
+          @if (tipoElegido() === 'ABONO') {
+            Lo mas largo que puede durar el periodo de un abono; al vender se puede elegir menos.
+          } @else {
+            Dias corridos desde la compra, contando el de la compra.
+          }
+        </p>
+        @if (invalido('vigenciaDias')) {
+          <p class="estado estado--error">Tiene que ser al menos 1.</p>
+        }
+      </div>
+    </div>
+
+    <div class="filtros">
+      <div class="campo">
+        <label for="producto-desde">Se vende desde</label>
+        <input
+          id="producto-desde"
+          type="date"
+          formControlName="vigenciaDesde"
+          [attr.aria-invalid]="invalido('vigenciaDesde')"
+        />
+        @if (invalido('vigenciaDesde')) {
+          <p class="estado estado--error">Indica desde cuando se vende.</p>
+        }
+      </div>
+      <div class="campo">
+        <label for="producto-hasta">Se vende hasta (opcional)</label>
+        <input
+          id="producto-hasta"
+          type="date"
+          formControlName="vigenciaHasta"
+          aria-describedby="producto-hasta-ayuda"
+        />
+        <p class="ayuda" id="producto-hasta-ayuda">Vacio: se vende sin fecha de fin.</p>
+      </div>
+    </div>
+
+    <div aria-live="polite">
+      @if (errorAccion(); as fallo) {
+        <p class="estado estado--error" role="alert">{{ fallo.mensaje }}</p>
+      }
+    </div>
+
+    <div class="acciones">
+      <button type="submit" class="boton" [disabled]="enviando()">
+        {{ enviando() ? 'Guardando…' : enEdicion() ? 'Guardar cambios' : 'Crear producto' }}
+      </button>
+      <button type="button" class="boton boton--secundario" (click)="cerrarPanel()">
+        Cancelar
+      </button>
+    </div>
+  </form>
+}
+
+@if (panel(); as actual) {
+  @if (actual.tipo === 'baja') {
+    <section class="tarjeta">
+      <akine-confirmacion-con-motivo
+        idCampo="producto-baja-motivo"
+        [titulo]="'Dar de baja ' + actual.producto.nombre"
+        etiqueta="Motivo de la baja"
+        ayuda="El producto deja de venderse. Los pases ya vendidos conservan su saldo y su vigencia,
+          y las clases los siguen consumiendo."
+        textoError="El motivo es obligatorio para dar de baja un producto."
+        textoConfirmar="Dar de baja"
+        [enviando]="enviando()"
+        (confirmado)="confirmarBaja($event)"
+        (cancelado)="cerrarPanel()"
+      />
+      @if (errorAccion(); as fallo) {
+        <p class="estado estado--error" role="alert">{{ fallo.mensaje }}</p>
+      }
+    </section>
+  }
+}
+
+@if (productos() === null && !error()) {
+  <p class="estado estado--cargando" aria-live="polite">Leyendo los productos…</p>
+} @else if (productos()?.length === 0 && !error()) {
+  <p class="estado estado--vacio">
+    Esta sede no tiene productos{{ incluirBajas() ? '' : ' vigentes' }}.
+  </p>
+} @else if (productos(); as lista) {
+  @if (lista.length > 0) {
+    <div class="tabla-scroll" tabindex="0" role="region" aria-labelledby="titulo-tabla-productos">
+      <h2 id="titulo-tabla-productos" class="visualmente-oculto">Productos de la sede</h2>
+      <table class="tabla">
+        <thead>
+          <tr>
+            <th scope="col">Producto</th>
+            <th scope="col">Tipo</th>
+            <th scope="col">Oferta</th>
+            <th scope="col">Creditos</th>
+            <th scope="col">Precio</th>
+            <th scope="col">Vale</th>
+            <th scope="col">Se vende</th>
+            <th scope="col">Estado</th>
+            @if (puedeGestionar()) {
+              <th scope="col">Acciones</th>
+            }
+          </tr>
+        </thead>
+        <tbody>
+          @for (producto of lista; track producto.id) {
+            <tr [class.fila--revocada]="producto.active === false">
+              <td>
+                {{ producto.nombre }}
+                @if (producto.descripcion) {
+                  <div class="ayuda">{{ producto.descripcion }}</div>
+                }
+              </td>
+              <td>{{ tipoDeProducto(producto) }}</td>
+              <td>{{ nombreDeOferta(producto) }}</td>
+              <td>{{ creditos(producto.creditos) }}</td>
+              <td class="importe">{{ importe(producto.precio, producto.moneda) }}</td>
+              <td>
+                {{ abono(producto) ? 'Periodo de hasta ' : '' }}{{ producto.vigenciaDias }} dias
+              </td>
+              <td>{{ ventana(producto) }}</td>
+              <td>
+                @if (producto.active === false) {
+                  <span class="marca-estado marca-estado--revocada">Dado de baja</span>
+                  @if (producto.deactivationReason) {
+                    <div class="ayuda">Motivo: {{ producto.deactivationReason }}</div>
+                  }
+                } @else {
+                  <span class="marca-estado marca-estado--activa">Vigente</span>
+                }
+              </td>
+              @if (puedeGestionar()) {
+                <td>
+                  @if (producto.active !== false) {
+                    <div class="acciones-fila">
+                      <button
+                        type="button"
+                        class="boton boton--secundario"
+                        [attr.aria-label]="'Editar ' + producto.nombre"
+                        (click)="abrirEdicion(producto)"
+                      >
+                        Editar
+                      </button>
+                      <button
+                        type="button"
+                        class="boton boton--secundario"
+                        [attr.aria-label]="'Dar de baja ' + producto.nombre"
+                        (click)="abrirBaja(producto)"
+                      >
+                        Dar de baja
+                      </button>
+                    </div>
+                  }
+                </td>
+              }
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+}

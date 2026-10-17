@@ -11,7 +11,14 @@ import {
 import { RouterLink } from '@angular/router';
 
 import { ClinicalApi } from '../../services/clinical-api';
-import { ErrorAtencion, traducirErrorAtencion } from '../../models/atencion-errors';
+import { MedicionesDeSesion } from '../../components/mediciones-de-sesion/mediciones-de-sesion';
+import { TratamientosDeSesion } from '../../components/tratamientos-de-sesion/tratamientos-de-sesion';
+import { CasoAdministrativoResponse } from '../../../../api/generated/model/caso-administrativo-response';
+import {
+  ErrorAtencion,
+  traducirErrorAtencion,
+  traducirErrorDeBorrador,
+} from '../../models/atencion-errors';
 import {
   CerrarSesion,
   CerrarSesionAsistenciaEnum,
@@ -38,7 +45,9 @@ import {
   comoLateralidad,
   comoModo,
   etiquetaDe,
+  borradorDeNotas,
   instanteEnPalabras,
+  notasDelBorrador,
   resumenDePrevia,
 } from '../../models/etiquetas-de-atencion';
 
@@ -105,7 +114,29 @@ const ESPERA_AUTOSAVE = 1_500;
  * un 409 `sesion-cerrada` porque la cerraron desde otra pestaña— los campos <b>desaparecen</b> y
  * queda una vista de solo lectura. Dejarlos editables seria ofrecer un guardado que el backend
  * rechaza siempre: el usuario escribe, aprieta y recibe un error por hacer lo que la pantalla le
- * mostraba como posible. Corregir una sesion cerrada es una enmienda (AKINE-06.06) y no existe.
+ * mostraba como posible. Corregir una sesion cerrada es una enmienda (AKINE-06.06): tiene su
+ * propia pantalla, con motivo obligatorio, y la de versiones muestra lo que cambio.
+ *
+ * <h2>6. Examen fisico y tratamientos (AKINE-06.03 y 06.04)</h2>
+ *
+ * <p>Son dos bloques propios ({@link MedicionesDeSesion}, {@link TratamientosDeSesion}). Las
+ * mediciones no tocan la version de la sesion; los tratamientos si, y por eso la reciben de esta
+ * pantalla y le devuelven la nueva: <b>hay una sola version</b>, la que tambien sostiene el
+ * autosave. Un conflicto, un cierre o una atencion ajena detectados por un bloque se resuelven
+ * aca, con el mismo panel que ya protege lo tipeado.
+ *
+ * <h2>7. El caso clinico se elige antes de iniciar, y se corrige con la atencion abierta (04.03)</h2>
+ *
+ * <p>Iniciar es idempotente y <b>la idempotencia manda sobre el caso</b>: `iniciar` solo toma el
+ * `casoId` al crear la sesion. Por eso, si el paciente tiene casos activos, la pantalla pregunta
+ * <b>antes</b> de iniciar —sugiriendo el de la misma oferta— y si no tiene ninguno inicia sola,
+ * como siempre. Sin caso es una respuesta valida (RF-M14-002); exigirlo es RF-M10-007 y es una
+ * decision pendiente.
+ *
+ * <p>Desde el contrato 0.102.0 el caso <b>se cambia mientras la atencion siga abierta</b>
+ * (`cambiarCasoDeSesion`): asociar uno que no se eligio, cambiarlo o quitarlo. Es una escritura
+ * mas sobre la misma version de la sesion, asi que el autosave la espera igual que espera a un
+ * tratamiento. Cerrada, no: el cierre numera dentro del caso que la sesion tenga en ese momento.
  *
  * <p><b>El `numeroSesion` se muestra</b> porque es lo que el profesional cuenta: "la sesion numero
  * 8 de este paciente". Es un correlativo por historia clinica, no un id de base.
@@ -123,7 +154,7 @@ const ESPERA_AUTOSAVE = 1_500;
  */
 @Component({
   selector: 'app-atencion-page',
-  imports: [RouterLink],
+  imports: [RouterLink, MedicionesDeSesion, TratamientosDeSesion],
   templateUrl: './atencion-page.html',
   styleUrl: '../../atencion.css',
 })
@@ -132,8 +163,13 @@ export class AtencionPage {
   private readonly tenantContext = inject(TenantContextStore);
   private readonly destroyRef = inject(DestroyRef);
 
-  /** De la ruta. `withComponentInputBinding` lo liga solo. */
-  readonly turnoId = input.required<string>();
+  /**
+   * De la ruta. `withComponentInputBinding` lo liga solo. Viene uno de los dos: `turnoId` en la
+   * atencion de un turno, que se inicia al entrar, y `sesionId` en la de un participante de una
+   * clase (AKINE-08.05), que ya se inicio desde el panel de la clase y aca solo se lee.
+   */
+  readonly turnoId = input<string>();
+  readonly sesionId = input<string>();
 
   protected readonly escala = ESCALA_EVA;
   protected readonly evoluciones = EVOLUCIONES;
@@ -143,6 +179,7 @@ export class AtencionPage {
   protected readonly tolerancias = TOLERANCIAS;
   protected readonly conductas = CONDUCTAS;
   protected readonly instanteEnPalabras = instanteEnPalabras;
+  protected readonly notasDelBorrador = notasDelBorrador;
 
   protected readonly sesion = signal<Sesion | null>(null);
   protected readonly abriendo = signal(false);
@@ -150,8 +187,62 @@ export class AtencionPage {
   protected readonly error = signal<ErrorAtencion | null>(null);
   protected readonly guardadoEn = signal('');
 
-  /** Version que se leyo. Es lo que viaja en cada escritura. */
-  private readonly version = signal(0);
+  /** Version que se leyo. Es lo que viaja en cada escritura, propia o de los tratamientos. */
+  protected readonly version = signal(0);
+
+  protected readonly consultorioId = this.tenantContext.consultorioId;
+  protected readonly organizationId = this.tenantContext.organizationId;
+
+  // --- Caso clinico (04.03) ---------------------------------------------------------------
+  /** Casos activos del paciente. Vacio si no tiene, o si no se pudieron leer. */
+  protected readonly casos = signal<readonly CasoAdministrativoResponse[]>([]);
+  /** `true` mientras la pantalla pregunta a que caso asociar la atencion, antes de iniciarla. */
+  protected readonly eligiendoCaso = signal(false);
+  protected readonly casoElegido = signal<number | null>(null);
+  /** La atencion ya existia con otro caso: la idempotencia manda sobre lo elegido. */
+  protected readonly casoIgnorado = signal(false);
+  /** Lo elegido en el selector de la atencion abierta. `null` es "sin caso". */
+  protected readonly casoNuevo = signal<number | null>(null);
+  /** `true` mientras el cambio de caso viaja con la version de la sesion. */
+  protected readonly cambiandoCaso = signal(false);
+  protected readonly avisoCaso = signal('');
+
+  /**
+   * `true` si hay algo que elegir: casos activos, o un caso asociado que se puede quitar. Sin
+   * ninguno de los dos el selector solo ofreceria "Sin caso", que es lo que ya hay.
+   */
+  protected readonly puedeCambiarCaso = computed(
+    () => !this.esGrupal() && (this.casos().length > 0 || this.sesion()?.casoId !== undefined),
+  );
+
+  /**
+   * `true` si la atencion es de un participante de una clase (AKINE-08.05). Su caso lo fijo la
+   * derivacion y no se cambia —el backend responde 409 `caso-de-atencion-grupal`—, asi que el
+   * selector de caso no se ofrece y la pantalla dice de que clase viene.
+   */
+  protected readonly esGrupal = computed(() => {
+    const sesion = this.sesion();
+    return sesion?.derivacionId !== undefined || sesion?.claseId !== undefined;
+  });
+
+  /** Panel de la clase de la que viene la atencion grupal, o `null`. */
+  protected readonly rutaDeLaClase = computed(() => {
+    const claseId = this.sesion()?.claseId;
+    return claseId === undefined ? null : `/atencion/clases/${claseId}`;
+  });
+
+  /** El caso asociado cuando ya no esta entre los activos (se cerro despues de asociarlo). */
+  protected readonly casoActualFueraDeLista = computed(() => {
+    const casoId = this.sesion()?.casoId;
+    return casoId !== undefined && !this.casos().some((caso) => caso.id === casoId) ? casoId : null;
+  });
+
+  protected readonly casoSinCambios = computed(
+    () => this.casoNuevo() === (this.sesion()?.casoId ?? null),
+  );
+
+  /** `true` mientras un tratamiento se escribe con la version de la sesion. */
+  protected readonly tratamientoEnVuelo = signal(false);
 
   // --- Lo que el profesional escribio. Ninguno se pisa nunca desde el servidor. ------------
   protected readonly modo = signal<GuardarEvaluacionModoEnum>(GuardarEvaluacionModoEnum.RAPIDA);
@@ -206,13 +297,22 @@ export class AtencionPage {
   /**
    * `true` cuando el paciente vino y todavia no hay nota.
    *
-   * <p>Es el unico campo condicionalmente obligatorio del cierre: sin el detalle estructurado de
-   * tratamientos —que es AKINE-06.04 y no existe— esta nota es <b>lo unico que registra que se
-   * hizo</b>. Con `AUSENTE` no aplica, y por eso se calcula contra {@link presente}.
+   * <p>Es el unico campo condicionalmente obligatorio del cierre: el backend la exige con el
+   * paciente presente aunque haya tratamientos estructurados (AKINE-06.04), porque es el resumen
+   * de lo que se hizo. Con `AUSENTE` no aplica, y por eso se calcula contra {@link presente}.
    */
   protected readonly faltaNota = computed(
     () => this.presente() && this.notaDeCierre().trim() === '',
   );
+
+  /** Lo que los bloques de examen y tratamientos necesitan: sede y sesion, o nada. */
+  protected readonly bloques = computed(() => {
+    const consultorioId = this.consultorioId();
+    const sesion = this.sesion();
+    return consultorioId === null || sesion?.id === undefined
+      ? null
+      : { consultorioId, sesionId: sesion.id, ofertaId: sesion.ofertaId };
+  });
 
   protected readonly completa = computed(() => this.modo() === GuardarEvaluacionModoEnum.COMPLETA);
   protected readonly previa = computed(() => resumenDePrevia(this.sesion()?.previa));
@@ -237,6 +337,7 @@ export class AtencionPage {
       // Depende de la ruta y del contexto: cambiar de sede invalida el turno, que es de la
       // sede anterior.
       this.turnoId();
+      this.sesionId();
       this.tenantContext.contextEpoch();
       untracked(() => this.abrir());
     });
@@ -258,11 +359,57 @@ export class AtencionPage {
    */
   protected abrir(): void {
     const consultorioId = this.tenantContext.consultorioId();
+    const sesionId = this.numeroDeSesion();
     const turnoId = this.numeroDeTurno();
-    if (consultorioId === null || turnoId === null) {
+    if (consultorioId === null) {
+      return;
+    }
+    if (sesionId !== null) {
+      this.limpiarApertura();
+      this.abrirSesion(consultorioId, sesionId);
+      return;
+    }
+    if (turnoId === null) {
       return;
     }
 
+    this.limpiarApertura();
+    this.api.casosDelTurno(consultorioId, turnoId).subscribe(({ ofertaId, casos }) => {
+      this.casos.set(casos);
+      if (casos.length === 0) {
+        this.iniciar();
+        return;
+      }
+      // Se sugiere el caso de la misma oferta solo si es uno: con dos, elegir por el profesional
+      // seria adivinar de cual de los dos tratamientos es esta sesion.
+      const deLaOferta = casos.filter((caso) => caso.ofertaId === ofertaId);
+      this.casoElegido.set(deLaOferta.length === 1 ? (deLaOferta[0].id ?? null) : null);
+      this.abriendo.set(false);
+      this.eligiendoCaso.set(true);
+    });
+  }
+
+  /**
+   * Abre por su id una atencion que ya existe (AKINE-08.05): la de un participante de una clase.
+   * La inicio el panel de la clase, que es donde se elige la derivacion —y con ella el caso—, asi
+   * que aca no hay nada que iniciar ni que preguntar.
+   */
+  private abrirSesion(consultorioId: number, sesionId: number): void {
+    this.api.ver(consultorioId, sesionId).subscribe({
+      next: (sesion) => {
+        this.abriendo.set(false);
+        this.adoptar(sesion);
+      },
+      error: (error: unknown) => {
+        this.abriendo.set(false);
+        this.sesion.set(null);
+        this.error.set(traducirErrorAtencion(error));
+      },
+    });
+  }
+
+  /** Deja la pantalla como recien entrada: nada de la atencion anterior queda a la vista. */
+  private limpiarApertura(): void {
     this.cancelarAutosave();
     this.abriendo.set(true);
     this.error.set(null);
@@ -276,18 +423,126 @@ export class AtencionPage {
     this.respuestaTratamiento.set('');
     this.tolerancia.set(null);
     this.proximaConducta.set(null);
+    this.casos.set([]);
+    this.eligiendoCaso.set(false);
+    this.casoElegido.set(null);
+    this.casoIgnorado.set(false);
+    this.avisoCaso.set('');
+  }
 
-    this.api.iniciar(consultorioId, turnoId).subscribe({
+  protected elegirCaso(valor: string): void {
+    const id = Number(valor);
+    this.casoElegido.set(Number.isFinite(id) && id > 0 ? id : null);
+  }
+
+  /**
+   * Inicia (o retoma) la atencion, con el caso elegido si hay uno.
+   *
+   * <p>Si la sesion ya existia vuelve con el caso que tenia: se avisa, para que nadie crea que la
+   * asocio al que eligio.
+   */
+  protected iniciar(): void {
+    const consultorioId = this.tenantContext.consultorioId();
+    const turnoId = this.numeroDeTurno();
+    if (consultorioId === null || turnoId === null) {
+      return;
+    }
+    const casoId = this.eligiendoCaso() ? (this.casoElegido() ?? undefined) : undefined;
+    this.eligiendoCaso.set(false);
+    this.abriendo.set(true);
+    this.error.set(null);
+
+    this.api.iniciar(consultorioId, turnoId, casoId).subscribe({
       next: (sesion) => {
         this.abriendo.set(false);
+        this.casoIgnorado.set(casoId !== undefined && sesion.casoId !== casoId);
         this.adoptar(sesion);
       },
       error: (error: unknown) => {
         this.abriendo.set(false);
         this.sesion.set(null);
-        this.error.set(traducirErrorAtencion(error));
+        const traducido = traducirErrorAtencion(error);
+        this.error.set(traducido);
+        // Un caso que se cerro mientras se elegia: se vuelve a preguntar en vez de dejar la
+        // pantalla sin salida.
+        if (traducido.causa === 'caso-no-activo') {
+          this.eligiendoCaso.set(true);
+        }
       },
     });
+  }
+
+  /** "Caso 2", o vacio si la atencion no tiene caso. */
+  protected numeroDeCaso(casoId: number | undefined): string {
+    if (casoId === undefined) {
+      return '';
+    }
+    const numero = this.casos().find((caso) => caso.id === casoId)?.numeroCaso;
+    return numero === undefined ? 'Caso clinico asociado' : `Caso ${numero}`;
+  }
+
+  protected rotuloDeCaso(caso: CasoAdministrativoResponse): string {
+    const desde = instanteEnPalabras(caso.abiertoEn);
+    return `Caso ${caso.numeroCaso ?? ''}${desde ? `, abierto el ${desde}` : ''}`;
+  }
+
+  protected elegirCasoNuevo(valor: string): void {
+    const id = Number(valor);
+    this.casoNuevo.set(valor !== '' && Number.isFinite(id) && id > 0 ? id : null);
+    this.avisoCaso.set('');
+  }
+
+  /**
+   * Asocia, cambia o quita el caso de la atencion abierta.
+   *
+   * <p>La respuesta es la sesion entera y se toma <b>solo su version y sus metadatos</b>: el editor
+   * sigue siendo del profesional. No marca "Ultimo guardado", que es de las notas y no se mandaron. Un caso que se cerro mientras
+   * se elegia es 409 `caso-clinico-cerrado` y va al mismo cartel que cualquier otro problema.
+   */
+  protected cambiarCaso(): void {
+    const consultorioId = this.tenantContext.consultorioId();
+    const sesionId = this.sesion()?.id;
+    if (consultorioId === null || sesionId === undefined || this.casoSinCambios()) {
+      return;
+    }
+    const casoId = this.casoNuevo();
+    this.cambiandoCaso.set(true);
+    this.error.set(null);
+    this.avisoCaso.set('');
+
+    this.api.cambiarCaso(consultorioId, sesionId, casoId, this.version()).subscribe({
+      next: (sesion) => {
+        this.cambiandoCaso.set(false);
+        this.casoIgnorado.set(false);
+        this.sesion.set(sesion);
+        this.version.set(sesion.version ?? 0);
+        this.casoNuevo.set(sesion.casoId ?? null);
+        this.avisoCaso.set(
+          sesion.casoId === undefined
+            ? 'La atencion quedo sin caso.'
+            : `La atencion quedo asociada al ${this.numeroDeCaso(sesion.casoId)}.`,
+        );
+      },
+      error: (error: unknown) => {
+        this.cambiandoCaso.set(false);
+        this.casoNuevo.set(this.sesion()?.casoId ?? null);
+        this.fallo(error);
+      },
+    });
+  }
+
+  // -------------------------------------------------------------------------------------
+  // Bloques de examen y tratamientos
+  // -------------------------------------------------------------------------------------
+
+  /** Un tratamiento hizo avanzar la version de la sesion: es la que viaja de aca en adelante. */
+  protected adoptarVersion(version: number): void {
+    this.version.set(version);
+  }
+
+  /** Un bloque encontro un conflicto, un cierre o una atencion ajena: se resuelve aca. */
+  protected problemaDeBloque(error: unknown): void {
+    this.fallo(error);
   }
 
   /**
@@ -299,7 +554,8 @@ export class AtencionPage {
   private adoptar(sesion: Sesion): void {
     this.sesion.set(sesion);
     this.version.set(sesion.version ?? 0);
-    this.notas.set(sesion.borrador ?? '');
+    this.casoNuevo.set(sesion.casoId ?? null);
+    this.notas.set(notasDelBorrador(sesion.borrador));
 
     const evaluacion = sesion.evaluacion;
     this.modo.set(comoModo(evaluacion?.modo));
@@ -341,9 +597,22 @@ export class AtencionPage {
     if (this.hayConflicto()) {
       return;
     }
+    this.programarAutosave();
+  }
+
+  /**
+   * Programa el autosave. Si al vencer la espera hay un tratamiento o un cambio de caso
+   * escribiendose, espera otra vuelta: los dos mandan la misma version y el segundo comeria un 409
+   * que nadie provoco.
+   */
+  private programarAutosave(): void {
     this.cancelarAutosave();
     this.temporizador = setTimeout(() => {
       this.temporizador = null;
+      if (this.tratamientoEnVuelo() || this.cambiandoCaso()) {
+        this.programarAutosave();
+        return;
+      }
       this.guardarBorrador();
     }, ESPERA_AUTOSAVE);
   }
@@ -360,13 +629,15 @@ export class AtencionPage {
     this.guardando.set(true);
     this.error.set(null);
 
-    this.api.guardarBorrador(consultorioId, sesionId, this.notas(), this.version()).subscribe({
-      next: (sesion) => {
-        this.guardando.set(false);
-        this.adoptarSoloVersion(sesion);
-      },
-      error: (error: unknown) => this.fallo(error),
-    });
+    this.api
+      .guardarBorrador(consultorioId, sesionId, borradorDeNotas(this.notas()), this.version())
+      .subscribe({
+        next: (sesion) => {
+          this.guardando.set(false);
+          this.adoptarSoloVersion(sesion);
+        },
+        error: (error: unknown) => this.fallo(error, traducirErrorDeBorrador),
+      });
   }
 
   // -------------------------------------------------------------------------------------
@@ -546,7 +817,7 @@ export class AtencionPage {
       next: (sesion) => {
         this.guardando.set(false);
         this.version.set(sesion.version ?? 0);
-        this.notasDelServidor.set(sesion.borrador ?? '');
+        this.notasDelServidor.set(notasDelBorrador(sesion.borrador));
         this.sesion.set({ ...sesion, borrador: this.sesion()?.borrador });
         this.error.set(null);
       },
@@ -597,10 +868,13 @@ export class AtencionPage {
    * <p>Si la relectura falla no se toca nada. Quedarse con el cartel y la pantalla como estaba es
    * peor que nada, pero es honesto; borrarla seria afirmar un estado que no se pudo confirmar.
    */
-  private fallo(error: unknown): void {
+  private fallo(
+    error: unknown,
+    traducir: (error: unknown) => ErrorAtencion = traducirErrorAtencion,
+  ): void {
     this.guardando.set(false);
     this.cancelarAutosave();
-    const traducido = traducirErrorAtencion(error);
+    const traducido = traducir(error);
     this.error.set(traducido);
 
     if (traducido.causa !== 'sesion-cerrada') {
@@ -627,9 +901,18 @@ export class AtencionPage {
   }
 
   private numeroDeTurno(): number | null {
-    const id = Number(this.turnoId());
-    return Number.isFinite(id) && id > 0 ? id : null;
+    return idPositivo(this.turnoId());
   }
+
+  private numeroDeSesion(): number | null {
+    return idPositivo(this.sesionId());
+  }
+}
+
+/** El id de la ruta, o `null` si falta o no es un entero positivo. */
+function idPositivo(valor: string | undefined): number | null {
+  const id = Number(valor);
+  return valor !== undefined && Number.isInteger(id) && id > 0 ? id : null;
 }
 
 /** Texto recortado, o `undefined` para que la clave no viaje. */

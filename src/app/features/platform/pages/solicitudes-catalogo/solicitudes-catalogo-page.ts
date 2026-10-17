@@ -8,6 +8,7 @@ import {
   signal,
 } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { catchError, map, of } from 'rxjs';
 
 import { CatalogoClinicoService } from '../../../../api/generated/api/catalogo-clinico.service';
@@ -19,7 +20,9 @@ import {
 } from '../../../../api/generated/model/resolve-catalogo-solicitud-request';
 import { formatearInstante } from '../../../../shared/utils/instantes';
 import { textoRequerido } from '../../../../shared/validators/texto-requerido';
+import { RUTA_SUSCRIPCIONES_DE_PLATAFORMA } from '../../models/rutas-de-plataforma';
 import { CausaSolicitud, traducirErrorSolicitud } from '../../models/solicitud-errors';
+import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 
 type FiltroEstado = 'TODAS' | 'PENDIENTE' | 'APROBADA' | 'RECHAZADA';
 type Desenlace = 'APROBAR' | 'RECHAZAR';
@@ -54,17 +57,20 @@ type Especialidades =
  */
 @Component({
   selector: 'app-solicitudes-catalogo-page',
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, RouterLink],
   templateUrl: './solicitudes-catalogo-page.html',
 })
 export class SolicitudesCatalogoPage {
+  private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly catalogo = inject(CatalogoClinicoService);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly formBuilder = inject(FormBuilder);
   private readonly injector = inject(Injector);
 
-  protected readonly formatearInstante = formatearInstante;
+  protected readonly formatearInstante = (instante: string | undefined | null): string | null =>
+    formatearInstante(instante, this.diaDeLaSede.zona());
 
+  protected readonly rutaSuscripciones = RUTA_SUSCRIPCIONES_DE_PLATAFORMA;
   protected readonly estado = signal<Estado>({ tipo: 'cargando' });
   protected readonly filtroEstado = signal<FiltroEstado>('PENDIENTE');
   protected readonly seleccionada = signal<CatalogoSolicitudResponse | null>(null);

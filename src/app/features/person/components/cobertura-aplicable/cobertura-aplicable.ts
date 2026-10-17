@@ -19,6 +19,7 @@ import { CoberturasApi } from '../../services/coberturas-api';
 import { fechaEnPalabras, importeEnPalabras } from '../../models/etiquetas-de-ficha';
 import { motivoDeNoAplicable } from '../../models/etiquetas-de-cobertura';
 import { traducirErrorPersona } from '../../models/person-errors';
+import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 
 type EstadoDeConsulta =
   | { readonly tipo: 'sin-oferta' }
@@ -48,6 +49,7 @@ type EstadoDeConsulta =
   styleUrl: '../../person.css',
 })
 export class CoberturaAplicable {
+  private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly api = inject(CoberturasApi);
   private readonly contexto = inject(TenantContextStore);
 
@@ -57,7 +59,8 @@ export class CoberturaAplicable {
   /** `YYYY-MM-DD`, o vacio para el dia de hoy de la sede. */
   readonly fecha = input('');
 
-  protected readonly fechaEnPalabras = fechaEnPalabras;
+  protected readonly fechaEnPalabras = (valor: string | undefined | null): string =>
+    fechaEnPalabras(valor, this.diaDeLaSede.zona());
   protected readonly motivoDeNoAplicable = motivoDeNoAplicable;
 
   protected readonly estado = signal<EstadoDeConsulta>({ tipo: 'sin-oferta' });

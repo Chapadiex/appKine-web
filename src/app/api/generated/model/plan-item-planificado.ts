@@ -18,6 +18,14 @@ export interface PlanItemPlanificado {
      */
     autorizacionId?: number;
     /**
+     * Primer dia de vigencia de esa autorizacion, leido en vivo de M17 (0.107.0). Ausente si el item no tiene autorizacion o si esta ya no resuelve (dada de baja). Fecha local, sin hora
+     */
+    autorizacionVigenciaDesde?: string;
+    /**
+     * Ultimo dia de vigencia de esa autorizacion, INCLUSIVO, leido en vivo de M17 (0.107.0). Ausente si no tiene autorizacion, si no resuelve o si la autorizacion no tiene fin. Sirve para avisar que vence antes del fin estimado del plan sin pedir otro permiso
+     */
+    autorizacionVigenciaHasta?: string;
+    /**
      * Sesiones que la cobertura otorgo, declaradas a mano. Ausente = sin tope declarado, que es distinto de cero
      */
     cantidadAutorizada?: number;

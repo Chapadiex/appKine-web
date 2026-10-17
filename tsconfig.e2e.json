@@ -1,0 +1,10 @@
+/* Chequeo de tipos de e2e/ y playwright.config.ts. Playwright transpila sin tipar, asi que
+   sin este proyecto un error de tipos en un spec no lo agarra nada. Se corre con `npm run lint:e2e`. */
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "types": ["node"]
+  },
+  "include": ["e2e/**/*.ts", "playwright.config.ts"]
+}

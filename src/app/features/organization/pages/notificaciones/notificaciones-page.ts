@@ -17,6 +17,7 @@ import {
   textoEstado,
   textoTipo,
 } from '../../models/notificaciones';
+import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 
 const POR_PAGINA = 20;
 
@@ -44,13 +45,15 @@ const POR_PAGINA = 20;
   styleUrl: '../../organization.css',
 })
 export class NotificacionesPage {
+  private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly notificaciones = inject(NotificacionesService);
   private readonly tenantContext = inject(TenantContextStore);
 
   protected readonly estadosFiltrables = ESTADOS_FILTRABLES;
   protected readonly textoEstado = textoEstado;
   protected readonly textoTipo = textoTipo;
-  protected readonly formatearInstante = formatearInstante;
+  protected readonly formatearInstante = (instante: string | undefined | null): string | null =>
+    formatearInstante(instante, this.diaDeLaSede.zona());
 
   protected readonly estado = signal<EstadoDeListado<NotificationPageResponse>>({
     tipo: 'cargando',

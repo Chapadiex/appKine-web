@@ -22,6 +22,7 @@ import {
 } from '../../models/reportes';
 import { ReportesApi } from '../../services/reportes-api';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
+import { guardarComoArchivo, nombreDelEncabezado } from '../../../../shared/utils/descarga';
 
 type EstadoReporte =
   | { readonly tipo: 'inicial' }
@@ -189,9 +190,14 @@ export class ReportesPage {
     this.exportando.set(true);
     this.errorExport.set(null);
     this.api.exportar(consultorioId, actual.reporte, desde, hasta).subscribe({
-      next: (csv) => {
+      next: (respuesta) => {
         this.exportando.set(false);
-        descargar(csv, nombreDeArchivo(actual.reporte ?? 'reporte', desde, hasta));
+        // El nombre lo pone el servidor; el armado local queda de respaldo si no lo mando.
+        guardarComoArchivo(
+          new Blob([respuesta.body ?? ''], { type: 'text/csv;charset=utf-8' }),
+          nombreDelEncabezado(respuesta.headers.get('Content-Disposition')) ??
+            nombreDeArchivo(actual.reporte ?? 'reporte', desde, hasta),
+        );
       },
       error: (error: unknown) => {
         this.exportando.set(false);
@@ -217,13 +223,4 @@ export class ReportesPage {
 /** El primero del mes de `hoy` (`YYYY-MM-DD`), que ya viene en la zona de la sede. */
 function primerDiaDelMes(hoy: string): string {
   return `${hoy.slice(0, 8)}01`;
-}
-
-function descargar(contenido: string, nombre: string): void {
-  const url = URL.createObjectURL(new Blob([contenido], { type: 'text/csv;charset=utf-8' }));
-  const enlace = document.createElement('a');
-  enlace.href = url;
-  enlace.download = nombre;
-  enlace.click();
-  URL.revokeObjectURL(url);
 }

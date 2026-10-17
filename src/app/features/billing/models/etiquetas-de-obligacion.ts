@@ -2,7 +2,9 @@ import {
   Obligacion,
   ObligacionConceptoEnum,
   ObligacionEstadoEnum,
+  ObligacionOrigenEnum,
 } from '../../../api/generated/model/obligacion';
+import { formatearFecha } from '../../../shared/utils/instantes';
 
 /**
  * Textos y formateo de la cuenta corriente (M18, AKINE-07.01).
@@ -104,6 +106,25 @@ export function conceptoEnPalabras(concepto: string | undefined): string {
   }
 }
 
+/**
+ * De donde salio la deuda (M29, contrato 0.102.0): una sesion cerrada o la venta de un pase o un
+ * abono. Una venta <b>no tiene sesion</b> —`sesionId` viene vacio— y la pantalla no lo usa para
+ * nada, asi que no se rompe: solo lo dice.
+ *
+ * <p>`SESION` y la ausencia de origen (deudas anteriores a M29) devuelven vacio: es el caso
+ * normal y rotularlo en cada fila seria ruido.
+ */
+export function origenEnPalabras(origen: string | undefined): string {
+  switch (origen) {
+    case ObligacionOrigenEnum.VENTA_PASE:
+      return 'Venta de pase';
+    case ObligacionOrigenEnum.VENTA_ABONO:
+      return 'Venta de abono';
+    default:
+      return '';
+  }
+}
+
 /** Clase de la marca de estado. Reusa las tres del design system, sin colores propios. */
 export function claseDeEstado(estado: string | undefined): string {
   if (estado === ObligacionEstadoEnum.ANULADA) {
@@ -127,18 +148,27 @@ export function sePuedeAnular(obligacion: Obligacion): boolean {
   return obligacion.estado !== ObligacionEstadoEnum.ANULADA;
 }
 
-/** Fecha legible de un instante UTC, con la zona del navegador. */
-export function fechaEnPalabras(instante: string | undefined): string {
-  if (instante === undefined || instante === '') {
-    return '';
-  }
-  const fecha = new Date(instante);
-  if (Number.isNaN(fecha.getTime())) {
-    return '';
-  }
-  return new Intl.DateTimeFormat('es-AR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  }).format(fecha);
+/**
+ * `true` si la deuda salio de la venta de un pase o un abono y no de una sesion (contrato
+ * 0.114.0).
+ *
+ * <p>Esa deuda <b>no se anula sola</b>: `DELETE /obligaciones/{id}` responde 409
+ * `obligacion-de-venta`, porque dejaria el pase `ACTIVO` con sus creditos y sin deuda que lo
+ * respalde. Se anula el pase, que anula las dos cosas juntas. Misma regla que el backend: todo
+ * origen distinto de `SESION`. Sin origen (deudas anteriores a M29) es una sesion.
+ */
+export function esDeVenta(obligacion: Obligacion): boolean {
+  return (obligacion.origen ?? ObligacionOrigenEnum.SESION) !== ObligacionOrigenEnum.SESION;
+}
+
+/**
+ * Fecha de negocio legible, en la zona de la sede.
+ *
+ * <p>Un instante (`devengadaEn`, `registradoEn`) se muestra en `zona` —`DiaDeLaSede.zona()`—: una
+ * deuda devengada a las 22:30 del 14 en Cordoba es del 14 aunque el navegador ya este en el 15.
+ * Una fecha pura del contrato (`fechaNegocio`, `periodoDesde`) no se convierte. Ver
+ * `formatearFecha` en `shared/utils/instantes`.
+ */
+export function fechaEnPalabras(valor: string | undefined, zona = ''): string {
+  return formatearFecha(valor, zona);
 }

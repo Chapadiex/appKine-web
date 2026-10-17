@@ -10,6 +10,7 @@ import { TenantContextStore } from '../../../../core/services/tenant-context.sto
 import { etiquetaDeTipo } from '../../models/tipos-de-espacio';
 import { traducirErrorEspacio } from '../../models/espacio-errors';
 import { aCampoLocal, aInstanteUtc, formatearInstante } from '../../../../shared/utils/instantes';
+import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 
 /** Lo que devuelve la consulta, envuelto para reusar {@link vistaDeListado}. */
 interface ResultadoDeVentana {
@@ -58,11 +59,13 @@ const MILISEGUNDOS_POR_DIA = 24 * 60 * 60 * 1000;
 })
 export class DisponibilidadPage {
   private readonly espacios = inject(EspaciosService);
+  private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly tenantContext = inject(TenantContextStore);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
 
   protected readonly etiquetaDeTipo = etiquetaDeTipo;
-  protected readonly formatearInstante = formatearInstante;
+  protected readonly formatearInstante = (instante: string | undefined): string | null =>
+    formatearInstante(instante, this.diaDeLaSede.zona());
   protected readonly maximoDeDias = MAXIMO_DE_DIAS;
 
   protected readonly nombreDeLaSede = computed(
@@ -104,6 +107,19 @@ export class DisponibilidadPage {
         this.proponerVentana();
       });
     });
+
+    // La ventana se propone al construirse, quizas antes de conocer la zona de la sede. Cuando
+    // llega, se vuelve a proponer en esa zona si nadie toco los campos ni consulto todavia.
+    effect(() => {
+      if (this.diaDeLaSede.zona() === '') {
+        return;
+      }
+      untracked(() => {
+        if (this.formulario.pristine && this.ventanaConsultada() === null) {
+          this.proponerVentana();
+        }
+      });
+    });
   }
 
   /**
@@ -116,8 +132,8 @@ export class DisponibilidadPage {
     const ahora = new Date();
     const enDosHoras = new Date(ahora.getTime() + 2 * 60 * 60 * 1000);
     this.formulario.reset({
-      desde: aCampoLocal(ahora.toISOString()),
-      hasta: aCampoLocal(enDosHoras.toISOString()),
+      desde: aCampoLocal(ahora.toISOString(), this.diaDeLaSede.zona()),
+      hasta: aCampoLocal(enDosHoras.toISOString(), this.diaDeLaSede.zona()),
     });
   }
 
@@ -137,8 +153,8 @@ export class DisponibilidadPage {
     }
 
     const valores = this.formulario.getRawValue();
-    const desde = aInstanteUtc(valores.desde);
-    const hasta = aInstanteUtc(valores.hasta);
+    const desde = aInstanteUtc(valores.desde, this.diaDeLaSede.zona());
+    const hasta = aInstanteUtc(valores.hasta, this.diaDeLaSede.zona());
 
     if (desde === null || hasta === null) {
       this.errorVentana.set('Revisa las dos fechas: alguna no es un momento valido.');

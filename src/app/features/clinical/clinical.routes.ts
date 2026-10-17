@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 
+import { ANCHO_AMPLIO, DATA_ANCHO } from '../../core/models/ancho-de-contenido';
 import { contextGuard } from '../../core/guards/context.guard';
 
 /**
@@ -34,9 +35,12 @@ import { contextGuard } from '../../core/guards/context.guard';
  * sesion para volver a mostrar lo mismo. Despues del cierre esa URL sigue siendo la correcta:
  * abrirla devuelve la atencion cerrada, en modo lectura.
  *
- * <p><b>Y no hay ruta de enmienda.</b> Corregir una sesion cerrada es AKINE-06.06, fuera de
- * alcance por DP-10. La Historia Clinica tampoco tiene endpoints. Montar rutas para ellas seria
- * prometer pantallas que terminan en un 404.
+ * <h2>Enmienda y versiones (AKINE-06.06): por sesion, y no por turno</h2>
+ *
+ * <p>Lo que se corrige es una <b>sesion cerrada</b>, que ya existe y tiene id: no hay nada que
+ * iniciar, asi que la URL es la de la sesion. Lleva solo el id —ningun dato clinico viaja en la
+ * URL— y la pantalla lee el resto. Las dos llevan `contextGuard` por lo mismo que la atencion,
+ * y tampoco `permissionGuard`: enmendar la sesion ajena es 409 `sesion-ajena`, no 403.
  */
 export const routes: Routes = [
   {
@@ -44,5 +48,35 @@ export const routes: Routes = [
     canActivate: [contextGuard],
     loadComponent: () => import('./pages/atencion/atencion-page').then((m) => m.AtencionPage),
     title: 'AKINE - Atencion clinica',
+  },
+  {
+    // Atencion de un participante de una clase (AKINE-08.05): ya existe —la abrio el panel de la
+    // clase— y se abre por su id. Misma pantalla que la del turno.
+    path: 'sesiones/:sesionId',
+    canActivate: [contextGuard],
+    loadComponent: () => import('./pages/atencion/atencion-page').then((m) => m.AtencionPage),
+    title: 'AKINE - Atencion clinica',
+  },
+  {
+    // Panel de atencion clinica de una clase (AKINE-08.05): una atencion por participante y Caso.
+    // Sin `permissionGuard` por lo mismo que la atencion: lo decide el backend (sesion:register).
+    path: 'clases/:claseId',
+    canActivate: [contextGuard],
+    loadComponent: () =>
+      import('./pages/atencion-grupal/atencion-grupal-page').then((m) => m.AtencionGrupalPage),
+    title: 'AKINE - Atencion clinica de la clase',
+    data: { [DATA_ANCHO]: ANCHO_AMPLIO },
+  },
+  {
+    path: 'sesiones/:sesionId/enmienda',
+    canActivate: [contextGuard],
+    loadComponent: () => import('./pages/enmienda/enmienda-page').then((m) => m.EnmiendaPage),
+    title: 'AKINE - Enmendar una atencion',
+  },
+  {
+    path: 'sesiones/:sesionId/versiones',
+    canActivate: [contextGuard],
+    loadComponent: () => import('./pages/versiones/versiones-page').then((m) => m.VersionesPage),
+    title: 'AKINE - Versiones de una atencion',
   },
 ];

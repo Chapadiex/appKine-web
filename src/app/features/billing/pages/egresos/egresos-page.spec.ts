@@ -6,6 +6,7 @@ import { Router, provideRouter } from '@angular/router';
 import { EgresosPage } from './egresos-page';
 import { TIMEOUT_AXE, esperarSinViolaciones } from '../../../../core/testing/axe';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
+import { fijarReloj, soltarReloj } from '../../../../core/testing/reloj';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { errorInterceptor } from '../../../../core/interceptors/error.interceptor';
 import { provideApi } from '../../../../api/generated/provide-api';
@@ -52,7 +53,10 @@ describe('EgresosPage', () => {
     vi.spyOn(TestBed.inject(DiaDeLaSede), 'hoy').mockReturnValue(HOY_DE_LA_SEDE);
   });
 
-  afterEach(() => httpMock.verify());
+  afterEach(() => {
+    soltarReloj();
+    httpMock.verify();
+  });
 
   it('arranca en el mes de la sede y lista estado, total y saldo pendiente', async () => {
     const fixture = await montar([EGRESO]);
@@ -64,6 +68,16 @@ describe('EgresosPage', () => {
     expect(texto).toContain('150.000,00');
     expect(texto).toContain('50.000,00');
     expect(campo<HTMLInputElement>(fixture, '#filtro-desde').value).toBe('2026-10-01');
+  });
+
+  it('la fecha de registro es la del dia de la sede, no la del navegador', async () => {
+    // 22:30 del 14/10 en Cordoba: en UTC, o en cualquier zona adelantada, ya es el 15.
+    fijarReloj('2026-10-15T01:30:00Z', { zonaDelNavegador: 'Pacific/Kiritimati' });
+    vi.spyOn(TestBed.inject(DiaDeLaSede), 'zona').mockReturnValue('America/Argentina/Cordoba');
+    const fixture = await montar([{ ...EGRESO, registradoEn: '2026-10-15T01:30:00Z' }]);
+
+    expect(contenido(fixture)).toContain('14/10/2026');
+    expect(contenido(fixture)).not.toContain('15/10/2026');
   });
 
   it('filtrar manda estado, categoria y periodo al servidor', async () => {

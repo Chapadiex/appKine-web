@@ -89,7 +89,8 @@ export class PresentacionDetallePage {
   protected readonly estadoDeItem = estadoDeItemEnPalabras;
   protected readonly hallazgoEnPalabras = hallazgoEnPalabras;
   protected readonly fecha = fechaIsoEnPalabras;
-  protected readonly instante = fechaEnPalabras;
+  protected readonly instante = (valor: string | undefined): string =>
+    fechaEnPalabras(valor, this.diaDeLaSede.zona());
   protected readonly medioEnPalabras = medioEnPalabras;
   protected readonly medios = MEDIOS_DE_PAGO_DE_FINANCIADOR;
   protected readonly esDebitable = esDebitable;

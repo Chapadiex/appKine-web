@@ -53,6 +53,27 @@ export type CausaAtencion =
    * vigente ese dia. La sesion sigue abierta: se carga el precio y se reintenta. Ver `ofertaId`.
    */
   | 'oferta-sin-precio'
+  /** 400 `medicion-fuera-de-rango`: el valor cae fuera del rango vigente. Ver `minimo`/`maximo`. */
+  | 'fuera-de-rango'
+  /** 400 `medicion-tipo-incompatible`: falta el valor o sobra otro, segun el tipo de la medida. */
+  | 'tipo-incompatible'
+  /** 409 `medicion-definicion-inactiva`: el test se dio de baja y no admite mediciones nuevas. */
+  | 'definicion-inactiva'
+  /** 409 `practica-no-utilizable` / `practica-no-habilitada-en-oferta`. */
+  | 'practica-no-utilizable'
+  /** 400 `parametro-invalido`: un parametro sin tipo, o con unidad sobre algo que no es numero. */
+  | 'parametro-invalido'
+  /** 409 `enmienda-cambia-practicas`: la enmienda cambiaria el conjunto de practicas realizadas. */
+  | 'enmienda-cambia-practicas'
+  /** 400 `enmienda-sin-motivo`: una enmienda sin motivo es una correccion silenciosa. */
+  | 'enmienda-sin-motivo'
+  /** 409 `caso-clinico-cerrado` / `caso-no-activo`: el caso elegido ya no esta activo. */
+  | 'caso-no-activo'
+  /**
+   * 409 `caso-de-atencion-grupal` (AKINE-08.05): la atencion es de un participante de una clase y
+   * su caso lo fijo la derivacion. No se cambia.
+   */
+  | 'caso-de-atencion-grupal'
   /** Cualquier otro 409. Gana el `detail` del backend. */
   | 'conflicto'
   /** 429: hay que esperar. */
@@ -69,6 +90,9 @@ export interface ErrorAtencion {
   readonly motivo: string;
   /** Oferta a la que le falta precio. Solo en `oferta-sin-precio`, y si el servidor la mando. */
   readonly ofertaId?: number | null;
+  /** Rango vigente de la medida. Solo en `fuera-de-rango`, si el servidor lo mando. */
+  readonly minimo?: number | null;
+  readonly maximo?: number | null;
 }
 
 const MENSAJE_GENERICO = 'No pudimos completar la operacion. Volve a intentar en un momento.';
@@ -107,14 +131,47 @@ const MENSAJE_VERSION_VIEJA =
  *
  * <p>El texto tiene que decir las dos cosas que le importan a quien lo lee. Que <b>lo cerrado
  * quedo guardado</b> —el 409 llega al intentar seguir editando, y sin decirlo parece que se
- * perdio algo—, y que corregir una sesion cerrada <b>no existe todavia</b>: es una enmienda con su
- * propio actor y su propio motivo (AKINE-06.06), y prometer un camino que no hay es peor que
- * decir que no lo hay.
+ * perdio algo—, y que corregir una sesion cerrada <b>es una enmienda</b> (AKINE-06.06): con motivo
+ * obligatorio y una version nueva que deja la anterior intacta.
  */
 const MENSAJE_SESION_CERRADA =
   'Esta atencion ya esta cerrada, asi que no admite mas cambios. Lo que estaba guardado al ' +
-  'cerrarla quedo registrado. Corregir una sesion cerrada es una enmienda y todavia no se puede ' +
-  'hacer desde el sistema.';
+  'cerrarla quedo registrado. Corregir una sesion cerrada es una enmienda: se hace desde la ' +
+  'atencion cerrada, con un motivo, y deja la version anterior intacta.';
+
+const MENSAJE_TIPO_INCOMPATIBLE =
+  'El valor no corresponde al tipo de esa medida: una numerica pide un numero, una de texto un ' +
+  'hallazgo y una de si/no una de las dos opciones. Se manda exactamente uno.';
+
+const MENSAJE_DEFINICION_INACTIVA =
+  'Esa medida se dio de baja en el catalogo y ya no admite mediciones nuevas. Las ya tomadas ' +
+  'siguen legibles.';
+
+const MENSAJE_PRACTICA_NO_UTILIZABLE =
+  'Esa practica no se puede asentar en esta atencion: se dio de baja en el catalogo o la oferta ' +
+  'del turno no la incluye.';
+
+const MENSAJE_PARAMETRO_INVALIDO =
+  'Un parametro no se puede interpretar: cada uno necesita su tipo, y la unidad va solo en los ' +
+  'numericos.';
+
+const MENSAJE_ENMIENDA_CAMBIA_PRACTICAS =
+  'La enmienda cambiaria las practicas realizadas en la sesion, y eso no se corrige enmendando: ' +
+  'esas practicas eligieron al cierre que autorizacion se consumio. Se puede corregir todo lo ' +
+  'demas de cada tratamiento.';
+
+const MENSAJE_ENMIENDA_SIN_MOTIVO =
+  'Falta el motivo de la enmienda. Sin el, una correccion es indistinguible de un cambio ' +
+  'silencioso, que es justamente lo que el historial existe para evitar.';
+
+const MENSAJE_CASO_NO_ACTIVO =
+  'El caso elegido ya no esta activo. Elegi otro, o inicia la atencion sin caso y reabrilo desde ' +
+  'la historia clinica si correspondia.';
+
+const MENSAJE_CASO_DE_ATENCION_GRUPAL =
+  'El caso de esta atencion no se puede cambiar: es la atencion de un participante de una clase, ' +
+  'y su caso lo fijo la derivacion clinica. Si correspondia otro caso, cerra esta atencion con lo ' +
+  'que paso y deriva al participante al caso correcto desde la clase.';
 
 const MENSAJE_SUSCRIPCION_SUSPENDIDA =
   'La suscripcion de la organizacion esta suspendida, asi que no se pueden registrar atenciones.';
@@ -181,6 +238,42 @@ export function traducirErrorAtencion(error: unknown): ErrorAtencion {
       return { mensaje: MENSAJE_SESION_CERRADA, causa: 'sesion-cerrada', motivo: '' };
     case 'validation-error':
       return { mensaje: conDetalle(error, MENSAJE_VALIDACION), causa: 'validacion', motivo: '' };
+    case 'medicion-fuera-de-rango':
+      return mensajeFueraDeRango(error);
+    case 'medicion-tipo-incompatible':
+      return { mensaje: MENSAJE_TIPO_INCOMPATIBLE, causa: 'tipo-incompatible', motivo: '' };
+    case 'medicion-definicion-inactiva':
+      return { mensaje: MENSAJE_DEFINICION_INACTIVA, causa: 'definicion-inactiva', motivo: '' };
+    case 'practica-no-utilizable':
+    case 'practica-no-habilitada-en-oferta':
+      return {
+        mensaje: MENSAJE_PRACTICA_NO_UTILIZABLE,
+        causa: 'practica-no-utilizable',
+        motivo: '',
+      };
+    case 'parametro-invalido':
+      return {
+        mensaje: conDetalle(error, MENSAJE_PARAMETRO_INVALIDO),
+        causa: 'parametro-invalido',
+        motivo: '',
+      };
+    case 'enmienda-cambia-practicas':
+      return {
+        mensaje: MENSAJE_ENMIENDA_CAMBIA_PRACTICAS,
+        causa: 'enmienda-cambia-practicas',
+        motivo: '',
+      };
+    case 'enmienda-sin-motivo':
+      return { mensaje: MENSAJE_ENMIENDA_SIN_MOTIVO, causa: 'enmienda-sin-motivo', motivo: '' };
+    case 'caso-de-atencion-grupal':
+      return {
+        mensaje: MENSAJE_CASO_DE_ATENCION_GRUPAL,
+        causa: 'caso-de-atencion-grupal',
+        motivo: '',
+      };
+    case 'caso-clinico-cerrado':
+    case 'caso-no-activo':
+      return { mensaje: MENSAJE_CASO_NO_ACTIVO, causa: 'caso-no-activo', motivo: '' };
     default:
       break;
   }
@@ -207,6 +300,31 @@ export function traducirErrorAtencion(error: unknown): ErrorAtencion {
 }
 
 /**
+ * Traduce un error del autosave de las notas (`PUT .../borrador`).
+ *
+ * <p>Desde el contrato 0.102.0 un borrador que la columna JSON no acepta es 400 `validation-error`
+ * con `errors.contenido`, y no el 409 generico de integridad que llegaba antes. El mensaje generico
+ * de validacion habla de dolor y lateralidad, que no tienen nada que ver con las notas: aca se dice
+ * que fueron las notas, lo que respondio el servidor, y que lo escrito no se perdio. Cualquier otro
+ * error se traduce como el resto de la pantalla.
+ */
+export function traducirErrorDeBorrador(error: unknown): ErrorAtencion {
+  if (error instanceof AkineHttpError && error.problemType === 'validation-error') {
+    const contenido = error.erroresPorCampo['contenido'];
+    if (contenido) {
+      return {
+        mensaje:
+          `Las notas no se guardaron: ${contenido}. Lo que escribiste sigue en pantalla y no se ` +
+          'perdio; revisalo y volve a guardar.',
+        causa: 'validacion',
+        motivo: '',
+      };
+    }
+  }
+  return traducirErrorAtencion(error);
+}
+
+/**
  * `oferta-sin-precio` explicado: toda prestacion cerrada genera deuda (DP-17), y la de esta es el
  * precio particular, que la oferta no tiene cargado para ese dia. Lo que importa decir es que no
  * se perdio nada —la sesion sigue abierta— y cual es la salida: cargar el precio y volver a cerrar.
@@ -222,6 +340,31 @@ function mensajeSinPrecio(error: AkineHttpError): string {
     '. La atencion sigue abierta y no se perdio nada: carga el precio de la oferta y volve a ' +
     'cerrarla.'
   );
+}
+
+/**
+ * `medicion-fuera-de-rango` con el rango que el servidor mando. El rango se valida contra la version
+ * vigente del catalogo en este momento: decirlo evita que el profesional crea que la medida vieja
+ * quedo invalida.
+ */
+function mensajeFueraDeRango(error: AkineHttpError): ErrorAtencion {
+  const minimo = error.numeroDeExtension('minimo');
+  const maximo = error.numeroDeExtension('maximo');
+  const rango =
+    minimo !== null && maximo !== null
+      ? ` El catalogo admite de ${minimo} a ${maximo}.`
+      : minimo !== null
+        ? ` El catalogo admite desde ${minimo}.`
+        : maximo !== null
+          ? ` El catalogo admite hasta ${maximo}.`
+          : '';
+  return {
+    mensaje: `El valor esta fuera del rango de esa medida.${rango} Revisa la unidad y volve a cargarlo.`,
+    causa: 'fuera-de-rango',
+    motivo: '',
+    minimo,
+    maximo,
+  };
 }
 
 /** `2026-10-08` -> `08/10/2026`. Cualquier otra cosa se devuelve tal cual. */

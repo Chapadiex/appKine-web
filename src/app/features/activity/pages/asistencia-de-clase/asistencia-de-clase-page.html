@@ -1,0 +1,332 @@
+<p><a class="enlace" routerLink="/asistencia">Volver a las clases del dia</a></p>
+@if (puedeAtender()) {
+  <p>
+    <a class="enlace" [routerLink]="['/atencion/clases', claseId()]"
+      >Atencion clinica de la clase</a
+    >
+    <span class="ayuda">
+      — la atencion de cada participante que estuvo y fue derivado a un caso.</span
+    >
+  </p>
+}
+
+@switch (estado().tipo) {
+  @case ('cargando') {
+    <h1>Asistencia</h1>
+    <p class="estado estado--cargando" role="status">Cargando la clase…</p>
+  }
+  @case ('error') {
+    <h1>Asistencia</h1>
+    @if (error(); as fallo) {
+      <section class="tarjeta" role="alert" aria-labelledby="titulo-error-asistencia">
+        <h2 id="titulo-error-asistencia">No se pudo cargar la clase</h2>
+        <p class="estado estado--error">{{ fallo.mensaje }}</p>
+        <div class="acciones">
+          <button type="button" class="boton boton--secundario" (click)="cargar()">
+            Reintentar
+          </button>
+        </div>
+      </section>
+    }
+  }
+  @case ('listo') {
+    @if (detalle(); as clase) {
+      <h1>Asistencia: {{ clase.titulo || 'Clase ' + clase.claseId }}</h1>
+
+      <section class="tarjeta" aria-labelledby="titulo-clase">
+        <h2 id="titulo-clase">La clase</h2>
+        <p>
+          {{ fechaHora(clase.inicio, zona()) }} a {{ hora(clase.fin, zona()) }} ·
+          <b>{{ etiquetaDeEstadoDeClase(clase.estado) }}</b>
+        </p>
+        <ul class="contadores" aria-label="Resumen de la asistencia">
+          <li>Presentes: {{ clase.presentes ?? 0 }}</li>
+          <li>Ausentes: {{ clase.ausentes ?? 0 }}</li>
+          <li>Sin resolver: {{ clase.sinResolver ?? 0 }}</li>
+          <li>Lugares: {{ clase.ocupados ?? 0 }} de {{ clase.capacidadEfectiva ?? '—' }}</li>
+          <li>En espera: {{ clase.enEspera ?? 0 }}</li>
+        </ul>
+
+        @if (clase.estado === 'PROGRAMADA') {
+          <p class="ayuda">La lista se toma con la clase en curso: iniciala para empezar.</p>
+        }
+        @if (clase.estado === 'CANCELADA') {
+          <p class="ayuda">La clase esta cancelada y no tuvo asistentes.</p>
+        }
+        @if (clase.estado === 'REALIZADA') {
+          <p class="ayuda">
+            La clase ya cerro. Podes corregir una asistencia: cada correccion pide motivo y el
+            resultado anterior queda en el historial.
+          </p>
+        }
+
+        @if (puedeGestionarClase()) {
+          <div class="acciones">
+            @if (clase.estado === 'PROGRAMADA') {
+              <button type="button" class="boton" [disabled]="enviando()" (click)="iniciar()">
+                Iniciar clase
+              </button>
+            }
+            @if (clase.estado === 'EN_CURSO') {
+              <button
+                type="button"
+                class="boton boton--secundario"
+                [disabled]="enviando() || pendientes().length > 0"
+                aria-describedby="ayuda-cierre"
+                (click)="cerrar()"
+              >
+                Cerrar clase
+              </button>
+              <p id="ayuda-cierre" class="ayuda">
+                Al cerrar, quienes tenian lugar y nadie marco quedan ausentes.
+                @if (pendientes().length > 0) {
+                  Guarda o descarta los cambios antes de cerrar.
+                }
+              </p>
+            }
+          </div>
+        }
+      </section>
+
+      <div aria-live="polite">
+        @if (avisoCierre(); as aviso) {
+          <p class="estado estado--ok">{{ aviso }}</p>
+        }
+        @if (lote(); as resumen) {
+          <section class="tarjeta" aria-labelledby="titulo-resultado-lote">
+            <h2 id="titulo-resultado-lote">Resultado</h2>
+            <p class="estado estado--ok">
+              Se guardaron {{ resumen.exitosos }}
+              {{ resumen.exitosos === 1 ? 'participante' : 'participantes' }}.
+            </p>
+            @if (resumen.fallos.length > 0) {
+              <p class="estado estado--error">
+                {{ resumen.fallos.length }} no se pudieron guardar y siguen marcados para
+                reintentar:
+              </p>
+              <ul>
+                @for (fallo of resumen.fallos; track fallo.inscripcionId) {
+                  <li>
+                    <b>{{ fallo.nombre }}</b
+                    >: {{ fallo.mensaje }}
+                  </li>
+                }
+              </ul>
+            }
+            @if (resumen.consumos.length > 0) {
+              <h3>Pases</h3>
+              <ul>
+                @for (consumo of resumen.consumos; track consumo.inscripcionId) {
+                  <li>
+                    <b>{{ consumo.nombre }}</b
+                    >: {{ consumo.texto }}
+                  </li>
+                }
+              </ul>
+            }
+          </section>
+        }
+      </div>
+      @if (errorAccion(); as fallo) {
+        <p class="estado estado--error" role="alert">{{ fallo.mensaje }}</p>
+      }
+
+      <section class="tarjeta" aria-labelledby="titulo-participantes">
+        <h2 id="titulo-participantes">Participantes</h2>
+
+        @if (participantes().length === 0) {
+          <p class="estado estado--vacio">La clase no tiene inscriptos.</p>
+        } @else {
+          @if (admite() && puedeMarcar()) {
+            <div class="acciones">
+              <button
+                type="button"
+                class="boton boton--secundario"
+                [disabled]="enviando()"
+                (click)="presentesLosSinMarcar()"
+              >
+                Marcar presentes a los sin marcar
+              </button>
+            </div>
+          }
+
+          <div
+            class="tabla-scroll"
+            tabindex="0"
+            role="region"
+            aria-labelledby="titulo-tabla-participantes"
+          >
+            <table class="tabla">
+              <caption id="titulo-tabla-participantes">
+                Participantes de la clase
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col">Participante</th>
+                  <th scope="col">Inscripcion</th>
+                  <th scope="col">Registrado</th>
+                  @if (admite() && puedeMarcar()) {
+                    <th scope="col">Marcar</th>
+                  }
+                  <th scope="col"><span class="visualmente-oculto">Historial</span></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (p of participantes(); track p.inscripcion?.id) {
+                  <tr>
+                    <td>
+                      {{ nombre(p) }}
+                      @if (p.numeroDocumento) {
+                        <br /><span class="ayuda"
+                          >{{ p.tipoDocumento }} {{ p.numeroDocumento }}</span
+                        >
+                      }
+                    </td>
+                    <td>{{ etiquetaDeInscripcion(p.inscripcion?.estado) }}</td>
+                    <td>
+                      {{ etiquetaDeResultado(p.asistencia?.resultado) }}
+                      @if ((p.asistencia?.correcciones ?? 0) > 0) {
+                        <br /><span class="ayuda"
+                          >Corregida {{ p.asistencia?.correcciones }}
+                          {{ p.asistencia?.correcciones === 1 ? 'vez' : 'veces' }}</span
+                        >
+                      }
+                    </td>
+                    @if (admite() && puedeMarcar()) {
+                      <td>
+                        @if (tieneLugar(p)) {
+                          <fieldset class="marcas">
+                            <legend class="visualmente-oculto">
+                              Asistencia de {{ nombre(p) }}
+                            </legend>
+                            @for (r of resultados; track r.valor) {
+                              <label class="opcion-radio">
+                                <input
+                                  type="radio"
+                                  [name]="'asistencia-' + p.inscripcion?.id"
+                                  [value]="r.valor"
+                                  [checked]="elegido(p) === r.valor"
+                                  [disabled]="enviando()"
+                                  (change)="marcar(p, r.valor)"
+                                />
+                                {{ r.etiqueta }}
+                              </label>
+                            }
+                          </fieldset>
+                          @if (corrige(p)) {
+                            <div class="campo motivo-correccion">
+                              <label [for]="'motivo-' + p.inscripcion?.id">
+                                Motivo de la correccion
+                              </label>
+                              <input
+                                [id]="'motivo-' + p.inscripcion?.id"
+                                type="text"
+                                maxlength="500"
+                                [value]="marcaDe(p)?.motivo ?? ''"
+                                [attr.aria-invalid]="faltaMotivo(p) ? 'true' : null"
+                                [attr.aria-describedby]="
+                                  faltaMotivo(p) ? 'error-motivo-' + p.inscripcion?.id : null
+                                "
+                                (input)="escribirMotivo(p, $any($event.target).value)"
+                              />
+                              @if (faltaMotivo(p)) {
+                                <p [id]="'error-motivo-' + p.inscripcion?.id" class="campo__error">
+                                  Escribi por que se corrige.
+                                </p>
+                              }
+                            </div>
+                          }
+                        } @else {
+                          <span class="ayuda">Sin lugar en la clase</span>
+                        }
+                      </td>
+                    }
+                    <td>
+                      @if (p.asistencia?.id) {
+                        <button
+                          type="button"
+                          class="boton boton--secundario"
+                          (click)="verHistorial(p)"
+                        >
+                          Historial
+                          <span class="visualmente-oculto">de {{ nombre(p) }}</span>
+                        </button>
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+
+          @if ((clase.totalPages ?? 1) > 1) {
+            @if (pendientes().length === 0) {
+              <app-paginacion
+                [paginaActual]="pagina()"
+                [totalPaginas]="clase.totalPages ?? 1"
+                etiqueta="Paginas de participantes"
+                (cambioDePagina)="irAPagina($event)"
+              />
+            } @else {
+              <p class="ayuda">Guarda o descarta los cambios para ver otra pagina.</p>
+            }
+          }
+
+          @if (admite() && puedeMarcar()) {
+            <div class="acciones">
+              <button
+                type="button"
+                class="boton"
+                [disabled]="enviando() || pendientes().length === 0"
+                (click)="guardar()"
+              >
+                Guardar asistencia
+                @if (pendientes().length > 0) {
+                  ({{ pendientes().length }})
+                }
+              </button>
+              @if (pendientes().length > 0) {
+                <button
+                  type="button"
+                  class="boton boton--secundario"
+                  [disabled]="enviando()"
+                  (click)="descartar()"
+                >
+                  Descartar cambios
+                </button>
+              }
+            </div>
+          }
+        }
+      </section>
+
+      @if (historial(); as h) {
+        <section class="tarjeta" aria-labelledby="titulo-historial" aria-live="polite">
+          <h2 id="titulo-historial">Historial de {{ h.nombre }}</h2>
+          @if (h.error) {
+            <p class="estado estado--error">{{ h.error.mensaje }}</p>
+          } @else if (h.eventos === null) {
+            <p class="estado estado--cargando">Cargando el historial…</p>
+          } @else if (h.eventos.length === 0) {
+            <p class="estado estado--vacio">Sin eventos registrados.</p>
+          } @else {
+            <ol class="historial">
+              @for (e of h.eventos; track e.id) {
+                <li>
+                  {{ fechaHora(e.ocurridoEn, zona()) }} · <b>{{ etiquetaDeEvento(e.tipo) }}</b
+                  >:
+                  {{ cambio(e) }}
+                </li>
+              }
+            </ol>
+          }
+          <div class="acciones">
+            <button type="button" class="boton boton--secundario" (click)="cerrarHistorial()">
+              Cerrar historial
+            </button>
+          </div>
+        </section>
+      }
+    }
+  }
+}

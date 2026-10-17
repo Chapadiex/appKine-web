@@ -214,6 +214,40 @@ describe('InvitacionesPage', () => {
     expect(anfitrion.textContent).toContain('Podes volver a invitar a esa persona');
   });
 
+  it('cambiar de filtro con una relectura en vuelo descarta la vieja', async () => {
+    const fixture = await montar();
+    const anfitrion = fixture.nativeElement as HTMLElement;
+
+    abrir(fixture, 'Cancelar');
+    escribir(anfitrion, '#cancelar-invitacion-motivo', 'Se cubrio el puesto');
+    fixture.detectChanges();
+    confirmar(anfitrion, 'Cancelar la invitacion');
+    fixture.detectChanges();
+    httpMock
+      .expectOne(
+        (peticion: HttpRequest<unknown>) =>
+          peticion.method === 'POST' && peticion.url === `${LISTADO}/7/cancel`,
+      )
+      .flush({ ...PENDIENTE, estado: 'CANCELADA' });
+    // La relectura de las pendientes sigue en vuelo cuando se elige otro filtro.
+    const vieja = httpMock.expectOne(esListado());
+
+    const filtro = anfitrion.querySelector('#filtro-estado-invitacion') as HTMLSelectElement;
+    filtro.value = 'CANCELADA';
+    filtro.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+
+    const nueva = httpMock.expectOne(esListado());
+    expect(nueva.request.urlWithParams).toContain('estado=CANCELADA');
+    expect(vieja.cancelled).toBe(true);
+    nueva.flush([{ ...PENDIENTE, estado: 'CANCELADA', resolucionNota: 'Se cubrio el puesto' }]);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(anfitrion.querySelectorAll('tbody tr').length).toBe(1);
+    expect(anfitrion.textContent).toContain('Se cubrio el puesto');
+  });
+
   it(
     'la pantalla no tiene violaciones de accesibilidad',
     async () => {

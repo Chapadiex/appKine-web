@@ -1,0 +1,390 @@
+<p><a class="enlace" [routerLink]="RUTA_CLASES">Volver a las clases de la semana</a></p>
+
+@if (cargando() && clase() === null) {
+  <p class="estado estado--cargando" aria-live="polite">Leyendo la clase…</p>
+}
+
+@if (errorDeLectura(); as fallo) {
+  <h1>Clase</h1>
+  <section class="tarjeta conflicto" aria-labelledby="titulo-error-clase">
+    <h2 id="titulo-error-clase">No se pudo leer la clase</h2>
+    <p class="estado estado--error">{{ fallo.mensaje }}</p>
+    <div class="acciones">
+      @if (fallo.accion === 'elegir-contexto') {
+        <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto de trabajo</a>
+      } @else {
+        <button type="button" class="boton" (click)="cargar()">Reintentar</button>
+      }
+    </div>
+  </section>
+}
+
+@if (clase(); as actual) {
+  <h1>{{ titulo() }}</h1>
+
+  <section class="tarjeta" aria-labelledby="titulo-datos-clase">
+    <h2 id="titulo-datos-clase">La clase</h2>
+    <dl class="detalle">
+      <dt>Horario</dt>
+      <dd>{{ horario() }}</dd>
+      <dt>Estado</dt>
+      <dd>
+        <span
+          class="marca-estado"
+          [class.marca-estado--activa]="actual.estado === 'PROGRAMADA'"
+          [class.marca-estado--revocada]="actual.estado === 'CANCELADA'"
+          >{{ textoDeEstado(actual.estado) }}</span
+        >
+        @if (actual.motivoCancelacion) {
+          — {{ actual.motivoCancelacion }}
+        }
+      </dd>
+      @if (actual.ofertaNombre) {
+        <dt>Oferta</dt>
+        <dd>{{ actual.ofertaNombre }}</dd>
+      }
+      @if (actual.profesionalId) {
+        <dt>Profesional</dt>
+        <dd>{{ actual.profesionalNombre || 'Profesional #' + actual.profesionalId }}</dd>
+      }
+      @if (actual.espacioId) {
+        <dt>Box</dt>
+        <dd>{{ actual.espacioNombre || 'Box #' + actual.espacioId }}</dd>
+      }
+    </dl>
+
+    @if (cupos(); as c) {
+      <h3>Cupos</h3>
+      <dl class="detalle" aria-live="polite">
+        <dt>Lugares ocupados</dt>
+        <dd>{{ c.ocupados ?? 0 }} de {{ c.capacidadEfectiva ?? c.capacidad ?? 0 }}</dd>
+        <dt>Disponibles</dt>
+        <dd>{{ c.disponibles ?? 0 }}</dd>
+        <dt>En lista de espera</dt>
+        <dd>{{ c.enEspera ?? 0 }}</dd>
+        @if (c.capacidadEfectiva !== undefined && c.capacidadEfectiva !== c.capacidad) {
+          <dt>Cupo pedido</dt>
+          <dd>
+            {{ c.capacidad }}; la oferta o el box limitan la clase a {{ c.capacidadEfectiva }}
+          </dd>
+        }
+      </dl>
+    }
+
+    @if (puedeGestionar() && panel().tipo === 'ninguno') {
+      <div class="acciones">
+        <button type="button" class="boton boton--secundario" (click)="abrirReprogramacion()">
+          Reprogramar
+        </button>
+        <button type="button" class="boton boton--secundario" (click)="abrirCancelacion()">
+          Cancelar la clase
+        </button>
+      </div>
+    }
+  </section>
+
+  <div aria-live="polite">
+    @if (aviso()) {
+      <p class="estado estado--ok" role="status">{{ aviso() }}</p>
+    }
+    @if (errorDeAccion(); as fallo) {
+      <section class="tarjeta conflicto" aria-labelledby="titulo-error-accion" role="alert">
+        <h2 id="titulo-error-accion">No se pudo completar la operacion</h2>
+        <p class="estado estado--error">{{ fallo.mensaje }}</p>
+        @if (fallo.motivo) {
+          <p class="ayuda">Detalle: {{ fallo.motivo }}</p>
+        }
+        @if (fallo.accion === 'ofrecer-espera' && persona()) {
+          <div class="acciones">
+            <button type="button" class="boton" [disabled]="enviando()" (click)="inscribir(true)">
+              Anotar en la lista de espera
+            </button>
+          </div>
+        }
+      </section>
+    }
+  </div>
+
+  @if (panel().tipo === 'reprogramar') {
+    <form
+      class="tarjeta"
+      [formGroup]="reprogramacion"
+      (ngSubmit)="reprogramar()"
+      aria-labelledby="titulo-reprogramar"
+      novalidate
+    >
+      <h2 id="titulo-reprogramar">Reprogramar la clase</h2>
+      <p class="ayuda">
+        Es la misma clase: conserva a sus inscriptos y su historial. Si cambia el horario, cada
+        inscripto recibe un aviso. Fecha y horas en la zona de la sede.
+      </p>
+      <div class="filtros">
+        <div class="campo">
+          <label for="reprogramar-fecha">Fecha</label>
+          <input id="reprogramar-fecha" type="date" formControlName="fecha" />
+        </div>
+        <div class="campo">
+          <label for="reprogramar-inicio">Hora de inicio</label>
+          <input id="reprogramar-inicio" type="time" formControlName="horaInicio" />
+        </div>
+        <div class="campo">
+          <label for="reprogramar-fin">Hora de fin</label>
+          <input id="reprogramar-fin" type="time" formControlName="horaFin" />
+        </div>
+        <div class="campo">
+          <label for="reprogramar-capacidad">Cupo</label>
+          <input id="reprogramar-capacidad" type="number" min="1" formControlName="capacidad" />
+        </div>
+      </div>
+      <div class="campo">
+        <label for="reprogramar-espacio">Box</label>
+        <select
+          id="reprogramar-espacio"
+          formControlName="espacioId"
+          aria-describedby="reprogramar-espacio-ayuda"
+        >
+          <option value="">Que el sistema elija uno libre</option>
+          @for (espacio of espacios(); track espacio.espacioId) {
+            <option [value]="espacio.espacioId">{{ espacio.nombre }}</option>
+          }
+        </select>
+        <p class="ayuda" id="reprogramar-espacio-ayuda">
+          Si dejas que el sistema elija, toma el primer box libre, que puede no ser el actual. Un
+          box elegido se valida tal cual: si no esta libre, la clase no se mueve.
+        </p>
+      </div>
+      <div class="acciones">
+        <button type="submit" class="boton" [disabled]="enviando()">Guardar el cambio</button>
+        <button type="button" class="boton boton--secundario" (click)="cerrarPanel()">
+          Volver sin cambiar
+        </button>
+      </div>
+    </form>
+  }
+
+  @if (panel().tipo === 'cancelar') {
+    <section class="tarjeta">
+      <akine-confirmacion-con-motivo
+        idCampo="clase-cancelar-motivo"
+        titulo="Cancelar la clase"
+        etiqueta="Motivo de la cancelacion"
+        ayuda="Queda en el historial. Las inscripciones se cancelan y cada inscripto recibe un aviso."
+        textoConfirmar="Cancelar la clase"
+        [enviando]="enviando()"
+        (confirmado)="cancelarClase($event)"
+        (cancelado)="cerrarPanel()"
+      />
+    </section>
+  }
+
+  @if (puedeInscribir()) {
+    <section class="tarjeta" aria-labelledby="titulo-inscribir">
+      <h2 id="titulo-inscribir">Inscribir a una persona</h2>
+      <p class="ayuda">Inscribir reserva un lugar; no registra que la persona haya venido.</p>
+
+      @if (persona(); as elegida) {
+        <p>
+          Persona elegida: <b>{{ elegida.apellido }}, {{ elegida.nombre }}</b>
+          @if (elegida.numeroDocumento) {
+            — {{ elegida.numeroDocumento }}
+          }
+          <button type="button" class="boton boton--secundario" (click)="quitarPersona()">
+            Elegir otra
+          </button>
+        </p>
+        <div class="campo">
+          <label>
+            <input
+              type="checkbox"
+              [checked]="aceptaEspera()"
+              (change)="cambiarAceptaEspera($any($event.target).checked)"
+            />
+            Si no hay lugar, anotarla en la lista de espera
+          </label>
+        </div>
+        <div class="acciones">
+          <button type="button" class="boton" [disabled]="enviando()" (click)="inscribir()">
+            Inscribir
+          </button>
+        </div>
+      } @else {
+        <div class="campo">
+          <label for="inscribir-persona">Buscar en el padron: documento, apellido o nombre</label>
+          <input
+            id="inscribir-persona"
+            type="search"
+            autocomplete="off"
+            (input)="buscarPersona($any($event.target).value)"
+          />
+        </div>
+        @if (candidatas().length > 0) {
+          <ul class="lista-personas">
+            @for (candidata of candidatas(); track candidata.id) {
+              <li>
+                <button
+                  type="button"
+                  class="boton boton--secundario"
+                  (click)="elegirPersona(candidata)"
+                >
+                  {{ candidata.apellido }}, {{ candidata.nombre }}
+                  @if (candidata.numeroDocumento) {
+                    — {{ candidata.numeroDocumento }}
+                  }
+                </button>
+              </li>
+            }
+          </ul>
+        } @else if (buscoPersonas()) {
+          <p class="estado estado--vacio">Ninguna persona del padron coincide con esa busqueda.</p>
+        }
+      }
+    </section>
+  }
+
+  @if (panel().tipo === 'baja') {
+    <section class="tarjeta">
+      <akine-confirmacion-con-motivo
+        idCampo="inscripcion-baja-motivo"
+        [titulo]="'Dar de baja a ' + nombreDe(participanteEnBaja() ?? undefined)"
+        etiqueta="Motivo de la baja"
+        ayuda="Libera el lugar. Si habia lista de espera, entra la primera persona de la cola."
+        textoConfirmar="Dar de baja"
+        [enviando]="enviando()"
+        (confirmado)="darDeBaja($event)"
+        (cancelado)="cerrarPanel()"
+      />
+    </section>
+  }
+
+  @if (puedeVerParticipantes()) {
+    <section class="tarjeta" aria-labelledby="titulo-participantes">
+      <h2 id="titulo-participantes">Participantes</h2>
+      @if (actual.id) {
+        <p>
+          <a class="enlace" [routerLink]="['/asistencia', actual.id]">Tomar asistencia</a>
+          <span class="ayuda"> — iniciar la clase, registrar quien vino y cerrarla.</span>
+        </p>
+        @if (puedeAtender()) {
+          <p>
+            <a class="enlace" [routerLink]="['/atencion/clases', actual.id]">Atencion clinica</a>
+            <span class="ayuda">
+              — abrir la atencion de cada participante que estuvo y fue derivado a un caso.</span
+            >
+          </p>
+        }
+      }
+      @if (participantes() === null) {
+        <p class="estado estado--cargando">Leyendo los participantes…</p>
+      } @else if (conLugar().length === 0) {
+        <p class="estado estado--vacio">Todavia no hay nadie inscripto con lugar.</p>
+      } @else {
+        <div class="tabla-scroll" tabindex="0" role="region" aria-label="Inscriptos con lugar">
+          <table class="tabla">
+            <caption class="visualmente-oculto">
+              Inscriptos con lugar en la clase
+            </caption>
+            <thead>
+              <tr>
+                <th scope="col">Persona</th>
+                <th scope="col">Documento</th>
+                <th scope="col">Estado</th>
+                <th scope="col">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (p of conLugar(); track p.inscripcion?.id) {
+                <tr>
+                  <th scope="row">{{ nombreDe(p) }}</th>
+                  <td>{{ documentoDe(p) }}</td>
+                  <td>{{ textoDeInscripcion(p.inscripcion?.estado) }}</td>
+                  <td>
+                    @if (puedeOperarInscripciones() && editable()) {
+                      <div class="acciones-fila">
+                        @if (admiteConfirmacion(p.inscripcion)) {
+                          <button
+                            type="button"
+                            class="boton boton--secundario"
+                            [disabled]="enviando()"
+                            (click)="confirmar(p)"
+                          >
+                            Confirmar<span class="visualmente-oculto"> a {{ nombreDe(p) }}</span>
+                          </button>
+                        }
+                        @if (admiteBaja(p.inscripcion)) {
+                          <button
+                            type="button"
+                            class="boton boton--secundario"
+                            [disabled]="enviando()"
+                            (click)="abrirBaja(p)"
+                          >
+                            Dar de baja<span class="visualmente-oculto"> a {{ nombreDe(p) }}</span>
+                          </button>
+                        }
+                      </div>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+
+      <h3>Lista de espera</h3>
+      @if (enEspera().length === 0) {
+        <p class="ayuda">Nadie espera lugar.</p>
+      } @else {
+        <ol class="historial" aria-label="Lista de espera, en orden de llegada">
+          @for (p of enEspera(); track p.inscripcion?.id) {
+            <li>
+              {{ nombreDe(p) }} — posicion {{ p.inscripcion?.posicionEspera }}
+              @if (puedeOperarInscripciones() && editable()) {
+                <button
+                  type="button"
+                  class="boton boton--secundario"
+                  [disabled]="enviando()"
+                  (click)="abrirBaja(p)"
+                >
+                  Sacar de la espera<span class="visualmente-oculto"> a {{ nombreDe(p) }}</span>
+                </button>
+              }
+            </li>
+          }
+        </ol>
+      }
+
+      @if (canceladas().length > 0) {
+        <h3>Bajas</h3>
+        <ul class="historial">
+          @for (p of canceladas(); track p.inscripcion?.id) {
+            <li>
+              {{ nombreDe(p) }} — {{ cuando(p.inscripcion?.canceladaEn) }}
+              @if (p.inscripcion?.motivoCancelacion) {
+                ({{ p.inscripcion?.motivoCancelacion }})
+              }
+            </li>
+          }
+        </ul>
+      }
+    </section>
+  }
+
+  @if (historial().length > 0) {
+    <section class="tarjeta" aria-labelledby="titulo-historial">
+      <h2 id="titulo-historial">Historial</h2>
+      <ol class="historial">
+        @for (evento of historial(); track evento.id) {
+          <li>
+            {{ cuando(evento.ocurridoEn) }}: {{ textoDeEvento(evento.tipo) }}
+            @if (evento.inicioAnterior && evento.inicioNuevo) {
+              — de {{ cuando(evento.inicioAnterior) }} a {{ cuando(evento.inicioNuevo) }}
+            }
+            @if (evento.motivo) {
+              ({{ evento.motivo }})
+            }
+          </li>
+        }
+      </ol>
+    </section>
+  }
+}

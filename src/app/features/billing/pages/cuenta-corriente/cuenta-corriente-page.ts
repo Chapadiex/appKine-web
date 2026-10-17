@@ -28,11 +28,14 @@ import {
 import {
   claseDeEstado,
   conceptoEnPalabras,
+  esDeVenta,
+  origenEnPalabras,
   estadoEnPalabras,
   fechaEnPalabras,
   importeEnPalabras,
   sePuedeAnular,
 } from '../../models/etiquetas-de-obligacion';
+import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 
 /** En cual de los tres estados esta el listado. No es paginado: el backend devuelve un array. */
 type EstadoCuenta =
@@ -92,6 +95,7 @@ type EstadoCuenta =
   styleUrl: '../../billing.css',
 })
 export class CuentaCorrientePage {
+  private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly api = inject(BillingApi);
   private readonly tenantContext = inject(TenantContextStore);
 
@@ -113,12 +117,21 @@ export class CuentaCorrientePage {
   protected readonly rutaCobros = computed(
     () => `/pacientes/${this.personaId()}/cuenta-corriente/cobros`,
   );
+  /**
+   * Los pases de la persona (`features/activity`), donde se anula la deuda de una venta: anular el
+   * pase anula pase y deuda juntos (contrato 0.114.0). La ruta va escrita y no importada, porque
+   * un feature no importa de otro (ADR-0004).
+   */
+  protected readonly rutaPases = computed(() => `/pacientes/${this.personaId()}/pases`);
 
   protected readonly estadoEnPalabras = estadoEnPalabras;
   protected readonly claseDeEstado = claseDeEstado;
   protected readonly conceptoEnPalabras = conceptoEnPalabras;
-  protected readonly fechaEnPalabras = fechaEnPalabras;
+  protected readonly origenEnPalabras = origenEnPalabras;
+  protected readonly fechaEnPalabras = (valor: string | undefined): string =>
+    fechaEnPalabras(valor, this.diaDeLaSede.zona());
   protected readonly sePuedeAnular = sePuedeAnular;
+  protected readonly esDeVenta = esDeVenta;
 
   protected readonly estado = signal<EstadoCuenta>({ tipo: 'cargando' });
   protected readonly persona = signal<PersonaResponse | null>(null);
@@ -176,7 +189,8 @@ export class CuentaCorrientePage {
   // F-3: saldo a favor e imputacion posterior
   // -------------------------------------------------------------------------------------
 
-  protected readonly instanteEnPalabras = instanteEnPalabras;
+  protected readonly instanteEnPalabras = (valor: string | undefined): string =>
+    instanteEnPalabras(valor, this.diaDeLaSede.zona());
   protected readonly importeEnPalabras = importeEnPalabras;
 
   /**

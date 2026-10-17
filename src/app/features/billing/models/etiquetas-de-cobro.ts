@@ -1,4 +1,5 @@
 import { MedioDeCobroMedioEnum } from '../../../api/generated/model/medio-de-cobro';
+import { formatearInstante } from '../../../shared/utils/instantes';
 
 /**
  * Textos del cobro (M19, AKINE-07.02).
@@ -47,20 +48,10 @@ export function medioEnPalabras(medio: string | undefined): string {
   }
 }
 
-/** Fecha y hora legibles de un instante UTC. Un comprobante sin hora no se puede ubicar en el dia. */
-export function instanteEnPalabras(instante: string | undefined): string {
-  if (instante === undefined || instante === '') {
-    return '';
-  }
-  const fecha = new Date(instante);
-  if (Number.isNaN(fecha.getTime())) {
-    return '';
-  }
-  return new Intl.DateTimeFormat('es-AR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(fecha);
+/**
+ * Fecha y hora legibles de un instante UTC, en la zona de la sede (`DiaDeLaSede.zona()`). Un
+ * comprobante sin hora no se puede ubicar en el dia, y con la hora del navegador se ubica en otro.
+ */
+export function instanteEnPalabras(instante: string | undefined, zona = ''): string {
+  return formatearInstante(instante, zona) ?? '';
 }
