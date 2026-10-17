@@ -1,13 +1,13 @@
 import { Locator, Page } from '@playwright/test';
 
-import { expect, ingresar, navegar, problemaDe, respuestaDe, test } from './support/agenda-real';
+import { expect, ingresar, navegar, problemaDe, respuestaDe } from './support/agenda-real';
+import { ZONA_DEL_NAVEGADOR_DE_HOY, test } from './support/centro-de-hoy';
 import {
   Oferta,
   Persona,
   Turno,
   crearOferta,
   crearPersona,
-  fechaLocal,
   turnoDeHoy,
   uriDeProblema,
   verTurno,
@@ -18,8 +18,9 @@ import {
  * registrar la llegada → validar o seguir como Particular → pasar a espera → llamar.
  *
  * <p>La recepcion solo opera turnos de HOY, asi que estos tests reservan por la API el primer
- * horario todavia futuro del dia. Pasadas las 23:30 en la zona de la sede ya no queda ninguno y
- * los tests se saltean diciendo por que: no hay forma honesta de tener un turno de hoy a esa hora.
+ * horario todavia futuro del dia, en un centro cuya sede esta en una zona donde ahora es media
+ * mañana (`support/centro-de-hoy.ts`). Sobre el centro compartido, con la sede en Cordoba, fallaban
+ * cada vez que el CI corria cerca de la medianoche de alli (`motivo: PASADO`).
  *
  * <p>La oferta va SIN habilitaciones explicitas (la presta cualquier profesional de la sede): una
  * habilitacion cargada hoy no vale para hoy, porque el motor la evalua al mediodia local.
@@ -43,21 +44,17 @@ async function abrirLaRecepcion(page: Page, persona: Persona): Promise<Locator> 
   return fila;
 }
 
+test.use({ timezoneId: ZONA_DEL_NAVEGADOR_DE_HOY });
+
 test.describe('Recepcion del dia contra el backend real', () => {
   let oferta: Oferta;
   let persona: Persona;
   let turno: Turno;
 
   test.beforeEach(async ({ page, api, centro }) => {
-    // Turnos de 15 minutos: quedan muchos horarios futuros hoy aunque la suite corra de noche.
     oferta = await crearOferta(api, centro, { habilitarProfesional: false, duracionMinutos: 15 });
     persona = await crearPersona(api);
-    const reservado = await turnoDeHoy(api, centro, oferta, persona);
-    test.skip(
-      reservado === null,
-      `no queda ningun horario futuro hoy (${fechaLocal(centro.timezone)}) en ${centro.timezone}`,
-    );
-    turno = reservado!;
+    turno = await turnoDeHoy(api, centro, oferta, persona);
     await ingresar(page, centro);
   });
 

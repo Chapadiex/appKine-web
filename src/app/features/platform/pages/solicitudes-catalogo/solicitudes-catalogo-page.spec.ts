@@ -10,6 +10,18 @@ import { provideApi } from '../../../../api/generated/provide-api';
 import { traducirErrorSolicitud } from '../../models/solicitud-errors';
 
 const LISTADO = '/api/v1/catalogo-solicitudes';
+const CENTROS = '/api/v1/platform/organizations';
+
+/** Una pagina del listado de centros de la plataforma. */
+function paginaDeCentros(
+  centros: readonly { id: number; name: string }[],
+  page = 0,
+  totalPages = 1,
+): object {
+  return { content: centros, page, size: 100, totalPages, totalElements: centros.length };
+}
+
+const CENTRO_SUR = paginaDeCentros([{ id: 3, name: 'Centro Kinesio Sur' }]);
 
 const PRACTICA = {
   id: 9,
@@ -167,7 +179,7 @@ describe('SolicitudesCatalogoPage', () => {
   });
 
   it('el filtro relee la bandeja con el estado elegido', async () => {
-    const { fixture, anfitrion } = await montar([]);
+    const { fixture, anfitrion } = await montar([], null);
     expect(anfitrion.textContent).toContain('No hay solicitudes');
 
     escribir(anfitrion, '#filtro-estado-bandeja', 'TODAS', 'change');
@@ -179,11 +191,77 @@ describe('SolicitudesCatalogoPage', () => {
     expect(anfitrion.textContent).toContain('ya no administra la plataforma');
   });
 
+  it('nombra al centro en la bandeja y en el detalle, sin mostrar sus ids (RNF-M01-005)', async () => {
+    const { fixture, anfitrion } = await montar([PRACTICA]);
+
+    const fila = anfitrion.querySelector('tbody tr');
+    expect(fila?.textContent).toContain('Centro Kinesio Sur');
+    expect(
+      [...(fila?.querySelectorAll('td') ?? [])].map((td) => td.textContent?.trim()),
+    ).not.toContain('3');
+
+    clickEn(anfitrion, 'Revisar');
+    fixture.detectChanges();
+    const detalle = anfitrion.querySelector('dl.detalle')?.textContent ?? '';
+    expect(detalle).toContain('Centro Kinesio Sur');
+    expect(detalle).toContain('la pidio desde una de sus sedes');
+    expect(detalle).not.toContain('sede 30');
+  });
+
+  it('recorre las paginas de centros hasta encontrarlos y no los vuelve a pedir', async () => {
+    const OTRO = { ...ESPECIALIDAD, organizationId: 250 };
+    const fixture = TestBed.createComponent(SolicitudesCatalogoPage);
+    fixture.detectChanges();
+    httpMock.expectOne(esListado).flush([PRACTICA, OTRO]);
+
+    const primera = httpMock.expectOne((r) => r.url === CENTROS);
+    expect(primera.request.params.get('page')).toBe('0');
+    expect(primera.request.params.get('size')).toBe('100');
+    primera.flush(paginaDeCentros([{ id: 3, name: 'Centro Kinesio Sur' }], 0, 5));
+    const segunda = httpMock.expectOne((r) => r.url === CENTROS);
+    expect(segunda.request.params.get('page')).toBe('1');
+    segunda.flush(paginaDeCentros([{ id: 250, name: 'Rehabilitar Norte' }], 1, 5));
+    // Con los dos encontrados no pide la tercera de las cinco paginas.
+    httpMock.expectNone((r) => r.url === CENTROS);
+    fixture.detectChanges();
+
+    const anfitrion = fixture.nativeElement as HTMLElement;
+    expect(anfitrion.textContent).toContain('Centro Kinesio Sur');
+    expect(anfitrion.textContent).toContain('Rehabilitar Norte');
+
+    // Releer la bandeja con centros ya conocidos no vuelve a recorrer el listado.
+    escribir(anfitrion, '#filtro-estado-bandeja', 'TODAS', 'change');
+    httpMock.expectOne(esListado).flush([OTRO]);
+    httpMock.expectNone((r) => r.url === CENTROS);
+  });
+
+  it('un centro que no figura en el listado, o un listado que falla, no muestra el id', async () => {
+    const { fixture, anfitrion } = await montar([PRACTICA], paginaDeCentros([]));
+    expect(anfitrion.querySelector('tbody tr')?.textContent).toContain(
+      'Centro dado de baja o no disponible',
+    );
+
+    escribir(anfitrion, '#filtro-estado-bandeja', 'TODAS', 'change');
+    httpMock.expectOne(esListado).flush([PRACTICA]);
+    httpMock
+      .expectOne((r) => r.url === CENTROS)
+      .flush(null, { status: 500, statusText: 'Server Error' });
+    fixture.detectChanges();
+    // La bandeja sigue en pie: solo le falta el nombre.
+    expect(anfitrion.querySelector('tbody tr')?.textContent).toContain(
+      'Centro dado de baja o no disponible',
+    );
+    expect(anfitrion.textContent).toContain('Drenaje linfatico');
+  });
+
   it('traduce los errores que no pasan por la pantalla', () => {
     expect(traducirErrorSolicitud(new Error('x')).causa).toBe('otro');
   });
 
-  async function montar(solicitudes: readonly object[]): Promise<{
+  async function montar(
+    solicitudes: readonly object[],
+    centros: object | null = CENTRO_SUR,
+  ): Promise<{
     fixture: ComponentFixture<SolicitudesCatalogoPage>;
     anfitrion: HTMLElement;
   }> {
@@ -192,6 +270,9 @@ describe('SolicitudesCatalogoPage', () => {
     const pedido = httpMock.expectOne(esListado);
     expect(pedido.request.params.get('estado')).toBe('PENDIENTE');
     pedido.flush(solicitudes);
+    if (centros !== null) {
+      httpMock.expectOne((r) => r.url === CENTROS).flush(centros);
+    }
     await fixture.whenStable();
     fixture.detectChanges();
     return { fixture, anfitrion: fixture.nativeElement as HTMLElement };
