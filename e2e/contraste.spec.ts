@@ -293,6 +293,22 @@ test.describe('Contraste de color', () => {
       await auditarContraste(page, 'atencion clinica de una clase con derivaciones');
     });
 
+    /**
+     * Derivar a una participante a un caso (AKINE-08.04): el veredicto, los casos activos y el
+     * error de no haber elegido ninguno.
+     */
+    test('derivar a una participante con dos casos activos y sin elegir', async ({ page }) => {
+      await instalarApiDeContraste(page);
+      await page.goto(`/atencion/clases/${CLASE.id}`);
+      await page.getByRole('button', { name: /Derivar a un caso a Perez, Ana/ }).click();
+      const tarjeta = page.getByRole('region', { name: 'Derivar a Perez, Ana a un caso clinico' });
+      await expect(tarjeta.getByText('Con 2 casos activos')).toBeVisible();
+      await tarjeta.getByRole('button', { name: 'Derivar al caso' }).click();
+      await expect(tarjeta.getByText('Elegi a que caso se deriva.')).toBeVisible();
+
+      await auditarContraste(page, 'derivar a una participante sin elegir caso');
+    });
+
     /** Productos de pack y pases (F9, M29): la fila dada de baja y las tres marcas de estado. */
     test('los productos de pack con uno dado de baja', async ({ page }) => {
       await instalarApiDeContraste(page);

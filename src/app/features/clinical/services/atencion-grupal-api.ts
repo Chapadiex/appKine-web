@@ -1,19 +1,32 @@
 import { Injectable, inject } from '@angular/core';
-import { Observable, catchError, of } from 'rxjs';
+import { Observable, catchError, map, of } from 'rxjs';
 
 import { AtencionClinicaGrupalService } from '../../../api/generated/api/atencion-clinica-grupal.service';
 import { ClasesService } from '../../../api/generated/api/clases.service';
 import { DerivacionClinicaDeParticipantesService } from '../../../api/generated/api/derivacion-clinica-de-participantes.service';
+import { HistoriaClinicaService } from '../../../api/generated/api/historia-clinica.service';
 import { AtencionDeParticipante } from '../../../api/generated/model/atencion-de-participante';
 import { AtencionGrupal } from '../../../api/generated/model/atencion-grupal';
+import {
+  CasoAdministrativoResponse,
+  CasoAdministrativoResponseEstadoEnum,
+} from '../../../api/generated/model/caso-administrativo-response';
 import { Clase } from '../../../api/generated/model/clase';
 import { DerivacionDeParticipante } from '../../../api/generated/model/derivacion-de-participante';
 import { DerivacionesDeParticipante } from '../../../api/generated/model/derivaciones-de-participante';
+import { DerivarParticipante } from '../../../api/generated/model/derivar-participante';
+import { ElegibilidadClinicaDeParticipante } from '../../../api/generated/model/elegibilidad-clinica-de-participante';
 import { IniciarAtencionGrupalItem } from '../../../api/generated/model/iniciar-atencion-grupal-item';
 import { ResultadoDeAtencionGrupal } from '../../../api/generated/model/resultado-de-atencion-grupal';
 
 /** Motivo de acceso declarado (DP-03), o `null` si no se declaro ninguno. */
 export type MotivoDeAcceso = string | null;
+
+/** Los casos a los que se puede derivar: solo los ACTIVOS, con lo administrativo y nada clinico. */
+export interface CasosParaDerivar {
+  readonly tieneHistoriaClinica: boolean;
+  readonly casos: readonly CasoAdministrativoResponse[];
+}
 
 /**
  * Fachada de la atencion clinica grupal (M14/M28, AKINE-08.05) sobre el cliente generado.
@@ -31,6 +44,7 @@ export class AtencionGrupalApi {
   private readonly atencion = inject(AtencionClinicaGrupalService);
   private readonly clases = inject(ClasesService);
   private readonly derivaciones = inject(DerivacionClinicaDeParticipantesService);
+  private readonly historias = inject(HistoriaClinicaService);
 
   /**
    * El panel: quien estuvo y que atenciones tiene, <b>sin contenido clinico</b>. Exige
@@ -82,6 +96,60 @@ export class AtencionGrupalApi {
       consultorioId,
       claseId,
       iniciarAtencionGrupal: { items },
+      xJustificacionAcceso: motivo ?? undefined,
+    });
+  }
+
+  /**
+   * Si el participante se puede derivar y por que no (AKINE-08.04). Veredicto <b>grupal</b>: no
+   * lee nada clinico, no se audita y no pide motivo. Exige `inscripcion:read`.
+   */
+  elegibilidad(
+    consultorioId: number,
+    claseId: number,
+    inscripcionId: number,
+  ): Observable<ElegibilidadClinicaDeParticipante> {
+    return this.derivaciones.verElegibilidadClinicaDeParticipante({
+      consultorioId,
+      claseId,
+      inscripcionId,
+    });
+  }
+
+  /**
+   * Los casos ACTIVOS de la persona, por los <b>datos administrativos</b> de su historia
+   * (`paciente:read`): numero, oferta y fecha de apertura, sin diagnostico ni objetivo. Elegir el
+   * Caso de una derivacion no necesita leer contenido clinico, y por eso no pide motivo ni se
+   * audita como acceso clinico. Una persona sin perfil de paciente es 404.
+   */
+  casosParaDerivar(personaId: number): Observable<CasosParaDerivar> {
+    return this.historias.verDatosAdministrativosDeHistoriaClinica({ personaId }).pipe(
+      map((datos) => ({
+        tieneHistoriaClinica: datos.tieneHistoriaClinica === true,
+        casos: (datos.casos ?? []).filter(
+          (caso) => caso.estado === CasoAdministrativoResponseEstadoEnum.ACTIVO,
+        ),
+      })),
+    );
+  }
+
+  /**
+   * Deriva al participante a un Caso (RF-M28-008). <b>Derivar no es atender</b>: no crea Sesion,
+   * no consume autorizacion y no devenga. Idempotente por destino: repetir al mismo Caso devuelve
+   * la existente con `yaExistia`. Exige `hc:write` con relacion asistencial o motivo declarado.
+   */
+  derivar(
+    consultorioId: number,
+    claseId: number,
+    inscripcionId: number,
+    derivacion: DerivarParticipante,
+    motivo: MotivoDeAcceso,
+  ): Observable<DerivacionDeParticipante> {
+    return this.derivaciones.derivarParticipante({
+      consultorioId,
+      claseId,
+      inscripcionId,
+      derivarParticipante: derivacion,
       xJustificacionAcceso: motivo ?? undefined,
     });
   }

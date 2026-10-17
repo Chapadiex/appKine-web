@@ -23,6 +23,23 @@ const JUAN = 72;
 const ANA = 73;
 const atencionDe = (inscripcion: number) => `${BASE}/inscripciones/${inscripcion}/atencion-clinica`;
 const derivacionesDe = (inscripcion: number) => `${BASE}/inscripciones/${inscripcion}/derivaciones`;
+const elegibilidadDe = (inscripcion: number) =>
+  `${BASE}/inscripciones/${inscripcion}/elegibilidad-clinica`;
+const DATOS_DE_MARIA = '/api/v1/historias-clinicas/por-persona/501/datos-administrativos';
+const MARIA_DERIVABLE = {
+  inscripcionId: MARIA,
+  personaId: 501,
+  derivable: true,
+  ofertaClinica: true,
+  esPacienteVigente: true,
+  resultadoAsistencia: 'PRESENTE',
+  motivos: [],
+};
+const UN_CASO_DE_MARIA = {
+  personaId: 501,
+  tieneHistoriaClinica: true,
+  casos: [{ id: 7, numeroCaso: 1, estado: 'ACTIVO', abiertoEn: '2026-09-01T13:00:00Z' }],
+};
 
 /** Maria estuvo y no tiene atencion; Juan estuvo y tiene una cerrada; Ana falto. */
 const PANEL_CLINICO = {
@@ -210,10 +227,102 @@ describe('AtencionGrupalPage', () => {
     const fixture = await montar();
     boton(fixture, /^Iniciar atencion/).click();
     problema(http.expectOne(atencionDe(MARIA)), 409, 'participacion-sin-derivacion');
+    // La salida es derivarla: la tarjeta se abre ahi mismo.
     responderRecarga();
     await estabilizar(fixture);
+    http.expectOne(elegibilidadDe(MARIA)).flush(MARIA_DERIVABLE);
+    http.expectOne(DATOS_DE_MARIA).flush(UN_CASO_DE_MARIA);
+    await estabilizar(fixture);
     expect(alerta(fixture)).toContain('No tiene una derivacion clinica vigente');
+    expect(texto(fixture)).toContain('Derivar a Sintetica, Maria a un caso clinico');
     expect(navegar).not.toHaveBeenCalled();
+  });
+
+  it('derivar por pantalla: elige el caso, avisa, marca la fila y deja iniciar la atencion', async () => {
+    const fixture = await montar();
+    // Juan y Maria estuvieron; Ana no: solo a quien estuvo se lo deriva.
+    expect(botones(fixture, /^Derivar a un caso/)).toHaveLength(2);
+    botones(fixture, /^Derivar a un caso/)[0].click();
+    fixture.detectChanges();
+    http.expectOne(elegibilidadDe(MARIA)).flush(MARIA_DERIVABLE);
+    http.expectOne(DATOS_DE_MARIA).flush(UN_CASO_DE_MARIA);
+    await estabilizar(fixture);
+
+    boton(fixture, /^Derivar al caso/).click();
+    const derivar = http.expectOne((r) => r.method === 'POST' && r.url === derivacionesDe(MARIA));
+    expect(derivar.request.body).toEqual({ casoClinicoId: 7 });
+    derivar.flush({ id: 30, casoClinicoId: 7, numeroCaso: 1, estado: 'VIGENTE' });
+    responderRecarga();
+    await estabilizar(fixture);
+
+    expect(texto(fixture)).toContain(
+      'Sintetica, Maria quedo derivada al caso clinico 1. Ya se puede iniciar su atencion.',
+    );
+    expect(texto(fixture)).toContain('Derivada al caso clinico 1');
+    expect(texto(fixture)).not.toContain('Derivar a Sintetica, Maria a un caso clinico');
+    boton(fixture, /^Iniciar atencion/).click();
+    http.expectOne(atencionDe(MARIA)).flush(ABIERTA);
+    await estabilizar(fixture);
+    expect(navegar).toHaveBeenCalledWith('/atencion/sesiones/900');
+  });
+
+  it('derivar dos veces al mismo caso dice que ya estaba derivada', async () => {
+    const fixture = await montar();
+    botones(fixture, /^Derivar a un caso/)[0].click();
+    fixture.detectChanges();
+    http.expectOne(elegibilidadDe(MARIA)).flush(MARIA_DERIVABLE);
+    http.expectOne(DATOS_DE_MARIA).flush(UN_CASO_DE_MARIA);
+    await estabilizar(fixture);
+    boton(fixture, /^Derivar al caso/).click();
+    http
+      .expectOne((r) => r.method === 'POST' && r.url === derivacionesDe(MARIA))
+      .flush({ id: 30, casoClinicoId: 7, numeroCaso: 1, estado: 'VIGENTE', yaExistia: true });
+    responderRecarga();
+    await estabilizar(fixture);
+    expect(texto(fixture)).toContain('ya estaba derivada al caso clinico 1');
+  });
+
+  it('derivar sin relacion asistencial pide el motivo en el panel y reintenta con el', async () => {
+    const fixture = await montar();
+    botones(fixture, /^Derivar a un caso/)[0].click();
+    fixture.detectChanges();
+    http.expectOne(elegibilidadDe(MARIA)).flush(MARIA_DERIVABLE);
+    http.expectOne(DATOS_DE_MARIA).flush(UN_CASO_DE_MARIA);
+    await estabilizar(fixture);
+    boton(fixture, /^Derivar al caso/).click();
+    problema(
+      http.expectOne((r) => r.method === 'POST' && r.url === derivacionesDe(MARIA)),
+      403,
+      'justificacion-de-acceso-requerida',
+    );
+    await estabilizar(fixture);
+    expect(texto(fixture)).toContain('Declara el motivo del acceso');
+
+    escribir(fixture, '#motivo-acceso-grupal', 'Cubro a la profesional');
+    boton(fixture, /Declarar y seguir/).click();
+    const reintento = http.expectOne((r) => r.method === 'POST' && r.url === derivacionesDe(MARIA));
+    expect(reintento.request.headers.get('X-Justificacion-Acceso')).toBe('Cubro a la profesional');
+    reintento.flush({ id: 30, casoClinicoId: 7, numeroCaso: 1, estado: 'VIGENTE' });
+    responderRecarga();
+    await estabilizar(fixture);
+    expect(texto(fixture)).toContain('quedo derivada al caso clinico 1');
+  });
+
+  it('sin derivaciones, la tarjeta de derivaciones ofrece derivar', async () => {
+    const fixture = await montar();
+    botones(fixture, /^Derivaciones/)[0].click();
+    http.expectOne(derivacionesDe(MARIA)).flush({ derivaciones: [] });
+    await estabilizar(fixture);
+    boton(fixture, /^Derivar a un caso$/).click();
+    fixture.detectChanges();
+    http.expectOne(elegibilidadDe(MARIA)).flush(MARIA_DERIVABLE);
+    http.expectOne(DATOS_DE_MARIA).flush(UN_CASO_DE_MARIA);
+    await estabilizar(fixture);
+    // Se abre una y se cierra la otra.
+    expect(fixture.nativeElement.querySelector('#titulo-derivaciones')).toBeNull();
+    boton(fixture, /^Cerrar$/).click();
+    await estabilizar(fixture);
+    expect(botones(fixture, /^Derivar al caso/)).toHaveLength(0);
   });
 
   it('el lote muestra cuantas se abrieron y quien fallo con su causa', async () => {

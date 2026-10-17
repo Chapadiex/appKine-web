@@ -40,6 +40,10 @@ export type CausaAtencionGrupal =
   | 'caso-cerrado'
   /** 409 `persona-sin-perfil-paciente`. */
   | 'sin-perfil-paciente'
+  /** 409 `caso-no-activo`: al derivar, el Caso elegido no esta activo o no es de esa historia. */
+  | 'caso-no-activo'
+  /** 409 `autorizacion-no-elegible`: al derivar, la autorizacion declarada no habilita. */
+  | 'autorizacion-no-elegible'
   /** 400 `validation-error`: la reversion sin motivo. */
   | 'motivo-obligatorio'
   | 'red'
@@ -103,6 +107,14 @@ const MENSAJE_CASO_CERRADO =
 const MENSAJE_SIN_PERFIL =
   'La persona todavia no es paciente: hace falta activar su perfil de paciente.';
 
+const MENSAJE_CASO_NO_ACTIVO =
+  'El caso elegido ya no esta activo. Volve a cargar los casos y elegi uno activo, o reabrilo ' +
+  'desde la historia clinica.';
+
+const MENSAJE_AUTORIZACION_NO_ELEGIBLE =
+  'La autorizacion declarada no habilita el dia de la clase (vencida, agotada, aun no vigente o ' +
+  'no aprobada).';
+
 const MENSAJE_MOTIVO = 'Revertir una derivacion necesita un motivo.';
 
 const POR_TIPO: Readonly<Record<string, readonly [CausaAtencionGrupal, string]>> = {
@@ -116,6 +128,8 @@ const POR_TIPO: Readonly<Record<string, readonly [CausaAtencionGrupal, string]>>
   'caso-de-atencion-grupal': ['caso-de-atencion-grupal', MENSAJE_CASO_DE_ATENCION_GRUPAL],
   'caso-clinico-cerrado': ['caso-cerrado', MENSAJE_CASO_CERRADO],
   'persona-sin-perfil-paciente': ['sin-perfil-paciente', MENSAJE_SIN_PERFIL],
+  'caso-no-activo': ['caso-no-activo', MENSAJE_CASO_NO_ACTIVO],
+  'autorizacion-no-elegible': ['autorizacion-no-elegible', MENSAJE_AUTORIZACION_NO_ELEGIBLE],
   'derivacion-no-accesible': ['no-encontrado', MENSAJE_NO_ENCONTRADO],
   'validation-error': ['motivo-obligatorio', MENSAJE_MOTIVO],
 };

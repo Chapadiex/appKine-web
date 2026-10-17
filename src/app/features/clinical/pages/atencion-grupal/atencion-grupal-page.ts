@@ -23,6 +23,7 @@ import {
 } from '../../models/atencion-grupal-errors';
 import { instanteEnPalabras } from '../../models/etiquetas-de-atencion';
 import { AtencionGrupalApi } from '../../services/atencion-grupal-api';
+import { DerivarParticipante, ReintentoConMotivo } from './derivar-participante';
 
 type EstadoCarga =
   | { readonly tipo: 'cargando' }
@@ -103,7 +104,7 @@ const ETIQUETAS_DE_ASISTENCIA: Readonly<Record<string, string>> = {
  */
 @Component({
   selector: 'app-atencion-grupal-page',
-  imports: [RouterLink],
+  imports: [RouterLink, DerivarParticipante],
   templateUrl: './atencion-grupal-page.html',
 })
 export class AtencionGrupalPage {
@@ -127,6 +128,16 @@ export class AtencionGrupalPage {
   protected readonly motivoDeReversion = signal('');
   protected readonly faltaMotivoDeReversion = signal(false);
   protected readonly avisoDeReversion = signal<string | null>(null);
+
+  // --- Derivacion (AKINE-08.04) ---------------------------------------------------------------
+  /** Participante cuya derivacion a un Caso se esta armando, o `null`. */
+  protected readonly derivando = signal<FilaDeAtencion | null>(null);
+  protected readonly avisoDeDerivacion = signal<string | null>(null);
+  /**
+   * Los derivados en esta visita y a que Caso, para decirlo en su fila: el panel no trae las
+   * derivaciones —son lectura clinica— y la atencion todavia no existe.
+   */
+  protected readonly derivadas = signal<ReadonlyMap<number, string>>(new Map());
 
   // --- Motivo de acceso (DP-03) -------------------------------------------------------------
   /** El motivo declarado en esta visita. Viaja en cada operacion clinica hasta salir. */
@@ -183,6 +194,9 @@ export class AtencionGrupalPage {
         this.lote.set(null);
         this.errorDeAccion.set(null);
         this.cerrarDerivaciones();
+        this.derivando.set(null);
+        this.avisoDeDerivacion.set(null);
+        this.derivadas.set(new Map());
         this.motivo.set(null);
         this.pidiendoMotivo.set(false);
         this.reintento = null;
@@ -191,7 +205,7 @@ export class AtencionGrupalPage {
     });
   }
 
-  private ids(): { consultorioId: number; claseId: number } | null {
+  protected ids(): { consultorioId: number; claseId: number } | null {
     const consultorioId = this.tenant.consultorioId();
     const claseId = Number(this.claseId());
     return consultorioId === null || !Number.isInteger(claseId) || claseId <= 0
@@ -276,6 +290,9 @@ export class AtencionGrupalPage {
           this.errorDeAccion.set(traducido);
           if (traducido.causa === 'derivacion-ambigua') {
             this.verDerivaciones(fila, true);
+          } else if (traducido.causa === 'sin-derivacion') {
+            // La salida de "no tiene derivacion" es derivarlo: se ofrece ahi mismo.
+            this.abrirDerivacion(fila);
           }
           this.cargar();
         },
@@ -334,6 +351,7 @@ export class AtencionGrupalPage {
     if (this.derivaciones()?.fila.inscripcionId !== fila.inscripcionId) {
       this.avisoDeReversion.set(null);
     }
+    this.derivando.set(null);
     this.revirtiendo.set(null);
     this.motivoDeReversion.set('');
     this.faltaMotivoDeReversion.set(false);
@@ -531,6 +549,37 @@ export class AtencionGrupalPage {
           }
         },
       });
+  }
+
+  // ------------------------------------------------------------------ derivar
+
+  /** Abre la tarjeta para derivar al participante a un Caso. Cierra la de sus derivaciones. */
+  protected abrirDerivacion(fila: FilaDeAtencion): void {
+    this.cerrarDerivaciones();
+    this.avisoDeDerivacion.set(null);
+    this.derivando.set(fila);
+  }
+
+  /**
+   * Quedo derivado: se dice a que Caso y se recarga el panel, que ya ofrece "Iniciar atencion"
+   * para el. Repetir al mismo Caso devuelve la existente (`yaExistia`), y tambien se dice.
+   */
+  protected alDerivar(fila: FilaDeAtencion, derivacion: DerivacionDeParticipante): void {
+    const caso = this.numeroDeCaso(derivacion).replace('Caso clinico', 'caso clinico');
+    this.derivando.set(null);
+    this.errorDeAccion.set(null);
+    this.derivadas.update((actual) => new Map(actual).set(fila.inscripcionId, caso));
+    const verbo = derivacion.yaExistia === true ? 'ya estaba derivada' : 'quedo derivada';
+    this.avisoDeDerivacion.set(
+      `${fila.nombre} ${verbo} al ${caso}. Ya se puede iniciar su atencion.`,
+    );
+    this.cargar();
+  }
+
+  /** La tarjeta de derivar necesita motivo de acceso: se pide aca, el mismo de toda la visita. */
+  protected pedirMotivoParaDerivar(reintento: ReintentoConMotivo): void {
+    this.pidiendoMotivo.set(true);
+    this.reintento = () => reintento(this.motivo());
   }
 
   // ------------------------------------------------------------------ motivo de acceso
