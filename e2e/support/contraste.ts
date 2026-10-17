@@ -744,6 +744,7 @@ export async function instalarApiDeContraste(page: Page): Promise<ApiDeContraste
           'pase:manage',
           'pase:adjust',
           'sesion:register',
+          'hc:write',
         ],
       });
     }

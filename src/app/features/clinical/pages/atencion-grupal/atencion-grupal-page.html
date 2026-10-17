@@ -258,6 +258,7 @@
                         }
                         @if (fila.estuvo) {
                           <button
+                            *akinePermiso="PERMISO_HC_WRITE"
                             type="button"
                             class="boton boton--secundario"
                             [disabled]="enVuelo() !== null"
@@ -312,7 +313,12 @@
             </p>
             @if (panel.fila.estuvo) {
               <div class="acciones">
-                <button type="button" class="boton" (click)="abrirDerivacion(panel.fila)">
+                <button
+                  *akinePermiso="PERMISO_HC_WRITE"
+                  type="button"
+                  class="boton"
+                  (click)="abrirDerivacion(panel.fila)"
+                >
                   Derivar a un caso
                 </button>
               </div>

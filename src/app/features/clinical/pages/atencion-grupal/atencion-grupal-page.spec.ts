@@ -10,7 +10,9 @@ import { Router, provideRouter } from '@angular/router';
 import { AtencionGrupalPage } from './atencion-grupal-page';
 import { provideApi } from '../../../../api/generated/provide-api';
 import { errorInterceptor } from '../../../../core/interceptors/error.interceptor';
+import { PermissionsStore } from '../../../../core/services/permissions.store';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
+import { RUTA_PERMISOS_EFECTIVOS } from '../../../../core/testing/rutas-api';
 import { TIMEOUT_AXE, esperarSinViolaciones } from '../../../../core/testing/axe';
 
 const CONSULTORIO = 3;
@@ -124,6 +126,11 @@ describe('AtencionGrupalPage', () => {
       organizationName: 'Centro Belgrano',
       consultorioId: CONSULTORIO,
       consultorioName: 'Sede Centro',
+    });
+    // Los permisos de la PROFESIONAL: derivar (hc:write) se ofrece solo con ellos.
+    TestBed.inject(PermissionsStore).cargar().subscribe();
+    http.expectOne(RUTA_PERMISOS_EFECTIVOS).flush({
+      permissions: ['sesion:register', 'inscripcion:read', 'hc:read', 'hc:write', 'paciente:read'],
     });
   });
 
@@ -264,6 +271,16 @@ describe('AtencionGrupalPage', () => {
     http.expectOne(atencionDe(MARIA)).flush(ABIERTA);
     await estabilizar(fixture);
     expect(navegar).toHaveBeenCalledWith('/atencion/sesiones/900');
+  });
+
+  it('sin hc:write no ofrece derivar: el backend lo rechazaria', async () => {
+    TestBed.inject(PermissionsStore).cargar().subscribe();
+    http
+      .expectOne(RUTA_PERMISOS_EFECTIVOS)
+      .flush({ permissions: ['sesion:register', 'inscripcion:read', 'hc:read'] });
+    const fixture = await montar();
+    expect(botones(fixture, /^Derivar a un caso/)).toHaveLength(0);
+    expect(botones(fixture, /^Iniciar atencion/)).toHaveLength(1);
   });
 
   it('derivar dos veces al mismo caso dice que ya estaba derivada', async () => {

@@ -26,7 +26,9 @@ import {
 import { ParticipanteEnAtencionGrupal } from '../../../../api/generated/model/participante-en-atencion-grupal';
 import { ResultadoDeAtencionGrupal } from '../../../../api/generated/model/resultado-de-atencion-grupal';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
+import { PERMISO_HC_WRITE } from '../../../../core/models/permisos';
 import { FocoAlMontar } from '../../../../shared/directives/foco-al-montar.directive';
+import { PermisoDirective } from '../../../../shared/directives/permiso.directive';
 import {
   ErrorAtencionGrupal,
   errorSinContextoGrupal,
@@ -116,7 +118,7 @@ const ETIQUETAS_DE_ASISTENCIA: Readonly<Record<string, string>> = {
  */
 @Component({
   selector: 'app-atencion-grupal-page',
-  imports: [RouterLink, FocoAlMontar, DerivarParticipante],
+  imports: [RouterLink, FocoAlMontar, PermisoDirective, DerivarParticipante],
   templateUrl: './atencion-grupal-page.html',
 })
 export class AtencionGrupalPage {
@@ -130,6 +132,8 @@ export class AtencionGrupalPage {
   readonly claseId = input.required<string>();
 
   protected readonly instante = instanteEnPalabras;
+  /** Derivar escribe en la historia: sin `hc:write` no se ofrece (el backend rechazaria igual). */
+  protected readonly PERMISO_HC_WRITE = PERMISO_HC_WRITE;
 
   protected readonly estado = signal<EstadoCarga>({ tipo: 'cargando' });
   /** Participante con una operacion en vuelo, `'lote'` para el lote, o `null`. */
