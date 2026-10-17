@@ -50,6 +50,7 @@ test.describe('Catalogo clinico contra el backend real', () => {
   test('pedido al catalogo comun, aprobado por la plataforma y visto por el centro', async ({
     page,
     browser,
+    centro,
   }) => {
     const motivo = await plataformaDisponible();
     test.skip(motivo !== null, motivo ?? '');
@@ -79,7 +80,14 @@ test.describe('Catalogo clinico contra el backend real', () => {
       await expect(
         plataforma.getByRole('heading', { name: 'Solicitudes de catalogo', level: 1 }),
       ).toBeVisible();
+      // RNF-M01-005: el centro que pidio, por su nombre y no por su organizationId.
+      const filaDelPedido = plataforma.getByRole('row').filter({ hasText: nombre });
+      await expect(filaDelPedido).toContainText(centro.nombreCentro);
+      await expect(
+        filaDelPedido.getByRole('cell', { name: String(centro.organizationId), exact: true }),
+      ).toHaveCount(0);
       await plataforma.getByRole('button', { name: `Revisar ${nombre}` }).click();
+      await expect(plataforma.locator('dl.detalle')).toContainText(centro.nombreCentro);
       await plataforma.getByRole('button', { name: 'Aprobar y publicar' }).click();
       await expect(plataforma.getByLabel('Codigo con el que se publica')).toHaveValue(
         `E2E_PEDIDA_${sufijo}`,
