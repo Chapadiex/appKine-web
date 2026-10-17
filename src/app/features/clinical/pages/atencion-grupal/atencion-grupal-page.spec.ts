@@ -475,6 +475,39 @@ describe('AtencionGrupalPage', () => {
       expect(botones(fixture, /^Revertir la derivacion/)).toHaveLength(0);
     });
 
+    it('el foco va al panel, al motivo y de vuelta al boton que abrio cada cosa', async () => {
+      const fixture = await montar();
+      // Un click de verdad enfoca el boton: es a donde vuelve el foco al cerrar el panel.
+      const abrio = botones(fixture, /^Derivaciones/)[0];
+      abrio.focus();
+      abrio.click();
+      http
+        .expectOne(derivacionesDe(MARIA))
+        .flush({ derivaciones: [{ id: 30, casoClinicoId: 7, estado: 'VIGENTE' }] });
+      await estabilizar(fixture);
+      expect(document.activeElement?.getAttribute('aria-labelledby')).toBe('titulo-derivaciones');
+
+      boton(fixture, /^Revertir la derivacion/).click();
+      await estabilizar(fixture);
+      expect(document.activeElement?.id).toBe('motivo-reversion-30');
+
+      // Confirmar sin motivo devuelve el foco al campo que falta.
+      boton(fixture, /Confirmar la reversion/).focus();
+      boton(fixture, /Confirmar la reversion/).click();
+      await estabilizar(fixture);
+      expect(document.activeElement?.id).toBe('motivo-reversion-30');
+
+      boton(fixture, /^No revertir/).click();
+      await estabilizar(fixture);
+      expect(document.activeElement?.id).toBe('revertir-30');
+
+      // Cerrar el panel devuelve el foco al "Derivaciones" de la fila que lo abrio.
+      boton(fixture, /^Cerrar$/).click();
+      await estabilizar(fixture);
+      await new Promise((resolve) => setTimeout(resolve));
+      expect(document.activeElement).toBe(abrio);
+    });
+
     it('sin derivaciones lo dice', async () => {
       const fixture = await conDerivaciones([]);
       expect(texto(fixture)).toContain('No tiene derivaciones en esta clase.');

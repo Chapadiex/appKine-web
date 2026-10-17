@@ -1,4 +1,4 @@
-import { AkineHttpError } from '../../../core/interceptors/error.interceptor';
+import { AkineHttpError, AkineProblemType } from '../../../core/interceptors/error.interceptor';
 
 /**
  * Traduccion de los errores de la atencion clinica grupal (M14/M28, AKINE-08.05).
@@ -105,7 +105,13 @@ const MENSAJE_SIN_PERFIL =
 
 const MENSAJE_MOTIVO = 'Revertir una derivacion necesita un motivo.';
 
-const POR_TIPO: Readonly<Record<string, readonly [CausaAtencionGrupal, string]>> = {
+/**
+ * Clave tipada con el catalogo del contrato: un `problemType` mal escrito o renombrado por el
+ * backend no compila, y `npm run api:check` lee estas claves como manejadas.
+ */
+const POR_TIPO: Readonly<
+  Partial<Record<AkineProblemType, readonly [CausaAtencionGrupal, string]>>
+> = {
   'missing-tenant-context': ['sin-contexto', MENSAJE_SIN_CONTEXTO],
   'justificacion-de-acceso-requerida': ['requiere-justificacion', MENSAJE_REQUIERE_JUSTIFICACION],
   'oferta-no-clinica': ['oferta-no-clinica', MENSAJE_OFERTA_NO_CLINICA],
@@ -121,7 +127,7 @@ const POR_TIPO: Readonly<Record<string, readonly [CausaAtencionGrupal, string]>>
 };
 
 function porTipo(slug: string | null): ErrorAtencionGrupal | null {
-  const conocido = slug === null ? undefined : POR_TIPO[slug];
+  const conocido = slug === null ? undefined : POR_TIPO[slug as AkineProblemType];
   return conocido === undefined ? null : { causa: conocido[0], mensaje: conocido[1] };
 }
 

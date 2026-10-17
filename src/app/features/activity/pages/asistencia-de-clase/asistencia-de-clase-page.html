@@ -34,7 +34,7 @@
       <h1>Asistencia: {{ clase.titulo || 'Clase ' + clase.claseId }}</h1>
 
       <section class="tarjeta" aria-labelledby="titulo-clase">
-        <h2 id="titulo-clase">La clase</h2>
+        <h2 id="titulo-clase" tabindex="-1">La clase</h2>
         <p>
           {{ fechaHora(clase.inicio, zona()) }} a {{ hora(clase.fin, zona()) }} ·
           <b>{{ etiquetaDeEstadoDeClase(clase.estado) }}</b>
@@ -67,7 +67,7 @@
                 Iniciar clase
               </button>
             }
-            @if (clase.estado === 'EN_CURSO') {
+            @if (clase.estado === 'EN_CURSO' && puedeCerrarClase()) {
               <button
                 type="button"
                 class="boton boton--secundario"
@@ -90,10 +90,10 @@
 
       <div aria-live="polite">
         @if (avisoCierre(); as aviso) {
-          <p class="estado estado--ok">{{ aviso }}</p>
+          <p class="estado estado--ok" akineFocoAlMontar>{{ aviso }}</p>
         }
         @if (lote(); as resumen) {
-          <section class="tarjeta" aria-labelledby="titulo-resultado-lote">
+          <section class="tarjeta" aria-labelledby="titulo-resultado-lote" akineFocoAlMontar>
             <h2 id="titulo-resultado-lote">Resultado</h2>
             <p class="estado estado--ok">
               Se guardaron {{ resumen.exitosos }}
@@ -132,7 +132,7 @@
       }
 
       <section class="tarjeta" aria-labelledby="titulo-participantes">
-        <h2 id="titulo-participantes">Participantes</h2>
+        <h2 id="titulo-participantes" tabindex="-1">Participantes</h2>
 
         @if (participantes().length === 0) {
           <p class="estado estado--vacio">La clase no tiene inscriptos.</p>
@@ -301,7 +301,12 @@
       </section>
 
       @if (historial(); as h) {
-        <section class="tarjeta" aria-labelledby="titulo-historial" aria-live="polite">
+        <section
+          class="tarjeta"
+          aria-labelledby="titulo-historial"
+          aria-live="polite"
+          akineFocoAlMontar
+        >
           <h2 id="titulo-historial">Historial de {{ h.nombre }}</h2>
           @if (h.error) {
             <p class="estado estado--error">{{ h.error.mensaje }}</p>
