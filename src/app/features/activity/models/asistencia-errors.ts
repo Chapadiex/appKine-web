@@ -23,6 +23,7 @@ export type CausaAsistencia =
   | 'clase-completa'
   | 'duplicada'
   | 'motivo-obligatorio'
+  | 'lotes-saturados'
   | 'red'
   | 'otro';
 
@@ -109,4 +110,25 @@ export function traducirFalloDeItem(
 ): ErrorAsistencia {
   const slug = (problemType ?? '').split('/').filter(Boolean).pop() ?? '';
   return porTipo(slug, detalle) ?? { mensaje: detalle || MENSAJE_GENERICO, causa: 'otro' };
+}
+
+/**
+ * Error del guardado en lote. Aparte de {@link traducirErrorAsistencia} porque un `503` aca
+ * tiene una causa concreta (appKine-api #157): la sede ya tiene demasiados lotes en curso. El
+ * backend lo rechaza <b>antes de tocar nada</b>, asi que se dice que no se guardo y que lo
+ * marcado sigue en pantalla. Fuera del lote, un 503 sigue siendo el aviso generico.
+ */
+export function traducirErrorDeLote(error: unknown): ErrorAsistencia {
+  if (error instanceof AkineHttpError && error.esServicioNoDisponible && !error.esDeRed) {
+    const segundos = error.reintentarEnSegundos;
+    const n = segundos === null ? 0 : Math.ceil(segundos);
+    const espera = n > 0 ? `en ${n} ${n === 1 ? 'segundo' : 'segundos'}` : 'en unos segundos';
+    return {
+      mensaje:
+        `Hay muchos registros de asistencia en curso en esta sede. Probá de nuevo ${espera}. ` +
+        'No se guardó nada: lo que marcaste sigue acá.',
+      causa: 'lotes-saturados',
+    };
+  }
+  return traducirErrorAsistencia(error);
 }

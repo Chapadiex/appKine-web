@@ -516,7 +516,7 @@ export class AsistenciaDeClasesService extends BaseService implements Asistencia
 
     /**
      * Marcar a varios participantes
-     * La lista compacta de RF-M13-008. **Cada item corre en su propia transaccion**: un fallo individual no revierte a los anteriores ni oculta los resultados de los demas (CA-M13-008-06).  **Responde 200 aunque haya fallos parciales** — no es un error del pedido, es el resultado del pedido—, y cada item fallido trae el mismo &#x60;problemType&#x60; que habria viajado en la operacion individual.
+     * La lista compacta de RF-M13-008. **Cada item corre en su propia transaccion**: un fallo individual no revierte a los anteriores ni oculta los resultados de los demas (CA-M13-008-06).  **Responde 200 aunque haya fallos parciales** — no es un error del pedido, es el resultado del pedido—, y cada item fallido trae el mismo &#x60;problemType&#x60; que habria viajado en la operacion individual.  **Lotes a la vez por sede** (U-49 c): si el despliegue enciende el limite y la sede ya tiene tantos lotes en curso como admite, el pedido espera unos segundos y, si no consigue lugar, responde **503** &#x60;service-unavailable&#x60; con &#x60;Retry-After&#x60; **sin haber registrado ningun item**: reenviarlo es seguro. El lote de un solo item y la operacion individual no tienen limite. Apagado por defecto.
      * @endpoint post /api/v1/consultorios/{consultorioId}/clases/{claseId}/asistencias/lote
      * @param requestParameters
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
