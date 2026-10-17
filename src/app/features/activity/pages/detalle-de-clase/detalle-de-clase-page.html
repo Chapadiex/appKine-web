@@ -73,10 +73,20 @@
 
     @if (puedeGestionar() && panel().tipo === 'ninguno') {
       <div class="acciones">
-        <button type="button" class="boton boton--secundario" (click)="abrirReprogramacion()">
+        <button
+          id="boton-reprogramar"
+          type="button"
+          class="boton boton--secundario"
+          (click)="abrirReprogramacion()"
+        >
           Reprogramar
         </button>
-        <button type="button" class="boton boton--secundario" (click)="abrirCancelacion()">
+        <button
+          id="boton-cancelar-clase"
+          type="button"
+          class="boton boton--secundario"
+          (click)="abrirCancelacion()"
+        >
           Cancelar la clase
         </button>
       </div>
@@ -85,7 +95,7 @@
 
   <div aria-live="polite">
     @if (aviso()) {
-      <p class="estado estado--ok" role="status">{{ aviso() }}</p>
+      <p id="aviso-clase" class="estado estado--ok" role="status" tabindex="-1">{{ aviso() }}</p>
     }
     @if (errorDeAccion(); as fallo) {
       <section class="tarjeta conflicto" aria-labelledby="titulo-error-accion" role="alert">
@@ -109,6 +119,7 @@
     <form
       class="tarjeta"
       [formGroup]="reprogramacion"
+      akineFocoAlMontar="campo"
       (ngSubmit)="reprogramar()"
       aria-labelledby="titulo-reprogramar"
       novalidate

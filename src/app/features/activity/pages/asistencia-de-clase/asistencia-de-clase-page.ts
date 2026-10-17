@@ -1,4 +1,15 @@
-import { Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  Injector,
+  afterNextRender,
+  computed,
+  effect,
+  inject,
+  input,
+  signal,
+  untracked,
+} from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { DetalleOperativoDeClase } from '../../../../api/generated/model/detalle-operativo-de-clase';
@@ -8,12 +19,14 @@ import { ResultadoDeLoteDeAsistencia } from '../../../../api/generated/model/res
 import {
   PERMISO_ASISTENCIA_MANAGE,
   PERMISO_CLASE_MANAGE,
+  PERMISO_INSCRIPCION_MANAGE,
   PERMISO_SESION_REGISTER,
 } from '../../../../core/models/permisos';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { PermissionsStore } from '../../../../core/services/permissions.store';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import { FocoAlMontar } from '../../../../shared/directives/foco-al-montar.directive';
 import {
   ErrorAsistencia,
   errorSinContexto,
@@ -88,7 +101,7 @@ interface Historial {
  */
 @Component({
   selector: 'app-asistencia-de-clase-page',
-  imports: [RouterLink, Paginacion],
+  imports: [RouterLink, Paginacion, FocoAlMontar],
   templateUrl: './asistencia-de-clase-page.html',
   styleUrl: '../../asistencia.css',
 })
@@ -97,6 +110,8 @@ export class AsistenciaDeClasePage {
   private readonly tenant = inject(TenantContextStore);
   private readonly permisos = inject(PermissionsStore);
   private readonly diaDeLaSede = inject(DiaDeLaSede);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly injector = inject(Injector);
 
   /** De la ruta. `withComponentInputBinding` lo liga solo. */
   readonly claseId = input.required<string>();
@@ -145,6 +160,18 @@ export class AsistenciaDeClasePage {
   );
   protected readonly puedeMarcar = computed(
     () => !this.permisos.cargados() || this.permisos.tiene(PERMISO_ASISTENCIA_MANAGE),
+  );
+  /**
+   * Cerrar la clase marca ausentes y cancela la lista de espera: desde el contrato 0.120.0 el
+   * backend pide `clase:manage`, `asistencia:manage` e `inscripcion:manage` (AKINE-09.02). Sin los
+   * tres, el boton terminaba en 403.
+   */
+  protected readonly puedeCerrarClase = computed(
+    () =>
+      !this.permisos.cargados() ||
+      (this.permisos.tiene(PERMISO_CLASE_MANAGE) &&
+        this.permisos.tiene(PERMISO_ASISTENCIA_MANAGE) &&
+        this.permisos.tiene(PERMISO_INSCRIPCION_MANAGE)),
   );
 
   /** Ofrece la atencion clinica de la clase (AKINE-08.05). Sin permisos cargados, se ofrece. */
@@ -216,7 +243,11 @@ export class AsistenciaDeClasePage {
     }
     this.empezarAccion();
     this.api.iniciar(ids.consultorioId, ids.claseId).subscribe({
-      next: () => this.terminarAccion(),
+      next: () => {
+        this.terminarAccion();
+        // "Iniciar clase" desaparece con la clase en curso: el foco iria al `body`.
+        this.enfocarDespues('#titulo-clase');
+      },
       error: (error: unknown) => this.fallarAccion(error),
     });
   }
@@ -310,6 +341,8 @@ export class AsistenciaDeClasePage {
   protected descartar(): void {
     this.marcas.set(new Map());
     this.faltanMotivos.set([]);
+    // "Descartar cambios" desaparece sin pendientes: el foco vuelve a la lista.
+    this.enfocarDespues('#titulo-participantes');
   }
 
   protected guardar(): void {
@@ -387,6 +420,13 @@ export class AsistenciaDeClasePage {
   }
 
   // ------------------------------------------------------------------ comun
+
+  /** Foco a un elemento de la pantalla despues del proximo render (WCAG 2.4.3). */
+  private enfocarDespues(selector: string): void {
+    afterNextRender(() => this.host.nativeElement.querySelector<HTMLElement>(selector)?.focus(), {
+      injector: this.injector,
+    });
+  }
 
   private empezarAccion(): void {
     this.enviando.set(true);

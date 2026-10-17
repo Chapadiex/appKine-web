@@ -1,4 +1,15 @@
-import { Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  Injector,
+  afterNextRender,
+  computed,
+  effect,
+  inject,
+  input,
+  signal,
+  untracked,
+} from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
 
@@ -15,6 +26,7 @@ import {
 import { ParticipanteEnAtencionGrupal } from '../../../../api/generated/model/participante-en-atencion-grupal';
 import { ResultadoDeAtencionGrupal } from '../../../../api/generated/model/resultado-de-atencion-grupal';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
+import { FocoAlMontar } from '../../../../shared/directives/foco-al-montar.directive';
 import {
   ErrorAtencionGrupal,
   errorSinContextoGrupal,
@@ -104,13 +116,15 @@ const ETIQUETAS_DE_ASISTENCIA: Readonly<Record<string, string>> = {
  */
 @Component({
   selector: 'app-atencion-grupal-page',
-  imports: [RouterLink, DerivarParticipante],
+  imports: [RouterLink, FocoAlMontar, DerivarParticipante],
   templateUrl: './atencion-grupal-page.html',
 })
 export class AtencionGrupalPage {
   private readonly api = inject(AtencionGrupalApi);
   private readonly tenant = inject(TenantContextStore);
   private readonly router = inject(Router);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly injector = inject(Injector);
 
   /** De la ruta. `withComponentInputBinding` lo liga solo. */
   readonly claseId = input.required<string>();
@@ -496,6 +510,22 @@ export class AtencionGrupalPage {
     this.avisoDeReversion.set(null);
   }
 
+  /**
+   * "No revertir": el campo y sus botones desaparecen y vuelve a dibujarse "Revertir la
+   * derivacion" —un elemento nuevo—, asi que el foco se lleva ahi a mano (WCAG 2.4.3).
+   */
+  protected cancelarReversion(derivacion: DerivacionDeParticipante): void {
+    this.revirtiendo.set(null);
+    this.faltaMotivoDeReversion.set(false);
+    this.enfocarDespues(`#revertir-${derivacion.id}`);
+  }
+
+  private enfocarDespues(selector: string): void {
+    afterNextRender(() => this.host.nativeElement.querySelector<HTMLElement>(selector)?.focus(), {
+      injector: this.injector,
+    });
+  }
+
   protected escribirMotivoDeReversion(texto: string): void {
     this.motivoDeReversion.set(texto);
     if (texto.trim() !== '') {
@@ -515,6 +545,7 @@ export class AtencionGrupalPage {
     }
     if (motivo === '') {
       this.faltaMotivoDeReversion.set(true);
+      this.enfocarDespues(`#motivo-reversion-${derivacion.id}`);
       return;
     }
     const derivacionId = derivacion.id;

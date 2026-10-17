@@ -141,6 +141,30 @@ function cuerposDeSwitchSobreProblemType(texto) {
   return cuerpos;
 }
 
+/**
+ * Cuerpo del objeto literal de cada declaracion tipada con `Record<AkineProblemType, ...>`, por
+ * balance de llaves desde el `= {` que sigue a la anotacion. Solo esas: un `Record<string, ...>`
+ * no lo revisa el compilador, y contar sus claves como manejadas seria creerle a un literal suelto.
+ */
+function cuerposDeTablaPorProblemType(texto) {
+  const cuerpos = [];
+  const anotacion = /Record<\s*AkineProblemType\s*,/g;
+  let encontrado;
+  while ((encontrado = anotacion.exec(texto))) {
+    const apertura = texto.indexOf('= {', encontrado.index);
+    if (apertura < 0) continue;
+    let i = apertura + 3;
+    let profundidad = 1;
+    while (i < texto.length && profundidad > 0) {
+      if (texto[i] === '{') profundidad++;
+      else if (texto[i] === '}') profundidad--;
+      i++;
+    }
+    cuerpos.push(texto.slice(apertura, i));
+  }
+  return cuerpos;
+}
+
 /** slug -> archivos donde aparece. */
 const usos = new Map();
 function registrar(slug, archivo) {
@@ -164,6 +188,13 @@ for (const archivo of [
   for (const cuerpo of cuerposDeSwitchSobreProblemType(texto))
     for (const m of cuerpo.matchAll(/case\s*'([a-z0-9-]+)'/g)) registrar(m[1], archivo);
   for (const m of texto.matchAll(/\bproblemType\s*===\s*'([a-z0-9-]+)'/g)) registrar(m[1], archivo);
+
+  // (d) Tabla de traduccion con la clave tipada por el catalogo:
+  //     `const POR_TIPO: Partial<Record<AkineProblemType, ...>> = { 'slug': [...] }`. La protege el
+  //     compilador igual que un `case`, y es tan "manejado" como un `case`: sin esto, el informe de
+  //     abajo listaba como pendientes tipos que una pantalla traduce con mensaje propio (09.02).
+  for (const cuerpo of cuerposDeTablaPorProblemType(texto))
+    for (const m of cuerpo.matchAll(/^\s*'([a-z0-9-]+)'\s*:/gm)) registrar(m[1], archivo);
 
   // (c) Helper de E2E `problema(status, 'slug', ...)`, que arma la URI por interpolacion.
   //     Su parametro es un `string` suelto: sin esto, los mocks de `route.fulfill` no se miran.

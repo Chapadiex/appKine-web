@@ -512,6 +512,62 @@ const PARTICIPANTES_DE_CLASE = [
   },
 ];
 
+/** La clase de la grilla del dia (agenda unificada), para la lista de la asistencia. */
+const EVENTO_DE_CLASE = {
+  tipo: 'CLASE',
+  eventoId: CLASE.id,
+  titulo: 'Pilates reformer',
+  ofertaId: CLASE.ofertaId,
+  ofertaNombre: CLASE.ofertaNombre,
+  estado: 'EN_CURSO',
+  inicio: CLASE.inicio,
+  fin: CLASE.fin,
+  capacidad: 2,
+  ocupados: 2,
+};
+
+/** La clase EN CURSO para tomar lista: una sin marcar, una corregida, una en espera. */
+const DETALLE_OPERATIVO = {
+  claseId: CLASE.id,
+  titulo: 'Pilates reformer',
+  estado: 'EN_CURSO',
+  inicio: CLASE.inicio,
+  fin: CLASE.fin,
+  presentes: 1,
+  ausentes: 0,
+  sinResolver: 1,
+  ocupados: 2,
+  capacidadEfectiva: 2,
+  enEspera: 1,
+  page: 0,
+  totalPages: 1,
+  content: [
+    PARTICIPANTES_DE_CLASE[0],
+    {
+      ...PARTICIPANTES_DE_CLASE[1],
+      asistencia: { id: 20, resultado: 'PRESENTE', correcciones: 1 },
+    },
+    PARTICIPANTES_DE_CLASE[2],
+  ],
+};
+
+/** El lote de asistencia con las tres salidas que pinta la pantalla: guardado, pase y fallo. */
+const LOTE_DE_ASISTENCIA = {
+  exitosos: 1,
+  fallidos: 1,
+  items: [
+    {
+      inscripcionId: 501,
+      resultado: { registrada: true, consumoDeCredito: { efecto: 'CONSUMIDO', saldo: 3 } },
+    },
+    {
+      inscripcionId: 502,
+      problemType: 'https://akine.app/problems/inscripcion-transicion-no-permitida',
+      detalle: 'La inscripcion esta cancelada',
+    },
+  ],
+};
+
 /** El panel de atencion clinica de la clase (AKINE-08.05). */
 const ATENCION_GRUPAL = {
   claseId: CLASE.id,
@@ -681,6 +737,7 @@ export async function instalarApiDeContraste(page: Page): Promise<ApiDeContraste
           'clase:manage',
           'inscripcion:read',
           'inscripcion:manage',
+          'asistencia:manage',
           'producto:read',
           'producto:manage',
           'pase:read',
@@ -719,12 +776,37 @@ export async function instalarApiDeContraste(page: Page): Promise<ApiDeContraste
     if (camino === `${clases}/${CLASE.id}/atencion-clinica` && metodo === 'GET') {
       return json(ATENCION_GRUPAL);
     }
+    // Asistencia (08.03): la clase EN CURSO, con una asistencia ya registrada y corregida.
     if (camino === `${clases}/${CLASE.id}/detalle-operativo`) {
+      return json(DETALLE_OPERATIVO);
+    }
+    // El lote de asistencia: uno guardado con consumo de pase y uno rechazado con su causa.
+    if (camino === `${clases}/${CLASE.id}/asistencias/lote` && metodo === 'POST') {
+      return json(LOTE_DE_ASISTENCIA);
+    }
+    // El lote de atencion clinica (08.05): Ana no tiene derivacion vigente.
+    if (camino === `${clases}/${CLASE.id}/atencion-clinica/lote` && metodo === 'POST') {
       return json({
-        claseId: CLASE.id,
-        titulo: 'Pilates reformer',
-        inicio: CLASE.inicio,
-        content: PARTICIPANTES_DE_CLASE,
+        exitosos: 0,
+        fallidos: 1,
+        items: [
+          {
+            inscripcionId: 501,
+            problemType: 'https://akine.app/problems/participacion-sin-derivacion',
+            detalle: 'Sin derivacion vigente',
+          },
+        ],
+      });
+    }
+    // Las clases del dia de la asistencia salen de la agenda unificada.
+    if (camino === `/api/v1/consultorios/${CONSULTORIO_ID}/agenda` && metodo === 'GET') {
+      return json({
+        fecha: '2026-10-20',
+        timezone: 'America/Argentina/Cordoba',
+        eventos: [
+          { ...EVENTO_DE_CLASE },
+          { ...EVENTO_DE_CLASE, eventoId: 71, titulo: 'Yoga suave', estado: 'CANCELADA' },
+        ],
       });
     }
     // Derivar a Ana (AKINE-08.04): derivable, paciente, con dos casos activos y uno cerrado.

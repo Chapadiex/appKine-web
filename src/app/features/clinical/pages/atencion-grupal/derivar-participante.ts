@@ -10,6 +10,8 @@ import {
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
+import { FocoAlMontar } from '../../../../shared/directives/foco-al-montar.directive';
+
 import { CasoAdministrativoResponse } from '../../../../api/generated/model/caso-administrativo-response';
 import { DerivacionDeParticipante } from '../../../../api/generated/model/derivacion-de-participante';
 import { ElegibilidadClinicaDeParticipante } from '../../../../api/generated/model/elegibilidad-clinica-de-participante';
@@ -63,7 +65,7 @@ const ETIQUETAS_DE_ASISTENCIA: Readonly<Record<string, string>> = {
  */
 @Component({
   selector: 'app-derivar-participante',
-  imports: [RouterLink],
+  imports: [RouterLink, FocoAlMontar],
   templateUrl: './derivar-participante.html',
 })
 export class DerivarParticipante {
