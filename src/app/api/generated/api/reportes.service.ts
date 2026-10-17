@@ -186,7 +186,7 @@ export class ReportesService extends BaseService implements ReportesServiceInter
             }
         }
 
-        let localVarPath = `/api/v1/consultorios/${this.configuration.encodeParam({name: "consultorioId", value: consultorioId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/reportes/${this.configuration.encodeParam({name: "reporte", value: reporte, in: "path", style: "simple", explode: false, dataType: "'OPERATIVO' | 'TURNOS' | 'CLINICO' | 'ECONOMICO' | 'FINANCIADORES'", dataFormat: undefined})}/export`;
+        let localVarPath = `/api/v1/consultorios/${this.configuration.encodeParam({name: "consultorioId", value: consultorioId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/reportes/${this.configuration.encodeParam({name: "reporte", value: reporte, in: "path", style: "simple", explode: false, dataType: "'OPERATIVO' | 'TURNOS' | 'CLINICO' | 'ECONOMICO' | 'FINANCIADORES' | 'CLASES' | 'PASES'", dataFormat: undefined})}/export`;
         const { basePath, withCredentials } = this.configuration;
         return this.httpClient.request<string>('get', `${basePath}${localVarPath}`,
             {
@@ -204,7 +204,7 @@ export class ReportesService extends BaseService implements ReportesServiceInter
 
     /**
      * Generar un reporte
-     * Calcula el reporte para el periodo pedido (RF-M23-001 a RF-M23-005).  **El periodo se interpreta en la zona de la sede**, no en la del servidor. Un cobro de las 21:30 en Ushuaia convertido con la zona equivocada cae en el dia siguiente: el reporte no falla, da otro numero.  **Cada indicador declara su fuente y su criterio de fecha.** Deuda, cobro, caja, presentacion y egreso son cinco conceptos y ningun campo los suma.  **Lo que no se puede ver se declara**: &#x60;omitidas&#x60; lleva las secciones cuyo permiso falta, y &#x60;advertencias&#x60; los indicadores que valen cero por construccion y no por falta de actividad.  Ventana maxima: 366 dias.
+     * Calcula el reporte para el periodo pedido (RF-M23-001 a RF-M23-005; &#x60;CLASES&#x60; es RF-M23-007 y &#x60;PASES&#x60; es RF-M23-010).  **El periodo se interpreta en la zona de la sede**, no en la del servidor. Un cobro de las 21:30 en Ushuaia convertido con la zona equivocada cae en el dia siguiente: el reporte no falla, da otro numero.  **Cada indicador declara su fuente y su criterio de fecha.** Deuda, cobro, caja, presentacion y egreso son cinco conceptos y ningun campo los suma.  **Lo que no se puede ver se declara**: &#x60;omitidas&#x60; lleva las secciones cuyo permiso falta, y &#x60;advertencias&#x60; los indicadores que valen cero por construccion y no por falta de actividad.  Ventana maxima: 366 dias.
      * @endpoint get /api/v1/consultorios/{consultorioId}/reportes/{reporte}
      * @param requestParameters
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
@@ -281,7 +281,7 @@ export class ReportesService extends BaseService implements ReportesServiceInter
             }
         }
 
-        let localVarPath = `/api/v1/consultorios/${this.configuration.encodeParam({name: "consultorioId", value: consultorioId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/reportes/${this.configuration.encodeParam({name: "reporte", value: reporte, in: "path", style: "simple", explode: false, dataType: "'OPERATIVO' | 'TURNOS' | 'CLINICO' | 'ECONOMICO' | 'FINANCIADORES'", dataFormat: undefined})}`;
+        let localVarPath = `/api/v1/consultorios/${this.configuration.encodeParam({name: "consultorioId", value: consultorioId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/reportes/${this.configuration.encodeParam({name: "reporte", value: reporte, in: "path", style: "simple", explode: false, dataType: "'OPERATIVO' | 'TURNOS' | 'CLINICO' | 'ECONOMICO' | 'FINANCIADORES' | 'CLASES' | 'PASES'", dataFormat: undefined})}`;
         const { basePath, withCredentials } = this.configuration;
         return this.httpClient.request<ReporteResponse>('get', `${basePath}${localVarPath}`,
             {
