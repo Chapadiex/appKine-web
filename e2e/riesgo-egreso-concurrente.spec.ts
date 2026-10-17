@@ -32,11 +32,23 @@ import { abrirLaCaja, cajaAbierta, dejarLaCajaCerrada, uriDeProblema } from './s
  */
 test.describe.configure({ mode: 'default' });
 
-/** Sin comprobante el egreso no se confirma (`egreso-sin-comprobante`). */
-const COMPROBANTE = {
-  comprobanteTipo: 'Factura C',
-  comprobanteNumero: '0001-00000042',
-} as const;
+/**
+ * Sin comprobante el egreso no se confirma (`egreso-sin-comprobante`), y el comprobante tiene que
+ * ser UNICO por egreso: el backend rechaza con 409 `egreso-comprobante-duplicado` un comprobante
+ * de ese beneficiario que ya este cargado en un egreso no anulado (`uk_egreso_comprobante`).
+ *
+ * <p>Con un numero fijo, la carrera de abajo dependia de quien la ganara: cuando ganaba el pago, el
+ * egreso quedaba PAGADO —resultado legitimo— y retenia la factura, asi que el alta de la vuelta
+ * siguiente moria con ese 409 antes de llegar a la carrera. Solo pasaba si la anulacion ganaba las
+ * once primeras vueltas, y por eso salia flaky (el reintento siembra otro centro y vuelve a tirar).
+ */
+function comprobanteUnico(): { comprobanteTipo: string; comprobanteNumero: string } {
+  const numero = parseInt(randomUUID().replace(/-/g, '').slice(0, 7), 16) % 100_000_000;
+  return {
+    comprobanteTipo: 'Factura C',
+    comprobanteNumero: `0001-${String(numero).padStart(8, '0')}`,
+  };
+}
 
 interface Egreso {
   readonly id: number;
@@ -44,6 +56,8 @@ interface Egreso {
   readonly estado: string;
   readonly concepto: string;
   readonly saldoPendiente: number;
+  readonly comprobanteTipo?: string;
+  readonly comprobanteNumero?: string;
   readonly pagos?: readonly { readonly id: number; readonly estado: string }[];
 }
 
@@ -85,7 +99,8 @@ test.describe('Egresos con dos operadores a la vez contra el backend real', () =
       categoria: 'ALQUILER',
       concepto: `${egreso.concepto} (corregido)`,
       importeTotal: 3200,
-      ...COMPROBANTE,
+      comprobanteTipo: egreso.comprobanteTipo,
+      comprobanteNumero: egreso.comprobanteNumero,
       version: egreso.version,
     });
     await page.locator('#edicion-concepto').fill(`${egreso.concepto} (pisado)`);
@@ -231,7 +246,7 @@ async function altaDeEgreso(
     moneda: 'ARS',
     tipoBeneficiario: 'EXTERNO',
     beneficiarioNombre: 'Inmobiliaria Sintetica SRL',
-    ...COMPROBANTE,
+    ...comprobanteUnico(),
     idempotencyKey: randomUUID(),
   });
 }
