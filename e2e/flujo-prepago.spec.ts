@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 
-import { expect, ingresar, navegar, problemaDe, respuestaDe, test } from './support/agenda-real';
+import { expect, ingresar, navegar, problemaDe, respuestaDe } from './support/agenda-real';
+import { ZONA_DEL_NAVEGADOR_DE_HOY, test } from './support/centro-de-hoy';
 import {
   Oferta,
   Persona,
@@ -8,7 +9,6 @@ import {
   crearOferta,
   crearPersona,
   exigirPrepago,
-  fechaLocal,
   turnoDeHoy,
   uriDeProblema,
   verTurno,
@@ -17,6 +17,10 @@ import {
 /**
  * E2E del prepago como anticipo (E-6, DP-06 / ADR-0013) y visible antes del check-in (E-8),
  * contra el backend REAL.
+ *
+ * <p>El turno es de HOY, en un centro cuya sede esta donde ahora es media mañana
+ * (`support/centro-de-hoy.ts`): sobre el centro compartido fallaba cerca de la medianoche de
+ * Cordoba (`motivo: PASADO`).
  *
  * <p>La oferta exige prepago y el turno es de HOY (la recepcion solo opera el dia). Antes de que
  * el paciente llegue, la fila ya avisa "Prepago pendiente"; el mostrador lo registra desde ahi y
@@ -36,6 +40,8 @@ async function abrirLaRecepcion(page: import('@playwright/test').Page, persona: 
   return fila;
 }
 
+test.use({ timezoneId: ZONA_DEL_NAVEGADOR_DE_HOY });
+
 test.describe('Prepago antes del check-in contra el backend real', () => {
   let oferta: Oferta;
   let persona: Persona;
@@ -49,12 +55,7 @@ test.describe('Prepago antes del check-in contra el backend real', () => {
     });
     oferta = await exigirPrepago(api, centro, creada);
     persona = await crearPersona(api);
-    const reservado = await turnoDeHoy(api, centro, oferta, persona);
-    test.skip(
-      reservado === null,
-      `no queda ningun horario futuro hoy (${fechaLocal(centro.timezone)}) en ${centro.timezone}`,
-    );
-    turno = reservado!;
+    turno = await turnoDeHoy(api, centro, oferta, persona);
     await ingresar(page, centro);
   });
 

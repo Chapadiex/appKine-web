@@ -169,9 +169,10 @@ chocar con otros PR que agregan al final), y sus bloques de dias en `DIAS_CONFIG
   el motivo. La plataforma ingresa por pantalla en un navegador aparte, sin contexto de centro.
 - El servicio de `flujo-servicios` queda dado de baja: `servicioAgendable` toma el PRIMER servicio
   activo, asi que no cambia las corridas siguientes.
-- **Los specs de "hoy" fallan en un dia feriado**: `agenda-recepcion` y `flujo-prepago` reservan
-  turnos de HOY, y el 12/10/2026 (feriado nacional) la agenda del dia viene `FERIADO`. No es de esta
-  tanda; queda anotado porque se vio al correr la suite entera ese dia.
+- **Los specs de "hoy" fallaban en un dia feriado**: `agenda-recepcion` y `flujo-prepago` reservan
+  turnos de HOY, y el 12/10/2026 (feriado nacional) la agenda del dia vino `FERIADO`. Lo resolvio la
+  apertura del feriado en el sembrado (#67); el defecto de la medianoche, que es otro, esta en la
+  seccion "El defecto de la medianoche".
 
 ## Las pantallas del contrato 0.98.0 (`e2e/flujo-*.spec.ts`, cuarta tanda)
 
@@ -220,13 +221,11 @@ simula el impacto de un cambio de horario, asi que no le mueven la cuenta a `flu
 - **`/espacios/disponibilidad` interpreta el `datetime-local` en la zona del navegador**, no en la de
   la sede (ver el PR). El spec pone las vigencias lejos de los bordes para no depender de eso.
 
-### Lo que sigue sin E2E contra el backend real
+### Lo que quedaba sin E2E contra el backend real
 
-| Pantalla                                | Por que                                                                |
-| --------------------------------------- | ---------------------------------------------------------------------- |
-| `/catalogo/nomencladores/:id/vigencias` | Necesita un nomenclador propio sembrado; queda para la proxima tanda   |
-| `/auth/sesion-expirada`                 | Exige vencer el refresh; hoy solo la cubre el unitario                 |
-| `/auth/invitacion` (aceptar)            | El spec abre y cancela; aceptar crea una cuenta (un alta mas del cupo) |
+Las tres pantallas que esta tanda dejo afuera (`/catalogo/nomencladores/:id/vigencias`,
+`/auth/sesion-expirada` y aceptar `/auth/invitacion`) tienen spec propio desde el 17/10/2026: ver
+"Los huecos del inventario, con centro propio" mas abajo.
 
 ## Asistencia de clases (F9, `e2e/flujo-asistencia.spec.ts`)
 
@@ -239,7 +238,186 @@ espacio, y es **futura** a proposito: inscribir a una clase que ya empezo es
 | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `flujo-asistencia` | Clase con cuatro inscriptas → `/asistencia` con la fecha de la clase → iniciar → con la pantalla abierta se cancela una inscripcion por la API → lote presente/tarde/ausente/cancelada → correccion sin motivo (bloqueada) y con motivo → historial → cerrar | El lote devuelve 3 exitosos y 1 fallido con `inscripcion-transicion-no-permitida`, sin deshacer los demas; la correccion viaja con su motivo; el historial guarda "Ausente a Presente"; el detalle final es `REALIZADA` con 3 presentes y 0 ausentes |
 
-- **El consumo de un pase y la derivacion clinica no tienen E2E** porque el backend no publica API
-  para ninguno de los dos (08.04 sin controller; 08.06 a 08.09 sin codigo sobre `V64`).
+- **La derivacion clinica** (08.04) se da de alta por pantalla desde el panel de atencion grupal
+  ("Derivar a un caso": elegibilidad, casos activos por los datos administrativos y derivacion) en
+  `flujo-atencion-grupal` y `circuito-f9`; el Caso se abre por la API porque pide diagnostico
+  presuntivo. El consumo de un pase: ver la seccion siguiente.
 - **`aceptaListaEspera` va explicito al inscribir:** el contrato lo declara opcional y el backend
   responde 400 si falta (`boolean` primitivo en `InscribirRequest`).
+
+## Pases y productos de pack (F9, `e2e/flujo-pases.spec.ts`)
+
+En el proyecto `agenda`, sobre el mismo centro. Helpers en `e2e/support/sembrado-pases.ts`. La
+oferta es `GRUPAL` con `esquemaCobro = POR_PACK` y la clase cae en el primer dia programable de
+`DIAS_PASES` (4 a 10 dias desde hoy): **cercana a proposito**, porque el pase vale 60 dias desde hoy
+y el consumo exige que este vigente el dia de la clase.
+
+| Spec          | Que recorre                                                                                                                                                            | Lo que afirma contra el backend real                                                                                                                                                                                        |
+| ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `flujo-pases` | `/productos`: alta del producto de 2 creditos → `/pacientes/:id/pases`: venta → `/asistencia/:claseId`: iniciar y marcar presente → ledger del pase → cuenta corriente | El alta es 201; la venta es 201 con la deuda `PENDIENTE` y el pase en 2 de 2; el lote devuelve `consumoDeCredito` `CONSUMIDO` con saldo 1; el ledger tiene compra +2 y consumo -1; la deuda sin sesion dice "Venta de pase" |
+
+## Las pantallas de mas riesgo, con centro propio (`e2e/riesgo-*.spec.ts`)
+
+Dinero, permisos y concurrencia. Corren en el proyecto `chromium` (no se llaman `flujo-*`) y **cada
+archivo siembra su propio centro** en `beforeAll` con `sembrarCentroPropio`
+(`e2e/support/centro-propio.ts`, sobre `altaDeCentro` de `sembrado.ts`): abren y cierran la caja,
+anulan lotes y otorgan permisos, que es estado de la SEDE. Sobre el centro compartido le cambiarian
+el estado a los `flujo-*`, y sumarle miembros a un centro BASICO lo lleva a `plan-limit-exceeded`.
+Son dos altas por archivo dentro del cupo de `esperarCupoDeRegistro`. Ninguno usa `route.fulfill`.
+
+| Spec                                    | Que recorre                                                                                                                                                                          | Lo que afirma contra el backend real                                                                                                                                                                               |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `riesgo-cobro-efectivo-anulado`         | Cobro en EFECTIVO por pantalla → anularlo desde `/cobros` → arqueo. Despues: anular un cobro en efectivo con la caja cerrada, con la caja vacia y con la plata en el cajon           | La deuda vuelve a PENDIENTE entera, el teorico vuelve al saldo inicial y el arqueo cierra sin diferencia; `cobro-anulado` al repetir; `caja-no-abierta` y `caja-saldo-insuficiente` sin tocar la deuda             |
+| `riesgo-presentacion-debito-y-descarte` | Borrador con dos deudas → quitar una → descartar con motivo. Lote presentado → debito excedido → debito total de una → factura → pago → conciliar → borrador nuevo                   | Quitar y descartar liberan la deuda; un lote presentado no se descarta (`presentacion-no-editable`); `validation-error` con `importePresentado`; `item-no-debitable`; la debitada sigue PENDIENTE y re-presentable |
+| `riesgo-egreso-concurrente`             | Borrador corregido por otro operador mientras la pantalla lo muestra → guardar. Pago registrado por otro operador → "Anular el egreso" en la pantalla vieja → anular el pago primero | `concurrent-modification` sin pisar lo del otro; `egreso-con-pagos`; la pantalla recargada esconde la anulacion y ofrece anular el pago                                                                            |
+| `riesgo-permisos-de-la-plata`           | Una PROFESIONAL del centro: caja, presentaciones, egresos, cobros por la API y por URL; grant `paciente:manage` otorgado y quitado                                                   | `forbidden` en todo lo economico, `/sin-permiso` en cada pantalla, la cuenta corriente dice por que no muestra nada; `caja:operate` no otorgable; el grant vale y deja de valer con el MISMO token                 |
+| `riesgo-autorizacion-ultima-unidad`     | Autorizacion de UNA unidad, dos sesiones de la misma practica cerradas a la vez por la profesional                                                                                   | Los dos cierres entran, la autorizacion consume una vez (Consumidas 1, Disponibles 0) y el ledger tiene un solo consumo                                                                                            |
+
+- **Defecto del backend, test en `fixme`:** `riesgo-egreso-concurrente` › "un pago y una anulacion a
+  la vez...". Con un pago en efectivo y la anulacion del egreso en paralelo, en 9 de 12 carreras los
+  dos responden con exito y el egreso queda `ANULADO` con un pago vigente. El comentario del test
+  tiene el pedido, la respuesta y la causa probable (`descontarSaldo` nativo sin `@Version`).
+- **El debito parcial** deja hoy la deuda entera pendiente (U-11, conocido y aceptado): el spec
+  debita el total, que es la regla que no depende de esa decision.
+- **`cobro:register` no es otorgable a PROFESIONAL** (`permisos-otorgables` devuelve `hc:read`,
+  `hc:write`, `paciente:manage`), aunque la matriz §2 dice "No por defecto" en esa celda. La §16.1
+  no la lista; el spec usa `paciente:manage` y no afirma nada sobre `cobro:register`.
+
+### Inventario de pantallas de riesgo y su E2E contra el backend real (15/10/2026)
+
+| Pantalla                                                        | Cubierta | Spec                                                                                                              |
+| --------------------------------------------------------------- | -------- | ----------------------------------------------------------------------------------------------------------------- |
+| `/caja`: apertura, movimiento, reversion, cierre con arqueo     | Si       | `flujo-caja`                                                                                                      |
+| `/pacientes/:id/cuenta-corriente`: deudas y anular una deuda    | Si       | `flujo-autorizaciones`, `flujo-cuenta-corriente-concepto`                                                         |
+| `/cuenta-corriente/cobrar`                                      | Si       | `flujo-caja`, `flujo-prepago`, `riesgo-cobro-efectivo-anulado`                                                    |
+| `/cuenta-corriente/cobros`: anular, reintegrar, imputar         | Si       | `flujo-cobros-posteriores` (transferencia), `riesgo-cobro-efectivo-anulado` (efectivo)                            |
+| `/presentaciones` y detalle: armar, confirmar, pagar, conciliar | Si       | `flujo-presentaciones`, `flujo-presentacion-csv`                                                                  |
+| `/presentaciones/:id`: quitar, descartar, debito                | Si       | `riesgo-presentacion-debito-y-descarte`                                                                           |
+| `/egresos` y detalle: alta, confirmar, pagar, anular el pago    | Si       | `flujo-caja`                                                                                                      |
+| `/egresos/:id`: corregir, anular el egreso, dos operadores      | Si       | `riesgo-egreso-concurrente` (la carrera pago/anulacion en `fixme`)                                                |
+| `/pacientes/:id/coberturas` y `/autorizaciones`                 | Si       | `cobertura-autorizacion`, `flujo-autorizaciones`, `flujo-consumos-a-revisar`, `riesgo-autorizacion-ultima-unidad` |
+| `/historia-clinica/personas/:id`: motivo de acceso              | Si       | `historia-clinica`, `acceso-clinico`, `flujo-auditoria-clinica`                                                   |
+| Permisos por rol sobre la plata (PROFESIONAL)                   | Si       | `riesgo-permisos-de-la-plata`                                                                                     |
+| Permisos por rol sobre lo clinico (ADMINISTRATIVO)              | Si       | `flujo-historia-administrativa`, `acceso-clinico`                                                                 |
+| Permisos adicionales de un colaborador                          | Si       | `flujo-colaboradores`                                                                                             |
+| `/catalogo/nomencladores/:id/vigencias`                         | Si       | `nomenclador-vigencias` (17/10)                                                                                   |
+| `/auth/sesion-expirada`, aceptar `/auth/invitacion`             | Si       | `sesion-expirada`, `invitacion-aceptada` (17/10)                                                                  |
+
+La atencion clinica, las clases y los pases/abonos los cubren sus propios PR y no entran aca: ver
+el inventario completo al final.
+
+## El defecto de la medianoche (09.04)
+
+`agenda-recepcion` y `flujo-prepago` necesitan un turno de HOY (la recepcion solo opera el dia de la
+sede) y lo reservaban sobre el centro compartido, con la sede en Cordoba: el primer horario todavia
+futuro del dia. **Entre las 23:30 y las 24:00 de Cordoba no queda ninguno** —la disponibilidad
+sembrada termina 23:45 y el ultimo turno de 15 minutos empieza 23:30—, el motor devuelve el dia
+vacio con `motivoSinSlots: PASADO` y el sembrado moria en `el <fecha> tiene slots (motivo:
+PASADO)`. Un poco antes, con dos o tres horarios futuros, alcanzaba un reintento del CI o dos workers
+compitiendo para quedarse sin ninguno. El resultado dependia de la HORA del CI, no del producto, y
+el `test.skip` que lo "cubria" llegaba tarde: `slotsDelDia` fallaba antes de devolver `null`.
+
+**Arreglo** (`e2e/support/centro-de-hoy.ts`): esos dos specs usan un `test` cuyo fixture `centro` es
+un centro propio por worker con la **sede en la zona donde ahora es media mañana**
+(`zonaDeMediaManana`: entre 26 zonas de desfase entero, la que marca la hora mas cercana a las 10:00
+al cargar el spec). "Hoy" es el dia de la sede y su zona se edita (`PATCH
+/organizations/{orgId}/consultorios/{id}`, que `altaDeCentro` aplica ANTES de cargar la
+disponibilidad y abrir los feriados), asi que siempre quedan unas trece horas de turnos futuros, sea
+la hora que sea en Cordoba. No hay esperas, reintentos ni reloj simulado: el motor de slots y la
+recepcion leen el reloj real del backend, que no se puede fijar desde el navegador. `turnoDeHoy` ya
+no devuelve `null` ni saltea: si no hay horario, falla diciendo la zona y la fecha.
+
+El navegador de esos specs corre en `ZONA_DEL_NAVEGADOR_DE_HOY`, una zona cuyo dia es OTRO que el de
+esa sede, por la misma razon que el resto de la suite (ver "El navegador corre en otra zona"). Para
+fijar la zona de la sede a mano: `AKINE_E2E_ZONA_DE_HOY`. Con ella en una zona donde son mas de las
+23:30 el defecto vuelve tal cual (`motivo: PASADO`), que es como se verifico.
+
+Los demas specs no reservan turnos de hoy: trabajan en dias futuros de su bloque de `DIAS` (de 2 en
+adelante), y la fecha que calcula el test a las 23:59 y la que ve el backend a las 00:01 caen las dos
+dentro del bloque.
+
+## El circuito completo de F9 (`e2e/circuito-f9.spec.ts`, 09.04)
+
+Proyecto `chromium`, **centro propio** (abre y cierra la caja). Sin `route.fulfill`. Lo que prueba y
+ningun spec por pantalla puede: que lo que deja un modulo sea lo que el siguiente necesita.
+
+| Test            | Que recorre                                                                                                                                                                                                                                                                                                                                                                                                                                                   | Lo que afirma contra el backend real                                                                                                                                                                                                                                                                     |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| con pase        | Oferta `POR_PACK` con registro clinico y producto de 2 creditos → `/clases/:id`: dos inscriptas llenan el cupo, la tercera choca y va a la lista de espera, la baja de una la promueve → venta del pase por `/pacientes/:id/pases` → `/asistencia/:id`: lote con las dos presentes → la profesional, en su navegador: `/atencion/clases/:id` → derivar al Caso → iniciar → cerrar la Sesion → `/pacientes/:id/cuenta-corriente` → cobro en efectivo → `/caja` | `clase-completa`; promocion; el lote devuelve 2 `CONSUMIDO` con saldo 1; la Sesion abre con el Caso de la derivacion; **cerrar la Sesion no devenga otra deuda (U-42)**: la unica es la venta del pase, `PENDIENTE` por 15.000; el cobro la deja `PAGADA` y el teorico de la caja sube de 1.000 a 16.000 |
+| con obra social | Oferta grupal que admite obra social con `KIN_SESION`, convenio con arancel 12.000 (9.000 + 3.000), persona con cobertura → clase, inscripcion y asistencia por la API → la profesional deriva, abre y cierra la Sesion por pantalla → cuenta corriente → cobro en efectivo → `/caja`                                                                                                                                                                         | La Sesion grupal devenga por convenio: `COSEGURO` de 3.000 en la cuenta de la persona (fila "Coseguro" con "Convenio X") y 9.000 del financiador en `prestaciones-elegibles`, las dos de esa Sesion; el cobro deja el coseguro `PAGADO` y el teorico en 4.000                                            |
+
+- **Dos caminos porque el backend los separa** (`ObligacionDevengador`, AKINE-08.05/U-42): sin
+  cobertura, la atencion grupal no devenga particular, porque la clase ya se cobra por su esquema
+  sobre la asistencia; con cobertura devenga por convenio.
+- **La profesional trabaja en un `browser.newContext()` propio**: la sesion del navegador de la
+  administradora no se toca, y la rotacion del refresh no las cruza.
+
+## Los huecos del inventario, con centro propio (17/10/2026)
+
+Las cuatro pantallas que el inventario del 16/10 daba sin cubrir. Proyecto `chromium`, sin
+`route.fulfill` ni esperas fijas; las tres que operan sobre una sede siembran su centro con
+`sembrarCentroPropio` (`e2e/support/centro-propio.ts`).
+
+| Spec                    | Que recorre                                                                                                                                                                           | Lo que afirma contra el backend real                                                                                                                                                                     |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `sesion-expirada`       | Cuenta propia adentro → la misma cuenta, desde otro cliente, cierra todas sus sesiones (`DELETE /auth/sessions`) → la proxima peticion de la pantalla → "Volver a iniciar sesion"     | El 401 de la peticion y el del refresh los emite el servidor; la pantalla conserva `volverA` y, tras ingresar, el usuario vuelve a `/pacientes`                                                          |
+| `invitacion-aceptada`   | Invitacion por la API a alguien sin cuenta → el enlace real de Mailpit → nombre y contrasena en `/auth/invitacion` → aceptar → ingresar con esa contrasena                            | `cuentaCreada: true` en la organizacion y la sede del centro; la invitacion figura `ACEPTADA` como PROFESIONAL; el mismo enlace ya no abre nada; la cuenta entra directo al centro                       |
+| `nomenclador-vigencias` | Nomenclador PROPIO por la API → por pantalla: una vigencia vieja y otra nueva del mismo codigo, una tercera que las pisa, baja de la vieja con motivo, filtro por codigo              | Las fechas `datetime-local` viajan como la hora de la SEDE (el navegador corre en otra zona); "Activa, fuera de ventana" y "Rige hoy"; `nomenclador-vigencia-overlap` en el campo; la baja con su motivo |
+| `clase-reprogramada`    | Clase futura con dos inscriptas → "Reprogramar" al dia siguiente, otro horario y otro cupo → despues, otro operador reprograma por la API mientras la pantalla tiene la version vieja | Misma clase y mismas inscripciones en el horario nuevo de la sede, "Reprogramada" en el historial; `concurrent-modification` sin pisar lo del otro operador                                              |
+
+- **El 401 del access token se provoca, la muerte de la sesion no.** El access token sigue valido
+  diez minutos despues de revocar (ADR-0017). `sesion-expirada` le rompe la firma a UNA peticion
+  con `route.continue` —la peticion igual viaja al backend real, que responde su 401—; el refresh
+  revocado lo rechaza el servidor de verdad.
+- **Defecto de pantalla encontrado y corregido:** al morir la sesion, `limpiarSesion()` cambia el
+  contexto y la pantalla (el padron, y casi todas por `contextEpoch`) vuelve a pedir sus datos
+  antes de que la navegacion la destruya. Esa peticion sale sin token, su refresh tambien da 401,
+  y como la sesion ya era `anonimo` el interceptor mandaba al login pelado: "Tu sesion se cerro"
+  duraba un instante y el `volverA` se perdia. Ahora el interceptor no navega si el usuario ya esta
+  en `/auth/` o yendo ahi (`yaEstaEnAuth`, con dos unitarios). El refresh de mas sigue saliendo.
+
+## Inventario: que pantallas tienen E2E contra el backend real (17/10/2026)
+
+Cuenta solo lo que corre contra el backend REAL, sin `route.fulfill` (los de contraste y movil
+simulan la API y no entran). Ruta → spec que la recorre.
+
+| Pantalla                                                    | E2E real | Spec                                                                                            |
+| ----------------------------------------------------------- | -------- | ----------------------------------------------------------------------------------------------- |
+| `/auth/ingresar`, `registro`, `activar`, `restablecer`      | Si       | `auth-flujo`, `cuenta-ciclo-real`                                                               |
+| `/auth/reenviar-activacion`                                 | Si       | `flujo-reenvio-y-vinculo`                                                                       |
+| `/auth/invitacion` (abrir, cancelar, aceptar)               | Si       | `flujo-invitaciones`, `invitacion-aceptada`                                                     |
+| `/auth/sesion-expirada`                                     | Si       | `sesion-expirada`                                                                               |
+| `/seleccionar-contexto`                                     | Si       | `contexto-sin-fuga`, los que ingresan como profesional                                          |
+| `/organizacion`, `suscripcion`, `sedes`, `sedes/nueva`      | Si       | `flujo-suscripcion`, `flujo-sedes`                                                              |
+| `/organizacion/colaboradores` (alta, invitaciones, avisos)  | Si       | `flujo-colaboradores`, `flujo-invitaciones`, `flujo-notificaciones`, `flujo-desvinculacion`     |
+| `/organizacion/auditoria`                                   | Si       | `flujo-auditoria-clinica`                                                                       |
+| `/espacios`, `nuevo`, `disponibilidad`                      | Si       | `flujo-espacios`, `flujo-disponibilidad-resuelta`                                               |
+| `/horarios`, `excepciones`, `efectivo`, `calendario`        | Si       | `flujo-horarios`, `flujo-disponibilidad-resuelta`                                               |
+| `/catalogo/:tipo`, `/catalogo/solicitudes`                  | Si       | `flujo-catalogo`                                                                                |
+| `/catalogo/nomencladores/:id/vigencias`                     | Si       | `nomenclador-vigencias`                                                                         |
+| `/servicios/catalogo`, `ofertas`, `habilitaciones`          | Si       | `flujo-servicios`                                                                               |
+| `/servicios/ofertas/:id/practicas`, `precios`               | Si       | `flujo-practicas-y-aranceles`, `flujo-servicios`                                                |
+| `/contratacion/financiadores` y planes                      | Si       | `flujo-financiadores`                                                                           |
+| `/contratacion/convenios`, aranceles, importar, efectivo    | Si       | `flujo-practicas-y-aranceles`, `flujo-coberturas-y-aranceles`, `flujo-dia-de-la-sede`           |
+| `/pacientes`, `/pacientes/:id` (360)                        | Si       | `flujo-padron`, `flujo-historia-administrativa`                                                 |
+| `/pacientes/:id/documentos`                                 | Si       | `flujo-documentos`                                                                              |
+| `/pacientes/:id/coberturas`, `autorizaciones`               | Si       | `cobertura-autorizacion`, `flujo-autorizaciones`, `flujo-consumos-a-revisar`                    |
+| `/pacientes/:id/cuenta-corriente`, `cobrar`, `cobros`       | Si       | `flujo-caja`, `flujo-cobros-posteriores`, `riesgo-cobro-efectivo-anulado`, `circuito-f9`        |
+| `/agenda`, reservar, turno, serie, series                   | Si       | `agenda-buscador`, `agenda-reserva`, `agenda-ciclo`, `flujo-series`, `flujo-serie-reprogramada` |
+| `/agenda/recepcion`                                         | Si       | `agenda-recepcion`, `flujo-prepago`, `flujo-clases` (clases del dia)                            |
+| `/atencion/turnos/:id`, `sesiones/:id`, enmienda, versiones | Si       | `flujo-atencion-clinica`, `flujo-atencion-pedidos`                                              |
+| `/historia-clinica/personas/:id`, casos, plan               | Si       | `historia-clinica`, `acceso-clinico`, `casos-clinicos`, `plan-de-tratamiento`                   |
+| `/caja`                                                     | Si       | `flujo-caja`, `riesgo-cobro-efectivo-anulado`, `circuito-f9`                                    |
+| `/presentaciones`, `/presentaciones/:id`                    | Si       | `flujo-presentaciones`, `flujo-presentacion-csv`, `riesgo-presentacion-debito-y-descarte`       |
+| `/egresos`, `/egresos/:id`                                  | Si       | `flujo-caja`, `riesgo-egreso-concurrente`                                                       |
+| `/reportes`                                                 | Si       | `flujo-reportes`, `flujo-dia-de-la-sede`                                                        |
+| `/plataforma/solicitudes`, `/plataforma/suscripciones`      | Si       | `flujo-catalogo`, `flujo-suscripcion`                                                           |
+| **F9** `/clases`, `/clases/nueva`, `/clases/:id`            | Si       | `flujo-clases`, `circuito-f9`                                                                   |
+| **F9** `/asistencia`, `/asistencia/:claseId`                | Si       | `flujo-asistencia`, `flujo-pases`, `circuito-f9`                                                |
+| **F9** `/productos`                                         | Si       | `flujo-pases`                                                                                   |
+| **F9** `/pacientes/:id/pases` (pases y abonos)              | Si       | `flujo-pases`, `circuito-f9`                                                                    |
+| **F9** `/atencion/clases/:claseId` (atencion grupal)        | Si       | `flujo-atencion-grupal`, `circuito-f9`                                                          |
+| **F9** derivacion de una participante a su Caso             | Si       | `flujo-atencion-grupal`, `circuito-f9` ("Derivar a un caso" en el panel de atencion grupal)     |
+| **F9** reprogramar una clase (`/clases/:id`, "Reprogramar") | Si       | `clase-reprogramada`                                                                            |
+| **F9** renovacion automatica de abonos                      | Parcial  | `flujo-pases` enciende y apaga la marca; la renovacion la hace un job del backend               |
+| `/estado`, 404, `/sin-permiso`                              | Si       | `smoke`, `riesgo-permisos-de-la-plata`                                                          |

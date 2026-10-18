@@ -23,6 +23,14 @@ export interface Obligacion {
      */
     anuladaEn?: string;
     /**
+     * Asistencia a clase que la genero. Presente con `origen = ASISTENCIA_CLASE` (desde 0.124.0).
+     */
+    asistenciaId?: number;
+    /**
+     * Clase de esa asistencia. Presente con `origen = ASISTENCIA_CLASE` (desde 0.124.0).
+     */
+    claseId?: number;
+    /**
      * Que parte de la prestacion es esta deuda (AKINE F-4). `PARTICULAR`: sin cobertura aplicable, el precio de la oferta. `FINANCIADOR`: la parte del arancel que paga el financiador. `COSEGURO`: la parte del arancel que paga el paciente.
      */
     concepto?: ObligacionConceptoEnum;
@@ -51,6 +59,14 @@ export interface Obligacion {
      */
     motivoAnulacion?: string;
     ofertaId?: number;
+    /**
+     * Que hecho devengo la deuda: una atencion (`SESION`) o la venta de un pack o pase (`VENTA_PASE`, RF-M18-009) o de un periodo de abono (`VENTA_ABONO`, RF-M18-010), o una clase asistida de una oferta `POR_CLASE` (`ASISTENCIA_CLASE`, RF-M18-008, desde 0.124.0). Devengar no es cobrar: la deuda de una venta o de una clase se paga con `POST /cobros` como cualquier otra.
+     */
+    origen?: ObligacionOrigenEnum;
+    /**
+     * Pase vendido que la genero. Presente con `origen = VENTA_PASE` o `VENTA_ABONO`.
+     */
+    paseId?: number;
     personaId?: number;
     /**
      * Practica facturada (DP-11: la realizada, o la principal de la oferta si la sesion cerro sin tratamientos). Ausente en `PARTICULAR`.
@@ -65,7 +81,7 @@ export interface Obligacion {
      */
     saldo?: number;
     /**
-     * Atencion que la genero. Es lo que la hace trazable.
+     * Atencion que la genero, cuando `origen` es `SESION`. **Ausente** cuando la deuda nace de la venta de un pase o de un abono (`origen = VENTA_PASE` o `VENTA_ABONO`, desde 0.102.0) o de una clase asistida (`ASISTENCIA_CLASE`, desde 0.124.0).
      */
     sesionId?: number;
     /**
@@ -91,6 +107,12 @@ export enum ObligacionEstadoEnum {
     PARCIAL = 'PARCIAL',
     PAGADA = 'PAGADA',
     ANULADA = 'ANULADA'
+};
+export enum ObligacionOrigenEnum {
+    SESION = 'SESION',
+    VENTA_PASE = 'VENTA_PASE',
+    VENTA_ABONO = 'VENTA_ABONO',
+    ASISTENCIA_CLASE = 'ASISTENCIA_CLASE'
 };
 export enum ObligacionResponsableEnum {
     PACIENTE = 'PACIENTE',

@@ -1,0 +1,201 @@
+<h1>Suscripcion de un centro</h1>
+
+<p class="descripcion">
+  Plan, estado y version de la suscripcion de un centro, y el cambio de plan. No hace falta un
+  acceso de soporte: el consumo de limites del centro no se muestra aca.
+  <a class="enlace" [routerLink]="rutaSolicitudes">Ir a las solicitudes de catalogo</a>
+</p>
+
+<section class="tarjeta" aria-labelledby="titulo-buscar-centro">
+  <h2 id="titulo-buscar-centro">Centro</h2>
+  <form (submit)="$event.preventDefault(); buscar()">
+    <div class="campo">
+      <label for="suscripcion-busqueda">Nombre o identificador del centro</label>
+      <input
+        id="suscripcion-busqueda"
+        type="search"
+        autocomplete="off"
+        aria-describedby="suscripcion-busqueda-ayuda"
+        [value]="busqueda()"
+        (input)="busqueda.set($any($event.target).value)"
+      />
+      <p id="suscripcion-busqueda-ayuda" class="ayuda">
+        Busca en el nombre y en el slug del centro. Vacio, lista todos.
+      </p>
+    </div>
+    <div class="campo">
+      <label for="suscripcion-filtro-estado">Estado de la suscripcion</label>
+      <select
+        id="suscripcion-filtro-estado"
+        [value]="filtroDeEstado()"
+        (change)="filtroDeEstado.set($any($event.target).value)"
+      >
+        <option value="">Todos</option>
+        <option value="ACTIVA">Activa</option>
+        <option value="SUSPENDIDA">Suspendida</option>
+        <option value="CANCELADA">Cancelada</option>
+      </select>
+    </div>
+    <div class="acciones">
+      <button type="submit" class="boton">Buscar centros</button>
+    </div>
+  </form>
+
+  <div aria-live="polite">
+    @switch (listado().tipo) {
+      @case ('cargando') {
+        <p class="estado estado--cargando">Buscando centros&hellip;</p>
+      }
+      @case ('error') {
+        <p class="estado estado--error" role="alert">{{ errorDeListado()?.mensaje }}</p>
+        <button type="button" class="boton" (click)="buscar()">Reintentar</button>
+      }
+    }
+    @if (paginaDeCentros(); as p) {
+      @if (p.centros.length === 0) {
+        <p class="estado estado--vacio">Ningun centro coincide con la busqueda.</p>
+      } @else {
+        <p class="ayuda" data-testid="suscripcion-total-centros">
+          {{ p.total === 1 ? '1 centro' : p.total + ' centros' }}
+        </p>
+        <div class="tabla-scroll" tabindex="0" role="region" aria-label="Centros encontrados">
+          <table class="tabla">
+            <caption class="visualmente-oculto">
+              Centros de la plataforma, con su slug, el plan y el estado de la suscripcion y la
+              fecha de alta.
+            </caption>
+            <thead>
+              <tr>
+                <th scope="col">Centro</th>
+                <th scope="col">Slug</th>
+                <th scope="col">Plan</th>
+                <th scope="col">Suscripcion</th>
+                <th scope="col">Alta</th>
+                <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (c of p.centros; track c.id) {
+                <tr [attr.aria-current]="esElegido(c) ? 'true' : null">
+                  <th scope="row">{{ c.name }}</th>
+                  <td>{{ c.slug }}</td>
+                  <td>{{ c.planName ?? nombreDePlan(c.planCode) }}</td>
+                  <td>
+                    <span class="marca-estado">{{ c.status }}</span>
+                  </td>
+                  <td>{{ fechaDeAlta(c) }}</td>
+                  <td class="acciones-fila">
+                    <button
+                      type="button"
+                      class="boton boton--secundario"
+                      [attr.aria-label]="'Ver la suscripcion de ' + c.name"
+                      (click)="elegir(c)"
+                    >
+                      Ver la suscripcion
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <app-paginacion
+          [paginaActual]="p.pagina"
+          [totalPaginas]="p.totalPaginas"
+          etiqueta="Paginas de centros"
+          (cambioDePagina)="irAPagina($event)"
+        />
+      }
+    }
+  </div>
+</section>
+
+@switch (estado().tipo) {
+  @case ('cargando') {
+    <p class="estado estado--cargando" role="status">Leyendo la suscripcion…</p>
+  }
+  @case ('error') {
+    <p class="estado estado--error" role="alert">{{ error()?.mensaje }}</p>
+  }
+}
+
+<div aria-live="polite">
+  @if (resultado(); as r) {
+    <div
+      class="estado"
+      [class.estado--ok]="r.ok"
+      [class.estado--error]="!r.ok"
+      [attr.role]="r.ok ? null : 'alert'"
+    >
+      <p>{{ r.texto }}</p>
+      @if (r.excedidos.length > 0) {
+        <p>
+          El uso actual ya supera estos limites del plan nuevo. No se borro ni se desactivo nada:
+          solo se rechazaran las altas que los superen.
+        </p>
+        <ul data-testid="suscripcion-excedidos">
+          @for (limite of r.excedidos; track limite.code) {
+            <li>{{ rotuloDeLimite(limite) }}</li>
+          }
+        </ul>
+      }
+    </div>
+  }
+</div>
+
+@if (suscripcion(); as s) {
+  <section class="tarjeta" aria-labelledby="titulo-suscripcion">
+    <h2 id="titulo-suscripcion">{{ centro()?.name ?? 'Suscripcion del centro' }}</h2>
+    @if (centro()?.slug; as slug) {
+      <p class="ayuda">{{ slug }}</p>
+    }
+    <dl class="detalle">
+      <dt>Plan</dt>
+      <dd data-testid="suscripcion-plan">{{ s.planName ?? nombreDePlan(s.planCode) }}</dd>
+      <dt>Estado</dt>
+      <dd>{{ s.status }}</dd>
+      <dt>Version</dt>
+      <dd data-testid="suscripcion-version">{{ s.version }}</dd>
+    </dl>
+
+    <h3>Cambiar el plan</h3>
+    @if (!activa()) {
+      <p class="estado estado--vacio">
+        La suscripcion esta {{ s.status }}: el plan solo se cambia con la suscripcion activa.
+      </p>
+    } @else if (planesNoDisponibles()) {
+      <p class="estado estado--error" role="alert">
+        No se pudo leer el catalogo de planes. Recarga la pagina para volver a intentar.
+      </p>
+    } @else {
+      <form (submit)="$event.preventDefault(); cambiarPlan()">
+        <div class="campo">
+          <label for="suscripcion-plan-nuevo">Plan nuevo</label>
+          <select
+            id="suscripcion-plan-nuevo"
+            aria-describedby="suscripcion-plan-ayuda"
+            [value]="planElegido()"
+            (change)="planElegido.set($any($event.target).value)"
+          >
+            @for (plan of planes(); track plan.code) {
+              <option [value]="plan.code">{{ plan.name ?? plan.code }}</option>
+            }
+          </select>
+          <p id="suscripcion-plan-ayuda" class="ayuda">
+            Se manda con la version {{ s.version }}. Si otro cambio llega antes, no se aplica nada y
+            la suscripcion se vuelve a leer.
+          </p>
+        </div>
+        <div class="acciones">
+          <button type="submit" class="boton" [disabled]="enviando() || mismoPlan()">
+            @if (enviando()) {
+              Cambiando…
+            } @else {
+              Cambiar el plan
+            }
+          </button>
+        </div>
+      </form>
+    }
+  </section>
+}

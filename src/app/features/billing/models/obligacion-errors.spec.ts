@@ -15,6 +15,7 @@ const PROBLEMAS_DE_LA_OBLIGACION = [
   'obligacion-con-cobros',
   'obligacion-already-anulada',
   'concurrent-modification',
+  'obligacion-de-venta',
 ] as const;
 
 function cuerpo(datos: Record<string, unknown>): ProblemDetail {
@@ -71,6 +72,7 @@ describe('traducirErrorObligacion', () => {
       'con-cobros',
       'ya-anulada',
       'version-vieja',
+      'de-venta',
     ] satisfies CausaObligacion[]);
     expect(new Set(causas).size).toBe(PROBLEMAS_DE_LA_OBLIGACION.length);
   });
@@ -121,6 +123,22 @@ describe('traducirErrorObligacion', () => {
 
     expect(traducido.causa).toBe('con-cobros');
     expect(traducido.yaCobrado).toBeNull();
+  });
+
+  it('obligacion-de-venta manda a anular el pase, no dice que no se puede', () => {
+    const traducido = traducirErrorObligacion(
+      problema('obligacion-de-venta', 409, {
+        obligacionId: 9001,
+        paseId: 77,
+        origen: 'VENTA_PASE',
+      }),
+    );
+
+    expect(traducido.causa).toBe('de-venta');
+    expect(traducido.mensaje).toContain('anular el pase');
+    expect(traducido.mensaje).not.toContain('no se puede');
+    // No es un dato viejo: recargar no lo destraba, la salida es otra pantalla.
+    expect(hayQueRecargar(traducido.causa)).toBe(false);
   });
 
   it('missing-tenant-context manda a elegir contexto y aclara que la sesion sigue abierta', () => {

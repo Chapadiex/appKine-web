@@ -30,9 +30,9 @@ export interface UpdateOfertaRequest {
      */
     duracionMinutos?: number;
     /**
-     * Esquema de cobro nuevo. Null deja el actual
+     * Esquema de cobro nuevo. Null deja el actual. Mismo vocabulario que el alta
      */
-    esquemaCobro?: string;
+    esquemaCobro?: UpdateOfertaRequestEsquemaCobroEnum;
     /**
      * Version que el cliente cree estar editando. Si la fila avanzo desde entonces, responde 409 concurrent-modification y no pisa nada
      */
@@ -90,6 +90,12 @@ export interface UpdateOfertaRequest {
      */
     vigenciaHasta?: string;
 }
+export enum UpdateOfertaRequestEsquemaCobroEnum {
+    POR_SESION = 'POR_SESION',
+    POR_CLASE = 'POR_CLASE',
+    POR_PACK = 'POR_PACK',
+    POR_ABONO = 'POR_ABONO'
+};
 export enum UpdateOfertaRequestModalidadEnum {
     INDIVIDUAL = 'INDIVIDUAL',
     GRUPAL = 'GRUPAL'

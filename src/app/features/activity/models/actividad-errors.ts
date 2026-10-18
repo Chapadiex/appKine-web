@@ -98,7 +98,7 @@ const MENSAJE_RECURSO_OCUPADO =
   'Ya hay un turno u otra clase que se cruza con ese horario. Elegi otro horario u otro profesional.';
 const MENSAJE_HORARIO =
   'El profesional no atiende en ese horario, no esta habilitado para la oferta, o el box no esta ' +
-  'disponible. Elegi otro horario u otro profesional.';
+  'disponible. Elegi otro horario, otro profesional u otro box.';
 const MENSAJE_YA_INSCRIPTA = 'Esa persona ya esta anotada en esta clase.';
 const MENSAJE_VERSION_VIEJA =
   'Alguien modifico la clase mientras la mirabas. No se cambio nada: volve a leerla y repeti la ' +

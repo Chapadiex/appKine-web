@@ -23,7 +23,7 @@
         @for (caso of activos(); track caso.id) {
           <li class="casos__item">
             <a class="enlace casos__titulo" [routerLink]="visita.rutaCaso(caso.id!)">
-              Caso {{ caso.numeroCaso }} · {{ nombreDeOferta(caso.ofertaId) }}
+              Caso {{ caso.numeroCaso }} · {{ nombreDeOferta(caso) }}
             </a>
             <p class="historia__cuerpo casos__diagnostico">{{ caso.diagnosticoPresuntivo }}</p>
             <p class="ayuda">
@@ -43,7 +43,7 @@
         @for (caso of cerrados(); track caso.id) {
           <li class="casos__item">
             <a class="enlace casos__titulo" [routerLink]="visita.rutaCaso(caso.id!)">
-              Caso {{ caso.numeroCaso }} · {{ nombreDeOferta(caso.ofertaId) }}
+              Caso {{ caso.numeroCaso }} · {{ nombreDeOferta(caso) }}
             </a>
             <p class="historia__cuerpo casos__diagnostico">{{ caso.diagnosticoPresuntivo }}</p>
             <p class="ayuda">

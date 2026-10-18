@@ -104,11 +104,25 @@ server {
         try_files $uri =404;
     }
 
-    # index.html nunca se cachea sin revalidar: es el que apunta a los nombres con hash del
-    # despliegue vigente. Cachearlo dejaria al navegador pidiendo chunks que ya no existen.
+    # index.html: el nonce de la CSP (AKINE-09.02) y nada de cache.
+    #
+    # `sub_filter` reemplaza el marcador AKINE_CSP_NONCE que el build dejo en `ngCspNonce`, en los
+    # <style nonce> y en los <script nonce>, por $request_id: el mismo valor que la cabecera
+    # Content-Security-Policy de ESTA respuesta (security-headers.conf). Un nonce distinto por
+    # pedido es lo que impide que un atacante lo conozca de antemano.
+    #
+    # `no-store`, sin ETag ni Last-Modified, y no `no-cache` como antes: con revalidacion el
+    # navegador recibiria un 304 con la cabecera —y el nonce— nueva y reusaria el cuerpo viejo,
+    # con el nonce anterior, y la CSP bloquearia sus propios estilos y scripts. Sigue siendo el
+    # archivo que apunta a los nombres con hash del despliegue vigente, asi que tampoco se
+    # cachea sin pedirlo de nuevo.
     location = /index.html {
         include /etc/nginx/snippets/security-headers.conf;
-        add_header Cache-Control "no-cache" always;
+        add_header Cache-Control "no-store" always;
+        etag off;
+        if_modified_since off;
+        sub_filter_once off;
+        sub_filter 'AKINE_CSP_NONCE' '$request_id';
     }
 
     # Ningun archivo oculto (.git, .env...) se sirve aunque terminara en la raiz web.

@@ -452,10 +452,13 @@ h1 {
 }
 
 /* El radio y su label en una linea, con el label clickeable: el area de acierto de un
-   radio suelto es demasiado chica para una tablet. */
+   radio suelto es demasiado chica para una tablet. El `min-height` lleva el label a 24 px aunque
+   la fuente del sistema lo deje en 23: es el minimo de WCAG 2.5.8 (AA), medido a 375 px por
+   `e2e/movil.spec.ts` (AKINE-09.02). */
 .opcion-radio {
   display: flex;
   align-items: center;
+  min-height: 1.5rem;
   gap: var(--esp-4);
   margin-bottom: var(--esp-4);
 }

@@ -160,6 +160,110 @@ describe('CuentaCorrientePage', () => {
     expect(enlace?.textContent).toContain('Ir a presentaciones');
   });
 
+  it('una deuda de venta de pase se lista con su origen y no ofrece anularse sola: manda a los pases', async () => {
+    const fixture = await montar([
+      {
+        ...PENDIENTE,
+        sesionId: undefined,
+        origen: 'VENTA_PASE',
+        paseId: 77,
+        concepto: 'PARTICULAR',
+        snapshotNombre: 'Pack Pilates 8',
+      },
+    ]);
+
+    const contenido = texto(fixture);
+    expect(contenido).toContain('Pack Pilates 8');
+    expect(contenido).toContain('Venta de pase');
+    // 0.114.0: DELETE /obligaciones/{id} sobre esta deuda responde 409 obligacion-de-venta.
+    // Ofrecer el boton seria ofrecer una accion que sabemos que falla.
+    expect(rotulosDeBoton(fixture)).not.toContain('Anular');
+    expect(enlaceA(fixture, `/pacientes/${PERSONA}/pases`)?.textContent).toContain(
+      'Anular desde los pases',
+    );
+    expect(contenido).toContain('Se anula el pase y esta deuda juntos.');
+  });
+
+  it('la deuda de una venta de abono tampoco se anula desde aca', async () => {
+    const fixture = await montar([
+      { ...PENDIENTE, sesionId: undefined, origen: 'VENTA_ABONO', paseId: 78 },
+    ]);
+
+    expect(rotulosDeBoton(fixture)).not.toContain('Anular');
+    expect(enlaceA(fixture, `/pacientes/${PERSONA}/pases`)).not.toBeNull();
+  });
+
+  it('la deuda de una clase asistida dice "Clase del dd/mm" y se anula como la de una sesion (U-39)', async () => {
+    const DE_CLASE = {
+      ...PENDIENTE,
+      sesionId: undefined,
+      origen: 'ASISTENCIA_CLASE',
+      asistenciaId: 501,
+      claseId: 90,
+      concepto: 'PARTICULAR',
+      snapshotNombre: 'Yoga por clase',
+    };
+    const fixture = await montar([
+      DE_CLASE,
+      { ...DE_CLASE, id: PENDIENTE.id + 1, asistenciaId: 502 },
+    ]);
+
+    // Dos deudas de la misma clase: la fecha se pide una sola vez.
+    const clase = httpMock.expectOne(`/api/v1/consultorios/${CONSULTORIO}/clases/90`);
+    clase.flush({ id: 90, inicio: '2026-10-20T15:00:00Z', fin: '2026-10-20T16:00:00Z' });
+    await estabilizar(fixture);
+
+    const contenido = texto(fixture);
+    expect(contenido).toContain('Yoga por clase');
+    expect(contenido).toContain('Clase del 20/10');
+    // No es de venta: no manda a los pases, ofrece anular aca.
+    expect(enlaceA(fixture, `/pacientes/${PERSONA}/pases`)).toBeNull();
+    expect(rotulosDeBoton(fixture)).toContain('Anular');
+
+    anular(fixture, 'Se corrigio la asistencia.');
+    const pedido = httpMock.expectOne(esAnular());
+    expect((pedido.request.body as Record<string, unknown>)['motivo']).toBe(
+      'Se corrigio la asistencia.',
+    );
+    pedido.flush({ ...DE_CLASE, estado: 'ANULADA', version: 1 });
+    await estabilizar(fixture);
+    httpMock.expectOne(FICHA).flush({ id: PERSONA, apellido: 'Gomez', nombre: 'Ana' });
+    responderListado(httpMock.expectOne(esListado()), []);
+    await estabilizar(fixture);
+  });
+
+  it('si la clase no se puede leer, la deuda dice "Clase asistida" y la cuenta se ve igual', async () => {
+    const fixture = await montar([
+      { ...PENDIENTE, sesionId: undefined, origen: 'ASISTENCIA_CLASE', claseId: 91 },
+    ]);
+
+    httpMock
+      .expectOne(`/api/v1/consultorios/${CONSULTORIO}/clases/91`)
+      .flush(
+        { type: 'https://akine.app/problems/forbidden' },
+        { status: 403, statusText: 'Forbidden' },
+      );
+    await estabilizar(fixture);
+
+    expect(texto(fixture)).toContain('Clase asistida');
+    expect(rotulosDeBoton(fixture)).toContain('Anular');
+  });
+
+  it('una deuda de venta ya anulada muestra su motivo y no manda a los pases', async () => {
+    const fixture = await montar([
+      {
+        ...PENDIENTE,
+        origen: 'VENTA_PASE',
+        paseId: 77,
+        estado: 'ANULADA',
+        motivoAnulacion: 'Pase anulado: vendido por error.',
+      },
+    ]);
+
+    expect(enlaceA(fixture, `/pacientes/${PERSONA}/pases`)).toBeNull();
+    expect(texto(fixture)).toContain('Pase anulado: vendido por error.');
+  });
+
   it('sin coseguros no habla de la obra social ni avisa nada', async () => {
     const fixture = await montar([{ ...PENDIENTE, concepto: 'PARTICULAR' }]);
 
@@ -242,6 +346,29 @@ describe('CuentaCorrientePage', () => {
     // moneda de ESA obligacion: el `ProblemDetail` no la trae.
     expect(contenido).toContain('3.000,00');
     expect(contenido).not.toContain('no se puede');
+  });
+
+  it('si obligacion-de-venta llega igual, explica que se anula el pase y enlaza a los pases', async () => {
+    // Una fila sin `origen` (p. ej. leida antes de que el backend lo informe) ofrece el boton; el
+    // backend es la autoridad y rechaza.
+    const fixture = await montar([PENDIENTE]);
+    anular(fixture, 'Vendido por error.');
+
+    rechazar(httpMock.expectOne(esAnular()), 'obligacion-de-venta', {
+      obligacionId: PENDIENTE.id,
+      paseId: 77,
+      origen: 'VENTA_PASE',
+    });
+    await estabilizar(fixture);
+
+    const contenido = texto(fixture);
+    expect(contenido).toContain('anular el pase');
+    expect(contenido).not.toContain('no se puede');
+    expect(enlaceA(fixture, `/pacientes/${PERSONA}/pases`)?.textContent).toContain(
+      'Ir a los pases de la persona',
+    );
+    // No es un dato viejo: recargar no lo destraba.
+    expect(rotulosDeBoton(fixture)).not.toContain('Recargar la cuenta corriente');
   });
 
   it('ante obligacion-already-anulada no lo trata como una falla, y ofrece recargar', async () => {
@@ -487,6 +614,13 @@ describe('CuentaCorrientePage', () => {
     return Array.from(
       fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>,
     ).map((boton) => (boton.textContent ?? '').trim());
+  }
+
+  function enlaceA(
+    fixture: ComponentFixture<CuentaCorrientePage>,
+    ruta: string,
+  ): HTMLAnchorElement | null {
+    return (fixture.nativeElement as HTMLElement).querySelector(`a[href="${ruta}"]`);
   }
 
   function texto(fixture: ComponentFixture<CuentaCorrientePage>): string {

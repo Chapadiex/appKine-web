@@ -51,6 +51,10 @@ export interface SesionVersion {
      * Cuenta que la escribio. Es **por version**: quien enmienda no suele ser quien cerro
      */
     registradaPor?: number;
+    /**
+     * Nombre visible de la cuenta que la escribio, para mostrar sin resolver el id. Solo el nombre: ni el email ni ningun dato del paciente. Ausente si la cuenta ya no se puede resolver
+     */
+    registradaPorNombre?: string;
     respuestaTratamiento?: string;
     tolerancia?: SesionVersionToleranciaEnum;
     /**

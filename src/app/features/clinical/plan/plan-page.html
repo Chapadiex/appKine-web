@@ -198,6 +198,15 @@
                         @if (i.cantidadAutorizada !== undefined && i.cantidadAutorizada !== null) {
                           · {{ i.cantidadAutorizada }} autorizadas
                         }
+                        @if (vigenciaDe(i); as vigencia) {
+                          ·
+                          <span
+                            class="plan__vigencia"
+                            [class.plan__vigencia--vencida]="vigencia.estado === 'vencida'"
+                            data-testid="plan-vigencia-autorizacion"
+                            >{{ vigencia.texto }}</span
+                          >
+                        }
                       </li>
                     }
                   </ul>

@@ -77,7 +77,12 @@ export class CasoDetallePage {
   protected readonly estado = signal<Estado>({ tipo: 'cargando' });
   protected readonly caso = signal<CasoClinico | null>(null);
   protected readonly eventos = signal<readonly CasoEvento[]>([]);
-  protected readonly nombreDeOferta = signal('');
+  /** Desde 0.107.0 el caso trae el nombre, resuelto contra la sede de la oferta. */
+  protected readonly nombreDeOferta = computed(() => {
+    const caso = this.caso();
+    if (caso?.ofertaNombre) return caso.ofertaNombre;
+    return caso?.ofertaId === undefined ? 'Sin oferta' : `Oferta #${caso.ofertaId}`;
+  });
   protected readonly habilitados = signal<readonly ProfesionalHabilitado[]>([]);
 
   protected readonly enVuelo = signal<Operacion | null>(null);
@@ -135,10 +140,16 @@ export class CasoDetallePage {
     });
   }
 
+  /**
+   * El nombre de un integrante: el que trae el caso (0.107.0, resuelto por la membership aunque ya
+   * no este habilitado) y, para alguien recien sumado en la copia de trabajo, el de la habilitacion
+   * de donde se lo eligio.
+   */
   protected nombreDe(membershipId: number | undefined): string {
     if (membershipId === undefined) return 'Profesional sin identificar';
+    const delCaso = this.caso()?.equipo?.find((m) => m.profesionalMembershipId === membershipId);
     const habilitado = this.habilitados().find((p) => p.membershipId === membershipId);
-    return habilitado?.nombre ?? `Profesional #${membershipId}`;
+    return delCaso?.profesionalNombre ?? habilitado?.nombre ?? `Profesional #${membershipId}`;
   }
 
   protected releer(): void {
@@ -309,20 +320,18 @@ export class CasoDetallePage {
     });
   }
 
-  /** Nombre de la oferta y profesionales habilitados. Accesorios: si fallan, se ven los ids. */
+  /**
+   * Los habilitados de la oferta, de donde salen los candidatos para sumar al equipo. Accesorios:
+   * si fallan, no se ofrece a nadie y el equipo guardado se sigue viendo con sus nombres.
+   */
   private cargarSede(caso: CasoClinico): void {
     const consultorioId = this.contexto.consultorioId();
     const ofertaId = caso.ofertaId;
-    this.nombreDeOferta.set(ofertaId === undefined ? 'Sin oferta' : `Oferta #${ofertaId}`);
     this.habilitados.set([]);
     if (consultorioId === null || ofertaId === undefined) return;
     if (caso.ofertaConsultorioId !== undefined && caso.ofertaConsultorioId !== consultorioId) {
-      return; // Caso de otra sede: sus ofertas y habilitaciones no son de esta.
+      return; // Caso de otra sede: sus habilitaciones no son de esta.
     }
-    this.sede.ofertas$(consultorioId).subscribe((ofertas) => {
-      const nombre = ofertas.find((o) => o.id === ofertaId)?.nombreComercial;
-      if (nombre) this.nombreDeOferta.set(nombre);
-    });
     this.sede
       .profesionales$(consultorioId, ofertaId)
       .subscribe((lista) => this.habilitados.set(lista));

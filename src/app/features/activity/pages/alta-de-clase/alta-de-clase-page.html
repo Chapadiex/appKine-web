@@ -3,7 +3,8 @@
 <p class="descripcion">
   Una clase es un evento grupal unico sobre una oferta grupal, con su cupo. No genera un turno por
   persona: las inscripciones se hacen despues, desde el detalle de la clase. Cada clase se programa
-  por separado; si la oferta necesita un box, el sistema elige uno libre.
+  por separado. El box se puede elegir; si no se elige y la oferta lo necesita, el sistema toma uno
+  libre.
 </p>
 
 <p><a class="enlace" [routerLink]="RUTA_CLASES">Volver a las clases de la semana</a></p>
@@ -53,6 +54,36 @@
     </div>
   }
 
+  @if (ofertaElegida(); as oferta) {
+    <div class="campo">
+      <label for="clase-espacio">Box</label>
+      <select
+        id="clase-espacio"
+        formControlName="espacioId"
+        [attr.aria-invalid]="errorDelServidor('espacioId') !== '' ? true : null"
+        [attr.aria-describedby]="
+          errorDelServidor('espacioId') !== ''
+            ? 'clase-espacio-ayuda clase-espacio-error'
+            : 'clase-espacio-ayuda'
+        "
+      >
+        <option value="">
+          {{ oferta.requiereEspacio ? 'Que el sistema elija uno libre' : 'Sin box' }}
+        </option>
+        @for (espacio of espacios(); track espacio.espacioId) {
+          <option [value]="espacio.espacioId">{{ espacio.nombre }}</option>
+        }
+      </select>
+      <p class="ayuda" id="clase-espacio-ayuda">
+        Un box elegido se valida tal cual: tiene que estar habilitado para la oferta y libre en ese
+        horario. Si no lo esta, la clase no se programa en otro.
+      </p>
+      @if (errorDelServidor('espacioId'); as mensaje) {
+        <p class="estado estado--error" id="clase-espacio-error">{{ mensaje }}</p>
+      }
+    </div>
+  }
+
   <div class="filtros">
     <div class="campo">
       <label for="clase-fecha">Fecha</label>
@@ -61,7 +92,11 @@
         type="date"
         formControlName="fecha"
         [attr.aria-invalid]="invalido('fecha')"
+        [attr.aria-describedby]="invalido('fecha') ? 'clase-fecha-error' : null"
       />
+      @if (invalido('fecha')) {
+        <p class="estado estado--error" id="clase-fecha-error">Elegi la fecha de la clase.</p>
+      }
     </div>
     <div class="campo">
       <label for="clase-inicio">Hora de inicio</label>
@@ -70,7 +105,11 @@
         type="time"
         formControlName="horaInicio"
         [attr.aria-invalid]="invalido('horaInicio')"
+        [attr.aria-describedby]="invalido('horaInicio') ? 'clase-inicio-error' : null"
       />
+      @if (invalido('horaInicio')) {
+        <p class="estado estado--error" id="clase-inicio-error">Indica a que hora empieza.</p>
+      }
     </div>
     <div class="campo">
       <label for="clase-fin">Hora de fin</label>
@@ -79,7 +118,11 @@
         type="time"
         formControlName="horaFin"
         [attr.aria-invalid]="invalido('horaFin')"
+        [attr.aria-describedby]="invalido('horaFin') ? 'clase-fin-error' : null"
       />
+      @if (invalido('horaFin')) {
+        <p class="estado estado--error" id="clase-fin-error">Indica a que hora termina.</p>
+      }
     </div>
     <div class="campo">
       <label for="clase-capacidad">Cupo</label>
@@ -88,14 +131,16 @@
         type="number"
         min="1"
         formControlName="capacidad"
-        [attr.aria-invalid]="invalido('capacidad')"
-        aria-describedby="clase-capacidad-ayuda"
+        [attr.aria-invalid]="invalido('capacidad') || errorDelServidor('capacidad') !== ''"
+        [attr.aria-describedby]="descripcionDeCapacidad()"
       />
       <p class="ayuda" id="clase-capacidad-ayuda">
         No puede superar la capacidad de la oferta ni la del box.
       </p>
-      @if (errorDelServidor('capacidad'); as mensaje) {
-        <p class="estado estado--error">{{ mensaje }}</p>
+      @if (invalido('capacidad')) {
+        <p class="estado estado--error" id="clase-capacidad-error">El cupo es de 1 en adelante.</p>
+      } @else if (errorDelServidor('capacidad'); as mensaje) {
+        <p class="estado estado--error" id="clase-capacidad-error">{{ mensaje }}</p>
       }
     </div>
   </div>

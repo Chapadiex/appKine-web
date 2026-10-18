@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, catchError, forkJoin, map, of } from 'rxjs';
 
+import { ClasesService } from '../../../api/generated/api/clases.service';
 import { Cobro } from '../../../api/generated/model/cobro';
 import { CobrosService } from '../../../api/generated/api/cobros.service';
 import { ImputarSaldoAFavor } from '../../../api/generated/model/imputar-saldo-a-favor';
@@ -51,6 +52,7 @@ export class BillingApi {
   private readonly api = inject(ObligacionesService);
   private readonly cobros = inject(CobrosService);
   private readonly personas = inject(PersonasService);
+  private readonly clases = inject(ClasesService);
 
   /**
    * De quien es esta cuenta corriente.
@@ -65,6 +67,37 @@ export class BillingApi {
    */
   verPersona(personaId: number): Observable<PersonaResponse> {
     return this.personas.verPersona({ personaId });
+  }
+
+  /**
+   * Cuando empezo cada clase de las deudas de origen `ASISTENCIA_CLASE` (U-39), por `claseId`.
+   *
+   * <p>La obligacion trae el `claseId` y no la fecha de la clase, y `devengadaEn` es cuando se
+   * registro la asistencia, que no es lo mismo si se corrigio dias despues. Se lee el detalle de
+   * cada clase distinta (`clase:read`, que tiene quien mira la cuenta corriente). Una clase que no
+   * se pudo leer <b>no voltea la cuenta corriente</b>: queda afuera del mapa y la fila dice
+   * "Clase asistida" sin fecha.
+   */
+  inicioDeClases(
+    consultorioId: number,
+    claseIds: readonly number[],
+  ): Observable<Readonly<Record<number, string>>> {
+    const distintas = [...new Set(claseIds)];
+    if (distintas.length === 0) {
+      return of({});
+    }
+    return forkJoin(
+      distintas.map((claseId) =>
+        this.clases.verClase({ consultorioId, claseId }).pipe(
+          map((clase) => [claseId, clase.inicio] as const),
+          catchError(() => of([claseId, undefined] as const)),
+        ),
+      ),
+    ).pipe(
+      map((pares) =>
+        Object.fromEntries(pares.filter((par): par is readonly [number, string] => !!par[1])),
+      ),
+    );
   }
 
   /**

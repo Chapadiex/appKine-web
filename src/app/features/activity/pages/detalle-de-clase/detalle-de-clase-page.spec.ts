@@ -14,6 +14,7 @@ import {
 import { TIMEOUT_AXE, esperarSinViolaciones } from '../../../../core/testing/axe';
 import {
   URL_CLASES,
+  URL_ESPACIOS,
   URL_OFERTAS,
   asentar,
   clickear,
@@ -27,12 +28,16 @@ import { DetalleDeClasePage } from './detalle-de-clase-page';
 const ID = 70;
 const URL_CLASE = `${URL_CLASES}/${ID}`;
 const INSCRIPCIONES = `${URL_CLASE}/inscripciones`;
+const HABILITACIONES = `${URL_OFERTAS}/42/habilitaciones`;
 
 const CLASE = {
   id: ID,
   ofertaId: 42,
   profesionalId: 55,
   espacioId: 9,
+  ofertaNombre: 'Pilates reformer',
+  profesionalNombre: 'Lic. Diaz',
+  espacioNombre: 'Sala grande',
   estado: 'PROGRAMADA',
   inicio: '2026-10-20T21:00:00Z',
   fin: '2026-10-20T22:00:00Z',
@@ -111,15 +116,6 @@ describe('DetalleDeClasePage', () => {
     ]);
   }
 
-  function responderNombres(): void {
-    httpMock
-      .expectOne((p) => p.url === URL_OFERTAS)
-      .flush([{ id: 42, nombreComercial: 'Pilates reformer', modalidad: 'GRUPAL' }]);
-    httpMock
-      .expectOne(`${URL_OFERTAS}/42/habilitaciones`)
-      .flush({ profesionales: [{ membershipId: 55, nombre: 'Lic. Diaz' }] });
-  }
-
   async function montar(
     permisos: string[] = [
       PERMISO_CLASE_READ,
@@ -133,7 +129,6 @@ describe('DetalleDeClasePage', () => {
     fixture.componentRef.setInput('claseId', String(ID));
     fixture.detectChanges();
     responderClase();
-    responderNombres();
     await asentar(fixture);
     if (permisos.includes(PERMISO_INSCRIPCION_READ)) {
       httpMock.expectOne(INSCRIPCIONES).flush(PARTICIPANTES);
@@ -150,7 +145,8 @@ describe('DetalleDeClasePage', () => {
       expect(texto).toContain('Pilates reformer');
       expect(texto).toContain('martes 20/10, 18:00 a 19:00');
       expect(texto).toContain('Lic. Diaz');
-      expect(texto).toContain('Box #9');
+      expect(texto).toContain('Sala grande');
+      expect(texto).not.toContain('asignado por el sistema');
       expect(texto).toContain('2 de 2');
       expect(texto).toContain('Perez, Ana');
       expect(texto).toContain('DNI 30111222');
@@ -243,6 +239,8 @@ describe('DetalleDeClasePage', () => {
     httpMock.expectOne(INSCRIPCIONES).flush(PARTICIPANTES);
     await asentar(fixture);
     expect(textoDe(fixture)).toContain('Rios, Mara quedo inscripta con lugar');
+    // "Inscribir" desaparecio con la persona elegida: el foco queda en el resultado.
+    expect(document.activeElement?.id).toBe('aviso-clase');
   });
 
   it('la baja nombra a quien entro desde la espera', async () => {
@@ -292,10 +290,31 @@ describe('DetalleDeClasePage', () => {
   it('reprograma con la version leida y cancela con motivo', async () => {
     const fixture = await montar();
     clickear(fixture, 'Reprogramar');
+    httpMock.expectOne(HABILITACIONES).flush({
+      restringidaPorEspacio: true,
+      espacios: [
+        { espacioId: 9, nombre: 'Sala grande', estado: 'ACTIVO', enServicio: true },
+        { espacioId: 14, nombre: 'Sala chica', estado: 'ACTIVO', enServicio: true },
+      ],
+    });
+    await asentar(fixture);
     const raiz = fixture.nativeElement as HTMLElement;
     expect((raiz.querySelector('#reprogramar-inicio') as HTMLInputElement).value).toBe('18:00');
+    // El formulario se abre con el foco en su primer campo.
+    expect(document.activeElement?.closest('form')?.getAttribute('aria-labelledby')).toBe(
+      'titulo-reprogramar',
+    );
+    // El box actual queda elegido: reprogramar sin el dejaria que el servidor tome otro.
+    const box = raiz.querySelector('#reprogramar-espacio') as HTMLSelectElement;
+    expect(box.value).toBe('9');
+    expect(Array.from(box.options).map((o) => o.textContent?.trim())).toEqual([
+      'Que el sistema elija uno libre',
+      'Sala grande',
+      'Sala chica',
+    ]);
     escribir(fixture, '#reprogramar-inicio', '19:00');
     escribir(fixture, '#reprogramar-fin', '20:00');
+    escribir(fixture, '#reprogramar-espacio', '14');
     clickear(fixture, 'Guardar el cambio');
     const pedido = httpMock.expectOne(`${URL_CLASE}/reprogramacion`);
     expect(pedido.request.body).toEqual({
@@ -303,6 +322,7 @@ describe('DetalleDeClasePage', () => {
       fin: '2026-10-20T23:00:00.000Z',
       capacidad: 2,
       profesionalId: 55,
+      espacioId: 14,
       version: 3,
     });
     pedido.flush({ ...CLASE, version: 4 });
@@ -312,6 +332,7 @@ describe('DetalleDeClasePage', () => {
     httpMock.expectOne(INSCRIPCIONES).flush(PARTICIPANTES);
     await asentar(fixture);
     expect(textoDe(fixture)).toContain('Clase reprogramada');
+    expect(document.activeElement?.id).toBe('aviso-clase');
 
     clickear(fixture, 'Cancelar la clase');
     escribir(fixture, '#clase-cancelar-motivo', 'Profesional enfermo');
@@ -334,9 +355,40 @@ describe('DetalleDeClasePage', () => {
     expect(texto).not.toContain('Inscribir a una persona');
   });
 
+  it('cerrar un panel sin cambios devuelve el foco al boton que lo abrio', async () => {
+    const fixture = await montar();
+    clickear(fixture, 'Reprogramar');
+    httpMock.expectOne(HABILITACIONES).flush({
+      restringidaPorEspacio: true,
+      espacios: [{ espacioId: 9, nombre: 'Sala grande', estado: 'ACTIVO', enServicio: true }],
+    });
+    await asentar(fixture);
+    clickear(fixture, 'Volver sin cambiar');
+    await asentar(fixture);
+    expect(document.activeElement?.id).toBe('boton-reprogramar');
+
+    clickear(fixture, 'Cancelar la clase');
+    await asentar(fixture);
+    const cancelar = Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll('button[type="button"]'),
+    ).find((b) => b.textContent?.trim() === 'Cancelar') as HTMLButtonElement;
+    cancelar.click();
+    await asentar(fixture);
+    expect(document.activeElement?.id).toBe('boton-cancelar-clase');
+  });
+
   it('la version vieja al reprogramar se explica y relee', async () => {
     const fixture = await montar();
     clickear(fixture, 'Reprogramar');
+    // Oferta sin restriccion de espacio y sede sin permiso para listar boxes: queda el actual.
+    httpMock.expectOne(HABILITACIONES).flush({});
+    httpMock
+      .expectOne((p) => p.url === URL_ESPACIOS)
+      .flush(null, { status: 403, statusText: 'Forbidden' });
+    await asentar(fixture);
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelectorAll('#reprogramar-espacio option'),
+    ).toHaveLength(2);
     escribir(fixture, '#reprogramar-fin', '17:00');
     clickear(fixture, 'Guardar el cambio');
     expect(textoDe(fixture)).toContain('La hora de fin tiene que ser posterior');
@@ -378,6 +430,5 @@ describe('DetalleDeClasePage', () => {
     expect(textoDe(fixture)).toContain('No se pudo leer la clase');
     clickear(fixture, 'Reintentar');
     responderClase();
-    responderNombres();
   });
 });

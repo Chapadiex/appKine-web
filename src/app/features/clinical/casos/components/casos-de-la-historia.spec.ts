@@ -19,10 +19,26 @@ const ACTIVO = {
   estado: 'ACTIVO',
   ofertaId: 14,
   ofertaConsultorioId: 3,
+  ofertaNombre: 'Kinesiologia',
   diagnosticoPresuntivo: 'Lumbalgia',
-  equipo: [{ profesionalMembershipId: 31, rol: 'RESPONSABLE', vigente: true }],
+  equipo: [
+    {
+      profesionalMembershipId: 31,
+      profesionalNombre: 'Lopez, Maria',
+      rol: 'RESPONSABLE',
+      vigente: true,
+    },
+  ],
 };
-const CERRADO = { ...ACTIVO, id: 8, numeroCaso: 2, estado: 'CERRADO', equipo: [] };
+// Sin nombre resuelto (oferta dada de baja en otra sede): se ve el id, no un nombre inventado.
+const CERRADO = {
+  ...ACTIVO,
+  id: 8,
+  numeroCaso: 2,
+  estado: 'CERRADO',
+  ofertaNombre: undefined,
+  equipo: [],
+};
 
 /**
  * Los casos de la historia (D-b): activos y cerrados por separado, con nombres de la sede, y el
@@ -61,7 +77,9 @@ describe('CasosDeLaHistoria', () => {
     const cerrados = (fixture.nativeElement as HTMLElement).querySelector(
       '[aria-label="Casos cerrados"]',
     );
-    expect(cerrados?.textContent).toContain('Caso 2');
+    expect(cerrados?.textContent).toContain('Caso 2 · Oferta #14');
+    // Los nombres vienen en el caso (0.107.0): no se piden habilitaciones solo para resolverlos.
+    httpMock.expectNone(HABILITACIONES);
   });
 
   it('el posible duplicado muestra los candidatos y confirmar reenvia con la marca', async () => {
@@ -103,12 +121,8 @@ describe('CasosDeLaHistoria', () => {
     await estabilizar(fixture);
     httpMock
       .expectOne(OFERTAS + '?estado=TODOS')
-      .flush([{ id: 14, nombreComercial: 'Kinesiologia', estado: 'ACTIVO' }]);
+      .flush([{ id: 14, nombreComercial: 'Kinesio (listado de la sede)', estado: 'ACTIVO' }]);
     httpMock.expectOne((r) => r.url === CASOS && r.method === 'GET').flush([ACTIVO, CERRADO]);
-    await estabilizar(fixture);
-    httpMock
-      .expectOne(HABILITACIONES)
-      .flush({ profesionales: [{ membershipId: 31, nombre: 'Lopez, Maria' }] });
     await estabilizar(fixture);
     return fixture;
   }

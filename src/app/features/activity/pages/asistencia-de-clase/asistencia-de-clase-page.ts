@@ -1,19 +1,37 @@
-import { Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  Injector,
+  afterNextRender,
+  computed,
+  effect,
+  inject,
+  input,
+  signal,
+  untracked,
+} from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { DetalleOperativoDeClase } from '../../../../api/generated/model/detalle-operativo-de-clase';
 import { EventoDeAsistencia } from '../../../../api/generated/model/evento-de-asistencia';
 import { ParticipanteOperativo } from '../../../../api/generated/model/participante-operativo';
 import { ResultadoDeLoteDeAsistencia } from '../../../../api/generated/model/resultado-de-lote-de-asistencia';
-import { PERMISO_ASISTENCIA_MANAGE, PERMISO_CLASE_MANAGE } from '../../../../core/models/permisos';
+import {
+  PERMISO_ASISTENCIA_MANAGE,
+  PERMISO_CLASE_MANAGE,
+  PERMISO_INSCRIPCION_MANAGE,
+  PERMISO_SESION_REGISTER,
+} from '../../../../core/models/permisos';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { PermissionsStore } from '../../../../core/services/permissions.store';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import { FocoAlMontar } from '../../../../shared/directives/foco-al-montar.directive';
 import {
   ErrorAsistencia,
   errorSinContexto,
   traducirErrorAsistencia,
+  traducirErrorDeLote,
   traducirFalloDeItem,
 } from '../../models/asistencia-errors';
 import {
@@ -34,6 +52,8 @@ import {
   nombreDeParticipante,
   tieneLugar,
 } from '../../models/etiquetas-de-asistencia';
+import { avisoDeDevengo } from '../../models/etiquetas-de-devengo';
+import { avisoDeConsumo } from '../../models/etiquetas-de-pases';
 import { AsistenciaApi } from '../../services/asistencia-api';
 
 type EstadoCarga =
@@ -45,6 +65,21 @@ interface FalloDeItem {
   readonly inscripcionId: number;
   readonly nombre: string;
   readonly mensaje: string;
+}
+
+/** Lo que la asistencia hizo con el pase de un participante (M29, RN-M29-005). */
+interface ConsumoDeItem {
+  readonly inscripcionId: number;
+  readonly nombre: string;
+  readonly texto: string;
+}
+
+/**
+ * Lo que la asistencia hizo con la deuda de una clase `POR_CLASE` (U-39). `aviso` marca
+ * `CON_COBROS` y `SIN_PRECIO`: piden que alguien mire la cuenta corriente, pero no son fallos.
+ */
+interface DevengoDeItem extends ConsumoDeItem {
+  readonly aviso: boolean;
 }
 
 interface Historial {
@@ -68,12 +103,16 @@ interface Historial {
  * <p><b>Corregir no borra.</b> Cambiar un resultado ya registrado exige motivo y el anterior queda
  * en el historial (RN-M28-009), que se abre por participante.
  *
- * <p>No muestra nada clinico ni economico: el detalle operativo no lo trae (privacidad de quien
- * toma lista) y la asistencia no consume pases ni genera deuda en el backend actual.
+ * <p>No muestra nada clinico ni deuda: el detalle operativo no lo trae (privacidad de quien toma
+ * lista). Lo unico economico que aparece es lo que el backend devuelve al guardar: si la
+ * asistencia consumio o devolvio un credito del pase de la persona, o si no tenia un pase con
+ * creditos para la clase (M29, RN-M29-005), y en una oferta `POR_CLASE` que le hizo a la deuda de
+ * la clase (U-39). Nada de eso <b>es un error</b>: la asistencia se registra igual
+ * (CA-M19-009-06). Sin `pase:read` (U-46 c) llega solo el efecto, y se muestra solo el efecto.
  */
 @Component({
   selector: 'app-asistencia-de-clase-page',
-  imports: [RouterLink, Paginacion],
+  imports: [RouterLink, Paginacion, FocoAlMontar],
   templateUrl: './asistencia-de-clase-page.html',
   styleUrl: '../../asistencia.css',
 })
@@ -82,6 +121,8 @@ export class AsistenciaDeClasePage {
   private readonly tenant = inject(TenantContextStore);
   private readonly permisos = inject(PermissionsStore);
   private readonly diaDeLaSede = inject(DiaDeLaSede);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly injector = inject(Injector);
 
   /** De la ruta. `withComponentInputBinding` lo liga solo. */
   readonly claseId = input.required<string>();
@@ -96,6 +137,8 @@ export class AsistenciaDeClasePage {
   protected readonly tieneLugar = tieneLugar;
   protected readonly hora = horaEnZona;
   protected readonly fechaHora = fechaHoraEnZona;
+  /** Leyenda del campo de observaciones (U-46 d): el contrato las declara operativas. */
+  protected readonly avisoObservaciones = 'Operativas: no anotes datos de salud.';
 
   protected readonly estado = signal<EstadoCarga>({ tipo: 'cargando' });
   protected readonly pagina = signal(0);
@@ -103,9 +146,12 @@ export class AsistenciaDeClasePage {
   protected readonly enviando = signal(false);
   protected readonly errorAccion = signal<ErrorAsistencia | null>(null);
   protected readonly faltanMotivos = signal<readonly number[]>([]);
-  protected readonly lote = signal<{ exitosos: number; fallos: readonly FalloDeItem[] } | null>(
-    null,
-  );
+  protected readonly lote = signal<{
+    exitosos: number;
+    fallos: readonly FalloDeItem[];
+    consumos: readonly ConsumoDeItem[];
+    devengos: readonly DevengoDeItem[];
+  } | null>(null);
   protected readonly avisoCierre = signal<string | null>(null);
   protected readonly historial = signal<Historial | null>(null);
 
@@ -128,6 +174,23 @@ export class AsistenciaDeClasePage {
   );
   protected readonly puedeMarcar = computed(
     () => !this.permisos.cargados() || this.permisos.tiene(PERMISO_ASISTENCIA_MANAGE),
+  );
+  /**
+   * Cerrar la clase marca ausentes y cancela la lista de espera: desde el contrato 0.120.0 el
+   * backend pide `clase:manage`, `asistencia:manage` e `inscripcion:manage` (AKINE-09.02). Sin los
+   * tres, el boton terminaba en 403.
+   */
+  protected readonly puedeCerrarClase = computed(
+    () =>
+      !this.permisos.cargados() ||
+      (this.permisos.tiene(PERMISO_CLASE_MANAGE) &&
+        this.permisos.tiene(PERMISO_ASISTENCIA_MANAGE) &&
+        this.permisos.tiene(PERMISO_INSCRIPCION_MANAGE)),
+  );
+
+  /** Ofrece la atencion clinica de la clase (AKINE-08.05). Sin permisos cargados, se ofrece. */
+  protected readonly puedeAtender = computed(
+    () => !this.permisos.cargados() || this.permisos.tiene(PERMISO_SESION_REGISTER),
   );
 
   /** Respuesta mas nueva pedida: una vieja que llega tarde no pisa a la nueva. */
@@ -194,7 +257,11 @@ export class AsistenciaDeClasePage {
     }
     this.empezarAccion();
     this.api.iniciar(ids.consultorioId, ids.claseId).subscribe({
-      next: () => this.terminarAccion(),
+      next: () => {
+        this.terminarAccion();
+        // "Iniciar clase" desaparece con la clase en curso: el foco iria al `body`.
+        this.enfocarDespues('#titulo-clase');
+      },
       error: (error: unknown) => this.fallarAccion(error),
     });
   }
@@ -268,6 +335,20 @@ export class AsistenciaDeClasePage {
     }
   }
 
+  protected escribirObservaciones(
+    participante: ParticipanteOperativo,
+    observaciones: string,
+  ): void {
+    const id = participante.inscripcion?.id;
+    const marca = id === undefined ? undefined : this.marcas().get(id);
+    if (id === undefined || marca === undefined) {
+      return;
+    }
+    const siguiente = new Map(this.marcas());
+    siguiente.set(id, { ...marca, observaciones });
+    this.marcas.set(siguiente);
+  }
+
   /** Marca presentes a los que tienen lugar y nadie resolvio todavia. No toca lo registrado. */
   protected presentesLosSinMarcar(): void {
     const siguiente = new Map(this.marcas());
@@ -288,6 +369,8 @@ export class AsistenciaDeClasePage {
   protected descartar(): void {
     this.marcas.set(new Map());
     this.faltanMotivos.set([]);
+    // "Descartar cambios" desaparece sin pendientes: el foco vuelve a la lista.
+    this.enfocarDespues('#titulo-participantes');
   }
 
   protected guardar(): void {
@@ -327,7 +410,8 @@ export class AsistenciaDeClasePage {
         this.marcas.set(siguiente);
         this.terminarAccion();
       },
-      error: (error: unknown) => this.fallarAccion(error),
+      // Las marcas no se tocan: un 503 del lote no guardo nada y se reintenta con lo mismo.
+      error: (error: unknown) => this.fallarAccion(error, traducirErrorDeLote),
     });
   }
 
@@ -366,6 +450,13 @@ export class AsistenciaDeClasePage {
 
   // ------------------------------------------------------------------ comun
 
+  /** Foco a un elemento de la pantalla despues del proximo render (WCAG 2.4.3). */
+  private enfocarDespues(selector: string): void {
+    afterNextRender(() => this.host.nativeElement.querySelector<HTMLElement>(selector)?.focus(), {
+      injector: this.injector,
+    });
+  }
+
   private empezarAccion(): void {
     this.enviando.set(true);
     this.errorAccion.set(null);
@@ -378,9 +469,12 @@ export class AsistenciaDeClasePage {
     this.cargar();
   }
 
-  private fallarAccion(error: unknown): void {
+  private fallarAccion(
+    error: unknown,
+    traducir: (error: unknown) => ErrorAsistencia = traducirErrorAsistencia,
+  ): void {
     this.enviando.set(false);
-    this.errorAccion.set(traducirErrorAsistencia(error));
+    this.errorAccion.set(traducir(error));
     // El estado de la clase pudo cambiar por otro operador: se relee para no mentir.
     this.cargar();
   }
@@ -389,7 +483,12 @@ export class AsistenciaDeClasePage {
 function resumirLote(
   resultado: ResultadoDeLoteDeAsistencia,
   nombres: ReadonlyMap<number, string>,
-): { exitosos: number; fallos: FalloDeItem[] } {
+): {
+  exitosos: number;
+  fallos: FalloDeItem[];
+  consumos: ConsumoDeItem[];
+  devengos: DevengoDeItem[];
+} {
   const fallos = (resultado.items ?? [])
     .filter((item) => !item.resultado)
     .map((item) => ({
@@ -397,5 +496,19 @@ function resumirLote(
       nombre: nombres.get(item.inscripcionId ?? -1) ?? `Inscripcion ${item.inscripcionId}`,
       mensaje: traducirFalloDeItem(item.problemType, item.detalle).mensaje,
     }));
-  return { exitosos: resultado.exitosos ?? 0, fallos };
+  const consumos = (resultado.items ?? []).flatMap((item) => {
+    const texto = avisoDeConsumo(item.resultado?.consumoDeCredito);
+    const id = item.inscripcionId ?? -1;
+    return texto === null
+      ? []
+      : [{ inscripcionId: id, nombre: nombres.get(id) ?? `Inscripcion ${id}`, texto }];
+  });
+  const devengos = (resultado.items ?? []).flatMap((item) => {
+    const aviso = avisoDeDevengo(item.resultado?.devengoDeClase);
+    const id = item.inscripcionId ?? -1;
+    return aviso === null
+      ? []
+      : [{ inscripcionId: id, nombre: nombres.get(id) ?? `Inscripcion ${id}`, ...aviso }];
+  });
+  return { exitosos: resultado.exitosos ?? 0, fallos, consumos, devengos };
 }

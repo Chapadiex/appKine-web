@@ -5,24 +5,27 @@
   distintas y esta pantalla registra la segunda.
 </p>
 
-<p><a class="enlace" routerLink="/agenda">Volver a la agenda</a></p>
+@if (rutaDeLaClase(); as rutaClase) {
+  <p><a class="enlace" [routerLink]="rutaClase">Volver a la atencion clinica de la clase</a></p>
+} @else {
+  <p><a class="enlace" routerLink="/agenda">Volver a la agenda</a></p>
+}
 
 @if (abriendo()) {
-  <p class="estado estado--cargando">Abriendo la atencion de este turno…</p>
+  <p class="estado estado--cargando">Abriendo la atencion…</p>
 }
 
 <!--
-  El caso se elige ANTES de iniciar: el backend solo lo toma al crear la sesion, y no hay forma de
-  cambiarlo despues. Si el paciente no tiene casos activos esta seccion no aparece y la atencion
-  arranca sola.
+  El caso se elige ANTES de iniciar: iniciar es idempotente y solo toma el caso al crear la sesion.
+  Si el paciente no tiene casos activos esta seccion no aparece y la atencion arranca sola. Con la
+  atencion abierta el caso se puede cambiar desde la tarjeta de la atencion.
 -->
 @if (eligiendoCaso()) {
   <section class="tarjeta" aria-labelledby="titulo-caso">
     <h2 id="titulo-caso">Antes de empezar: caso clinico</h2>
     <p class="ayuda">
       El paciente tiene casos clinicos activos. Elegi a cual pertenece esta atencion, o segui sin
-      caso. <b>No se puede cambiar despues de iniciar</b>, y si la atencion ya estaba iniciada
-      conserva el caso con el que empezo.
+      caso. Mientras la atencion siga abierta lo vas a poder cambiar; una vez cerrada, no.
     </p>
     <fieldset class="grupo">
       <legend>Caso de esta atencion</legend>
@@ -126,6 +129,21 @@
     </h2>
 
     <dl class="detalle">
+      <!--
+        Atencion de un participante de una clase (AKINE-08.05). Sin turno: Turno no es Clase. Su
+        caso lo fijo la derivacion clinica y no se cambia desde aca.
+      -->
+      @if (esGrupal()) {
+        <dt>Origen</dt>
+        <dd>
+          @if (atencion.claseTitulo) {
+            Participante de la clase grupal <b>{{ atencion.claseTitulo }}</b>
+          } @else {
+            Participante de una clase grupal
+          }
+        </dd>
+      }
+
       <dt>Iniciada</dt>
       <dd>{{ instanteEnPalabras(atencion.iniciadaEn) }}</dd>
 
@@ -162,8 +180,67 @@
     @if (casoIgnorado()) {
       <p class="ayuda" role="status">
         Esta atencion ya estaba iniciada, asi que conserva el caso con el que empezo y no el que
-        elegiste.
+        elegiste. Si corresponde otro, cambialo aca abajo.
       </p>
+    }
+
+    <!--
+      Cambiar el caso de la atencion abierta (contrato 0.102.0). Es una escritura sobre la version
+      de la sesion: se bloquea mientras otra escritura viaja con esa misma version.
+    -->
+    @if (esGrupal() && !cerrada()) {
+      <p class="ayuda">
+        El caso de esta atencion lo fijo la derivacion del participante en la clase, y no se cambia
+        desde aca. Con la atencion abierta la derivacion ya no se puede revertir: si el caso era
+        otro, cerra esta atencion con lo que paso (ausente, si no hubo atencion) y deriva al
+        participante al caso que corresponde.
+      </p>
+    }
+
+    @if (!cerrada() && puedeCambiarCaso()) {
+      <div class="campo">
+        <label for="atencion-caso">Caso clinico de esta atencion</label>
+        <select
+          id="atencion-caso"
+          [disabled]="cambiandoCaso()"
+          (change)="elegirCasoNuevo($any($event.target).value)"
+        >
+          <option value="" [selected]="casoNuevo() === null">Sin caso</option>
+          @if (casoActualFueraDeLista(); as actual) {
+            <option [value]="actual" [selected]="casoNuevo() === actual" disabled>
+              {{ numeroDeCaso(actual) }} (ya no esta activo)
+            </option>
+          }
+          @for (caso of casos(); track caso.id) {
+            <option [value]="caso.id" [selected]="casoNuevo() === caso.id">
+              {{ rotuloDeCaso(caso) }}
+            </option>
+          }
+        </select>
+      </div>
+      <div class="acciones">
+        <button
+          type="button"
+          class="boton boton--secundario"
+          [disabled]="
+            casoSinCambios() ||
+            cambiandoCaso() ||
+            guardando() ||
+            tratamientoEnVuelo() ||
+            hayConflicto()
+          "
+          (click)="cambiarCaso()"
+        >
+          @if (cambiandoCaso()) {
+            Guardando el caso…
+          } @else {
+            Guardar el caso
+          }
+        </button>
+      </div>
+      @if (avisoCaso(); as aviso) {
+        <p class="ayuda" role="status">{{ aviso }}</p>
+      }
     }
 
     @if (!cerrada()) {
@@ -452,7 +529,7 @@
       [sesionId]="b.sesionId"
       [ofertaId]="b.ofertaId"
       [version]="version()"
-      [ocupado]="guardando() || hayConflicto()"
+      [ocupado]="guardando() || cambiandoCaso() || hayConflicto()"
       (versionCambio)="adoptarVersion($event)"
       (enVuelo)="tratamientoEnVuelo.set($event)"
       (problema)="problemaDeBloque($event)"

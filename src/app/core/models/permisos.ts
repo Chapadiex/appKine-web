@@ -151,6 +151,20 @@ export const PERMISO_REPORTE_READ = 'reporte:read';
 export const PERMISO_HC_READ = 'hc:read';
 
 /**
+ * Escritura en la Historia Clinica (M09). Solo decide si se OFRECE derivar a un participante de una
+ * clase a un Caso (AKINE-08.04): el contrato exige ademas `inscripcion:read` —que ya pide la ruta
+ * del panel— y, sin relacion asistencial, un motivo declarado, que resuelve la pantalla.
+ */
+export const PERMISO_HC_WRITE = 'hc:write';
+
+/**
+ * Registrar atenciones clinicas (M14). Solo decide si se OFRECE el enlace a la atencion clinica de
+ * una clase (AKINE-08.05): escribir en una atencion es ademas de quien la lleva, y eso lo decide el
+ * backend (409 `sesion-ajena`).
+ */
+export const PERMISO_SESION_REGISTER = 'sesion:register';
+
+/**
  * Clases grupales (M28, AKINE-08.01). `clase:read` mira la grilla y los cupos —que no nombran a
  * nadie—; `clase:manage` programa, reprograma y cancela. Son codigos propios y no `turno:*`
  * (decision pendiente 9 del backend): una clase no es N turnos.
@@ -174,3 +188,22 @@ export const PERMISO_INSCRIPCION_MANAGE = 'inscripcion:manage';
  * no necesita saber quien esta inscripto— e iniciar o cerrar la clase es `clase:manage`.
  */
 export const PERMISO_ASISTENCIA_MANAGE = 'asistencia:manage';
+
+/**
+ * Productos de pack y pases (F9, M29, AKINE-08.06). Copiados de `activity.domain.PermissionCodes`.
+ *
+ * <p>La matriz §32 no tiene fila de productos ni de pases; el backend tomo las mas cercanas:
+ * `producto:manage` como `convenio:manage` (ORG_ADMIN y CONSULTORIO_ADMIN), `pase:manage` como
+ * `cobro:register` (tambien ADMINISTRATIVO). <b>El PROFESIONAL no tiene ninguno</b>: el precio y el
+ * saldo son datos comerciales. El consumo de un credito no tiene permiso propio: lo dispara tomar
+ * lista, que pide `asistencia:manage`.
+ */
+export const PERMISO_PRODUCTO_READ = 'producto:read';
+export const PERMISO_PRODUCTO_MANAGE = 'producto:manage';
+export const PERMISO_PASE_READ = 'pase:read';
+export const PERMISO_PASE_MANAGE = 'pase:manage';
+/**
+ * Ajustar el saldo de un pase o anularlo (AKINE-08.07). Reforzado: ORG_ADMIN y CONSULTORIO_ADMIN,
+ * no el mostrador (el ADMINISTRATIVO vende pero no corrige saldos).
+ */
+export const PERMISO_PASE_ADJUST = 'pase:adjust';

@@ -59,7 +59,7 @@
 @if (vacia()) {
   <p class="estado estado--vacio">
     Esta persona no tiene ninguna deuda registrada. Las obligaciones se generan al cerrar una
-    atencion: no se cargan a mano.
+    atencion o al vender un pase: no se cargan a mano.
   </p>
 }
 
@@ -83,7 +83,14 @@
         @for (obligacion of obligaciones(); track obligacion.id) {
           <tr [class.fila--revocada]="!sePuedeAnular(obligacion)">
             <td>{{ fechaEnPalabras(obligacion.devengadaEn) }}</td>
-            <td>{{ obligacion.snapshotNombre }}</td>
+            <td>
+              {{ obligacion.snapshotNombre }}
+              @if (esDeClase(obligacion)) {
+                <div class="ayuda">{{ conceptoDeClase(obligacion) }}</div>
+              } @else if (origenEnPalabras(obligacion.origen); as origen) {
+                <div class="ayuda">{{ origen }}</div>
+              }
+            </td>
             <td>
               {{ conceptoEnPalabras(obligacion.concepto) }}
               @if (obligacion.convenio?.convenioNombre; as convenio) {
@@ -114,7 +121,17 @@
               </span>
             </td>
             <td>
-              @if (sePuedeAnular(obligacion)) {
+              @if (sePuedeAnular(obligacion) && esDeVenta(obligacion)) {
+                <!--
+                  La deuda de una venta no se anula sola: el backend responde 409
+                  obligacion-de-venta porque dejaria el pase activo con sus creditos. Se anula el
+                  pase, que anula pase y deuda juntos (contrato 0.114.0).
+                -->
+                <div class="acciones-fila">
+                  <a class="enlace" [routerLink]="rutaPases()">Anular desde los pases</a>
+                </div>
+                <span class="ayuda">Se anula el pase y esta deuda juntos.</span>
+              } @else if (sePuedeAnular(obligacion)) {
                 <div class="acciones-fila">
                   <button
                     type="button"
@@ -170,6 +187,14 @@
                       su propio circuito y su propio registro. Todavia no se hace desde el sistema:
                       hay que resolverlo por caja.
                     </p>
+                  }
+
+                  @if (problema.causa === 'de-venta') {
+                    <div class="acciones">
+                      <a class="boton boton--secundario" [routerLink]="rutaPases()">
+                        Ir a los pases de la persona
+                      </a>
+                    </div>
                   }
 
                   @if (recargable()) {

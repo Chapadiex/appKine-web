@@ -23,7 +23,8 @@
     "api:generate": "openapi-generator-cli generate -i ../appKine-api/openapi/akine-api.yaml -g typescript-angular -o src/app/api/generated -c openapi-generator.json",
     "api:check": "node scripts/check-contract-version.mjs && node scripts/check-problem-types.mjs",
     "problems:check": "node scripts/check-problem-types.mjs",
-    "lint": "ng lint",
+    "lint": "ng lint && npm run lint:e2e",
+    "lint:e2e": "tsc -p tsconfig.e2e.json && eslint e2e playwright.config.ts",
     "coverage:check": "node scripts/check-coverage.mjs",
     "contraste:check": "node scripts/check-contraste-medido.mjs"
   },

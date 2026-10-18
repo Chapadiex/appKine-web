@@ -363,10 +363,11 @@ export class ApiAkine {
       buscado === undefined
         ? disponibles[0]
         : disponibles.find((c) => c.organizationId === buscado);
-    expect(
-      contexto,
-      `${this.email} tiene un contexto de trabajo${buscado === undefined ? '' : ` en ${buscado}`}`,
-    ).toBeDefined();
+    if (contexto === undefined) {
+      throw new Error(
+        `${this.email} no tiene un contexto de trabajo${buscado === undefined ? '' : ` en ${buscado}`}`,
+      );
+    }
 
     const elegido = await this.http.post('/api/v1/auth/context', {
       headers: { authorization: `Bearer ${preContexto}` },
@@ -379,7 +380,7 @@ export class ApiAkine {
 
   /** Pedido crudo: devuelve la respuesta tal cual, para que el test afirme sobre los errores. */
   async pedir(
-    metodo: 'GET' | 'POST' | 'PUT' | 'DELETE',
+    metodo: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE',
     ruta: string,
     cuerpo?: unknown,
     cabeceras: Record<string, string> = {},
@@ -404,7 +405,7 @@ export class ApiAkine {
 
   /** Pedido que tiene que salir bien; si no, falla nombrando la ruta y el cuerpo del error. */
   async exigir<T>(
-    metodo: 'GET' | 'POST' | 'PUT' | 'DELETE',
+    metodo: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE',
     ruta: string,
     cuerpo?: unknown,
   ): Promise<T> {
@@ -479,12 +480,36 @@ export async function activarPorMailpit(http: APIRequestContext, email: string):
  * profesional no necesita activarse: nunca ingresa, solo atiende en la agenda.
  */
 export async function sembrarCentro(): Promise<Centro> {
+  const centro = await altaDeCentro('agenda', 'Agenda');
+  nodeFs.writeFileSync(ARCHIVO_DEL_CENTRO, JSON.stringify(centro));
+  return centro;
+}
+
+/**
+ * Da de alta un centro completo —administradora, profesional activada y vinculada, disponibilidad
+ * de 00:00 a 23:45 los siete dias— y lo devuelve SIN escribirlo en el archivo compartido.
+ *
+ * <p>Es lo que usan los specs de `support/centro-propio.ts`: un spec que suma miembros, abre la caja
+ * o arma lotes sobre el centro compartido le cambia el estado a los demas, y el plan BASICO tiene
+ * tope de miembros (`plan-limit-exceeded` ya rompio el CI asi).
+ */
+export async function altaDeCentro(
+  etiqueta: string,
+  nombre: string,
+  opciones: {
+    /**
+     * Zona IANA de la sede, si no sirve la del alta. Se fija ANTES de cargar la disponibilidad y
+     * los feriados, que se leen en la hora local de la sede. Ver `support/centro-de-hoy.ts`.
+     */
+    timezone?: string;
+  } = {},
+): Promise<Centro> {
   const http = await fabricaDeRequest.newContext({ baseURL: API });
   try {
     const sufijo = nonce();
-    const emailAdmin = emailUnico('e2e.agenda.admin');
-    const emailProfesional = emailUnico('e2e.agenda.profesional');
-    const nombreCentro = `Centro Agenda E2E ${sufijo}`;
+    const emailAdmin = emailUnico(`e2e.${etiqueta}.admin`);
+    const emailProfesional = emailUnico(`e2e.${etiqueta}.profesional`);
+    const nombreCentro = `Centro ${nombre} E2E ${sufijo}`;
 
     await registrar(http, {
       email: emailAdmin,
@@ -509,10 +534,15 @@ export async function sembrarCentro(): Promise<Centro> {
         '/api/v1/me/contexts',
       );
       const { organizationId, consultorioId } = contexto;
-      const sede = await api.exigir<{ timezone: string }>(
-        'GET',
-        `/api/v1/organizations/${organizationId}/consultorios/${consultorioId}`,
-      );
+      const rutaDeLaSede = `/api/v1/organizations/${organizationId}/consultorios/${consultorioId}`;
+      let sede = await api.exigir<{ timezone: string; version: number }>('GET', rutaDeLaSede);
+      if (opciones.timezone !== undefined && opciones.timezone !== sede.timezone) {
+        sede = await api.exigir('PATCH', rutaDeLaSede, {
+          timezone: opciones.timezone,
+          version: sede.version,
+        });
+        expect(sede.timezone).toBe(opciones.timezone);
+      }
 
       const { membershipId } = await api.exigir<{ membershipId: number }>(
         'POST',
@@ -550,7 +580,6 @@ export async function sembrarCentro(): Promise<Centro> {
         servicioId: await servicioAgendable(api),
         profesional: { membershipId, nombre: `Pablo Kinesiologo ${sufijo}` },
       };
-      nodeFs.writeFileSync(ARCHIVO_DEL_CENTRO, JSON.stringify(centro));
       return centro;
     } finally {
       await api.cerrar();
@@ -931,16 +960,20 @@ export function verTurno(
 
 /**
  * Reserva el primer horario todavia futuro de HOY que siga libre (la recepcion solo opera turnos
- * del dia). Devuelve `null` si ya no queda ninguno —pasadas las 23:30 en la zona de la sede— y el
- * test se saltea diciendo por que. Dos workers pueden competir por el mismo horario: un 409
- * `recurso-ocupado` es el otro test, y se prueba el siguiente.
+ * del dia). Dos workers pueden competir por el mismo horario: un 409 `recurso-ocupado` es el otro
+ * test, y se prueba el siguiente.
+ *
+ * <p><b>Solo sirve con un centro "de hoy"</b> (`support/centro-de-hoy.ts`), cuya sede esta en una
+ * zona donde ahora es media mañana. Con la sede en Cordoba, a partir de las 23:30 de alli ya no
+ * queda ningun horario futuro y la agenda del dia viene vacia con motivo `PASADO`: los specs de
+ * recepcion y prepago fallaban asi cada vez que el CI corria cerca de la medianoche de Cordoba.
  */
 export async function turnoDeHoy(
   api: ApiAkine,
   centro: Centro,
   oferta: Oferta,
   persona: Persona,
-): Promise<Turno | null> {
+): Promise<Turno> {
   const hoy = fechaLocal(centro.timezone);
   const futuros = (await slotsDelDia(api, centro, oferta.id, hoy)).filter(
     (s) => new Date(s.desde).getTime() > Date.now() + 60_000,
@@ -952,7 +985,9 @@ export async function turnoDeHoy(
     }
     expect(respuesta.status(), await respuesta.text()).toBe(409);
   }
-  return null;
+  throw new Error(
+    `ningun horario futuro libre hoy (${hoy}) en ${centro.timezone}, entre ${futuros.length}`,
+  );
 }
 
 /** Marca la oferta como "exige prepago" (E-6, `PUT /politica-de-prepago`). */

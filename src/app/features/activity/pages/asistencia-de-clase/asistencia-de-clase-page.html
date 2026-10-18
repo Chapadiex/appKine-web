@@ -1,4 +1,14 @@
 <p><a class="enlace" routerLink="/asistencia">Volver a las clases del dia</a></p>
+@if (puedeAtender()) {
+  <p>
+    <a class="enlace" [routerLink]="['/atencion/clases', claseId()]"
+      >Atencion clinica de la clase</a
+    >
+    <span class="ayuda">
+      — la atencion de cada participante que estuvo y fue derivado a un caso.</span
+    >
+  </p>
+}
 
 @switch (estado().tipo) {
   @case ('cargando') {
@@ -24,7 +34,7 @@
       <h1>Asistencia: {{ clase.titulo || 'Clase ' + clase.claseId }}</h1>
 
       <section class="tarjeta" aria-labelledby="titulo-clase">
-        <h2 id="titulo-clase">La clase</h2>
+        <h2 id="titulo-clase" tabindex="-1">La clase</h2>
         <p>
           {{ fechaHora(clase.inicio, zona()) }} a {{ hora(clase.fin, zona()) }} ·
           <b>{{ etiquetaDeEstadoDeClase(clase.estado) }}</b>
@@ -57,7 +67,7 @@
                 Iniciar clase
               </button>
             }
-            @if (clase.estado === 'EN_CURSO') {
+            @if (clase.estado === 'EN_CURSO' && puedeCerrarClase()) {
               <button
                 type="button"
                 class="boton boton--secundario"
@@ -80,10 +90,10 @@
 
       <div aria-live="polite">
         @if (avisoCierre(); as aviso) {
-          <p class="estado estado--ok">{{ aviso }}</p>
+          <p class="estado estado--ok" akineFocoAlMontar>{{ aviso }}</p>
         }
         @if (lote(); as resumen) {
-          <section class="tarjeta" aria-labelledby="titulo-resultado-lote">
+          <section class="tarjeta" aria-labelledby="titulo-resultado-lote" akineFocoAlMontar>
             <h2 id="titulo-resultado-lote">Resultado</h2>
             <p class="estado estado--ok">
               Se guardaron {{ resumen.exitosos }}
@@ -103,6 +113,28 @@
                 }
               </ul>
             }
+            @if (resumen.consumos.length > 0) {
+              <h3>Pases</h3>
+              <ul>
+                @for (consumo of resumen.consumos; track consumo.inscripcionId) {
+                  <li>
+                    <b>{{ consumo.nombre }}</b
+                    >: {{ consumo.texto }}
+                  </li>
+                }
+              </ul>
+            }
+            @if (resumen.devengos.length > 0) {
+              <h3>Deudas de la clase</h3>
+              <ul>
+                @for (devengo of resumen.devengos; track devengo.inscripcionId) {
+                  <li>
+                    <b>{{ devengo.aviso ? 'Revisar: ' : '' }}{{ devengo.nombre }}</b
+                    >: {{ devengo.texto }}
+                  </li>
+                }
+              </ul>
+            }
           </section>
         }
       </div>
@@ -111,7 +143,7 @@
       }
 
       <section class="tarjeta" aria-labelledby="titulo-participantes">
-        <h2 id="titulo-participantes">Participantes</h2>
+        <h2 id="titulo-participantes" tabindex="-1">Participantes</h2>
 
         @if (participantes().length === 0) {
           <p class="estado estado--vacio">La clase no tiene inscriptos.</p>
@@ -215,6 +247,24 @@
                               }
                             </div>
                           }
+                          @if (marcaDe(p); as marca) {
+                            <div class="campo observaciones-asistencia">
+                              <label [for]="'observaciones-' + p.inscripcion?.id">
+                                Observaciones (opcional)
+                              </label>
+                              <input
+                                [id]="'observaciones-' + p.inscripcion?.id"
+                                type="text"
+                                maxlength="500"
+                                [value]="marca.observaciones ?? ''"
+                                [attr.aria-describedby]="'aviso-observaciones-' + p.inscripcion?.id"
+                                (input)="escribirObservaciones(p, $any($event.target).value)"
+                              />
+                              <p [id]="'aviso-observaciones-' + p.inscripcion?.id" class="ayuda">
+                                {{ avisoObservaciones }}
+                              </p>
+                            </div>
+                          }
                         } @else {
                           <span class="ayuda">Sin lugar en la clase</span>
                         }
@@ -280,7 +330,12 @@
       </section>
 
       @if (historial(); as h) {
-        <section class="tarjeta" aria-labelledby="titulo-historial" aria-live="polite">
+        <section
+          class="tarjeta"
+          aria-labelledby="titulo-historial"
+          aria-live="polite"
+          akineFocoAlMontar
+        >
           <h2 id="titulo-historial">Historial de {{ h.nombre }}</h2>
           @if (h.error) {
             <p class="estado estado--error">{{ h.error.mensaje }}</p>

@@ -1,8 +1,9 @@
 import { Injectable, inject } from '@angular/core';
-import { Observable, map } from 'rxjs';
+import { Observable, catchError, map, of } from 'rxjs';
 
 import { ClasesService } from '../../../api/generated/api/clases.service';
 import { ColaboradoresService } from '../../../api/generated/api/colaboradores.service';
+import { EspaciosService } from '../../../api/generated/api/espacios.service';
 import { InscripcionesService } from '../../../api/generated/api/inscripciones.service';
 import { PersonasService } from '../../../api/generated/api/personas.service';
 import { ServiciosYOfertasService } from '../../../api/generated/api/servicios-y-ofertas.service';
@@ -26,6 +27,7 @@ import { ProgramarClase } from '../../../api/generated/model/programar-clase';
 import { ReprogramarClase } from '../../../api/generated/model/reprogramar-clase';
 import { ResultadoDeCancelacion } from '../../../api/generated/model/resultado-de-cancelacion';
 import { ResultadoDeInscripcion } from '../../../api/generated/model/resultado-de-inscripcion';
+import { OpcionDeEspacio, espaciosHabilitadosEnServicio } from '../models/clases';
 
 /**
  * Fachada de la feature `activity` (M28): clases programadas e inscripciones (AKINE-08.01 y
@@ -37,8 +39,11 @@ import { ResultadoDeInscripcion } from '../../../api/generated/model/resultado-d
  * <ul>
  *   <li><b>Una clase es un evento unico</b>, no N turnos (CA-M28-001-06). <b>No hay recurrencia</b>:
  *       cada clase se programa por separado.</li>
- *   <li><b>El box no se elige</b>: si la oferta lo requiere, el backend toma uno habilitado y libre
- *       y lo devuelve en `espacioId`. Ni `ProgramarClase` ni `ReprogramarClase` lo llevan.</li>
+ *   <li><b>El box se puede elegir</b> (contrato 0.102.0): `espacioId` es opcional al programar y al
+ *       reprogramar. Sin el, el backend toma el primer box apto y libre —al reprogramar puede no
+ *       ser el actual—; con el, valida ese y solo ese, sin caer a otro.</li>
+ *   <li><b>La clase trae sus nombres</b>: `ofertaNombre`, `profesionalNombre` y `espacioNombre`.
+ *       Mostrarlos no exige releer ofertas ni habilitaciones.</li>
  *   <li><b>El cupo lo otorga la base</b>: dos inscripciones sobre el ultimo lugar dejan una sola
  *       confirmada. Sin lugar, `aceptaListaEspera` decide entre la cola y `clase-completa`.</li>
  *   <li><b>La baja de una inscripcion con lugar promueve a la cabeza de la espera</b> en el mismo
@@ -54,6 +59,7 @@ export class ActivityApi {
   private readonly ofertas = inject(ServiciosYOfertasService);
   private readonly personas = inject(PersonasService);
   private readonly colaboradores = inject(ColaboradoresService);
+  private readonly espacios = inject(EspaciosService);
 
   /** Clases que EMPIEZAN en `[desde, hasta)`, instantes UTC. Exige `clase:read`. */
   listar(consultorioId: number, desde: string, hasta: string): Observable<readonly Clase[]> {
@@ -170,6 +176,35 @@ export class ActivityApi {
               m.roleCode === MembershipResponseRoleCodeEnum.PROFESIONAL,
           ),
         ),
+      );
+  }
+
+  /**
+   * Boxes que se pueden ofrecer para una clase de la oferta. Restringida por espacio: sus
+   * habilitaciones activas y en servicio. Sin restriccion —`false` es "cualquiera", no "ninguno"—:
+   * los espacios activos de la sede. Sin permiso o con error, lista vacia: la pantalla igual deja
+   * que el servidor elija.
+   */
+  espaciosElegibles(
+    organizationId: number | null,
+    consultorioId: number,
+    habilitaciones: HabilitacionesResponse | null,
+  ): Observable<readonly OpcionDeEspacio[]> {
+    if (habilitaciones?.restringidaPorEspacio) {
+      return of(espaciosHabilitadosEnServicio(habilitaciones));
+    }
+    if (organizationId === null) {
+      return of([]);
+    }
+    return this.espacios
+      .listEspacios({ orgId: organizationId, consultorioId, estado: 'ACTIVO', size: 100 })
+      .pipe(
+        map((pagina) =>
+          (pagina.content ?? [])
+            .filter((e) => e.id !== undefined && e.enServicio !== false)
+            .map((e) => ({ espacioId: e.id as number, nombre: e.name || `Box #${e.id}` })),
+        ),
+        catchError(() => of([])),
       );
   }
 }

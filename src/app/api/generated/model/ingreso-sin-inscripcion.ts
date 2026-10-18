@@ -14,7 +14,7 @@
  */
 export interface IngresoSinInscripcion { 
     /**
-     * Nota operativa, no clinica
+     * Nota **operativa, no clinica**: la ve cualquiera con `inscripcion:read`, asi que **no debe llevar datos de salud** (U-46 d).
      */
     observaciones?: string;
     /**

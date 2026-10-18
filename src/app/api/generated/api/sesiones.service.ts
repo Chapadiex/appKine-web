@@ -17,6 +17,8 @@ import { Observable }                                        from 'rxjs';
 import { OpenApiHttpParams, QueryParamStyle } from '../query.params';
 
 // @ts-ignore
+import { CambiarCasoDeSesion } from '../model/cambiar-caso-de-sesion';
+// @ts-ignore
 import { CerrarSesion } from '../model/cerrar-sesion';
 // @ts-ignore
 import { EnmendarSesion } from '../model/enmendar-sesion';
@@ -37,6 +39,7 @@ import { Configuration }                                     from '../configurat
 import { BaseService } from '../api.base.service';
 import {
     SesionesServiceInterface,
+    CambiarCasoDeSesionRequestParams,
     CerrarSesionRequestParams,
     EnmendarRequestParams,
     EvaluarRequestParams,
@@ -55,6 +58,86 @@ export class SesionesService extends BaseService implements SesionesServiceInter
 
     constructor(protected httpClient: HttpClient, @Optional() @Inject(BASE_PATH) basePath: string|string[], @Optional() configuration?: Configuration) {
         super(basePath, configuration);
+    }
+
+    /**
+     * Asociar, cambiar o quitar el caso clinico de una atencion abierta
+     * Deja en la sesion el caso que viene en &#x60;casoId&#x60;, o ninguno si viene nulo. Es la unica forma de corregir el caso despues de iniciar: el inicio es idempotente y devuelve la sesion con el caso que ya tenia.  **Solo con la sesion abierta.** Una sesion cerrada ya tiene su numero dentro del caso, y cambiarlo seria renumerar historia clinica (409 &#x60;sesion-cerrada&#x60;).  El caso tiene que ser **activo y de la misma historia clinica**: uno de otro paciente responde 404 —indistinguible de \&quot;no existe\&quot;— y uno cerrado 409 &#x60;caso-clinico-cerrado&#x60;. Quitar el caso siempre se puede: el caso no es obligatorio (RF-M14-002).  **Hay que mandar la &#x60;version&#x60; que se leyo**, y **solo el profesional de la sesion puede cambiarlo**: escribir en la atencion ajena es 409, no 403. Deja evento de auditoria. Pedir el caso que ya tiene no escribe ni avanza la version.
+     * @endpoint put /api/v1/consultorios/{consultorioId}/sesiones/{sesionId}/caso
+     * @param requestParameters
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public cambiarCasoDeSesion(requestParameters: CambiarCasoDeSesionRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<Sesion>;
+    public cambiarCasoDeSesion(requestParameters: CambiarCasoDeSesionRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<Sesion>>;
+    public cambiarCasoDeSesion(requestParameters: CambiarCasoDeSesionRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<Sesion>>;
+    public cambiarCasoDeSesion(requestParameters: CambiarCasoDeSesionRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        const consultorioId = requestParameters?.consultorioId;
+        if (consultorioId === null || consultorioId === undefined) {
+            throw new Error('Required parameter consultorioId was null or undefined when calling cambiarCasoDeSesion.');
+        }
+        const sesionId = requestParameters?.sesionId;
+        if (sesionId === null || sesionId === undefined) {
+            throw new Error('Required parameter sesionId was null or undefined when calling cambiarCasoDeSesion.');
+        }
+        const cambiarCasoDeSesion = requestParameters?.cambiarCasoDeSesion;
+        if (cambiarCasoDeSesion === null || cambiarCasoDeSesion === undefined) {
+            throw new Error('Required parameter cambiarCasoDeSesion was null or undefined when calling cambiarCasoDeSesion.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        // to determine the Content-Type header
+        const consumes: string[] = [
+            'application/json'
+        ];
+        const httpContentTypeSelected: string | undefined = this.configuration.selectHeaderContentType(consumes);
+        if (httpContentTypeSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Content-Type', httpContentTypeSelected);
+        }
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/consultorios/${this.configuration.encodeParam({name: "consultorioId", value: consultorioId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/sesiones/${this.configuration.encodeParam({name: "sesionId", value: sesionId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/caso`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<Sesion>('put', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                body: cambiarCasoDeSesion,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
     }
 
     /**
@@ -299,7 +382,7 @@ export class SesionesService extends BaseService implements SesionesServiceInter
 
     /**
      * Guardar el borrador de la atencion
-     * Guarda el contenido parcial de la atencion. Pensado para llamarse seguido, desde el autosave de la pantalla.  **Hay que mandar la &#x60;version&#x60; que se leyo.** Dos pestanas del mismo profesional sobre la misma sesion son el caso normal; sin la version la segunda pisa a la primera en silencio y el profesional pierde lo que escribio. Un 409 &#x60;concurrent-modification&#x60; significa recargar.  **Solo el profesional de la sesion puede guardar.** No es cuestion de permiso —dos profesionales de la misma sede tienen el mismo &#x60;sesion:register&#x60;— sino de propiedad de esa atencion, y por eso el rechazo es 409 y no 403.  El contenido es **opaco**: que campos tiene una evaluacion lo define AKINE-06.02. Esta etapa garantiza que se guarda, se versiona y no se pierde.
+     * Guarda el contenido parcial de la atencion. Pensado para llamarse seguido, desde el autosave de la pantalla.  **Hay que mandar la &#x60;version&#x60; que se leyo.** Dos pestanas del mismo profesional sobre la misma sesion son el caso normal; sin la version la segunda pisa a la primera en silencio y el profesional pierde lo que escribio. Un 409 &#x60;concurrent-modification&#x60; significa recargar.  **Solo el profesional de la sesion puede guardar.** No es cuestion de permiso —dos profesionales de la misma sede tienen el mismo &#x60;sesion:register&#x60;— sino de propiedad de esa atencion, y por eso el rechazo es 409 y no 403.  El contenido es **opaco**: que campos tiene una evaluacion lo define AKINE-06.02. Esta etapa garantiza que se guarda, se versiona y no se pierde.  **Lo unico que se exige es que sea JSON.** Un &#x60;contenido&#x60; que no parsea, vacio o anidado mas alla de 99 niveles responde **400 &#x60;validation-error&#x60;** con &#x60;errors.contenido&#x60;; reintentar el mismo cuerpo falla igual. &#x60;null&#x60; vacia el borrador.
      * @endpoint put /api/v1/consultorios/{consultorioId}/sesiones/{sesionId}/borrador
      * @param requestParameters
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
@@ -379,7 +462,7 @@ export class SesionesService extends BaseService implements SesionesServiceInter
 
     /**
      * Iniciar la atencion de un turno
-     * Abre la atencion, o **devuelve la que ya estaba abierta**.  El doble inicio es idempotente a proposito: un profesional que aprieta dos veces o recarga la pantalla es el caso normal, y un 409 le exigiria a la pantalla distinguir dos situaciones que para el usuario son la misma (RN-M14-001, un turno produce como mucho una sesion).  La Historia Clinica del paciente **se crea si no existia**. Exige perfil de paciente vigente: una atencion sobre alguien que solo es \&quot;persona\&quot; falla, y                no se crea historia clinica a nombre de quien no es paciente.                 Quien atiende es el profesional del turno. Si el turno tiene uno asignado y no es quien inicia, es 409: dejar que otro abra la sesion de un turno ajeno rompe la propiedad antes de que la sesion exista.  EL CASO CLINICO ES OPCIONAL (04.03). Sin casoId la atencion se registra igual: RF-M14-002 admite atencion sin caso y ninguna sesion anterior a 04.03 lo tiene. Exigirlo es RF-M10-007, que necesita su propia ventana de migracion. Cuando viene, tiene que ser un caso ACTIVO de la MISMA historia clinica: uno de otro paciente responde 404 —indistinguible de \&quot;no existe\&quot;, para no poder censar casos ajenos probando ids— y uno cerrado responde 409, porque lleva a otra accion, que es reabrirlo.  LA IDEMPOTENCIA MANDA SOBRE EL CASO: si la sesion del turno ya existe se devuelve tal cual, con el caso que tenga, aunque esta llamada traiga otro. Reasignar el caso de una atencion ya empezada no es \&quot;iniciar\&quot;.
+     * Abre la atencion, o **devuelve la que ya estaba abierta**.  El doble inicio es idempotente a proposito: un profesional que aprieta dos veces o recarga la pantalla es el caso normal, y un 409 le exigiria a la pantalla distinguir dos situaciones que para el usuario son la misma (RN-M14-001, un turno produce como mucho una sesion).  La Historia Clinica del paciente **se crea si no existia**. Exige perfil de paciente vigente: una atencion sobre alguien que solo es \&quot;persona\&quot; falla, y                no se crea historia clinica a nombre de quien no es paciente.                 Quien atiende es el profesional del turno. Si el turno tiene uno asignado y no es quien inicia, es 409: dejar que otro abra la sesion de un turno ajeno rompe la propiedad antes de que la sesion exista.  EL CASO CLINICO ES OPCIONAL (04.03). Sin casoId la atencion se registra igual: RF-M14-002 admite atencion sin caso y ninguna sesion anterior a 04.03 lo tiene. Exigirlo es RF-M10-007, que necesita su propia ventana de migracion. Cuando viene, tiene que ser un caso ACTIVO de la MISMA historia clinica: uno de otro paciente responde 404 —indistinguible de \&quot;no existe\&quot;, para no poder censar casos ajenos probando ids— y uno cerrado responde 409, porque lleva a otra accion, que es reabrirlo.  LA IDEMPOTENCIA MANDA SOBRE EL CASO: si la sesion del turno ya existe se devuelve tal cual, con el caso que tenga, aunque esta llamada traiga otro. Reasignar el caso de una atencion ya empezada no es \&quot;iniciar\&quot;: es &#x60;PUT .../sesiones/{sesionId}/caso&#x60;.
      * @endpoint post /api/v1/consultorios/{consultorioId}/sesiones/turnos/{turnoId}
      * @param requestParameters
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.

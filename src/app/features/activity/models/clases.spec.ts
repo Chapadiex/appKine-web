@@ -1,15 +1,18 @@
+import { EspacioHabilitadoEstadoEnum } from '../../../api/generated/model/espacio-habilitado';
 import {
   admiteBaja,
   admiteCambios,
   admiteConfirmacion,
   diaEnPalabras,
   diasDeLaSemana,
+  espaciosHabilitadosEnServicio,
   fechaDeSede,
   fechaHoraDeSede,
   horaDeSede,
   instanteDesdeHoraDeSede,
   lugaresLibres,
   lunesDeLaSemana,
+  nombreDeClase,
   sumarDiasAFecha,
   textoDeEstadoDeClase,
   textoDeEstadoDeInscripcion,
@@ -99,5 +102,29 @@ describe('clases: estados y reglas de la pantalla', () => {
     expect(lugaresLibres({ capacidadEfectiva: 8, ocupados: 3 })).toBe(5);
     expect(lugaresLibres({ capacidad: 2, ocupados: 3 })).toBe(0);
     expect(lugaresLibres({})).toBe(0);
+  });
+});
+
+describe('nombreDeClase y espaciosHabilitadosEnServicio', () => {
+  it('nombra por titulo, despues por oferta y al final por id', () => {
+    expect(nombreDeClase({ id: 1, titulo: 'Yoga', ofertaNombre: 'Pilates' })).toBe('Yoga');
+    expect(nombreDeClase({ id: 1, ofertaNombre: 'Pilates' })).toBe('Pilates');
+    expect(nombreDeClase({ id: 1 })).toBe('Clase #1');
+  });
+
+  it('ofrece solo las habilitaciones activas y en servicio, con nombre de respaldo', () => {
+    expect(
+      espaciosHabilitadosEnServicio({
+        espacios: [
+          { espacioId: 9, nombre: 'Sala grande', estado: EspacioHabilitadoEstadoEnum.ACTIVO },
+          { espacioId: 10, estado: EspacioHabilitadoEstadoEnum.ACTIVO, enServicio: true },
+          { espacioId: 11, estado: EspacioHabilitadoEstadoEnum.ACTIVO, enServicio: false },
+          { espacioId: 12, estado: EspacioHabilitadoEstadoEnum.INACTIVO },
+        ],
+      }),
+    ).toEqual([
+      { espacioId: 9, nombre: 'Sala grande' },
+      { espacioId: 10, nombre: 'Box #10' },
+    ]);
   });
 });

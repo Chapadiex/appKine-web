@@ -193,17 +193,22 @@
 
       <div class="campo">
         <label for="alta-oferta-esquema">Esquema de cobro (opcional)</label>
-        <input
+        <select
           id="alta-oferta-esquema"
-          type="text"
           formControlName="esquemaCobro"
-          autocomplete="off"
           aria-describedby="alta-oferta-esquema-ayuda"
-        />
+        >
+          <option value="">Sin esquema</option>
+          @for (esquema of esquemasDeCobro; track esquema) {
+            <option [value]="esquema">{{ esquema }}</option>
+          }
+        </select>
         <p class="ayuda" id="alta-oferta-esquema-ayuda">
-          Se <b>guarda y se muestra</b>, pero todavia nadie lo interpreta: las reglas economicas
-          dependen de convenios y aranceles que se construyen mas adelante. Anota aca lo que el
-          centro necesite recordar.
+          <b>POR_SESION</b>, <b>POR_PACK</b>, <b>POR_ABONO</b> o <b>POR_CLASE</b>.
+          <b>POR_PACK</b> es el que deja armar productos de pack sobre la oferta y hace que cada
+          asistencia a una clase consuma un credito del pase de la persona. <b>POR_CLASE</b> devenga
+          una deuda por cada clase a la que la persona asiste (presente o con demora); la ausencia
+          no genera deuda.
         </p>
       </div>
 
@@ -637,12 +642,20 @@
 
                           <div class="campo">
                             <label for="editar-oferta-esquema">Esquema de cobro</label>
-                            <input
+                            <select
                               id="editar-oferta-esquema"
-                              type="text"
                               formControlName="esquemaCobro"
-                              autocomplete="off"
-                            />
+                              aria-describedby="editar-oferta-esquema-ayuda"
+                            >
+                              <option value="">Sin cambios</option>
+                              @for (esquema of esquemasDeCobro; track esquema) {
+                                <option [value]="esquema">{{ esquema }}</option>
+                              }
+                            </select>
+                            <p class="ayuda" id="editar-oferta-esquema-ayuda">
+                              POR_SESION, POR_PACK, POR_ABONO o POR_CLASE. POR_CLASE devenga una
+                              deuda con cada asistencia a una clase; la ausencia no genera deuda.
+                            </p>
                           </div>
 
                           <div class="campo limpiar">

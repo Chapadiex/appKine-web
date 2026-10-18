@@ -30,9 +30,9 @@ export interface CreateOfertaRequest {
      */
     duracionMinutos: number;
     /**
-     * Esquema de cobro declarado, texto libre acotado. Se guarda sin resolverse: los modulos que lo interpretarian no existen todavia
+     * Esquema de cobro (RN-M27-006): `POR_SESION` devenga por atencion, `POR_CLASE` devenga una deuda por cada clase asistida (presente o presente con demora; la ausencia no devenga: U-39, RF-M18-008), `POR_PACK` y `POR_ABONO` consumen el credito de un pase o abono y la deuda nace al venderlo. Vocabulario cerrado: otro valor es 400. Ausente: sin esquema declarado
      */
-    esquemaCobro?: string;
+    esquemaCobro?: CreateOfertaRequestEsquemaCobroEnum;
     /**
      * Si genera registro clinico. Si se omite, hereda del servicio
      */
@@ -78,6 +78,12 @@ export interface CreateOfertaRequest {
      */
     vigenciaHasta?: string;
 }
+export enum CreateOfertaRequestEsquemaCobroEnum {
+    POR_SESION = 'POR_SESION',
+    POR_CLASE = 'POR_CLASE',
+    POR_PACK = 'POR_PACK',
+    POR_ABONO = 'POR_ABONO'
+};
 export enum CreateOfertaRequestModalidadEnum {
     INDIVIDUAL = 'INDIVIDUAL',
     GRUPAL = 'GRUPAL'

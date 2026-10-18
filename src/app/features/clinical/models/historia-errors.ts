@@ -80,12 +80,18 @@ export function errorDeCausa(causa: CausaHistoria): ErrorHistoria {
 /**
  * El 403 de DP-03: hay permiso, pero falta relacion asistencial y el backend pide motivo. Exportado
  * para que casos, plan y la entrada desde el 360 lo reconozcan igual, sin copiar la condicion.
+ *
+ * <p>Desde el contrato 0.107.0 (`appKine-api` #132) el caso tiene tipo propio,
+ * `justificacion-de-acceso-requerida`. Hasta 0.106 viajaba como `forbidden` con la extension
+ * `requiereJustificacion: true`, que el backend sigue mandando: se aceptan las dos senales para no
+ * depender del orden en que se despliegan los dos repos.
  */
 export function requiereJustificacion(error: unknown): boolean {
   return (
     error instanceof AkineHttpError &&
     error.status === 403 &&
-    error.extension('requiereJustificacion') === true
+    (error.problemType === 'justificacion-de-acceso-requerida' ||
+      error.extension('requiereJustificacion') === true)
   );
 }
 

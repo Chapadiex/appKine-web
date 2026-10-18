@@ -42,9 +42,9 @@ export interface OfertaResponse {
      */
     duracionMinutos?: number;
     /**
-     * Esquema de cobro DECLARADO, texto libre acotado. No lo resuelve nadie todavia: los modulos de facturacion y cobros no existen (RN-M27-006). Se guarda para no perder el dato, no para ramificar
+     * Esquema de cobro de la oferta (RN-M27-006), o ausente si no declara ninguno. `POR_CLASE` devenga con la asistencia, sin no-show (U-39)
      */
-    esquemaCobro?: string;
+    esquemaCobro?: OfertaResponseEsquemaCobroEnum;
     /**
      * Ciclo de vida administrativo. Una oferta INACTIVA se sigue leyendo con 200: sus historicos tienen que seguir resolviendo
      */
@@ -114,6 +114,12 @@ export interface OfertaResponse {
      */
     vigenteHoy?: boolean;
 }
+export enum OfertaResponseEsquemaCobroEnum {
+    POR_SESION = 'POR_SESION',
+    POR_CLASE = 'POR_CLASE',
+    POR_PACK = 'POR_PACK',
+    POR_ABONO = 'POR_ABONO'
+};
 export enum OfertaResponseEstadoEnum {
     ACTIVO = 'ACTIVO',
     INACTIVO = 'INACTIVO'

@@ -361,6 +361,14 @@
               >
                 Cuenta corriente
               </a>
+              <!-- Pases de la persona (M29). Ruta de `activity`, detras de `pase:read`. -->
+              <a
+                class="enlace"
+                [routerLink]="['/pacientes', persona.id, 'pases']"
+                *akinePermiso="permisoPase"
+              >
+                Pases
+              </a>
             </td>
           </tr>
 

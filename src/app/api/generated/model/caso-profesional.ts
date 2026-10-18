@@ -26,6 +26,10 @@ export interface CasoProfesional {
      * Membership del profesional en este centro
      */
     profesionalMembershipId?: number;
+    /**
+     * Nombre del profesional, resuelto al leer por su membership en la organizacion (0.107.0): sirve aunque el caso sea de otra sede o el profesional ya no este habilitado. Ausente si no resuelve o en la vista administrativa de la historia; ahi la pantalla muestra el id
+     */
+    profesionalNombre?: string;
     rol?: CasoProfesionalRolEnum;
     vigente?: boolean;
 }

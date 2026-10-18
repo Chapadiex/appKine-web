@@ -2,6 +2,7 @@ import {
   Obligacion,
   ObligacionConceptoEnum,
   ObligacionEstadoEnum,
+  ObligacionOrigenEnum,
 } from '../../../api/generated/model/obligacion';
 import { formatearFecha } from '../../../shared/utils/instantes';
 
@@ -105,6 +106,27 @@ export function conceptoEnPalabras(concepto: string | undefined): string {
   }
 }
 
+/**
+ * De donde salio la deuda (M29, contrato 0.102.0): una sesion cerrada o la venta de un pase o un
+ * abono. Una venta <b>no tiene sesion</b> —`sesionId` viene vacio— y la pantalla no lo usa para
+ * nada, asi que no se rompe: solo lo dice.
+ *
+ * <p>`SESION` y la ausencia de origen (deudas anteriores a M29) devuelven vacio: es el caso
+ * normal y rotularlo en cada fila seria ruido.
+ */
+export function origenEnPalabras(origen: string | undefined): string {
+  switch (origen) {
+    case ObligacionOrigenEnum.VENTA_PASE:
+      return 'Venta de pase';
+    case ObligacionOrigenEnum.VENTA_ABONO:
+      return 'Venta de abono';
+    case ObligacionOrigenEnum.ASISTENCIA_CLASE:
+      return 'Clase asistida';
+    default:
+      return '';
+  }
+}
+
 /** Clase de la marca de estado. Reusa las tres del design system, sin colores propios. */
 export function claseDeEstado(estado: string | undefined): string {
   if (estado === ObligacionEstadoEnum.ANULADA) {
@@ -126,6 +148,42 @@ export function claseDeEstado(estado: string | undefined): string {
  */
 export function sePuedeAnular(obligacion: Obligacion): boolean {
   return obligacion.estado !== ObligacionEstadoEnum.ANULADA;
+}
+
+/**
+ * `true` si la deuda salio de la venta de un pase o un abono (contrato 0.114.0).
+ *
+ * <p>Esa deuda <b>no se anula sola</b>: `DELETE /obligaciones/{id}` responde 409
+ * `obligacion-de-venta`, porque dejaria el pase `ACTIVO` con sus creditos y sin deuda que lo
+ * respalde. Se anula el pase, que anula las dos cosas juntas.
+ *
+ * <p>La deuda de una clase asistida (`ASISTENCIA_CLASE`, U-39, contrato 0.126.0) <b>no es de
+ * venta</b>: se anula por `DELETE /obligaciones/{id}` como la de una sesion. Por eso esto ya no es
+ * "todo origen distinto de `SESION`": se nombran los dos de venta.
+ */
+export function esDeVenta(obligacion: Obligacion): boolean {
+  return (
+    obligacion.origen === ObligacionOrigenEnum.VENTA_PASE ||
+    obligacion.origen === ObligacionOrigenEnum.VENTA_ABONO
+  );
+}
+
+/** `true` si la deuda nacio de una clase asistida de una oferta `POR_CLASE` (U-39). */
+export function esDeClase(obligacion: Obligacion): boolean {
+  return obligacion.origen === ObligacionOrigenEnum.ASISTENCIA_CLASE;
+}
+
+/**
+ * Concepto de una deuda de clase: `Clase del 20/10`. `inicio` es el instante de la clase, que la
+ * obligacion no trae (solo `claseId`); sin el, `Clase asistida`. El dia se toma en la zona de la
+ * sede: una clase de las 22:30 del 20 en Cordoba es del 20 aunque el navegador ya este en el 21.
+ *
+ * <p>No se usa `devengadaEn`: es cuando se registro la asistencia, y una correccion a presente
+ * hecha dias despues devenga con esa fecha, no con la de la clase.
+ */
+export function conceptoDeClase(inicio: string | undefined, zona = ''): string {
+  const fecha = inicio === undefined ? '' : formatearFecha(inicio, zona);
+  return fecha === '' ? 'Clase asistida' : `Clase del ${fecha.slice(0, 5)}`;
 }
 
 /**

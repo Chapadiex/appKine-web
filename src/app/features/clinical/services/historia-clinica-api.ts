@@ -7,6 +7,7 @@ import { CasosClinicosService } from '../../../api/generated/api/casos-clinicos.
 import { EntradasClinicasService } from '../../../api/generated/api/entradas-clinicas.service';
 import { HistoriaClinicaService } from '../../../api/generated/api/historia-clinica.service';
 import { TimelineClinicoService } from '../../../api/generated/api/timeline-clinico.service';
+import { VerTimelineClinicoRequestParams } from '../../../api/generated/api/timeline-clinico.serviceInterface';
 import {
   AdjuntoClinicoResponse,
   AdjuntoClinicoResponseCategoriaEnum,
@@ -26,6 +27,21 @@ import { TimelineResponse } from '../../../api/generated/model/timeline-response
  * llevado.
  */
 export type Justificacion = string | null;
+
+/** Un origen del filtro del timeline, tal como lo declara el contrato (0.107.0). */
+export type OrigenDelTimeline = NonNullable<VerTimelineClinicoRequestParams['origen']>[number];
+
+/**
+ * Los filtros del timeline. Todos los resuelve el servidor (RF-M09-004): filtrar en el cliente una
+ * lista paginada diria "no hay adjuntos" cuando estan en la pagina que no se cargo. `desde` y
+ * `hasta` son instantes UTC, inclusivos; un arreglo vacio de origenes es "todos".
+ */
+export interface FiltrosDelTimeline {
+  readonly casoId: number | null;
+  readonly origenes: readonly OrigenDelTimeline[];
+  readonly desde: string | null;
+  readonly hasta: string | null;
+}
 
 /** Tamano de pagina pedido. El servidor lo acota; pedir mas no trae mas. */
 const TAMANO_DE_PAGINA = 20;
@@ -61,18 +77,25 @@ export class HistoriaClinicaApi {
   /**
    * Una pagina del timeline. `cursor` es el `proximoCursor` de la pagina anterior y nada mas: es
    * opaco, y uno inventado es 400 `cursor-invalido`, nunca "la primera pagina".
+   *
+   * <p><b>El cursor no lleva los filtros</b> (`appKine-api` #132): marca una posicion y nada mas.
+   * Por eso los filtros viajan en cada pagina, no solo en la primera: una segunda pagina sin ellos
+   * seguiria desde la misma posicion pero con todos los origenes y fechas mezclados.
    */
   paginaDelTimeline(
     historiaClinicaId: number,
     cursor: string | null,
-    casoId: number | null,
+    filtros: FiltrosDelTimeline,
     justificacion: Justificacion,
   ): Observable<TimelineResponse> {
     return this.timeline.verTimelineClinico({
       historiaClinicaId,
       limite: TAMANO_DE_PAGINA,
       ...(cursor === null ? {} : { cursor }),
-      ...(casoId === null ? {} : { casoId }),
+      ...(filtros.casoId === null ? {} : { casoId: filtros.casoId }),
+      ...(filtros.origenes.length === 0 ? {} : { origen: [...filtros.origenes] }),
+      ...(filtros.desde === null ? {} : { desde: filtros.desde }),
+      ...(filtros.hasta === null ? {} : { hasta: filtros.hasta }),
       ...motivoDeAcceso(justificacion),
     });
   }

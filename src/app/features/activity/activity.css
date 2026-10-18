@@ -76,3 +76,21 @@
   margin: 0;
   padding-left: var(--esp-6);
 }
+
+/*
+ * Casilla con su texto en una linea, y el `label` entero como objetivo de toque (AKINE-09.02). La
+ * pantalla de productos la usaba sin que esta hoja la definiera: el rotulo media 23 px de alto a
+ * 375 px, uno menos que el minimo de WCAG 2.5.8. `e2e/movil.spec.ts` lo mide.
+ */
+.opcion-casilla {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-4);
+  min-height: 1.5rem;
+  font-weight: var(--peso-medio);
+}
+
+.opcion-casilla input {
+  width: auto;
+  margin: 0;
+}

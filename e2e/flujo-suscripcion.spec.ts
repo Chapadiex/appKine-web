@@ -3,10 +3,10 @@ import { randomUUID } from 'node:crypto';
 import { APIRequestContext, request as fabricaDeRequest } from '@playwright/test';
 
 import { emailUnico, nonce } from './support/akine';
-import { expect, ingresar, navegar, test } from './support/agenda-real';
+import { expect, ingresar, navegar, respuestaDe, test } from './support/agenda-real';
 import { cuentaActiva } from './support/cuentas';
 import { API, ApiAkine, Centro, ingresarComoPlataforma, uriDeProblema } from './support/sembrado';
-import { plataformaDisponible } from './support/sembrado-configuracion';
+import { paginaDePlataforma, plataformaDisponible } from './support/sembrado-configuracion';
 
 /**
  * E2E de la suscripcion (M01, AKINE-01.01) contra el backend REAL: el plan, su estado y el consumo
@@ -14,8 +14,10 @@ import { plataformaDisponible } from './support/sembrado-configuracion';
  *
  * <p><b>Usa una organizacion propia</b>, como `flujo-sedes`: suspender el centro compartido dejaria
  * en solo lectura a todos los demas specs. Es un alta self-service mas, dentro del cupo de
- * `esperarCupoDeRegistro`. El cambio de plan y la suspension los hace la plataforma por los
- * endpoints reales; la pantalla es la del centro.
+ * `esperarCupoDeRegistro`. El cambio de plan lo hace la plataforma desde su consola
+ * (`/plataforma/suscripciones`), que lo busca por nombre en `listPlatformOrganizations`, con la version que lee por `getPlatformSubscription` —el defecto D3
+ * del pre-QA del 14/10: sin acceso de soporte no tenia de donde sacarla—; la suspension va por el
+ * endpoint real. La pantalla del final es la del centro.
  */
 
 interface Suscripcion {
@@ -43,13 +45,15 @@ function comoPlataforma(
 test.describe('Suscripcion contra el backend real', () => {
   test('plan, estado y limites; despues del cambio de plan y de la suspension', async ({
     page,
+    browser,
   }) => {
     test.slow();
     const motivoPlataforma = await plataformaDisponible();
     test.skip(motivoPlataforma !== null, motivoPlataforma ?? '');
 
     const email = emailUnico('e2e.suscripcion.admin');
-    await cuentaActiva({ email, organizationName: `Centro Suscripcion E2E ${nonce()}` });
+    const nombreDelCentro = `Centro Suscripcion E2E ${nonce()}`;
+    await cuentaActiva({ email, organizationName: nombreDelCentro });
     const admin = await ApiAkine.como(email);
     try {
       const [{ organizationId }] = await admin.exigir<{ organizationId: number }[]>(
@@ -70,16 +74,61 @@ test.describe('Suscripcion contra el backend real', () => {
       await expect(sedes.getByRole('cell').nth(0)).toHaveText('1');
       await expect(sedes.getByRole('cell').nth(1)).toHaveText('1');
 
-      // --- La plataforma cambia el plan y suspende ---------------------------------------------
+      // --- La plataforma cambia el plan desde su consola, sin acceso de soporte ----------------
+      const plataforma = await paginaDePlataforma(browser);
+      try {
+        // El centro se busca por nombre y se elige del listado (RNF-M01-005): el id no se tipea.
+        await navegar(plataforma, '/plataforma/suscripciones');
+        await plataforma.getByLabel('Nombre o identificador del centro').fill(nombreDelCentro);
+        // La carga inicial de la pantalla tambien lista centros: se espera la que lleva el texto.
+        const busqueda = plataforma.waitForResponse((r) => {
+          const url = new URL(r.url());
+          return (
+            r.request().method() === 'GET' &&
+            url.pathname.endsWith('/platform/organizations') &&
+            url.searchParams.get('q') === nombreDelCentro
+          );
+        });
+        await plataforma.getByRole('button', { name: 'Buscar centros' }).click();
+        const listado = await busqueda;
+        expect(listado.status(), await listado.text()).toBe(200);
+        const fila = plataforma.getByRole('row').filter({ hasText: nombreDelCentro });
+        await expect(fila).toHaveCount(1);
+        await expect(fila).toContainText('ACTIVA');
+        const lectura = respuestaDe(
+          plataforma,
+          'GET',
+          new RegExp(`/platform/organizations/${organizationId}/subscription$`),
+        );
+        await fila
+          .getByRole('button', { name: `Ver la suscripcion de ${nombreDelCentro}` })
+          .click();
+        expect((await lectura).status()).toBe(200);
+        await expect(plataforma.getByRole('heading', { name: nombreDelCentro })).toBeVisible();
+        // La version que muestra es la de la base, la misma que ve el centro.
+        await expect(plataforma.getByTestId('suscripcion-version')).toHaveText(
+          String(inicial.version),
+        );
+        await plataforma.getByLabel('Plan nuevo').selectOption('PROFESIONAL');
+        const cambio = respuestaDe(plataforma, 'POST', /\/subscription\/plan-changes$/);
+        await plataforma.getByRole('button', { name: 'Cambiar el plan' }).click();
+        const respuesta = await cambio;
+        expect(respuesta.status(), await respuesta.text()).toBe(200);
+        expect(respuesta.request().postDataJSON()).toEqual({
+          planCode: 'PROFESIONAL',
+          expectedVersion: inicial.version,
+        });
+        await expect(plataforma.getByText(/El centro paso al plan/)).toBeVisible();
+        await expect(plataforma.getByTestId('suscripcion-plan')).not.toHaveText(inicial.planName);
+      } finally {
+        await plataforma.context().close();
+      }
+
+      // --- Y la suspende por el endpoint real --------------------------------------------------
       const motivo = `Falta de pago sintetica ${nonce()}`;
       const http = await fabricaDeRequest.newContext({ baseURL: API });
       try {
         const token = await ingresarComoPlataforma(http);
-        const cambio = await comoPlataforma(http, token, `${ruta}/plan-changes`, {
-          planCode: 'PROFESIONAL',
-          expectedVersion: inicial.version ?? 0,
-        });
-        expect(cambio.status(), await cambio.text()).toBe(200);
         const suspension = await comoPlataforma(http, token, `${ruta}/transitions`, {
           toStatus: 'SUSPENDIDA',
           expectedStatus: 'ACTIVA',

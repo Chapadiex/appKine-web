@@ -52,6 +52,16 @@ describe('traducirErrorCaso', () => {
     expect(r.causa).toBe('requiere-justificacion');
   });
 
+  it('el 403 justificacion-de-acceso-requerida (0.107.0) pide el motivo aunque no traiga la extension', () => {
+    const r = traducirErrorCaso(akine(403, 'justificacion-de-acceso-requerida'));
+    expect(r.causa).toBe('requiere-justificacion');
+  });
+
+  it('un 403 forbidden sin la extension sigue siendo falta de permiso', () => {
+    const r = traducirErrorCaso(akine(403, 'forbidden'));
+    expect(r.causa).not.toBe('requiere-justificacion');
+  });
+
   it('un 409 sin problemType propio es conflicto', () => {
     const r = traducirErrorCaso(akine(409));
     expect(r.causa).toBe('conflicto');

@@ -2,7 +2,7 @@ import { HttpRequest, provideHttpClient, withInterceptors } from '@angular/commo
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { TimelineClinico } from './timeline-clinico';
+import { TimelineClinico, rangoDeDias } from './timeline-clinico';
 import { provideApi } from '../../../../../api/generated/provide-api';
 import { errorInterceptor } from '../../../../../core/interceptors/error.interceptor';
 
@@ -104,6 +104,88 @@ describe('TimelineClinico', () => {
     await estabilizar(fixture);
     expect(texto(fixture)).toContain('Este caso todavia no tiene hechos clinicos.');
   });
+
+  it('los origenes marcados van al servidor y se reenvian con el cursor al cargar mas', async () => {
+    const fixture = await montar();
+    httpMock.expectOne((r) => r.url === TIMELINE).flush({ eventos: [evento(1)] });
+    await estabilizar(fixture);
+
+    marcar(fixture, 'Sesiones');
+    httpMock.expectOne((r) => r.url === TIMELINE).flush({ eventos: [evento(1)] });
+    await estabilizar(fixture);
+    marcar(fixture, 'Entradas');
+    const filtrada = httpMock.expectOne((r) => r.url === TIMELINE);
+    // En el orden del catalogo, no en el del click: la misma eleccion pide siempre lo mismo.
+    expect(filtrada.request.params.getAll('origen')).toEqual(['ENTRADA_CLINICA', 'SESION']);
+    expect(filtrada.request.params.has('cursor')).toBe(false);
+    filtrada.flush({ eventos: [evento(1)], proximoCursor: 'c-1' });
+    await estabilizar(fixture);
+
+    boton(fixture, 'Cargar hechos anteriores').click();
+    const segunda = httpMock.expectOne((r) => r.url === TIMELINE);
+    expect(segunda.request.params.get('cursor')).toBe('c-1');
+    expect(segunda.request.params.getAll('origen')).toEqual(['ENTRADA_CLINICA', 'SESION']);
+    segunda.flush({ eventos: [] });
+    await estabilizar(fixture);
+    expect(texto(fixture)).toContain('No hay hechos anteriores que coincidan con los filtros.');
+
+    boton(fixture, 'Quitar los filtros').click();
+    fixture.detectChanges();
+    const sinFiltros = httpMock.expectOne((r) => r.url === TIMELINE);
+    expect(sinFiltros.request.params.has('origen')).toBe(false);
+    sinFiltros.flush({ eventos: [] });
+    await estabilizar(fixture);
+  });
+
+  it('el rango de dias viaja como instantes y un rango invertido no sale', async () => {
+    const fixture = await montar();
+    httpMock.expectOne((r) => r.url === TIMELINE).flush({ eventos: [evento(1)] });
+    await estabilizar(fixture);
+
+    fecha(fixture, '#timeline-desde', '2026-09-01');
+    const conDesde = httpMock.expectOne((r) => r.url === TIMELINE);
+    expect(decodeURIComponent(conDesde.request.params.get('desde') ?? '')).toBe(
+      rangoDeDias('2026-09-01', '', '').desde,
+    );
+    expect(conDesde.request.params.has('hasta')).toBe(false);
+    conDesde.flush({ eventos: [] });
+    await estabilizar(fixture);
+    expect(texto(fixture)).toContain('Ningun hecho clinico coincide con los filtros.');
+
+    fecha(fixture, '#timeline-hasta', '2026-08-31');
+    httpMock.expectNone((r) => r.url === TIMELINE);
+    await estabilizar(fixture);
+    expect(texto(fixture)).toContain('"Desde" tiene que ser el mismo dia que "Hasta"');
+    expect(filas(fixture)).toBe(0);
+  });
+
+  it('rangoDeDias: del primer instante del desde al ultimo del hasta, en la zona de la sede', () => {
+    expect(rangoDeDias('2026-09-01', '2026-09-15', 'America/Argentina/Cordoba')).toEqual({
+      desde: '2026-09-01T03:00:00.000Z',
+      hasta: '2026-09-16T02:59:59.999Z',
+    });
+    expect(rangoDeDias('', '2026-12-31', 'UTC')).toEqual({
+      desde: null,
+      hasta: '2026-12-31T23:59:59.999Z',
+    });
+  });
+
+  function marcar(fixture: ComponentFixture<TimelineClinico>, rotulo: string): void {
+    const etiquetas = (fixture.nativeElement as HTMLElement).querySelectorAll('label');
+    const etiqueta = Array.from(etiquetas).find((l) => l.textContent?.trim() === rotulo);
+    const casilla = etiqueta?.querySelector('input') as HTMLInputElement;
+    casilla.click();
+    fixture.detectChanges();
+  }
+
+  function fecha(fixture: ComponentFixture<TimelineClinico>, selector: string, valor: string) {
+    const campo = (fixture.nativeElement as HTMLElement).querySelector(
+      selector,
+    ) as HTMLInputElement;
+    campo.value = valor;
+    campo.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+  }
 
   async function montar(casos: object[] = []): Promise<ComponentFixture<TimelineClinico>> {
     const fixture = TestBed.createComponent(TimelineClinico);

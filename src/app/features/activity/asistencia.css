@@ -22,7 +22,8 @@
   margin-bottom: 0;
 }
 
-.motivo-correccion {
+.motivo-correccion,
+.observaciones-asistencia {
   margin-top: var(--esp-4, 0.5rem);
 }
 

@@ -1,6 +1,9 @@
 import { Routes } from '@angular/router';
 
+import { ANCHO_AMPLIO, DATA_ANCHO } from '../../core/models/ancho-de-contenido';
 import { contextGuard } from '../../core/guards/context.guard';
+import { permissionGuard } from '../../core/guards/permission.guard';
+import { PERMISO_INSCRIPCION_READ, PERMISO_SESION_REGISTER } from '../../core/models/permisos';
 
 /**
  * Rutas de la feature `clinical` (atencion clinica, M14, AKINE-06.01 y 06.02).
@@ -22,7 +25,7 @@ import { contextGuard } from '../../core/guards/context.guard';
  * —`/consultorios/{id}/sesiones/...`—, asi que mandar al selector una vez es preferible a abrir
  * una pantalla que no puede pedir nada.
  *
- * <p><b>No lleva `permissionGuard`.</b> `sesion:register` no basta para escribir en una atencion:
+ * <p><b>No lleva `permissionGuard`</b> (salvo el panel de la clase, ver su ruta). `sesion:register` no basta para escribir en una atencion:
  * la sesion es de <b>quien la lleva</b>, y el backend rechaza a cualquier otro con 409
  * `sesion-ajena` aunque tenga el permiso. Un guard de permiso daria la impresion contraria —que
  * quien pasa puede escribir— y dejaria afuera igual a nadie util. La autoridad es el backend.
@@ -47,6 +50,35 @@ export const routes: Routes = [
     canActivate: [contextGuard],
     loadComponent: () => import('./pages/atencion/atencion-page').then((m) => m.AtencionPage),
     title: 'AKINE - Atencion clinica',
+  },
+  {
+    // Atencion de un participante de una clase (AKINE-08.05): ya existe —la abrio el panel de la
+    // clase— y se abre por su id. Misma pantalla que la del turno.
+    path: 'sesiones/:sesionId',
+    canActivate: [contextGuard],
+    loadComponent: () => import('./pages/atencion/atencion-page').then((m) => m.AtencionPage),
+    title: 'AKINE - Atencion clinica',
+  },
+  {
+    // Panel de atencion clinica de una clase (AKINE-08.05): una atencion por participante y Caso.
+    //
+    // A diferencia de la atencion individual, ESTE si lleva `permissionGuard` (AKINE-09.02). La
+    // atencion de un turno ya existe y es de alguien: ahi el rechazo es 409 `sesion-ajena`, no un
+    // problema de permiso. El panel, en cambio, no tiene otra funcion que ABRIR atenciones, y abrir
+    // una pide `sesion:register`, que la matriz §32 da solo al PROFESIONAL. Un ADMINISTRATIVO —que
+    // tiene `inscripcion:read`, y por eso el backend le deja leer el panel— entraba a una pantalla
+    // donde cada boton terminaba en 403. Son dos guards porque cada uno es OR y hacen falta los
+    // dos: `sesion:register` para abrir e `inscripcion:read` para leer la clase.
+    path: 'clases/:claseId',
+    canActivate: [
+      contextGuard,
+      permissionGuard(PERMISO_SESION_REGISTER),
+      permissionGuard(PERMISO_INSCRIPCION_READ),
+    ],
+    loadComponent: () =>
+      import('./pages/atencion-grupal/atencion-grupal-page').then((m) => m.AtencionGrupalPage),
+    title: 'AKINE - Atencion clinica de la clase',
+    data: { [DATA_ANCHO]: ANCHO_AMPLIO },
   },
   {
     path: 'sesiones/:sesionId/enmienda',

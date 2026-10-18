@@ -23,6 +23,7 @@ describe('traducirErrorAtencion', () => {
     ['enmienda-sin-motivo', 400, 'enmienda-sin-motivo'],
     ['caso-clinico-cerrado', 409, 'caso-no-activo'],
     ['caso-no-activo', 409, 'caso-no-activo'],
+    ['caso-de-atencion-grupal', 409, 'caso-de-atencion-grupal'],
   ])('mapea %s por problemType, no por el texto de detail', (tipo, status, causa) => {
     // El `detail` dice una cosa distinta a proposito: si el traductor lo mirara, fallaria aca.
     expect(traducirErrorAtencion(problema(tipo, status, 'texto que no dice nada')).causa).toBe(

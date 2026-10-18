@@ -10,10 +10,12 @@ import { provideApi } from '../../../../api/generated/provide-api';
 import { traducirErrorSolicitud } from '../../models/solicitud-errors';
 
 const LISTADO = '/api/v1/catalogo-solicitudes';
+const CENTROS = '/api/v1/platform/organizations';
 
 const PRACTICA = {
   id: 9,
   organizationId: 3,
+  organizationName: 'Centro Kinesio Sur',
   consultorioId: 30,
   tipo: 'PRACTICA',
   nombrePropuesto: 'Drenaje linfatico',
@@ -177,6 +179,43 @@ describe('SolicitudesCatalogoPage', () => {
     fixture.detectChanges();
 
     expect(anfitrion.textContent).toContain('ya no administra la plataforma');
+  });
+
+  it('nombra al centro en la bandeja y en el detalle, sin mostrar sus ids (RNF-M01-005)', async () => {
+    const { fixture, anfitrion } = await montar([PRACTICA]);
+
+    const fila = anfitrion.querySelector('tbody tr');
+    expect(fila?.textContent).toContain('Centro Kinesio Sur');
+    expect(
+      [...(fila?.querySelectorAll('td') ?? [])].map((td) => td.textContent?.trim()),
+    ).not.toContain('3');
+
+    clickEn(anfitrion, 'Revisar');
+    fixture.detectChanges();
+    const detalle = anfitrion.querySelector('dl.detalle')?.textContent ?? '';
+    expect(detalle).toContain('Centro Kinesio Sur');
+    expect(detalle).toContain('la pidio desde una de sus sedes');
+    expect(detalle).not.toContain('sede 30');
+  });
+
+  it('el nombre lo trae la solicitud: no recorre el listado de centros de la plataforma', async () => {
+    const OTRO = { ...ESPECIALIDAD, organizationId: 250, organizationName: 'Rehabilitar Norte' };
+    const { anfitrion } = await montar([PRACTICA, OTRO]);
+
+    httpMock.expectNone((r) => r.url === CENTROS);
+    expect(anfitrion.textContent).toContain('Centro Kinesio Sur');
+    expect(anfitrion.textContent).toContain('Rehabilitar Norte');
+  });
+
+  it('un centro que ya no se encuentra (organizationName null) no muestra el id', async () => {
+    const { anfitrion } = await montar([{ ...PRACTICA, organizationName: null }]);
+
+    const fila = anfitrion.querySelector('tbody tr');
+    expect(fila?.textContent).toContain('Centro dado de baja o no disponible');
+    expect(
+      [...(fila?.querySelectorAll('td') ?? [])].map((td) => td.textContent?.trim()),
+    ).not.toContain('3');
+    expect(anfitrion.textContent).toContain('Drenaje linfatico');
   });
 
   it('traduce los errores que no pasan por la pantalla', () => {

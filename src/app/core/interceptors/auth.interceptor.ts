@@ -93,7 +93,9 @@ export const authInterceptor: HttpInterceptorFn = (request, next) => {
           // El refresh fallo: la sesion murio de verdad (vencida, revocada o reusada) y el
           // backend ya borro la cookie. Se limpia el estado local y se manda afuera.
           session.limpiarSesion();
-          navegarAfuera(router, habiaSesion, desdeDonde);
+          if (!yaEstaEnAuth(router)) {
+            navegarAfuera(router, habiaSesion, desdeDonde);
+          }
           // Se propaga el error ORIGINAL: la pantalla pidio pacientes, no un refresh.
           return throwError(() => error);
         }),
@@ -135,6 +137,32 @@ function navegarAfuera(router: Router, habiaSesion: boolean, desdeDonde: string)
     })
     .catch(() => undefined);
 }
+
+/**
+ * `true` si el usuario ya esta en una pantalla de `/auth/`, o yendo a una.
+ *
+ * <p><b>El segundo 401 de una sesion que ya murio no puede mover al usuario.</b> `limpiarSesion()`
+ * cambia el contexto de trabajo, y las pantallas que dependen de el (casi todas, por
+ * `contextEpoch`) vuelven a pedir sus datos ANTES de que la navegacion a la sesion expirada las
+ * destruya. Esa peticion sale sin token, vuelve 401, su refresh tambien, y como para entonces la
+ * sesion ya es `anonimo` caia en la rama de "nunca tuvo sesion": mandaba al login pelado. El
+ * usuario veia "Tu sesion se cerro" un instante y terminaba en el login sin el `volverA`, que era
+ * todo lo que esa pantalla venia a conservar. Lo destapo el E2E contra el backend real
+ * (`e2e/sesion-expirada.spec.ts`).
+ *
+ * <p>Se mira la navegacion EN CURSO ademas de la URL actual: el segundo 401 puede llegar antes de
+ * que la navegacion a la sesion expirada termine, y una segunda navegacion la reemplazaria.
+ */
+function yaEstaEnAuth(router: Router): boolean {
+  const enCurso = router.currentNavigation();
+  const destino = enCurso
+    ? router.serializeUrl(enCurso.finalUrl ?? enCurso.extractedUrl)
+    : router.url;
+  return destino.startsWith(PREFIJO_AUTH);
+}
+
+/** Prefijo de las pantallas anonimas: login, sesion expirada, invitacion, activacion... */
+const PREFIJO_AUTH = '/auth/';
 
 /** Reemite la peticion original con el token nuevo y marcada para no reintentarse otra vez. */
 function reintentar(

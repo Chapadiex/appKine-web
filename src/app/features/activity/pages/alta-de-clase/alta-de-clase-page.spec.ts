@@ -10,6 +10,7 @@ import { rutaMemberships } from '../../../../core/testing/rutas-api';
 import {
   CONSULTORIO,
   ORGANIZACION,
+  URL_ESPACIOS,
   URL_OFERTAS,
   asentar,
   elegirSede,
@@ -29,6 +30,7 @@ const GRUPAL = {
   capacidad: 12,
   duracionMinutos: 45,
   requiereProfesional: true,
+  requiereEspacio: true,
 };
 
 describe('AltaDeClasePage', () => {
@@ -63,6 +65,14 @@ describe('AltaDeClasePage', () => {
     return fixture;
   }
 
+  /** Oferta sin restricciones y una sede cuyos espacios no se pueden leer (sin permiso). */
+  function responderSinBoxes(): void {
+    httpMock.expectOne(HABILITACIONES).flush({});
+    httpMock
+      .expectOne((p) => p.url === URL_ESPACIOS)
+      .flush(null, { status: 403, statusText: 'Forbidden' });
+  }
+
   it(
     'ofrece solo las grupales, toma cupo y duracion de la oferta y programa en hora de la sede',
     async () => {
@@ -79,15 +89,28 @@ describe('AltaDeClasePage', () => {
           { membershipId: 55, nombre: 'Lic. Diaz', estado: 'ACTIVO' },
           { membershipId: 56, nombre: 'Baja', estado: 'INACTIVO' },
         ],
+        restringidaPorEspacio: true,
+        espacios: [
+          { espacioId: 9, nombre: 'Sala grande', estado: 'ACTIVO', enServicio: true },
+          { espacioId: 10, nombre: 'Box dado de baja', estado: 'ACTIVO', enServicio: false },
+          { espacioId: 11, nombre: 'Habilitacion vencida', estado: 'INACTIVO' },
+        ],
       });
       await asentar(fixture);
+      // Restringida por espacio: los boxes salen de las habilitaciones, sin leer los de la sede.
+      httpMock.expectNone((p) => p.url === URL_ESPACIOS);
       const raiz = fixture.nativeElement as HTMLElement;
       expect((raiz.querySelector('#clase-capacidad') as HTMLInputElement).value).toBe('12');
       expect((raiz.querySelector('#clase-fin') as HTMLInputElement).value).toBe('09:45');
       expect(raiz.querySelectorAll('#clase-profesional option')).toHaveLength(2);
+      const boxes = Array.from(raiz.querySelectorAll('#clase-espacio option')).map((o) =>
+        o.textContent?.trim(),
+      );
+      expect(boxes).toEqual(['Que el sistema elija uno libre', 'Sala grande']);
       await esperarSinViolaciones(fixture.nativeElement);
 
       escribir(fixture, '#clase-profesional', '55');
+      escribir(fixture, '#clase-espacio', '9');
       escribir(fixture, '#clase-titulo', ' Pilates de la tarde ');
       (raiz.querySelector('button[type="submit"]') as HTMLButtonElement).click();
       const pedido = httpMock.expectOne(PROGRAMAR);
@@ -97,6 +120,7 @@ describe('AltaDeClasePage', () => {
       expect(cuerpo['fin']).toBe('2026-10-20T12:45:00.000Z');
       expect(cuerpo['capacidad']).toBe(12);
       expect(cuerpo['profesionalId']).toBe(55);
+      expect(cuerpo['espacioId']).toBe(9);
       expect(cuerpo['titulo']).toBe('Pilates de la tarde');
       expect(typeof cuerpo['idempotencyKey']).toBe('string');
       pedido.flush({ id: 70 });
@@ -112,6 +136,15 @@ describe('AltaDeClasePage', () => {
     httpMock
       .expectOne(HABILITACIONES)
       .flush({ restringidaPorProfesional: false, profesionales: [] });
+    // Sin restriccion de espacio, cualquier box activo de la sede en servicio.
+    httpMock
+      .expectOne((p) => p.url === URL_ESPACIOS)
+      .flush({
+        content: [
+          { id: 9, name: 'Sala grande', enServicio: true },
+          { id: 12, name: 'Box fuera de servicio', enServicio: false },
+        ],
+      });
     httpMock
       .expectOne((p) => p.url === rutaMemberships(ORGANIZACION))
       .flush({
@@ -131,12 +164,18 @@ describe('AltaDeClasePage', () => {
     expect(textoDe(fixture)).toContain('Lic. Diaz');
     expect(textoDe(fixture)).not.toContain('Otra sede');
     expect(textoDe(fixture)).not.toContain('Recepcion');
+    expect(textoDe(fixture)).toContain('Sala grande');
+    expect(textoDe(fixture)).not.toContain('Box fuera de servicio');
   });
 
   it('el rechazo del servidor se muestra con su causa y la clave se conserva', async () => {
-    const fixture = await montar([{ ...GRUPAL, requiereProfesional: false }]);
+    const fixture = await montar([
+      { ...GRUPAL, requiereProfesional: false, requiereEspacio: false },
+    ]);
     escribir(fixture, '#clase-oferta', '42');
+    responderSinBoxes();
     await asentar(fixture);
+    expect(textoDe(fixture)).toContain('Sin box');
     const enviar = () =>
       (
         (fixture.nativeElement as HTMLElement).querySelector(
@@ -148,6 +187,7 @@ describe('AltaDeClasePage', () => {
     const primero = httpMock.expectOne(PROGRAMAR);
     const clave = (primero.request.body as { idempotencyKey: string }).idempotencyKey;
     expect((primero.request.body as { profesionalId?: number }).profesionalId).toBeUndefined();
+    expect((primero.request.body as { espacioId?: number }).espacioId).toBeUndefined();
     primero.flush(
       {
         type: 'https://akine.app/problems/clase-capacidad-no-admitida',
@@ -190,9 +230,33 @@ describe('AltaDeClasePage', () => {
     httpMock.expectNone(PROGRAMAR);
   });
 
+  it('cada campo en error dice que le falta y el foco va al primero (WCAG 3.3.1)', async () => {
+    const fixture = await montar([{ ...GRUPAL, requiereProfesional: false }]);
+    escribir(fixture, '#clase-oferta', '42');
+    responderSinBoxes();
+    await asentar(fixture);
+    escribir(fixture, '#clase-fecha', '');
+    escribir(fixture, '#clase-capacidad', '0');
+    const raiz = fixture.nativeElement as HTMLElement;
+    (raiz.querySelector('button[type="submit"]') as HTMLButtonElement).click();
+    await asentar(fixture);
+
+    httpMock.expectNone(PROGRAMAR);
+    expect(textoDe(fixture)).toContain('Elegi la fecha de la clase.');
+    expect(textoDe(fixture)).toContain('El cupo es de 1 en adelante.');
+    expect(raiz.querySelector('#clase-fecha')?.getAttribute('aria-describedby')).toBe(
+      'clase-fecha-error',
+    );
+    expect(raiz.querySelector('#clase-capacidad')?.getAttribute('aria-describedby')).toBe(
+      'clase-capacidad-ayuda clase-capacidad-error',
+    );
+    expect(document.activeElement?.id).toBe('clase-fecha');
+  });
+
   it('rechaza un fin anterior al inicio sin salir a la red', async () => {
     const fixture = await montar([{ ...GRUPAL, requiereProfesional: false, duracionMinutos: 0 }]);
     escribir(fixture, '#clase-oferta', '42');
+    responderSinBoxes();
     escribir(fixture, '#clase-inicio', '10:00');
     escribir(fixture, '#clase-fin', '09:00');
     (

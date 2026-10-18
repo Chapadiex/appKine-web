@@ -18,6 +18,10 @@ export interface ReprogramarClase {
      */
     capacidad: number;
     /**
+     * Box elegido. **Opcional**, pero sin el el servidor vuelve a elegir el primer box apto y libre, que **puede no ser el actual**: para conservar el box, manda el `espacioId` que tiene la clase. Con el, se valida igual que al programar.
+     */
+    espacioId?: number;
+    /**
      * Nuevo instante de fin, UTC y exclusivo
      */
     fin: string;

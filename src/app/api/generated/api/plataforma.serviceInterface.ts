@@ -13,13 +13,19 @@ import { Observable }                                        from 'rxjs';
 
 import { GrantPlatformRoleRequest } from '../model/models';
 import { GrantSupportAccessRequest } from '../model/models';
+import { PlatformOrganizationPageResponse } from '../model/models';
 import { PlatformRoleResponse } from '../model/models';
+import { PlatformSubscriptionResponse } from '../model/models';
 import { ProblemDetail } from '../model/models';
 import { SupportAccessResponse } from '../model/models';
 
 
 import { Configuration }                                     from '../configuration';
 
+
+export interface GetPlatformSubscriptionRequestParams {
+    orgId: number;
+}
 
 export interface GrantPlatformRoleRequestParams {
     grantPlatformRoleRequest: GrantPlatformRoleRequest;
@@ -28,6 +34,13 @@ export interface GrantPlatformRoleRequestParams {
 export interface GrantSupportAccessRequestParams {
     orgId: number;
     grantSupportAccessRequest: GrantSupportAccessRequest;
+}
+
+export interface ListPlatformOrganizationsRequestParams {
+    q?: string;
+    status?: 'ACTIVA' | 'SUSPENDIDA' | 'CANCELADA';
+    page?: number;
+    size?: number;
 }
 
 export interface ListSupportAccessRequestParams {
@@ -49,6 +62,14 @@ export interface PlataformaServiceInterface {
     configuration: Configuration;
 
     /**
+     * Suscripcion de un centro, para la administracion de plataforma
+     * Devuelve el plan contratado, el estado, la version y las transiciones posibles de la suscripcion del centro. La version es la expectedVersion que pide el cambio de plan.  No trae el consumo de los limites: eso es dato del centro y sigue en GET /organizations/{orgId}/subscription, que para la plataforma exige un acceso de soporte vigente.  Reservado a la administracion de plataforma, igual que el cambio de plan y las transiciones. Una organizacion inexistente o dada de baja es 404.
+     * @endpoint get /api/v1/platform/organizations/{orgId}/subscription
+* @param requestParameters
+     */
+    getPlatformSubscription(requestParameters: GetPlatformSubscriptionRequestParams, extraHttpRequestParams?: any): Observable<PlatformSubscriptionResponse>;
+
+    /**
      * Otorgar el rol de plataforma a una cuenta
      * Reservado a la administracion de plataforma. Motivo obligatorio: es el permiso mas alto del sistema.  La existencia de la cuenta NO se verifica: cuenta es propiedad del modulo de identidad y este modulo no puede consultarla. Un accountId inexistente falla contra la clave foranea y se responde como una solicitud invalida.  Otorgarlo dos veces responde 409: dos administradores operando a la vez tienen que enterarse de que el otro llego primero.
      * @endpoint post /api/v1/platform/roles
@@ -63,6 +84,14 @@ export interface PlataformaServiceInterface {
 * @param requestParameters
      */
     grantSupportAccess(requestParameters: GrantSupportAccessRequestParams, extraHttpRequestParams?: any): Observable<SupportAccessResponse>;
+
+    /**
+     * Listado de centros, para la administracion de plataforma
+     * Listado paginado de las organizaciones vigentes con el estado y el plan de su suscripcion, ordenado por nombre. Es el insumo para elegir el centro cuya suscripcion se opera. Las dadas de baja no aparecen. No trae miembros, sedes, consumo de limites ni datos de pacientes. Reservado a la administracion de plataforma, igual que la lectura y el cambio del plan. El tamano de pagina se acota a 100: pedir mas devuelve ese maximo, no un error.
+     * @endpoint get /api/v1/platform/organizations
+* @param requestParameters
+     */
+    listPlatformOrganizations(requestParameters: ListPlatformOrganizationsRequestParams, extraHttpRequestParams?: any): Observable<PlatformOrganizationPageResponse>;
 
     /**
      * Roles de plataforma vigentes

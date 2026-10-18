@@ -4,6 +4,7 @@
   Pedidos de los centros para sumar un concepto al catalogo comun. Aprobar publica el concepto
   global en el mismo acto, con el codigo y el nombre que dejes en el formulario; rechazar le deja tu
   nota al centro que lo pidio.
+  <a class="enlace" [routerLink]="rutaSuscripciones">Ver o cambiar la suscripcion de un centro</a>
 </p>
 
 <div aria-live="polite">
@@ -30,11 +31,11 @@
       <dd>{{ solicitud.codigoPropuesto || 'Sin codigo propuesto' }}</dd>
       <dt>Justificacion</dt>
       <dd>{{ solicitud.justificacion }}</dd>
-      <dt>Organizacion</dt>
+      <dt>Centro</dt>
       <dd>
-        {{ solicitud.organizationId }}
+        {{ nombreDeCentro(solicitud) }}
         @if (solicitud.consultorioId) {
-          (sede {{ solicitud.consultorioId }})
+          (la pidio desde una de sus sedes)
         }
       </dd>
       <dt>Pedida el</dt>
@@ -259,7 +260,7 @@
                 <tr>
                   <th scope="col">Concepto pedido</th>
                   <th scope="col">Tipo</th>
-                  <th scope="col">Organizacion</th>
+                  <th scope="col">Centro</th>
                   <th scope="col">Pedida el</th>
                   <th scope="col">Estado</th>
                   <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
@@ -275,7 +276,7 @@
                       }
                     </th>
                     <td>{{ etiquetaDeTipo(solicitud.tipo) }}</td>
-                    <td>{{ solicitud.organizationId }}</td>
+                    <td>{{ nombreDeCentro(solicitud) }}</td>
                     <td>{{ formatearInstante(solicitud.createdAt) ?? 'Sin fecha' }}</td>
                     <td>
                       <span class="marca-estado">{{ etiquetaDeEstado(solicitud.estado) }}</span>
