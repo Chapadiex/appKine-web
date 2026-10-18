@@ -1,0 +1,70 @@
+name: SAST (CodeQL)
+
+# Propuesta para la decision U-06 (appKine-api/docs/fases/decisiones-pendientes.md). NO
+# BLOQUEANTE por ahora: no esta entre los checks requeridos de `main`. Los hallazgos van a la
+# pestana Security › Code scanning. Como volverlo bloqueante: docs/calidad.md.
+#
+# El repo es publico, asi que code scanning con CodeQL no cuesta nada ni pide GitHub Advanced
+# Security. El DAST (OWASP ZAP) vive en el backend: el frontend es estatico detras de nginx y lo
+# que un DAST mira de verdad son las respuestas de la API.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Lunes 09:00 UTC (06:00 en Cordoba), el mismo dia que Dependabot.
+    - cron: '0 9 * * 1'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  codeql:
+    name: CodeQL (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      actions: read
+      security-events: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        # JavaScript/TypeScript no se compila para CodeQL: `build-mode: none` es el unico modo.
+        # `actions` analiza los propios workflows (inyeccion por `${{ }}` en `run:`, permisos).
+        language: [javascript-typescript, actions]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Inicializar CodeQL
+        uses: github/codeql-action/init@v4
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: none
+          # `security-extended` agrega consultas de seguridad de menor precision a la suite
+          # default. Si el ruido molesta, se vuelve a `default`.
+          queries: security-extended
+          # Sin esto CodeQL analiza tambien el cliente generado desde el contrato y los artefactos
+          # de build y de reportes.
+          config: |
+            paths-ignore:
+              - src/app/api/generated
+              - dist
+              - coverage
+              - playwright-report
+              - test-results
+
+      - name: Analizar
+        uses: github/codeql-action/analyze@v4
+        with:
+          category: /language:${{ matrix.language }}
