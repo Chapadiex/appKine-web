@@ -43,8 +43,13 @@ npm audit --omit=dev --audit-level=high
   simple**: `get-uri` pide `basic-ftp ^5` y la corrección está en la 6; `npm audit fix --force`
   propone *bajar* el generador a 2.14.0, que es una mayor hacia atrás. Sólo corre en
   `npm run api:generate`, en la máquina del desarrollador y en el job `contrato`, nunca en el
-  bundle. Queda como decisión: un `overrides` a `basic-ftp@^6` (cruza una mayor que `get-uri` no
-  declara) o esperar a que el generador actualice su cadena.
+  bundle. ~~Queda como decisión: un `overrides` a `basic-ftp@^6` (cruza una mayor que `get-uri` no
+  declara) o esperar a que el generador actualice su cadena.~~
+- **Resuelto el 17/10/2026 (U-05, DP-34 de `appKine-api/docs/producto/AKINE_IMPLEMENTATION_PLAN.md`):**
+  `overrides` `"basic-ftp": "^6"` en `package.json`, que resuelve **6.2.3**. `npm audit` da **0
+  vulnerabilidades** (producción y desarrollo) y `npm run api:generate` genera el cliente idéntico
+  byte a byte. Borrar el `overrides` cuando `get-uri` pida `basic-ftp ^6` por sí mismo.
+  El mismo día el backend bajó `mysql-connector-j` a 9.6.0.
 
 ## SonarQube — job `sonar` del `ci.yml`
 
