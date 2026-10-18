@@ -1,7 +1,8 @@
 import { Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { Observable, forkJoin } from 'rxjs';
+import { Observable, forkJoin, of, throwError } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 
 import { AdjuntoResponse } from '../../../../api/generated/model/adjunto-response';
 import { AdjuntosApi } from '../../services/adjuntos-api';
@@ -29,6 +30,7 @@ import { UpdateOrdenRequest } from '../../../../api/generated/model/update-orden
 import { AccionDeAutorizacion, DocumentosApi } from '../../services/documentos-api';
 import { CausaPersona, hayQueRecargar, traducirErrorPersona } from '../../models/person-errors';
 import { coberturaEnUnaLinea } from '../../models/etiquetas-de-cobertura';
+import { esSinPermiso } from '../../../../core/interceptors/error.interceptor';
 import { fechaEnPalabras } from '../../models/etiquetas-de-ficha';
 import { nombreCompleto } from '../../models/etiquetas-de-person';
 import { numeroDeclarado } from '../../../../shared/utils/numero-declarado';
@@ -196,6 +198,9 @@ export class OrdenesYAutorizacionesPage {
   protected readonly autorizaciones = signal<readonly AutorizacionResponse[]>([]);
   protected readonly coberturas = signal<readonly CoberturaResponse[]>([]);
   protected readonly practicas = signal<readonly CatalogoConceptoResponse[]>([]);
+
+  /** El catalogo clinico respondio 403 (sin `catalogo:read`): no hay practicas que elegir. */
+  protected readonly practicasSinPermiso = signal(false);
   protected readonly adjuntos = signal<readonly AdjuntoResponse[]>([]);
 
   protected readonly elegibilidad = signal<ElegibilidadResponse | null>(null);
@@ -341,6 +346,10 @@ export class OrdenesYAutorizacionesPage {
    * practicas no se puede consultar elegibilidad y sin los adjuntos no se puede vincular. Mostrar
    * la pantalla con la mitad de los selectores vacios seria peor que un error, porque el operador
    * intentaria trabajar y no entenderia por que no puede.
+   *
+   * <p><b>La excepcion es el 403 del catalogo clinico</b> (DP-36: leerlo exige `catalogo:read`).
+   * No es una falla sino un rol que no lo puede leer, y no se arregla reintentando: la pantalla
+   * carga igual, con los selectores de practica vacios y un aviso que dice por que.
    */
   protected cargar(): void {
     const id = this.identificador();
@@ -359,7 +368,13 @@ export class OrdenesYAutorizacionesPage {
       ordenes: this.api.listarOrdenes(id, 'TODAS', undefined),
       autorizaciones: this.api.listarAutorizaciones(id, 'TODAS', undefined),
       coberturas: this.coberturasApi.listar(id, 'ACTIVA', undefined),
-      practicas: this.api.practicas(),
+      practicas: this.api
+        .practicas()
+        .pipe(
+          catchError((error: unknown) =>
+            esSinPermiso(error) ? of(null) : throwError(() => error),
+          ),
+        ),
       adjuntos: this.adjuntosApi.listar({
         personaId: id,
         filtro: 'VIGENTES',
@@ -372,7 +387,8 @@ export class OrdenesYAutorizacionesPage {
         this.ordenes.set(respuesta.ordenes);
         this.autorizaciones.set(respuesta.autorizaciones);
         this.coberturas.set(respuesta.coberturas);
-        this.practicas.set(respuesta.practicas.content ?? []);
+        this.practicas.set(respuesta.practicas?.content ?? []);
+        this.practicasSinPermiso.set(respuesta.practicas === null);
         this.adjuntos.set(respuesta.adjuntos.content ?? []);
         this.cargando.set(false);
       },
@@ -974,6 +990,7 @@ export class OrdenesYAutorizacionesPage {
     this.autorizaciones.set([]);
     this.coberturas.set([]);
     this.practicas.set([]);
+    this.practicasSinPermiso.set(false);
     this.adjuntos.set([]);
     this.elegibilidad.set(null);
   }

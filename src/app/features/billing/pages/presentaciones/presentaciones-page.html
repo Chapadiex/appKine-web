@@ -151,6 +151,12 @@
             <option [value]="ficha.id">{{ ficha.nombre }}</option>
           }
         </select>
+        @if (financiadoresSinPermiso()) {
+          <p class="estado estado--error" role="status">
+            No tenes permiso para consultar los financiadores (hace falta el permiso de convenios),
+            asi que no podes armar un lote nuevo. Los que ya existen se ven igual.
+          </p>
+        }
         @if (campoInvalido('financiadorId')) {
           <p class="campo__error" role="alert">Elegi a que financiador se presenta.</p>
         }

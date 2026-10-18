@@ -4,7 +4,11 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 
 import { CatalogosPage } from './catalogos-page';
-import { PERMISO_CONSULTORIO_MANAGE } from '../../../../core/models/permisos';
+import {
+  PERMISO_CATALOGO_MANAGE,
+  PERMISO_CATALOGO_READ,
+  PERMISO_CONSULTORIO_MANAGE,
+} from '../../../../core/models/permisos';
 import { PermissionsStore } from '../../../../core/services/permissions.store';
 import { RUTA_PERMISOS_EFECTIVOS } from '../../../../core/testing/rutas-api';
 import { TIMEOUT_AXE, esperarSinViolaciones } from '../../../../core/testing/axe';
@@ -378,7 +382,7 @@ describe('CatalogosPage', () => {
     });
     permisos.cargar().subscribe();
     httpMock.expectOne(RUTA_PERMISOS_EFECTIVOS).flush({
-      permissions: [PERMISO_CONSULTORIO_MANAGE],
+      permissions: [PERMISO_CATALOGO_MANAGE],
     });
 
     const fixture = TestBed.createComponent(CatalogosPage);
@@ -411,8 +415,11 @@ describe('CatalogosPage', () => {
     });
     permisos.cargar().subscribe();
     // Un profesional: puede consultar el catalogo -lo necesita para registrar una sesion- y no
-    // administrarlo. Eso es UX; la autoridad sigue siendo el backend.
-    httpMock.expectOne(RUTA_PERMISOS_EFECTIVOS).flush({ permissions: [] });
+    // administrarlo. Eso es UX; la autoridad sigue siendo el backend. Desde DP-36 las acciones
+    // piden `catalogo:manage`: el `consultorio:manage` interino ya no las muestra.
+    httpMock.expectOne(RUTA_PERMISOS_EFECTIVOS).flush({
+      permissions: [PERMISO_CATALOGO_READ, PERMISO_CONSULTORIO_MANAGE],
+    });
 
     const fixture = TestBed.createComponent(CatalogosPage);
     fixture.componentRef.setInput('tipo', 'especialidades');
@@ -533,7 +540,7 @@ describe('CatalogosPage', () => {
 
     permisos.cargar().subscribe();
     httpMock.expectOne(RUTA_PERMISOS_EFECTIVOS).flush({
-      permissions: [PERMISO_CONSULTORIO_MANAGE],
+      permissions: [PERMISO_CATALOGO_MANAGE],
     });
 
     const fixture = TestBed.createComponent(CatalogosPage);
@@ -558,7 +565,7 @@ describe('CatalogosPage', () => {
 
     permisos.cargar().subscribe();
     httpMock.expectOne(RUTA_PERMISOS_EFECTIVOS).flush({
-      permissions: [PERMISO_CONSULTORIO_MANAGE],
+      permissions: [PERMISO_CATALOGO_MANAGE],
     });
 
     const fixture = TestBed.createComponent(CatalogosPage);

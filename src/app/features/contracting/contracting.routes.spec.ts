@@ -11,6 +11,8 @@ import { NotFound } from '../../shared/pages/not-found/not-found';
 import { PermissionsStore } from '../../core/services/permissions.store';
 import { PlanesDelFinanciadorPage } from './pages/planes-del-financiador/planes-del-financiador-page';
 import { SessionService } from '../../core/services/session.service';
+import { RUTA_SIN_PERMISO } from '../../core/models/rutas';
+import { PERMISO_CONVENIO_READ, PERMISO_CONVENIO_MANAGE } from '../../core/models/permisos';
 import { routes as rutasDeLaApp } from '../../app.routes';
 
 /**
@@ -25,17 +27,25 @@ import { routes as rutasDeLaApp } from '../../app.routes';
  * cuelgan de un id. Un prefijo que se mueva sin que esos enlaces se muevan con el <b>no rompe la
  * compilacion</b>: deja al usuario en el 404 del comodin.
  */
+const TODOS = new Set<string>([PERMISO_CONVENIO_READ, PERMISO_CONVENIO_MANAGE]);
+let concedidos: ReadonlySet<string> = TODOS;
+
 describe('Rutas de /contratacion', () => {
   let router: Router;
 
   beforeEach(() => {
+    concedidos = TODOS;
     TestBed.configureTestingModule({
       providers: [
         provideRouter(rutasDeLaApp),
         { provide: SessionService, useValue: { estado: () => 'activa', restaurando: () => false } },
         {
           provide: PermissionsStore,
-          useValue: { cargados: () => true, tieneAlguno: () => true, tiene: () => true },
+          useValue: {
+            cargados: () => true,
+            tieneAlguno: (...pedidos: string[]) => pedidos.some((p) => concedidos.has(p)),
+            tiene: (p: string) => concedidos.has(p),
+          },
         },
       ],
     });
@@ -76,6 +86,21 @@ describe('Rutas de /contratacion', () => {
     ];
     for (const url of urls) {
       expect(await componenteDe(url)).not.toBe(NotFound);
+    }
+  });
+
+  it('sin convenio:read ninguna de las seis pantallas abre, aunque tenga convenio:manage (DP-36)', async () => {
+    concedidos = new Set([PERMISO_CONVENIO_MANAGE]);
+    for (const url of [
+      '/contratacion/financiadores',
+      '/contratacion/financiadores/10/planes',
+      '/contratacion/convenios',
+      '/contratacion/convenios/7/aranceles',
+      '/contratacion/convenios/7/aranceles/importar',
+      '/contratacion/arancel-efectivo',
+    ]) {
+      await router.navigateByUrl(url);
+      expect(router.url).toBe(RUTA_SIN_PERMISO);
     }
   });
 

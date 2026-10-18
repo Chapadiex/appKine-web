@@ -8,6 +8,8 @@ import { VigenciasPage } from './pages/vigencias/vigencias-page';
 import { NotFound } from '../../shared/pages/not-found/not-found';
 import { PermissionsStore } from '../../core/services/permissions.store';
 import { SessionService } from '../../core/services/session.service';
+import { RUTA_SIN_PERMISO } from '../../core/models/rutas';
+import { PERMISO_CATALOGO_READ, PERMISO_CATALOGO_MANAGE } from '../../core/models/permisos';
 import { routes as rutasDeLaApp } from '../../app.routes';
 
 /**
@@ -31,17 +33,25 @@ import { routes as rutasDeLaApp } from '../../app.routes';
  *
  * <p><b>Sin constante propia</b>, por el mismo motivo que `/organizacion` y `/espacios`.
  */
+const TODOS = new Set<string>([PERMISO_CATALOGO_READ, PERMISO_CATALOGO_MANAGE]);
+let concedidos: ReadonlySet<string> = TODOS;
+
 describe('Rutas de /catalogo', () => {
   let router: Router;
 
   beforeEach(() => {
+    concedidos = TODOS;
     TestBed.configureTestingModule({
       providers: [
         provideRouter(rutasDeLaApp),
         { provide: SessionService, useValue: { estado: () => 'activa', restaurando: () => false } },
         {
           provide: PermissionsStore,
-          useValue: { cargados: () => true, tieneAlguno: () => true, tiene: () => true },
+          useValue: {
+            cargados: () => true,
+            tieneAlguno: (...pedidos: string[]) => pedidos.some((p) => concedidos.has(p)),
+            tiene: (p: string) => concedidos.has(p),
+          },
         },
       ],
     });
@@ -68,6 +78,18 @@ describe('Rutas de /catalogo', () => {
     ];
     for (const url of urls) {
       expect(await componenteDe(url)).not.toBe(NotFound);
+    }
+  });
+
+  it('sin catalogo:read ninguna de las tres pantallas abre, aunque tenga catalogo:manage (DP-36)', async () => {
+    concedidos = new Set([PERMISO_CATALOGO_MANAGE]);
+    for (const url of [
+      '/catalogo/especialidades',
+      '/catalogo/solicitudes',
+      '/catalogo/nomencladores/123/vigencias',
+    ]) {
+      await router.navigateByUrl(url);
+      expect(router.url).toBe(RUTA_SIN_PERMISO);
     }
   });
 

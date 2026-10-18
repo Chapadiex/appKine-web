@@ -91,6 +91,22 @@
   <section class="tarjeta" aria-labelledby="titulo-items">
     <h2 id="titulo-items">Prestaciones del lote</h2>
 
+    @if (items().length > 0) {
+      <div class="campo">
+        <label for="filtro-estado-item">Mostrar</label>
+        <select
+          id="filtro-estado-item"
+          [value]="filtroDeItem()"
+          (change)="filtrarItems($any($event.target).value)"
+        >
+          <option value="">Todas las prestaciones</option>
+          @for (estado of estadosDeItem; track estado) {
+            <option [value]="estado">{{ estadoDeItem(estado) }}</option>
+          }
+        </select>
+      </div>
+    }
+
     @if (items().length === 0) {
       <p class="estado estado--vacio">
         El lote no tiene prestaciones todavia.
@@ -117,7 +133,7 @@
             </tr>
           </thead>
           <tbody>
-            @for (item of items(); track item.id) {
+            @for (item of itemsVisibles(); track item.id) {
               <tr>
                 <td>
                   {{ item.concepto }}
@@ -125,6 +141,13 @@
                     <ul class="ayuda">
                       @for (o of observaciones; track $index) {
                         <li><b>Observada:</b> {{ o }}</li>
+                      }
+                    </ul>
+                  }
+                  @if (item.id !== undefined && avisosPorItem().get(item.id); as avisosDelItem) {
+                    <ul class="ayuda">
+                      @for (a of avisosDelItem; track $index) {
+                        <li><b>Aviso:</b> {{ a }}</li>
                       }
                     </ul>
                   }
@@ -140,7 +163,14 @@
                     <br /><span class="ayuda">Debitado {{ importe(item.importeDebitado) }}</span>
                   }
                 </td>
-                <td>{{ estadoDeItem(item.estado) }}</td>
+                <td>
+                  <span [class]="claseDeEstadoDeItem(item.estado)">{{
+                    estadoDeItem(item.estado)
+                  }}</span>
+                  @if (detalleDeEstadoDeItem(item.estado); as detalle) {
+                    <p class="ayuda">{{ detalle }}</p>
+                  }
+                </td>
                 <td>
                   <div class="acciones-fila">
                     @if (esBorrador()) {
@@ -215,6 +245,9 @@
           </tbody>
         </table>
       </div>
+      @if (itemsVisibles().length === 0) {
+        <p class="estado estado--vacio">Ninguna prestacion del lote esta en ese estado.</p>
+      }
     }
   </section>
 
@@ -233,7 +266,8 @@
           </p>
         } @else {
           <p class="estado estado--error">
-            {{ hallazgos().length }} observacion(es): quitalas del lote antes de confirmarlo.
+            {{ hallazgos().length }} observacion(es) que impiden confirmar: corregilas en la ficha
+            del paciente o quita esas prestaciones del lote.
           </p>
           <ul>
             @for (reparo of hallazgos(); track $index) {
@@ -245,9 +279,23 @@
           </ul>
         }
       }
+      @if (avisos().length > 0) {
+        <p class="estado estado--vacio">
+          {{ avisos().length }} aviso(s): no impiden confirmar, pero el financiador puede debitar
+          esas prestaciones.
+        </p>
+        <ul>
+          @for (aviso of avisos(); track $index) {
+            <li>
+              Prestacion de la deuda #{{ aviso.obligacionId }}:
+              {{ hallazgoEnPalabras(aviso.hallazgo) }}
+            </li>
+          }
+        </ul>
+      }
       <p class="ayuda">
-        Todavia no se valida que haya orden, autorizacion y credencial: revisalas a mano con los
-        requisitos que muestra la bandeja.
+        La orden y la autorizacion que el convenio exigia el dia de la prestacion son obligatorias
+        para presentar; la credencial vencida o sin numero de afiliado es solo un aviso.
       </p>
       <div class="acciones">
         <button type="button" class="boton boton--secundario" (click)="revisar()">
@@ -256,7 +304,7 @@
         <button
           type="button"
           class="boton"
-          [disabled]="operando() !== null || items().length === 0"
+          [disabled]="operando() !== null || !confirmable()"
           (click)="confirmar()"
         >
           Confirmar y presentar
@@ -320,6 +368,11 @@
                     }
                     @if (requisitos(obligacion); as texto) {
                       <p class="ayuda">{{ texto }}</p>
+                    }
+                    @if (esSaldoDeDebitoParcial(obligacion)) {
+                      <p class="ayuda">
+                        Ya se cobro en parte: vuelve por el saldo que dejo un debito parcial.
+                      </p>
                     }
                   </td>
                   <td>{{ instante(obligacion.devengadaEn) }}</td>

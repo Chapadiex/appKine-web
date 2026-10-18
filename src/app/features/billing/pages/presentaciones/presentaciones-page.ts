@@ -7,6 +7,7 @@ import { FinanciadorResponse } from '../../../../api/generated/model/financiador
 import { Presentacion } from '../../../../api/generated/model/presentacion';
 import { PresentacionesApi } from '../../services/presentaciones-api';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
+import { esSinPermiso } from '../../../../core/interceptors/error.interceptor';
 import {
   ErrorPresentacion,
   errorSinContexto,
@@ -68,6 +69,9 @@ export class PresentacionesPage {
 
   protected readonly estado = signal<EstadoListado>({ tipo: 'cargando' });
   protected readonly financiadores = signal<readonly FinanciadorResponse[]>([]);
+
+  /** El catalogo de financiadores respondio 403: falta `convenio:read` (DP-36). */
+  protected readonly financiadoresSinPermiso = signal(false);
   protected readonly cuenta = signal<CuentaCorrienteDeFinanciador | null>(null);
   protected readonly creando = signal(false);
   protected readonly errorAlta = signal<ErrorPresentacion | null>(null);
@@ -188,7 +192,10 @@ export class PresentacionesPage {
     this.api.financiadoresActivos().subscribe({
       next: (lista) => this.financiadores.set(lista),
       // Sin la lista no se puede filtrar ni crear por financiador, pero la bandeja se lee igual.
-      error: () => this.financiadores.set([]),
+      error: (error: unknown) => {
+        this.financiadores.set([]);
+        this.financiadoresSinPermiso.set(esSinPermiso(error));
+      },
     });
   }
 }

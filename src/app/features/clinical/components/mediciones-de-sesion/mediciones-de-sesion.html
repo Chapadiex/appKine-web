@@ -97,7 +97,12 @@
     <fieldset class="grupo">
       <legend>Registrar una medicion</legend>
 
-      @if (definiciones().length === 0) {
+      @if (catalogoSinPermiso()) {
+        <p class="estado estado--error" role="status">
+          No tenes permiso para consultar el catalogo de medidas, asi que no podes registrar una
+          medicion nueva. Pediselo a quien administra el centro.
+        </p>
+      } @else if (definiciones().length === 0) {
         <p class="ayuda">
           El catalogo de medidas esta vacio: las definiciones las carga quien administra el centro.
         </p>

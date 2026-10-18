@@ -110,6 +110,12 @@
               <option [value]="practica.id">{{ practica.name }}</option>
             }
           </select>
+          @if (practicasSinPermiso()) {
+            <p class="estado estado--error" role="status">
+              No tenes permiso para consultar el catalogo clinico, asi que no hay practicas para
+              elegir. Pediselo a quien administra el centro.
+            </p>
+          }
           @if (mostrarErrorDeElegibilidad('practicaId')) {
             <p class="estado estado--error">Elegi la practica.</p>
           }
@@ -687,6 +693,12 @@
               <option [value]="practica.id">{{ practica.name }}</option>
             }
           </select>
+          @if (practicasSinPermiso()) {
+            <p class="estado estado--error" role="status">
+              No tenes permiso para consultar el catalogo clinico, asi que no hay practicas para
+              elegir. Pediselo a quien administra el centro.
+            </p>
+          }
           @if (mostrarErrorDeAutorizacion('practicaId')) {
             <p class="estado estado--error">Elegi la practica.</p>
           }

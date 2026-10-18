@@ -2,6 +2,8 @@ import { Routes } from '@angular/router';
 
 import { ANCHO_AMPLIO, DATA_ANCHO } from '../../core/models/ancho-de-contenido';
 import { contextGuard } from '../../core/guards/context.guard';
+import { permissionGuard } from '../../core/guards/permission.guard';
+import { PERMISO_CONVENIO_READ } from '../../core/models/permisos';
 
 /**
  * Rutas de la feature `contracting` (M15 y M16, etapas AKINE-03.03 y AKINE-03.05).
@@ -23,11 +25,11 @@ import { contextGuard } from '../../core/guards/context.guard';
  * quedaria en modo solo-lectura sin poder explicar por que, que es peor que mandar al selector
  * una vez.
  *
- * <p><b>Ninguna lleva `permissionGuard`, y no es un olvido.</b> No existe `convenio:read`: las
- * lecturas se autorizan por pertenencia. Un guard de `convenio:manage` sobre el listado dejaria
- * sin poder consultar los aranceles a recepcion, que es justamente quien necesita saber cuanto
- * cobrar. Las <b>acciones</b> si van detras de `*akinePermiso`, que es UX; la autoridad sigue
- * siendo el backend.
+ * <p><b>Las seis llevan `permissionGuard(PERMISO_CONVENIO_READ)`</b> (DP-36 / U-07): toda lectura
+ * de `contracting` exige `convenio:read`, que tiene el personal —recepcion incluida, que es
+ * quien necesita saber cuanto cobrar— y no el `PACIENTE`. No es `convenio:manage`: ese gobierna
+ * las <b>acciones</b>, que van detras de `*akinePermiso`. Las dos cosas son UX; la autoridad
+ * sigue siendo el backend.
  *
  * <h2>Por que las jerarquias cuelgan de su padre y no son rutas sueltas</h2>
  *
@@ -49,7 +51,7 @@ import { contextGuard } from '../../core/guards/context.guard';
 export const routes: Routes = [
   {
     path: 'financiadores',
-    canActivate: [contextGuard],
+    canActivate: [contextGuard, permissionGuard(PERMISO_CONVENIO_READ)],
     loadComponent: () =>
       import('./pages/financiadores/financiadores-page').then((m) => m.FinanciadoresPage),
     title: 'AKINE - Financiadores',
@@ -57,7 +59,7 @@ export const routes: Routes = [
   },
   {
     path: 'financiadores/:financiadorId/planes',
-    canActivate: [contextGuard],
+    canActivate: [contextGuard, permissionGuard(PERMISO_CONVENIO_READ)],
     loadComponent: () =>
       import('./pages/planes-del-financiador/planes-del-financiador-page').then(
         (m) => m.PlanesDelFinanciadorPage,
@@ -67,7 +69,7 @@ export const routes: Routes = [
   },
   {
     path: 'convenios',
-    canActivate: [contextGuard],
+    canActivate: [contextGuard, permissionGuard(PERMISO_CONVENIO_READ)],
     loadComponent: () =>
       import('./pages/convenios-de-la-sede/convenios-de-la-sede-page').then(
         (m) => m.ConveniosDeLaSedePage,
@@ -77,7 +79,7 @@ export const routes: Routes = [
   },
   {
     path: 'convenios/:convenioId/aranceles',
-    canActivate: [contextGuard],
+    canActivate: [contextGuard, permissionGuard(PERMISO_CONVENIO_READ)],
     loadComponent: () =>
       import('./pages/aranceles-del-convenio/aranceles-del-convenio-page').then(
         (m) => m.ArancelesDelConvenioPage,
@@ -87,7 +89,7 @@ export const routes: Routes = [
   },
   {
     path: 'convenios/:convenioId/aranceles/importar',
-    canActivate: [contextGuard],
+    canActivate: [contextGuard, permissionGuard(PERMISO_CONVENIO_READ)],
     loadComponent: () =>
       import('./pages/importar-aranceles/importar-aranceles-page').then(
         (m) => m.ImportarArancelesPage,
@@ -100,7 +102,7 @@ export const routes: Routes = [
     // "cuanto sale esto para este paciente". Cual convenio resuelve —si es que alguno resuelve—
     // es justamente lo que la pantalla averigua, y pedirlo en la URL seria pedir la respuesta.
     path: 'arancel-efectivo',
-    canActivate: [contextGuard],
+    canActivate: [contextGuard, permissionGuard(PERMISO_CONVENIO_READ)],
     loadComponent: () =>
       import('./pages/arancel-efectivo/arancel-efectivo-page').then((m) => m.ArancelEfectivoPage),
     title: 'AKINE - Arancel efectivo',

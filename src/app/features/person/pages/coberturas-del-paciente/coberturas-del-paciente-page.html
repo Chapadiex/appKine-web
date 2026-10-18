@@ -194,6 +194,12 @@
               <option [value]="financiador.id">{{ financiador.nombre }}</option>
             }
           </select>
+          @if (financiadoresSinPermiso()) {
+            <p class="estado estado--error" role="status">
+              No tenes permiso para consultar los financiadores de la organizacion, asi que no podes
+              cargar una cobertura financiada. Una particular si.
+            </p>
+          }
         </div>
 
         <div class="campo">

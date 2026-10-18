@@ -8,6 +8,7 @@ import { PermisoDirective } from '../../../../shared/directives/permiso.directiv
 import { PracticasDeOfertaResponse } from '../../../../api/generated/model/practicas-de-oferta-response';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { OfferingApi } from '../../services/offering-api';
+import { esSinPermiso } from '../../../../core/interceptors/error.interceptor';
 import { CausaOffering, hayQueRecargar, traducirErrorOffering } from '../../models/offering-errors';
 
 /** Una practica de la lista que se va a guardar. */
@@ -150,7 +151,14 @@ export class PracticasDeLaOfertaPage {
       error: (error: unknown) => {
         this.buscando.set(false);
         this.resultados.set(null);
-        this.errorBusqueda.set(traducirErrorOffering(error, 'oferta').mensaje);
+        // El 403 de la busqueda es del catalogo clinico (`catalogo:read`, DP-36), no de la oferta:
+        // el texto de `traducirErrorOffering` culparia a `consultorio:manage`.
+        this.errorBusqueda.set(
+          esSinPermiso(error)
+            ? 'No tenes permiso para consultar el catalogo clinico, asi que no podes buscar ' +
+                'practicas. Pediselo a quien administra el centro.'
+            : traducirErrorOffering(error, 'oferta').mensaje,
+        );
       },
     });
   }

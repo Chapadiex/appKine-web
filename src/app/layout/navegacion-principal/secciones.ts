@@ -3,6 +3,7 @@ import { PERMISO_CAJA_OPERATE, PERMISO_COLABORADOR_READ } from '../../core/model
 import { PERMISO_COBRO_REGISTER as PERMISO_PRESENTACIONES } from '../../core/models/permisos';
 import { PERMISO_REPORTE_READ } from '../../core/models/permisos';
 import { PERMISO_PACIENTE_READ } from '../../core/models/permisos';
+import { PERMISO_CATALOGO_READ, PERMISO_CONVENIO_READ } from '../../core/models/permisos';
 import { PERMISO_CLASE_READ } from '../../core/models/permisos';
 import { RUTA_CLASES } from '../../features/activity/models/rutas-de-clases';
 import { PERMISO_INSCRIPCION_READ } from '../../core/models/permisos';
@@ -51,14 +52,14 @@ export interface Seccion {
  *   <li><b>Horarios</b> — `horarios.routes.ts`: las <b>cuatro</b> rutas llevan
  *       `permissionGuard(PERMISO_COLABORADOR_READ)`, la ruta vacia incluida, y por eso lleva
  *       `permisos`.</li>
- *   <li><b>Catalogo</b> — `catalog.routes.ts`: ninguna lleva `permissionGuard`; consultar que
- *       practicas existen es lo que necesita cualquiera que registre una sesion.</li>
+ *   <li><b>Catalogo</b> — `catalog.routes.ts`: las tres rutas llevan
+ *       `permissionGuard(PERMISO_CATALOGO_READ)` (DP-36). Lo tiene todo el equipo; el paciente
+ *       no. `catalogo:manage` gobierna las acciones y es de la pantalla.</li>
  *   <li><b>Servicios</b> — `offering.routes.ts`: ninguna lleva `permissionGuard`.</li>
- *   <li><b>Contratacion</b> — `contracting.routes.ts`: ninguna de las cinco lleva
- *       `permissionGuard`. No existe `convenio:read` y las lecturas se autorizan por
- *       pertenencia, asi que poner `convenio:manage` aca le sacaria del menu la consulta de
- *       arancel efectivo justo a recepcion, que es quien necesita saber cuanto cobrar. Las
- *       acciones si van detras de `*akinePermiso` dentro de cada pantalla.</li>
+ *   <li><b>Contratacion</b> — `contracting.routes.ts`: todas las rutas llevan
+ *       `permissionGuard(PERMISO_CONVENIO_READ)` (DP-36). Lo tiene el personal, recepcion
+ *       incluida; el paciente no. No es `convenio:manage`: con ese, recepcion perderia la
+ *       consulta de arancel efectivo. Las acciones van detras de `*akinePermiso`.</li>
  *   <li><b>Organizacion</b> — `organization.routes.ts`: la ruta vacia no lleva
  *       `permissionGuard`. Las hijas si —`colaborador:read`, `colaborador:manage`,
  *       `consultorio:manage`, `auditoria:read`—, pero este enlace no abre ninguna de ellas.
@@ -95,12 +96,12 @@ export const SECCIONES: readonly Seccion[] = [
   { etiqueta: 'Productos de pack', ruta: RUTA_PRODUCTOS, permisos: [PERMISO_PRODUCTO_READ] },
   { etiqueta: 'Espacios', ruta: '/espacios' },
   { etiqueta: 'Horarios', ruta: RUTA_HORARIOS, permisos: [PERMISO_COLABORADOR_READ] },
-  { etiqueta: 'Catalogo', ruta: '/catalogo' },
+  { etiqueta: 'Catalogo', ruta: '/catalogo', permisos: [PERMISO_CATALOGO_READ] },
   { etiqueta: 'Servicios', ruta: '/servicios' },
   // Va despues de Servicios y no al lado de Pacientes: primero se define QUE se ofrece y recien
   // despues con quien se acordo cobrarlo. "Contratacion" y no "Convenios" porque la seccion
   // tambien incluye el catalogo de financiadores, que no es un convenio.
-  { etiqueta: 'Contratacion', ruta: '/contratacion' },
+  { etiqueta: 'Contratacion', ruta: '/contratacion', permisos: [PERMISO_CONVENIO_READ] },
   // La caja es de la sede y la opera recepcion. Sin `caja:operate` no hay nada que mirar.
   { etiqueta: 'Caja', ruta: '/caja', permisos: [PERMISO_CAJA_OPERATE] },
   // Egresos y pagos (M22). El backend los autoriza con `caja:operate` (DU-10 sigue abierta).

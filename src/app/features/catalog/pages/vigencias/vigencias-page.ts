@@ -18,7 +18,7 @@ import { CatalogoClinicoService } from '../../../../api/generated/api/catalogo-c
 import { CatalogoConceptoResponse } from '../../../../api/generated/model/catalogo-concepto-response';
 import { ConfirmacionConMotivo } from '../../../../shared/components/confirmacion-con-motivo/confirmacion-con-motivo';
 import { CreateVigenciaRequest } from '../../../../api/generated/model/create-vigencia-request';
-import { PERMISO_CONSULTORIO_MANAGE } from '../../../../core/models/permisos';
+import { PERMISO_CATALOGO_MANAGE } from '../../../../core/models/permisos';
 import { PermisoDirective } from '../../../../shared/directives/permiso.directive';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { CausaCatalogo, traducirErrorCatalogo } from '../../models/catalogo-errors';
@@ -83,7 +83,7 @@ export class VigenciasPage {
   private readonly formBuilder = inject(FormBuilder);
   private readonly injector = inject(Injector);
 
-  protected readonly permisoManage = PERMISO_CONSULTORIO_MANAGE;
+  protected readonly permisoManage = PERMISO_CATALOGO_MANAGE;
   protected readonly etiquetaDeAlcance = etiquetaDeAlcance;
   protected readonly formatearInstante = (instante: string | undefined | null): string | null =>
     formatearInstante(instante, this.diaDeLaSede.zona());

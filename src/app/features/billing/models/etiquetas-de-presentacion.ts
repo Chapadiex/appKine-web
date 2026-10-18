@@ -50,18 +50,74 @@ export function claseDeEstadoDePresentacion(estado: string | undefined): string 
   }
 }
 
+/**
+ * Los seis estados de una prestacion dentro del lote, en el orden en que se recorren (DP-37).
+ *
+ * <p>`INCLUIDO`, `ACEPTADO` y `DEBITADO_PARCIAL` mantienen tomada la deuda; `DEBITADO` (debito
+ * total), `ACEPTADO_PARCIAL` y `ANULADO` la liberan para otro lote.
+ */
+export const ESTADOS_DE_ITEM: readonly PresentacionItemEstadoEnum[] = [
+  PresentacionItemEstadoEnum.INCLUIDO,
+  PresentacionItemEstadoEnum.DEBITADO_PARCIAL,
+  PresentacionItemEstadoEnum.DEBITADO,
+  PresentacionItemEstadoEnum.ACEPTADO,
+  PresentacionItemEstadoEnum.ACEPTADO_PARCIAL,
+  PresentacionItemEstadoEnum.ANULADO,
+];
+
 export function estadoDeItemEnPalabras(estado: string | undefined): string {
   switch (estado) {
     case PresentacionItemEstadoEnum.INCLUIDO:
       return 'Incluida';
     case PresentacionItemEstadoEnum.ACEPTADO:
       return 'Aceptada';
+    case PresentacionItemEstadoEnum.ACEPTADO_PARCIAL:
+      return 'Aceptada en parte';
     case PresentacionItemEstadoEnum.DEBITADO:
       return 'Debitada';
+    case PresentacionItemEstadoEnum.DEBITADO_PARCIAL:
+      return 'Debitada en parte';
     case PresentacionItemEstadoEnum.ANULADO:
       return 'Anulada';
     default:
       return estado ?? '';
+  }
+}
+
+/** Clase de la pastilla del estado del item: verde lo cobrado, rojo lo perdido, gris lo abierto. */
+export function claseDeEstadoDeItem(estado: string | undefined): string {
+  switch (estado) {
+    case PresentacionItemEstadoEnum.ACEPTADO:
+    case PresentacionItemEstadoEnum.ACEPTADO_PARCIAL:
+      return 'marca-estado marca-estado--activa';
+    case PresentacionItemEstadoEnum.DEBITADO:
+    case PresentacionItemEstadoEnum.ANULADO:
+      return 'marca-estado marca-estado--revocada';
+    default:
+      return 'marca-estado marca-estado--suspendida';
+  }
+}
+
+/**
+ * Que significa el estado para la deuda, en los dos casos que no se explican solos (DP-37 / U-11).
+ * Vacio para los demas.
+ */
+export function detalleDeEstadoDeItem(estado: string | undefined): string {
+  switch (estado) {
+    case PresentacionItemEstadoEnum.DEBITADO_PARCIAL:
+      return (
+        'Sigue en el lote: al cerrarlo se salda lo presentado menos lo debitado, y lo debitado ' +
+        'queda pendiente para presentarlo en otro lote.'
+      );
+    case PresentacionItemEstadoEnum.ACEPTADO_PARCIAL:
+      return (
+        'Se cobro lo presentado menos lo debitado. Lo debitado quedo pendiente en la deuda y ' +
+        'vuelve a la bandeja de elegibles por ese saldo.'
+      );
+    case PresentacionItemEstadoEnum.DEBITADO:
+      return 'Salio del lote: la deuda sigue pendiente por el total y se puede volver a presentar.';
+    default:
+      return '';
   }
 }
 
@@ -82,6 +138,24 @@ export function hallazgoEnPalabras(hallazgo: string | undefined): string {
       return 'La prestacion cae fuera del periodo del lote.';
     case ReparoDePresentacionHallazgoEnum.MONEDA_DISTINTA:
       return 'La deuda esta en otra moneda que el lote.';
+    case ReparoDePresentacionHallazgoEnum.SIN_ORDEN:
+      return (
+        'El convenio exigia orden medica y el paciente no tenia una vigente para esa cobertura el ' +
+        'dia de la prestacion. Cargala en la ficha del paciente (ordenes y autorizaciones) o quita ' +
+        'la prestacion del lote.'
+      );
+    case ReparoDePresentacionHallazgoEnum.SIN_AUTORIZACION:
+      return (
+        'El convenio exigia autorizacion y no hay una aprobada de esa cobertura y practica que ' +
+        'cubra el dia de la prestacion. Cargala en la ficha del paciente (ordenes y ' +
+        'autorizaciones) o quita la prestacion del lote.'
+      );
+    case ReparoDePresentacionHallazgoEnum.CREDENCIAL_FALTANTE:
+      return (
+        'La credencial estaba vencida el dia de la prestacion, o la cobertura no tiene numero de ' +
+        'afiliado. No impide presentar, pero el financiador puede debitarla: regularizala en la ' +
+        'ficha del paciente.'
+      );
     default:
       return hallazgo ?? '';
   }

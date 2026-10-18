@@ -27,6 +27,7 @@ import {
   vigenciaEnPalabras,
 } from '../../models/etiquetas-de-cobertura';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
+import { esSinPermiso } from '../../../../core/interceptors/error.interceptor';
 
 /** Operacion abierta sobre una fila. Solo una a la vez. */
 type TipoAccion = 'editar' | 'baja';
@@ -137,6 +138,12 @@ export class CoberturasDelPacientePage {
 
   protected readonly financiadores = signal<readonly FinanciadorResponse[]>([]);
   protected readonly planes = signal<readonly PlanCoberturaResponse[]>([]);
+
+  /**
+   * El catalogo de financiadores respondio 403: el rol no tiene `convenio:read` (DP-36). El alta
+   * financiada no se puede armar sin elegir un plan, pero la PARTICULAR si, y la pantalla sigue.
+   */
+  protected readonly financiadoresSinPermiso = signal(false);
 
   protected readonly enviando = signal(false);
   protected readonly errorAccion = signal<string | null>(null);
@@ -325,9 +332,13 @@ export class CoberturasDelPacientePage {
    * caso frecuente.
    */
   private cargarFinanciadores(): void {
+    this.financiadoresSinPermiso.set(false);
     this.api.financiadores().subscribe({
       next: (lista) => this.financiadores.set(lista),
-      error: () => this.financiadores.set([]),
+      error: (error: unknown) => {
+        this.financiadores.set([]);
+        this.financiadoresSinPermiso.set(esSinPermiso(error));
+      },
     });
   }
 

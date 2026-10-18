@@ -5,7 +5,7 @@ import { Observable, forkJoin, of } from 'rxjs';
 import { catchError, switchMap } from 'rxjs/operators';
 
 import { ConfirmacionConMotivo } from '../../../../shared/components/confirmacion-con-motivo/confirmacion-con-motivo';
-import { Obligacion } from '../../../../api/generated/model/obligacion';
+import { Obligacion, ObligacionEstadoEnum } from '../../../../api/generated/model/obligacion';
 import { PagoDeFinanciador } from '../../../../api/generated/model/pago-de-financiador';
 import { Presentacion, PresentacionEstadoEnum } from '../../../../api/generated/model/presentacion';
 import { PresentacionItem } from '../../../../api/generated/model/presentacion-item';
@@ -22,9 +22,12 @@ import {
   traducirErrorPresentacion,
 } from '../../models/presentacion-errors';
 import {
+  ESTADOS_DE_ITEM,
   MEDIOS_DE_PAGO_DE_FINANCIADOR,
   admiteFactura,
+  claseDeEstadoDeItem,
   claseDeEstadoDePresentacion,
+  detalleDeEstadoDeItem,
   esBorrador,
   esDebitable,
   estaEnCurso,
@@ -87,6 +90,9 @@ export class PresentacionDetallePage {
   protected readonly estadoEnPalabras = estadoDePresentacionEnPalabras;
   protected readonly claseDeEstado = claseDeEstadoDePresentacion;
   protected readonly estadoDeItem = estadoDeItemEnPalabras;
+  protected readonly claseDeEstadoDeItem = claseDeEstadoDeItem;
+  protected readonly detalleDeEstadoDeItem = detalleDeEstadoDeItem;
+  protected readonly estadosDeItem = ESTADOS_DE_ITEM;
   protected readonly hallazgoEnPalabras = hallazgoEnPalabras;
   protected readonly fecha = fechaIsoEnPalabras;
   protected readonly instante = (valor: string | undefined): string =>
@@ -138,21 +144,37 @@ export class PresentacionDetallePage {
   protected readonly admiteFactura = computed(() => admiteFactura(this.lote()));
   protected readonly items = computed<readonly PresentacionItem[]>(() => this.lote()?.items ?? []);
 
+  /** Filtro de la tabla del lote por estado de la prestacion. Vacio = todas. */
+  protected readonly filtroDeItem = signal<string>('');
+
+  protected readonly itemsVisibles = computed<readonly PresentacionItem[]>(() => {
+    const filtro = this.filtroDeItem();
+    return filtro === '' ? this.items() : this.items().filter((item) => item.estado === filtro);
+  });
+
+  /** Lo que impide confirmar (RF-M21-003): incluye `SIN_ORDEN` y `SIN_AUTORIZACION` (DP-37). */
   protected readonly hallazgos = computed<readonly ReparoDePresentacion[]>(
     () => this.validacion()?.hallazgos ?? [],
   );
 
+  /** Lo que conviene regularizar y NO impide confirmar: hoy, `CREDENCIAL_FALTANTE` (DP-37). */
+  protected readonly avisos = computed<readonly ReparoDePresentacion[]>(
+    () => this.validacion()?.avisos ?? [],
+  );
+
+  /**
+   * Si el boton de confirmar se ofrece. Manda `confirmable` de la revision: un aviso no lo apaga.
+   * Sin revision todavia, decide el servidor al confirmar.
+   */
+  protected readonly confirmable = computed(
+    () => this.items().length > 0 && this.validacion()?.confirmable !== false,
+  );
+
   /** Hallazgos por item, para marcarlos en la tabla del lote. */
-  protected readonly hallazgosPorItem = computed(() => {
-    const mapa = new Map<number, string[]>();
-    for (const reparo of this.hallazgos()) {
-      if (reparo.itemId === undefined) continue;
-      const lista = mapa.get(reparo.itemId) ?? [];
-      lista.push(hallazgoEnPalabras(reparo.hallazgo));
-      mapa.set(reparo.itemId, lista);
-    }
-    return mapa;
-  });
+  protected readonly hallazgosPorItem = computed(() => porItem(this.hallazgos()));
+
+  /** Avisos por item, aparte: no son observaciones que bloqueen. */
+  protected readonly avisosPorItem = computed(() => porItem(this.avisos()));
 
   constructor() {
     // Fechas por defecto tomadas antes de conocer la zona de la sede: se corrigen al llegar.
@@ -174,6 +196,7 @@ export class PresentacionDetallePage {
         // Un lote de otra organizacion en pantalla es una fuga de tenant.
         this.lote.set(null);
         this.validacion.set(null);
+        this.filtroDeItem.set('');
         this.errorOperacion.set(null);
         this.aviso.set(null);
         this.cerrarPaneles();
@@ -285,7 +308,8 @@ export class PresentacionDetallePage {
     this.operar(
       `debito-${itemId}`,
       (c, p) => this.api.debitar(c, p, itemId, importe, motivo.trim()),
-      'Debito registrado. La deuda de esa prestacion sigue pendiente: rechazarla no la perdona.',
+      'Debito registrado. Si fue por el total, la prestacion sale del lote y su deuda sigue ' +
+        'pendiente; si fue parcial, sigue en el lote y al cerrarlo se salda lo no debitado.',
     );
   }
 
@@ -321,7 +345,8 @@ export class PresentacionDetallePage {
     this.operar(
       'conciliar',
       (c, p) => this.api.conciliar(c, p),
-      'Lote cerrado. Cada prestacion aceptada salda su deuda por el importe presentado.',
+      'Lote cerrado. Cada prestacion aceptada salda su deuda por lo presentado; las debitadas en ' +
+        'parte, por lo presentado menos lo debitado, que queda pendiente para otro lote.',
     );
   }
 
@@ -365,6 +390,14 @@ export class PresentacionDetallePage {
 
   protected importe(valor: number | undefined): string {
     return importeEnPalabras(valor, this.lote()?.moneda);
+  }
+
+  /**
+   * Una deuda del financiador `PARCIAL` en la bandeja es lo que quedo de un debito parcial ya
+   * conciliado (DP-37): vuelve por el saldo, no por el total de la prestacion.
+   */
+  protected esSaldoDeDebitoParcial(obligacion: Obligacion): boolean {
+    return obligacion.estado === ObligacionEstadoEnum.PARCIAL;
   }
 
   protected requisitos(obligacion: Obligacion): string {
@@ -451,6 +484,10 @@ export class PresentacionDetallePage {
     }
   }
 
+  protected filtrarItems(valor: string): void {
+    this.filtroDeItem.set(valor);
+  }
+
   private ids(): { consultorioId: number; presentacionId: number } | null {
     const consultorioId = this.tenantContext.consultorioId();
     const presentacionId = Number(this.presentacionId());
@@ -459,4 +496,15 @@ export class PresentacionDetallePage {
     }
     return { consultorioId, presentacionId };
   }
+}
+
+function porItem(reparos: readonly ReparoDePresentacion[]): Map<number, string[]> {
+  const mapa = new Map<number, string[]>();
+  for (const reparo of reparos) {
+    if (reparo.itemId === undefined) continue;
+    const lista = mapa.get(reparo.itemId) ?? [];
+    lista.push(hallazgoEnPalabras(reparo.hallazgo));
+    mapa.set(reparo.itemId, lista);
+  }
+  return mapa;
 }

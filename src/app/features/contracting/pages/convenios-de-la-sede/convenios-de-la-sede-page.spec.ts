@@ -455,9 +455,9 @@ describe('ConveniosDeLaSedePage', () => {
     expect(anfitrion.textContent).toContain('Activo y vigente');
   });
 
-  it('sin permiso el listado se ve pero no aparece ninguna accion', async () => {
-    // Las lecturas se autorizan por pertenencia y no existe `convenio:read`: esconder la pantalla
-    // entera dejaria a recepcion sin poder consultar cuanto cobrar.
+  it('sin convenio:manage el listado se ve pero no aparece ninguna accion', async () => {
+    // Entrar lo decide `convenio:read` en la ruta (DP-36); las acciones, `convenio:manage`.
+    // Recepcion lee los convenios y no los administra.
     const fixture = await montar([]);
     const anfitrion = fixture.nativeElement as HTMLElement;
 

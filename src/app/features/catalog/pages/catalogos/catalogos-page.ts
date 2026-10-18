@@ -24,7 +24,7 @@ import {
   CreateCatalogoConceptoRequestAlcanceEnum,
 } from '../../../../api/generated/model/create-catalogo-concepto-request';
 import { EstadoDeListado, vistaDeListado } from '../../../../shared/utils/estado-de-listado';
-import { PERMISO_CONSULTORIO_MANAGE } from '../../../../core/models/permisos';
+import { PERMISO_CATALOGO_MANAGE } from '../../../../core/models/permisos';
 import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
 import { PermisoDirective } from '../../../../shared/directives/permiso.directive';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
@@ -125,7 +125,7 @@ export class CatalogosPage {
   private readonly formBuilder = inject(FormBuilder);
   private readonly injector = inject(Injector);
 
-  protected readonly permisoManage = PERMISO_CONSULTORIO_MANAGE;
+  protected readonly permisoManage = PERMISO_CATALOGO_MANAGE;
   protected readonly tipos = TIPOS_DE_CATALOGO;
   protected readonly etiquetaDeAlcance = etiquetaDeAlcance;
   protected readonly esGlobal = esGlobal;

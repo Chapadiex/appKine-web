@@ -2,7 +2,7 @@ import { HttpClient, provideHttpClient, withInterceptors } from '@angular/common
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
-import { AkineHttpError, errorInterceptor } from './error.interceptor';
+import { AkineHttpError, errorInterceptor, esSinPermiso } from './error.interceptor';
 import { AuthTokenStore } from '../services/auth-token.store';
 import { ServicioNoDisponibleStore } from '../services/servicio-no-disponible.store';
 
@@ -84,6 +84,24 @@ describe('errorInterceptor', () => {
     // Sin esto la UI solo puede decir "demasiados intentos", que no dice cuanto esperar.
     expect(error.reintentarEnSegundos).toBe(45);
     expect(error.esRateLimited).toBe(true);
+  });
+
+  it('esSinPermiso es el 403 de un permiso, no el de la suscripcion ni otro status', () => {
+    const forbidden = new AkineHttpError(
+      403,
+      { type: 'https://akine.app/problems/forbidden' },
+      false,
+    );
+    const suspendida = new AkineHttpError(
+      403,
+      { type: 'https://akine.app/problems/subscription-suspended' },
+      false,
+    );
+    expect(forbidden.esSinPermiso).toBe(true);
+    expect(esSinPermiso(forbidden)).toBe(true);
+    expect(suspendida.esSinPermiso).toBe(false);
+    expect(esSinPermiso(new AkineHttpError(404, null, false))).toBe(false);
+    expect(esSinPermiso(new Error('otro'))).toBe(false);
   });
 
   it('un 429 sin Retry-After visible no rompe: queda en null', async () => {

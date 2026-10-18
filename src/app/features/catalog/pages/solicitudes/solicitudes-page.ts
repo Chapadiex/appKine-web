@@ -16,7 +16,7 @@ import { catchError, of } from 'rxjs';
 import { CatalogoClinicoService } from '../../../../api/generated/api/catalogo-clinico.service';
 import { CatalogoSolicitudResponse } from '../../../../api/generated/model/catalogo-solicitud-response';
 import { CreateCatalogoSolicitudRequest } from '../../../../api/generated/model/create-catalogo-solicitud-request';
-import { PERMISO_CONSULTORIO_MANAGE } from '../../../../core/models/permisos';
+import { PERMISO_CATALOGO_MANAGE } from '../../../../core/models/permisos';
 import { PermisoDirective } from '../../../../shared/directives/permiso.directive';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { CausaCatalogo, traducirErrorCatalogo } from '../../models/catalogo-errors';
@@ -69,7 +69,7 @@ export class SolicitudesPage {
   private readonly formBuilder = inject(FormBuilder);
   private readonly injector = inject(Injector);
 
-  protected readonly permisoManage = PERMISO_CONSULTORIO_MANAGE;
+  protected readonly permisoManage = PERMISO_CATALOGO_MANAGE;
   protected readonly tipos = TIPOS_DE_CATALOGO;
   protected readonly formatearInstante = (instante: string | undefined | null): string | null =>
     formatearInstante(instante, this.diaDeLaSede.zona());
