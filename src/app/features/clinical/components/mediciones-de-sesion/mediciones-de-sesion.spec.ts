@@ -216,6 +216,26 @@ describe('MedicionesDeSesion', () => {
     httpMock.expectNone((p) => p.url === DEFINICIONES);
   });
 
+  it('sin catalogo:read sigue mostrando lo medido y dice por que no puede medir (DP-36)', async () => {
+    const fixture = TestBed.createComponent(MedicionesDeSesion);
+    fixture.componentRef.setInput('consultorioId', CONSULTORIO);
+    fixture.componentRef.setInput('sesionId', SESION);
+    fixture.componentRef.setInput('editable', true);
+    fixture.detectChanges();
+    responderLecturas();
+    httpMock
+      .expectOne((p) => p.url === DEFINICIONES)
+      .flush(
+        { type: 'https://akine.app/problems/forbidden', status: 403 },
+        { status: 403, statusText: 'Forbidden' },
+      );
+    await estabilizar(fixture);
+
+    expect(texto(fixture)).toContain('No tenes permiso para consultar el catalogo de medidas');
+    expect(fixture.nativeElement.querySelector('[role="alert"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('#medicion-definicion')).toBeNull();
+  });
+
   it('sin sesion anterior lo dice, en vez de dejar la columna vacia sin explicacion', async () => {
     const fixture = await montar(true, { medidas: [] });
     expect(texto(fixture)).toContain('estas son las primeras mediciones');

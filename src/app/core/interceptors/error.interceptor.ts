@@ -192,6 +192,22 @@ export class AkineHttpError extends Error {
   get esRateLimited(): boolean {
     return this.problemType === 'rate-limited' || this.status === 429;
   }
+
+  /**
+   * `true` cuando falta un permiso del contexto (`403`), y no es la suscripcion suspendida.
+   *
+   * <p>Lo usan las pantallas que leen algo <b>accesorio</b> de otro modulo —el catalogo de
+   * financiadores, el catalogo clinico, los tipos de medicion— para seguir funcionando sin esa
+   * lista cuando el rol no la puede leer (DP-36), en vez de caer enteras.
+   */
+  get esSinPermiso(): boolean {
+    return this.status === 403 && !this.esSuscripcionSuspendida;
+  }
+}
+
+/** {@link AkineHttpError.esSinPermiso} sobre un error cualquiera de un `subscribe`. */
+export function esSinPermiso(error: unknown): boolean {
+  return error instanceof AkineHttpError && error.esSinPermiso;
 }
 
 /**

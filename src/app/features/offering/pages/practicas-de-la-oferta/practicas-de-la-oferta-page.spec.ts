@@ -130,6 +130,22 @@ describe('PracticasDeLaOfertaPage', () => {
     expect(texto(fixture)).toContain('Guardamos las practicas de la oferta.');
   });
 
+  it('el 403 de la busqueda culpa al catalogo (catalogo:read) y no a la oferta', async () => {
+    const fixture = await montar();
+
+    escribir(fixture, '#buscar-practica', 'drenaje');
+    enviar(fixture);
+    httpMock
+      .expectOne((peticion: HttpRequest<unknown>) => peticion.url === CATALOGO)
+      .flush(
+        { type: 'https://akine.app/problems/forbidden', status: 403 },
+        { status: 403, statusText: 'Forbidden' },
+      );
+    await estabilizar(fixture);
+
+    expect(texto(fixture)).toContain('No tenes permiso para consultar el catalogo clinico');
+  });
+
   it('quitar la principal pasa la marca a la primera que queda; vaciar manda principal nula', async () => {
     const fixture = await montar();
 

@@ -173,7 +173,7 @@ export async function sembrarPrestacionFinanciada(
 export async function colaboradoraActiva(
   api: ApiAkine,
   centro: Centro,
-  rol: 'ADMINISTRATIVO',
+  rol: 'ADMINISTRATIVO' | 'PACIENTE',
 ): Promise<{ readonly email: string; readonly membershipId: number }> {
   const email = emailUnico('e2e.p098.administrativa');
   const http = await fabricaDeRequest.newContext({ baseURL: API });

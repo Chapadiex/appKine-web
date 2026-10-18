@@ -40,9 +40,11 @@ import {
  *       atrapada en un lote que nunca se va a presentar;</li>
  *   <li>un lote presentado no se descarta (es evidencia de lo reclamado): el servidor lo rechaza;</li>
  *   <li>el debito <b>no perdona</b> la deuda (RN-M21-004): al conciliar, la prestacion aceptada
- *       queda PAGADA y la debitada sigue PENDIENTE por el total y re-presentable. El debito
- *       PARCIAL deja hoy la deuda entera pendiente (U-11, conocido y aceptado): por eso el test
- *       debita el total, que es la regla que no depende de esa decision.</li>
+ *       queda PAGADA y la debitada por el total sigue PENDIENTE por el total y re-presentable;</li>
+ *   <li>el debito <b>parcial</b> (DP-37 / U-11) deja el item `DEBITADO_PARCIAL`, que sigue en el
+ *       lote y ocupando la deuda; al conciliar pasa a `ACEPTADO_PARCIAL`, salda lo presentado
+ *       menos lo debitado, y la deuda queda `PARCIAL` por lo debitado y vuelve a la bandeja por
+ *       ese saldo.</li>
  * </ul>
  *
  * <p>Centro propio (`support/centro-propio.ts`): el lote toma TODAS las deudas elegibles del
@@ -64,6 +66,7 @@ test.describe('Debito, quitar y descartar en presentaciones contra el backend re
   let financiador: Financiador;
   let aceptada: Deuda;
   let debitada: Deuda;
+  let parcial: Deuda;
 
   test.beforeAll(async () => {
     test.setTimeout(300_000);
@@ -91,11 +94,12 @@ test.describe('Debito, quitar y descartar en presentaciones contra el backend re
       vigenciaDesde: desde,
     });
 
-    // Dos pacientes, una sesion cada uno: las filas del lote se distinguen por "Persona #id".
+    // Tres pacientes, una sesion cada uno: las filas del lote se distinguen por "Persona #id".
     const { slots } = await diaDeTrabajo(api, centro, oferta.id, 2);
     const deudas: Deuda[] = [];
-    for (const [i, slot] of [slots[0], slots[1]].entries()) {
-      const persona = await crearPersona(api, { nombre: i === 0 ? 'Acepta' : 'Debita' });
+    const nombres = ['Acepta', 'Debita', 'Parcial'];
+    for (const [i, slot] of [slots[0], slots[1], slots[2]].entries()) {
+      const persona = await crearPersona(api, { nombre: nombres[i] });
       await darCobertura(api, persona, financiador, desde);
       const turno = await reservarElPrimeroLibre(api, centro, oferta.id, persona.id, [slot]);
       await cerrarSesionDelTurno(profesional, centro, turno.id);
@@ -109,7 +113,7 @@ test.describe('Debito, quitar y descartar en presentaciones contra el backend re
       expect(obligacion!.importeOriginal).toBe(FINANCIADOR);
       deudas.push({ persona, obligacion: obligacion! });
     }
-    [aceptada, debitada] = deudas;
+    [aceptada, debitada, parcial] = deudas;
   });
 
   test.afterAll(async () => {
@@ -277,6 +281,87 @@ test.describe('Debito, quitar y descartar en presentaciones contra el backend re
     await abrirBorrador(page, propio, financiador, false);
     await expect(filaElegible(page, debitada)).toHaveCount(1);
     await expect(filaElegible(page, aceptada)).toHaveCount(0);
+  });
+
+  test('el debito parcial sigue en el lote y, conciliado, deja pendiente solo lo debitado (DP-37)', async ({
+    page,
+  }) => {
+    test.slow();
+    const { api, centro } = propio;
+    const sede = `/api/v1/consultorios/${centro.consultorioId}`;
+    const DEBITO = 4000;
+    const COBRADO = FINANCIADOR - DEBITO;
+    await ingresar(page, centro);
+    await abrirBorrador(page, propio, financiador);
+    await agregar(page, parcial);
+    await page.getByRole('button', { name: 'Confirmar y presentar' }).click();
+    await expect(page.getByText(/Lote presentado: tiene numero/)).toBeVisible();
+
+    // Debito por una parte de lo presentado.
+    await filaDelLote(page, parcial).getByRole('button', { name: 'Registrar debito' }).click();
+    await page.getByLabel('Importe debitado').fill(String(DEBITO));
+    await page.getByLabel('Motivo informado por el financiador').fill('Sesion sin firma');
+    const debito = respuestaDe(page, 'POST', /\/items\/\d+\/debito$/);
+    await page.getByRole('button', { name: 'Confirmar el debito' }).click();
+    expect((await debito).status()).toBeLessThan(300);
+    await expect(page.getByText(/Debito registrado\./)).toBeVisible();
+    await expect(filaDelLote(page, parcial)).toContainText('Debitada en parte');
+    await expect(filaDelLote(page, parcial)).toContainText('Sigue en el lote');
+    await expect(filaDelLote(page, parcial)).toContainText('Debito: Sesion sin firma');
+    await expect(filaDelLote(page, parcial)).toContainText('4.000,00');
+    // Ya tiene su debito: no se le registra otro.
+    await expect(
+      filaDelLote(page, parcial).getByRole('button', { name: 'Registrar debito' }),
+    ).toHaveCount(0);
+    await expect(dato(page, 'Saldo')).toContainText('5.600,00');
+    // Sigue ocupando la deuda: no esta en la bandeja de elegibles mientras el lote no se cierre.
+    expect((await elegibles(propio, financiador.id)).map((o) => o.id)).not.toContain(
+      parcial.obligacion.id,
+    );
+
+    // El filtro de la tabla del lote por estado.
+    await page.getByLabel('Mostrar').selectOption({ label: 'Aceptada' });
+    await expect(page.getByText('Ninguna prestacion del lote esta en ese estado.')).toBeVisible();
+    await page.getByLabel('Mostrar').selectOption({ label: 'Debitada en parte' });
+    await expect(filaDelLote(page, parcial)).toHaveCount(1);
+    await page.getByLabel('Mostrar').selectOption({ label: 'Todas las prestaciones' });
+
+    await page.getByLabel('Numero de factura').fill(`0001-${randomUUID().slice(0, 8)}`);
+    await page.getByRole('button', { name: 'Registrar la factura' }).click();
+    await expect(page.getByText('Factura registrada.')).toBeVisible();
+    await page.locator('#pago-importe').fill(String(COBRADO));
+    await page.locator('#pago-medio').selectOption({ label: 'Transferencia' });
+    await page.getByRole('button', { name: 'Registrar el pago' }).click();
+    await expect(page.getByText(/Pago registrado\./)).toBeVisible();
+    await expect(dato(page, 'Saldo')).toContainText('0,00');
+    await page.getByRole('button', { name: 'Cerrar (conciliar) el lote' }).click();
+    await expect(
+      page.getByText(/las debitadas en parte, por lo presentado menos lo/),
+    ).toBeVisible();
+    await expect(dato(page, 'Estado')).toHaveText('Conciliada');
+    await expect(filaDelLote(page, parcial)).toContainText('Aceptada en parte');
+    await expect(filaDelLote(page, parcial)).toContainText(
+      'Se cobro lo presentado menos lo debitado',
+    );
+
+    // La deuda queda PARCIAL por lo debitado y vuelve a la bandeja por ese saldo.
+    const deuda = await api.exigir<Obligacion>(
+      'GET',
+      `${sede}/obligaciones/${parcial.obligacion.id}`,
+    );
+    expect(deuda.estado).toBe('PARCIAL');
+    expect(deuda.saldo).toBe(DEBITO);
+    const enBandeja = (await elegibles(propio, financiador.id)).find(
+      (o) => o.id === parcial.obligacion.id,
+    );
+    expect(enBandeja?.saldo).toBe(DEBITO);
+
+    await navegar(page, '/presentaciones');
+    await abrirBorrador(page, propio, financiador, false);
+    await expect(filaElegible(page, parcial)).toContainText('4.000,00');
+    await expect(filaElegible(page, parcial)).toContainText(
+      'vuelve por el saldo que dejo un debito parcial',
+    );
   });
 });
 

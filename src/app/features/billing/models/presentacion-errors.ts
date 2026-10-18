@@ -66,7 +66,8 @@ const POR_TIPO: Readonly<Record<string, readonly [CausaPresentacion, boolean, st
   'presentacion-con-hallazgos': [
     'con-hallazgos',
     true,
-    'El lote tiene prestaciones que no se pueden reclamar. Revisalo y quita las observadas.',
+    'El lote tiene prestaciones con reparos: no se pueden reclamar, o les falta la orden o la ' +
+      'autorizacion que el convenio exigia. Corregilas en la ficha del paciente o quitalas del lote.',
   ],
   'obligacion-ya-presentada': [
     'ya-presentada',

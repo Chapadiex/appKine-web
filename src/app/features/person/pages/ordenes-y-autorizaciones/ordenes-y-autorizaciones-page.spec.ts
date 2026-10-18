@@ -501,6 +501,38 @@ describe('OrdenesYAutorizacionesPage', () => {
     expect(rotulosDeBoton(fixture)).toContain('Reintentar');
   });
 
+  it('el 403 del catalogo clinico no tira la pantalla: carga sin practicas y dice por que', async () => {
+    tenantContext.select({
+      organizationId: 1,
+      organizationName: 'Centro Belgrano',
+      consultorioId: 3,
+      consultorioName: 'Sede Centro',
+    });
+    permisos.cargar().subscribe();
+    httpMock.expectOne(RUTA_PERMISOS_EFECTIVOS).flush({ permissions: [PERMISO_PACIENTE_MANAGE] });
+
+    const fixture = TestBed.createComponent(OrdenesYAutorizacionesPage);
+    fixture.componentRef.setInput('personaId', String(PERSONA));
+    fixture.detectChanges();
+
+    // DP-36: leer el catalogo exige `catalogo:read`. Un rol sin el no es una falla de la pantalla.
+    httpMock
+      .expectOne(esListado(CATALOGO))
+      .flush(
+        { type: 'https://akine.app/problems/forbidden', status: 403 },
+        { status: 403, statusText: 'Forbidden' },
+      );
+    httpMock.expectOne(FICHA).flush(PACIENTE);
+    httpMock.expectOne(esListado(ORDENES)).flush([]);
+    httpMock.expectOne(esListado(AUTORIZACIONES)).flush([]);
+    httpMock.expectOne(esListado(COBERTURAS)).flush([COBERTURA]);
+    httpMock.expectOne(esListado(ADJUNTOS)).flush({ content: [] });
+    await estabilizar(fixture);
+
+    expect(texto(fixture)).toContain('No tenes permiso para consultar el catalogo clinico');
+    expect(rotulosDeBoton(fixture)).not.toContain('Reintentar');
+  });
+
   it('con el motivo vacio no manda la baja de la orden', async () => {
     const fixture = await montar({ ordenes: [ORDEN] });
 

@@ -11,7 +11,7 @@
 
 export interface ReparoDePresentacion { 
     /**
-     * Los tres requisitos documentales del convenio —orden, autorizacion y credencial— **todavia no se validan**: viven en el arancel congelado y el devengado no los copia a la obligacion.
+     * Los requisitos documentales se evaluan contra lo que el convenio exigia el dia de la prestacion: `SIN_ORDEN` y `SIN_AUTORIZACION` van en `hallazgos` (bloquean); `CREDENCIAL_FALTANTE` va en `avisos` (no bloquea).
      */
     hallazgo?: ReparoDePresentacionHallazgoEnum;
     itemId?: number;
@@ -24,7 +24,10 @@ export enum ReparoDePresentacionHallazgoEnum {
     FINANCIADOR_DISTINTO = 'FINANCIADOR_DISTINTO',
     SEDE_DISTINTA = 'SEDE_DISTINTA',
     FUERA_DEL_PERIODO = 'FUERA_DEL_PERIODO',
-    MONEDA_DISTINTA = 'MONEDA_DISTINTA'
+    MONEDA_DISTINTA = 'MONEDA_DISTINTA',
+    SIN_ORDEN = 'SIN_ORDEN',
+    SIN_AUTORIZACION = 'SIN_AUTORIZACION',
+    CREDENCIAL_FALTANTE = 'CREDENCIAL_FALTANTE'
 };
 
 

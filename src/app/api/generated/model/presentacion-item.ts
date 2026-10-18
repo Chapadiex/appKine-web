@@ -22,7 +22,7 @@ export interface PresentacionItem {
      */
     debitadoEn?: string;
     /**
-     * `INCLUIDO` y `ACEPTADO` mantienen tomada la obligacion; `DEBITADO` y `ANULADO` la liberan para otro lote.
+     * `INCLUIDO`, `ACEPTADO` y `DEBITADO_PARCIAL` mantienen tomada la obligacion; `DEBITADO` (debito total), `ACEPTADO_PARCIAL` (conciliado con debito parcial: lo debitado queda pendiente y re-presentable) y `ANULADO` la liberan para otro lote.
      */
     estado?: PresentacionItemEstadoEnum;
     fechaPrestacion?: string;
@@ -55,7 +55,9 @@ export enum PresentacionItemEstadoEnum {
     INCLUIDO = 'INCLUIDO',
     ACEPTADO = 'ACEPTADO',
     DEBITADO = 'DEBITADO',
-    ANULADO = 'ANULADO'
+    ANULADO = 'ANULADO',
+    DEBITADO_PARCIAL = 'DEBITADO_PARCIAL',
+    ACEPTADO_PARCIAL = 'ACEPTADO_PARCIAL'
 };
 
 

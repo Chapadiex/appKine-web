@@ -173,6 +173,24 @@ describe('CoberturasDelPacientePage', () => {
     await estabilizar(fixture);
   });
 
+  it('sin convenio:read el alta financiada lo explica y la particular sigue (DP-36)', async () => {
+    const fixture = await montar([]);
+
+    apretar(fixture, 'Agregar una cobertura');
+    httpMock
+      .expectOne(esFinanciadores())
+      .flush(
+        { type: 'https://akine.app/problems/forbidden', status: 403 },
+        { status: 403, statusText: 'Forbidden' },
+      );
+    await estabilizar(fixture);
+    elegirEn(fixture, '#alta-cobertura-tipo', 'FINANCIADA');
+
+    expect(texto(fixture)).toContain('No tenes permiso para consultar los financiadores');
+    // La pantalla sigue en pie: el listado y el formulario estan.
+    expect(texto(fixture)).toContain('Agregar cobertura');
+  });
+
   it('elegir un financiador pide sus planes contra la fecha de inicio, no contra hoy', async () => {
     const fixture = await montar([]);
 

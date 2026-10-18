@@ -76,8 +76,7 @@ export type PermisoF1 = (typeof PERMISOS_F1)[number];
  *
  * <p>Gobierna las MUTACIONES de la configuracion economica: el catalogo de financiadores y sus
  * planes —que son de la ORGANIZACION— y los convenios y aranceles —que son de la SEDE—.
- * <b>No hay permiso de lectura</b>: consultar el catalogo se autoriza por pertenencia, y por eso
- * ninguna pantalla pregunta por un `convenio:read` que la matriz no declara.
+ * La lectura es {@link PERMISO_CONVENIO_READ}.
  *
  * <p><b>Se evalua siempre con una sede, aunque el financiador no sea de ninguna.</b> Es la misma
  * asimetria que `paciente:manage` y `cobro:register`: la ficha vive en la organizacion, pero
@@ -91,6 +90,33 @@ export type PermisoF1 = (typeof PERMISOS_F1)[number];
  * siempre; la distincion importa el dia que alguien agregue un selector de sede.
  */
 export const PERMISO_CONVENIO_MANAGE = 'convenio:manage';
+
+/**
+ * Consultar financiadores, planes, convenios, aranceles y el arancel efectivo (DP-36 / U-07,
+ * contrato 0.130.0).
+ *
+ * <p>Repite DP-22 en `contracting`: hasta DP-36 la lectura de la configuracion economica se
+ * autorizaba por pertenencia y un `PACIENTE` la leia entera. Ahora la tiene el personal
+ * —`ORG_ADMIN` en la organizacion; `CONSULTORIO_ADMIN`, `PROFESIONAL` y `ADMINISTRATIVO` en la
+ * sede— y se evalua con la sede del contexto. No es otorgable por grant.
+ */
+export const PERMISO_CONVENIO_READ = 'convenio:read';
+
+/**
+ * Consultar el catalogo clinico, sus vigencias, los tipos de medicion y los pedidos de alta
+ * (DP-36 / U-08, contrato 0.130.0).
+ *
+ * <p>Reemplaza la autorizacion interina por pertenencia: un `PACIENTE` recibe 403. Lo tiene el
+ * personal de la sede y la plataforma (alcance GLOBAL, que igual no ve conceptos de un tenant).
+ */
+export const PERMISO_CATALOGO_READ = 'catalogo:read';
+
+/**
+ * Dar de alta, editar y dar de baja conceptos del catalogo clinico y sus vigencias, y pedir altas
+ * a la plataforma (DP-36 / U-08). Reemplaza al `consultorio:manage` interino; lo tienen
+ * `ORG_ADMIN`, `CONSULTORIO_ADMIN` y la plataforma.
+ */
+export const PERMISO_CATALOGO_MANAGE = 'catalogo:manage';
 
 /**
  * Consultar la agenda (F5, etapa AKINE-05.01).

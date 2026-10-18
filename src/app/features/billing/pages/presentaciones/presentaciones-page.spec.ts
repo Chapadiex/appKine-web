@@ -125,6 +125,30 @@ describe('PresentacionesPage', () => {
     expect(contenido(fixture)).toContain('El periodo termina antes de empezar');
   });
 
+  it('sin convenio:read lista los lotes igual y explica por que no puede abrir uno', async () => {
+    tenantContext.select({
+      organizationId: 1,
+      organizationName: 'Centro Belgrano',
+      consultorioId: CONSULTORIO,
+      consultorioName: 'Sede Centro',
+    });
+    const fixture = TestBed.createComponent(PresentacionesPage);
+    fixture.detectChanges();
+    httpMock
+      .expectOne('/api/v1/financiadores')
+      .flush(
+        { type: 'https://akine.app/problems/forbidden', status: 403 },
+        { status: 403, statusText: 'Forbidden' },
+      );
+    httpMock
+      .expectOne((p: HttpRequest<unknown>) => p.url === `${BASE}/presentaciones`)
+      .flush([LOTE]);
+    await estabilizar(fixture);
+
+    expect(contenido(fixture)).toContain('No tenes permiso para consultar los financiadores');
+    expect(contenido(fixture)).toContain('OSDE');
+  });
+
   it('sin sede en el contexto no pide lotes y manda al selector', async () => {
     const fixture = TestBed.createComponent(PresentacionesPage);
     fixture.detectChanges();

@@ -16,6 +16,7 @@ import {
   fechaLocal,
   obligacionesDe,
   reservar,
+  reservarElPrimeroLibre,
   sumarDias,
   uriDeProblema,
 } from './support/sembrado';
@@ -37,6 +38,14 @@ import { nonce } from './support/akine';
  *
  * <p>Todas las vigencias arrancan hace un mes: la deuda se devenga HOY (el instante del cierre) aunque
  * el turno sea futuro, y el periodo del lote tiene que contener hoy.
+ *
+ * <h2>Los reparos documentales (DP-37, contrato 0.129.0)</h2>
+ *
+ * <p>El segundo test arma un convenio que EXIGE orden y credencial, y dos pacientes: uno sin orden
+ * (reparo `SIN_ORDEN`, bloquea) y otro con orden pero con la credencial vencida (aviso
+ * `CREDENCIAL_FALTANTE`, no bloquea). Lo que se afirma es la regla de la pantalla —`confirmable`
+ * manda y un aviso no apaga "Confirmar"— y que el servidor responde 409 `presentacion-con-hallazgos`
+ * si alguien confirma por fuera de ella.
  */
 
 const TOTAL = 12000;
@@ -265,6 +274,161 @@ test.describe('Presentaciones a financiadores contra el backend real', () => {
     const [coseguro] = await obligacionesDe(api, centro, sembrado.persona.id);
     expect(coseguro.id).toBe(sembrado.coseguro.id);
     expect(coseguro.estado).toBe('PENDIENTE');
+  });
+});
+
+test.describe('Reparos documentales de un lote contra el backend real (DP-37)', () => {
+  let profesional: ApiAkine;
+
+  test.beforeAll(async ({ centro }) => {
+    profesional = await comoProfesional(centro);
+  });
+
+  test.afterAll(async () => {
+    await profesional.cerrar();
+  });
+
+  test('SIN_ORDEN bloquea confirmar; la credencial vencida es un aviso que no', async ({
+    page,
+    api,
+    centro,
+  }) => {
+    test.slow();
+    const hoy = fechaLocal(centro.timezone);
+    const desde = sumarDias(hoy, -30);
+    const sede = `/api/v1/consultorios/${centro.consultorioId}`;
+    const sufijo = nonce();
+
+    const practicaId = await practicaGlobal(api, 'KIN_SESION');
+    const oferta = await crearOferta(api, centro, {
+      extra: { admiteObraSocial: true, precioBase: TOTAL, moneda: 'ARS' },
+    });
+    await api.exigir('PUT', `${sede}/ofertas/${oferta.id}/practicas`, {
+      practicaIds: [practicaId],
+      practicaPrincipalId: practicaId,
+      expectedVersion: oferta.version,
+    });
+    const nombre = `Obra Social Reparos ${sufijo}`;
+    const financiador = await api.exigir<{ id: number }>('POST', '/api/v1/financiadores', {
+      codigo: `OSR${sufijo}`.slice(0, 20),
+      nombre,
+      tipo: 'OBRA_SOCIAL',
+    });
+    const plan = await api.exigir<{ id: number }>(
+      'POST',
+      `/api/v1/financiadores/${financiador.id}/planes`,
+      {
+        codigo: `PR${sufijo}`.slice(0, 20),
+        nombre: `Plan Reparos ${sufijo}`,
+        vigenciaDesde: desde,
+      },
+    );
+    // Exige orden y credencial: lo que el convenio pedia queda congelado en la deuda al cerrar.
+    const convenio = await api.exigir<{ id: number }>('POST', `${sede}/convenios`, {
+      financiadorId: financiador.id,
+      planId: plan.id,
+      codigo: `CVR${sufijo}`.slice(0, 20),
+      nombre: `Convenio Reparos ${sufijo}`,
+      modalidad: 'POR_PRESTACION',
+      vigenciaDesde: desde,
+      moneda: 'ARS',
+      requiereOrden: true,
+      requiereCredencial: true,
+    });
+    await api.exigir('POST', `${sede}/convenios/${convenio.id}/aranceles`, {
+      practicaId,
+      importeTotal: TOTAL,
+      importeFinanciador: FINANCIADOR,
+      coseguro: COSEGURO,
+      vigenciaDesde: desde,
+    });
+
+    // Sin orden, credencial al dia → SIN_ORDEN. Con orden, credencial vencida ayer → aviso.
+    const sinOrden = await crearPersona(api, { nombre: 'SinOrden' });
+    const conAviso = await crearPersona(api, { nombre: 'ConAviso' });
+    for (const [persona, credencialVigenciaHasta] of [
+      [sinOrden, undefined],
+      [conAviso, sumarDias(hoy, -1)],
+    ] as const) {
+      await api.exigir('POST', `/api/v1/personas/${persona.id}/coberturas`, {
+        tipo: 'FINANCIADA',
+        planId: plan.id,
+        numeroAfiliado: `AF-${nonce()}`,
+        credencialVigenciaHasta,
+        vigenciaDesde: desde,
+        principal: true,
+      });
+    }
+    await api.exigir('POST', `/api/v1/personas/${conAviso.id}/ordenes`, {
+      profesionalEmisor: 'Dra. Sintetica Orden',
+      fechaEmision: desde,
+    });
+    const { slots } = await diaDeTrabajo(api, centro, oferta.id, DIAS.presentacion);
+    for (const persona of [sinOrden, conAviso]) {
+      const turno = await reservarElPrimeroLibre(api, centro, oferta.id, persona.id, slots);
+      await cerrarSesionDelTurno(profesional, centro, turno.id);
+    }
+
+    await ingresar(page, centro);
+    await navegar(page, '/presentaciones');
+    await page.locator('#alta-financiador').selectOption({ label: nombre });
+    await page.locator('#alta-desde').fill(sumarDias(hoy, -1));
+    await page.locator('#alta-hasta').fill(sumarDias(hoy, 1));
+    const alta = respuestaDe(page, 'POST', /\/presentaciones$/);
+    await page.getByRole('button', { name: 'Abrir el borrador' }).click();
+    expect((await alta).status()).toBe(201);
+    await expect(page.getByRole('heading', { name: `Lote en borrador a ${nombre}` })).toBeVisible();
+    const presentacionId = Number(new URL(page.url()).pathname.split('/').at(-1));
+
+    const bandeja = page.getByRole('region', { name: 'Tabla de prestaciones elegibles' });
+    const lote = page.getByRole('region', { name: 'Tabla de prestaciones del lote' });
+    const filaDe = (persona: Persona): Locator =>
+      lote.getByRole('row').filter({ hasText: `Persona #${persona.id}` });
+    for (const persona of [sinOrden, conAviso]) {
+      // Incluir no evalua los requisitos: la revision muestra la lista entera.
+      await bandeja
+        .getByRole('row')
+        .filter({ hasText: `Persona #${persona.id}` })
+        .getByRole('button', { name: /^Agregar/ })
+        .click();
+      await expect(filaDe(persona)).toHaveCount(1);
+    }
+
+    await expect(filaDe(sinOrden)).toContainText('Observada: El convenio exigia orden medica');
+    await expect(filaDe(conAviso)).toContainText('Aviso: La credencial estaba vencida');
+    await expect(filaDe(conAviso)).not.toContainText('Observada:');
+    await expect(page.getByText(/1 observacion\(es\) que impiden confirmar/)).toBeVisible();
+    await expect(page.getByText(/1 aviso\(s\): no impiden confirmar/)).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Confirmar y presentar' })).toBeDisabled();
+
+    // Por fuera de la pantalla, el servidor rechaza con el reparo nuevo.
+    const forzado = await api.pedir(
+      'POST',
+      `${sede}/presentaciones/${presentacionId}/confirmacion`,
+    );
+    expect(forzado.status(), await forzado.text()).toBe(409);
+    expect(((await forzado.json()) as { type: string }).type).toBe(
+      uriDeProblema('presentacion-con-hallazgos'),
+    );
+    const validacion = await api.exigir<{
+      confirmable: boolean;
+      hallazgos: { hallazgo: string }[];
+      avisos: { hallazgo: string }[];
+    }>('GET', `${sede}/presentaciones/${presentacionId}/validacion`);
+    expect(validacion.confirmable).toBe(false);
+    expect(validacion.hallazgos.map((h) => h.hallazgo)).toEqual(['SIN_ORDEN']);
+    expect(validacion.avisos.map((a) => a.hallazgo)).toEqual(['CREDENCIAL_FALTANTE']);
+
+    // Quitada la observada, queda solo el aviso: se confirma.
+    await filaDe(sinOrden).getByRole('button', { name: 'Quitar' }).click();
+    await expect(filaDe(sinOrden)).toHaveCount(0);
+    await expect(page.getByText('Ninguna prestacion tiene observaciones.')).toBeVisible();
+    await expect(page.getByText(/1 aviso\(s\)/)).toBeVisible();
+    const confirmar = page.getByRole('button', { name: 'Confirmar y presentar' });
+    await expect(confirmar).toBeEnabled();
+    await confirmar.click();
+    await expect(page.getByText(/Lote presentado: tiene numero/)).toBeVisible();
+    await expect(dato(page, 'Presentado')).toContainText('9.600,00');
   });
 });
 

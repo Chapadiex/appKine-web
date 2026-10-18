@@ -48,6 +48,23 @@ const PRESENTADA = {
   saldo: 12000,
 };
 
+const ITEM_PARCIAL = {
+  ...ITEM,
+  id: 502,
+  obligacionId: 9003,
+  estado: 'DEBITADO_PARCIAL',
+  importeDebitado: 4000,
+  motivoDebito: 'Sesion no autorizada',
+};
+
+const LOTE_CON_PARCIALES = {
+  ...PRESENTADA,
+  items: [ITEM_PARCIAL, ITEM],
+  totalPresentado: 24000,
+  totalDebitado: 4000,
+  saldo: 20000,
+};
+
 const ELEGIBLE = {
   id: 9002,
   snapshotNombre: 'Kinesiologia - evaluacion',
@@ -304,6 +321,179 @@ describe('PresentacionDetallePage', () => {
     },
     TIMEOUT_AXE,
   );
+
+  // ---------------------------- DP-37: reparos documentales y avisos -------------------
+
+  it('un reparo SIN_ORDEN bloquea confirmar y el aviso de credencial va aparte', async () => {
+    const fixture = await montarBorrador({
+      confirmable: false,
+      hallazgos: [{ itemId: 501, obligacionId: 9001, hallazgo: 'SIN_ORDEN' }],
+      avisos: [{ itemId: 501, obligacionId: 9001, hallazgo: 'CREDENCIAL_FALTANTE' }],
+    });
+
+    const texto = contenido(fixture);
+    expect(texto).toContain('Observada: El convenio exigia orden medica');
+    expect(texto).toContain('Cargala en la ficha del paciente');
+    expect(texto).toContain('Aviso: La credencial estaba vencida');
+    expect(texto).toContain('1 observacion(es) que impiden confirmar');
+    expect(texto).toContain('1 aviso(s): no impiden confirmar');
+    expect(botones(fixture, 'Confirmar y presentar')[0].disabled).toBe(true);
+  });
+
+  it('un lote con solo avisos se puede confirmar: manda confirmable', async () => {
+    const fixture = await montarBorrador({
+      confirmable: true,
+      hallazgos: [],
+      avisos: [{ itemId: 501, obligacionId: 9001, hallazgo: 'CREDENCIAL_FALTANTE' }],
+    });
+
+    expect(contenido(fixture)).toContain('Ninguna prestacion tiene observaciones.');
+    expect(contenido(fixture)).toContain('1 aviso(s)');
+    const confirmar = botones(fixture, 'Confirmar y presentar')[0];
+    expect(confirmar.disabled).toBe(false);
+
+    confirmar.click();
+    fixture.detectChanges();
+    httpMock.expectOne(`${DETALLE}/confirmacion`).flush({ ...PRESENTADA });
+    httpMock.expectOne(DETALLE).flush(PRESENTADA);
+    httpMock.expectOne((p) => p.method === 'GET' && p.url === PAGOS).flush([]);
+    await estabilizar(fixture);
+    expect(contenido(fixture)).toContain('Lote presentado');
+  });
+
+  it('el 409 presentacion-con-hallazgos puede traer SIN_AUTORIZACION', async () => {
+    const fixture = await montarBorrador({ confirmable: true, hallazgos: [] });
+
+    apretar(fixture, 'Confirmar y presentar');
+    httpMock
+      .expectOne(`${DETALLE}/confirmacion`)
+      .flush(
+        { type: 'https://akine.app/problems/presentacion-con-hallazgos', status: 409 },
+        { status: 409, statusText: 'Conflict' },
+      );
+    httpMock.expectOne(VALIDACION).flush({
+      confirmable: false,
+      hallazgos: [{ itemId: 501, obligacionId: 9001, hallazgo: 'SIN_AUTORIZACION' }],
+      avisos: [],
+    });
+    await estabilizar(fixture);
+
+    const texto = contenido(fixture);
+    expect(texto).toContain('les falta la orden o la autorizacion que el convenio exigia');
+    expect(texto).toContain('El convenio exigia autorizacion');
+    expect(botones(fixture, 'Confirmar y presentar')[0].disabled).toBe(true);
+  });
+
+  it('una deuda PARCIAL en la bandeja vuelve por el saldo de un debito parcial', async () => {
+    const fixture = crear();
+    httpMock.expectOne(DETALLE).flush(BORRADOR);
+    httpMock
+      .expectOne((p) => p.url === ELEGIBLES)
+      .flush([{ ...ELEGIBLE, estado: 'PARCIAL', saldo: 2000 }]);
+    httpMock.expectOne(VALIDACION).flush({ confirmable: true, hallazgos: [], avisos: [] });
+    await estabilizar(fixture);
+
+    expect(contenido(fixture)).toContain('vuelve por el saldo que dejo un debito parcial');
+    expect(contenido(fixture)).toContain('2.000,00');
+  });
+
+  // ---------------------------- DP-37: debito parcial ---------------------------------
+
+  it('los estados parciales se ven con su pastilla, su detalle y se pueden filtrar', async () => {
+    const fixture = crear();
+    httpMock.expectOne(DETALLE).flush(LOTE_CON_PARCIALES);
+    httpMock.expectOne((p) => p.method === 'GET' && p.url === PAGOS).flush([]);
+    await estabilizar(fixture);
+
+    const anfitrion = fixture.nativeElement as HTMLElement;
+    const pastillas = Array.from(anfitrion.querySelectorAll('td span.marca-estado')).map((s) => [
+      (s.textContent ?? '').trim(),
+      s.className,
+    ]);
+    expect(pastillas).toEqual([
+      ['Debitada en parte', 'marca-estado marca-estado--suspendida'],
+      ['Incluida', 'marca-estado marca-estado--suspendida'],
+    ]);
+    const texto = contenido(fixture);
+    expect(texto).toContain('Sigue en el lote: al cerrarlo se salda lo presentado menos lo');
+    expect(texto).toContain('Debitado');
+    expect(texto).toContain('4.000,00');
+    expect(texto).toContain('Debito: Sesion no autorizada');
+    // Solo lo INCLUIDO se puede debitar: el parcial ya tiene su debito.
+    expect(botones(fixture, 'Registrar debito')).toHaveLength(1);
+
+    filtrar(fixture, 'DEBITADO_PARCIAL');
+    expect(anfitrion.querySelectorAll('tbody tr')).toHaveLength(1);
+    expect(contenido(fixture)).toContain('Debitada en parte');
+
+    filtrar(fixture, 'ACEPTADO_PARCIAL');
+    expect(contenido(fixture)).toContain('Ninguna prestacion del lote esta en ese estado.');
+
+    filtrar(fixture, '');
+    expect(anfitrion.querySelectorAll('.tabla tbody tr')).toHaveLength(2);
+  });
+
+  it('un lote conciliado muestra lo aceptado en parte con lo que quedo pendiente', async () => {
+    const fixture = crear();
+    httpMock.expectOne(DETALLE).flush({
+      ...LOTE_CON_PARCIALES,
+      estado: 'CONCILIADA',
+      items: [
+        { ...ITEM_PARCIAL, estado: 'ACEPTADO_PARCIAL' },
+        { ...ITEM, estado: 'DEBITADO', importeDebitado: 12000, motivoDebito: 'Duplicada' },
+      ],
+    });
+    httpMock.expectOne((p) => p.method === 'GET' && p.url === PAGOS).flush([]);
+    await estabilizar(fixture);
+
+    const texto = contenido(fixture);
+    expect(texto).toContain('Aceptada en parte');
+    expect(texto).toContain('Se cobro lo presentado menos lo debitado');
+    expect(texto).toContain('Salio del lote');
+    const clases = Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll('td span.marca-estado'),
+    ).map((s) => s.className);
+    expect(clases).toEqual([
+      'marca-estado marca-estado--activa',
+      'marca-estado marca-estado--revocada',
+    ]);
+  });
+
+  it('conciliar avisa que lo debitado en parte queda pendiente', async () => {
+    const fixture = await montarPresentada();
+
+    apretar(fixture, 'Cerrar (conciliar) el lote');
+    httpMock.expectOne(`${DETALLE}/conciliacion`).flush({});
+    httpMock.expectOne(DETALLE).flush({ ...PRESENTADA, estado: 'CONCILIADA' });
+    httpMock.expectOne((p) => p.method === 'GET' && p.url === PAGOS).flush([]);
+    await estabilizar(fixture);
+
+    expect(contenido(fixture)).toContain('las debitadas en parte, por lo presentado menos lo');
+  });
+
+  it(
+    'no tiene violaciones de accesibilidad con avisos y estados parciales',
+    async () => {
+      const fixture = await montarBorrador({
+        confirmable: false,
+        hallazgos: [{ itemId: 501, obligacionId: 9001, hallazgo: 'SIN_AUTORIZACION' }],
+        avisos: [{ itemId: 501, obligacionId: 9001, hallazgo: 'CREDENCIAL_FALTANTE' }],
+      });
+      await esperarSinViolaciones(fixture.nativeElement as HTMLElement);
+    },
+    TIMEOUT_AXE,
+  );
+
+  // ------------------------------------------------------------------------------------
+
+  function filtrar(fixture: ComponentFixture<PresentacionDetallePage>, valor: string): void {
+    const select = (fixture.nativeElement as HTMLElement).querySelector<HTMLSelectElement>(
+      '#filtro-estado-item',
+    )!;
+    select.value = valor;
+    select.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+  }
 
   // ------------------------------------------------------------------------------------
 

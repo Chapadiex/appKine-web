@@ -15,11 +15,15 @@ import { ReparoDePresentacion } from './reparo-de-presentacion';
  */
 export interface ValidacionDePresentacion { 
     /**
+     * Lo que conviene regularizar y NO impide confirmar (hoy, `CREDENCIAL_FALTANTE`). Misma forma que `hallazgos`
+     */
+    avisos?: Array<ReparoDePresentacion>;
+    /**
      * `true` cuando el lote tiene prestaciones y ninguna tiene reparos
      */
     confirmable?: boolean;
     /**
-     * Vacio cuando el lote esta listo
+     * Lo que impide confirmar. Vacio cuando el lote esta listo
      */
     hallazgos?: Array<ReparoDePresentacion>;
     presentacionId?: number;

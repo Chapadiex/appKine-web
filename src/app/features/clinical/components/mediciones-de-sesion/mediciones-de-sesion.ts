@@ -11,6 +11,7 @@ import {
   untracked,
 } from '@angular/core';
 import { forkJoin } from 'rxjs';
+import { esSinPermiso } from '../../../../core/interceptors/error.interceptor';
 
 import { ClinicalApi, LadoDeMedicion } from '../../services/clinical-api';
 import { ErrorAtencion, traducirErrorAtencion } from '../../models/atencion-errors';
@@ -87,6 +88,12 @@ export class MedicionesDeSesion {
   protected readonly cargando = signal(false);
   protected readonly guardando = signal(false);
   protected readonly error = signal<ErrorAtencion | null>(null);
+
+  /**
+   * Los tipos de medicion respondieron 403: el rol no tiene `catalogo:read` (DP-36). Las
+   * mediciones ya tomadas se siguen viendo; lo que no se puede es elegir una nueva.
+   */
+  protected readonly catalogoSinPermiso = signal(false);
   protected readonly aviso = signal('');
 
   // --- Formulario de una medicion ---------------------------------------------------------
@@ -178,7 +185,13 @@ export class MedicionesDeSesion {
     if (this.editable() && this.definiciones().length === 0) {
       this.api.definicionesActivas().subscribe({
         next: (definiciones) => this.definiciones.set(definiciones),
-        error: (error: unknown) => this.error.set(traducirErrorAtencion(error)),
+        error: (error: unknown) => {
+          if (esSinPermiso(error)) {
+            this.catalogoSinPermiso.set(true);
+          } else {
+            this.error.set(traducirErrorAtencion(error));
+          }
+        },
       });
     }
   }
