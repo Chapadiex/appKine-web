@@ -30,7 +30,7 @@ export interface CreateOfertaRequest {
      */
     duracionMinutos: number;
     /**
-     * Esquema de cobro (RN-M27-006): `POR_SESION` devenga por atencion, `POR_PACK` y `POR_ABONO` consumen el credito de un pase o abono y la deuda nace al venderlo. Vocabulario cerrado: otro valor es 400. `POR_CLASE` existe en el esquema pero hoy responde 400, hasta decidir cuando se devenga (U-39). Ausente: sin esquema declarado
+     * Esquema de cobro (RN-M27-006): `POR_SESION` devenga por atencion, `POR_CLASE` devenga una deuda por cada clase asistida (presente o presente con demora; la ausencia no devenga: U-39, RF-M18-008), `POR_PACK` y `POR_ABONO` consumen el credito de un pase o abono y la deuda nace al venderlo. Vocabulario cerrado: otro valor es 400. Ausente: sin esquema declarado
      */
     esquemaCobro?: CreateOfertaRequestEsquemaCobroEnum;
     /**
@@ -80,6 +80,7 @@ export interface CreateOfertaRequest {
 }
 export enum CreateOfertaRequestEsquemaCobroEnum {
     POR_SESION = 'POR_SESION',
+    POR_CLASE = 'POR_CLASE',
     POR_PACK = 'POR_PACK',
     POR_ABONO = 'POR_ABONO'
 };

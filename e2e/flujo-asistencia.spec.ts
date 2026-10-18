@@ -160,3 +160,108 @@ test.describe('Asistencia de clases contra el backend real', () => {
     expect(final).toMatchObject({ estado: 'REALIZADA', presentes: 3, ausentes: 0 });
   });
 });
+
+/**
+ * U-39 y U-46 contra el backend real: en una oferta `POR_CLASE` la deuda nace con la asistencia y
+ * la correccion a ausente la anula. La cuenta corriente muestra la deuda como "Clase del dd/mm" y
+ * la ofrece anular como una de sesion (no es de venta). El campo de observaciones avisa que son
+ * operativas (U-46 d).
+ */
+test.describe('Asistencia de una clase POR_CLASE contra el backend real (U-39)', () => {
+  const PRECIO = 6000;
+  let clase: ClaseSembrada;
+
+  test.beforeEach(async ({ page, api, centro }) => {
+    clase = await claseConInscriptos(api, centro, DIAS_ASISTENCIA.asistencia, 1, {
+      esquemaCobro: 'POR_CLASE',
+      precioBase: PRECIO,
+      moneda: 'ARS',
+    });
+    await ingresar(page, centro);
+  });
+
+  test('asistencia → deuda en la cuenta corriente → correccion a ausente → deuda anulada', async ({
+    page,
+    api,
+    centro,
+  }) => {
+    const [{ persona, inscripcionId }] = clase.inscripciones;
+    const [anio, mes, dia] = clase.fecha.split('-');
+    const concepto = `Clase del ${dia}/${mes}`;
+    const deudasDe = () =>
+      api.exigir<{ id: number; origen?: string; claseId?: number; estado: string }[]>(
+        'GET',
+        `/api/v1/consultorios/${centro.consultorioId}/obligaciones?personaId=${persona.id}`,
+      );
+    expect(anio).toHaveLength(4);
+
+    // ---- Presente: nace la deuda de la clase. Las observaciones avisan que son operativas.
+    await navegar(page, `/asistencia/${clase.id}`);
+    await page.getByRole('button', { name: 'Iniciar clase' }).click();
+    await expect(page.getByText('En curso', { exact: true })).toBeVisible();
+    await marcar(page, persona.apellido, 'Presente');
+    const observaciones = filaDe(page, persona.apellido).getByLabel('Observaciones (opcional)');
+    await expect(observaciones).toHaveAccessibleDescription(/Operativas: no anotes datos de salud/);
+    await observaciones.fill('Llego con el grupo de la tarde');
+    const alta = respuestaDe(page, 'POST', LOTE);
+    await page.getByRole('button', { name: /Guardar asistencia \(1\)/ }).click();
+    const respuestaAlta = await alta;
+    expect(respuestaAlta.status()).toBe(200);
+    expect(respuestaAlta.request().postDataJSON()).toEqual({
+      items: [
+        { inscripcionId, resultado: 'PRESENTE', observaciones: 'Llego con el grupo de la tarde' },
+      ],
+    });
+    const cuerpoAlta = (await respuestaAlta.json()) as {
+      items: { resultado?: { devengoDeClase?: { efecto: string; obligacionId?: number } } }[];
+    };
+    const devengo = cuerpoAlta.items[0].resultado?.devengoDeClase;
+    expect(devengo?.efecto).toBe('DEVENGADA');
+    const resultado = page.getByRole('region', { name: 'Resultado' });
+    await expect(resultado).toContainText('Deudas de la clase');
+    await expect(resultado).toContainText(`${persona.apellido}`);
+    await expect(resultado).toContainText('se genero la deuda de la clase por');
+
+    const [deuda] = (await deudasDe()).filter((d) => d.origen === 'ASISTENCIA_CLASE');
+    expect(deuda).toEqual(
+      expect.objectContaining({
+        claseId: clase.id,
+        estado: 'PENDIENTE',
+        id: devengo?.obligacionId,
+      }),
+    );
+
+    // ---- La cuenta corriente la muestra con su concepto y la ofrece anular (no es de venta).
+    await navegar(page, `/pacientes/${persona.id}/cuenta-corriente`);
+    const fila = page.getByRole('row').filter({ hasText: concepto });
+    await expect(fila).toContainText('Pendiente');
+    await expect(fila.getByRole('button', { name: 'Anular' })).toBeVisible();
+    await expect(fila.getByRole('link', { name: 'Anular desde los pases' })).toHaveCount(0);
+
+    // ---- Correccion a ausente con motivo: la deuda se anula (no se borra).
+    await navegar(page, `/asistencia/${clase.id}`);
+    await marcar(page, persona.apellido, 'Ausente');
+    await filaDe(page, persona.apellido)
+      .getByLabel('Motivo de la correccion')
+      .fill('Se marco presente por error');
+    const correccion = respuestaDe(page, 'POST', LOTE);
+    await page.getByRole('button', { name: /Guardar asistencia \(1\)/ }).click();
+    const respuestaCorreccion = await correccion;
+    expect(respuestaCorreccion.status()).toBe(200);
+    const cuerpoCorreccion = (await respuestaCorreccion.json()) as {
+      items: { resultado?: { devengoDeClase?: { efecto: string } } }[];
+    };
+    expect(cuerpoCorreccion.items[0].resultado?.devengoDeClase?.efecto).toBe('ANULADA');
+    await expect(page.getByRole('region', { name: 'Resultado' })).toContainText(
+      'se anulo la deuda de la clase',
+    );
+
+    const anulada = (await deudasDe()).find((d) => d.id === deuda.id);
+    expect(anulada?.estado).toBe('ANULADA');
+    await navegar(page, `/pacientes/${persona.id}/cuenta-corriente`);
+    const filaAnulada = page.getByRole('row').filter({ hasText: concepto });
+    await expect(filaAnulada).toContainText('Anulada');
+    await expect(filaAnulada).toContainText('Se marco presente por error');
+    await expect(filaAnulada.getByRole('button', { name: 'Anular' })).toHaveCount(0);
+  });
+});

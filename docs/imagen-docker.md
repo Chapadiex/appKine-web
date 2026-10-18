@@ -43,12 +43,14 @@ procesa con `envsubst` al arrancar) y `security-headers.conf`.
 - **Fallback de SPA**: toda ruta que no es un archivo recibe `index.html`.
 - **Cache**: archivos con hash en el nombre (`chunk-XXXXXXXX.js`, `styles-XXXXXXXX.css`) un anio
   e `immutable`; si no existen, 404 —nunca `index.html` servido como JavaScript—. `index.html`
-  con `no-cache`, porque es el que apunta a los hashes del despliegue vigente.
+  con `no-store` y sin `ETag` ni `Last-Modified`: apunta a los hashes del despliegue vigente y
+  lleva el nonce de la CSP, que cambia en cada respuesta (ver abajo).
 - **Compresion**: JavaScript y CSS van **precomprimidos desde el build** (ver abajo); el resto
   (`index.html`, SVG, JSON de `/api`) se comprime al vuelo con gzip.
-- **Cabeceras**: CSP, `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`,
-  `Permissions-Policy`, `Cross-Origin-Opener-Policy`. **HSTS no**: lo pone quien termina TLS
-  delante del contenedor.
+- **Cabeceras**: CSP con nonce y sin `'unsafe-inline'`, `X-Content-Type-Options`,
+  `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy` (todo lo que AKINE no usa, apagado),
+  `Cross-Origin-Opener-Policy` y `Cross-Origin-Resource-Policy`. **HSTS no**: lo pone quien
+  termina TLS delante del contenedor.
 - **Healthcheck**: `GET /healthz` responde `ok` sin tocar el backend.
 - Corre como UID 101 (`nginx`) y escucha en **8080**.
 
@@ -81,20 +83,35 @@ cierre de sus dependencias; `core/services/precarga-de-modulos.ts` agrega un
 `<link rel="modulepreload">` por cada una cuando el router empieza a bajar la pantalla. Es un
 bloque de datos: no se ejecuta, y la CSP no necesita ningun cambio.
 
-### La CSP y el onload de Angular
+### La CSP con nonce (AKINE-09.02)
 
-Angular inlinea el CSS critico y carga la hoja completa con
-`<link media="print" onload="this.media='all'">`. Con `script-src 'self'` el navegador bloquea
-ese handler y **la app queda sin estilos sin otro sintoma**. La CSP lo permite por hash
-(`'unsafe-hashes' 'sha256-...'`), que habilita ese texto exacto y ningun otro inline.
+Hasta 09.02 la CSP tenia `style-src 'unsafe-inline'` —Angular inyecta los estilos de cada
+componente en elementos `<style>`— y `'unsafe-hashes'` con el hash del
+`<link media="print" onload="this.media='all'">` con el que carga la hoja diferida. La primera
+dejaba aplicarse cualquier `<style>` que un XSS lograra inyectar.
 
-Si una version de Angular cambia el texto del handler, el hash deja de coincidir. El job
-`imagen` del CI extrae el `index.html` de la imagen, calcula el hash de cada `onload` y **falla**
-si alguno no esta en `security-headers.conf`. Para actualizarlo:
+Ahora no hay ninguna de las dos. `src/index.html` declara
+`<app-root ngCspNonce="AKINE_CSP_NONCE">`, y con eso:
 
-```bash
-printf '%s' "this.media='all'" | openssl dgst -sha256 -binary | base64
-```
+- **el build** le pone `nonce="AKINE_CSP_NONCE"` al CSS critico inlineado y reemplaza el
+  `onload` de la hoja diferida por un `<script nonce>` que hace lo mismo;
+- **Angular**, en runtime, lee `ngCspNonce` y se lo pone a cada `<style>` que inyecta;
+- **nginx** (`location = /index.html`) reemplaza el marcador por `$request_id` —128 bits
+  aleatorios por pedido— con `sub_filter`, y manda la cabecera con
+  `script-src 'self' 'nonce-$request_id'; style-src 'self' 'nonce-$request_id'`.
+
+Por eso `index.html` va con `no-store` y sin validadores: un 304 traeria la cabecera con el nonce
+nuevo y el navegador reusaria el cuerpo con el viejo. En el dev server no hay CSP y el marcador
+viaja tal cual, sin efecto.
+
+Los `[style.x]` de las plantillas siguen funcionando (Angular los aplica por CSSOM, que la CSP no
+restringe); un atributo `style="..."` **estatico** en una plantilla quedaria bloqueado.
+
+El job `imagen` del CI **falla** si el `index.html` construido trae un handler `on...=`, un
+`<style>` o un `<script>` inline sin el marcador, o si pierde `ngCspNonce`; y con el contenedor
+arriba comprueba que el nonce de la cabecera es el del cuerpo, que cambia entre pedidos y que la
+CSP no admite `unsafe-*`. Verificado en Chromium contra la imagen el 16/10/2026: la app pinta con
+estilos, sin violaciones de CSP, y un `<style>` inyectado sin nonce queda bloqueado.
 
 ## SBOM
 

@@ -79,6 +79,11 @@ export function nombreDeParticipante(participante: ParticipanteOperativo): strin
 export interface Marca {
   readonly resultado: ResultadoAsistencia;
   readonly motivo: string;
+  /**
+   * Observaciones <b>operativas</b> del registro, opcionales. El contrato (0.125.0, U-46 d) las
+   * declara sin datos de salud: la pantalla lo avisa al lado del campo.
+   */
+  readonly observaciones?: string;
 }
 
 /**
@@ -125,6 +130,10 @@ export function armarLote(
     };
     if (esCorreccion(participante, marca)) {
       item.motivo = marca.motivo.trim();
+    }
+    const observaciones = marca.observaciones?.trim() ?? '';
+    if (observaciones !== '') {
+      item.observaciones = observaciones;
     }
     items.push(item);
   }

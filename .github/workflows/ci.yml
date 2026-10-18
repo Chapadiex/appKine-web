@@ -292,23 +292,37 @@ jobs:
           test -s sbom/akine-web.cdx.json
           echo "Imagen: $(docker image inspect akine-web:${{ github.sha }} --format '{{.Size}}') bytes"
 
-      # La CSP permite por hash el onload con el que Angular carga la hoja de estilos diferida.
-      # Si una version de Angular cambia ese texto, el hash deja de coincidir y la app se sirve
-      # SIN ESTILOS en produccion sin que falle nada mas. Este paso lo convierte en un error.
-      - name: Verificar que la CSP cubre los handlers inline del index.html
+      # CSP con nonce (AKINE-09.02): sin 'unsafe-inline' ni 'unsafe-hashes', todo <style> y todo
+      # <script> inline del index.html tiene que llevar el marcador del nonce, y ningun elemento
+      # un handler `on...=`. Si una version de Angular vuelve a emitir el `onload` de la hoja
+      # diferida, o un <style> sin nonce, la CSP lo bloquea y la app se sirve SIN ESTILOS en
+      # produccion sin que falle nada mas. Este paso lo convierte en un error.
+      - name: Verificar que el index.html no necesita inline sin nonce
         run: |
           id=$(docker create akine-web:${{ github.sha }})
           docker cp "$id:/usr/share/nginx/html/index.html" index.prod.html
           docker rm "$id"
-          grep -o 'onload="[^"]*"' index.prod.html | sed 's/^onload="//;s/"$//' | sort -u > handlers.txt || true
           falta=0
-          while IFS= read -r h; do
-            hash=$(printf '%s' "$h" | openssl dgst -sha256 -binary | base64)
-            if ! grep -qF "'sha256-$hash'" docker/nginx/security-headers.conf; then
-              echo "::error::El handler inline \"$h\" (sha256-$hash) no esta en la CSP de docker/nginx/security-headers.conf."
-              falta=1
-            fi
-          done < handlers.txt
+          if grep -Eo '<[a-z][^>]*[[:space:]]on[a-z]+=' index.prod.html; then
+            echo "::error::El index.html trae un handler inline (on...=): la CSP sin 'unsafe-hashes' lo bloquea."
+            falta=1
+          fi
+          if grep -Eo '<style[^>]*>' index.prod.html | grep -v 'nonce="AKINE_CSP_NONCE"'; then
+            echo "::error::Un <style> del index.html no lleva el nonce: la CSP lo bloquea."
+            falta=1
+          fi
+          if grep -Eo '<script[^>]*>' index.prod.html | grep -v 'src=' | grep -v 'type="application/json"' | grep -v 'nonce="AKINE_CSP_NONCE"'; then
+            echo "::error::Un <script> inline del index.html no lleva el nonce: la CSP lo bloquea."
+            falta=1
+          fi
+          grep -q 'ngcspnonce="AKINE_CSP_NONCE"\|ngCspNonce="AKINE_CSP_NONCE"' index.prod.html || {
+            echo "::error::El index.html perdio ngCspNonce: Angular no le pone nonce a los <style> de componente."
+            falta=1
+          }
+          if grep '^add_header Content-Security-Policy' docker/nginx/security-headers.conf | grep -q "unsafe-"; then
+            echo "::error::La CSP volvio a permitir inline sin nonce."
+            falta=1
+          fi
           exit $falta
 
       - name: Arrancar la imagen y probar la SPA
@@ -319,9 +333,27 @@ jobs:
             sleep 1
           done
           # Ruta profunda del router: tiene que devolver index.html, no 404.
-          curl -fsS http://localhost:8080/una/ruta/profunda | grep -q '<app-root>'
-          # index.html sin cache; un asset con hash, inmutable.
-          curl -fsSI http://localhost:8080/ | grep -qi '^cache-control: no-cache'
+          curl -fsS http://localhost:8080/una/ruta/profunda | grep -q '<app-root'
+          # index.html sin cache ni validadores (un 304 dejaria el cuerpo con el nonce viejo); un
+          # asset con hash, inmutable.
+          curl -fsSI http://localhost:8080/ | grep -qi '^cache-control: no-store'
+          ! curl -fsSI http://localhost:8080/ | grep -qi '^etag:'
+          # El nonce (AKINE-09.02): el de la cabecera es el del cuerpo, cambia en cada pedido, el
+          # marcador no llega al navegador y la CSP no admite inline sin nonce.
+          nonce_de() {
+            curl -fsS -D "cabeceras-$1.txt" -o "cuerpo-$1.html" "http://localhost:8080$2"
+            grep -i '^content-security-policy:' "cabeceras-$1.txt" | grep -oE "'nonce-[0-9a-f]{32}'" | head -1 | tr -d "'" | sed 's/^nonce-//'
+          }
+          n1=$(nonce_de 1 /)
+          n2=$(nonce_de 2 /una/ruta/profunda)
+          test -n "$n1" && test -n "$n2" && test "$n1" != "$n2"
+          grep -q "nonce=\"$n1\"" cuerpo-1.html
+          grep -q "nonce=\"$n2\"" cuerpo-2.html
+          ! grep -q 'AKINE_CSP_NONCE' cuerpo-1.html
+          ! grep -i '^content-security-policy:' cabeceras-1.txt | grep -q 'unsafe-'
+          for h in x-content-type-options referrer-policy permissions-policy x-frame-options; do
+            grep -qi "^$h:" cabeceras-1.txt
+          done
           asset=$(curl -fsS http://localhost:8080/ | grep -o 'main-[A-Z0-9]*\.js' | head -1)
           curl -fsSI "http://localhost:8080/$asset" | grep -qi '^cache-control: public, max-age=31536000, immutable'
           # Un chunk perezoso tambien: con el optimizador de chunks su hash trae minusculas,

@@ -1,4 +1,15 @@
-import { Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  Injector,
+  afterNextRender,
+  computed,
+  effect,
+  inject,
+  input,
+  signal,
+  untracked,
+} from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
 
@@ -15,6 +26,9 @@ import {
 import { ParticipanteEnAtencionGrupal } from '../../../../api/generated/model/participante-en-atencion-grupal';
 import { ResultadoDeAtencionGrupal } from '../../../../api/generated/model/resultado-de-atencion-grupal';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
+import { PERMISO_HC_WRITE } from '../../../../core/models/permisos';
+import { FocoAlMontar } from '../../../../shared/directives/foco-al-montar.directive';
+import { PermisoDirective } from '../../../../shared/directives/permiso.directive';
 import {
   ErrorAtencionGrupal,
   errorSinContextoGrupal,
@@ -23,6 +37,7 @@ import {
 } from '../../models/atencion-grupal-errors';
 import { instanteEnPalabras } from '../../models/etiquetas-de-atencion';
 import { AtencionGrupalApi } from '../../services/atencion-grupal-api';
+import { DerivarParticipante, ReintentoConMotivo } from './derivar-participante';
 
 type EstadoCarga =
   | { readonly tipo: 'cargando' }
@@ -103,18 +118,22 @@ const ETIQUETAS_DE_ASISTENCIA: Readonly<Record<string, string>> = {
  */
 @Component({
   selector: 'app-atencion-grupal-page',
-  imports: [RouterLink],
+  imports: [RouterLink, FocoAlMontar, PermisoDirective, DerivarParticipante],
   templateUrl: './atencion-grupal-page.html',
 })
 export class AtencionGrupalPage {
   private readonly api = inject(AtencionGrupalApi);
   private readonly tenant = inject(TenantContextStore);
   private readonly router = inject(Router);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly injector = inject(Injector);
 
   /** De la ruta. `withComponentInputBinding` lo liga solo. */
   readonly claseId = input.required<string>();
 
   protected readonly instante = instanteEnPalabras;
+  /** Derivar escribe en la historia: sin `hc:write` no se ofrece (el backend rechazaria igual). */
+  protected readonly PERMISO_HC_WRITE = PERMISO_HC_WRITE;
 
   protected readonly estado = signal<EstadoCarga>({ tipo: 'cargando' });
   /** Participante con una operacion en vuelo, `'lote'` para el lote, o `null`. */
@@ -127,6 +146,16 @@ export class AtencionGrupalPage {
   protected readonly motivoDeReversion = signal('');
   protected readonly faltaMotivoDeReversion = signal(false);
   protected readonly avisoDeReversion = signal<string | null>(null);
+
+  // --- Derivacion (AKINE-08.04) ---------------------------------------------------------------
+  /** Participante cuya derivacion a un Caso se esta armando, o `null`. */
+  protected readonly derivando = signal<FilaDeAtencion | null>(null);
+  protected readonly avisoDeDerivacion = signal<string | null>(null);
+  /**
+   * Los derivados en esta visita y a que Caso, para decirlo en su fila: el panel no trae las
+   * derivaciones —son lectura clinica— y la atencion todavia no existe.
+   */
+  protected readonly derivadas = signal<ReadonlyMap<number, string>>(new Map());
 
   // --- Motivo de acceso (DP-03) -------------------------------------------------------------
   /** El motivo declarado en esta visita. Viaja en cada operacion clinica hasta salir. */
@@ -183,6 +212,9 @@ export class AtencionGrupalPage {
         this.lote.set(null);
         this.errorDeAccion.set(null);
         this.cerrarDerivaciones();
+        this.derivando.set(null);
+        this.avisoDeDerivacion.set(null);
+        this.derivadas.set(new Map());
         this.motivo.set(null);
         this.pidiendoMotivo.set(false);
         this.reintento = null;
@@ -191,7 +223,7 @@ export class AtencionGrupalPage {
     });
   }
 
-  private ids(): { consultorioId: number; claseId: number } | null {
+  protected ids(): { consultorioId: number; claseId: number } | null {
     const consultorioId = this.tenant.consultorioId();
     const claseId = Number(this.claseId());
     return consultorioId === null || !Number.isInteger(claseId) || claseId <= 0
@@ -276,6 +308,9 @@ export class AtencionGrupalPage {
           this.errorDeAccion.set(traducido);
           if (traducido.causa === 'derivacion-ambigua') {
             this.verDerivaciones(fila, true);
+          } else if (traducido.causa === 'sin-derivacion') {
+            // La salida de "no tiene derivacion" es derivarlo: se ofrece ahi mismo.
+            this.abrirDerivacion(fila);
           }
           this.cargar();
         },
@@ -334,6 +369,7 @@ export class AtencionGrupalPage {
     if (this.derivaciones()?.fila.inscripcionId !== fila.inscripcionId) {
       this.avisoDeReversion.set(null);
     }
+    this.derivando.set(null);
     this.revirtiendo.set(null);
     this.motivoDeReversion.set('');
     this.faltaMotivoDeReversion.set(false);
@@ -478,6 +514,22 @@ export class AtencionGrupalPage {
     this.avisoDeReversion.set(null);
   }
 
+  /**
+   * "No revertir": el campo y sus botones desaparecen y vuelve a dibujarse "Revertir la
+   * derivacion" —un elemento nuevo—, asi que el foco se lleva ahi a mano (WCAG 2.4.3).
+   */
+  protected cancelarReversion(derivacion: DerivacionDeParticipante): void {
+    this.revirtiendo.set(null);
+    this.faltaMotivoDeReversion.set(false);
+    this.enfocarDespues(`#revertir-${derivacion.id}`);
+  }
+
+  private enfocarDespues(selector: string): void {
+    afterNextRender(() => this.host.nativeElement.querySelector<HTMLElement>(selector)?.focus(), {
+      injector: this.injector,
+    });
+  }
+
   protected escribirMotivoDeReversion(texto: string): void {
     this.motivoDeReversion.set(texto);
     if (texto.trim() !== '') {
@@ -497,6 +549,7 @@ export class AtencionGrupalPage {
     }
     if (motivo === '') {
       this.faltaMotivoDeReversion.set(true);
+      this.enfocarDespues(`#motivo-reversion-${derivacion.id}`);
       return;
     }
     const derivacionId = derivacion.id;
@@ -531,6 +584,37 @@ export class AtencionGrupalPage {
           }
         },
       });
+  }
+
+  // ------------------------------------------------------------------ derivar
+
+  /** Abre la tarjeta para derivar al participante a un Caso. Cierra la de sus derivaciones. */
+  protected abrirDerivacion(fila: FilaDeAtencion): void {
+    this.cerrarDerivaciones();
+    this.avisoDeDerivacion.set(null);
+    this.derivando.set(fila);
+  }
+
+  /**
+   * Quedo derivado: se dice a que Caso y se recarga el panel, que ya ofrece "Iniciar atencion"
+   * para el. Repetir al mismo Caso devuelve la existente (`yaExistia`), y tambien se dice.
+   */
+  protected alDerivar(fila: FilaDeAtencion, derivacion: DerivacionDeParticipante): void {
+    const caso = this.numeroDeCaso(derivacion).replace('Caso clinico', 'caso clinico');
+    this.derivando.set(null);
+    this.errorDeAccion.set(null);
+    this.derivadas.update((actual) => new Map(actual).set(fila.inscripcionId, caso));
+    const verbo = derivacion.yaExistia === true ? 'ya estaba derivada' : 'quedo derivada';
+    this.avisoDeDerivacion.set(
+      `${fila.nombre} ${verbo} al ${caso}. Ya se puede iniciar su atencion.`,
+    );
+    this.cargar();
+  }
+
+  /** La tarjeta de derivar necesita motivo de acceso: se pide aca, el mismo de toda la visita. */
+  protected pedirMotivoParaDerivar(reintento: ReintentoConMotivo): void {
+    this.pidiendoMotivo.set(true);
+    this.reintento = () => reintento(this.motivo());
   }
 
   // ------------------------------------------------------------------ motivo de acceso

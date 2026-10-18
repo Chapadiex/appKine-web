@@ -293,6 +293,82 @@ test.describe('Contraste de color', () => {
       await auditarContraste(page, 'atencion clinica de una clase con derivaciones');
     });
 
+    /**
+     * Derivar a una participante a un caso (AKINE-08.04): el veredicto, los casos activos y el
+     * error de no haber elegido ninguno.
+     */
+    test('derivar a una participante con dos casos activos y sin elegir', async ({ page }) => {
+      await instalarApiDeContraste(page);
+      await page.goto(`/atencion/clases/${CLASE.id}`);
+      await page.getByRole('button', { name: /Derivar a un caso a Perez, Ana/ }).click();
+      const tarjeta = page.getByRole('region', { name: 'Derivar a Perez, Ana a un caso clinico' });
+      await expect(tarjeta.getByText('Con 2 casos activos')).toBeVisible();
+      await tarjeta.getByRole('button', { name: 'Derivar al caso' }).click();
+      await expect(tarjeta.getByText('Elegi a que caso se deriva.')).toBeVisible();
+
+      await auditarContraste(page, 'derivar a una participante sin elegir caso');
+    });
+
+    /**
+     * Hardening de F9 (AKINE-09.02): los estados de las pantallas de clases que faltaban. El alta
+     * con cada campo en error, la lista del dia, la asistencia con el resultado de un lote —el
+     * guardado, el credito del pase y el fallo con su causa, en la region `aria-live`— y el lote
+     * de atencion clinica con un participante que no se pudo abrir.
+     */
+    test('el alta de una clase con los campos en error', async ({ page }) => {
+      await instalarApiDeContraste(page);
+      await page.goto('/clases/nueva');
+      await page.getByLabel('Oferta grupal').selectOption({ label: 'Pilates reformer' });
+      await page.getByLabel('Fecha', { exact: true }).fill('');
+      await page.getByLabel('Cupo').fill('0');
+      await page.getByRole('button', { name: 'Programar clase' }).click();
+      await expect(page.getByText('Elegi la fecha de la clase.')).toBeVisible();
+      await expect(page.getByText('El cupo es de 1 en adelante.')).toBeVisible();
+      // El foco quedo en el primer campo en error (WCAG 3.3.1).
+      await expect(page.getByLabel('Fecha', { exact: true })).toBeFocused();
+
+      await auditarContraste(page, 'alta de una clase con los campos en error');
+    });
+
+    test('las clases del dia para tomar asistencia, con una cancelada', async ({ page }) => {
+      await instalarApiDeContraste(page);
+      await page.goto('/asistencia?fecha=2026-10-20');
+      await expect(page.getByRole('cell', { name: 'Yoga suave', exact: true })).toBeVisible();
+
+      await auditarContraste(page, 'clases del dia con una cancelada');
+    });
+
+    test('la asistencia en curso con el resultado de un lote parcial', async ({ page }) => {
+      await instalarApiDeContraste(page);
+      await page.goto(`/asistencia/${CLASE.id}`);
+      await page.getByRole('button', { name: 'Marcar presentes a los sin marcar' }).click();
+      await page
+        .getByRole('group', { name: 'Asistencia de Gomez, Luis' })
+        .getByLabel('Ausente', { exact: true })
+        .check();
+      await page.getByLabel('Motivo de la correccion').fill('Se fue a los diez minutos');
+      await page.getByRole('button', { name: /Guardar asistencia/ }).click();
+
+      const resultado = page.getByRole('region', { name: 'Resultado' });
+      await expect(resultado.getByText('Gomez, Luis')).toBeVisible();
+      await expect(resultado).toBeFocused();
+      await expect(page.locator('[aria-live="polite"]').getByText('Se guardaron 1')).toBeVisible();
+
+      await auditarContraste(page, 'asistencia en curso con el resultado de un lote parcial');
+    });
+
+    test('la atencion clinica de una clase con el lote que no pudo abrir una', async ({ page }) => {
+      await instalarApiDeContraste(page);
+      await page.goto(`/atencion/clases/${CLASE.id}`);
+      await page.getByRole('button', { name: /Iniciar para todos/ }).click();
+
+      const resultado = page.getByRole('region', { name: 'Resultado' });
+      await expect(resultado.getByText('No tiene una derivacion clinica vigente')).toBeVisible();
+      await expect(resultado).toBeFocused();
+
+      await auditarContraste(page, 'atencion clinica de una clase con un lote parcial');
+    });
+
     /** Productos de pack y pases (F9, M29): la fila dada de baja y las tres marcas de estado. */
     test('los productos de pack con uno dado de baja', async ({ page }) => {
       await instalarApiDeContraste(page);

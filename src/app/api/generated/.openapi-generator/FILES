@@ -264,6 +264,7 @@ model/derivar-participante.ts
 model/desvinculacion-impacto-response.ts
 model/detalle-operativo-de-clase.ts
 model/deuda-de-venta.ts
+model/devengo-de-clase.ts
 model/dia-de-agenda.ts
 model/dia-efectivo-response.ts
 model/disponibilidad-efectiva-response.ts

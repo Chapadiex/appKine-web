@@ -15,14 +15,18 @@ import { JUSTIFICACION, exigirCon, ingresarAlCentro } from './support/sembrado-p
 /**
  * E2E de la atencion clinica grupal (AKINE-08.05) contra el backend REAL.
  *
- * <p>Clase de una oferta grupal que genera registro clinico, con una participante presente y
- * derivada a su Caso → panel de atencion clinica de la clase → "Iniciar atencion" → la Sesion
- * abre en la pantalla de atencion de siempre, marcada como de la clase y sin selector de caso →
- * de vuelta en el panel, la atencion figura en curso y la derivacion explica que ya no se revierte.
+ * <p>Clase de una oferta grupal que genera registro clinico, con una participante presente que
+ * tiene un Caso activo → panel de atencion clinica de la clase → "Derivar a un caso" (AKINE-08.04:
+ * elegibilidad, casos activos por los datos administrativos, derivacion) → "Iniciar atencion" → la
+ * Sesion abre en la pantalla de atencion de siempre, marcada como de la clase y sin selector de
+ * caso → de vuelta en el panel, la atencion figura en curso y la derivacion explica que ya no se
+ * revierte.
  *
- * <p>Lo que estos pasos prueban y los unitarios no pueden: que el backend abra la Sesion desde la
- * derivacion con el Caso de la derivacion, que `verSesion` devuelva `claseId`/`derivacionId` para
- * que la pantalla la reconozca como grupal, y que el panel la liste despues.
+ * <p>Lo que estos pasos prueban y los unitarios no pueden: que la elegibilidad y los datos
+ * administrativos le alcancen a la profesional para elegir el Caso, que el backend acepte la
+ * derivacion que arma la pantalla, que abra la Sesion desde ella con el Caso de la derivacion, que
+ * `verSesion` devuelva `claseId`/`derivacionId` para que la pantalla la reconozca como grupal, y
+ * que el panel la liste despues.
  *
  * <p>Ingresa por pantalla como la <b>profesional</b>: `sesion:register` es suyo y la Sesion es de
  * quien la abre.
@@ -73,7 +77,7 @@ test.describe('Atencion clinica grupal contra el backend real', () => {
       items: [{ inscripcionId: inscripcion.id, resultado: 'PRESENTE' }],
     });
 
-    // La profesional abre la historia, el Caso, y deriva a la participante a ese Caso.
+    // La profesional abre la historia y el Caso. Derivar a la participante es por pantalla.
     const profesional: ApiAkine = await comoProfesional(centro);
     const historia = await exigirCon<{ id: number }>(
       profesional,
@@ -89,13 +93,6 @@ test.describe('Atencion clinica grupal contra el backend real', () => {
       { ofertaId: oferta.id, diagnosticoPresuntivo: 'Gonalgia sintetica de los E2E' },
       JUSTIFICACION,
     );
-    const derivacion = await exigirCon<{ id: number }>(
-      profesional,
-      'POST',
-      `${base}/clases/${clase.id}/inscripciones/${inscripcion.id}/derivaciones`,
-      { casoClinicoId: caso.id, motivo: 'Derivacion sintetica de los E2E' },
-      JUSTIFICACION,
-    );
 
     // --- Pantalla: el panel de la clase ---------------------------------------------------
     await ingresarAlCentro(page, centro.emailProfesional, centro);
@@ -107,6 +104,35 @@ test.describe('Atencion clinica grupal contra el backend real', () => {
     const fila = page.getByRole('row').filter({ hasText: persona.apellido });
     await expect(fila).toContainText('Presente');
     await expect(fila).toContainText('Sin atencion');
+
+    // --- Derivar por pantalla: elegibilidad, el Caso activo y la derivacion ------------------
+    const elegibilidad = respuestaDe(page, 'GET', /\/inscripciones\/\d+\/elegibilidad-clinica$/);
+    await fila.getByRole('button', { name: /Derivar a un caso/ }).click();
+    expect((await elegibilidad).status()).toBe(200);
+    const tarjeta = page.getByRole('region', { name: /^Derivar a .* a un caso clinico$/ });
+    await expect(tarjeta).toContainText('Si, con perfil de paciente');
+    await expect(tarjeta).toContainText('Con 1 caso activo');
+    const destino = tarjeta.getByRole('radio', { name: /Caso clinico 1/ });
+    await expect(destino).toBeChecked();
+    await tarjeta
+      .getByRole('textbox', { name: /Motivo de la derivacion/ })
+      .fill('Derivacion sintetica de los E2E');
+    const pedidoDerivar = respuestaDe(page, 'POST', /\/inscripciones\/\d+\/derivaciones$/);
+    await tarjeta.getByRole('button', { name: 'Derivar al caso' }).click();
+    let derivada = await pedidoDerivar;
+    if (derivada.status() === 403) {
+      await page
+        .getByRole('textbox', { name: 'Motivo del acceso' })
+        .fill(JUSTIFICACION['X-Justificacion-Acceso']);
+      const reintento = respuestaDe(page, 'POST', /\/inscripciones\/\d+\/derivaciones$/);
+      await page.getByRole('button', { name: 'Declarar y seguir' }).click();
+      derivada = await reintento;
+    }
+    expect(derivada.status()).toBe(201);
+    const derivacion = (await derivada.json()) as { id: number; casoClinicoId: number };
+    expect(derivacion.casoClinicoId).toBe(caso.id);
+    await expect(page.getByText(/quedo derivada al caso clinico 1/)).toBeVisible();
+    await expect(fila).toContainText('Derivada al caso clinico 1');
 
     // --- Iniciar la atencion: sin relacion asistencial el backend puede pedir motivo ---------
     const inicio = respuestaDe(page, 'POST', /\/inscripciones\/\d+\/atencion-clinica$/);

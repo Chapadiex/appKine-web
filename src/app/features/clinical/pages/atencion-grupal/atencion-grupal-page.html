@@ -42,7 +42,7 @@
       </section>
     } @else {
       @if (pidiendoMotivo()) {
-        <section class="tarjeta" aria-labelledby="titulo-motivo-grupal">
+        <section class="tarjeta" aria-labelledby="titulo-motivo-grupal" akineFocoAlMontar="campo">
           <h2 id="titulo-motivo-grupal">Declara el motivo del acceso</h2>
           <p class="ayuda">
             No figura que atiendas a algun participante en esta sede. Para abrir su atencion o ver
@@ -80,7 +80,7 @@
 
       <div aria-live="polite">
         @if (lote(); as resumen) {
-          <section class="tarjeta" aria-labelledby="titulo-resultado-atenciones">
+          <section class="tarjeta" aria-labelledby="titulo-resultado-atenciones" akineFocoAlMontar>
             <h2 id="titulo-resultado-atenciones">Resultado</h2>
             <p class="estado estado--ok">
               Se abrieron {{ resumen.exitosos }}
@@ -158,6 +158,11 @@
       @if (errorDeAccion(); as fallo) {
         <p class="estado estado--error" role="alert">{{ fallo.mensaje }}</p>
       }
+      <div aria-live="polite">
+        @if (avisoDeDerivacion(); as aviso) {
+          <p class="estado estado--ok" akineFocoAlMontar>{{ aviso }}</p>
+        }
+      </div>
 
       <section class="tarjeta" aria-labelledby="titulo-participantes-grupal">
         <h2 id="titulo-participantes-grupal">Participantes</h2>
@@ -213,6 +218,9 @@
                     <td>
                       @if (fila.atenciones.length === 0) {
                         Sin atencion
+                        @if (derivadas().get(fila.inscripcionId); as caso) {
+                          <br />Derivada al {{ caso }}
+                        }
                       } @else {
                         <ul>
                           @for (atencion of fila.atenciones; track atencion.sesionId) {
@@ -248,6 +256,19 @@
                             }
                           </button>
                         }
+                        @if (fila.estuvo) {
+                          <button
+                            *akinePermiso="PERMISO_HC_WRITE"
+                            type="button"
+                            class="boton boton--secundario"
+                            [disabled]="enVuelo() !== null"
+                            (click)="abrirDerivacion(fila)"
+                          >
+                            Derivar a un caso<span class="visualmente-oculto">
+                              a {{ fila.nombre }}</span
+                            >
+                          </button>
+                        }
                         <button
                           type="button"
                           class="boton boton--secundario"
@@ -267,7 +288,7 @@
       </section>
 
       @if (derivacionesAbajo(); as panel) {
-        <section class="tarjeta" aria-labelledby="titulo-derivaciones">
+        <section class="tarjeta" aria-labelledby="titulo-derivaciones" akineFocoAlMontar>
           <h2 id="titulo-derivaciones">Derivaciones de {{ panel.fila.nombre }}</h2>
           @if (panel.porAmbiguedad) {
             <p class="ayuda">
@@ -279,7 +300,7 @@
             <p class="estado estado--error" role="alert">{{ fallo.mensaje }}</p>
           }
           @if (avisoDeReversion(); as aviso) {
-            <p class="estado estado--ok" role="status">{{ aviso }}</p>
+            <p class="estado estado--ok" role="status" akineFocoAlMontar>{{ aviso }}</p>
           }
           @if (panel.lista === null) {
             @if (panel.error === null) {
@@ -290,6 +311,18 @@
               No tiene derivaciones en esta clase. Sin derivacion a un caso clinico no hay atencion
               que abrir.
             </p>
+            @if (panel.fila.estuvo) {
+              <div class="acciones">
+                <button
+                  *akinePermiso="PERMISO_HC_WRITE"
+                  type="button"
+                  class="boton"
+                  (click)="abrirDerivacion(panel.fila)"
+                >
+                  Derivar a un caso
+                </button>
+              </div>
+            }
           } @else {
             <ul>
               @for (derivacion of panel.lista; track derivacion.id) {
@@ -328,7 +361,7 @@
                         }
                       </div>
                       @if (revirtiendo() === derivacion.id) {
-                        <div class="campo">
+                        <div class="campo" akineFocoAlMontar="campo">
                           <label [for]="'motivo-reversion-' + derivacion.id"
                             >Motivo para revertir la derivacion</label
                           >
@@ -361,7 +394,7 @@
                           <button
                             type="button"
                             class="boton boton--secundario"
-                            (click)="revirtiendo.set(null)"
+                            (click)="cancelarReversion(derivacion)"
                           >
                             No revertir
                           </button>
@@ -372,6 +405,7 @@
                             type="button"
                             class="boton boton--secundario"
                             [disabled]="enVuelo() !== null"
+                            [id]="'revertir-' + derivacion.id"
                             (click)="empezarReversion(derivacion)"
                           >
                             Revertir la derivacion
@@ -390,6 +424,22 @@
             </button>
           </div>
         </section>
+      }
+
+      @if (derivando(); as fila) {
+        @if (ids(); as sede) {
+          <app-derivar-participante
+            [consultorioId]="sede.consultorioId"
+            [claseId]="sede.claseId"
+            [inscripcionId]="fila.inscripcionId"
+            [nombre]="fila.nombre"
+            [motivo]="motivo()"
+            [ofertaId]="listo()?.clase?.ofertaId ?? null"
+            (pideMotivo)="pedirMotivoParaDerivar($event)"
+            (derivado)="alDerivar(fila, $event)"
+            (cerrar)="derivando.set(null)"
+          />
+        }
       }
     }
   }

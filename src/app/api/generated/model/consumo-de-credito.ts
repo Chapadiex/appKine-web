@@ -18,11 +18,11 @@ export interface ConsumoDeCredito {
      */
     efecto?: ConsumoDeCreditoEfectoEnum;
     /**
-     * El pase afectado. Ausente si no hubo movimiento.
+     * El pase afectado. Ausente si no hubo movimiento, **y siempre ausente si quien registra no tiene `pase:read` en la sede** (U-46 c): el `efecto` le dice si consumio, pero no que pase era.
      */
     paseId?: number;
     /**
-     * Saldo del pase despues del movimiento.
+     * Saldo del pase despues del movimiento. **Solo con `pase:read`** en la sede; sin el permiso viaja ausente aunque haya habido movimiento (U-46 c).
      */
     saldo?: number;
 }

@@ -31,11 +31,11 @@
       <dd>{{ solicitud.codigoPropuesto || 'Sin codigo propuesto' }}</dd>
       <dt>Justificacion</dt>
       <dd>{{ solicitud.justificacion }}</dd>
-      <dt>Organizacion</dt>
+      <dt>Centro</dt>
       <dd>
-        {{ solicitud.organizationId }}
+        {{ nombreDeCentro(solicitud) }}
         @if (solicitud.consultorioId) {
-          (sede {{ solicitud.consultorioId }})
+          (la pidio desde una de sus sedes)
         }
       </dd>
       <dt>Pedida el</dt>
@@ -260,7 +260,7 @@
                 <tr>
                   <th scope="col">Concepto pedido</th>
                   <th scope="col">Tipo</th>
-                  <th scope="col">Organizacion</th>
+                  <th scope="col">Centro</th>
                   <th scope="col">Pedida el</th>
                   <th scope="col">Estado</th>
                   <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
@@ -276,7 +276,7 @@
                       }
                     </th>
                     <td>{{ etiquetaDeTipo(solicitud.tipo) }}</td>
-                    <td>{{ solicitud.organizationId }}</td>
+                    <td>{{ nombreDeCentro(solicitud) }}</td>
                     <td>{{ formatearInstante(solicitud.createdAt) ?? 'Sin fecha' }}</td>
                     <td>
                       <span class="marca-estado">{{ etiquetaDeEstado(solicitud.estado) }}</span>

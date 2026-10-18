@@ -50,6 +50,10 @@ export interface CatalogoSolicitudResponse {
      */
     organizationId?: number;
     /**
+     * Nombre de la organizacion que solicita, resuelto al leer: si el centro cambia de nombre, la solicitud muestra el actual. null solo si la organizacion ya no se encuentra
+     */
+    organizationName?: string | null;
+    /**
      * Motivo de la aprobacion o del rechazo, o null
      */
     resolucionNota?: string;

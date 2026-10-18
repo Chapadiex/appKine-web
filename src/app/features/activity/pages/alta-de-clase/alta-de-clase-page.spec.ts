@@ -230,6 +230,29 @@ describe('AltaDeClasePage', () => {
     httpMock.expectNone(PROGRAMAR);
   });
 
+  it('cada campo en error dice que le falta y el foco va al primero (WCAG 3.3.1)', async () => {
+    const fixture = await montar([{ ...GRUPAL, requiereProfesional: false }]);
+    escribir(fixture, '#clase-oferta', '42');
+    responderSinBoxes();
+    await asentar(fixture);
+    escribir(fixture, '#clase-fecha', '');
+    escribir(fixture, '#clase-capacidad', '0');
+    const raiz = fixture.nativeElement as HTMLElement;
+    (raiz.querySelector('button[type="submit"]') as HTMLButtonElement).click();
+    await asentar(fixture);
+
+    httpMock.expectNone(PROGRAMAR);
+    expect(textoDe(fixture)).toContain('Elegi la fecha de la clase.');
+    expect(textoDe(fixture)).toContain('El cupo es de 1 en adelante.');
+    expect(raiz.querySelector('#clase-fecha')?.getAttribute('aria-describedby')).toBe(
+      'clase-fecha-error',
+    );
+    expect(raiz.querySelector('#clase-capacidad')?.getAttribute('aria-describedby')).toBe(
+      'clase-capacidad-ayuda clase-capacidad-error',
+    );
+    expect(document.activeElement?.id).toBe('clase-fecha');
+  });
+
   it('rechaza un fin anterior al inicio sin salir a la red', async () => {
     const fixture = await montar([{ ...GRUPAL, requiereProfesional: false, duracionMinutos: 0 }]);
     escribir(fixture, '#clase-oferta', '42');

@@ -22,6 +22,8 @@ describe('traducirErrorAtencionGrupal', () => {
     ['oferta-no-clinica', 409, 'oferta-no-clinica'],
     ['caso-clinico-cerrado', 409, 'caso-cerrado'],
     ['persona-sin-perfil-paciente', 409, 'sin-perfil-paciente'],
+    ['caso-no-activo', 409, 'caso-no-activo'],
+    ['autorizacion-no-elegible', 409, 'autorizacion-no-elegible'],
     ['justificacion-de-acceso-requerida', 403, 'requiere-justificacion'],
     ['derivacion-no-accesible', 404, 'no-encontrado'],
     ['validation-error', 400, 'motivo-obligatorio'],

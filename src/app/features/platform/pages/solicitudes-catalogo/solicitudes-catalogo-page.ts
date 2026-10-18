@@ -51,6 +51,10 @@ type Especialidades =
  * catalogo comun, la solicitud <b>sigue pendiente</b> y la pantalla lo dice en el campo que
  * choco: o se normaliza distinto, o se rechaza con una nota que diga que ya existe.
  *
+ * <p><b>El centro por su nombre, no por su id</b> (RNF-M01-005). La solicitud trae
+ * `organizationName`, resuelto por el backend al leer; si viene `null` (el centro ya no se
+ * encuentra) se dice asi, sin mostrar el numero.
+ *
  * <p><b>Sin contexto de tenant.</b> La bandeja es de todos los centros y el backend se la
  * entrega a la cuenta de plataforma con su token `pre_context`. Por eso esta pantalla no mira
  * `contextEpoch`: no hay centro que cambiar.
@@ -120,7 +124,9 @@ export class SolicitudesCatalogoPage {
     this.catalogo
       .listCatalogoSolicitudes({ estado: filtro === 'TODAS' ? undefined : filtro })
       .subscribe({
-        next: (solicitudes) => this.estado.set({ tipo: 'listo', solicitudes }),
+        next: (solicitudes) => {
+          this.estado.set({ tipo: 'listo', solicitudes });
+        },
         error: (error: unknown) =>
           this.estado.set({ tipo: 'error', mensaje: traducirErrorSolicitud(error).mensaje }),
       });
@@ -270,6 +276,14 @@ export class SolicitudesCatalogoPage {
           this.causaAccion.set(traducido.causa);
         },
       });
+  }
+
+  /**
+   * El centro que pidio, por su nombre. Nunca el id crudo (RNF-M01-005). Lo resuelve el backend al
+   * leer (`organizationName`, contrato 0.122.0); `null` solo si la organizacion ya no se encuentra.
+   */
+  protected nombreDeCentro(solicitud: CatalogoSolicitudResponse): string {
+    return solicitud.organizationName || 'Centro dado de baja o no disponible';
   }
 
   protected etiquetaDeTipo(tipo: CatalogoSolicitudResponse['tipo']): string {

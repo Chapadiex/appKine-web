@@ -46,17 +46,21 @@ export interface ClaseSembrada {
 /**
  * Oferta GRUPAL sin profesional ni espacio, una clase en el dia `dias` desde hoy y `personas`
  * inscriptas. Grupal por MODALIDAD: el backend no la deduce del cupo.
+ *
+ * <p>`extraOferta` agrega campos al alta de la oferta: el esquema de cobro y el precio, por ejemplo
+ * `POR_CLASE` (U-39), que devenga una deuda con cada asistencia.
  */
 export async function claseConInscriptos(
   api: ApiAkine,
   centro: Centro,
   dias: number,
   personas: number,
+  extraOferta: Record<string, unknown> = {},
 ): Promise<ClaseSembrada> {
   const oferta = await crearOferta(api, centro, {
     nombre: `Pilates E2E ${nonce()}`,
     habilitarProfesional: false,
-    extra: { modalidad: 'GRUPAL', capacidad: 8, requiereProfesional: false },
+    extra: { modalidad: 'GRUPAL', capacidad: 8, requiereProfesional: false, ...extraOferta },
   });
   const fecha = fechaLocal(centro.timezone, dias);
   // Hora con el nonce para que dos corridas sobre la misma base no compartan horario.

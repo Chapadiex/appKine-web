@@ -106,7 +106,7 @@ export interface AsistenciaDeClasesServiceInterface {
 
     /**
      * Marcar a un participante
-     * Registra el hecho de que la persona estuvo —o no— (RF-M28-007). **No crea una Sesion clinica** (RN-M28-007) y **no genera obligacion**.  **La idempotencia sale del hecho, no de una clave**: repetir el mismo resultado devuelve 200 sin escribir nada; mandar otro resultado es una **correccion**, que exige &#x60;motivo&#x60; y **apendea** el valor anterior en el historial en vez de borrarlo.  **El cupo no se mueve**: los cuatro estados involucrados consumen lugar.
+     * Registra el hecho de que la persona estuvo —o no— (RF-M28-007). **No crea una Sesion clinica** (RN-M28-007) y **no genera obligacion**.  **La idempotencia sale del hecho, no de una clave**: repetir el mismo resultado devuelve 200 sin escribir nada; mandar otro resultado es una **correccion**, que exige &#x60;motivo&#x60; y **apendea** el valor anterior en el historial en vez de borrarlo.  **El cupo no se mueve**: los cuatro estados involucrados consumen lugar.  **Sin &#x60;pase:read&#x60; en la sede**, &#x60;consumoDeCredito&#x60; viaja solo con su &#x60;efecto&#x60;: quien toma lista sabe si consumio un credito, pero no que pase era ni cuanto le queda (U-46 c). Vale igual para el lote y para el ingreso sin inscripcion.
      * @endpoint post /api/v1/consultorios/{consultorioId}/clases/{claseId}/asistencias
 * @param requestParameters
      */
@@ -122,7 +122,7 @@ export interface AsistenciaDeClasesServiceInterface {
 
     /**
      * Marcar a varios participantes
-     * La lista compacta de RF-M13-008. **Cada item corre en su propia transaccion**: un fallo individual no revierte a los anteriores ni oculta los resultados de los demas (CA-M13-008-06).  **Responde 200 aunque haya fallos parciales** — no es un error del pedido, es el resultado del pedido—, y cada item fallido trae el mismo &#x60;problemType&#x60; que habria viajado en la operacion individual.
+     * La lista compacta de RF-M13-008. **Cada item corre en su propia transaccion**: un fallo individual no revierte a los anteriores ni oculta los resultados de los demas (CA-M13-008-06).  **Responde 200 aunque haya fallos parciales** — no es un error del pedido, es el resultado del pedido—, y cada item fallido trae el mismo &#x60;problemType&#x60; que habria viajado en la operacion individual.  **Lotes a la vez por sede** (U-49 c): si el despliegue enciende el limite y la sede ya tiene tantos lotes en curso como admite, el pedido espera unos segundos y, si no consigue lugar, responde **503** &#x60;service-unavailable&#x60; con &#x60;Retry-After&#x60; **sin haber registrado ningun item**: reenviarlo es seguro. El lote de un solo item y la operacion individual no tienen limite. Apagado por defecto.
      * @endpoint post /api/v1/consultorios/{consultorioId}/clases/{claseId}/asistencias/lote
 * @param requestParameters
      */

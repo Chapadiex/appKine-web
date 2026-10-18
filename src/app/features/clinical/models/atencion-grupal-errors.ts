@@ -1,4 +1,4 @@
-import { AkineHttpError } from '../../../core/interceptors/error.interceptor';
+import { AkineHttpError, AkineProblemType } from '../../../core/interceptors/error.interceptor';
 
 /**
  * Traduccion de los errores de la atencion clinica grupal (M14/M28, AKINE-08.05).
@@ -40,6 +40,10 @@ export type CausaAtencionGrupal =
   | 'caso-cerrado'
   /** 409 `persona-sin-perfil-paciente`. */
   | 'sin-perfil-paciente'
+  /** 409 `caso-no-activo`: al derivar, el Caso elegido no esta activo o no es de esa historia. */
+  | 'caso-no-activo'
+  /** 409 `autorizacion-no-elegible`: al derivar, la autorizacion declarada no habilita. */
+  | 'autorizacion-no-elegible'
   /** 400 `validation-error`: la reversion sin motivo. */
   | 'motivo-obligatorio'
   | 'red'
@@ -103,9 +107,23 @@ const MENSAJE_CASO_CERRADO =
 const MENSAJE_SIN_PERFIL =
   'La persona todavia no es paciente: hace falta activar su perfil de paciente.';
 
+const MENSAJE_CASO_NO_ACTIVO =
+  'El caso elegido ya no esta activo. Volve a cargar los casos y elegi uno activo, o reabrilo ' +
+  'desde la historia clinica.';
+
+const MENSAJE_AUTORIZACION_NO_ELEGIBLE =
+  'La autorizacion declarada no habilita el dia de la clase (vencida, agotada, aun no vigente o ' +
+  'no aprobada).';
+
 const MENSAJE_MOTIVO = 'Revertir una derivacion necesita un motivo.';
 
-const POR_TIPO: Readonly<Record<string, readonly [CausaAtencionGrupal, string]>> = {
+/**
+ * Clave tipada con el catalogo del contrato: un `problemType` mal escrito o renombrado por el
+ * backend no compila, y `npm run api:check` lee estas claves como manejadas.
+ */
+const POR_TIPO: Readonly<
+  Partial<Record<AkineProblemType, readonly [CausaAtencionGrupal, string]>>
+> = {
   'missing-tenant-context': ['sin-contexto', MENSAJE_SIN_CONTEXTO],
   'justificacion-de-acceso-requerida': ['requiere-justificacion', MENSAJE_REQUIERE_JUSTIFICACION],
   'oferta-no-clinica': ['oferta-no-clinica', MENSAJE_OFERTA_NO_CLINICA],
@@ -116,12 +134,14 @@ const POR_TIPO: Readonly<Record<string, readonly [CausaAtencionGrupal, string]>>
   'caso-de-atencion-grupal': ['caso-de-atencion-grupal', MENSAJE_CASO_DE_ATENCION_GRUPAL],
   'caso-clinico-cerrado': ['caso-cerrado', MENSAJE_CASO_CERRADO],
   'persona-sin-perfil-paciente': ['sin-perfil-paciente', MENSAJE_SIN_PERFIL],
+  'caso-no-activo': ['caso-no-activo', MENSAJE_CASO_NO_ACTIVO],
+  'autorizacion-no-elegible': ['autorizacion-no-elegible', MENSAJE_AUTORIZACION_NO_ELEGIBLE],
   'derivacion-no-accesible': ['no-encontrado', MENSAJE_NO_ENCONTRADO],
   'validation-error': ['motivo-obligatorio', MENSAJE_MOTIVO],
 };
 
 function porTipo(slug: string | null): ErrorAtencionGrupal | null {
-  const conocido = slug === null ? undefined : POR_TIPO[slug];
+  const conocido = slug === null ? undefined : POR_TIPO[slug as AkineProblemType];
   return conocido === undefined ? null : { causa: conocido[0], mensaje: conocido[1] };
 }
 

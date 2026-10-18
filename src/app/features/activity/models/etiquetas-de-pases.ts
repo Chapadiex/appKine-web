@@ -147,13 +147,20 @@ export function importeDePase(valor: number | undefined, moneda: string | undefi
  *
  * <p>`SIN_PASE_ELEGIBLE` <b>no es un error</b>: la asistencia quedo registrada igual —asistencia y
  * economia son independientes—. Se avisa para que recepcion le ofrezca un pase a la persona.
+ *
+ * <p>Sin `pase:read` en la sede (hoy el PROFESIONAL, U-46 c) viaja solo el `efecto`: ni
+ * `paseId` ni `saldo`. Se dice que consumio o devolvio, sin inventar un saldo de cero.
  */
 export function avisoDeConsumo(consumo: ConsumoDeCredito | undefined): string | null {
   switch (consumo?.efecto) {
     case 'CONSUMIDO':
-      return `consumio un credito del pase; le quedan ${creditosEnPalabras(consumo.saldo ?? 0)}.`;
+      return consumo.saldo === undefined
+        ? 'consumio un credito del pase.'
+        : `consumio un credito del pase; le quedan ${creditosEnPalabras(consumo.saldo)}.`;
     case 'DEVUELTO':
-      return `se le devolvio el credito al pase; ahora tiene ${creditosEnPalabras(consumo.saldo ?? 0)}.`;
+      return consumo.saldo === undefined
+        ? 'se le devolvio el credito al pase.'
+        : `se le devolvio el credito al pase; ahora tiene ${creditosEnPalabras(consumo.saldo)}.`;
     case 'SIN_PASE_ELEGIBLE':
       return (
         'no tiene un pase vigente con creditos para esta clase. La asistencia quedo registrada ' +

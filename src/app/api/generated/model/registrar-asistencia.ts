@@ -22,7 +22,7 @@ export interface RegistrarAsistencia {
      */
     motivo?: string;
     /**
-     * Nota **operativa, no clinica**. La ve cualquiera con `inscripcion:read`, asi que no puede llevar informacion de salud.
+     * Nota **operativa, no clinica**. La ve cualquiera con `inscripcion:read`, asi que **no debe llevar datos de salud** (U-46 d): ni diagnosticos, ni sintomas, ni el motivo de una ausencia medica. El servidor no puede verificarlo; la pantalla lo avisa al cargarla.
      */
     observaciones?: string;
     /**
