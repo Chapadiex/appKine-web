@@ -140,6 +140,53 @@ describe('SerieDeTurnosAltaPage', () => {
     TIMEOUT_AXE,
   );
 
+  it('un feriado en la previsualizacion dice "se omitira" y no bloquea; el alta muestra la omitida (U-22)', async () => {
+    const fixture = await montar();
+    elegirPersona(fixture);
+    await previsualizar(fixture, 3, [
+      dia('2026-10-12'),
+      { fecha: '2026-10-19', slots: [], motivoSinSlots: 'FERIADO' },
+      dia('2026-10-26'),
+    ]);
+
+    expect(texto(fixture)).toContain('Se omitira');
+    expect(texto(fixture)).toContain('1 fecha(s) caen en feriado');
+    expect(texto(fixture)).not.toContain('no tienen lugar');
+    const reservar = boton(fixture, 'Reservar los 2 turnos');
+    expect(reservar?.disabled).toBe(false);
+
+    reservar?.click();
+    httpMock
+      .expectOne((p) => p.method === 'POST' && p.url === SERIES)
+      .flush({
+        id: 8,
+        timezone: ZONA,
+        turnos: [
+          { id: 301, inicio: INICIO, estado: 'RESERVADO' },
+          { id: 302, inicio: '2026-10-26T12:00:00Z', estado: 'RESERVADO' },
+        ],
+        ocurrenciasOmitidas: [
+          { inicio: '2026-10-19T12:00:00Z', fecha: '2026-10-19', motivo: 'FERIADO' },
+        ],
+      });
+    await asentar(fixture);
+
+    expect(texto(fixture)).toContain('Se reservaron 2 turnos');
+    expect(texto(fixture)).toContain('No se reservaron 1 fecha(s)');
+    expect(texto(fixture)).toContain('Feriado: la sede no atiende');
+  });
+
+  it('si todas caen en feriado no hay nada que reservar', async () => {
+    const fixture = await montar();
+    elegirPersona(fixture);
+    await previsualizar(fixture, 1, [
+      { fecha: '2026-10-12', slots: [], motivoSinSlots: 'FERIADO' },
+    ]);
+
+    expect(texto(fixture)).toContain('no queda ninguna para reservar');
+    expect(boton(fixture, 'Reservar los 0 turnos')?.disabled).toBe(true);
+  });
+
   it('cambiar la regla descarta la previsualizacion', async () => {
     const fixture = await montar();
     await previsualizar(fixture, 1, [dia('2026-10-12')]);

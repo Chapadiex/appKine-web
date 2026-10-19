@@ -4,6 +4,8 @@ import { forkJoin } from 'rxjs';
 
 import { ClinicalApi } from '../../services/clinical-api';
 import { ErrorAtencion, traducirErrorAtencion } from '../../models/atencion-errors';
+import { PermissionsStore } from '../../../../core/services/permissions.store';
+import { PERMISO_SESION_AMEND } from '../../../../core/models/permisos';
 import {
   CONDUCTAS,
   ESCALA_EVA,
@@ -108,6 +110,7 @@ export class EnmiendaPage {
   private readonly api = inject(ClinicalApi);
   private readonly tenantContext = inject(TenantContextStore);
   private readonly router = inject(Router);
+  private readonly permisos = inject(PermissionsStore);
 
   readonly sesionId = input.required<string>();
 
@@ -152,6 +155,28 @@ export class EnmiendaPage {
     () => this.sesion()?.cierre?.asistencia === CierreDeSesionAsistenciaEnum.PRESENTE,
   );
   protected readonly hayConflicto = computed(() => this.error()?.causa === 'version-vieja');
+
+  /**
+   * `true` cuando ya se sabe que la cuenta NO tiene `sesion:amend` en esta sede (DP-43). Con los
+   * permisos sin cargar no se afirma nada: decide el backend (403).
+   */
+  protected readonly sinPermiso = computed(
+    () => this.permisos.cargados() && !this.permisos.tiene(PERMISO_SESION_AMEND),
+  );
+
+  /** Fecha limite de la enmienda: la que trae la sesion o la del 409 `enmienda-fuera-de-ventana`. */
+  protected readonly enmendableHasta = computed(
+    () => this.error()?.enmendableHasta || this.sesion()?.enmendableHasta || '',
+  );
+
+  /** Paso la ventana (DP-43): por la fecha que trae la sesion o porque el servidor lo dijo. */
+  protected readonly fueraDeVentana = computed(() => {
+    if (this.error()?.causa === 'enmienda-fuera-de-ventana') {
+      return true;
+    }
+    const hasta = this.sesion()?.enmendableHasta;
+    return hasta !== undefined && hasta !== '' && new Date(hasta).getTime() < Date.now();
+  });
 
   constructor() {
     effect(() => {

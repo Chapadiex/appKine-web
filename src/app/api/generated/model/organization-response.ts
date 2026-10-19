@@ -34,7 +34,7 @@ export interface OrganizationResponse {
      */
     slug?: string;
     /**
-     * Zona horaria IANA del centro
+     * Zona horaria IANA del centro. Decide el dia de hoy en lo que se hace sin sede (padron, coberturas, autorizaciones, ordenes, planes); por defecto la de su primera sede (DP-43)
      */
     timezone?: string;
     /**

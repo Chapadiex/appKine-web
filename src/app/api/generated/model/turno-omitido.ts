@@ -15,7 +15,7 @@ import { Turno } from './turno';
  */
 export interface TurnoOmitido { 
     /**
-     * `YA_EMPEZO` (el pasado es inalterable), `ESTADO_TERMINAL` (ya cancelado o ausente), `EN_ESPERA` (el paciente ya llego: tiene una recepcion abierta; se resuelve solo) o `CON_ATENCION` (tiene una Sesion registrada)
+     * `YA_EMPEZO` (el pasado es inalterable), `ESTADO_TERMINAL` (ya cancelado o ausente), `EN_ESPERA` (el paciente ya llego: tiene una recepcion abierta o se retiro sin ser atendido; se resuelve solo) o `CON_ATENCION` (tiene una Sesion registrada)
      */
     motivo?: TurnoOmitidoMotivoEnum;
     turno?: Turno;

@@ -1,0 +1,127 @@
+<h1>Atender sin turno</h1>
+
+<p class="descripcion">
+  Para un paciente que se atiende sin reserva. No ocupa ni libera agenda: abre la atencion clinica
+  directamente, y la atiende quien la inicia. El motivo es obligatorio, porque sin turno nada mas
+  explica por que el paciente estaba aca.
+</p>
+
+<p><a class="enlace" routerLink="/agenda/recepcion">Volver a la recepcion del dia</a></p>
+
+<section class="tarjeta" aria-labelledby="titulo-sin-turno-persona">
+  <h2 id="titulo-sin-turno-persona">A quien se atiende</h2>
+  @if (persona(); as elegida) {
+    <p>
+      <b>{{ elegida.apellido }}, {{ elegida.nombre }}</b>
+      <button type="button" class="boton boton--secundario" (click)="persona.set(null)">
+        Elegir otra persona
+      </button>
+    </p>
+  } @else {
+    <form (submit)="$event.preventDefault(); buscarPersona(busqueda.value)">
+      <div class="campo">
+        <label for="sin-turno-persona">Documento, apellido, nombre o telefono</label>
+        <input #busqueda id="sin-turno-persona" type="search" autocomplete="off" />
+      </div>
+      <div class="acciones">
+        <button type="submit" class="boton boton--secundario">Buscar</button>
+      </div>
+    </form>
+    @if (buscoPersonas() && candidatas().length === 0) {
+      <p class="estado estado--vacio">Nadie del padron coincide con la busqueda.</p>
+    }
+    @if (candidatas().length > 0) {
+      <ul>
+        @for (candidata of candidatas(); track candidata.id) {
+          <li>
+            <button
+              type="button"
+              class="boton boton--secundario"
+              (click)="elegirPersona(candidata)"
+            >
+              {{ candidata.apellido }}, {{ candidata.nombre }}
+              @if (candidata.numeroDocumento) {
+                ({{ candidata.numeroDocumento }})
+              }
+            </button>
+          </li>
+        }
+      </ul>
+    }
+  }
+</section>
+
+<section class="tarjeta" aria-labelledby="titulo-sin-turno-atencion">
+  <h2 id="titulo-sin-turno-atencion">La atencion</h2>
+  <div class="campo">
+    <label for="sin-turno-oferta">Oferta</label>
+    <select id="sin-turno-oferta" (change)="elegirOferta($any($event.target).value)">
+      <option value="" [selected]="ofertaId() === null">Elegi una oferta</option>
+      @for (oferta of ofertas(); track oferta.id) {
+        <option [value]="oferta.id" [selected]="ofertaId() === oferta.id">
+          {{ oferta.nombreComercial }}
+        </option>
+      }
+    </select>
+  </div>
+
+  <p class="ayuda">La atiende quien la inicia: vos.</p>
+
+  @if (persona() !== null) {
+    <div class="campo">
+      <label for="sin-turno-caso">
+        Caso clinico
+        @if (requiereCaso()) {
+          (obligatorio para esta oferta)
+        } @else {
+          (opcional)
+        }
+      </label>
+      <select id="sin-turno-caso" (change)="elegirCaso($any($event.target).value)">
+        <option value="" [selected]="casoId() === null" [disabled]="requiereCaso()">
+          Sin caso
+        </option>
+        @for (caso of casos(); track caso.id) {
+          <option [value]="caso.id" [selected]="casoId() === caso.id">
+            {{ rotuloDeCaso(caso) }}
+          </option>
+        }
+      </select>
+      @if (requiereCaso() && casos().length === 0 && persona()?.id; as personaId) {
+        <p class="ayuda">
+          El paciente no tiene casos activos.
+          <a class="enlace" [routerLink]="['/historia-clinica', 'personas', personaId]">
+            Abrir un caso en su historia clinica
+          </a>
+        </p>
+      }
+    </div>
+  }
+
+  <div class="campo">
+    <label for="sin-turno-motivo">Motivo (obligatorio)</label>
+    <textarea
+      id="sin-turno-motivo"
+      rows="3"
+      maxlength="1000"
+      [value]="motivo()"
+      (input)="escribirMotivo($any($event.target).value)"
+      [attr.aria-invalid]="aviso() !== '' && motivo().trim() === '' ? 'true' : null"
+    ></textarea>
+  </div>
+
+  <div aria-live="polite">
+    @if (aviso()) {
+      <p class="estado estado--error" role="alert">{{ aviso() }}</p>
+    }
+    @if (error(); as problema) {
+      <p class="estado estado--error" role="alert">{{ problema.mensaje }}</p>
+    }
+  </div>
+
+  <div class="acciones">
+    <button type="button" class="boton" [disabled]="enviando()" (click)="atender()">
+      Iniciar la atencion
+    </button>
+  </div>
+</section>

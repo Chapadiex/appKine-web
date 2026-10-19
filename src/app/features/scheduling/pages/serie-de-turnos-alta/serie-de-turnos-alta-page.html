@@ -20,6 +20,15 @@
         <li>{{ fechaHora(turno.inicio) }} — {{ textoDeEstado(turno.estado) }}</li>
       }
     </ul>
+    @if ((creada.ocurrenciasOmitidas?.length ?? 0) > 0) {
+      <h3>No se reservaron {{ creada.ocurrenciasOmitidas?.length }} fecha(s)</h3>
+      <p class="ayuda">No son turnos: nunca existieron. El resto de la serie se reservo igual.</p>
+      <ul>
+        @for (omitida of creada.ocurrenciasOmitidas ?? []; track omitida.inicio) {
+          <li>{{ fechaHora(omitida.inicio) }} — {{ textoDeOcurrenciaOmitida(omitida.motivo) }}</li>
+        }
+      </ul>
+    }
     @if (creada.id) {
       <p>
         <a class="enlace" [routerLink]="['/agenda', 'series', creada.id]">
@@ -240,6 +249,14 @@
           o la fecha de inicio: la serie entra entera o no entra.
         </p>
       }
+      @if (feriados() > 0) {
+        <p class="ayuda">
+          {{ feriados() }} fecha(s) caen en feriado: se omitiran y el resto se reserva igual.
+          @if (reservables() === 0) {
+            Como todas caen en feriado, no queda ninguna para reservar.
+          }
+        </p>
+      }
       <div class="tabla-scroll" tabindex="0" role="region" aria-label="Turnos de la serie">
         <table class="tabla">
           <caption class="visualmente-oculto">
@@ -260,6 +277,9 @@
                     <span class="marca-estado marca-estado--revocada">Rechazada al reservar</span>
                   } @else if (ocurrencia.estado === 'libre') {
                     <span class="marca-estado marca-estado--activa">Libre</span>
+                  } @else if (ocurrencia.estado === 'feriado') {
+                    <span class="marca-estado marca-estado--suspendida">Se omitira</span>
+                    {{ ocurrencia.detalle }}
                   } @else {
                     <span class="marca-estado marca-estado--revocada">Sin lugar</span>
                     {{ ocurrencia.detalle }}
@@ -273,7 +293,7 @@
 
       <div class="acciones">
         <button type="button" class="boton" [disabled]="!puedeReservar()" (click)="reservar()">
-          Reservar los {{ prevista.length }} turnos
+          Reservar los {{ reservables() }} turnos
         </button>
         @if (persona() === null) {
           <span class="ayuda">Falta elegir a quien se le reserva.</span>

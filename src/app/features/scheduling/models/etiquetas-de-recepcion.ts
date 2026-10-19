@@ -2,7 +2,12 @@ import {
   PrepagoDeRecepcion,
   PrepagoDeRecepcionEstadoEnum,
 } from '../../../api/generated/model/prepago-de-recepcion';
-import { Recepcion, RecepcionEstadoEnum } from '../../../api/generated/model/recepcion';
+import { EventoDeRecepcionTipoEnum } from '../../../api/generated/model/evento-de-recepcion';
+import {
+  Recepcion,
+  RecepcionEstadoEnum,
+  RecepcionModalidadEnum,
+} from '../../../api/generated/model/recepcion';
 
 /**
  * Textos y lecturas de la Recepcion con maquina propia (M13, AKINE E-4, DP-16).
@@ -24,12 +29,34 @@ const TEXTOS_DE_RECEPCION: Readonly<Record<RecepcionEstadoEnum, string>> = {
     'Llamada — lo llamaron desde la sala; la atencion es otro registro',
   [RecepcionEstadoEnum.ANULADA]: 'Anulada — el check-in fue un error y la llegada no vale',
   [RecepcionEstadoEnum.CERRADA]: 'Cerrada — el turno se cancelo con la persona presente',
+  [RecepcionEstadoEnum.RETIRADO]:
+    'Se retiro sin ser atendido — la llegada consta; el turno ya no admite otro check-in',
 };
+
+const TEXTOS_DE_EVENTO: Readonly<Record<EventoDeRecepcionTipoEnum, string>> = {
+  [EventoDeRecepcionTipoEnum.LLEGADA]: 'Llegada registrada',
+  [EventoDeRecepcionTipoEnum.VALIDACION]: 'Cobertura validada',
+  [EventoDeRecepcionTipoEnum.PARTICULAR]: 'Se atiende como Particular',
+  [EventoDeRecepcionTipoEnum.ESPERA]: 'Paso a la sala de espera',
+  [EventoDeRecepcionTipoEnum.LLAMADO]: 'Llamado desde la sala',
+  [EventoDeRecepcionTipoEnum.ANULACION]: 'Llegada anulada',
+  [EventoDeRecepcionTipoEnum.CIERRE_POR_CANCELACION]: 'Cerrada porque el turno se cancelo',
+  [EventoDeRecepcionTipoEnum.RETIRO]: 'Se retiro sin ser atendido',
+};
+
+/** Texto de un evento del historial de la recepcion, o el codigo crudo si es uno nuevo. */
+export function textoDeEventoDeRecepcion(tipo: string | undefined): string {
+  if (tipo === undefined || tipo === '') {
+    return 'Evento desconocido';
+  }
+  return TEXTOS_DE_EVENTO[tipo as EventoDeRecepcionTipoEnum] ?? tipo;
+}
 
 /** Estados en los que la recepcion ya no admite ninguna transicion. */
 const CERRADOS: ReadonlySet<string> = new Set<string>([
   RecepcionEstadoEnum.ANULADA,
   RecepcionEstadoEnum.CERRADA,
+  RecepcionEstadoEnum.RETIRADO,
 ]);
 
 /** Texto del estado, o el codigo crudo si el contrato sumo uno que este cliente no conoce. */
@@ -56,10 +83,46 @@ export function textoDeModalidad(modalidad: string | undefined): string {
  * `true` cuando hay una recepcion que todavia admite transiciones.
  *
  * <p>Una `ANULADA` no cuenta: la llegada no valia y el turno admite un check-in nuevo. Una
- * `CERRADA` tampoco: el turno se cancelo.
+ * `CERRADA` tampoco: el turno se cancelo. Una `RETIRADO` tampoco admite transiciones, pero
+ * <b>sigue siendo la vigente</b>: ver {@link recepcionRetirada}.
  */
 export function recepcionAbierta(recepcion: Recepcion | undefined): boolean {
   return recepcion?.estado !== undefined && !CERRADOS.has(recepcion.estado);
+}
+
+/**
+ * `true` cuando la persona se retiro sin ser atendida (U-21). <b>La llegada vale</b>: a diferencia
+ * de `ANULADA`, la recepcion sigue siendo la vigente del turno, asi que el turno ya no admite un
+ * check-in nuevo, ni marcarlo ausente (seria falso), ni reprogramarlo. El backend responde 409 a
+ * las tres; la pantalla no las ofrece.
+ */
+export function recepcionRetirada(recepcion: Recepcion | undefined): boolean {
+  return recepcion?.estado === RecepcionEstadoEnum.RETIRADO;
+}
+
+/**
+ * `true` cuando la recepcion admite "Atender como Particular" (RF-M13-005, U-21): desde `LLEGO` u
+ * `OBSERVADA`, y desde `EN_ESPERA` salvo que ya se atienda como Particular (repetirla pisaria el
+ * motivo que consta: 409).
+ */
+export function admiteParticular(recepcion: Recepcion | undefined): boolean {
+  switch (recepcion?.estado) {
+    case RecepcionEstadoEnum.LLEGO:
+    case RecepcionEstadoEnum.OBSERVADA:
+      return true;
+    case RecepcionEstadoEnum.EN_ESPERA:
+      return recepcion.modalidad !== RecepcionModalidadEnum.PARTICULAR;
+    default:
+      return false;
+  }
+}
+
+/** `true` cuando se puede registrar que la persona se retiro: solo desde `LLEGO` o `EN_ESPERA`. */
+export function admiteRetiro(recepcion: Recepcion | undefined): boolean {
+  return (
+    recepcion?.estado === RecepcionEstadoEnum.LLEGO ||
+    recepcion?.estado === RecepcionEstadoEnum.EN_ESPERA
+  );
 }
 
 /**

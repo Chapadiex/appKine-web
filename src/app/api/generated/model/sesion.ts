@@ -22,7 +22,7 @@ export interface Sesion {
     borrador?: string;
     borradorGuardadoEn?: string;
     /**
-     * Caso Clinico al que pertenece la atencion (04.03). **Ausente es legitimo**: RF-M14-002 admite atencion sin caso, y ninguna sesion anterior a 04.03 lo tiene. Exigirlo es RF-M10-007 y todavia no rige.
+     * Caso Clinico al que pertenece la atencion (04.03). **Ausente es legitimo** en las ofertas que no lo exigen. Desde DP-43 (RF-M10-007) una oferta con `requiereCasoClinico` no inicia, no quita el caso ni cierra sin el (409 `caso-clinico-requerido`). Las sesiones anteriores sin caso siguen como estaban.
      */
     casoId?: number;
     cerradaEn?: string;
@@ -44,6 +44,10 @@ export interface Sesion {
      */
     derivacionId?: number;
     /**
+     * U-25 (DP-43). Hasta cuando se puede enmendar la sesion cerrada: el cierre mas la ventana de la organizacion (30 dias si no fijo otra). Despues, la enmienda responde 409 `enmienda-fuera-de-ventana`. Ausente mientras la sesion esta abierta.
+     */
+    enmendableHasta?: string;
+    /**
      * Estado de la ATENCION, no del turno ni del cobro. `BORRADOR` mientras se carga; `CERRADA` desde el cierre clinico, y sigue `CERRADA` despues de cada enmienda.
      */
     estado?: SesionEstadoEnum;
@@ -63,6 +67,10 @@ export interface Sesion {
     id?: number;
     iniciadaEn?: string;
     /**
+     * DP-43. Por que se atendio **sin turno**. Viene solo en la atencion sin turno ni derivacion, donde es obligatorio.
+     */
+    motivoSinTurno?: string;
+    /**
      * Correlativo **dentro del Caso Clinico** (regla maestra 3, 04.03). Ausente si la sesion no tiene caso o sigue abierta. **No es numeroSesion**: aquel cuenta dentro de la historia y este dentro del caso. Desde 04.03 \"la sesion 8\" es ambigua si no se dice de que, y ninguna pantalla puede mostrar uno solo sin decir cual es.
      */
     numeroEnCaso?: number;
@@ -76,7 +84,7 @@ export interface Sesion {
      */
     previa?: EvaluacionPrevia;
     /**
-     * Membership del profesional que atiende. Decide quien puede guardar.
+     * Membership del profesional que atiende. Decide quien puede guardar. Solo cambia por el reemplazo autorizado (DP-43).
      */
     profesionalId?: number;
     /**
