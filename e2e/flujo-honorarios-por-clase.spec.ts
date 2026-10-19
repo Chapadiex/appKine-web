@@ -264,10 +264,10 @@ test.describe('Servicio en el egreso contra el backend real (DP-39)', () => {
     expect((await reporte).status()).toBe(200);
     const rentabilidad = page
       .locator('section')
-      .filter({ has: page.getByRole('heading', { name: 'Rentabilidad por servicio' }) });
+      .filter({ has: page.getByRole('heading', { name: 'Rentabilidad por servicio', level: 2 }) });
     await expect(rentabilidad.getByRole('row').filter({ hasText: oferta.nombre })).toContainText(
       '2.000,00',
     );
-    await expect(page.getByRole('heading', { name: 'Caja por servicio' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Caja por servicio', level: 2 })).toBeVisible();
   });
 });
