@@ -204,6 +204,7 @@ describe('RecepcionDelDiaPage', () => {
     expect(botonesDeLaFila(fixture, 'Ramirez, Ana')).toEqual([
       'Validar cobertura',
       'Atender como Particular',
+      'Se retiro sin ser atendido',
       'Anular la llegada',
     ]);
   });
@@ -313,6 +314,90 @@ describe('RecepcionDelDiaPage', () => {
     expect(botonesDeLaFila(fixture, 'Sosa, Bruno')).toEqual(['Anular la llegada']);
   });
 
+  it('Particular se ofrece desde la sala de espera (U-21) y la recepcion sigue EN_ESPERA', async () => {
+    const fixture = await montar();
+
+    expect(botonesDeLaFila(fixture, 'Sosa, Bruno')).toEqual([
+      'Atender como Particular',
+      'Llamar',
+      'Se retiro sin ser atendido',
+      'Anular la llegada',
+    ]);
+    clickearEnLaFila(fixture, 'Sosa, Bruno', 'Atender como Particular');
+    const raiz = fixture.nativeElement as HTMLElement;
+    const campo = raiz.querySelector('#recepcion-motivo-particular') as HTMLInputElement;
+    campo.value = 'Prefiere abonar';
+    campo.dispatchEvent(new Event('input'));
+    (raiz.querySelector('section form button[type="submit"]') as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    const pedido = httpMock.expectOne(recepcion(302, 'particular'));
+    expect(pedido.request.body).toEqual({ expectedVersion: 4, motivo: 'Prefiere abonar' });
+    pedido.flush({ ...DEL_DIA[1].recepcion, modalidad: 'PARTICULAR', version: 5 });
+    await asentar(fixture);
+
+    expect(textoDe(fixture)).toContain('1 en espera');
+    // Ya es Particular: repetirlo pisaria el motivo que consta (409), asi que no se ofrece.
+    expect(botonesDeLaFila(fixture, 'Sosa, Bruno')).toEqual([
+      'Llamar',
+      'Se retiro sin ser atendido',
+      'Anular la llegada',
+    ]);
+  });
+
+  it('"se retiro sin ser atendido" exige motivo y deja la fila RETIRADO, sin check-in', async () => {
+    const fixture = await montar();
+
+    clickearEnLaFila(fixture, 'Sosa, Bruno', 'Se retiro sin ser atendido');
+    const raiz = fixture.nativeElement as HTMLElement;
+    const confirmar = (): void => {
+      (raiz.querySelector('section form button[type="submit"]') as HTMLButtonElement).click();
+      fixture.detectChanges();
+    };
+    confirmar();
+    expect(textoDe(fixture)).toContain('Escribi por que se retiro');
+    httpMock.expectNone(recepcion(302, 'retiro'));
+
+    const campo = raiz.querySelector('#recepcion-motivo-retiro') as HTMLInputElement;
+    campo.value = 'Se canso de esperar';
+    campo.dispatchEvent(new Event('input'));
+    confirmar();
+
+    const pedido = httpMock.expectOne(recepcion(302, 'retiro'));
+    expect(pedido.request.method).toBe('POST');
+    expect(pedido.request.body).toEqual({ expectedVersion: 4, motivo: 'Se canso de esperar' });
+    pedido.flush({
+      ...DEL_DIA[1].recepcion,
+      estado: 'RETIRADO',
+      cerradaEn: '2026-09-15T13:20:00Z',
+      motivoCierre: 'Se canso de esperar',
+      version: 5,
+    });
+    await asentar(fixture);
+
+    const texto = textoDe(fixture);
+    expect(texto).toContain('se retiro sin ser atendido');
+    expect(texto).toContain('RETIRADO');
+    expect(texto).toContain('Motivo del retiro: Se canso de esperar');
+    expect(texto).toContain('0 en espera');
+    // La llegada vale: no se ofrece otro check-in, ni anular, ni nada sobre la recepcion.
+    expect(botonesDeLaFila(fixture, 'Sosa, Bruno')).toEqual([]);
+  });
+
+  it('una recepcion RETIRADO leida del servidor no ofrece registrar la llegada', async () => {
+    const fixture = await montar({
+      turnos: [
+        {
+          ...DEL_DIA[1],
+          recepcion: { ...DEL_DIA[1].recepcion, estado: 'RETIRADO', motivoCierre: 'Urgencia' },
+        },
+      ],
+    });
+
+    expect(botonesDeLaFila(fixture, 'Sosa, Bruno')).toEqual([]);
+    expect(textoDe(fixture)).toContain('Motivo del retiro: Urgencia');
+  });
+
   it('pasar a espera manda la version de la recepcion', async () => {
     const fixture = await montar({
       turnos: [{ ...DEL_DIA[3], recepcion: { ...DEL_DIA[3].recepcion, estado: 'VALIDADA' } }],
@@ -326,7 +411,12 @@ describe('RecepcionDelDiaPage', () => {
     await asentar(fixture);
 
     expect(textoDe(fixture)).toContain('paso a la sala de espera');
-    expect(botonesDeLaFila(fixture, 'Ibarra, Dario')).toEqual(['Llamar', 'Anular la llegada']);
+    expect(botonesDeLaFila(fixture, 'Ibarra, Dario')).toEqual([
+      'Atender como Particular',
+      'Llamar',
+      'Se retiro sin ser atendido',
+      'Anular la llegada',
+    ]);
   });
 
   it('anular deja la fila sin recepcion y vuelve a ofrecer el check-in', async () => {

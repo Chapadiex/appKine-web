@@ -1,7 +1,10 @@
 import { DiaDeAgendaMotivoSinSlotsEnum } from '../../../api/generated/model/dia-de-agenda';
 import { AkineHttpError, ProblemDetail } from '../../../core/interceptors/error.interceptor';
 import {
+  aReservar,
   clasificarOcurrencias,
+  enConflicto,
+  textoDeOcurrenciaOmitida,
   diaIso,
   expandirRegla,
   fechaEnZona,
@@ -99,12 +102,15 @@ describe('series — clasificacion contra la agenda', () => {
     expect(resultado.map((o) => o.estado)).toEqual([
       'libre',
       'completo',
-      'sin-horario',
+      'feriado',
       'sin-horario',
       'sin-horario',
     ]);
     expect(resultado[0].instante).toBe('2026-10-12T12:00:00Z');
-    expect(resultado[2].detalle).toContain('Feriado');
+    // U-22: el feriado se omite al reservar, no bloquea la serie.
+    expect(resultado[2].detalle).toContain('Se omitira');
+    expect(aReservar(resultado)).toBe(4);
+    expect(enConflicto(resultado)).toBe(3);
     expect(resultado[3].detalle).toContain('09:00');
   });
 
@@ -117,6 +123,8 @@ describe('series — clasificacion contra la agenda', () => {
     expect(fechaEnZona('2026-10-13T02:00:00Z', ZONA)).toBe('2026-10-12');
     expect(textoDeDias([1, 4])).toBe('Lunes y jueves');
     expect(textoDeOmitido('EN_ESPERA')).toContain('llego');
+    expect(textoDeOcurrenciaOmitida('FERIADO')).toContain('Feriado');
+    expect(textoDeOcurrenciaOmitida('OTRO')).toBe('No se reservo');
   });
 });
 

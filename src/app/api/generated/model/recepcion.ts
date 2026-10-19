@@ -15,7 +15,7 @@ import { PrepagoDeRecepcion } from './prepago-de-recepcion';
  */
 export interface Recepcion { 
     /**
-     * Cuando se anulo o se cerro.
+     * Cuando se anulo, se cerro o la persona se retiro.
      */
     cerradaEn?: string;
     /**
@@ -28,7 +28,7 @@ export interface Recepcion {
     convenioId?: number;
     enEsperaDesde?: string;
     /**
-     * `LLEGO` (sin validar), `VALIDADA` (se sabe como se atiende), `OBSERVADA` (la validacion encontro algo: advierte, no bloquea), `EN_ESPERA`, `LLAMADA`, `ANULADA` (check-in por error) o `CERRADA` (el turno se cancelo con la persona presente; la llegada consta).
+     * `LLEGO` (sin validar), `VALIDADA` (se sabe como se atiende), `OBSERVADA` (la validacion encontro algo: advierte, no bloquea), `EN_ESPERA`, `LLAMADA`, `ANULADA` (check-in por error), `RETIRADO` (se retiro sin ser atendido; la llegada consta) o `CERRADA` (el turno se cancelo con la persona presente; la llegada consta).
      */
     estado?: RecepcionEstadoEnum;
     id?: number;
@@ -46,7 +46,7 @@ export interface Recepcion {
      */
     modalidad?: RecepcionModalidadEnum;
     /**
-     * Motivo de la anulacion o de la cancelacion del turno.
+     * Motivo de la anulacion, de la cancelacion del turno o del retiro.
      */
     motivoCierre?: string;
     /**
@@ -79,7 +79,8 @@ export enum RecepcionEstadoEnum {
     EN_ESPERA = 'EN_ESPERA',
     LLAMADA = 'LLAMADA',
     ANULADA = 'ANULADA',
-    CERRADA = 'CERRADA'
+    CERRADA = 'CERRADA',
+    RETIRADO = 'RETIRADO'
 };
 export enum RecepcionModalidadEnum {
     COBERTURA = 'COBERTURA',

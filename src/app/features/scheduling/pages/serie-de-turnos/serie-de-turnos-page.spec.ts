@@ -229,6 +229,17 @@ describe('SerieDeTurnosPage', () => {
     TIMEOUT_AXE,
   );
 
+  it('muestra las fechas que el alta omitio por feriado (U-22)', async () => {
+    const fixture = await montar(undefined, {
+      ...LA_SERIE,
+      ocurrenciasOmitidas: [
+        { inicio: '2026-10-19T12:00:00Z', fecha: '2026-10-19', motivo: 'FERIADO' },
+      ],
+    });
+    expect(texto(fixture)).toContain('Fechas omitidas al reservar');
+    expect(texto(fixture)).toContain('Feriado: la sede no atiende');
+  });
+
   it('con solo turno:read no ofrece cancelar', async () => {
     const fixture = await montar([PERMISO_TURNO_READ]);
     expect(texto(fixture)).toContain('Lunes');
@@ -240,6 +251,7 @@ describe('SerieDeTurnosPage', () => {
 
   async function montar(
     permisos: string[] = [PERMISO_TURNO_READ, PERMISO_TURNO_MANAGE],
+    serie: object = LA_SERIE,
   ): Promise<ComponentFixture<SerieDeTurnosPage>> {
     TestBed.inject(TenantContextStore).select({
       organizationId: 1,
@@ -253,7 +265,7 @@ describe('SerieDeTurnosPage', () => {
     const fixture = TestBed.createComponent(SerieDeTurnosPage);
     fixture.componentRef.setInput('serieId', String(SERIE));
     fixture.detectChanges();
-    httpMock.expectOne(URL_SERIE).flush(LA_SERIE);
+    httpMock.expectOne(URL_SERIE).flush(serie);
     await asentar(fixture);
     return fixture;
   }

@@ -158,6 +158,60 @@ test.describe('Recepcion del dia contra el backend real', () => {
     await expect(fila.getByRole('button', { name: 'Registrar la llegada' })).toBeVisible();
   });
 
+  /**
+   * U-21 (DP-43): la persona se retira desde la sala. La llegada VALE: la recepcion queda RETIRADO,
+   * el turno no cambia y ya no se ofrece otro check-in, ni marcar ausente ni moverlo. El backend lo
+   * confirma con 409 a un check-in nuevo.
+   */
+  test('se retiro sin ser atendido: exige motivo, queda RETIRADO y el turno no admite ausencia', async ({
+    page,
+    api,
+    centro,
+  }) => {
+    const fila = await abrirLaRecepcion(page, persona);
+    await fila.getByRole('button', { name: 'Registrar la llegada' }).click();
+    await expect(fila.getByText('LLEGO', { exact: true })).toBeVisible();
+    // Particular desde la sala (U-21): llega a EN_ESPERA y se ofrece sin anular la llegada.
+    await fila.getByRole('button', { name: 'Validar cobertura' }).click();
+    await fila.getByRole('button', { name: 'Pasar a espera' }).click();
+    await expect(fila.getByText('EN_ESPERA', { exact: true })).toBeVisible();
+    await expect(fila.getByRole('button', { name: 'Atender como Particular' })).toBeVisible();
+
+    await fila.getByRole('button', { name: 'Se retiro sin ser atendido' }).click();
+    const panel = page.getByRole('region', { name: 'Confirmar la transicion de la recepcion' });
+    await panel.getByRole('button', { name: 'Registrar el retiro' }).click();
+    await expect(panel.getByText('Escribi por que se retiro: es obligatorio.')).toBeVisible();
+
+    const retiro = respuestaDe(page, 'POST', /\/recepcion\/retiro$/);
+    await panel.getByLabel('Motivo (obligatorio)').fill('Se canso de esperar');
+    await panel.getByRole('button', { name: 'Registrar el retiro' }).click();
+    expect((await retiro).status()).toBe(200);
+
+    await expect(fila.getByText('RETIRADO', { exact: true })).toBeVisible();
+    await expect(fila.getByText('Motivo del retiro: Se canso de esperar')).toBeVisible();
+    await expect(fila.getByRole('button')).toHaveCount(0);
+
+    const guardado = await verTurno(api, centro, turno.id);
+    expect(guardado.recepcion?.estado).toBe('RETIRADO');
+    expect(guardado.estado).toBe('RESERVADO');
+
+    // Un check-in nuevo rebota: la llegada ya consta.
+    const otraLlegada = await api.pedir(
+      'POST',
+      `/api/v1/consultorios/${centro.consultorioId}/turnos/${turno.id}/recepcion`,
+    );
+    expect(otraLlegada.status()).toBe(409);
+
+    // El ciclo del turno no ofrece la ausencia ni la reprogramacion, y muestra el RETIRO.
+    await fila.getByRole('link', { name: 'Ver el turno' }).click();
+    await expect(page.getByText('se retiro sin ser atendida')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Marcar que no vino' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Mover a otro horario' })).toHaveCount(0);
+    const historial = page.getByRole('region', { name: 'Historial de la recepcion' });
+    await expect(historial.getByText(/Se retiro sin ser atendido —/)).toBeVisible();
+    await expect(historial.getByText('Se canso de esperar')).toBeVisible();
+  });
+
   test('un turno cancelado se lista con su motivo y no admite registrar la llegada', async ({
     page,
     api,

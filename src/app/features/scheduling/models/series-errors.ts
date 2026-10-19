@@ -106,8 +106,14 @@ export function traducirErrorSerie(
         ocurrenciaInicio === ''
           ? MENSAJE_SIN_LUGAR_SIN_FECHA
           : `No se reservo ningun turno: la serie entra entera o no entra. El turno del ` +
-            `${fechaHoraEnZona(ocurrenciaInicio, timezone)} ${causaDeOcurrencia(base)}. Cambia ` +
-            'el dia, la hora o la fecha de inicio y volve a previsualizar.',
+            `${fechaHoraEnZona(ocurrenciaInicio, timezone)} ${causaDeOcurrencia(base)}. ` +
+            // U-22: un feriado ya no frena la serie, se omite. Este 409 en el alta es una fecha sin
+            // horario o, con feriados, que TODAS caian en feriado.
+            (base.causa === 'slot-no-disponible'
+              ? 'Las fechas en feriado se omiten solas; si todas caen en feriado, no queda ' +
+                'ninguna para reservar. '
+              : '') +
+            'Cambia el dia, la hora o la fecha de inicio y volve a previsualizar.',
     };
   }
 

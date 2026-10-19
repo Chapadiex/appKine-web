@@ -22,6 +22,11 @@
  */
 export const PERMISO_TENANT_MANAGE = 'tenant:manage';
 export const PERMISO_TENANT_READ = 'tenant:read';
+/**
+ * Editar los datos de la organizacion (`updateOrganization`, contrato 0.143.0), del `ORG_ADMIN`.
+ * Hoy ninguna pantalla edita la organizacion: la constante queda para gatearla cuando exista.
+ */
+export const PERMISO_TENANT_UPDATE = 'tenant:update';
 export const PERMISO_CONSULTORIO_MANAGE = 'consultorio:manage';
 export const PERMISO_COLABORADOR_MANAGE = 'colaborador:manage';
 export const PERMISO_COLABORADOR_READ = 'colaborador:read';
@@ -61,6 +66,7 @@ export const PERMISO_PACIENTE_READ = 'paciente:read';
 export const PERMISOS_F1 = [
   PERMISO_TENANT_MANAGE,
   PERMISO_TENANT_READ,
+  PERMISO_TENANT_UPDATE,
   PERMISO_CONSULTORIO_MANAGE,
   PERMISO_COLABORADOR_MANAGE,
   PERMISO_COLABORADOR_READ,
@@ -189,6 +195,18 @@ export const PERMISO_HC_WRITE = 'hc:write';
  * backend (409 `sesion-ajena`).
  */
 export const PERMISO_SESION_REGISTER = 'sesion:register';
+
+/**
+ * Enmendar una sesion cerrada (DP-43, U-25). Base del `PROFESIONAL` en su sede, no otorgable; la
+ * propiedad sigue mandando: enmendar la ajena es 409 `sesion-ajena`, no 403.
+ */
+export const PERMISO_SESION_AMEND = 'sesion:amend';
+
+/**
+ * Reemplazar al profesional de una atencion abierta (DP-43, U-24). Base <b>solo</b> del
+ * `CONSULTORIO_ADMIN`, no otorgable. No habilita a escribir en la atencion ajena.
+ */
+export const PERMISO_SESION_REASSIGN = 'sesion:reassign';
 
 /**
  * Clases grupales (M28, AKINE-08.01). `clase:read` mira la grilla y los cupos —que no nombran a

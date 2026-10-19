@@ -7,6 +7,7 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { OcurrenciaOmitidaDeSerie } from './ocurrencia-omitida-de-serie';
 import { Turno } from './turno';
 
 
@@ -35,6 +36,10 @@ export interface SerieDeTurnos {
      */
     hora?: string;
     id?: number;
+    /**
+     * Las ocurrencias que la regla producia y el alta NO reservo, con su motivo (U-22): hoy, las que caen en un dia que la sede cierra por feriado. Vacia si no se omitio ninguna. No son turnos —nunca existieron—, y por eso `cantidad` puede ser mayor que la cantidad de `turnos`.
+     */
+    ocurrenciasOmitidas?: Array<OcurrenciaOmitidaDeSerie>;
     ofertaId?: number;
     personaId?: number;
     /**

@@ -6,6 +6,9 @@ import { Router, provideRouter } from '@angular/router';
 import { EnmiendaPage } from './enmienda-page';
 import { TIMEOUT_AXE, esperarSinViolaciones } from '../../../../core/testing/axe';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
+import { PermissionsStore } from '../../../../core/services/permissions.store';
+import { RUTA_PERMISOS_EFECTIVOS } from '../../../../core/testing/rutas-api';
+import { PERMISO_SESION_AMEND, PERMISO_SESION_REGISTER } from '../../../../core/models/permisos';
 import { errorInterceptor } from '../../../../core/interceptors/error.interceptor';
 import { provideApi } from '../../../../api/generated/provide-api';
 
@@ -269,6 +272,57 @@ describe('EnmiendaPage', () => {
     expect(valor(fixture, '#enmienda-zona')).toBe('cadera');
   });
 
+  it('muestra hasta cuando se puede enmendar (DP-43)', async () => {
+    const fixture = await montar({ ...CERRADA, enmendableHasta: '2099-10-15T12:48:00Z' });
+    expect(texto(fixture)).toContain('Se puede enmendar hasta');
+    expect(botonEnmendar(fixture).disabled).toBe(false);
+  });
+
+  it('una ventana vencida no deja mandar la enmienda', async () => {
+    const fixture = await montar({ ...CERRADA, enmendableHasta: '2026-01-01T00:00:00Z' });
+    expect(texto(fixture)).toContain('La ventana para enmendar esta atencion cerro');
+    expect(botonEnmendar(fixture).disabled).toBe(true);
+  });
+
+  it('el 409 enmienda-fuera-de-ventana dice hasta cuando se podia y bloquea el envio', async () => {
+    const fixture = await montar();
+    escribir(fixture, '#enmienda-motivo', 'Corrijo la zona');
+    apretar(fixture, 'Registrar la enmienda');
+    httpMock
+      .expectOne((p) => p.method === 'POST' && p.url === ENMIENDAS)
+      .flush(
+        {
+          type: 'https://akine.app/problems/enmienda-fuera-de-ventana',
+          status: 409,
+          cerradaEn: '2026-09-15T12:48:00Z',
+          ventanaDias: 30,
+          enmendableHasta: '2026-10-15T12:48:00Z',
+        },
+        { status: 409, statusText: 'Conflict' },
+      );
+    await estabilizar(fixture);
+
+    expect(texto(fixture)).toContain('ya no se puede enmendar');
+    expect(texto(fixture)).toContain('durante 30 dias');
+    expect(botonEnmendar(fixture).disabled).toBe(true);
+  });
+
+  it('sin sesion:amend lo dice y no deja mandar', async () => {
+    TestBed.inject(PermissionsStore).cargar().subscribe();
+    httpMock.expectOne(RUTA_PERMISOS_EFECTIVOS).flush({ permissions: [PERMISO_SESION_REGISTER] });
+    const fixture = await montar();
+    expect(texto(fixture)).toContain('necesita el permiso de enmienda');
+    expect(botonEnmendar(fixture).disabled).toBe(true);
+  });
+
+  it('con sesion:amend deja mandar', async () => {
+    TestBed.inject(PermissionsStore).cargar().subscribe();
+    httpMock.expectOne(RUTA_PERMISOS_EFECTIVOS).flush({ permissions: [PERMISO_SESION_AMEND] });
+    const fixture = await montar();
+    expect(texto(fixture)).not.toContain('necesita el permiso de enmienda');
+    expect(botonEnmendar(fixture).disabled).toBe(false);
+  });
+
   it('una atencion abierta no se enmienda: lo dice', async () => {
     const fixture = await montar({ ...CERRADA, numeroSesion: undefined }, []);
     expect(texto(fixture)).toContain('Esta atencion sigue abierta');
@@ -338,6 +392,12 @@ describe('EnmiendaPage', () => {
     }
     boton.click();
     fixture.detectChanges();
+  }
+
+  function botonEnmendar(fixture: ComponentFixture<EnmiendaPage>): HTMLButtonElement {
+    return Array.from(
+      fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>,
+    ).find((b) => (b.textContent ?? '').trim() === 'Registrar la enmienda') as HTMLButtonElement;
   }
 
   function texto(fixture: ComponentFixture<EnmiendaPage>): string {

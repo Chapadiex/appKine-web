@@ -12,3 +12,6 @@ export const RUTA_SOLICITUDES_DE_PLATAFORMA = `/${SEGMENTO_PLATAFORMA}/solicitud
 
 /** Suscripcion de un centro y cambio de plan (PLA-06, D3 del pre-QA del 14/10). */
 export const RUTA_SUSCRIPCIONES_DE_PLATAFORMA = `/${SEGMENTO_PLATAFORMA}/suscripciones`;
+
+/** Catalogo global de financiadores y planes (DP-43, U-12). */
+export const RUTA_CATALOGO_FINANCIADORES_DE_PLATAFORMA = `/${SEGMENTO_PLATAFORMA}/catalogo-financiadores`;

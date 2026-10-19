@@ -4,6 +4,7 @@ import { RouterLink } from '@angular/router';
 import { Observable } from 'rxjs';
 
 import { Agenda } from '../../../../api/generated/model/agenda';
+import { EventoDeRecepcion } from '../../../../api/generated/model/evento-de-recepcion';
 import { EventoDeTurno } from '../../../../api/generated/model/evento-de-turno';
 import { PERMISO_TURNO_MANAGE } from '../../../../core/models/permisos';
 import { PermissionsStore } from '../../../../core/services/permissions.store';
@@ -24,7 +25,12 @@ import {
   textoDeEstado,
   textoDeEvento,
 } from '../../models/etiquetas-de-turno';
-import { recepcionAbierta, textoDePrepago } from '../../models/etiquetas-de-recepcion';
+import {
+  recepcionAbierta,
+  recepcionRetirada,
+  textoDeEventoDeRecepcion,
+  textoDePrepago,
+} from '../../models/etiquetas-de-recepcion';
 import { PrepagoDeRecepcionEstadoEnum } from '../../../../api/generated/model/prepago-de-recepcion';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 
@@ -108,7 +114,15 @@ export class CicloDeTurnoPage {
   protected readonly textoDeEstado = textoDeEstado;
   protected readonly textoDeEvento = textoDeEvento;
 
+  protected readonly textoDeEventoDeRecepcion = textoDeEventoDeRecepcion;
+
   protected readonly eventos = signal<readonly EventoDeTurno[]>([]);
+
+  /**
+   * Historial de la RECEPCION del turno (DP-16), que es otra maquina: llegada, validacion, espera,
+   * retiro. Se pide solo cuando la lectura del turno trae una recepcion vigente.
+   */
+  protected readonly eventosDeRecepcion = signal<readonly EventoDeRecepcion[]>([]);
   protected readonly cargando = signal(false);
   protected readonly enviando = signal(false);
   protected readonly error = signal<ErrorAgenda | null>(null);
@@ -225,6 +239,13 @@ export class CicloDeTurnoPage {
     });
   });
 
+  /**
+   * `true` cuando la persona se retiro sin ser atendida (U-21). La llegada vale: el turno ya no se
+   * puede marcar ausente (seria falso) ni reprogramar (se llevaria a otra fecha una llegada de
+   * esta). El backend responde 409 a las dos; la pantalla no las ofrece. Cancelar si.
+   */
+  protected readonly retirado = computed(() => recepcionRetirada(this.turnoLeido()?.recepcion));
+
   /** Las tres transiciones con version, disponibles solo cuando hay todo lo que necesitan. */
   protected readonly puedeTransicionar = computed(
     () => this.puedeOperar() && !this.cicloCerrado() && this.versionConocida() !== null,
@@ -232,7 +253,7 @@ export class CicloDeTurnoPage {
 
   /** Reprogramar necesita ademas la oferta, que es de donde salen los horarios candidatos. */
   protected readonly puedeReprogramar = computed(
-    () => this.puedeTransicionar() && this.numeroDeOferta() !== null,
+    () => this.puedeTransicionar() && this.numeroDeOferta() !== null && !this.retirado(),
   );
 
   protected readonly slotsDestino = computed<readonly SlotDisponible[]>(
@@ -253,6 +274,7 @@ export class CicloDeTurnoPage {
         this.turnoLeido.set(null);
         this.agendaDestino.set(null);
         this.eventos.set([]);
+        this.eventosDeRecepcion.set([]);
         this.error.set(null);
         this.exito.set(null);
         this.panel.set('ninguno');
@@ -309,6 +331,9 @@ export class CicloDeTurnoPage {
           this.turnoLeido.set(turno);
           this.fijarVersionEnLaUrl(turno.version);
         }
+        if (turno.recepcion !== undefined) {
+          this.cargarHistorialDeRecepcion(consultorioId, turnoId);
+        }
         if (!sabiaLaOferta && this.numeroDeOferta() !== null) {
           this.cargarDestino();
         }
@@ -318,6 +343,14 @@ export class CicloDeTurnoPage {
       error: () => this.turnoLeido.set(null),
     });
     this.cargarHistorial();
+  }
+
+  /** Silencioso: si falla, la seccion queda vacia y el resto de la pantalla sigue operando. */
+  private cargarHistorialDeRecepcion(consultorioId: number, turnoId: number): void {
+    this.api.historialRecepcion(consultorioId, turnoId).subscribe({
+      next: (eventos) => this.eventosDeRecepcion.set(eventos),
+      error: () => this.eventosDeRecepcion.set([]),
+    });
   }
 
   /**

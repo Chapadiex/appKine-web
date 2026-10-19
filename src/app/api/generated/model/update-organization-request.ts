@@ -18,7 +18,7 @@ export interface UpdateOrganizationRequest {
      */
     name?: string;
     /**
-     * Nueva zona horaria IANA. Omitirla o enviarla vacia la deja como esta
+     * Nueva zona horaria IANA de la organizacion: decide el dia de hoy en todo lo que se hace sin sede (DP-43). Omitirla o enviarla vacia la deja como esta; un offset fijo o una abreviatura es 400
      */
     timezone?: string;
     /**

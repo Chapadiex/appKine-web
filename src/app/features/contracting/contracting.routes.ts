@@ -58,6 +58,18 @@ export const routes: Routes = [
     data: { [DATA_ANCHO]: ANCHO_AMPLIO },
   },
   {
+    // DP-43 (U-12): agregar al centro una entrada del catalogo global. Va antes de la ruta con
+    // parametro para que "catalogo" no se lea como un `financiadorId`.
+    path: 'financiadores/catalogo',
+    canActivate: [contextGuard, permissionGuard(PERMISO_CONVENIO_READ)],
+    loadComponent: () =>
+      import('./pages/catalogo-de-financiadores/catalogo-de-financiadores-page').then(
+        (m) => m.CatalogoDeFinanciadoresPage,
+      ),
+    title: 'AKINE - Catalogo de financiadores',
+    data: { [DATA_ANCHO]: ANCHO_AMPLIO },
+  },
+  {
     path: 'financiadores/:financiadorId/planes',
     canActivate: [contextGuard, permissionGuard(PERMISO_CONVENIO_READ)],
     loadComponent: () =>
