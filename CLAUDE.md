@@ -227,8 +227,9 @@ Reglas innegociables del QA:
 ### Estado al 19/10/2026, sobre `05d81c4`
 
 > Esta subsección **supersede** a la del 14/10 en cliente, tests, E2E, PR y pendiente; la del 14/10
-> queda como historia. Medido el 19/10 sobre `origin/main` y por la API de GitHub. **Otros agentes
-> mergean en paralelo** (cliente 0.142 y 0.143): los números son los de `05d81c4`.
+> queda como historia. Medido el 19/10 sobre `origin/main` y por la API de GitHub. Los números son
+> los de `05d81c4`; **esa misma tarde entró #121** (cliente 0.143.0, merge `0209715`): la fila del
+> cliente y el pendiente 1 lo reflejan.
 
 `main` tiene **447 commits** y el último merge es `05d81c4` (PR #117); los ocho checks de ese commit
 están en verde (lint/build/tests, contrato alineado, contraste, E2E contra el backend real, imagen y
@@ -239,7 +240,7 @@ mergeados salvo los Dependabot #88 y #115, cerrados sin merge) y el **#4** (hist
 
 | | Valor |
 |---|---|
-| Cliente generado | **0.134.0** (`contractVersion` en `environment.ts` y `environment.prod.ts`, y `src/app/api/generated/package.json`). `appKine-api` `main` está en **0.142.0** (357 operaciones): **el cliente va 8 minors atrás** y le faltan las pantallas de 0.137.0 (catálogo global de financiadores), 0.140.0 (`RETIRADO` y feriados en series) y 0.142.0 (caso por oferta, atención sin turno, reemplazo, enmienda) |
+| Cliente generado | **0.143.0** desde #121 (`0209715`, mergeado el 19/10 a la tarde), igual que `appKine-api` `main` (api #172). En `05d81c4` era 0.134.0, **8 minors atrás** del contrato 0.142.0; #121 trajo las pantallas de 0.137.0 (catálogo global de financiadores, en plataforma y en el centro), 0.140.0 (`RETIRADO` en recepción y feriados en series) y 0.142.0 (caso por oferta, atención sin turno, reemplazo de profesional y ventana de enmienda), con E2E contra el backend real de las cuatro |
 | Tests | **184 archivos de spec / 1.977 tests, 0 fallos**, leídos del log de "Lint, build y tests" de `05d81c4` (el 14/10 eran 142 / 1.523). Cobertura del mismo log: st **90,43 %** · rama **81,86 %** · fn **85,79 %** · ln **91,44 %**, sobre el piso de 80 % en las cuatro |
 | E2E | **68 specs** en `e2e/` (`ls e2e/*.spec.ts`; el 14/10 eran 34). El job "E2E Playwright contra el backend real" pasó en `05d81c4`. No se corrieron localmente para este documento |
 
@@ -264,9 +265,12 @@ Lo que entró desde el 14/10, con su PR:
 
 #### Pendiente
 
-1. **Regenerar el cliente contra 0.142.0** (y 0.143.0 cuando entre) y hacer las pantallas de los
-   tres minors que faltan; hoy `api:check` pasa porque el frontend declara 0.134.0, no porque esté
-   al día.
+1. **Mergear #122**, las correcciones de la revisión de #121 (prepago de un turno `RETIRADO`
+   descrito como "antes del check-in", historial de recepción con enums crudos, búsqueda del catálogo
+   del centro sin cancelar el pedido anterior, `rotuloDeCaso` duplicado, dos formatos de fecha en la
+   enmienda), y los Dependabot #118 y #119 (el lock de #119 perdía `@emnapi/core` y
+   `@emnapi/runtime`, peers opcionales que Windows no escribe y `npm ci` en Linux exige; se
+   repusieron a mano desde el lock de `main`).
 2. **Dependabot de versión mayor** (Angular 22, TypeScript 6, Vitest 5): se hace después del
    despliegue del RC (DP-41).
 3. **El QA manual del §6 de `appKine-api`** y la aprobación y el deploy, que son del usuario.
