@@ -265,7 +265,7 @@ Lo que entró desde el 14/10, con su PR:
 
 #### Pendiente
 
-1. **Mergear #122**, las correcciones de la revisión de #121 (prepago de un turno `RETIRADO`
+1. **Mergear #123**, las correcciones de la revisión de #121 (prepago de un turno `RETIRADO`
    descrito como "antes del check-in", historial de recepción con enums crudos, búsqueda del catálogo
    del centro sin cancelar el pedido anterior, `rotuloDeCaso` duplicado, dos formatos de fecha en la
    enmienda), y los Dependabot #118 y #119 (el lock de #119 perdía `@emnapi/core` y
