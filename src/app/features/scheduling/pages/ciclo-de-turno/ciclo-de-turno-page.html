@@ -273,9 +273,9 @@
             <dt>Estado</dt>
             <dd>
               @if (evento.estadoAnterior) {
-                {{ evento.estadoAnterior }} →
+                {{ nombreDeEstadoDeRecepcion(evento.estadoAnterior) }} →
               }
-              {{ evento.estadoNuevo }}
+              {{ nombreDeEstadoDeRecepcion(evento.estadoNuevo) }}
             </dd>
             @if (evento.motivo) {
               <dt>Motivo</dt>

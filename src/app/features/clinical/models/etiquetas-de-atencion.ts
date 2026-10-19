@@ -3,6 +3,7 @@ import {
   CerrarSesionProximaConductaEnum,
   CerrarSesionToleranciaEnum,
 } from '../../../api/generated/model/cerrar-sesion';
+import { CasoAdministrativoResponse } from '../../../api/generated/model/caso-administrativo-response';
 import { EvaluacionPrevia } from '../../../api/generated/model/evaluacion-previa';
 import {
   GuardarEvaluacionDolorLateralidadEnum,
@@ -157,6 +158,12 @@ export function comoModo(valor: unknown): GuardarEvaluacionModoEnum {
  * agenda: esta pantalla la mira quien esta atendiendo, en la sede, ahora. Ademas la respuesta de
  * la sesion no trae `timezone`, asi que inventarla seria peor.
  */
+/** Rotulo de un caso para elegirlo: numero y, si se sabe, desde cuando esta abierto. */
+export function rotuloDeCaso(caso: CasoAdministrativoResponse): string {
+  const desde = instanteEnPalabras(caso.abiertoEn);
+  return `Caso ${caso.numeroCaso ?? ''}${desde ? `, abierto el ${desde}` : ''}`;
+}
+
 export function instanteEnPalabras(instante: string | undefined): string {
   if (instante === undefined || instante === '') {
     return '';

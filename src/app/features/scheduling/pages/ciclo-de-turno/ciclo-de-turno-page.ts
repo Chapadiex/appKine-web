@@ -26,7 +26,8 @@ import {
   textoDeEvento,
 } from '../../models/etiquetas-de-turno';
 import {
-  recepcionAbierta,
+  llegadaVigente,
+  nombreDeEstadoDeRecepcion,
   recepcionRetirada,
   textoDeEventoDeRecepcion,
   textoDePrepago,
@@ -115,6 +116,7 @@ export class CicloDeTurnoPage {
   protected readonly textoDeEvento = textoDeEvento;
 
   protected readonly textoDeEventoDeRecepcion = textoDeEventoDeRecepcion;
+  protected readonly nombreDeEstadoDeRecepcion = nombreDeEstadoDeRecepcion;
 
   protected readonly eventos = signal<readonly EventoDeTurno[]>([]);
 
@@ -234,7 +236,7 @@ export class CicloDeTurnoPage {
       return '';
     }
     return textoDePrepago(prepago, {
-      antesDelCheckin: !recepcionAbierta(leido?.recepcion),
+      antesDelCheckin: !llegadaVigente(leido?.recepcion),
       turnoCaido: caido,
     });
   });

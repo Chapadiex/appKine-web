@@ -5,7 +5,7 @@ import { CasoAdministrativoResponse } from '../../../../api/generated/model/caso
 import { OfertaResponse } from '../../../../api/generated/model/oferta-response';
 import { PersonaResponse } from '../../../../api/generated/model/persona-response';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
-import { instanteEnPalabras } from '../../models/etiquetas-de-atencion';
+import { rotuloDeCaso } from '../../models/etiquetas-de-atencion';
 import { ErrorAtencion, traducirErrorAtencion } from '../../models/atencion-errors';
 import { ClinicalApi } from '../../services/clinical-api';
 
@@ -36,8 +36,6 @@ export class AtencionSinTurnoPage {
   private readonly api = inject(ClinicalApi);
   private readonly router = inject(Router);
   private readonly tenantContext = inject(TenantContextStore);
-
-  protected readonly instanteEnPalabras = instanteEnPalabras;
 
   protected readonly ofertas = signal<readonly OfertaResponse[]>([]);
   protected readonly ofertaId = signal<number | null>(null);
@@ -159,10 +157,7 @@ export class AtencionSinTurnoPage {
       });
   }
 
-  protected rotuloDeCaso(caso: CasoAdministrativoResponse): string {
-    const desde = instanteEnPalabras(caso.abiertoEn);
-    return `Caso ${caso.numeroCaso ?? ''}${desde ? `, abierto el ${desde}` : ''}`;
-  }
+  protected readonly rotuloDeCaso = rotuloDeCaso;
 
   private cargarOfertas(): void {
     const consultorioId = this.tenantContext.consultorioId();

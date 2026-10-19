@@ -1,5 +1,6 @@
 import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
+import { Subscription } from 'rxjs';
 
 import { CatalogoFinanciadorResponse } from '../../../../api/generated/model/catalogo-financiador-response';
 import { PERMISO_CONVENIO_MANAGE } from '../../../../core/models/permisos';
@@ -49,6 +50,8 @@ export class CatalogoDeFinanciadoresPage {
   /** Id de la entrada con una adopcion en vuelo, o `null`. */
   protected readonly adoptando = signal<number | null>(null);
   protected readonly errorAccion = signal<string | null>(null);
+  /** Listado en vuelo: una busqueda nueva lo cancela, para que la respuesta vieja no pise a la nueva. */
+  private pedidoDeListado: Subscription | null = null;
 
   protected readonly puedeAdoptar = computed(() => this.permisos.tiene(PERMISO_CONVENIO_MANAGE));
   protected readonly entradas = computed(() => {
@@ -76,7 +79,8 @@ export class CatalogoDeFinanciadoresPage {
     this.estado.set({ tipo: 'cargando' });
     const q = this.busqueda().trim();
     const tipo = this.filtroTipo();
-    this.api
+    this.pedidoDeListado?.unsubscribe();
+    this.pedidoDeListado = this.api
       .listarCatalogo({ q: q === '' ? undefined : q, tipo: tipo === '' ? undefined : tipo })
       .subscribe({
         next: (entradas) => this.estado.set({ tipo: 'listo', entradas }),

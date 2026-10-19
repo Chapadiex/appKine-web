@@ -23,6 +23,7 @@ import { textoDeEstado } from '../../models/etiquetas-de-turno';
 import {
   admiteParticular,
   admiteRetiro,
+  llegadaVigente,
   recepcionAbierta,
   recepcionRetirada,
   textoDeModalidad,
@@ -400,7 +401,7 @@ export class RecepcionDelDiaPage {
       turno.estado === TurnoDelDiaEstadoEnum.RESERVADO ||
       turno.estado === TurnoDelDiaEstadoEnum.CONFIRMADO;
     // Una recepcion RETIRADO sigue siendo la vigente (U-21): la llegada vale y otro check-in es 409.
-    return reservaViva && !recepcionAbierta(turno.recepcion) && !recepcionRetirada(turno.recepcion);
+    return reservaViva && !llegadaVigente(turno.recepcion);
   }
 
   /** Particular desde `LLEGO`, `OBSERVADA` o `EN_ESPERA` (U-21), salvo que ya lo sea. */
@@ -457,7 +458,8 @@ export class RecepcionDelDiaPage {
    */
   protected textoDePrepago(turno: TurnoDelDia): string {
     return textoDePrepago(turno.prepago, {
-      antesDelCheckin: !recepcionAbierta(turno.recepcion),
+      // Una RETIRADO no esta abierta, pero la llegada consta: el prepago no es "antes del check-in".
+      antesDelCheckin: !llegadaVigente(turno.recepcion),
       turnoCaido:
         turno.estado === TurnoDelDiaEstadoEnum.CANCELADO ||
         turno.estado === TurnoDelDiaEstadoEnum.AUSENTE,
