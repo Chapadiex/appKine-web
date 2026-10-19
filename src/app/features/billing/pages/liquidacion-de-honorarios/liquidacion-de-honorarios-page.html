@@ -1,0 +1,266 @@
+<p><a class="enlace" routerLink="/egresos">Volver a los egresos</a></p>
+
+<h1>Liquidar honorarios por clase</h1>
+
+<p class="descripcion">
+  Cuanto le corresponde a un instructor por las clases que dicto en un periodo: la tarifa de la
+  oferta por cada participante presente, repartida en partes iguales entre los instructores de la
+  clase. Confirmar crea un <b>egreso en borrador</b>, imputado al servicio; no mueve la caja.
+</p>
+
+<!-- ================================ Pedido ================================ -->
+
+<section class="tarjeta" aria-labelledby="titulo-pedido">
+  <h2 id="titulo-pedido">Que liquidar</h2>
+  <form [formGroup]="filtro" (ngSubmit)="calcular()" novalidate>
+    <div class="campos-en-linea">
+      <div class="campo">
+        <label for="honorarios-colaborador">Colaborador</label>
+        <select
+          id="honorarios-colaborador"
+          formControlName="colaborador"
+          [attr.aria-invalid]="campoInvalido('colaborador') ? 'true' : null"
+        >
+          <option value="">Elegi un colaborador</option>
+          @for (vinculo of colaboradores(); track vinculo.id) {
+            <option [value]="vinculo.id">{{ nombreDe(vinculo) }}</option>
+          }
+        </select>
+        @if (sinColaboradores()) {
+          <p class="ayuda">No se pudo leer el padron de colaboradores.</p>
+        }
+        @if (campoInvalido('colaborador')) {
+          <p class="campo__error" role="alert">Elegi a quien se le liquida.</p>
+        }
+      </div>
+
+      <div class="campo">
+        <label for="honorarios-desde">Clases desde</label>
+        <input id="honorarios-desde" type="date" formControlName="desde" />
+      </div>
+
+      <div class="campo">
+        <label for="honorarios-hasta">Clases hasta</label>
+        <input
+          id="honorarios-hasta"
+          type="date"
+          formControlName="hasta"
+          [attr.aria-invalid]="campoInvalido('hasta') ? 'true' : null"
+        />
+        @if (campoInvalido('hasta')) {
+          <p class="campo__error" role="alert">
+            El periodo va completo y no puede terminar antes de empezar.
+          </p>
+        }
+      </div>
+
+      <div class="campo">
+        <label for="honorarios-oferta">Servicio (opcional)</label>
+        <select id="honorarios-oferta" formControlName="ofertaId">
+          <option value="">Todos los servicios grupales</option>
+          @for (oferta of ofertas(); track oferta.id) {
+            <option [value]="oferta.id">{{ oferta.nombreComercial }}</option>
+          }
+        </select>
+      </div>
+    </div>
+
+    <div class="acciones">
+      <button type="submit" class="boton" [disabled]="estado().tipo === 'cargando'">
+        Calcular el borrador
+      </button>
+    </div>
+  </form>
+</section>
+
+<!-- ================================ Resultado ================================ -->
+
+<div aria-live="polite">
+  @for (hecha of confirmadas(); track hecha.id) {
+    <section class="tarjeta" role="status" [attr.aria-labelledby]="'titulo-hecha-' + hecha.id">
+      <h2 class="estado estado--ok" [id]="'titulo-hecha-' + hecha.id">
+        Liquidacion #{{ hecha.id }} confirmada por {{ importe(hecha.importeTotal, hecha.moneda) }}
+      </h2>
+      <p>Se creo el egreso en borrador: falta cargarle el comprobante, confirmarlo y pagarlo.</p>
+      <div class="acciones">
+        <a class="boton" [routerLink]="['/egresos', hecha.egresoId]">Ir al egreso</a>
+        <a
+          class="boton boton--secundario"
+          [routerLink]="['/egresos/honorarios/liquidaciones', hecha.id]"
+        >
+          Ver la liquidacion
+        </a>
+      </div>
+    </section>
+  }
+
+  @if (errorConfirmacion(); as fallo) {
+    <section class="tarjeta" role="alert" aria-labelledby="titulo-error-confirmacion">
+      <h2 id="titulo-error-confirmacion">No se confirmo la liquidacion</h2>
+      <p class="estado estado--error">{{ fallo.mensaje }}</p>
+    </section>
+  }
+</div>
+
+@if (estado().tipo === 'cargando') {
+  <p class="estado estado--cargando">Calculando el borrador…</p>
+}
+
+@if (error(); as fallo) {
+  <section class="tarjeta" role="alert" aria-labelledby="titulo-error-borrador">
+    <h2 id="titulo-error-borrador">No se pudo calcular el borrador</h2>
+    <p class="estado estado--error">{{ fallo.mensaje }}</p>
+    <div class="acciones">
+      @if (fallo.causa === 'sin-contexto') {
+        <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto</a>
+      } @else {
+        <button type="button" class="boton boton--secundario" (click)="calcular()">
+          Reintentar
+        </button>
+      }
+    </div>
+  </section>
+}
+
+@if (borrador(); as b) {
+  <section class="tarjeta" aria-labelledby="titulo-borrador">
+    <h2 id="titulo-borrador">Borrador del {{ fecha(b.desde) }} al {{ fecha(b.hasta) }}</h2>
+    <p>
+      Total a liquidar: <b class="importe">{{ importe(b.importeTotal) }}</b> en
+      {{ b.clases?.length ?? 0 }} clases.
+    </p>
+    @if (mezclaOfertas()) {
+      <p class="ayuda">
+        Las clases son de {{ grupos().length }} servicios distintos. Cada liquidacion es de un solo
+        servicio, porque su egreso se imputa a el: se confirma una por servicio.
+      </p>
+    }
+    @if (grupos().length > 0) {
+      <div class="campo">
+        <label for="honorarios-concepto">Concepto del egreso (opcional)</label>
+        <input
+          id="honorarios-concepto"
+          type="text"
+          autocomplete="off"
+          maxlength="200"
+          [formControl]="concepto"
+          aria-describedby="honorarios-concepto-ayuda"
+        />
+        <p class="ayuda" id="honorarios-concepto-ayuda">
+          Vacio, se usa "Honorarios por clase del" y el periodo.
+        </p>
+      </div>
+    }
+  </section>
+
+  @if (grupos().length === 0) {
+    <p class="estado estado--vacio">
+      No hay clases para liquidar a este colaborador en el periodo.
+      @if (excluidas().length > 0) {
+        Abajo esta por que no entra cada una.
+      }
+    </p>
+  }
+
+  @for (grupo of grupos(); track grupo.ofertaId) {
+    <section class="tarjeta" [attr.aria-labelledby]="'titulo-grupo-' + grupo.ofertaId">
+      <h2 [id]="'titulo-grupo-' + grupo.ofertaId">
+        {{ grupo.ofertaNombre }}: {{ totalDelGrupo(grupo) }}
+      </h2>
+      <div
+        class="tabla-scroll"
+        tabindex="0"
+        role="region"
+        [attr.aria-label]="'Clases incluidas de ' + grupo.ofertaNombre"
+      >
+        <table class="tabla">
+          <thead>
+            <tr>
+              <th scope="col">Fecha</th>
+              <th scope="col">Clase</th>
+              <th scope="col">Presentes</th>
+              <th scope="col">Por participante</th>
+              <th scope="col">Total de la clase</th>
+              <th scope="col">Reparto</th>
+              <th scope="col">Le corresponde</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (linea of grupo.lineas; track linea.claseId) {
+              <tr>
+                <td>{{ fecha(linea.fecha) }}</td>
+                <td>{{ linea.titulo || grupo.ofertaNombre }}</td>
+                <td>{{ linea.presentes }}</td>
+                <td class="importe">{{ importe(linea.importePorParticipante, linea.moneda) }}</td>
+                <td class="importe">{{ importe(linea.importeClase, linea.moneda) }}</td>
+                <td>{{ parteEnPalabras(linea) }}</td>
+                <td class="importe">
+                  <b>{{ importe(linea.importeColaborador, linea.moneda) }}</b>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <div class="acciones">
+        <button
+          type="button"
+          class="boton"
+          [disabled]="confirmando() !== null"
+          (click)="confirmar(grupo)"
+        >
+          @if (confirmando() === grupo.ofertaId) {
+            Confirmando…
+          } @else if (mezclaOfertas()) {
+            Confirmar la liquidacion de {{ grupo.ofertaNombre }}
+          } @else {
+            Confirmar la liquidacion
+          }
+        </button>
+      </div>
+    </section>
+  }
+
+  @if (excluidas().length > 0) {
+    <section class="tarjeta" aria-labelledby="titulo-excluidas">
+      <h2 id="titulo-excluidas">Clases que no entran</h2>
+      <div
+        class="tabla-scroll"
+        tabindex="0"
+        role="region"
+        aria-label="Tabla de las clases que no entran"
+      >
+        <table class="tabla">
+          <thead>
+            <tr>
+              <th scope="col">Fecha</th>
+              <th scope="col">Clase</th>
+              <th scope="col">Servicio</th>
+              <th scope="col">Por que no entra</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (excluida of excluidas(); track excluida.claseId) {
+              <tr>
+                <td>{{ fecha(excluida.fecha) }}</td>
+                <td>{{ excluida.titulo || excluida.ofertaNombre }}</td>
+                <td>{{ excluida.ofertaNombre }}</td>
+                <td>
+                  {{ motivoEnPalabras(excluida.motivo) }}
+                  @if (excluida.motivo === 'YA_LIQUIDADA' && excluida.egresoId) {
+                    —
+                    <a class="enlace" [routerLink]="['/egresos', excluida.egresoId]">
+                      ver el egreso<span class="visualmente-oculto">
+                        de la clase del {{ fecha(excluida.fecha) }}</span
+                      >
+                    </a>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  }
+}

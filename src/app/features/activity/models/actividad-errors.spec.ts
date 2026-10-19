@@ -30,6 +30,13 @@ describe('traducirErrorActividad', () => {
     expect(r.mensaje).toContain('Ocupados 2 de 2');
   });
 
+  it('clase-con-honorarios-liquidados (DP-38) explica que hay que anular el egreso', () => {
+    const r = traducirErrorActividad(error(409, 'clase-con-honorarios-liquidados', { claseId: 9 }));
+    expect(r.causa).toBe('clase-con-honorarios-liquidados');
+    expect(r.accion).toBe('ninguna');
+    expect(r.mensaje).toContain('anula el egreso de esa liquidacion');
+  });
+
   it('clase-completa sin extensiones conserva el mensaje base', () => {
     const r = traducirErrorActividad(error(409, 'clase-completa'));
     expect(r.mensaje).toContain('lista de espera');

@@ -33,6 +33,7 @@ import {
   etiquetaDeTipoDePase,
   importeDePase,
   origenDeMovimiento,
+  renovacionApagadaPorAutorizante,
 } from '../../models/etiquetas-de-pases';
 import { ErrorPase, errorSinContextoDePase, traducirErrorPase } from '../../models/pase-errors';
 import { MOVIMIENTOS_POR_PAGINA, PasesApi } from '../../services/pases-api';
@@ -404,6 +405,8 @@ export class PasesDePersonaPage {
   }
 
   // ------------------------------------------------------------------ renovacion de abonos
+
+  protected readonly renovacionApagadaPorAutorizante = renovacionApagadaPorAutorizante;
 
   /**
    * El periodo que renovo a este, si esta en la lista. Lo dice el backend (`renovadoPorPaseId`,

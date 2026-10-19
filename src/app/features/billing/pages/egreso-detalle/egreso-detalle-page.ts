@@ -17,6 +17,7 @@ import { Observable } from 'rxjs';
 
 import { Egreso } from '../../../../api/generated/model/egreso';
 import { JornadaCaja } from '../../../../api/generated/model/jornada-caja';
+import { OfertaResponse } from '../../../../api/generated/model/oferta-response';
 import { PagoDeEgreso } from '../../../../api/generated/model/pago-de-egreso';
 import { EditarEgresoCategoriaEnum } from '../../../../api/generated/model/editar-egreso';
 import { RegistrarEgresoCategoriaEnum } from '../../../../api/generated/model/registrar-egreso';
@@ -57,6 +58,18 @@ type EstadoCarga =
 /** Que se sabe de la caja de la sede: `null` mientras no se pregunto o no hizo falta. */
 type SituacionDeCaja =
   { readonly abierta: false } | { readonly abierta: true; readonly jornada: JornadaCaja };
+
+/**
+ * Campos que un egreso nacido de una liquidacion de honorarios no deja corregir (DP-38): salen de
+ * las clases liquidadas. Concepto y comprobante si se corrigen.
+ */
+const CAMPOS_DE_LIQUIDACION = [
+  'categoria',
+  'importe',
+  'periodoDesde',
+  'periodoHasta',
+  'ofertaId',
+] as const;
 
 type Operacion = 'editar' | 'confirmar' | 'pagar' | 'anular' | 'anular-pago';
 
@@ -113,6 +126,8 @@ export class EgresoDetallePage {
 
   protected readonly carga = signal<EstadoCarga>({ tipo: 'cargando' });
   protected readonly egreso = signal<Egreso | null>(null);
+  /** Ofertas de la sede, activas y de baja: el egreso puede estar imputado a una de baja (DP-39). */
+  protected readonly ofertas = signal<readonly OfertaResponse[]>([]);
   protected readonly caja = signal<SituacionDeCaja | null>(null);
   protected readonly operando = signal<Operacion | null>(null);
   protected readonly errorOperacion = signal<ErrorEgreso | null>(null);
@@ -132,6 +147,7 @@ export class EgresoDetallePage {
     comprobanteTipo: [''],
     comprobanteNumero: [''],
     comprobanteFecha: [''],
+    ofertaId: [''],
   });
 
   protected readonly pago = this.fb.group({
@@ -144,6 +160,22 @@ export class EgresoDetallePage {
   private claveDePago = nuevaClaveDeIntento();
 
   protected readonly esBorrador = computed(() => esBorradorDeEgreso(this.egreso()));
+  /** El egreso nacio de una liquidacion de honorarios por clase (DP-38). */
+  protected readonly deLiquidacion = computed(() => tieneLiquidacion(this.egreso()));
+  /** Las que se ofrecen al corregir: activas, mas la actual aunque este de baja. */
+  protected readonly ofertasElegibles = computed(() => {
+    const actual = this.egreso()?.ofertaId;
+    return this.ofertas().filter((o) => o.estado === 'ACTIVO' || o.id === actual);
+  });
+  protected readonly nombreDeOferta = computed(() => {
+    const id = this.egreso()?.ofertaId;
+    if (id === undefined || id === null) {
+      return null;
+    }
+    const oferta = this.ofertas().find((o) => o.id === id);
+    const nombre = oferta?.nombreComercial ?? `Oferta #${id}`;
+    return oferta !== undefined && oferta.estado !== 'ACTIVO' ? `${nombre} (dada de baja)` : nombre;
+  });
   protected readonly admitePago = computed(() => admitePago(this.egreso()));
   protected readonly conPagosVigentes = computed(() => tienePagosVigentes(this.egreso()));
   protected readonly admiteAnulacion = computed(
@@ -179,11 +211,13 @@ export class EgresoDetallePage {
       untracked(() => {
         // Un egreso de otra organizacion en pantalla es una fuga de tenant.
         this.egreso.set(null);
+        this.ofertas.set([]);
         this.caja.set(null);
         this.errorOperacion.set(null);
         this.aviso.set(null);
         this.cerrarPaneles();
         this.cargar();
+        this.cargarOfertas();
       });
     });
   }
@@ -244,7 +278,8 @@ export class EgresoDetallePage {
       'editar',
       // Contrato 0.92.0: la correccion lleva la version leida y ya no manda beneficiario, moneda
       // ni clave. Si otro lo cambio antes, el backend responde 409 `concurrent-modification` y no
-      // pisa nada.
+      // pisa nada. El PUT REEMPLAZA (0.132.0): la oferta viaja siempre, o el egreso queda sin
+      // imputar. En uno de liquidacion los campos bloqueados viajan con su valor leido.
       this.api.editar(ids.consultorioId, ids.egresoId, {
         version,
         categoria: v.categoria as EditarEgresoCategoriaEnum,
@@ -255,6 +290,7 @@ export class EgresoDetallePage {
         comprobanteTipo: v.comprobanteTipo.trim() || undefined,
         comprobanteNumero: v.comprobanteNumero.trim() || undefined,
         comprobanteFecha: v.comprobanteFecha || undefined,
+        ofertaId: v.ofertaId === '' ? undefined : Number(v.ofertaId),
       }),
       'Cambios guardados. El egreso sigue en borrador.',
     );
@@ -408,7 +444,17 @@ export class EgresoDetallePage {
         comprobanteTipo: egreso.comprobanteTipo ?? '',
         comprobanteNumero: egreso.comprobanteNumero ?? '',
         comprobanteFecha: egreso.comprobanteFecha ?? '',
+        ofertaId: egreso.ofertaId == null ? '' : String(egreso.ofertaId),
       });
+      const bloqueados = tieneLiquidacion(egreso);
+      for (const campo of CAMPOS_DE_LIQUIDACION) {
+        const control = this.edicion.controls[campo];
+        if (bloqueados) {
+          control.disable({ emitEvent: false });
+        } else {
+          control.enable({ emitEvent: false });
+        }
+      }
       this.edicionIntentada.set(false);
     }
     if (admitePago(egreso)) {
@@ -421,6 +467,18 @@ export class EgresoDetallePage {
       this.pagoIntentado.set(false);
       this.consultarCaja();
     }
+  }
+
+  private cargarOfertas(): void {
+    const consultorioId = this.tenantContext.consultorioId();
+    if (consultorioId === null) {
+      return;
+    }
+    // Sin el listado se muestra el id: el egreso se sigue pudiendo corregir.
+    this.api.ofertasDeLaSede(consultorioId).subscribe({
+      next: (lista) => this.ofertas.set(lista),
+      error: () => this.ofertas.set([]),
+    });
   }
 
   /** La caja solo importa para pagar en efectivo, y solo se consulta si el egreso admite pago. */
@@ -482,4 +540,8 @@ export class EgresoDetallePage {
       injector: this.injector,
     });
   }
+}
+
+function tieneLiquidacion(egreso: Egreso | null): boolean {
+  return egreso?.liquidacionHonorariosId != null;
 }

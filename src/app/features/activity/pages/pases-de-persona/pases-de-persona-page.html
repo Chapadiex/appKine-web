@@ -361,6 +361,17 @@
                         La renovacion la autorizo {{ pase.renovacionAutorizadaPor }}.
                       }
                     </div>
+                  } @else if (renovacionApagadaPorAutorizante(pase.renovacionOmitidaMotivo)) {
+                    <div class="ayuda" role="note">
+                      La renovacion automatica se apago porque
+                      @if (pase.renovacionAutorizadaPor) {
+                        {{ pase.renovacionAutorizadaPor }}, quien la autorizo,
+                      } @else {
+                        quien la autorizo
+                      }
+                      ya no puede vender en esta sede (se lo desvinculo o perdio el permiso). Para
+                      que el abono se siga renovando, activala de nuevo.
+                    </div>
                   } @else if (pase.renovacionOmitidaMotivo) {
                     <div class="ayuda">
                       No se pudo renovar: {{ pase.renovacionOmitidaMotivo }}. La renovacion

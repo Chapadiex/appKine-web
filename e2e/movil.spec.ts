@@ -1,6 +1,11 @@
 import { Page, expect, test } from '@playwright/test';
 
-import { CLASE, PERSONA_CON_PASES, instalarApiDeContraste } from './support/contraste';
+import {
+  CLASE,
+  PERSONA_CON_PASES,
+  abrirBorradorDeHonorarios,
+  instalarApiDeContraste,
+} from './support/contraste';
 import { FECHA_MOVIL, PERSONA_ID, instalarApiMovil } from './support/movil';
 
 /**
@@ -101,6 +106,18 @@ const PANTALLAS: readonly Pantalla[] = [
     ruta: `/clases/${CLASE.id}`,
     apiDeF9: true,
     listo: texto('Sosa, Eva — posicion 1'),
+  },
+  {
+    nombre: 'tarifas de honorario de una oferta',
+    ruta: `/servicios/ofertas/${CLASE.ofertaId}/honorarios`,
+    apiDeF9: true,
+    listo: texto('Rige hoy'),
+  },
+  {
+    nombre: 'borrador de una liquidacion de honorarios',
+    ruta: '/egresos/honorarios',
+    apiDeF9: true,
+    listo: abrirBorradorDeHonorarios,
   },
   {
     nombre: 'clases del dia',

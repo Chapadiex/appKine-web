@@ -3,6 +3,7 @@ import { expect, test } from '@playwright/test';
 import {
   CLASE,
   PERSONA_CON_PASES,
+  abrirBorradorDeHonorarios,
   auditarContraste,
   instalarApiDeContraste,
 } from './support/contraste';
@@ -278,6 +279,25 @@ test.describe('Contraste de color', () => {
       await expect(page.getByText('Sosa, Eva — posicion 1')).toBeVisible();
 
       await auditarContraste(page, 'detalle de una clase llena con lista de espera');
+    });
+
+    /** Honorarios por clase (DP-38): la grilla de tarifas de la oferta, con una dada de baja. */
+    test('las tarifas de honorario de una oferta, con una dada de baja', async ({ page }) => {
+      await instalarApiDeContraste(page);
+      await page.goto(`/servicios/ofertas/${CLASE.ofertaId}/honorarios`);
+      await expect(page.getByText('Rige hoy')).toBeVisible();
+
+      await auditarContraste(page, 'tarifas de honorario de una oferta');
+    });
+
+    test('el borrador de una liquidacion de honorarios con dos servicios y excluidas', async ({
+      page,
+    }) => {
+      await instalarApiDeContraste(page);
+      await page.goto('/egresos/honorarios');
+      await abrirBorradorDeHonorarios(page);
+
+      await auditarContraste(page, 'borrador de una liquidacion de honorarios');
     });
 
     /** Atencion clinica de la clase (AKINE-08.05), con las derivaciones de una participante. */

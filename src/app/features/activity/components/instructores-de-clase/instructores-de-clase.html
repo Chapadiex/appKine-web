@@ -1,0 +1,93 @@
+<section class="tarjeta" aria-labelledby="titulo-instructores">
+  <h2 id="titulo-instructores">Instructores</h2>
+
+  @if (errorDeLectura(); as fallo) {
+    <p class="estado estado--error">{{ fallo.mensaje }}</p>
+    <div class="acciones">
+      <button type="button" class="boton boton--secundario" (click)="cargar()">Reintentar</button>
+    </div>
+  } @else if (instructores() === null) {
+    <p class="estado estado--cargando">Leyendo los instructores…</p>
+  } @else {
+    <dl class="detalle">
+      <dt>Principal</dt>
+      <dd>{{ nombreDelPrincipal() }}</dd>
+      <dt>Adicionales</dt>
+      <dd>
+        {{ nombresDeAdicionales() }}
+      </dd>
+    </dl>
+    <p class="ayuda">
+      Los honorarios de la clase se reparten en partes iguales entre los {{ cantidad() }}
+      instructores. Un adicional no ocupa agenda: la clase solo bloquea el horario del principal.
+    </p>
+
+    <div aria-live="polite">
+      @if (aviso()) {
+        <p id="aviso-instructores" class="estado estado--ok" role="status" tabindex="-1">
+          {{ aviso() }}
+        </p>
+      }
+    </div>
+
+    @if (puedeGestionar() && !editando()) {
+      <div class="acciones">
+        <button
+          id="boton-instructores"
+          type="button"
+          class="boton boton--secundario"
+          (click)="abrir()"
+        >
+          Cambiar los instructores adicionales
+        </button>
+      </div>
+    }
+
+    @if (editando()) {
+      <form class="panel-instructores" (submit)="$event.preventDefault(); guardar()" novalidate>
+        <fieldset class="grupo">
+          <legend id="instructores-titulo-panel" tabindex="-1">Instructores adicionales</legend>
+          @if (candidatos() === null) {
+            <p class="estado estado--cargando">Buscando profesionales…</p>
+          } @else if (opciones().length === 0) {
+            <p class="estado estado--vacio">
+              No hay otros profesionales habilitados para esta oferta.
+            </p>
+          } @else {
+            @for (opcion of opciones(); track opcion.membershipId) {
+              <label class="opcion-radio">
+                <input
+                  type="checkbox"
+                  [checked]="elegido(opcion.membershipId)"
+                  (change)="alternar(opcion.membershipId, $any($event.target).checked)"
+                />
+                {{ opcion.nombre }}
+              </label>
+            }
+          }
+        </fieldset>
+        <p class="ayuda">
+          Se guarda la lista completa: lo que destildes deja de ser instructor de la clase.
+        </p>
+
+        @if (errorDeAccion(); as fallo) {
+          <p class="estado estado--error" role="alert">{{ fallo.mensaje }}</p>
+        }
+
+        <div class="acciones">
+          <button type="submit" class="boton" [disabled]="enviando()">
+            {{ enviando() ? 'Guardando…' : 'Guardar los instructores' }}
+          </button>
+          <button
+            type="button"
+            class="boton boton--secundario"
+            [disabled]="enviando()"
+            (click)="cerrar()"
+          >
+            Cancelar
+          </button>
+        </div>
+      </form>
+    }
+  }
+</section>

@@ -12,8 +12,11 @@ import { HttpHeaders }                                       from '@angular/comm
 import { Observable }                                        from 'rxjs';
 
 import { AnularEgreso } from '../model/models';
+import { BorradorDeHonorarios } from '../model/models';
+import { ConfirmarLiquidacionDeHonorariosRequest } from '../model/models';
 import { EditarEgreso } from '../model/models';
 import { Egreso } from '../model/models';
+import { LiquidacionDeHonorarios } from '../model/models';
 import { PagoDeEgreso } from '../model/models';
 import { ProblemDetail } from '../model/models';
 import { RegistrarEgreso } from '../model/models';
@@ -47,9 +50,22 @@ export interface BuscarEgresoRequestParams {
     desplazamiento?: number;
 }
 
+export interface CalcularBorradorDeHonorariosRequestParams {
+    consultorioId: number;
+    colaboradorMembershipId: number;
+    desde: string;
+    hasta: string;
+    ofertaId?: number;
+}
+
 export interface ConfirmarEgresoRequestParams {
     consultorioId: number;
     egresoId: number;
+}
+
+export interface ConfirmarLiquidacionDeHonorariosRequestParams {
+    consultorioId: number;
+    confirmarLiquidacionDeHonorariosRequest: ConfirmarLiquidacionDeHonorariosRequest;
 }
 
 export interface EditarRequestParams {
@@ -74,6 +90,11 @@ export interface VerEgresoRequestParams {
     egresoId: number;
 }
 
+export interface VerLiquidacionDeHonorariosRequestParams {
+    consultorioId: number;
+    liquidacionId: number;
+}
+
 
 export interface EgresosServiceInterface {
     defaultHeaders: HttpHeaders;
@@ -81,7 +102,7 @@ export interface EgresosServiceInterface {
 
     /**
      * Anular el egreso
-     * Anula el compromiso con motivo obligatorio (RF-M22-005).  **No toca la caja**: un egreso que solo se debia nunca movio plata.  **Se rechaza si quedan pagos vigentes** (409 &#x60;egreso-con-pagos&#x60;, con &#x60;yaPagado&#x60; en el cuerpo). Anular el compromiso dejaria plata fuera del cajon sin nada que la justifique. El orden correcto es anular primero los pagos —que es lo que la devuelve— y despues el compromiso.  **Anular no significa borrar** (RN-M22-002): la fila queda con su motivo, su actor y su fecha.
+     * Anula el compromiso con motivo obligatorio (RF-M22-005).  **No toca la caja**: un egreso que solo se debia nunca movio plata.  **Se rechaza si quedan pagos vigentes** (409 &#x60;egreso-con-pagos&#x60;, con &#x60;yaPagado&#x60; en el cuerpo). Anular el compromiso dejaria plata fuera del cajon sin nada que la justifique. El orden correcto es anular primero los pagos —que es lo que la devuelve— y despues el compromiso.  **Anular no significa borrar** (RN-M22-002): la fila queda con su motivo, su actor y su fecha.  **Si el egreso nacio de una liquidacion de honorarios por clase (DP-38), la libera**: sus clases vuelven a entrar en el borrador siguiente del colaborador. La liquidacion queda &#x60;LIBERADA&#x60;, con su detalle.
      * @endpoint post /api/v1/consultorios/{consultorioId}/egresos/{egresoId}/anulacion
 * @param requestParameters
      */
@@ -104,12 +125,28 @@ export interface EgresosServiceInterface {
     buscarEgreso(requestParameters: BuscarEgresoRequestParams, extraHttpRequestParams?: any): Observable<Array<Egreso>>;
 
     /**
+     * Calcular el borrador de honorarios por clase de un colaborador
+     * DP-38 (RF-M22-006). **Se calcula al pedirlo y no se guarda.** Entran las clases &#x60;REALIZADA&#x60; de la sede con inicio en el periodo (dias locales de la sede) donde el colaborador es el principal o un instructor adicional.  Por clase: **tarifa vigente el dia de la clase x presentes** (&#x60;PRESENTE&#x60; + &#x60;PRESENTE_TARDE&#x60;), repartida **en partes iguales** entre los instructores; el centavo sobrante va al primero del orden estable (el principal, despues los adicionales por membership).  &#x60;excluidas&#x60; dice por que una clase dictada no entra: &#x60;YA_LIQUIDADA&#x60; (con el egreso que la tiene), &#x60;SIN_HONORARIO&#x60;, &#x60;SIN_PRESENTES&#x60; o &#x60;SIN_IMPORTE&#x60;. Periodo de hasta 62 dias. Monedas distintas en el periodo: 400.
+     * @endpoint get /api/v1/consultorios/{consultorioId}/honorarios/borrador
+* @param requestParameters
+     */
+    calcularBorradorDeHonorarios(requestParameters: CalcularBorradorDeHonorariosRequestParams, extraHttpRequestParams?: any): Observable<BorradorDeHonorarios>;
+
+    /**
      * Confirmar el egreso
      * Punto de no retorno: el egreso deja de editarse y **recien ahora admite pagos** (RF-M22-001).  **Confirmar NO mueve la caja.** Lo que mueve la caja es el pago. Es como esta etapa lee RN-M22-001 —\&quot;solo un egreso confirmado puede mover la caja\&quot;— porque la letra estricta volveria contradictorias otras dos cosas del mismo documento: un egreso debido y no pagado no podria existir, y el pago parcial seria irrepresentable, porque no se puede sacar media vez la plata de un cajon.  **Exige comprobante** (tipo y numero). Un egreso confirmado sin respaldo documental es plata que salio sin papel. En borrador es opcional a proposito: la liquidacion se arma antes de tener la factura en la mano.
      * @endpoint post /api/v1/consultorios/{consultorioId}/egresos/{egresoId}/confirmacion
 * @param requestParameters
      */
     confirmarEgreso(requestParameters: ConfirmarEgresoRequestParams, extraHttpRequestParams?: any): Observable<Egreso>;
+
+    /**
+     * Confirmar el borrador de honorarios como egreso
+     * DP-38 (RF-M22-006/007). Recalcula el borrador **bajo el lock de sus clases** y, si es el que se miro (&#x60;claseIds&#x60; e &#x60;importeTotal&#x60;), crea el **egreso** de M22 en &#x60;BORRADOR&#x60; —&#x60;COLABORADOR&#x60;, &#x60;HONORARIOS_PROFESIONALES&#x60;, con el periodo— y la liquidacion con el **snapshot por clase**. No mueve la caja: el egreso sigue su ciclo (confirmar con comprobante, pagar).  Si el borrador cambio —otra liquidacion, una asistencia corregida, una tarifa nueva— **409 &#x60;borrador-de-honorarios-desactualizado&#x60;** con &#x60;importeTotalActual&#x60; y &#x60;claseIdsActuales&#x60;. Sin clases liquidables, **409 &#x60;liquidacion-de-honorarios-vacia&#x60;**.  **Idempotente** por &#x60;idempotencyKey&#x60;: el reintento con el mismo pedido devuelve la misma liquidacion (200); con otro pedido, 409. Una clase liquidada no entra en otro borrador del mismo colaborador hasta que se anule su egreso.  **Una liquidacion es de UNA oferta** y su egreso queda imputado a ella (&#x60;ofertaId&#x60;, DP-39), asi que los honorarios entran solos en la rentabilidad por servicio. Si el borrador mezcla ofertas, 400: se pide y se confirma por oferta con &#x60;ofertaId&#x60;.
+     * @endpoint post /api/v1/consultorios/{consultorioId}/honorarios/liquidaciones
+* @param requestParameters
+     */
+    confirmarLiquidacionDeHonorarios(requestParameters: ConfirmarLiquidacionDeHonorariosRequestParams, extraHttpRequestParams?: any): Observable<LiquidacionDeHonorarios>;
 
     /**
      * Corregir el borrador
@@ -142,5 +179,13 @@ export interface EgresosServiceInterface {
 * @param requestParameters
      */
     verEgreso(requestParameters: VerEgresoRequestParams, extraHttpRequestParams?: any): Observable<Egreso>;
+
+    /**
+     * Ver una liquidacion de honorarios por clase
+     * DP-38 (RF-M22-007, CA-M22-007-06). La liquidacion con su **snapshot por clase**: oferta, presentes, tarifa, instructores y la parte del colaborador, tal como se confirmaron. &#x60;estado&#x60; &#x60;LIBERADA&#x60; si se anulo su egreso. El egreso la referencia en &#x60;liquidacionHonorariosId&#x60;.
+     * @endpoint get /api/v1/consultorios/{consultorioId}/honorarios/liquidaciones/{liquidacionId}
+* @param requestParameters
+     */
+    verLiquidacionDeHonorarios(requestParameters: VerLiquidacionDeHonorariosRequestParams, extraHttpRequestParams?: any): Observable<LiquidacionDeHonorarios>;
 
 }

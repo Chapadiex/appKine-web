@@ -71,6 +71,21 @@
       <dt>Categoria</dt>
       <dd>{{ categoriaEnPalabras(e.categoria) }}</dd>
 
+      <dt>Servicio u oferta</dt>
+      <dd>{{ nombreDeOferta() ?? 'Sin imputar a un servicio' }}</dd>
+
+      @if (e.liquidacionHonorariosId) {
+        <dt>Liquidacion de honorarios</dt>
+        <dd>
+          <a
+            class="enlace"
+            [routerLink]="['/egresos/honorarios/liquidaciones', e.liquidacionHonorariosId]"
+          >
+            Ver la liquidacion #{{ e.liquidacionHonorariosId }} y sus clases
+          </a>
+        </dd>
+      }
+
       @if (e.periodoDesde) {
         <dt>Periodo liquidado</dt>
         <dd>{{ fecha(e.periodoDesde) }} al {{ fecha(e.periodoHasta) }}</dd>
@@ -122,6 +137,13 @@
       <p class="ayuda">
         El beneficiario no se cambia: seria otro egreso. Una vez confirmado ya no se corrige.
       </p>
+      @if (deLiquidacion()) {
+        <p class="ayuda" id="ayuda-de-liquidacion">
+          Nacio de una liquidacion de honorarios por clase: el importe, la categoria, el periodo y
+          el servicio salen de las clases liquidadas y no se corrigen. El concepto y el comprobante
+          si. Si el importe esta mal, anula el egreso —eso libera las clases— y volve a liquidar.
+        </p>
+      }
       <form [formGroup]="edicion" (ngSubmit)="guardar()" novalidate>
         <div class="campos-en-linea">
           <div class="campo">
@@ -159,6 +181,15 @@
             @if (campoDeEdicionInvalido('importe')) {
               <p class="campo__error" role="alert">Un importe mayor que cero.</p>
             }
+          </div>
+          <div class="campo">
+            <label for="edicion-oferta">Servicio u oferta</label>
+            <select id="edicion-oferta" formControlName="ofertaId">
+              <option value="">Sin imputar a un servicio</option>
+              @for (oferta of ofertasElegibles(); track oferta.id) {
+                <option [value]="oferta.id">{{ oferta.nombreComercial }}</option>
+              }
+            </select>
           </div>
           <!-- La moneda, como el beneficiario, queda la del alta: la correccion no la cambia. -->
           <p class="ayuda">Moneda: {{ e.moneda }}. No se corrige en el borrador.</p>
@@ -414,7 +445,11 @@
           idCampo="motivo-anular-egreso"
           titulo="Anular el egreso"
           etiqueta="Motivo de la anulacion"
-          ayuda="Anular no borra: el egreso queda en el historial con su motivo. No toca la caja."
+          [ayuda]="
+            deLiquidacion()
+              ? 'Anular no borra: el egreso queda en el historial con su motivo y no toca la caja. Libera la liquidacion de honorarios: sus clases vuelven a poder liquidarse.'
+              : 'Anular no borra: el egreso queda en el historial con su motivo. No toca la caja.'
+          "
           textoConfirmar="Anular el egreso"
           [enviando]="operando() === 'anular'"
           (confirmado)="anular($event)"

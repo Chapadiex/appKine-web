@@ -38,6 +38,7 @@ export type CausaActividad =
   | 'clase-capacidad-no-admitida'
   | 'clase-transicion-no-permitida'
   | 'clase-completa'
+  | 'clase-con-honorarios-liquidados'
   | 'inscripcion-transicion-no-permitida'
   | 'recurso-ocupado'
   | 'horario-no-disponible'
@@ -94,6 +95,10 @@ const MENSAJE_COMPLETA =
 const MENSAJE_TRANSICION_INSCRIPCION =
   'La inscripcion no admite esa operacion: esta en la lista de espera, ya fue cancelada o ya tiene ' +
   'asistencia registrada. Volve a leer los participantes.';
+const MENSAJE_HONORARIOS_LIQUIDADOS =
+  'Esta clase ya tiene honorarios liquidados, y cambiar sus instructores cambiaria el reparto de ' +
+  'una liquidacion cerrada. Si hay que corregirlo, anula el egreso de esa liquidacion: eso la ' +
+  'libera y despues se cambian los instructores y se vuelve a liquidar.';
 const MENSAJE_RECURSO_OCUPADO =
   'Ya hay un turno u otra clase que se cruza con ese horario. Elegi otro horario u otro profesional.';
 const MENSAJE_HORARIO =
@@ -143,6 +148,8 @@ export function traducirErrorActividad(error: unknown): ErrorActividad {
       return armar('clase-capacidad-no-admitida', 'corregir', mensajeDeCapacidad(error), motivo);
     case 'clase-transicion-no-permitida':
       return armar('clase-transicion-no-permitida', 'recargar', MENSAJE_TRANSICION_CLASE, motivo);
+    case 'clase-con-honorarios-liquidados':
+      return armar('clase-con-honorarios-liquidados', 'ninguna', MENSAJE_HONORARIOS_LIQUIDADOS);
     case 'clase-completa':
       return armar('clase-completa', 'ofrecer-espera', mensajeDeCompleta(error));
     case 'inscripcion-transicion-no-permitida':

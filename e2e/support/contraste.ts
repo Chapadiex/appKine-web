@@ -673,6 +673,84 @@ export interface ApiDeContraste {
  * No se inyecta nada en ningun store: un atajo por dentro dejaria el shell —y con el la barra de
  * navegacion, que es una de las superficies que hay que medir— sin pintar.
  */
+/** Tarifas de honorario de la oferta de la clase (DP-38): una vigente y una dada de baja. */
+const HONORARIOS_DE_LA_OFERTA = [
+  {
+    id: 700,
+    ofertaId: CLASE.ofertaId,
+    importePorParticipante: 1500,
+    moneda: 'ARS',
+    vigenciaDesde: '2026-01-01',
+    estado: 'ACTIVO',
+    vigente: true,
+    version: 2,
+  },
+  {
+    id: 699,
+    ofertaId: CLASE.ofertaId,
+    importePorParticipante: 1200,
+    moneda: 'ARS',
+    vigenciaDesde: '2025-01-01',
+    vigenciaHasta: '2025-12-31',
+    estado: 'INACTIVO',
+    vigente: false,
+    deactivationReason: 'Cargada con el importe del ano anterior por error',
+    version: 3,
+  },
+];
+
+/** Un borrador de honorarios que mezcla dos servicios, con clases excluidas por cada motivo. */
+const BORRADOR_DE_HONORARIOS = {
+  consultorioId: CONSULTORIO_ID,
+  colaboradorMembershipId: 55,
+  desde: '2026-10-01',
+  hasta: '2026-10-31',
+  importeTotal: 1234567.5,
+  moneda: 'ARS',
+  clases: [
+    {
+      claseId: 70,
+      fecha: '2026-10-20',
+      titulo: 'Pilates reformer de los martes a la tarde',
+      ofertaId: CLASE.ofertaId,
+      ofertaNombre: 'Pilates reformer',
+      presentes: 12,
+      importePorParticipante: 1500,
+      importeClase: 18000,
+      instructores: 2,
+      posicion: 1,
+      importeColaborador: 9000,
+      moneda: 'ARS',
+    },
+    {
+      claseId: 72,
+      fecha: '2026-10-22',
+      titulo: 'Yoga terapeutico',
+      ofertaId: 43,
+      ofertaNombre: 'Yoga terapeutico para adultos mayores',
+      presentes: 8,
+      importePorParticipante: 1225567.5,
+      importeClase: 1225567.5,
+      instructores: 1,
+      posicion: 1,
+      importeColaborador: 1225567.5,
+      moneda: 'ARS',
+    },
+  ],
+  excluidas: [
+    {
+      claseId: 69,
+      fecha: '2026-10-13',
+      titulo: 'Pilates reformer',
+      ofertaNombre: 'Pilates reformer',
+      motivo: 'YA_LIQUIDADA',
+      egresoId: 600,
+    },
+    { claseId: 68, fecha: '2026-10-06', ofertaNombre: 'Pilates reformer', motivo: 'SIN_PRESENTES' },
+    { claseId: 67, fecha: '2026-10-02', ofertaNombre: 'Funcional', motivo: 'SIN_HONORARIO' },
+  ],
+};
+
 export async function instalarApiDeContraste(page: Page): Promise<ApiDeContraste> {
   const api: ApiDeContraste = { padron: 'con-filas' };
 
@@ -745,6 +823,7 @@ export async function instalarApiDeContraste(page: Page): Promise<ApiDeContraste
           'pase:adjust',
           'sesion:register',
           'hc:write',
+          'caja:operate',
         ],
       });
     }
@@ -876,6 +955,39 @@ export async function instalarApiDeContraste(page: Page): Promise<ApiDeContraste
       return json({ profesionales: [{ membershipId: 55, nombre: 'Lic. Diaz' }] });
     }
 
+    // --- Honorarios por clase (DP-38) --------------------------------------------------
+    if (camino === `${clases}/${CLASE.id}/instructores` && metodo === 'GET') {
+      return json({
+        claseId: CLASE.id,
+        principalMembershipId: 55,
+        principalNombre: 'Lic. Diaz',
+        adicionales: [{ membershipId: 61, nombre: 'Lic. Rios Altamirano' }],
+      });
+    }
+    if (
+      camino ===
+        `/api/v1/consultorios/${CONSULTORIO_ID}/ofertas/${CLASE.ofertaId}/honorarios-por-clase` &&
+      metodo === 'GET'
+    ) {
+      return json(HONORARIOS_DE_LA_OFERTA);
+    }
+    if (camino === `/api/v1/organizations/${ORGANIZATION_ID}/memberships` && metodo === 'GET') {
+      return json(
+        pagina([
+          { id: 55, accountName: 'Lic. Diaz', estado: 'ACTIVA', roleCode: 'PROFESIONAL' },
+          {
+            id: 61,
+            accountName: 'Lic. Rios Altamirano',
+            estado: 'ACTIVA',
+            roleCode: 'PROFESIONAL',
+          },
+        ]),
+      );
+    }
+    if (camino === `/api/v1/consultorios/${CONSULTORIO_ID}/honorarios/borrador`) {
+      return json(BORRADOR_DE_HONORARIOS);
+    }
+
     // --- Productos de pack y pases (F9, M29) -------------------------------------------
     if (camino === `/api/v1/consultorios/${CONSULTORIO_ID}/productos` && metodo === 'GET') {
       return json(PRODUCTOS_DE_PACK);
@@ -909,4 +1021,13 @@ export async function instalarApiDeContraste(page: Page): Promise<ApiDeContraste
   });
 
   return api;
+}
+
+/** Pide el borrador de honorarios del arnes: elige al colaborador y calcula. */
+export async function abrirBorradorDeHonorarios(page: Page): Promise<void> {
+  const colaborador = page.getByLabel('Colaborador');
+  await colaborador.locator('option').nth(1).waitFor({ state: 'attached' });
+  await colaborador.selectOption({ label: 'Lic. Diaz' });
+  await page.getByRole('button', { name: 'Calcular el borrador' }).click();
+  await page.getByText('Ya liquidada a este colaborador').waitFor();
 }

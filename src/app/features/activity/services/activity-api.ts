@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { Observable, catchError, map, of } from 'rxjs';
+import { Observable, catchError, map, of, switchMap } from 'rxjs';
 
 import { ClasesService } from '../../../api/generated/api/clases.service';
 import { ColaboradoresService } from '../../../api/generated/api/colaboradores.service';
@@ -11,6 +11,7 @@ import { Clase } from '../../../api/generated/model/clase';
 import { Cupos } from '../../../api/generated/model/cupos';
 import { EventoDeClase } from '../../../api/generated/model/evento-de-clase';
 import { HabilitacionesResponse } from '../../../api/generated/model/habilitaciones-response';
+import { InstructoresDeClase } from '../../../api/generated/model/instructores-de-clase';
 import { Inscripcion } from '../../../api/generated/model/inscripcion';
 import {
   MembershipResponse,
@@ -206,5 +207,81 @@ export class ActivityApi {
         ),
         catchError(() => of([])),
       );
+  }
+
+  // -------------------------------------------------------------------------------------------
+  // Instructores adicionales (DP-38). El total de honorarios de la clase se reparte en partes
+  // iguales entre el principal y los adicionales. El adicional NO ocupa agenda.
+  // -------------------------------------------------------------------------------------------
+
+  /** El principal y los adicionales vigentes. Exige `clase:read`. */
+  instructores(consultorioId: number, claseId: number): Observable<InstructoresDeClase> {
+    return this.clases.getInstructoresDeClase({ consultorioId, claseId });
+  }
+
+  /**
+   * Reemplaza la lista COMPLETA de adicionales; vacia los quita. Exige `clase:manage`. Una clase
+   * con honorarios liquidados responde 409 `clase-con-honorarios-liquidados`.
+   */
+  reemplazarInstructores(
+    consultorioId: number,
+    claseId: number,
+    adicionales: readonly number[],
+  ): Observable<InstructoresDeClase> {
+    return this.clases.reemplazarInstructoresDeClase({
+      consultorioId,
+      claseId,
+      reemplazarInstructoresDeClaseRequest: { adicionales: [...adicionales] },
+    });
+  }
+
+  /**
+   * Quienes pueden sumarse como instructores de una clase de la oferta: los habilitados si la
+   * oferta esta restringida por profesional; si no, <b>cualquier colaborador</b> con vinculo vigente
+   * en la sede, sea cual sea su rol —es la regla del backend para el adicional (DP-38): no exige el
+   * rol PROFESIONAL, a diferencia del principal—. Sin permiso o con error, lista vacia: el backend
+   * valida igual.
+   */
+  instructoresElegibles(
+    organizationId: number | null,
+    consultorioId: number,
+    ofertaId: number,
+  ): Observable<readonly { readonly membershipId: number; readonly nombre: string }[]> {
+    return this.habilitaciones(consultorioId, ofertaId).pipe(
+      catchError(() => of(null)),
+      switchMap((respuesta) => {
+        if (respuesta?.restringidaPorProfesional) {
+          return of(
+            (respuesta.profesionales ?? [])
+              .filter((p) => p.estado === 'ACTIVO' && p.membershipId !== undefined)
+              .map((p) => ({
+                membershipId: p.membershipId as number,
+                nombre: p.nombre || `Profesional #${p.membershipId}`,
+              })),
+          );
+        }
+        if (organizationId === null) {
+          return of([]);
+        }
+        return this.colaboradores.listMemberships({ orgId: organizationId, size: 200 }).pipe(
+          map((pagina) =>
+            (pagina.content ?? [])
+              .filter(
+                (m) =>
+                  m.id !== undefined &&
+                  m.estado === MembershipResponseEstadoEnum.ACTIVA &&
+                  (m.consultorioId === undefined ||
+                    m.consultorioId === null ||
+                    m.consultorioId === consultorioId),
+              )
+              .map((m) => ({
+                membershipId: m.id as number,
+                nombre: m.accountName || m.accountEmail || `Colaborador #${m.id}`,
+              })),
+          ),
+          catchError(() => of([])),
+        );
+      }),
+    );
   }
 }

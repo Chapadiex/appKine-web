@@ -96,6 +96,19 @@ export const routes: Routes = [
     data: { [DATA_ANCHO]: ANCHO_AMPLIO },
   },
   {
+    // Honorarios por clase (DP-38, RF-M22-006): tarifa por participante presente, por vigencia.
+    // La lectura tambien exige `consultorio:manage` (es lo que cobra un colega): sin el permiso la
+    // grilla muestra el 403 del backend. No lleva guard por lo mismo que las demas de aca.
+    path: 'ofertas/:ofertaId/honorarios',
+    canActivate: [contextGuard],
+    loadComponent: () =>
+      import('./pages/honorarios-por-clase-de-la-oferta/honorarios-por-clase-de-la-oferta-page').then(
+        (m) => m.HonorariosPorClaseDeLaOfertaPage,
+      ),
+    title: 'AKINE - Honorarios por clase de la oferta',
+    data: { [DATA_ANCHO]: ANCHO_AMPLIO },
+  },
+  {
     // Entrar a `/servicios` a secas cae en las ofertas, no en el catalogo: el diseno (6) dice
     // que la de ofertas "es la que usa un administrador todos los dias", y el catalogo global
     // es sobre todo una referencia que se consulta cuando hay que dar de alta una oferta.

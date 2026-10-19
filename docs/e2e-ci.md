@@ -256,6 +256,23 @@ y el consumo exige que este vigente el dia de la clase.
 | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `flujo-pases` | `/productos`: alta del producto de 2 creditos → `/pacientes/:id/pases`: venta → `/asistencia/:claseId`: iniciar y marcar presente → ledger del pase → cuenta corriente | El alta es 201; la venta es 201 con la deuda `PENDIENTE` y el pase en 2 de 2; el lote devuelve `consumoDeCredito` `CONSUMIDO` con saldo 1; el ledger tiene compra +2 y consumo -1; la deuda sin sesion dice "Venta de pase" |
 
+## Honorarios por clase y servicio en el egreso (DP-38 y DP-39, `e2e/flujo-honorarios-por-clase.spec.ts`)
+
+En el proyecto `agenda`, sobre el mismo centro. La clase la siembra `claseConInscriptos` (oferta
+`GRUPAL` sin profesional, tres inscriptas) en el dia 163 desde hoy, y el borrador se pide **acotado a
+la oferta del test**, que es nueva en cada corrida: una clase de una corrida anterior sobre la misma
+base no cambia el numero. Los dos instructores son adicionales —la profesional y la
+administradora—, porque el adicional no exige rol PROFESIONAL.
+
+| Spec | Que recorre | Lo que afirma contra el backend real |
+| --- | --- | --- |
+| `flujo-honorarios-por-clase` (honorarios) | `/servicios/ofertas/:id/honorarios`: tarifa de 1.500 → `/clases/:id`: dos instructores adicionales → asistencia por la API (2 presentes, cierre) → `/egresos/honorarios`: borrador → confirmar → egreso → liquidacion | La tarifa es 201; el PUT de instructores lleva la lista completa; la fila del borrador da 3.000 por la clase y 1.500 por instructor; la confirmacion lleva `ofertaId`, `claseIds`, `importeTotal` y clave; el egreso nace en BORRADOR con la oferta y `liquidacionHonorariosId`, importe bloqueado; la clase pasa a "Ya liquidada" |
+| `flujo-honorarios-por-clase` (servicio en el egreso) | `/egresos`: alta imputada a una oferta → correccion del borrador → confirmar → `/reportes` de servicios | El alta y el PUT llevan `ofertaId` (el PUT reemplaza); la fila de la oferta en "Rentabilidad por servicio" muestra 2.000,00 de egresos imputados |
+
+El E2E destapo que una oferta grupal **sin precio de lista** no admite una tarifa sin moneda (400,
+"Un honorario sin moneda no es un importe"), aunque el contrato la declara opcional: la pantalla la
+pide y propone la de la lista, o ARS.
+
 ## Las pantallas de mas riesgo, con centro propio (`e2e/riesgo-*.spec.ts`)
 
 Dinero, permisos y concurrencia. Corren en el proyecto `chromium` (no se llaman `flujo-*`) y **cada
@@ -409,7 +426,9 @@ simulan la API y no entran). Ruta → spec que la recorre.
 | `/historia-clinica/personas/:id`, casos, plan               | Si       | `historia-clinica`, `acceso-clinico`, `casos-clinicos`, `plan-de-tratamiento`                   |
 | `/caja`                                                     | Si       | `flujo-caja`, `riesgo-cobro-efectivo-anulado`, `circuito-f9`                                    |
 | `/presentaciones`, `/presentaciones/:id`                    | Si       | `flujo-presentaciones`, `flujo-presentacion-csv`, `riesgo-presentacion-debito-y-descarte`       |
-| `/egresos`, `/egresos/:id`                                  | Si       | `flujo-caja`, `riesgo-egreso-concurrente`                                                       |
+| `/egresos`, `/egresos/:id`                                  | Si       | `flujo-caja`, `riesgo-egreso-concurrente`, `flujo-honorarios-por-clase`                         |
+| `/egresos/honorarios`, liquidaciones (DP-38)                | Si       | `flujo-honorarios-por-clase`                                                                    |
+| `/servicios/ofertas/:id/honorarios` (DP-38)                 | Si       | `flujo-honorarios-por-clase`                                                                    |
 | `/reportes`                                                 | Si       | `flujo-reportes`, `flujo-dia-de-la-sede`                                                        |
 | `/plataforma/solicitudes`, `/plataforma/suscripciones`      | Si       | `flujo-catalogo`, `flujo-suscripcion`                                                           |
 | **F9** `/clases`, `/clases/nueva`, `/clases/:id`            | Si       | `flujo-clases`, `circuito-f9`                                                                   |

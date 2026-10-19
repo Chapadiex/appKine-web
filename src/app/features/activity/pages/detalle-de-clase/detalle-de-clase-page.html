@@ -93,6 +93,8 @@
     }
   </section>
 
+  <app-instructores-de-clase [clase]="actual" [puedeGestionar]="puedeCambiarInstructores()" />
+
   <div aria-live="polite">
     @if (aviso()) {
       <p id="aviso-clase" class="estado estado--ok" role="status" tabindex="-1">{{ aviso() }}</p>
