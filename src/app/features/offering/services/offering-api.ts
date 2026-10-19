@@ -10,6 +10,8 @@ import { ColaboradoresService } from '../../../api/generated/api/colaboradores.s
 import { EspaciosService } from '../../../api/generated/api/espacios.service';
 import { HabilitacionesResponse } from '../../../api/generated/model/habilitaciones-response';
 import { OfertaResponse } from '../../../api/generated/model/oferta-response';
+import { CreateHonorarioPorClaseRequest } from '../../../api/generated/model/create-honorario-por-clase-request';
+import { HonorarioPorClase } from '../../../api/generated/model/honorario-por-clase';
 import { CreatePrecioParticularRequest } from '../../../api/generated/model/create-precio-particular-request';
 import { PrecioParticularResponse } from '../../../api/generated/model/precio-particular-response';
 import { ServicioResponse } from '../../../api/generated/model/servicio-response';
@@ -386,6 +388,62 @@ export class OfferingApi {
       consultorioId,
       ofertaId,
       precioId,
+      deactivateOfferingRequest: { reason: motivo },
+    });
+  }
+
+  // ---------------------------------------------------------------------------------------
+  // Honorarios por clase (DP-38, RF-M22-006). Tarifa por participante presente, con vigencia.
+  // Lectura y escritura con `consultorio:manage`: el honorario es plata de la sede.
+  // ---------------------------------------------------------------------------------------
+
+  /** Las tarifas de la oferta, activas y dadas de baja. */
+  listarHonorariosPorClase(
+    consultorioId: number,
+    ofertaId: number,
+  ): Observable<readonly HonorarioPorClase[]> {
+    return this.api.listHonorariosPorClaseDeOferta({ consultorioId, ofertaId });
+  }
+
+  crearHonorarioPorClase(
+    consultorioId: number,
+    ofertaId: number,
+    cuerpo: CreateHonorarioPorClaseRequest,
+  ): Observable<HonorarioPorClase> {
+    return this.api.createHonorarioPorClaseDeOferta({
+      consultorioId,
+      ofertaId,
+      createHonorarioPorClaseRequest: cuerpo,
+    });
+  }
+
+  /** Lo unico editable de una tarifa: el fin de su vigencia. `null` la reabre. */
+  cambiarFinHonorarioPorClase(
+    consultorioId: number,
+    ofertaId: number,
+    honorarioId: number,
+    vigenciaHasta: string | null,
+    expectedVersion: number,
+  ): Observable<HonorarioPorClase> {
+    return this.api.cambiarFinHonorarioPorClaseDeOferta({
+      consultorioId,
+      ofertaId,
+      honorarioId,
+      cambiarFinHonorarioPorClaseRequest:
+        vigenciaHasta === null ? { expectedVersion } : { expectedVersion, vigenciaHasta },
+    });
+  }
+
+  darDeBajaHonorarioPorClase(
+    consultorioId: number,
+    ofertaId: number,
+    honorarioId: number,
+    motivo: string,
+  ): Observable<unknown> {
+    return this.api.deactivateHonorarioPorClaseDeOferta({
+      consultorioId,
+      ofertaId,
+      honorarioId,
       deactivateOfferingRequest: { reason: motivo },
     });
   }

@@ -98,7 +98,15 @@ describe('DetalleDeClasePage', () => {
     httpMock = TestBed.inject(HttpTestingController);
   });
 
-  afterEach(() => httpMock.verify());
+  afterEach(() => {
+    // Los instructores (DP-38) los lee su propio componente cada vez que la clase cambia; su
+    // comportamiento se prueba en instructores-de-clase.spec.ts.
+    httpMock
+      .match(`${URL_CLASE}/instructores`)
+      .filter((r) => !r.cancelled)
+      .forEach((r) => r.flush({ claseId: ID, principalMembershipId: 55, adicionales: [] }));
+    httpMock.verify();
+  });
 
   /** Responde las tres lecturas de la clase. */
   function responderClase(clase: object = CLASE, cupos: object = CUPOS): void {
@@ -430,5 +438,20 @@ describe('DetalleDeClasePage', () => {
     expect(textoDe(fixture)).toContain('No se pudo leer la clase');
     clickear(fixture, 'Reintentar');
     responderClase();
+  });
+
+  it('ofrece cambiar instructores en una clase dictada y no en una cancelada', async () => {
+    otorgar(httpMock, PERMISO_CLASE_READ, PERMISO_CLASE_MANAGE);
+    const fixture = TestBed.createComponent(DetalleDeClasePage);
+    fixture.componentRef.setInput('claseId', String(ID));
+    fixture.detectChanges();
+    responderClase({ ...CLASE, estado: 'REALIZADA' });
+    await asentar(fixture);
+    httpMock
+      .expectOne(`${URL_CLASE}/instructores`)
+      .flush({ claseId: ID, principalMembershipId: 55, principalNombre: 'Lic. Diaz' });
+    await asentar(fixture);
+    expect(textoDe(fixture)).toContain('Cambiar los instructores adicionales');
+    expect(textoDe(fixture)).not.toContain('Reprogramar');
   });
 });

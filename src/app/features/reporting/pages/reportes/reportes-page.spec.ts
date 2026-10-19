@@ -100,6 +100,77 @@ describe('ReportesPage', () => {
     expect(texto).toContain('Del 01/09/2026 al 30/09/2026');
   });
 
+  it(
+    'rentabilidad y caja por servicio (DP-39): importes legibles, una columna por medio y la advertencia en su seccion',
+    async () => {
+      const fixture = await montar();
+      escribir(fixture, '#reporte-desde', '2026-09-01');
+      escribir(fixture, '#reporte-hasta', '2026-09-30');
+      enviar(fixture);
+      httpMock.expectOne(`${BASE}/OPERATIVO?desde=2026-09-01&hasta=2026-09-30`).flush({
+        ...REPORTE,
+        reporte: 'SERVICIOS',
+        omitidas: [],
+        secciones: [
+          {
+            seccion: 'rentabilidad-por-servicio',
+            titulo: 'Rentabilidad por servicio',
+            indicadores: [],
+            columnas: [
+              'Servicio',
+              'Naturaleza',
+              'Oferta',
+              'Ingresos (devengado)',
+              'Egresos imputados',
+              'Resultado',
+            ],
+            filas: [
+              ['Kinesiologia', 'CLINICA', 'Kinesio', '1500.00', '250.00', '1250.00'],
+              ['(sin imputar)', '', '(egresos sin oferta)', '0.00', '1000.00', '-1000.00'],
+            ],
+          },
+          {
+            seccion: 'caja-por-servicio',
+            titulo: 'Caja por servicio',
+            indicadores: [],
+            columnas: ['Servicio', 'Naturaleza', 'Oferta', 'EFECTIVO', 'TRANSFERENCIA', 'Total'],
+            filas: [['Pilates', 'BIENESTAR', 'Pilates grupal', '33.33', '366.67', '400.00']],
+          },
+        ],
+        advertencias: [
+          {
+            seccion: 'rentabilidad-por-servicio',
+            codigo: 'rentabilidad-sin-costos',
+            detalle: 'Ningun egreso del periodo esta imputado a un servicio',
+          },
+          { codigo: 'general', detalle: 'Aviso de todo el reporte' },
+        ],
+      });
+      await estabilizar(fixture);
+      const html = fixture.nativeElement as HTMLElement;
+      const texto = contenido(fixture);
+
+      expect(texto).toContain('1.500,00');
+      expect(texto).toContain('-1.000,00');
+      expect(texto).toContain('366,67');
+      expect(texto).toContain('TRANSFERENCIA');
+      // Lo que no es importe se deja como vino.
+      expect(texto).toContain('(egresos sin oferta)');
+      expect(html.querySelectorAll('td.importe').length).toBe(9);
+
+      // La advertencia de la seccion va dentro de la seccion; la general, arriba.
+      const secciones = [...html.querySelectorAll('section')];
+      const rentabilidad = secciones.find((x) =>
+        (x.textContent ?? '').includes('Rentabilidad por servicio'),
+      )!;
+      expect(rentabilidad.textContent).toContain('Ningun egreso del periodo esta imputado');
+      expect(texto.match(/Ningun egreso del periodo/g)?.length).toBe(1);
+      expect(texto).toContain('Aviso de todo el reporte');
+      await esperarSinViolaciones(html);
+    },
+    TIMEOUT_AXE,
+  );
+
   it('muestra de antemano las secciones del reporte elegido', async () => {
     const fixture = await montar();
     expect(contenido(fixture)).toContain('Este reporte trae');

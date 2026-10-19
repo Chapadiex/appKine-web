@@ -49,6 +49,10 @@ export interface RegistrarEgreso {
     importeTotal: number;
     moneda: string;
     /**
+     * Oferta de esta sede a la que se imputa el costo (DP-39): es lo que la rentabilidad por servicio del reporte `SERVICIOS` resta de sus ingresos. **Opcional**: sin oferta el egreso va a la fila \"sin imputar\" (alquiler, impuestos). Una oferta de otra sede o de otro tenant es 404.
+     */
+    ofertaId?: number;
+    /**
      * Periodo liquidado. Los dos o ninguno.
      */
     periodoDesde?: string;

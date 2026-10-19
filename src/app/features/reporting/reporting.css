@@ -78,3 +78,10 @@
 .indicador__origen dd {
   margin: 0;
 }
+
+/* Importes por fila (rentabilidad y caja por servicio, DP-39): alineados para compararlos. */
+.tabla td.importe {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}

@@ -14,6 +14,11 @@ const EGRESO_ID = 41;
 const BASE = `/api/v1/consultorios/${CONSULTORIO}`;
 const DETALLE = `${BASE}/egresos/${EGRESO_ID}`;
 const JORNADAS = `${BASE}/caja/jornadas`;
+const OFERTAS = [
+  { id: 31, nombreComercial: 'Pilates grupal', estado: 'ACTIVO' },
+  { id: 32, nombreComercial: 'Yoga', estado: 'ACTIVO' },
+  { id: 33, nombreComercial: 'Funcional', estado: 'INACTIVO' },
+];
 
 const BORRADOR = {
   id: EGRESO_ID,
@@ -266,6 +271,71 @@ describe('EgresoDetallePage', () => {
     await estabilizar(fixture);
   });
 
+  it('la correccion manda siempre la oferta actual, porque el PUT reemplaza (DP-39)', async () => {
+    const fixture = await montar({ ...BORRADOR, ofertaId: 33 });
+    // Imputado a una oferta de baja: se nombra y se sigue ofreciendo para no perderla.
+    expect(contenido(fixture)).toContain('Funcional (dada de baja)');
+    expect(campo<HTMLSelectElement>(fixture, '#edicion-oferta').value).toBe('33');
+
+    escribir(fixture, '#edicion-concepto', 'Alquiler del salon de Funcional');
+    enviar(fixture, 0);
+    const edicion = httpMock.expectOne((p) => p.method === 'PUT' && p.url === DETALLE);
+    expect(edicion.request.body).toMatchObject({
+      ofertaId: 33,
+      concepto: 'Alquiler del salon de Funcional',
+    });
+    edicion.flush({ ...BORRADOR, ofertaId: 33, version: 4 });
+    await estabilizar(fixture);
+
+    elegir(fixture, '#edicion-oferta', '');
+    enviar(fixture, 0);
+    const sinImputar = httpMock.expectOne((p) => p.method === 'PUT' && p.url === DETALLE);
+    expect((sinImputar.request.body as Record<string, unknown>)['ofertaId']).toBeUndefined();
+    sinImputar.flush({ ...BORRADOR, version: 5 });
+    await estabilizar(fixture);
+    expect(contenido(fixture)).toContain('Sin imputar a un servicio');
+  });
+
+  it('un egreso de liquidacion enlaza la liquidacion y solo deja corregir concepto y comprobante', async () => {
+    const fixture = await montar({
+      ...BORRADOR,
+      tipoBeneficiario: 'COLABORADOR',
+      categoria: 'HONORARIOS_PROFESIONALES',
+      importeTotal: 500,
+      periodoDesde: '2026-10-01',
+      periodoHasta: '2026-10-31',
+      ofertaId: 31,
+      liquidacionHonorariosId: 77,
+    });
+    expect(contenido(fixture)).toContain('Pilates grupal');
+    expect(contenido(fixture)).toContain('Nacio de una liquidacion de honorarios por clase');
+    const enlace = (fixture.nativeElement as HTMLElement).querySelector<HTMLAnchorElement>(
+      'a[href="/egresos/honorarios/liquidaciones/77"]',
+    );
+    expect(enlace).not.toBeNull();
+    expect(campo<HTMLInputElement>(fixture, '#edicion-importe').disabled).toBe(true);
+    expect(campo<HTMLSelectElement>(fixture, '#edicion-oferta').disabled).toBe(true);
+    expect(campo<HTMLSelectElement>(fixture, '#edicion-categoria').disabled).toBe(true);
+    expect(campo<HTMLInputElement>(fixture, '#edicion-concepto').disabled).toBe(false);
+
+    escribir(fixture, '#edicion-comprobante-tipo', 'Factura C');
+    escribir(fixture, '#edicion-comprobante-numero', '0001-1');
+    enviar(fixture, 0);
+    const edicion = httpMock.expectOne((p) => p.method === 'PUT' && p.url === DETALLE);
+    // Lo bloqueado viaja con su valor leido: el PUT reemplaza todo.
+    expect(edicion.request.body).toMatchObject({
+      categoria: 'HONORARIOS_PROFESIONALES',
+      importeTotal: 500,
+      periodoDesde: '2026-10-01',
+      periodoHasta: '2026-10-31',
+      ofertaId: 31,
+      comprobanteTipo: 'Factura C',
+    });
+    edicion.flush(...problema('egreso-de-liquidacion'));
+    await estabilizar(fixture);
+    expect(contenido(fixture)).toContain('Este egreso nacio de una liquidacion de honorarios');
+  });
+
   it('un egreso que no existe muestra el error de carga', async () => {
     const fixture = crear();
     httpMock.expectOne(DETALLE).flush(...problema('not-found', 404));
@@ -288,6 +358,7 @@ describe('EgresoDetallePage', () => {
     const fixture = TestBed.createComponent(EgresoDetallePage);
     fixture.componentRef.setInput('egresoId', String(EGRESO_ID));
     fixture.detectChanges();
+    httpMock.expectOne((p) => p.url === `${BASE}/ofertas`).flush(OFERTAS);
     return fixture;
   }
 

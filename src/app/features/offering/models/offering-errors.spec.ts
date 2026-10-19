@@ -45,6 +45,8 @@ describe('traducirErrorOffering', () => {
       [409, 'oferta-already-inactive', 'oferta', 'oferta-ya-inactiva'],
       [409, 'precio-particular-solapado', 'oferta', 'precio-solapado'],
       [409, 'precio-particular-inactivo', 'oferta', 'precio-inactivo'],
+      [409, 'honorario-de-clase-solapado', 'oferta', 'honorario-solapado'],
+      [409, 'honorario-de-clase-inactivo', 'oferta', 'honorario-inactivo'],
       [409, 'practica-no-utilizable', 'oferta', 'practica-no-utilizable'],
       [409, 'oferta-inactiva', 'oferta', 'oferta-inactiva'],
       [409, 'consultorio-no-operable', 'oferta', 'consultorio-no-operable'],

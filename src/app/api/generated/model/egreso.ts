@@ -34,8 +34,16 @@ export interface Egreso {
     estado?: EgresoEstadoEnum;
     id?: number;
     importeTotal?: number;
+    /**
+     * La liquidacion de honorarios por clase de la que nacio el egreso (DP-38). Solo en el detalle; null en los listados y en los egresos cargados a mano. Con valor, importe, categoria y periodo no se editan (409 `egreso-de-liquidacion`) y el detalle por clase se lee en `verLiquidacionDeHonorarios`.
+     */
+    liquidacionHonorariosId?: number;
     moneda?: string;
     motivoAnulacion?: string;
+    /**
+     * Oferta de la sede a la que se imputa el costo (DP-39), o vacio si no es costo de ningun servicio. Es lo que lee la rentabilidad del reporte `SERVICIOS`.
+     */
+    ofertaId?: number;
     /**
      * Vacio en los listados, completo en el detalle. **Incluye los anulados.**
      */

@@ -139,6 +139,25 @@ function formatoDecimal(valor: number, decimales: number): string {
   }).format(valor);
 }
 
+/**
+ * Un importe que el backend manda en una celda como `BigDecimal.toPlainString()` de escala 2
+ * (`1200.00`, `-35.50`): las secciones de dinero por fila (rentabilidad y caja por servicio,
+ * DP-39) los mandan asi. Solo ese formato: un entero puede ser un año o una cantidad, y no se toca.
+ */
+const IMPORTE_EN_CELDA = /^-?\d+\.\d{2}$/;
+
+export function esImporteEnCelda(celda: string | undefined): boolean {
+  return celda !== undefined && IMPORTE_EN_CELDA.test(celda);
+}
+
+/** La celda como se lee: los importes con separadores de es-AR; lo demas, tal cual. */
+export function celdaEnPalabras(celda: string | undefined): string {
+  if (celda === undefined) {
+    return '';
+  }
+  return esImporteEnCelda(celda) ? formatoDecimal(Number(celda), 2) : celda;
+}
+
 /** Nombre del archivo CSV que se descarga. */
 export function nombreDeArchivo(codigo: string, desde: string, hasta: string): string {
   return `reporte-${codigo.toLowerCase()}-${desde}-a-${hasta}.csv`;

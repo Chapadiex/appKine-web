@@ -6,6 +6,12 @@ describe('textos de notificacion', () => {
     expect(textoTipo(TipoNotificacion.PASE_SALDO_BAJO)).toBe('Pase con pocos creditos');
   });
 
+  it('el aviso de DP-40 (0.133.0) dice que la renovacion se apago por desvinculacion', () => {
+    expect(textoTipo(TipoNotificacion.ABONO_RENOVACION_APAGADA)).toBe(
+      'Renovacion de abonos apagada por desvinculacion',
+    );
+  });
+
   it('todo tipo del contrato tiene su texto', () => {
     for (const tipo of Object.values(TipoNotificacion)) {
       expect(TEXTO_TIPO[tipo]).toBeTruthy();
