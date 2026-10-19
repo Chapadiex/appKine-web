@@ -27,6 +27,8 @@ import { ProblemDetail } from '../model/problem-detail';
 // @ts-ignore
 import { Recepcion } from '../model/recepcion';
 // @ts-ignore
+import { RetirarRecepcion } from '../model/retirar-recepcion';
+// @ts-ignore
 import { TransicionDeRecepcion } from '../model/transicion-de-recepcion';
 // @ts-ignore
 import { ValidarRecepcion } from '../model/validar-recepcion';
@@ -43,6 +45,7 @@ import {
     LlamarRecepcionRequestParams,
     PasarAEsperaRecepcionRequestParams,
     RegistrarLlegadaRecepcionRequestParams,
+    RetirarRecepcionRequestParams,
     ValidarRecepcionRequestParams,
     VerRecepcionRequestParams
 } from './recepcion.serviceInterface';
@@ -140,7 +143,7 @@ export class RecepcionService extends BaseService implements RecepcionServiceInt
 
     /**
      * Continuar como Particular
-     * RF-M13-005. Decision explicita del operador, **con motivo obligatorio**, cuando la persona no tiene cobertura aplicable o la validacion quedo observada. Deja la recepcion &#x60;VALIDADA&#x60; con modalidad &#x60;PARTICULAR&#x60;.  **No modifica la cobertura maestra del paciente** (RN-M13-004): es un dato de esta recepcion. Desde &#x60;LLEGO&#x60; u &#x60;OBSERVADA&#x60;.
+     * RF-M13-005. Decision explicita del operador, **con motivo obligatorio**, cuando la persona no tiene cobertura aplicable o la validacion quedo observada. Desde &#x60;LLEGO&#x60; u &#x60;OBSERVADA&#x60; deja la recepcion &#x60;VALIDADA&#x60; con modalidad &#x60;PARTICULAR&#x60;.  **Desde &#x60;EN_ESPERA&#x60;** (U-21) la persona sigue en la sala: la recepcion queda &#x60;EN_ESPERA&#x60;, con modalidad &#x60;PARTICULAR&#x60; y su &#x60;enEsperaDesde&#x60; intacto, sin anular ni volver a marcar la llegada. Si ya se atiende como Particular responde 409.  **No modifica la cobertura maestra del paciente** (RN-M13-004): es un dato de esta recepcion.
      * @endpoint post /api/v1/consultorios/{consultorioId}/turnos/{turnoId}/recepcion/particular
      * @param requestParameters
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
@@ -500,6 +503,86 @@ export class RecepcionService extends BaseService implements RecepcionServiceInt
         return this.httpClient.request<Recepcion>('post', `${basePath}${localVarPath}`,
             {
                 context: localVarHttpContext,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * Registrar que la persona se retiro sin ser atendida
+     * U-21. Desde &#x60;LLEGO&#x60; o &#x60;EN_ESPERA&#x60;, **con motivo obligatorio**. Deja la recepcion &#x60;RETIRADO&#x60;, terminal, con &#x60;cerradaEn&#x60; y &#x60;motivoCierre&#x60;.  A diferencia de la anulacion, **la llegada vale**: la persona vino. Por eso la recepcion sigue siendo la vigente del turno, un nuevo check-in responde 409 y el turno ya no se puede marcar ausente ni reprogramar.  **No cambia el estado del turno** (DP-05): sigue &#x60;RESERVADO&#x60; o &#x60;CONFIRMADO&#x60;. Tampoco impide abrir la Sesion: la Sesion es la que prueba la atencion.
+     * @endpoint post /api/v1/consultorios/{consultorioId}/turnos/{turnoId}/recepcion/retiro
+     * @param requestParameters
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public retirarRecepcion(requestParameters: RetirarRecepcionRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<Recepcion>;
+    public retirarRecepcion(requestParameters: RetirarRecepcionRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<Recepcion>>;
+    public retirarRecepcion(requestParameters: RetirarRecepcionRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<Recepcion>>;
+    public retirarRecepcion(requestParameters: RetirarRecepcionRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        const consultorioId = requestParameters?.consultorioId;
+        if (consultorioId === null || consultorioId === undefined) {
+            throw new Error('Required parameter consultorioId was null or undefined when calling retirarRecepcion.');
+        }
+        const turnoId = requestParameters?.turnoId;
+        if (turnoId === null || turnoId === undefined) {
+            throw new Error('Required parameter turnoId was null or undefined when calling retirarRecepcion.');
+        }
+        const retirarRecepcion = requestParameters?.retirarRecepcion;
+        if (retirarRecepcion === null || retirarRecepcion === undefined) {
+            throw new Error('Required parameter retirarRecepcion was null or undefined when calling retirarRecepcion.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        // to determine the Content-Type header
+        const consumes: string[] = [
+            'application/json'
+        ];
+        const httpContentTypeSelected: string | undefined = this.configuration.selectHeaderContentType(consumes);
+        if (httpContentTypeSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Content-Type', httpContentTypeSelected);
+        }
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/consultorios/${this.configuration.encodeParam({name: "consultorioId", value: consultorioId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/turnos/${this.configuration.encodeParam({name: "turnoId", value: turnoId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/recepcion/retiro`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<Recepcion>('post', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                body: retirarRecepcion,
                 responseType: <any>responseType_,
                 ...(withCredentials ? { withCredentials } : {}),
                 headers: localVarHeaders,

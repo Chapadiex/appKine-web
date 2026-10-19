@@ -438,6 +438,12 @@ export enum ProblemType {
 
     HTTPS___AKINE_APP_PROBLEMS_LIQUIDACION_DE_HONORARIOS_VACIA = 'https://akine.app/problems/liquidacion-de-honorarios-vacia',
 
-    HTTPS___AKINE_APP_PROBLEMS_EGRESO_DE_LIQUIDACION = 'https://akine.app/problems/egreso-de-liquidacion'
+    HTTPS___AKINE_APP_PROBLEMS_EGRESO_DE_LIQUIDACION = 'https://akine.app/problems/egreso-de-liquidacion',
+
+    HTTPS___AKINE_APP_PROBLEMS_CASO_CLINICO_REQUERIDO = 'https://akine.app/problems/caso-clinico-requerido',
+
+    HTTPS___AKINE_APP_PROBLEMS_ENMIENDA_FUERA_DE_VENTANA = 'https://akine.app/problems/enmienda-fuera-de-ventana',
+
+    HTTPS___AKINE_APP_PROBLEMS_PROFESIONAL_NO_HABILITADO_EN_OFERTA = 'https://akine.app/problems/profesional-no-habilitado-en-oferta'
 }
 

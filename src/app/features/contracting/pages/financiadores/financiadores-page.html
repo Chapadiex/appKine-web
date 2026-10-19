@@ -43,6 +43,14 @@
   <button type="button" class="boton" (click)="abrirAlta()" *akinePermiso="permisoManage">
     Dar de alta un financiador
   </button>
+  <!-- DP-43 (U-12): una copia propia de una entrada del catalogo de la plataforma. -->
+  <a
+    class="boton boton--secundario"
+    routerLink="/contratacion/financiadores/catalogo"
+    *akinePermiso="permisoManage"
+  >
+    Agregar desde el catalogo
+  </a>
 </p>
 
 @if (altaAbierta()) {
@@ -289,6 +297,10 @@
                     <th scope="row">
                       {{ financiador.nombre }}
                       <p class="ayuda">Codigo {{ financiador.codigo }}</p>
+                      @if (financiador.catalogoId) {
+                        <!-- Informativo: la copia es del centro y el catalogo no la cambia. -->
+                        <span class="etiqueta">Del catalogo</span>
+                      }
                       @if (financiador.observaciones) {
                         <p class="ayuda">{{ financiador.observaciones }}</p>
                       }

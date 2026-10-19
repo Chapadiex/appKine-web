@@ -6,6 +6,9 @@ import { CreatePlanCoberturaRequest } from '../../../api/generated/model/create-
 import { DeactivateContractingRequest } from '../../../api/generated/model/deactivate-contracting-request';
 import { FinanciadorResponse } from '../../../api/generated/model/financiador-response';
 import { FinanciadoresYPlanesService } from '../../../api/generated/api/financiadores-y-planes.service';
+import { CatalogoGlobalDeFinanciadoresService } from '../../../api/generated/api/catalogo-global-de-financiadores.service';
+import { AdopcionDeFinanciadorResponse } from '../../../api/generated/model/adopcion-de-financiador-response';
+import { CatalogoFinanciadorResponse } from '../../../api/generated/model/catalogo-financiador-response';
 import { PlanCoberturaResponse } from '../../../api/generated/model/plan-cobertura-response';
 import { UpdateFinanciadorRequest } from '../../../api/generated/model/update-financiador-request';
 import { UpdatePlanCoberturaRequest } from '../../../api/generated/model/update-plan-cobertura-request';
@@ -50,6 +53,7 @@ export type FiltroTipo =
 @Injectable({ providedIn: 'root' })
 export class ContractingApi {
   private readonly api = inject(FinanciadoresYPlanesService);
+  private readonly catalogo = inject(CatalogoGlobalDeFinanciadoresService);
 
   /**
    * Financiadores de la organizacion.
@@ -158,5 +162,27 @@ export class ContractingApi {
       planId,
       deactivateContractingRequest: cuerpo,
     });
+  }
+
+  /**
+   * Catalogo global de la plataforma que el centro puede adoptar (DP-43, U-12): las entradas
+   * ACTIVAS con sus planes ACTIVOS. `financiadorAdoptadoId` es la copia vigente de este centro
+   * —<b>ausente</b>, no `null`, si no la adopto— y `actualizacionDisponible` avisa que la
+   * entrada cambio despues de adoptarla, sin aplicar nada.
+   */
+  listarCatalogo(filtro: {
+    readonly q?: string;
+    readonly tipo?: FiltroTipo;
+  }): Observable<CatalogoFinanciadorResponse[]> {
+    return this.catalogo.listCatalogoFinanciadores({ q: filtro.q, tipo: filtro.tipo });
+  }
+
+  /**
+   * Adopta una entrada del catalogo: crea la copia del centro con sus planes. Idempotente: 201 la
+   * primera vez y 200 con la MISMA copia despues (`creado = false`). La pantalla trata las dos
+   * igual: navega a la copia.
+   */
+  adoptarDelCatalogo(catalogoId: number): Observable<AdopcionDeFinanciadorResponse> {
+    return this.catalogo.adoptarFinanciadorDelCatalogo({ catalogoId });
   }
 }

@@ -29,6 +29,8 @@ api/casos-clinicos.service.ts
 api/casos-clinicos.serviceInterface.ts
 api/catalogo-clinico.service.ts
 api/catalogo-clinico.serviceInterface.ts
+api/catalogo-global-de-financiadores.service.ts
+api/catalogo-global-de-financiadores.serviceInterface.ts
 api/clases.service.ts
 api/clases.serviceInterface.ts
 api/coberturas-del-paciente.service.ts
@@ -138,6 +140,7 @@ model/adjunto-clinico-page-response.ts
 model/adjunto-clinico-response.ts
 model/adjunto-page-response.ts
 model/adjunto-response.ts
+model/adopcion-de-financiador-response.ts
 model/advertencia-response.ts
 model/agenda-del-dia.ts
 model/agenda-unificada.ts
@@ -194,6 +197,7 @@ model/caso-profesional.ts
 model/catalogo-concepto-page-response.ts
 model/catalogo-concepto-response.ts
 model/catalogo-de-reportes-response.ts
+model/catalogo-financiador-response.ts
 model/catalogo-solicitud-response.ts
 model/cerrar-caja.ts
 model/cerrar-caso-clinico-request.ts
@@ -300,6 +304,7 @@ model/evento-de-recepcion.ts
 model/evento-de-turno.ts
 model/excepcion-response.ts
 model/feriado-response.ts
+model/fijar-politica-de-enmienda.ts
 model/fila-importacion-arancel-request.ts
 model/fila-importacion-arancel-response.ts
 model/finalizar-plan-tratamiento-request.ts
@@ -328,6 +333,7 @@ model/ingreso-sin-inscripcion.ts
 model/iniciar-atencion-de-participante.ts
 model/iniciar-atencion-grupal-item.ts
 model/iniciar-atencion-grupal.ts
+model/iniciar-sesion-sin-turno.ts
 model/inscribir.ts
 model/inscripcion.ts
 model/instructor-adicional.ts
@@ -367,6 +373,7 @@ model/my-platform-role-response.ts
 model/notification-page-response.ts
 model/notification-response.ts
 model/obligacion.ts
+model/ocurrencia-omitida-de-serie.ts
 model/oferta-response.ts
 model/orden-response.ts
 model/organization-response.ts
@@ -385,6 +392,7 @@ model/password-reset-request.ts
 model/permisos-otorgables-response.ts
 model/persona-page-response.ts
 model/persona-response.ts
+model/plan-catalogo-response.ts
 model/plan-change-request.ts
 model/plan-change-response.ts
 model/plan-cobertura-response.ts
@@ -398,6 +406,7 @@ model/platform-organization-page-response.ts
 model/platform-organization-response.ts
 model/platform-role-response.ts
 model/platform-subscription-response.ts
+model/politica-de-enmienda.ts
 model/politica-de-prepago-request.ts
 model/practica-de-oferta.ts
 model/practicas-de-oferta-response.ts
@@ -416,6 +425,7 @@ model/reclasificar-adjunto-clinico-request.ts
 model/reemplazar-habilitaciones-request.ts
 model/reemplazar-instructores-de-clase-request.ts
 model/reemplazar-practicas-request.ts
+model/reemplazar-profesional-de-sesion.ts
 model/register-account-request.ts
 model/registrar-antecedente-request.ts
 model/registrar-asistencia-lote.ts
@@ -453,6 +463,7 @@ model/resultado-de-inscripcion.ts
 model/resultado-de-lote-de-asistencia.ts
 model/resultado-de-venta.ts
 model/resumen-de-persona-response.ts
+model/retirar-recepcion.ts
 model/revertir-consumo-request.ts
 model/revertir-derivacion.ts
 model/revertir-movimiento-de-caja.ts

@@ -7,6 +7,7 @@ import { ConfirmacionConMotivo } from '../../../../shared/components/confirmacio
 import {
   PERMISO_CLASE_READ,
   PERMISO_COBRO_REGISTER,
+  PERMISO_SESION_REGISTER,
   PERMISO_TURNO_MANAGE,
 } from '../../../../core/models/permisos';
 import { ClasesDelDia } from '../../components/clases-del-dia/clases-del-dia';
@@ -20,7 +21,10 @@ import { CausaAgenda, ErrorAgenda, traducirErrorRecepcion } from '../../models/a
 import { fechaEnPalabras, horaEnZona, hoyEnZona } from '../../models/etiquetas-de-agenda';
 import { textoDeEstado } from '../../models/etiquetas-de-turno';
 import {
+  admiteParticular,
+  admiteRetiro,
   recepcionAbierta,
+  recepcionRetirada,
   textoDeModalidad,
   textoDePrepago,
   textoDeRecepcion,
@@ -31,7 +35,7 @@ import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 const RUTA = '/agenda/recepcion';
 
 /** Las dos transiciones que piden un motivo antes de mandarse. */
-type TipoDePanel = 'particular' | 'anular';
+type TipoDePanel = 'particular' | 'anular' | 'retiro';
 
 /** Errores tras los que la fila que se ve quedo vieja y conviene releerla sola. */
 const CAUSAS_QUE_RELEEN: ReadonlySet<CausaAgenda> = new Set<CausaAgenda>([
@@ -175,6 +179,7 @@ export class RecepcionDelDiaPage {
   protected readonly puedeOperar = computed(() => this.permisos.tiene(PERMISO_TURNO_MANAGE));
   protected readonly puedeCobrar = computed(() => this.permisos.tiene(PERMISO_COBRO_REGISTER));
   protected readonly puedeVerClases = computed(() => this.permisos.tiene(PERMISO_CLASE_READ));
+  protected readonly puedeAtender = computed(() => this.permisos.tiene(PERMISO_SESION_REGISTER));
   protected readonly consultorioId = computed(() => this.tenantContext.consultorioId());
   protected readonly hayTurnos = computed(() => this.turnos().length > 0);
 
@@ -337,6 +342,14 @@ export class RecepcionDelDiaPage {
           this.api.atenderComoParticular(c, t, { expectedVersion: versionDe(turno), motivo }),
         () => `${nombre(turno)} se atiende como Particular. La cobertura de su ficha no cambio.`,
       );
+    } else if (tipo === 'retiro') {
+      this.transicion(
+        turno,
+        (c, t) => this.api.retirarRecepcion(c, t, { expectedVersion: versionDe(turno), motivo }),
+        () =>
+          `${nombre(turno)} se retiro sin ser atendido. La llegada consta y el turno no cambia; ` +
+          'si vuelve, la atencion se puede abrir igual desde la pantalla clinica.',
+      );
     } else {
       this.transicion(
         turno,
@@ -386,7 +399,22 @@ export class RecepcionDelDiaPage {
     const reservaViva =
       turno.estado === TurnoDelDiaEstadoEnum.RESERVADO ||
       turno.estado === TurnoDelDiaEstadoEnum.CONFIRMADO;
-    return reservaViva && !recepcionAbierta(turno.recepcion);
+    // Una recepcion RETIRADO sigue siendo la vigente (U-21): la llegada vale y otro check-in es 409.
+    return reservaViva && !recepcionAbierta(turno.recepcion) && !recepcionRetirada(turno.recepcion);
+  }
+
+  /** Particular desde `LLEGO`, `OBSERVADA` o `EN_ESPERA` (U-21), salvo que ya lo sea. */
+  protected admiteParticular(turno: TurnoDelDia): boolean {
+    return admiteParticular(turno.recepcion);
+  }
+
+  /** "Se retiro sin ser atendido": solo desde `LLEGO` o `EN_ESPERA` (U-21). */
+  protected admiteRetiro(turno: TurnoDelDia): boolean {
+    return admiteRetiro(turno.recepcion);
+  }
+
+  protected retirado(turno: TurnoDelDia): boolean {
+    return recepcionRetirada(turno.recepcion);
   }
 
   protected admiteValidar(turno: TurnoDelDia): boolean {

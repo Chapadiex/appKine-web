@@ -20,7 +20,10 @@ import {
 } from '../../../../api/generated/model/resolve-catalogo-solicitud-request';
 import { formatearInstante } from '../../../../shared/utils/instantes';
 import { textoRequerido } from '../../../../shared/validators/texto-requerido';
-import { RUTA_SUSCRIPCIONES_DE_PLATAFORMA } from '../../models/rutas-de-plataforma';
+import {
+  RUTA_CATALOGO_FINANCIADORES_DE_PLATAFORMA,
+  RUTA_SUSCRIPCIONES_DE_PLATAFORMA,
+} from '../../models/rutas-de-plataforma';
 import { CausaSolicitud, traducirErrorSolicitud } from '../../models/solicitud-errors';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 
@@ -75,6 +78,7 @@ export class SolicitudesCatalogoPage {
     formatearInstante(instante, this.diaDeLaSede.zona());
 
   protected readonly rutaSuscripciones = RUTA_SUSCRIPCIONES_DE_PLATAFORMA;
+  protected readonly rutaCatalogoFinanciadores = RUTA_CATALOGO_FINANCIADORES_DE_PLATAFORMA;
   protected readonly estado = signal<Estado>({ tipo: 'cargando' });
   protected readonly filtroEstado = signal<FiltroEstado>('PENDIENTE');
   protected readonly seleccionada = signal<CatalogoSolicitudResponse | null>(null);

@@ -1,5 +1,7 @@
 import { Agenda } from '../../../api/generated/model/agenda';
 import { AlcanceDeSerieAlcanceEnum } from '../../../api/generated/model/alcance-de-serie';
+import { DiaDeAgendaMotivoSinSlotsEnum } from '../../../api/generated/model/dia-de-agenda';
+import { OcurrenciaOmitidaDeSerieMotivoEnum } from '../../../api/generated/model/ocurrencia-omitida-de-serie';
 import { SerieDeTurnosResumenEstadoEnum } from '../../../api/generated/model/serie-de-turnos-resumen';
 import { SlotDisponible } from '../../../api/generated/model/slot-disponible';
 import { TurnoOmitidoMotivoEnum } from '../../../api/generated/model/turno-omitido';
@@ -109,7 +111,11 @@ export function ventanasDeAgenda(
 }
 
 /** Que se espera de una ocurrencia, segun la agenda leida. */
-export type EstadoPrevisto = 'libre' | 'completo' | 'sin-horario';
+/**
+ * `feriado` (U-22) no es un conflicto: el alta la omite y crea el resto, y la devuelve en
+ * `ocurrenciasOmitidas`. Solo si TODAS caen en feriado el alta falla.
+ */
+export type EstadoPrevisto = 'libre' | 'completo' | 'sin-horario' | 'feriado';
 
 export interface OcurrenciaPrevista {
   readonly fecha: string;
@@ -160,7 +166,9 @@ export function clasificarOcurrencias(
       return prevista(fecha, 'completo', 'Ese horario ya no tiene cupo.');
     }
     if ((dia.slots ?? []).length === 0) {
-      return prevista(fecha, 'sin-horario', textoSinSlots(dia));
+      return dia.motivoSinSlots === DiaDeAgendaMotivoSinSlotsEnum.FERIADO
+        ? prevista(fecha, 'feriado', 'Se omitira: la sede no atiende por feriado.')
+        : prevista(fecha, 'sin-horario', textoSinSlots(dia));
     }
     const conQuien = profesionalId === null ? '' : ' con ese profesional';
     return prevista(
@@ -173,6 +181,27 @@ export function clasificarOcurrencias(
 
 function prevista(fecha: string, estado: EstadoPrevisto, detalle: string): OcurrenciaPrevista {
   return { fecha, estado, detalle, instante: '' };
+}
+
+/** Ocurrencias que se esperan reservar: todas menos las que se omiten por feriado. */
+export function aReservar(previstas: readonly OcurrenciaPrevista[]): number {
+  return previstas.filter((o) => o.estado !== 'feriado').length;
+}
+
+/** Ocurrencias que impiden el alta: ni libres ni omitidas por feriado. */
+export function enConflicto(previstas: readonly OcurrenciaPrevista[]): number {
+  return previstas.filter((o) => o.estado !== 'libre' && o.estado !== 'feriado').length;
+}
+
+const TEXTOS_DE_OCURRENCIA_OMITIDA: Readonly<Record<OcurrenciaOmitidaDeSerieMotivoEnum, string>> = {
+  [OcurrenciaOmitidaDeSerieMotivoEnum.FERIADO]: 'Feriado: la sede no atiende, no se reservo',
+};
+
+/** Por que el alta no reservo una ocurrencia de la regla (U-22). */
+export function textoDeOcurrenciaOmitida(motivo: string | undefined): string {
+  return (
+    TEXTOS_DE_OCURRENCIA_OMITIDA[motivo as OcurrenciaOmitidaDeSerieMotivoEnum] ?? 'No se reservo'
+  );
 }
 
 /** `YYYY-MM-DD` de un instante, en la zona de la sede. */

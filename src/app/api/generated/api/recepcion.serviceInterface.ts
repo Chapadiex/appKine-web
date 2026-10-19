@@ -16,6 +16,7 @@ import { AtenderComoParticular } from '../model/models';
 import { EventoDeRecepcion } from '../model/models';
 import { ProblemDetail } from '../model/models';
 import { Recepcion } from '../model/models';
+import { RetirarRecepcion } from '../model/models';
 import { TransicionDeRecepcion } from '../model/models';
 import { ValidarRecepcion } from '../model/models';
 
@@ -57,6 +58,12 @@ export interface RegistrarLlegadaRecepcionRequestParams {
     turnoId: number;
 }
 
+export interface RetirarRecepcionRequestParams {
+    consultorioId: number;
+    turnoId: number;
+    retirarRecepcion: RetirarRecepcion;
+}
+
 export interface ValidarRecepcionRequestParams {
     consultorioId: number;
     turnoId: number;
@@ -83,7 +90,7 @@ export interface RecepcionServiceInterface {
 
     /**
      * Continuar como Particular
-     * RF-M13-005. Decision explicita del operador, **con motivo obligatorio**, cuando la persona no tiene cobertura aplicable o la validacion quedo observada. Deja la recepcion &#x60;VALIDADA&#x60; con modalidad &#x60;PARTICULAR&#x60;.  **No modifica la cobertura maestra del paciente** (RN-M13-004): es un dato de esta recepcion. Desde &#x60;LLEGO&#x60; u &#x60;OBSERVADA&#x60;.
+     * RF-M13-005. Decision explicita del operador, **con motivo obligatorio**, cuando la persona no tiene cobertura aplicable o la validacion quedo observada. Desde &#x60;LLEGO&#x60; u &#x60;OBSERVADA&#x60; deja la recepcion &#x60;VALIDADA&#x60; con modalidad &#x60;PARTICULAR&#x60;.  **Desde &#x60;EN_ESPERA&#x60;** (U-21) la persona sigue en la sala: la recepcion queda &#x60;EN_ESPERA&#x60;, con modalidad &#x60;PARTICULAR&#x60; y su &#x60;enEsperaDesde&#x60; intacto, sin anular ni volver a marcar la llegada. Si ya se atiende como Particular responde 409.  **No modifica la cobertura maestra del paciente** (RN-M13-004): es un dato de esta recepcion.
      * @endpoint post /api/v1/consultorios/{consultorioId}/turnos/{turnoId}/recepcion/particular
 * @param requestParameters
      */
@@ -120,6 +127,14 @@ export interface RecepcionServiceInterface {
 * @param requestParameters
      */
     registrarLlegadaRecepcion(requestParameters: RegistrarLlegadaRecepcionRequestParams, extraHttpRequestParams?: any): Observable<Recepcion>;
+
+    /**
+     * Registrar que la persona se retiro sin ser atendida
+     * U-21. Desde &#x60;LLEGO&#x60; o &#x60;EN_ESPERA&#x60;, **con motivo obligatorio**. Deja la recepcion &#x60;RETIRADO&#x60;, terminal, con &#x60;cerradaEn&#x60; y &#x60;motivoCierre&#x60;.  A diferencia de la anulacion, **la llegada vale**: la persona vino. Por eso la recepcion sigue siendo la vigente del turno, un nuevo check-in responde 409 y el turno ya no se puede marcar ausente ni reprogramar.  **No cambia el estado del turno** (DP-05): sigue &#x60;RESERVADO&#x60; o &#x60;CONFIRMADO&#x60;. Tampoco impide abrir la Sesion: la Sesion es la que prueba la atencion.
+     * @endpoint post /api/v1/consultorios/{consultorioId}/turnos/{turnoId}/recepcion/retiro
+* @param requestParameters
+     */
+    retirarRecepcion(requestParameters: RetirarRecepcionRequestParams, extraHttpRequestParams?: any): Observable<Recepcion>;
 
     /**
      * Validar cobertura y documentacion

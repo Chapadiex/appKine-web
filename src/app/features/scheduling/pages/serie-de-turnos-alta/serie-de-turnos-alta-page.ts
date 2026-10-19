@@ -20,7 +20,10 @@ import {
   DIAS_DE_LA_SEMANA,
   MAXIMO_OCURRENCIAS,
   OcurrenciaPrevista,
+  aReservar,
   clasificarOcurrencias,
+  enConflicto,
+  textoDeOcurrenciaOmitida,
   diaIso,
   expandirRegla,
   fechaEnZona,
@@ -122,8 +125,12 @@ export class SerieDeTurnosAltaPage {
     return this.profesionales().find((p) => p.membershipId === id)?.nombre ?? `#${id}`;
   });
 
-  protected readonly conflictos = computed(
-    () => (this.previsualizacion() ?? []).filter((o) => o.estado !== 'libre').length,
+  protected readonly conflictos = computed(() => enConflicto(this.previsualizacion() ?? []));
+
+  /** Las que se van a reservar: las fechas en feriado se omiten y no frenan el alta (U-22). */
+  protected readonly reservables = computed(() => aReservar(this.previsualizacion() ?? []));
+  protected readonly feriados = computed(
+    () => (this.previsualizacion() ?? []).length - this.reservables(),
   );
 
   /** Fecha local de la ocurrencia que el backend rechazo, para marcarla en la tabla. */
@@ -136,7 +143,7 @@ export class SerieDeTurnosAltaPage {
     return (
       this.persona() !== null &&
       prevista !== null &&
-      prevista.length > 0 &&
+      this.reservables() > 0 &&
       this.conflictos() === 0 &&
       !this.enviando()
     );
@@ -361,6 +368,8 @@ export class SerieDeTurnosAltaPage {
       },
     });
   }
+
+  protected readonly textoDeOcurrenciaOmitida = textoDeOcurrenciaOmitida;
 
   protected fechaHora(instante: string | undefined): string {
     return fechaHoraEnZona(instante, this.timezone());

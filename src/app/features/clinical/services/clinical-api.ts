@@ -27,6 +27,23 @@ import { SesionesService } from '../../../api/generated/api/sesiones.service';
 import { Tratamiento } from '../../../api/generated/model/tratamiento';
 import { TratamientosRealizadosService } from '../../../api/generated/api/tratamientos-realizados.service';
 import { TurnosService } from '../../../api/generated/api/turnos.service';
+import { ColaboradoresService } from '../../../api/generated/api/colaboradores.service';
+import { PersonasService } from '../../../api/generated/api/personas.service';
+import { IniciarSesionSinTurno } from '../../../api/generated/model/iniciar-sesion-sin-turno';
+import {
+  MembershipResponseEstadoEnum,
+  MembershipResponseRoleCodeEnum,
+} from '../../../api/generated/model/membership-response';
+import { OfertaResponse } from '../../../api/generated/model/oferta-response';
+import { PersonaResponse } from '../../../api/generated/model/persona-response';
+import { PoliticaDeEnmienda } from '../../../api/generated/model/politica-de-enmienda';
+import { ReemplazarProfesionalDeSesion } from '../../../api/generated/model/reemplazar-profesional-de-sesion';
+
+/** Un profesional al que se le puede pasar una atencion abierta (DP-43). */
+export interface ProfesionalElegible {
+  readonly membershipId: number;
+  readonly nombre: string;
+}
 
 /** Lado de una medicion. `BILATERAL` no existe: una medicion bilateral son dos mediciones. */
 export type LadoDeMedicion = 'IZQUIERDA' | 'DERECHA' | 'NO_APLICA';
@@ -35,6 +52,8 @@ export type LadoDeMedicion = 'IZQUIERDA' | 'DERECHA' | 'NO_APLICA';
 export interface CasosDelTurno {
   /** Oferta del turno: sugiere el caso que la comparte. Ausente si no se pudo leer el turno. */
   readonly ofertaId?: number;
+  /** Paciente del turno: con el se enlaza a su historia para abrir un caso. */
+  readonly personaId?: number;
   /** Casos ACTIVOS de la historia del paciente. Vacio si no tiene historia o ningun caso vivo. */
   readonly casos: readonly CasoAdministrativoResponse[];
 }
@@ -65,6 +84,8 @@ export class ClinicalApi {
   private readonly espacios = inject(EspaciosService);
   private readonly turnos = inject(TurnosService);
   private readonly historias = inject(HistoriaClinicaService);
+  private readonly colaboradores = inject(ColaboradoresService);
+  private readonly personas = inject(PersonasService);
 
   /**
    * Abre la atencion del turno, o devuelve la que ya estaba abierta.
@@ -103,6 +124,7 @@ export class ClinicalApi {
           .pipe(
             map((datos) => ({
               ofertaId: turno.ofertaId,
+              personaId: turno.personaId,
               casos: (datos.casos ?? []).filter(
                 (caso) => caso.estado === CasoAdministrativoResponseEstadoEnum.ACTIVO,
               ),
@@ -318,5 +340,134 @@ export class ClinicalApi {
     return this.espacios
       .listEspacios({ orgId: organizationId, consultorioId, estado: 'ACTIVO', size: 100 })
       .pipe(map((pagina) => pagina.content ?? []));
+  }
+
+  // -------------------------------------------------------------------------------------
+  // DP-43: caso obligatorio, atencion sin turno, reemplazo y ventana de enmienda
+  // -------------------------------------------------------------------------------------
+
+  /**
+   * Si la oferta exige caso clinico (RF-M10-007). Sirve para no ofrecer "Sin caso" cuando el
+   * backend lo va a rechazar con 409 `caso-clinico-requerido`. Si no se puede leer, `false`: la
+   * autoridad sigue siendo el backend y el 409 se explica igual.
+   */
+  requiereCasoClinico(consultorioId: number, ofertaId: number): Observable<boolean> {
+    return this.ofertas.listOfertas({ consultorioId, estado: 'TODOS' }).pipe(
+      map(
+        (ofertas) =>
+          (Array.isArray(ofertas) ? ofertas : []).find((o) => o.id === ofertaId)
+            ?.requiereCasoClinico === true,
+      ),
+      catchError(() => of(false)),
+    );
+  }
+
+  /** Ofertas activas de la sede: entre ellas se elige la de la atencion sin turno. */
+  ofertasDeLaSede(consultorioId: number): Observable<OfertaResponse[]> {
+    return this.ofertas.listOfertas({ consultorioId, estado: 'ACTIVO' });
+  }
+
+  /** Personas activas del padron, para elegir a quien se atiende sin turno. */
+  buscarPersonas(texto: string): Observable<PersonaResponse[]> {
+    const q = texto.trim();
+    return this.personas
+      .buscarPersonas({ q: q === '' ? undefined : q, estado: 'ACTIVO', perfil: 'TODOS', size: 10 })
+      .pipe(map((pagina) => pagina.content ?? []));
+  }
+
+  /** Casos ACTIVOS de la historia de una persona. Vacio si no tiene historia o no se pudo leer. */
+  casosDePersona(personaId: number): Observable<CasoAdministrativoResponse[]> {
+    return this.historias.verDatosAdministrativosDeHistoriaClinica({ personaId }).pipe(
+      map((datos) =>
+        (datos.casos ?? []).filter(
+          (caso) => caso.estado === CasoAdministrativoResponseEstadoEnum.ACTIVO,
+        ),
+      ),
+      catchError(() => of<CasoAdministrativoResponse[]>([])),
+    );
+  }
+
+  /**
+   * Abre una atencion sin turno (DP-43). Quien atiende es quien inicia. `idempotencyKey` ancla el
+   * doble click: con la misma clave y el mismo pedido vuelve la misma atencion.
+   */
+  iniciarSinTurno(consultorioId: number, cuerpo: IniciarSesionSinTurno): Observable<Sesion> {
+    return this.sesiones.iniciarSesionSinTurno({ consultorioId, iniciarSesionSinTurno: cuerpo });
+  }
+
+  /**
+   * Otro profesional continua la atencion abierta (DP-43). Exige `sesion:reassign`, motivo y la
+   * version leida. No habilita a escribir en la atencion ajena: cambia al dueno.
+   */
+  reemplazarProfesional(
+    consultorioId: number,
+    sesionId: number,
+    cuerpo: ReemplazarProfesionalDeSesion,
+  ): Observable<Sesion> {
+    return this.sesiones.reemplazarProfesionalDeSesion({
+      consultorioId,
+      sesionId,
+      reemplazarProfesionalDeSesion: cuerpo,
+    });
+  }
+
+  /**
+   * Profesionales a los que se puede pasar una atencion de la oferta: los habilitados si la oferta
+   * esta restringida, o los profesionales con vinculo vigente en la sede si no lo esta. Sin permiso
+   * para leer colaboradores, lista vacia.
+   */
+  profesionalesParaReemplazo(
+    organizationId: number,
+    consultorioId: number,
+    ofertaId: number | undefined,
+  ): Observable<ProfesionalElegible[]> {
+    const deLaSede = this.colaboradores.listMemberships({ orgId: organizationId, size: 200 }).pipe(
+      map((pagina) =>
+        (pagina.content ?? [])
+          .filter(
+            (m) =>
+              m.estado === MembershipResponseEstadoEnum.ACTIVA &&
+              m.roleCode === MembershipResponseRoleCodeEnum.PROFESIONAL &&
+              (m.consultorioId === undefined || m.consultorioId === consultorioId) &&
+              m.id !== undefined,
+          )
+          .map((m) => ({ membershipId: m.id as number, nombre: m.accountName ?? `#${m.id}` })),
+      ),
+      catchError(() => of<ProfesionalElegible[]>([])),
+    );
+    if (ofertaId === undefined) {
+      return deLaSede;
+    }
+    return this.ofertas.getHabilitaciones({ consultorioId, ofertaId }).pipe(
+      switchMap((habilitaciones) =>
+        habilitaciones.restringidaPorProfesional
+          ? of(
+              (habilitaciones.profesionales ?? [])
+                .filter((p) => p.estado === 'ACTIVO' && p.vinculoVigente !== false)
+                .filter((p) => p.membershipId !== undefined)
+                .map((p) => ({
+                  membershipId: p.membershipId as number,
+                  nombre: p.nombre ?? `#${p.membershipId}`,
+                })),
+            )
+          : deLaSede,
+      ),
+      catchError(() => deLaSede),
+    );
+  }
+
+  /** Ventana de enmienda de la organizacion (DP-43). Sin politica propia rigen 30 dias. */
+  verPoliticaDeEnmienda(): Observable<PoliticaDeEnmienda> {
+    return this.sesiones.verPoliticaDeEnmienda();
+  }
+
+  /** Fija la ventana (1..3650 dias). `version` nula si se leyo la politica por defecto. */
+  fijarPoliticaDeEnmienda(
+    ventanaDias: number,
+    version: number | undefined,
+  ): Observable<PoliticaDeEnmienda> {
+    return this.sesiones.fijarPoliticaDeEnmienda({
+      fijarPoliticaDeEnmienda: { ventanaDias, version },
+    });
   }
 }

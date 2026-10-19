@@ -41,19 +41,31 @@
           {{ rotuloDeCaso(caso) }}
         </label>
       }
-      <label class="opcion-radio">
-        <input
-          type="radio"
-          name="caso"
-          value=""
-          [checked]="casoElegido() === null"
-          (change)="elegirCaso('')"
-        />
-        Sin caso
-      </label>
+      @if (!requiereCaso()) {
+        <label class="opcion-radio">
+          <input
+            type="radio"
+            name="caso"
+            value=""
+            [checked]="casoElegido() === null"
+            (change)="elegirCaso('')"
+          />
+          Sin caso
+        </label>
+      }
     </fieldset>
+    @if (requiereCaso()) {
+      <p class="ayuda">Esta prestacion exige un caso clinico: elegi uno para poder iniciar.</p>
+    }
     <div class="acciones">
-      <button type="button" class="boton" (click)="iniciar()">Iniciar la atencion</button>
+      <button
+        type="button"
+        class="boton"
+        [disabled]="requiereCaso() && casoElegido() === null"
+        (click)="iniciar()"
+      >
+        Iniciar la atencion
+      </button>
     </div>
   </section>
 }
@@ -74,6 +86,14 @@
 
     @if (problema.motivo) {
       <p class="ayuda">Motivo que dio el servidor: {{ problema.motivo }}</p>
+    }
+
+    @if (problema.causa === 'caso-requerido' && personaDelTurno(); as persona) {
+      <p>
+        <a class="enlace" [routerLink]="['/historia-clinica', 'personas', persona]">
+          Abrir un caso en la historia clinica del paciente
+        </a>
+      </p>
     }
 
     @if (problema.causa === 'oferta-sin-precio' && problema.ofertaId) {
@@ -205,7 +225,15 @@
           [disabled]="cambiandoCaso()"
           (change)="elegirCasoNuevo($any($event.target).value)"
         >
-          <option value="" [selected]="casoNuevo() === null">Sin caso</option>
+          @if (!requiereCaso() || sesion()?.casoId === undefined) {
+            <!--
+              DP-43: si la oferta exige caso, quitarlo es 409. Solo queda la opcion cuando la
+              atencion ya no tiene caso (abierta antes de la regla), para que el selector la refleje.
+            -->
+            <option value="" [selected]="casoNuevo() === null" [disabled]="requiereCaso()">
+              Sin caso
+            </option>
+          }
           @if (casoActualFueraDeLista(); as actual) {
             <option [value]="actual" [selected]="casoNuevo() === actual" disabled>
               {{ numeroDeCaso(actual) }} (ya no esta activo)
@@ -240,6 +268,65 @@
       </div>
       @if (avisoCaso(); as aviso) {
         <p class="ayuda" role="status">{{ aviso }}</p>
+      }
+    }
+
+    @if (avisoReemplazo(); as aviso) {
+      <p class="estado estado--ok" role="status">{{ aviso }}</p>
+    }
+
+    @if (!cerrada() && !esGrupal() && puedeReasignar()) {
+      <!--
+        DP-43 (U-24): solo el administrador de la sede. Cambia al dueno de la atencion; no da
+        permiso para escribir en la ajena.
+      -->
+      @if (!reemplazando()) {
+        <div class="acciones">
+          <button type="button" class="boton boton--secundario" (click)="abrirReemplazo()">
+            Reemplazar profesional
+          </button>
+        </div>
+      } @else {
+        <section class="tarjeta" aria-labelledby="titulo-reemplazo">
+          <h3 id="titulo-reemplazo">Reemplazar al profesional de esta atencion</h3>
+          <p class="ayuda">
+            Otro profesional continua la atencion abierta. Queda registrado quien reemplazo a quien
+            y por que. El turno no cambia.
+          </p>
+          <div class="campo">
+            <label for="atencion-profesional-nuevo">Profesional que continua</label>
+            <select
+              id="atencion-profesional-nuevo"
+              (change)="elegirProfesional($any($event.target).value)"
+            >
+              <option value="" [selected]="profesionalNuevo() === null">
+                Elegi un profesional
+              </option>
+              @for (profesional of profesionales(); track profesional.membershipId) {
+                <option
+                  [value]="profesional.membershipId"
+                  [selected]="profesionalNuevo() === profesional.membershipId"
+                  [disabled]="profesional.membershipId === atencion.profesionalId"
+                >
+                  {{ profesional.nombre }}
+                  @if (profesional.membershipId === atencion.profesionalId) {
+                    (atiende ahora)
+                  }
+                </option>
+              }
+            </select>
+          </div>
+          <app-confirmacion-con-motivo
+            idCampo="atencion-motivo-reemplazo"
+            titulo="Motivo del reemplazo"
+            etiqueta="Motivo (obligatorio)"
+            textoError="Escribi por que se reemplaza al profesional: es obligatorio."
+            textoConfirmar="Reemplazar"
+            [enviando]="enviandoReemplazo() || reemplazoSinDestino()"
+            (confirmado)="reemplazar($event)"
+            (cancelado)="cancelarReemplazo()"
+          />
+        </section>
       }
     }
 
@@ -291,6 +378,12 @@
         <b>Esta atencion ya fue enmendada</b>: lo que se ve aca es la ultima version.
       }
     </p>
+
+    @if (atencion.enmendableHasta) {
+      <p class="ayuda">
+        Se puede enmendar hasta el {{ instanteEnPalabras(atencion.enmendableHasta) }}.
+      </p>
+    }
 
     <div class="acciones">
       <a class="boton" [routerLink]="['/atencion', 'sesiones', atencion.id, 'enmienda']">
