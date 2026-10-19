@@ -224,7 +224,55 @@ Reglas innegociables del QA:
 
 ## 7. Estado actual
 
-### Estado al 14/10/2026, sobre `dcfe064`
+### Estado al 19/10/2026, sobre `05d81c4`
+
+> Esta subsección **supersede** a la del 14/10 en cliente, tests, E2E, PR y pendiente; la del 14/10
+> queda como historia. Medido el 19/10 sobre `origin/main` y por la API de GitHub. **Otros agentes
+> mergean en paralelo** (cliente 0.142 y 0.143): los números son los de `05d81c4`.
+
+`main` tiene **447 commits** y el último merge es `05d81c4` (PR #117); los ocho checks de ese commit
+están en verde (lint/build/tests, contrato alineado, contraste, E2E contra el backend real, imagen y
+SBOM, CodeQL en dos lenguajes y Sonar, que pasa porque se saltea). Desde el 14/10 entraron los PR **#77 a #117** (todos
+mergeados salvo los Dependabot #88 y #115, cerrados sin merge) y el **#4** (historia clínica en pantalla, mergeado el 15/10). Siguen abiertos Dependabot **#53, #55, #56,
+#57** y **#84** (Angular 22 y Vitest 5, DP-41: después del RC), **#118** (imagen `node`) y **#119**
+(grupo `npm-menores`).
+
+| | Valor |
+|---|---|
+| Cliente generado | **0.134.0** (`contractVersion` en `environment.ts` y `environment.prod.ts`, y `src/app/api/generated/package.json`). `appKine-api` `main` está en **0.142.0** (357 operaciones): **el cliente va 8 minors atrás** y le faltan las pantallas de 0.137.0 (catálogo global de financiadores), 0.140.0 (`RETIRADO` y feriados en series) y 0.142.0 (caso por oferta, atención sin turno, reemplazo, enmienda) |
+| Tests | **184 archivos de spec / 1.977 tests, 0 fallos**, leídos del log de "Lint, build y tests" de `05d81c4` (el 14/10 eran 142 / 1.523). Cobertura del mismo log: st **90,43 %** · rama **81,86 %** · fn **85,79 %** · ln **91,44 %**, sobre el piso de 80 % en las cuatro |
+| E2E | **68 specs** en `e2e/` (`ls e2e/*.spec.ts`; el 14/10 eran 34). El job "E2E Playwright contra el backend real" pasó en `05d81c4`. No se corrieron localmente para este documento |
+
+Lo que entró desde el 14/10, con su PR:
+
+| Qué | PR |
+|---|---|
+| Historia clínica en pantalla: timeline, casos y plan (D-a, D-b, D-c, D-e) | #4, #83 |
+| Atención clínica: mediciones, tratamientos, caso, enmiendas y versiones (D-d, D-g); ajustes por api #127 | #80, #90 |
+| F9 en pantalla: asistencia, clases e inscripciones, nombres y box, productos y pases, abonos y vencimiento, renovación y avisos | #79, #81, #91, #92, #98, #103 |
+| Atención clínica grupal (08.05) y derivación a un participante (08.04) | #104, #108 |
+| Reportes de clases y de pases y abonos (cliente 0.121.0); E2E del circuito de F9 | #107, #106 |
+| Hardening de las pantallas de F9: a11y, guards, CSP con nonce | #109 |
+| Oferta `POR_CLASE` con la deuda de la clase en la asistencia (U-39) y aviso de lotes saturados (503, U-49 c) | #112, #113 |
+| Reparos documentales, débito parcial y permisos de lectura (DP-36, DP-37) | #116 |
+| Honorarios por clase (DP-38), rentabilidad por servicio (DP-39) y renovación apagada (DP-40) | #117 |
+| Cliente regenerado en 0.101.0, 0.104.0, 0.107.0, 0.109.0, 0.111.0, 0.115.0, 0.118.0, 0.123.0 y 0.130.0 | #85, #89, #95, #96, #101, #102, #105, #110, #116 |
+| Fechas de billing y `datetime-local` en la zona de la sede; CSV de reportes con el nombre del servidor | #86 |
+| E2E contra el backend real: inventario no clínico, pantallas de más riesgo, huecos del inventario, carrera pago vs anulación de egreso | #82, #94, #97, #110, #111 |
+| Estabilidad del E2E (login de plataforma con 429) y chequeo de tipos y lint de `e2e/` | #93, #100 |
+| Seguridad y dependencias: CodeQL (U-06, #77), `overrides` de `basic-ftp@^6` (U-05, #114), Dependabot ignora las mayores de Vitest (#87) | #77, #114, #87 |
+
+#### Pendiente
+
+1. **Regenerar el cliente contra 0.142.0** (y 0.143.0 cuando entre) y hacer las pantallas de los
+   tres minors que faltan; hoy `api:check` pasa porque el frontend declara 0.134.0, no porque esté
+   al día.
+2. **Dependabot de versión mayor** (Angular 22, TypeScript 6, Vitest 5): se hace después del
+   despliegue del RC (DP-41).
+3. **El QA manual del §6 de `appKine-api`** y la aprobación y el deploy, que son del usuario.
+4. **Secretos sin cargar:** `SONAR_TOKEN`/`SONAR_HOST_URL`; el job de Sonar se saltea en este repo y en `appKine-api` (confirmado en el log del 19/10).
+
+### Estado al 14/10/2026, sobre `dcfe064` (histórico)
 
 > Esta subsección **supersede** a la del 11/10, que sigue abajo como historia, en cliente, tests,
 > E2E y próximo paso. Medido el 14/10 sobre `origin/main` y por la API de GitHub.
