@@ -52,6 +52,11 @@ export function textoDeEventoDeRecepcion(tipo: string | undefined): string {
   return TEXTOS_DE_EVENTO[tipo as EventoDeRecepcionTipoEnum] ?? tipo;
 }
 
+/** Solo el nombre del estado, sin la explicacion: para el historial, donde va "antes → despues". */
+export function nombreDeEstadoDeRecepcion(estado: string | undefined): string {
+  return textoDeRecepcion(estado).split(' — ')[0];
+}
+
 /** Estados en los que la recepcion ya no admite ninguna transicion. */
 const CERRADOS: ReadonlySet<string> = new Set<string>([
   RecepcionEstadoEnum.ANULADA,
@@ -98,6 +103,15 @@ export function recepcionAbierta(recepcion: Recepcion | undefined): boolean {
  */
 export function recepcionRetirada(recepcion: Recepcion | undefined): boolean {
   return recepcion?.estado === RecepcionEstadoEnum.RETIRADO;
+}
+
+/**
+ * `true` cuando consta una llegada que vale: la recepcion esta abierta o la persona se retiro sin
+ * ser atendida (U-21). Una `ANULADA` o una `CERRADA` no cuentan. Es lo que decide si el turno
+ * admite otro check-in y si el prepago se lee "antes de la llegada".
+ */
+export function llegadaVigente(recepcion: Recepcion | undefined): boolean {
+  return recepcionAbierta(recepcion) || recepcionRetirada(recepcion);
 }
 
 /**

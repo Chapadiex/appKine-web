@@ -53,6 +53,7 @@ import {
   instanteEnPalabras,
   notasDelBorrador,
   resumenDePrevia,
+  rotuloDeCaso,
 } from '../../models/etiquetas-de-atencion';
 
 /** Milisegundos de quietud antes de que el autosave dispare. */
@@ -523,10 +524,7 @@ export class AtencionPage {
     return numero === undefined ? 'Caso clinico asociado' : `Caso ${numero}`;
   }
 
-  protected rotuloDeCaso(caso: CasoAdministrativoResponse): string {
-    const desde = instanteEnPalabras(caso.abiertoEn);
-    return `Caso ${caso.numeroCaso ?? ''}${desde ? `, abierto el ${desde}` : ''}`;
-  }
+  protected readonly rotuloDeCaso = rotuloDeCaso;
 
   protected elegirCasoNuevo(valor: string): void {
     const id = Number(valor);

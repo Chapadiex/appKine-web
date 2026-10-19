@@ -1,4 +1,5 @@
 import { AkineHttpError } from '../../../core/interceptors/error.interceptor';
+import { instanteEnPalabras } from './etiquetas-de-atencion';
 
 /**
  * Motivo por el que fallo una operacion de la pantalla de atencion (M14, AKINE-06.01 y 06.02).
@@ -233,7 +234,8 @@ const MENSAJE_CLAVE_REUSADA =
 function mensajeFueraDeVentana(error: AkineHttpError): ErrorAtencion {
   const hasta = textoDeExtension(error, 'enmendableHasta');
   const dias = error.numeroDeExtension('ventanaDias');
-  const cuando = hasta === '' ? '' : ` Se podia enmendar hasta el ${fechaCorta(hasta)}.`;
+  const cuando =
+    hasta === '' ? '' : ` Se podia enmendar hasta el ${instanteEnPalabras(hasta) || hasta}.`;
   const ventana = dias === null ? '' : ` La organizacion admite enmiendas durante ${dias} dias.`;
   return {
     mensaje:
@@ -245,13 +247,6 @@ function mensajeFueraDeVentana(error: AkineHttpError): ErrorAtencion {
     motivo: '',
     enmendableHasta: hasta,
   };
-}
-
-function fechaCorta(instante: string): string {
-  const fecha = new Date(instante);
-  return Number.isNaN(fecha.getTime())
-    ? instante
-    : new Intl.DateTimeFormat('es-AR', { dateStyle: 'long' }).format(fecha);
 }
 
 /** Traduce cualquier error de la pantalla de atencion. */

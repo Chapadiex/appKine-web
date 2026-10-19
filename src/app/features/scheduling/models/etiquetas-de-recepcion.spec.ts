@@ -5,6 +5,8 @@ import {
 import {
   admiteParticular,
   admiteRetiro,
+  llegadaVigente,
+  nombreDeEstadoDeRecepcion,
   recepcionAbierta,
   recepcionRetirada,
   textoDeEventoDeRecepcion,
@@ -48,6 +50,14 @@ describe('etiquetas de recepcion', () => {
     expect(textoDeEventoDeRecepcion('RETIRO')).toBe('Se retiro sin ser atendido');
     expect(textoDeEventoDeRecepcion('NUEVO')).toBe('NUEVO');
     expect(textoDeEventoDeRecepcion(undefined)).toBe('Evento desconocido');
+    // La llegada consta: ni otro check-in ni el prepago 'antes de la llegada'.
+    expect(llegadaVigente(retirada)).toBe(true);
+    expect(llegadaVigente({ estado: RecepcionEstadoEnum.ANULADA })).toBe(false);
+    expect(llegadaVigente({ estado: RecepcionEstadoEnum.EN_ESPERA })).toBe(true);
+    expect(llegadaVigente(undefined)).toBe(false);
+    expect(nombreDeEstadoDeRecepcion('RETIRADO')).toBe('Se retiro sin ser atendido');
+    expect(nombreDeEstadoDeRecepcion('EN_ESPERA')).not.toContain(' — ');
+    expect(nombreDeEstadoDeRecepcion('NUEVO')).toBe('NUEVO');
   });
 
   it('Particular desde la espera salvo que ya lo sea; retiro solo desde LLEGO o EN_ESPERA', () => {
