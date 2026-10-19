@@ -3,6 +3,8 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { AkineHttpError } from '../../../core/interceptors/error.interceptor';
 import { traducirErrorReporte } from './reporte-errors';
 import {
+  celdaEnPalabras,
+  esImporteEnCelda,
   nombreDeArchivo,
   nombreDeReporte,
   permisoEnPalabras,
@@ -71,6 +73,19 @@ describe('reportes', () => {
       );
       expect(traducirErrorReporte(new AkineHttpError(500, null, false)).causa).toBe('otro');
       expect(traducirErrorReporte(new HttpErrorResponse({ status: 500 })).causa).toBe('otro');
+    });
+  });
+
+  describe('celdas del detalle', () => {
+    it('formatea solo los importes de escala 2 y deja lo demas como vino', () => {
+      expect(celdaEnPalabras('1200.00')).toBe('1.200,00');
+      expect(celdaEnPalabras('-35.50')).toBe('-35,50');
+      expect(celdaEnPalabras('2026')).toBe('2026');
+      expect(celdaEnPalabras('12.5')).toBe('12.5');
+      expect(celdaEnPalabras('Kinesio')).toBe('Kinesio');
+      expect(celdaEnPalabras(undefined)).toBe('');
+      expect(esImporteEnCelda('0.00')).toBe(true);
+      expect(esImporteEnCelda(undefined)).toBe(false);
     });
   });
 });

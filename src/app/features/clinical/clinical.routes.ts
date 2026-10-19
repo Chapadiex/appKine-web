@@ -3,7 +3,11 @@ import { Routes } from '@angular/router';
 import { ANCHO_AMPLIO, DATA_ANCHO } from '../../core/models/ancho-de-contenido';
 import { contextGuard } from '../../core/guards/context.guard';
 import { permissionGuard } from '../../core/guards/permission.guard';
-import { PERMISO_INSCRIPCION_READ, PERMISO_SESION_REGISTER } from '../../core/models/permisos';
+import {
+  PERMISO_CONSULTORIO_MANAGE,
+  PERMISO_INSCRIPCION_READ,
+  PERMISO_SESION_REGISTER,
+} from '../../core/models/permisos';
 
 /**
  * Rutas de la feature `clinical` (atencion clinica, M14, AKINE-06.01 y 06.02).
@@ -45,6 +49,28 @@ import { PERMISO_INSCRIPCION_READ, PERMISO_SESION_REGISTER } from '../../core/mo
  * y tampoco `permissionGuard`: enmendar la sesion ajena es 409 `sesion-ajena`, no 403.
  */
 export const routes: Routes = [
+  {
+    // DP-43 (U-24): atencion sin turno. Esta SI lleva permissionGuard: abrirla exige
+    // sesion:register y no hay atencion de nadie mas en juego (quien inicia es quien atiende).
+    path: 'sin-turno',
+    canActivate: [contextGuard, permissionGuard(PERMISO_SESION_REGISTER)],
+    loadComponent: () =>
+      import('./pages/atencion-sin-turno/atencion-sin-turno-page').then(
+        (m) => m.AtencionSinTurnoPage,
+      ),
+    title: 'AKINE - Atender sin turno',
+  },
+  {
+    // DP-43 (U-25): ventana de enmienda de la organizacion, del ORG_ADMIN. El alcance
+    // (organizacion, no sede) lo decide el backend: un 403 se explica en la pantalla.
+    path: 'politica-de-enmienda',
+    canActivate: [contextGuard, permissionGuard(PERMISO_CONSULTORIO_MANAGE)],
+    loadComponent: () =>
+      import('./pages/politica-de-enmienda/politica-de-enmienda-page').then(
+        (m) => m.PoliticaDeEnmiendaPage,
+      ),
+    title: 'AKINE - Ventana de enmienda',
+  },
   {
     path: 'turnos/:turnoId',
     canActivate: [contextGuard],

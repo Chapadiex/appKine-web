@@ -12,7 +12,10 @@ import { PlatformOrganizationResponse } from '../../../../api/generated/model/pl
 import { PlatformSubscriptionResponse } from '../../../../api/generated/model/platform-subscription-response';
 import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
 import { formatearFecha } from '../../../../shared/utils/instantes';
-import { RUTA_SOLICITUDES_DE_PLATAFORMA } from '../../models/rutas-de-plataforma';
+import {
+  RUTA_CATALOGO_FINANCIADORES_DE_PLATAFORMA,
+  RUTA_SOLICITUDES_DE_PLATAFORMA,
+} from '../../models/rutas-de-plataforma';
 import { ErrorSuscripcion, traducirErrorSuscripcion } from '../../models/suscripcion-errors';
 
 type Estado =
@@ -73,6 +76,7 @@ export class SuscripcionDeCentroPage {
   private readonly catalogoDePlanes = inject(PlanesService);
 
   protected readonly rutaSolicitudes = RUTA_SOLICITUDES_DE_PLATAFORMA;
+  protected readonly rutaCatalogoFinanciadores = RUTA_CATALOGO_FINANCIADORES_DE_PLATAFORMA;
 
   protected readonly busqueda = signal('');
   protected readonly filtroDeEstado = signal<EstadoDeSuscripcion | ''>('');

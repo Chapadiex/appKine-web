@@ -29,6 +29,8 @@ api/casos-clinicos.service.ts
 api/casos-clinicos.serviceInterface.ts
 api/catalogo-clinico.service.ts
 api/catalogo-clinico.serviceInterface.ts
+api/catalogo-global-de-financiadores.service.ts
+api/catalogo-global-de-financiadores.serviceInterface.ts
 api/clases.service.ts
 api/clases.serviceInterface.ts
 api/coberturas-del-paciente.service.ts
@@ -138,6 +140,7 @@ model/adjunto-clinico-page-response.ts
 model/adjunto-clinico-response.ts
 model/adjunto-page-response.ts
 model/adjunto-response.ts
+model/adopcion-de-financiador-response.ts
 model/advertencia-response.ts
 model/agenda-del-dia.ts
 model/agenda-unificada.ts
@@ -177,8 +180,10 @@ model/baja-de-perfil-paciente-request.ts
 model/baja-de-persona-request.ts
 model/baja-de-producto.ts
 model/bloque-response.ts
+model/borrador-de-honorarios.ts
 model/calendario-sede-response.ts
 model/cambiar-caso-de-sesion.ts
+model/cambiar-fin-honorario-por-clase-request.ts
 model/cambiar-fin-precio-particular-request.ts
 model/cancel-invitacion-request.ts
 model/cancelar-clase.ts
@@ -192,12 +197,14 @@ model/caso-profesional.ts
 model/catalogo-concepto-page-response.ts
 model/catalogo-concepto-response.ts
 model/catalogo-de-reportes-response.ts
+model/catalogo-financiador-response.ts
 model/catalogo-solicitud-response.ts
 model/cerrar-caja.ts
 model/cerrar-caso-clinico-request.ts
 model/cerrar-sesion.ts
 model/change-membership-request.ts
 model/cierre-de-sesion.ts
+model/clase-excluida-de-honorarios.ts
 model/clase.ts
 model/clasificar-adjunto-request.ts
 model/closed-sessions-response.ts
@@ -211,6 +218,7 @@ model/cobertura-response.ts
 model/cobro.ts
 model/comparacion-de-mediciones.ts
 model/configuracion-de-renovacion-de-abono.ts
+model/confirmar-liquidacion-de-honorarios-request.ts
 model/consultorio-page-response.ts
 model/consultorio-response.ts
 model/consumo-de-credito.ts
@@ -231,6 +239,7 @@ model/create-convenio-request.ts
 model/create-espacio-request.ts
 model/create-excepcion-request.ts
 model/create-financiador-request.ts
+model/create-honorario-por-clase-request.ts
 model/create-invitacion-request.ts
 model/create-medicion-definicion-request.ts
 model/create-membership-request.ts
@@ -295,6 +304,7 @@ model/evento-de-recepcion.ts
 model/evento-de-turno.ts
 model/excepcion-response.ts
 model/feriado-response.ts
+model/fijar-politica-de-enmienda.ts
 model/fila-importacion-arancel-request.ts
 model/fila-importacion-arancel-response.ts
 model/finalizar-plan-tratamiento-request.ts
@@ -308,6 +318,7 @@ model/habilitaciones-response.ts
 model/historia-clinica-response.ts
 model/historial-de-autorizacion-response.ts
 model/hito-response.ts
+model/honorario-por-clase.ts
 model/horario-general-franja-request.ts
 model/horario-general-franja-response.ts
 model/impacto-disponibilidad-response.ts
@@ -322,8 +333,11 @@ model/ingreso-sin-inscripcion.ts
 model/iniciar-atencion-de-participante.ts
 model/iniciar-atencion-grupal-item.ts
 model/iniciar-atencion-grupal.ts
+model/iniciar-sesion-sin-turno.ts
 model/inscribir.ts
 model/inscripcion.ts
+model/instructor-adicional.ts
+model/instructores-de-clase.ts
 model/integrante-del-equipo.ts
 model/invitacion-preview-response.ts
 model/invitacion-response.ts
@@ -332,6 +346,8 @@ model/item-de-atencion-grupal.ts
 model/item-de-lote-de-asistencia.ts
 model/jornada-caja.ts
 model/limit-usage-response.ts
+model/linea-de-honorario.ts
+model/liquidacion-de-honorarios.ts
 model/login-request.ts
 model/marcar-cobertura-principal-request.ts
 model/medicion-comparada.ts
@@ -357,6 +373,7 @@ model/my-platform-role-response.ts
 model/notification-page-response.ts
 model/notification-response.ts
 model/obligacion.ts
+model/ocurrencia-omitida-de-serie.ts
 model/oferta-response.ts
 model/orden-response.ts
 model/organization-response.ts
@@ -375,6 +392,7 @@ model/password-reset-request.ts
 model/permisos-otorgables-response.ts
 model/persona-page-response.ts
 model/persona-response.ts
+model/plan-catalogo-response.ts
 model/plan-change-request.ts
 model/plan-change-response.ts
 model/plan-cobertura-response.ts
@@ -388,6 +406,7 @@ model/platform-organization-page-response.ts
 model/platform-organization-response.ts
 model/platform-role-response.ts
 model/platform-subscription-response.ts
+model/politica-de-enmienda.ts
 model/politica-de-prepago-request.ts
 model/practica-de-oferta.ts
 model/practicas-de-oferta-response.ts
@@ -404,7 +423,9 @@ model/reabrir-caso-clinico-request.ts
 model/recepcion.ts
 model/reclasificar-adjunto-clinico-request.ts
 model/reemplazar-habilitaciones-request.ts
+model/reemplazar-instructores-de-clase-request.ts
 model/reemplazar-practicas-request.ts
+model/reemplazar-profesional-de-sesion.ts
 model/register-account-request.ts
 model/registrar-antecedente-request.ts
 model/registrar-asistencia-lote.ts
@@ -442,6 +463,7 @@ model/resultado-de-inscripcion.ts
 model/resultado-de-lote-de-asistencia.ts
 model/resultado-de-venta.ts
 model/resumen-de-persona-response.ts
+model/retirar-recepcion.ts
 model/revertir-consumo-request.ts
 model/revertir-derivacion.ts
 model/revertir-movimiento-de-caja.ts

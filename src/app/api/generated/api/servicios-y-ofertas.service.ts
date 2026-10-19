@@ -17,7 +17,11 @@ import { Observable }                                        from 'rxjs';
 import { OpenApiHttpParams, QueryParamStyle } from '../query.params';
 
 // @ts-ignore
+import { CambiarFinHonorarioPorClaseRequest } from '../model/cambiar-fin-honorario-por-clase-request';
+// @ts-ignore
 import { CambiarFinPrecioParticularRequest } from '../model/cambiar-fin-precio-particular-request';
+// @ts-ignore
+import { CreateHonorarioPorClaseRequest } from '../model/create-honorario-por-clase-request';
 // @ts-ignore
 import { CreateOfertaRequest } from '../model/create-oferta-request';
 // @ts-ignore
@@ -28,6 +32,8 @@ import { CreateServicioRequest } from '../model/create-servicio-request';
 import { DeactivateOfferingRequest } from '../model/deactivate-offering-request';
 // @ts-ignore
 import { HabilitacionesResponse } from '../model/habilitaciones-response';
+// @ts-ignore
+import { HonorarioPorClase } from '../model/honorario-por-clase';
 // @ts-ignore
 import { OfertaResponse } from '../model/oferta-response';
 // @ts-ignore
@@ -57,15 +63,19 @@ import { Configuration }                                     from '../configurat
 import { BaseService } from '../api.base.service';
 import {
     ServiciosYOfertasServiceInterface,
+    CambiarFinHonorarioPorClaseDeOfertaRequestParams,
     CambiarFinPrecioParticularDeOfertaRequestParams,
+    CreateHonorarioPorClaseDeOfertaRequestParams,
     CreateOfertaRequestParams,
     CreatePrecioParticularDeOfertaRequestParams,
     CreateServicioRequestParams,
+    DeactivateHonorarioPorClaseDeOfertaRequestParams,
     DeactivateOfertaRequestParams,
     DeactivatePrecioParticularDeOfertaRequestParams,
     DeactivateServicioRequestParams,
     GetHabilitacionesRequestParams,
     GetPracticasDeOfertaRequestParams,
+    ListHonorariosPorClaseDeOfertaRequestParams,
     ListOfertasRequestParams,
     ListPreciosParticularesDeOfertaRequestParams,
     ListServiciosRequestParams,
@@ -87,6 +97,90 @@ export class ServiciosYOfertasService extends BaseService implements ServiciosYO
 
     constructor(protected httpClient: HttpClient, @Optional() @Inject(BASE_PATH) basePath: string|string[], @Optional() configuration?: Configuration) {
         super(basePath, configuration);
+    }
+
+    /**
+     * Cerrar o reabrir la vigencia de un honorario por clase
+     * DP-38. Exige consultorio:manage. Es lo UNICO editable de un honorario: el fin de su vigencia. Extenderlo puede producir 409 honorario-de-clase-solapado.
+     * @endpoint put /api/v1/consultorios/{consultorioId}/ofertas/{ofertaId}/honorarios-por-clase/{honorarioId}
+     * @param requestParameters
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public cambiarFinHonorarioPorClaseDeOferta(requestParameters: CambiarFinHonorarioPorClaseDeOfertaRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HonorarioPorClase>;
+    public cambiarFinHonorarioPorClaseDeOferta(requestParameters: CambiarFinHonorarioPorClaseDeOfertaRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<HonorarioPorClase>>;
+    public cambiarFinHonorarioPorClaseDeOferta(requestParameters: CambiarFinHonorarioPorClaseDeOfertaRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<HonorarioPorClase>>;
+    public cambiarFinHonorarioPorClaseDeOferta(requestParameters: CambiarFinHonorarioPorClaseDeOfertaRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        const consultorioId = requestParameters?.consultorioId;
+        if (consultorioId === null || consultorioId === undefined) {
+            throw new Error('Required parameter consultorioId was null or undefined when calling cambiarFinHonorarioPorClaseDeOferta.');
+        }
+        const ofertaId = requestParameters?.ofertaId;
+        if (ofertaId === null || ofertaId === undefined) {
+            throw new Error('Required parameter ofertaId was null or undefined when calling cambiarFinHonorarioPorClaseDeOferta.');
+        }
+        const honorarioId = requestParameters?.honorarioId;
+        if (honorarioId === null || honorarioId === undefined) {
+            throw new Error('Required parameter honorarioId was null or undefined when calling cambiarFinHonorarioPorClaseDeOferta.');
+        }
+        const cambiarFinHonorarioPorClaseRequest = requestParameters?.cambiarFinHonorarioPorClaseRequest;
+        if (cambiarFinHonorarioPorClaseRequest === null || cambiarFinHonorarioPorClaseRequest === undefined) {
+            throw new Error('Required parameter cambiarFinHonorarioPorClaseRequest was null or undefined when calling cambiarFinHonorarioPorClaseDeOferta.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        // to determine the Content-Type header
+        const consumes: string[] = [
+            'application/json'
+        ];
+        const httpContentTypeSelected: string | undefined = this.configuration.selectHeaderContentType(consumes);
+        if (httpContentTypeSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Content-Type', httpContentTypeSelected);
+        }
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/consultorios/${this.configuration.encodeParam({name: "consultorioId", value: consultorioId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/ofertas/${this.configuration.encodeParam({name: "ofertaId", value: ofertaId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/honorarios-por-clase/${this.configuration.encodeParam({name: "honorarioId", value: honorarioId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<HonorarioPorClase>('put', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                body: cambiarFinHonorarioPorClaseRequest,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
     }
 
     /**
@@ -163,6 +257,86 @@ export class ServiciosYOfertasService extends BaseService implements ServiciosYO
             {
                 context: localVarHttpContext,
                 body: cambiarFinPrecioParticularRequest,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * Fijar el honorario por participante presente de la oferta para un periodo
+     * DP-38 (RF-M22-006). Exige consultorio:manage.  DOS HONORARIOS ACTIVOS DE LA MISMA OFERTA NO PUEDEN PISARSE: 409 honorario-de-clase-solapado, con el id y el periodo del que choca. Para cambiar la tarifa se cierra la vigencia de la actual (PUT) y se carga la nueva.  El importe no se edita despues. Lo ya liquidado no cambia nunca: la liquidacion copio su importe (CA-M22-007-06). Sin moneda, hereda la del precio de lista.
+     * @endpoint post /api/v1/consultorios/{consultorioId}/ofertas/{ofertaId}/honorarios-por-clase
+     * @param requestParameters
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public createHonorarioPorClaseDeOferta(requestParameters: CreateHonorarioPorClaseDeOfertaRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HonorarioPorClase>;
+    public createHonorarioPorClaseDeOferta(requestParameters: CreateHonorarioPorClaseDeOfertaRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<HonorarioPorClase>>;
+    public createHonorarioPorClaseDeOferta(requestParameters: CreateHonorarioPorClaseDeOfertaRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<HonorarioPorClase>>;
+    public createHonorarioPorClaseDeOferta(requestParameters: CreateHonorarioPorClaseDeOfertaRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        const consultorioId = requestParameters?.consultorioId;
+        if (consultorioId === null || consultorioId === undefined) {
+            throw new Error('Required parameter consultorioId was null or undefined when calling createHonorarioPorClaseDeOferta.');
+        }
+        const ofertaId = requestParameters?.ofertaId;
+        if (ofertaId === null || ofertaId === undefined) {
+            throw new Error('Required parameter ofertaId was null or undefined when calling createHonorarioPorClaseDeOferta.');
+        }
+        const createHonorarioPorClaseRequest = requestParameters?.createHonorarioPorClaseRequest;
+        if (createHonorarioPorClaseRequest === null || createHonorarioPorClaseRequest === undefined) {
+            throw new Error('Required parameter createHonorarioPorClaseRequest was null or undefined when calling createHonorarioPorClaseDeOferta.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        // to determine the Content-Type header
+        const consumes: string[] = [
+            'application/json'
+        ];
+        const httpContentTypeSelected: string | undefined = this.configuration.selectHeaderContentType(consumes);
+        if (httpContentTypeSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Content-Type', httpContentTypeSelected);
+        }
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/consultorios/${this.configuration.encodeParam({name: "consultorioId", value: consultorioId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/ofertas/${this.configuration.encodeParam({name: "ofertaId", value: ofertaId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/honorarios-por-clase`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<HonorarioPorClase>('post', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                body: createHonorarioPorClaseRequest,
                 responseType: <any>responseType_,
                 ...(withCredentials ? { withCredentials } : {}),
                 headers: localVarHeaders,
@@ -391,6 +565,89 @@ export class ServiciosYOfertasService extends BaseService implements ServiciosYO
             {
                 context: localVarHttpContext,
                 body: createServicioRequest,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * Dar de baja un honorario por clase
+     * Baja LOGICA con motivo obligatorio. Exige consultorio:manage. Libera el periodo; lo ya liquidado con esa tarifa no se toca.
+     * @endpoint delete /api/v1/consultorios/{consultorioId}/ofertas/{ofertaId}/honorarios-por-clase/{honorarioId}
+     * @param requestParameters
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public deactivateHonorarioPorClaseDeOferta(requestParameters: DeactivateHonorarioPorClaseDeOfertaRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any>;
+    public deactivateHonorarioPorClaseDeOferta(requestParameters: DeactivateHonorarioPorClaseDeOfertaRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<any>>;
+    public deactivateHonorarioPorClaseDeOferta(requestParameters: DeactivateHonorarioPorClaseDeOfertaRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<any>>;
+    public deactivateHonorarioPorClaseDeOferta(requestParameters: DeactivateHonorarioPorClaseDeOfertaRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        const consultorioId = requestParameters?.consultorioId;
+        if (consultorioId === null || consultorioId === undefined) {
+            throw new Error('Required parameter consultorioId was null or undefined when calling deactivateHonorarioPorClaseDeOferta.');
+        }
+        const ofertaId = requestParameters?.ofertaId;
+        if (ofertaId === null || ofertaId === undefined) {
+            throw new Error('Required parameter ofertaId was null or undefined when calling deactivateHonorarioPorClaseDeOferta.');
+        }
+        const honorarioId = requestParameters?.honorarioId;
+        if (honorarioId === null || honorarioId === undefined) {
+            throw new Error('Required parameter honorarioId was null or undefined when calling deactivateHonorarioPorClaseDeOferta.');
+        }
+        const deactivateOfferingRequest = requestParameters?.deactivateOfferingRequest;
+        if (deactivateOfferingRequest === null || deactivateOfferingRequest === undefined) {
+            throw new Error('Required parameter deactivateOfferingRequest was null or undefined when calling deactivateHonorarioPorClaseDeOferta.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        // to determine the Content-Type header
+        const consumes: string[] = [
+            'application/json'
+        ];
+        const httpContentTypeSelected: string | undefined = this.configuration.selectHeaderContentType(consumes);
+        if (httpContentTypeSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Content-Type', httpContentTypeSelected);
+        }
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/consultorios/${this.configuration.encodeParam({name: "consultorioId", value: consultorioId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/ofertas/${this.configuration.encodeParam({name: "ofertaId", value: ofertaId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/honorarios-por-clase/${this.configuration.encodeParam({name: "honorarioId", value: honorarioId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<any>('delete', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                body: deactivateOfferingRequest,
                 responseType: <any>responseType_,
                 ...(withCredentials ? { withCredentials } : {}),
                 headers: localVarHeaders,
@@ -758,6 +1015,72 @@ export class ServiciosYOfertasService extends BaseService implements ServiciosYO
         let localVarPath = `/api/v1/consultorios/${this.configuration.encodeParam({name: "consultorioId", value: consultorioId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/ofertas/${this.configuration.encodeParam({name: "ofertaId", value: ofertaId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/practicas`;
         const { basePath, withCredentials } = this.configuration;
         return this.httpClient.request<PracticasDeOfertaResponse>('get', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * Listar los honorarios por clase de la oferta
+     * DP-38 (RF-M22-006). La grilla de vigencias, ACTIVOS E HISTORICOS, del mas nuevo al mas viejo. vigente dice cual rige hoy. Exige consultorio:manage: es lo que cobra un colega.  La tarifa que aplica a una clase es la vigente el dia local de la clase en la sede. Una clase sin tarifa ese dia no entra en ninguna liquidacion.
+     * @endpoint get /api/v1/consultorios/{consultorioId}/ofertas/{ofertaId}/honorarios-por-clase
+     * @param requestParameters
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public listHonorariosPorClaseDeOferta(requestParameters: ListHonorariosPorClaseDeOfertaRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<Array<HonorarioPorClase>>;
+    public listHonorariosPorClaseDeOferta(requestParameters: ListHonorariosPorClaseDeOfertaRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<Array<HonorarioPorClase>>>;
+    public listHonorariosPorClaseDeOferta(requestParameters: ListHonorariosPorClaseDeOfertaRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<Array<HonorarioPorClase>>>;
+    public listHonorariosPorClaseDeOferta(requestParameters: ListHonorariosPorClaseDeOfertaRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        const consultorioId = requestParameters?.consultorioId;
+        if (consultorioId === null || consultorioId === undefined) {
+            throw new Error('Required parameter consultorioId was null or undefined when calling listHonorariosPorClaseDeOferta.');
+        }
+        const ofertaId = requestParameters?.ofertaId;
+        if (ofertaId === null || ofertaId === undefined) {
+            throw new Error('Required parameter ofertaId was null or undefined when calling listHonorariosPorClaseDeOferta.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/consultorios/${this.configuration.encodeParam({name: "consultorioId", value: consultorioId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/ofertas/${this.configuration.encodeParam({name: "ofertaId", value: ofertaId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/honorarios-por-clase`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<Array<HonorarioPorClase>>('get', `${basePath}${localVarPath}`,
             {
                 context: localVarHttpContext,
                 responseType: <any>responseType_,

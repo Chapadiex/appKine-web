@@ -127,6 +127,14 @@
     </p>
   }
 
+  @if (retirado()) {
+    <p class="ayuda">
+      La persona se retiro sin ser atendida: la llegada consta, asi que el turno ya no se puede
+      marcar como ausente ni mover a otro horario. La atencion se puede abrir igual desde la
+      pantalla clinica.
+    </p>
+  }
+
   @if (panel() === 'ninguno') {
     <div class="acciones">
       @if (estado() !== 'CONFIRMADO') {
@@ -143,14 +151,16 @@
         >
           Cancelar el turno
         </button>
-        <button
-          type="button"
-          class="boton boton--secundario"
-          [disabled]="enviando()"
-          (click)="abrir('ausencia')"
-        >
-          Marcar que no vino
-        </button>
+        @if (!retirado()) {
+          <button
+            type="button"
+            class="boton boton--secundario"
+            [disabled]="enviando()"
+            (click)="abrir('ausencia')"
+          >
+            Marcar que no vino
+          </button>
+        }
       }
       @if (puedeReprogramar()) {
         <button
@@ -245,6 +255,37 @@
       </akine-confirmacion-con-motivo>
     </section>
   }
+}
+
+@if (eventosDeRecepcion().length > 0) {
+  <section class="tarjeta" aria-labelledby="titulo-historial-recepcion">
+    <h2 id="titulo-historial-recepcion">Historial de la recepcion</h2>
+    <p class="ayuda">
+      La llegada al mostrador es otra maquina que la reserva: estos pasos no cambian el turno.
+    </p>
+    <ol class="dias">
+      @for (evento of eventosDeRecepcion(); track evento.id) {
+        <li class="dia">
+          <p class="dia__fecha">
+            {{ textoDeEventoDeRecepcion(evento.tipo) }} — {{ instanteEnZona(evento.ocurridoEn) }}
+          </p>
+          <dl class="detalle">
+            <dt>Estado</dt>
+            <dd>
+              @if (evento.estadoAnterior) {
+                {{ evento.estadoAnterior }} →
+              }
+              {{ evento.estadoNuevo }}
+            </dd>
+            @if (evento.motivo) {
+              <dt>Motivo</dt>
+              <dd>{{ evento.motivo }}</dd>
+            }
+          </dl>
+        </li>
+      }
+    </ol>
+  </section>
 }
 
 <section class="tarjeta" aria-labelledby="titulo-historial">

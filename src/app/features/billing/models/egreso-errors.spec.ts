@@ -32,6 +32,9 @@ describe('traducirErrorEgreso', () => {
     ['movimiento-no-reversible', 409, 'pago-ya-anulado', true],
     ['concurrent-modification', 409, 'version-vieja', true],
     ['idempotency-key-conflict', 409, 'clave-reusada', false],
+    ['egreso-de-liquidacion', 409, 'de-liquidacion', true],
+    ['borrador-de-honorarios-desactualizado', 409, 'borrador-desactualizado', true],
+    ['liquidacion-de-honorarios-vacia', 409, 'liquidacion-vacia', true],
   ])('%s se traduce a un mensaje propio', (tipo, status, causa, recargar) => {
     const traducido = traducirErrorEgreso(problema(tipo, status));
     expect(traducido.causa).toBe(causa);
@@ -52,6 +55,17 @@ describe('traducirErrorEgreso', () => {
     );
     expect(caja.mensaje).toContain('80,00');
     expect(caja.irACaja).toBe(true);
+  });
+
+  it('el borrador desactualizado dice cuanto da ahora (DP-38)', () => {
+    expect(
+      traducirErrorEgreso(
+        problema('borrador-de-honorarios-desactualizado', 409, { importeTotalActual: 499.99 }),
+      ).mensaje,
+    ).toContain('499,99');
+    expect(
+      traducirErrorEgreso(problema('borrador-de-honorarios-desactualizado', 409)).mensaje,
+    ).not.toContain('ahora da');
   });
 
   it('el conflicto de clave pide renovarla', () => {

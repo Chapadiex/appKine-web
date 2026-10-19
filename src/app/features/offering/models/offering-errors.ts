@@ -48,6 +48,10 @@ export type CausaOffering =
   | 'precio-solapado'
   /** 409 precio-particular-inactivo: el precio ya esta dado de baja. */
   | 'precio-inactivo'
+  /** 409 honorario-de-clase-solapado: dos tarifas activas de la misma oferta se pisan (DP-38). */
+  | 'honorario-solapado'
+  /** 409 honorario-de-clase-inactivo: la tarifa ya esta dada de baja. */
+  | 'honorario-inactivo'
   /** 409 servicio-codigo-taken / servicio-nombre-taken: ya hay un servicio vigente igual. */
   | 'servicio-duplicado'
   /** 409 servicio-inactivo: el servicio esta dado de baja; no admite ofertas nuevas ni ediciones. */
@@ -137,6 +141,15 @@ const MENSAJE_PRECIO_INACTIVO =
   'Ese precio ya esta dado de baja, asi que no admite cambios. Recarga la grilla para verlo con ' +
   'su estado actual y, si hace falta, carga otro.';
 
+const MENSAJE_HONORARIO_SOLAPADO =
+  'Ya hay otra tarifa de honorario activa de esta oferta que cubre alguno de esos dias, y dos ' +
+  'tarifas no pueden pisarse. Para cambiarla, cerrale la vigencia a la actual el dia anterior y ' +
+  'carga la nueva desde el dia siguiente.';
+
+const MENSAJE_HONORARIO_INACTIVO =
+  'Esa tarifa ya esta dada de baja, asi que no admite cambios. Recarga la grilla para verla con ' +
+  'su estado actual y, si hace falta, carga otra.';
+
 const MENSAJE_PRACTICA_NO_UTILIZABLE =
   'Alguna de las practicas que agregaste esta dada de baja o fuera de vigencia en el catalogo, ' +
   'asi que no se puede sumar a la oferta. Sacala de la lista y volve a guardar. Las que la oferta ' +
@@ -212,6 +225,10 @@ export function traducirErrorOffering(error: unknown, ambito: AmbitoOffering): E
       return base(MENSAJE_PRECIO_SOLAPADO, 'precio-solapado');
     case 'precio-particular-inactivo':
       return base(MENSAJE_PRECIO_INACTIVO, 'precio-inactivo');
+    case 'honorario-de-clase-solapado':
+      return base(MENSAJE_HONORARIO_SOLAPADO, 'honorario-solapado');
+    case 'honorario-de-clase-inactivo':
+      return base(MENSAJE_HONORARIO_INACTIVO, 'honorario-inactivo');
     case 'practica-no-utilizable':
       return base(MENSAJE_PRACTICA_NO_UTILIZABLE, 'practica-no-utilizable');
     case 'oferta-inactiva':
@@ -263,6 +280,7 @@ export function hayQueRecargar(causa: CausaOffering | null): boolean {
     causa === 'no-encontrado' ||
     causa === 'conflicto' ||
     causa === 'precio-inactivo' ||
+    causa === 'honorario-inactivo' ||
     causa === 'servicio-inactivo' ||
     causa === 'oferta-ya-inactiva'
   );

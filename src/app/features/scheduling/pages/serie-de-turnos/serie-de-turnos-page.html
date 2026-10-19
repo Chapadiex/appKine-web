@@ -67,6 +67,15 @@
         <dd>{{ fechaEnPalabras(actual.fechaHasta) }}</dd>
       }
     </dl>
+    @if ((actual.ocurrenciasOmitidas?.length ?? 0) > 0) {
+      <!-- U-22: las fechas que la regla producia y el alta no reservo. No son turnos. -->
+      <h3>Fechas omitidas al reservar</h3>
+      <ul>
+        @for (omitida of actual.ocurrenciasOmitidas ?? []; track omitida.inicio) {
+          <li>{{ fechaHora(omitida.inicio) }} — {{ textoDeOcurrenciaOmitida(omitida.motivo) }}</li>
+        }
+      </ul>
+    }
     @if (puedeOperar()) {
       <div class="acciones">
         @if (primerPendiente(); as pivote) {

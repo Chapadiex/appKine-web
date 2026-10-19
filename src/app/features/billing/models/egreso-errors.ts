@@ -29,6 +29,9 @@ export type CausaEgreso =
   | 'beneficiario-no-vinculado'
   | 'caja'
   | 'clave-reusada'
+  | 'de-liquidacion'
+  | 'borrador-desactualizado'
+  | 'liquidacion-vacia'
   | 'datos-invalidos'
   | 'conflicto'
   | 'version-vieja'
@@ -176,6 +179,36 @@ export function traducirErrorEgreso(error: unknown): ErrorEgreso {
         causa: 'pago-ya-anulado',
         recargar: true,
       };
+    case 'egreso-de-liquidacion':
+      return {
+        mensaje:
+          'Este egreso nacio de una liquidacion de honorarios: su importe, categoria, periodo y ' +
+          'servicio salen de las clases liquidadas y no se corrigen a mano. Se pueden cambiar el ' +
+          'concepto y el comprobante. Si el importe esta mal, anula el egreso —eso libera las ' +
+          'clases— y volve a liquidar.',
+        causa: 'de-liquidacion',
+        recargar: true,
+      };
+    case 'borrador-de-honorarios-desactualizado': {
+      const actual = error.numeroDeExtension('importeTotalActual');
+      return {
+        mensaje:
+          'El borrador cambio desde que lo miraste —otra liquidacion, una asistencia corregida o ' +
+          'una tarifa nueva—' +
+          (actual === null ? '' : `: ahora da ${importeEnPalabras(actual, undefined)}`) +
+          '. No se liquido nada. Revisa el borrador actualizado y volve a confirmar.',
+        causa: 'borrador-desactualizado',
+        recargar: true,
+      };
+    }
+    case 'liquidacion-de-honorarios-vacia':
+      return {
+        mensaje:
+          'No queda ninguna clase para liquidar en ese periodo: ya se liquidaron o no tienen ' +
+          'honorario ni presentes. No se creo ningun egreso.',
+        causa: 'liquidacion-vacia',
+        recargar: true,
+      };
     case 'concurrent-modification':
       return {
         mensaje:
@@ -207,7 +240,8 @@ export function traducirErrorEgreso(error: unknown): ErrorEgreso {
   }
   if (error.status === 404) {
     return {
-      mensaje: 'El egreso o el pago no existen, o no son de esta organizacion.',
+      mensaje:
+        'El egreso, el pago, la liquidacion o la oferta elegida no existen, o no son de esta sede.',
       causa: 'no-encontrado',
       recargar: false,
     };

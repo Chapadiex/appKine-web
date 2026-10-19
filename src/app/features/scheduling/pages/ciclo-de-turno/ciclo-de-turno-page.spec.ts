@@ -187,6 +187,36 @@ describe('CicloDeTurnoPage', () => {
     expect(texto).toMatch(/sugerido \$\s?15\.000,00/);
   });
 
+  it('un turno cuya persona se retiro (U-21) no ofrece ausencia ni reprogramar, y muestra el RETIRO', async () => {
+    const fixture = await montar({
+      leido: {
+        ...TURNO_LEIDO,
+        recepcion: { id: 9, estado: 'RETIRADO', motivoCierre: 'Se canso de esperar', version: 3 },
+      },
+      eventosDeRecepcion: [
+        { id: 1, tipo: 'LLEGADA', estadoNuevo: 'LLEGO', ocurridoEn: '2026-09-15T11:50:00Z' },
+        {
+          id: 2,
+          tipo: 'RETIRO',
+          estadoAnterior: 'LLEGO',
+          estadoNuevo: 'RETIRADO',
+          motivo: 'Se canso de esperar',
+          ocurridoEn: '2026-09-15T12:20:00Z',
+        },
+      ],
+    });
+
+    const texto = textoDe(fixture);
+    expect(texto).toContain('se retiro sin ser atendida');
+    expect(texto).toContain('Historial de la recepcion');
+    expect(texto).toContain('Se retiro sin ser atendido —');
+    expect(texto).toContain('Se canso de esperar');
+    expect(boton(fixture, 'Marcar que no vino')).toBeNull();
+    expect(boton(fixture, 'Mover a otro horario')).toBeNull();
+    // Cancelar sigue disponible: el retiro no cierra la reserva.
+    expect(boton(fixture, 'Cancelar el turno')).not.toBeNull();
+  });
+
   it('la ausencia sale con el motivo VACIO: el contrato lo declara opcional', async () => {
     const fixture = await montar();
     clickear(fixture, 'Marcar que no vino');
@@ -572,6 +602,7 @@ describe('CicloDeTurnoPage', () => {
       lecturaFalla?: boolean;
       leido?: object;
       serieId?: number;
+      eventosDeRecepcion?: object[];
     } = {},
   ): Promise<ComponentFixture<CicloDeTurnoPage>> {
     tenantContext.select({
@@ -600,6 +631,9 @@ describe('CicloDeTurnoPage', () => {
           ? TURNO_LEIDO
           : { ...TURNO_LEIDO, serieId: opciones.serieId }),
     );
+    if (opciones.eventosDeRecepcion !== undefined) {
+      httpMock.expectOne(`${TURNO_URL}/recepcion/historial`).flush(opciones.eventosDeRecepcion);
+    }
     httpMock.expectOne(HISTORIAL).flush(EVENTOS);
     httpMock.expectOne(esAgenda()).flush(DIA);
     await asentar(fixture);

@@ -168,6 +168,12 @@
     <section class="tarjeta" [attr.aria-labelledby]="'titulo-seccion-' + i">
       <h2 [id]="'titulo-seccion-' + i">{{ tituloDeSeccion(seccion.seccion, seccion.titulo) }}</h2>
 
+      @for (a of advertenciasDe(seccion.seccion); track $index) {
+        <p class="aviso" role="note">
+          <b>Para leer bien estos numeros:</b> {{ a.detalle || a.codigo }}
+        </p>
+      }
+
       @if (seccion.indicadores && seccion.indicadores.length > 0) {
         <ul class="indicadores">
           @for (ind of seccion.indicadores; track ind.clave) {
@@ -215,8 +221,8 @@
               <tbody>
                 @for (fila of seccion.filas; track $index) {
                   <tr>
-                    @for (celda of fila; track $index) {
-                      <td>{{ celda }}</td>
+                    @for (valorDeCelda of fila; track $index) {
+                      <td [class.importe]="esImporte(valorDeCelda)">{{ celda(valorDeCelda) }}</td>
                     }
                   </tr>
                 }

@@ -1,7 +1,13 @@
 import { Page, expect, test } from '@playwright/test';
 
-import { CLASE, PERSONA_CON_PASES, instalarApiDeContraste } from './support/contraste';
+import {
+  CLASE,
+  PERSONA_CON_PASES,
+  abrirBorradorDeHonorarios,
+  instalarApiDeContraste,
+} from './support/contraste';
 import { FECHA_MOVIL, PERSONA_ID, instalarApiMovil } from './support/movil';
+import { instalarApiDp43 } from './support/pantallas-dp43';
 
 /**
  * Auditoria de ANCHO DE TELEFONO: 375 px, el ancho CSS de un telefono chico.
@@ -35,6 +41,8 @@ interface Pantalla {
    * inscripciones, asistencia, atencion grupal, productos y pases.
    */
   readonly apiDeF9?: boolean;
+  /** Las pantallas de DP-43 suman su API (`support/pantallas-dp43.ts`) sobre la del telefono. */
+  readonly apiDp43?: { readonly plataforma?: boolean };
   /** Algo que solo aparece cuando la pantalla ya pinto sus datos. */
   readonly listo: (page: Page) => Promise<void>;
 }
@@ -103,6 +111,18 @@ const PANTALLAS: readonly Pantalla[] = [
     listo: texto('Sosa, Eva — posicion 1'),
   },
   {
+    nombre: 'tarifas de honorario de una oferta',
+    ruta: `/servicios/ofertas/${CLASE.ofertaId}/honorarios`,
+    apiDeF9: true,
+    listo: texto('Rige hoy'),
+  },
+  {
+    nombre: 'borrador de una liquidacion de honorarios',
+    ruta: '/egresos/honorarios',
+    apiDeF9: true,
+    listo: abrirBorradorDeHonorarios,
+  },
+  {
     nombre: 'clases del dia',
     ruta: '/asistencia?fecha=2026-10-20',
     apiDeF9: true,
@@ -135,6 +155,36 @@ const PANTALLAS: readonly Pantalla[] = [
     ruta: `/pacientes/${PERSONA_CON_PASES}/pases`,
     apiDeF9: true,
     listo: texto('Agotado'),
+  },
+  // --- DP-43: catalogo global de financiadores, atencion sin turno y ventana de enmienda -----
+  {
+    nombre: 'catalogo global de financiadores de la plataforma',
+    ruta: '/plataforma/catalogo-financiadores',
+    apiDp43: { plataforma: true },
+    listo: texto('Plan 210 Integral Familiar con Odontologia'),
+  },
+  {
+    nombre: 'catalogo de financiadores del centro',
+    ruta: '/contratacion/financiadores/catalogo',
+    apiDp43: {},
+    listo: texto('Ya agregado'),
+  },
+  {
+    nombre: 'atender sin turno',
+    ruta: '/atencion/sin-turno',
+    apiDp43: {},
+    listo: async (page) => {
+      await page
+        .getByLabel('Oferta', { exact: true })
+        .selectOption({ label: 'Rehabilitacion neurologica' });
+      await expect(page.getByLabel('Motivo (obligatorio)')).toBeVisible();
+    },
+  },
+  {
+    nombre: 'ventana de enmienda',
+    ruta: '/atencion/politica-de-enmienda',
+    apiDp43: {},
+    listo: texto('45 dias'),
   },
 ];
 
@@ -213,6 +263,9 @@ test.describe('Ancho de telefono (375 px)', () => {
         await instalarApiDeContraste(page);
       } else {
         await instalarApiMovil(page, { conSesion: pantalla.conSesion ?? true });
+      }
+      if (pantalla.apiDp43 !== undefined) {
+        await instalarApiDp43(page, pantalla.apiDp43);
       }
       await page.goto(pantalla.ruta);
       await pantalla.listo(page);

@@ -9,6 +9,7 @@ import {
   untracked,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { ConfirmacionConMotivo } from '../../../../shared/components/confirmacion-con-motivo/confirmacion-con-motivo';
 
 import { ClinicalApi } from '../../services/clinical-api';
 import { MedicionesDeSesion } from '../../components/mediciones-de-sesion/mediciones-de-sesion';
@@ -33,6 +34,9 @@ import {
 } from '../../../../api/generated/model/guardar-evaluacion';
 import { Sesion } from '../../../../api/generated/model/sesion';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
+import { PermissionsStore } from '../../../../core/services/permissions.store';
+import { PERMISO_SESION_REASSIGN } from '../../../../core/models/permisos';
+import { ProfesionalElegible } from '../../services/clinical-api';
 import {
   ASISTENCIAS,
   CONDUCTAS,
@@ -154,7 +158,7 @@ const ESPERA_AUTOSAVE = 1_500;
  */
 @Component({
   selector: 'app-atencion-page',
-  imports: [RouterLink, MedicionesDeSesion, TratamientosDeSesion],
+  imports: [RouterLink, MedicionesDeSesion, TratamientosDeSesion, ConfirmacionConMotivo],
   templateUrl: './atencion-page.html',
   styleUrl: '../../atencion.css',
 })
@@ -162,6 +166,7 @@ export class AtencionPage {
   private readonly api = inject(ClinicalApi);
   private readonly tenantContext = inject(TenantContextStore);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly permisos = inject(PermissionsStore);
 
   /**
    * De la ruta. `withComponentInputBinding` lo liga solo. Viene uno de los dos: `turnoId` en la
@@ -206,6 +211,29 @@ export class AtencionPage {
   /** `true` mientras el cambio de caso viaja con la version de la sesion. */
   protected readonly cambiandoCaso = signal(false);
   protected readonly avisoCaso = signal('');
+
+  /**
+   * `true` cuando la oferta exige caso clinico (RF-M10-007, DP-43): no se ofrece "Sin caso", porque
+   * iniciar, quitarlo o cerrar presente sin el es 409 `caso-clinico-requerido`. Se lee de la oferta
+   * al abrir la atencion y se fija tambien al recibir ese 409; la autoridad es el backend.
+   */
+  protected readonly requiereCaso = signal(false);
+  private ofertaConsultada: number | null = null;
+  /** Paciente del turno, para enlazar a su historia cuando hace falta abrir un caso. */
+  protected readonly personaDelTurno = signal<number | null>(null);
+
+  // --- Reemplazo del profesional (DP-43, U-24) -------------------------------------------
+  /** Solo el `CONSULTORIO_ADMIN` lo tiene. Ocultar el boton es UX: el backend responde 403. */
+  protected readonly puedeReasignar = computed(() => this.permisos.tiene(PERMISO_SESION_REASSIGN));
+  protected readonly reemplazando = signal(false);
+  protected readonly enviandoReemplazo = signal(false);
+  protected readonly profesionales = signal<readonly ProfesionalElegible[]>([]);
+  protected readonly profesionalNuevo = signal<number | null>(null);
+  protected readonly avisoReemplazo = signal('');
+  protected readonly reemplazoSinDestino = computed(
+    () =>
+      this.profesionalNuevo() === null || this.profesionalNuevo() === this.sesion()?.profesionalId,
+  );
 
   /**
    * `true` si hay algo que elegir: casos activos, o un caso asociado que se puede quitar. Sin
@@ -374,8 +402,9 @@ export class AtencionPage {
     }
 
     this.limpiarApertura();
-    this.api.casosDelTurno(consultorioId, turnoId).subscribe(({ ofertaId, casos }) => {
+    this.api.casosDelTurno(consultorioId, turnoId).subscribe(({ ofertaId, personaId, casos }) => {
       this.casos.set(casos);
+      this.personaDelTurno.set(personaId ?? null);
       if (casos.length === 0) {
         this.iniciar();
         return;
@@ -428,6 +457,11 @@ export class AtencionPage {
     this.casoElegido.set(null);
     this.casoIgnorado.set(false);
     this.avisoCaso.set('');
+    this.requiereCaso.set(false);
+    this.ofertaConsultada = null;
+    this.personaDelTurno.set(null);
+    this.reemplazando.set(false);
+    this.avisoReemplazo.set('');
   }
 
   protected elegirCaso(valor: string): void {
@@ -467,6 +501,14 @@ export class AtencionPage {
         // pantalla sin salida.
         if (traducido.causa === 'caso-no-activo') {
           this.eligiendoCaso.set(true);
+        }
+        // La oferta exige caso (DP-43): con casos activos se vuelve a preguntar, ya sin "Sin caso";
+        // sin ninguno, el mensaje enlaza a la historia para abrir uno.
+        if (traducido.causa === 'caso-requerido') {
+          this.requiereCaso.set(true);
+          if (this.casos().length > 0) {
+            this.eligiendoCaso.set(true);
+          }
         }
       },
     });
@@ -551,8 +593,106 @@ export class AtencionPage {
    * <p>Solo se llama en la apertura. Despues de eso el editor es del profesional y ninguna
    * respuesta lo pisa: para eso esta {@link adoptarSoloVersion}.
    */
+  /** Lee una sola vez por oferta si exige caso. Silencioso: si falla, decide el backend. */
+  private consultarSiRequiereCaso(sesion: Sesion): void {
+    const consultorioId = this.tenantContext.consultorioId();
+    const ofertaId = sesion.ofertaId;
+    if (
+      consultorioId === null ||
+      ofertaId === undefined ||
+      sesion.claseId !== undefined ||
+      this.ofertaConsultada === ofertaId
+    ) {
+      return;
+    }
+    this.ofertaConsultada = ofertaId;
+    this.api
+      .requiereCasoClinico(consultorioId, ofertaId)
+      .subscribe((requiere) => this.requiereCaso.update((antes) => antes || requiere));
+  }
+
+  // -------------------------------------------------------------------------------------
+  // Reemplazo del profesional (DP-43, U-24)
+  // -------------------------------------------------------------------------------------
+
+  protected abrirReemplazo(): void {
+    const consultorioId = this.tenantContext.consultorioId();
+    const organizationId = this.tenantContext.organizationId();
+    if (consultorioId === null || organizationId === null) {
+      return;
+    }
+    this.reemplazando.set(true);
+    this.avisoReemplazo.set('');
+    this.profesionalNuevo.set(null);
+    this.api
+      .profesionalesParaReemplazo(organizationId, consultorioId, this.sesion()?.ofertaId)
+      .subscribe((profesionales) => this.profesionales.set(profesionales));
+  }
+
+  protected cancelarReemplazo(): void {
+    this.reemplazando.set(false);
+  }
+
+  protected elegirProfesional(valor: string): void {
+    const id = Number(valor);
+    this.profesionalNuevo.set(Number.isFinite(id) && id > 0 ? id : null);
+  }
+
+  /** Manda el reemplazo con la version leida. El motivo lo valida `ConfirmacionConMotivo`. */
+  protected reemplazar(motivo: string): void {
+    const consultorioId = this.tenantContext.consultorioId();
+    const sesionId = this.sesion()?.id;
+    const profesionalId = this.profesionalNuevo();
+    if (
+      consultorioId === null ||
+      sesionId === undefined ||
+      profesionalId === null ||
+      this.reemplazoSinDestino()
+    ) {
+      return;
+    }
+    this.enviandoReemplazo.set(true);
+    this.error.set(null);
+    this.api
+      .reemplazarProfesional(consultorioId, sesionId, {
+        profesionalId,
+        motivo,
+        version: this.version(),
+      })
+      .subscribe({
+        next: (sesion) => {
+          this.enviandoReemplazo.set(false);
+          this.reemplazando.set(false);
+          this.sesion.set(sesion);
+          this.version.set(sesion.version ?? 0);
+          const nombre = this.nombreDelProfesional(sesion.profesionalId);
+          this.avisoReemplazo.set(
+            'La atencion ahora la continua ' +
+              nombre +
+              '. Desde aca solo ese profesional puede guardarla; el anterior va a ver que la ' +
+              'atencion es de otro profesional.',
+          );
+        },
+        error: (error: unknown) => {
+          this.enviandoReemplazo.set(false);
+          this.fallo(error);
+        },
+      });
+  }
+
+  protected nombreDelProfesional(membershipId: number | undefined): string {
+    if (membershipId === undefined) {
+      return 'Sin registrar';
+    }
+    return (
+      this.profesionales().find((p) => p.membershipId === membershipId)?.nombre ??
+      'Profesional #' + membershipId
+    );
+  }
+
   private adoptar(sesion: Sesion): void {
     this.sesion.set(sesion);
+    this.consultarSiRequiereCaso(sesion);
     this.version.set(sesion.version ?? 0);
     this.casoNuevo.set(sesion.casoId ?? null);
     this.notas.set(notasDelBorrador(sesion.borrador));
@@ -876,6 +1016,9 @@ export class AtencionPage {
     this.cancelarAutosave();
     const traducido = traducir(error);
     this.error.set(traducido);
+    if (traducido.causa === 'caso-requerido') {
+      this.requiereCaso.set(true);
+    }
 
     if (traducido.causa !== 'sesion-cerrada') {
       return;

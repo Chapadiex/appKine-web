@@ -10,6 +10,8 @@ import { TenantContextStore } from '../../../../core/services/tenant-context.sto
 import { ErrorReporte, errorSinContexto, traducirErrorReporte } from '../../models/reporte-errors';
 import {
   ADVERTENCIA_ACTIVIDAD_PROPIA,
+  celdaEnPalabras,
+  esImporteEnCelda,
   MAXIMO_DIAS_DE_REPORTE,
   REPORTES,
   esCodigoDeReporte,
@@ -110,10 +112,23 @@ export class ReportesPage {
     () =>
       this.reporte()?.advertencias?.some((a) => a.codigo === ADVERTENCIA_ACTIVIDAD_PROPIA) ?? false,
   );
-  protected readonly advertencias = computed(
-    () =>
-      this.reporte()?.advertencias?.filter((a) => a.codigo !== ADVERTENCIA_ACTIVIDAD_PROPIA) ?? [],
-  );
+  /**
+   * Las advertencias que no son de una seccion en pantalla van arriba. Las de una seccion visible
+   * se leen junto a sus numeros —`rentabilidad-sin-costos` (DP-39) dice que el "resultado" de esa
+   * tabla es en realidad la facturacion—: arriba quedaria lejos de la tabla que corrige.
+   */
+  protected readonly advertencias = computed(() => {
+    const visibles = new Set((this.reporte()?.secciones ?? []).map((s) => s.seccion));
+    return (
+      this.reporte()?.advertencias?.filter(
+        (a) =>
+          a.codigo !== ADVERTENCIA_ACTIVIDAD_PROPIA &&
+          (a.seccion === undefined || !visibles.has(a.seccion)),
+      ) ?? []
+    );
+  });
+  protected readonly celda = celdaEnPalabras;
+  protected readonly esImporte = esImporteEnCelda;
 
   constructor() {
     // Fechas por defecto tomadas antes de conocer la zona de la sede: se corrigen al llegar.
@@ -140,6 +155,15 @@ export class ReportesPage {
     this.filtro.controls.reporte.valueChanges
       .pipe(takeUntilDestroyed())
       .subscribe((codigo) => this.reporteElegido.set(codigo));
+  }
+
+  /** Las advertencias de una seccion visible, para mostrarlas dentro de ella. */
+  protected advertenciasDe(seccion: string | undefined) {
+    return (
+      this.reporte()?.advertencias?.filter(
+        (a) => a.codigo !== ADVERTENCIA_ACTIVIDAD_PROPIA && a.seccion === seccion,
+      ) ?? []
+    );
   }
 
   /** Titulo legible de una seccion, segun el catalogo; si no, su nombre estable. */

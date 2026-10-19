@@ -14,6 +14,9 @@ import { TratamientosDeSesion } from '../../components/tratamientos-de-sesion/tr
 import { AkineHttpError } from '../../../../core/interceptors/error.interceptor';
 import { TIMEOUT_AXE, esperarSinViolaciones } from '../../../../core/testing/axe';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
+import { PermissionsStore } from '../../../../core/services/permissions.store';
+import { RUTA_PERMISOS_EFECTIVOS } from '../../../../core/testing/rutas-api';
+import { PERMISO_SESION_REASSIGN, PERMISO_SESION_REGISTER } from '../../../../core/models/permisos';
 import { errorInterceptor } from '../../../../core/interceptors/error.interceptor';
 import { provideApi } from '../../../../api/generated/provide-api';
 
@@ -904,13 +907,146 @@ describe('AtencionPage', () => {
     });
   });
 
-  async function montar(sesion: object = ABIERTA): Promise<ComponentFixture<AtencionPage>> {
+  // -------------------------------------------------------------------------------------
+  // DP-43: caso obligatorio por oferta, reemplazo del profesional y ventana de enmienda
+  // -------------------------------------------------------------------------------------
+
+  const CASO_REQUERIDO = {
+    type: 'https://akine.app/problems/caso-clinico-requerido',
+    status: 409,
+    detail: 'La oferta exige caso clinico.',
+  };
+
+  it('el 409 caso-clinico-requerido al iniciar vuelve a preguntar, ya sin "Sin caso"', async () => {
+    const fixture = crearSinMontar();
+    responderCasos([CASO_RODILLA]);
+    await estabilizar(fixture);
+
+    apretarRadio(fixture, '');
+    apretar(fixture, 'Iniciar la atencion');
+    httpMock.expectOne(esIniciar()).flush(CASO_REQUERIDO, { status: 409, statusText: 'Conflict' });
+    await estabilizar(fixture);
+
+    expect(texto(fixture)).toContain('exige un caso clinico');
+    expect(texto(fixture)).toContain('Antes de empezar: caso clinico');
+    expect(fixture.nativeElement.querySelector('input[name="caso"][value=""]')).toBeNull();
+
+    apretarRadio(fixture, '31');
+    apretar(fixture, 'Iniciar la atencion');
+    const reintento = httpMock.expectOne(esIniciar());
+    expect(reintento.request.params.get('casoId')).toBe('31');
+    reintento.flush({ ...ABIERTA, casoId: 31 });
+    await estabilizar(fixture);
+    responderBloques();
+  });
+
+  it('sin casos activos, el 409 caso-clinico-requerido enlaza a la historia para abrir uno', async () => {
+    const fixture = crearSinMontar();
+    responderCasos([]);
+    httpMock.expectOne(esIniciar()).flush(CASO_REQUERIDO, { status: 409, statusText: 'Conflict' });
+    await estabilizar(fixture);
+
+    const enlace = fixture.nativeElement.querySelector(
+      `a[href="/historia-clinica/personas/${PERSONA}"]`,
+    );
+    expect(enlace).not.toBeNull();
+    expect(texto(fixture)).toContain('Abrir un caso');
+  });
+
+  it('si la oferta exige caso, la atencion abierta no ofrece quitarlo', async () => {
+    const fixture = crearSinMontar();
+    responderCasos([CASO_RODILLA, CASO_HOMBRO]);
+    await estabilizar(fixture);
+    apretar(fixture, 'Iniciar la atencion');
+    httpMock.expectOne(esIniciar()).flush({ ...ABIERTA, ofertaId: 4, casoId: 31 });
+    await estabilizar(fixture);
+    httpMock
+      .expectOne(
+        (p) => p.method === 'GET' && p.url === `/api/v1/consultorios/${CONSULTORIO}/ofertas`,
+      )
+      .flush([{ id: 4, requiereCasoClinico: true }]);
+    responderBloques();
+    await estabilizar(fixture);
+
+    const opciones = Array.from(
+      fixture.nativeElement.querySelectorAll(
+        '#atencion-caso option',
+      ) as NodeListOf<HTMLOptionElement>,
+    ).map((o) => o.textContent?.trim());
+    expect(opciones).not.toContain('Sin caso');
+  });
+
+  it('cerrar presente sin caso en una oferta que lo exige explica el 409', async () => {
+    const fixture = await montar();
+    apretarRadio(fixture, 'PRESENTE');
+    escribirEn(fixture, '#cierre-nota', 'Se trabajo movilidad.');
+    fixture.detectChanges();
+    apretar(fixture, 'Cerrar la atencion');
+    httpMock.expectOne(esCierre()).flush(CASO_REQUERIDO, { status: 409, statusText: 'Conflict' });
+    await estabilizar(fixture);
+    expect(texto(fixture)).toContain('exige un caso clinico');
+    expect(texto(fixture)).toContain('Atencion en curso');
+  });
+
+  it('el reemplazo del profesional solo se ofrece con sesion:reassign y manda motivo y version', async () => {
+    const fixture = await montar({ ...ABIERTA, ofertaId: 4, profesionalId: 7 }, [
+      PERMISO_SESION_REGISTER,
+      PERMISO_SESION_REASSIGN,
+    ]);
+
+    apretar(fixture, 'Reemplazar profesional');
+    httpMock
+      .expectOne((p) => p.url === `/api/v1/consultorios/${CONSULTORIO}/ofertas/4/habilitaciones`)
+      .flush({
+        restringidaPorProfesional: true,
+        profesionales: [
+          { membershipId: 7, nombre: 'Lopez, Ana', estado: 'ACTIVO' },
+          { membershipId: 8, nombre: 'Diaz, Bruno', estado: 'ACTIVO' },
+        ],
+      });
+    await estabilizar(fixture);
+
+    elegir(fixture, '#atencion-profesional-nuevo', '8');
+    fixture.detectChanges();
+    escribirEn(fixture, '#atencion-motivo-reemplazo', 'Licencia de la profesional');
+    fixture.detectChanges();
+    apretar(fixture, 'Reemplazar');
+
+    const pedido = httpMock.expectOne((p) => p.method === 'PUT' && p.url === `${VER}/profesional`);
+    expect(pedido.request.body).toEqual({
+      profesionalId: 8,
+      motivo: 'Licencia de la profesional',
+      version: 3,
+    });
+    pedido.flush({ ...ABIERTA, ofertaId: 4, profesionalId: 8, version: 4 });
+    await estabilizar(fixture);
+    expect(texto(fixture)).toContain('ahora la continua Diaz, Bruno');
+  });
+
+  it('sin sesion:reassign no se ofrece reemplazar', async () => {
+    const fixture = await montar({ ...ABIERTA, ofertaId: 4, profesionalId: 7 });
+    expect(rotulosDeBoton(fixture)).not.toContain('Reemplazar profesional');
+  });
+
+  it('una atencion cerrada dice hasta cuando se puede enmendar', async () => {
+    const fixture = await montar({ ...CERRADA, enmendableHasta: '2026-10-15T12:48:00Z' });
+    expect(texto(fixture)).toContain('Se puede enmendar hasta');
+  });
+
+  async function montar(
+    sesion: object = ABIERTA,
+    permisosDeLaSede?: string[],
+  ): Promise<ComponentFixture<AtencionPage>> {
     tenantContext.select({
       organizationId: 1,
       organizationName: 'Centro Belgrano',
       consultorioId: CONSULTORIO,
       consultorioName: 'Sede Centro',
     });
+    if (permisosDeLaSede !== undefined) {
+      TestBed.inject(PermissionsStore).cargar().subscribe();
+      httpMock.expectOne(RUTA_PERMISOS_EFECTIVOS).flush({ permissions: permisosDeLaSede });
+    }
 
     const fixture = TestBed.createComponent(AtencionPage);
     fixture.componentRef.setInput('turnoId', String(TURNO));
@@ -956,10 +1092,13 @@ describe('AtencionPage', () => {
   }
 
   function esDeBloque(url: string): boolean {
-    return /\/(mediciones|tratamientos|practicas|espacios)(\/|$)/.test(url);
+    return /\/(mediciones|tratamientos|practicas|espacios|ofertas)(\/|$)/.test(url);
   }
 
   function cuerpoVacio(url: string): object {
+    if (url.endsWith('/ofertas')) {
+      return [];
+    }
     if (url.endsWith('/tratamientos')) {
       return [];
     }

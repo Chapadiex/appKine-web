@@ -10,6 +10,7 @@ import {
   etiquetaDeMovimiento,
   importeDePase,
   origenDeMovimiento,
+  renovacionApagadaPorAutorizante,
 } from './etiquetas-de-pases';
 import { ConsumoDeCreditoEfectoEnum as Efecto } from '../../../api/generated/model/consumo-de-credito';
 import {
@@ -89,5 +90,13 @@ describe('etiquetas de pases', () => {
       expect(texto).not.toContain('undefined');
       expect(texto).not.toContain('0 creditos');
     }
+  });
+
+  it('reconoce el motivo de DP-40 y no confunde los otros motivos de omision', () => {
+    expect(
+      renovacionApagadaPorAutorizante('quien autorizo la renovacion ya no puede vender en la sede'),
+    ).toBe(true);
+    expect(renovacionApagadaPorAutorizante('el producto esta dado de baja')).toBe(false);
+    expect(renovacionApagadaPorAutorizante(undefined)).toBe(false);
   });
 });

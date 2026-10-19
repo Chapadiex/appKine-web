@@ -14,8 +14,10 @@ import { Observable }                                        from 'rxjs';
 import { CancelarClase } from '../model/models';
 import { Clase } from '../model/models';
 import { EventoDeClase } from '../model/models';
+import { InstructoresDeClase } from '../model/models';
 import { ProblemDetail } from '../model/models';
 import { ProgramarClase } from '../model/models';
+import { ReemplazarInstructoresDeClaseRequest } from '../model/models';
 import { ReprogramarClase } from '../model/models';
 
 
@@ -26,6 +28,11 @@ export interface CancelarClaseRequestParams {
     consultorioId: number;
     claseId: number;
     cancelarClase: CancelarClase;
+}
+
+export interface GetInstructoresDeClaseRequestParams {
+    consultorioId: number;
+    claseId: number;
 }
 
 export interface HistorialClaseRequestParams {
@@ -43,6 +50,12 @@ export interface ProgramarRequestParams {
     consultorioId: number;
     ofertaId: number;
     programarClase: ProgramarClase;
+}
+
+export interface ReemplazarInstructoresDeClaseRequestParams {
+    consultorioId: number;
+    claseId: number;
+    reemplazarInstructoresDeClaseRequest: ReemplazarInstructoresDeClaseRequest;
 }
 
 export interface ReprogramarClaseRequestParams {
@@ -70,6 +83,14 @@ export interface ClasesServiceInterface {
     cancelarClase(requestParameters: CancelarClaseRequestParams, extraHttpRequestParams?: any): Observable<Clase>;
 
     /**
+     * Ver los instructores de una clase
+     * DP-38. El principal (el profesional de la clase) y los adicionales vigentes, en el **orden estable** del reparto de honorarios: el principal y despues los adicionales por membership. Exige &#x60;clase:read&#x60;.
+     * @endpoint get /api/v1/consultorios/{consultorioId}/clases/{claseId}/instructores
+* @param requestParameters
+     */
+    getInstructoresDeClase(requestParameters: GetInstructoresDeClaseRequestParams, extraHttpRequestParams?: any): Observable<InstructoresDeClase>;
+
+    /**
      * Historial de una clase
      * Las transiciones registradas, de la mas vieja a la mas nueva (RN-M28-009). **Append-only**: ninguna operacion del sistema las modifica ni las borra.  Una reprogramacion guarda el intervalo y la capacidad anteriores, que es lo que la hace trazable sin recrear la clase.
      * @endpoint get /api/v1/consultorios/{consultorioId}/clases/{claseId}/historial
@@ -92,6 +113,14 @@ export interface ClasesServiceInterface {
 * @param requestParameters
      */
     programar(requestParameters: ProgramarRequestParams, extraHttpRequestParams?: any): Observable<Clase>;
+
+    /**
+     * Reemplazar los instructores adicionales de una clase
+     * DP-38. Reemplaza la lista **completa** de instructores adicionales; vacia los quita. Exige &#x60;clase:manage&#x60;. Cada uno con vinculo vigente en la sede y habilitado para la oferta (sin habilitaciones declaradas, cualquiera), sin repetir y sin el principal: si no, 400. Quitar no borra: queda la historia.  **El adicional no ocupa agenda**: la exclusion de turnos y clases sigue mirando solo al principal.  Una clase cancelada no cambia instructores (409 &#x60;clase-transicion-no-permitida&#x60;), y una con honorarios ya liquidados tampoco (409 &#x60;clase-con-honorarios-liquidados&#x60;): cambiaria el reparto de una liquidacion cerrada. Se anula el egreso, que la libera.
+     * @endpoint put /api/v1/consultorios/{consultorioId}/clases/{claseId}/instructores
+* @param requestParameters
+     */
+    reemplazarInstructoresDeClase(requestParameters: ReemplazarInstructoresDeClaseRequestParams, extraHttpRequestParams?: any): Observable<InstructoresDeClase>;
 
     /**
      * Reprogramar una clase

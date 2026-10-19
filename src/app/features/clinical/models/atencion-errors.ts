@@ -74,6 +74,21 @@ export type CausaAtencion =
    * su caso lo fijo la derivacion. No se cambia.
    */
   | 'caso-de-atencion-grupal'
+  /**
+   * 409 `caso-clinico-requerido` (RF-M10-007, DP-43): la oferta exige caso clinico para iniciar, para
+   * quitarlo y para cerrar presente. Se resuelve eligiendo (o abriendo) un caso y reintentando.
+   */
+  | 'caso-requerido'
+  /** 409 `enmienda-fuera-de-ventana` (DP-43): paso la ventana de enmienda. Ver `enmendableHasta`. */
+  | 'enmienda-fuera-de-ventana'
+  /** 409 `profesional-no-habilitado-en-oferta` (DP-43): quien atiende no presta esa oferta. */
+  | 'profesional-no-habilitado'
+  /** 409 `profesional-no-asignable`: el reemplazo no tiene vinculo vigente o no registra sesiones. */
+  | 'profesional-no-asignable'
+  /** 409 `oferta-no-vigente`: la oferta elegida para atender sin turno no rige hoy. */
+  | 'oferta-no-vigente'
+  /** 409 `idempotency-key-conflict`: la misma clave con otro pedido. Se reintenta con otra. */
+  | 'clave-reusada'
   /** Cualquier otro 409. Gana el `detail` del backend. */
   | 'conflicto'
   /** 429: hay que esperar. */
@@ -93,6 +108,8 @@ export interface ErrorAtencion {
   /** Rango vigente de la medida. Solo en `fuera-de-rango`, si el servidor lo mando. */
   readonly minimo?: number | null;
   readonly maximo?: number | null;
+  /** Hasta cuando se podia enmendar. Solo en `enmienda-fuera-de-ventana`. */
+  readonly enmendableHasta?: string;
 }
 
 const MENSAJE_GENERICO = 'No pudimos completar la operacion. Volve a intentar en un momento.';
@@ -194,6 +211,49 @@ const MENSAJE_VALIDACION =
   'El servidor rechazo un dato clinico. El dolor va de 0 a 10, y la lateralidad exige una zona: ' +
   '"derecha" de que.';
 
+const MENSAJE_CASO_REQUERIDO =
+  'Esta prestacion exige un caso clinico: elegi uno de los casos activos del paciente (o abri uno ' +
+  'desde su historia clinica) y volve a intentar. No se registro nada.';
+
+const MENSAJE_PROFESIONAL_NO_HABILITADO =
+  'Ese profesional no esta habilitado para prestar esta oferta. Elegi otra oferta u otro ' +
+  'profesional, o pedi que lo habiliten en la oferta.';
+
+const MENSAJE_PROFESIONAL_NO_ASIGNABLE =
+  'Ese profesional no puede continuar la atencion: necesita un vinculo vigente en esta sede y ' +
+  'permiso para registrar sesiones.';
+
+const MENSAJE_OFERTA_NO_VIGENTE =
+  'Esa oferta no esta vigente hoy en esta sede, asi que no se puede atender con ella. Elegi otra.';
+
+const MENSAJE_CLAVE_REUSADA =
+  'Ese pedido ya se habia mandado con otros datos. No se abrio otra atencion: revisa los datos y ' +
+  'volve a intentar.';
+
+function mensajeFueraDeVentana(error: AkineHttpError): ErrorAtencion {
+  const hasta = textoDeExtension(error, 'enmendableHasta');
+  const dias = error.numeroDeExtension('ventanaDias');
+  const cuando = hasta === '' ? '' : ` Se podia enmendar hasta el ${fechaCorta(hasta)}.`;
+  const ventana = dias === null ? '' : ` La organizacion admite enmiendas durante ${dias} dias.`;
+  return {
+    mensaje:
+      'Esta sesion ya no se puede enmendar: paso la ventana desde su cierre.' +
+      cuando +
+      ventana +
+      ' El original queda como esta; si hace falta corregirlo, habla con quien administra el centro.',
+    causa: 'enmienda-fuera-de-ventana',
+    motivo: '',
+    enmendableHasta: hasta,
+  };
+}
+
+function fechaCorta(instante: string): string {
+  const fecha = new Date(instante);
+  return Number.isNaN(fecha.getTime())
+    ? instante
+    : new Intl.DateTimeFormat('es-AR', { dateStyle: 'long' }).format(fecha);
+}
+
 /** Traduce cualquier error de la pantalla de atencion. */
 export function traducirErrorAtencion(error: unknown): ErrorAtencion {
   if (!(error instanceof AkineHttpError)) {
@@ -274,6 +334,26 @@ export function traducirErrorAtencion(error: unknown): ErrorAtencion {
     case 'caso-clinico-cerrado':
     case 'caso-no-activo':
       return { mensaje: MENSAJE_CASO_NO_ACTIVO, causa: 'caso-no-activo', motivo: '' };
+    case 'caso-clinico-requerido':
+      return { mensaje: MENSAJE_CASO_REQUERIDO, causa: 'caso-requerido', motivo: '' };
+    case 'enmienda-fuera-de-ventana':
+      return mensajeFueraDeVentana(error);
+    case 'profesional-no-habilitado-en-oferta':
+      return {
+        mensaje: MENSAJE_PROFESIONAL_NO_HABILITADO,
+        causa: 'profesional-no-habilitado',
+        motivo: '',
+      };
+    case 'profesional-no-asignable':
+      return {
+        mensaje: conDetalle(error, MENSAJE_PROFESIONAL_NO_ASIGNABLE),
+        causa: 'profesional-no-asignable',
+        motivo: '',
+      };
+    case 'oferta-no-vigente':
+      return { mensaje: MENSAJE_OFERTA_NO_VIGENTE, causa: 'oferta-no-vigente', motivo: '' };
+    case 'idempotency-key-conflict':
+      return { mensaje: MENSAJE_CLAVE_REUSADA, causa: 'clave-reusada', motivo: '' };
     default:
       break;
   }

@@ -3,6 +3,11 @@ import { Observable, map } from 'rxjs';
 
 import { ColaboradoresService } from '../../../api/generated/api/colaboradores.service';
 import { EgresosService } from '../../../api/generated/api/egresos.service';
+import { ServiciosYOfertasService } from '../../../api/generated/api/servicios-y-ofertas.service';
+import { BorradorDeHonorarios } from '../../../api/generated/model/borrador-de-honorarios';
+import { ConfirmarLiquidacionDeHonorariosRequest } from '../../../api/generated/model/confirmar-liquidacion-de-honorarios-request';
+import { LiquidacionDeHonorarios } from '../../../api/generated/model/liquidacion-de-honorarios';
+import { OfertaResponse } from '../../../api/generated/model/oferta-response';
 import { EditarEgreso } from '../../../api/generated/model/editar-egreso';
 import { Egreso } from '../../../api/generated/model/egreso';
 import {
@@ -34,6 +39,7 @@ export interface FiltroDeEgresos {
 export class EgresosApi {
   private readonly api = inject(EgresosService);
   private readonly colaboradores = inject(ColaboradoresService);
+  private readonly ofertas = inject(ServiciosYOfertasService);
 
   buscar(consultorioId: number, filtro: FiltroDeEgresos): Observable<readonly Egreso[]> {
     return this.api.buscarEgreso({ consultorioId, ...filtro });
@@ -94,5 +100,55 @@ export class EgresosApi {
           (pagina.content ?? []).filter((m) => m.estado === MembershipResponseEstadoEnum.ACTIVA),
         ),
       );
+  }
+
+  /**
+   * Ofertas de la sede, activas y dadas de baja: el egreso se imputa a una (DP-39) y la de baja se
+   * acepta, asi que un egreso viejo tiene que poder seguir mostrando a cual estaba imputado.
+   */
+  ofertasDeLaSede(consultorioId: number): Observable<readonly OfertaResponse[]> {
+    return this.ofertas.listOfertas({ consultorioId, estado: 'TODOS' });
+  }
+
+  // -------------------------------------------------------------------------------------------
+  // Honorarios por clase (DP-38, RF-M22-006/007). Todo con `caja:operate`.
+  // -------------------------------------------------------------------------------------------
+
+  /** El borrador del periodo, calculado al pedirlo. No escribe nada. */
+  borradorDeHonorarios(
+    consultorioId: number,
+    colaboradorMembershipId: number,
+    desde: string,
+    hasta: string,
+    ofertaId?: number,
+  ): Observable<BorradorDeHonorarios> {
+    return this.api.calcularBorradorDeHonorarios({
+      consultorioId,
+      colaboradorMembershipId,
+      desde,
+      hasta,
+      ofertaId,
+    });
+  }
+
+  /**
+   * Crea el egreso BORRADOR y la liquidacion. La clave se exige en el tipo: sin ella un doble click
+   * liquida dos veces las mismas clases.
+   */
+  confirmarLiquidacion(
+    consultorioId: number,
+    pedido: ConfirmarLiquidacionDeHonorariosRequest & { readonly idempotencyKey: string },
+  ): Observable<LiquidacionDeHonorarios> {
+    return this.api.confirmarLiquidacionDeHonorarios({
+      consultorioId,
+      confirmarLiquidacionDeHonorariosRequest: pedido,
+    });
+  }
+
+  verLiquidacion(
+    consultorioId: number,
+    liquidacionId: number,
+  ): Observable<LiquidacionDeHonorarios> {
+    return this.api.verLiquidacionDeHonorarios({ consultorioId, liquidacionId });
   }
 }

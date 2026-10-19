@@ -26,6 +26,29 @@ export const routes: Routes = [
     data: { [DATA_ANCHO]: ANCHO_AMPLIO },
   },
   {
+    // Liquidacion de honorarios por clase (DP-38, RF-M22-006/007). Vive bajo /egresos porque lo
+    // que produce es un egreso, y pide el mismo `caja:operate`. Va ANTES de `:egresoId`: si no,
+    // "honorarios" se tomaria por el id de un egreso.
+    path: 'honorarios',
+    canActivate: [contextGuard, permissionGuard(PERMISO_CAJA_OPERATE)],
+    loadComponent: () =>
+      import('./pages/liquidacion-de-honorarios/liquidacion-de-honorarios-page').then(
+        (m) => m.LiquidacionDeHonorariosPage,
+      ),
+    title: 'AKINE - Liquidar honorarios por clase',
+    data: { [DATA_ANCHO]: ANCHO_AMPLIO },
+  },
+  {
+    path: 'honorarios/liquidaciones/:liquidacionId',
+    canActivate: [contextGuard, permissionGuard(PERMISO_CAJA_OPERATE)],
+    loadComponent: () =>
+      import('./pages/liquidacion-detalle/liquidacion-detalle-page').then(
+        (m) => m.LiquidacionDetallePage,
+      ),
+    title: 'AKINE - Liquidacion de honorarios',
+    data: { [DATA_ANCHO]: ANCHO_AMPLIO },
+  },
+  {
     path: ':egresoId',
     canActivate: [contextGuard, permissionGuard(PERMISO_CAJA_OPERATE)],
     loadComponent: () =>
