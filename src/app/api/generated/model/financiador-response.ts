@@ -14,6 +14,10 @@
  */
 export interface FinanciadorResponse { 
     /**
+     * Entrada del catalogo global de la plataforma de la que se adopto esta copia (DP-43). INFORMATIVO: la copia es del centro y editar el catalogo no la toca. Null = cargado a mano por el centro
+     */
+    catalogoId?: number;
+    /**
      * Clave estable con la que las coberturas lo referencian. No cambia nunca: renombrar es cambiar nombre, no codigo
      */
     codigo?: string;

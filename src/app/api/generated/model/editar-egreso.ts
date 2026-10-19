@@ -32,6 +32,10 @@ export interface EditarEgreso {
      */
     importeTotal: number;
     /**
+     * Oferta de esta sede a la que se imputa el costo (DP-39). La correccion **reemplaza** el valor: sin `ofertaId` el egreso queda sin imputar. Una oferta de otra sede o de otro tenant es 404.
+     */
+    ofertaId?: number;
+    /**
      * Periodo liquidado. Los dos o ninguno.
      */
     periodoDesde?: string;

@@ -23,6 +23,24 @@
   <p class="estado estado--cargando">Leyendo la ultima version…</p>
 }
 
+@if (cerrada() && enmendableHasta()) {
+  <!-- DP-43 (U-25): la ventana es de la organizacion y rige tambien para las ya cerradas. -->
+  <p class="ayuda" data-testid="enmendable-hasta">
+    @if (fueraDeVentana()) {
+      La ventana para enmendar esta atencion cerro el {{ instanteEnPalabras(enmendableHasta()) }}.
+    } @else {
+      Se puede enmendar hasta el {{ instanteEnPalabras(enmendableHasta()) }}.
+    }
+  </p>
+}
+
+@if (sinPermiso()) {
+  <p class="estado estado--vacio">
+    Enmendar una atencion cerrada necesita el permiso de enmienda en esta sede, que tiene el
+    profesional. Podes leer las versiones, pero no registrar una nueva.
+  </p>
+}
+
 @if (error(); as problema) {
   <section class="tarjeta" role="alert" aria-labelledby="titulo-problema-enmienda">
     <h2 id="titulo-problema-enmienda">
@@ -452,7 +470,7 @@
       <button
         type="button"
         class="boton"
-        [disabled]="enviando() || hayConflicto()"
+        [disabled]="enviando() || hayConflicto() || fueraDeVentana() || sinPermiso()"
         (click)="enmendar()"
       >
         Registrar la enmienda

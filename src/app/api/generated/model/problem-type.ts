@@ -426,6 +426,24 @@ export enum ProblemType {
 
     HTTPS___AKINE_APP_PROBLEMS_DERIVACION_CON_SESION = 'https://akine.app/problems/derivacion-con-sesion',
 
-    HTTPS___AKINE_APP_PROBLEMS_CASO_DE_ATENCION_GRUPAL = 'https://akine.app/problems/caso-de-atencion-grupal'
+    HTTPS___AKINE_APP_PROBLEMS_CASO_DE_ATENCION_GRUPAL = 'https://akine.app/problems/caso-de-atencion-grupal',
+
+    HTTPS___AKINE_APP_PROBLEMS_HONORARIO_DE_CLASE_SOLAPADO = 'https://akine.app/problems/honorario-de-clase-solapado',
+
+    HTTPS___AKINE_APP_PROBLEMS_HONORARIO_DE_CLASE_INACTIVO = 'https://akine.app/problems/honorario-de-clase-inactivo',
+
+    HTTPS___AKINE_APP_PROBLEMS_CLASE_CON_HONORARIOS_LIQUIDADOS = 'https://akine.app/problems/clase-con-honorarios-liquidados',
+
+    HTTPS___AKINE_APP_PROBLEMS_BORRADOR_DE_HONORARIOS_DESACTUALIZADO = 'https://akine.app/problems/borrador-de-honorarios-desactualizado',
+
+    HTTPS___AKINE_APP_PROBLEMS_LIQUIDACION_DE_HONORARIOS_VACIA = 'https://akine.app/problems/liquidacion-de-honorarios-vacia',
+
+    HTTPS___AKINE_APP_PROBLEMS_EGRESO_DE_LIQUIDACION = 'https://akine.app/problems/egreso-de-liquidacion',
+
+    HTTPS___AKINE_APP_PROBLEMS_CASO_CLINICO_REQUERIDO = 'https://akine.app/problems/caso-clinico-requerido',
+
+    HTTPS___AKINE_APP_PROBLEMS_ENMIENDA_FUERA_DE_VENTANA = 'https://akine.app/problems/enmienda-fuera-de-ventana',
+
+    HTTPS___AKINE_APP_PROBLEMS_PROFESIONAL_NO_HABILITADO_EN_OFERTA = 'https://akine.app/problems/profesional-no-habilitado-en-oferta'
 }
 

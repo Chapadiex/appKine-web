@@ -19,9 +19,15 @@ import { OpenApiHttpParams, QueryParamStyle } from '../query.params';
 // @ts-ignore
 import { AnularEgreso } from '../model/anular-egreso';
 // @ts-ignore
+import { BorradorDeHonorarios } from '../model/borrador-de-honorarios';
+// @ts-ignore
+import { ConfirmarLiquidacionDeHonorariosRequest } from '../model/confirmar-liquidacion-de-honorarios-request';
+// @ts-ignore
 import { EditarEgreso } from '../model/editar-egreso';
 // @ts-ignore
 import { Egreso } from '../model/egreso';
+// @ts-ignore
+import { LiquidacionDeHonorarios } from '../model/liquidacion-de-honorarios';
 // @ts-ignore
 import { PagoDeEgreso } from '../model/pago-de-egreso';
 // @ts-ignore
@@ -40,11 +46,14 @@ import {
     AnularEgresoRequestParams,
     AnularPagoRequestParams,
     BuscarEgresoRequestParams,
+    CalcularBorradorDeHonorariosRequestParams,
     ConfirmarEgresoRequestParams,
+    ConfirmarLiquidacionDeHonorariosRequestParams,
     EditarRequestParams,
     PagarRequestParams,
     RegistrarEgresoRequestParams,
-    VerEgresoRequestParams
+    VerEgresoRequestParams,
+    VerLiquidacionDeHonorariosRequestParams
 } from './egresos.serviceInterface';
 
 
@@ -60,7 +69,7 @@ export class EgresosService extends BaseService implements EgresosServiceInterfa
 
     /**
      * Anular el egreso
-     * Anula el compromiso con motivo obligatorio (RF-M22-005).  **No toca la caja**: un egreso que solo se debia nunca movio plata.  **Se rechaza si quedan pagos vigentes** (409 &#x60;egreso-con-pagos&#x60;, con &#x60;yaPagado&#x60; en el cuerpo). Anular el compromiso dejaria plata fuera del cajon sin nada que la justifique. El orden correcto es anular primero los pagos —que es lo que la devuelve— y despues el compromiso.  **Anular no significa borrar** (RN-M22-002): la fila queda con su motivo, su actor y su fecha.
+     * Anula el compromiso con motivo obligatorio (RF-M22-005).  **No toca la caja**: un egreso que solo se debia nunca movio plata.  **Se rechaza si quedan pagos vigentes** (409 &#x60;egreso-con-pagos&#x60;, con &#x60;yaPagado&#x60; en el cuerpo). Anular el compromiso dejaria plata fuera del cajon sin nada que la justifique. El orden correcto es anular primero los pagos —que es lo que la devuelve— y despues el compromiso.  **Anular no significa borrar** (RN-M22-002): la fila queda con su motivo, su actor y su fecha.  **Si el egreso nacio de una liquidacion de honorarios por clase (DP-38), la libera**: sus clases vuelven a entrar en el borrador siguiente del colaborador. La liquidacion queda &#x60;LIBERADA&#x60;, con su detalle.
      * @endpoint post /api/v1/consultorios/{consultorioId}/egresos/{egresoId}/anulacion
      * @param requestParameters
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
@@ -358,6 +367,120 @@ export class EgresosService extends BaseService implements EgresosServiceInterfa
     }
 
     /**
+     * Calcular el borrador de honorarios por clase de un colaborador
+     * DP-38 (RF-M22-006). **Se calcula al pedirlo y no se guarda.** Entran las clases &#x60;REALIZADA&#x60; de la sede con inicio en el periodo (dias locales de la sede) donde el colaborador es el principal o un instructor adicional.  Por clase: **tarifa vigente el dia de la clase x presentes** (&#x60;PRESENTE&#x60; + &#x60;PRESENTE_TARDE&#x60;), repartida **en partes iguales** entre los instructores; el centavo sobrante va al primero del orden estable (el principal, despues los adicionales por membership).  &#x60;excluidas&#x60; dice por que una clase dictada no entra: &#x60;YA_LIQUIDADA&#x60; (con el egreso que la tiene), &#x60;SIN_HONORARIO&#x60;, &#x60;SIN_PRESENTES&#x60; o &#x60;SIN_IMPORTE&#x60;. Periodo de hasta 62 dias. Monedas distintas en el periodo: 400.
+     * @endpoint get /api/v1/consultorios/{consultorioId}/honorarios/borrador
+     * @param requestParameters
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public calcularBorradorDeHonorarios(requestParameters: CalcularBorradorDeHonorariosRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<BorradorDeHonorarios>;
+    public calcularBorradorDeHonorarios(requestParameters: CalcularBorradorDeHonorariosRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<BorradorDeHonorarios>>;
+    public calcularBorradorDeHonorarios(requestParameters: CalcularBorradorDeHonorariosRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<BorradorDeHonorarios>>;
+    public calcularBorradorDeHonorarios(requestParameters: CalcularBorradorDeHonorariosRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        const consultorioId = requestParameters?.consultorioId;
+        if (consultorioId === null || consultorioId === undefined) {
+            throw new Error('Required parameter consultorioId was null or undefined when calling calcularBorradorDeHonorarios.');
+        }
+        const colaboradorMembershipId = requestParameters?.colaboradorMembershipId;
+        if (colaboradorMembershipId === null || colaboradorMembershipId === undefined) {
+            throw new Error('Required parameter colaboradorMembershipId was null or undefined when calling calcularBorradorDeHonorarios.');
+        }
+        const desde = requestParameters?.desde;
+        if (desde === null || desde === undefined) {
+            throw new Error('Required parameter desde was null or undefined when calling calcularBorradorDeHonorarios.');
+        }
+        const hasta = requestParameters?.hasta;
+        if (hasta === null || hasta === undefined) {
+            throw new Error('Required parameter hasta was null or undefined when calling calcularBorradorDeHonorarios.');
+        }
+        const ofertaId = requestParameters?.ofertaId;
+
+        let localVarQueryParameters = new OpenApiHttpParams(this.encoder);
+
+        localVarQueryParameters = this.addToHttpParams(
+            localVarQueryParameters,
+            'colaboradorMembershipId',
+            <any>colaboradorMembershipId,
+            QueryParamStyle.Form,
+            true,
+        );
+
+
+        localVarQueryParameters = this.addToHttpParams(
+            localVarQueryParameters,
+            'desde',
+            <any>desde,
+            QueryParamStyle.Form,
+            true,
+        );
+
+
+        localVarQueryParameters = this.addToHttpParams(
+            localVarQueryParameters,
+            'hasta',
+            <any>hasta,
+            QueryParamStyle.Form,
+            true,
+        );
+
+
+        localVarQueryParameters = this.addToHttpParams(
+            localVarQueryParameters,
+            'ofertaId',
+            <any>ofertaId,
+            QueryParamStyle.Form,
+            true,
+        );
+
+
+        let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/consultorios/${this.configuration.encodeParam({name: "consultorioId", value: consultorioId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/honorarios/borrador`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<BorradorDeHonorarios>('get', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                params: localVarQueryParameters.toHttpParams(),
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
      * Confirmar el egreso
      * Punto de no retorno: el egreso deja de editarse y **recien ahora admite pagos** (RF-M22-001).  **Confirmar NO mueve la caja.** Lo que mueve la caja es el pago. Es como esta etapa lee RN-M22-001 —\&quot;solo un egreso confirmado puede mover la caja\&quot;— porque la letra estricta volveria contradictorias otras dos cosas del mismo documento: un egreso debido y no pagado no podria existir, y el pago parcial seria irrepresentable, porque no se puede sacar media vez la plata de un cajon.  **Exige comprobante** (tipo y numero). Un egreso confirmado sin respaldo documental es plata que salio sin papel. En borrador es opcional a proposito: la liquidacion se arma antes de tener la factura en la mano.
      * @endpoint post /api/v1/consultorios/{consultorioId}/egresos/{egresoId}/confirmacion
@@ -413,6 +536,82 @@ export class EgresosService extends BaseService implements EgresosServiceInterfa
         return this.httpClient.request<Egreso>('post', `${basePath}${localVarPath}`,
             {
                 context: localVarHttpContext,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * Confirmar el borrador de honorarios como egreso
+     * DP-38 (RF-M22-006/007). Recalcula el borrador **bajo el lock de sus clases** y, si es el que se miro (&#x60;claseIds&#x60; e &#x60;importeTotal&#x60;), crea el **egreso** de M22 en &#x60;BORRADOR&#x60; —&#x60;COLABORADOR&#x60;, &#x60;HONORARIOS_PROFESIONALES&#x60;, con el periodo— y la liquidacion con el **snapshot por clase**. No mueve la caja: el egreso sigue su ciclo (confirmar con comprobante, pagar).  Si el borrador cambio —otra liquidacion, una asistencia corregida, una tarifa nueva— **409 &#x60;borrador-de-honorarios-desactualizado&#x60;** con &#x60;importeTotalActual&#x60; y &#x60;claseIdsActuales&#x60;. Sin clases liquidables, **409 &#x60;liquidacion-de-honorarios-vacia&#x60;**.  **Idempotente** por &#x60;idempotencyKey&#x60;: el reintento con el mismo pedido devuelve la misma liquidacion (200); con otro pedido, 409. Una clase liquidada no entra en otro borrador del mismo colaborador hasta que se anule su egreso.  **Una liquidacion es de UNA oferta** y su egreso queda imputado a ella (&#x60;ofertaId&#x60;, DP-39), asi que los honorarios entran solos en la rentabilidad por servicio. Si el borrador mezcla ofertas, 400: se pide y se confirma por oferta con &#x60;ofertaId&#x60;.
+     * @endpoint post /api/v1/consultorios/{consultorioId}/honorarios/liquidaciones
+     * @param requestParameters
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public confirmarLiquidacionDeHonorarios(requestParameters: ConfirmarLiquidacionDeHonorariosRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<LiquidacionDeHonorarios>;
+    public confirmarLiquidacionDeHonorarios(requestParameters: ConfirmarLiquidacionDeHonorariosRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<LiquidacionDeHonorarios>>;
+    public confirmarLiquidacionDeHonorarios(requestParameters: ConfirmarLiquidacionDeHonorariosRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<LiquidacionDeHonorarios>>;
+    public confirmarLiquidacionDeHonorarios(requestParameters: ConfirmarLiquidacionDeHonorariosRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        const consultorioId = requestParameters?.consultorioId;
+        if (consultorioId === null || consultorioId === undefined) {
+            throw new Error('Required parameter consultorioId was null or undefined when calling confirmarLiquidacionDeHonorarios.');
+        }
+        const confirmarLiquidacionDeHonorariosRequest = requestParameters?.confirmarLiquidacionDeHonorariosRequest;
+        if (confirmarLiquidacionDeHonorariosRequest === null || confirmarLiquidacionDeHonorariosRequest === undefined) {
+            throw new Error('Required parameter confirmarLiquidacionDeHonorariosRequest was null or undefined when calling confirmarLiquidacionDeHonorarios.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        // to determine the Content-Type header
+        const consumes: string[] = [
+            'application/json'
+        ];
+        const httpContentTypeSelected: string | undefined = this.configuration.selectHeaderContentType(consumes);
+        if (httpContentTypeSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Content-Type', httpContentTypeSelected);
+        }
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/consultorios/${this.configuration.encodeParam({name: "consultorioId", value: consultorioId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/honorarios/liquidaciones`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<LiquidacionDeHonorarios>('post', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                body: confirmarLiquidacionDeHonorariosRequest,
                 responseType: <any>responseType_,
                 ...(withCredentials ? { withCredentials } : {}),
                 headers: localVarHeaders,
@@ -713,6 +912,72 @@ export class EgresosService extends BaseService implements EgresosServiceInterfa
         let localVarPath = `/api/v1/consultorios/${this.configuration.encodeParam({name: "consultorioId", value: consultorioId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/egresos/${this.configuration.encodeParam({name: "egresoId", value: egresoId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}`;
         const { basePath, withCredentials } = this.configuration;
         return this.httpClient.request<Egreso>('get', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * Ver una liquidacion de honorarios por clase
+     * DP-38 (RF-M22-007, CA-M22-007-06). La liquidacion con su **snapshot por clase**: oferta, presentes, tarifa, instructores y la parte del colaborador, tal como se confirmaron. &#x60;estado&#x60; &#x60;LIBERADA&#x60; si se anulo su egreso. El egreso la referencia en &#x60;liquidacionHonorariosId&#x60;.
+     * @endpoint get /api/v1/consultorios/{consultorioId}/honorarios/liquidaciones/{liquidacionId}
+     * @param requestParameters
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public verLiquidacionDeHonorarios(requestParameters: VerLiquidacionDeHonorariosRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<LiquidacionDeHonorarios>;
+    public verLiquidacionDeHonorarios(requestParameters: VerLiquidacionDeHonorariosRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<LiquidacionDeHonorarios>>;
+    public verLiquidacionDeHonorarios(requestParameters: VerLiquidacionDeHonorariosRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<LiquidacionDeHonorarios>>;
+    public verLiquidacionDeHonorarios(requestParameters: VerLiquidacionDeHonorariosRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        const consultorioId = requestParameters?.consultorioId;
+        if (consultorioId === null || consultorioId === undefined) {
+            throw new Error('Required parameter consultorioId was null or undefined when calling verLiquidacionDeHonorarios.');
+        }
+        const liquidacionId = requestParameters?.liquidacionId;
+        if (liquidacionId === null || liquidacionId === undefined) {
+            throw new Error('Required parameter liquidacionId was null or undefined when calling verLiquidacionDeHonorarios.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/consultorios/${this.configuration.encodeParam({name: "consultorioId", value: consultorioId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/honorarios/liquidaciones/${this.configuration.encodeParam({name: "liquidacionId", value: liquidacionId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<LiquidacionDeHonorarios>('get', `${basePath}${localVarPath}`,
             {
                 context: localVarHttpContext,
                 responseType: <any>responseType_,

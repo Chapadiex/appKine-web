@@ -11,12 +11,15 @@ import { HttpHeaders }                                       from '@angular/comm
 
 import { Observable }                                        from 'rxjs';
 
+import { CambiarFinHonorarioPorClaseRequest } from '../model/models';
 import { CambiarFinPrecioParticularRequest } from '../model/models';
+import { CreateHonorarioPorClaseRequest } from '../model/models';
 import { CreateOfertaRequest } from '../model/models';
 import { CreatePrecioParticularRequest } from '../model/models';
 import { CreateServicioRequest } from '../model/models';
 import { DeactivateOfferingRequest } from '../model/models';
 import { HabilitacionesResponse } from '../model/models';
+import { HonorarioPorClase } from '../model/models';
 import { OfertaResponse } from '../model/models';
 import { PoliticaDePrepagoRequest } from '../model/models';
 import { PracticasDeOfertaResponse } from '../model/models';
@@ -33,11 +36,24 @@ import { ValidacionDeOfertaResponse } from '../model/models';
 import { Configuration }                                     from '../configuration';
 
 
+export interface CambiarFinHonorarioPorClaseDeOfertaRequestParams {
+    consultorioId: number;
+    ofertaId: number;
+    honorarioId: number;
+    cambiarFinHonorarioPorClaseRequest: CambiarFinHonorarioPorClaseRequest;
+}
+
 export interface CambiarFinPrecioParticularDeOfertaRequestParams {
     consultorioId: number;
     ofertaId: number;
     precioId: number;
     cambiarFinPrecioParticularRequest: CambiarFinPrecioParticularRequest;
+}
+
+export interface CreateHonorarioPorClaseDeOfertaRequestParams {
+    consultorioId: number;
+    ofertaId: number;
+    createHonorarioPorClaseRequest: CreateHonorarioPorClaseRequest;
 }
 
 export interface CreateOfertaRequestParams {
@@ -53,6 +69,13 @@ export interface CreatePrecioParticularDeOfertaRequestParams {
 
 export interface CreateServicioRequestParams {
     createServicioRequest: CreateServicioRequest;
+}
+
+export interface DeactivateHonorarioPorClaseDeOfertaRequestParams {
+    consultorioId: number;
+    ofertaId: number;
+    honorarioId: number;
+    deactivateOfferingRequest: DeactivateOfferingRequest;
 }
 
 export interface DeactivateOfertaRequestParams {
@@ -79,6 +102,11 @@ export interface GetHabilitacionesRequestParams {
 }
 
 export interface GetPracticasDeOfertaRequestParams {
+    consultorioId: number;
+    ofertaId: number;
+}
+
+export interface ListHonorariosPorClaseDeOfertaRequestParams {
     consultorioId: number;
     ofertaId: number;
 }
@@ -147,12 +175,28 @@ export interface ServiciosYOfertasServiceInterface {
     configuration: Configuration;
 
     /**
+     * Cerrar o reabrir la vigencia de un honorario por clase
+     * DP-38. Exige consultorio:manage. Es lo UNICO editable de un honorario: el fin de su vigencia. Extenderlo puede producir 409 honorario-de-clase-solapado.
+     * @endpoint put /api/v1/consultorios/{consultorioId}/ofertas/{ofertaId}/honorarios-por-clase/{honorarioId}
+* @param requestParameters
+     */
+    cambiarFinHonorarioPorClaseDeOferta(requestParameters: CambiarFinHonorarioPorClaseDeOfertaRequestParams, extraHttpRequestParams?: any): Observable<HonorarioPorClase>;
+
+    /**
      * Cerrar o reabrir la vigencia de un precio particular
      * RF-M16-009. Exige consultorio:manage. Es lo UNICO editable de un precio: el fin de su vigencia. Extenderlo puede producir 409 precio-particular-solapado.
      * @endpoint put /api/v1/consultorios/{consultorioId}/ofertas/{ofertaId}/precios-particulares/{precioId}
 * @param requestParameters
      */
     cambiarFinPrecioParticularDeOferta(requestParameters: CambiarFinPrecioParticularDeOfertaRequestParams, extraHttpRequestParams?: any): Observable<PrecioParticularResponse>;
+
+    /**
+     * Fijar el honorario por participante presente de la oferta para un periodo
+     * DP-38 (RF-M22-006). Exige consultorio:manage.  DOS HONORARIOS ACTIVOS DE LA MISMA OFERTA NO PUEDEN PISARSE: 409 honorario-de-clase-solapado, con el id y el periodo del que choca. Para cambiar la tarifa se cierra la vigencia de la actual (PUT) y se carga la nueva.  El importe no se edita despues. Lo ya liquidado no cambia nunca: la liquidacion copio su importe (CA-M22-007-06). Sin moneda, hereda la del precio de lista.
+     * @endpoint post /api/v1/consultorios/{consultorioId}/ofertas/{ofertaId}/honorarios-por-clase
+* @param requestParameters
+     */
+    createHonorarioPorClaseDeOferta(requestParameters: CreateHonorarioPorClaseDeOfertaRequestParams, extraHttpRequestParams?: any): Observable<HonorarioPorClase>;
 
     /**
      * Dar de alta una oferta en la sede
@@ -177,6 +221,14 @@ export interface ServiciosYOfertasServiceInterface {
 * @param requestParameters
      */
     createServicio(requestParameters: CreateServicioRequestParams, extraHttpRequestParams?: any): Observable<ServicioResponse>;
+
+    /**
+     * Dar de baja un honorario por clase
+     * Baja LOGICA con motivo obligatorio. Exige consultorio:manage. Libera el periodo; lo ya liquidado con esa tarifa no se toca.
+     * @endpoint delete /api/v1/consultorios/{consultorioId}/ofertas/{ofertaId}/honorarios-por-clase/{honorarioId}
+* @param requestParameters
+     */
+    deactivateHonorarioPorClaseDeOferta(requestParameters: DeactivateHonorarioPorClaseDeOfertaRequestParams, extraHttpRequestParams?: any): Observable<{}>;
 
     /**
      * Dar de baja una oferta de la sede
@@ -217,6 +269,14 @@ export interface ServiciosYOfertasServiceInterface {
 * @param requestParameters
      */
     getPracticasDeOferta(requestParameters: GetPracticasDeOfertaRequestParams, extraHttpRequestParams?: any): Observable<PracticasDeOfertaResponse>;
+
+    /**
+     * Listar los honorarios por clase de la oferta
+     * DP-38 (RF-M22-006). La grilla de vigencias, ACTIVOS E HISTORICOS, del mas nuevo al mas viejo. vigente dice cual rige hoy. Exige consultorio:manage: es lo que cobra un colega.  La tarifa que aplica a una clase es la vigente el dia local de la clase en la sede. Una clase sin tarifa ese dia no entra en ninguna liquidacion.
+     * @endpoint get /api/v1/consultorios/{consultorioId}/ofertas/{ofertaId}/honorarios-por-clase
+* @param requestParameters
+     */
+    listHonorariosPorClaseDeOferta(requestParameters: ListHonorariosPorClaseDeOfertaRequestParams, extraHttpRequestParams?: any): Observable<Array<HonorarioPorClase>>;
 
     /**
      * Listar las ofertas de la sede

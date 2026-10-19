@@ -3,6 +3,7 @@ import { expect, test } from '@playwright/test';
 import {
   CLASE,
   PERSONA_CON_PASES,
+  abrirBorradorDeHonorarios,
   auditarContraste,
   instalarApiDeContraste,
 } from './support/contraste';
@@ -16,6 +17,7 @@ import {
   masDias,
   ok,
 } from './support/agenda-simulada';
+import { instalarApiDp43 } from './support/pantallas-dp43';
 
 /**
  * Auditoria de CONTRASTE DE COLOR contra un navegador real (WCAG 1.4.3, nivel AA).
@@ -280,6 +282,25 @@ test.describe('Contraste de color', () => {
       await auditarContraste(page, 'detalle de una clase llena con lista de espera');
     });
 
+    /** Honorarios por clase (DP-38): la grilla de tarifas de la oferta, con una dada de baja. */
+    test('las tarifas de honorario de una oferta, con una dada de baja', async ({ page }) => {
+      await instalarApiDeContraste(page);
+      await page.goto(`/servicios/ofertas/${CLASE.ofertaId}/honorarios`);
+      await expect(page.getByText('Rige hoy')).toBeVisible();
+
+      await auditarContraste(page, 'tarifas de honorario de una oferta');
+    });
+
+    test('el borrador de una liquidacion de honorarios con dos servicios y excluidas', async ({
+      page,
+    }) => {
+      await instalarApiDeContraste(page);
+      await page.goto('/egresos/honorarios');
+      await abrirBorradorDeHonorarios(page);
+
+      await auditarContraste(page, 'borrador de una liquidacion de honorarios');
+    });
+
     /** Atencion clinica de la clase (AKINE-08.05), con las derivaciones de una participante. */
     test('la atencion clinica de una clase con las derivaciones abiertas', async ({ page }) => {
       await instalarApiDeContraste(page);
@@ -384,6 +405,50 @@ test.describe('Contraste de color', () => {
       await expect(page.getByText('Agotado', { exact: true })).toBeVisible();
 
       await auditarContraste(page, 'pases de una persona con las tres marcas');
+    });
+
+    /** DP-43 (U-12): el catalogo global en la consola, con un plan dado de baja. */
+    test('el catalogo global de financiadores de la plataforma', async ({ page }) => {
+      await instalarApiDeContraste(page);
+      await instalarApiDp43(page, { plataforma: true });
+      await page.goto('/plataforma/catalogo-financiadores');
+      await expect(page.getByText('Plan 110 Joven')).toBeVisible();
+
+      await auditarContraste(page, 'catalogo global de financiadores de la plataforma');
+    });
+
+    test('el catalogo de financiadores del centro, con uno ya agregado y desactualizado', async ({
+      page,
+    }) => {
+      await instalarApiDeContraste(page);
+      await instalarApiDp43(page);
+      await page.goto('/contratacion/financiadores/catalogo');
+      await expect(page.getByText('El catalogo cambio despues de agregarlo')).toBeVisible();
+
+      await auditarContraste(page, 'catalogo de financiadores del centro');
+    });
+
+    /** DP-43 (U-24, U-25): atender sin turno con el aviso de motivo, y la ventana de enmienda. */
+    test('atender sin turno con el motivo faltante', async ({ page }) => {
+      await instalarApiDeContraste(page);
+      await instalarApiDp43(page);
+      await page.goto('/atencion/sin-turno');
+      await page
+        .getByLabel('Oferta', { exact: true })
+        .selectOption({ label: 'Rehabilitacion neurologica' });
+      await page.getByRole('button', { name: 'Iniciar la atencion' }).click();
+      await expect(page.getByText('Elegi a quien se atiende.')).toBeVisible();
+
+      await auditarContraste(page, 'atender sin turno con un aviso');
+    });
+
+    test('la ventana de enmienda de la organizacion', async ({ page }) => {
+      await instalarApiDeContraste(page);
+      await instalarApiDp43(page);
+      await page.goto('/atencion/politica-de-enmienda');
+      await expect(page.getByText('45 dias')).toBeVisible();
+
+      await auditarContraste(page, 'ventana de enmienda');
     });
 
     test('el padron sin ninguna fila', async ({ page }) => {

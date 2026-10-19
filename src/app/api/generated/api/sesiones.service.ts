@@ -23,11 +23,19 @@ import { CerrarSesion } from '../model/cerrar-sesion';
 // @ts-ignore
 import { EnmendarSesion } from '../model/enmendar-sesion';
 // @ts-ignore
+import { FijarPoliticaDeEnmienda } from '../model/fijar-politica-de-enmienda';
+// @ts-ignore
 import { GuardarBorrador } from '../model/guardar-borrador';
 // @ts-ignore
 import { GuardarEvaluacion } from '../model/guardar-evaluacion';
 // @ts-ignore
+import { IniciarSesionSinTurno } from '../model/iniciar-sesion-sin-turno';
+// @ts-ignore
+import { PoliticaDeEnmienda } from '../model/politica-de-enmienda';
+// @ts-ignore
 import { ProblemDetail } from '../model/problem-detail';
+// @ts-ignore
+import { ReemplazarProfesionalDeSesion } from '../model/reemplazar-profesional-de-sesion';
 // @ts-ignore
 import { Sesion } from '../model/sesion';
 // @ts-ignore
@@ -43,8 +51,11 @@ import {
     CerrarSesionRequestParams,
     EnmendarRequestParams,
     EvaluarRequestParams,
+    FijarPoliticaDeEnmiendaRequestParams,
     GuardarBorradorRequestParams,
     IniciarSesionRequestParams,
+    IniciarSesionSinTurnoRequestParams,
+    ReemplazarProfesionalDeSesionRequestParams,
     VerSesionRequestParams,
     VersionesRequestParams
 } from './sesiones.serviceInterface';
@@ -62,7 +73,7 @@ export class SesionesService extends BaseService implements SesionesServiceInter
 
     /**
      * Asociar, cambiar o quitar el caso clinico de una atencion abierta
-     * Deja en la sesion el caso que viene en &#x60;casoId&#x60;, o ninguno si viene nulo. Es la unica forma de corregir el caso despues de iniciar: el inicio es idempotente y devuelve la sesion con el caso que ya tenia.  **Solo con la sesion abierta.** Una sesion cerrada ya tiene su numero dentro del caso, y cambiarlo seria renumerar historia clinica (409 &#x60;sesion-cerrada&#x60;).  El caso tiene que ser **activo y de la misma historia clinica**: uno de otro paciente responde 404 —indistinguible de \&quot;no existe\&quot;— y uno cerrado 409 &#x60;caso-clinico-cerrado&#x60;. Quitar el caso siempre se puede: el caso no es obligatorio (RF-M14-002).  **Hay que mandar la &#x60;version&#x60; que se leyo**, y **solo el profesional de la sesion puede cambiarlo**: escribir en la atencion ajena es 409, no 403. Deja evento de auditoria. Pedir el caso que ya tiene no escribe ni avanza la version.
+     * Deja en la sesion el caso que viene en &#x60;casoId&#x60;, o ninguno si viene nulo. Es la unica forma de corregir el caso despues de iniciar: el inicio es idempotente y devuelve la sesion con el caso que ya tenia.  **Solo con la sesion abierta.** Una sesion cerrada ya tiene su numero dentro del caso, y cambiarlo seria renumerar historia clinica (409 &#x60;sesion-cerrada&#x60;).  El caso tiene que ser **activo y de la misma historia clinica**: uno de otro paciente responde 404 —indistinguible de \&quot;no existe\&quot;— y uno cerrado 409 &#x60;caso-clinico-cerrado&#x60;. Quitar el caso se puede salvo que la oferta lo exija (409 &#x60;caso-clinico-requerido&#x60;, RF-M10-007, DP-43).  **Hay que mandar la &#x60;version&#x60; que se leyo**, y **solo el profesional de la sesion puede cambiarlo**: escribir en la atencion ajena es 409, no 403. Deja evento de auditoria. Pedir el caso que ya tiene no escribe ni avanza la version.
      * @endpoint put /api/v1/consultorios/{consultorioId}/sesiones/{sesionId}/caso
      * @param requestParameters
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
@@ -222,7 +233,7 @@ export class SesionesService extends BaseService implements SesionesServiceInter
 
     /**
      * Enmendar una sesion cerrada
-     * Corrige el contenido clinico de una atencion **ya cerrada**, escribiendo una **version nueva** que deja la anterior intacta y consultable (RF-M14-010).  **Enmendar no es editar.** RN-M14-006 no prohibe corregir una sesion cerrada: prohibe corregirla *silenciosamente*. Por eso el motivo es obligatorio, la version queda numerada con su autor y su instante, y la operacion deja evento de auditoria.  **LO QUE ESTA OPERACION NO PUEDE CORREGIR, y conviene saberlo antes de intentarlo:** la **asistencia**, los dos correlativos (&#x60;numeroSesion&#x60; y &#x60;numeroEnCaso&#x60;), la oferta, el turno, el profesional y las fechas de la atencion. No estan en el cuerpo del pedido, asi que no hay forma de mandarlos.  El caso que esto deja afuera es real y esta asumido: una sesion cerrada con &#x60;AUSENTE&#x60; cuando el paciente vino **no se arregla enmendando**. Cambiar la asistencia es un acto economico —obliga a devengar o anular una obligacion (M18) y a consumir o revertir una unidad de autorizacion (M17)— y esas compensaciones son explicitas y de otros modulos. Lo que si corresponde es enmendar la nota de cierre dejando escrito lo que paso, con ese motivo.  **La enmienda no vuelve a disparar nada economico.** No se devenga deuda ni se consume autorizacion: ninguno de los campos enmendables los afecta.  **Tratamientos y mediciones tambien se enmiendan (C-6)**, con &#x60;tratamientos&#x60; y &#x60;mediciones&#x60;: listas completas de lo que tiene que quedar. La version nueva lleva la foto de lo que quedo y la anterior conserva lo que habia. Lo que no se puede cambiar es **el conjunto de practicas realizadas**: eligieron al cierre que autorizacion se consumio, y cambiarlas es una compensacion en M17 (409 &#x60;enmienda-cambia-practicas&#x60;).  **Es un reemplazo completo, no un parche.** Un campo ausente significa \&quot;queda vacio\&quot;, no \&quot;dejalo como estaba\&quot;: la pantalla manda el formulario entero. La unica excepcion son &#x60;tratamientos&#x60; y &#x60;mediciones&#x60;: **ausentes no se tocan**, para que un cliente que no los conoce no pueda vaciarlos por omision.  **Solo el profesional de la sesion puede enmendar.** No es cuestion de permiso —dos profesionales de la misma sede tienen el mismo &#x60;sesion:register&#x60;— sino de propiedad de esa atencion, y por eso el rechazo es 409 y no 403.  **No hay ventana temporal**: se puede enmendar una sesion de hace dos años. El error clinico que mas necesita correccion es el que se descubre tarde, y la enmienda no puede ocultar nada — el original queda, con su fecha y su autor.
+     * Corrige el contenido clinico de una atencion **ya cerrada**, escribiendo una **version nueva** que deja la anterior intacta y consultable (RF-M14-010).  **Enmendar no es editar.** RN-M14-006 no prohibe corregir una sesion cerrada: prohibe corregirla *silenciosamente*. Por eso el motivo es obligatorio, la version queda numerada con su autor y su instante, y la operacion deja evento de auditoria.  **LO QUE ESTA OPERACION NO PUEDE CORREGIR, y conviene saberlo antes de intentarlo:** la **asistencia**, los dos correlativos (&#x60;numeroSesion&#x60; y &#x60;numeroEnCaso&#x60;), la oferta, el turno, el profesional y las fechas de la atencion. No estan en el cuerpo del pedido, asi que no hay forma de mandarlos.  El caso que esto deja afuera es real y esta asumido: una sesion cerrada con &#x60;AUSENTE&#x60; cuando el paciente vino **no se arregla enmendando**. Cambiar la asistencia es un acto economico —obliga a devengar o anular una obligacion (M18) y a consumir o revertir una unidad de autorizacion (M17)— y esas compensaciones son explicitas y de otros modulos. Lo que si corresponde es enmendar la nota de cierre dejando escrito lo que paso, con ese motivo.  **La enmienda no vuelve a disparar nada economico.** No se devenga deuda ni se consume autorizacion: ninguno de los campos enmendables los afecta.  **Tratamientos y mediciones tambien se enmiendan (C-6)**, con &#x60;tratamientos&#x60; y &#x60;mediciones&#x60;: listas completas de lo que tiene que quedar. La version nueva lleva la foto de lo que quedo y la anterior conserva lo que habia. Lo que no se puede cambiar es **el conjunto de practicas realizadas**: eligieron al cierre que autorizacion se consumio, y cambiarlas es una compensacion en M17 (409 &#x60;enmienda-cambia-practicas&#x60;).  **Es un reemplazo completo, no un parche.** Un campo ausente significa \&quot;queda vacio\&quot;, no \&quot;dejalo como estaba\&quot;: la pantalla manda el formulario entero. La unica excepcion son &#x60;tratamientos&#x60; y &#x60;mediciones&#x60;: **ausentes no se tocan**, para que un cliente que no los conoce no pueda vaciarlos por omision.  **Exige &#x60;sesion:amend&#x60;** (DP-43; hasta entonces era &#x60;sesion:register&#x60;), y **solo el profesional de la sesion puede enmendar.** Lo segundo no es cuestion de permiso —dos profesionales de la misma sede tienen el mismo &#x60;sesion:amend&#x60;— sino de propiedad de esa atencion, y por eso el rechazo es 409 y no 403.  **Hay ventana temporal** (DP-43): se puede enmendar hasta &#x60;enmendableHasta&#x60;, el cierre mas los dias que fija la organizacion (30 si no fijo otros, &#x60;GET /api/v1/politica-de-enmienda&#x60;). Despues, 409 &#x60;enmienda-fuera-de-ventana&#x60; con &#x60;cerradaEn&#x60;, &#x60;ventanaDias&#x60; y &#x60;enmendableHasta&#x60;. El original queda siempre, con su fecha y su autor.
      * @endpoint post /api/v1/consultorios/{consultorioId}/sesiones/{sesionId}/enmiendas
      * @param requestParameters
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
@@ -381,6 +392,78 @@ export class SesionesService extends BaseService implements SesionesServiceInter
     }
 
     /**
+     * Fijar la ventana para enmendar sesiones de la organizacion
+     * Fija los dias desde el cierre en que una sesion se puede enmendar, de 1 a 3650 (DP-43). **Rige tambien para las sesiones ya cerradas**: la ventana no se congela en cada sesion, asi que achicarla puede dejar fuera de ventana una sesion que hoy se podia enmendar, y agrandarla la vuelve a habilitar.  Hay que mandar la &#x60;version&#x60; leida, **nula** si se leyo la politica por defecto. Si no coincide, 409 &#x60;concurrent-modification&#x60;. Deja &#x60;POLITICA_DE_ENMIENDA_FIJADA&#x60; en la auditoria.
+     * @endpoint put /api/v1/politica-de-enmienda
+     * @param requestParameters
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public fijarPoliticaDeEnmienda(requestParameters: FijarPoliticaDeEnmiendaRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<PoliticaDeEnmienda>;
+    public fijarPoliticaDeEnmienda(requestParameters: FijarPoliticaDeEnmiendaRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<PoliticaDeEnmienda>>;
+    public fijarPoliticaDeEnmienda(requestParameters: FijarPoliticaDeEnmiendaRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<PoliticaDeEnmienda>>;
+    public fijarPoliticaDeEnmienda(requestParameters: FijarPoliticaDeEnmiendaRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        const fijarPoliticaDeEnmienda = requestParameters?.fijarPoliticaDeEnmienda;
+        if (fijarPoliticaDeEnmienda === null || fijarPoliticaDeEnmienda === undefined) {
+            throw new Error('Required parameter fijarPoliticaDeEnmienda was null or undefined when calling fijarPoliticaDeEnmienda.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        // to determine the Content-Type header
+        const consumes: string[] = [
+            'application/json'
+        ];
+        const httpContentTypeSelected: string | undefined = this.configuration.selectHeaderContentType(consumes);
+        if (httpContentTypeSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Content-Type', httpContentTypeSelected);
+        }
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/politica-de-enmienda`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<PoliticaDeEnmienda>('put', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                body: fijarPoliticaDeEnmienda,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
      * Guardar el borrador de la atencion
      * Guarda el contenido parcial de la atencion. Pensado para llamarse seguido, desde el autosave de la pantalla.  **Hay que mandar la &#x60;version&#x60; que se leyo.** Dos pestanas del mismo profesional sobre la misma sesion son el caso normal; sin la version la segunda pisa a la primera en silencio y el profesional pierde lo que escribio. Un 409 &#x60;concurrent-modification&#x60; significa recargar.  **Solo el profesional de la sesion puede guardar.** No es cuestion de permiso —dos profesionales de la misma sede tienen el mismo &#x60;sesion:register&#x60;— sino de propiedad de esa atencion, y por eso el rechazo es 409 y no 403.  El contenido es **opaco**: que campos tiene una evaluacion lo define AKINE-06.02. Esta etapa garantiza que se guarda, se versiona y no se pierde.  **Lo unico que se exige es que sea JSON.** Un &#x60;contenido&#x60; que no parsea, vacio o anidado mas alla de 99 niveles responde **400 &#x60;validation-error&#x60;** con &#x60;errors.contenido&#x60;; reintentar el mismo cuerpo falla igual. &#x60;null&#x60; vacia el borrador.
      * @endpoint put /api/v1/consultorios/{consultorioId}/sesiones/{sesionId}/borrador
@@ -462,7 +545,7 @@ export class SesionesService extends BaseService implements SesionesServiceInter
 
     /**
      * Iniciar la atencion de un turno
-     * Abre la atencion, o **devuelve la que ya estaba abierta**.  El doble inicio es idempotente a proposito: un profesional que aprieta dos veces o recarga la pantalla es el caso normal, y un 409 le exigiria a la pantalla distinguir dos situaciones que para el usuario son la misma (RN-M14-001, un turno produce como mucho una sesion).  La Historia Clinica del paciente **se crea si no existia**. Exige perfil de paciente vigente: una atencion sobre alguien que solo es \&quot;persona\&quot; falla, y                no se crea historia clinica a nombre de quien no es paciente.                 Quien atiende es el profesional del turno. Si el turno tiene uno asignado y no es quien inicia, es 409: dejar que otro abra la sesion de un turno ajeno rompe la propiedad antes de que la sesion exista.  EL CASO CLINICO ES OPCIONAL (04.03). Sin casoId la atencion se registra igual: RF-M14-002 admite atencion sin caso y ninguna sesion anterior a 04.03 lo tiene. Exigirlo es RF-M10-007, que necesita su propia ventana de migracion. Cuando viene, tiene que ser un caso ACTIVO de la MISMA historia clinica: uno de otro paciente responde 404 —indistinguible de \&quot;no existe\&quot;, para no poder censar casos ajenos probando ids— y uno cerrado responde 409, porque lleva a otra accion, que es reabrirlo.  LA IDEMPOTENCIA MANDA SOBRE EL CASO: si la sesion del turno ya existe se devuelve tal cual, con el caso que tenga, aunque esta llamada traiga otro. Reasignar el caso de una atencion ya empezada no es \&quot;iniciar\&quot;: es &#x60;PUT .../sesiones/{sesionId}/caso&#x60;.
+     * Abre la atencion, o **devuelve la que ya estaba abierta**.  El doble inicio es idempotente a proposito: un profesional que aprieta dos veces o recarga la pantalla es el caso normal, y un 409 le exigiria a la pantalla distinguir dos situaciones que para el usuario son la misma (RN-M14-001, un turno produce como mucho una sesion).  La Historia Clinica del paciente **se crea si no existia**. Exige perfil de paciente vigente: una atencion sobre alguien que solo es \&quot;persona\&quot; falla, y                no se crea historia clinica a nombre de quien no es paciente.                 Quien atiende es el profesional del turno. Si el turno tiene uno asignado y no es quien inicia, es 409: dejar que otro abra la sesion de un turno ajeno rompe la propiedad antes de que la sesion exista.  EL CASO CLINICO ES OPCIONAL SALVO QUE LA OFERTA LO EXIJA (RF-M10-007, DP-43). Si la oferta del turno tiene &#x60;requiereCasoClinico&#x60;, iniciar sin casoId responde 409 &#x60;caso-clinico-requerido&#x60; y no abre historia ni sesion; en las demas ofertas la atencion se registra igual sin caso. Las sesiones ya existentes sin caso no se tocan. Cuando viene, tiene que ser un caso ACTIVO de la MISMA historia clinica: uno de otro paciente responde 404 —indistinguible de \&quot;no existe\&quot;, para no poder censar casos ajenos probando ids— y uno cerrado responde 409, porque lleva a otra accion, que es reabrirlo.  LA IDEMPOTENCIA MANDA SOBRE EL CASO: si la sesion del turno ya existe se devuelve tal cual, con el caso que tenga, aunque esta llamada traiga otro. Reasignar el caso de una atencion ya empezada no es \&quot;iniciar\&quot;: es &#x60;PUT .../sesiones/{sesionId}/caso&#x60;.
      * @endpoint post /api/v1/consultorios/{consultorioId}/sesiones/turnos/{turnoId}
      * @param requestParameters
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
@@ -529,6 +612,219 @@ export class SesionesService extends BaseService implements SesionesServiceInter
             {
                 context: localVarHttpContext,
                 params: localVarQueryParameters.toHttpParams(),
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * Iniciar una atencion sin turno
+     * Abre la atencion de un paciente **sin reserva** (RF-M14-002, DP-43). Exige &#x60;sesion:register&#x60; en la sede, como la atencion de turno, y quien atiende es quien inicia.  **El motivo es obligatorio**: sin turno nada explica por que el paciente estaba ahi. No va a la auditoria (es texto libre sobre un paciente); vuelve en &#x60;motivoSinTurno&#x60;.  **La oferta la elige el cliente**, asi que se valida: de esta sede (404 si no), vigente hoy en la zona de la sede (409 &#x60;oferta-no-vigente&#x60;) y con quien atiende habilitado (409 &#x60;profesional-no-habilitado-en-oferta&#x60;; una oferta sin habilitaciones declaradas admite a todos). La persona tiene que ser paciente vigente; la historia clinica se crea si no existia.  **El caso** es obligatorio solo si la oferta tiene &#x60;requiereCasoClinico&#x60; (409 &#x60;caso-clinico-requerido&#x60;). Cuando viene, mismas reglas que en la atencion de turno: activo y de la misma historia (404 si es de otro paciente, 409 si esta cerrado).  **Manda &#x60;idempotencyKey&#x60;.** Sin turno no hay reserva que ancle el doble click: con la misma clave y el mismo pedido se devuelve la atencion ya creada, con otro pedido 409 &#x60;idempotency-key-conflict&#x60;. Sin clave cada llamada abre una atencion nueva.  No ocupa ni libera agenda: Turno es reserva y Sesion es atencion (DP-05).
+     * @endpoint post /api/v1/consultorios/{consultorioId}/sesiones
+     * @param requestParameters
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public iniciarSesionSinTurno(requestParameters: IniciarSesionSinTurnoRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<Sesion>;
+    public iniciarSesionSinTurno(requestParameters: IniciarSesionSinTurnoRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<Sesion>>;
+    public iniciarSesionSinTurno(requestParameters: IniciarSesionSinTurnoRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<Sesion>>;
+    public iniciarSesionSinTurno(requestParameters: IniciarSesionSinTurnoRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        const consultorioId = requestParameters?.consultorioId;
+        if (consultorioId === null || consultorioId === undefined) {
+            throw new Error('Required parameter consultorioId was null or undefined when calling iniciarSesionSinTurno.');
+        }
+        const iniciarSesionSinTurno = requestParameters?.iniciarSesionSinTurno;
+        if (iniciarSesionSinTurno === null || iniciarSesionSinTurno === undefined) {
+            throw new Error('Required parameter iniciarSesionSinTurno was null or undefined when calling iniciarSesionSinTurno.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        // to determine the Content-Type header
+        const consumes: string[] = [
+            'application/json'
+        ];
+        const httpContentTypeSelected: string | undefined = this.configuration.selectHeaderContentType(consumes);
+        if (httpContentTypeSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Content-Type', httpContentTypeSelected);
+        }
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/consultorios/${this.configuration.encodeParam({name: "consultorioId", value: consultorioId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/sesiones`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<Sesion>('post', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                body: iniciarSesionSinTurno,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * Reemplazar al profesional de una atencion abierta
+     * Otro profesional continua la atencion (DP-43). **Solo el administrador de la sede** (&#x60;sesion:reassign&#x60;, del &#x60;CONSULTORIO_ADMIN&#x60;), con motivo obligatorio, y queda auditado (&#x60;SESION_PROFESIONAL_REEMPLAZADO&#x60;) con un registro propio de quien reemplazo a quien y por que.  **No es un permiso para escribir en la atencion ajena**: escribir en la atencion de otro sigue siendo 409 &#x60;sesion-ajena&#x60;. Esta operacion cambia al dueño; desde ahi, el anterior recibe &#x60;sesion-ajena&#x60; y el nuevo guarda normalmente.  **Solo con la sesion abierta** (cerrada: 409 &#x60;sesion-cerrada&#x60;: la atencion ya ocurrio y cambiar quien la presto seria reescribirla). El profesional nuevo tiene que tener membership vigente en la sede y &#x60;sesion:register&#x60; (409 &#x60;profesional-no-asignable&#x60;) y estar habilitado para la oferta (409 &#x60;profesional-no-habilitado-en-oferta&#x60;). **El turno no se toca.**  **Hay que mandar la &#x60;version&#x60; que se leyo.** Pedir el profesional que ya tiene no escribe ni avanza la version.
+     * @endpoint put /api/v1/consultorios/{consultorioId}/sesiones/{sesionId}/profesional
+     * @param requestParameters
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public reemplazarProfesionalDeSesion(requestParameters: ReemplazarProfesionalDeSesionRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<Sesion>;
+    public reemplazarProfesionalDeSesion(requestParameters: ReemplazarProfesionalDeSesionRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<Sesion>>;
+    public reemplazarProfesionalDeSesion(requestParameters: ReemplazarProfesionalDeSesionRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<Sesion>>;
+    public reemplazarProfesionalDeSesion(requestParameters: ReemplazarProfesionalDeSesionRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        const consultorioId = requestParameters?.consultorioId;
+        if (consultorioId === null || consultorioId === undefined) {
+            throw new Error('Required parameter consultorioId was null or undefined when calling reemplazarProfesionalDeSesion.');
+        }
+        const sesionId = requestParameters?.sesionId;
+        if (sesionId === null || sesionId === undefined) {
+            throw new Error('Required parameter sesionId was null or undefined when calling reemplazarProfesionalDeSesion.');
+        }
+        const reemplazarProfesionalDeSesion = requestParameters?.reemplazarProfesionalDeSesion;
+        if (reemplazarProfesionalDeSesion === null || reemplazarProfesionalDeSesion === undefined) {
+            throw new Error('Required parameter reemplazarProfesionalDeSesion was null or undefined when calling reemplazarProfesionalDeSesion.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        // to determine the Content-Type header
+        const consumes: string[] = [
+            'application/json'
+        ];
+        const httpContentTypeSelected: string | undefined = this.configuration.selectHeaderContentType(consumes);
+        if (httpContentTypeSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Content-Type', httpContentTypeSelected);
+        }
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/consultorios/${this.configuration.encodeParam({name: "consultorioId", value: consultorioId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/sesiones/${this.configuration.encodeParam({name: "sesionId", value: sesionId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/profesional`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<Sesion>('put', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                body: reemplazarProfesionalDeSesion,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * Ver la ventana para enmendar sesiones de la organizacion
+     * Cuantos dias desde el cierre se puede enmendar una sesion (DP-43). Sin politica propia rigen **30 dias** y la respuesta trae &#x60;porDefecto &#x3D; true&#x60; y &#x60;version&#x60; nula. Exige administrar la organizacion (&#x60;consultorio:manage&#x60; con alcance organizacion: el &#x60;ORG_ADMIN&#x60;). La fecha limite de cada sesion viaja en la sesion misma (&#x60;enmendableHasta&#x60;).
+     * @endpoint get /api/v1/politica-de-enmienda
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public verPoliticaDeEnmienda(observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<PoliticaDeEnmienda>;
+    public verPoliticaDeEnmienda(observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<PoliticaDeEnmienda>>;
+    public verPoliticaDeEnmienda(observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<PoliticaDeEnmienda>>;
+    public verPoliticaDeEnmienda(observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+
+        let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/politica-de-enmienda`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<PoliticaDeEnmienda>('get', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
                 responseType: <any>responseType_,
                 ...(withCredentials ? { withCredentials } : {}),
                 headers: localVarHeaders,

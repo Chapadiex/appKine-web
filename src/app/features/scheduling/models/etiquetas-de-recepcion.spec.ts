@@ -1,5 +1,16 @@
-import { RecepcionEstadoEnum } from '../../../api/generated/model/recepcion';
-import { recepcionAbierta, textoDeModalidad, textoDeRecepcion } from './etiquetas-de-recepcion';
+import {
+  RecepcionEstadoEnum,
+  RecepcionModalidadEnum,
+} from '../../../api/generated/model/recepcion';
+import {
+  admiteParticular,
+  admiteRetiro,
+  recepcionAbierta,
+  recepcionRetirada,
+  textoDeEventoDeRecepcion,
+  textoDeModalidad,
+  textoDeRecepcion,
+} from './etiquetas-de-recepcion';
 import { textoDeEstado } from './etiquetas-de-turno';
 
 describe('etiquetas de recepcion', () => {
@@ -27,5 +38,38 @@ describe('etiquetas de recepcion', () => {
   it('EN_ESPERA del turno solo sobrevive como historia', () => {
     // DP-16: el servidor ya no lo emite, pero los eventos viejos del turno pueden traerlo.
     expect(textoDeEstado('EN_ESPERA')).toContain('historico');
+  });
+
+  it('RETIRADO (U-21): terminal, pero la llegada vale', () => {
+    const retirada = { estado: RecepcionEstadoEnum.RETIRADO };
+    expect(recepcionAbierta(retirada)).toBe(false);
+    expect(recepcionRetirada(retirada)).toBe(true);
+    expect(textoDeRecepcion('RETIRADO')).toContain('la llegada consta');
+    expect(textoDeEventoDeRecepcion('RETIRO')).toBe('Se retiro sin ser atendido');
+    expect(textoDeEventoDeRecepcion('NUEVO')).toBe('NUEVO');
+    expect(textoDeEventoDeRecepcion(undefined)).toBe('Evento desconocido');
+  });
+
+  it('Particular desde la espera salvo que ya lo sea; retiro solo desde LLEGO o EN_ESPERA', () => {
+    expect(admiteParticular({ estado: RecepcionEstadoEnum.LLEGO })).toBe(true);
+    expect(admiteParticular({ estado: RecepcionEstadoEnum.OBSERVADA })).toBe(true);
+    expect(
+      admiteParticular({
+        estado: RecepcionEstadoEnum.EN_ESPERA,
+        modalidad: RecepcionModalidadEnum.COBERTURA,
+      }),
+    ).toBe(true);
+    expect(
+      admiteParticular({
+        estado: RecepcionEstadoEnum.EN_ESPERA,
+        modalidad: RecepcionModalidadEnum.PARTICULAR,
+      }),
+    ).toBe(false);
+    expect(admiteParticular({ estado: RecepcionEstadoEnum.VALIDADA })).toBe(false);
+    expect(admiteParticular(undefined)).toBe(false);
+    expect(admiteRetiro({ estado: RecepcionEstadoEnum.LLEGO })).toBe(true);
+    expect(admiteRetiro({ estado: RecepcionEstadoEnum.EN_ESPERA })).toBe(true);
+    expect(admiteRetiro({ estado: RecepcionEstadoEnum.LLAMADA })).toBe(false);
+    expect(admiteRetiro({ estado: RecepcionEstadoEnum.VALIDADA })).toBe(false);
   });
 });

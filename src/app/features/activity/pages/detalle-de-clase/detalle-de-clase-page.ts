@@ -32,6 +32,7 @@ import { TenantContextStore } from '../../../../core/services/tenant-context.sto
 import { ConfirmacionConMotivo } from '../../../../shared/components/confirmacion-con-motivo/confirmacion-con-motivo';
 import { FocoAlMontar } from '../../../../shared/directives/foco-al-montar.directive';
 import { nuevaClaveDeIntento } from '../../../../shared/utils/clave-de-intento';
+import { InstructoresDeClaseComponent } from '../../components/instructores-de-clase/instructores-de-clase';
 import { ErrorActividad, traducirErrorActividad } from '../../models/actividad-errors';
 import {
   admiteBaja,
@@ -85,7 +86,13 @@ type Panel =
  */
 @Component({
   selector: 'app-detalle-de-clase-page',
-  imports: [ReactiveFormsModule, RouterLink, ConfirmacionConMotivo, FocoAlMontar],
+  imports: [
+    ReactiveFormsModule,
+    RouterLink,
+    ConfirmacionConMotivo,
+    FocoAlMontar,
+    InstructoresDeClaseComponent,
+  ],
   templateUrl: './detalle-de-clase-page.html',
   styleUrl: '../../activity.css',
 })
@@ -133,6 +140,13 @@ export class DetalleDeClasePage {
   protected readonly editable = computed(() => admiteCambios(this.clase()));
   protected readonly puedeGestionar = computed(
     () => this.permisos.tiene(PERMISO_CLASE_MANAGE) && this.editable(),
+  );
+  /**
+   * Los instructores adicionales (DP-38) se cambian tambien en una clase ya dictada —es justo la
+   * que se liquida—; solo la cancelada no admite cambios.
+   */
+  protected readonly puedeCambiarInstructores = computed(
+    () => this.permisos.tiene(PERMISO_CLASE_MANAGE) && this.clase()?.estado !== 'CANCELADA',
   );
   protected readonly puedeInscribir = computed(
     () => this.permisos.tiene(PERMISO_INSCRIPCION_MANAGE) && this.editable(),

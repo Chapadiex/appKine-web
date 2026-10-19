@@ -1,0 +1,130 @@
+<h1>Catalogo de financiadores</h1>
+
+<p class="descripcion">
+  Obras sociales, prepagas y ART que la plataforma ya tiene cargadas. Agregar una al centro crea una
+  <b>copia propia</b> con sus planes activos: desde ahi es del centro, se edita como cualquier otro
+  financiador y los cambios posteriores del catalogo <b>no</b> la modifican.
+</p>
+
+<p><a class="enlace" routerLink="/contratacion/financiadores">Volver a los financiadores</a></p>
+
+<section class="tarjeta" aria-labelledby="titulo-buscar-catalogo">
+  <h2 id="titulo-buscar-catalogo">Buscar en el catalogo</h2>
+  <form (submit)="$event.preventDefault(); cargar()">
+    <div class="par-de-campos">
+      <div class="campo">
+        <label for="catalogo-busqueda">Nombre, codigo o CUIT</label>
+        <input
+          id="catalogo-busqueda"
+          type="search"
+          autocomplete="off"
+          [value]="busqueda()"
+          (input)="busqueda.set($any($event.target).value)"
+        />
+      </div>
+      <div class="campo">
+        <label for="catalogo-tipo">Tipo</label>
+        <select
+          id="catalogo-tipo"
+          [value]="filtroTipo()"
+          (change)="filtroTipo.set($any($event.target).value)"
+        >
+          <option value="">Todos</option>
+          @for (tipo of tipos; track tipo.valor) {
+            <option [value]="tipo.valor">{{ tipo.etiqueta }}</option>
+          }
+        </select>
+      </div>
+    </div>
+    <div class="acciones">
+      <button type="submit" class="boton">Buscar</button>
+    </div>
+  </form>
+</section>
+
+<div aria-live="polite">
+  @if (errorAccion(); as mensaje) {
+    <p class="estado estado--error" role="alert">{{ mensaje }}</p>
+  }
+</div>
+
+@if (!puedeAdoptar()) {
+  <p class="estado estado--vacio">
+    Podes mirar el catalogo. Agregar un financiador al centro necesita permiso para administrar
+    convenios en esta sede.
+  </p>
+}
+
+@switch (estado().tipo) {
+  @case ('cargando') {
+    <p class="estado estado--cargando">Leyendo el catalogo&hellip;</p>
+  }
+  @case ('error') {
+    <p class="estado estado--error" role="alert">{{ mensajeError() }}</p>
+    <button type="button" class="boton" (click)="cargar()">Reintentar</button>
+  }
+  @case ('listo') {
+    @if (entradas().length === 0) {
+      <p class="estado estado--vacio">Ninguna entrada del catalogo coincide con la busqueda.</p>
+    } @else {
+      <div class="tabla-scroll" tabindex="0" role="region" aria-label="Catalogo de financiadores">
+        <table class="tabla">
+          <caption class="visualmente-oculto">
+            Entradas activas del catalogo de la plataforma y si el centro ya tiene su copia
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">Financiador</th>
+              <th scope="col">Tipo</th>
+              <th scope="col">CUIT</th>
+              <th scope="col">Planes</th>
+              <th scope="col">En el centro</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (entrada of entradas(); track entrada.id) {
+              <tr>
+                <th scope="row">
+                  {{ entrada.nombre }}
+                  <p class="ayuda">Codigo {{ entrada.codigo }}</p>
+                </th>
+                <td>{{ etiquetaDeTipo(entrada.tipo) }}</td>
+                <td>{{ entrada.cuit || 'Sin CUIT' }}</td>
+                <td>{{ cantidadDePlanes(entrada) }}</td>
+                <td>
+                  @if (entrada.financiadorAdoptadoId; as copia) {
+                    <span class="marca-estado marca-estado--activa">Ya agregado</span>
+                    <a
+                      class="enlace"
+                      [routerLink]="['/contratacion', 'financiadores', copia, 'planes']"
+                    >
+                      Ver la copia del centro
+                    </a>
+                    @if (entrada.actualizacionDisponible) {
+                      <p class="ayuda">
+                        El catalogo cambio despues de agregarlo. La copia del centro no se actualiza
+                        sola: revisala y edita lo que haga falta.
+                      </p>
+                    }
+                  } @else if (puedeAdoptar()) {
+                    <button
+                      type="button"
+                      class="boton"
+                      [disabled]="adoptando() !== null"
+                      (click)="adoptar(entrada)"
+                    >
+                      Agregar al centro
+                      <span class="visualmente-oculto">{{ entrada.nombre }}</span>
+                    </button>
+                  } @else {
+                    <span class="ayuda">No agregado</span>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  }
+}

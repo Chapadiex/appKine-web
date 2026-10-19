@@ -26,5 +26,15 @@ export const routes: Routes = [
       ),
     title: 'AKINE - Suscripcion de un centro',
   },
+  {
+    // DP-43 (U-12): el catalogo global que los centros adoptan por copia.
+    path: 'catalogo-financiadores',
+    loadComponent: () =>
+      import('./pages/catalogo-financiadores/catalogo-financiadores-page').then(
+        (m) => m.CatalogoFinanciadoresPage,
+      ),
+    title: 'AKINE - Catalogo de financiadores',
+    data: { [DATA_ANCHO]: ANCHO_AMPLIO },
+  },
   { path: '', pathMatch: 'full', redirectTo: 'solicitudes' },
 ];

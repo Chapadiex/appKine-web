@@ -10,6 +10,7 @@ import { HabilitacionesResponse } from '../../../api/generated/model/habilitacio
 import { OfertaResponse } from '../../../api/generated/model/oferta-response';
 import { PersonaPageResponse } from '../../../api/generated/model/persona-page-response';
 import { PersonasService } from '../../../api/generated/api/personas.service';
+import { EventoDeRecepcion } from '../../../api/generated/model/evento-de-recepcion';
 import { Recepcion } from '../../../api/generated/model/recepcion';
 import { RecepcionService } from '../../../api/generated/api/recepcion.service';
 import { ServiciosYOfertasService } from '../../../api/generated/api/servicios-y-ofertas.service';
@@ -405,6 +406,31 @@ export class SchedulingApi {
         motivo: cuerpo.motivo === '' ? undefined : cuerpo.motivo,
       },
     });
+  }
+
+  /**
+   * Registra que la persona se retiro sin ser atendida (U-21). Desde `LLEGO` o `EN_ESPERA`, con
+   * motivo <b>obligatorio</b>. La recepcion queda `RETIRADO`, terminal, y sigue siendo la vigente:
+   * la llegada vale. El turno no cambia.
+   */
+  retirarRecepcion(
+    consultorioId: number,
+    turnoId: number,
+    cuerpo: { readonly expectedVersion: number; readonly motivo: string },
+  ): Observable<Recepcion> {
+    return this.recepcion.retirarRecepcion({
+      consultorioId,
+      turnoId,
+      retirarRecepcion: { expectedVersion: cuerpo.expectedVersion, motivo: cuerpo.motivo },
+    });
+  }
+
+  /** Historial de la recepcion del turno: llegada, validacion, espera, retiro, anulacion. */
+  historialRecepcion(
+    consultorioId: number,
+    turnoId: number,
+  ): Observable<readonly EventoDeRecepcion[]> {
+    return this.recepcion.historialRecepcion({ consultorioId, turnoId });
   }
 
   /** Ofertas ACTIVAS de la sede: son las unicas que se pueden agendar. */

@@ -769,6 +769,25 @@ describe('PasesDePersonaPage', () => {
     TIMEOUT_AXE,
   );
 
+  it('DP-40: la renovacion apagada por desvinculacion del autorizante se explica', async () => {
+    const fixture = await montar([
+      {
+        ...ABONO_SIN,
+        renovacionAutorizadaPor: 'Lucia Sintetica',
+        renovacionOmitidaMotivo: 'quien autorizo la renovacion ya no puede vender en la sede',
+      },
+    ]);
+    const texto = textoDe(fixture);
+    expect(texto).toContain(
+      'La renovacion automatica se apago porque Lucia Sintetica, quien la autorizo,',
+    );
+    expect(texto).toContain(
+      'ya no puede vender en esta sede (se lo desvinculo o perdio el permiso)',
+    );
+    expect(texto).not.toContain('No se pudo renovar');
+    expect(boton(fixture, 'Activar la renovacion automatica de Abono yoga')).not.toBeNull();
+  });
+
   it('el periodo siguiente sale de renovadoPorPaseId, no de deducirlo de la lista', async () => {
     // Renovado por un periodo que no esta cargado: lo dice sin enlace y no ofrece configurar.
     const fixture = await montar([

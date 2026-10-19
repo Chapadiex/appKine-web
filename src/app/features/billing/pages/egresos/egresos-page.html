@@ -6,6 +6,12 @@
   o mas pagos. <b>Solo el pago en efectivo sale del cajon</b> y exige la caja abierta.
 </p>
 
+<nav class="acciones" aria-label="Honorarios">
+  <a class="boton boton--secundario" routerLink="/egresos/honorarios">
+    Liquidar honorarios por clase
+  </a>
+</nav>
+
 <!-- ================================ Filtros =================================== -->
 
 <section class="tarjeta" aria-labelledby="titulo-filtros">
@@ -188,6 +194,20 @@
           />
         </div>
       }
+
+      <div class="campo">
+        <label for="alta-oferta">Servicio u oferta (opcional)</label>
+        <select id="alta-oferta" formControlName="ofertaId" aria-describedby="alta-oferta-ayuda">
+          <option value="">Sin imputar a un servicio</option>
+          @for (oferta of ofertas(); track oferta.id) {
+            <option [value]="oferta.id">{{ oferta.nombreComercial }}</option>
+          }
+        </select>
+        <p class="ayuda" id="alta-oferta-ayuda">
+          Si es un costo de un servicio, se resta de su rentabilidad en el reporte de servicios. El
+          alquiler o los impuestos van sin imputar.
+        </p>
+      </div>
 
       <div class="campo">
         <label for="alta-categoria">Categoria</label>

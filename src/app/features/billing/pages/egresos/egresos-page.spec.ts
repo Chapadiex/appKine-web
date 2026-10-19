@@ -122,6 +122,8 @@ describe('EgresosPage', () => {
       comprobanteFecha: HOY_DE_LA_SEDE,
     });
     expect(cuerpo['beneficiarioNombre']).toBeUndefined();
+    // Sin elegir servicio el egreso va sin imputar (DP-39).
+    expect(cuerpo['ofertaId']).toBeUndefined();
     expect(typeof cuerpo['idempotencyKey']).toBe('string');
     alta.flush({ ...EGRESO, id: 90, estado: 'BORRADOR' });
     await estabilizar(fixture);
@@ -166,6 +168,23 @@ describe('EgresosPage', () => {
     expect(contenido(fixture)).toContain('ya esta cargado en otro egreso');
   });
 
+  it('el servicio elegido viaja como ofertaId y solo se ofrecen las ofertas activas', async () => {
+    const fixture = await montar([]);
+    vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+    expect(contenido(fixture)).toContain('Pilates grupal');
+    expect(contenido(fixture)).not.toContain('Oferta de baja');
+
+    elegir(fixture, '#alta-colaborador', '7');
+    elegir(fixture, '#alta-oferta', '31');
+    escribir(fixture, '#alta-concepto', 'Insumos de Pilates');
+    escribir(fixture, '#alta-importe', '5000');
+    enviar(fixture, 1);
+    const alta = httpMock.expectOne((p) => p.method === 'POST');
+    expect((alta.request.body as Record<string, unknown>)['ofertaId']).toBe(31);
+    alta.flush({ ...EGRESO, id: 91, ofertaId: 31 });
+    await estabilizar(fixture);
+  });
+
   it('sin sede en el contexto no pide egresos y manda al selector', async () => {
     const fixture = TestBed.createComponent(EgresosPage);
     fixture.detectChanges();
@@ -203,6 +222,12 @@ describe('EgresosPage', () => {
           { id: 8, accountName: 'Revocada Sintetica', estado: 'REVOCADA' },
         ],
       });
+    httpMock
+      .expectOne((p) => p.url === `${BASE}/ofertas`)
+      .flush([
+        { id: 31, nombreComercial: 'Pilates grupal', estado: 'ACTIVO' },
+        { id: 32, nombreComercial: 'Oferta de baja', estado: 'INACTIVO' },
+      ]);
     const busqueda = httpMock.expectOne((p: HttpRequest<unknown>) => p.url === `${BASE}/egresos`);
     expect(busqueda.request.params.get('desde')).toBe('2026-10-01');
     busqueda.flush(egresos);

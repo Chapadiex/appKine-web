@@ -5,6 +5,7 @@ import { Router, RouterLink } from '@angular/router';
 
 import { Egreso } from '../../../../api/generated/model/egreso';
 import { MembershipResponse } from '../../../../api/generated/model/membership-response';
+import { OfertaResponse } from '../../../../api/generated/model/oferta-response';
 import {
   RegistrarEgresoCategoriaEnum,
   RegistrarEgresoTipoBeneficiarioEnum,
@@ -104,10 +105,14 @@ export class EgresosPage {
     comprobanteTipo: [''],
     comprobanteNumero: [''],
     comprobanteFecha: [this.diaDeLaSede.hoy()],
+    // DP-39: la oferta a la que se imputa el costo. Vacia = sin imputar (alquiler, impuestos).
+    ofertaId: [''],
   });
 
   protected readonly estado = signal<EstadoListado>({ tipo: 'cargando' });
   protected readonly colaboradores = signal<readonly MembershipResponse[]>([]);
+  /** Ofertas activas de la sede, para imputar el costo (DP-39). Sin ellas, el egreso va sin imputar. */
+  protected readonly ofertas = signal<readonly OfertaResponse[]>([]);
   /** `true` si no se pudo leer el padron de colaboradores: solo queda el beneficiario externo. */
   protected readonly sinColaboradores = signal(false);
   protected readonly creando = signal(false);
@@ -161,8 +166,10 @@ export class EgresosPage {
       untracked(() => {
         // Cambiar de organizacion no puede dejar egresos ni colaboradores de la anterior.
         this.colaboradores.set([]);
+        this.ofertas.set([]);
         this.errorAlta.set(null);
         this.cargarColaboradores();
+        this.cargarOfertas();
         this.buscar();
       });
     });
@@ -227,6 +234,7 @@ export class EgresosPage {
         comprobanteTipo: v.comprobanteTipo.trim() || undefined,
         comprobanteNumero: v.comprobanteNumero.trim() || undefined,
         comprobanteFecha: v.comprobanteFecha || undefined,
+        ofertaId: v.ofertaId === '' ? undefined : Number(v.ofertaId),
         idempotencyKey: this.claveDeAlta,
       })
       .subscribe({
@@ -288,6 +296,18 @@ export class EgresosPage {
       return false;
     }
     return periodoDesde === '' || periodoHasta === '' || periodoHasta < periodoDesde;
+  }
+
+  private cargarOfertas(): void {
+    const consultorioId = this.tenantContext.consultorioId();
+    if (consultorioId === null) {
+      return;
+    }
+    // Sin el listado (un error de red, por ejemplo) se carga igual: el egreso va sin imputar.
+    this.api.ofertasDeLaSede(consultorioId).subscribe({
+      next: (lista) => this.ofertas.set(lista.filter((o) => o.estado === 'ACTIVO')),
+      error: () => this.ofertas.set([]),
+    });
   }
 
   private cargarColaboradores(): void {

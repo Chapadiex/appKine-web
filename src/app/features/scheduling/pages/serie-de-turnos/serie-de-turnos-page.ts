@@ -20,6 +20,7 @@ import {
   horarioDesplazado,
   textoDeAlcance,
   textoDeDias,
+  textoDeOcurrenciaOmitida,
   textoDeOmitido,
 } from '../../models/series';
 import { SchedulingApi } from '../../services/scheduling-api';
@@ -109,6 +110,7 @@ export class SerieDeTurnosPage {
   protected readonly textoDeAlcance = textoDeAlcance;
   protected readonly textoDeDias = textoDeDias;
   protected readonly textoDeOmitido = textoDeOmitido;
+  protected readonly textoDeOcurrenciaOmitida = textoDeOcurrenciaOmitida;
 
   protected readonly serie = signal<SerieDeTurnos | null>(null);
   protected readonly cargando = signal(false);

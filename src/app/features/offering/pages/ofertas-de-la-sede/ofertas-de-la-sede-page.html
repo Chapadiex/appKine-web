@@ -485,6 +485,14 @@
                           Practicas
                         </a>
                         <ng-container *akinePermiso="permisoManage">
+                          @if (oferta.modalidad === 'GRUPAL') {
+                            <a
+                              class="boton boton--secundario"
+                              [routerLink]="['/servicios/ofertas', oferta.id, 'honorarios']"
+                            >
+                              Honorarios
+                            </a>
+                          }
                           <button
                             type="button"
                             class="boton boton--secundario"

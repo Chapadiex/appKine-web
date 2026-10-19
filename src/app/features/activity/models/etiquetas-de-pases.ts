@@ -170,3 +170,13 @@ export function avisoDeConsumo(consumo: ConsumoDeCredito | undefined): string | 
       return null;
   }
 }
+
+/**
+ * DP-40 (0.133.0): la renovacion se apaga sola cuando quien la autorizo ya no puede vender en la
+ * sede (desvinculado, cambio de rol o de sede, permiso quitado). El contrato no tiene un codigo
+ * para esa causa: el backend escribe en `renovacionOmitidaMotivo` el texto fijo de
+ * `ApagadoDeRenovaciones.MOTIVO`, y se reconoce por su parte estable.
+ */
+export function renovacionApagadaPorAutorizante(motivo: string | undefined): boolean {
+  return (motivo ?? '').toLowerCase().includes('ya no puede vender');
+}

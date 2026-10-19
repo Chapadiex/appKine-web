@@ -23,9 +23,13 @@ import { Clase } from '../model/clase';
 // @ts-ignore
 import { EventoDeClase } from '../model/evento-de-clase';
 // @ts-ignore
+import { InstructoresDeClase } from '../model/instructores-de-clase';
+// @ts-ignore
 import { ProblemDetail } from '../model/problem-detail';
 // @ts-ignore
 import { ProgramarClase } from '../model/programar-clase';
+// @ts-ignore
+import { ReemplazarInstructoresDeClaseRequest } from '../model/reemplazar-instructores-de-clase-request';
 // @ts-ignore
 import { ReprogramarClase } from '../model/reprogramar-clase';
 
@@ -36,9 +40,11 @@ import { BaseService } from '../api.base.service';
 import {
     ClasesServiceInterface,
     CancelarClaseRequestParams,
+    GetInstructoresDeClaseRequestParams,
     HistorialClaseRequestParams,
     ListarClaseRequestParams,
     ProgramarRequestParams,
+    ReemplazarInstructoresDeClaseRequestParams,
     ReprogramarClaseRequestParams,
     VerClaseRequestParams
 } from './clases.serviceInterface';
@@ -124,6 +130,72 @@ export class ClasesService extends BaseService implements ClasesServiceInterface
             {
                 context: localVarHttpContext,
                 body: cancelarClase,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * Ver los instructores de una clase
+     * DP-38. El principal (el profesional de la clase) y los adicionales vigentes, en el **orden estable** del reparto de honorarios: el principal y despues los adicionales por membership. Exige &#x60;clase:read&#x60;.
+     * @endpoint get /api/v1/consultorios/{consultorioId}/clases/{claseId}/instructores
+     * @param requestParameters
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public getInstructoresDeClase(requestParameters: GetInstructoresDeClaseRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<InstructoresDeClase>;
+    public getInstructoresDeClase(requestParameters: GetInstructoresDeClaseRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<InstructoresDeClase>>;
+    public getInstructoresDeClase(requestParameters: GetInstructoresDeClaseRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<InstructoresDeClase>>;
+    public getInstructoresDeClase(requestParameters: GetInstructoresDeClaseRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        const consultorioId = requestParameters?.consultorioId;
+        if (consultorioId === null || consultorioId === undefined) {
+            throw new Error('Required parameter consultorioId was null or undefined when calling getInstructoresDeClase.');
+        }
+        const claseId = requestParameters?.claseId;
+        if (claseId === null || claseId === undefined) {
+            throw new Error('Required parameter claseId was null or undefined when calling getInstructoresDeClase.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/consultorios/${this.configuration.encodeParam({name: "consultorioId", value: consultorioId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/clases/${this.configuration.encodeParam({name: "claseId", value: claseId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/instructores`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<InstructoresDeClase>('get', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
                 responseType: <any>responseType_,
                 ...(withCredentials ? { withCredentials } : {}),
                 headers: localVarHeaders,
@@ -361,6 +433,86 @@ export class ClasesService extends BaseService implements ClasesServiceInterface
             {
                 context: localVarHttpContext,
                 body: programarClase,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * Reemplazar los instructores adicionales de una clase
+     * DP-38. Reemplaza la lista **completa** de instructores adicionales; vacia los quita. Exige &#x60;clase:manage&#x60;. Cada uno con vinculo vigente en la sede y habilitado para la oferta (sin habilitaciones declaradas, cualquiera), sin repetir y sin el principal: si no, 400. Quitar no borra: queda la historia.  **El adicional no ocupa agenda**: la exclusion de turnos y clases sigue mirando solo al principal.  Una clase cancelada no cambia instructores (409 &#x60;clase-transicion-no-permitida&#x60;), y una con honorarios ya liquidados tampoco (409 &#x60;clase-con-honorarios-liquidados&#x60;): cambiaria el reparto de una liquidacion cerrada. Se anula el egreso, que la libera.
+     * @endpoint put /api/v1/consultorios/{consultorioId}/clases/{claseId}/instructores
+     * @param requestParameters
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public reemplazarInstructoresDeClase(requestParameters: ReemplazarInstructoresDeClaseRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<InstructoresDeClase>;
+    public reemplazarInstructoresDeClase(requestParameters: ReemplazarInstructoresDeClaseRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<InstructoresDeClase>>;
+    public reemplazarInstructoresDeClase(requestParameters: ReemplazarInstructoresDeClaseRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<InstructoresDeClase>>;
+    public reemplazarInstructoresDeClase(requestParameters: ReemplazarInstructoresDeClaseRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        const consultorioId = requestParameters?.consultorioId;
+        if (consultorioId === null || consultorioId === undefined) {
+            throw new Error('Required parameter consultorioId was null or undefined when calling reemplazarInstructoresDeClase.');
+        }
+        const claseId = requestParameters?.claseId;
+        if (claseId === null || claseId === undefined) {
+            throw new Error('Required parameter claseId was null or undefined when calling reemplazarInstructoresDeClase.');
+        }
+        const reemplazarInstructoresDeClaseRequest = requestParameters?.reemplazarInstructoresDeClaseRequest;
+        if (reemplazarInstructoresDeClaseRequest === null || reemplazarInstructoresDeClaseRequest === undefined) {
+            throw new Error('Required parameter reemplazarInstructoresDeClaseRequest was null or undefined when calling reemplazarInstructoresDeClase.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        // to determine the Content-Type header
+        const consumes: string[] = [
+            'application/json'
+        ];
+        const httpContentTypeSelected: string | undefined = this.configuration.selectHeaderContentType(consumes);
+        if (httpContentTypeSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Content-Type', httpContentTypeSelected);
+        }
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/consultorios/${this.configuration.encodeParam({name: "consultorioId", value: consultorioId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/clases/${this.configuration.encodeParam({name: "claseId", value: claseId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/instructores`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<InstructoresDeClase>('put', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                body: reemplazarInstructoresDeClaseRequest,
                 responseType: <any>responseType_,
                 ...(withCredentials ? { withCredentials } : {}),
                 headers: localVarHeaders,

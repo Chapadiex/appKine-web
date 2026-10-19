@@ -1,0 +1,97 @@
+<p><a class="enlace" routerLink="/egresos/honorarios">Volver a liquidar honorarios</a></p>
+
+<h1>Liquidacion de honorarios</h1>
+
+@if (error(); as fallo) {
+  <section class="tarjeta" role="alert" aria-labelledby="titulo-error-liquidacion">
+    <h2 id="titulo-error-liquidacion">No se pudo cargar la liquidacion</h2>
+    <p class="estado estado--error">{{ fallo.mensaje }}</p>
+    <div class="acciones">
+      @if (fallo.causa === 'sin-contexto') {
+        <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto</a>
+      } @else {
+        <button type="button" class="boton boton--secundario" (click)="cargar()">Reintentar</button>
+      }
+    </div>
+  </section>
+} @else if (liquidacion() === null) {
+  <p class="estado estado--cargando">Cargando la liquidacion…</p>
+}
+
+@if (liquidacion(); as l) {
+  <section class="tarjeta" aria-labelledby="titulo-resumen-liquidacion">
+    <h2 id="titulo-resumen-liquidacion">
+      #{{ l.id }} — {{ l.colaboradorNombre || 'Colaborador #' + l.colaboradorMembershipId }}
+    </h2>
+    <dl class="detalle">
+      <dt>Estado</dt>
+      <dd>
+        <span
+          class="marca-estado"
+          [class.marca-estado--activa]="!liberada()"
+          [class.marca-estado--revocada]="liberada()"
+          >{{ liberada() ? 'Liberada' : 'Vigente' }}</span
+        >
+        @if (liberada()) {
+          <span class="ayuda">
+            — se anulo su egreso el {{ instante(l.liberadaEn) }}; sus clases vuelven a poder
+            liquidarse.</span
+          >
+        }
+      </dd>
+
+      <dt>Periodo</dt>
+      <dd>{{ fecha(l.desde) }} al {{ fecha(l.hasta) }}</dd>
+
+      <dt>Total</dt>
+      <dd class="importe">
+        <b>{{ importe(l.importeTotal) }}</b>
+      </dd>
+
+      <dt>Egreso</dt>
+      <dd>
+        <a class="enlace" [routerLink]="['/egresos', l.egresoId]">Egreso #{{ l.egresoId }}</a>
+        @if (l.egresoEstado) {
+          <span class="ayuda"> ({{ estadoDeEgreso(l.egresoEstado) }})</span>
+        }
+      </dd>
+
+      <dt>Confirmada</dt>
+      <dd>{{ instante(l.confirmadaEn) }}</dd>
+    </dl>
+  </section>
+
+  <h2 id="titulo-clases-liquidadas">Clases liquidadas</h2>
+  <p class="ayuda">
+    Es la foto del momento de confirmar: una tarifa nueva o una asistencia corregida despues no la
+    cambian.
+  </p>
+  <div class="tabla-scroll" tabindex="0" role="region" aria-labelledby="titulo-clases-liquidadas">
+    <table class="tabla">
+      <thead>
+        <tr>
+          <th scope="col">Fecha</th>
+          <th scope="col">Clase</th>
+          <th scope="col">Presentes</th>
+          <th scope="col">Por participante</th>
+          <th scope="col">Total de la clase</th>
+          <th scope="col">Reparto</th>
+          <th scope="col">Le corresponde</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (linea of l.clases ?? []; track linea.claseId) {
+          <tr>
+            <td>{{ fecha(linea.fecha) }}</td>
+            <td>{{ linea.titulo || linea.ofertaNombre }}</td>
+            <td>{{ linea.presentes }}</td>
+            <td class="importe">{{ importe(linea.importePorParticipante) }}</td>
+            <td class="importe">{{ importe(linea.importeClase) }}</td>
+            <td>{{ parteEnPalabras(linea) }}</td>
+            <td class="importe">{{ importe(linea.importeColaborador) }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}
