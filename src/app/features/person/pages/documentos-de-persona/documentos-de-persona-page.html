@@ -3,34 +3,31 @@
   <a class="enlace" routerLink="/pacientes">Volver al padron</a>
 </p>
 
-<h1>
-  Documentacion administrativa
-  @if (persona(); as ficha) {
-    — {{ nombreCompleto(ficha) }}
-  }
-</h1>
+<div class="titulo-con-ayuda">
+  <h1>
+    Documentacion administrativa
+    @if (persona(); as ficha) {
+      — {{ nombreCompleto(ficha) }}
+    }
+  </h1>
+  <app-ayuda titulo="Aca no va nada clinico">
+    <p>
+      Las categorias son todas administrativas, a proposito. Un estudio, una radiografia o un
+      informe
+      <b>no se cargan aca</b>: viven en el modulo clinico, con sus propios controles de acceso.
+    </p>
+    <p>
+      Y un documento adjunto <b>no reemplaza un dato cargado</b>. La foto de una credencial no carga
+      la cobertura, y el DNI escaneado no completa el documento de la ficha. Si hace falta el dato,
+      hay que cargarlo ademas.
+    </p>
+  </app-ayuda>
+</div>
 
 <p class="descripcion">
   Los documentos que el paciente presenta en el mostrador: su documento de identidad, la credencial
   de la cobertura, consentimientos y comprobantes.
 </p>
-
-<!--
-  Va arriba de todo y no en la ayuda del formulario: el reflejo de quien tiene un PDF en la mano es
-  subirlo donde haya un boton de subir, y esta pantalla NO es donde va un estudio.
--->
-<section class="tarjeta nota-clave" aria-labelledby="titulo-nota-adjuntos">
-  <h2 id="titulo-nota-adjuntos">Aca no va nada clinico</h2>
-  <p>
-    Las categorias son todas administrativas, a proposito. Un estudio, una radiografia o un informe
-    <b>no se cargan aca</b>: viven en el modulo clinico, con sus propios controles de acceso.
-  </p>
-  <p>
-    Y un documento adjunto <b>no reemplaza un dato cargado</b>. La foto de una credencial no carga
-    la cobertura, y el DNI escaneado no completa el documento de la ficha. Si hace falta el dato,
-    hay que cargarlo ademas.
-  </p>
-</section>
 
 <div aria-live="polite">
   @if (exito(); as mensaje) {

@@ -3,35 +3,31 @@
   <a class="enlace" routerLink="/pacientes">Volver al padron</a>
 </p>
 
-<h1>
-  Coberturas
-  @if (persona(); as ficha) {
-    — {{ nombreCompleto(ficha) }}
-  }
-</h1>
+<div class="titulo-con-ayuda">
+  <h1>
+    Coberturas
+    @if (persona(); as ficha) {
+      — {{ nombreCompleto(ficha) }}
+    }
+  </h1>
+  <app-ayuda titulo="Cobertura del paciente no es convenio del centro">
+    <p>
+      Esto es <b>lo que el paciente tiene</b>: su obra social, su prepaga, o particular. Que la
+      tenga <b>no significa</b> que este centro tenga convenio con ese financiador, ni que la
+      practica sea facturable a ese plan.
+    </p>
+    <p>
+      <b>Particular</b> siempre esta disponible, incluso para alguien con obra social: un paciente
+      puede elegir pagar particular una atencion.
+    </p>
+  </app-ayuda>
+</div>
 
 <p class="descripcion">
   Con que cobertura se atiende hoy el paciente, y con cuales se atendio antes. Se muestran todas,
   incluidas las vencidas y las dadas de baja: es lo que permite explicar despues como se facturo
   cada atencion.
 </p>
-
-<!--
-  La confusion mas cara del modulo (regla maestra 6). El nombre de un financiador en una lista se
-  lee como "aca le cubren esto", y eso es exactamente lo que esta pantalla NO dice.
--->
-<section class="tarjeta nota-clave" aria-labelledby="titulo-nota-cobertura">
-  <h2 id="titulo-nota-cobertura">Cobertura del paciente no es convenio del centro</h2>
-  <p>
-    Esto es <b>lo que el paciente tiene</b>: su obra social, su prepaga, o particular. Que la tenga
-    <b>no significa</b> que este centro tenga convenio con ese financiador, ni que la practica sea
-    facturable a ese plan.
-  </p>
-  <p>
-    <b>Particular</b> siempre esta disponible, incluso para alguien con obra social: un paciente
-    puede elegir pagar particular una atencion.
-  </p>
-</section>
 
 <div aria-live="polite">
   @if (exito(); as mensaje) {

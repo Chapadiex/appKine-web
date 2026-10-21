@@ -72,8 +72,12 @@ test.describe('Permisos de convenios y catalogo por rol contra el backend real (
     ]) {
       await esperarSinPermiso(page, ruta, centro.nombreCentro);
     }
-    await expect(page.getByRole('link', { name: 'Contratacion' })).toHaveCount(0);
-    await expect(page.getByRole('link', { name: 'Catalogo' })).toHaveCount(0);
+    await expect(
+      page.getByRole('link', { name: 'Contratacion', includeHidden: true, exact: true }),
+    ).toHaveCount(0);
+    await expect(
+      page.getByRole('link', { name: 'Catalogo', includeHidden: true, exact: true }),
+    ).toHaveCount(0);
   });
 
   test('PROFESIONAL: lee convenios y catalogo, y no administra el catalogo', async ({ page }) => {
@@ -85,8 +89,12 @@ test.describe('Permisos de convenios y catalogo por rol contra el backend real (
     expect(convenios.status(), await convenios.text()).toBe(200);
 
     await deAUnLogin(() => ingresarAlCentro(page, centro.emailProfesional, centro));
-    await expect(page.getByRole('link', { name: 'Contratacion' })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Catalogo' })).toBeVisible();
+    await expect(
+      page.getByRole('link', { name: 'Contratacion', includeHidden: true, exact: true }),
+    ).toHaveCount(1);
+    await expect(
+      page.getByRole('link', { name: 'Catalogo', includeHidden: true, exact: true }),
+    ).toHaveCount(1);
 
     await irA(page, '/contratacion/convenios');
     await expect(

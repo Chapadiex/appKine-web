@@ -463,7 +463,10 @@ describe('ConveniosDeLaSedePage', () => {
 
     expect(anfitrion.textContent).toContain('OSDE 210 kinesiologia');
     expect(
-      [...anfitrion.querySelectorAll('button')].map((boton) => (boton.textContent ?? '').trim()),
+      // El boton de ayuda de la pantalla no es una accion sobre convenios.
+      [...anfitrion.querySelectorAll('button:not(.ayuda-contextual__boton)')].map((boton) =>
+        (boton.textContent ?? '').trim(),
+      ),
     ).toEqual([]);
     // El enlace a los aranceles no lleva permiso: es otra lectura.
     expect(anfitrion.querySelector('a[href="/contratacion/convenios/7/aranceles"]')).not.toBeNull();

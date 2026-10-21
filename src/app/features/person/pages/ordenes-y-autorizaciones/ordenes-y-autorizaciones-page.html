@@ -3,39 +3,34 @@
   <a class="enlace" routerLink="/pacientes">Volver al padron</a>
 </p>
 
-<h1>
-  Ordenes y autorizaciones
-  @if (persona(); as ficha) {
-    — {{ nombreCompleto(ficha) }}
-  }
-</h1>
+<div class="titulo-con-ayuda">
+  <h1>
+    Ordenes y autorizaciones
+    @if (persona(); as ficha) {
+      — {{ nombreCompleto(ficha) }}
+    }
+  </h1>
+  <app-ayuda titulo="Vencido, rechazado y dado de baja no son lo mismo">
+    <p>
+      <b>Vencido</b> se calcula solo, por la fecha. Un documento vencido no desaparece: se sigue
+      viendo y se sigue pudiendo corregir.
+    </p>
+    <p>
+      <b>Rechazada</b> es la respuesta del financiador. La autorizacion queda viva y es justamente
+      lo que explica por que no se pudo atender.
+    </p>
+    <p>
+      <b>Dado de baja</b> significa que ese papel <b>nunca debio cargarse</b>. Es lo unico que se
+      usa para corregir un error de carga.
+    </p>
+  </app-ayuda>
+</div>
 
 <p class="descripcion">
   Los papeles administrativos del paciente: la orden que firmo un medico y la autorizacion que dio
   su financiador. Se muestran todos, incluidos los vencidos y los dados de baja, porque es lo que
   permite explicar despues con que papel se lo atendio.
 </p>
-
-<!--
-  La distincion que sostiene toda la pantalla. Sin esto, alguien da de baja una orden vencida
-  -que sigue sirviendo para explicar el pasado y se puede corregir- o vuelve a pedir una
-  autorizacion rechazada en vez de leer por que se la rechazaron.
--->
-<section class="tarjeta nota-clave" aria-labelledby="titulo-nota-documentos">
-  <h2 id="titulo-nota-documentos">Vencido, rechazado y dado de baja no son lo mismo</h2>
-  <p>
-    <b>Vencido</b> se calcula solo, por la fecha. Un documento vencido no desaparece: se sigue
-    viendo y se sigue pudiendo corregir.
-  </p>
-  <p>
-    <b>Rechazada</b> es la respuesta del financiador. La autorizacion queda viva y es justamente lo
-    que explica por que no se pudo atender.
-  </p>
-  <p>
-    <b>Dado de baja</b> significa que ese papel <b>nunca debio cargarse</b>. Es lo unico que se usa
-    para corregir un error de carga.
-  </p>
-</section>
 
 <div aria-live="polite">
   @if (exito(); as mensaje) {

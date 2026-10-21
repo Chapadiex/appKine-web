@@ -24,6 +24,7 @@ import { OfferingApi } from '../../services/offering-api';
 import { CausaOffering, hayQueRecargar, traducirErrorOffering } from '../../models/offering-errors';
 import { enPalabras } from '../../models/situacion-de-vigencia';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 
 /** La moneda que se propone cuando la oferta no tiene precio de lista: la del producto. */
 const MONEDA_POR_DEFECTO = 'ARS';
@@ -52,7 +53,7 @@ interface SituacionDeLaTarifa {
  */
 @Component({
   selector: 'app-honorarios-por-clase-de-la-oferta-page',
-  imports: [ReactiveFormsModule, RouterLink, ConfirmacionConMotivo],
+  imports: [Ayuda, ReactiveFormsModule, RouterLink, ConfirmacionConMotivo],
   templateUrl: './honorarios-por-clase-de-la-oferta-page.html',
   styleUrl: '../../offering.css',
 })

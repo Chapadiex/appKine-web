@@ -1,4 +1,23 @@
-<h1>Convenios de la sede</h1>
+<div class="titulo-con-ayuda">
+  <h1>Convenios de la sede</h1>
+  <app-ayuda titulo="Renovar es cerrar la vigencia, no dar de baja">
+    <p>
+      Dos convenios de esta sede con el <b>mismo financiador y el mismo plan</b> no pueden pisarse
+      en el tiempo. Si al cargar uno nuevo te rechaza por periodo solapado, la salida no es
+      reintentar: es <b>editar el convenio que ya esta y ponerle fecha de fin</b>, y recien despues
+      cargar el nuevo desde el dia siguiente.
+    </p>
+    <p>
+      <b>Dar de baja es otra cosa</b>: exige motivo, es terminal y no hay reactivacion. No cascadea
+      a los aranceles ni se bloquea por tenerlos — dejan de resolver porque su convenio dejo de
+      resolver—, y lo ya liquidado sigue explicandose con su copia congelada.
+    </p>
+    <p>
+      La fecha de fin es <b>inclusiva</b>: el dia que pongas es el ultimo en que el convenio
+      <b>todavia</b> resuelve.
+    </p>
+  </app-ayuda>
+</div>
 
 <p class="descripcion">
   Lo que <b>esta sede</b> acordo con un plan de un financiador: desde cuando, hasta cuando, como se
@@ -16,25 +35,6 @@
     Consultar un arancel
   </a>
 </nav>
-
-<section class="tarjeta nota-clave" aria-labelledby="titulo-nota-convenios">
-  <h2 id="titulo-nota-convenios">Renovar es cerrar la vigencia, no dar de baja</h2>
-  <p>
-    Dos convenios de esta sede con el <b>mismo financiador y el mismo plan</b> no pueden pisarse en
-    el tiempo. Si al cargar uno nuevo te rechaza por periodo solapado, la salida no es reintentar:
-    es <b>editar el convenio que ya esta y ponerle fecha de fin</b>, y recien despues cargar el
-    nuevo desde el dia siguiente.
-  </p>
-  <p>
-    <b>Dar de baja es otra cosa</b>: exige motivo, es terminal y no hay reactivacion. No cascadea a
-    los aranceles ni se bloquea por tenerlos — dejan de resolver porque su convenio dejo de
-    resolver—, y lo ya liquidado sigue explicandose con su copia congelada.
-  </p>
-  <p>
-    La fecha de fin es <b>inclusiva</b>: el dia que pongas es el ultimo en que el convenio
-    <b>todavia</b> resuelve.
-  </p>
-</section>
 
 <div aria-live="polite">
   @if (exito(); as mensaje) {

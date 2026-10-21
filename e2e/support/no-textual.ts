@@ -111,6 +111,10 @@ const AYUDANTES = `
     function visible(el) {
       const estilo = getComputedStyle(el);
       if (estilo.visibility === 'hidden' || estilo.display === 'none') return false;
+      // Lo que esta dentro de un details cerrado no se ve ni lo recorre el Tab, aunque Chromium le
+      // deje cajas. Su summary si: es la cabecera que lo abre (UX-01, barra lateral).
+      const plegado = el.closest('details:not([open])');
+      if (plegado && !(el.tagName === 'SUMMARY' && el.parentElement === plegado)) return false;
       return el.getClientRects().length > 0;
     }
     function nombre(el) {

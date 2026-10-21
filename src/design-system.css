@@ -758,3 +758,99 @@ h1 {
   font-weight: var(--peso-semi);
   border-bottom-color: var(--color-acento);
 }
+
+/* --- Titulo con ayuda contextual (UX-01) ----------------------------------------------- */
+
+/*
+ * El titulo de la pantalla y su boton "?" en una fila. El `h1` conserva su margen inferior: la
+ * fila lo absorbe para que la distancia a la descripcion sea la de siempre.
+ */
+.titulo-con-ayuda {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-4);
+  margin-bottom: var(--esp-4);
+}
+
+.titulo-con-ayuda > h1 {
+  margin: 0;
+}
+
+.ayuda-contextual {
+  position: relative;
+  display: inline-flex;
+}
+
+/*
+ * Boton redondo de 32 px, con contorno de control (3:1, WCAG 1.4.11): sin borde no se distingue
+ * de un adorno. Dentro de un `h1` no va nunca: su nombre se sumaria al del encabezado.
+ */
+.ayuda-contextual__boton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: var(--borde-fino) solid var(--color-borde-control);
+  border-radius: var(--radio-pastilla);
+  background: var(--color-superficie);
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-base);
+  cursor: pointer;
+}
+
+.ayuda-contextual__boton:hover,
+.ayuda-contextual__boton[aria-expanded='true'] {
+  background: var(--color-superficie-sutil);
+  color: var(--color-texto-fuerte);
+}
+
+/*
+ * El panel cuelga del boton, alineado a su borde izquierdo, por encima del contenido. Ancho de
+ * lectura (28rem) acotado al viewport para que en tablet no se salga por la derecha.
+ */
+.ayuda-contextual__panel {
+  position: absolute;
+  top: calc(100% + var(--esp-3));
+  left: 0;
+  z-index: 15;
+  width: min(28rem, calc(100vw - 2.5rem));
+  padding: var(--esp-6) var(--esp-7);
+  border: var(--borde-fino) solid var(--color-borde);
+  border-left: var(--borde-acento) solid var(--color-acento);
+  border-radius: var(--radio-lg);
+  background: var(--color-superficie);
+  color: var(--color-texto);
+  font-size: var(--tipo-sm);
+  font-weight: var(--peso-normal);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.16);
+}
+
+.ayuda-contextual__panel[hidden] {
+  display: none;
+}
+
+.ayuda-contextual__titulo {
+  margin: 0 0 var(--esp-4);
+  color: var(--color-texto-fuerte);
+  font-size: var(--tipo-md);
+  font-weight: var(--peso-semi);
+}
+
+.ayuda-contextual__panel p {
+  margin: 0 0 var(--esp-4);
+}
+
+.ayuda-contextual__panel p:last-child,
+.ayuda-contextual__panel ul:last-child {
+  margin-bottom: 0;
+}
+
+/* En una pantalla de 375 px el boton queda cerca del borde derecho: el panel se ancla a la derecha. */
+@media (max-width: 30rem) {
+  .ayuda-contextual__panel {
+    left: auto;
+    right: 0;
+  }
+}

@@ -1,5 +1,10 @@
 @if (convenio(); as ficha) {
-  <h1>Aranceles de {{ ficha.nombre }}</h1>
+  <div class="titulo-con-ayuda">
+    <h1>Aranceles de {{ ficha.nombre }}</h1>
+    <app-ayuda titulo="Subir un precio no es editar el arancel">
+      <ng-container [ngTemplateOutlet]="ayudaDePantalla" />
+    </app-ayuda>
+  </div>
   <p class="descripcion">
     Codigo {{ ficha.codigo }} · moneda <b>{{ ficha.moneda }}</b> · {{ ventanaEnPalabras(ficha) }}.
     Cada arancel dice cuanto cuesta una practica bajo este convenio, cuanto pone el financiador y
@@ -7,7 +12,12 @@
     convenio: fuera de ella nunca podria resolver.
   </p>
 } @else {
-  <h1>Aranceles del convenio #{{ convenioId }}</h1>
+  <div class="titulo-con-ayuda">
+    <h1>Aranceles del convenio #{{ convenioId }}</h1>
+    <app-ayuda titulo="Subir un precio no es editar el arancel">
+      <ng-container [ngTemplateOutlet]="ayudaDePantalla" />
+    </app-ayuda>
+  </div>
   <p class="descripcion">
     No pudimos leer el convenio, asi que <b>los importes se muestran sin moneda</b>: el arancel no
     la declara, la hereda del convenio. Recarga la pagina para recuperarla.
@@ -21,8 +31,8 @@
   </a>
 </nav>
 
-<section class="tarjeta nota-clave" aria-labelledby="titulo-nota-aranceles">
-  <h2 id="titulo-nota-aranceles">Subir un precio no es editar el arancel</h2>
+<!-- La ayuda de la pantalla: una sola copia para las dos ramas del titulo. -->
+<ng-template #ayudaDePantalla>
   <p>
     Para <b>actualizar</b> un precio, cerrale la vigencia al arancel actual y carga otro desde el
     dia siguiente. Asi lo que se liquido en marzo se sigue explicando con el precio de marzo. Si en
@@ -39,7 +49,7 @@
     hay porcentaje de cobertura a proposito — un porcentaje obliga a redondear, y el redondeo de un
     arancel es la diferencia de un centavo que reaparece en una presentacion rechazada.
   </p>
-</section>
+</ng-template>
 
 <div aria-live="polite">
   @if (exito(); as mensaje) {

@@ -35,6 +35,7 @@ import {
 } from '../../models/etiquetas-de-ficha';
 import { SECCION_COBERTURAS, coberturaDelResumen } from '../../models/etiquetas-de-cobertura';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 
 /** Confirmacion abierta sobre la ficha. Solo una a la vez. */
 type TipoDeBaja = 'persona' | 'perfil';
@@ -102,7 +103,13 @@ interface ConteoPorCategoria {
  */
 @Component({
   selector: 'app-ficha-de-persona-page',
-  imports: [RouterLink, ConfirmacionConMotivo, PermisoDirective, DatosAdministrativosDeHistoria],
+  imports: [
+    Ayuda,
+    RouterLink,
+    ConfirmacionConMotivo,
+    PermisoDirective,
+    DatosAdministrativosDeHistoria,
+  ],
   templateUrl: './ficha-de-persona-page.html',
   styleUrl: '../../person.css',
 })

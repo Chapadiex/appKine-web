@@ -14,6 +14,7 @@ import {
 } from '../../core/models/permisos';
 import { RUTA_CLASES } from '../../features/activity/models/rutas-de-clases';
 import { RUTA_PRODUCTOS } from '../../features/activity/models/rutas-de-pases';
+import { NombreDeIcono } from '../../shared/components/icono/icono';
 
 /** Una entrada de la navegacion principal. */
 export interface Seccion {
@@ -31,6 +32,9 @@ export interface Seccion {
 /** Un grupo de secciones con su rotulo. Un grupo sin secciones visibles no se dibuja. */
 export interface GrupoDeSecciones {
   readonly etiqueta: string;
+
+  /** Icono del grupo en la barra. Un grupo con una sola seccion visible lo presta a su enlace. */
+  readonly icono: NombreDeIcono;
 
   readonly secciones: readonly Seccion[];
 }
@@ -86,6 +90,7 @@ export interface GrupoDeSecciones {
 export const GRUPOS: readonly GrupoDeSecciones[] = [
   {
     etiqueta: 'Operacion',
+    icono: 'operacion',
     secciones: [
       { etiqueta: 'Agenda', ruta: '/agenda' },
       { etiqueta: 'Recepcion del dia', ruta: '/agenda/recepcion', permisos: [PERMISO_TURNO_READ] },
@@ -93,10 +98,12 @@ export const GRUPOS: readonly GrupoDeSecciones[] = [
   },
   {
     etiqueta: 'Pacientes',
+    icono: 'pacientes',
     secciones: [{ etiqueta: 'Pacientes', ruta: '/pacientes', permisos: [PERMISO_PACIENTE_READ] }],
   },
   {
     etiqueta: 'Actividades',
+    icono: 'actividades',
     secciones: [
       { etiqueta: 'Clases', ruta: RUTA_CLASES, permisos: [PERMISO_CLASE_READ] },
       { etiqueta: 'Asistencia', ruta: '/asistencia', permisos: [PERMISO_INSCRIPCION_READ] },
@@ -105,6 +112,7 @@ export const GRUPOS: readonly GrupoDeSecciones[] = [
   },
   {
     etiqueta: 'Economia',
+    icono: 'economia',
     secciones: [
       { etiqueta: 'Caja', ruta: '/caja', permisos: [PERMISO_CAJA_OPERATE] },
       { etiqueta: 'Egresos', ruta: '/egresos', permisos: [PERMISO_CAJA_OPERATE] },
@@ -114,6 +122,7 @@ export const GRUPOS: readonly GrupoDeSecciones[] = [
   },
   {
     etiqueta: 'Configuracion',
+    icono: 'configuracion',
     secciones: [
       { etiqueta: 'Organizacion', ruta: '/organizacion' },
       { etiqueta: 'Espacios', ruta: '/espacios' },

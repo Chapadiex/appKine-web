@@ -1,4 +1,22 @@
-<h1>Catalogo de servicios</h1>
+<div class="titulo-con-ayuda">
+  <h1>Catalogo de servicios</h1>
+  <app-ayuda titulo="Este catalogo lo administra AKINE, no tu centro">
+    <p>
+      Cualquiera puede <b>consultarlo</b>: es la lista de la que se elige al crear una oferta. Dar
+      de alta, editar o dar de baja un servicio, en cambio, exige <b>rol de plataforma</b>.
+      @if (puedeAdministrar()) {
+        Tu cuenta lo tiene: lo que cambies aca lo ven todos los centros.
+      } @else if (rolConsultado()) {
+        Tu cuenta no lo tiene, por eso esas acciones no aparecen en esta pantalla.
+      }
+    </p>
+    <p>
+      Lo que si administra tu centro son las
+      <a routerLink="/servicios/ofertas">ofertas de la sede</a>: ahi se define el nombre comercial,
+      la duracion, el precio y la vigencia con la que cada servicio se presta aca.
+    </p>
+  </app-ayuda>
+</div>
 
 <p class="descripcion">
   Que existe como concepto: kinesiologia respiratoria, pilates terapeutico, evaluacion postural. Es
@@ -12,29 +30,6 @@
   </a>
   <a class="boton boton--secundario" routerLink="/servicios/ofertas">Ofertas de la sede</a>
 </nav>
-
-<!--
-  Las acciones de alta, edicion y baja solo aparecen con rol de plataforma (PlatformRoleStore).
-  Esta nota va ARRIBA y no en un tooltip: a quien no las ve le explica por que no estan, y a
-  quien si las ve le recuerda que lo que cambie aca lo ven todos los centros.
--->
-<section class="tarjeta nota-clave" aria-labelledby="titulo-nota-quien-administra">
-  <h2 id="titulo-nota-quien-administra">Este catalogo lo administra AKINE, no tu centro</h2>
-  <p>
-    Cualquiera puede <b>consultarlo</b>: es la lista de la que se elige al crear una oferta. Dar de
-    alta, editar o dar de baja un servicio, en cambio, exige <b>rol de plataforma</b>.
-    @if (puedeAdministrar()) {
-      Tu cuenta lo tiene: lo que cambies aca lo ven todos los centros.
-    } @else if (rolConsultado()) {
-      Tu cuenta no lo tiene, por eso esas acciones no aparecen en esta pantalla.
-    }
-  </p>
-  <p>
-    Lo que si administra tu centro son las
-    <a routerLink="/servicios/ofertas">ofertas de la sede</a>: ahi se define el nombre comercial, la
-    duracion, el precio y la vigencia con la que cada servicio se presta aca.
-  </p>
-</section>
 
 <div aria-live="polite">
   @if (exito(); as mensaje) {

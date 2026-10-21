@@ -28,6 +28,7 @@ import {
 } from '../../models/etiquetas-de-cobertura';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { esSinPermiso } from '../../../../core/interceptors/error.interceptor';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 
 /** Operacion abierta sobre una fila. Solo una a la vez. */
 type TipoAccion = 'editar' | 'baja';
@@ -93,6 +94,7 @@ type EstadoDeCoberturas =
 @Component({
   selector: 'app-coberturas-del-paciente-page',
   imports: [
+    Ayuda,
     ReactiveFormsModule,
     RouterLink,
     ConfirmacionConMotivo,

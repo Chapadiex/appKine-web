@@ -1,5 +1,10 @@
 @if (financiador(); as ficha) {
-  <h1>Planes de {{ ficha.nombre }}</h1>
+  <div class="titulo-con-ayuda">
+    <h1>Planes de {{ ficha.nombre }}</h1>
+    <app-ayuda titulo="Cerrar la vigencia no es dar de baja">
+      <ng-container [ngTemplateOutlet]="ayudaDePantalla" />
+    </app-ayuda>
+  </div>
   <p class="descripcion">
     {{ etiquetaDeTipo(ficha.tipo) }} · codigo {{ ficha.codigo }}. Un plan es <b>lo que se elige</b>:
     la cobertura de un paciente apunta a un plan, y el convenio de cada sede se firma contra un plan
@@ -10,7 +15,12 @@
     Degradacion honesta: si la lectura del financiador fallo, la pantalla igual sirve. Se dice que
     no se pudo leer el encabezado en vez de inventar un nombre o dejar el titulo vacio.
   -->
-  <h1>Planes del financiador #{{ financiadorId }}</h1>
+  <div class="titulo-con-ayuda">
+    <h1>Planes del financiador #{{ financiadorId }}</h1>
+    <app-ayuda titulo="Cerrar la vigencia no es dar de baja">
+      <ng-container [ngTemplateOutlet]="ayudaDePantalla" />
+    </app-ayuda>
+  </div>
   <p class="descripcion">
     No pudimos leer los datos del financiador, pero sus planes se listan igual. Un plan es lo que se
     elige: la cobertura de un paciente apunta a un plan, y el convenio de cada sede se firma contra
@@ -25,8 +35,8 @@
   <a class="boton boton--secundario" routerLink="/contratacion/convenios">Convenios de la sede</a>
 </nav>
 
-<section class="tarjeta nota-clave" aria-labelledby="titulo-nota-planes">
-  <h2 id="titulo-nota-planes">Cerrar la vigencia no es dar de baja</h2>
+<!-- La ayuda de la pantalla: una sola copia para las dos ramas del titulo. -->
+<ng-template #ayudaDePantalla>
   <p>
     <b>Cerrar la vigencia</b> es ponerle fecha de fin desde <i>Editar</i>. El plan queda
     <b>activo y consultable</b>, y lo unico que cambia es que deja de ofrecerse despues de esa
@@ -41,7 +51,7 @@
     La fecha de fin es <b>inclusiva</b>: el dia que pongas es el ultimo en que el plan
     <b>todavia</b> se ofrece. Ojo, porque en las ofertas de servicio la convencion es la contraria.
   </p>
-</section>
+</ng-template>
 
 <div aria-live="polite">
   @if (exito(); as mensaje) {

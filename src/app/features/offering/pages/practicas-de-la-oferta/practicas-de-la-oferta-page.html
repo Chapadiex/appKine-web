@@ -1,4 +1,16 @@
-<h1>Practicas de la oferta</h1>
+<div class="titulo-con-ayuda">
+  <h1>Practicas de la oferta</h1>
+  <app-ayuda titulo="Para que sirve esta lista">
+    <p>
+      La oferta es lo que el centro vende; la practica es lo que el financiador reconoce y paga. La
+      <b>cobertura aplicable</b> de un paciente se calcula sobre estas practicas, y cuando una
+      sesion cierra <b>sin tratamientos registrados</b>, el <b>devengo al financiador</b> y el
+      consumo de la autorizacion usan la <b>practica principal</b>. Si se registraron tratamientos,
+      manda la practica realizada.
+    </p>
+    <p>Esta lista dice lo que la oferta <b>puede</b> prestar, no lo que se presto en una sesion.</p>
+  </app-ayuda>
+</div>
 
 <p class="descripcion">
   Que practicas del catalogo puede prestar esta oferta, y cual es la principal.
@@ -13,18 +25,6 @@
     Habilitaciones
   </a>
 </nav>
-
-<section class="tarjeta nota-clave" aria-labelledby="nota-practicas">
-  <h2 id="nota-practicas">Para que sirve esta lista</h2>
-  <p>
-    La oferta es lo que el centro vende; la practica es lo que el financiador reconoce y paga. La
-    <b>cobertura aplicable</b> de un paciente se calcula sobre estas practicas, y cuando una sesion
-    cierra <b>sin tratamientos registrados</b>, el <b>devengo al financiador</b> y el consumo de la
-    autorizacion usan la <b>practica principal</b>. Si se registraron tratamientos, manda la
-    practica realizada.
-  </p>
-  <p>Esta lista dice lo que la oferta <b>puede</b> prestar, no lo que se presto en una sesion.</p>
-</section>
 
 @switch (estado().tipo) {
   @case ('cargando') {

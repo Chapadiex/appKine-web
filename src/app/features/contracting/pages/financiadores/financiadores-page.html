@@ -1,4 +1,15 @@
-<h1>Financiadores</h1>
+<div class="titulo-con-ayuda">
+  <h1>Financiadores</h1>
+  <app-ayuda titulo="Dos cosas que conviene saber antes de tocar nada">
+    <p>
+      <b>Dar de baja no cascadea y no borra.</b> Los planes del financiador conservan sus filas, y
+      las coberturas y convenios ya firmados <b>siguen resolviendo</b>. Lo unico que la baja impide
+      es crear planes nuevos bajo el y ofrecerlo en selecciones nuevas. No hay reactivacion: un
+      financiador que vuelve es un alta nueva, que si puede reusar el mismo codigo.
+    </p>
+    <p>{{ notaParticular }}</p>
+  </app-ayuda>
+</div>
 
 <p class="descripcion">
   Con quien trabaja tu organizacion: obras sociales, prepagas, ART, mutuales y organismos. Es el
@@ -15,23 +26,6 @@
     Consultar un arancel
   </a>
 </nav>
-
-<!--
-  Las dos aclaraciones que evitan los reportes de bug mas probables del modulo. Van arriba y no en
-  un tooltip: quien lee la tabla tiene que llegar a la columna de acciones sabiendo que "dar de
-  baja" no borra nada, y quien busca "Particular" tiene que encontrar la explicacion antes de
-  concluir que falta cargarlo.
--->
-<section class="tarjeta nota-clave" aria-labelledby="titulo-nota-financiadores">
-  <h2 id="titulo-nota-financiadores">Dos cosas que conviene saber antes de tocar nada</h2>
-  <p>
-    <b>Dar de baja no cascadea y no borra.</b> Los planes del financiador conservan sus filas, y las
-    coberturas y convenios ya firmados <b>siguen resolviendo</b>. Lo unico que la baja impide es
-    crear planes nuevos bajo el y ofrecerlo en selecciones nuevas. No hay reactivacion: un
-    financiador que vuelve es un alta nueva, que si puede reusar el mismo codigo.
-  </p>
-  <p>{{ notaParticular }}</p>
-</section>
 
 <div aria-live="polite">
   @if (exito(); as mensaje) {

@@ -33,6 +33,7 @@ import {
   etiquetaDeTipo,
 } from '../../models/etiquetas-de-contracting';
 import { textoRequerido } from '../../../../shared/validators/texto-requerido';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 
 /** Operacion abierta sobre una fila. Solo una a la vez. */
 type TipoAccion = 'editar' | 'baja';
@@ -82,7 +83,7 @@ type TipoAccion = 'editar' | 'baja';
  */
 @Component({
   selector: 'app-financiadores-page',
-  imports: [ReactiveFormsModule, RouterLink, PermisoDirective, ConfirmacionConMotivo],
+  imports: [Ayuda, ReactiveFormsModule, RouterLink, PermisoDirective, ConfirmacionConMotivo],
   templateUrl: './financiadores-page.html',
   styleUrl: '../../contracting.css',
 })

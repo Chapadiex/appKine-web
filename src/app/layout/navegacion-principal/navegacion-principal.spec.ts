@@ -131,20 +131,41 @@ describe('NavegacionPrincipal', () => {
     expect(enlaces(fixture)).toContain('Horarios');
   });
 
-  /** Un grupo cuyas secciones exigen permisos que faltan no deja un rotulo huerfano. */
-  it('no dibuja el rotulo de un grupo sin secciones visibles', () => {
+  /**
+   * Un grupo sin secciones visibles no deja una cabecera huerfana, y uno con una sola seccion no se
+   * despliega: su enlace va directo. Sin permisos quedan Agenda (sola, directa) y Configuracion.
+   */
+  it('no dibuja un grupo vacio y no despliega uno de una sola seccion', () => {
     conContexto();
     const fixture = montar();
     responderPermisos([]);
     fixture.detectChanges();
 
-    expect(rotulos(fixture)).toEqual(['Operacion', 'Configuracion']);
+    expect(rotulos(fixture)).toEqual(['Configuracion']);
+    expect(enlaces(fixture)).toContain('Agenda');
 
     TestBed.inject(PermissionsStore).cargar().subscribe();
-    httpMock.expectOne(RUTA_PERMISOS_EFECTIVOS).flush({ permissions: ['clase:read'] });
+    httpMock
+      .expectOne(RUTA_PERMISOS_EFECTIVOS)
+      .flush({ permissions: [PERMISO_TURNO_READ, 'clase:read', 'inscripcion:read'] });
     fixture.detectChanges();
 
     expect(rotulos(fixture)).toEqual(['Operacion', 'Actividades', 'Configuracion']);
+  });
+
+  /** Acordeon: llega desplegado el grupo de la pantalla actual, y solo ese. */
+  it('despliega solo el grupo de la seccion actual, y lo sigue al navegar', async () => {
+    conContexto();
+    const fixture = montar();
+    responderPermisos([PERMISO_TURNO_READ]);
+
+    await router.navigateByUrl('/agenda/recepcion');
+    fixture.detectChanges();
+    expect(desplegados(fixture)).toEqual(['Operacion']);
+
+    await router.navigateByUrl('/organizacion');
+    fixture.detectChanges();
+    expect(desplegados(fixture)).toEqual(['Configuracion']);
   });
 
   /**
@@ -263,6 +284,12 @@ describe('NavegacionPrincipal', () => {
     return Array.from(
       (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLElement>('.nav__rotulo'),
     ).map((rotulo) => rotulo.textContent?.trim());
+  }
+
+  function desplegados(fixture: ComponentFixture<NavegacionPrincipal>): (string | undefined)[] {
+    return Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLDetailsElement>('details[open]'),
+    ).map((grupo) => grupo.querySelector('.nav__rotulo')?.textContent?.trim());
   }
 
   function marcados(fixture: ComponentFixture<NavegacionPrincipal>): (string | undefined)[] {

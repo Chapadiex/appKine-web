@@ -1,4 +1,22 @@
-<h1>Ofertas de la sede</h1>
+<div class="titulo-con-ayuda">
+  <h1>Ofertas de la sede</h1>
+  <app-ayuda titulo="Activa y vigente hoy no son lo mismo">
+    <p>
+      <b>Activa</b> quiere decir que la oferta no fue dada de baja. Es su estado administrativo, y
+      no depende de la fecha.
+    </p>
+    <p>
+      <b>Vigente hoy</b> quiere decir que ademas hoy cae dentro de su ventana de vigencia, y por eso
+      se ofrece para reservar. Una oferta activa que arranca el mes que viene figura como
+      <b>activa pero todavia sin vigencia</b>: no es un error, y va a empezar a ofrecerse sola ese
+      dia. Lo mismo pasa con los espacios entre <i>activo</i> y <i>en servicio</i>.
+    </p>
+    <p>
+      La vigencia se calcula en la <b>zona horaria de la sede</b>, no en la de tu computadora: si
+      estas viajando, lo que ves sigue siendo lo que ve el centro.
+    </p>
+  </app-ayuda>
+</div>
 
 <p class="descripcion">
   Como esta sede presta cada servicio del catalogo: con que nombre comercial, cuanto dura, para
@@ -12,30 +30,6 @@
     Ofertas de la sede
   </a>
 </nav>
-
-<!--
-  La distincion que esta pantalla no puede aplanar. Va arriba y no en un tooltip: es la causa del
-  reporte de bug mas probable del modulo -"la cargue y no aparece en la agenda"- y quien lee la
-  tabla tiene que llegar a la columna Estado ya sabiendo que hay dos cosas distintas mezcladas.
-  El detalle por fila lo redacta `models/situacion-de-vigencia.ts`.
--->
-<section class="tarjeta nota-clave" aria-labelledby="titulo-nota-vigencia">
-  <h2 id="titulo-nota-vigencia">Activa y vigente hoy no son lo mismo</h2>
-  <p>
-    <b>Activa</b> quiere decir que la oferta no fue dada de baja. Es su estado administrativo, y no
-    depende de la fecha.
-  </p>
-  <p>
-    <b>Vigente hoy</b> quiere decir que ademas hoy cae dentro de su ventana de vigencia, y por eso
-    se ofrece para reservar. Una oferta activa que arranca el mes que viene figura como
-    <b>activa pero todavia sin vigencia</b>: no es un error, y va a empezar a ofrecerse sola ese
-    dia. Lo mismo pasa con los espacios entre <i>activo</i> y <i>en servicio</i>.
-  </p>
-  <p>
-    La vigencia se calcula en la <b>zona horaria de la sede</b>, no en la de tu computadora: si
-    estas viajando, lo que ves sigue siendo lo que ve el centro.
-  </p>
-</section>
 
 <div aria-live="polite">
   @if (exito(); as mensaje) {

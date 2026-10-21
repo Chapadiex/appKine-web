@@ -41,36 +41,69 @@
 }
 
 /*
-  Rotulo del grupo: mas chico y en mayusculas, para que se lea como titulo de lista y no como
-  una entrada mas. El color suave ya esta medido sobre la marca (texto chico, 4,5:1).
+  Cabecera de grupo: icono, nombre y flecha. Es un `summary`: el navegador lo hace operable con
+  teclado y anuncia si esta desplegado. Se le saca el triangulo nativo, que la flecha reemplaza.
 */
-.nav__rotulo {
-  margin: var(--esp-5) 0 var(--esp-2);
-  padding: 0 var(--esp-5);
+.nav__cabecera {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-5);
+  min-height: 2.5rem;
+  padding: var(--esp-2) var(--esp-5);
+  border-radius: var(--radio-sm);
   color: var(--color-marca-texto-suave);
-  font-size: var(--tipo-2xs);
-  font-weight: var(--peso-semi);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  font-size: var(--tipo-sm);
+  font-weight: var(--peso-medio);
+  list-style: none;
+  cursor: pointer;
+  user-select: none;
 }
 
-.nav__grupo {
-  margin: 0;
-  padding: 0;
+.nav__cabecera::-webkit-details-marker {
+  display: none;
+}
+
+.nav__cabecera:hover {
+  background: var(--color-marca-superficie-activa);
+  color: var(--color-marca-texto);
+}
+
+/* El grupo de la pantalla actual se dice aunque este plegado: texto pleno y peso. */
+.nav__cabecera--actual {
+  color: var(--color-marca-texto);
+  font-weight: var(--peso-semi);
+}
+
+.nav__rotulo {
+  flex: 1;
+}
+
+.nav__icono {
+  font-size: var(--tipo-lg);
+}
+
+.nav__flecha {
+  transition: transform 0.15s ease;
+}
+
+.nav__grupo[open] > .nav__cabecera .nav__flecha {
+  transform: rotate(180deg);
+}
+
+/* Las secciones del grupo, con sangria a la altura del nombre (icono + espacio). */
+.nav__lista {
+  margin: 0 0 var(--esp-3);
+  padding: 0 0 0 calc(var(--esp-5) + 1.125rem);
   list-style: none;
 }
 
 /* La consola de plataforma va al pie, separada: no es una seccion del centro. */
-.nav__grupo--plataforma {
+.nav__plataforma {
   margin-top: auto;
-  padding-top: var(--esp-5);
   border-top: var(--borde-fino) solid var(--color-marca-superficie-activa);
+  border-radius: 0;
 }
 
-/*
-  Filas de 2 rem contando el padding: 17 entradas y 5 rotulos entran en 768 px de alto. En
-  tablet, donde el dedo necesita 44 px, la barra es un panel y el alto sube (abajo).
-*/
 .nav__enlace {
   display: flex;
   align-items: center;
@@ -101,6 +134,12 @@
   font-weight: var(--peso-semi);
 }
 
+/* Enlace de primer nivel (grupo de una sola seccion, plataforma): misma fila que una cabecera. */
+.nav__enlace--grupo {
+  gap: var(--esp-5);
+  min-height: 2.5rem;
+}
+
 /*
   Tablet y menor: la barra sale de pantalla y vuelve como panel sobre el contenido. Cerrada
   queda ADEMAS `visibility: hidden`: un `translateX` solo la saca de la vista, y el Tab seguiria
@@ -125,13 +164,15 @@
     transform: none;
   }
 
-  .nav__enlace {
+  .nav__enlace,
+  .nav__cabecera {
     min-height: 2.75rem;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .barra-lateral {
+  .barra-lateral,
+  .nav__flecha {
     transition: none;
   }
 }

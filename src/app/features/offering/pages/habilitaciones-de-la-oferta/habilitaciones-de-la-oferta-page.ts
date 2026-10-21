@@ -9,6 +9,7 @@ import { PermisoDirective } from '../../../../shared/directives/permiso.directiv
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { OfferingApi } from '../../services/offering-api';
 import { CausaOffering, hayQueRecargar, traducirErrorOffering } from '../../models/offering-errors';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 
 /** Una fila de casilla, igual para profesionales y para espacios. */
 interface Candidato {
@@ -58,7 +59,7 @@ interface Candidato {
  */
 @Component({
   selector: 'app-habilitaciones-de-la-oferta-page',
-  imports: [RouterLink, PermisoDirective],
+  imports: [Ayuda, RouterLink, PermisoDirective],
   templateUrl: './habilitaciones-de-la-oferta-page.html',
   styleUrl: '../../offering.css',
 })

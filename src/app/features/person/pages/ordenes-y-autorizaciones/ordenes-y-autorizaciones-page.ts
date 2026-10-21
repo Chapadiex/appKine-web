@@ -55,6 +55,7 @@ import {
 } from '../../models/etiquetas-de-documento';
 import { textoRequerido } from '../../../../shared/validators/texto-requerido';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 
 /** Panel abierto sobre una orden. Solo uno a la vez en toda la pantalla. */
 type PanelDeOrden = 'editar' | 'baja' | 'documento';
@@ -142,6 +143,7 @@ interface PanelAbierto {
 @Component({
   selector: 'app-ordenes-y-autorizaciones-page',
   imports: [
+    Ayuda,
     ReactiveFormsModule,
     RouterLink,
     ConfirmacionConMotivo,

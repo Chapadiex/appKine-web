@@ -1,32 +1,27 @@
-<h1>Padron de personas</h1>
+<div class="titulo-con-ayuda">
+  <h1>Padron de personas</h1>
+  <app-ayuda titulo="Persona y paciente no son lo mismo">
+    <p>
+      <b>Persona</b> es la ficha administrativa: quien es, como contactarla. Con eso alcanza para
+      inscribirla a una clase, venderle un pase o registrarla en una actividad no clinica.
+    </p>
+    <p>
+      <b>Paciente</b> es un perfil clinico que se activa sobre esa misma persona, sin volver a
+      cargar ningun dato. Se activa cuando empieza una atencion clinica, y no antes: una ficha sin
+      perfil no esta incompleta.
+    </p>
+    <p>
+      Activar el perfil <b>no crea historia clinica</b>. La historia clinica es otra cosa y se
+      maneja en el modulo clinico.
+    </p>
+  </app-ayuda>
+</div>
 
 <p class="descripcion">
   Todas las personas registradas en la organizacion. Una persona <b>no es</b> un paciente: alguien
   puede reservar una clase o una actividad sin ningun perfil clinico. Convertirla en paciente es una
   accion aparte, y se hace cuando empieza una atencion.
 </p>
-
-<!--
-  Va arriba y no en un tooltip, por lo mismo que la nota de vigencia en ofertas: es la causa del
-  malentendido mas probable del modulo -"la cargue y no aparece como paciente"- y quien lee la
-  tabla tiene que llegar a la columna Perfil sabiendo que son dos cosas distintas.
--->
-<section class="tarjeta nota-clave" aria-labelledby="titulo-nota-perfil">
-  <h2 id="titulo-nota-perfil">Persona y paciente no son lo mismo</h2>
-  <p>
-    <b>Persona</b> es la ficha administrativa: quien es, como contactarla. Con eso alcanza para
-    inscribirla a una clase, venderle un pase o registrarla en una actividad no clinica.
-  </p>
-  <p>
-    <b>Paciente</b> es un perfil clinico que se activa sobre esa misma persona, sin volver a cargar
-    ningun dato. Se activa cuando empieza una atencion clinica, y no antes: una ficha sin perfil no
-    esta incompleta.
-  </p>
-  <p>
-    Activar el perfil <b>no crea historia clinica</b>. La historia clinica es otra cosa y se maneja
-    en el modulo clinico.
-  </p>
-</section>
 
 <div aria-live="polite">
   @if (exito(); as mensaje) {

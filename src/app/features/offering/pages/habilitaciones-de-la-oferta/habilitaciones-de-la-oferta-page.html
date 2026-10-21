@@ -1,4 +1,13 @@
-<h1>Habilitaciones de la oferta</h1>
+<div class="titulo-con-ayuda">
+  <h1>Habilitaciones de la oferta</h1>
+  <app-ayuda titulo="Habilitar no es dar permiso">
+    <p>
+      Habilitar dice <b>quien puede prestar</b> esta oferta y <b>donde</b>. No le da a nadie acceso
+      al sistema ni le cambia lo que puede administrar: eso lo decide su rol. Un administrador sin
+      habilitacion sigue configurando esta oferta aunque no la preste.
+    </p>
+  </app-ayuda>
+</div>
 
 @if (oferta(); as detalle) {
   <p class="descripcion">
@@ -12,15 +21,6 @@
   <a class="boton boton--secundario" routerLink="/servicios/catalogo">Catalogo de servicios</a>
   <a class="boton boton--secundario" routerLink="/servicios/ofertas">Ofertas de la sede</a>
 </nav>
-
-<section class="tarjeta nota-clave" aria-labelledby="nota-habilitacion">
-  <h2 id="nota-habilitacion">Habilitar no es dar permiso</h2>
-  <p>
-    Habilitar dice <b>quien puede prestar</b> esta oferta y <b>donde</b>. No le da a nadie acceso al
-    sistema ni le cambia lo que puede administrar: eso lo decide su rol. Un administrador sin
-    habilitacion sigue configurando esta oferta aunque no la preste.
-  </p>
-</section>
 
 @switch (estado().tipo) {
   @case ('cargando') {

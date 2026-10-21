@@ -1,12 +1,22 @@
 @if (convenio(); as ficha) {
-  <h1>Importar aranceles a {{ ficha.nombre }}</h1>
+  <div class="titulo-con-ayuda">
+    <h1>Importar aranceles a {{ ficha.nombre }}</h1>
+    <app-ayuda titulo="Todo o nada">
+      <ng-container [ngTemplateOutlet]="ayudaDePantalla" />
+    </app-ayuda>
+  </div>
   <p class="descripcion">
     Codigo {{ ficha.codigo }} · moneda <b>{{ ficha.moneda }}</b> · {{ ventanaEnPalabras(ficha) }}.
     Carga muchos aranceles de una vez desde una planilla: primero se ve una <b>vista previa</b>
     fila por fila, y recien despues se confirma.
   </p>
 } @else {
-  <h1>Importar aranceles al convenio #{{ convenioId }}</h1>
+  <div class="titulo-con-ayuda">
+    <h1>Importar aranceles al convenio #{{ convenioId }}</h1>
+    <app-ayuda titulo="Todo o nada">
+      <ng-container [ngTemplateOutlet]="ayudaDePantalla" />
+    </app-ayuda>
+  </div>
   <p class="descripcion">
     Carga muchos aranceles de una vez desde una planilla: primero se ve una <b>vista previa</b>
     fila por fila, y recien despues se confirma.
@@ -17,8 +27,8 @@
   <a class="boton boton--secundario" [routerLink]="rutaDeLaGrilla">Volver a la grilla</a>
 </nav>
 
-<section class="tarjeta nota-clave" aria-labelledby="titulo-nota-importacion">
-  <h2 id="titulo-nota-importacion">Todo o nada</h2>
+<!-- La ayuda de la pantalla: una sola copia para las dos ramas del titulo. -->
+<ng-template #ayudaDePantalla>
   <p>
     La confirmacion carga <b>todas las filas o ninguna</b>: si una sola no entra, no se escribe nada
     y se te muestra cual fallo y por que. La vista previa no reserva nada —si alguien carga un
@@ -29,7 +39,7 @@
     nomenclador nuevo sobre uno abierto, primero cerrale la vigencia al que ya esta. Reintentar una
     importacion ya aplicada no duplica nada: choca contra sus propias filas.
   </p>
-</section>
+</ng-template>
 
 @if (convenioInactivo()) {
   <p class="estado estado--vacio">

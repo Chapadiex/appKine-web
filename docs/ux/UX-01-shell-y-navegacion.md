@@ -198,3 +198,33 @@ login; el foco al abrir el menú se pedía antes del render (`queueMicrotask` �
 
 **Hallazgos de la revisión** (§6, paso 5): la lectura del diff dejó un MEDIO corregido en el mismo
 PR (la consola de plataforma no se marcaba como actual porque no era una sección) y ninguno abierto.
+
+## 13. Ajustes tras la primera revisión del usuario — 21/10/2026
+
+El usuario vio el PR y pidió dos cambios:
+
+1. **"El menú lateral tiene muchas cosas": agrupar y poner un ícono.** Cada grupo pasó a ser un
+   acordeón (`details`/`summary` con `name` compartido) con ícono propio: llega desplegado solo el
+   grupo de la pantalla actual, y abrir otro cierra el anterior. Un grupo con una sola sección
+   visible (Pacientes, o Agenda para un rol sin `turno:read`) no se despliega: es un enlace directo
+   con el ícono del grupo. La barra pasa de 17 entradas a la vista a 5 cabeceras más las secciones
+   del grupo actual.
+   Esto revierte la decisión del §4 de no plegar ningún grupo. Lo que esa decisión protegía se
+   resolvió de otro modo: los E2E de permisos buscan los enlaces con `includeHidden: true`, y
+   cuentan si el enlace existe en la barra, no si está desplegado.
+2. **Un ícono "?" que muestre la explicación en un popover.** Nuevo `app-ayuda`
+   (`shared/components/ayuda`): botón redondo al lado del `h1` con `aria-expanded`/`aria-controls`,
+   panel que se cierra con Escape (devuelve el foco) o con un clic afuera. Reemplaza las **17 notas
+   didácticas** (`nota-clave`) de pantalla. El texto no se borró, solo cambió de lugar. Sigue en el
+   DOM con `hidden`, así que los specs que lo leen pasan sin cambios. En las tres pantallas con
+   título condicional (aranceles, importar aranceles, planes) la ayuda es una `ng-template`
+   compartida por las dos ramas.
+
+**Defecto encontrado al verificar:** la nota de la ficha llevaba adentro el botón "Abrir la
+historia clinica", y la migración lo escondió en el panel. Lo destapó `acceso-clinico.spec.ts`.
+Regla que queda: **una ayuda explica, nunca contiene acciones.** El botón volvió a la vista.
+
+**Ajuste del arnés de foco:** `e2e/support/no-textual.ts` consideraba visibles los enlaces de un
+`details` cerrado (Chromium les deja cajas) y esperaba que el Tab los recorriera. Ahora cuenta
+como invisible lo que está dentro de un `details` cerrado, salvo su `summary`. Así el arnés queda
+igual al comportamiento del navegador.

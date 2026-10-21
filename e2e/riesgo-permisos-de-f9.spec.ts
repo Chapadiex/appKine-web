@@ -70,7 +70,9 @@ test.describe('Permisos de las pantallas de F9 por rol contra el backend real', 
     for (const ruta of ['/productos', `/pacientes/${persona.id}/pases`]) {
       await esperarSinPermiso(page, ruta, centro.nombreCentro);
     }
-    await expect(page.getByRole('link', { name: 'Productos de pack' })).toHaveCount(0);
+    await expect(
+      page.getByRole('link', { name: 'Productos de pack', includeHidden: true, exact: true }),
+    ).toHaveCount(0);
 
     // Control: lo que su rol si tiene abre su pantalla.
     await irA(page, `/asistencia/${clase.id}`);

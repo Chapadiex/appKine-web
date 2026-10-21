@@ -27,6 +27,7 @@ import {
 } from '../../models/etiquetas-de-offering';
 import { CausaOffering, hayQueRecargar, traducirErrorOffering } from '../../models/offering-errors';
 import { textoRequerido } from '../../../../shared/validators/texto-requerido';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 
 /** Operacion abierta sobre una fila. Solo una a la vez. */
 type TipoAccion = 'editar' | 'baja';
@@ -76,7 +77,7 @@ const ESPERA_DE_BUSQUEDA = 250;
  */
 @Component({
   selector: 'app-catalogo-de-servicios-page',
-  imports: [ReactiveFormsModule, RouterLink, ConfirmacionConMotivo],
+  imports: [Ayuda, ReactiveFormsModule, RouterLink, ConfirmacionConMotivo],
   templateUrl: './catalogo-de-servicios-page.html',
   styleUrl: '../../offering.css',
 })

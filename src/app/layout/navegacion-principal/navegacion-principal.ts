@@ -1,8 +1,9 @@
-import { Component, computed, effect, inject, input, output } from '@angular/core';
+import { Component, computed, effect, inject, input, linkedSignal, output } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink } from '@angular/router';
 import { filter, map, startWith } from 'rxjs';
 
+import { Icono } from '../../shared/components/icono/icono';
 import { PermissionsStore } from '../../core/services/permissions.store';
 import { PlatformRoleStore } from '../../core/services/platform-role.store';
 import { RUTA_SOLICITUDES_DE_PLATAFORMA } from '../../features/platform/models/rutas-de-plataforma';
@@ -41,7 +42,7 @@ import { TenantContextStore } from '../../core/services/tenant-context.store';
  */
 @Component({
   selector: 'app-navegacion-principal',
-  imports: [RouterLink],
+  imports: [RouterLink, Icono],
   templateUrl: './navegacion-principal.html',
   styleUrl: './navegacion-principal.css',
 })
@@ -78,7 +79,7 @@ export class NavegacionPrincipal {
 
   protected readonly grupos = computed<readonly GrupoDeSecciones[]>(() =>
     GRUPOS.map((grupo) => ({
-      etiqueta: grupo.etiqueta,
+      ...grupo,
       secciones: grupo.secciones.filter((seccion) => this.visible(seccion)),
     })).filter((grupo) => grupo.secciones.length > 0),
   );
@@ -99,6 +100,20 @@ export class NavegacionPrincipal {
     ]),
   );
 
+  /** El grupo que contiene la seccion actual: es el que se ve desplegado al llegar. */
+  private readonly grupoActual = computed(
+    () =>
+      this.grupos().find((grupo) => grupo.secciones.some((s) => this.esActual(s)))?.etiqueta ??
+      null,
+  );
+
+  /**
+   * El grupo desplegado. Arranca en el de la seccion actual y vuelve a el en cada navegacion; en
+   * el medio, lo decide el usuario. Uno solo a la vez (acordeon): con todos abiertos la barra
+   * volvia a ser la lista de diecisiete entradas que este cambio vino a sacar.
+   */
+  protected readonly grupoAbierto = linkedSignal<string | null>(() => this.grupoActual());
+
   constructor() {
     effect(() => {
       if (this.hayContexto() && !this.permisos.cargados()) {
@@ -115,6 +130,24 @@ export class NavegacionPrincipal {
 
   protected esActual(seccion: Seccion): boolean {
     return this.seccionActual()?.ruta === seccion.ruta;
+  }
+
+  protected contieneActual(grupo: GrupoDeSecciones): boolean {
+    return grupo.etiqueta === this.grupoActual();
+  }
+
+  /**
+   * Sincroniza el acordeon con el `details` que el usuario abrio o cerro. Al abrir uno, el
+   * navegador cierra el otro (`name` compartido) y su evento llega despues: por eso un cierre solo
+   * limpia si era el grupo abierto.
+   */
+  protected alAlternar(grupo: GrupoDeSecciones, evento: Event): void {
+    const abierto = (evento.target as HTMLDetailsElement).open;
+    if (abierto) {
+      this.grupoAbierto.set(grupo.etiqueta);
+    } else if (this.grupoAbierto() === grupo.etiqueta) {
+      this.grupoAbierto.set(null);
+    }
   }
 
   protected navegar(): void {

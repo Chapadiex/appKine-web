@@ -11,27 +11,6 @@
  */
 
 /*
- * La nota que separa el estado administrativo de la vigencia de hoy.
- *
- * Va con borde de acento y encabezado propio, no como un parrafo mas: es la aclaracion que
- * evita el reporte de bug mas probable del modulo -"la cargue y no aparece en la agenda"- y en
- * el medio de la prosa nadie la lee. El color no es lo unico que la distingue -tiene su propio
- * encabezado-, asi que sigue comunicando en escala de grises (WCAG 1.4.1).
- */
-.nota-clave {
-  border-left: var(--borde-acento) solid var(--color-acento);
-  background: var(--color-superficie-sutil);
-}
-
-.nota-clave p {
-  margin: 0 0 var(--esp-4);
-}
-
-.nota-clave p:last-child {
-  margin-bottom: 0;
-}
-
-/*
  * La casilla y su texto en la misma linea.
  *
  * `.campo label` es `display: block` en la hoja global, que es lo correcto para un `input` de

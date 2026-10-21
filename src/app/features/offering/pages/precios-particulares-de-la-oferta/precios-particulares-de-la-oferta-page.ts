@@ -27,6 +27,7 @@ import { CausaOffering, hayQueRecargar, traducirErrorOffering } from '../../mode
 import { precioEnPalabras } from '../../models/etiquetas-de-offering';
 import { enPalabras } from '../../models/situacion-de-vigencia';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 
 /** Operacion abierta sobre una fila. Solo una a la vez. */
 type TipoAccion = 'fin' | 'baja';
@@ -56,7 +57,7 @@ interface SituacionDelPrecio {
  */
 @Component({
   selector: 'app-precios-particulares-de-la-oferta-page',
-  imports: [ReactiveFormsModule, RouterLink, PermisoDirective, ConfirmacionConMotivo],
+  imports: [Ayuda, ReactiveFormsModule, RouterLink, PermisoDirective, ConfirmacionConMotivo],
   templateUrl: './precios-particulares-de-la-oferta-page.html',
   styleUrl: '../../offering.css',
 })

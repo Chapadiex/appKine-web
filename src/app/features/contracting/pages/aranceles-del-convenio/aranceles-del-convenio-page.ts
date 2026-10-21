@@ -42,6 +42,8 @@ import {
   ventanaEnPalabras,
 } from '../../models/vigencia-de-contracting';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
+import { NgTemplateOutlet } from '@angular/common';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 
 /** Operacion abierta sobre una fila. Solo una a la vez. */
 type TipoAccion = 'editar' | 'baja';
@@ -95,7 +97,14 @@ type TipoAccion = 'editar' | 'baja';
  */
 @Component({
   selector: 'app-aranceles-del-convenio-page',
-  imports: [ReactiveFormsModule, RouterLink, PermisoDirective, ConfirmacionConMotivo],
+  imports: [
+    Ayuda,
+    NgTemplateOutlet,
+    ReactiveFormsModule,
+    RouterLink,
+    PermisoDirective,
+    ConfirmacionConMotivo,
+  ],
   templateUrl: './aranceles-del-convenio-page.html',
   styleUrl: '../../contracting.css',
 })

@@ -31,6 +31,7 @@ import {
   tamanoEnPalabras,
 } from '../../models/etiquetas-de-ficha';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 
 const TAMANO_DE_PAGINA = 20;
 
@@ -90,7 +91,14 @@ type TipoAccion = 'reclasificar' | 'baja';
  */
 @Component({
   selector: 'app-documentos-de-persona-page',
-  imports: [ReactiveFormsModule, RouterLink, ConfirmacionConMotivo, Paginacion, PermisoDirective],
+  imports: [
+    Ayuda,
+    ReactiveFormsModule,
+    RouterLink,
+    ConfirmacionConMotivo,
+    Paginacion,
+    PermisoDirective,
+  ],
   templateUrl: './documentos-de-persona-page.html',
   styleUrl: '../../person.css',
 })

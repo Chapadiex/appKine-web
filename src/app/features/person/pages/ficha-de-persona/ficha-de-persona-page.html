@@ -18,7 +18,30 @@
     </p>
   }
 } @else if (persona(); as ficha) {
-  <h1>{{ nombreCompleto(ficha) }}</h1>
+  <div class="titulo-con-ayuda">
+    <h1>{{ nombreCompleto(ficha) }}</h1>
+    <app-ayuda titulo="Esta ficha no muestra nada clinico">
+      <p>
+        Es administrativa a proposito. El acceso a la historia clinica exige justificarlo y queda
+        auditado: mostrarla al abrir una ficha de mostrador convertiria ese control en un tramite
+        vacio. Lo clinico se consulta desde el modulo clinico, con su permiso.
+      </p>
+    </app-ayuda>
+  </div>
+
+  <!--
+    El enlace no abre nada clinico: lleva a la pantalla de la historia, que es la que pide el
+    motivo si hace falta. Solo se ofrece a un paciente —una persona sin perfil no tiene historia—
+    y a quien tiene hc:read. El permiso es UX: el backend rechaza igual. Es una accion: va a la
+    vista, nunca dentro de la ayuda.
+  -->
+  @if (ficha.esPaciente) {
+    <p class="acciones" *akinePermiso="permisoHistoria">
+      <a class="boton boton--secundario" [routerLink]="rutaHistoriaClinica()">
+        Abrir la historia clinica
+      </a>
+    </p>
+  }
 
   <div aria-live="polite">
     @if (exito(); as mensaje) {
@@ -79,32 +102,6 @@
           — motivo: {{ ficha.deactivationReason }}
         }
         . No admite operaciones nuevas, y todo lo que ya tenia registrado se sigue consultando.
-      </p>
-    }
-  </section>
-
-  <!--
-    Que NO esta en esta pantalla. Va arriba de las secciones y no al pie: quien busca la historia
-    clinica aca tiene que enterarse antes de recorrer la ficha entera y concluir que el sistema no
-    la tiene.
-  -->
-  <section class="tarjeta nota-clave" aria-labelledby="titulo-sin-clinico">
-    <h2 id="titulo-sin-clinico">Esta ficha no muestra nada clinico</h2>
-    <p>
-      Es administrativa a proposito. El acceso a la historia clinica exige justificarlo y queda
-      auditado: mostrarla al abrir una ficha de mostrador convertiria ese control en un tramite
-      vacio. Lo clinico se consulta desde el modulo clinico, con su permiso.
-    </p>
-    <!--
-      El enlace no abre nada clinico: lleva a la pantalla de la historia, que es la que pide el
-      motivo si hace falta. Solo se ofrece a un paciente —una persona sin perfil no tiene historia—
-      y a quien tiene hc:read. El permiso es UX: el backend rechaza igual.
-    -->
-    @if (ficha.esPaciente) {
-      <p *akinePermiso="permisoHistoria">
-        <a class="boton boton--secundario" [routerLink]="rutaHistoriaClinica()">
-          Abrir la historia clinica
-        </a>
       </p>
     }
   </section>

@@ -30,6 +30,7 @@ import {
   personaInactiva,
 } from '../../models/etiquetas-de-person';
 import { textoRequerido } from '../../../../shared/validators/texto-requerido';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 
 /** Operacion abierta sobre una fila. Solo una a la vez. */
 type TipoAccion = 'editar' | 'activar-perfil';
@@ -93,7 +94,14 @@ const TAMANO_DE_PAGINA = 20;
  */
 @Component({
   selector: 'app-padron-de-personas-page',
-  imports: [ReactiveFormsModule, PermisoDirective, ConfirmacionConMotivo, Paginacion, RouterLink],
+  imports: [
+    Ayuda,
+    ReactiveFormsModule,
+    PermisoDirective,
+    ConfirmacionConMotivo,
+    Paginacion,
+    RouterLink,
+  ],
   templateUrl: './padron-de-personas-page.html',
   styleUrl: '../../person.css',
 })

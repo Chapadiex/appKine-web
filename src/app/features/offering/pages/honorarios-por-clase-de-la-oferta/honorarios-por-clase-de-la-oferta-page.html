@@ -1,4 +1,20 @@
-<h1>Honorarios por clase de la oferta</h1>
+<div class="titulo-con-ayuda">
+  <h1>Honorarios por clase de la oferta</h1>
+  <app-ayuda titulo="Por participante presente, repartido entre los instructores">
+    <p>
+      Una clase vale la tarifa por la cantidad de participantes <b>presentes</b> (incluida la
+      llegada tarde). Si la clase tuvo instructores adicionales, ese total se reparte
+      <b>en partes iguales</b>
+      entre todos. Rige la tarifa vigente el dia de la clase; una clase sin tarifa no entra en
+      ninguna liquidacion.
+    </p>
+    <p>
+      Para <b>cambiar la tarifa</b>, cerrale la vigencia a la actual el dia anterior y carga la
+      nueva. El importe no se edita: si una carga estaba mal, dala de baja y volvela a cargar. Lo ya
+      liquidado guardo su importe y no cambia.
+    </p>
+  </app-ayuda>
+</div>
 
 @if (oferta(); as detalle) {
   <p class="descripcion">
@@ -16,21 +32,6 @@
   <a class="boton boton--secundario" routerLink="/servicios/ofertas">Ofertas de la sede</a>
   <a class="boton boton--secundario" routerLink="/egresos/honorarios">Liquidar honorarios</a>
 </nav>
-
-<section class="tarjeta nota-clave" aria-labelledby="titulo-nota-honorarios">
-  <h2 id="titulo-nota-honorarios">Por participante presente, repartido entre los instructores</h2>
-  <p>
-    Una clase vale la tarifa por la cantidad de participantes <b>presentes</b> (incluida la llegada
-    tarde). Si la clase tuvo instructores adicionales, ese total se reparte <b>en partes iguales</b>
-    entre todos. Rige la tarifa vigente el dia de la clase; una clase sin tarifa no entra en ninguna
-    liquidacion.
-  </p>
-  <p>
-    Para <b>cambiar la tarifa</b>, cerrale la vigencia a la actual el dia anterior y carga la nueva.
-    El importe no se edita: si una carga estaba mal, dala de baja y volvela a cargar. Lo ya
-    liquidado guardo su importe y no cambia.
-  </p>
-</section>
 
 <div aria-live="polite">
   @if (exito(); as mensaje) {
