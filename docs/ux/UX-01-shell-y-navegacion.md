@@ -1,0 +1,165 @@
+# UX-01 · Shell y navegación — análisis y propuesta
+
+> Etapa 1 del plan [`00-plan-refactor-ux-ui.md`](00-plan-refactor-ux-ui.md). Escrito el 21/10/2026
+> sobre `main` = `8493929`, antes de implementar, con el formato §22 de la skill
+> `refactor-ux-ui`. Decisiones del §9 del plan tomadas por el usuario el 21/10: seis grupos, notas
+> plegadas en su lugar, SVG inline propios, `system-ui`, panel lateral + pantalla.
+
+## 1. Objetivo de la pantalla
+
+El shell no es una pantalla: es el marco de las 80. Lo que el usuario intenta hacer con él, cien
+veces por día, es **llegar a la pantalla que necesita y saber dónde está**. Nada más. Todo lo que
+el shell muestre y no sirva a eso es ruido que se paga en cada navegación.
+
+## 2. Problemas detectados
+
+| # | Problema | Sev. |
+|---|---|---|
+| 1 | **Quince secciones en una barra horizontal**, sin agrupar, que a 1366 px se parte en dos filas y a 1024 en tres. "Productos de pack" y "Egresos" pesan lo mismo que "Agenda". El usuario recorre quince palabras para encontrar una | ALTO |
+| 2 | **La cabecera mide 180 px**: marca de 20 px con eslogan, dos filas de menú, línea de contexto. A 768 de alto (notebook) se lleva el 23 % de la pantalla antes del título | ALTO |
+| 3 | **Las pantallas hermanas no están en la navegación.** Recepción del día (la más usada) se alcanza por un enlace de texto bajo el título de la agenda. Series, atención sin turno, invitaciones, sedes, auditoría: igual. Desde Caja no hay camino a Recepción sin pasar por Agenda | ALTO |
+| 4 | **El contexto activo repite el nombre**: "Centro Agenda E2E d950233b · Centro Agenda E2E d950233b" cuando la sede se llama como el centro. Y "Cambiar" es un enlace de 12 px | MEDIO |
+| 5 | **Sin señal de grupo**: la marca activa dice qué sección, no de qué parte de la aplicación (operación, administración, configuración) | MEDIO |
+| 6 | **El eslogan** "Gestion de centros de kinesiologia y rehabilitacion" ocupa 330 px en cada pantalla y no cambia nada de lo que el usuario hace | BAJO |
+| 7 | **Sin iconografía**: a igual tipografía, quince palabras son un párrafo | BAJO |
+
+## 3. Jerarquía propuesta
+
+1. **Dónde estoy** (grupo + sección), siempre visible y a la izquierda.
+2. **A dónde puedo ir**, agrupado por tarea, a un clic.
+3. **Para quién trabajo** (centro · sede) y cómo cambiarlo, arriba y compacto.
+4. El contenido, que arranca a **48 px** del borde superior en vez de 180.
+
+## 4. Flujo propuesto
+
+- La **barra lateral** (240 px, fija, fondo de marca) lleva la marca y las secciones agrupadas.
+  Todas visibles, ningún grupo plegado: a 768 px de alto entran las 17 entradas y 6 rótulos con
+  filas de 32 px. Nada que descubrir, nada que desplegar.
+- La **barra superior** (48 px, superficie de página) lleva el contexto activo con su enlace
+  "Cambiar", el acceso a la consola de plataforma cuando corresponde y, en tablet, el botón que
+  abre la barra lateral.
+- En **tablet y menor** (< 1024 px) la barra lateral sale de pantalla y se abre con el botón
+  "Menú" (`aria-expanded`, `aria-controls`, Escape cierra, el foco entra al menú y vuelve al
+  botón al cerrar, un fondo oscurecido cierra al tocarlo).
+- La sección actual se marca por **el prefijo más largo** que coincida con la URL: en
+  `/agenda/recepcion` se marca Recepción del día y no Agenda; en `/agenda/ofertas/1/reservar`,
+  Agenda. `aria-current="page"` en una sola entrada.
+- El skip link sigue siendo el primer elemento enfocable y salta a `main`.
+
+### Grupos y entradas
+
+| Grupo | Entradas (ruta · permiso que la muestra) |
+|---|---|
+| **Operación** | Agenda `/agenda` · Recepción del día `/agenda/recepcion` (`turno:read`) |
+| **Pacientes** | Padrón `/pacientes` (`paciente:read`) |
+| **Actividades** | Clases (`clase:read`) · Asistencia (`inscripcion:read`) · Productos de pack (`producto:read`) |
+| **Economía** | Caja (`caja:operate`) · Egresos (`caja:operate`) · Presentaciones (`cobro:register`) · Reportes (`reporte:read`) |
+| **Configuración** | Organización · Espacios · Horarios (`colaborador:read`) · Servicios · Catálogo (`catalogo:read`) · Contratación (`convenio:read`) |
+| **Plataforma** | Consola (solo `PLATFORM_ADMIN`), al pie, separada |
+
+Los nombres de las secciones **no cambian** ("Contratacion", "Catalogo", "Productos de pack",
+"Agenda"…): cuatro E2E los buscan por `getByRole('link', { name })` y siguen encontrándolos,
+porque la barra lateral los deja todos en el DOM. Un grupo que se pliega los escondería y
+rompería `riesgo-permisos-*`: por eso no se pliega.
+
+Las pantallas hermanas que **no** entran en la barra (Series, Atención sin turno, Sedes,
+Colaboradores, Invitaciones, Financiadores, Catálogo de servicios…) pasan a **pestañas de
+sección** (`app-pestanas`) en la etapa que refactoriza cada pantalla (UX-03, UX-04, UX-07). El
+componente nace acá, con la Agenda como primer uso (Turnos · Recepción · Series), para que
+UX-02 ya lo tenga.
+
+## 5. Elementos a mantener
+
+- Skip link primero, `header` como banner, `nav` con `aria-label="Secciones de AKINE"`, `main#contenido` con `tabindex="-1"`.
+- Filtro de secciones por permiso (`PermissionsStore.tieneAlguno`) y carga perezosa de permisos y rol de plataforma al tener contexto.
+- Los tokens `--color-marca-*` para la superficie oscura, con su anillo de foco `--color-foco-sobre-marca`.
+- La región viva del aviso de 503 y el ancho de contenido por ruta (`lectura` 46rem / `amplio` 76rem).
+- Los textos "Elegi donde vas a trabajar" y "Consola de plataforma" para la sesión sin contexto.
+
+## 6. Elementos a modificar
+
+- `secciones.ts`: de lista plana a **grupos** (`GRUPOS`), conservando `SECCIONES` derivada (la usa `egresos.routes.spec.ts`) y `RUTA_INICIO`.
+- `navegacion-principal`: pasa a ser la **barra lateral**; el contexto y los enlaces sin contexto salen de acá.
+- Nueva `barra-superior`: contexto, "Cambiar", consola de plataforma, botón de menú en tablet.
+- `app.html` / `app.css`: grilla de dos columnas (barra lateral + columna de barra superior y `main`); contenido alineado a la izquierda con su `max-width`, no centrado.
+- `design-system.css`: tokens `--ancho-barra-lateral`, `--alto-barra-superior`; el anillo de foco sobre marca aplica a `.barra-lateral` además de `.cabecera`.
+- Contexto: cuando la sede se llama igual que el centro se muestra **una sola vez**.
+- Se quita el eslogan de la cabecera (queda en el `<title>` y en el login).
+
+## 7. Elementos a ocultar o mostrar progresivamente
+
+- En tablet, la barra lateral entera (menú).
+- Nada más: el shell no tiene texto explicativo que plegar.
+
+## 8. Componentes reutilizables
+
+- `layout/barra-superior` (nuevo).
+- `layout/navegacion-principal` (rehecho como barra lateral).
+- `shared/components/pestanas` (nuevo): lista de enlaces hermanos con `aria-current`, sin reglas de dominio; recibe `{ etiqueta, ruta, exacta? }[]`.
+- Iconos: un componente `shared/components/icono` con un mapa de SVG inline (`menu`, `cerrar`, `cambiar`), `aria-hidden` por defecto. Sin dependencia nueva.
+
+## 9. Propuesta visual
+
+```
+┌──────────────┬──────────────────────────────────────────────────────────────┐
+│ AKINE        │ [☰]  Centro Agenda E2E · Sede Centro   Cambiar     Plataforma │ 48 px
+│              ├──────────────────────────────────────────────────────────────┤
+│ OPERACIÓN    │                                                              │
+│  Agenda      │  Agenda de turnos                                            │
+│ ▌Recepción   │  ─ Turnos · Recepción del día · Series ─   (app-pestanas)    │
+│ PACIENTES    │                                                              │
+│  Padrón      │  … contenido, max-width según la ruta, alineado a la izq. …  │
+│ ACTIVIDADES  │                                                              │
+│  Clases      │                                                              │
+│  Asistencia  │                                                              │
+│  Productos   │                                                              │
+│ ECONOMÍA     │                                                              │
+│  Caja        │                                                              │
+│  Egresos     │                                                              │
+│  Presentac.  │                                                              │
+│  Reportes    │                                                              │
+│ CONFIGURACIÓN│                                                              │
+│  Organización│                                                              │
+│  Espacios    │                                                              │
+│  Horarios    │                                                              │
+│  Servicios   │                                                              │
+│  Catálogo    │                                                              │
+│  Contratación│                                                              │
+│              │                                                              │
+│ Plataforma   │                                                              │
+└──────────────┴──────────────────────────────────────────────────────────────┘
+   240 px
+```
+
+- Barra lateral: fondo `--color-marca-fondo`, rótulos de grupo en `--tipo-2xs` mayúsculas y
+  `--color-marca-texto-suave`, entradas de 32 px con 12 px de sangría; la activa con fondo
+  `--color-marca-superficie-activa` y una barra de 3 px a la izquierda en `--color-marca-borde`
+  (no solo color: también peso de fuente, y `aria-current` para el lector).
+- Barra superior: fondo `--color-superficie`, borde inferior `--color-borde-sutil`, texto del
+  contexto en `--tipo-sm`; "Cambiar" como enlace con subrayado.
+- Tablet: barra lateral `position: fixed`, `transform: translateX(-100%)` cerrada, fondo
+  oscurecido al abrir; botón "Menú" de 44 px con el icono.
+
+## 10. Implementación — tareas
+
+1. Tokens y reglas globales en `design-system.css`.
+2. `secciones.ts` con `GRUPOS` y `SECCIONES` derivada.
+3. `shared/components/icono` (menu, cerrar).
+4. `layout/navegacion-principal` como barra lateral (plantilla, estilos, lógica de prefijo más largo, apertura en tablet).
+5. `layout/barra-superior` (contexto, Cambiar, plataforma, botón de menú).
+6. `app.html` / `app.css` / `app.ts`: grilla, estado `menuAbierto`, foco y Escape.
+7. `shared/components/pestanas` y su primer uso en la Agenda (Turnos · Recepción · Series), reemplazando los dos enlaces sueltos.
+8. Specs: `navegacion-principal.spec`, `barra-superior.spec`, `app.spec`, `pestanas.spec`; ajustar `agenda-*` E2E si el texto "Ver la recepcion del dia" deja de existir.
+9. Estados de contraste: la cabecera y las pestañas ya quedan dentro de las pantallas auditadas (toda pantalla con contexto monta el shell).
+10. Capturas a 1366, 1024 y 768 para el PR.
+
+## 11. Design challenge (CLAUDE.md §3)
+
+1. **Contrato:** no consume nada nuevo. Permisos y rol de plataforma ya vienen de `PermissionsStore` y `PlatformRoleStore`.
+2. **Ubicación:** `layout/` para barra lateral y superior (saben de secciones y contexto), `shared/` para pestañas e iconos (no saben de dominio).
+3. **Zoneless:** `menuAbierto` es un signal; la sección activa es `toSignal` de `NavigationEnd`.
+4. **Contexto tenant:** la barra se recalcula desde `TenantContextStore.context()`; al cambiar de contexto los permisos se vuelven a cargar como hoy.
+5. **Permisos:** siguen siendo UX; el backend rechaza igual.
+6. **Reglas maestras:** la barra separa Agenda (turnos) de Atención (sesión): no hay entrada "Atención" en la barra que sugiera que atender es lo mismo que recibir.
+7. **Accesibilidad:** `nav` nombrado, `aria-current` único, foco gestionado al abrir y cerrar el menú, 44 px de toque, contraste con tokens ya medidos.
+8. **El caso que rompe:** un usuario con permisos mínimos (rol paciente) ve un grupo vacío. Un grupo sin entradas visibles **no se renderiza**, rótulo incluido.
