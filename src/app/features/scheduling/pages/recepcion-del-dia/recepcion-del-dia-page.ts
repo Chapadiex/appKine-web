@@ -11,6 +11,8 @@ import {
   PERMISO_TURNO_MANAGE,
 } from '../../../../core/models/permisos';
 import { ClasesDelDia } from '../../components/clases-del-dia/clases-del-dia';
+import { Pestanas } from '../../../../shared/components/pestanas/pestanas';
+import { ETIQUETA_PESTANAS_DE_AGENDA, pestanasDeAgenda } from '../../models/pestanas-de-agenda';
 import { PermissionsStore } from '../../../../core/services/permissions.store';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { PrepagoDeRecepcionEstadoEnum } from '../../../../api/generated/model/prepago-de-recepcion';
@@ -124,7 +126,7 @@ const CAUSAS_QUE_RELEEN: ReadonlySet<CausaAgenda> = new Set<CausaAgenda>([
  */
 @Component({
   selector: 'app-recepcion-del-dia-page',
-  imports: [RouterLink, ConfirmacionConMotivo, ClasesDelDia],
+  imports: [RouterLink, ConfirmacionConMotivo, ClasesDelDia, Pestanas],
   templateUrl: './recepcion-del-dia-page.html',
   styleUrl: '../../agenda.css',
 })
@@ -133,6 +135,10 @@ export class RecepcionDelDiaPage {
   private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly tenantContext = inject(TenantContextStore);
   private readonly permisos = inject(PermissionsStore);
+
+  /** La ruta ya exigio `turno:read`: las tres pestanas de la agenda estan disponibles. */
+  protected readonly pestanas = pestanasDeAgenda(true);
+  protected readonly etiquetaDePestanas = ETIQUETA_PESTANAS_DE_AGENDA;
   private readonly location = inject(Location);
 
   /**

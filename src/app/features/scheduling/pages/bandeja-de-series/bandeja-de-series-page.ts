@@ -11,6 +11,8 @@ import {
 } from '../../../../api/generated/model/serie-de-turnos-resumen';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import { Pestanas } from '../../../../shared/components/pestanas/pestanas';
+import { ETIQUETA_PESTANAS_DE_AGENDA, pestanasDeAgenda } from '../../models/pestanas-de-agenda';
 import { fechaEnPalabras } from '../../models/etiquetas-de-agenda';
 import { fechaHoraEnZona } from '../../models/etiquetas-de-turno';
 import { ErrorSerie, traducirErrorSerie } from '../../models/series-errors';
@@ -68,11 +70,15 @@ interface PersonaFiltrada {
  */
 @Component({
   selector: 'app-bandeja-de-series-page',
-  imports: [RouterLink, Paginacion],
+  imports: [RouterLink, Paginacion, Pestanas],
   templateUrl: './bandeja-de-series-page.html',
   styleUrl: '../../agenda.css',
 })
 export class BandejaDeSeriesPage {
+  /** La ruta ya exigio `turno:read`: las tres pestanas de la agenda estan disponibles. */
+  protected readonly pestanas = pestanasDeAgenda(true);
+  protected readonly etiquetaDePestanas = ETIQUETA_PESTANAS_DE_AGENDA;
+
   private readonly series = inject(SeriesApi);
   private readonly agenda = inject(SchedulingApi);
   private readonly tenantContext = inject(TenantContextStore);

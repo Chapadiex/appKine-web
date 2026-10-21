@@ -47,8 +47,9 @@ interface Pantalla {
   readonly listo: (page: Page) => Promise<void>;
 }
 
+/** Dentro de `main`: la barra lateral (UX-01) repite los nombres de las secciones, escondida en el telefono. */
 const texto = (contenido: string) => async (page: Page) =>
-  expect(page.getByText(contenido).first()).toBeVisible();
+  expect(page.getByRole('main').getByText(contenido).first()).toBeVisible();
 
 const PANTALLAS: readonly Pantalla[] = [
   {

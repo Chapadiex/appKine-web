@@ -10,13 +10,12 @@
   clinica, que es otra.
 </p>
 
-<p>
-  <a class="enlace" routerLink="/agenda">Ir al buscador de agenda</a>
-  @if (puedeAtender()) {
-    <!-- DP-43 (U-24): la atencion sin turno es otra pantalla, la clinica; no pasa por la recepcion. -->
-    · <a class="enlace" routerLink="/atencion/sin-turno">Atender sin turno</a>
-  }
-</p>
+<app-pestanas [pestanas]="pestanas" [etiqueta]="etiquetaDePestanas" />
+
+@if (puedeAtender()) {
+  <!-- DP-43 (U-24): la atencion sin turno es otra pantalla, la clinica; no pasa por la recepcion. -->
+  <p><a class="enlace" routerLink="/atencion/sin-turno">Atender sin turno</a></p>
+}
 
 <section class="tarjeta" aria-labelledby="titulo-dia">
   <h2 id="titulo-dia">Dia</h2>

@@ -198,13 +198,13 @@ Cada etapa sigue el ciclo de siete pasos del pedido: **análisis de usabilidad �
 problemas → propuesta → estructura visual → implementación → revisión → ajustes**, y no se abre
 la siguiente hasta cumplir su criterio de cierre (§6).
 
-### UX-00 · Relevamiento y criterios — **hecha con este documento**
+### ~~UX-00 · Relevamiento y criterios~~ — cerrada el 21/10/2026 (`69443e3`)
 
 - **Entregables:** este plan; la skill en `.claude/skills/refactor-ux-ui/`; las capturas base
   (se regeneran con el script de §8 cuando haga falta: no se commitean).
-- **Cierre:** el usuario aprueba el orden de etapas y responde las decisiones de §9.
+- **Cierre:** el usuario aprobó el orden de etapas el 21/10/2026 y tomó las cinco decisiones de §9 con las propuestas del plan (seis grupos, notas plegadas en su lugar, SVG inline propios, `system-ui`, panel lateral + pantalla).
 
-### UX-01 · Shell y navegación
+### ~~UX-01 · Shell y navegación~~ — implementada el 21/10/2026, rama `akine-web-ux-01-shell` (registro en [`UX-01-shell-y-navegacion.md`](UX-01-shell-y-navegacion.md) §12)
 
 - **Objetivo:** que el usuario sepa dónde está y llegue a cualquier pantalla en dos clics, y
   que la cabecera deje de costar 180 px.

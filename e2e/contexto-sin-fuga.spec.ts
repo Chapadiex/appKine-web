@@ -80,7 +80,8 @@ test.describe('Escenario 10 - cambio de contexto sin fuga de datos', () => {
 
     await expect(page).toHaveURL(/\/organizacion/);
     await expect(page.getByRole('heading', { name: 'Organizacion' })).toBeVisible();
-    await expect(page.getByText(centroA, { exact: true })).toBeVisible();
+    // En `main`: la barra superior (UX-01) tambien dice el centro activo, y eso no es la pantalla.
+    await expect(page.getByRole('main').getByText(centroA, { exact: true })).toBeVisible();
     await expect(page.getByText(centroB, { exact: true })).toHaveCount(0);
 
     // --- Cambio a B: sin nuevo login, el token se renueva acotado a B (DP-02) ---
@@ -88,7 +89,7 @@ test.describe('Escenario 10 - cambio de contexto sin fuga de datos', () => {
     await page.getByRole('button', { name: centroB }).click();
 
     await expect(page).toHaveURL(/\/organizacion/);
-    await expect(page.getByText(centroB, { exact: true })).toBeVisible();
+    await expect(page.getByRole('main').getByText(centroB, { exact: true })).toBeVisible();
 
     // El nucleo del escenario: CERO residuo de A en toda la pantalla, no solo en el titulo.
     await expect(page.getByText(centroA, { exact: true })).toHaveCount(0);
@@ -113,7 +114,7 @@ test.describe('Escenario 10 - cambio de contexto sin fuga de datos', () => {
     await page.getByRole('button', { name: centroA }).click();
 
     await expect(page.getByRole('heading', { name: 'Organizacion' })).toBeVisible();
-    await expect(page.getByText(centroA, { exact: true })).toBeVisible();
+    await expect(page.getByRole('main').getByText(centroA, { exact: true })).toBeVisible();
     await expect(page.getByText('Zona horaria')).toBeVisible();
   });
 

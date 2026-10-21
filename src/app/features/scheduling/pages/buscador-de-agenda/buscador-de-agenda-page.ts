@@ -11,6 +11,8 @@ import { ProfesionalHabilitado } from '../../../../api/generated/model/profesion
 import { SlotDisponible } from '../../../../api/generated/model/slot-disponible';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { SchedulingApi } from '../../services/scheduling-api';
+import { Pestanas } from '../../../../shared/components/pestanas/pestanas';
+import { ETIQUETA_PESTANAS_DE_AGENDA, pestanasDeAgenda } from '../../models/pestanas-de-agenda';
 import { recortarVentana, traducirErrorAgenda } from '../../models/agenda-errors';
 import {
   diaSinSlots,
@@ -69,7 +71,7 @@ const DIAS_POR_DEFECTO = 7;
  */
 @Component({
   selector: 'app-buscador-de-agenda-page',
-  imports: [RouterLink],
+  imports: [RouterLink, Pestanas],
   templateUrl: './buscador-de-agenda-page.html',
   styleUrl: '../../agenda.css',
 })
@@ -88,8 +90,11 @@ export class BuscadorDeAgendaPage {
    * o un texto, <b>nunca</b> para esconderlo.
    */
   protected readonly puedeReservar = computed(() => this.permisos.tiene(PERMISO_TURNO_MANAGE));
-  /** La bandeja de series pide `turno:read` (E-8). UX: el backend rechaza igual. */
-  protected readonly puedeVerSeries = computed(() => this.permisos.tiene(PERMISO_TURNO_READ));
+  /** Recepcion y series piden `turno:read` (E-8). UX: el backend rechaza igual. */
+  protected readonly pestanas = computed(() =>
+    pestanasDeAgenda(this.permisos.tiene(PERMISO_TURNO_READ)),
+  );
+  protected readonly etiquetaDePestanas = ETIQUETA_PESTANAS_DE_AGENDA;
   protected readonly diaSinSlots = diaSinSlots;
   protected readonly fechaEnPalabras = fechaEnPalabras;
   protected readonly slotCompleto = slotCompleto;

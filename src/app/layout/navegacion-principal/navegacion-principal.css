@@ -1,55 +1,87 @@
 /*
-  Estilos de la navegacion principal.
+  Barra lateral (UX-01).
 
-  Vive sobre la barra de marca, asi que todos los colores salen de los tokens `--color-marca-*`
-  de `src/design-system.css`. Ni un literal: la barra NO se aclara en modo oscuro -una franja
+  Es la superficie de marca: todos los colores salen de los tokens `--color-marca-*` de
+  `src/design-system.css`. Ni un literal: la barra NO se aclara en modo oscuro -una franja
   celeste sobre una pagina oscura es un faro- y un `#rrggbb` suelto se quedaria en el modo en
   el que se escribio.
 */
 
-/* Sin esto el host es `inline` y su hijo `flex` no llega al ancho de la cabecera. */
+/* Sin esto el host es `inline` y la grilla del shell no le da la columna. */
 :host {
   display: block;
 }
 
 /*
-  La barra ocupa el ancho completo de la cabecera y separa navegacion de contexto.
-  `wrap` a proposito: en pantalla angosta el indicador de contexto baja debajo de los enlaces
-  en lugar de comprimirlos.
+  Pegada arriba y con su propio scroll: si las secciones no entran a 768 px de alto, se
+  desplaza la barra y no la pagina. `100dvh` y no `100vh`: en tablet la barra del navegador
+  cambia de alto y `vh` deja un resto escondido abajo.
 */
-.barra {
+.barra-lateral {
+  position: sticky;
+  top: 0;
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--esp-4) var(--esp-6);
-  width: 100%;
+  flex-direction: column;
+  box-sizing: border-box;
+  height: 100dvh;
+  padding: var(--esp-5) var(--esp-4);
+  overflow-y: auto;
+  background: var(--color-marca-fondo);
+  color: var(--color-marca-texto);
 }
 
-.nav__lista {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--esp-2);
+.marca {
+  display: block;
+  padding: var(--esp-4) var(--esp-5) var(--esp-7);
+  color: var(--color-marca-texto);
+  font-size: var(--tipo-xl);
+  font-weight: var(--peso-fuerte);
+  letter-spacing: 0.08em;
+  text-decoration: none;
+}
+
+/*
+  Rotulo del grupo: mas chico y en mayusculas, para que se lea como titulo de lista y no como
+  una entrada mas. El color suave ya esta medido sobre la marca (texto chico, 4,5:1).
+*/
+.nav__rotulo {
+  margin: var(--esp-5) 0 var(--esp-2);
+  padding: 0 var(--esp-5);
+  color: var(--color-marca-texto-suave);
+  font-size: var(--tipo-2xs);
+  font-weight: var(--peso-semi);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.nav__grupo {
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
+/* La consola de plataforma va al pie, separada: no es una seccion del centro. */
+.nav__grupo--plataforma {
+  margin-top: auto;
+  padding-top: var(--esp-5);
+  border-top: var(--borde-fino) solid var(--color-marca-superficie-activa);
+}
+
 /*
-  Area de toque de 44 px de alto contando el padding: los profesionales usan tablet y un
-  enlace de 20 px no se acierta con el dedo.
+  Filas de 2 rem contando el padding: 17 entradas y 5 rotulos entran en 768 px de alto. En
+  tablet, donde el dedo necesita 44 px, la barra es un panel y el alto sube (abajo).
 */
 .nav__enlace {
-  display: inline-block;
-  padding: var(--esp-4) var(--esp-5);
-  border-bottom: var(--borde-medio) solid transparent;
-  border-radius: var(--radio-sm) var(--radio-sm) 0 0;
+  display: flex;
+  align-items: center;
+  min-height: 2rem;
+  padding: var(--esp-2) var(--esp-5);
+  border-left: var(--foco-grosor) solid transparent;
+  border-radius: var(--radio-sm);
   color: var(--color-marca-texto-suave);
   font-size: var(--tipo-sm);
   font-weight: var(--peso-medio);
   text-decoration: none;
-  white-space: nowrap;
 }
 
 .nav__enlace:hover {
@@ -58,43 +90,48 @@
 }
 
 /*
-  La seccion actual se marca de DOS formas ademas del color: subrayado grueso y peso de
+  La seccion actual se marca de DOS formas ademas del color: barra a la izquierda y peso de
   fuente. Solo con color, un usuario con vision de color reducida no distingue donde esta
   (WCAG 1.4.1). El `aria-current` de la plantilla cubre al lector de pantalla.
 */
 .nav__enlace--actual {
   background: var(--color-marca-superficie-activa);
-  border-bottom-color: var(--color-marca-borde);
+  border-left-color: var(--color-marca-borde);
   color: var(--color-marca-texto);
   font-weight: var(--peso-semi);
 }
 
-/* Indicador del contexto activo. */
-.contexto {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: var(--esp-2) var(--esp-4);
-  margin: 0;
-  font-size: var(--tipo-xs);
-  color: var(--color-marca-texto-suave);
-}
-
-.contexto__valor {
-  color: var(--color-marca-texto);
-  font-weight: var(--peso-medio);
-}
-
-.contexto__sede {
-  color: var(--color-marca-texto-suave);
-  font-weight: var(--peso-normal);
-}
-
 /*
-  Subrayado permanente y no solo en hover: es el unico enlace de la barra que no esta en la
-  lista de secciones, y sin subrayado se lee como texto muerto.
+  Tablet y menor: la barra sale de pantalla y vuelve como panel sobre el contenido. Cerrada
+  queda ADEMAS `visibility: hidden`: un `translateX` solo la saca de la vista, y el Tab seguiria
+  recorriendo diecisiete enlaces invisibles antes de llegar al contenido.
 */
-.contexto__cambiar {
-  color: var(--color-marca-texto);
-  text-decoration: underline;
+@media (max-width: 63.99rem) {
+  .barra-lateral {
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: 30;
+    width: var(--ancho-barra-lateral);
+    visibility: hidden;
+    transform: translateX(-100%);
+    transition:
+      transform 0.2s ease,
+      visibility 0.2s;
+    box-shadow: 0 0 0 100vmax rgb(0 0 0 / 0);
+  }
+
+  .barra-lateral--abierta {
+    visibility: visible;
+    transform: none;
+  }
+
+  .nav__enlace {
+    min-height: 2.75rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .barra-lateral {
+    transition: none;
+  }
 }

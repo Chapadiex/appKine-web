@@ -1,59 +1,47 @@
-import { Component, computed, effect, inject } from '@angular/core';
-import { RouterLink, RouterLinkActive } from '@angular/router';
+import { Component, computed, effect, inject, input, output } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { NavigationEnd, Router, RouterLink } from '@angular/router';
+import { filter, map, startWith } from 'rxjs';
 
 import { PermissionsStore } from '../../core/services/permissions.store';
 import { PlatformRoleStore } from '../../core/services/platform-role.store';
 import { RUTA_SOLICITUDES_DE_PLATAFORMA } from '../../features/platform/models/rutas-de-plataforma';
-import { RUTA_SELECTOR_CONTEXTO } from '../../core/models/rutas';
-import { SECCIONES, Seccion } from './secciones';
+import {
+  GRUPOS,
+  GrupoDeSecciones,
+  RUTA_INICIO,
+  SECCION_PLATAFORMA,
+  Seccion,
+  seccionDe,
+} from './secciones';
 import { SessionService } from '../../core/services/session.service';
 import { TenantContextStore } from '../../core/services/tenant-context.store';
 
 /**
- * Navegacion principal de AKINE, en la barra de marca del layout raiz.
+ * Barra lateral de navegacion (UX-01).
  *
- * <p><b>Por que existe.</b> Hasta esta tarea el shell tenia cero enlaces: todas las pantallas
- * se alcanzaban tipeando la URL a mano. Una aplicacion sin navegacion no se puede demostrar y
- * no se puede usar.
+ * <p>Lleva la marca y las secciones de {@link GRUPOS}, agrupadas y todas visibles: ningun grupo
+ * se pliega, porque lo que se pliega hay que descubrirlo, y porque los E2E de permisos buscan
+ * los enlaces por nombre y un enlace plegado no esta en pantalla.
  *
- * <h2>Que se muestra</h2>
+ * <p><b>Que se muestra lo deciden la sesion, el contexto y los permisos.</b> Sin contexto no hay
+ * barra: con un token `pre_context` ninguna seccion responde. Cada seccion declara en
+ * {@link GRUPOS} el permiso que exige el `permissionGuard` de su ruta, y la barra esconde las que
+ * faltan. Un grupo que se queda sin secciones visibles no se dibuja, rotulo incluido.
  *
- * <p>Tres situaciones, y las tres son distintas para el usuario:
+ * <p><b>La seccion actual se calcula, no se delega a `routerLinkActive`.</b> Ese marca por
+ * prefijo y en `/agenda/recepcion` dejaba dos entradas con `aria-current`; {@link seccionDe}
+ * elige la de ruta mas larga.
  *
- * <ul>
- *   <li><b>Anonimo</b> — nada. Las pantallas de login, activacion y recuperacion no tienen a
- *       donde navegar, y ofrecerle secciones a quien no tiene sesion solo produce rebotes al
- *       login.</li>
- *   <li><b>Autenticado sin contexto</b> — un unico enlace al selector. Con un token
- *       `pre_context` <b>ningun</b> endpoint de negocio responde (el backend corta con
- *       `403 missing-tenant-context`), asi que cada seccion se abriria vacia y llena de
- *       errores. Lo que corresponde es mandar a elegir donde trabajar.</li>
- *   <li><b>Con contexto</b> — las secciones que el contexto habilita, mas el indicador de
- *       donde esta parado el usuario y como cambiarlo.</li>
- * </ul>
+ * <p><b>En tablet es un panel.</b> `abierto` lo decide el shell (el boton de menu vive en la
+ * barra superior) y `cerrar` se emite al navegar o al pedirlo con Escape. En escritorio el
+ * input no cambia nada: la barra esta siempre a la vista.
  *
- * <h2>Filtrado por permiso</h2>
- *
- * <p>Cada seccion declara en {@link SECCIONES} el permiso que exige el `permissionGuard` de su
- * propia ruta, y aca se filtra contra los permisos efectivos del contexto. <b>Esconder no es
- * autorizar</b>: esto es UX, y quien decide es el backend. Lo que compra es no ofrecer un
- * enlace cuyo unico destino posible era la pantalla de "no tenes permiso".
- *
- * <p><b>Mientras los permisos no cargaron se esconde</b>, igual que `*akinePermiso` y por el
- * mismo motivo: durante esa ventana "no se todavia" y "no tiene" son el mismo `Set` vacio, y
- * de las dos salidas la cerrada es la reversible. Las secciones sin permiso —que son casi
- * todas, porque el backend las autoriza por pertenencia— no dependen de esa carga y se ven
- * desde el primer frame.
- *
- * <p>El filtrado se hace en TypeScript y no con `*akinePermiso` sobre cada `li` a proposito:
- * la directiva exige un valor y `tieneAlguno()` sin argumentos devuelve `false`, asi que una
- * seccion sin permiso pasada como lista vacia quedaria escondida para todo el mundo. Eso
- * obliga a pedir los permisos aca, cosa que la directiva hacia sola: de eso se ocupa el
- * `effect` del constructor.
+ * <p>Pide los permisos y el rol de plataforma apenas puede: es lo que decide que enlaces hay.
  */
 @Component({
   selector: 'app-navegacion-principal',
-  imports: [RouterLink, RouterLinkActive],
+  imports: [RouterLink],
   templateUrl: './navegacion-principal.html',
   styleUrl: './navegacion-principal.css',
 })
@@ -62,69 +50,78 @@ export class NavegacionPrincipal {
   private readonly tenant = inject(TenantContextStore);
   private readonly permisos = inject(PermissionsStore);
   private readonly rolDePlataforma = inject(PlatformRoleStore);
+  private readonly router = inject(Router);
 
-  /**
-   * Enlace a la consola de plataforma (AKINE-A-7), solo para quien la administra. Va aparte de
-   * `SECCIONES` porque no depende del contexto: un administrador de plataforma no tiene ninguno.
-   */
+  /** En tablet, si el panel esta desplegado. En escritorio no tiene efecto. */
+  readonly abierto = input(false);
+
+  /** Pide cerrar el panel: se navego a una seccion. */
+  readonly cerrar = output<void>();
+
+  protected readonly rutaInicio = RUTA_INICIO;
   protected readonly rutaPlataforma = RUTA_SOLICITUDES_DE_PLATAFORMA;
+  protected readonly seccionPlataforma = SECCION_PLATAFORMA;
   protected readonly esAdminDePlataforma = this.rolDePlataforma.esAdminDePlataforma;
 
-  protected readonly rutaSelector = RUTA_SELECTOR_CONTEXTO;
-
-  /** Contexto activo: de aca salen los nombres de la organizacion y la sede. */
-  protected readonly contexto = this.tenant.context;
-
-  /** `true` con sesion pero sin contexto elegido: se ofrece el selector y nada mas. */
-  protected readonly faltaContexto = computed(() => this.session.estado() === 'sin-contexto');
-
-  /**
-   * `true` solo con token de contexto <b>y</b> contexto en el store.
-   *
-   * <p>Se exigen los dos y no uno: el estado dice que el token opera, y el store es de donde
-   * salen los nombres. Si alguna vez se desincronizaran, dibujar la barra sin saber en que
-   * organizacion se esta es peor que no dibujarla.
-   */
-  protected readonly hayContexto = computed(
+  private readonly hayContexto = computed(
     () => this.session.estado() === 'activa' && this.tenant.context() !== null,
   );
 
   /**
-   * `true` cuando ya no hay una restauracion del arranque en vuelo (AKINE-LCP).
-   *
-   * <p>El shell se dibuja mientras la sesion de la recarga se recupera. Entre el refresh y los
-   * nombres de los contextos, el store tiene la organizacion con un nombre provisorio
-   * ("Organizacion 3"): la barra espera a que termine para no mostrarlo. Los efectos de abajo
-   * NO esperan: pedir los permisos y el rol en paralelo con los nombres es lo que adelanta.
+   * La barra espera a que la sesion termine de restaurarse (AKINE-LCP: entre el refresh y los
+   * nombres de los contextos, la organizacion tiene un rotulo provisorio). Los permisos, en
+   * cambio, se piden apenas hay contexto: es lo que adelanta.
    */
-  protected readonly sesionResuelta = computed(() => !this.session.restaurando());
+  protected readonly mostrarBarra = computed(
+    () => !this.session.restaurando() && this.hayContexto(),
+  );
 
-  /** Las secciones que este contexto puede abrir, en el orden declarado. */
-  protected readonly secciones = computed<readonly Seccion[]>(() =>
-    SECCIONES.filter(
-      (seccion) => seccion.permisos === undefined || this.permisos.tieneAlguno(...seccion.permisos),
+  protected readonly grupos = computed<readonly GrupoDeSecciones[]>(() =>
+    GRUPOS.map((grupo) => ({
+      etiqueta: grupo.etiqueta,
+      secciones: grupo.secciones.filter((seccion) => this.visible(seccion)),
+    })).filter((grupo) => grupo.secciones.length > 0),
+  );
+
+  private readonly url = toSignal(
+    this.router.events.pipe(
+      filter((evento) => evento instanceof NavigationEnd),
+      startWith(null),
+      map(() => this.router.url),
     ),
+    { initialValue: this.router.url },
+  );
+
+  protected readonly seccionActual = computed(() =>
+    seccionDe(this.url(), [
+      ...this.grupos().flatMap((grupo) => grupo.secciones),
+      ...(this.esAdminDePlataforma() ? [SECCION_PLATAFORMA] : []),
+    ]),
   );
 
   constructor() {
-    // Los permisos no se piden solos. Este menu es, en varias pantallas, el unico consumidor
-    // que existe -las que no llevan `permissionGuard` ni muestran acciones condicionadas-, y
-    // sin esto la seccion de horarios no aparecia nunca. `asegurarCargados` es idempotente,
-    // comparte la carga en vuelo y no hace nada sin contexto.
-    //
-    // Va dentro del `effect` y no suelto en el constructor: `cargados()` vuelve a `false` en
-    // cada cambio de contexto, y eso tiene que volver a disparar la carga.
     effect(() => {
       if (this.hayContexto() && !this.permisos.cargados()) {
         this.permisos.asegurarCargados();
       }
     });
 
-    // El rol de plataforma es de la cuenta: se pregunta una vez por sesion, con o sin contexto.
     effect(() => {
       if (this.session.estado() !== 'anonimo') {
         this.rolDePlataforma.asegurarCargado();
       }
     });
+  }
+
+  protected esActual(seccion: Seccion): boolean {
+    return this.seccionActual()?.ruta === seccion.ruta;
+  }
+
+  protected navegar(): void {
+    this.cerrar.emit();
+  }
+
+  private visible(seccion: Seccion): boolean {
+    return seccion.permisos === undefined || this.permisos.tieneAlguno(...seccion.permisos);
   }
 }

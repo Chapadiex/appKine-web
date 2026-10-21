@@ -1,12 +1,9 @@
 /*
-  Estilos del shell (AKINE-00.01).
+  Estilos del shell (AKINE-00.01, rehecho en UX-01).
 
-  Los colores salen de la capa de tokens de `src/design-system.css`: la cabecera usa
-  `--color-marca-fondo`, que en modo oscuro NO se aclara -una barra celeste sobre una pagina
-  oscura es un faro-, a diferencia del fondo de los botones.
-
-  Lo que si queda fijado son las garantias de accesibilidad WCAG 2.1 AA: foco visible,
-  skip link operativo y contraste suficiente.
+  Los colores salen de la capa de tokens de `src/design-system.css`. Lo que queda fijado aca
+  son las garantias de accesibilidad WCAG 2.1 AA: foco visible, skip link operativo y contraste
+  suficiente.
 */
 
 .skip-link {
@@ -27,11 +24,8 @@
 /*
   El anillo del skip link va HACIA ADENTRO, sobre su propio fondo de marca. Aparece pegado a la
   esquina superior izquierda: un anillo exterior caeria la mitad fuera de la pantalla y la otra
-  mitad sobre la cabecera, que es del mismo azul que el boton. Adentro se mide contra un solo
-  fondo, y con el celeste de foco sobre marca da 6,8:1 en claro.
-
-  El anillo de foco del resto de la aplicacion ya no vive aca: era una regla de componente y la
-  encapsulacion la dejaba sin efecto fuera de esta plantilla. Esta en `src/design-system.css`.
+  mitad sobre la barra lateral, que es del mismo azul que el boton. Adentro se mide contra un
+  solo fondo, y con el celeste de foco sobre marca da 6,8:1 en claro.
 */
 .skip-link:focus-visible {
   outline: var(--foco-grosor) solid var(--color-foco-sobre-marca);
@@ -39,60 +33,65 @@
 }
 
 /*
- * La cabecera apila marca y navegacion en columna. Antes eran dos `span` en fila; con el menu
- * adentro, una sola fila obliga a elegir entre comprimir los enlaces o empujar la marca fuera
- * de pantalla en cuanto el viewport se angosta.
- */
-.cabecera {
+  Dos columnas: barra lateral y pagina. `minmax(0, 1fr)` y no `1fr`: con `1fr` a secas una tabla
+  ancha agranda la columna en vez de desplazarse dentro de su `.tabla-scroll`.
+
+  `align-content: start`: sin eso, cuando la barra lateral no ocupa columna (tablet, o sin
+  contexto) la grilla reparte el alto sobrante entre sus filas y la fila vacia del `nav` empuja la
+  cabecera 100 px para abajo. El alto lo pone `.pagina`.
+*/
+.shell {
+  display: grid;
+  grid-template-columns: var(--ancho-barra-lateral) minmax(0, 1fr);
+  align-content: start;
+  min-height: 100dvh;
+}
+
+.shell--sin-barra {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.pagina {
   display: flex;
   flex-direction: column;
-  gap: var(--esp-4);
-  padding: var(--esp-6) var(--esp-8);
-  background: var(--color-marca-fondo);
-  color: var(--color-marca-texto);
+  min-width: 0;
+  min-height: 100dvh;
 }
 
-/* La marca y su subtitulo siguen en fila, y envuelven cuando no entran. */
-.cabecera__marca {
+/*
+  Barra superior: pegada arriba, con el alto del token. En escritorio es la unica franja entre
+  el borde de la ventana y el titulo de la pantalla: 48 px donde antes habia 180.
+*/
+.cabecera {
+  position: sticky;
+  top: 0;
+  z-index: 20;
   display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: var(--esp-5);
-}
-
-.marca {
-  font-size: var(--tipo-xl);
-  font-weight: var(--peso-fuerte);
-  letter-spacing: 0.08em;
-}
-
-.subtitulo {
-  font-size: var(--tipo-sm);
-  color: var(--color-marca-texto-suave);
+  align-items: center;
+  padding: 0 var(--esp-8);
+  background: var(--color-superficie);
+  border-bottom: var(--borde-fino) solid var(--color-borde-sutil);
 }
 
 /*
- * Ancho de lectura: unos 90 caracteres por renglon. Es el defecto de toda pantalla, porque
- * la mayoria son prosa y formularios.
- */
+  Contenido alineado a la izquierda, con el ancho maximo que pide la ruta. Centrarlo dentro de
+  la columna dejaba un margen vacio a la izquierda que no separaba nada; el espacio sobrante va
+  a la derecha, que es donde no molesta.
+*/
 .contenido {
+  width: 100%;
   max-width: 46rem;
-  margin: 0 auto;
-  padding: var(--esp-9) var(--esp-8);
+  margin: 0;
+  padding: var(--esp-8) var(--esp-8) var(--esp-9);
 }
 
-/*
- * Ancho de tabla, que la ruta pide con `data: { ancho: 'amplio' }`.
- *
- * 76rem esta medido, no elegido de gusto: es el punto exacto donde la tabla de colaboradores
- * deja de desbordar Y sus botones de accion dejan de envolverse. Por debajo, la fila mide
- * 209 px de alto porque las cuatro acciones se apilan; a 76rem mide 81 px y no baja mas por
- * ensancharla, asi que ir a 90rem no compra nada y solo aleja las columnas entre si.
- *
- * Es `max-width`, no `width`: en tablet el viewport manda y el layout sigue siendo fluido.
- */
 .contenido--amplio {
   max-width: 76rem;
+}
+
+/* Sin barra lateral (login, selector de contexto) la pagina si se centra: es una tarjeta sola. */
+.shell--sin-barra .contenido {
+  margin: 0 auto;
 }
 
 .contenido:focus {
@@ -100,9 +99,42 @@
 }
 
 /*
- * Aviso de servicio no disponible (503). Tokens de aviso del design system: el mismo par
- * fondo/texto que ya mide `a11y:contraste` en las pantallas que lo usan.
- */
+  Fondo que cierra el panel en tablet. Tapa la pagina, no la barra (z-index entre las dos). En
+  escritorio no existe: no hay panel que cerrar.
+*/
+.fondo-menu {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 25;
+  padding: 0;
+  border: 0;
+  background: rgb(0 0 0 / 0.4);
+  cursor: pointer;
+}
+
+@media (max-width: 63.99rem) {
+  .shell {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .fondo-menu {
+    display: block;
+  }
+
+  .cabecera {
+    padding: 0 var(--esp-6);
+  }
+
+  .contenido {
+    padding: var(--esp-7) var(--esp-6) var(--esp-9);
+  }
+}
+
+/*
+  Aviso de 503. Dentro de la columna de pagina, debajo de la barra superior: pertenece a la
+  pagina que fallo, no al shell entero.
+*/
 .aviso-servicio {
   display: flex;
   flex-wrap: wrap;

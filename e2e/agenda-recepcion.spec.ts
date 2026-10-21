@@ -37,7 +37,7 @@ function filaDe(page: Page, persona: Persona): Locator {
 /** Entra como entra el mostrador: desde la agenda, por su unico enlace, que no lleva fecha. */
 async function abrirLaRecepcion(page: Page, persona: Persona): Promise<Locator> {
   await navegar(page, '/agenda');
-  await page.getByRole('link', { name: 'Ver la recepcion del dia' }).click();
+  await page.getByRole('link', { name: 'Recepcion', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Recepcion del dia', level: 1 })).toBeVisible();
   const fila = filaDe(page, persona);
   await expect(fila).toBeVisible();

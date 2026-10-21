@@ -1,74 +1,61 @@
 <!--
-  Navegacion principal. Va dentro del `header` del layout raiz, que ya es el landmark
-  `banner`: un `nav` anidado ahi sigue siendo un landmark propio y axe lo exige nombrado.
+  Barra lateral. Es un `nav` propio, fuera del `header` del shell: el `header` es la barra
+  superior (landmark `banner`) y esta es la navegacion (landmark `navigation`, nombrada).
+  `id` para el `aria-controls` del boton de menu de la barra superior.
 -->
-@if (sesionResuelta() && hayContexto()) {
-  <div class="barra">
-    <nav class="nav" aria-label="Secciones de AKINE">
-      <ul class="nav__lista">
-        @for (seccion of secciones(); track seccion.ruta) {
+@if (mostrarBarra()) {
+  <nav
+    id="navegacion-principal"
+    class="barra-lateral"
+    [class.barra-lateral--abierta]="abierto()"
+    aria-label="Secciones de AKINE"
+  >
+    <a class="marca" [routerLink]="rutaInicio" (click)="navegar()">AKINE</a>
+
+    @for (grupo of grupos(); track grupo.etiqueta) {
+      <!--
+        El rotulo del grupo no es un enlace ni un encabezado: es el nombre de la lista que sigue,
+        y la lista lo toma como nombre accesible. Un `h2` por grupo metia seis encabezados en
+        cada pantalla antes del `h1`.
+      -->
+      <p class="nav__rotulo" [id]="'grupo-' + grupo.etiqueta">{{ grupo.etiqueta }}</p>
+      <ul class="nav__grupo" [attr.aria-labelledby]="'grupo-' + grupo.etiqueta">
+        @for (seccion of grupo.secciones; track seccion.ruta) {
           <li>
             <!--
-              `aria-current="page"` y no solo la clase: el color del subrayado no existe para
-              un lector de pantalla. `routerLinkActive` marca por prefijo -su defecto-, asi que
-              "Agenda" sigue marcada dentro de `/agenda/ofertas/1/reservar`.
+              `aria-current="page"` y no solo la clase: el color de la marca no existe para un
+              lector de pantalla. La entrada actual la decide `seccionDe`, por prefijo mas largo.
             -->
             <a
               class="nav__enlace"
+              [class.nav__enlace--actual]="esActual(seccion)"
               [routerLink]="seccion.ruta"
-              routerLinkActive="nav__enlace--actual"
-              #activo="routerLinkActive"
-              [attr.aria-current]="activo.isActive ? 'page' : null"
+              [attr.aria-current]="esActual(seccion) ? 'page' : null"
+              (click)="navegar()"
               >{{ seccion.etiqueta }}</a
             >
           </li>
         }
-        @if (esAdminDePlataforma()) {
-          <li>
-            <a
-              class="nav__enlace"
-              [routerLink]="rutaPlataforma"
-              routerLinkActive="nav__enlace--actual"
-              #activoPlataforma="routerLinkActive"
-              [attr.aria-current]="activoPlataforma.isActive ? 'page' : null"
-              >Plataforma</a
-            >
-          </li>
-        }
       </ul>
-    </nav>
+    }
 
     <!--
-      Indicador del contexto activo. `p` y no `nav`: es un dato, no un grupo de enlaces, y el
-      unico enlace que tiene ya es el de cambiarlo.
+      Un administrador de plataforma con contexto tiene ademas su consola, separada al pie: no es
+      una seccion del centro.
     -->
-    @if (contexto(); as activo) {
-      <p class="contexto">
-        <span class="contexto__valor">
-          {{ activo.organizationName }}
-          @if (activo.consultorioName) {
-            <span class="contexto__sede">· {{ activo.consultorioName }}</span>
-          }
-        </span>
-        <a class="contexto__cambiar" [routerLink]="rutaSelector">Cambiar</a>
-      </p>
+    @if (esAdminDePlataforma()) {
+      <ul class="nav__grupo nav__grupo--plataforma" aria-label="Plataforma">
+        <li>
+          <a
+            class="nav__enlace"
+            [routerLink]="rutaPlataforma"
+            [attr.aria-current]="esActual(seccionPlataforma) ? 'page' : null"
+            [class.nav__enlace--actual]="esActual(seccionPlataforma)"
+            (click)="navegar()"
+            >Plataforma</a
+          >
+        </li>
+      </ul>
     }
-  </div>
-} @else if (sesionResuelta() && faltaContexto()) {
-  <!--
-    Autenticado sin contexto: con un token `pre_context` ninguna seccion responde, asi que el
-    unico enlace util es el que resuelve eso.
-  -->
-  <p class="contexto">
-    <a class="contexto__cambiar" [routerLink]="rutaSelector">Elegi donde vas a trabajar</a>
-  </p>
-  <!--
-    Un administrador de plataforma no es miembro de ningun centro: este es su unico camino a la
-    consola (AKINE-A-7).
-  -->
-  @if (esAdminDePlataforma()) {
-    <p class="contexto">
-      <a class="contexto__cambiar" [routerLink]="rutaPlataforma">Consola de plataforma</a>
-    </p>
-  }
+  </nav>
 }

@@ -158,6 +158,10 @@
   --borde-acento: 4px;
   --foco-grosor: 3px;
   --foco-offset: 2px;
+
+  /* --- Shell (UX-01) ---------------------------------------------------------------- */
+  --ancho-barra-lateral: 15rem;
+  --alto-barra-superior: 3rem;
 }
 
 /*
@@ -236,7 +240,7 @@
 }
 
 /* Sobre la barra de marca el anillo cambia de color: `--color-foco` ahi no se ve. */
-.cabecera :focus-visible {
+.barra-lateral :focus-visible {
   outline-color: var(--color-foco-sobre-marca);
 }
 
@@ -706,4 +710,51 @@ h1 {
   .detalle dd {
     margin-bottom: var(--esp-4);
   }
+}
+
+/* --- Pestanas de seccion (UX-01) ------------------------------------------------------- */
+
+/*
+ * Navegacion secundaria: las pantallas hermanas de una seccion, debajo del titulo. Es una
+ * linea de enlaces con la actual subrayada, no una fila de botones bordeados: los botones
+ * decian "accion" y esto es "lugar". El contenedor desplaza en horizontal cuando no entran,
+ * en vez de partirse en dos filas.
+ */
+.pestanas {
+  margin-bottom: var(--esp-8);
+  border-bottom: var(--borde-fino) solid var(--color-borde);
+  overflow-x: auto;
+}
+
+.pestanas__lista {
+  display: flex;
+  gap: var(--esp-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* `margin-bottom` negativo para que el subrayado de la actual pise el borde del contenedor. */
+.pestanas__enlace {
+  display: inline-block;
+  margin-bottom: calc(-1 * var(--borde-fino));
+  padding: var(--esp-4) var(--esp-5);
+  border-bottom: var(--borde-medio) solid transparent;
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-sm);
+  font-weight: var(--peso-medio);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.pestanas__enlace:hover {
+  color: var(--color-texto);
+  border-bottom-color: var(--color-borde-control);
+}
+
+/* La actual se marca con subrayado Y peso, no solo con color (WCAG 1.4.1). */
+.pestanas__enlace--actual {
+  color: var(--color-texto-fuerte);
+  font-weight: var(--peso-semi);
+  border-bottom-color: var(--color-acento);
 }

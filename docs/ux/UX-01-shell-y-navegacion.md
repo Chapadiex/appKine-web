@@ -163,3 +163,38 @@ UX-02 ya lo tenga.
 6. **Reglas maestras:** la barra separa Agenda (turnos) de Atención (sesión): no hay entrada "Atención" en la barra que sugiera que atender es lo mismo que recibir.
 7. **Accesibilidad:** `nav` nombrado, `aria-current` único, foco gestionado al abrir y cerrar el menú, 44 px de toque, contraste con tokens ya medidos.
 8. **El caso que rompe:** un usuario con permisos mínimos (rol paciente) ve un grupo vacío. Un grupo sin entradas visibles **no se renderiza**, rótulo incluido.
+
+## 12. Registro de cierre — 21/10/2026
+
+**Implementado** en la rama `akine-web-ux-01-shell` tal como lo describe este documento, con una
+diferencia: Series y Atención sin turno no entraron en la barra lateral (quedan como pestaña y
+como enlace de la recepción); la barra lleva 17 entradas en 5 grupos más Plataforma.
+
+**Verificación** (medida sobre el worktree, contra el stack `demo-api` en `localhost:8080`):
+
+| Qué | Resultado |
+|---|---|
+| `npm run lint`, `npm run format:check` | limpios |
+| Unitarias (`npm run test:ci`) | 190 archivos / 2.035 tests: **2.034 en verde, 1 fallo preexistente y ajeno** (`clases-del-dia-page.spec.ts` fija `2026-10-21` como "otra fecha" y hoy es esa fecha; vence sola, se corrige aparte). Gate de cobertura en verde |
+| Contraste (`contraste-claro` + `contraste-oscuro` + `movil`) | 89 en verde; 3 de `contraste-no-textual` en oscuro fallaron por carga (elementos desprendidos mientras corría otra suite con 6 workers) y pasaron 12/12 al repetirlos con 2 workers. `movil` 25/25 tras acotar su chequeo a `main` |
+| E2E contra el backend real, proyecto `agenda` | 19/19, incluidos `agenda-recepcion` y `flujo-prepago`, que ahora entran a la recepción por la pestaña |
+| E2E `chromium` (`contexto-sin-fuga`, `riesgo-permisos-de-convenios-y-catalogo`, `riesgo-permisos-de-f9`) | 10/10 tras acotar a `main` los cinco localizadores del nombre del centro (abajo). `smoke` no se corrió localmente |
+| Capturas | 1366, 1024 y 768 px, claro y oscuro, agenda, recepción, padrón, caja, convenios y login; sin desborde horizontal en ninguna; foco entra al panel al abrir y vuelve al botón con Escape |
+
+**E2E que hubo que tocar**, y por qué (plan §3.6):
+
+- `agenda-recepcion`, `flujo-prepago`: entraban por el enlace "Ver la recepcion del dia", que ya no
+  existe; entran por la pestaña "Recepcion".
+- `contexto-sin-fuga`, `riesgo-permisos-de-convenios-y-catalogo`, `riesgo-permisos-de-f9`: afirmaban
+  `getByText(centro, { exact: true })` y la barra superior ahora dice el centro **una sola vez**
+  (antes decía "X · X" y no coincidía exacto). Se acotaron a `main`, que es lo que querían probar.
+- `movil`: buscaba el título con `getByText(...).first()` y el primero pasó a ser el enlace de la
+  barra lateral, escondido en el teléfono. Se acotó a `main`.
+
+**Defectos encontrados al verificar** (ninguno en `main`, todos de esta rama y corregidos antes
+del PR): la clase `.grupo` colisionaba con la global de fieldset y la barra heredaba un borde; la
+grilla del shell estiraba la fila vacía del `nav` y empujaba la cabecera 100 px en tablet y en el
+login; el foco al abrir el menú se pedía antes del render (`queueMicrotask` → `afterNextRender`).
+
+**Hallazgos de la revisión** (§6, paso 5): la lectura del diff dejó un MEDIO corregido en el mismo
+PR (la consola de plataforma no se marcaba como actual porque no era una sección) y ninguno abierto.

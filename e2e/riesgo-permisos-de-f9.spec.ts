@@ -121,7 +121,8 @@ async function esperarSinPermiso(page: Page, ruta: string, nombreCentro: string)
   await expect(
     page.getByRole('heading', { name: 'No tenes permiso para esta pantalla', level: 1 }),
   ).toBeVisible();
-  await expect(page.getByText(nombreCentro, { exact: true })).toBeVisible();
+  // En `main`: la barra superior (UX-01) tambien dice el centro activo.
+  await expect(page.getByRole('main').getByText(nombreCentro, { exact: true })).toBeVisible();
 }
 
 async function esperarForbidden(api: ApiAkine, ruta: string): Promise<void> {

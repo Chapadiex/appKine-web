@@ -33,7 +33,7 @@ import {
 /** Entra a la recepcion como entra el mostrador: desde la agenda. */
 async function abrirLaRecepcion(page: import('@playwright/test').Page, persona: Persona) {
   await navegar(page, '/agenda');
-  await page.getByRole('link', { name: 'Ver la recepcion del dia' }).click();
+  await page.getByRole('link', { name: 'Recepcion', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Recepcion del dia', level: 1 })).toBeVisible();
   const fila = page.getByRole('row').filter({ hasText: persona.apellido });
   await expect(fila).toBeVisible();

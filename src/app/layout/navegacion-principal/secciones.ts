@@ -1,35 +1,47 @@
 import { RUTA_HORARIOS } from '../../features/resource/models/rutas-de-horarios';
-import { PERMISO_CAJA_OPERATE, PERMISO_COLABORADOR_READ } from '../../core/models/permisos';
-import { PERMISO_COBRO_REGISTER as PERMISO_PRESENTACIONES } from '../../core/models/permisos';
-import { PERMISO_REPORTE_READ } from '../../core/models/permisos';
-import { PERMISO_PACIENTE_READ } from '../../core/models/permisos';
-import { PERMISO_CATALOGO_READ, PERMISO_CONVENIO_READ } from '../../core/models/permisos';
-import { PERMISO_CLASE_READ } from '../../core/models/permisos';
+import {
+  PERMISO_CAJA_OPERATE,
+  PERMISO_CATALOGO_READ,
+  PERMISO_CLASE_READ,
+  PERMISO_COBRO_REGISTER,
+  PERMISO_COLABORADOR_READ,
+  PERMISO_CONVENIO_READ,
+  PERMISO_INSCRIPCION_READ,
+  PERMISO_PACIENTE_READ,
+  PERMISO_PRODUCTO_READ,
+  PERMISO_REPORTE_READ,
+  PERMISO_TURNO_READ,
+} from '../../core/models/permisos';
 import { RUTA_CLASES } from '../../features/activity/models/rutas-de-clases';
-import { PERMISO_INSCRIPCION_READ } from '../../core/models/permisos';
-import { PERMISO_PRODUCTO_READ } from '../../core/models/permisos';
 import { RUTA_PRODUCTOS } from '../../features/activity/models/rutas-de-pases';
 
 /** Una entrada de la navegacion principal. */
 export interface Seccion {
-  /** Texto del enlace. Es el nombre accesible: tiene que decir a donde lleva. */
   readonly etiqueta: string;
 
-  /** URL absoluta, tal como la monta `app.routes.ts`. */
   readonly ruta: string;
 
   /**
-   * Permisos que habilitan la seccion. Con varios alcanza tener <b>alguno</b> (OR).
-   *
-   * <p>`undefined` significa "la autoriza la pertenencia": el backend deja entrar a
-   * cualquier miembro vigente del contexto y no hay permiso que preguntar. <b>No</b>
-   * significa "todavia no lo averigue".
+   * Permisos de los que al menos uno tiene que estar presente para mostrar la entrada. Sin
+   * `permisos`, la seccion se ve con solo tener contexto.
    */
   readonly permisos?: readonly string[];
 }
 
+/** Un grupo de secciones con su rotulo. Un grupo sin secciones visibles no se dibuja. */
+export interface GrupoDeSecciones {
+  readonly etiqueta: string;
+
+  readonly secciones: readonly Seccion[];
+}
+
 /**
- * Las secciones de AKINE, en el orden en que se muestran (AKINE-navegacion).
+ * Las secciones de AKINE agrupadas por tarea, en el orden en que se muestran (UX-01).
+ *
+ * <p>El orden sigue el dia de un centro: lo que el mostrador usa cien veces por dia va arriba
+ * (Operacion), lo que el administrador configura una vez por mes va abajo (Configuracion). La
+ * consola de plataforma no esta aca: no es una seccion del centro y la plantilla la agrega al pie
+ * solo para `PLATFORM_ADMIN`.
  *
  * <h2>De donde sale el permiso de cada una</h2>
  *
@@ -43,80 +55,99 @@ export interface Seccion {
  *   <li><b>Agenda</b> — `scheduling.routes.ts`: solo `contextGuard`. Consultar la agenda lo
  *       hace cualquiera que atienda; `turno:manage` gobierna el boton de reservar y eso lo
  *       resuelve la pantalla, no este menu.</li>
+ *   <li><b>Recepcion del dia</b> — `scheduling.routes.ts`: `permissionGuard(PERMISO_TURNO_READ)`.
+ *       Entra a la barra por ser la pantalla mas usada del mostrador; sus hermanas (series,
+ *       atencion sin turno) son pestanas de la agenda.</li>
  *   <li><b>Pacientes</b> — `person.routes.ts`: `permissionGuard(PERMISO_PACIENTE_READ)` en todas
  *       las rutas (DP-22): la lectura de personas exige `paciente:read`, que el staff tiene y el
  *       paciente no. `paciente:manage` gobierna el alta, que es de la pantalla.</li>
- *   <li><b>Espacios</b> — `resource.routes.ts`: el listado NO lleva `permissionGuard`
- *       (`GET .../espacios` exige solo ser miembro). El alta si, con
- *       `consultorio:manage`.</li>
- *   <li><b>Horarios</b> — `horarios.routes.ts`: las <b>cuatro</b> rutas llevan
- *       `permissionGuard(PERMISO_COLABORADOR_READ)`, la ruta vacia incluida, y por eso lleva
- *       `permisos`.</li>
- *   <li><b>Catalogo</b> — `catalog.routes.ts`: las tres rutas llevan
- *       `permissionGuard(PERMISO_CATALOGO_READ)` (DP-36). Lo tiene todo el equipo; el paciente
- *       no. `catalogo:manage` gobierna las acciones y es de la pantalla.</li>
- *   <li><b>Servicios</b> — `offering.routes.ts`: ninguna lleva `permissionGuard`.</li>
- *   <li><b>Contratacion</b> — `contracting.routes.ts`: todas las rutas llevan
- *       `permissionGuard(PERMISO_CONVENIO_READ)` (DP-36). Lo tiene el personal, recepcion
- *       incluida; el paciente no. No es `convenio:manage`: con ese, recepcion perderia la
- *       consulta de arancel efectivo. Las acciones van detras de `*akinePermiso`.</li>
+ *   <li><b>Clases, Asistencia, Productos de pack</b> — `activity.routes.ts`,
+ *       `asistencia.routes.ts`, `pases.routes.ts`: `clase:read`, `inscripcion:read` y
+ *       `producto:read` respectivamente.</li>
+ *   <li><b>Caja y Egresos</b> — `caja.routes.ts` y `egresos.routes.ts`: `caja:operate`.</li>
+ *   <li><b>Presentaciones</b> — `presentaciones.routes.ts`: `cobro:register`.</li>
+ *   <li><b>Reportes</b> — `reporting.routes.ts`: `reporte:read` (DP-15).</li>
  *   <li><b>Organizacion</b> — `organization.routes.ts`: la ruta vacia no lleva
- *       `permissionGuard`. Las hijas si —`colaborador:read`, `colaborador:manage`,
- *       `consultorio:manage`, `auditoria:read`—, pero este enlace no abre ninguna de ellas.
- *       Esconder la seccion entera por un permiso que solo hace falta tres clicks mas
- *       adelante le sacaria a un profesional la pantalla de su propia organizacion, que si
- *       puede ver.</li>
- *   <li><b>Caja</b> — `caja.routes.ts`: la unica ruta lleva
- *       `permissionGuard(PERMISO_CAJA_OPERATE)`. Todo lo que hay en la pantalla, incluso leer
- *       la jornada, lo autoriza `caja:operate`, asi que sin el no queda nada que mirar.</li>
- *   <li><b>Clases</b> — `activity.routes.ts`: la ruta vacia lleva
- *       `permissionGuard(PERMISO_CLASE_READ)`. Programar pide `clase:manage` y es de la pantalla.</li>
- *   <li><b>Productos de pack</b> — `pases.routes.ts` (`rutasProductos`): `producto:read`. Editar
- *       pide `producto:manage` y es de la pantalla.</li>
- *   <li><b>Egresos</b> — `egresos.routes.ts`: las dos rutas llevan
- *       `permissionGuard(PERMISO_CAJA_OPERATE)`, el permiso que el backend exige en M22.</li>
+ *       `permissionGuard`; sus hijas si, y lo resuelve cada pantalla.</li>
+ *   <li><b>Espacios</b> — `resource.routes.ts`: el listado NO lleva `permissionGuard`
+ *       (`GET .../espacios` exige solo ser miembro). El alta si, con `consultorio:manage`.</li>
+ *   <li><b>Horarios</b> — `horarios.routes.ts`: las <b>cuatro</b> rutas llevan
+ *       `permissionGuard(PERMISO_COLABORADOR_READ)`, la ruta vacia incluida.</li>
+ *   <li><b>Servicios</b> — `offering.routes.ts`: ninguna lleva `permissionGuard`.</li>
+ *   <li><b>Catalogo</b> — `catalog.routes.ts`: las tres rutas llevan
+ *       `permissionGuard(PERMISO_CATALOGO_READ)` (DP-36).</li>
+ *   <li><b>Contratacion</b> — `contracting.routes.ts`: todas las rutas llevan
+ *       `permissionGuard(PERMISO_CONVENIO_READ)` (DP-36).</li>
  * </ul>
  *
- * <p><b>Esconder no es autorizar.</b> Esta lista es exclusivamente UX: evita ofrecer un enlace
- * que iba a terminar en la pantalla de "no tenes permiso". Quien decide es el backend, que
- * rechaza igual a quien llegue por URL directa.
- *
- * <p>Vive en `layout/` y no en `shared/`: sabe que es un Turno y que es un Paciente, que es
- * justamente lo que `shared/` no puede saber (AGENT.md 4).
+ * <p>Las etiquetas son nombres accesibles que los E2E buscan con `getByRole('link', { name })`
+ * (`riesgo-permisos-*`): cambiar una es cambiar el E2E en el mismo PR.
  */
-export const SECCIONES: readonly Seccion[] = [
-  { etiqueta: 'Agenda', ruta: '/agenda' },
-  { etiqueta: 'Pacientes', ruta: '/pacientes', permisos: [PERMISO_PACIENTE_READ] },
-  // Clases grupales (M28). `activity.routes.ts` exige `clase:read` en la ruta vacia.
-  { etiqueta: 'Clases', ruta: RUTA_CLASES, permisos: [PERMISO_CLASE_READ] },
-  // Asistencia a clases (F9). `asistencia.routes.ts` exige `inscripcion:read` en las dos rutas.
-  { etiqueta: 'Asistencia', ruta: '/asistencia', permisos: [PERMISO_INSCRIPCION_READ] },
-  // Productos de pack (M29). `rutasProductos` exige `producto:read`; el PROFESIONAL no lo tiene. Los
-  // pases de una persona no son seccion: cuelgan del padron, como la cuenta corriente.
-  { etiqueta: 'Productos de pack', ruta: RUTA_PRODUCTOS, permisos: [PERMISO_PRODUCTO_READ] },
-  { etiqueta: 'Espacios', ruta: '/espacios' },
-  { etiqueta: 'Horarios', ruta: RUTA_HORARIOS, permisos: [PERMISO_COLABORADOR_READ] },
-  { etiqueta: 'Catalogo', ruta: '/catalogo', permisos: [PERMISO_CATALOGO_READ] },
-  { etiqueta: 'Servicios', ruta: '/servicios' },
-  // Va despues de Servicios y no al lado de Pacientes: primero se define QUE se ofrece y recien
-  // despues con quien se acordo cobrarlo. "Contratacion" y no "Convenios" porque la seccion
-  // tambien incluye el catalogo de financiadores, que no es un convenio.
-  { etiqueta: 'Contratacion', ruta: '/contratacion', permisos: [PERMISO_CONVENIO_READ] },
-  // La caja es de la sede y la opera recepcion. Sin `caja:operate` no hay nada que mirar.
-  { etiqueta: 'Caja', ruta: '/caja', permisos: [PERMISO_CAJA_OPERATE] },
-  // Egresos y pagos (M22). El backend los autoriza con `caja:operate` (DU-10 sigue abierta).
-  { etiqueta: 'Egresos', ruta: '/egresos', permisos: [PERMISO_CAJA_OPERATE] },
-  // Presentaciones a financiadores (M21). El permiso es `cobro:register`: lo decidio el backend.
-  { etiqueta: 'Presentaciones', ruta: '/presentaciones', permisos: [PERMISO_PRESENTACIONES] },
-  // Reportes (M23). `reporting.routes.ts` exige `reporte:read`; adentro cada seccion pide el suyo.
-  { etiqueta: 'Reportes', ruta: '/reportes', permisos: [PERMISO_REPORTE_READ] },
-  { etiqueta: 'Organizacion', ruta: '/organizacion' },
+export const GRUPOS: readonly GrupoDeSecciones[] = [
+  {
+    etiqueta: 'Operacion',
+    secciones: [
+      { etiqueta: 'Agenda', ruta: '/agenda' },
+      { etiqueta: 'Recepcion del dia', ruta: '/agenda/recepcion', permisos: [PERMISO_TURNO_READ] },
+    ],
+  },
+  {
+    etiqueta: 'Pacientes',
+    secciones: [{ etiqueta: 'Pacientes', ruta: '/pacientes', permisos: [PERMISO_PACIENTE_READ] }],
+  },
+  {
+    etiqueta: 'Actividades',
+    secciones: [
+      { etiqueta: 'Clases', ruta: RUTA_CLASES, permisos: [PERMISO_CLASE_READ] },
+      { etiqueta: 'Asistencia', ruta: '/asistencia', permisos: [PERMISO_INSCRIPCION_READ] },
+      { etiqueta: 'Productos de pack', ruta: RUTA_PRODUCTOS, permisos: [PERMISO_PRODUCTO_READ] },
+    ],
+  },
+  {
+    etiqueta: 'Economia',
+    secciones: [
+      { etiqueta: 'Caja', ruta: '/caja', permisos: [PERMISO_CAJA_OPERATE] },
+      { etiqueta: 'Egresos', ruta: '/egresos', permisos: [PERMISO_CAJA_OPERATE] },
+      { etiqueta: 'Presentaciones', ruta: '/presentaciones', permisos: [PERMISO_COBRO_REGISTER] },
+      { etiqueta: 'Reportes', ruta: '/reportes', permisos: [PERMISO_REPORTE_READ] },
+    ],
+  },
+  {
+    etiqueta: 'Configuracion',
+    secciones: [
+      { etiqueta: 'Organizacion', ruta: '/organizacion' },
+      { etiqueta: 'Espacios', ruta: '/espacios' },
+      { etiqueta: 'Horarios', ruta: RUTA_HORARIOS, permisos: [PERMISO_COLABORADOR_READ] },
+      { etiqueta: 'Servicios', ruta: '/servicios' },
+      { etiqueta: 'Catalogo', ruta: '/catalogo', permisos: [PERMISO_CATALOGO_READ] },
+      { etiqueta: 'Contratacion', ruta: '/contratacion', permisos: [PERMISO_CONVENIO_READ] },
+    ],
+  },
 ];
 
-/**
- * Seccion a la que apunta la ruta vacia.
- *
- * <p>La usa `app.routes.ts` para redirigir `/` y esta escrita una sola vez para que el dia que
- * la home cambie, el `redirectTo` y esta lista no puedan discrepar.
- */
+/** Todas las secciones, sin grupo, en el orden de la barra. */
+export const SECCIONES: readonly Seccion[] = GRUPOS.flatMap((grupo) => grupo.secciones);
+
+/** La consola de plataforma: no es una seccion del centro y la barra la agrega al pie para `PLATFORM_ADMIN`. */
+export const SECCION_PLATAFORMA: Seccion = { etiqueta: 'Plataforma', ruta: '/plataforma' };
+
+/** A donde va quien entra por `/`: la agenda es la unica seccion que todo contexto puede abrir. */
 export const RUTA_INICIO = '/agenda';
+
+/**
+ * La seccion que corresponde a una URL: la de ruta mas larga que sea prefijo de la URL por
+ * segmentos. En `/agenda/recepcion` gana "Recepcion del dia" y no "Agenda"; en
+ * `/agenda/ofertas/1/reservar` queda "Agenda". Con `routerLinkActive` por prefijo las dos
+ * quedaban marcadas a la vez.
+ */
+export function seccionDe(url: string, secciones: readonly Seccion[]): Seccion | null {
+  const camino = url.split(/[?#]/)[0] ?? '';
+  let elegida: Seccion | null = null;
+  for (const seccion of secciones) {
+    const coincide = camino === seccion.ruta || camino.startsWith(`${seccion.ruta}/`);
+    if (coincide && (elegida === null || seccion.ruta.length > elegida.ruta.length)) {
+      elegida = seccion;
+    }
+  }
+  return elegida;
+}
