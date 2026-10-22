@@ -1,3 +1,4 @@
+import { DatePipe } from '@angular/common';
 import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Observable, catchError, map, of, switchMap } from 'rxjs';
@@ -59,7 +60,7 @@ const HECHOS_A_REVISAR = 20;
  */
 @Component({
   selector: 'app-subscription-page',
-  imports: [Ayuda, RouterLink],
+  imports: [Ayuda, DatePipe, RouterLink],
   templateUrl: './subscription-page.html',
   styleUrl: '../../organization.css',
 })

@@ -67,7 +67,7 @@
             >{{ suscripcion()?.status }}</span
           >
           <span class="plan-actual__alta">
-            Alta de la suscripción: {{ suscripcion()?.startedAt }}
+            Alta de la suscripción: {{ suscripcion()?.startedAt | date: 'dd/MM/yyyy' }}
           </span>
         </div>
       }

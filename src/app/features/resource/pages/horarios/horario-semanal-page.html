@@ -117,7 +117,9 @@
 
 <section class="tarjeta tarjeta--semana" aria-labelledby="titulo-semana">
   <div class="seccion-cabecera">
-    <h2 id="titulo-semana">Semana de {{ nombreDelProfesional() }}</h2>
+    <h2 id="titulo-semana">
+      {{ profesionalElegido() ? 'Semana de ' + nombreDelProfesional() : 'Semana del profesional' }}
+    </h2>
     @if (estado().tipo === 'listo') {
       <div class="seccion-cabecera__datos">
         <span class="seccion-cabecera__resumen">{{ totalBloques() }} bloques cargados</span>
