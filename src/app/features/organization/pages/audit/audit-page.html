@@ -195,54 +195,134 @@
           <p class="estado estado--vacio">No hay hechos registrados para ese filtro.</p>
         } @else {
           <div
-            class="tabla-scroll"
-            tabindex="0"
-            role="region"
-            aria-label="Hechos auditados de la organización"
+            class="auditoria-con-panel"
+            [class.auditoria-con-panel--abierto]="detalle() !== null"
           >
-            <table class="tabla">
-              <caption class="visualmente-oculto">
-                Hechos auditados que coinciden con el filtro elegido
-              </caption>
-              <thead>
-                <tr>
-                  <th scope="col">Cuando</th>
-                  <th scope="col">Hecho</th>
-                  <th scope="col">Entidad</th>
-                  <th scope="col">Actor</th>
-                  <th scope="col">Cambio</th>
-                  <th scope="col">Motivo</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (evento of eventos(); track evento.id) {
-                  <tr>
-                    <th scope="row">{{ evento.occurredAt }}</th>
-                    <td>{{ evento.eventType }}</td>
-                    <td>{{ evento.entityType }} {{ evento.entityId }}</td>
-                    <td>Cuenta {{ evento.actorAccountId }}</td>
-                    <td>
-                      @if (evento.previousState || evento.newState) {
-                        {{ evento.previousState ?? '-' }} &rarr; {{ evento.newState ?? '-' }}
-                      } @else {
-                        -
-                      }
-                    </td>
-                    <td>{{ evento.reason ?? '-' }}</td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-          </div>
+            <div class="auditoria-con-panel__lista">
+              <div
+                class="tabla-scroll"
+                tabindex="0"
+                role="region"
+                aria-label="Hechos auditados de la organización"
+              >
+                <table class="tabla">
+                  <caption class="visualmente-oculto">
+                    Hechos auditados que coinciden con el filtro elegido
+                  </caption>
+                  <thead>
+                    <tr>
+                      <th scope="col">Cuando</th>
+                      <th scope="col">Hecho</th>
+                      <th scope="col">Entidad</th>
+                      <th scope="col">Actor</th>
+                      <th scope="col">Cambio</th>
+                      <th scope="col">Motivo</th>
+                      <th scope="col"><span class="visualmente-oculto">Detalle</span></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (evento of eventos(); track evento.id) {
+                      <tr [class.fila--seleccionada]="detalle()?.id === evento.id">
+                        <th scope="row">{{ evento.occurredAt }}</th>
+                        <td>{{ evento.eventType }}</td>
+                        <td>{{ evento.entityType }} {{ evento.entityId }}</td>
+                        <td>Cuenta {{ evento.actorAccountId }}</td>
+                        <td>
+                          @if (evento.previousState || evento.newState) {
+                            {{ evento.previousState ?? '-' }} &rarr; {{ evento.newState ?? '-' }}
+                          } @else {
+                            -
+                          }
+                        </td>
+                        <td>{{ evento.reason ?? '-' }}</td>
+                        <td>
+                          <button
+                            type="button"
+                            class="boton boton--secundario"
+                            [id]="'auditoria-evento-' + evento.id"
+                            [attr.aria-expanded]="detalle()?.id === evento.id"
+                            aria-controls="auditoria-detalle"
+                            (click)="alternarDetalle(evento)"
+                          >
+                            Ver detalle<span class="visualmente-oculto">
+                              de {{ evento.eventType }} sobre {{ evento.entityType }}
+                              {{ evento.entityId }}</span
+                            >
+                          </button>
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
 
-          <div class="tabla-pie">
-            <span>{{ totalEventos() }} hechos encontrados</span>
-            <akine-paginacion
-              etiqueta="Paginas de resultados de auditoria"
-              [paginaActual]="paginaActual()"
-              [totalPaginas]="totalPaginas()"
-              (cambioDePagina)="irAPagina($event)"
-            />
+              <div class="tabla-pie">
+                <span>{{ totalEventos() }} hechos encontrados</span>
+                <akine-paginacion
+                  etiqueta="Paginas de resultados de auditoria"
+                  [paginaActual]="paginaActual()"
+                  [totalPaginas]="totalPaginas()"
+                  (cambioDePagina)="irAPagina($event)"
+                />
+              </div>
+            </div>
+
+            <!--
+            Detalle del hecho elegido. Muestra lo que la pagina ya tiene de ese hecho: no hay
+            otra consulta. Siempre en el DOM para que aria-controls apunte a algo que existe;
+            oculto mientras no hay seleccion.
+          -->
+            <aside
+              id="auditoria-detalle"
+              class="auditoria-detalle"
+              tabindex="-1"
+              aria-labelledby="auditoria-detalle-titulo"
+              [hidden]="detalle() === null"
+              (keydown.escape)="cerrarDetalle()"
+            >
+              @if (detalle(); as evento) {
+                <div class="auditoria-detalle__cabecera">
+                  <h3 id="auditoria-detalle-titulo">{{ evento.eventType }}</h3>
+                  <button type="button" class="boton boton--secundario" (click)="cerrarDetalle()">
+                    Cerrar detalle
+                  </button>
+                </div>
+                <dl class="auditoria-detalle__datos">
+                  <dt>Cuándo</dt>
+                  <dd>{{ evento.occurredAt }}</dd>
+                  <dt>Entidad</dt>
+                  <dd>{{ evento.entityType }} {{ evento.entityId }}</dd>
+                  <dt>Actor</dt>
+                  <dd>Cuenta {{ evento.actorAccountId }}</dd>
+                  @if (evento.consultorioId !== undefined && evento.consultorioId !== null) {
+                    <dt>Sede</dt>
+                    <dd>Sede {{ evento.consultorioId }}</dd>
+                  }
+                  <dt>Motivo</dt>
+                  <dd>{{ evento.reason ?? '-' }}</dd>
+                  @if (evento.correlationId) {
+                    <dt>Correlación</dt>
+                    <dd class="auditoria-detalle__codigo">{{ evento.correlationId }}</dd>
+                  }
+                </dl>
+                @if (evento.previousState || evento.newState) {
+                  <p class="auditoria-detalle__cambio">
+                    <span class="auditoria-detalle__antes">{{ evento.previousState ?? '-' }}</span>
+                    &rarr;
+                    <span class="auditoria-detalle__despues">{{ evento.newState ?? '-' }}</span>
+                  </p>
+                }
+                @if (detallesDe(evento).length > 0) {
+                  <dl class="auditoria-detalle__datos">
+                    @for (par of detallesDe(evento); track par.clave) {
+                      <dt>{{ par.clave }}</dt>
+                      <dd>{{ par.valor }}</dd>
+                    }
+                  </dl>
+                }
+                <p class="ayuda">Los registros de auditoría no se pueden editar ni borrar.</p>
+              }
+            </aside>
           </div>
         }
       }

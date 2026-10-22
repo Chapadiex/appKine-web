@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { Page } from '@playwright/test';
 
 import { nonce } from './support/akine';
+import { abrirAcciones } from './support/filtros';
 import { expect, ingresar, navegar, respuestaDe, test } from './support/agenda-real';
 import { crearOferta, fechaLocal } from './support/sembrado';
 import { ClaseDePack, claseDePackConUnaInscripta } from './support/sembrado-pases';
@@ -166,6 +167,8 @@ test.describe('Pases contra el backend real', () => {
     await expect(filaDe(page, producto)).toContainText('3 de 3');
 
     // ---- Ajuste: fuera de rango lo frena la pantalla; -1 con motivo lo registra el backend.
+    // Ajustar y anular van en el menu "⋯" de la fila; "Ver movimientos" queda a la vista.
+    await abrirAcciones(filaDe(page, producto));
     await filaDe(page, producto)
       .getByRole('button', { name: `Ajustar saldo de ${producto}` })
       .click();
@@ -193,6 +196,7 @@ test.describe('Pases contra el backend real', () => {
     );
 
     // ---- Anulacion: sin creditos usados y sin cobros, anula el pase y su deuda.
+    await abrirAcciones(filaDe(page, producto));
     await filaDe(page, producto)
       .getByRole('button', { name: `Anular ${producto}` })
       .click();
@@ -332,6 +336,7 @@ test.describe('Pases contra el backend real', () => {
 
     // ---- Apagarla desde la fila: PUT con la version leida, y la fila lo dice.
     const renovacion = respuestaDe(page, 'PUT', RENOVACION);
+    await abrirAcciones(filaDe(page, abono));
     await filaDe(page, abono)
       .getByRole('button', { name: `Desactivar la renovación automática de ${abono}` })
       .click();
@@ -342,6 +347,7 @@ test.describe('Pases contra el backend real', () => {
     );
     await expect(page.getByText(`"${abono}" ya no se renueva solo.`)).toBeVisible();
     await expect(filaDe(page, abono)).toContainText('No se renueva solo.');
+    await abrirAcciones(filaDe(page, abono));
     await expect(
       filaDe(page, abono).getByRole('button', {
         name: `Activar la renovación automática de ${abono}`,

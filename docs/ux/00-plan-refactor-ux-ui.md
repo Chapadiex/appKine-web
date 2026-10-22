@@ -29,18 +29,18 @@ resultado / tabla / estado vacío en texto plano
 Eso significa que **arreglar el esqueleto arregla las 80 a la vez**, y que el orden correcto es
 cimientos primero y pantallas después. Hallazgos, clasificados con la escala de la skill:
 
-| # | Hallazgo | Evidencia | Sev. |
-|---|---|---|---|
-| T1 | **Navegación plana de 15 secciones** en una barra horizontal que se parte en dos filas a 1366 px. Sin agrupación por tarea ni por rol: "Productos de pack" pesa lo mismo que "Agenda". La cabecera ocupa **180 px** (marca + eslogan + dos filas de menú + línea de contexto) antes del primer pixel útil | `layout/navegacion-principal/secciones.ts`, capturas | **ALTO** |
-| T2 | **Navegación secundaria inventada en cada feature.** Enlaces sueltos en párrafos (`routerLink="/…"` en **205** lugares de 72 plantillas, "Volver a…" en **92**), pseudo-pestañas con botones bordeados (`pestan*` en 11 plantillas), y la recepción del día, las series y la atención sin turno colgadas como enlaces de texto bajo el título de la agenda. El usuario no sabe dónde está ni qué hay al lado | `buscador-de-agenda`, `servicios`, `contratacion` | **ALTO** |
-| T3 | **La explicación ocupa el primer pliegue.** `class="descripcion"` en 77 plantillas, `nota-clave` (panel didáctico de 3 párrafos) en 20, `class="ayuda"` **722 veces**. En Convenios de la sede el primer dato útil aparece a **1.080 px** de altura; en el Padrón, a 1.050. Los textos son correctos y valiosos (codifican reglas de negocio de la tesis), pero están en el lugar equivocado: se leen una vez y se pagan en cada uso | capturas `pacientes`, `contratacion`, `servicios` | **ALTO** |
-| T4 | **Formularios en una columna a todo el ancho.** Un campo numérico ("Saldo inicial contado") mide 1.118 px; "Moneda (ISO 4217)" exhibe la norma en el label. Cada campo lleva ayuda debajo, obligatorio o no, frecuente o no | `caja`, `padron`, `reportes` | **ALTO** |
-| T5 | **La acción principal no tiene lugar fijo.** "Dar de alta una persona" vive dentro de la tarjeta de búsqueda; "Firmar un convenio" entre la nota y la lista; "Vincular a alguien" es un botón con texto subrayado; "Abrir la caja" aparece deshabilitado y gris sin decir por qué | capturas | **ALTO** |
-| T6 | **Tablas con 4 botones por fila** (`acciones-fila` en 35 plantillas) y datos crudos: fechas ISO (`2026-10-21T13:19:59.154280Z`), e-mails completos de 50 caracteres como subtítulo, columnas de igual peso | `colaboradores` | **MEDIO** |
-| T7 | **Estados vacíos y de carga como párrafo suelto** (`estado--vacio` 146 usos, `estado--cargando` 96, `estado--error` 290), sin acción asociada ni jerarquía. "Este día no tiene ningún turno agendado" aparece como una línea entre dos tarjetas | `recepcion`, `servicios` | **MEDIO** |
-| T8 | **Sin componentes de estructura.** `shared/components` tiene **3** (confirmación con motivo, editor de franjas, paginación). No hay PageHeader, Tabs, EmptyState, Drawer ni Dialog (`<dialog>`: 0 usos). Cada feature resuelve lo mismo a mano: 303 `tarjeta`, 350 `acciones` | `src/app/shared` | **MEDIO** |
-| T9 | **Todo es tarjeta.** 303 `<section class="tarjeta">`: filtros, notas, errores, resultados y formularios tienen el mismo borde y el mismo peso. La jerarquía título → sección → campo → ayuda existe en tipografía pero no en el layout | `design-system.css` | **MEDIO** |
-| T10 | **Sin iconografía ni señales visuales** fuera del color de las pastillas de estado. Las acciones se distinguen solo por el texto | — | **BAJO** |
+| #   | Hallazgo                                                                                                                                                                                                                                                                                                                                                                                                                             | Evidencia                                            | Sev.      |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------- | --------- |
+| T1  | **Navegación plana de 15 secciones** en una barra horizontal que se parte en dos filas a 1366 px. Sin agrupación por tarea ni por rol: "Productos de pack" pesa lo mismo que "Agenda". La cabecera ocupa **180 px** (marca + eslogan + dos filas de menú + línea de contexto) antes del primer pixel útil                                                                                                                            | `layout/navegacion-principal/secciones.ts`, capturas | **ALTO**  |
+| T2  | **Navegación secundaria inventada en cada feature.** Enlaces sueltos en párrafos (`routerLink="/…"` en **205** lugares de 72 plantillas, "Volver a…" en **92**), pseudo-pestañas con botones bordeados (`pestan*` en 11 plantillas), y la recepción del día, las series y la atención sin turno colgadas como enlaces de texto bajo el título de la agenda. El usuario no sabe dónde está ni qué hay al lado                         | `buscador-de-agenda`, `servicios`, `contratacion`    | **ALTO**  |
+| T3  | **La explicación ocupa el primer pliegue.** `class="descripcion"` en 77 plantillas, `nota-clave` (panel didáctico de 3 párrafos) en 20, `class="ayuda"` **722 veces**. En Convenios de la sede el primer dato útil aparece a **1.080 px** de altura; en el Padrón, a 1.050. Los textos son correctos y valiosos (codifican reglas de negocio de la tesis), pero están en el lugar equivocado: se leen una vez y se pagan en cada uso | capturas `pacientes`, `contratacion`, `servicios`    | **ALTO**  |
+| T4  | **Formularios en una columna a todo el ancho.** Un campo numérico ("Saldo inicial contado") mide 1.118 px; "Moneda (ISO 4217)" exhibe la norma en el label. Cada campo lleva ayuda debajo, obligatorio o no, frecuente o no                                                                                                                                                                                                          | `caja`, `padron`, `reportes`                         | **ALTO**  |
+| T5  | **La acción principal no tiene lugar fijo.** "Dar de alta una persona" vive dentro de la tarjeta de búsqueda; "Firmar un convenio" entre la nota y la lista; "Vincular a alguien" es un botón con texto subrayado; "Abrir la caja" aparece deshabilitado y gris sin decir por qué                                                                                                                                                    | capturas                                             | **ALTO**  |
+| T6  | **Tablas con 4 botones por fila** (`acciones-fila` en 35 plantillas) y datos crudos: fechas ISO (`2026-10-21T13:19:59.154280Z`), e-mails completos de 50 caracteres como subtítulo, columnas de igual peso                                                                                                                                                                                                                           | `colaboradores`                                      | **MEDIO** |
+| T7  | **Estados vacíos y de carga como párrafo suelto** (`estado--vacio` 146 usos, `estado--cargando` 96, `estado--error` 290), sin acción asociada ni jerarquía. "Este día no tiene ningún turno agendado" aparece como una línea entre dos tarjetas                                                                                                                                                                                      | `recepcion`, `servicios`                             | **MEDIO** |
+| T8  | **Sin componentes de estructura.** `shared/components` tiene **3** (confirmación con motivo, editor de franjas, paginación). No hay PageHeader, Tabs, EmptyState, Drawer ni Dialog (`<dialog>`: 0 usos). Cada feature resuelve lo mismo a mano: 303 `tarjeta`, 350 `acciones`                                                                                                                                                        | `src/app/shared`                                     | **MEDIO** |
+| T9  | **Todo es tarjeta.** 303 `<section class="tarjeta">`: filtros, notas, errores, resultados y formularios tienen el mismo borde y el mismo peso. La jerarquía título → sección → campo → ayuda existe en tipografía pero no en el layout                                                                                                                                                                                               | `design-system.css`                                  | **MEDIO** |
+| T10 | **Sin iconografía ni señales visuales** fuera del color de las pastillas de estado. Las acciones se distinguen solo por el texto                                                                                                                                                                                                                                                                                                     | —                                                    | **BAJO**  |
 
 Lo que **funciona y se conserva** (no se toca en ninguna etapa):
 
@@ -109,13 +109,13 @@ cita; cuando una pantalla necesite apartarse, lo dice en su análisis.
 > **"?"** (`app-ayuda`) al lado del título al que pertenece. A la vista queda solo lo que el
 > usuario necesita para operar.
 
-| Texto | Dónde va |
-|---|---|
-| Descripción bajo el `h1` ("Todas las personas registradas…") | `?` del título de la pantalla, con titulo "Sobre esta pantalla" |
-| Nota didáctica ("Persona y paciente no son lo mismo") | el mismo `?`, como subtítulo después de la descripción |
-| Párrafo al inicio de una sección ("Antes de dar de alta a alguien, buscalo…") | `?` al lado del `h2` de esa sección |
-| Ayuda de un campo que cambia lo que se escribe (formato, rango, qué incluye) | queda bajo el campo |
-| Ayuda de un campo que no cambia lo que se escribe ("Es la fecha local de la sede") | se borra, o va al `?` de la sección |
+| Texto                                                                              | Dónde va                                                        |
+| ---------------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| Descripción bajo el `h1` ("Todas las personas registradas…")                       | `?` del título de la pantalla, con titulo "Sobre esta pantalla" |
+| Nota didáctica ("Persona y paciente no son lo mismo")                              | el mismo `?`, como subtítulo después de la descripción          |
+| Párrafo al inicio de una sección ("Antes de dar de alta a alguien, buscalo…")      | `?` al lado del `h2` de esa sección                             |
+| Ayuda de un campo que cambia lo que se escribe (formato, rango, qué incluye)       | queda bajo el campo                                             |
+| Ayuda de un campo que no cambia lo que se escribe ("Es la fecha local de la sede") | se borra, o va al `?` de la sección                             |
 
 **Excepciones: lo que nunca va detrás de un "?"**
 
@@ -148,7 +148,6 @@ error, además de estar en el `?`.
   general del proceso, arriba del formulario en la región de avisos.
 
 ### 3.4 Listas y tablas
-
 
 > **Regla de filtros (decidida por el usuario el 21/10/2026).** Arriba del listado va **un solo
 > campo**: la búsqueda por texto, que tiene que buscar **por todo** lo que identifica al registro
@@ -221,22 +220,22 @@ Inventario de lo que las etapas construyen en `shared/` (sin reglas de dominio, 
 `layout/`. Cada uno nace en UX-02 con la primera pantalla que lo necesita y se completa cuando la
 segunda lo reutiliza.
 
-| Componente | Reemplaza a | Usos estimados hoy | Nace en |
-|---|---|---|---|
-| `app-page-header` (título, volver, contexto, acciones) | `h1` + `descripcion` + enlaces "Volver" + botón suelto | 80 pantallas | UX-02 |
-| `app-pestanas` (navegación secundaria, `role="tablist"` o enlaces con `aria-current`) | pseudo-pestañas de 11 plantillas + enlaces sueltos | 15 secciones | UX-01 |
-| `app-seccion` (título + contenido, con o sin borde) | 303 `tarjeta` | todas | UX-02 |
-| `app-nota` (nota plegable, "¿Qué significa…?") | 29 `nota-clave` + ayudas largas | 20 pantallas | UX-02 |
-| `app-estado-vacio` (frase + acción) | 146 `estado--vacio` | 71 pantallas | UX-02 |
-| `app-estado-carga` (esqueleto / spinner en sitio) | 96 `estado--cargando` | 81 pantallas | UX-02 |
-| `app-aviso` (éxito / error / advertencia, con región viva fija) | `estado--ok` / `estado--error` intercalados | 102 pantallas | UX-02 |
-| `app-marca-estado` (badge, severidad + texto) | `marca-estado--*` y `etiqueta` | 35 tablas | UX-02 |
-| `app-menu-de-fila` (acciones "⋯", teclado y foco) | `acciones-fila` con 3–4 botones | 35 tablas | UX-03 |
-| `app-dialogo` (sobre `<dialog>` nativo, foco atrapado y devuelto) | paneles inline que empujan la página | confirmaciones, altas cortas | UX-03 |
-| `app-panel-lateral` (drawer para detalle sin salir de la lista) | navegaciones a pantallas de detalle de un dato | padrón, colaboradores, ofertas | UX-04 |
-| `app-barra-de-acciones` (pie fijo de formulario) | `acciones` al final de formularios largos | 20 formularios | UX-03 |
-| `app-grilla-de-campos` (grilla 12 col + anchos por tipo; solo CSS) | `campo` apilado | todos los formularios | UX-02 |
-| Pipes `fechaEnPalabras`, `horaEnZona`, `importe` (si no existen ya en `shared/utils`) | helpers repetidos en cada page | fichas y tablas | UX-02 |
+| Componente                                                                            | Reemplaza a                                            | Usos estimados hoy             | Nace en |
+| ------------------------------------------------------------------------------------- | ------------------------------------------------------ | ------------------------------ | ------- |
+| `app-page-header` (título, volver, contexto, acciones)                                | `h1` + `descripcion` + enlaces "Volver" + botón suelto | 80 pantallas                   | UX-02   |
+| `app-pestanas` (navegación secundaria, `role="tablist"` o enlaces con `aria-current`) | pseudo-pestañas de 11 plantillas + enlaces sueltos     | 15 secciones                   | UX-01   |
+| `app-seccion` (título + contenido, con o sin borde)                                   | 303 `tarjeta`                                          | todas                          | UX-02   |
+| `app-nota` (nota plegable, "¿Qué significa…?")                                        | 29 `nota-clave` + ayudas largas                        | 20 pantallas                   | UX-02   |
+| `app-estado-vacio` (frase + acción)                                                   | 146 `estado--vacio`                                    | 71 pantallas                   | UX-02   |
+| `app-estado-carga` (esqueleto / spinner en sitio)                                     | 96 `estado--cargando`                                  | 81 pantallas                   | UX-02   |
+| `app-aviso` (éxito / error / advertencia, con región viva fija)                       | `estado--ok` / `estado--error` intercalados            | 102 pantallas                  | UX-02   |
+| `app-marca-estado` (badge, severidad + texto)                                         | `marca-estado--*` y `etiqueta`                         | 35 tablas                      | UX-02   |
+| `app-menu-de-fila` (acciones "⋯", teclado y foco)                                     | `acciones-fila` con 3–4 botones                        | 35 tablas                      | UX-03   |
+| `app-dialogo` (sobre `<dialog>` nativo, foco atrapado y devuelto)                     | paneles inline que empujan la página                   | confirmaciones, altas cortas   | UX-03   |
+| `app-panel-lateral` (drawer para detalle sin salir de la lista)                       | navegaciones a pantallas de detalle de un dato         | padrón, colaboradores, ofertas | UX-04   |
+| `app-barra-de-acciones` (pie fijo de formulario)                                      | `acciones` al final de formularios largos              | 20 formularios                 | UX-03   |
+| `app-grilla-de-campos` (grilla 12 col + anchos por tipo; solo CSS)                    | `campo` apilado                                        | todos los formularios          | UX-02   |
+| Pipes `fechaEnPalabras`, `horaEnZona`, `importe` (si no existen ya en `shared/utils`) | helpers repetidos en cada page                         | fichas y tablas                | UX-02   |
 
 Lo que **ya existe y se mantiene**: `confirmacion-con-motivo` (22 usos; se le da el `app-dialogo`
 por debajo), `paginacion`, `editor-de-franjas`, `selector-de-horario`.
@@ -254,13 +253,27 @@ Cada etapa sigue el ciclo de siete pasos del pedido: **análisis de usabilidad �
 problemas → propuesta → estructura visual → implementación → revisión → ajustes**, y no se abre
 la siguiente hasta cumplir su criterio de cierre (§6).
 
+> **Estado al 22/10/2026.** El orden de abajo se alteró: en vez de ir etapa por etapa, el usuario
+> pidió aplicar de una vez el diseño del canvas _AKINE · Pantallas_ a toda la app, y entró en
+> `appKine-web` **#125** (mergeado el 22/10, CI en verde). Eso cubrió la **parte visual** de UX-02
+> a UX-09: anatomía de pantalla, "?", buscador + embudo, tablas ordenables y paginadas, alta en el
+> título, pestañas, migas, grillas de campos, marcas de estado, atención en tablet y tildes.
+> **#126** llevó a `shared/` las migas y la cabecera de la persona. Las decisiones funcionales del
+> 22/10 (menú "⋯", paneles, asistente de importación, filtros rápidos, medidor de contraseña,
+> "Nuevo turno") están en la rama `akine-web-ux-canvas-decisiones`; lo que necesita backend, en
+> DP-45 (`appKine-api` #174). El detalle está en [`canvas-pendientes.md`](canvas-pendientes.md).
+>
+> **Lo que sigue abierto de las etapas:** la guía de estilo de UX-02 (`docs/ux/guia-de-estilo.md`,
+> no escrita), la revisión del §6 pantalla por pantalla con un usuario real, y UX-10 completa
+> (barrido de patrones viejos, CSS sin uso, auditoría de teclado y tablet, ADR-0005).
+
 ### ~~UX-00 · Relevamiento y criterios~~ — cerrada el 21/10/2026 (`69443e3`)
 
 - **Entregables:** este plan; la skill en `.claude/skills/refactor-ux-ui/`; las capturas base
   (se regeneran con el script de §8 cuando haga falta: no se commitean).
 - **Cierre:** el usuario aprobó el orden de etapas el 21/10/2026 y tomó las cinco decisiones de §9 con las propuestas del plan (seis grupos, notas plegadas en su lugar, SVG inline propios, `system-ui`, panel lateral + pantalla).
 
-### ~~UX-01 · Shell y navegación~~ — implementada el 21/10/2026, rama `akine-web-ux-01-shell` (registro en [`UX-01-shell-y-navegacion.md`](UX-01-shell-y-navegacion.md) §12)
+### ~~UX-01 · Shell y navegación~~ — mergeada el 22/10/2026 en `appKine-web` #125 (registro en [`UX-01-shell-y-navegacion.md`](UX-01-shell-y-navegacion.md) §12)
 
 - **Objetivo:** que el usuario sepa dónde está y llegue a cualquier pantalla en dos clics, y
   que la cabecera deje de costar 180 px.
@@ -467,14 +480,14 @@ Una etapa está terminada cuando **todas** sus pantallas cumplen esto, y no ante
 
 ## 7. Riesgos y cómo se cubren
 
-| Riesgo | Cobertura |
-|---|---|
-| Los 68 E2E localizan por nombre accesible; mover un texto los rompe | El refactor mantiene labels y nombres de botón; cuando no puede, el mismo PR ajusta el E2E. Se corren localmente antes de abrir el PR (`e2e/agenda.setup.ts` siembra el centro) |
-| El gate de contraste mide 8 estados de pantalla fijos; una cabecera nueva puede no estar en ninguno | UX-01 agrega la cabecera y las pestañas a los estados de `e2e/support/contraste.ts` |
-| Dos estéticas conviven durante meses | Aceptado por diseño: el orden por frecuencia hace que lo más usado se vea nuevo primero. UX-10 cierra el resto |
-| El texto didáctico codifica reglas que la tesis defiende | No se borra: se pliega. Cada `nota-clave` que se esconde queda accesible con un clic en el mismo lugar |
-| Un "rediseño" que termina tocando lógica | Regla 5 de §2 y punto 3 de §6: el diff lo delata y el PR lo declara |
-| Angular 22 (Dependabot #84) entra en el medio | DP-41 lo pone después del RC. Si entrara antes, UX-02 se rebasa; los componentes son standalone y no dependen de nada que cambie en v22 |
+| Riesgo                                                                                              | Cobertura                                                                                                                                                                       |
+| --------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Los 68 E2E localizan por nombre accesible; mover un texto los rompe                                 | El refactor mantiene labels y nombres de botón; cuando no puede, el mismo PR ajusta el E2E. Se corren localmente antes de abrir el PR (`e2e/agenda.setup.ts` siembra el centro) |
+| El gate de contraste mide 8 estados de pantalla fijos; una cabecera nueva puede no estar en ninguno | UX-01 agrega la cabecera y las pestañas a los estados de `e2e/support/contraste.ts`                                                                                             |
+| Dos estéticas conviven durante meses                                                                | Aceptado por diseño: el orden por frecuencia hace que lo más usado se vea nuevo primero. UX-10 cierra el resto                                                                  |
+| El texto didáctico codifica reglas que la tesis defiende                                            | No se borra: se pliega. Cada `nota-clave` que se esconde queda accesible con un clic en el mismo lugar                                                                          |
+| Un "rediseño" que termina tocando lógica                                                            | Regla 5 de §2 y punto 3 de §6: el diff lo delata y el PR lo declara                                                                                                             |
+| Angular 22 (Dependabot #84) entra en el medio                                                       | DP-41 lo pone después del RC. Si entrara antes, UX-02 se rebasa; los componentes son standalone y no dependen de nada que cambie en v22                                         |
 
 ---
 

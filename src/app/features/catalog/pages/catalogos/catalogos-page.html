@@ -345,37 +345,65 @@
                         }
                       </td>
                       <td class="acciones-fila">
-                        @if (tipoActual.slug === 'nomencladores') {
-                          <a
-                            class="boton boton--secundario"
-                            [routerLink]="['/catalogo/nomencladores', concepto.id, 'vigencias']"
-                          >
-                            Ver vigencias
-                          </a>
-                        }
-
-                        @if (esGlobal(concepto)) {
-                          <span class="ayuda">
-                            La mantiene AKINE.
-                            <a routerLink="/catalogo/solicitudes">Pedir un cambio</a>
-                          </span>
-                        } @else if (concepto.estado === 'ACTIVO') {
-                          <ng-container *akinePermiso="permisoManage">
+                        @if (
+                          cantidadDeAcciones(concepto, tipoActual.slug === 'nomencladores') >= 3
+                        ) {
+                          <app-acciones-de-fila [de]="concepto.name ?? concepto.codigo ?? ''">
                             <button
+                              principal
                               type="button"
                               class="boton boton--secundario"
                               (click)="abrirPanel(concepto, 'editar')"
                             >
                               Editar
                             </button>
+                            <a
+                              class="boton boton--secundario"
+                              [routerLink]="['/catalogo/nomencladores', concepto.id, 'vigencias']"
+                            >
+                              Ver vigencias
+                            </a>
                             <button
                               type="button"
-                              class="boton boton--secundario"
+                              class="boton boton--secundario accion--peligro"
                               (click)="abrirPanel(concepto, 'baja')"
                             >
                               Dar de baja
                             </button>
-                          </ng-container>
+                          </app-acciones-de-fila>
+                        } @else {
+                          @if (tipoActual.slug === 'nomencladores') {
+                            <a
+                              class="boton boton--secundario"
+                              [routerLink]="['/catalogo/nomencladores', concepto.id, 'vigencias']"
+                            >
+                              Ver vigencias
+                            </a>
+                          }
+
+                          @if (esGlobal(concepto)) {
+                            <span class="ayuda">
+                              La mantiene AKINE.
+                              <a routerLink="/catalogo/solicitudes">Pedir un cambio</a>
+                            </span>
+                          } @else if (concepto.estado === 'ACTIVO') {
+                            <ng-container *akinePermiso="permisoManage">
+                              <button
+                                type="button"
+                                class="boton boton--secundario"
+                                (click)="abrirPanel(concepto, 'editar')"
+                              >
+                                Editar
+                              </button>
+                              <button
+                                type="button"
+                                class="boton boton--secundario"
+                                (click)="abrirPanel(concepto, 'baja')"
+                              >
+                                Dar de baja
+                              </button>
+                            </ng-container>
+                          }
                         }
                       </td>
                     </tr>

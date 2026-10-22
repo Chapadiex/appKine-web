@@ -603,7 +603,12 @@ describe('AtencionGrupalPage', () => {
 
     it('el foco va al panel, al motivo y de vuelta al botón que abrio cada cosa', async () => {
       const fixture = await montar();
-      // Un click de verdad enfoca el boton: es a donde vuelve el foco al cerrar el panel.
+      // "Derivaciones" vive en el menu "⋯" de la fila (decidido el 22/10/2026): se abre el menu y
+      // se elige. Elegir cierra el menu y esconde el item, asi que el foco que se devuelve al
+      // cerrar el panel es el del boton "⋯", que es lo que quedo a la vista de la fila.
+      const menu = botones(fixture, /^Más acciones de/)[0];
+      menu.click();
+      await estabilizar(fixture);
       const abrio = botones(fixture, /^Derivaciones/)[0];
       abrio.focus();
       abrio.click();
@@ -627,11 +632,11 @@ describe('AtencionGrupalPage', () => {
       await estabilizar(fixture);
       expect(document.activeElement?.id).toBe('revertir-30');
 
-      // Cerrar el panel devuelve el foco al "Derivaciones" de la fila que lo abrio.
+      // Cerrar el panel devuelve el foco a lo que la fila dejo a la vista del que lo abrio.
       boton(fixture, /^Cerrar$/).click();
       await estabilizar(fixture);
       await new Promise((resolve) => setTimeout(resolve));
-      expect(document.activeElement).toBe(abrio);
+      expect(document.activeElement).toBe(menu);
     });
 
     it('sin derivaciones lo dice', async () => {

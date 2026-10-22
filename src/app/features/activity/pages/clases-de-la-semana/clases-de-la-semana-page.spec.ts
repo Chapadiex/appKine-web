@@ -148,6 +148,32 @@ describe('ClasesDeLaSemanaPage', () => {
     );
   });
 
+  it('los filtros rápidos cuentan por estado sobre la semana entera y filtran la tabla', async () => {
+    otorgar(httpMock, PERMISO_CLASE_READ);
+    const fixture = montar('2026-10-01');
+    esperarClases().flush([
+      { ...CLASE, id: 1, titulo: 'Yoga suave' },
+      { ...CLASE, id: 2, titulo: 'Pilates mat' },
+      { ...CLASE, id: 3, titulo: 'Funcional', estado: 'CANCELADA' },
+    ]);
+    await asentar(fixture);
+
+    const opcion = (nombre: string) =>
+      Array.from(
+        (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>(
+          '.filtros-rapidos__opcion',
+        ),
+      ).find((b) => (b.textContent ?? '').includes(nombre)) as HTMLButtonElement;
+    expect(opcion('Todas').textContent).toContain('3');
+    expect(opcion('Programadas').textContent).toContain('2');
+    expect(opcion('Canceladas').textContent).toContain('1');
+
+    opcion('Canceladas').click();
+    await asentar(fixture);
+    expect(textoDe(fixture)).toContain('Funcional');
+    expect(textoDe(fixture)).not.toContain('Yoga suave');
+  });
+
   it('un error de lectura se muestra y se reintenta', async () => {
     otorgar(httpMock, PERMISO_CLASE_READ);
     const fixture = montar();

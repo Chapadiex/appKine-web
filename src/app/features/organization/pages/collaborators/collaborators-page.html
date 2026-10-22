@@ -126,51 +126,51 @@
                       }
                     </td>
                     <td>
-                      <div class="acciones-fila" *akinePermiso="permisoManage">
-                        @if (colaborador.estado === 'ACTIVA') {
-                          <button
-                            type="button"
-                            class="boton boton--secundario"
-                            (click)="abrirPanel(colaborador, 'editar')"
-                          >
-                            Cambiar rol o alcance
-                          </button>
-                          <button
-                            type="button"
-                            class="boton boton--secundario"
-                            (click)="abrirPanel(colaborador, 'suspender')"
-                          >
-                            Suspender
-                          </button>
-                        }
+                      @if (colaborador.estado !== 'REVOCADA') {
+                        <app-acciones-de-fila
+                          *akinePermiso="permisoManage"
+                          [de]="nombreDe(colaborador)"
+                        >
+                          @if (colaborador.estado === 'ACTIVA') {
+                            <button
+                              principal
+                              type="button"
+                              class="boton boton--secundario"
+                              (click)="abrirPanel(colaborador, 'editar')"
+                            >
+                              Cambiar rol o alcance
+                            </button>
+                          }
 
-                        @if (colaborador.estado === 'SUSPENDIDA') {
-                          <button
-                            type="button"
-                            class="boton boton--secundario"
-                            (click)="abrirPanel(colaborador, 'reactivar')"
-                          >
-                            Reactivar
-                          </button>
-                        }
+                          @if (colaborador.estado === 'SUSPENDIDA') {
+                            <button
+                              principal
+                              type="button"
+                              class="boton boton--secundario"
+                              (click)="abrirPanel(colaborador, 'reactivar')"
+                            >
+                              Reactivar
+                            </button>
+                          }
 
-                        @if (colaborador.estado !== 'REVOCADA') {
+                          @if (colaborador.estado === 'ACTIVA') {
+                            <button type="button" (click)="abrirPanel(colaborador, 'suspender')">
+                              Suspender
+                            </button>
+                          }
+
+                          <button type="button" (click)="abrirPanel(colaborador, 'permisos')">
+                            Permisos adicionales
+                          </button>
                           <button
                             type="button"
-                            class="boton boton--secundario"
+                            class="accion--peligro"
                             (click)="abrirPanel(colaborador, 'revocar')"
                           >
                             Revocar
                           </button>
-                          <button
-                            type="button"
-                            class="boton boton--secundario"
-                            (click)="abrirPanel(colaborador, 'permisos')"
-                          >
-                            Permisos adicionales
-                          </button>
-                        }
-                      </div>
+                        </app-acciones-de-fila>
+                      }
                     </td>
                   </tr>
 

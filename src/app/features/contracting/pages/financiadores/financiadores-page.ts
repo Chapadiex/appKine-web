@@ -26,7 +26,7 @@ import { PERMISO_CONVENIO_MANAGE } from '../../../../core/models/permisos';
 import { PermisoDirective } from '../../../../shared/directives/permiso.directive';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { UpdateFinanciadorRequest } from '../../../../api/generated/model/update-financiador-request';
-import { ContractingApi, FiltroEstado, FiltroTipo } from '../../services/contracting-api';
+import { ContractingApi, FiltroTipo } from '../../services/contracting-api';
 import {
   CausaContracting,
   hayQueRecargar,
@@ -43,6 +43,12 @@ import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-or
 import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
 import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 import { Filtros } from '../../../../shared/components/filtros/filtros';
+import {
+  FiltroRapido,
+  FiltrosRapidos,
+} from '../../../../shared/components/filtros-rapidos/filtros-rapidos';
+import { AccionesDeFila } from '../../../../shared/components/acciones-de-fila/acciones-de-fila';
+import { PermissionsStore } from '../../../../core/services/permissions.store';
 import { Icono } from '../../../../shared/components/icono/icono';
 
 /** Operacion abierta sobre una fila. Solo una a la vez. */
@@ -99,6 +105,8 @@ type TipoAccion = 'editar' | 'baja';
     Paginacion,
     Ayuda,
     Filtros,
+    FiltrosRapidos,
+    AccionesDeFila,
     Icono,
     ReactiveFormsModule,
     RouterLink,
@@ -118,6 +126,16 @@ export class FinanciadoresPage {
   private readonly injector = inject(Injector);
 
   protected readonly permisoManage = PERMISO_CONVENIO_MANAGE;
+
+  private readonly permisos = inject(PermissionsStore);
+
+  /**
+   * Si hay acciones para el menu "⋯" de la fila. Sin permiso quedaria un menu vacio, asi que la
+   * fila muestra solo el enlace a los planes. Es UX: el backend decide igual.
+   */
+  protected readonly puedeGestionar = computed(
+    () => this.permisos.cargados() && this.permisos.tieneAlguno(PERMISO_CONVENIO_MANAGE),
+  );
   protected readonly tipos = TIPOS_DE_FINANCIADOR;
   protected readonly etiquetaDeTipo = etiquetaDeTipo;
   protected readonly notaParticular = NOTA_PARTICULAR;
@@ -130,9 +148,36 @@ export class FinanciadoresPage {
     tipo: 'cargando',
   });
 
-  protected readonly financiadores = computed<readonly FinanciadorResponse[]>(() => {
+  /** Todo lo que trajo el servidor, sin el filtro rapido de estado. De aca salen los conteos. */
+  protected readonly cargados = computed<readonly FinanciadorResponse[]>(() => {
     const actual = this.estado();
     return actual.tipo === 'listo' ? actual.pagina : [];
+  });
+
+  /** Lo que se ve: la lista entera filtrada por el estado elegido arriba de la tabla. */
+  protected readonly financiadores = computed<readonly FinanciadorResponse[]>(() => {
+    const elegido = this.filtroRapido();
+    return elegido === 'TODOS'
+      ? this.cargados()
+      : this.cargados().filter((ficha) => ficha.estado === elegido);
+  });
+
+  /** Filtros rapidos con conteo: "Activos 8 · Dados de baja 2 · Todos 10". */
+  protected readonly opcionesDeEstado = computed<readonly FiltroRapido[]>(() => {
+    const todos = this.cargados();
+    return [
+      {
+        valor: 'ACTIVO',
+        etiqueta: 'Activos',
+        cantidad: todos.filter((ficha) => ficha.estado === 'ACTIVO').length,
+      },
+      {
+        valor: 'INACTIVO',
+        etiqueta: 'Dados de baja',
+        cantidad: todos.filter((ficha) => ficha.estado === 'INACTIVO').length,
+      },
+      { valor: 'TODOS', etiqueta: 'Todos', cantidad: todos.length },
+    ];
   });
 
   /** Orden y paginado de la lista completa (plan Â§3.4): el servidor no pagina financiadores. */
@@ -154,14 +199,16 @@ export class FinanciadoresPage {
     return actual.tipo === 'error' && actual.faltaContexto;
   });
 
-  protected readonly filtroEstado = signal<FiltroEstado>('ACTIVO');
+  /**
+   * Estado administrativo elegido en los filtros rapidos. El listado se pide siempre entero
+   * (`estado: TODOS`): el servidor no pagina, y asi los conteos son los de la lista.
+   */
+  protected readonly filtroRapido = signal<string>('ACTIVO');
   protected readonly filtroTipo = signal<FiltroTipo | null>(null);
   protected readonly busqueda = signal('');
 
   /** Filtros avanzados (detras del embudo) fuera de su valor por defecto. */
-  protected readonly filtrosAvanzadosActivos = computed(
-    () => Number(this.filtroEstado() !== 'ACTIVO') + Number(this.filtroTipo() !== null),
-  );
+  protected readonly filtrosAvanzadosActivos = computed(() => Number(this.filtroTipo() !== null));
 
   /** Fila y operacion abiertas, o `null`. Solo una a la vez. */
   protected readonly panel = signal<{ readonly id: number; readonly tipo: TipoAccion } | null>(
@@ -233,7 +280,7 @@ export class FinanciadoresPage {
     this.api
       .listarFinanciadores({
         q: texto === '' ? undefined : texto,
-        estado: this.filtroEstado(),
+        estado: 'TODOS',
         tipo: this.filtroTipo() ?? undefined,
       })
       .pipe(catchError((error: unknown) => of(error instanceof Error ? error : new Error(''))))
@@ -270,12 +317,10 @@ export class FinanciadoresPage {
     this.cargar();
   }
 
-  protected cambiarFiltroEstado(valor: string): void {
-    const elegido: FiltroEstado =
-      valor === 'INACTIVO' || valor === 'TODOS' ? valor : ('ACTIVO' as const);
+  protected elegirEstado(valor: string): void {
+    const elegido = valor === 'INACTIVO' || valor === 'TODOS' ? valor : 'ACTIVO';
     this.cerrarPanel();
-    this.filtroEstado.set(elegido);
-    this.cargar();
+    this.filtroRapido.set(elegido);
   }
 
   protected cambiarFiltroTipo(valor: string): void {
@@ -551,7 +596,7 @@ export class FinanciadoresPage {
     this.api
       .listarFinanciadores({
         q: texto === '' ? undefined : texto,
-        estado: this.filtroEstado(),
+        estado: 'TODOS',
         tipo: this.filtroTipo() ?? undefined,
       })
       .pipe(catchError(() => of(null)))
@@ -585,7 +630,7 @@ export class FinanciadoresPage {
   private reiniciar(): void {
     this.cerrarPanel();
     this.exito.set(null);
-    this.filtroEstado.set('ACTIVO');
+    this.filtroRapido.set('ACTIVO');
     this.filtroTipo.set(null);
     this.busqueda.set('');
     this.formularioBusqueda.reset({ q: '' });

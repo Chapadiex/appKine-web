@@ -18,7 +18,7 @@ import {
   ok,
 } from './support/agenda-simulada';
 import { instalarApiDp43 } from './support/pantallas-dp43';
-import { abrirFiltros } from './support/filtros';
+import { abrirAcciones, abrirFiltros } from './support/filtros';
 
 /**
  * Auditoria de CONTRASTE DE COLOR contra un navegador real (WCAG 1.4.3, nivel AA).
@@ -309,6 +309,8 @@ test.describe('Contraste de color', () => {
       await instalarApiDeContraste(page);
       await page.goto(`/atencion/clases/${CLASE.id}`);
       await expect(page.getByText('Atención cerrada', { exact: false })).toBeVisible();
+      // Las acciones de la participante van en el menu "⋯" de su fila.
+      await abrirAcciones(page.getByRole('row').filter({ hasText: 'Perez, Ana' }));
       await page.getByRole('button', { name: /Derivaciones de Perez, Ana/ }).click();
       await expect(
         page.getByText('Motivo de la reversión: Derivada al caso equivocado'),
@@ -324,6 +326,7 @@ test.describe('Contraste de color', () => {
     test('derivar a una participante con dos casos activos y sin elegir', async ({ page }) => {
       await instalarApiDeContraste(page);
       await page.goto(`/atencion/clases/${CLASE.id}`);
+      await abrirAcciones(page.getByRole('row').filter({ hasText: 'Perez, Ana' }));
       await page.getByRole('button', { name: /Derivar a un caso a Perez, Ana/ }).click();
       const tarjeta = page.getByRole('region', { name: 'Derivar a Perez, Ana a un caso clínico' });
       await expect(tarjeta.getByText('Con 2 casos activos')).toBeVisible();

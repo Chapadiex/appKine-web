@@ -28,6 +28,8 @@ import { EstadoDeListado, vistaDeListado } from '../../../../shared/utils/estado
 import { PERMISO_CATALOGO_MANAGE } from '../../../../core/models/permisos';
 import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
 import { PermisoDirective } from '../../../../shared/directives/permiso.directive';
+import { PermissionsStore } from '../../../../core/services/permissions.store';
+import { AccionesDeFila } from '../../../../shared/components/acciones-de-fila/acciones-de-fila';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { UpdateCatalogoConceptoRequest } from '../../../../api/generated/model/update-catalogo-concepto-request';
 import { CausaCatalogo, traducirErrorCatalogo } from '../../models/catalogo-errors';
@@ -110,6 +112,7 @@ const TOPE_DE_ESPECIALIDADES = 100;
 @Component({
   selector: 'app-catalogos-page',
   imports: [
+    AccionesDeFila,
     Pestanas,
     Ayuda,
     Filtros,
@@ -138,6 +141,7 @@ export class CatalogosPage {
   private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly catalogo = inject(CatalogoClinicoService);
   private readonly tenantContext = inject(TenantContextStore);
+  private readonly permisos = inject(PermissionsStore);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly formBuilder = inject(FormBuilder);
   private readonly injector = inject(Injector);
@@ -145,6 +149,20 @@ export class CatalogosPage {
   protected readonly permisoManage = PERMISO_CATALOGO_MANAGE;
   protected readonly etiquetaDeAlcance = etiquetaDeAlcance;
   protected readonly esGlobal = esGlobal;
+
+  /**
+   * Cuantas acciones muestra la fila, con las mismas condiciones que la plantilla: "Ver
+   * vigencias" en nomencladores; Editar y Dar de baja si el concepto es del centro, esta activo
+   * y hay permiso. Con tres o mas la fila usa el menu "⋯" (decision del 22/10/2026).
+   */
+  protected cantidadDeAcciones(concepto: CatalogoConceptoResponse, esNomenclador: boolean): number {
+    const verVigencias = esNomenclador ? 1 : 0;
+    const propias =
+      !esGlobal(concepto) && concepto.estado === 'ACTIVO' && this.permisos.tiene(this.permisoManage)
+        ? 2
+        : 0;
+    return verVigencias + propias;
+  }
   protected readonly formatearInstante = (instante: string | undefined | null): string | null =>
     formatearInstante(instante, this.diaDeLaSede.zona());
 

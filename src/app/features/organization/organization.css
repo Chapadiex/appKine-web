@@ -507,3 +507,93 @@
 .grilla-campos > :not(.campo) {
   grid-column: 1 / -1;
 }
+
+/*
+ * Auditoria: lista y detalle del hecho elegido. A partir de 64rem el detalle queda a la derecha de
+ * la lista; en pantallas angostas cae debajo de ella.
+ */
+.auditoria-con-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--esp-6);
+  align-items: start;
+}
+
+@media (min-width: 64rem) {
+  .auditoria-con-panel--abierto {
+    grid-template-columns: minmax(0, 3fr) minmax(18rem, 2fr);
+  }
+}
+
+.auditoria-con-panel__lista {
+  min-width: 0;
+}
+
+.auditoria-detalle {
+  min-width: 0;
+  padding: var(--esp-6);
+  border: var(--borde-fino) solid var(--color-borde);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie);
+}
+
+.auditoria-detalle[hidden] {
+  display: none;
+}
+
+.auditoria-detalle__cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--esp-4);
+}
+
+.auditoria-detalle__cabecera h3 {
+  margin: 0;
+  font-size: var(--tipo-base);
+  font-weight: var(--peso-fuerte);
+  overflow-wrap: anywhere;
+}
+
+.auditoria-detalle__datos {
+  display: grid;
+  grid-template-columns: 7rem minmax(0, 1fr);
+  gap: var(--esp-3) var(--esp-5);
+  margin: var(--esp-5) 0;
+  font-size: var(--tipo-sm);
+}
+
+.auditoria-detalle__datos dt {
+  color: var(--color-texto-suave);
+}
+
+.auditoria-detalle__datos dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.auditoria-detalle__codigo {
+  font-family: monospace;
+}
+
+.auditoria-detalle__cambio {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--esp-3);
+  margin: var(--esp-5) 0;
+  font-size: var(--tipo-sm);
+}
+
+.auditoria-detalle__antes,
+.auditoria-detalle__despues {
+  padding: var(--esp-2) var(--esp-3);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie-sutil);
+  color: var(--color-texto);
+}
+
+.fila--seleccionada {
+  background: var(--color-superficie-sutil);
+}

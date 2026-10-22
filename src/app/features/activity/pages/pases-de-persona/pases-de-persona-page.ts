@@ -19,6 +19,7 @@ import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { PermissionsStore } from '../../../../core/services/permissions.store';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { ConfirmacionConMotivo } from '../../../../shared/components/confirmacion-con-motivo/confirmacion-con-motivo';
+import { AccionesDeFila } from '../../../../shared/components/acciones-de-fila/acciones-de-fila';
 import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
 import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
 import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
@@ -106,6 +107,7 @@ const ENTERO_CON_SIGNO = /^[+-]?\d+$/;
     ConfirmacionConMotivo,
     Paginacion,
     FocoAlMontar,
+    AccionesDeFila,
   ],
   templateUrl: './pases-de-persona-page.html',
   styleUrls: ['../../activity.css', './pases-de-persona.css'],

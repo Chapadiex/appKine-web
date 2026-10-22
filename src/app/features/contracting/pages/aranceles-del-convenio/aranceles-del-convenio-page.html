@@ -266,324 +266,328 @@
   </section>
 }
 
-<section class="tarjeta tarjeta--tabla" aria-labelledby="titulo-listado-aranceles">
-  <div class="tarjeta__cabecera">
-    <h2 id="titulo-listado-aranceles">Grilla de vigencias</h2>
-  </div>
+<!--
+  Edicion en panel lateral (decision del 22/10/2026): el formulario de editar un arancel se abre
+  al costado de la grilla —fijo mientras se scrollea en pantallas anchas, debajo en las angostas—
+  y no debajo de la fila. Es el MISMO formulario: mismos controles, mismos ids, mismo envio y mismo
+  manejo de la concurrencia. El foco entra al panel al abrirlo y vuelve al boton de la fila al
+  cerrarlo (Cancelar, Escape o guardar).
+-->
+<div class="con-panel-lateral" [class.con-panel-lateral--abierto]="arancelEnEdicion() !== null">
+  <section class="tarjeta tarjeta--tabla" aria-labelledby="titulo-listado-aranceles">
+    <div class="tarjeta__cabecera">
+      <h2 id="titulo-listado-aranceles">Grilla de vigencias</h2>
+    </div>
 
-  <!--
+    <!--
     Regla de filtros (plan §3.4): sin busqueda por texto en el backend, solo el embudo. La fecha
     de vigencia va adentro y cuenta como activa si no es hoy: cambia la columna Situacion.
   -->
-  <app-filtros [soloAvanzados]="true" [activos]="filtrosAvanzadosActivos()">
-    <div class="campo">
-      <label for="filtro-estado-arancel">Mostrar</label>
-      <select
-        id="filtro-estado-arancel"
-        [value]="filtroEstado()"
-        (change)="cambiarFiltroEstado($any($event.target).value)"
-        aria-describedby="filtro-estado-arancel-ayuda"
-      >
-        <option value="ACTIVO">Solo los activos</option>
-        <option value="INACTIVO">Solo los dados de baja</option>
-        <option value="TODOS">Todos</option>
-      </select>
-      <p class="ayuda" id="filtro-estado-arancel-ayuda">
-        Este filtro es por <b>estado administrativo</b>, no por vigencia: "solo los activos" incluye
-        los de períodos ya transcurridos, que son justamente los que explican por que una prestación
-        de marzo se cobro distinto que una de octubre.
-      </p>
-    </div>
-
-    <div class="campo">
-      <label for="filtro-fecha-arancel">Vigencia al día</label>
-      <input
-        id="filtro-fecha-arancel"
-        type="date"
-        [value]="fecha()"
-        (change)="cambiarFecha($any($event.target).value)"
-        aria-describedby="filtro-fecha-arancel-ayuda"
-      />
-      <p class="ayuda" id="filtro-fecha-arancel-ayuda">
-        No filtra: <b>cambia la fecha contra la que se calcula la vigencia</b>. Ponerle la fecha de
-        una prestación responde que arancel regía ese día.
-      </p>
-    </div>
-  </app-filtros>
-
-  <div aria-live="polite">
-    @switch (estado().tipo) {
-      @case ('cargando') {
-        <p class="estado estado--cargando">Cargando los aranceles&hellip;</p>
-      }
-
-      @case ('sin-contexto') {
-        <p class="estado estado--vacio">Todavía no elegiste un consultorio.</p>
-        <p class="ayuda">
-          Los convenios y sus aranceles son de una sede concreta. Tu sesión sigue abierta: solo
-          falta elegir dónde estás.
+    <app-filtros [soloAvanzados]="true" [activos]="filtrosAvanzadosActivos()">
+      <div class="campo">
+        <label for="filtro-estado-arancel">Mostrar</label>
+        <select
+          id="filtro-estado-arancel"
+          [value]="filtroEstado()"
+          (change)="cambiarFiltroEstado($any($event.target).value)"
+          aria-describedby="filtro-estado-arancel-ayuda"
+        >
+          <option value="ACTIVO">Solo los activos</option>
+          <option value="INACTIVO">Solo los dados de baja</option>
+          <option value="TODOS">Todos</option>
+        </select>
+        <p class="ayuda" id="filtro-estado-arancel-ayuda">
+          Este filtro es por <b>estado administrativo</b>, no por vigencia: "solo los activos"
+          incluye los de períodos ya transcurridos, que son justamente los que explican por que una
+          prestación de marzo se cobro distinto que una de octubre.
         </p>
-        <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
-      }
+      </div>
 
-      @case ('error') {
-        <p class="estado estado--error" role="alert">{{ mensajeError() }}</p>
+      <div class="campo">
+        <label for="filtro-fecha-arancel">Vigencia al día</label>
+        <input
+          id="filtro-fecha-arancel"
+          type="date"
+          [value]="fecha()"
+          (change)="cambiarFecha($any($event.target).value)"
+          aria-describedby="filtro-fecha-arancel-ayuda"
+        />
+        <p class="ayuda" id="filtro-fecha-arancel-ayuda">
+          No filtra: <b>cambia la fecha contra la que se calcula la vigencia</b>. Ponerle la fecha
+          de una prestación responde que arancel regía ese día.
+        </p>
+      </div>
+    </app-filtros>
 
-        @if (faltaContexto()) {
-          <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
-        } @else {
-          <button type="button" class="boton" (click)="cargar()">Reintentar</button>
+    <div aria-live="polite">
+      @switch (estado().tipo) {
+        @case ('cargando') {
+          <p class="estado estado--cargando">Cargando los aranceles&hellip;</p>
         }
-      }
 
-      @case ('listo') {
-        @if (aranceles().length === 0) {
-          <p class="estado estado--vacio">
-            Este convenio no tiene aranceles que coincidan con el filtro.
-          </p>
+        @case ('sin-contexto') {
+          <p class="estado estado--vacio">Todavía no elegiste un consultorio.</p>
           <p class="ayuda">
-            Un convenio sin aranceles <b>no resuelve ningún precio</b>: la consulta de arancel
-            efectivo va a responder que hay convenio pero falta el precio de esa práctica. Carga al
-            menos una práctica para que empiece a servir.
+            Los convenios y sus aranceles son de una sede concreta. Tu sesión sigue abierta: solo
+            falta elegir dónde estás.
           </p>
-        } @else {
-          <div class="tabla-scroll" tabindex="0" role="region" aria-label="Aranceles del convenio">
-            <table class="tabla">
-              <caption class="visualmente-oculto">
-                Aranceles del convenio, con su práctica, los tres importes, la ventana de vigencia,
-                la situación y las acciones.
-              </caption>
-              <thead>
-                <tr>
-                  <th scope="col" appOrdenable [tabla]="tabla" columna="practica">Práctica</th>
-                  <th scope="col" appOrdenable [tabla]="tabla" columna="vigencia">Vigencia</th>
-                  <th scope="col" class="importe" appOrdenable [tabla]="tabla" columna="total">
-                    Total
-                  </th>
-                  <th
-                    scope="col"
-                    class="importe"
-                    appOrdenable
-                    [tabla]="tabla"
-                    columna="financiador"
-                  >
-                    Financiador
-                  </th>
-                  <th scope="col" class="importe" appOrdenable [tabla]="tabla" columna="coseguro">
-                    Coseguro
-                  </th>
-                  <th scope="col">Situación</th>
-                  <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (arancel of tabla.visibles(); track arancel.id) {
-                  @let situacionDeLaFila = situacion(arancel);
+          <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
+        }
 
-                  <tr
-                    [class.fila--revocada]="arancel.estado === 'INACTIVO'"
-                    [class.fila--atenuada]="situacionDeLaFila.atenuada"
-                  >
-                    <th scope="row" class="celda-ancha">
-                      <span class="celda-principal">{{ nombreDeLaPractica(arancel) }}</span>
-                      <span class="celda-secundaria">{{ alcanceDelArancel(arancel) }}</span>
+        @case ('error') {
+          <p class="estado estado--error" role="alert">{{ mensajeError() }}</p>
+
+          @if (faltaContexto()) {
+            <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
+          } @else {
+            <button type="button" class="boton" (click)="cargar()">Reintentar</button>
+          }
+        }
+
+        @case ('listo') {
+          @if (aranceles().length === 0) {
+            <p class="estado estado--vacio">
+              Este convenio no tiene aranceles que coincidan con el filtro.
+            </p>
+            <p class="ayuda">
+              Un convenio sin aranceles <b>no resuelve ningún precio</b>: la consulta de arancel
+              efectivo va a responder que hay convenio pero falta el precio de esa práctica. Carga
+              al menos una práctica para que empiece a servir.
+            </p>
+          } @else {
+            <div
+              class="tabla-scroll"
+              tabindex="0"
+              role="region"
+              aria-label="Aranceles del convenio"
+            >
+              <table class="tabla">
+                <caption class="visualmente-oculto">
+                  Aranceles del convenio, con su práctica, los tres importes, la ventana de
+                  vigencia, la situación y las acciones.
+                </caption>
+                <thead>
+                  <tr>
+                    <th scope="col" appOrdenable [tabla]="tabla" columna="practica">Práctica</th>
+                    <th scope="col" appOrdenable [tabla]="tabla" columna="vigencia">Vigencia</th>
+                    <th scope="col" class="importe" appOrdenable [tabla]="tabla" columna="total">
+                      Total
                     </th>
-                    <td>{{ ventanaEnPalabras(arancel) }}</td>
-                    <td class="importe">
-                      {{ importeEnPalabras(arancel.importeTotal, moneda(), '-') }}
-                    </td>
-                    <td class="importe">
-                      {{ importeEnPalabras(arancel.importeFinanciador, moneda(), '-') }}
-                    </td>
-                    <td class="importe">
-                      {{ importeEnPalabras(arancel.coseguro, moneda(), '-') }}
-                    </td>
-                    <td>
-                      <span
-                        class="marca-estado"
-                        [class.marca-estado--activa]="situacionDeLaFila.clave === 'vigente'"
-                        [class.marca-estado--revocada]="situacionDeLaFila.clave === 'dada-de-baja'"
-                        [class.marca-estado--suspendida]="
-                          situacionDeLaFila.clave !== 'vigente' &&
-                          situacionDeLaFila.clave !== 'dada-de-baja'
-                        "
-                        >{{ situacionDeLaFila.resumen }}</span
-                      >
-                      @if (situacionDeLaFila.explicacion; as explicacion) {
-                        <span class="celda-secundaria">{{ explicacion }}</span>
-                      }
-                      @if (arancel.estado === 'INACTIVO' && arancel.deactivationReason) {
-                        <span class="celda-secundaria">{{ arancel.deactivationReason }}</span>
-                      }
-                    </td>
-                    <td class="celda-acciones">
-                      @if (arancel.estado === 'ACTIVO') {
-                        <ng-container *akinePermiso="permisoManage">
-                          <button
-                            type="button"
-                            class="accion-texto"
-                            (click)="abrirPanel(arancel, 'editar')"
-                          >
-                            Editar
-                          </button>
-                          <button
-                            type="button"
-                            class="accion-texto accion-texto--peligro"
-                            (click)="abrirPanel(arancel, 'baja')"
-                          >
-                            Dar de baja
-                          </button>
-                        </ng-container>
-                      }
-                    </td>
+                    <th
+                      scope="col"
+                      class="importe"
+                      appOrdenable
+                      [tabla]="tabla"
+                      columna="financiador"
+                    >
+                      Financiador
+                    </th>
+                    <th scope="col" class="importe" appOrdenable [tabla]="tabla" columna="coseguro">
+                      Coseguro
+                    </th>
+                    <th scope="col">Situación</th>
+                    <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
                   </tr>
+                </thead>
+                <tbody>
+                  @for (arancel of tabla.visibles(); track arancel.id) {
+                    @let situacionDeLaFila = situacion(arancel);
 
-                  @if (panelAbierto(arancel.id, 'editar')) {
-                    <tr class="fila-panel">
-                      <td colspan="7">
-                        <form
-                          [formGroup]="formularioEdicion"
-                          (ngSubmit)="enviarEdicion()"
-                          novalidate
+                    <tr
+                      [class.fila--revocada]="arancel.estado === 'INACTIVO'"
+                      [class.fila--atenuada]="situacionDeLaFila.atenuada"
+                    >
+                      <th scope="row" class="celda-ancha">
+                        <span class="celda-principal">{{ nombreDeLaPractica(arancel) }}</span>
+                        <span class="celda-secundaria">{{ alcanceDelArancel(arancel) }}</span>
+                      </th>
+                      <td>{{ ventanaEnPalabras(arancel) }}</td>
+                      <td class="importe">
+                        {{ importeEnPalabras(arancel.importeTotal, moneda(), '-') }}
+                      </td>
+                      <td class="importe">
+                        {{ importeEnPalabras(arancel.importeFinanciador, moneda(), '-') }}
+                      </td>
+                      <td class="importe">
+                        {{ importeEnPalabras(arancel.coseguro, moneda(), '-') }}
+                      </td>
+                      <td>
+                        <span
+                          class="marca-estado"
+                          [class.marca-estado--activa]="situacionDeLaFila.clave === 'vigente'"
+                          [class.marca-estado--revocada]="
+                            situacionDeLaFila.clave === 'dada-de-baja'
+                          "
+                          [class.marca-estado--suspendida]="
+                            situacionDeLaFila.clave !== 'vigente' &&
+                            situacionDeLaFila.clave !== 'dada-de-baja'
+                          "
+                          >{{ situacionDeLaFila.resumen }}</span
                         >
-                          <h3>Editar el arancel de {{ nombreDeLaPractica(arancel) }}</h3>
+                        @if (situacionDeLaFila.explicacion; as explicacion) {
+                          <span class="celda-secundaria">{{ explicacion }}</span>
+                        }
+                        @if (arancel.estado === 'INACTIVO' && arancel.deactivationReason) {
+                          <span class="celda-secundaria">{{ arancel.deactivationReason }}</span>
+                        }
+                      </td>
+                      <td class="celda-acciones">
+                        @if (arancel.estado === 'ACTIVO') {
+                          <ng-container *akinePermiso="permisoManage">
+                            <button
+                              type="button"
+                              class="accion-texto"
+                              [id]="'accion-editar-arancel-' + arancel.id"
+                              (click)="abrirPanel(arancel, 'editar')"
+                            >
+                              Editar
+                            </button>
+                            <button
+                              type="button"
+                              class="accion-texto accion-texto--peligro"
+                              (click)="abrirPanel(arancel, 'baja')"
+                            >
+                              Dar de baja
+                            </button>
+                          </ng-container>
+                        }
+                      </td>
+                    </tr>
 
-                          <p class="ayuda">
-                            <b>Esto es para corregir una carga, no para subir el precio.</b> Para
-                            actualizarlo, cerrale la vigencia a este y cargá otro: así lo ya
-                            liquidado se sigue explicando con el precio que regía entonces. Ni la
-                            práctica ni el convenio se pueden cambiar. Los tres importes viajan
-                            juntos aunque toques uno solo, porque se validan como terna.
-                          </p>
-
-                          <div class="grilla-campos grilla-campos--dos">
-                            <div class="campo">
-                              <label for="editar-arancel-total">Importe total</label>
-                              <input
-                                id="editar-arancel-total"
-                                type="number"
-                                min="0"
-                                step="0.01"
-                                formControlName="importeTotal"
-                              />
-                            </div>
-
-                            <div class="campo">
-                              <label for="editar-arancel-financiador">Pone el financiador</label>
-                              <input
-                                id="editar-arancel-financiador"
-                                type="number"
-                                min="0"
-                                step="0.01"
-                                formControlName="importeFinanciador"
-                              />
-                            </div>
-                          </div>
-
-                          <div class="campo">
-                            <label for="editar-arancel-coseguro">Coseguro del paciente</label>
-                            <input
-                              id="editar-arancel-coseguro"
-                              type="number"
-                              min="0"
-                              step="0.01"
-                              formControlName="coseguro"
-                            />
-                          </div>
-
-                          <div class="grilla-campos grilla-campos--dos">
-                            <div class="campo">
-                              <label for="editar-arancel-desde">Vigente desde</label>
-                              <input
-                                id="editar-arancel-desde"
-                                type="date"
-                                formControlName="vigenciaDesde"
-                              />
-                            </div>
-
-                            <div class="campo">
-                              <label for="editar-arancel-hasta">Vigente hasta</label>
-                              <input
-                                id="editar-arancel-hasta"
-                                type="date"
-                                formControlName="vigenciaHasta"
-                                aria-describedby="editar-arancel-hasta-ayuda"
-                              />
-                              <p class="ayuda" id="editar-arancel-hasta-ayuda">
-                                El fin es <b>inclusivo</b>. Mover la vigencia puede chocar con otro
-                                arancel de la misma práctica.
-                              </p>
-                            </div>
-                          </div>
+                    @if (panelAbierto(arancel.id, 'baja')) {
+                      <tr class="fila-panel">
+                        <td colspan="7">
+                          <app-confirmacion-con-motivo
+                            idCampo="baja-arancel-motivo"
+                            [titulo]="'Dar de baja el arancel de ' + nombreDeLaPractica(arancel)"
+                            etiqueta="Motivo de la baja"
+                            ayuda="Queda registrado junto al arancel. Libera el PERÍODO: se puede volver a cargar un arancel de esa práctica para las mismas fechas, porque el no-solapamiento solo mira los activos. Lo ya liquidado con este arancel guarda su propio snapshot congelado y no se toca. No hay reactivación."
+                            textoConfirmar="Dar de baja"
+                            [enviando]="enviando()"
+                            (confirmado)="enviarBaja($event)"
+                            (cancelado)="cerrarPanel()"
+                          />
 
                           @if (errorAccion(); as mensaje) {
                             <p class="estado estado--error" role="alert">{{ mensaje }}</p>
                           }
-
-                          <p class="acciones">
-                            <button type="submit" class="boton" [disabled]="enviando()">
-                              {{ enviando() ? 'Guardando...' : 'Guardar cambios' }}
+                          @if (hayQueRecargar()) {
+                            <button type="button" class="boton" (click)="cargar()">
+                              Recargar la grilla
                             </button>
-                            <button
-                              type="button"
-                              class="boton boton--secundario"
-                              (click)="cerrarPanel()"
-                              [disabled]="enviando()"
-                            >
-                              Cancelar
-                            </button>
-                            @if (hayQueRecargar()) {
-                              <button type="button" class="boton" (click)="cargar()">
-                                Recargar la grilla
-                              </button>
-                            }
-                          </p>
-                        </form>
-                      </td>
-                    </tr>
+                          }
+                        </td>
+                      </tr>
+                    }
                   }
+                </tbody>
+              </table>
+            </div>
 
-                  @if (panelAbierto(arancel.id, 'baja')) {
-                    <tr class="fila-panel">
-                      <td colspan="7">
-                        <app-confirmacion-con-motivo
-                          idCampo="baja-arancel-motivo"
-                          [titulo]="'Dar de baja el arancel de ' + nombreDeLaPractica(arancel)"
-                          etiqueta="Motivo de la baja"
-                          ayuda="Queda registrado junto al arancel. Libera el PERÍODO: se puede volver a cargar un arancel de esa práctica para las mismas fechas, porque el no-solapamiento solo mira los activos. Lo ya liquidado con este arancel guarda su propio snapshot congelado y no se toca. No hay reactivación."
-                          textoConfirmar="Dar de baja"
-                          [enviando]="enviando()"
-                          (confirmado)="enviarBaja($event)"
-                          (cancelado)="cerrarPanel()"
-                        />
-
-                        @if (errorAccion(); as mensaje) {
-                          <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-                        }
-                        @if (hayQueRecargar()) {
-                          <button type="button" class="boton" (click)="cargar()">
-                            Recargar la grilla
-                          </button>
-                        }
-                      </td>
-                    </tr>
-                  }
-                }
-              </tbody>
-            </table>
-          </div>
-
-          <div class="tabla-pie">
-            <span>{{ tabla.total() }} aranceles</span>
-            <app-paginacion
-              [paginaActual]="tabla.pagina()"
-              [totalPaginas]="tabla.totalPaginas()"
-              etiqueta="Páginas de aranceles"
-              (cambioDePagina)="tabla.irA($event)"
-            />
-          </div>
+            <div class="tabla-pie">
+              <span>{{ tabla.total() }} aranceles</span>
+              <app-paginacion
+                [paginaActual]="tabla.pagina()"
+                [totalPaginas]="tabla.totalPaginas()"
+                etiqueta="Páginas de aranceles"
+                (cambioDePagina)="tabla.irA($event)"
+              />
+            </div>
+          }
         }
       }
-    }
-  </div>
-</section>
+    </div>
+  </section>
+
+  @if (arancelEnEdicion(); as arancel) {
+    <aside class="tarjeta panel-lateral" aria-labelledby="titulo-panel-arancel">
+      <form [formGroup]="formularioEdicion" (ngSubmit)="enviarEdicion()" novalidate>
+        <h3 id="titulo-panel-arancel">Editar el arancel de {{ nombreDeLaPractica(arancel) }}</h3>
+
+        <p class="ayuda">
+          <b>Esto es para corregir una carga, no para subir el precio.</b> Para actualizarlo,
+          cerrale la vigencia a este y cargá otro: así lo ya liquidado se sigue explicando con el
+          precio que regía entonces. Ni la práctica ni el convenio se pueden cambiar. Los tres
+          importes viajan juntos aunque toques uno solo, porque se validan como terna.
+        </p>
+
+        <div class="grilla-campos grilla-campos--dos">
+          <div class="campo">
+            <label for="editar-arancel-total">Importe total</label>
+            <input
+              id="editar-arancel-total"
+              type="number"
+              min="0"
+              step="0.01"
+              formControlName="importeTotal"
+            />
+          </div>
+
+          <div class="campo">
+            <label for="editar-arancel-financiador">Pone el financiador</label>
+            <input
+              id="editar-arancel-financiador"
+              type="number"
+              min="0"
+              step="0.01"
+              formControlName="importeFinanciador"
+            />
+          </div>
+        </div>
+
+        <div class="campo">
+          <label for="editar-arancel-coseguro">Coseguro del paciente</label>
+          <input
+            id="editar-arancel-coseguro"
+            type="number"
+            min="0"
+            step="0.01"
+            formControlName="coseguro"
+          />
+        </div>
+
+        <div class="grilla-campos grilla-campos--dos">
+          <div class="campo">
+            <label for="editar-arancel-desde">Vigente desde</label>
+            <input id="editar-arancel-desde" type="date" formControlName="vigenciaDesde" />
+          </div>
+
+          <div class="campo">
+            <label for="editar-arancel-hasta">Vigente hasta</label>
+            <input
+              id="editar-arancel-hasta"
+              type="date"
+              formControlName="vigenciaHasta"
+              aria-describedby="editar-arancel-hasta-ayuda"
+            />
+            <p class="ayuda" id="editar-arancel-hasta-ayuda">
+              El fin es <b>inclusivo</b>. Mover la vigencia puede chocar con otro arancel de la
+              misma práctica.
+            </p>
+          </div>
+        </div>
+
+        @if (errorAccion(); as mensaje) {
+          <p class="estado estado--error" role="alert">{{ mensaje }}</p>
+        }
+
+        <p class="acciones">
+          <button type="submit" class="boton" [disabled]="enviando()">
+            {{ enviando() ? 'Guardando...' : 'Guardar cambios' }}
+          </button>
+          <button
+            type="button"
+            class="boton boton--secundario"
+            (click)="cerrarEdicion()"
+            [disabled]="enviando()"
+          >
+            Cancelar
+          </button>
+          @if (hayQueRecargar()) {
+            <button type="button" class="boton" (click)="cargar()">Recargar la grilla</button>
+          }
+        </p>
+      </form>
+    </aside>
+  }
+</div>

@@ -2,6 +2,7 @@ import { Locator, Page } from '@playwright/test';
 
 import { expect, ingresar, navegar, problemaDe, respuestaDe } from './support/agenda-real';
 import { ZONA_DEL_NAVEGADOR_DE_HOY, test } from './support/centro-de-hoy';
+import { abrirAcciones } from './support/filtros';
 import {
   Oferta,
   Persona,
@@ -76,9 +77,13 @@ test.describe('Recepcion del dia contra el backend real', () => {
     await expect(fila.getByText('OBSERVADA', { exact: true })).toBeVisible();
     await expect(fila.getByText(/Observaci[oó]n: OFERTA_SIN_PRACTICA/)).toBeVisible();
 
+    // Desde la validacion observada la transicion siguiente (Validar) sigue a la vista y pasar a
+    // espera va en el menu "⋯" de la fila.
+    await abrirAcciones(fila);
     await fila.getByRole('button', { name: 'Pasar a espera' }).click();
     await expect(fila.getByText('EN_ESPERA', { exact: true })).toBeVisible();
 
+    // En la sala de espera "Llamar" es la transicion siguiente: queda a la vista.
     await fila.getByRole('button', { name: 'Llamar' }).click();
     await expect(fila.getByText('LLAMADA', { exact: true })).toBeVisible();
     await expect(fila.getByRole('button', { name: 'Llamar' })).toHaveCount(0);
@@ -98,6 +103,7 @@ test.describe('Recepcion del dia contra el backend real', () => {
     await fila.getByRole('button', { name: 'Registrar la llegada' }).click();
     await expect(fila.getByText('LLEGO', { exact: true })).toBeVisible();
 
+    await abrirAcciones(fila);
     await fila.getByRole('button', { name: 'Atender como Particular' }).click();
     const panel = page.getByRole('region', { name: 'Confirmar la transicion de la recepción' });
     await panel.getByLabel('Motivo (obligatorio)').fill('No trajo la credencial de la obra social');
@@ -173,8 +179,10 @@ test.describe('Recepcion del dia contra el backend real', () => {
     await expect(fila.getByText('LLEGO', { exact: true })).toBeVisible();
     // Particular desde la sala (U-21): llega a EN_ESPERA y se ofrece sin anular la llegada.
     await fila.getByRole('button', { name: 'Validar cobertura' }).click();
+    await abrirAcciones(fila);
     await fila.getByRole('button', { name: 'Pasar a espera' }).click();
     await expect(fila.getByText('EN_ESPERA', { exact: true })).toBeVisible();
+    await abrirAcciones(fila);
     await expect(fila.getByRole('button', { name: 'Atender como Particular' })).toBeVisible();
 
     await fila.getByRole('button', { name: 'Se retiro sin ser atendido' }).click();

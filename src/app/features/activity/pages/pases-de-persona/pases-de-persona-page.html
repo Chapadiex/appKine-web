@@ -411,60 +411,77 @@
                   }
                 </td>
                 <td>
-                  <div class="acciones-fila">
-                    <button
-                      type="button"
-                      class="boton boton--secundario"
-                      [attr.aria-label]="'Ver movimientos de ' + pase.nombre"
-                      [attr.aria-expanded]="detalle()?.paseId === pase.id"
-                      (click)="verMovimientos(pase)"
-                    >
-                      Ver movimientos
-                    </button>
-                    @if (puedeVender() && renovacionConfigurable(pase)) {
+                  <!--
+                    Hasta cuatro acciones: menu "⋯" (decidido el 22/10/2026). "Ver movimientos" es la
+                    frecuente y queda a la vista. Sin permiso para vender ni ajustar solo hay esa.
+                  -->
+                  @if (puedeVender() || puedeAjustar()) {
+                    <app-acciones-de-fila [de]="pase.nombre ?? 'el pase'">
+                      <button
+                        principal
+                        type="button"
+                        class="boton boton--secundario"
+                        [attr.aria-label]="'Ver movimientos de ' + pase.nombre"
+                        [attr.aria-expanded]="detalle()?.paseId === pase.id"
+                        (click)="verMovimientos(pase)"
+                      >
+                        Ver movimientos
+                      </button>
+                      @if (puedeVender() && renovacionConfigurable(pase)) {
+                        <button
+                          type="button"
+                          [disabled]="renovando() === pase.id"
+                          [attr.aria-label]="
+                            (pase.renovacionAutomatica
+                              ? 'Desactivar la renovación automática de '
+                              : 'Activar la renovación automática de ') + pase.nombre
+                          "
+                          (click)="cambiarRenovacion(pase, !pase.renovacionAutomatica)"
+                        >
+                          {{
+                            renovando() === pase.id
+                              ? 'Guardando…'
+                              : pase.renovacionAutomatica
+                                ? 'Desactivar renovacion'
+                                : 'Activar renovacion'
+                          }}
+                        </button>
+                      }
+                      @if (puedeAjustar()) {
+                        @if (ajustable(pase)) {
+                          <button
+                            type="button"
+                            [attr.aria-label]="'Ajustar saldo de ' + pase.nombre"
+                            (click)="abrirAjuste(pase)"
+                          >
+                            Ajustar saldo
+                          </button>
+                        }
+                        @if (anulable(pase)) {
+                          <button
+                            type="button"
+                            class="accion--peligro"
+                            [attr.aria-label]="'Anular ' + pase.nombre"
+                            (click)="abrirAnulacion(pase)"
+                          >
+                            Anular
+                          </button>
+                        }
+                      }
+                    </app-acciones-de-fila>
+                  } @else {
+                    <div class="acciones-fila">
                       <button
                         type="button"
                         class="boton boton--secundario"
-                        [disabled]="renovando() === pase.id"
-                        [attr.aria-label]="
-                          (pase.renovacionAutomatica
-                            ? 'Desactivar la renovación automática de '
-                            : 'Activar la renovación automática de ') + pase.nombre
-                        "
-                        (click)="cambiarRenovacion(pase, !pase.renovacionAutomatica)"
+                        [attr.aria-label]="'Ver movimientos de ' + pase.nombre"
+                        [attr.aria-expanded]="detalle()?.paseId === pase.id"
+                        (click)="verMovimientos(pase)"
                       >
-                        {{
-                          renovando() === pase.id
-                            ? 'Guardando…'
-                            : pase.renovacionAutomatica
-                              ? 'Desactivar renovacion'
-                              : 'Activar renovacion'
-                        }}
+                        Ver movimientos
                       </button>
-                    }
-                    @if (puedeAjustar()) {
-                      @if (ajustable(pase)) {
-                        <button
-                          type="button"
-                          class="boton boton--secundario"
-                          [attr.aria-label]="'Ajustar saldo de ' + pase.nombre"
-                          (click)="abrirAjuste(pase)"
-                        >
-                          Ajustar saldo
-                        </button>
-                      }
-                      @if (anulable(pase)) {
-                        <button
-                          type="button"
-                          class="boton boton--secundario"
-                          [attr.aria-label]="'Anular ' + pase.nombre"
-                          (click)="abrirAnulacion(pase)"
-                        >
-                          Anular
-                        </button>
-                      }
-                    }
-                  </div>
+                    </div>
+                  }
                 </td>
               </tr>
             }

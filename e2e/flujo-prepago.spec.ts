@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 
 import { expect, ingresar, navegar, problemaDe, respuestaDe } from './support/agenda-real';
 import { ZONA_DEL_NAVEGADOR_DE_HOY, test } from './support/centro-de-hoy';
+import { abrirAcciones } from './support/filtros';
 import {
   Oferta,
   Persona,
@@ -71,6 +72,8 @@ test.describe('Prepago antes del check-in contra el backend real', () => {
     await expect(fila.getByText('Sin recepción')).toBeVisible();
     await expect(fila.getByText('Prepago pendiente', { exact: true })).toBeVisible();
 
+    // Sin llegada la fila tiene tres acciones (llegada, prepago, ver): el prepago va en el menu "⋯".
+    await abrirAcciones(fila);
     await fila.getByRole('link', { name: 'Registrar prepago' }).click();
     await expect(
       page.getByRole('heading', { name: 'Registrar un prepago', level: 1 }),
@@ -128,6 +131,8 @@ test.describe('Prepago antes del check-in contra el backend real', () => {
   }) => {
     // La pantalla ofrece el enlace con el turno vivo; otra persona lo cancela antes de cobrar.
     const fila = await abrirLaRecepcion(page, persona);
+    // Sin llegada la fila tiene tres acciones (llegada, prepago, ver): el prepago va en el menu "⋯".
+    await abrirAcciones(fila);
     await fila.getByRole('link', { name: 'Registrar prepago' }).click();
     await expect(
       page.getByRole('heading', { name: 'Registrar un prepago', level: 1 }),

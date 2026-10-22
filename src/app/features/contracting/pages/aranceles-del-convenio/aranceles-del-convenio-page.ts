@@ -1,5 +1,6 @@
 import {
   Component,
+  HostListener,
   ElementRef,
   Injector,
   afterNextRender,
@@ -371,6 +372,15 @@ export class ArancelesDelConvenioPage {
     this.cargar();
   }
 
+  /** El arancel que se esta editando en el panel lateral, o `null`. */
+  protected readonly arancelEnEdicion = computed<ArancelResponse | null>(() => {
+    const abierto = this.panel();
+    if (abierto === null || abierto.tipo !== 'editar') {
+      return null;
+    }
+    return this.aranceles().find((arancel) => arancel.id === abierto.id) ?? null;
+  });
+
   protected panelAbierto(id: number | undefined, tipo: TipoAccion): boolean {
     const panel = this.panel();
     return panel !== null && panel.id === id && panel.tipo === tipo;
@@ -415,6 +425,37 @@ export class ArancelesDelConvenioPage {
         vigenciaHasta: arancel.vigenciaHasta ?? '',
       });
       afterNextRender(() => this.enfocar('#editar-arancel-total'), { injector: this.injector });
+    }
+  }
+
+  /**
+   * Cierra la edicion y le devuelve el foco al boton "Editar" de la fila, que es de donde salio.
+   * Sin esto, quien navega por teclado cierra el panel lateral y el foco cae al principio de la
+   * pagina. Cancelar, Escape y guardar pasan por aca; las demas formas de cerrar no.
+   */
+  protected cerrarEdicion(): void {
+    if (this.enviando()) {
+      return;
+    }
+    this.cerrarEditando();
+  }
+
+  /** Escape dentro del panel lateral lo cierra. Fuera de el no hace nada. */
+  @HostListener('document:keydown.escape')
+  protected cerrarConEscape(): void {
+    const panel = this.host.nativeElement.querySelector('aside.panel-lateral');
+    if (panel !== null && panel.contains(document.activeElement)) {
+      this.cerrarEdicion();
+    }
+  }
+
+  private cerrarEditando(): void {
+    const id = this.panel()?.id;
+    this.cerrarPanel();
+    if (id !== undefined) {
+      afterNextRender(() => this.enfocar(`#accion-editar-arancel-${id}`), {
+        injector: this.injector,
+      });
     }
   }
 
@@ -518,7 +559,7 @@ export class ArancelesDelConvenioPage {
 
     this.api.editarArancel(consultorioId, this.convenioId, panel.id, cambios).subscribe({
       next: () => {
-        this.cerrarPanel();
+        this.cerrarEditando();
         this.exito.set(
           'El arancel quedó guardado. Recorda que esto NO es la forma de subir un precio: para eso ' +
             'se le cierra la vigencia a este y se carga otro, así lo ya liquidado se sigue ' +

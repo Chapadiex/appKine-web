@@ -1,6 +1,7 @@
 import { Page } from '@playwright/test';
 
 import { navegar, ingresar, problemaDe, respuestaDe } from './support/agenda-real';
+import { abrirAcciones } from './support/filtros';
 import {
   CentroPropio,
   cerrarCentroPropio,
@@ -101,12 +102,14 @@ test.describe('Cobro en efectivo anulado contra el backend real', () => {
       .filter({
         has: page.getByRole('cell', { name: `N.º ${cobro.comprobanteNumero}`, exact: true }),
       });
+    await abrirAcciones(fila);
     await fila.getByRole('button', { name: 'Anular' }).click();
     await page.getByLabel('Motivo de la anulacion').fill('Se cobro a la persona equivocada');
     const anulacion = respuestaDe(page, 'POST', /\/cobros\/\d+\/anulacion$/);
     await page.getByRole('button', { name: 'Anular el cobro' }).click();
     expect((await anulacion).status()).toBeLessThan(300);
     await expect(fila).toContainText('Anulado');
+    await abrirAcciones(fila);
     await expect(fila.getByRole('button', { name: 'Anular' })).toBeDisabled();
 
     const devuelta = await api.exigir<{ estado: string; saldo: number }>(
@@ -168,6 +171,7 @@ test.describe('Cobro en efectivo anulado contra el backend real', () => {
       });
 
     // 1. Sin caja abierta no hay cajon donde devolver el efectivo.
+    await abrirAcciones(fila);
     await fila.getByRole('button', { name: 'Anular' }).click();
     await page.getByLabel('Motivo de la anulacion').fill('Se cobro dos veces');
     let rechazo = respuestaDe(page, 'POST', /\/cobros\/\d+\/anulacion$/);
@@ -191,6 +195,7 @@ test.describe('Cobro en efectivo anulado contra el backend real', () => {
     // 2. Caja abierta pero vacia: devolver 8.500 dejaria el cajon en negativo.
     await abrirLaCaja(api, centro, 0);
     await page.reload();
+    await abrirAcciones(fila);
     await fila.getByRole('button', { name: 'Anular' }).click();
     await page.getByLabel('Motivo de la anulacion').fill('Se cobro dos veces');
     rechazo = respuestaDe(page, 'POST', /\/cobros\/\d+\/anulacion$/);
@@ -208,6 +213,7 @@ test.describe('Cobro en efectivo anulado contra el backend real', () => {
     await dejarLaCajaCerrada(api, centro);
     await abrirLaCaja(api, centro, PRECIO);
     await page.reload();
+    await abrirAcciones(fila);
     await fila.getByRole('button', { name: 'Anular' }).click();
     await page.getByLabel('Motivo de la anulacion').fill('Se cobro dos veces');
     const anulacion = respuestaDe(page, 'POST', /\/cobros\/\d+\/anulacion$/);

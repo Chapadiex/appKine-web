@@ -17,6 +17,8 @@ import { Migas } from '../../../../shared/components/migas/migas';
 
 import { ConfirmacionConMotivo } from '../../../../shared/components/confirmacion-con-motivo/confirmacion-con-motivo';
 import { PERMISO_CAJA_OPERATE, PERMISO_COBRO_REGISTER } from '../../../../core/models/permisos';
+import { PermissionsStore } from '../../../../core/services/permissions.store';
+import { AccionesDeFila } from '../../../../shared/components/acciones-de-fila/acciones-de-fila';
 import { PermisoDirective } from '../../../../shared/directives/permiso.directive';
 import { ReintegrarSaldoAFavorMedioEnum } from '../../../../api/generated/model/reintegrar-saldo-a-favor';
 import { centavosDeTexto, deCentavos } from '../../models/dinero';
@@ -95,6 +97,7 @@ interface OperacionAbierta {
     RouterLink,
     ConfirmacionConMotivo,
     PermisoDirective,
+    AccionesDeFila,
   ],
   templateUrl: './cobros-page.html',
   styleUrls: ['../../billing.css', '../cuenta-corriente/cuenta-corriente.css'],
@@ -105,6 +108,7 @@ export class CobrosPage {
   private readonly tenantContext = inject(TenantContextStore);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly injector = inject(Injector);
+  private readonly permisos = inject(PermissionsStore);
 
   /** De la ruta padre. `withComponentInputBinding` lo liga solo. */
   readonly personaId = input.required<string>();
@@ -133,6 +137,11 @@ export class CobrosPage {
   /** Anular y reintegrar: `*akinePermiso` acepta CUALQUIERA, asi que se anidan las dos. */
   protected readonly PERMISO_COBRO_REGISTER = PERMISO_COBRO_REGISTER;
   protected readonly PERMISO_CAJA_OPERATE = PERMISO_CAJA_OPERATE;
+
+  /** Anular y reintegrar piden los dos permisos; sin ellos la fila solo ofrece ver el comprobante. */
+  protected readonly puedeAnularYReintegrar = computed(
+    () => this.permisos.tiene(PERMISO_COBRO_REGISTER) && this.permisos.tiene(PERMISO_CAJA_OPERATE),
+  );
   protected readonly estaAnulado = estaAnulado;
   protected readonly motivoParaNoAnular = motivoParaNoAnular;
   protected readonly motivoParaNoReintegrar = motivoParaNoReintegrar;

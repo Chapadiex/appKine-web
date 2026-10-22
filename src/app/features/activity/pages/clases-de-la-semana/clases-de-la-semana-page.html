@@ -98,6 +98,13 @@
 </div>
 
 @if (clases() !== null) {
+  @if (total() > 0) {
+    <app-filtros-rapidos
+      etiqueta="Filtrar por estado de la clase"
+      [opciones]="opcionesDeEstado()"
+      [(valor)]="filtroDeEstado"
+    />
+  }
   @if (tabla.total() === 0) {
     <p class="estado estado--vacio">
       {{ total() === 0 ? 'No hay clases esta semana.' : 'Ninguna clase coincide con la búsqueda.' }}

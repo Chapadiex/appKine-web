@@ -383,31 +383,25 @@
               </td>
               <td>{{ orden.adjuntoId ? 'Vinculado' : 'Sin vincular' }}</td>
               <td>
-                @if (!ordenInactiva(orden)) {
-                  <button
-                    type="button"
-                    class="boton boton--secundario"
-                    (click)="abrirEdicionDeOrden(orden)"
-                    *akinePermiso="permisoManage"
-                  >
-                    Corregir
-                  </button>
-                  <button
-                    type="button"
-                    class="boton boton--secundario"
-                    (click)="abrirDocumentoDeOrden(orden)"
-                    *akinePermiso="permisoManage"
-                  >
-                    Escaneo
-                  </button>
-                  <button
-                    type="button"
-                    class="boton boton--secundario"
-                    (click)="abrirBajaDeOrden(orden)"
-                    *akinePermiso="permisoManage"
-                  >
-                    Dar de baja la orden
-                  </button>
+                <!--
+                  Tres acciones: menu "⋯" (decidido el 22/10/2026). Todas piden paciente:manage y
+                  solo valen en una orden vigente; sin eso la celda queda vacia.
+                -->
+                @if (!ordenInactiva(orden) && puedeGestionar()) {
+                  <app-acciones-de-fila [de]="'orden ' + (orden.numero || emisorEnPalabras(orden))">
+                    <button
+                      principal
+                      type="button"
+                      class="boton boton--secundario"
+                      (click)="abrirEdicionDeOrden(orden)"
+                    >
+                      Corregir
+                    </button>
+                    <button type="button" (click)="abrirDocumentoDeOrden(orden)">Escaneo</button>
+                    <button type="button" class="accion--peligro" (click)="abrirBajaDeOrden(orden)">
+                      Dar de baja la orden
+                    </button>
+                  </app-acciones-de-fila>
                 }
               </td>
             </tr>
@@ -858,56 +852,64 @@
               <td>{{ habilitaEnPalabras(autorizacion) }}</td>
               <td>{{ autorizacion.adjuntoId ? 'Vinculado' : 'Sin vincular' }}</td>
               <td>
-                <button
-                  type="button"
-                  class="boton boton--secundario"
-                  [attr.aria-expanded]="esPanelDeAutorizacion(autorizacion, 'historial')"
-                  (click)="alternarHistorial(autorizacion)"
-                >
-                  Historial
-                </button>
-                <button
-                  type="button"
-                  class="boton boton--secundario"
-                  [attr.aria-expanded]="esPanelDeAutorizacion(autorizacion, 'consumo')"
-                  (click)="alternarConsumo(autorizacion)"
-                >
-                  Saldo y consumos
-                </button>
-                @if (!autorizacionInactiva(autorizacion)) {
-                  @if (admiteResolucion(autorizacion)) {
+                <!--
+                  Hasta seis acciones: menu "⋯" (decidido el 22/10/2026). "Saldo y consumos" queda a
+                  la vista; el historial y lo que escribe (piden paciente:manage) van detras. Sin
+                  permiso o con la autorizacion dada de baja solo quedan las dos de lectura.
+                -->
+                @if (!autorizacionInactiva(autorizacion) && puedeGestionar()) {
+                  <app-acciones-de-fila [de]="'autorización ' + autorizacion.numero">
                     <button
+                      principal
                       type="button"
                       class="boton boton--secundario"
-                      (click)="abrirResolucion(autorizacion)"
-                      *akinePermiso="permisoManage"
+                      [attr.aria-expanded]="esPanelDeAutorizacion(autorizacion, 'consumo')"
+                      (click)="alternarConsumo(autorizacion)"
                     >
-                      Respuesta del financiador
+                      Saldo y consumos
                     </button>
-                  }
+                    <button
+                      type="button"
+                      [attr.aria-expanded]="esPanelDeAutorizacion(autorizacion, 'historial')"
+                      (click)="alternarHistorial(autorizacion)"
+                    >
+                      Historial
+                    </button>
+                    @if (admiteResolucion(autorizacion)) {
+                      <button type="button" (click)="abrirResolucion(autorizacion)">
+                        Respuesta del financiador
+                      </button>
+                    }
+                    <button type="button" (click)="abrirEdicionDeAutorizacion(autorizacion)">
+                      Corregir
+                    </button>
+                    <button type="button" (click)="abrirDocumentoDeAutorizacion(autorizacion)">
+                      Comprobante
+                    </button>
+                    <button
+                      type="button"
+                      class="accion--peligro"
+                      (click)="abrirBajaDeAutorizacion(autorizacion)"
+                    >
+                      Dar de baja la autorización
+                    </button>
+                  </app-acciones-de-fila>
+                } @else {
                   <button
                     type="button"
                     class="boton boton--secundario"
-                    (click)="abrirEdicionDeAutorizacion(autorizacion)"
-                    *akinePermiso="permisoManage"
+                    [attr.aria-expanded]="esPanelDeAutorizacion(autorizacion, 'historial')"
+                    (click)="alternarHistorial(autorizacion)"
                   >
-                    Corregir
+                    Historial
                   </button>
                   <button
                     type="button"
                     class="boton boton--secundario"
-                    (click)="abrirDocumentoDeAutorizacion(autorizacion)"
-                    *akinePermiso="permisoManage"
+                    [attr.aria-expanded]="esPanelDeAutorizacion(autorizacion, 'consumo')"
+                    (click)="alternarConsumo(autorizacion)"
                   >
-                    Comprobante
-                  </button>
-                  <button
-                    type="button"
-                    class="boton boton--secundario"
-                    (click)="abrirBajaDeAutorizacion(autorizacion)"
-                    *akinePermiso="permisoManage"
-                  >
-                    Dar de baja la autorización
+                    Saldo y consumos
                   </button>
                 }
               </td>

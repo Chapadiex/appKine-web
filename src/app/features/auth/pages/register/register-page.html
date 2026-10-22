@@ -116,6 +116,7 @@
         <p class="ayuda" id="registro-password-ayuda">
           Si no cumple la política del sistema, te decimos exactamente qué le falta.
         </p>
+        <app-medidor-de-contrasena [valor]="passwordEscrita()" />
         @if (mostrarError('password')) {
           <p class="campo__error" id="registro-password-error">Escribí una contraseña.</p>
         }

@@ -226,7 +226,7 @@ describe('ArancelesDelConvenioPage', () => {
     // Se corrige el reparto sin mover el total: la terna sigue cuadrando.
     escribir(fixture, '#editar-arancel-financiador', '8000');
     escribir(fixture, '#editar-arancel-coseguro', '4000');
-    enviar(fixture, 'tr.fila-panel form');
+    enviar(fixture, 'aside.panel-lateral form');
 
     const edicion = httpMock.expectOne(
       (peticion: HttpRequest<unknown>) =>
@@ -265,7 +265,7 @@ describe('ArancelesDelConvenioPage', () => {
 
     abrir(fixture, 'Editar');
     escribir(fixture, '#editar-arancel-total', '');
-    enviar(fixture, 'tr.fila-panel form');
+    enviar(fixture, 'aside.panel-lateral form');
 
     httpMock.expectNone((peticion: HttpRequest<unknown>) => peticion.method === 'PUT');
     expect((fixture.nativeElement as HTMLElement).textContent).toContain(
@@ -278,7 +278,7 @@ describe('ArancelesDelConvenioPage', () => {
 
     abrir(fixture, 'Editar');
     escribir(fixture, '#editar-arancel-coseguro', '');
-    enviar(fixture, 'tr.fila-panel form');
+    enviar(fixture, 'aside.panel-lateral form');
 
     httpMock.expectNone((peticion: HttpRequest<unknown>) => peticion.method === 'PUT');
     expect((fixture.nativeElement as HTMLElement).textContent).toContain(
@@ -337,7 +337,7 @@ describe('ArancelesDelConvenioPage', () => {
     // Se sube el total sin repartir la diferencia: el descuido con el que se rompe la invariante
     // economica sin que nadie lo note.
     escribir(fixture, '#editar-arancel-total', '15000');
-    enviar(fixture, 'tr.fila-panel form');
+    enviar(fixture, 'aside.panel-lateral form');
 
     httpMock.expectNone((peticion: HttpRequest<unknown>) => peticion.method === 'PUT');
     expect((fixture.nativeElement as HTMLElement).textContent).toContain('difiere del total en');
@@ -348,7 +348,7 @@ describe('ArancelesDelConvenioPage', () => {
 
     abrir(fixture, 'Editar');
     escribir(fixture, '#editar-arancel-hasta', '2026-08-31');
-    enviar(fixture, 'tr.fila-panel form');
+    enviar(fixture, 'aside.panel-lateral form');
 
     const edicion = httpMock.expectOne(
       (peticion: HttpRequest<unknown>) =>
@@ -397,7 +397,7 @@ describe('ArancelesDelConvenioPage', () => {
 
     abrir(fixture, 'Editar');
     escribir(fixture, '#editar-arancel-hasta', '2026-12-31');
-    enviar(fixture, 'tr.fila-panel form');
+    enviar(fixture, 'aside.panel-lateral form');
 
     httpMock
       .expectOne(

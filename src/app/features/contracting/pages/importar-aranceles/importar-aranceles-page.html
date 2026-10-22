@@ -44,6 +44,32 @@
     Este convenio está dado de baja, así que <b>no admite aranceles nuevos</b>.
   </p>
 } @else {
+  <!--
+    Asistente de tres pasos (decision del 22/10/2026). No agrega comportamiento: cada paso es un
+    estado que la pantalla ya tenia. 1 Cargar = la planilla; 2 Vista previa = el resultado fila
+    por fila del modo PREVIEW; 3 Confirmar = el modo CONFIRMAR. Las llamadas a la API son las mismas.
+  -->
+  <ol class="pasos" aria-label="Pasos de la importación">
+    @for (item of pasos; track item.numero) {
+      <li
+        class="paso"
+        [class.paso--actual]="item.numero === paso()"
+        [class.paso--hecho]="item.numero < paso()"
+        [attr.aria-current]="item.numero === paso() ? 'step' : null"
+      >
+        <span class="paso__numero" aria-hidden="true">{{
+          item.numero < paso() ? '✓' : item.numero
+        }}</span>
+        <span class="paso__titulo">{{ item.etiqueta }}</span>
+        @if (item.numero < paso()) {
+          <span class="visualmente-oculto">(completado)</span>
+        }
+      </li>
+    }
+  </ol>
+}
+
+@if (!convenioInactivo() && paso() === 1) {
   <section class="tarjeta" aria-labelledby="titulo-planilla">
     <h2 id="titulo-planilla">La planilla</h2>
 
@@ -140,98 +166,125 @@
 }
 
 @if (desenlace(); as resultado) {
-  <section class="tarjeta tarjeta--tabla" aria-labelledby="titulo-resultado">
-    <div class="tarjeta__cabecera">
-      <h2 id="titulo-resultado">
-        {{ resultado.tipo === 'preview' ? 'Vista previa' : 'Confirmación rechazada' }}
-      </h2>
-    </div>
+  @if (paso() === 2) {
+    <section class="tarjeta tarjeta--tabla" aria-labelledby="titulo-resultado">
+      <div class="tarjeta__cabecera">
+        <h2 id="titulo-resultado">
+          {{ resultado.tipo === 'preview' ? 'Vista previa' : 'Confirmación rechazada' }}
+        </h2>
+      </div>
 
-    <div aria-live="polite">
-      @if (resultado.tipo === 'rechazo') {
-        <p class="estado estado--error" role="alert">
-          No se cargo ningún arancel: {{ filasRechazadas() }} de {{ resultado.filas.length }} filas
-          no entran, y la importación es todo o nada. Algo pudo haber cambiado desde la vista
-          previa; corregi las filas marcadas y volvé a pedirla.
-        </p>
-      } @else if (filasRechazadas() > 0) {
-        <p class="estado estado--error">
-          {{ filasRechazadas() }} de {{ resultado.filas.length }} filas no entrarian. Como la
-          importación es todo o nada, corregilas en la planilla y volvé a pedir la vista previa.
-        </p>
-      } @else {
-        <p class="estado estado--ok">
-          Las {{ resultado.filas.length }} filas entran como aranceles nuevos. Todavía no se cargo
-          nada: falta confirmar.
-        </p>
-      }
+      <div aria-live="polite">
+        @if (resultado.tipo === 'rechazo') {
+          <p class="estado estado--error" role="alert">
+            No se cargo ningún arancel: {{ filasRechazadas() }} de
+            {{ resultado.filas.length }} filas no entran, y la importación es todo o nada. Algo pudo
+            haber cambiado desde la vista previa; corregi las filas marcadas y volvé a pedirla.
+          </p>
+        } @else if (filasRechazadas() > 0) {
+          <p class="estado estado--error">
+            {{ filasRechazadas() }} de {{ resultado.filas.length }} filas no entrarian. Como la
+            importación es todo o nada, corregilas en la planilla y volvé a pedir la vista previa.
+          </p>
+        } @else {
+          <p class="estado estado--ok">
+            Las {{ resultado.filas.length }} filas entran como aranceles nuevos. Todavía no se cargo
+            nada: falta confirmar.
+          </p>
+        }
 
-      @if (!desenlaceVigente()) {
-        <p class="estado estado--vacio">
-          Cambiaste la planilla después de este resultado, así que ya no la describe. Pedí la vista
-          previa de nuevo para poder confirmar.
-        </p>
-      }
-    </div>
+        @if (!desenlaceVigente()) {
+          <p class="estado estado--vacio">
+            Cambiaste la planilla después de este resultado, así que ya no la describe. Pedí la
+            vista previa de nuevo para poder confirmar.
+          </p>
+        }
+      </div>
 
-    <div class="tabla-scroll" tabindex="0" role="region" aria-label="Resultado por fila">
-      <table class="tabla">
-        <caption class="visualmente-oculto">
-          Resultado de cada fila de la planilla: la práctica, los tres importes, la vigencia y si
-          entra o por que no.
-        </caption>
-        <thead>
-          <tr>
-            <th scope="col">Fila</th>
-            <th scope="col">Práctica</th>
-            <th scope="col">Oferta</th>
-            <th scope="col" class="importe">Total</th>
-            <th scope="col" class="importe">Financiador</th>
-            <th scope="col" class="importe">Coseguro</th>
-            <th scope="col">Vigencia</th>
-            <th scope="col">Resultado</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (fila of resultado.filas; track fila.fila) {
-            @let enviada = filaEnviada(fila.fila);
-            <tr [class.fila--revocada]="!esAlta(fila)">
-              <th scope="row">
-                <span class="celda-principal">{{ fila.fila }}</span>
-                @if (lineaDe(fila.fila); as linea) {
-                  <span class="celda-secundaria">(linea {{ linea }})</span>
-                }
-              </th>
-              <td>{{ practicaEnPalabras(fila) }}</td>
-              <td>{{ fila.ofertaId ? '#' + fila.ofertaId : 'General' }}</td>
-              <td class="importe">{{ importe(enviada?.importeTotal) }}</td>
-              <td class="importe">{{ importe(enviada?.importeFinanciador) }}</td>
-              <td class="importe">{{ importe(enviada?.coseguro) }}</td>
-              <td>{{ vigenciaEnPalabras(enviada) }}</td>
-              <td>
-                @if (esAlta(fila)) {
-                  <span class="marca-estado marca-estado--activa">Entra</span>
-                } @else {
-                  <span class="marca-estado marca-estado--revocada">No entra</span>
-                  <span class="celda-secundaria">{{ motivoDeFilaRechazada(fila) }}</span>
-                }
-              </td>
+      <div class="tabla-scroll" tabindex="0" role="region" aria-label="Resultado por fila">
+        <table class="tabla">
+          <caption class="visualmente-oculto">
+            Resultado de cada fila de la planilla: la práctica, los tres importes, la vigencia y si
+            entra o por que no.
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">Fila</th>
+              <th scope="col">Práctica</th>
+              <th scope="col">Oferta</th>
+              <th scope="col" class="importe">Total</th>
+              <th scope="col" class="importe">Financiador</th>
+              <th scope="col" class="importe">Coseguro</th>
+              <th scope="col">Vigencia</th>
+              <th scope="col">Resultado</th>
             </tr>
-          }
-        </tbody>
-      </table>
-    </div>
+          </thead>
+          <tbody>
+            @for (fila of resultado.filas; track fila.fila) {
+              @let enviada = filaEnviada(fila.fila);
+              <tr [class.fila--revocada]="!esAlta(fila)">
+                <th scope="row">
+                  <span class="celda-principal">{{ fila.fila }}</span>
+                  @if (lineaDe(fila.fila); as linea) {
+                    <span class="celda-secundaria">(linea {{ linea }})</span>
+                  }
+                </th>
+                <td>{{ practicaEnPalabras(fila) }}</td>
+                <td>{{ fila.ofertaId ? '#' + fila.ofertaId : 'General' }}</td>
+                <td class="importe">{{ importe(enviada?.importeTotal) }}</td>
+                <td class="importe">{{ importe(enviada?.importeFinanciador) }}</td>
+                <td class="importe">{{ importe(enviada?.coseguro) }}</td>
+                <td>{{ vigenciaEnPalabras(enviada) }}</td>
+                <td>
+                  @if (esAlta(fila)) {
+                    <span class="marca-estado marca-estado--activa">Entra</span>
+                  } @else {
+                    <span class="marca-estado marca-estado--revocada">No entra</span>
+                    <span class="celda-secundaria">{{ motivoDeFilaRechazada(fila) }}</span>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
 
-    @if (resultado.tipo === 'preview') {
-      <p class="acciones" *akinePermiso="permisoManage">
-        <button type="button" class="boton" (click)="confirmar()" [disabled]="!puedeConfirmar()">
-          {{
-            enviando() === 'confirmar'
-              ? 'Cargando...'
-              : 'Confirmar ' + resultado.filas.length + ' aranceles'
-          }}
-        </button>
+      <p class="acciones tarjeta__pie">
+        <button type="button" class="boton boton--secundario" (click)="volver()">Volver</button>
+        @if (resultado.tipo === 'preview') {
+          <button type="button" class="boton" (click)="continuar()" [disabled]="!puedeConfirmar()">
+            Continuar
+          </button>
+        }
       </p>
-    }
-  </section>
+    </section>
+  }
+
+  @if (paso() === 3) {
+    <section class="tarjeta" aria-labelledby="titulo-confirmar">
+      <h2 id="titulo-confirmar">Confirmar la importación</h2>
+      <p>
+        Se van a cargar <b>{{ resultado.filas.length }} aranceles</b> como aranceles nuevos del
+        convenio. La importación es <b>todo o nada</b>: si una sola fila dejó de entrar desde la
+        vista previa, no se escribe ninguna.
+      </p>
+
+      @if (errorAccion(); as mensaje) {
+        <p class="estado estado--error" role="alert">{{ mensaje }}</p>
+      }
+
+      <p class="acciones tarjeta__pie">
+        <button type="button" class="boton boton--secundario" (click)="volver()">Volver</button>
+        <ng-container *akinePermiso="permisoManage">
+          <button type="button" class="boton" (click)="confirmar()" [disabled]="!puedeConfirmar()">
+            {{
+              enviando() === 'confirmar'
+                ? 'Cargando...'
+                : 'Confirmar ' + resultado.filas.length + ' aranceles'
+            }}
+          </button>
+        </ng-container>
+      </p>
+    </section>
+  }
 }

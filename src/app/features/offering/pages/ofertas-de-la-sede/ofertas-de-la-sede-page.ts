@@ -51,6 +51,11 @@ import { textoRequerido } from '../../../../shared/validators/texto-requerido';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { Filtros } from '../../../../shared/components/filtros/filtros';
+import { AccionesDeFila } from '../../../../shared/components/acciones-de-fila/acciones-de-fila';
+import {
+  FiltrosRapidos,
+  FiltroRapido,
+} from '../../../../shared/components/filtros-rapidos/filtros-rapidos';
 import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
 import { Icono } from '../../../../shared/components/icono/icono';
 import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
@@ -121,6 +126,8 @@ type Heredable = '' | 'true' | 'false';
 @Component({
   selector: 'app-ofertas-de-la-sede-page',
   imports: [
+    AccionesDeFila,
+    FiltrosRapidos,
     Pestanas,
     Ayuda,
     ColumnaOrdenable,
@@ -174,9 +181,32 @@ export class OfertasDeLaSedePage {
     tipo: 'cargando',
   });
 
-  protected readonly ofertas = computed<readonly OfertaResponse[]>(() => {
+  /** Todo lo que llego del servidor, antes del filtro rapido por modalidad. */
+  protected readonly ofertasCargadas = computed<readonly OfertaResponse[]>(() => {
     const actual = this.estado();
     return actual.tipo === 'listo' ? actual.pagina : [];
+  });
+
+  /** Filtro rapido por modalidad (UX-01): 'TODAS', 'INDIVIDUAL' o 'GRUPAL'. */
+  protected readonly filtroModalidad = signal<string>('TODAS');
+
+  /** Opciones del filtro rapido, contadas sobre la lista que llego entera. */
+  protected readonly opcionesModalidad = computed<readonly FiltroRapido[]>(() => {
+    const todas = this.ofertasCargadas();
+    const cuenta = (modalidad: string) =>
+      todas.filter((oferta) => oferta.modalidad === modalidad).length;
+    return [
+      { valor: 'TODAS', etiqueta: 'Todas', cantidad: todas.length },
+      { valor: 'INDIVIDUAL', etiqueta: 'Individuales', cantidad: cuenta('INDIVIDUAL') },
+      { valor: 'GRUPAL', etiqueta: 'Grupales', cantidad: cuenta('GRUPAL') },
+    ];
+  });
+
+  /** Lo que muestra la tabla: lo cargado, acotado por el filtro rapido. */
+  protected readonly ofertas = computed<readonly OfertaResponse[]>(() => {
+    const modalidad = this.filtroModalidad();
+    const todas = this.ofertasCargadas();
+    return modalidad === 'TODAS' ? todas : todas.filter((oferta) => oferta.modalidad === modalidad);
   });
 
   /** Orden y paginado de la lista completa (plan §3.4): el servidor no pagina ofertas. */
@@ -915,6 +945,7 @@ export class OfertasDeLaSedePage {
     this.exito.set(null);
     this.filtroEstado.set('ACTIVO');
     this.filtroServicio.set(null);
+    this.filtroModalidad.set('TODAS');
     this.altaEsGrupal.set(false);
   }
 

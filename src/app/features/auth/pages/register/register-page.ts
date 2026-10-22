@@ -8,6 +8,8 @@ import { RegisterAccountRequest } from '../../../../api/generated/model/register
 import { RegistroYActivacionService } from '../../../../api/generated/api/registro-y-activacion.service';
 import { crearEsperaPorLimite } from '../../../../shared/utils/espera-por-limite';
 import { nuevaClaveDeIntento } from '../../../../shared/utils/clave-de-intento';
+import { MedidorDeContrasena } from '../../components/medidor-de-contrasena/medidor-de-contrasena';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { textoRequerido } from '../../../../shared/validators/texto-requerido';
 import { Icono } from '../../../../shared/components/icono/icono';
 
@@ -46,7 +48,7 @@ const MENSAJE_CLAVE_REUSADA =
  */
 @Component({
   selector: 'app-register-page',
-  imports: [Icono, ReactiveFormsModule, RouterLink],
+  imports: [Icono, MedidorDeContrasena, ReactiveFormsModule, RouterLink],
   templateUrl: './register-page.html',
   styleUrls: ['../../auth.css', '../../../../shared/styles/acceso.css'],
 })
@@ -66,6 +68,11 @@ export class RegisterPage {
     organizationSlug: [''],
     consultorioName: [''],
     planCode: [''],
+  });
+
+  /** Lo escrito en la contraseña, solo para el medidor (es una guia: no valida nada). */
+  protected readonly passwordEscrita = toSignal(this.formulario.controls.password.valueChanges, {
+    initialValue: '',
   });
 
   protected readonly estado = signal<EstadoFormulario>({ tipo: 'editando' });

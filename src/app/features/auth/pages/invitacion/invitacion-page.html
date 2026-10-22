@@ -113,6 +113,7 @@
                   [attr.aria-invalid]="mostrarErrorDe('password') ? 'true' : null"
                   aria-describedby="invitacion-password-ayuda"
                 />
+                <app-medidor-de-contrasena [valor]="passwordEscrita()" />
                 @if (mostrarErrorDe('password')) {
                   <p class="campo__error">La contraseña tiene que tener al menos 10 caracteres.</p>
                 }

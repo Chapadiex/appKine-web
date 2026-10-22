@@ -426,20 +426,15 @@ describe('ConveniosDeLaSedePage', () => {
   it('el filtro y la fecha recargan, y el vacío manda al catalogo de financiadores', async () => {
     const fixture = await montar();
 
-    cambiarSelect(fixture, '#filtro-estado-convenio', 'TODOS');
-    httpMock
-      .expectOne(
-        (peticion: HttpRequest<unknown>) =>
-          peticion.url === CONVENIOS && peticion.params.get('estado') === 'TODOS',
-      )
-      .flush([]);
-    await fixture.whenStable();
-    fixture.detectChanges();
+    // El filtro de estado es un filtro rapido en pantalla: no pide otra vez al servidor. Ninguno
+    // de los dos convenios esta dado de baja, asi que el listado queda vacio.
+    filtrarPorEstado(fixture, 'Dados de baja');
 
     const anfitrion = fixture.nativeElement as HTMLElement;
     expect(anfitrion.textContent).toContain('todo lo que se atienda en esta sede se cobra como');
     expect(anfitrion.querySelector('a[href="/contratacion/financiadores"]')).not.toBeNull();
 
+    filtrarPorEstado(fixture, 'Activos');
     cambiarSelect(fixture, '#filtro-fecha-convenio', '2025-06-15');
     httpMock
       .expectOne(
@@ -466,12 +461,36 @@ describe('ConveniosDeLaSedePage', () => {
       // Ni la ayuda, ni el embudo, ni el orden de columna son acciones sobre convenios.
       [
         ...anfitrion.querySelectorAll(
-          'button:not(.ayuda-contextual__boton):not(.filtros-barra__boton):not(.tabla__orden)',
+          'button:not(.ayuda-contextual__boton):not(.filtros-barra__boton):not(.tabla__orden):not(.filtros-rapidos__opcion)',
         ),
       ].map((boton) => (boton.textContent ?? '').trim()),
     ).toEqual([]);
     // El enlace a los aranceles no lleva permiso: es otra lectura.
     expect(anfitrion.querySelector('a[href="/contratacion/convenios/7/aranceles"]')).not.toBeNull();
+  });
+
+  it('los filtros rapidos cuentan la lista entera por estado administrativo', async () => {
+    const fixture = await montar();
+    const anfitrion = fixture.nativeElement as HTMLElement;
+
+    const botones = [
+      ...anfitrion.querySelectorAll<HTMLButtonElement>('.filtros-rapidos__opcion'),
+    ].map((boton) => (boton.textContent ?? '').replace(/\s+/g, ' ').trim());
+    expect(botones).toEqual(['Activos 2', 'Dados de baja 0', 'Todos 2']);
+  });
+
+  it('con tres acciones, Aranceles queda a la vista y Editar y Dar de baja van en el menu', async () => {
+    const fixture = await montar();
+    const menu = (fixture.nativeElement as HTMLElement).querySelector(
+      'tbody tr app-acciones-de-fila',
+    ) as HTMLElement;
+
+    expect(menu).not.toBeNull();
+    const panel = menu.querySelector('.acciones-de-fila__panel')?.textContent ?? '';
+    expect(panel).toContain('Editar');
+    expect(panel).toContain('Dar de baja');
+    expect(panel).not.toContain('Aranceles');
+    expect(menu.querySelector('a[href="/contratacion/convenios/7/aranceles"]')).not.toBeNull();
   });
 
   it('sin sede elegida no consulta convenios y manda a elegirla, no al login', async () => {
@@ -606,6 +625,20 @@ function marcar(fixture: { nativeElement: HTMLElement; detectChanges(): void }, 
 }
 
 /** Un control de filtro, que vive fuera de todo formulario reactivo y escucha `change`. */
+function filtrarPorEstado(
+  fixture: { nativeElement: HTMLElement; detectChanges(): void },
+  etiqueta: string,
+) {
+  const boton = [
+    ...fixture.nativeElement.querySelectorAll<HTMLButtonElement>('.filtros-rapidos__opcion'),
+  ].find((candidato) => (candidato.textContent ?? '').trim().startsWith(etiqueta));
+  if (boton === undefined) {
+    throw new Error(`No existe el filtro rapido ${etiqueta}`);
+  }
+  boton.click();
+  fixture.detectChanges();
+}
+
 function cambiarSelect(
   fixture: { nativeElement: HTMLElement; detectChanges(): void },
   selector: string,

@@ -215,35 +215,41 @@
                 }
               </td>
               <td>
-                <div class="acciones-fila">
-                  <button
-                    type="button"
-                    class="boton boton--secundario"
-                    (click)="descargar(adjunto)"
-                    [disabled]="adjuntoNoDisponible(adjunto)"
-                  >
-                    Descargar
-                  </button>
-
-                  @if (!adjuntoInactivo(adjunto)) {
+                <!--
+                  Tres acciones: menu "⋯" (decidido el 22/10/2026). Descargar es la frecuente y queda
+                  a la vista; reclasificar y dar de baja piden paciente:manage. Sin ese permiso, o
+                  con el documento ya dado de baja, queda solo Descargar.
+                -->
+                @if (!adjuntoInactivo(adjunto) && puedeGestionar()) {
+                  <app-acciones-de-fila [de]="nombreDeAdjunto(adjunto)">
                     <button
+                      principal
                       type="button"
                       class="boton boton--secundario"
-                      (click)="abrirReclasificacion(adjunto)"
-                      *akinePermiso="permisoManage"
+                      (click)="descargar(adjunto)"
+                      [disabled]="adjuntoNoDisponible(adjunto)"
                     >
+                      Descargar
+                    </button>
+                    <button type="button" (click)="abrirReclasificacion(adjunto)">
                       Reclasificar
                     </button>
+                    <button type="button" class="accion--peligro" (click)="abrirBaja(adjunto)">
+                      Dar de baja
+                    </button>
+                  </app-acciones-de-fila>
+                } @else {
+                  <div class="acciones-fila">
                     <button
                       type="button"
                       class="boton boton--secundario"
-                      (click)="abrirBaja(adjunto)"
-                      *akinePermiso="permisoManage"
+                      (click)="descargar(adjunto)"
+                      [disabled]="adjuntoNoDisponible(adjunto)"
                     >
-                      Dar de baja
+                      Descargar
                     </button>
-                  }
-                </div>
+                  </div>
+                }
               </td>
             </tr>
 

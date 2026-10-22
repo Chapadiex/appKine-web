@@ -1,4 +1,13 @@
-import { Component, ElementRef, effect, inject, signal, untracked } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  Injector,
+  afterNextRender,
+  effect,
+  inject,
+  signal,
+  untracked,
+} from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { catchError, of } from 'rxjs';
@@ -66,6 +75,7 @@ export class AuditPage {
   private readonly auditoria = inject(AuditoriaService);
   private readonly tenantContext = inject(TenantContextStore);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly injector = inject(Injector);
 
   /**
    * Arranca en `inicial`, que es el quinto caso de {@link EstadoDeListado}: sin ninguno de
@@ -78,6 +88,9 @@ export class AuditPage {
   /** Los cinco valores derivados del estado, con los nombres que la plantilla ya usaba. */
   private readonly vista = vistaDeListado<AuditEventResponse>(this.estado);
   protected readonly paginaActual = signal(0);
+
+  /** Hecho cuyo detalle esta abierto en el panel lateral, o `null`. Solo uno a la vez. */
+  protected readonly detalle = signal<AuditEventResponse | null>(null);
   protected readonly intentos = signal(0);
 
   /** Error de la ventana temporal, que ninguna validacion de campo suelto puede expresar. */
@@ -103,6 +116,7 @@ export class AuditPage {
       this.tenantContext.contextEpoch();
       untracked(() => {
         this.paginaActual.set(0);
+        this.detalle.set(null);
         this.errorVentana.set(null);
         this.intentos.set(0);
         this.estado.set(
@@ -125,6 +139,32 @@ export class AuditPage {
   protected cambiarFiltro(): void {
     this.errorVentana.set(null);
     this.intentos.set(0);
+  }
+
+  /** Abre el detalle del hecho (o lo cierra si ya era ese) y lleva el foco al panel. */
+  protected alternarDetalle(evento: AuditEventResponse): void {
+    if (this.detalle()?.id === evento.id) {
+      this.cerrarDetalle();
+      return;
+    }
+    this.detalle.set(evento);
+    // El panel esta en el DOM pero oculto: el foco solo entra cuando ya se mostro.
+    afterNextRender(() => this.enfocar('#auditoria-detalle'), { injector: this.injector });
+  }
+
+  /** Cierra el panel y devuelve el foco al boton que lo abrio. */
+  protected cerrarDetalle(): void {
+    const abierto = this.detalle();
+    if (abierto === null) {
+      return;
+    }
+    this.detalle.set(null);
+    this.enfocar(`#auditoria-evento-${abierto.id}`);
+  }
+
+  /** Pares clave/valor de `details`, que el contrato declara como mapa libre. */
+  protected detallesDe(evento: AuditEventResponse): { clave: string; valor: string }[] {
+    return Object.entries(evento.details ?? {}).map(([clave, valor]) => ({ clave, valor }));
   }
 
   protected mostrarError(campo: 'entityType' | 'entityId' | 'actorAccountId'): boolean {
@@ -157,6 +197,7 @@ export class AuditPage {
       return;
     }
 
+    this.detalle.set(null);
     this.estado.set({ tipo: 'cargando' });
 
     this.auditoria

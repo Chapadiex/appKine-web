@@ -28,7 +28,7 @@ import { PermisoDirective } from '../../../../shared/directives/permiso.directiv
 import { PlanCoberturaResponse } from '../../../../api/generated/model/plan-cobertura-response';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { UpdateConvenioRequest } from '../../../../api/generated/model/update-convenio-request';
-import { ContractingApi, FiltroEstado } from '../../services/contracting-api';
+import { ContractingApi } from '../../services/contracting-api';
 import { ConveniosApi } from '../../services/convenios-api';
 import {
   CausaContracting,
@@ -54,6 +54,12 @@ import { Paginacion } from '../../../../shared/components/paginacion/paginacion'
 import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { Filtros } from '../../../../shared/components/filtros/filtros';
+import {
+  FiltroRapido,
+  FiltrosRapidos,
+} from '../../../../shared/components/filtros-rapidos/filtros-rapidos';
+import { AccionesDeFila } from '../../../../shared/components/acciones-de-fila/acciones-de-fila';
+import { PermissionsStore } from '../../../../core/services/permissions.store';
 
 /** Operacion abierta sobre una fila. Solo una a la vez. */
 type TipoAccion = 'editar' | 'baja';
@@ -110,6 +116,8 @@ type TipoAccion = 'editar' | 'baja';
     Icono,
     Paginacion,
     Filtros,
+    FiltrosRapidos,
+    AccionesDeFila,
     ReactiveFormsModule,
     RouterLink,
     PermisoDirective,
@@ -130,6 +138,16 @@ export class ConveniosDeLaSedePage {
   private readonly injector = inject(Injector);
 
   protected readonly permisoManage = PERMISO_CONVENIO_MANAGE;
+
+  private readonly permisos = inject(PermissionsStore);
+
+  /**
+   * Si hay acciones para el menu "⋯" de la fila. Sin permiso quedaria un menu vacio, asi que la
+   * fila muestra solo el enlace a los aranceles. Es UX: el backend decide igual.
+   */
+  protected readonly puedeGestionar = computed(
+    () => this.permisos.cargados() && this.permisos.tieneAlguno(PERMISO_CONVENIO_MANAGE),
+  );
   protected readonly modalidades = MODALIDADES_DE_CONVENIO;
   protected readonly etiquetaDeModalidad = etiquetaDeModalidad;
   protected readonly enUnaLinea = enUnaLinea;
@@ -142,9 +160,36 @@ export class ConveniosDeLaSedePage {
     tipo: 'cargando',
   });
 
-  protected readonly convenios = computed<readonly ConvenioResponse[]>(() => {
+  /** Todo lo que trajo el servidor, sin el filtro rapido de estado. De aca salen los conteos. */
+  protected readonly cargados = computed<readonly ConvenioResponse[]>(() => {
     const actual = this.estado();
     return actual.tipo === 'listo' ? actual.pagina : [];
+  });
+
+  /** Lo que se ve: la lista entera filtrada por el estado elegido arriba de la tabla. */
+  protected readonly convenios = computed<readonly ConvenioResponse[]>(() => {
+    const elegido = this.filtroRapido();
+    return elegido === 'TODOS'
+      ? this.cargados()
+      : this.cargados().filter((convenio) => convenio.estado === elegido);
+  });
+
+  /** Filtros rapidos con conteo: "Activos 8 · Dados de baja 2 · Todos 10". */
+  protected readonly opcionesDeEstado = computed<readonly FiltroRapido[]>(() => {
+    const todos = this.cargados();
+    return [
+      {
+        valor: 'ACTIVO',
+        etiqueta: 'Activos',
+        cantidad: todos.filter((convenio) => convenio.estado === 'ACTIVO').length,
+      },
+      {
+        valor: 'INACTIVO',
+        etiqueta: 'Dados de baja',
+        cantidad: todos.filter((convenio) => convenio.estado === 'INACTIVO').length,
+      },
+      { valor: 'TODOS', etiqueta: 'Todos', cantidad: todos.length },
+    ];
   });
 
   /** Orden y paginado de la lista completa (plan §3.4): el servidor no pagina convenios. */
@@ -181,15 +226,18 @@ export class ConveniosDeLaSedePage {
   /** Planes del financiador elegido en el alta. Se piden al elegirlo, no antes. */
   protected readonly planes = signal<readonly PlanCoberturaResponse[]>([]);
 
-  protected readonly filtroEstado = signal<FiltroEstado>('ACTIVO');
+  /**
+   * Estado administrativo elegido en los filtros rapidos. El listado se pide siempre entero
+   * (`estado: TODOS`): el servidor no pagina, y asi los conteos son los de la lista.
+   */
+  protected readonly filtroRapido = signal<string>('ACTIVO');
 
   /**
    * Filtros avanzados (detras del embudo) fuera de su valor por defecto. La fecha de vigencia
    * cuenta si no es hoy: cambia la Situacion de cada fila, y eso no puede quedar escondido.
    */
-  protected readonly filtrosAvanzadosActivos = computed(
-    () =>
-      Number(this.filtroEstado() !== 'ACTIVO') + Number(this.fecha() !== this.diaDeLaSede.hoy()),
+  protected readonly filtrosAvanzadosActivos = computed(() =>
+    Number(this.fecha() !== this.diaDeLaSede.hoy()),
   );
 
   protected readonly panel = signal<{ readonly id: number; readonly tipo: TipoAccion } | null>(
@@ -273,7 +321,7 @@ export class ConveniosDeLaSedePage {
     this.estado.set({ tipo: 'cargando' });
 
     this.api
-      .listarConvenios(consultorioId, { estado: this.filtroEstado(), fecha: this.fecha() })
+      .listarConvenios(consultorioId, { estado: 'TODOS', fecha: this.fecha() })
       .pipe(catchError((error: unknown) => of(error instanceof Error ? error : new Error(''))))
       .subscribe((respuesta) => {
         if (respuesta instanceof Error) {
@@ -308,12 +356,10 @@ export class ConveniosDeLaSedePage {
     this.cargar();
   }
 
-  protected cambiarFiltroEstado(valor: string): void {
-    const elegido: FiltroEstado =
-      valor === 'INACTIVO' || valor === 'TODOS' ? valor : ('ACTIVO' as const);
+  protected elegirEstado(valor: string): void {
+    const elegido = valor === 'INACTIVO' || valor === 'TODOS' ? valor : 'ACTIVO';
     this.cerrarPanel();
-    this.filtroEstado.set(elegido);
-    this.cargar();
+    this.filtroRapido.set(elegido);
   }
 
   protected panelAbierto(id: number | undefined, tipo: TipoAccion): boolean {
@@ -623,7 +669,7 @@ export class ConveniosDeLaSedePage {
     }
 
     this.api
-      .listarConvenios(consultorioId, { estado: this.filtroEstado(), fecha: this.fecha() })
+      .listarConvenios(consultorioId, { estado: 'TODOS', fecha: this.fecha() })
       .pipe(catchError(() => of(null)))
       .subscribe((convenios) => {
         if (convenios === null) {
@@ -668,7 +714,7 @@ export class ConveniosDeLaSedePage {
   private reiniciar(): void {
     this.cerrarPanel();
     this.exito.set(null);
-    this.filtroEstado.set('ACTIVO');
+    this.filtroRapido.set('ACTIVO');
     this.fecha.set(this.diaDeLaSede.hoy());
     this.financiadores.set([]);
     this.planes.set([]);

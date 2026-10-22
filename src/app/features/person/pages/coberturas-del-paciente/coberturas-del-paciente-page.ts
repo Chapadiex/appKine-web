@@ -1,4 +1,6 @@
 import { Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
+import { AccionesDeFila } from '../../../../shared/components/acciones-de-fila/acciones-de-fila';
+import { PermissionsStore } from '../../../../core/services/permissions.store';
 import { cabeceraDePersona } from '../../../../core/services/cabecera-de-persona';
 import { CabeceraDeFicha } from '../../../../shared/components/cabecera-de-ficha/cabecera-de-ficha';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -112,6 +114,7 @@ type EstadoDeCoberturas =
     ConfirmacionConMotivo,
     PermisoDirective,
     CoberturaAplicable,
+    AccionesDeFila,
   ],
   templateUrl: './coberturas-del-paciente-page.html',
   styleUrl: '../../person.css',
@@ -126,6 +129,10 @@ export class CoberturasDelPacientePage {
   readonly personaId = input.required<string>();
 
   protected readonly permisoManage = PERMISO_PACIENTE_MANAGE;
+  private readonly permisos = inject(PermissionsStore);
+
+  /** Las acciones de fila piden `paciente:manage`; sin el, no hay menu que abrir. */
+  protected readonly puedeGestionar = computed(() => this.permisos.tiene(PERMISO_PACIENTE_MANAGE));
 
   protected readonly nombreCompleto = nombreCompleto;
   protected readonly coberturaEnUnaLinea = coberturaEnUnaLinea;
