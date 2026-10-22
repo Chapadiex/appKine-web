@@ -62,7 +62,7 @@ describe('Rutas de /auth', () => {
     expect('/auth/restablecer').toBe('/auth/restablecer');
   });
 
-  it('/auth/activar resuelve a la pantalla de activacion, no al comodin', async () => {
+  it('/auth/activar resuelve a la pantalla de activación, no al comodin', async () => {
     expect(await componenteDe('/auth/activar')).toBe(ActivatePage);
   });
 

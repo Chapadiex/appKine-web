@@ -136,19 +136,19 @@ describe('AtencionGrupalPage', () => {
 
   afterEach(() => http.verify());
 
-  it('lista quien estuvo, su asistencia y sus atenciones, con nombre y enlace a la atencion', async () => {
+  it('lista quien estuvo, su asistencia y sus atenciones, con nombre y enlace a la atención', async () => {
     const fixture = await montar();
     const tabla = texto(fixture);
     expect(tabla).toContain('Rehabilitacion de rodilla');
     expect(tabla).toContain('Sintetica, Maria');
     expect(tabla).toContain('Llego tarde');
-    expect(tabla).toContain('Atencion cerrada · sesion 3 del caso · sesion 8 del paciente');
+    expect(tabla).toContain('Atención cerrada · sesión 3 del caso · sesión 8 del paciente');
     const enlace = fixture.nativeElement.querySelector(
       'a[href="/atencion/sesiones/901"]',
     ) as HTMLAnchorElement | null;
     expect(enlace).not.toBeNull();
     // Solo Maria: Juan ya tiene atencion y Ana no estuvo.
-    expect(botones(fixture, /^Iniciar atencion/)).toHaveLength(1);
+    expect(botones(fixture, /^Iniciar atención/)).toHaveLength(1);
     expect(boton(fixture, /Iniciar para todos/).textContent).toContain('(1)');
   });
 
@@ -174,7 +174,7 @@ describe('AtencionGrupalPage', () => {
     expect(texto(fixture)).toContain('Participante sin nombre');
     expect(texto(fixture)).not.toContain(String(MARIA));
     expect(texto(fixture)).not.toContain('501');
-    expect(texto(fixture)).toContain(`Atencion clinica: Clase ${CLASE}`);
+    expect(texto(fixture)).toContain(`Atención clínica: Clase ${CLASE}`);
   });
 
   it('una clase sin titulo se llama como su oferta', async () => {
@@ -184,12 +184,12 @@ describe('AtencionGrupalPage', () => {
     http.expectOne(PANEL).flush(PANEL_CLINICO);
     http.expectOne(esLaClase).flush({ ...CLASE_LEIDA, titulo: undefined });
     await estabilizar(fixture);
-    expect(texto(fixture)).toContain('Atencion clinica: Kinesiologia grupal');
+    expect(texto(fixture)).toContain('Atención clínica: Kinesiologia grupal');
   });
 
-  it('iniciar la atencion de un participante la abre y lleva a ella', async () => {
+  it('iniciar la atención de un participante la abre y lleva a ella', async () => {
     const fixture = await montar();
-    boton(fixture, /^Iniciar atencion/).click();
+    boton(fixture, /^Iniciar atención/).click();
     const pedido = http.expectOne(atencionDe(MARIA));
     expect(pedido.request.method).toBe('POST');
     expect(pedido.request.body).toEqual({});
@@ -201,7 +201,7 @@ describe('AtencionGrupalPage', () => {
 
   it('con dos derivaciones no elige: lo dice, muestra las dos y abre desde la elegida', async () => {
     const fixture = await montar();
-    boton(fixture, /^Iniciar atencion/).click();
+    boton(fixture, /^Iniciar atención/).click();
     problema(http.expectOne(atencionDe(MARIA)), 409, 'derivacion-ambigua', {
       derivacionIds: [30, 32],
     });
@@ -214,15 +214,15 @@ describe('AtencionGrupalPage', () => {
     responderRecarga();
     await estabilizar(fixture);
 
-    expect(texto(fixture)).toContain('mas de una derivacion vigente');
+    expect(texto(fixture)).toContain('más de una derivación vigente');
     // El numero visible del caso, no el id; sin numero, un texto neutro.
-    expect(texto(fixture)).toContain('Caso clinico 1');
-    expect(texto(fixture)).toContain('Caso clinico sin numero');
-    expect(texto(fixture)).not.toContain('Caso clinico 7');
-    expect(texto(fixture)).not.toContain('Caso clinico 8');
+    expect(texto(fixture)).toContain('Caso clínico 1');
+    expect(texto(fixture)).toContain('Caso clínico sin número');
+    expect(texto(fixture)).not.toContain('Caso clínico 7');
+    expect(texto(fixture)).not.toContain('Caso clínico 8');
     expect(navegar).not.toHaveBeenCalled();
 
-    botones(fixture, /Iniciar atencion desde esta derivacion/)[1].click();
+    botones(fixture, /Iniciar atención desde esta derivación/)[1].click();
     const pedido = http.expectOne(atencionDe(MARIA));
     expect(pedido.request.body).toEqual({ derivacionId: 32 });
     pedido.flush({ ...ABIERTA, sesionId: 902, derivacionId: 32 });
@@ -232,7 +232,7 @@ describe('AtencionGrupalPage', () => {
 
   it('sin derivacion lo dice con su texto propio, y no navega', async () => {
     const fixture = await montar();
-    boton(fixture, /^Iniciar atencion/).click();
+    boton(fixture, /^Iniciar atención/).click();
     problema(http.expectOne(atencionDe(MARIA)), 409, 'participacion-sin-derivacion');
     // La salida es derivarla: la tarjeta se abre ahi mismo.
     responderRecarga();
@@ -240,12 +240,12 @@ describe('AtencionGrupalPage', () => {
     http.expectOne(elegibilidadDe(MARIA)).flush(MARIA_DERIVABLE);
     http.expectOne(DATOS_DE_MARIA).flush(UN_CASO_DE_MARIA);
     await estabilizar(fixture);
-    expect(alerta(fixture)).toContain('No tiene una derivacion clinica vigente');
-    expect(texto(fixture)).toContain('Derivar a Sintetica, Maria a un caso clinico');
+    expect(alerta(fixture)).toContain('No tiene una derivación clínica vigente');
+    expect(texto(fixture)).toContain('Derivar a Sintetica, Maria a un caso clínico');
     expect(navegar).not.toHaveBeenCalled();
   });
 
-  it('derivar por pantalla: elige el caso, avisa, marca la fila y deja iniciar la atencion', async () => {
+  it('derivar por pantalla: elige el caso, avisa, marca la fila y deja iniciar la atención', async () => {
     const fixture = await montar();
     // Juan y Maria estuvieron; Ana no: solo a quien estuvo se lo deriva.
     expect(botones(fixture, /^Derivar a un caso/)).toHaveLength(2);
@@ -263,11 +263,11 @@ describe('AtencionGrupalPage', () => {
     await estabilizar(fixture);
 
     expect(texto(fixture)).toContain(
-      'Sintetica, Maria quedo derivada al caso clinico 1. Ya se puede iniciar su atencion.',
+      'Sintetica, Maria quedo derivada al caso clínico 1. Ya se puede iniciar su atención.',
     );
-    expect(texto(fixture)).toContain('Derivada al caso clinico 1');
-    expect(texto(fixture)).not.toContain('Derivar a Sintetica, Maria a un caso clinico');
-    boton(fixture, /^Iniciar atencion/).click();
+    expect(texto(fixture)).toContain('Derivada al caso clínico 1');
+    expect(texto(fixture)).not.toContain('Derivar a Sintetica, Maria a un caso clínico');
+    boton(fixture, /^Iniciar atención/).click();
     http.expectOne(atencionDe(MARIA)).flush(ABIERTA);
     await estabilizar(fixture);
     expect(navegar).toHaveBeenCalledWith('/atencion/sesiones/900');
@@ -280,7 +280,7 @@ describe('AtencionGrupalPage', () => {
       .flush({ permissions: ['sesion:register', 'inscripcion:read', 'hc:read'] });
     const fixture = await montar();
     expect(botones(fixture, /^Derivar a un caso/)).toHaveLength(0);
-    expect(botones(fixture, /^Iniciar atencion/)).toHaveLength(1);
+    expect(botones(fixture, /^Iniciar atención/)).toHaveLength(1);
   });
 
   it('derivar dos veces al mismo caso dice que ya estaba derivada', async () => {
@@ -296,10 +296,10 @@ describe('AtencionGrupalPage', () => {
       .flush({ id: 30, casoClinicoId: 7, numeroCaso: 1, estado: 'VIGENTE', yaExistia: true });
     responderRecarga();
     await estabilizar(fixture);
-    expect(texto(fixture)).toContain('ya estaba derivada al caso clinico 1');
+    expect(texto(fixture)).toContain('ya estaba derivada al caso clínico 1');
   });
 
-  it('derivar sin relacion asistencial pide el motivo en el panel y reintenta con el', async () => {
+  it('derivar sin relación asistencial pide el motivo en el panel y reintenta con el', async () => {
     const fixture = await montar();
     botones(fixture, /^Derivar a un caso/)[0].click();
     fixture.detectChanges();
@@ -322,7 +322,7 @@ describe('AtencionGrupalPage', () => {
     reintento.flush({ id: 30, casoClinicoId: 7, numeroCaso: 1, estado: 'VIGENTE' });
     responderRecarga();
     await estabilizar(fixture);
-    expect(texto(fixture)).toContain('quedo derivada al caso clinico 1');
+    expect(texto(fixture)).toContain('quedo derivada al caso clínico 1');
   });
 
   it('sin derivaciones, la tarjeta de derivaciones ofrece derivar', async () => {
@@ -369,9 +369,9 @@ describe('AtencionGrupalPage', () => {
     responderRecarga();
     await estabilizar(fixture);
     const resultado = texto(fixture);
-    expect(resultado).toContain('Se abrieron 1 atencion.');
+    expect(resultado).toContain('Se abrieron 1 atención.');
     expect(resultado).toContain('1 no se pudieron abrir');
-    expect(resultado).toMatch(/Sintetica, Ana\s*: No tiene una derivacion clinica vigente/);
+    expect(resultado).toMatch(/Sintetica, Ana\s*: No tiene una derivación clínica vigente/);
     expect(navegar).not.toHaveBeenCalled();
   });
 
@@ -397,11 +397,11 @@ describe('AtencionGrupalPage', () => {
     });
     responderRecarga();
     await estabilizar(fixture);
-    expect(texto(fixture)).toMatch(/Sintetica, Ana\s*: Tiene mas de una derivacion vigente/);
+    expect(texto(fixture)).toMatch(/Sintetica, Ana\s*: Tiene más de una derivación vigente/);
     // La lectura de derivaciones es clinica: no se hace hasta que alguien elige.
     http.expectNone(derivacionesDe(ANA));
 
-    boton(fixture, /^Elegir la derivacion/).click();
+    boton(fixture, /^Elegir la derivación/).click();
     http.expectOne(derivacionesDe(ANA)).flush({
       derivaciones: [
         { id: 40, casoClinicoId: 17, numeroCaso: 2, estado: 'VIGENTE' },
@@ -412,12 +412,12 @@ describe('AtencionGrupalPage', () => {
     await estabilizar(fixture);
     // Solo las que el backend ofrecio, y en el resultado: la tarjeta de abajo no se abre.
     expect(botones(fixture, /^Iniciar desde:/).map((b) => b.textContent?.trim())).toHaveLength(2);
-    expect(texto(fixture)).toContain('Iniciar desde: Caso clinico 2');
-    expect(texto(fixture)).toContain('Iniciar desde: Caso clinico 4');
-    expect(texto(fixture)).not.toContain('Caso clinico 3');
+    expect(texto(fixture)).toContain('Iniciar desde: Caso clínico 2');
+    expect(texto(fixture)).toContain('Iniciar desde: Caso clínico 4');
+    expect(texto(fixture)).not.toContain('Caso clínico 3');
     expect(fixture.nativeElement.querySelector('#titulo-derivaciones')).toBeNull();
 
-    botones(fixture, /^Iniciar desde: Caso clinico 4/)[0].click();
+    botones(fixture, /^Iniciar desde: Caso clínico 4/)[0].click();
     const pedido = http.expectOne(atencionDe(ANA));
     expect(pedido.request.body).toEqual({ derivacionId: 42 });
     pedido.flush({ ...ABIERTA, sesionId: 903, derivacionId: 42, inscripcionId: ANA });
@@ -445,7 +445,7 @@ describe('AtencionGrupalPage', () => {
     });
     responderRecarga();
     await estabilizar(fixture);
-    boton(fixture, /^Elegir la derivacion/).click();
+    boton(fixture, /^Elegir la derivación/).click();
     http.expectOne(derivacionesDe(MARIA)).flush({
       derivaciones: [
         { id: 30, numeroCaso: 1, estado: 'VIGENTE' },
@@ -453,7 +453,7 @@ describe('AtencionGrupalPage', () => {
       ],
     });
     await estabilizar(fixture);
-    boton(fixture, /^Iniciar desde: Caso clinico 1/).click();
+    boton(fixture, /^Iniciar desde: Caso clínico 1/).click();
     problema(http.expectOne(atencionDe(MARIA)), 409, 'caso-clinico-cerrado');
     await estabilizar(fixture);
     expect(alerta(fixture)).toContain('caso');
@@ -462,7 +462,7 @@ describe('AtencionGrupalPage', () => {
     boton(fixture, /^No elegir ahora/).click();
     await estabilizar(fixture);
     expect(botones(fixture, /^Iniciar desde:/)).toHaveLength(0);
-    expect(botones(fixture, /^Elegir la derivacion/)).toHaveLength(1);
+    expect(botones(fixture, /^Elegir la derivación/)).toHaveLength(1);
   });
 
   it('si ninguna de las ofrecidas sigue vigente lo dice', async () => {
@@ -481,7 +481,7 @@ describe('AtencionGrupalPage', () => {
     });
     responderRecarga();
     await estabilizar(fixture);
-    boton(fixture, /^Elegir la derivacion/).click();
+    boton(fixture, /^Elegir la derivación/).click();
     http.expectOne(derivacionesDe(MARIA)).flush({
       derivaciones: [{ id: 30, numeroCaso: 1, estado: 'REVERTIDA' }],
     });
@@ -491,7 +491,7 @@ describe('AtencionGrupalPage', () => {
 
   it('si el backend pide motivo de acceso lo pide en pantalla y reintenta con el', async () => {
     const fixture = await montar();
-    boton(fixture, /^Iniciar atencion/).click();
+    boton(fixture, /^Iniciar atención/).click();
     problema(http.expectOne(atencionDe(MARIA)), 403, 'justificacion-de-acceso-requerida');
     await estabilizar(fixture);
     expect(texto(fixture)).toContain('Declara el motivo del acceso');
@@ -537,7 +537,7 @@ describe('AtencionGrupalPage', () => {
     });
     responderRecarga();
     await estabilizar(fixture);
-    expect(texto(fixture)).toContain('Se abrieron 1 atencion.');
+    expect(texto(fixture)).toContain('Se abrieron 1 atención.');
   });
 
   describe('revertir una derivacion', () => {
@@ -553,30 +553,30 @@ describe('AtencionGrupalPage', () => {
       return fixture;
     }
 
-    it('pide motivo, y con 409 derivacion-con-sesion explica que la atencion la fija', async () => {
+    it('pide motivo, y con 409 derivacion-con-sesion explica que la atención la fija', async () => {
       const fixture = await conDerivaciones([{ id: 30, casoClinicoId: 7, estado: 'VIGENTE' }]);
-      boton(fixture, /^Revertir la derivacion/).click();
+      boton(fixture, /^Revertir la derivación/).click();
       await estabilizar(fixture);
-      boton(fixture, /Confirmar la reversion/).click();
+      boton(fixture, /Confirmar la reversión/).click();
       await estabilizar(fixture);
-      expect(texto(fixture)).toContain('Escribi por que se revierte.');
+      expect(texto(fixture)).toContain('Escribí por qué se revierte.');
       http.expectNone(`${derivacionesDe(MARIA)}/30/reversion`);
 
       escribir(fixture, '#motivo-reversion-30', 'Derivada por error');
-      boton(fixture, /Confirmar la reversion/).click();
+      boton(fixture, /Confirmar la reversión/).click();
       const pedido = http.expectOne(`${derivacionesDe(MARIA)}/30/reversion`);
       expect(pedido.request.body).toEqual({ motivo: 'Derivada por error' });
       problema(pedido, 409, 'derivacion-con-sesion');
       await estabilizar(fixture);
-      expect(alerta(fixture)).toContain('ya se abrio una atencion clinica desde ella');
+      expect(alerta(fixture)).toContain('ya se abrió una atención clínica desde ella');
     });
 
     it('revertida, relee las derivaciones y el panel, y lo confirma', async () => {
       const fixture = await conDerivaciones([{ id: 30, casoClinicoId: 7, estado: 'VIGENTE' }]);
-      boton(fixture, /^Revertir la derivacion/).click();
+      boton(fixture, /^Revertir la derivación/).click();
       await estabilizar(fixture);
       escribir(fixture, '#motivo-reversion-30', 'Derivada por error');
-      boton(fixture, /Confirmar la reversion/).click();
+      boton(fixture, /Confirmar la reversión/).click();
       http
         .expectOne(`${derivacionesDe(MARIA)}/30/reversion`)
         .flush({ id: 30, estado: 'REVERTIDA' });
@@ -588,20 +588,20 @@ describe('AtencionGrupalPage', () => {
       responderRecarga();
       await estabilizar(fixture);
       expect(texto(fixture)).toContain('Derivacion revertida.');
-      expect(texto(fixture)).toContain('Motivo de la reversion: Derivada por error');
-      expect(botones(fixture, /^Revertir la derivacion/)).toHaveLength(0);
+      expect(texto(fixture)).toContain('Motivo de la reversión: Derivada por error');
+      expect(botones(fixture, /^Revertir la derivación/)).toHaveLength(0);
     });
 
-    it('con la atencion abierta desde la derivacion no ofrece revertir y dice por que', async () => {
+    it('con la atención abierta desde la derivacion no ofrece revertir y dice por que', async () => {
       const fixture = await conDerivaciones(
         [{ id: 31, casoClinicoId: 7, estado: 'VIGENTE' }],
         JUAN,
       );
-      expect(texto(fixture)).toContain('la derivacion no se puede revertir');
-      expect(botones(fixture, /^Revertir la derivacion/)).toHaveLength(0);
+      expect(texto(fixture)).toContain('la derivación no se puede revertir');
+      expect(botones(fixture, /^Revertir la derivación/)).toHaveLength(0);
     });
 
-    it('el foco va al panel, al motivo y de vuelta al boton que abrio cada cosa', async () => {
+    it('el foco va al panel, al motivo y de vuelta al botón que abrio cada cosa', async () => {
       const fixture = await montar();
       // Un click de verdad enfoca el boton: es a donde vuelve el foco al cerrar el panel.
       const abrio = botones(fixture, /^Derivaciones/)[0];
@@ -613,13 +613,13 @@ describe('AtencionGrupalPage', () => {
       await estabilizar(fixture);
       expect(document.activeElement?.getAttribute('aria-labelledby')).toBe('titulo-derivaciones');
 
-      boton(fixture, /^Revertir la derivacion/).click();
+      boton(fixture, /^Revertir la derivación/).click();
       await estabilizar(fixture);
       expect(document.activeElement?.id).toBe('motivo-reversion-30');
 
       // Confirmar sin motivo devuelve el foco al campo que falta.
-      boton(fixture, /Confirmar la reversion/).focus();
-      boton(fixture, /Confirmar la reversion/).click();
+      boton(fixture, /Confirmar la reversión/).focus();
+      boton(fixture, /Confirmar la reversión/).click();
       await estabilizar(fixture);
       expect(document.activeElement?.id).toBe('motivo-reversion-30');
 
@@ -643,9 +643,9 @@ describe('AtencionGrupalPage', () => {
     });
   });
 
-  it('una clase no clinica lo dice y no ofrece nada', async () => {
+  it('una clase no clínica lo dice y no ofrece nada', async () => {
     const fixture = await montar({ claseId: CLASE, clinica: false, participantes: [] });
-    expect(texto(fixture)).toContain('Esta clase no genera registro clinico');
+    expect(texto(fixture)).toContain('Esta clase no genera registro clínico');
     expect(botones(fixture, /Iniciar/)).toHaveLength(0);
   });
 
@@ -657,7 +657,7 @@ describe('AtencionGrupalPage', () => {
     // La clase va en paralelo y el error del panel la cancela.
     http.match(esLaClase);
     await estabilizar(fixture);
-    expect(alerta(fixture)).toContain('No tenes permiso');
+    expect(alerta(fixture)).toContain('No tenés permiso');
     boton(fixture, /Reintentar/).click();
     responderRecarga();
     await estabilizar(fixture);
@@ -670,7 +670,7 @@ describe('AtencionGrupalPage', () => {
     fixture.componentRef.setInput('claseId', String(CLASE));
     fixture.detectChanges();
     await estabilizar(fixture);
-    expect(alerta(fixture)).toContain('Eligi una organizacion');
+    expect(alerta(fixture)).toContain('Eligi una organización');
   });
 
   it(
@@ -748,7 +748,7 @@ describe('AtencionGrupalPage', () => {
   function boton(fixture: ComponentFixture<AtencionGrupalPage>, nombre: RegExp): HTMLButtonElement {
     const encontrado = botones(fixture, nombre)[0];
     if (encontrado === undefined) {
-      throw new Error(`No hay boton ${nombre}`);
+      throw new Error(`No hay botón ${nombre}`);
     }
     return encontrado;
   }

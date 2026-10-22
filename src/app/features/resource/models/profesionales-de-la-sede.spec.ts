@@ -37,7 +37,7 @@ const SEDE = 3;
  * verde de la tarea 14 no eran evidencia de equivalencia. Este spec lo pina.
  */
 describe('atiendeEn', () => {
-  it('un vinculo de alcance organizacion habilita en esta sede', () => {
+  it('un vinculo de alcance organización habilita en esta sede', () => {
     // `consultorioId` nulo NO es "sin sede": es toda la organizacion. Tratarlo como faltante
     // dejaria fuera del selector justo a quien atiende en todas las sedes.
     // El generador tipa `consultorioId?: number`, sin null, pero el backend manda null: por eso
@@ -83,7 +83,7 @@ describe('nombreDeVinculo', () => {
    * selector y un aviso que dice "la apertura de " y se corta. Con `||` cae al correo, que es
    * el comportamiento que se quiere. Esto es lo que se pina.
    */
-  it('un nombre vacio cae al correo, no a una etiqueta en blanco', () => {
+  it('un nombre vacío cae al correo, no a una etiqueta en blanco', () => {
     expect(nombreDeVinculo(vinculo({ accountName: '', accountEmail: 'ana@example.test' }))).toBe(
       'ana@example.test',
     );
@@ -109,7 +109,7 @@ describe('nombreDeVinculo', () => {
  */
 describe('textoDeProfesionales', () => {
   it('redacta el singular, el plural y el caso de la sede sin profesionales', () => {
-    expect(textoDeProfesionales(0)).toBe('ningun profesional vinculado hoy a la sede');
+    expect(textoDeProfesionales(0)).toBe('ningún profesional vinculado hoy a la sede');
     expect(textoDeProfesionales(1)).toBe('1 profesional');
     expect(textoDeProfesionales(7)).toBe('7 profesionales');
   });
@@ -126,16 +126,16 @@ describe('textoDeProfesionales', () => {
 describe('esListaCompleta', () => {
   const vinculos = (cuantos: number) => Array.from({ length: cuantos }, () => ({}));
 
-  it('una pagina que no llega al tope y agota el total esta completa', () => {
+  it('una página que no llega al tope y agota el total esta completa', () => {
     expect(esListaCompleta({ content: vinculos(12), totalElements: 12 })).toBe(true);
   });
 
-  it('sin totalElements, una pagina corta sigue estando completa', () => {
+  it('sin totalElements, una página corta sigue estando completa', () => {
     // Es lo que responde una organizacion chica: no hay nada que indique un corte.
     expect(esListaCompleta({ content: vinculos(3) })).toBe(true);
   });
 
-  it('una pagina llena se considera incompleta aunque no venga totalElements', () => {
+  it('una página llena se considera incompleta aunque no venga totalElements', () => {
     // Raspar el tope es indistinguible de quedar cortado. Ante la duda, se duda: el precio de
     // equivocarse hacia este lado es un cartel que dice "no sabemos".
     expect(esListaCompleta({ content: vinculos(TOPE_DE_VINCULOS) })).toBe(false);

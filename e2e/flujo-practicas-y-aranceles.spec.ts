@@ -27,10 +27,10 @@ interface PracticaDeOferta {
 
 /** Busca una practica del catalogo por su codigo y la agrega a la seleccion. */
 async function agregarPractica(page: Page, codigo: string): Promise<void> {
-  await page.getByLabel('Buscar en el catalogo por nombre o codigo').fill(codigo);
+  await page.getByLabel('Buscar en el catalogo por nombre o código').fill(codigo);
   await page.getByRole('button', { name: 'Buscar', exact: true }).click();
   const resultado = page
-    .getByRole('region', { name: 'Agregar una practica' })
+    .getByRole('region', { name: 'Agregar una práctica' })
     .getByRole('listitem')
     .filter({ hasText: codigo });
   await resultado.getByRole('button', { name: /^Agregar / }).click();
@@ -39,7 +39,7 @@ async function agregarPractica(page: Page, codigo: string): Promise<void> {
 
 function declarada(page: Page, codigo: string): Locator {
   return page
-    .getByRole('group', { name: 'Practica principal' })
+    .getByRole('group', { name: 'Práctica principal' })
     .getByRole('listitem')
     .filter({ hasText: codigo });
 }
@@ -54,10 +54,10 @@ test.describe('Practicas de una oferta contra el backend real', () => {
     await ingresar(page, centro);
     await navegar(page, `/servicios/ofertas/${oferta.id}/practicas`);
     await expect(
-      page.getByRole('heading', { name: 'Practicas de la oferta', level: 1 }),
+      page.getByRole('heading', { name: 'Prácticas de la oferta', level: 1 }),
     ).toBeVisible();
-    await expect(page.getByText(/Sin practicas, la oferta no le devenga nada/)).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Guardar las practicas' })).toBeDisabled();
+    await expect(page.getByText(/Sin prácticas, la oferta no le devenga nada/)).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Guardar las prácticas' })).toBeDisabled();
 
     await agregarPractica(page, 'KIN_SESION');
     await agregarPractica(page, 'KIN_EVAL');
@@ -67,10 +67,10 @@ test.describe('Practicas de una oferta contra el backend real', () => {
     await expect(declarada(page, 'KIN_EVAL')).toContainText('(principal)');
 
     const guardado = respuestaDe(page, 'PUT', /\/ofertas\/\d+\/practicas$/);
-    await page.getByRole('button', { name: 'Guardar las practicas' }).click();
+    await page.getByRole('button', { name: 'Guardar las prácticas' }).click();
     expect((await guardado).status()).toBe(200);
     await expect(
-      page.getByRole('status').filter({ hasText: 'Guardamos las practicas de la oferta.' }),
+      page.getByRole('status').filter({ hasText: 'Guardamos las prácticas de la oferta.' }),
     ).toBeVisible();
 
     const leidas = await api.exigir<{ practicaPrincipalId: number; practicas: PracticaDeOferta[] }>(
@@ -89,9 +89,9 @@ test.describe('Practicas de una oferta contra el backend real', () => {
     await declarada(page, 'KIN_SESION')
       .getByRole('button', { name: /^Quitar / })
       .click();
-    await page.getByRole('button', { name: 'Guardar las practicas' }).click();
+    await page.getByRole('button', { name: 'Guardar las prácticas' }).click();
     await expect(
-      page.getByRole('status').filter({ hasText: 'Guardamos las practicas de la oferta.' }),
+      page.getByRole('status').filter({ hasText: 'Guardamos las prácticas de la oferta.' }),
     ).toBeVisible();
     await expect(declarada(page, 'KIN_SESION')).toHaveCount(0);
     await expect(page.getByRole('region', { name: 'Dadas de baja' })).toBeVisible();
@@ -124,7 +124,7 @@ test.describe('Importacion de aranceles de un convenio contra el backend real', 
       page.getByRole('heading', { name: `Importar aranceles a ${convenio.nombre}`, level: 1 }),
     ).toBeVisible();
 
-    const planilla = page.getByLabel('O pegala aca');
+    const planilla = page.getByLabel('O pegala acá');
     await planilla.fill([encabezado, ...validas, pisada].join('\n'));
     await expect(page.getByText('3 filas listas para la vista previa.')).toBeVisible();
 
@@ -142,7 +142,7 @@ test.describe('Importacion de aranceles de un convenio contra el backend real', 
 
     // Se corrige la planilla: el resultado anterior deja de describirla.
     await planilla.fill([encabezado, ...validas].join('\n'));
-    await expect(page.getByText(/Cambiaste la planilla despues de este resultado/)).toBeVisible();
+    await expect(page.getByText(/Cambiaste la planilla después de este resultado/)).toBeVisible();
     await page.getByRole('button', { name: 'Vista previa' }).click();
     await expect(page.getByText(/Las 2 filas entran como aranceles nuevos/)).toBeVisible();
 

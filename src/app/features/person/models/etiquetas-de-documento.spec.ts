@@ -101,24 +101,24 @@ describe('etiquetas de ordenes y autorizaciones', () => {
     expect(situacionDeOrden({ estado: CicloOrden.ACTIVA, vigente: true })).toBe('Vigente');
     // Una orden cargada con vigencia futura no esta vencida ni vigente todavia.
     expect(situacionDeOrden({ estado: CicloOrden.ACTIVA, vigente: false })).toBe(
-      'Todavia no vigente',
+      'Todavía no vigente',
     );
     expect(ordenInactiva({ estado: CicloOrden.INACTIVA })).toBe(true);
   });
 
-  it('la situacion derivada del backend manda sobre la cuenta por vigencia (B-4)', () => {
+  it('la situación derivada del backend manda sobre la cuenta por vigencia (B-4)', () => {
     expect(
       situacionDeOrden({ estado: CicloOrden.ACTIVA, vigente: true, situacion: Situacion.CUMPLIDA }),
     ).toBe('Cumplida: se consumieron las sesiones prescriptas');
     expect(
       situacionDeOrden({ estado: CicloOrden.ACTIVA, situacion: Situacion.SIN_AUTORIZACION }),
-    ).toBe('Sin autorizacion cargada');
+    ).toBe('Sin autorización cargada');
   });
 
   it('el aviso de vencimiento solo aparece cuando hay algo que avisar', () => {
     expect(avisoDeVencimiento(0)).toBe('Vence hoy');
-    expect(avisoDeVencimiento(1)).toBe('Vence manana');
-    expect(avisoDeVencimiento(5)).toBe('Vence en 5 dias');
+    expect(avisoDeVencimiento(1)).toBe('Vence mañana');
+    expect(avisoDeVencimiento(5)).toBe('Vence en 5 días');
     // Vacio significa "no dibujes nada": un "sin alerta" seria ruido en una tabla que se escanea
     // con la vista.
     expect(avisoDeVencimiento(90)).toBe('');
@@ -143,7 +143,7 @@ describe('etiquetas de ordenes y autorizaciones', () => {
     expect(vigenciaDeDocumento(undefined, undefined)).toBe('Sin vigencia declarada');
   });
 
-  it('los cuatro estados de una autorizacion se traducen, y lo desconocido se muestra crudo', () => {
+  it('los cuatro estados de una autorización se traducen, y lo desconocido se muestra crudo', () => {
     expect(estadoDeAutorizacion({ estadoAutorizacion: EstadoAut.PENDIENTE })).toBe(
       'Pendiente de respuesta',
     );
@@ -228,14 +228,14 @@ describe('etiquetas de ordenes y autorizaciones', () => {
       'convenio vigente con ese plan',
     );
     expect(motivoDeElegibilidad({ motivo: MotivoElegibilidad.SIN_ARANCEL_VIGENTE })).toContain(
-      'hueco de configuracion',
+      'hueco de configuración',
     );
     // Sin motivo, el convenio simplemente no exige nada: no hay nada que aclarar.
     expect(motivoDeElegibilidad({})).toBe('');
   });
 
   it('un requisito se lee con su tipo, si esta cumplido y con que', () => {
-    expect(nombreDeRequisito({ tipo: TipoRequisito.ORDEN })).toBe('Orden medica');
+    expect(nombreDeRequisito({ tipo: TipoRequisito.ORDEN })).toBe('Orden médica');
     expect(nombreDeRequisito({})).toBe('Requisito');
     expect(
       requisitoEnPalabras({
@@ -243,7 +243,7 @@ describe('etiquetas de ordenes y autorizaciones', () => {
         cumplido: false,
         detalle: 'No hay ninguna.',
       }),
-    ).toBe('Autorizacion: FALTA — No hay ninguna.');
+    ).toBe('Autorización: FALTA — No hay ninguna.');
     expect(requisitoEnPalabras({ tipo: TipoRequisito.CREDENCIAL, cumplido: true })).toBe(
       'Credencial vigente: cumplido',
     );

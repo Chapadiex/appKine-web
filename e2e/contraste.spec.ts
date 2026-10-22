@@ -18,6 +18,7 @@ import {
   ok,
 } from './support/agenda-simulada';
 import { instalarApiDp43 } from './support/pantallas-dp43';
+import { abrirFiltros } from './support/filtros';
 
 /**
  * Auditoria de CONTRASTE DE COLOR contra un navegador real (WCAG 1.4.3, nivel AA).
@@ -90,7 +91,7 @@ test.describe('Contraste de color', () => {
     test('el login en reposo, con sus enlaces y su boton de accion', async ({ page }) => {
       await instalarApiDeContraste(page);
       await page.goto('/auth/ingresar');
-      await expect(page.getByRole('heading', { name: 'Iniciar sesion', level: 1 })).toBeVisible();
+      await expect(page.getByRole('heading', { name: 'Iniciar sesión', level: 1 })).toBeVisible();
 
       await auditarContraste(page, 'login en reposo');
     });
@@ -102,10 +103,10 @@ test.describe('Contraste de color', () => {
     test('el login con los dos campos en error', async ({ page }) => {
       await instalarApiDeContraste(page);
       await page.goto('/auth/ingresar');
-      await page.getByRole('button', { name: 'Iniciar sesion' }).click();
+      await page.getByRole('button', { name: 'Ingresar' }).click();
 
-      await expect(page.getByText('Escribi un email valido.')).toBeVisible();
-      await expect(page.getByText('Escribi tu contrasena.')).toBeVisible();
+      await expect(page.getByText('Escribí un correo válido.')).toBeVisible();
+      await expect(page.getByText('Escribí tu contraseña.')).toBeVisible();
 
       await auditarContraste(page, 'login con los dos campos en error');
     });
@@ -142,11 +143,11 @@ test.describe('Contraste de color', () => {
       });
 
       await page.goto('/auth/ingresar');
-      await page.locator('form').getByLabel('Email').fill('ana.prueba@ejemplo.test');
-      await page.locator('form').getByLabel('Contrasena').fill('una-contrasena-larga-y-unica-2026');
-      await page.getByRole('button', { name: 'Iniciar sesion' }).click();
+      await page.locator('form').getByLabel('Correo electrónico').fill('ana.prueba@ejemplo.test');
+      await page.locator('form').getByLabel('Contraseña').fill('una-contrasena-larga-y-unica-2026');
+      await page.getByRole('button', { name: 'Ingresar' }).click();
 
-      const boton = page.getByRole('button', { name: 'Iniciar sesion' });
+      const boton = page.getByRole('button', { name: 'Ingresar' });
       await expect(boton).toBeDisabled();
       await auditarContraste(page, 'login con el boton deshabilitado mientras envia', {
         queAxeNoMide: [
@@ -186,6 +187,7 @@ test.describe('Contraste de color', () => {
       await instalarApiDeContraste(page);
       await page.goto('/espacios');
 
+      await abrirFiltros(page);
       await page.getByLabel('Mostrar').selectOption('TODOS');
       await expect(page.getByText('Sala grupal chica')).toBeVisible();
 
@@ -216,6 +218,7 @@ test.describe('Contraste de color', () => {
       await page.setViewportSize({ width: 480, height: 900 });
       await instalarApiDeContraste(page);
       await page.goto('/espacios');
+      await abrirFiltros(page);
       await page.getByLabel('Mostrar').selectOption('TODOS');
       await expect(page.getByText('Sala grupal chica')).toBeVisible();
 
@@ -305,10 +308,10 @@ test.describe('Contraste de color', () => {
     test('la atencion clinica de una clase con las derivaciones abiertas', async ({ page }) => {
       await instalarApiDeContraste(page);
       await page.goto(`/atencion/clases/${CLASE.id}`);
-      await expect(page.getByText('Atencion cerrada', { exact: false })).toBeVisible();
+      await expect(page.getByText('Atención cerrada', { exact: false })).toBeVisible();
       await page.getByRole('button', { name: /Derivaciones de Perez, Ana/ }).click();
       await expect(
-        page.getByText('Motivo de la reversion: Derivada al caso equivocado'),
+        page.getByText('Motivo de la reversión: Derivada al caso equivocado'),
       ).toBeVisible();
 
       await auditarContraste(page, 'atencion clinica de una clase con derivaciones');
@@ -322,10 +325,10 @@ test.describe('Contraste de color', () => {
       await instalarApiDeContraste(page);
       await page.goto(`/atencion/clases/${CLASE.id}`);
       await page.getByRole('button', { name: /Derivar a un caso a Perez, Ana/ }).click();
-      const tarjeta = page.getByRole('region', { name: 'Derivar a Perez, Ana a un caso clinico' });
+      const tarjeta = page.getByRole('region', { name: 'Derivar a Perez, Ana a un caso clínico' });
       await expect(tarjeta.getByText('Con 2 casos activos')).toBeVisible();
       await tarjeta.getByRole('button', { name: 'Derivar al caso' }).click();
-      await expect(tarjeta.getByText('Elegi a que caso se deriva.')).toBeVisible();
+      await expect(tarjeta.getByText('Elegí a qué caso se deriva.')).toBeVisible();
 
       await auditarContraste(page, 'derivar a una participante sin elegir caso');
     });
@@ -343,7 +346,7 @@ test.describe('Contraste de color', () => {
       await page.getByLabel('Fecha', { exact: true }).fill('');
       await page.getByLabel('Cupo').fill('0');
       await page.getByRole('button', { name: 'Programar clase' }).click();
-      await expect(page.getByText('Elegi la fecha de la clase.')).toBeVisible();
+      await expect(page.getByText('Elegí la fecha de la clase.')).toBeVisible();
       await expect(page.getByText('El cupo es de 1 en adelante.')).toBeVisible();
       // El foco quedo en el primer campo en error (WCAG 3.3.1).
       await expect(page.getByLabel('Fecha', { exact: true })).toBeFocused();
@@ -384,7 +387,7 @@ test.describe('Contraste de color', () => {
       await page.getByRole('button', { name: /Iniciar para todos/ }).click();
 
       const resultado = page.getByRole('region', { name: 'Resultado' });
-      await expect(resultado.getByText('No tiene una derivacion clinica vigente')).toBeVisible();
+      await expect(resultado.getByText('No tiene una derivación clínica vigente')).toBeVisible();
       await expect(resultado).toBeFocused();
 
       await auditarContraste(page, 'atencion clinica de una clase con un lote parcial');
@@ -423,7 +426,7 @@ test.describe('Contraste de color', () => {
       await instalarApiDeContraste(page);
       await instalarApiDp43(page);
       await page.goto('/contratacion/financiadores/catalogo');
-      await expect(page.getByText('El catalogo cambio despues de agregarlo')).toBeVisible();
+      await expect(page.getByText('El catálogo cambio después de agregarlo')).toBeVisible();
 
       await auditarContraste(page, 'catalogo de financiadores del centro');
     });
@@ -436,8 +439,8 @@ test.describe('Contraste de color', () => {
       await page
         .getByLabel('Oferta', { exact: true })
         .selectOption({ label: 'Rehabilitacion neurologica' });
-      await page.getByRole('button', { name: 'Iniciar la atencion' }).click();
-      await expect(page.getByText('Elegi a quien se atiende.')).toBeVisible();
+      await page.getByRole('button', { name: 'Iniciar atención' }).click();
+      await expect(page.getByText('Elegí a quien se atiende.')).toBeVisible();
 
       await auditarContraste(page, 'atender sin turno con un aviso');
     });
@@ -446,7 +449,7 @@ test.describe('Contraste de color', () => {
       await instalarApiDeContraste(page);
       await instalarApiDp43(page);
       await page.goto('/atencion/politica-de-enmienda');
-      await expect(page.getByText('45 dias')).toBeVisible();
+      await expect(page.getByText('45 días', { exact: true })).toBeVisible();
 
       await auditarContraste(page, 'ventana de enmienda');
     });

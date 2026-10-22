@@ -80,7 +80,7 @@ describe('SolicitudesPage', () => {
     expect(anfitrion.textContent).not.toContain('Rechazar');
 
     // El pendiente dice que hacer mientras tanto; el aprobado, donde encontrar el concepto.
-    expect(anfitrion.textContent).toContain('podes darlo de alta como un concepto de tu centro');
+    expect(anfitrion.textContent).toContain('podés darlo de alta como un concepto de tu centro');
     expect(anfitrion.textContent).toContain('Solo los de la plataforma');
   });
 
@@ -161,7 +161,7 @@ describe('SolicitudesPage', () => {
     expect(anfitrion.textContent).toContain('pedirlo dos veces no la acelera');
   });
 
-  it('el filtro por estado recarga con su parametro y la lista vacia no es un error', async () => {
+  it('el filtro por estado recarga con su parametro y la lista vacía no es un error', async () => {
     const fixture = await montar();
     const anfitrion = fixture.nativeElement as HTMLElement;
 
@@ -176,10 +176,10 @@ describe('SolicitudesPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect(anfitrion.textContent).toContain('todavia no hizo ningun pedido');
+    expect(anfitrion.textContent).toContain('todavía no hizo ningún pedido');
   });
 
-  it('sin organizacion elegida no consulta nada y manda a elegir contexto', async () => {
+  it('sin organización elegida no consulta nada y manda a elegir contexto', async () => {
     const fixture = TestBed.createComponent(SolicitudesPage);
     fixture.detectChanges();
     await fixture.whenStable();
@@ -188,13 +188,13 @@ describe('SolicitudesPage', () => {
     httpMock.expectNone((peticion: HttpRequest<unknown>) => peticion.url === LISTADO);
 
     const anfitrion = fixture.nativeElement as HTMLElement;
-    expect(anfitrion.textContent).toContain('Todavia no elegiste un consultorio');
+    expect(anfitrion.textContent).toContain('Todavía no elegiste un consultorio');
     // La salida es elegir contexto, NO re-autenticarse: las credenciales estan bien.
-    expect(anfitrion.textContent).toContain('Tu sesion sigue abierta');
+    expect(anfitrion.textContent).toContain('Tu sesión sigue abierta');
     expect(anfitrion.querySelector('a[href="/seleccionar-contexto"]')).not.toBeNull();
   });
 
-  it('un error de lectura se puede reintentar sin recargar la pagina', async () => {
+  it('un error de lectura se puede reintentar sin recargar la página', async () => {
     tenantContext.select({
       organizationId: 1,
       organizationName: 'Centro Belgrano',

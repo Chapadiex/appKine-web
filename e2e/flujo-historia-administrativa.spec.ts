@@ -104,7 +104,7 @@ test.describe('Historia clinica administrativa en el Paciente 360 contra el back
     await ingresarAlCentro(page, email, centro);
     await navegar(page, `/pacientes/${conHistoria.id}`);
     const seccion = page.getByRole('region', {
-      name: 'Historia clinica: datos administrativos',
+      name: 'Historia clínica: datos administrativos',
     });
     await expect(seccion.getByText('Historia abierta el')).toBeVisible();
     const fila = seccion
@@ -124,8 +124,8 @@ test.describe('Historia clinica administrativa en el Paciente 360 contra el back
     await navegar(page, `/pacientes/${sinHistoria.id}`);
     await expect(
       page
-        .getByRole('region', { name: 'Historia clinica: datos administrativos' })
-        .getByText('Esta persona todavia no tiene historia clinica.'),
+        .getByRole('region', { name: 'Historia clínica: datos administrativos' })
+        .getByText('Esta persona todavía no tiene historia clínica.'),
     ).toBeVisible();
   });
 });

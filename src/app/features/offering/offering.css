@@ -11,27 +11,6 @@
  */
 
 /*
- * La nota que separa el estado administrativo de la vigencia de hoy.
- *
- * Va con borde de acento y encabezado propio, no como un parrafo mas: es la aclaracion que
- * evita el reporte de bug mas probable del modulo -"la cargue y no aparece en la agenda"- y en
- * el medio de la prosa nadie la lee. El color no es lo unico que la distingue -tiene su propio
- * encabezado-, asi que sigue comunicando en escala de grises (WCAG 1.4.1).
- */
-.nota-clave {
-  border-left: var(--borde-acento) solid var(--color-acento);
-  background: var(--color-superficie-sutil);
-}
-
-.nota-clave p {
-  margin: 0 0 var(--esp-4);
-}
-
-.nota-clave p:last-child {
-  margin-bottom: 0;
-}
-
-/*
  * La casilla y su texto en la misma linea.
  *
  * `.campo label` es `display: block` en la hoja global, que es lo correcto para un `input` de
@@ -127,4 +106,129 @@
 .par-de-campos .campo {
   flex: 1 1 12rem;
   margin-bottom: 0;
+}
+
+/*
+ * El camino de vuelta a la lista de ofertas, sobre el titulo de cada pantalla de una oferta.
+ *
+ * Es un enlace de texto y no un boton: es "donde estoy" (migas), no una accion. La pestaña de
+ * la seccion (Habilitaciones, Practicas, Precios, Honorarios) queda debajo del titulo.
+ */
+.migas {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-3);
+  margin-bottom: var(--esp-3);
+  font-size: var(--tipo-sm);
+}
+
+.migas a {
+  color: var(--color-texto-suave);
+  text-decoration: none;
+}
+
+.migas a:hover {
+  color: var(--color-acento);
+  text-decoration: underline;
+}
+
+.migas span {
+  color: var(--color-texto-suave);
+}
+
+/*
+ * Habilitaciones de la oferta (diseno del canvas): cada seccion es una tarjeta con su titulo y su
+ * resumen ("2 habilitados") arriba, una tabla de candidatos con la casilla en la primera columna
+ * y el boton de guardar en un pie propio.
+ */
+.seccion-cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--esp-4);
+  margin-bottom: var(--esp-6);
+}
+
+.seccion-cabecera .titulo-con-ayuda {
+  margin-bottom: 0;
+}
+
+.seccion-cabecera__resumen {
+  font-size: var(--tipo-sm);
+  color: var(--color-texto-suave);
+}
+
+.capacidad {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp-6) var(--esp-9);
+  margin: 0;
+}
+
+.capacidad__dato dt {
+  font-size: var(--tipo-xs);
+  color: var(--color-texto-suave);
+}
+
+.capacidad__dato dd {
+  margin: var(--esp-1) 0 0;
+  font-size: var(--tipo-md);
+  font-weight: var(--peso-semi);
+  color: var(--color-texto-fuerte);
+}
+
+/*
+ * Aviso que acompana a un dato: dice con palabras lo que el color insinua (WCAG 1.4.1) y lleva
+ * su marca "!" para que se lea tambien en escala de grises.
+ */
+.aviso-habilitacion {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--esp-4);
+  margin: var(--esp-6) 0;
+  padding: var(--esp-4) var(--esp-5);
+  border-radius: var(--radio-md);
+  background: var(--color-aviso-fondo);
+  color: var(--color-aviso-texto);
+  font-size: var(--tipo-sm);
+}
+
+.aviso-habilitacion__marca {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: var(--radio-pastilla);
+  background: var(--color-aviso);
+  color: var(--color-superficie);
+  font-weight: var(--peso-semi);
+  font-size: var(--tipo-xs);
+}
+
+.habilitable__nombre {
+  font-weight: var(--peso-semi);
+  color: var(--color-texto-fuerte);
+}
+
+.habilitable__detalle {
+  font-weight: var(--peso-normal);
+  font-size: var(--tipo-xs);
+  color: var(--color-texto-suave);
+}
+
+.habilitable__advertencia {
+  margin: var(--esp-2) 0 0 var(--esp-8);
+}
+
+.pie-de-tarjeta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--esp-4);
+  margin-top: var(--esp-6);
+  padding-top: var(--esp-6);
+  border-top: var(--borde-fino) solid var(--color-borde);
 }

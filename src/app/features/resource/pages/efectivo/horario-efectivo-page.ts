@@ -34,6 +34,12 @@ import {
   textoDeRecorte,
 } from '../../models/horario-efectivo';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
+import { Pestanas } from '../../../../shared/components/pestanas/pestanas';
+import {
+  ETIQUETA_PESTANAS_DE_HORARIOS,
+  PESTANAS_DE_HORARIOS,
+} from '../../models/pestanas-de-horarios';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 
 /** Una semana: es la ventana que se mira para responder "por que el martes esta vacio". */
 const DIAS_PROPUESTOS = 7;
@@ -79,7 +85,7 @@ const DIAS_PROPUESTOS = 7;
  */
 @Component({
   selector: 'app-horario-efectivo-page',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [Ayuda, Pestanas, ReactiveFormsModule, RouterLink],
   templateUrl: './horario-efectivo-page.html',
   styleUrl: '../../resource.css',
 })
@@ -93,6 +99,8 @@ export class HorarioEfectivoPage {
 
   protected readonly maximoDias = MAXIMO_DIAS_VENTANA;
   protected readonly rutas = RUTAS_HORARIOS;
+  protected readonly pestanas = PESTANAS_DE_HORARIOS;
+  protected readonly etiquetaDePestanas = ETIQUETA_PESTANAS_DE_HORARIOS;
   protected readonly textoListaIncompleta = TEXTO_LISTA_INCOMPLETA;
   protected readonly etiquetaDeFecha = etiquetaDeFecha;
   protected readonly etiquetaDeOrigen = etiquetaDeOrigen;
@@ -295,14 +303,14 @@ export class HorarioEfectivoPage {
     }
     if (dias <= 0) {
       this.errorVentana.set(
-        'El fin de la ventana tiene que ser posterior al inicio, y es exclusivo: el dia que ' +
+        'El fin de la ventana tiene que ser posterior al inicio, y es exclusivo: el día que ' +
           'escribas en "hasta" no se resuelve.',
       );
       return;
     }
     if (dias > MAXIMO_DIAS_VENTANA) {
       this.errorVentana.set(
-        `La ventana no puede superar los ${MAXIMO_DIAS_VENTANA} dias. Acorta el periodo y volve a consultar.`,
+        `La ventana no puede superar los ${MAXIMO_DIAS_VENTANA} días. Acorta el periodo y volvé a consultar.`,
       );
       return;
     }

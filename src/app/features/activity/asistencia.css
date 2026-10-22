@@ -31,3 +31,185 @@
   margin: 0;
   padding-left: 1.25rem;
 }
+
+/*
+ * Restyle al canvas (UX-01): las tres marcas como un control segmentado, con la marca elegida
+ * teñida. Los radios nativos siguen ahi —teclado, lector de pantalla y E2E no cambian—.
+ */
+.marcas {
+  display: inline-flex;
+  flex-wrap: nowrap;
+  gap: 0;
+  border: var(--borde-fino, 1px) solid var(--color-borde-control);
+  border-radius: var(--radio-md);
+  overflow: hidden;
+}
+
+.marcas .opcion-radio {
+  padding: var(--esp-2) var(--esp-5);
+  border-left: var(--borde-fino, 1px) solid var(--color-borde);
+  background: var(--color-superficie);
+  font-size: var(--tipo-xs);
+  font-weight: var(--peso-medio);
+  cursor: pointer;
+}
+
+.marcas .opcion-radio:first-of-type {
+  border-left: 0;
+}
+
+.marcas .opcion-radio:has(input:checked) {
+  background: var(--color-acento-claro);
+  color: var(--color-acento);
+}
+
+.contadores li {
+  padding: var(--esp-1) var(--esp-4);
+  border-radius: var(--radio-pastilla);
+  background: var(--color-superficie-sutil);
+  font-size: var(--tipo-xs);
+  font-weight: var(--peso-medio);
+}
+
+/*
+ * Rediseno al canvas (UX-01), asistencia de la clase. La lista conserva a todos los participantes
+ * a la vez, en una tabla compacta: cada fila lleva su control segmentado. Presente, tarde y
+ * ausente se tiñen con los tokens de estado; el texto de la opcion elegida usa el token de texto
+ * del estado (contraste AA), y la seleccion no depende solo del color: el radio sigue marcado.
+ */
+.clase-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--esp-2) var(--esp-5);
+  margin: 0 0 var(--esp-5);
+  font-size: var(--tipo-sm);
+  color: var(--color-texto-suave);
+}
+
+.clase-meta__estado {
+  padding: var(--esp-1) var(--esp-4);
+  border-radius: var(--radio-pastilla);
+  background: var(--color-acento-claro);
+  color: var(--color-acento);
+  font-size: var(--tipo-xs);
+  font-weight: var(--peso-medio);
+}
+
+/* Franja de cifras: una celda por contador, separadas por una linea fina. */
+.contadores {
+  gap: 0;
+  border: var(--borde-fino) solid var(--color-borde);
+  border-radius: var(--radio-md);
+  overflow: hidden;
+}
+
+.contadores li {
+  flex: 1 1 8rem;
+  padding: var(--esp-4) var(--esp-6);
+  border-radius: 0;
+  background: transparent;
+  border-right: var(--borde-fino) solid var(--color-borde-sutil);
+  font-size: var(--tipo-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.contadores + .ayuda,
+.contadores ~ .acciones {
+  margin-top: var(--esp-5);
+}
+
+/* Barra de la lista: la accion masiva queda a la vista, pegada a la tabla. */
+.acciones--barra {
+  margin: 0 0 var(--esp-5);
+}
+
+.tabla td {
+  vertical-align: middle;
+}
+
+.marcas .opcion-radio {
+  min-height: 2rem;
+  padding: var(--esp-2) var(--esp-5);
+  white-space: nowrap;
+}
+
+.marcas .opcion-radio--presente:has(input:checked) {
+  background: var(--color-exito-fondo);
+  color: var(--color-exito-texto);
+}
+
+.marcas .opcion-radio--tarde:has(input:checked) {
+  background: var(--color-aviso-fondo);
+  color: var(--color-aviso-texto);
+}
+
+.marcas .opcion-radio--ausente:has(input:checked) {
+  background: var(--color-peligro-fondo);
+  color: var(--color-peligro-texto);
+}
+
+.marcas .opcion-radio:has(input:focus-visible) {
+  outline: var(--foco-grosor) solid var(--color-foco);
+  outline-offset: calc(var(--foco-grosor) * -1);
+}
+
+/* Pie de la lista: cuantos cambios hay sin guardar, y las acciones a la derecha. */
+.acciones--pie {
+  padding-top: var(--esp-5);
+  border-top: var(--borde-fino) solid var(--color-borde);
+}
+
+.pie-cambios {
+  margin-right: auto;
+  font-size: var(--tipo-xs);
+  color: var(--color-texto-suave);
+}
+
+/*
+ * Clases del dia. La fecha va en una barra liviana, sin tarjeta, y el cupo muestra su ocupacion
+ * con una barra fina ademas del numero (el texto es el dato; la barra es refuerzo).
+ */
+.barra-dia {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--esp-2) var(--esp-6);
+  margin-bottom: var(--esp-6);
+}
+
+.barra-dia .campo {
+  margin-bottom: 0;
+}
+
+.barra-dia .ayuda {
+  margin: 0 0 var(--esp-3);
+}
+
+.cupo {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-4);
+  min-width: 9rem;
+}
+
+.cupo__barra {
+  flex: 1 1 4rem;
+  height: 0.375rem;
+  border-radius: var(--radio-pastilla);
+  background: var(--color-borde);
+  overflow: hidden;
+}
+
+.cupo__relleno {
+  display: block;
+  height: 100%;
+  border-radius: var(--radio-pastilla);
+  background: var(--color-acento);
+}
+
+.cupo__texto {
+  font-size: var(--tipo-xs);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}

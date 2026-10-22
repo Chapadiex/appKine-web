@@ -90,7 +90,7 @@ test.describe('Cobro en efectivo anulado contra el backend real', () => {
 
     await navegar(page, '/caja');
     await expect(page.getByRole('heading', { name: 'Caja abierta' })).toBeVisible();
-    await expect(dato(page, 'Deberia haber en el cajon')).toContainText('9.500,00');
+    await expect(dato(page, 'Debería haber en el cajón')).toContainText('9.500,00');
     await expect(movimientoDeCaja(page, `Cobro ${cobro.id}`)).toContainText('+ $');
 
     // --- Anular desde el listado de cobros de la persona ---------------------------------------
@@ -118,7 +118,7 @@ test.describe('Cobro en efectivo anulado contra el backend real', () => {
 
     // El cajon devuelve la plata: el teorico es el saldo inicial y hay UN contramovimiento.
     await navegar(page, '/caja');
-    await expect(dato(page, 'Deberia haber en el cajon')).toContainText('1.000,00');
+    await expect(dato(page, 'Debería haber en el cajón')).toContainText('1.000,00');
     const teorico = await cajaAbierta(api, centro);
     expect(teorico?.saldoTeorico).toBe(INICIAL);
 
@@ -136,7 +136,7 @@ test.describe('Cobro en efectivo anulado contra el backend real', () => {
     await page.reload();
     await expect(page.getByRole('heading', { name: 'Caja abierta' })).toBeVisible();
     await page.getByLabel('Efectivo contado').fill(String(INICIAL));
-    await expect(page.getByText('El contado coincide con el teorico.')).toBeVisible();
+    await expect(page.getByText('El contado coincide con el teórico.')).toBeVisible();
     await page.getByRole('button', { name: 'Cerrar la caja' }).click();
     await expect(page.getByRole('heading', { name: 'Arqueo registrado' })).toBeVisible();
     expect(await cajaAbierta(api, centro)).toBeNull();

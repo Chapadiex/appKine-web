@@ -1,43 +1,37 @@
-<h1>Invitaciones</h1>
+<div class="titulo-con-ayuda">
+  <h1>Invitaciones</h1>
+  <app-ayuda titulo="Sobre esta pantalla">
+    <p>
+      A quien le escribiste para que se sume al equipo. No es la lista de quien trabaja en el
+      centro: esa es <a routerLink="/organizacion/colaboradores">Colaboradores</a>, y una persona
+      pasa de acá a esa cuando acepta.
+    </p>
+    <p class="ayuda-contextual__subtitulo">Cómo funciona una invitación</p>
+    <p>
+      La persona recibe un correo con un enlace. <b>Puede no tener cuenta en AKINE</b>: si no la
+      tiene, la crea al aceptar, en el mismo paso, sin ningún correo de activación aparte. El
+      vinculo nace <b>cuando acepta</b>, no cuando vos invitas.
+    </p>
+    <p>
+      Por eso <b>invitar no ocupa un lugar de tu plan y aceptar si</b>. Si tenés un solo lugar libre
+      y mandas cinco invitaciones, entra la primera que responda y las otras cuatro se van a
+      encontrar con que no hay lugar.
+    </p>
+    <p>
+      Si la persona <b>ya tiene cuenta</b> y solo querés vincularla, es mas directo
+      <a routerLink="/organizacion/colaboradores/nuevo">darla de alta</a>: queda vinculada en el
+      acto, sin esperar que responda.
+    </p>
+  </app-ayuda>
+  <div class="encabezado__acciones" *akinePermiso="permisoManage">
+    <button type="button" class="boton" (click)="abrirAlta()">
+      <app-icono nombre="agregar" />
+      Invitar a alguien
+    </button>
+  </div>
+</div>
 
-<p class="descripcion">
-  A quien le escribiste para que se sume al equipo. No es la lista de quien trabaja en el centro:
-  esa es <a routerLink="/organizacion/colaboradores">Colaboradores</a>, y una persona pasa de acá a
-  esa cuando acepta.
-</p>
-
-<p class="acciones">
-  <button type="button" class="boton" (click)="abrirAlta()" *akinePermiso="permisoManage">
-    Invitar a alguien
-  </button>
-  <a class="boton boton--secundario" routerLink="/organizacion/colaboradores">
-    Ver los colaboradores
-  </a>
-</p>
-
-<!--
-  Las dos cosas que hay que saber ANTES de invitar. Van arriba y no escondidas: la primera evita
-  el reporte de bug mas probable del modulo y la segunda evita que alguien planifique
-  incorporaciones contando lugares que no reservo.
--->
-<section class="tarjeta nota-invitaciones" aria-labelledby="titulo-nota-invitaciones">
-  <h2 id="titulo-nota-invitaciones">Como funciona una invitacion</h2>
-  <p>
-    La persona recibe un correo con un enlace. <b>Puede no tener cuenta en AKINE</b>: si no la
-    tiene, la crea al aceptar, en el mismo paso, sin ningun correo de activacion aparte. El vinculo
-    nace <b>cuando acepta</b>, no cuando vos invitas.
-  </p>
-  <p>
-    Por eso <b>invitar no ocupa un lugar de tu plan y aceptar si</b>. Si tenes un solo lugar libre y
-    mandas cinco invitaciones, entra la primera que responda y las otras cuatro se van a encontrar
-    con que no hay lugar.
-  </p>
-  <p>
-    Si la persona <b>ya tiene cuenta</b> y solo querés vincularla, es mas directo
-    <a routerLink="/organizacion/colaboradores/nuevo">darla de alta</a>: queda vinculada en el acto,
-    sin esperar que responda.
-  </p>
-</section>
+<app-pestanas [pestanas]="pestanas" [etiqueta]="etiquetaDePestanas" />
 
 <div aria-live="polite">
   @if (exito(); as mensaje) {
@@ -47,7 +41,7 @@
 
 @if (altaAbierta()) {
   <section class="tarjeta" aria-labelledby="titulo-alta-invitacion">
-    <h2 id="titulo-alta-invitacion">Nueva invitacion</h2>
+    <h2 id="titulo-alta-invitacion">Nueva invitación</h2>
 
     <form [formGroup]="formularioAlta" (ngSubmit)="enviarAlta()" novalidate>
       <div class="campo">
@@ -62,10 +56,10 @@
         @if (errorEnElEmail()) {
           <p class="campo__error" role="alert">{{ errorAccion() }}</p>
         } @else if (mostrarError('email')) {
-          <p class="campo__error">Escribi un email valido.</p>
+          <p class="campo__error">Escribí un correo válido.</p>
         } @else {
           <p class="ayuda">
-            Es la direccion a la que va el enlace, y la que va a quedar como su usuario. No hace
+            Es la dirección a la que va el enlace, y la que va a quedar como su usuario. No hace
             falta que ya tenga cuenta.
           </p>
         }
@@ -79,7 +73,7 @@
           }
         </select>
         <p class="ayuda">
-          Se puede cambiar despues, desde el listado de colaboradores, una vez que acepte.
+          Se puede cambiar después, desde el listado de colaboradores, una vez que acepte.
         </p>
       </div>
 
@@ -87,10 +81,10 @@
         <label for="invitacion-alcance">Donde trabajaria</label>
         <select id="invitacion-alcance" formControlName="alcance">
           <option value="SEDE">Solo en {{ nombreDeLaSede() }}</option>
-          <option value="ORGANIZACION">En toda la organizacion</option>
+          <option value="ORGANIZACION">En toda la organización</option>
         </select>
         <p class="ayuda">
-          El alcance acota lo que va a poder ver y hacer. "Toda la organizacion" incluye las sedes
+          El alcance acota lo que va a poder ver y hacer. "Toda la organización" incluye las sedes
           que abras mas adelante.
         </p>
       </div>
@@ -119,25 +113,31 @@
 <section class="tarjeta" aria-labelledby="titulo-listado-invitaciones">
   <h2 id="titulo-listado-invitaciones">Invitaciones enviadas</h2>
 
-  <div class="campo">
-    <label for="filtro-estado-invitacion">Mostrar</label>
-    <select
-      id="filtro-estado-invitacion"
-      [value]="filtro()"
-      (change)="cambiarFiltro($any($event.target).value)"
-      aria-describedby="filtro-estado-invitacion-ayuda"
-    >
-      <option value="PENDIENTE">Las que esperan respuesta</option>
-      <option value="ACEPTADA">Las aceptadas</option>
-      <option value="RECHAZADA">Las rechazadas</option>
-      <option value="CANCELADA">Las canceladas</option>
-      <option value="TODAS">Todas</option>
-    </select>
-    <p class="ayuda" id="filtro-estado-invitacion-ayuda">
-      Una invitacion cuyo enlace vencio <b>sigue figurando pendiente</b>: vencer no es una decision
-      de nadie, es el reloj. La fila lo aclara, y la salida es reenviarla.
-    </p>
-  </div>
+  <!--
+    Regla de filtros (plan §3.4): el listado no tiene busqueda por texto en el backend, asi que
+    va solo el embudo; "Mostrar" es un filtro avanzado.
+  -->
+  <app-filtros [soloAvanzados]="true" [activos]="filtrosAvanzadosActivos()">
+    <div class="campo">
+      <label for="filtro-estado-invitacion">Mostrar</label>
+      <select
+        id="filtro-estado-invitacion"
+        [value]="filtro()"
+        (change)="cambiarFiltro($any($event.target).value)"
+        aria-describedby="filtro-estado-invitacion-ayuda"
+      >
+        <option value="PENDIENTE">Las que esperan respuesta</option>
+        <option value="ACEPTADA">Las aceptadas</option>
+        <option value="RECHAZADA">Las rechazadas</option>
+        <option value="CANCELADA">Las canceladas</option>
+        <option value="TODAS">Todas</option>
+      </select>
+      <p class="ayuda" id="filtro-estado-invitacion-ayuda">
+        Una invitación cuyo enlace vencio <b>sigue figurando pendiente</b>: vencer no es una
+        decision de nadie, es el reloj. La fila lo aclara, y la salida es reenviarla.
+      </p>
+    </div>
+  </app-filtros>
 
   <div aria-live="polite">
     @switch (estado().tipo) {
@@ -146,9 +146,9 @@
       }
 
       @case ('sin-contexto') {
-        <p class="estado estado--vacio">Todavia no elegiste un consultorio.</p>
+        <p class="estado estado--vacio">Todavía no elegiste un consultorio.</p>
         <p class="ayuda">
-          Una invitacion la emite una organizacion concreta, asi que hay que indicar cual. Tu sesion
+          Una invitación la emite una organización concreta, así que hay que indicar cual. Tu sesión
           sigue abierta: solo falta elegir donde estas trabajando.
         </p>
         <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
@@ -172,7 +172,7 @@
             class="tabla-scroll"
             tabindex="0"
             role="region"
-            aria-label="Invitaciones enviadas por la organizacion"
+            aria-label="Invitaciones enviadas por la organización"
           >
             <table class="tabla">
               <caption class="visualmente-oculto">
@@ -181,20 +181,22 @@
               </caption>
               <thead>
                 <tr>
-                  <th scope="col">Persona invitada</th>
-                  <th scope="col">Rol propuesto</th>
-                  <th scope="col">Enviada</th>
-                  <th scope="col">Estado</th>
+                  <th scope="col" appOrdenable [tabla]="tabla" columna="persona">
+                    Persona invitada
+                  </th>
+                  <th scope="col" appOrdenable [tabla]="tabla" columna="rol">Rol propuesto</th>
+                  <th scope="col" appOrdenable [tabla]="tabla" columna="enviada">Enviada</th>
+                  <th scope="col" appOrdenable [tabla]="tabla" columna="estado">Estado</th>
                   <th scope="col">Acciones</th>
                 </tr>
               </thead>
               <tbody>
-                @for (invitacion of filas(); track invitacion.id) {
+                @for (invitacion of tabla.visibles(); track invitacion.id) {
                   <tr [class.fila--revocada]="invitacion.estado === 'CANCELADA'">
                     <th scope="row">
                       {{ invitacion.email }}
                       @if (invitacion.consultorioId === undefined) {
-                        <p class="ayuda">En toda la organizacion</p>
+                        <p class="ayuda">En toda la organización</p>
                       }
                     </th>
                     <td>{{ etiquetaDeRol(invitacion.roleCode) }}</td>
@@ -205,7 +207,7 @@
                       @if (invitacion.estado === 'PENDIENTE' && invitacion.vencida) {
                         <p class="ayuda">
                           El enlace que recibio ya no sirve. Reenviala para mandarle uno nuevo: es
-                          la misma invitacion, no una nueva.
+                          la misma invitación, no una nueva.
                         </p>
                       } @else if (invitacion.estado === 'PENDIENTE') {
                         <p class="ayuda">
@@ -249,10 +251,10 @@
                       <td colspan="5">
                         <app-confirmacion-con-motivo
                           idCampo="cancelar-invitacion-motivo"
-                          [titulo]="'Cancelar la invitacion a ' + invitacion.email"
-                          etiqueta="Motivo de la cancelacion"
-                          ayuda="Queda registrado junto a la invitacion. El enlace que recibio deja de servir en el acto. Podes volver a invitar a esa persona mas adelante."
-                          textoConfirmar="Cancelar la invitacion"
+                          [titulo]="'Cancelar la invitación a ' + invitacion.email"
+                          etiqueta="Motivo de la cancelación"
+                          ayuda="Queda registrado junto a la invitacion. El enlace que recibió deja de servir en el acto. Podés volver a invitar a esa persona mas adelante."
+                          textoConfirmar="Cancelar la invitación"
                           [enviando]="enviando()"
                           (confirmado)="enviarCancelacion($event)"
                           (cancelado)="cerrarPaneles()"
@@ -269,6 +271,16 @@
             </table>
           </div>
 
+          <div class="tabla-pie">
+            <span>{{ tabla.total() }} invitaciones</span>
+            <app-paginacion
+              [paginaActual]="tabla.pagina()"
+              [totalPaginas]="tabla.totalPaginas()"
+              etiqueta="Paginas de invitaciones"
+              (cambioDePagina)="tabla.irA($event)"
+            />
+          </div>
+
           @if (errorAccion() && cancelacionAbierta() === null && !altaAbierta()) {
             <p class="estado estado--error" role="alert">{{ errorAccion() }}</p>
           }
@@ -279,6 +291,6 @@
 </section>
 
 <p class="ayuda" *akinePermiso="permisoManage">
-  Si un correo de invitacion no salio, podes reintentarlo desde
+  Si un correo de invitación no salio, podés reintentarlo desde
   <a class="enlace" routerLink="/organizacion/colaboradores/notificaciones">Notificaciones</a>.
 </p>

@@ -59,7 +59,7 @@ describe('traducirErrorEspacio', () => {
     expect(traducirErrorEspacio(problema(403, 'missing-tenant-context')).mensaje).toContain(
       'Eligi un consultorio',
     );
-    expect(traducirErrorEspacio(problema(403, 'forbidden')).mensaje).toContain('No tenes permiso');
+    expect(traducirErrorEspacio(problema(403, 'forbidden')).mensaje).toContain('No tenés permiso');
   });
 
   it('el conflicto de nombre aclara que el de un espacio dado de baja si se puede reusar', () => {
@@ -71,7 +71,7 @@ describe('traducirErrorEspacio', () => {
     );
   });
 
-  it('los dos codigos reservados usan sus extras cuando llegan, y degradan cuando no', () => {
+  it('los dos códigos reservados usan sus extras cuando llegan, y degradan cuando no', () => {
     // Ninguno de los dos se emite hoy: la ocupacion es siempre cero y no hay agenda. El dia que
     // empiecen a llegar tienen que encontrar un mensaje util, no la rama generica.
     const conNumeros = traducirErrorEspacio(

@@ -35,7 +35,7 @@ export const routes: Routes = [
       import('./pages/presentacion-detalle/presentacion-detalle-page').then(
         (m) => m.PresentacionDetallePage,
       ),
-    title: 'AKINE - Lote de presentacion',
+    title: 'AKINE - Lote de presentación',
     data: { [DATA_ANCHO]: ANCHO_AMPLIO },
   },
 ];

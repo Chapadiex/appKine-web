@@ -1,42 +1,55 @@
-<h1>Suscripcion de un centro</h1>
+<div class="titulo-con-ayuda">
+  <h1>Suscripción de un centro</h1>
+  <app-ayuda titulo="Sobre esta pantalla">
+    <p>
+      Plan, estado y versión de la suscripción de un centro, y el cambio de plan. No hace falta un
+      acceso de soporte: el consumo de límites del centro no se muestra acá. Solo lo ve el equipo de
+      AKINE.
+    </p>
+  </app-ayuda>
+</div>
 
-<p class="descripcion">
-  Plan, estado y version de la suscripcion de un centro, y el cambio de plan. No hace falta un
-  acceso de soporte: el consumo de limites del centro no se muestra aca.
-  <a class="enlace" [routerLink]="rutaSolicitudes">Ir a las solicitudes de catalogo</a>
-  · <a class="enlace" [routerLink]="rutaCatalogoFinanciadores">Catalogo de financiadores</a>
-</p>
+<app-pestanas [pestanas]="pestanasDePlataforma" [etiqueta]="etiquetaDePestanas" />
 
 <section class="tarjeta" aria-labelledby="titulo-buscar-centro">
   <h2 id="titulo-buscar-centro">Centro</h2>
   <form (submit)="$event.preventDefault(); buscar()">
-    <div class="campo">
-      <label for="suscripcion-busqueda">Nombre o identificador del centro</label>
-      <input
-        id="suscripcion-busqueda"
-        type="search"
-        autocomplete="off"
-        aria-describedby="suscripcion-busqueda-ayuda"
-        [value]="busqueda()"
-        (input)="busqueda.set($any($event.target).value)"
-      />
-      <p id="suscripcion-busqueda-ayuda" class="ayuda">
-        Busca en el nombre y en el slug del centro. Vacio, lista todos.
-      </p>
-    </div>
-    <div class="campo">
-      <label for="suscripcion-filtro-estado">Estado de la suscripcion</label>
-      <select
-        id="suscripcion-filtro-estado"
-        [value]="filtroDeEstado()"
-        (change)="filtroDeEstado.set($any($event.target).value)"
-      >
-        <option value="">Todos</option>
-        <option value="ACTIVA">Activa</option>
-        <option value="SUSPENDIDA">Suspendida</option>
-        <option value="CANCELADA">Cancelada</option>
-      </select>
-    </div>
+    <!-- Regla de filtros (plan §3.4): la búsqueda a la vista; el estado, detrás del embudo. -->
+    <app-filtros [activos]="filtrosAvanzadosActivos()">
+      <div class="campo" filtro-principal>
+        <label class="visualmente-oculto" for="suscripcion-busqueda"
+          >Nombre o identificador del centro</label
+        >
+        <div class="campo-busqueda">
+          <app-icono class="campo-busqueda__icono" nombre="buscar" />
+          <input
+            id="suscripcion-busqueda"
+            type="search"
+            autocomplete="off"
+            placeholder="Buscar por nombre o identificador del centro"
+            aria-describedby="suscripcion-busqueda-ayuda"
+            [value]="busqueda()"
+            (input)="busqueda.set($any($event.target).value)"
+          />
+        </div>
+        <p id="suscripcion-busqueda-ayuda" class="visualmente-oculto">
+          Busca en el nombre y en el slug del centro. Vacío, lista todos.
+        </p>
+      </div>
+      <div class="campo">
+        <label for="suscripcion-filtro-estado">Estado de la suscripción</label>
+        <select
+          id="suscripcion-filtro-estado"
+          [value]="filtroDeEstado()"
+          (change)="filtroDeEstado.set($any($event.target).value)"
+        >
+          <option value="">Todos</option>
+          <option value="ACTIVA">Activa</option>
+          <option value="SUSPENDIDA">Suspendida</option>
+          <option value="CANCELADA">Cancelada</option>
+        </select>
+      </div>
+    </app-filtros>
     <div class="acciones">
       <button type="submit" class="boton">Buscar centros</button>
     </div>
@@ -54,7 +67,7 @@
     }
     @if (paginaDeCentros(); as p) {
       @if (p.centros.length === 0) {
-        <p class="estado estado--vacio">Ningun centro coincide con la busqueda.</p>
+        <p class="estado estado--vacio">Ningún centro coincide con la búsqueda.</p>
       } @else {
         <p class="ayuda" data-testid="suscripcion-total-centros">
           {{ p.total === 1 ? '1 centro' : p.total + ' centros' }}
@@ -62,7 +75,7 @@
         <div class="tabla-scroll" tabindex="0" role="region" aria-label="Centros encontrados">
           <table class="tabla">
             <caption class="visualmente-oculto">
-              Centros de la plataforma, con su slug, el plan y el estado de la suscripcion y la
+              Centros de la plataforma, con su slug, el plan y el estado de la suscripción y la
               fecha de alta.
             </caption>
             <thead>
@@ -70,7 +83,7 @@
                 <th scope="col">Centro</th>
                 <th scope="col">Slug</th>
                 <th scope="col">Plan</th>
-                <th scope="col">Suscripcion</th>
+                <th scope="col">Suscripción</th>
                 <th scope="col">Alta</th>
                 <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
               </tr>
@@ -82,17 +95,21 @@
                   <td>{{ c.slug }}</td>
                   <td>{{ c.planName ?? nombreDePlan(c.planCode) }}</td>
                   <td>
-                    <span class="marca-estado">{{ c.status }}</span>
+                    <span
+                      class="marca-estado"
+                      [class]="'marca-estado ' + claseDeEstado(c.status)"
+                      >{{ c.status }}</span
+                    >
                   </td>
                   <td>{{ fechaDeAlta(c) }}</td>
                   <td class="acciones-fila">
                     <button
                       type="button"
                       class="boton boton--secundario"
-                      [attr.aria-label]="'Ver la suscripcion de ' + c.name"
+                      [attr.aria-label]="'Ver la suscripción de ' + c.name"
                       (click)="elegir(c)"
                     >
-                      Ver la suscripcion
+                      Ver la suscripción
                     </button>
                   </td>
                 </tr>
@@ -103,7 +120,7 @@
         <app-paginacion
           [paginaActual]="p.pagina"
           [totalPaginas]="p.totalPaginas"
-          etiqueta="Paginas de centros"
+          etiqueta="Páginas de centros"
           (cambioDePagina)="irAPagina($event)"
         />
       }
@@ -113,7 +130,7 @@
 
 @switch (estado().tipo) {
   @case ('cargando') {
-    <p class="estado estado--cargando" role="status">Leyendo la suscripcion…</p>
+    <p class="estado estado--cargando" role="status">Leyendo la suscripción…</p>
   }
   @case ('error') {
     <p class="estado estado--error" role="alert">{{ error()?.mensaje }}</p>
@@ -131,8 +148,8 @@
       <p>{{ r.texto }}</p>
       @if (r.excedidos.length > 0) {
         <p>
-          El uso actual ya supera estos limites del plan nuevo. No se borro ni se desactivo nada:
-          solo se rechazaran las altas que los superen.
+          El uso actual ya supera estos límites del plan nuevo. No se borró ni se desactivó nada:
+          solo se rechazarán las altas que los superen.
         </p>
         <ul data-testid="suscripcion-excedidos">
           @for (limite of r.excedidos; track limite.code) {
@@ -146,7 +163,7 @@
 
 @if (suscripcion(); as s) {
   <section class="tarjeta" aria-labelledby="titulo-suscripcion">
-    <h2 id="titulo-suscripcion">{{ centro()?.name ?? 'Suscripcion del centro' }}</h2>
+    <h2 id="titulo-suscripcion">{{ centro()?.name ?? 'Suscripción del centro' }}</h2>
     @if (centro()?.slug; as slug) {
       <p class="ayuda">{{ slug }}</p>
     }
@@ -154,19 +171,23 @@
       <dt>Plan</dt>
       <dd data-testid="suscripcion-plan">{{ s.planName ?? nombreDePlan(s.planCode) }}</dd>
       <dt>Estado</dt>
-      <dd>{{ s.status }}</dd>
-      <dt>Version</dt>
+      <dd>
+        <span class="marca-estado" [class]="'marca-estado ' + claseDeEstado(s.status)">{{
+          s.status
+        }}</span>
+      </dd>
+      <dt>Versión</dt>
       <dd data-testid="suscripcion-version">{{ s.version }}</dd>
     </dl>
 
     <h3>Cambiar el plan</h3>
     @if (!activa()) {
       <p class="estado estado--vacio">
-        La suscripcion esta {{ s.status }}: el plan solo se cambia con la suscripcion activa.
+        La suscripción está {{ s.status }}: el plan solo se cambia con la suscripción activa.
       </p>
     } @else if (planesNoDisponibles()) {
       <p class="estado estado--error" role="alert">
-        No se pudo leer el catalogo de planes. Recarga la pagina para volver a intentar.
+        No se pudo leer el catálogo de planes. Recargá la página para volver a intentar.
       </p>
     } @else {
       <form (submit)="$event.preventDefault(); cambiarPlan()">
@@ -183,8 +204,8 @@
             }
           </select>
           <p id="suscripcion-plan-ayuda" class="ayuda">
-            Se manda con la version {{ s.version }}. Si otro cambio llega antes, no se aplica nada y
-            la suscripcion se vuelve a leer.
+            Se manda con la versión {{ s.version }}. Si otro cambio llega antes, no se aplica nada y
+            la suscripción se vuelve a leer.
           </p>
         </div>
         <div class="acciones">

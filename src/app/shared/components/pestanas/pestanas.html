@@ -1,0 +1,18 @@
+@if (pestanas().length > 1) {
+  <nav class="pestanas" [attr.aria-label]="etiqueta()">
+    <ul class="pestanas__lista">
+      @for (pestana of pestanas(); track pestana.ruta) {
+        <li>
+          <a
+            class="pestanas__enlace"
+            [routerLink]="pestana.ruta"
+            routerLinkActive="pestanas__enlace--actual"
+            [routerLinkActiveOptions]="{ exact: pestana.exacta === true }"
+            ariaCurrentWhenActive="page"
+            >{{ pestana.etiqueta }}</a
+          >
+        </li>
+      }
+    </ul>
+  </nav>
+}

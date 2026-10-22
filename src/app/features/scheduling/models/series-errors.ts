@@ -51,14 +51,14 @@ export interface ErrorSerie {
 function mensajeCantidadCambio(nada: string): string {
   return (
     'La serie cambio desde que se previsualizo: la cantidad de turnos afectados ya no es la que ' +
-    `confirmaste. ${nada} Volve a previsualizar y confirma de nuevo.`
+    `confirmaste. ${nada} Volvé a previsualizar y confirma de nuevo.`
   );
 }
 
 function mensajeNadaPendiente(nada: string): string {
   return (
-    'No queda ningun turno pendiente en ese alcance: los que hay ya pasaron, ya estan cancelados o ' +
-    `tienen una atencion. ${nada}`
+    'No queda ningún turno pendiente en ese alcance: los que hay ya pasaron, ya estan cancelados o ' +
+    `tienen una atención. ${nada}`
   );
 }
 
@@ -67,8 +67,8 @@ function nadaHecho(operacion: OperacionDeSerie): string {
 }
 
 const MENSAJE_SIN_LUGAR_SIN_FECHA =
-  'Una de las fechas de la serie no tiene lugar, asi que no se reservo ningun turno: la serie ' +
-  'entra entera o no entra. Revisa las ocurrencias y cambia el dia, la hora o la fecha de inicio.';
+  'Una de las fechas de la serie no tiene lugar, así que no se reservo ningún turno: la serie ' +
+  'entra entera o no entra. Revisa las ocurrencias y cambia el día, la hora o la fecha de inicio.';
 
 /**
  * Traduce un error de una operacion de serie. `timezone` es la de la sede, para la fecha.
@@ -89,12 +89,12 @@ export function traducirErrorSerie(
       ...resumen(base, 'revisar-ocurrencias'),
       ocurrenciaInicio,
       mensaje:
-        'No se movio ningun turno: la reprogramacion entra entera o no entra. ' +
+        'No se movio ningún turno: la reprogramacion entra entera o no entra. ' +
         (ocurrenciaInicio === ''
           ? 'Uno de los destinos no tiene lugar. '
           : `El turno que iba a quedar el ${fechaHoraEnZona(ocurrenciaInicio, timezone)} ` +
             `${causaDeOcurrencia(base)}. `) +
-        'Elegi otro horario para el turno de partida o achica el alcance.',
+        'Elegí otro horario para el turno de partida o achica el alcance.',
     };
   }
 
@@ -105,11 +105,11 @@ export function traducirErrorSerie(
       mensaje:
         ocurrenciaInicio === ''
           ? MENSAJE_SIN_LUGAR_SIN_FECHA
-          : `No se reservo ningun turno: la serie entra entera o no entra. El turno del ` +
+          : `No se reservo ningún turno: la serie entra entera o no entra. El turno del ` +
             // U-22: un feriado se omite y no llega aca. El caso "todas caen en feriado" lo avisa la
             // previsualizacion del alta, que ademas no deja reservar: este 409 nombra la fecha real.
             `${fechaHoraEnZona(ocurrenciaInicio, timezone)} ${causaDeOcurrencia(base)}. ` +
-            'Cambia el dia, la hora o la fecha de inicio y volve a previsualizar.',
+            'Cambia el día, la hora o la fecha de inicio y volvé a previsualizar.',
     };
   }
 
@@ -150,7 +150,7 @@ function causaDeOcurrencia(base: ErrorAgenda): string {
         ? 'choca con otro turno'
         : `choca con otro turno del ${base.recurso}`;
     case 'oferta-no-agendable':
-      return 'cae en un dia en que la oferta no se puede agendar';
+      return 'cae en un día en que la oferta no se puede agendar';
     default:
       return 'no tiene lugar';
   }

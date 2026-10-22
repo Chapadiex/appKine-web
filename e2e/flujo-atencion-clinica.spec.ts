@@ -85,7 +85,7 @@ test.describe('Atencion clinica contra el backend real', () => {
     await ingresarAlCentro(page, centro.emailProfesional, centro);
     await navegar(page, `/atencion/turnos/${turno.id}`);
     await expect(
-      page.getByRole('heading', { name: 'Antes de empezar: caso clinico' }),
+      page.getByRole('heading', { name: 'Antes de empezar: caso clínico' }),
     ).toBeVisible();
     // El de la misma oferta viene sugerido.
     await expect(
@@ -93,27 +93,27 @@ test.describe('Atencion clinica contra el backend real', () => {
     ).toBeChecked();
 
     const inicio = respuestaDe(page, 'POST', /\/sesiones\/turnos\/\d+$/);
-    await page.getByRole('button', { name: 'Iniciar la atencion' }).click();
+    await page.getByRole('button', { name: 'Iniciar atención' }).click();
     const sesion = (await (await inicio).json()) as { id: number; casoId?: number };
     expect(sesion.casoId).toBe(caso.id);
-    await expect(page.getByRole('heading', { name: 'Atencion en curso' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Atención en curso' })).toBeVisible();
     await expect(page.getByText(`Caso ${caso.numeroCaso}`, { exact: true })).toBeVisible();
 
     // --- Mediciones ------------------------------------------------------------------------
-    const examen = page.getByRole('region', { name: 'Examen fisico' });
+    const examen = page.getByRole('region', { name: 'Examen físico' });
     await examen
       .getByLabel('Medida')
       .selectOption({ label: `Flexion de rodilla E2E ${sufijo} (grados)` });
     await examen.getByLabel('Lado').selectOption({ label: 'Derecha' });
     await examen.getByLabel('Valor en grados').fill('200');
     const fueraDeRango = respuestaDe(page, 'PUT', /\/mediciones\/\d+$/);
-    await examen.getByRole('button', { name: 'Registrar la medicion' }).click();
+    await examen.getByRole('button', { name: 'Registrar la medición' }).click();
     expect((await fueraDeRango).status()).toBe(400);
     await expect(examen.getByRole('alert')).toContainText('El catalogo admite de 0 a 180');
 
     await examen.getByLabel('Valor en grados').fill('95');
-    await examen.getByRole('button', { name: 'Registrar la medicion' }).click();
-    await expect(examen.getByRole('status')).toContainText('Medicion registrada');
+    await examen.getByRole('button', { name: 'Registrar la medición' }).click();
+    await expect(examen.getByRole('status')).toContainText('Medición registrada');
     const filaRom = examen.getByRole('row').filter({ hasText: `Flexion de rodilla E2E ${sufijo}` });
     await expect(filaRom).toContainText('95 grados');
     await expect(filaRom).toContainText('Derecha');
@@ -122,11 +122,11 @@ test.describe('Atencion clinica contra el backend real', () => {
     const tratamiento = page.getByRole('region', { name: 'Tratamiento aplicado' });
     await tratamiento.getByLabel('Zona tratada').fill('rodilla');
     await tratamiento.getByLabel('Lado').selectOption({ label: 'Derecha' });
-    await tratamiento.getByLabel('Duracion en minutos').fill('15');
-    await tratamiento.getByRole('button', { name: 'Agregar un parametro' }).click();
-    await tratamiento.getByLabel('Nombre del parametro 1').fill('Intensidad');
-    await tratamiento.getByLabel('Valor del parametro 1').fill('20');
-    await tratamiento.getByLabel('Unidad del parametro 1').fill('mA');
+    await tratamiento.getByLabel('Duración en minutos').fill('15');
+    await tratamiento.getByRole('button', { name: 'Agregar un parámetro' }).click();
+    await tratamiento.getByLabel('Nombre del parámetro 1').fill('Intensidad');
+    await tratamiento.getByLabel('Valor del parámetro 1').fill('20');
+    await tratamiento.getByLabel('Unidad del parámetro 1').fill('mA');
     const registro = respuestaDe(page, 'POST', /\/sesiones\/\d+\/tratamientos$/);
     await tratamiento.getByRole('button', { name: 'Registrar el tratamiento' }).click();
     expect((await registro).ok()).toBe(true);
@@ -142,22 +142,22 @@ test.describe('Atencion clinica contra el backend real', () => {
     expect((await borrador).ok()).toBe(true);
 
     // --- Cierre --------------------------------------------------------------------------------
-    await page.getByRole('radio', { name: 'Vino a la sesion' }).check();
+    await page.getByRole('radio', { name: 'Vino a la sesión' }).check();
     await page.getByLabel('Nota de cierre').fill('Movilidad y fisioterapia, buena tolerancia.');
-    await page.getByRole('button', { name: 'Cerrar la atencion' }).click();
-    await expect(page.getByRole('heading', { name: 'Atencion cerrada' })).toBeVisible();
+    await page.getByRole('button', { name: 'Cerrar la atención' }).click();
+    await expect(page.getByRole('heading', { name: 'Atención cerrada' })).toBeVisible();
     // En lectura, el examen y el tratamiento siguen a la vista sin formularios.
     await expect(examen.getByRole('row').filter({ hasText: '95 grados' })).toBeVisible();
-    await expect(examen.getByRole('button', { name: 'Registrar la medicion' })).toHaveCount(0);
+    await expect(examen.getByRole('button', { name: 'Registrar la medición' })).toHaveCount(0);
     await expect(tratamiento).toContainText('KIN_SESION');
 
     // --- Enmienda ----------------------------------------------------------------------------
-    await page.getByRole('link', { name: 'Enmendar esta atencion' }).click();
+    await page.getByRole('link', { name: 'Enmendar esta atención' }).click();
     await expect(page).toHaveURL(new RegExp(`/atencion/sesiones/${sesion.id}/enmienda$`));
     await expect(page.getByLabel('Nota de cierre')).toHaveValue(
       'Movilidad y fisioterapia, buena tolerancia.',
     );
-    await page.getByRole('button', { name: 'Registrar la enmienda' }).click();
+    await page.getByRole('button', { name: 'Registrar la enmienda', exact: true }).click();
     await expect(
       page.getByRole('region', { name: 'Registrar la enmienda' }).getByRole('status'),
     ).toContainText('Falta el motivo');
@@ -166,19 +166,19 @@ test.describe('Atencion clinica contra el backend real', () => {
     await page.getByLabel('Intensidad (mA)').fill('25');
     await page.getByLabel('Valor en grados').fill('100');
     const enmienda = respuestaDe(page, 'POST', /\/enmiendas$/);
-    await page.getByRole('button', { name: 'Registrar la enmienda' }).click();
+    await page.getByRole('button', { name: 'Registrar la enmienda', exact: true }).click();
     expect((await enmienda).ok()).toBe(true);
 
     // --- Versiones ---------------------------------------------------------------------------
     await expect(page).toHaveURL(new RegExp(`/atencion/sesiones/${sesion.id}/versiones$`));
-    await expect(page.getByRole('heading', { name: 'Que cambio' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Qué cambió' })).toBeVisible();
     await expect(page.getByText('La intensidad y el ROM se cargaron mal').first()).toBeVisible();
-    const comparacion = page.getByRole('region', { name: 'Comparacion de versiones' });
+    const comparacion = page.getByRole('region', { name: 'Comparación de versiones' });
     const filaTratamiento = comparacion.getByRole('row').filter({ hasText: 'Tratamiento:' });
     await expect(filaTratamiento).toContainText('Intensidad: 20 mA');
     await expect(filaTratamiento).toContainText('Intensidad: 25 mA');
-    await expect(filaTratamiento.getByRole('cell').last()).toHaveText('Cambio');
-    const filaMedicion = comparacion.getByRole('row').filter({ hasText: 'Medicion:' });
+    await expect(filaTratamiento.getByRole('cell').last()).toHaveText('Cambió');
+    const filaMedicion = comparacion.getByRole('row').filter({ hasText: 'Medición:' });
     await expect(filaMedicion).toContainText('95 grados');
     await expect(filaMedicion).toContainText('100 grados');
     await expect(

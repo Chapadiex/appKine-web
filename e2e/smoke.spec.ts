@@ -17,18 +17,18 @@ test.describe('Baseline AKINE-00.01', () => {
   test('el shell carga y se conecta al backend a traves del proxy', async ({ page }) => {
     await page.goto('/estado');
 
-    await expect(page.getByRole('heading', { name: 'Baseline tecnico', level: 1 })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Estado del sistema', level: 1 })).toBeVisible();
 
     // Prueba la cadena completa: Angular -> cliente generado -> proxy -> Spring Boot -> MySQL.
-    await expect(page.getByText('Conectado')).toBeVisible();
-    await expect(page.getByText('akine-api')).toBeVisible();
+    await expect(page.getByRole('paragraph').filter({ hasText: /^Conectado$/ })).toBeVisible();
+    await expect(page.getByText('akine-api', { exact: true })).toBeVisible();
   });
 
   test('el frontend consume la misma version de contrato que publica el backend', async ({
     page,
   }) => {
     await page.goto('/estado');
-    await expect(page.getByText('Conectado')).toBeVisible();
+    await expect(page.getByRole('paragraph').filter({ hasText: /^Conectado$/ })).toBeVisible();
 
     const publicado = await page.getByRole('definition').nth(2).textContent();
     const consumido = await page.getByRole('definition').nth(3).textContent();
@@ -86,16 +86,16 @@ test.describe('Estructura de rutas (AKINE-00.02)', () => {
   test('una ruta inexistente muestra la pagina 404 con salida', async ({ page }) => {
     await page.goto('/no-existe-esta-ruta');
 
-    await expect(page.getByRole('heading', { name: 'Pagina no encontrada' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Página no encontrada' })).toBeVisible();
     // El error se anuncia por lector de pantalla, no solo visualmente (ADR-0005).
     await expect(page.getByRole('alert')).toBeVisible();
 
     // Y ofrece una salida: un cartel sin accion deja al usuario sin nada que hacer.
-    // 'Volver al inicio' apunta a `/`, que ahora redirige a la Agenda; sin sesion eso termina
+    // 'Ir al inicio' apunta a `/`, que ahora redirige a la Agenda; sin sesion eso termina
     // en el login. Lo que este test pinea es que la salida EXISTE y lleva a algun lado, no a
     // cual: el destino de la raiz lo pinea `app.routes.spec.ts`.
-    await page.getByRole('link', { name: 'Volver al inicio' }).click();
-    await expect(page.getByRole('heading', { level: 1 })).not.toHaveText('Pagina no encontrada');
+    await page.getByRole('link', { name: 'Ir al inicio' }).click();
+    await expect(page.getByRole('heading', { level: 1 })).not.toHaveText('Página no encontrada');
   });
 
   test('el layout persiste al cambiar de ruta', async ({ page }) => {

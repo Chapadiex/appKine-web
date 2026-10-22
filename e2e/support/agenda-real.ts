@@ -112,7 +112,7 @@ export async function problemaDe(
 
 /** Elige a la persona en el padron como lo hace el mostrador: escribiendo su apellido. */
 export async function elegirPersona(page: Page, persona: Persona): Promise<void> {
-  await page.getByLabel('Documento, apellido, nombre o telefono').fill(persona.apellido);
+  await page.getByLabel('Documento, apellido, nombre o teléfono').fill(persona.apellido);
   await page.getByRole('button', { name: `${persona.apellido}, ${persona.nombre}` }).click();
   await expect(page.getByText(`${persona.apellido}, ${persona.nombre}`)).toBeVisible();
 }
@@ -131,7 +131,7 @@ export async function abrirReserva(
     profesionalId: String(slot.profesionalId),
   });
   await navegar(page, `/agenda/ofertas/${oferta.id}/reservar?${query.toString()}`);
-  await expect(page.getByRole('heading', { name: 'Resumen', level: 2 })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Horario elegido', level: 2 })).toBeVisible();
   await expect(page.getByText(oferta.nombre)).toBeVisible();
   await elegirPersona(page, persona);
 }

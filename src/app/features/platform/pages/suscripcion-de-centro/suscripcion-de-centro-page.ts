@@ -1,5 +1,4 @@
 import { Component, computed, inject, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
 import { Subscription } from 'rxjs';
 
 import { PlanesService } from '../../../../api/generated/api/planes.service';
@@ -12,10 +11,14 @@ import { PlatformOrganizationResponse } from '../../../../api/generated/model/pl
 import { PlatformSubscriptionResponse } from '../../../../api/generated/model/platform-subscription-response';
 import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
 import { formatearFecha } from '../../../../shared/utils/instantes';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { Filtros } from '../../../../shared/components/filtros/filtros';
+import { Icono } from '../../../../shared/components/icono/icono';
+import { Pestanas } from '../../../../shared/components/pestanas/pestanas';
 import {
-  RUTA_CATALOGO_FINANCIADORES_DE_PLATAFORMA,
-  RUTA_SOLICITUDES_DE_PLATAFORMA,
-} from '../../models/rutas-de-plataforma';
+  ETIQUETA_PESTANAS_DE_PLATAFORMA,
+  PESTANAS_DE_PLATAFORMA,
+} from '../../models/pestanas-de-plataforma';
 import { ErrorSuscripcion, traducirErrorSuscripcion } from '../../models/suscripcion-errors';
 
 type Estado =
@@ -67,7 +70,7 @@ const TAMANO_DE_PAGINA = 20;
  */
 @Component({
   selector: 'app-suscripcion-de-centro-page',
-  imports: [RouterLink, Paginacion],
+  imports: [Ayuda, Filtros, Icono, Pestanas, Paginacion],
   templateUrl: './suscripcion-de-centro-page.html',
 })
 export class SuscripcionDeCentroPage {
@@ -75,11 +78,13 @@ export class SuscripcionDeCentroPage {
   private readonly suscripciones = inject(SuscripcionesService);
   private readonly catalogoDePlanes = inject(PlanesService);
 
-  protected readonly rutaSolicitudes = RUTA_SOLICITUDES_DE_PLATAFORMA;
-  protected readonly rutaCatalogoFinanciadores = RUTA_CATALOGO_FINANCIADORES_DE_PLATAFORMA;
+  protected readonly pestanasDePlataforma = PESTANAS_DE_PLATAFORMA;
+  protected readonly etiquetaDePestanas = ETIQUETA_PESTANAS_DE_PLATAFORMA;
 
   protected readonly busqueda = signal('');
   protected readonly filtroDeEstado = signal<EstadoDeSuscripcion | ''>('');
+  /** Filtros avanzados (detras del embudo) fuera de su valor por defecto. */
+  protected readonly filtrosAvanzadosActivos = computed(() => Number(this.filtroDeEstado() !== ''));
   protected readonly listado = signal<Listado>({ tipo: 'cargando' });
   /** El centro elegido del listado: su nombre encabeza la suscripcion. */
   protected readonly centro = signal<PlatformOrganizationResponse | null>(null);
@@ -196,6 +201,13 @@ export class SuscripcionDeCentroPage {
           if (traducido.causa === 'version-vieja') this.leer();
         },
       });
+  }
+
+  /** Modificador de `.marca-estado`: activa es vigente, suspendida reversible, cancelada terminal. */
+  protected claseDeEstado(estado: string | undefined): string {
+    if (estado === 'ACTIVA') return 'marca-estado--activa';
+    if (estado === 'SUSPENDIDA') return 'marca-estado--suspendida';
+    return 'marca-estado--revocada';
   }
 
   protected nombreDePlan(codigo: string | undefined): string {

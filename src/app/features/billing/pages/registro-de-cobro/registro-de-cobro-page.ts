@@ -20,6 +20,8 @@ import {
   textoDeCentavos,
 } from '../../models/dinero';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { CabeceraDePersona } from '../cuenta-corriente/cabecera-de-persona/cabecera-de-persona';
 
 /** Un medio de pago que se esta cargando. `id` es solo para el `track` del `@for`. */
 interface LineaDeMedio {
@@ -92,9 +94,9 @@ type EstadoDeuda =
  */
 @Component({
   selector: 'app-registro-de-cobro-page',
-  imports: [RouterLink],
+  imports: [Ayuda, CabeceraDePersona, RouterLink],
   templateUrl: './registro-de-cobro-page.html',
-  styleUrl: '../../billing.css',
+  styleUrls: ['../../billing.css', '../cuenta-corriente/cuenta-corriente.css'],
 })
 export class RegistroDeCobroPage {
   private readonly diaDeLaSede = inject(DiaDeLaSede);
@@ -289,12 +291,12 @@ export class RegistroDeCobroPage {
 
     const imputado = this.totalImputado();
     if (elegidas.size > 0 && imputado === null) {
-      faltantes.push('Hay un importe a imputar que no es un numero mayor que cero.');
+      faltantes.push('Hay un importe a imputar que no es un número mayor que cero.');
     }
 
     for (const deuda of this.excedidas()) {
       faltantes.push(
-        `No se puede imputar mas que el saldo de "${deuda.snapshotNombre ?? 'la prestacion'}": ` +
+        `No se puede imputar mas que el saldo de "${deuda.snapshotNombre ?? 'la prestación'}": ` +
           `${this.saldoEnPalabras(deuda)}. Un saldo no puede quedar negativo.`,
       );
     }
@@ -305,7 +307,7 @@ export class RegistroDeCobroPage {
 
     const recibido = this.totalDeMedios();
     if (recibido === null) {
-      faltantes.push('Hay un medio de pago sin importe, o con un importe que no es un numero.');
+      faltantes.push('Hay un medio de pago sin importe, o con un importe que no es un número.');
     }
 
     if (imputado !== null && recibido !== null && imputado !== recibido) {
@@ -326,10 +328,10 @@ export class RegistroDeCobroPage {
   private problemasDelPrepago(): readonly string[] {
     const faltantes: string[] = [];
     if (this.moneda() === null) {
-      faltantes.push('Indica la moneda del prepago con su codigo de tres letras, por ejemplo ARS.');
+      faltantes.push('Indica la moneda del prepago con su código de tres letras, por ejemplo ARS.');
     }
     if (this.totalDeMedios() === null) {
-      faltantes.push('Hay un medio de pago sin importe, o con un importe que no es un numero.');
+      faltantes.push('Hay un medio de pago sin importe, o con un importe que no es un número.');
     }
     return faltantes;
   }
@@ -384,7 +386,7 @@ export class RegistroDeCobroPage {
         tipo: 'error',
         mensaje:
           'Para registrar un cobro hay que saber en que sede estas: el comprobante se numera por ' +
-          'sede. Eligi una organizacion y un consultorio, y volve a entrar.',
+          'sede. Eligi una organización y un consultorio, y volvé a entrar.',
         faltaContexto: true,
       });
       return;

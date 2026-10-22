@@ -1,3 +1,4 @@
+import { Pestanas } from '../../../../shared/components/pestanas/pestanas';
 import {
   Component,
   ElementRef,
@@ -20,10 +21,19 @@ import { PERMISO_CATALOGO_MANAGE } from '../../../../core/models/permisos';
 import { PermisoDirective } from '../../../../shared/directives/permiso.directive';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { CausaCatalogo, traducirErrorCatalogo } from '../../models/catalogo-errors';
-import { TIPOS_DE_CATALOGO } from '../../models/tipos-de-catalogo';
+import {
+  ETIQUETA_PESTANAS_DE_CATALOGO,
+  PESTANAS_DE_CATALOGO,
+} from '../../models/tipos-de-catalogo';
 import { formatearInstante } from '../../../../shared/utils/instantes';
 import { textoRequerido } from '../../../../shared/validators/texto-requerido';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
+import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
+import { Icono } from '../../../../shared/components/icono/icono';
+import { Filtros } from '../../../../shared/components/filtros/filtros';
 
 /** Filtro de estado del listado. Los tres valores son los del contrato, mas "todas". */
 type FiltroEstado = 'TODAS' | 'PENDIENTE' | 'APROBADA' | 'RECHAZADA';
@@ -57,11 +67,23 @@ type Estado =
  */
 @Component({
   selector: 'app-solicitudes-page',
-  imports: [ReactiveFormsModule, RouterLink, PermisoDirective],
+  imports: [
+    Pestanas,
+    ColumnaOrdenable,
+    Paginacion,
+    Icono,
+    Ayuda,
+    Filtros,
+    ReactiveFormsModule,
+    RouterLink,
+    PermisoDirective,
+  ],
   templateUrl: './solicitudes-page.html',
   styleUrl: '../../catalog.css',
 })
 export class SolicitudesPage {
+  protected readonly pestanasDeCatalogo = PESTANAS_DE_CATALOGO;
+  protected readonly etiquetaDePestanas = ETIQUETA_PESTANAS_DE_CATALOGO;
   private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly catalogo = inject(CatalogoClinicoService);
   private readonly tenantContext = inject(TenantContextStore);
@@ -70,12 +92,16 @@ export class SolicitudesPage {
   private readonly injector = inject(Injector);
 
   protected readonly permisoManage = PERMISO_CATALOGO_MANAGE;
-  protected readonly tipos = TIPOS_DE_CATALOGO;
   protected readonly formatearInstante = (instante: string | undefined | null): string | null =>
     formatearInstante(instante, this.diaDeLaSede.zona());
 
   protected readonly estado = signal<Estado>({ tipo: 'cargando' });
   protected readonly filtroEstado = signal<FiltroEstado>('TODAS');
+
+  /** Cuantos filtros del embudo estan fuera de su valor por defecto: el boton los cuenta. */
+  protected readonly filtrosAvanzadosActivos = computed(() =>
+    Number(this.filtroEstado() !== 'TODAS'),
+  );
 
   protected readonly altaAbierta = signal(false);
   protected readonly enviando = signal(false);
@@ -87,6 +113,16 @@ export class SolicitudesPage {
   protected readonly solicitudes = computed(() => {
     const actual = this.estado();
     return actual.tipo === 'listo' ? actual.solicitudes : [];
+  });
+
+  /** Orden y paginado de la lista completa (plan Â§3.4): el servidor no pagina pedidos. */
+  protected readonly tabla = tablaLocal(this.solicitudes, {
+    columnas: {
+      nombre: (solicitud) => solicitud.nombrePropuesto,
+      tipo: (solicitud) => this.etiquetaDeTipo(solicitud),
+      fecha: (solicitud) => solicitud.createdAt,
+      estado: (solicitud) => this.etiquetaDeEstado(solicitud),
+    },
   });
 
   protected readonly mensajeError = computed(() => {
@@ -226,7 +262,7 @@ export class SolicitudesPage {
         this.cerrarAlta();
         this.exito.set(
           'Tu pedido quedo registrado. Lo resuelve la plataforma: vas a ver como quedo en este ' +
-            'mismo listado. Mientras tanto, si lo necesitas ya, podes darlo de alta como un ' +
+            'mismo listado. Mientras tanto, si lo necesitas ya, podés darlo de alta como un ' +
             'concepto de tu centro.',
         );
         this.cargar();

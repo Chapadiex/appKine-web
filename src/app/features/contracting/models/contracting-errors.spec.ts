@@ -84,7 +84,7 @@ describe('traducirErrorContracting', () => {
       (ambito) => traducirErrorContracting(problema(404, 'not-found'), ambito).mensaje,
     );
 
-    expect(mensajes[0]).toContain('catalogo');
+    expect(mensajes[0]).toContain('catálogo');
     expect(mensajes[1]).toContain('planes del financiador');
     expect(mensajes[2]).toContain('no es de esta sede');
     expect(mensajes[3]).toContain('grilla del convenio');
@@ -113,7 +113,7 @@ describe('traducirErrorContracting', () => {
     expect(hayQueRecargar(traducido.causa)).toBe(false);
   });
 
-  it('el codigo repetido aclara que el de una ficha dada de baja si se puede reusar', () => {
+  it('el código repetido aclara que el de una ficha dada de baja si se puede reusar', () => {
     // Sin esa mitad, quien acaba de dar de baja un financiador y quiere volver a cargarlo con el
     // mismo codigo lee "ya existe" y concluye que el sistema no lo dejo darlo de baja.
     expect(
@@ -129,7 +129,7 @@ describe('traducirErrorContracting', () => {
     expect(traducido.mensaje).toBe('prosa del backend');
   });
 
-  it('un 429 con Retry-After dice cuantos segundos, y sin el no inventa un numero', () => {
+  it('un 429 con Retry-After dice cuantos segundos, y sin el no inventa un número', () => {
     const conPlazo = traducirErrorContracting(problema(429, 'rate-limited', 12), 'financiador');
     expect(conPlazo.causa).toBe('limite');
     expect(conPlazo.segundosDeEspera).toBe(12);
@@ -143,7 +143,7 @@ describe('traducirErrorContracting', () => {
   it('un error de red no se confunde con un rechazo del servidor', () => {
     const traducido = traducirErrorContracting(new AkineHttpError(0, null, true), 'convenio');
     expect(traducido.causa).toBe('red');
-    expect(traducido.mensaje).toContain('Revisa tu conexion');
+    expect(traducido.mensaje).toContain('Revisa tu conexión');
   });
 
   it('lo que no es un AkineHttpError cae en el generico sin romper', () => {

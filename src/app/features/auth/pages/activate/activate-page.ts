@@ -32,7 +32,7 @@ type EstadoActivacion =
   selector: 'app-activate-page',
   imports: [RouterLink],
   templateUrl: './activate-page.html',
-  styleUrl: '../../auth.css',
+  styleUrls: ['../../auth.css', '../../../../shared/styles/acceso.css'],
 })
 export class ActivatePage {
   private readonly registro = inject(RegistroYActivacionService);

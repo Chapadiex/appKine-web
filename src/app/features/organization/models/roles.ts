@@ -15,7 +15,7 @@ import { MembershipResponseRoleCodeEnum } from '../../../api/generated/model/mem
 export const ROLES_DE_VINCULO = [
   {
     codigo: MembershipResponseRoleCodeEnum.ORG_ADMIN,
-    etiqueta: 'Administrador de la organizacion',
+    etiqueta: 'Administrador de la organización',
   },
   {
     codigo: MembershipResponseRoleCodeEnum.CONSULTORIO_ADMIN,

@@ -91,7 +91,7 @@ test.describe('Honorarios por clase contra el backend real', () => {
     await expect(
       page.getByRole('heading', { name: 'Honorarios por clase de la oferta', level: 1 }),
     ).toBeVisible();
-    await expect(page.getByText('sus clases no entran en ninguna liquidacion')).toBeVisible();
+    await expect(page.getByText('sus clases no entran en ninguna liquidación')).toBeVisible();
     await page.getByRole('button', { name: 'Cargar una tarifa' }).click();
     await page.getByLabel('Importe por participante presente').fill(TARIFA);
     const alta = respuestaDe(page, 'POST', /\/honorarios-por-clase$/);
@@ -151,7 +151,7 @@ test.describe('Honorarios por clase contra el backend real', () => {
 
     // ---- 5. Confirmar: nace el egreso en borrador, imputado a la oferta.
     const confirmacion = respuestaDe(page, 'POST', /\/honorarios\/liquidaciones$/);
-    await page.getByRole('button', { name: 'Confirmar la liquidacion' }).click();
+    await page.getByRole('button', { name: 'Confirmar la liquidación' }).click();
     const respuestaConfirmacion = await confirmacion;
     expect([200, 201]).toContain(respuestaConfirmacion.status());
     const pedido = respuestaConfirmacion.request().postDataJSON() as Record<string, unknown>;
@@ -164,17 +164,17 @@ test.describe('Honorarios por clase contra el backend real', () => {
     expect(typeof pedido['idempotencyKey']).toBe('string');
     const liquidacion = (await respuestaConfirmacion.json()) as { id: number; egresoId: number };
     egresoCreado = liquidacion.egresoId;
-    await expect(page.getByText(`Liquidacion #${liquidacion.id} confirmada`)).toBeVisible();
+    await expect(page.getByText(`Liquidación #${liquidacion.id} confirmada`)).toBeVisible();
     // La clase liquidada pasa a "no entra" en el borrador releido, con enlace a su egreso.
     await expect(page.getByText('Ya liquidada a este colaborador')).toBeVisible();
 
     await page.getByRole('link', { name: 'Ir al egreso' }).click();
     await expect(page).toHaveURL(new RegExp(`/egresos/${liquidacion.egresoId}$`));
     await expect(dato(page, 'Estado')).toContainText('Borrador');
-    await expect(dato(page, 'Categoria')).toContainText('Honorarios profesionales');
+    await expect(dato(page, 'Categoría')).toContainText('Honorarios profesionales');
     await expect(dato(page, 'Servicio u oferta')).toContainText(ofertaNombre);
     await expect(dato(page, 'Total')).toContainText('1.500,00');
-    await expect(page.getByText('Nacio de una liquidacion de honorarios por clase')).toBeVisible();
+    await expect(page.getByText('Nació de una liquidación de honorarios por clase')).toBeVisible();
     await expect(page.getByLabel('Importe total')).toBeDisabled();
 
     const egreso = await api.exigir<{ ofertaId: number; liquidacionHonorariosId: number }>(
@@ -184,7 +184,7 @@ test.describe('Honorarios por clase contra el backend real', () => {
     expect(egreso).toMatchObject({ ofertaId, liquidacionHonorariosId: liquidacion.id });
 
     // ---- 6. La liquidacion, con su snapshot por clase.
-    await page.getByRole('link', { name: /Ver la liquidacion #\d+/ }).click();
+    await page.getByRole('link', { name: /Ver la liquidación #\d+/ }).click();
     await expect(page).toHaveURL(
       new RegExp(`/egresos/honorarios/liquidaciones/${liquidacion.id}$`),
     );
@@ -229,7 +229,7 @@ test.describe('Servicio en el egreso contra el backend real (DP-39)', () => {
     await page.getByLabel('Concepto').fill(concepto);
     await page.getByLabel('Importe total').fill('2000');
     await page.getByLabel('Tipo').fill('Factura C');
-    await page.getByLabel('Numero').fill(`E2E-${sufijo}`);
+    await page.getByLabel('Número').fill(`E2E-${sufijo}`);
     const alta = respuestaDe(page, 'POST', /\/egresos$/);
     await page.getByRole('button', { name: 'Cargar el borrador' }).click();
     const creado = await alta;

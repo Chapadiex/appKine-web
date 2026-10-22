@@ -1,9 +1,18 @@
-<h1>Sedes</h1>
-
-<p class="descripcion">
-  Los consultorios de esta organizacion. Cada sede tiene su propia zona horaria, que es la que rige
-  su dia operativo y su agenda: no la de la organizacion.
-</p>
+<div class="titulo-con-ayuda">
+  <h1>Sedes</h1>
+  <app-ayuda titulo="Sobre esta pantalla">
+    <p>
+      Los consultorios de esta organización. Cada sede tiene su propia zona horaria, que es la que
+      rige su día operativo y su agenda: no la de la organización.
+    </p>
+  </app-ayuda>
+  <div class="encabezado__acciones" *akinePermiso="permisoManage">
+    <a class="boton" routerLink="/organizacion/sedes/nueva">
+      <app-icono nombre="agregar" />
+      Abrir una sede
+    </a>
+  </div>
+</div>
 
 <!--
   La sede del contexto activo dejo de estar vigente. Va arriba de todo y fuera del @switch
@@ -12,7 +21,7 @@
 -->
 @if (sedesDelContexto.sedeDelContextoInactiva()) {
   <section class="banner banner--suspendida" role="alert">
-    <h3>La sede en la que estas trabajando ya no esta activa</h3>
+    <h3>La sede en la que estás trabajando ya no está activa</h3>
     <p>
       Una sede dada de baja no admite operaciones nuevas: no se pueden agendar turnos ni registrar
       sesiones en ella. Lo que ya quedo registrado se conserva.
@@ -23,10 +32,6 @@
   </section>
 }
 
-<p class="acciones" *akinePermiso="permisoManage">
-  <a class="boton" routerLink="/organizacion/sedes/nueva">Abrir una sede nueva</a>
-</p>
-
 <div aria-live="polite">
   @if (exito(); as mensaje) {
     <p class="estado estado--ok">{{ mensaje }}</p>
@@ -34,25 +39,31 @@
 </div>
 
 <section class="tarjeta" aria-labelledby="titulo-sedes">
-  <h2 id="titulo-sedes">Sedes de la organizacion</h2>
+  <h2 id="titulo-sedes">Sedes de la organización</h2>
 
-  <div class="campo">
-    <label for="filtro-estado">Mostrar</label>
-    <select
-      id="filtro-estado"
-      [value]="filtro()"
-      (change)="cambiarFiltro($any($event.target).value)"
-      aria-describedby="filtro-estado-ayuda"
-    >
-      <option value="ACTIVO">Solo las sedes activas</option>
-      <option value="INACTIVO">Solo las dadas de baja</option>
-      <option value="TODOS">Todas</option>
-    </select>
-    <p class="ayuda" id="filtro-estado-ayuda">
-      Las sedes dadas de baja no se borran: siguen disponibles con su motivo y su fecha, porque los
-      turnos, sesiones y cobros historicos las siguen referenciando.
-    </p>
-  </div>
+  <!--
+    Regla de filtros (plan §3.4): el listado no tiene busqueda por texto en el backend, asi que
+    va solo el embudo; "Mostrar" es un filtro avanzado.
+  -->
+  <app-filtros [soloAvanzados]="true" [activos]="filtrosAvanzadosActivos()">
+    <div class="campo">
+      <label for="filtro-estado">Mostrar</label>
+      <select
+        id="filtro-estado"
+        [value]="filtro()"
+        (change)="cambiarFiltro($any($event.target).value)"
+        aria-describedby="filtro-estado-ayuda"
+      >
+        <option value="ACTIVO">Solo las sedes activas</option>
+        <option value="INACTIVO">Solo las dadas de baja</option>
+        <option value="TODOS">Todas</option>
+      </select>
+      <p class="ayuda" id="filtro-estado-ayuda">
+        Las sedes dadas de baja no se borran: siguen disponibles con su motivo y su fecha, porque
+        los turnos, sesiones y cobros historicos las siguen referenciando.
+      </p>
+    </div>
+  </app-filtros>
 
   <div aria-live="polite">
     @switch (estado().tipo) {
@@ -61,9 +72,9 @@
       }
 
       @case ('sin-contexto') {
-        <p class="estado estado--vacio">Todavia no elegiste un contexto de trabajo.</p>
+        <p class="estado estado--vacio">Todavía no elegiste un contexto de trabajo.</p>
         <p class="ayuda">
-          Las sedes son de una organizacion concreta, asi que hay que indicar cual.
+          Las sedes son de una organización concreta, así que hay que indicar cual.
         </p>
         <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto</a>
       }
@@ -86,17 +97,10 @@
             <p class="estado estado--vacio">No hay sedes que mostrar con este filtro.</p>
           }
         } @else {
-          <p class="ayuda">{{ totalSedes() }} sedes con el filtro elegido.</p>
-
-          <div
-            class="tabla-scroll"
-            tabindex="0"
-            role="region"
-            aria-label="Sedes de la organizacion"
-          >
+          <div class="tabla-scroll" tabindex="0" role="region" aria-label="Listado de sedes">
             <table class="tabla">
               <caption class="visualmente-oculto">
-                Sedes de la organizacion, con su zona horaria, agenda y estado
+                Sedes de la organización, con su zona horaria, agenda y estado
               </caption>
               <thead>
                 <tr>
@@ -114,7 +118,7 @@
                     <th scope="row">
                       {{ sede.name }}
                       @if (esLaDelContexto(sede.id)) {
-                        <span class="etiqueta">Estas trabajando aca</span>
+                        <span class="etiqueta">Estás trabajando acá</span>
                       }
                     </th>
                     <td>{{ sede.timezone ?? '-' }}</td>
@@ -221,7 +225,7 @@
                           <p class="ayuda" id="editar-ayuda-patch">
                             Se envia solo lo que cambies.
                             <b>Vaciar un dato institucional lo borra</b>; los campos que dejes como
-                            estan no se tocan, asi que un cambio de telefono no pisa la direccion
+                            estan no se tocan, así que un cambio de teléfono no pisa la dirección
                             que cargo otra persona.
                           </p>
 
@@ -267,13 +271,13 @@
                               }
                             </select>
                             <p class="ayuda" id="editar-timezone-ayuda">
-                              Cambiar la zona horaria mueve el dia operativo de esta sede y como se
+                              Cambiar la zona horaria mueve el día operativo de esta sede y como se
                               leen los horarios de su agenda.
                             </p>
                           </div>
 
                           <div class="campo">
-                            <label for="editar-slotMinutes">Duracion del turno, en minutos</label>
+                            <label for="editar-slotMinutes">Duración del turno, en minutos</label>
                             <input
                               id="editar-slotMinutes"
                               type="number"
@@ -288,7 +292,7 @@
 
                           <div class="campo">
                             <label for="editar-legalName">
-                              Razon social <span class="campo__opcional">(opcional)</span>
+                              Razón social <span class="campo__opcional">(opcional)</span>
                             </label>
                             <input
                               id="editar-legalName"
@@ -313,7 +317,7 @@
 
                           <div class="campo">
                             <label for="editar-addressLine">
-                              Direccion <span class="campo__opcional">(opcional)</span>
+                              Dirección <span class="campo__opcional">(opcional)</span>
                             </label>
                             <input
                               id="editar-addressLine"
@@ -325,7 +329,7 @@
 
                           <div class="campo">
                             <label for="editar-phone">
-                              Telefono <span class="campo__opcional">(opcional)</span>
+                              Teléfono <span class="campo__opcional">(opcional)</span>
                             </label>
                             <input
                               id="editar-phone"
@@ -416,12 +420,15 @@
             </table>
           </div>
 
-          <akine-paginacion
-            etiqueta="Paginas de sedes"
-            [paginaActual]="paginaActual()"
-            [totalPaginas]="totalPaginas()"
-            (cambioDePagina)="irAPagina($event)"
-          />
+          <div class="tabla-pie">
+            <span>{{ totalSedes() }} sedes con el filtro elegido</span>
+            <akine-paginacion
+              etiqueta="Paginas de sedes"
+              [paginaActual]="paginaActual()"
+              [totalPaginas]="totalPaginas()"
+              (cambioDePagina)="irAPagina($event)"
+            />
+          </div>
         }
       }
     }

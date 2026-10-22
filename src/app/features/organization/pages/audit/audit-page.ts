@@ -11,6 +11,7 @@ import { ListAuditEventsRequestParams } from '../../../../api/generated/api/audi
 import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { traducirErrorColaborador } from '../../models/colaborador-errors';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 
 /**
  * Cual de los tres filtros excluyentes esta elegido.
@@ -57,7 +58,7 @@ const POR_PAGINA = 20;
  */
 @Component({
   selector: 'app-audit-page',
-  imports: [ReactiveFormsModule, RouterLink, Paginacion],
+  imports: [Ayuda, ReactiveFormsModule, RouterLink, Paginacion],
   templateUrl: './audit-page.html',
   styleUrl: '../../organization.css',
 })
@@ -232,7 +233,7 @@ export class AuditPage {
 
     if (fin.getTime() - inicio.getTime() > DIAS_MAXIMOS * MILISEGUNDOS_POR_DIA) {
       this.errorVentana.set(
-        `La ventana no puede superar los ${DIAS_MAXIMOS} dias. Acorta el rango y volve a buscar.`,
+        `La ventana no puede superar los ${DIAS_MAXIMOS} días. Acorta el rango y volvé a buscar.`,
       );
       this.enfocar('#auditoria-desde');
       return null;

@@ -35,7 +35,7 @@ describe('SessionService', () => {
 
   // --- Login -----------------------------------------------------------------------
 
-  it('el login deja la sesion autenticada pero SIN contexto', async () => {
+  it('el login deja la sesión autenticada pero SIN contexto', async () => {
     const terminado = primerValor(session.login('kine@akine.test', 'clave-sintetica'));
 
     const peticion = httpMock.expectOne('/api/v1/auth/login');
@@ -66,7 +66,7 @@ describe('SessionService', () => {
     expect(session.estado()).toBe('anonimo');
   });
 
-  it('un 200 sin accessToken se trata como contrato roto, no como sesion valida', async () => {
+  it('un 200 sin accessToken se trata como contrato roto, no como sesión valida', async () => {
     const fallo = primerError(session.login('kine@akine.test', 'clave'));
 
     httpMock.expectOne('/api/v1/auth/login').flush({ scope: 'pre_context' });
@@ -94,7 +94,7 @@ describe('SessionService', () => {
     expect(session.contextos()).toEqual(contextos);
   });
 
-  it('una lista vacia de contextos no es un error', async () => {
+  it('una lista vacía de contextos no es un error', async () => {
     const terminado = primerValor(session.cargarContextos());
     httpMock.expectOne('/api/v1/me/contexts').flush([]);
 
@@ -103,7 +103,7 @@ describe('SessionService', () => {
     expect(session.contextoActivo()).toBeNull();
   });
 
-  it('elegir contexto activa la sesion y publica el tenant con sus nombres', async () => {
+  it('elegir contexto activa la sesión y publica el tenant con sus nombres', async () => {
     await cargarContextosDePrueba();
 
     const terminado = primerValor(session.seleccionarContexto(1, 10));
@@ -140,7 +140,7 @@ describe('SessionService', () => {
     expect(tokenStore.token()).toBe('jwt-b');
   });
 
-  it('un 404 al elegir contexto deja la sesion sin contexto, no anonima', async () => {
+  it('un 404 al elegir contexto deja la sesión sin contexto, no anonima', async () => {
     await cargarContextosDePrueba();
 
     const fallo = primerError(session.seleccionarContexto(1, 99));
@@ -181,7 +181,7 @@ describe('SessionService', () => {
     expect(tokenStore.token()).toBe('jwt-x');
   });
 
-  it('SINGLE-FLIGHT: terminado un ciclo, el proximo refresh vuelve a salir', async () => {
+  it('SINGLE-FLIGHT: terminado un ciclo, el próximo refresh vuelve a salir', async () => {
     const primero = primerValor(session.refrescar());
     httpMock
       .expectOne('/api/v1/auth/refresh')
@@ -288,7 +288,7 @@ describe('SessionService', () => {
     expect(session.contextoActivo()?.organizationName).toBe('Centro Norte');
   });
 
-  it('que falle el listado de nombres no invalida una sesion que el backend acepto', async () => {
+  it('que falle el listado de nombres no invalida una sesión que el backend acepto', async () => {
     const resultado = primerValor(session.restaurarSesion());
 
     httpMock.expectOne('/api/v1/auth/refresh').flush({
@@ -451,7 +451,7 @@ describe('SessionService', () => {
 
   // --- Tokens de contexto incompletos -----------------------------------------------
 
-  it('un token con scope context pero SIN ids no fija ningun tenant', async () => {
+  it('un token con scope context pero SIN ids no fija ningún tenant', async () => {
     const terminado = primerValor(session.seleccionarContexto(1, 10));
     // El backend dice "tenes contexto" y no dice cual. Inventar uno dibujaria una
     // organizacion elegida por el cliente; dejar el tenant vacio deja la pantalla sin datos,
@@ -466,7 +466,7 @@ describe('SessionService', () => {
     expect(session.contextoActivo()).toBeNull();
   });
 
-  it('un contexto conocido sin nombre cae a un rotulo derivado del id, no a vacio', async () => {
+  it('un contexto conocido sin nombre cae a un rotulo derivado del id, no a vacío', async () => {
     const terminado = primerValor(session.cargarContextos());
     httpMock.expectOne('/api/v1/me/contexts').flush([{ organizationId: 7, consultorioId: 70 }]);
     await terminado;
@@ -475,7 +475,7 @@ describe('SessionService', () => {
 
     // El selector de contexto y la barra superior pintan este texto. Un string vacio ahi deja
     // al usuario sin saber en que organizacion esta parado.
-    expect(tenantStore.context()?.organizationName).toBe('Organizacion 7');
+    expect(tenantStore.context()?.organizationName).toBe('Organización 7');
     expect(tenantStore.context()?.consultorioName).toBeUndefined();
   });
 
@@ -531,7 +531,7 @@ function primerError(observable: {
 }): Promise<unknown> {
   return new Promise<unknown>((resolve, reject) => {
     observable.subscribe({
-      next: () => reject(new Error('se esperaba un error y la operacion tuvo exito')),
+      next: () => reject(new Error('se esperaba un error y la operación tuvo exito')),
       error: resolve,
     });
   });

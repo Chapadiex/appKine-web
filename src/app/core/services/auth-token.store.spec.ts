@@ -18,19 +18,19 @@ describe('AuthTokenStore', () => {
     store = TestBed.inject(AuthTokenStore);
   });
 
-  it('arranca sin sesion', () => {
+  it('arranca sin sesión', () => {
     expect(store.token()).toBeNull();
     expect(store.isAuthenticated()).toBe(false);
   });
 
-  it('guarda el token y marca la sesion como activa', () => {
+  it('guarda el token y marca la sesión como activa', () => {
     store.set('un-jwt');
 
     expect(store.token()).toBe('un-jwt');
     expect(store.isAuthenticated()).toBe(true);
   });
 
-  it('limpiar deja la sesion inactiva', () => {
+  it('limpiar deja la sesión inactiva', () => {
     store.set('un-jwt');
     store.clear();
 

@@ -11,6 +11,7 @@ import {
 import { esperarProblema } from './support/cuentas';
 import { instanteEnZona } from './support/sembrado-asistencia';
 import { fechaLocal, practicaGlobal, sumarDias } from './support/sembrado';
+import { abrirFiltros } from './support/filtros';
 
 /**
  * E2E de `/catalogo/nomencladores/:id/vigencias` (M06, RN-M06-002) contra el backend REAL.
@@ -56,8 +57,8 @@ async function cargarVigencia(
   },
 ) {
   await page.getByRole('button', { name: 'Cargar una vigencia' }).click();
-  await page.getByLabel('Codigo', { exact: true }).fill(datos.codigo);
-  await page.getByLabel('Practica que codifica').selectOption(String(datos.practicaId));
+  await page.getByLabel('Código', { exact: true }).fill(datos.codigo);
+  await page.getByLabel('Práctica que codifica').selectOption(String(datos.practicaId));
   await page.getByLabel('Nombre', { exact: true }).fill(datos.nombre);
   if (datos.valor !== undefined) {
     await page.getByLabel('Valor de referencia (opcional)').fill(datos.valor);
@@ -105,9 +106,9 @@ test.describe('Vigencias de un nomenclador contra el backend real', () => {
     await ingresar(page, centro);
     await navegar(page, `/catalogo/nomencladores/${nomenclador.id}/vigencias`);
     await expect(page.getByRole('heading', { name: nomenclador.name, level: 2 })).toBeVisible();
-    await expect(page.getByText(`Codigo NOM-${sufijo}`)).toBeVisible();
+    await expect(page.getByText(`Código NOM-${sufijo}`)).toBeVisible();
     await expect(
-      page.getByText('Este nomenclador todavia no tiene vigencias con el filtro elegido.'),
+      page.getByText('Este nomenclador todavía no tiene vigencias con el filtro elegido.'),
     ).toBeVisible();
 
     // --- La vieja: una ventana que ya termino ------------------------------------------------
@@ -154,7 +155,7 @@ test.describe('Vigencias de un nomenclador contra el backend real', () => {
       desde: `${sumarDias(hoy, -150)}T00:00`,
     });
     await esperarProblema(pisada, 409, 'https://akine.app/problems/nomenclador-vigencia-overlap');
-    await expect(page.getByLabel('Codigo', { exact: true })).toHaveAttribute(
+    await expect(page.getByLabel('Código', { exact: true })).toHaveAttribute(
       'aria-invalid',
       'true',
     );
@@ -176,14 +177,15 @@ test.describe('Vigencias de un nomenclador contra el backend real', () => {
     await expect(filaDe(page, `Sesion vieja ${sufijo}`)).toHaveCount(0);
     await expect(filaDe(page, `Sesion nueva ${sufijo}`)).toContainText('Rige hoy');
 
+    await abrirFiltros(page);
     await page.getByLabel('Mostrar').selectOption({ label: 'Solo las dadas de baja' });
     await expect(filaDe(page, `Sesion vieja ${sufijo}`)).toContainText('Dada de baja');
     await expect(filaDe(page, `Sesion vieja ${sufijo}`)).toContainText(motivo);
 
     // --- El filtro por codigo muestra la historia completa del codigo -----------------------
     await page.getByLabel('Mostrar').selectOption({ label: 'Todas' });
-    await page.getByLabel('Filtrar por codigo').fill(codigo);
-    await page.getByLabel('Filtrar por codigo').press('Enter');
+    await page.getByLabel('Filtrar por código').fill(codigo);
+    await page.getByLabel('Filtrar por código').press('Enter');
     await expect(
       page.getByRole('region', { name: 'Vigencias del nomenclador' }).locator('tbody > tr'),
     ).toHaveCount(2);

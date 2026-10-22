@@ -15,14 +15,14 @@ export interface ErrorReporte {
   readonly causa: CausaReporte;
 }
 
-const MENSAJE_GENERICO = 'No se pudo generar el reporte. Volve a intentar en un momento.';
-const MENSAJE_DE_RED = 'No se pudo contactar al servidor. Revisa la conexion y volve a intentar.';
+const MENSAJE_GENERICO = 'No se pudo generar el reporte. Volvé a intentar en un momento.';
+const MENSAJE_DE_RED = 'No se pudo contactar al servidor. Revisa la conexion y volvé a intentar.';
 const MENSAJE_SIN_CONTEXTO =
-  'Los reportes son de una sede. Eligi una organizacion y un consultorio, y volve a entrar.';
+  'Los reportes son de una sede. Eligi una organización y un consultorio, y volvé a entrar.';
 const MENSAJE_SIN_PERMISO =
-  'No tenes permiso para ver reportes en esta sede (reporte:read). Pediselo a quien administra ' +
+  'No tenés permiso para ver reportes en esta sede (reporte:read). Pediselo a quien administra ' +
   'el centro.';
-const MENSAJE_NO_ENCONTRADO = 'La sede no existe o no es de esta organizacion.';
+const MENSAJE_NO_ENCONTRADO = 'La sede no existe o no es de esta organización.';
 const MENSAJE_RANGO = 'El periodo pedido no sirve para reportar.';
 
 export function errorSinContexto(): ErrorReporte {
@@ -44,7 +44,7 @@ export function traducirErrorReporte(error: unknown): ErrorReporte {
     const base = error.problem?.detail || MENSAJE_RANGO;
     const conMaximo =
       maximo !== null && !base.includes(String(maximo))
-        ? `${base}. Un reporte abarca como maximo ${maximo} dias.`
+        ? `${base}. Un reporte abarca como máximo ${maximo} días.`
         : base;
     return { mensaje: conMaximo, causa: 'rango-invalido' };
   }

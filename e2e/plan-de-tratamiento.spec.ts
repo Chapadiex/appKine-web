@@ -24,7 +24,7 @@ import {
  * <p>El ciclo entero sobre un caso: crear el plan con el editor estructurado (oferta elegida de una
  * lista, cantidades planificadas y autorizadas), activarlo, ver el avance DERIVADO por el backend
  * —0 realizadas: nada se carga a mano— con el aviso de "planificadas mas que autorizadas",
- * modificarlo (version 2), mirar el avance de la version 1, suspender, reanudar y finalizar.
+ * modificarlo (version 2), mirar el avance de la versión 1, suspender, reanudar y finalizar.
  */
 test.describe('Plan de tratamiento (D-c)', () => {
   test.describe.configure({ mode: 'default', timeout: 180_000 });
@@ -61,7 +61,7 @@ test.describe('Plan de tratamiento (D-c)', () => {
     await page.getByRole('link', { name: /Caso 1/ }).click();
     await page.getByRole('link', { name: 'Ver el plan de tratamiento' }).click();
     await expect(page).toHaveURL(new RegExp(`/casos/${casoId}/plan$`));
-    await expect(page.getByText('Este caso todavia no tiene plan')).toBeVisible();
+    await expect(page.getByText('Este caso todavía no tiene plan')).toBeVisible();
 
     // --- Crear --------------------------------------------------------------------------------
     await page.getByRole('button', { name: 'Crear un plan' }).click();
@@ -72,7 +72,7 @@ test.describe('Plan de tratamiento (D-c)', () => {
 
     await editor.getByRole('textbox', { name: 'Objetivos' }).fill('Fortalecer cuadriceps');
     await editor.getByRole('spinbutton', { name: 'Sesiones por semana (propuesta)' }).fill('2');
-    await editor.getByRole('spinbutton', { name: 'Duracion estimada (semanas)' }).fill('5');
+    await editor.getByRole('spinbutton', { name: 'Duración estimada (semanas)' }).fill('5');
     await editor
       .getByRole('combobox', { name: 'Oferta del item 1' })
       .selectOption({ label: sembrada.oferta.nombre });
@@ -101,13 +101,13 @@ test.describe('Plan de tratamiento (D-c)', () => {
       .getByRole('textbox', { name: 'Motivo de la modificacion (opcional)' })
       .fill('Respuesta lenta al tratamiento');
     await modificar.getByRole('button', { name: 'Guardar los cambios' }).click();
-    await expect(page.getByText('Se guardo una version nueva del plan.')).toBeVisible();
+    await expect(page.getByText('Se guardo una versión nueva del plan.')).toBeVisible();
 
     const versiones = page.getByRole('list', { name: 'Versiones del plan' });
-    await expect(versiones.getByRole('listitem').filter({ hasText: /^Version/ })).toHaveCount(2);
+    await expect(versiones.getByRole('listitem').filter({ hasText: /^Versión/ })).toHaveCount(2);
     await expect(versiones).toContainText('Respuesta lenta al tratamiento');
     await expect(avance).toContainText('0 de 12 realizadas');
-    await page.getByRole('button', { name: 'Ver el avance de la version 1' }).click();
+    await page.getByRole('button', { name: 'Ver el avance de la versión 1' }).click();
     await expect(avance).toContainText('0 de 10 realizadas');
 
     // --- Suspender, reanudar, finalizar ---------------------------------------------------------
@@ -139,8 +139,10 @@ test.describe('Plan de tratamiento (D-c)', () => {
   test('el enlace directo al plan sin motivo lo pide', async ({ page }) => {
     await abrirHistoriaConMotivo(page, sembrada);
     // Salir de la visita (a la ficha) la termina: volver por URL vuelve a pedir el motivo.
-    await page.getByRole('link', { name: 'Volver a la ficha de la persona' }).click();
-    await expect(page.getByText('Esta ficha no muestra nada clinico')).toBeVisible();
+    await page.getByRole('link', { name: 'Ficha', exact: true }).click();
+    await expect(
+      page.locator('app-ayuda').getByText('Esta ficha no muestra nada clínico', { exact: true }),
+    ).toBeAttached();
     await navegar(page, `/historia-clinica/personas/${sembrada.personaId}/casos/${casoId}/plan`);
     await expect(page.getByRole('heading', { name: 'Declara el motivo del acceso' })).toBeVisible();
     await page.getByRole('textbox', { name: 'Motivo del acceso' }).fill(MOTIVO_DE_ACCESO);
@@ -243,7 +245,7 @@ test.describe('Plan de tratamiento (D-c)', () => {
     const [anio, mes, dia] = hasta.split('-');
     const vigencia = page.getByTestId('plan-vigencia-autorizacion');
     await expect(vigencia).toHaveText(
-      `autorizacion vigente hasta el ${dia}/${mes}/${anio} inclusive`,
+      `autorización vigente hasta el ${dia}/${mes}/${anio} inclusive`,
     );
     await expect(vigencia).not.toHaveClass(/plan__vigencia--vencida/);
   });

@@ -26,7 +26,7 @@ describe('SessionExpiredPage', () => {
     const fixture = crear();
 
     expect(fixture.nativeElement.querySelector('[role="alert"]')).toBeTruthy();
-    expect(texto(fixture)).toContain('No pudimos renovar tu sesion');
+    expect(texto(fixture)).toContain('No pudimos renovarla, así que la cerramos');
   });
 
   it('conserva el destino interno para retomar donde se corto', async () => {
@@ -45,7 +45,7 @@ describe('SessionExpiredPage', () => {
     expect(enlace(fixture).getAttribute('href')).toBe('/auth/ingresar');
   });
 
-  it('descarta un destino protocol-relative, que tambien sale del sitio', async () => {
+  it('descarta un destino protocol-relative, que también sale del sitio', async () => {
     await preparar({ [PARAM_VOLVER_A]: '//sitio-malicioso.test/robar' });
     const fixture = crear();
 

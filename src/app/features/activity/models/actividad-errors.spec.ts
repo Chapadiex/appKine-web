@@ -34,7 +34,7 @@ describe('traducirErrorActividad', () => {
     const r = traducirErrorActividad(error(409, 'clase-con-honorarios-liquidados', { claseId: 9 }));
     expect(r.causa).toBe('clase-con-honorarios-liquidados');
     expect(r.accion).toBe('ninguna');
-    expect(r.mensaje).toContain('anula el egreso de esa liquidacion');
+    expect(r.mensaje).toContain('anula el egreso de esa liquidación');
   });
 
   it('clase-completa sin extensiones conserva el mensaje base', () => {
@@ -88,7 +88,7 @@ describe('traducirErrorActividad', () => {
     expect(traducirErrorActividad(error(409, 'conflict')).causa).toBe('conflicto');
   });
 
-  it('version vieja, clave reusada, suscripcion y validacion', () => {
+  it('versión vieja, clave reusada, suscripción y validacion', () => {
     expect(traducirErrorActividad(error(409, 'concurrent-modification')).causa).toBe(
       'version-vieja',
     );

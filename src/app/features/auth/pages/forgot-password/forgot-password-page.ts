@@ -5,6 +5,7 @@ import { RouterLink } from '@angular/router';
 import { EstadoFormulario, traducirYEsperar } from '../../models/auth-errors';
 import { RecuperacionService } from '../../../../api/generated/api/recuperacion.service';
 import { crearEsperaPorLimite } from '../../../../shared/utils/espera-por-limite';
+import { Icono } from '../../../../shared/components/icono/icono';
 
 /**
  * Mensaje unico del `202`.
@@ -14,15 +15,15 @@ import { crearEsperaPorLimite } from '../../../../shared/utils/espera-por-limite
  * verificador de direcciones.
  */
 export const MENSAJE_UNIFORME_RESET =
-  'Si el email esta registrado, te llega un correo con el enlace para poner una contrasena ' +
-  'nueva. Revisa tambien la carpeta de correo no deseado.';
+  'Si el email esta registrado, te llega un correo con el enlace para poner una contraseña ' +
+  'nueva. Revisa también la carpeta de correo no deseado.';
 
 /** Pedido de restablecimiento de contrasena (M02, AKINE-01.02). */
 @Component({
   selector: 'app-forgot-password-page',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [Icono, ReactiveFormsModule, RouterLink],
   templateUrl: './forgot-password-page.html',
-  styleUrl: '../../auth.css',
+  styleUrls: ['../../auth.css', '../../../../shared/styles/acceso.css'],
 })
 export class ForgotPasswordPage {
   private readonly recuperacion = inject(RecuperacionService);

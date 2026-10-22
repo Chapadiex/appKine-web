@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 
 import { sql } from './support/akine';
 import { navegar } from './support/agenda-real';
+import { abrirFiltros } from './support/filtros';
 import {
   HistoriaSembrada,
   MOTIVO_DE_ACCESO,
@@ -41,16 +42,16 @@ test.describe('Historia clinica - timeline (D-a)', () => {
 
     await expect(page.getByRole('heading', { name: 'Declara el motivo del acceso' })).toBeVisible();
     // Sin motivo no se manda nada: el campo obligatorio frena el envio.
-    await page.getByRole('button', { name: 'Ver la historia clinica' }).click();
+    await page.getByRole('button', { name: 'Ver la historia clínica' }).click();
     await expect(page.getByText('Sin motivo no se puede seguir.')).toBeVisible();
 
     await page.getByRole('textbox', { name: 'Motivo del acceso' }).fill(MOTIVO_DE_ACCESO);
-    await page.getByRole('button', { name: 'Ver la historia clinica' }).click();
+    await page.getByRole('button', { name: 'Ver la historia clínica' }).click();
 
     await expect(page.getByRole('heading', { name: sembrada.nombreCompleto })).toBeVisible();
     await expect(page.getByText(`Con motivo declarado: «${MOTIVO_DE_ACCESO}»`)).toBeVisible();
 
-    const timeline = page.getByRole('list', { name: /Hechos clinicos/ });
+    const timeline = page.getByRole('list', { name: /Hechos clínicos/ });
     await expect(timeline.getByRole('button', { name: /Entrada clinica/ })).toBeVisible();
     await expect(timeline.getByRole('button', { name: /Adjunto clinico/ })).toBeVisible();
     // El indice no trae contenido: el texto de la entrada no esta en la lista.
@@ -115,11 +116,11 @@ test.describe('Historia clinica - timeline (D-a)', () => {
   test('registrar una entrada nueva la suma al timeline', async ({ page }) => {
     await abrirHistoriaConMotivo(page, sembrada);
 
-    const timeline = page.getByRole('list', { name: /Hechos clinicos/ });
+    const timeline = page.getByRole('list', { name: /Hechos clínicos/ });
     await expect(timeline.getByRole('listitem').first()).toBeVisible();
     const antes = await timeline.getByRole('listitem').count();
 
-    await page.getByText('Nueva entrada clinica').click();
+    await page.getByText('Nueva entrada clínica').click();
     await page.getByRole('combobox', { name: 'Tipo de entrada' }).selectOption('INDICACION');
     await page
       .getByRole('textbox', { name: 'Texto', exact: true })
@@ -134,10 +135,11 @@ test.describe('Historia clinica - timeline (D-a)', () => {
     page,
   }) => {
     await abrirHistoriaConMotivo(page, sembrada);
-    const timeline = page.getByRole('list', { name: /Hechos clinicos/ });
+    const timeline = page.getByRole('list', { name: /Hechos clínicos/ });
     await expect(timeline.getByRole('button', { name: /Entrada clinica/ }).first()).toBeVisible();
 
     // Solo adjuntos: el servidor recibe el origen y no devuelve entradas.
+    await abrirFiltros(page);
     const filtrada = page.waitForResponse(
       (r) => r.url().includes('/timeline') && r.url().includes('origen=ADJUNTO_CLINICO'),
     );
@@ -150,13 +152,13 @@ test.describe('Historia clinica - timeline (D-a)', () => {
     const conRango = page.waitForResponse(
       (r) => r.url().includes('/timeline') && r.url().includes('desde='),
     );
-    await page.getByLabel('Desde el dia').fill('2099-01-01');
+    await page.getByLabel('Desde el día').fill('2099-01-01');
     expect((await conRango).status()).toBe(200);
-    await expect(page.getByText('Ningun hecho clinico coincide con los filtros.')).toBeVisible();
+    await expect(page.getByText('Ningún hecho clínico coincide con los filtros.')).toBeVisible();
 
     // Un rango invertido no sale: el backend lo rechazaria con 400.
-    await page.getByLabel('Hasta el dia (inclusive)').fill('2098-12-31');
-    await expect(page.getByText(/tiene que ser el mismo dia que/)).toBeVisible();
+    await page.getByLabel('Hasta el día (inclusive)').fill('2098-12-31');
+    await expect(page.getByText(/tiene que ser el mismo día que/)).toBeVisible();
 
     await page.getByRole('button', { name: 'Quitar los filtros' }).click();
     await expect(timeline.getByRole('button', { name: /Entrada clinica/ }).first()).toBeVisible();

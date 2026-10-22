@@ -41,14 +41,14 @@ export function contenidoDe(version: SesionVersion): FilaDeContenido[] {
   agregar('dolorZona', 'Zona del dolor', version.dolorZona);
   agregar('dolorLateralidad', 'Lateralidad', etiquetaDe(LATERALIDADES, version.dolorLateralidad));
   agregar('evolucion', 'Evolucion', etiquetaDe(EVOLUCIONES, version.evolucion));
-  agregar('objetivoSesion', 'Objetivo de la sesion', version.objetivoSesion);
-  agregar('motivoClinico', 'Motivo clinico', version.motivoClinico);
+  agregar('objetivoSesion', 'Objetivo de la sesión', version.objetivoSesion);
+  agregar('motivoClinico', 'Motivo clínico', version.motivoClinico);
   agregar('limitacionFuncional', 'Limitacion funcional', version.limitacionFuncional);
   agregar('notaDeCierre', 'Nota de cierre', version.notaDeCierre);
   agregar('respuestaTratamiento', 'Respuesta al tratamiento', version.respuestaTratamiento);
   agregar('tolerancia', 'Tolerancia', etiquetaDe(TOLERANCIAS, version.tolerancia));
   agregar('indicaciones', 'Indicaciones', version.indicaciones);
-  agregar('proximaConducta', 'Proxima conducta', etiquetaDe(CONDUCTAS, version.proximaConducta));
+  agregar('proximaConducta', 'Próxima conducta', etiquetaDe(CONDUCTAS, version.proximaConducta));
 
   for (const tratamiento of version.tratamientos ?? []) {
     agregar(
@@ -60,7 +60,7 @@ export function contenidoDe(version: SesionVersion): FilaDeContenido[] {
   for (const medicion of version.mediciones ?? []) {
     agregar(
       `medicion-${medicion.definicionId}-${medicion.lateralidad ?? 'NO_APLICA'}`,
-      `Medicion: ${medicion.nombre ?? 'medida'} (${ladoLegible(medicion.lateralidad)})`,
+      `Medición: ${medicion.nombre ?? 'medida'} (${ladoLegible(medicion.lateralidad)})`,
       [valorLegible(medicion), medicion.nota ? `nota: ${medicion.nota}` : '']
         .filter((parte) => parte !== '')
         .join('; '),

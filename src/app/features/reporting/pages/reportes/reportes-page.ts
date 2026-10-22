@@ -25,6 +25,7 @@ import {
 import { ReportesApi } from '../../services/reportes-api';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { guardarComoArchivo, nombreDelEncabezado } from '../../../../shared/utils/descarga';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 
 type EstadoReporte =
   | { readonly tipo: 'inicial' }
@@ -51,7 +52,7 @@ type EstadoReporte =
  */
 @Component({
   selector: 'app-reportes-page',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [Ayuda, ReactiveFormsModule, RouterLink],
   templateUrl: './reportes-page.html',
   styleUrl: '../../reporting.css',
 })

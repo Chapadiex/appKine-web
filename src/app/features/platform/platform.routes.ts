@@ -14,7 +14,7 @@ export const routes: Routes = [
       import('./pages/solicitudes-catalogo/solicitudes-catalogo-page').then(
         (m) => m.SolicitudesCatalogoPage,
       ),
-    title: 'AKINE - Solicitudes de catalogo',
+    title: 'AKINE - Solicitudes de catálogo',
     // Seis columnas con la de acciones: a 46rem "Revisar" queda detras del scroll horizontal.
     data: { [DATA_ANCHO]: ANCHO_AMPLIO },
   },
@@ -24,7 +24,7 @@ export const routes: Routes = [
       import('./pages/suscripcion-de-centro/suscripcion-de-centro-page').then(
         (m) => m.SuscripcionDeCentroPage,
       ),
-    title: 'AKINE - Suscripcion de un centro',
+    title: 'AKINE - Suscripción de un centro',
   },
   {
     // DP-43 (U-12): el catalogo global que los centros adoptan por copia.
@@ -33,7 +33,7 @@ export const routes: Routes = [
       import('./pages/catalogo-financiadores/catalogo-financiadores-page').then(
         (m) => m.CatalogoFinanciadoresPage,
       ),
-    title: 'AKINE - Catalogo de financiadores',
+    title: 'AKINE - Catálogo de financiadores',
     data: { [DATA_ANCHO]: ANCHO_AMPLIO },
   },
   { path: '', pathMatch: 'full', redirectTo: 'solicitudes' },

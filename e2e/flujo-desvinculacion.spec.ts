@@ -23,7 +23,7 @@ import {
 
 /** La fila del colaborador, recorriendo las paginas del listado (ordenado por id ascendente). */
 async function filaDelColaborador(page: Page, nombre: string): Promise<Locator> {
-  const region = page.getByRole('region', { name: 'Colaboradores de la organizacion' });
+  const region = page.getByRole('region', { name: 'Colaboradores de la organización' });
   const fila = region.getByRole('row').filter({ hasText: nombre });
   await expect(region.getByRole('row').first()).toBeVisible();
   for (let pagina = 0; pagina < 20; pagina++) {

@@ -36,7 +36,7 @@ describe('TenantContextStore', () => {
     expect(store.consultorioId()).toBeNull();
   });
 
-  it('expone la organizacion y el consultorio seleccionados', () => {
+  it('expone la organización y el consultorio seleccionados', () => {
     store.select(ORG_A);
 
     expect(store.hasContext()).toBe(true);
@@ -52,7 +52,7 @@ describe('TenantContextStore', () => {
     expect(store.consultorioId()).toBeNull();
   });
 
-  it('cambiar de organizacion incrementa contextEpoch', () => {
+  it('cambiar de organización incrementa contextEpoch', () => {
     const inicial = store.contextEpoch();
 
     store.select(ORG_A);
@@ -65,7 +65,7 @@ describe('TenantContextStore', () => {
     expect(store.contextEpoch()).toBeGreaterThan(trasPrimera);
   });
 
-  it('limpiar tambien incrementa contextEpoch', () => {
+  it('limpiar también incrementa contextEpoch', () => {
     store.select(ORG_A);
     const antes = store.contextEpoch();
 
@@ -89,7 +89,7 @@ describe('TenantContextStore', () => {
   });
 
   it('renombrar el contexto activo cambia los nombres SIN mover la epoca (AKINE-LCP)', () => {
-    store.select({ ...ORG_A, organizationName: 'Organizacion 1' });
+    store.select({ ...ORG_A, organizationName: 'Organización 1' });
     const epoca = store.contextEpoch();
 
     store.renombrar(ORG_A);

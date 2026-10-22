@@ -1,10 +1,13 @@
-<section class="tarjeta" aria-labelledby="titulo-tratamientos">
-  <h2 id="titulo-tratamientos">Tratamiento aplicado</h2>
-
-  <p class="ayuda">
-    Lo que se hizo realmente en esta visita, en el orden en que se hizo.
-    <b>Registrarlo no mueve el plan de tratamiento</b>: planificado no es realizado.
-  </p>
+<section class="tarjeta" [class.paso]="editable()" aria-labelledby="titulo-tratamientos">
+  <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
+    <h2 id="titulo-tratamientos" class="paso__titulo">Tratamiento aplicado</h2>
+    <app-ayuda titulo="Tratamiento aplicado">
+      <p>
+        Lo que se hizo realmente en esta visita, en el orden en que se hizo.
+        <b>Registrarlo no mueve el plan de tratamiento</b>: planificado no es realizado.
+      </p>
+    </app-ayuda>
+  </div>
 
   @if (cargando()) {
     <p class="estado estado--cargando">Leyendo los tratamientos…</p>
@@ -15,7 +18,7 @@
   }
 
   @if (!cargando() && tratamientos().length === 0) {
-    <p class="ayuda">Todavia no hay tratamientos registrados en esta sesion.</p>
+    <p class="ayuda">Todavía no hay tratamientos registrados en esta sesión.</p>
   }
 
   @if (tratamientos().length > 0) {
@@ -30,7 +33,7 @@
           </p>
           <dl class="detalle">
             @if (tratamiento.tecnica) {
-              <dt>Tecnica</dt>
+              <dt>Técnica</dt>
               <dd>{{ tratamiento.tecnica }}</dd>
             }
             @if (tratamiento.zona) {
@@ -43,7 +46,7 @@
               </dd>
             }
             @if (tratamiento.duracionMinutos) {
-              <dt>Duracion</dt>
+              <dt>Duración</dt>
               <dd>{{ tratamiento.duracionMinutos }} minutos</dd>
             }
             @if (tratamiento.espacioNombre) {
@@ -55,7 +58,7 @@
               <dd>{{ valorLegible(parametro) }}</dd>
             }
             @if (tratamiento.observacion) {
-              <dt>Observacion</dt>
+              <dt>Observación</dt>
               <dd>{{ tratamiento.observacion }}</dd>
             }
           </dl>
@@ -64,7 +67,7 @@
             @if (dandoDeBaja() === tratamiento.id) {
               <div class="campo">
                 <label [for]="'baja-motivo-' + tratamiento.id">
-                  Por que se da de baja {{ tratamiento.practicaNombre }}
+                  Por qué se da de baja {{ tratamiento.practicaNombre }}
                 </label>
                 <textarea
                   [id]="'baja-motivo-' + tratamiento.id"
@@ -113,121 +116,123 @@
 
       @if (practicas().length === 0) {
         <p class="ayuda">
-          La oferta de este turno no declara practicas, asi que no hay ninguna que asentar. Las
-          practicas de una oferta las configura quien administra el centro.
+          La oferta de este turno no declara prácticas, así que no hay ninguna que asentar. Las
+          prácticas de una oferta las configura quien administra el centro.
         </p>
       } @else {
-        <div class="campo">
-          <label for="tratamiento-practica">Practica</label>
-          <select
-            id="tratamiento-practica"
-            name="tratamiento-practica"
-            (change)="elegirPractica($any($event.target).value)"
-          >
-            <option value="" [selected]="practicaId() === null">Elegi una practica</option>
-            @for (opcion of practicas(); track opcion.practicaId) {
-              <option [value]="opcion.practicaId" [selected]="practicaId() === opcion.practicaId">
-                {{ opcion.nombre }}{{ opcion.codigo ? ' (' + opcion.codigo + ')' : '' }}
-              </option>
-            }
-          </select>
-        </div>
-
-        <div class="campo">
-          <label for="tratamiento-tecnica">
-            Tecnica o maniobra <span class="campo__opcional">(opcional)</span>
-          </label>
-          <input
-            id="tratamiento-tecnica"
-            name="tratamiento-tecnica"
-            type="text"
-            maxlength="200"
-            [value]="tecnica()"
-            (input)="tecnica.set($any($event.target).value)"
-          />
-        </div>
-
-        <div class="campo">
-          <label for="tratamiento-zona">
-            Zona tratada <span class="campo__opcional">(opcional)</span>
-          </label>
-          <input
-            id="tratamiento-zona"
-            name="tratamiento-zona"
-            type="text"
-            maxlength="120"
-            aria-describedby="ayuda-tratamiento-zona"
-            [value]="zona()"
-            (input)="zona.set($any($event.target).value)"
-          />
-          <p id="ayuda-tratamiento-zona" class="ayuda">
-            @if (faltaZona()) {
-              <b>Elegiste un lado sin decir de que zona, y el servidor va a rechazarlo.</b>
-            }
-          </p>
-        </div>
-
-        <div class="campo">
-          <label for="tratamiento-lateralidad">
-            Lado <span class="campo__opcional">(opcional)</span>
-          </label>
-          <select
-            id="tratamiento-lateralidad"
-            name="tratamiento-lateralidad"
-            (change)="elegirLateralidad($any($event.target).value)"
-          >
-            <option value="" [selected]="lateralidad() === null">Sin cargar</option>
-            @for (opcion of lateralidades; track opcion.valor) {
-              <option [value]="opcion.valor" [selected]="lateralidad() === opcion.valor">
-                {{ opcion.etiqueta }}
-              </option>
-            }
-          </select>
-        </div>
-
-        <div class="campo">
-          <label for="tratamiento-duracion">
-            Duracion en minutos <span class="campo__opcional">(opcional)</span>
-          </label>
-          <input
-            id="tratamiento-duracion"
-            name="tratamiento-duracion"
-            type="text"
-            inputmode="numeric"
-            [value]="duracion()"
-            (input)="duracion.set($any($event.target).value)"
-          />
-        </div>
-
-        @if (espacios().length > 0) {
+        <div class="grilla-campos grilla-campos--dos">
           <div class="campo">
-            <label for="tratamiento-espacio">
-              Espacio utilizado <span class="campo__opcional">(opcional)</span>
-            </label>
+            <label for="tratamiento-practica">Práctica</label>
             <select
-              id="tratamiento-espacio"
-              name="tratamiento-espacio"
-              aria-describedby="ayuda-tratamiento-espacio"
-              (change)="elegirEspacio($any($event.target).value)"
+              id="tratamiento-practica"
+              name="tratamiento-practica"
+              (change)="elegirPractica($any($event.target).value)"
             >
-              <option value="" [selected]="espacioId() === null">Sin cargar</option>
-              @for (opcion of espacios(); track opcion.id) {
-                <option [value]="opcion.id" [selected]="espacioId() === opcion.id">
-                  {{ opcion.name }}
+              <option value="" [selected]="practicaId() === null">Elegí una práctica</option>
+              @for (opcion of practicas(); track opcion.practicaId) {
+                <option [value]="opcion.practicaId" [selected]="practicaId() === opcion.practicaId">
+                  {{ opcion.nombre }}{{ opcion.codigo ? ' (' + opcion.codigo + ')' : '' }}
                 </option>
               }
             </select>
-            <p id="ayuda-tratamiento-espacio" class="ayuda">
-              El que se uso de verdad, aunque no sea el reservado en el turno.
+          </div>
+
+          <div class="campo">
+            <label for="tratamiento-tecnica">
+              Técnica o maniobra <span class="campo__opcional">(opcional)</span>
+            </label>
+            <input
+              id="tratamiento-tecnica"
+              name="tratamiento-tecnica"
+              type="text"
+              maxlength="200"
+              [value]="tecnica()"
+              (input)="tecnica.set($any($event.target).value)"
+            />
+          </div>
+
+          <div class="campo">
+            <label for="tratamiento-zona">
+              Zona tratada <span class="campo__opcional">(opcional)</span>
+            </label>
+            <input
+              id="tratamiento-zona"
+              name="tratamiento-zona"
+              type="text"
+              maxlength="120"
+              aria-describedby="ayuda-tratamiento-zona"
+              [value]="zona()"
+              (input)="zona.set($any($event.target).value)"
+            />
+            <p id="ayuda-tratamiento-zona" class="ayuda">
+              @if (faltaZona()) {
+                <b>Elegiste un lado sin decir de qué zona, y el servidor va a rechazarlo.</b>
+              }
             </p>
           </div>
-        }
+
+          <div class="campo">
+            <label for="tratamiento-lateralidad">
+              Lado <span class="campo__opcional">(opcional)</span>
+            </label>
+            <select
+              id="tratamiento-lateralidad"
+              name="tratamiento-lateralidad"
+              (change)="elegirLateralidad($any($event.target).value)"
+            >
+              <option value="" [selected]="lateralidad() === null">Sin cargar</option>
+              @for (opcion of lateralidades; track opcion.valor) {
+                <option [value]="opcion.valor" [selected]="lateralidad() === opcion.valor">
+                  {{ opcion.etiqueta }}
+                </option>
+              }
+            </select>
+          </div>
+
+          <div class="campo">
+            <label for="tratamiento-duracion">
+              Duración en minutos <span class="campo__opcional">(opcional)</span>
+            </label>
+            <input
+              id="tratamiento-duracion"
+              name="tratamiento-duracion"
+              type="text"
+              inputmode="numeric"
+              [value]="duracion()"
+              (input)="duracion.set($any($event.target).value)"
+            />
+          </div>
+
+          @if (espacios().length > 0) {
+            <div class="campo">
+              <label for="tratamiento-espacio">
+                Espacio utilizado <span class="campo__opcional">(opcional)</span>
+              </label>
+              <select
+                id="tratamiento-espacio"
+                name="tratamiento-espacio"
+                aria-describedby="ayuda-tratamiento-espacio"
+                (change)="elegirEspacio($any($event.target).value)"
+              >
+                <option value="" [selected]="espacioId() === null">Sin cargar</option>
+                @for (opcion of espacios(); track opcion.id) {
+                  <option [value]="opcion.id" [selected]="espacioId() === opcion.id">
+                    {{ opcion.name }}
+                  </option>
+                }
+              </select>
+              <p id="ayuda-tratamiento-espacio" class="ayuda">
+                El que se usó de verdad, aunque no sea el reservado en el turno.
+              </p>
+            </div>
+          }
+        </div>
 
         <fieldset class="grupo">
-          <legend>Parametros <span class="campo__opcional">(opcional)</span></legend>
+          <legend>Parámetros <span class="campo__opcional">(opcional)</span></legend>
           <p class="ayuda">
-            Intensidad, series, tiempo: cada parametro con su tipo. La unidad va solo en los
-            numeros.
+            Intensidad, series, tiempo: cada parámetro con su tipo. La unidad va solo en los
+            números.
           </p>
           <datalist id="tratamiento-claves">
             @for (clave of claves; track clave) {
@@ -236,9 +241,9 @@
           </datalist>
 
           @for (parametro of parametros(); track $index; let i = $index) {
-            <div class="parametro">
+            <div class="parametro grilla-campos grilla-campos--dos">
               <div class="campo">
-                <label [for]="'parametro-clave-' + i">Nombre del parametro {{ i + 1 }}</label>
+                <label [for]="'parametro-clave-' + i">Nombre del parámetro {{ i + 1 }}</label>
                 <input
                   [id]="'parametro-clave-' + i"
                   type="text"
@@ -249,7 +254,7 @@
                 />
               </div>
               <div class="campo">
-                <label [for]="'parametro-tipo-' + i">Tipo del parametro {{ i + 1 }}</label>
+                <label [for]="'parametro-tipo-' + i">Tipo del parámetro {{ i + 1 }}</label>
                 <select
                   [id]="'parametro-tipo-' + i"
                   (change)="elegirTipoDeParametro(i, $any($event.target).value)"
@@ -263,7 +268,7 @@
               </div>
               @if (parametro.tipoDato === Tipo.BOOLEANO) {
                 <div class="campo">
-                  <label [for]="'parametro-valor-' + i">Valor del parametro {{ i + 1 }}</label>
+                  <label [for]="'parametro-valor-' + i">Valor del parámetro {{ i + 1 }}</label>
                   <select
                     [id]="'parametro-valor-' + i"
                     (change)="
@@ -276,13 +281,13 @@
                     "
                   >
                     <option value="" [selected]="parametro.valorSiNo === null">Sin elegir</option>
-                    <option value="si" [selected]="parametro.valorSiNo === true">Si</option>
+                    <option value="si" [selected]="parametro.valorSiNo === true">Sí</option>
                     <option value="no" [selected]="parametro.valorSiNo === false">No</option>
                   </select>
                 </div>
               } @else {
                 <div class="campo">
-                  <label [for]="'parametro-valor-' + i">Valor del parametro {{ i + 1 }}</label>
+                  <label [for]="'parametro-valor-' + i">Valor del parámetro {{ i + 1 }}</label>
                   <input
                     [id]="'parametro-valor-' + i"
                     type="text"
@@ -296,7 +301,7 @@
               @if (parametro.tipoDato === Tipo.NUMERICO) {
                 <div class="campo">
                   <label [for]="'parametro-unidad-' + i">
-                    Unidad del parametro {{ i + 1 }}
+                    Unidad del parámetro {{ i + 1 }}
                     <span class="campo__opcional">(opcional)</span>
                   </label>
                   <input
@@ -309,8 +314,8 @@
                 </div>
               }
               <div class="acciones">
-                <button type="button" class="boton boton--secundario" (click)="quitarParametro(i)">
-                  Quitar el parametro {{ i + 1 }}
+                <button type="button" class="boton-texto" (click)="quitarParametro(i)">
+                  Quitar el parámetro {{ i + 1 }}
                 </button>
               </div>
             </div>
@@ -318,14 +323,14 @@
 
           <div class="acciones">
             <button type="button" class="boton boton--secundario" (click)="agregarParametro()">
-              Agregar un parametro
+              Agregar un parámetro
             </button>
           </div>
         </fieldset>
 
         <div class="campo">
           <label for="tratamiento-observacion">
-            Observacion <span class="campo__opcional">(opcional)</span>
+            Observación <span class="campo__opcional">(opcional)</span>
           </label>
           <input
             id="tratamiento-observacion"

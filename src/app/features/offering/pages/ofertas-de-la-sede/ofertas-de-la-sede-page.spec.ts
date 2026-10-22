@@ -157,7 +157,7 @@ describe('OfertasDeLaSedePage', () => {
     httpMock.verify();
   });
 
-  it('distingue una oferta vigente de una activa que todavia no arranco', async () => {
+  it('distingue una oferta vigente de una activa que todavía no arranco', async () => {
     const fixture = await montar();
     const filas = fixture.nativeElement.querySelectorAll('tbody tr');
     expect(filas.length).toBe(2);
@@ -169,7 +169,7 @@ describe('OfertasDeLaSedePage', () => {
 
     // Las dos son ACTIVAS. Lo que las separa es la vigencia de hoy, y la fila lo dice con
     // palabras -no solo con un gris-, porque el color no puede ser el unico portador (WCAG 1.4.1).
-    expect(laQueNoArranco.textContent).toContain('Activa, todavia sin vigencia');
+    expect(laQueNoArranco.textContent).toContain('Activa, todavía sin vigencia');
     expect(laQueNoArranco.textContent).toContain('no aparece en los selectores de reserva');
     expect(laQueNoArranco.className).toContain('fila--atenuada');
     expect(laQueNoArranco.className).not.toContain('fila--revocada');
@@ -201,7 +201,7 @@ describe('OfertasDeLaSedePage', () => {
   it('el alta OMITE lo que quedo en heredar: heredar no es apagar', async () => {
     const fixture = await montar();
 
-    abrir(fixture, 'Dar de alta una oferta');
+    abrir(fixture, 'Publicar un servicio en la sede');
     elegir(fixture, '#alta-oferta-servicio', '1');
     escribir(fixture, '#alta-oferta-nombre', 'Kinesio respiratoria');
     escribir(fixture, '#alta-oferta-duracion', '45');
@@ -240,7 +240,7 @@ describe('OfertasDeLaSedePage', () => {
   it('el alta ofrece POR_CLASE, explica que devenga con la asistencia y lo manda (U-39)', async () => {
     const fixture = await montar();
 
-    abrir(fixture, 'Dar de alta una oferta');
+    abrir(fixture, 'Publicar un servicio en la sede');
     const host = fixture.nativeElement as HTMLElement;
     const opciones = [...host.querySelectorAll('#alta-oferta-esquema option')].map(
       (opcion) => (opcion as HTMLOptionElement).value,
@@ -268,7 +268,7 @@ describe('OfertasDeLaSedePage', () => {
     fixture.detectChanges();
   });
 
-  it('la casilla es la unica forma de sacar el fin de vigencia, y ademas vacia el campo', async () => {
+  it('la casilla es la unica forma de sacar el fin de vigencia, y además vacía el campo', async () => {
     const fixture = await montar();
 
     abrir(fixture, 'Editar');
@@ -314,7 +314,7 @@ describe('OfertasDeLaSedePage', () => {
       .flush(
         {
           type: 'https://akine.app/problems/concurrent-modification',
-          detail: 'la version quedo vieja',
+          detail: 'la versión quedo vieja',
         },
         { status: 409, statusText: 'Conflict' },
       );
@@ -345,9 +345,9 @@ describe('OfertasDeLaSedePage', () => {
     fixture.detectChanges();
 
     const anfitrion = fixture.nativeElement as HTMLElement;
-    expect(anfitrion.textContent).toContain('Todavia no elegiste un consultorio');
+    expect(anfitrion.textContent).toContain('Todavía no elegiste un consultorio');
     expect(anfitrion.querySelector('a[href="/seleccionar-contexto"]')).not.toBeNull();
-    expect(anfitrion.textContent).not.toContain('Sesion expirada');
+    expect(anfitrion.textContent).not.toContain('Sesión expirada');
   });
 
   // -----------------------------------------------------------------------------------------
@@ -356,11 +356,11 @@ describe('OfertasDeLaSedePage', () => {
   // no hay datos, si no tiene permiso o si el servidor se cayo.
   // -----------------------------------------------------------------------------------------
 
-  it('un 403 sin permiso explica y deja reintentar sin perder la sesion', async () => {
+  it('un 403 sin permiso explica y deja reintentar sin perder la sesión', async () => {
     const fixture = await montarConListadoRoto(403, PROBLEMA_403);
     const anfitrion = fixture.nativeElement as HTMLElement;
 
-    expect(anfitrion.textContent).toContain('No podes modificar las ofertas de esta sede');
+    expect(anfitrion.textContent).toContain('No podés modificar las ofertas de esta sede');
     // La salida NO es el selector de contexto: la sede esta elegida, lo que falta es el
     // permiso. Mandarlo a elegir consultorio de nuevo seria un bucle sin fin.
     expect(anfitrion.querySelector('a[href="/seleccionar-contexto"]')).toBeNull();
@@ -384,7 +384,7 @@ describe('OfertasDeLaSedePage', () => {
     // elegir consultorio, y por eso es la unica que se ofrece.
     expect(anfitrion.querySelector('a[href="/seleccionar-contexto"]')).not.toBeNull();
     expect(textoDeBotones(fixture)).not.toContain('Reintentar');
-    expect(anfitrion.textContent).not.toContain('Sesion expirada');
+    expect(anfitrion.textContent).not.toContain('Sesión expirada');
   });
 
   it('un error de red se distingue de un rechazo del servidor', async () => {
@@ -483,12 +483,12 @@ describe('OfertasDeLaSedePage', () => {
   // Listas vacias y filas que no ofrecen acciones.
   // -----------------------------------------------------------------------------------------
 
-  it('sin ofertas explica que la sede no ofrece nada, en vez de mostrar una tabla vacia', async () => {
+  it('sin ofertas explica que la sede no ofrece nada, en vez de mostrar una tabla vacía', async () => {
     const fixture = await montar({ ofertas: [] });
     const anfitrion = fixture.nativeElement as HTMLElement;
 
     expect(anfitrion.querySelector('table')).toBeNull();
-    expect(anfitrion.textContent).toContain('todavia no tiene ofertas que coincidan con el filtro');
+    expect(anfitrion.textContent).toContain('todavía no tiene ofertas que coincidan con el filtro');
     // Una tabla con encabezados y sin filas no dice si el filtro tapa todo o si no hay nada.
     expect(anfitrion.textContent).toContain('esta sede no ofrece nada para reservar');
   });
@@ -516,7 +516,7 @@ describe('OfertasDeLaSedePage', () => {
     expect(anfitrion.textContent).toContain('Rehabilitacion respiratoria adultos');
 
     const botones = textoDeBotones(fixture);
-    expect(botones).not.toContain('Dar de alta una oferta');
+    expect(botones).not.toContain('Publicar un servicio en la sede');
     expect(botones).not.toContain('Editar');
     expect(botones).not.toContain('Dar de baja');
 
@@ -532,10 +532,10 @@ describe('OfertasDeLaSedePage', () => {
   // peticion no salga. Un formulario que muestra el error y manda igual es peor que uno mudo.
   // -----------------------------------------------------------------------------------------
 
-  it('el alta sin servicio ni nombre ni duracion no emite ninguna peticion', async () => {
+  it('el alta sin servicio ni nombre ni duración no emite ninguna peticion', async () => {
     const fixture = await montar();
 
-    abrir(fixture, 'Dar de alta una oferta');
+    abrir(fixture, 'Publicar un servicio en la sede');
     enviar(fixture, 'form[novalidate]');
 
     httpMock.expectNone(esAlta());
@@ -544,18 +544,18 @@ describe('OfertasDeLaSedePage', () => {
     expect(anfitrion.textContent).toContain('El nombre comercial es obligatorio');
   });
 
-  it('una duracion de cero no se manda: el 400 que devolveria no se sabe interpretar', async () => {
+  it('una duración de cero no se manda: el 400 que devolveria no se sabe interpretar', async () => {
     const fixture = await montar();
 
     completarAlta(fixture, { duracion: '0' });
 
     httpMock.expectNone(esAlta());
     expect((fixture.nativeElement as HTMLElement).textContent).toContain(
-      'La duracion es obligatoria y tiene que ser mayor a cero',
+      'La duración es obligatoria y tiene que ser mayor a cero',
     );
   });
 
-  it('una capacidad de cero no se manda aunque la duracion sea valida', async () => {
+  it('una capacidad de cero no se manda aunque la duración sea valida', async () => {
     const fixture = await montar();
 
     // RF-M27-003 pide capacidad explicita y no derivada de la modalidad. Cero es un turno al
@@ -565,7 +565,7 @@ describe('OfertasDeLaSedePage', () => {
     httpMock.expectNone(esAlta());
   });
 
-  it('una oferta sin version no se edita: se avisa en vez de mandar una expectedVersion inventada', async () => {
+  it('una oferta sin versión no se edita: se avisa en vez de mandar una expectedVersion inventada', async () => {
     const fixture = await montar({ ofertas: [SIN_VERSION] });
 
     abrir(fixture, 'Editar');
@@ -578,7 +578,7 @@ describe('OfertasDeLaSedePage', () => {
       (peticion: HttpRequest<unknown>) => peticion.method === 'PUT' && peticion.url.includes('/13'),
     );
     expect((fixture.nativeElement as HTMLElement).textContent).toContain(
-      'No pudimos leer la version de esta oferta',
+      'No pudimos leer la versión de esta oferta',
     );
   });
 
@@ -646,11 +646,11 @@ describe('OfertasDeLaSedePage', () => {
     expect(anfitrion.textContent).toContain('Masoterapia (MASO)');
 
     // Pero ofrecerlo en el alta seria empujar al usuario a un 409.
-    abrir(fixture, 'Dar de alta una oferta');
+    abrir(fixture, 'Publicar un servicio en la sede');
     const opciones = [
       ...anfitrion.querySelectorAll<HTMLOptionElement>('#alta-oferta-servicio option'),
     ].map((opcion) => opcion.textContent?.trim());
-    expect(opciones).toEqual(['Elegi un servicio', 'Kinesiologia respiratoria (KRES)']);
+    expect(opciones).toEqual(['Elegí un servicio', 'Kinesiologia respiratoria (KRES)']);
   });
 
   it('si el catalogo no carga la pantalla sigue en pie y lo dice en el selector', async () => {
@@ -662,7 +662,7 @@ describe('OfertasDeLaSedePage', () => {
     // Sin catalogo el nombre no resuelve, y se muestra el id pelado en vez de una celda vacia.
     expect(anfitrion.textContent).toContain('Servicio #1');
 
-    abrir(fixture, 'Dar de alta una oferta');
+    abrir(fixture, 'Publicar un servicio en la sede');
     expect(anfitrion.textContent).toContain('No pudimos traer el catalogo de servicios');
   });
 
@@ -754,7 +754,7 @@ describe('OfertasDeLaSedePage', () => {
     fixture.detectChanges();
   });
 
-  it('vaciar duracion o esquema en la edicion no los manda: un campo vacio no se toca', async () => {
+  it('vaciar duración o esquema en la edicion no los manda: un campo vacío no se toca', async () => {
     // El encabezado del panel promete "un campo vacio significa 'no lo toques'", y la capacidad,
     // el precio y la vigencia lo cumplian. La duracion no: `Number('')` es 0, que es finito, asi
     // que borrar el campo mandaba `duracionMinutos: 0` contra un check de la base. Y vaciar el
@@ -782,7 +782,7 @@ describe('OfertasDeLaSedePage', () => {
     fixture.detectChanges();
   });
 
-  it('una oferta sin modalidad no manda una modalidad vacia, y el selector no miente', async () => {
+  it('una oferta sin modalidad no manda una modalidad vacía, y el selector no miente', async () => {
     // El panel se abre con `oferta.modalidad ?? ''` y el enum del contrato solo admite
     // INDIVIDUAL o GRUPAL: `modalidad: ''` es un 400 seguro. Ademas, sin una opcion con ese
     // valor el selector mostraba INDIVIDUAL mientras el control valia ''.
@@ -813,7 +813,7 @@ describe('OfertasDeLaSedePage', () => {
   // E-6. Politica de prepago: recurso propio, con version y relectura ante conflicto
   // -----------------------------------------------------------------------------------------
 
-  it('exigir prepago manda la version leida al recurso propio y actualiza la fila', async () => {
+  it('exigir prepago manda la versión leida al recurso propio y actualiza la fila', async () => {
     const fixture = await montar({ ofertas: [VIGENTE] });
 
     hacerClick(fixture, 'Exigir prepago');
@@ -825,12 +825,12 @@ describe('OfertasDeLaSedePage', () => {
     fixture.detectChanges();
 
     const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
-    expect(texto).toContain('Exige prepago en recepcion.');
+    expect(texto).toContain('Exige prepago en recepción.');
     expect(texto).toContain('Es un aviso, no impide atenderlo');
     expect(textoDeBotones(fixture)).toContain('Dejar de exigir prepago');
   });
 
-  it('un conflicto de version al cambiar el prepago se explica y relee el listado', async () => {
+  it('un conflicto de versión al cambiar el prepago se explica y relee el listado', async () => {
     const fixture = await montar({ ofertas: [{ ...VIGENTE, exigePrepago: true }] });
 
     hacerClick(fixture, 'Dejar de exigir prepago');
@@ -840,7 +840,7 @@ describe('OfertasDeLaSedePage', () => {
       {
         type: 'https://akine.app/problems/concurrent-modification',
         status: 409,
-        detail: 'version vieja',
+        detail: 'versión vieja',
       },
       { status: 409, statusText: 'Conflict' },
     );
@@ -932,7 +932,7 @@ describe('OfertasDeLaSedePage', () => {
     fixture: ComponentFixture<OfertasDeLaSedePage>,
     campos?: { readonly duracion?: string; readonly capacidad?: string },
   ) {
-    abrir(fixture, 'Dar de alta una oferta');
+    abrir(fixture, 'Publicar un servicio en la sede');
     elegir(fixture, '#alta-oferta-servicio', '1');
     escribir(fixture, '#alta-oferta-nombre', 'Kinesio respiratoria');
     escribir(fixture, '#alta-oferta-duracion', campos?.duracion ?? '45');
@@ -983,7 +983,7 @@ function abrir(fixture: { nativeElement: HTMLElement; detectChanges(): void }, e
     (candidato) => (candidato.textContent ?? '').trim() === etiqueta,
   );
   if (boton === undefined) {
-    throw new Error(`No existe el boton ${etiqueta}`);
+    throw new Error(`No existe el botón ${etiqueta}`);
   }
   boton.click();
   fixture.detectChanges();

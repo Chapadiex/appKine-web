@@ -51,7 +51,7 @@ describe('OrganizationPage', () => {
     const fixture = TestBed.createComponent(OrganizationPage);
     fixture.detectChanges();
 
-    expect(texto(fixture)).toContain('Todavia no elegiste un contexto');
+    expect(texto(fixture)).toContain('Todavía no elegiste un contexto');
     expect(fixture.nativeElement.querySelector('a[href="/seleccionar-contexto"]')).toBeTruthy();
     httpMock.expectNone(() => true);
   });
@@ -101,7 +101,7 @@ describe('OrganizationPage', () => {
     expect(texto(fixture)).toContain('horarios de los profesionales');
   });
 
-  it('avisa cuando la organizacion esta dada de baja', async () => {
+  it('avisa cuando la organización esta dada de baja', async () => {
     tenantContext.select({ organizationId: 1, organizationName: 'Belgrano' });
     const fixture = TestBed.createComponent(OrganizationPage);
     fixture.detectChanges();
@@ -152,7 +152,7 @@ describe('OrganizationPage', () => {
     expect(texto(fixture)).toContain('No se pudo contactar al servidor');
     expect(fixture.nativeElement.querySelector('[role="alert"]')).toBeTruthy();
 
-    fixture.nativeElement.querySelector('button')?.click();
+    fixture.nativeElement.querySelector('button:not(.ayuda-contextual__boton)')?.click();
     fixture.detectChanges();
     httpMock.expectOne('/api/v1/organizations/1').flush(ORGANIZACION);
     await fixture.whenStable();
@@ -177,7 +177,7 @@ describe('OrganizationPage', () => {
     fixture.detectChanges();
 
     // Reintentar sin cambiar nada volveria a fallar exactamente igual.
-    expect(fixture.nativeElement.querySelector('button')).toBeNull();
+    expect(fixture.nativeElement.querySelector('button:not(.ayuda-contextual__boton)')).toBeNull();
     expect(fixture.nativeElement.querySelector('a[href="/seleccionar-contexto"]')).toBeTruthy();
   });
 
@@ -195,7 +195,7 @@ describe('OrganizationPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect(texto(fixture)).toContain('No encontramos esta organizacion');
+    expect(texto(fixture)).toContain('No encontramos esta organización');
   });
 
   it('ante otro error del servidor muestra el detail del backend', async () => {

@@ -30,18 +30,18 @@ function problema(
  */
 describe('traducirErrorConsultorio', () => {
   const casos: readonly (readonly [string, AkineHttpError, CausaConsultorio])[] = [
-    ['sede u organizacion de otro tenant', problema(404, 'not-found'), 'no-encontrado'],
+    ['sede u organización de otro tenant', problema(404, 'not-found'), 'no-encontrado'],
     ['falta consultorio:manage', problema(403, 'forbidden'), 'sin-permiso'],
     ['sin contexto elegido', problema(403, 'missing-tenant-context'), 'sin-contexto'],
     ['nombre repetido entre vigentes', problema(409, 'consultorio-name-taken'), 'conflicto'],
     ['tope del plan', problema(409, 'plan-limit-exceeded'), 'tope-del-plan'],
-    ['suscripcion suspendida', problema(409, 'subscription-suspended'), 'conflicto'],
+    ['suscripción suspendida', problema(409, 'subscription-suspended'), 'conflicto'],
     ['editar una sede inactiva', problema(409, 'consultorio-inactive'), 'conflicto'],
     ['bajar una ya inactiva', problema(409, 'consultorio-already-inactive'), 'conflicto'],
-    ['bajar la ultima activa', problema(409, 'last-consultorio-required'), 'ultima-sede'],
-    ['version vieja', problema(409, 'concurrent-modification'), 'concurrencia'],
+    ['bajar la última activa', problema(409, 'last-consultorio-required'), 'ultima-sede'],
+    ['versión vieja', problema(409, 'concurrent-modification'), 'concurrencia'],
     ['misma clave, otro cuerpo', problema(409, 'idempotency-key-conflict'), 'clave-repetida'],
-    ['zona no IANA o motivo vacio', problema(400, 'validation-error'), 'validacion'],
+    ['zona no IANA o motivo vacío', problema(400, 'validation-error'), 'validacion'],
   ];
 
   it.each(casos)('%s', (_nombre, error, causa) => {
@@ -90,13 +90,13 @@ describe('traducirErrorConsultorio', () => {
     const sinDatos = traducirErrorConsultorio(problema(409, 'plan-limit-exceeded')).mensaje;
 
     expect(unaSede).toContain('una sola sede');
-    expect(variasSedes).toContain('hasta 3 sedes y ya tenes 3');
+    expect(variasSedes).toContain('hasta 3 sedes y ya tenés 3');
     // Sin los datos del limite se dice lo mismo sin numeros: sigue siendo accionable.
     expect(sinDatos).toContain('cambiar a un plan');
     expect(unaSede).not.toContain('Detalle del backend');
   });
 
-  it('la ultima sede activa se explica, no se muestra como un conflicto a secas', () => {
+  it('la última sede activa se explica, no se muestra como un conflicto a secas', () => {
     const mensaje = traducirErrorConsultorio(problema(409, 'last-consultorio-required')).mensaje;
 
     expect(mensaje).toContain('unica sede activa');
@@ -118,13 +118,13 @@ describe('traducirErrorConsultorio', () => {
     const traducido = traducirErrorConsultorio(new Error('boom'));
 
     expect(traducido.causa).toBe('otro');
-    expect(traducido.mensaje).toContain('No pudimos completar la operacion');
+    expect(traducido.mensaje).toContain('No pudimos completar la operación');
   });
 
   it('un 500 sin cuerpo no muestra el texto interno del interceptor como si fuera del backend', () => {
     const traducido = traducirErrorConsultorio(new AkineHttpError(500, null, false));
 
     expect(traducido.causa).toBe('otro');
-    expect(traducido.mensaje).toContain('No pudimos completar la operacion');
+    expect(traducido.mensaje).toContain('No pudimos completar la operación');
   });
 });

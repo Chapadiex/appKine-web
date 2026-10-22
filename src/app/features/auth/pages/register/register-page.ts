@@ -9,6 +9,7 @@ import { RegistroYActivacionService } from '../../../../api/generated/api/regist
 import { crearEsperaPorLimite } from '../../../../shared/utils/espera-por-limite';
 import { nuevaClaveDeIntento } from '../../../../shared/utils/clave-de-intento';
 import { textoRequerido } from '../../../../shared/validators/texto-requerido';
+import { Icono } from '../../../../shared/components/icono/icono';
 
 /** Campos obligatorios, en el orden en que se enfoca el primero invalido. */
 const CAMPOS = [
@@ -26,7 +27,7 @@ type Campo = (typeof CAMPOS)[number];
 
 /** `409 idempotency-key-conflict`: la clave del intento ya se uso con otros datos. */
 const MENSAJE_CLAVE_REUSADA =
-  'Ya hay un registro en curso con otros datos. Recarga la pagina e intenta de nuevo.';
+  'Ya hay un registro en curso con otros datos. Recarga la página e intenta de nuevo.';
 
 /**
  * Alta self-service de cuenta, organizacion y primer consultorio (M02, AKINE-01.02).
@@ -45,11 +46,14 @@ const MENSAJE_CLAVE_REUSADA =
  */
 @Component({
   selector: 'app-register-page',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [Icono, ReactiveFormsModule, RouterLink],
   templateUrl: './register-page.html',
-  styleUrl: '../../auth.css',
+  styleUrls: ['../../auth.css', '../../../../shared/styles/acceso.css'],
 })
 export class RegisterPage {
+  /** Mostrar u ocultar la contraseña mientras se escribe (diseño del canvas). Solo cambia el input. */
+  protected readonly verPassword = signal(false);
+
   private readonly registro = inject(RegistroYActivacionService);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
 
@@ -124,7 +128,7 @@ export class RegisterPage {
           // Texto unico: no delata si el email ya tenia cuenta.
           mensaje:
             'Si el email esta disponible o ya tenia cuenta, te llega un correo con los pasos ' +
-            'a seguir. Revisa tambien la carpeta de correo no deseado.',
+            'a seguir. Revisa también la carpeta de correo no deseado.',
         }),
       error: (error: unknown) => this.fallar(error),
     });

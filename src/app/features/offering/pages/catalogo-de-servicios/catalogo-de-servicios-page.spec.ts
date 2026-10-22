@@ -92,7 +92,7 @@ describe('CatalogoDeServiciosPage', () => {
     expect(anfitrion.textContent).toContain('Bienestar');
 
     expect(anfitrion.textContent).toContain('Tu cuenta lo tiene');
-    expect(anfitrion.textContent).toContain('Dar de alta un servicio');
+    expect(anfitrion.textContent).toContain('Nuevo servicio');
     const acciones = [...anfitrion.querySelectorAll('tbody button')].map((boton) =>
       (boton.textContent ?? '').trim(),
     );
@@ -113,7 +113,7 @@ describe('CatalogoDeServiciosPage', () => {
     const botones = [...anfitrion.querySelectorAll('button')].map((boton) =>
       (boton.textContent ?? '').trim(),
     );
-    expect(botones).not.toContain('Dar de alta un servicio');
+    expect(botones).not.toContain('Nuevo servicio');
     expect(anfitrion.querySelectorAll('tbody button').length).toBe(0);
     // Sin columna vacia de acciones.
     const encabezados = [...anfitrion.querySelectorAll('thead th')].map((celda) =>
@@ -125,7 +125,7 @@ describe('CatalogoDeServiciosPage', () => {
     expect(anfitrion.querySelector('a[href="/servicios/ofertas"]')).not.toBeNull();
   });
 
-  it('el filtro de estado recarga con su parametro y una lista vacia no es un error', async () => {
+  it('el filtro de estado recarga con su parametro y una lista vacía no es un error', async () => {
     const fixture = await montar();
 
     elegir(fixture, '#filtro-estado-servicio', 'INACTIVO');
@@ -142,7 +142,7 @@ describe('CatalogoDeServiciosPage', () => {
     );
   });
 
-  it('cambiar el filtro con una consulta en vuelo la cancela: no gana la que llega ultima', async () => {
+  it('cambiar el filtro con una consulta en vuelo la cancela: no gana la que llega última', async () => {
     const fixture = await montar();
 
     elegir(fixture, '#filtro-estado-servicio', 'TODOS');
@@ -163,20 +163,20 @@ describe('CatalogoDeServiciosPage', () => {
     );
   });
 
-  it('el alta manda los cinco campos del contrato y omite la descripcion vacia', async () => {
+  it('el alta manda los cinco campos del contrato y omite la descripción vacía', async () => {
     const fixture = await montar();
 
-    abrir(fixture, 'Dar de alta un servicio');
+    abrir(fixture, 'Nuevo servicio');
 
     // Primero sin completar nada: no sale ninguna peticion y se marcan los obligatorios.
     enviar(fixture, 'form[novalidate]');
     httpMock.expectNone((peticion: HttpRequest<unknown>) => peticion.method === 'POST');
     expect((fixture.nativeElement as HTMLElement).textContent).toContain(
-      'El codigo es obligatorio',
+      'El código es obligatorio',
     );
 
     escribir(fixture, '#alta-servicio-codigo', 'EVP');
-    escribir(fixture, '#alta-servicio-nombre', 'Evaluacion postural');
+    escribir(fixture, '#alta-servicio-nombre', 'Evaluación postural');
     elegir(fixture, '#alta-servicio-naturaleza', 'PREVENTIVO');
     elegir(fixture, '#alta-servicio-modalidad', 'INDIVIDUAL');
     enviar(fixture, 'form[novalidate]');
@@ -187,14 +187,14 @@ describe('CatalogoDeServiciosPage', () => {
     );
     expect(alta.request.body).toEqual({
       codigo: 'EVP',
-      nombre: 'Evaluacion postural',
+      nombre: 'Evaluación postural',
       naturaleza: 'PREVENTIVO',
       modalidadDefault: 'INDIVIDUAL',
       requiereCasoClinicoDefault: false,
       generaRegistroClinicoDefault: false,
     });
 
-    alta.flush({ ...PILATES, id: 3, codigo: 'EVP', nombre: 'Evaluacion postural' });
+    alta.flush({ ...PILATES, id: 3, codigo: 'EVP', nombre: 'Evaluación postural' });
     httpMock.expectOne(esListado()).flush([KINE, PILATES]);
     await fixture.whenStable();
     fixture.detectChanges();
@@ -227,7 +227,7 @@ describe('CatalogoDeServiciosPage', () => {
     edicion.flush(
       {
         type: 'https://akine.app/problems/concurrent-modification',
-        detail: 'la version quedo vieja',
+        detail: 'la versión quedo vieja',
       },
       { status: 409, statusText: 'Conflict' },
     );
@@ -255,15 +255,15 @@ describe('CatalogoDeServiciosPage', () => {
     TIMEOUT_AXE,
   );
 
-  it('el 403 de una mutacion explica que el catalogo es de la plataforma, y no cierra sesion', async () => {
+  it('el 403 de una mutacion explica que el catalogo es de la plataforma, y no cierra sesión', async () => {
     // Ocultar es UX: con el boton a la vista (rol revocado a mitad de sesion, por ejemplo) el
     // backend igual rechaza, y el mensaje tiene que explicar de quien es el catalogo para que
     // el usuario no lea el 403 como un error suyo.
     const fixture = await montar();
 
-    abrir(fixture, 'Dar de alta un servicio');
+    abrir(fixture, 'Nuevo servicio');
     escribir(fixture, '#alta-servicio-codigo', 'EVP');
-    escribir(fixture, '#alta-servicio-nombre', 'Evaluacion postural');
+    escribir(fixture, '#alta-servicio-nombre', 'Evaluación postural');
     elegir(fixture, '#alta-servicio-naturaleza', 'PREVENTIVO');
     elegir(fixture, '#alta-servicio-modalidad', 'INDIVIDUAL');
     enviar(fixture, 'form[novalidate]');
@@ -278,7 +278,7 @@ describe('CatalogoDeServiciosPage', () => {
           type: 'https://akine.app/problems/forbidden',
           title: 'Acceso denegado',
           status: 403,
-          detail: 'No tiene permiso para realizar esta operacion',
+          detail: 'No tiene permiso para realizar esta operación',
         },
         { status: 403, statusText: 'Forbidden' },
       );
@@ -339,9 +339,9 @@ describe('CatalogoDeServiciosPage', () => {
     // el panel se cerrara, tendria que reescribir los cinco campos en cada rebote.
     const fixture = await montar();
 
-    abrir(fixture, 'Dar de alta un servicio');
+    abrir(fixture, 'Nuevo servicio');
     escribir(fixture, '#alta-servicio-codigo', 'EVP');
-    escribir(fixture, '#alta-servicio-nombre', 'Evaluacion postural');
+    escribir(fixture, '#alta-servicio-nombre', 'Evaluación postural');
     elegir(fixture, '#alta-servicio-naturaleza', 'PREVENTIVO');
     elegir(fixture, '#alta-servicio-modalidad', 'INDIVIDUAL');
     enviar(fixture, 'form[novalidate]');
@@ -389,7 +389,7 @@ describe('CatalogoDeServiciosPage', () => {
     expect(anfitrion.querySelectorAll('tbody tr').length).toBe(1);
   });
 
-  it('la edicion con el nombre vacio no emite el PUT', async () => {
+  it('la edicion con el nombre vacío no emite el PUT', async () => {
     // Un test que solo mirara el texto del error pasaria igual aunque la peticion saliera: lo
     // que importa es que el envio quede BLOQUEADO, porque el nombre vacio viajaria como un
     // cambio deliberado y el backend lo rechazaria con un 400 que no explica nada.
@@ -480,7 +480,7 @@ describe('CatalogoDeServiciosPage', () => {
     ).toContain('Recargar el listado');
   });
 
-  it('si la relectura posterior al 409 tambien falla, el mensaje queda y la pantalla no se rompe', async () => {
+  it('si la relectura posterior al 409 también falla, el mensaje queda y la pantalla no se rompe', async () => {
     // Es el caso encadenado: el servidor conflictua y ademas se cae. Si la relectura fallida
     // vaciara el listado o tirara la excepcion, el usuario perderia la tabla ademas del cambio.
     const fixture = await montar();
@@ -492,7 +492,7 @@ describe('CatalogoDeServiciosPage', () => {
     httpMock
       .expectOne((peticion: HttpRequest<unknown>) => peticion.method === 'PUT')
       .flush(
-        { type: 'https://akine.app/problems/concurrent-modification', detail: 'version vieja' },
+        { type: 'https://akine.app/problems/concurrent-modification', detail: 'versión vieja' },
         { status: 409, statusText: 'Conflict' },
       );
     fixture.detectChanges();
@@ -508,7 +508,7 @@ describe('CatalogoDeServiciosPage', () => {
     expect(anfitrion.querySelectorAll('tbody tr').length).toBeGreaterThan(0);
   });
 
-  it('la busqueda incremental hace una sola peticion por rafaga de teclas', async () => {
+  it('la búsqueda incremental hace una sola peticion por rafaga de teclas', async () => {
     // Sin el debounce sale una peticion por tecla: cinco letras son cinco listados y el ultimo
     // en llegar no tiene por que ser el de la ultima tecla, asi que la tabla puede quedar
     // mostrando el resultado de una busqueda que el usuario ya no tiene escrita.
@@ -532,7 +532,7 @@ describe('CatalogoDeServiciosPage', () => {
     expect((fixture.nativeElement as HTMLElement).querySelectorAll('tbody tr').length).toBe(1);
   });
 
-  it('la edicion manda cada campo que cambio, incluida la descripcion vaciada a proposito', async () => {
+  it('la edicion manda cada campo que cambio, incluida la descripción vaciada a proposito', async () => {
     // La descripcion vacia es el caso que se pierde si alguien "simplifica" omitiendo los
     // campos vacios: el contrato no publica ningun `limpiarDescripcion`, asi que la cadena
     // vacia es la UNICA forma de borrarla y omitirla deja el dato viejo para siempre.
@@ -605,7 +605,7 @@ function abrir(fixture: { nativeElement: HTMLElement; detectChanges(): void }, e
     (candidato) => (candidato.textContent ?? '').trim() === etiqueta,
   );
   if (boton === undefined) {
-    throw new Error(`No existe el boton ${etiqueta}`);
+    throw new Error(`No existe el botón ${etiqueta}`);
   }
   boton.click();
   fixture.detectChanges();

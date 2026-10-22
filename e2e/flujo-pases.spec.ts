@@ -66,8 +66,10 @@ test.describe('Pases contra el backend real', () => {
 
     // ---- Venta: crea el pase y una deuda, sin cobrar.
     await navegar(page, `/pacientes/${persona.id}/pases`);
-    await expect(page.getByRole('heading', { level: 1 })).toContainText(persona.apellido);
-    await expect(page.getByText('no compro ningun pase en esta sede')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Pases', level: 1 })).toBeVisible();
+    // La persona va en la cabecera de la ficha, arriba de las pestañas.
+    await expect(page.getByText(new RegExp(`^${persona.apellido},`)).first()).toBeVisible();
+    await expect(page.getByText('no compró ningún pase en esta sede')).toBeVisible();
     // La opcion dice "nombre — creditos, precio": se elige por el valor de la que nombra al producto.
     const selector = page.getByLabel('Producto');
     const valor = await selector.locator('option', { hasText: producto }).getAttribute('value');
@@ -246,7 +248,7 @@ test.describe('Pases contra el backend real', () => {
     const alta = respuestaDe(page, 'POST', PRODUCTOS);
     await page.getByRole('button', { name: 'Crear producto' }).click();
     expect((await alta).status()).toBe(201);
-    await expect(filaDe(page, abono)).toContainText('Periodo de hasta 30 dias');
+    await expect(filaDe(page, abono)).toContainText('Periodo de hasta 30 días');
 
     // ---- Venta del periodo que empieza hoy.
     const { persona } = clase;
@@ -331,7 +333,7 @@ test.describe('Pases contra el backend real', () => {
     // ---- Apagarla desde la fila: PUT con la version leida, y la fila lo dice.
     const renovacion = respuestaDe(page, 'PUT', RENOVACION);
     await filaDe(page, abono)
-      .getByRole('button', { name: `Desactivar la renovacion automatica de ${abono}` })
+      .getByRole('button', { name: `Desactivar la renovación automática de ${abono}` })
       .click();
     const respuestaRenovacion = await renovacion;
     expect(respuestaRenovacion.status()).toBe(200);
@@ -342,7 +344,7 @@ test.describe('Pases contra el backend real', () => {
     await expect(filaDe(page, abono)).toContainText('No se renueva solo.');
     await expect(
       filaDe(page, abono).getByRole('button', {
-        name: `Activar la renovacion automatica de ${abono}`,
+        name: `Activar la renovación automática de ${abono}`,
       }),
     ).toBeVisible();
   });
@@ -391,8 +393,8 @@ test.describe('Pases contra el backend real', () => {
     // Encabezado + 20 filas; la primera es la compra, la mas vieja.
     await expect(movimientos.getByRole('row')).toHaveCount(21);
     await expect(movimientos.getByRole('row').nth(1)).toContainText('Compra');
-    const paginas = page.getByRole('navigation', { name: 'Paginas de movimientos del pase' });
-    await expect(paginas).toContainText('Pagina 1 de 2');
+    const paginas = page.getByRole('navigation', { name: 'Páginas de movimientos del pase' });
+    await expect(paginas).toContainText('Página 1 de 2');
 
     const segunda = respuestaDe(page, 'GET', MOVIMIENTOS);
     await paginas.getByRole('button', { name: 'Siguiente' }).click();

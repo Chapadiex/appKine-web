@@ -1,37 +1,33 @@
-<h1>Financiadores</h1>
+<div class="titulo-con-ayuda">
+  <h1>Financiadores</h1>
+  <app-ayuda titulo="Sobre esta pantalla">
+    <p>
+      Con quien trabaja tu organización: obras sociales, prepagas, ART, mutuales y organismos. Es el
+      primer cimiento del circuito económico — un financiador tiene <b>planes</b>, y contra un plan
+      se firma el <b>convenio</b> de cada sede, que es el que define los aranceles.
+    </p>
+    <p class="ayuda-contextual__subtitulo">Dos cosas que conviene saber antes de tocar nada</p>
+    <p>
+      <b>Dar de baja no cascadea y no borra.</b> Los planes del financiador conservan sus filas, y
+      las coberturas y convenios ya firmados <b>siguen resolviendo</b>. Lo único que la baja impide
+      es crear planes nuevos bajo él y ofrecerlo en selecciones nuevas. No hay reactivación: un
+      financiador que vuelve es un alta nueva, que sí puede reusar el mismo código.
+    </p>
+    <p>{{ notaParticular }}</p>
+  </app-ayuda>
+  <div class="encabezado__acciones" *akinePermiso="permisoManage">
+    <!-- DP-43 (U-12): una copia propia de una entrada del catálogo de la plataforma. -->
+    <a class="boton boton--secundario" routerLink="/contratacion/financiadores/catalogo">
+      Agregar desde el catálogo
+    </a>
+    <button type="button" class="boton" (click)="abrirAlta()">
+      <app-icono nombre="agregar" />
+      Dar de alta un financiador
+    </button>
+  </div>
+</div>
 
-<p class="descripcion">
-  Con quien trabaja tu organizacion: obras sociales, prepagas, ART, mutuales y organismos. Es el
-  primer cimiento del circuito economico — un financiador tiene <b>planes</b>, y contra un plan se
-  firma el <b>convenio</b> de cada sede, que es el que define los aranceles.
-</p>
-
-<nav class="acciones" aria-label="Contratacion">
-  <a class="boton boton--secundario" routerLink="/contratacion/convenios">Convenios de la sede</a>
-  <a class="boton boton--secundario" routerLink="/contratacion/financiadores" aria-current="page">
-    Financiadores
-  </a>
-  <a class="boton boton--secundario" routerLink="/contratacion/arancel-efectivo">
-    Consultar un arancel
-  </a>
-</nav>
-
-<!--
-  Las dos aclaraciones que evitan los reportes de bug mas probables del modulo. Van arriba y no en
-  un tooltip: quien lee la tabla tiene que llegar a la columna de acciones sabiendo que "dar de
-  baja" no borra nada, y quien busca "Particular" tiene que encontrar la explicacion antes de
-  concluir que falta cargarlo.
--->
-<section class="tarjeta nota-clave" aria-labelledby="titulo-nota-financiadores">
-  <h2 id="titulo-nota-financiadores">Dos cosas que conviene saber antes de tocar nada</h2>
-  <p>
-    <b>Dar de baja no cascadea y no borra.</b> Los planes del financiador conservan sus filas, y las
-    coberturas y convenios ya firmados <b>siguen resolviendo</b>. Lo unico que la baja impide es
-    crear planes nuevos bajo el y ofrecerlo en selecciones nuevas. No hay reactivacion: un
-    financiador que vuelve es un alta nueva, que si puede reusar el mismo codigo.
-  </p>
-  <p>{{ notaParticular }}</p>
-</section>
+<app-pestanas [pestanas]="pestanas" [etiqueta]="etiquetaDePestanas" />
 
 <div aria-live="polite">
   @if (exito(); as mensaje) {
@@ -39,28 +35,14 @@
   }
 </div>
 
-<p class="acciones">
-  <button type="button" class="boton" (click)="abrirAlta()" *akinePermiso="permisoManage">
-    Dar de alta un financiador
-  </button>
-  <!-- DP-43 (U-12): una copia propia de una entrada del catalogo de la plataforma. -->
-  <a
-    class="boton boton--secundario"
-    routerLink="/contratacion/financiadores/catalogo"
-    *akinePermiso="permisoManage"
-  >
-    Agregar desde el catalogo
-  </a>
-</p>
-
 @if (altaAbierta()) {
   <section class="tarjeta" aria-labelledby="titulo-alta-financiador">
     <h2 id="titulo-alta-financiador">Nuevo financiador</h2>
 
     <form [formGroup]="formularioAlta" (ngSubmit)="enviarAlta()" novalidate>
-      <div class="par-de-campos">
+      <div class="grilla-campos grilla-campos--dos">
         <div class="campo">
-          <label for="alta-financiador-codigo">Codigo</label>
+          <label for="alta-financiador-codigo">Código</label>
           <input
             id="alta-financiador-codigo"
             type="text"
@@ -70,12 +52,12 @@
             aria-describedby="alta-financiador-codigo-ayuda"
           />
           @if (mostrarErrorAlta('codigo')) {
-            <p class="campo__error" role="alert">El codigo es obligatorio.</p>
+            <p class="campo__error" role="alert">El código es obligatorio.</p>
           }
           <p class="ayuda" id="alta-financiador-codigo-ayuda">
-            <b>No se puede cambiar despues.</b> Es lo que las coberturas y los convenios guardan
-            para referirse a este financiador, asi que cambiarlo reescribiria lo que ya paso. Tiene
-            que ser unico entre los vigentes; el de uno dado de baja si se puede reusar.
+            <b>No se puede cambiar después.</b> Es lo que las coberturas y los convenios guardan
+            para referirse a este financiador, así que cambiarlo reescribiría lo que ya pasó. Tiene
+            que ser único entre los vigentes; el de uno dado de baja si se puede reusar.
           </p>
         </div>
 
@@ -102,66 +84,69 @@
           [attr.aria-invalid]="mostrarErrorAlta('tipo') ? 'true' : null"
           aria-describedby="alta-financiador-tipo-ayuda"
         >
-          <option value="">Elegi un tipo</option>
+          <option value="">Elegí un tipo</option>
           @for (opcion of tipos; track opcion.valor) {
             <option [value]="opcion.valor">{{ opcion.etiqueta }} — {{ opcion.ayuda }}</option>
           }
         </select>
         @if (mostrarErrorAlta('tipo')) {
-          <p class="campo__error" role="alert">Eligi que tipo de financiador es.</p>
+          <p class="campo__error" role="alert">Elegí que tipo de financiador es.</p>
         }
         <p class="ayuda" id="alta-financiador-tipo-ayuda">
           Sirve para <b>clasificar y filtrar</b>: hoy ninguna regla del sistema depende del tipo.
         </p>
       </div>
 
-      <div class="campo">
-        <label for="alta-financiador-cuit">CUIT (opcional)</label>
-        <input
-          id="alta-financiador-cuit"
-          type="text"
-          formControlName="cuit"
-          autocomplete="off"
-          aria-describedby="alta-financiador-cuit-ayuda"
-        />
-        <p class="ayuda" id="alta-financiador-cuit-ayuda">
-          Se guarda <b>normalizado a 11 digitos</b>: los guiones y los puntos se descartan antes de
-          comparar, asi que 30-12345678-9 y 30123456789 son el mismo CUIT y no pueden convivir. Si
-          no lo tenes a mano, dejalo vacio — varios financiadores sin CUIT conviven sin chocar.
-        </p>
-      </div>
-
-      <div class="par-de-campos">
+      <details class="mas-opciones">
+        <summary>Más datos del financiador</summary>
         <div class="campo">
-          <label for="alta-financiador-email">Email de contacto (opcional)</label>
+          <label for="alta-financiador-cuit">CUIT (opcional)</label>
           <input
-            id="alta-financiador-email"
-            type="email"
-            formControlName="emailContacto"
-            autocomplete="off"
-          />
-        </div>
-
-        <div class="campo">
-          <label for="alta-financiador-telefono">Telefono de contacto (opcional)</label>
-          <input
-            id="alta-financiador-telefono"
+            id="alta-financiador-cuit"
             type="text"
-            formControlName="telefonoContacto"
+            formControlName="cuit"
+            autocomplete="off"
+            aria-describedby="alta-financiador-cuit-ayuda"
+          />
+          <p class="ayuda" id="alta-financiador-cuit-ayuda">
+            Se guarda <b>normalizado a 11 dígitos</b>: los guiones y los puntos se descartan antes
+            de comparar, así que 30-12345678-9 y 30123456789 son el mismo CUIT y no pueden convivir.
+            Si no lo tenés a mano, dejalo vacío — varios financiadores sin CUIT conviven sin chocar.
+          </p>
+        </div>
+
+        <div class="grilla-campos grilla-campos--dos">
+          <div class="campo">
+            <label for="alta-financiador-email">Email de contacto (opcional)</label>
+            <input
+              id="alta-financiador-email"
+              type="email"
+              formControlName="emailContacto"
+              autocomplete="off"
+            />
+          </div>
+
+          <div class="campo">
+            <label for="alta-financiador-telefono">Teléfono de contacto (opcional)</label>
+            <input
+              id="alta-financiador-telefono"
+              type="text"
+              formControlName="telefonoContacto"
+              autocomplete="off"
+            />
+          </div>
+        </div>
+
+        <div class="campo">
+          <label for="alta-financiador-observaciones">Observaciones (opcional)</label>
+          <input
+            id="alta-financiador-observaciones"
+            type="text"
+            formControlName="observaciones"
             autocomplete="off"
           />
         </div>
-      </div>
-
-      <div class="campo">
-        <label for="alta-financiador-observaciones">Observaciones (opcional)</label>
-        <input
-          id="alta-financiador-observaciones"
-          type="text"
-          formControlName="observaciones"
-          autocomplete="off"
-        />
-      </div>
+      </details>
 
       @if (errorAccion(); as mensaje) {
         <p class="estado estado--error" role="alert">{{ mensaje }}</p>
@@ -184,31 +169,46 @@
   </section>
 }
 
-<section class="tarjeta" aria-labelledby="titulo-listado-financiadores">
-  <h2 id="titulo-listado-financiadores">Financiadores de la organizacion</h2>
+<section class="tarjeta tarjeta--tabla" aria-labelledby="titulo-listado-financiadores">
+  <div class="tarjeta__cabecera">
+    <h2 id="titulo-listado-financiadores">Financiadores de la organización</h2>
+  </div>
 
   <!--
     La busqueda se dispara con el submit y no con cada tecla. El detalle esta en el javadoc de
     `buscar()`: una busqueda en vivo necesita debounce, y el debounce es de donde salio el defecto
-    del buscador de pacientes de la agenda.
-  -->
-  <form class="campo" [formGroup]="formularioBusqueda" (ngSubmit)="buscar()" novalidate>
-    <label for="buscar-financiador">Buscar</label>
-    <input
-      id="buscar-financiador"
-      type="search"
-      formControlName="q"
-      autocomplete="off"
-      aria-describedby="buscar-financiador-ayuda"
-    />
-    <p class="ayuda" id="buscar-financiador-ayuda">
-      Busca por nombre, codigo o CUIT. Un <code>%</code> tecleado busca un <code>%</code> literal:
-      los comodines se escapan.
-    </p>
-    <button type="submit" class="boton boton--secundario">Buscar</button>
-  </form>
+    del buscador de pacientes de la agenda. Con un solo campo en el formulario, Enter lo envia
+    (envio implicito de HTML): no hace falta un botón a la vista.
 
-  <div class="par-de-campos">
+    Regla de filtros (plan §3.4): la busqueda, que se usa siempre, a la vista; estado y tipo,
+    detras del embudo.
+  -->
+  <app-filtros [activos]="filtrosAvanzadosActivos()">
+    <form
+      class="campo"
+      filtro-principal
+      [formGroup]="formularioBusqueda"
+      (ngSubmit)="buscar()"
+      novalidate
+    >
+      <label class="visualmente-oculto" for="buscar-financiador">Buscar</label>
+      <div class="campo-busqueda">
+        <app-icono class="campo-busqueda__icono" nombre="buscar" />
+        <input
+          id="buscar-financiador"
+          type="search"
+          formControlName="q"
+          autocomplete="off"
+          placeholder="Buscar por nombre, código o CUIT"
+          aria-describedby="buscar-financiador-ayuda"
+        />
+      </div>
+      <p class="visualmente-oculto" id="buscar-financiador-ayuda">
+        Buscá por nombre, código o CUIT al presionar Enter. Un <code>%</code> tecleado busca un
+        <code>%</code> literal: los comodines se escapan.
+      </p>
+    </form>
+
     <div class="campo">
       <label for="filtro-estado-financiador">Mostrar</label>
       <select
@@ -223,7 +223,7 @@
       </select>
       <p class="ayuda" id="filtro-estado-financiador-ayuda">
         Los dados de baja se siguen pudiendo consultar: los convenios firmados con ellos siguen
-        resolviendo, y explicar una liquidacion vieja exige poder verlos.
+        resolviendo, y explicar una liquidación vieja exige poder verlos.
       </p>
     </div>
 
@@ -240,7 +240,7 @@
         }
       </select>
     </div>
-  </div>
+  </app-filtros>
 
   <div aria-live="polite">
     @switch (estado().tipo) {
@@ -249,7 +249,7 @@
       }
 
       @case ('sin-contexto') {
-        <p class="estado estado--vacio">Todavia no elegiste un consultorio.</p>
+        <p class="estado estado--vacio">Todavía no elegiste un consultorio.</p>
         <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
       }
 
@@ -266,67 +266,73 @@
       @case ('listo') {
         @if (financiadores().length === 0) {
           <p class="estado estado--vacio">
-            No hay financiadores que coincidan con lo que estas buscando.
+            No hay financiadores que coincidan con lo que estás buscando.
           </p>
           <p class="ayuda">
-            Sin ningun financiador cargado, esta sede solo puede cobrar de forma particular: no hay
+            Sin ningún financiador cargado, esta sede solo puede cobrar de forma particular: no hay
             plan contra el cual firmar un convenio, y sin convenio no hay arancel que resolver.
           </p>
         } @else {
-          <p class="ayuda">{{ financiadores().length }} en total.</p>
-
           <div class="tabla-scroll" tabindex="0" role="region" aria-label="Financiadores">
             <table class="tabla">
               <caption class="visualmente-oculto">
-                Financiadores de la organizacion, con su codigo, tipo, CUIT, contacto, estado y
+                Financiadores de la organización, con su código, tipo, CUIT, contacto, estado y
                 acciones.
               </caption>
               <thead>
                 <tr>
-                  <th scope="col">Financiador</th>
-                  <th scope="col">Tipo</th>
+                  <th scope="col" appOrdenable [tabla]="tabla" columna="nombre">Financiador</th>
+                  <th scope="col" appOrdenable [tabla]="tabla" columna="tipo">Tipo</th>
                   <th scope="col">CUIT</th>
                   <th scope="col">Contacto</th>
-                  <th scope="col">Estado</th>
-                  <th scope="col">Acciones</th>
+                  <th scope="col" appOrdenable [tabla]="tabla" columna="estado">Estado</th>
+                  <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
                 </tr>
               </thead>
               <tbody>
-                @for (financiador of financiadores(); track financiador.id) {
+                @for (financiador of tabla.visibles(); track financiador.id) {
                   <tr [class.fila--revocada]="financiador.estado === 'INACTIVO'">
-                    <th scope="row">
-                      {{ financiador.nombre }}
-                      <p class="ayuda">Codigo {{ financiador.codigo }}</p>
-                      @if (financiador.catalogoId) {
-                        <!-- Informativo: la copia es del centro y el catalogo no la cambia. -->
-                        <span class="etiqueta">Del catalogo</span>
-                      }
+                    <th scope="row" class="celda-ancha">
+                      <span class="celda-principal">
+                        {{ financiador.nombre }}
+                        @if (financiador.catalogoId) {
+                          <!-- Informativo: la copia es del centro y el catalogo no la cambia. -->
+                          <span class="etiqueta">Del catálogo</span>
+                        }
+                      </span>
+                      <span class="celda-secundaria">Código {{ financiador.codigo }}</span>
                       @if (financiador.observaciones) {
-                        <p class="ayuda">{{ financiador.observaciones }}</p>
+                        <span class="celda-secundaria">{{ financiador.observaciones }}</span>
                       }
                     </th>
                     <td>{{ etiquetaDeTipo(financiador.tipo) }}</td>
                     <td>{{ financiador.cuit || 'Sin CUIT' }}</td>
                     <td>
                       {{ financiador.emailContacto || 'Sin email' }}
-                      <p class="ayuda">{{ financiador.telefonoContacto || 'Sin telefono' }}</p>
+                      <span class="celda-secundaria">{{
+                        financiador.telefonoContacto || 'Sin teléfono'
+                      }}</span>
                     </td>
                     <td>
-                      <span class="marca-estado">
+                      <span
+                        class="marca-estado"
+                        [class.marca-estado--activa]="financiador.estado !== 'INACTIVO'"
+                        [class.marca-estado--revocada]="financiador.estado === 'INACTIVO'"
+                      >
                         {{ financiador.estado === 'INACTIVO' ? 'Dado de baja' : 'Activo' }}
                       </span>
                       @if (financiador.estado === 'INACTIVO' && financiador.deactivationReason) {
-                        <p class="ayuda">{{ financiador.deactivationReason }}</p>
+                        <span class="celda-secundaria">{{ financiador.deactivationReason }}</span>
                       }
                     </td>
-                    <td class="acciones-fila">
+                    <td class="celda-acciones">
                       <!--
                         Los planes se ven SIEMPRE, tambien los de un financiador dado de baja: sus
                         planes conservan sus filas y hay que poder consultarlos para explicar una
                         cobertura vieja. El enlace no lleva permiso, por lo mismo que el listado.
                       -->
                       <a
-                        class="boton boton--secundario"
+                        class="accion-texto"
                         [routerLink]="['/contratacion/financiadores', financiador.id, 'planes']"
                       >
                         Planes
@@ -335,14 +341,14 @@
                         <ng-container *akinePermiso="permisoManage">
                           <button
                             type="button"
-                            class="boton boton--secundario"
+                            class="accion-texto"
                             (click)="abrirPanel(financiador, 'editar')"
                           >
                             Editar
                           </button>
                           <button
                             type="button"
-                            class="boton boton--secundario"
+                            class="accion-texto accion-texto--peligro"
                             (click)="abrirPanel(financiador, 'baja')"
                           >
                             Dar de baja
@@ -364,14 +370,14 @@
 
                           <p class="ayuda">
                             Se manda <b>solo lo que cambies</b>. Ojo con una cosa: vaciar un campo
-                            opcional lo deja vacio de verdad, no lo "restaura" — y el
-                            <b>codigo no se puede cambiar</b>, porque es lo que los historicos
-                            guardan. Si esta mal tipeado, la salida es dar de baja esta ficha y
-                            cargar otra con el codigo correcto: el viejo queda libre.
+                            opcional lo deja vacío de verdad, no lo "restaura" — y el
+                            <b>código no se puede cambiar</b>, porque es lo que los históricos
+                            guardan. Si está mal tipeado, la salida es dar de baja esta ficha y
+                            cargar otra con el código correcto: el viejo queda libre.
                           </p>
 
                           <div class="campo">
-                            <label for="editar-financiador-codigo">Codigo</label>
+                            <label for="editar-financiador-codigo">Código</label>
                             <input
                               id="editar-financiador-codigo"
                               type="text"
@@ -408,47 +414,52 @@
                             </select>
                           </div>
 
-                          <div class="campo">
-                            <label for="editar-financiador-cuit">CUIT</label>
-                            <input
-                              id="editar-financiador-cuit"
-                              type="text"
-                              formControlName="cuit"
-                              autocomplete="off"
-                            />
-                          </div>
-
-                          <div class="par-de-campos">
+                          <details class="mas-opciones">
+                            <summary>Más datos del financiador</summary>
                             <div class="campo">
-                              <label for="editar-financiador-email">Email de contacto</label>
+                              <label for="editar-financiador-cuit">CUIT</label>
                               <input
-                                id="editar-financiador-email"
-                                type="email"
-                                formControlName="emailContacto"
-                                autocomplete="off"
-                              />
-                            </div>
-
-                            <div class="campo">
-                              <label for="editar-financiador-telefono">Telefono de contacto</label>
-                              <input
-                                id="editar-financiador-telefono"
+                                id="editar-financiador-cuit"
                                 type="text"
-                                formControlName="telefonoContacto"
+                                formControlName="cuit"
                                 autocomplete="off"
                               />
                             </div>
-                          </div>
 
-                          <div class="campo">
-                            <label for="editar-financiador-observaciones">Observaciones</label>
-                            <input
-                              id="editar-financiador-observaciones"
-                              type="text"
-                              formControlName="observaciones"
-                              autocomplete="off"
-                            />
-                          </div>
+                            <div class="grilla-campos grilla-campos--dos">
+                              <div class="campo">
+                                <label for="editar-financiador-email">Email de contacto</label>
+                                <input
+                                  id="editar-financiador-email"
+                                  type="email"
+                                  formControlName="emailContacto"
+                                  autocomplete="off"
+                                />
+                              </div>
+
+                              <div class="campo">
+                                <label for="editar-financiador-telefono"
+                                  >Teléfono de contacto</label
+                                >
+                                <input
+                                  id="editar-financiador-telefono"
+                                  type="text"
+                                  formControlName="telefonoContacto"
+                                  autocomplete="off"
+                                />
+                              </div>
+                            </div>
+
+                            <div class="campo">
+                              <label for="editar-financiador-observaciones">Observaciones</label>
+                              <input
+                                id="editar-financiador-observaciones"
+                                type="text"
+                                formControlName="observaciones"
+                                autocomplete="off"
+                              />
+                            </div>
+                          </details>
 
                           @if (errorAccion(); as mensaje) {
                             <p class="estado estado--error" role="alert">{{ mensaje }}</p>
@@ -484,7 +495,7 @@
                           idCampo="baja-financiador-motivo"
                           [titulo]="'Dar de baja ' + financiador.nombre"
                           etiqueta="Motivo de la baja"
-                          ayuda="Queda registrado junto al financiador y se muestra en el listado. La baja NO cascadea: sus planes conservan sus filas y las coberturas y convenios ya firmados siguen resolviendo. Lo unico que se impide es crear planes nuevos bajo el y ofrecerlo en selecciones nuevas. No hay reactivacion, y su codigo queda libre para un alta nueva."
+                          ayuda="Queda registrado junto al financiador y se muestra en el listado. La baja NO cascadea: sus planes conservan sus filas y las coberturas y convenios ya firmados siguen resolviendo. Lo único que se impide es crear planes nuevos bajo él y ofrecerlo en selecciones nuevas. No hay reactivación, y su código queda libre para un alta nueva."
                           textoConfirmar="Dar de baja"
                           [enviando]="enviando()"
                           (confirmado)="enviarBaja($event)"
@@ -505,6 +516,16 @@
                 }
               </tbody>
             </table>
+          </div>
+
+          <div class="tabla-pie">
+            <span>{{ tabla.total() }} financiadores</span>
+            <app-paginacion
+              [paginaActual]="tabla.pagina()"
+              [totalPaginas]="tabla.totalPaginas()"
+              etiqueta="Páginas de financiadores"
+              (cambioDePagina)="tabla.irA($event)"
+            />
           </div>
         }
       }

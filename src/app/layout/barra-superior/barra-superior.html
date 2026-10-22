@@ -1,0 +1,57 @@
+<!--
+  Barra superior. El `header` lo pone el shell (`app.html`); aca va lo que lleva adentro.
+  La marca se muestra solo cuando no hay barra lateral que la lleve: sin sesion resuelta o sin
+  contexto.
+-->
+@if (sesionResuelta() && contexto(); as activo) {
+  <!--
+    Boton de menu: solo se ve en tablet (CSS). `aria-controls` apunta al `nav` de la barra
+    lateral y `aria-expanded` dice si esta abierta; el nombre es texto visible para el lector y
+    el icono es decorativo.
+  -->
+  <button
+    type="button"
+    class="menu"
+    [attr.aria-expanded]="menuAbierto()"
+    aria-controls="navegacion-principal"
+    (click)="alternar()"
+  >
+    <app-icono [nombre]="menuAbierto() ? 'cerrar' : 'menu'" />
+    <span class="visualmente-oculto">Menu</span>
+  </button>
+
+  <!--
+    Indicador del contexto activo. `p` y no `nav`: es un dato, no un grupo de enlaces, y el
+    unico enlace que tiene ya es el de cambiarlo.
+  -->
+  <p class="contexto">
+    <span class="contexto__valor">
+      {{ activo.organizationName }}
+      @if (sede(); as nombreDeSede) {
+        <span class="contexto__sede">· {{ nombreDeSede }}</span>
+      }
+    </span>
+    <a class="contexto__cambiar" [routerLink]="rutaSelector">Cambiar</a>
+  </p>
+} @else {
+  <a class="marca" [routerLink]="rutaInicio">AKINE</a>
+
+  @if (sesionResuelta() && faltaContexto()) {
+    <!--
+      Autenticado sin contexto: con un token `pre_context` ninguna seccion responde, asi que el
+      unico enlace util es el que resuelve eso.
+    -->
+    <p class="contexto">
+      <a class="contexto__cambiar" [routerLink]="rutaSelector">Elegí donde vas a trabajar</a>
+    </p>
+    <!--
+      Un administrador de plataforma no es miembro de ningun centro: este es su unico camino a la
+      consola (AKINE-A-7).
+    -->
+    @if (esAdminDePlataforma()) {
+      <p class="contexto">
+        <a class="contexto__cambiar" [routerLink]="rutaPlataforma">Consola de plataforma</a>
+      </p>
+    }
+  }
+}

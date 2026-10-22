@@ -1,39 +1,37 @@
-<h1>Espacios en servicio</h1>
-
-<p class="descripcion">
-  Que espacios de <b>{{ nombreDeLaSede() }}</b> se pueden ofrecer durante un periodo: los que estan
-  activos y con su vigencia cubriendo la ventana entera. Los dados de baja y los que quedan fuera de
-  su ventana operativa no aparecen.
-</p>
-
-<p class="acciones">
-  <a class="enlace" routerLink="/espacios">Volver al listado de espacios</a>
-</p>
-
-<!--
-  El aviso que el propio contrato pide poner ANTES de escribir esta pantalla. No es una
-  aclaracion legal al pie: es la diferencia entre leer bien la tabla y planificar sobre un dato
-  que no existe todavia.
--->
-<section class="tarjeta nota-servicio" aria-labelledby="titulo-nota-ocupacion">
-  <h2 id="titulo-nota-ocupacion">Esto dice si el espacio esta en servicio, no si esta libre</h2>
-  <p>
-    La agenda de turnos todavia no existe en AKINE, asi que
-    <b>aca no hay ninguna reserva que contar</b>. Que un espacio figure en esta lista quiere decir
-    que esta habilitado para ofrecerse en esa ventana, no que nadie lo este usando.
-  </p>
-  <p>
-    Por eso la tabla muestra la <b>capacidad</b> configurada de cada espacio -cuantas personas
-    admite a la vez- y no cuantos lugares quedan. Cuando exista la agenda, la ocupacion real va a
-    poder consultarse desde ahi.
-  </p>
-</section>
+<div class="titulo-con-ayuda">
+  <h1>Espacios en servicio</h1>
+  <app-ayuda titulo="Sobre esta pantalla">
+    <p>
+      Qué espacios de <b>{{ nombreDeLaSede() }}</b> se pueden ofrecer durante un período: los que
+      están activos y con su vigencia cubriendo la ventana entera. Los dados de baja y los que
+      quedan fuera de su ventana operativa no aparecen.
+    </p>
+    <!--
+      El aviso que el contrato pide poner ANTES de leer la tabla: es la diferencia entre leerla
+      bien y planificar sobre un dato que no existe todavía.
+    -->
+    <p class="ayuda-contextual__subtitulo">
+      Esto dice si el espacio está en servicio, no si está libre
+    </p>
+    <p>
+      Que un espacio figure en esta lista quiere decir que está habilitado para ofrecerse en esa
+      ventana, no que nadie lo esté usando: <b>acá no hay ninguna reserva que contar</b>.
+    </p>
+    <p>
+      Por eso la tabla muestra la <b>capacidad</b> configurada de cada espacio —cuántas personas
+      admite a la vez— y no cuántos lugares quedan.
+    </p>
+  </app-ayuda>
+  <div class="encabezado__acciones">
+    <a class="boton boton--secundario" routerLink="/espacios">Espacios y boxes</a>
+  </div>
+</div>
 
 @if (sinSede()) {
   <section class="tarjeta" aria-labelledby="titulo-sin-sede-disp">
     <h2 id="titulo-sin-sede-disp">Falta elegir un consultorio</h2>
     <p>
-      Los espacios son de una sede concreta y todavia no elegiste ninguna. Tu sesion sigue abierta:
+      Los espacios son de una sede concreta y todavía no elegiste ninguna. Tu sesión sigue abierta:
       solo falta indicar donde estas trabajando.
     </p>
     <p>
@@ -41,9 +39,7 @@
     </p>
   </section>
 } @else {
-  <section class="tarjeta" aria-labelledby="titulo-ventana">
-    <h2 id="titulo-ventana">Periodo a consultar</h2>
-
+  <section class="tarjeta" aria-label="Período a consultar">
     <form [formGroup]="formulario" (ngSubmit)="consultar()" novalidate>
       <div class="ventana">
         <div class="campo">
@@ -75,8 +71,8 @@
             <p class="campo__error" id="ventana-hasta-error">Indica hasta cuando.</p>
           }
           <p class="ayuda" id="ventana-hasta-ayuda">
-            El fin es <b>exclusivo</b>: no se incluye a si mismo. Como maximo
-            {{ maximoDeDias }} dias por consulta.
+            El fin es <b>exclusivo</b>: no se incluye a sí mismo. Como máximo
+            {{ maximoDeDias }} días por consulta.
           </p>
         </div>
       </div>
@@ -93,14 +89,12 @@
     </div>
   </section>
 
-  <section class="tarjeta" aria-labelledby="titulo-resultado">
-    <h2 id="titulo-resultado">Espacios en servicio en ese periodo</h2>
-
+  <section class="tarjeta" aria-label="Espacios en servicio en ese período">
     <div aria-live="polite">
       @switch (estado().tipo) {
         @case ('inicial') {
           <p class="estado estado--vacio">
-            Elegi un periodo y toca "Ver que espacios hay" para consultarlo.
+            Elegí un periodo y toca "Ver que espacios hay" para consultarlo.
           </p>
         }
 
@@ -109,7 +103,7 @@
         }
 
         @case ('sin-contexto') {
-          <p class="estado estado--vacio">Todavia no elegiste un consultorio.</p>
+          <p class="estado estado--vacio">Todavía no elegiste un consultorio.</p>
           <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
         }
 
@@ -133,7 +127,7 @@
 
           @if (enServicio().length === 0) {
             <p class="estado estado--vacio">
-              Ningun espacio de esta sede esta en servicio durante todo ese periodo.
+              Ningún espacio de esta sede esta en servicio durante todo ese periodo.
             </p>
             <p class="ayuda">
               Puede ser que los espacios existan pero su ventana de vigencia no cubra el periodo
@@ -142,10 +136,6 @@
             </p>
             <a class="boton boton--secundario" routerLink="/espacios">Revisar los espacios</a>
           } @else {
-            <p class="ayuda">
-              {{ enServicio().length }} espacios se pueden ofrecer durante todo ese periodo.
-            </p>
-
             <div
               class="tabla-scroll"
               tabindex="0"
@@ -159,13 +149,13 @@
                 </caption>
                 <thead>
                   <tr>
-                    <th scope="col">Espacio</th>
-                    <th scope="col">Tipo</th>
-                    <th scope="col">Capacidad</th>
+                    <th scope="col" appOrdenable [tabla]="tabla" columna="espacio">Espacio</th>
+                    <th scope="col" appOrdenable [tabla]="tabla" columna="tipo">Tipo</th>
+                    <th scope="col" appOrdenable [tabla]="tabla" columna="capacidad">Capacidad</th>
                   </tr>
                 </thead>
                 <tbody>
-                  @for (espacio of enServicio(); track espacio.espacioId) {
+                  @for (espacio of tabla.visibles(); track espacio.espacioId) {
                     <tr>
                       <th scope="row">{{ espacio.name }}</th>
                       <td>{{ etiquetaDeTipo(espacio.tipo) }}</td>
@@ -185,6 +175,16 @@
                   }
                 </tbody>
               </table>
+            </div>
+
+            <div class="tabla-pie">
+              <span>{{ tabla.total() }} espacios</span>
+              <app-paginacion
+                [paginaActual]="tabla.pagina()"
+                [totalPaginas]="tabla.totalPaginas()"
+                etiqueta="Paginas de espacios"
+                (cambioDePagina)="tabla.irA($event)"
+              />
             </div>
           }
         }

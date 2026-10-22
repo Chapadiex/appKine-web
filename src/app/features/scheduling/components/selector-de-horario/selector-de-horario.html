@@ -1,5 +1,5 @@
 <div class="campo">
-  <label [for]="idDia()">Dia destino</label>
+  <label [for]="idDia()">Día destino</label>
   <input
     [id]="idDia()"
     type="date"
@@ -12,7 +12,7 @@
   <legend>Horario destino — {{ fechaEnPalabras(fecha()) }}</legend>
   @if (slots().length === 0) {
     <p class="estado estado--vacio">
-      Ese dia no tiene ningun horario disponible para esta oferta. Proba otro dia.
+      Ese día no tiene ningún horario disponible para esta oferta. Proba otro día.
     </p>
   } @else {
     <ul class="slots">

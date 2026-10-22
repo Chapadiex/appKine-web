@@ -6,6 +6,7 @@ import { TenantContextStore } from '../../../../core/services/tenant-context.sto
 import { instanteEnPalabras } from '../../models/etiquetas-de-atencion';
 import { ErrorAtencion, traducirErrorAtencion } from '../../models/atencion-errors';
 import { ClinicalApi } from '../../services/clinical-api';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 
 /** Rango del contrato: de 1 a 3650 dias. */
 export const VENTANA_MINIMA = 1;
@@ -24,9 +25,9 @@ export const VENTANA_MAXIMA = 3650;
  */
 @Component({
   selector: 'app-politica-de-enmienda-page',
-  imports: [RouterLink],
+  imports: [Ayuda, RouterLink],
   templateUrl: './politica-de-enmienda-page.html',
-  styleUrl: '../../atencion.css',
+  styleUrls: ['../../atencion.css', '../historia-clinica/historia-clinica.css'],
 })
 export class PoliticaDeEnmiendaPage {
   private readonly api = inject(ClinicalApi);
@@ -51,6 +52,7 @@ export class PoliticaDeEnmiendaPage {
   protected readonly achica = computed(
     () => this.diasValidos() && Number(this.dias()) < (this.politica()?.ventanaDias ?? 0),
   );
+  protected readonly unidad = computed(() => (Number(this.dias()) === 1 ? 'día' : 'días'));
   protected readonly sinCambios = computed(
     () => Number(this.dias()) === this.politica()?.ventanaDias,
   );
@@ -93,7 +95,7 @@ export class PoliticaDeEnmiendaPage {
         this.adoptar(politica);
         this.exito.set(
           `Listo: las sesiones se pueden enmendar durante ${politica.ventanaDias ?? this.dias()} ` +
-            'dias desde su cierre, tambien las que ya estaban cerradas.',
+            'días desde su cierre, también las que ya estaban cerradas.',
         );
       },
       error: (error: unknown) => {
@@ -120,7 +122,7 @@ function traducirErrorDePolitica(error: unknown): ErrorAtencion {
     ? {
         ...traducido,
         mensaje:
-          'La ventana de enmienda la fija quien administra la organizacion. Tu cuenta no tiene ' +
+          'La ventana de enmienda la fija quien administra la organización. Tu cuenta no tiene ' +
           'ese alcance en este contexto.',
       }
     : traducido;

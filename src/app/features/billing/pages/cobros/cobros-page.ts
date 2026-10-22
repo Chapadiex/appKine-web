@@ -33,6 +33,11 @@ import { ErrorCobro, OperacionDeCobro, traducirErrorCobro } from '../../models/c
 import { instanteEnPalabras, medioEnPalabras } from '../../models/etiquetas-de-cobro';
 import { importeEnPalabras } from '../../models/etiquetas-de-obligacion';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
+import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
+import { CabeceraDePersona } from '../cuenta-corriente/cabecera-de-persona/cabecera-de-persona';
 
 /** En cual de los tres estados esta el listado. No es paginado: el backend devuelve un array. */
 type EstadoCobros =
@@ -79,9 +84,17 @@ interface OperacionAbierta {
  */
 @Component({
   selector: 'app-cobros-page',
-  imports: [RouterLink, ConfirmacionConMotivo, PermisoDirective],
+  imports: [
+    CabeceraDePersona,
+    Ayuda,
+    ColumnaOrdenable,
+    Paginacion,
+    RouterLink,
+    ConfirmacionConMotivo,
+    PermisoDirective,
+  ],
   templateUrl: './cobros-page.html',
-  styleUrl: '../../billing.css',
+  styleUrls: ['../../billing.css', '../cuenta-corriente/cuenta-corriente.css'],
 })
 export class CobrosPage {
   private readonly diaDeLaSede = inject(DiaDeLaSede);
@@ -169,6 +182,17 @@ export class CobrosPage {
     return actual.tipo === 'listo' ? actual.cobros : [];
   });
 
+  /** Orden y paginado de la lista completa (plan §3.4): el backend devuelve un array. */
+  protected readonly tabla = tablaLocal(this.cobros, {
+    columnas: {
+      comprobante: (cobro) => cobro.comprobanteNumero ?? null,
+      fecha: (cobro) => cobro.cobradoEn ?? null,
+      total: (cobro) => cobro.total ?? null,
+      saldoAFavor: (cobro) => cobro.saldoAFavor ?? 0,
+      estado: (cobro) => cobro.estado ?? null,
+    },
+  });
+
   protected readonly mensajeError = computed(() => {
     const actual = this.estado();
     return actual.tipo === 'error' ? actual.mensaje : null;
@@ -205,8 +229,8 @@ export class CobrosPage {
       this.estado.set({
         tipo: 'error',
         mensaje:
-          'Para ver los cobros hay que saber en que sede estas. Eligi una organizacion y un ' +
-          'consultorio, y volve a entrar. Tu sesion sigue abierta.',
+          'Para ver los cobros hay que saber en que sede estas. Eligi una organización y un ' +
+          'consultorio, y volvé a entrar. Tu sesión sigue abierta.',
         faltaContexto: true,
       });
       return;
@@ -345,7 +369,7 @@ export class CobrosPage {
       next: () =>
         this.terminar(
           `Se anulo el comprobante N.º ${cobro.comprobanteNumero}. Sus imputaciones devolvieron ` +
-            'saldo a las deudas y sus movimientos de caja se revirtieron. El numero queda usado: ' +
+            'saldo a las deudas y sus movimientos de caja se revirtieron. El número queda usado: ' +
             'no se borra nada.',
         ),
       error: (error: unknown) => this.fallar(error, 'anular'),

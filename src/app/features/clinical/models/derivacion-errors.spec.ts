@@ -23,7 +23,7 @@ describe('traducirErrorDeDerivacion', () => {
     expect(error.mensaje).toContain('hc:write');
   });
 
-  it('un 400 no es la reversion sin motivo', () => {
+  it('un 400 no es la reversión sin motivo', () => {
     const error = traducirErrorDeDerivacion(problema('validation-error', 400));
     expect(error.causa).toBe('otro');
     expect(error.mensaje).not.toContain('Revertir');
@@ -38,7 +38,7 @@ describe('traducirErrorDeDerivacion', () => {
 
 describe('textoDeBloqueo', () => {
   it('traduce los bloqueos conocidos y deja a la vista uno nuevo', () => {
-    expect(textoDeBloqueo('OFERTA_NO_CLINICA')).toContain('no genera registro clinico');
+    expect(textoDeBloqueo('OFERTA_NO_CLINICA')).toContain('no genera registro clínico');
     expect(textoDeBloqueo('SIN_ASISTENCIA')).toContain('asistencia registrada');
     expect(textoDeBloqueo('AUSENTE')).toContain('ausente');
     expect(textoDeBloqueo('OTRO_CODIGO')).toBe('OTRO_CODIGO');

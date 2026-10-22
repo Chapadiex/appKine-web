@@ -33,8 +33,8 @@ import {
 /** Entra a la recepcion como entra el mostrador: desde la agenda. */
 async function abrirLaRecepcion(page: import('@playwright/test').Page, persona: Persona) {
   await navegar(page, '/agenda');
-  await page.getByRole('link', { name: 'Ver la recepcion del dia' }).click();
-  await expect(page.getByRole('heading', { name: 'Recepcion del dia', level: 1 })).toBeVisible();
+  await page.getByRole('link', { name: 'Recepción', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Recepción del día', level: 1 })).toBeVisible();
   const fila = page.getByRole('row').filter({ hasText: persona.apellido });
   await expect(fila).toBeVisible();
   return fila;
@@ -68,7 +68,7 @@ test.describe('Prepago antes del check-in contra el backend real', () => {
     expect((antes as { prepago?: { estado: string } }).prepago?.estado).toBe('PENDIENTE');
 
     const fila = await abrirLaRecepcion(page, persona);
-    await expect(fila.getByText('Sin recepcion')).toBeVisible();
+    await expect(fila.getByText('Sin recepción')).toBeVisible();
     await expect(fila.getByText('Prepago pendiente', { exact: true })).toBeVisible();
 
     await fila.getByRole('link', { name: 'Registrar prepago' }).click();
@@ -87,14 +87,14 @@ test.describe('Prepago antes del check-in contra el backend real', () => {
     expect((await alta).status()).toBe(201);
 
     await expect(page.getByRole('heading', { name: 'Cobro registrado' })).toBeVisible();
-    await expect(page.getByText(/Ninguna todavia: es un anticipo del turno/)).toBeVisible();
+    await expect(page.getByText(/Ninguna todavía: es un anticipo del turno/)).toBeVisible();
 
-    await page.getByRole('link', { name: 'Volver a la recepcion del dia' }).first().click();
-    await expect(page.getByRole('heading', { name: 'Recepcion del dia', level: 1 })).toBeVisible();
+    await page.getByRole('link', { name: 'Volver a la recepción del día' }).first().click();
+    await expect(page.getByRole('heading', { name: 'Recepción del día', level: 1 })).toBeVisible();
     const despues = page.getByRole('row').filter({ hasText: persona.apellido });
     await expect(despues.getByText('Prepago registrado', { exact: true })).toBeVisible();
     // Sigue sin llegada: el prepago no es el check-in.
-    await expect(despues.getByText('Sin recepcion')).toBeVisible();
+    await expect(despues.getByText('Sin recepción')).toBeVisible();
     await expect(despues.getByRole('link', { name: 'Registrar prepago' })).toHaveCount(0);
 
     const guardado = (await verTurno(api, centro, turno.id)) as Turno & {
@@ -151,7 +151,7 @@ test.describe('Prepago antes del check-in contra el backend real', () => {
 
     await expect(page.getByRole('heading', { name: 'No se registro el cobro' })).toBeVisible();
     await expect(
-      page.getByRole('link', { name: 'Volver a la recepcion del dia' }).last(),
+      page.getByRole('link', { name: 'Volver a la recepción del día' }).last(),
     ).toBeVisible();
   });
 });

@@ -298,6 +298,6 @@ export async function abrirHistoriaConMotivo(
   await entrarConContexto(page, sembrada);
   await navegar(page, `/historia-clinica/personas/${sembrada.personaId}`);
   await page.getByRole('textbox', { name: 'Motivo del acceso' }).fill(MOTIVO_DE_ACCESO);
-  await page.getByRole('button', { name: 'Ver la historia clinica' }).click();
+  await page.getByRole('button', { name: 'Ver la historia clínica' }).click();
   await expect(page.getByRole('heading', { name: sembrada.nombreCompleto })).toBeVisible();
 }

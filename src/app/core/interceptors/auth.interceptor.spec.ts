@@ -62,7 +62,7 @@ describe('authInterceptor', () => {
     peticion.flush({});
   });
 
-  it('sin sesion, no agrega cabecera Authorization', () => {
+  it('sin sesión, no agrega cabecera Authorization', () => {
     http.get('/api/v1/version').subscribe();
 
     const peticion = httpMock.expectOne('/api/v1/version');
@@ -94,7 +94,7 @@ describe('authInterceptor', () => {
 
   // --- Renovacion automatica -------------------------------------------------------
 
-  it('ante un 401 renueva la sesion y reintenta con el token nuevo', async () => {
+  it('ante un 401 renueva la sesión y reintenta con el token nuevo', async () => {
     tokenStore.set('jwt-vencido');
     const resultado = new Promise((resolve) => http.get('/api/v1/pacientes').subscribe(resolve));
 
@@ -176,7 +176,7 @@ describe('authInterceptor', () => {
     expect(session.estado()).toBe('anonimo');
   });
 
-  it('si el refresh responde 503 NO borra la sesion ni navega: el backend no la rechazo', async () => {
+  it('si el refresh responde 503 NO borra la sesión ni navega: el backend no la rechazo', async () => {
     const router = TestBed.inject(Router);
     const navegar = vi.spyOn(router, 'navigate').mockResolvedValue(true);
     const navegarUrl = vi.spyOn(router, 'navigateByUrl').mockResolvedValue(true);
@@ -201,7 +201,7 @@ describe('authInterceptor', () => {
     expect(navegarUrl).not.toHaveBeenCalled();
   });
 
-  it('si el refresh falla con sesion previa manda a sesion expirada, conservando el destino', async () => {
+  it('si el refresh falla con sesión previa manda a sesión expirada, conservando el destino', async () => {
     const router = TestBed.inject(Router);
     const navegar = vi.spyOn(router, 'navigate').mockResolvedValue(true);
     // La pantalla en la que estaba parado el usuario cuando se le cayo la sesion.
@@ -233,7 +233,7 @@ describe('authInterceptor', () => {
     });
   });
 
-  it('si nunca hubo sesion manda al login pelado, no a sesion expirada', async () => {
+  it('si nunca hubo sesión manda al login pelado, no a sesión expirada', async () => {
     const router = TestBed.inject(Router);
     const navegarPorUrl = vi.spyOn(router, 'navigateByUrl').mockResolvedValue(true);
     const navegar = vi.spyOn(router, 'navigate').mockResolvedValue(true);
@@ -252,7 +252,7 @@ describe('authInterceptor', () => {
     expect(navegar).not.toHaveBeenCalled();
   });
 
-  it('un 401 que llega con la sesion expirada ya en pantalla no la saca de ahi', async () => {
+  it('un 401 que llega con la sesión expirada ya en pantalla no la saca de ahi', async () => {
     const router = TestBed.inject(Router);
     const navegarPorUrl = vi.spyOn(router, 'navigateByUrl').mockResolvedValue(true);
     const navegar = vi.spyOn(router, 'navigate').mockResolvedValue(true);
@@ -274,7 +274,7 @@ describe('authInterceptor', () => {
     expect(navegar).not.toHaveBeenCalled();
   });
 
-  it('un 401 que llega mientras se navega a la sesion expirada no reemplaza esa navegacion', async () => {
+  it('un 401 que llega mientras se navega a la sesión expirada no reemplaza esa navegacion', async () => {
     const router = TestBed.inject(Router);
     const navegarPorUrl = vi.spyOn(router, 'navigateByUrl').mockResolvedValue(true);
     const navegar = vi.spyOn(router, 'navigate').mockResolvedValue(true);
@@ -347,7 +347,7 @@ describe('authInterceptor', () => {
     httpMock.verify();
   });
 
-  it('no reintenta dos veces la misma peticion aunque el token nuevo tambien de 401', async () => {
+  it('no reintenta dos veces la misma peticion aunque el token nuevo también de 401', async () => {
     tokenStore.set('jwt-vencido');
 
     const fallo = new Promise<unknown>((resolve) =>
@@ -365,7 +365,7 @@ describe('authInterceptor', () => {
     httpMock.verify();
   });
 
-  it('un fallo de red no dispara refresh: no hay sesion que renovar', async () => {
+  it('un fallo de red no dispara refresh: no hay sesión que renovar', async () => {
     tokenStore.set('jwt-valido');
 
     const fallo = new Promise<unknown>((resolve) =>

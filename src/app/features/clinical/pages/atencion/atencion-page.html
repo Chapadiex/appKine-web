@@ -1,18 +1,32 @@
-<h1>Atencion clinica</h1>
-
-<p class="descripcion">
-  Una sesion es la <b>atencion realizada</b>. El turno era la reserva de agenda: son dos cosas
-  distintas y esta pantalla registra la segunda.
-</p>
-
 @if (rutaDeLaClase(); as rutaClase) {
-  <p><a class="enlace" [routerLink]="rutaClase">Volver a la atencion clinica de la clase</a></p>
+  <p class="miga">
+    <a class="enlace" [routerLink]="rutaClase">Volver a la atención clínica de la clase</a>
+  </p>
 } @else {
-  <p><a class="enlace" routerLink="/agenda">Volver a la agenda</a></p>
+  <p class="miga"><a class="enlace" routerLink="/agenda">Volver a la agenda</a></p>
 }
 
+<div class="titulo-con-ayuda">
+  <h1>Atención clínica</h1>
+  @if (sesion()) {
+    <span
+      class="marca-estado"
+      [class.marca-estado--activa]="cerrada()"
+      [class.marca-estado--suspendida]="!cerrada()"
+    >
+      {{ cerrada() ? 'Cerrada' : 'En curso' }}
+    </span>
+  }
+  <app-ayuda titulo="Sobre esta pantalla">
+    <p>
+      Una sesión es la <b>atención realizada</b>. El turno era la reserva de agenda: son dos cosas
+      distintas y esta pantalla registra la segunda.
+    </p>
+  </app-ayuda>
+</div>
+
 @if (abriendo()) {
-  <p class="estado estado--cargando">Abriendo la atencion…</p>
+  <p class="estado estado--cargando">Abriendo la atención…</p>
 }
 
 <!--
@@ -21,14 +35,14 @@
   atencion abierta el caso se puede cambiar desde la tarjeta de la atencion.
 -->
 @if (eligiendoCaso()) {
-  <section class="tarjeta" aria-labelledby="titulo-caso">
-    <h2 id="titulo-caso">Antes de empezar: caso clinico</h2>
+  <section class="tarjeta tarjeta--angosta" aria-labelledby="titulo-caso">
+    <h2 id="titulo-caso">Antes de empezar: caso clínico</h2>
     <p class="ayuda">
-      El paciente tiene casos clinicos activos. Elegi a cual pertenece esta atencion, o segui sin
-      caso. Mientras la atencion siga abierta lo vas a poder cambiar; una vez cerrada, no.
+      El paciente tiene casos clínicos activos. Elegí a cuál pertenece esta atención, o seguí sin
+      caso. Mientras la atención siga abierta lo vas a poder cambiar; una vez cerrada, no.
     </p>
-    <fieldset class="grupo">
-      <legend>Caso de esta atencion</legend>
+    <fieldset class="opciones-tarjeta">
+      <legend>Caso de esta atención</legend>
       @for (caso of casos(); track caso.id) {
         <label class="opcion-radio">
           <input
@@ -55,16 +69,18 @@
       }
     </fieldset>
     @if (requiereCaso()) {
-      <p class="ayuda">Esta prestacion exige un caso clinico: elegi uno para poder iniciar.</p>
+      <p class="aviso-irreversible">
+        Esta prestación exige un caso clínico: elegí uno para poder iniciar.
+      </p>
     }
-    <div class="acciones">
+    <div class="pie-tarjeta">
       <button
         type="button"
         class="boton"
         [disabled]="requiereCaso() && casoElegido() === null"
         (click)="iniciar()"
       >
-        Iniciar la atencion
+        Iniciar atención
       </button>
     </div>
   </section>
@@ -74,9 +90,9 @@
   <section class="tarjeta" role="alert" aria-labelledby="titulo-problema">
     <h2 id="titulo-problema">
       @if (hayConflicto()) {
-        Otra pestaña guardo antes que vos
+        Otra pestaña guardó antes que vos
       } @else if (problema.causa === 'sesion-cerrada') {
-        La atencion ya estaba cerrada
+        La atención ya estaba cerrada
       } @else {
         No se pudo completar
       }
@@ -91,7 +107,7 @@
     @if (problema.causa === 'caso-requerido' && personaDelTurno(); as persona) {
       <p>
         <a class="enlace" [routerLink]="['/historia-clinica', 'personas', persona]">
-          Abrir un caso en la historia clinica del paciente
+          Abrir un caso en la historia clínica del paciente
         </a>
       </p>
     }
@@ -106,8 +122,8 @@
 
     @if (hayConflicto()) {
       <p class="ayuda">
-        Lo que escribiste sigue en pantalla y no se mando a ningun lado. Al releer vas a ver lo que
-        guardo la otra pestaña <b>al lado</b> de lo tuyo, para elegir con que quedarte.
+        Lo que escribiste sigue en pantalla y no se mandó a ningún lado. Al releer vas a ver lo que
+        guardó la otra pestaña <b>al lado</b> de lo tuyo, para elegir con qué quedarte.
       </p>
       <div class="acciones">
         <button type="button" class="boton" [disabled]="guardando()" (click)="releerParaComparar()">
@@ -124,693 +140,742 @@
 
 @if (notasDelServidor() !== null) {
   <section class="tarjeta" aria-labelledby="titulo-comparacion">
-    <h2 id="titulo-comparacion">Lo que guardo la otra pestaña</h2>
+    <h2 id="titulo-comparacion">Lo que guardó la otra pestaña</h2>
     <p class="ayuda">
-      Esto es lo que hay guardado en el servidor. Tu texto quedo intacto mas abajo: copia de aca lo
-      que falte y volve a guardar.
+      Esto es lo que hay guardado en el servidor. Tu texto quedó intacto más abajo: copiá de acá lo
+      que falte y volvé a guardar.
     </p>
     <pre class="comparacion">{{ notasDelServidor() }}</pre>
     <div class="acciones">
       <button type="button" class="boton boton--secundario" (click)="descartarComparacion()">
-        Ya lo revise
+        Ya lo revisé
       </button>
     </div>
   </section>
 }
 
 @if (sesion(); as atencion) {
-  <section class="tarjeta" aria-labelledby="titulo-atencion">
-    <h2 id="titulo-atencion">
-      @if (cerrada()) {
-        Atencion cerrada
-      } @else {
-        Atencion en curso
-      }
-    </h2>
-
-    <dl class="detalle">
+  <div class="atencion">
+    <div class="atencion__grilla">
       <!--
-        Atencion de un participante de una clase (AKINE-08.05). Sin turno: Turno no es Clase. Su
-        caso lo fijo la derivacion clinica y no se cambia desde aca.
+        Los datos de la atencion. En una columna (tablet) van arriba, que es el orden del DOM; en dos
+        columnas se corren a la derecha, como el panel lateral del lienzo.
       -->
-      @if (esGrupal()) {
-        <dt>Origen</dt>
-        <dd>
-          @if (atencion.claseTitulo) {
-            Participante de la clase grupal <b>{{ atencion.claseTitulo }}</b>
+      <section class="tarjeta atencion__lateral" aria-labelledby="titulo-atencion">
+        <h2 id="titulo-atencion">
+          @if (cerrada()) {
+            Atención cerrada
           } @else {
-            Participante de una clase grupal
+            Atención en curso
           }
-        </dd>
-      }
+        </h2>
 
-      <dt>Iniciada</dt>
-      <dd>{{ instanteEnPalabras(atencion.iniciadaEn) }}</dd>
+        <dl class="datos-atencion">
+          <!--
+            Atencion de un participante de una clase (AKINE-08.05). Sin turno: Turno no es Clase. Su
+            caso lo fijo la derivacion clinica y no se cambia desde aca.
+          -->
+          @if (esGrupal()) {
+            <div>
+              <dt>Origen</dt>
+              <dd>
+                @if (atencion.claseTitulo) {
+                  Participante de la clase grupal <b>{{ atencion.claseTitulo }}</b>
+                } @else {
+                  Participante de una clase grupal
+                }
+              </dd>
+            </div>
+          }
 
-      @if (cerrada()) {
-        <dt>Cerrada</dt>
-        <dd>{{ instanteEnPalabras(atencion.cerradaEn) }}</dd>
+          <div>
+            <dt>Iniciada</dt>
+            <dd>{{ instanteEnPalabras(atencion.iniciadaEn) }}</dd>
+          </div>
+
+          @if (cerrada()) {
+            <div>
+              <dt>Cerrada</dt>
+              <dd>{{ instanteEnPalabras(atencion.cerradaEn) }}</dd>
+            </div>
+
+            <!--
+              El correlativo es por historia clinica, no un id de base: es "la sesion numero 8 de
+              este paciente", que es como el profesional la cuenta.
+            -->
+            <div>
+              <dt>Número de sesión</dt>
+              <dd>
+                <b>Sesión número {{ atencion.numeroSesion }}</b> de este paciente
+              </dd>
+            </div>
+          } @else {
+            <div>
+              <dt>Estado</dt>
+              <dd>{{ atencion.estado }}</dd>
+            </div>
+          }
+
+          <div>
+            <dt>Caso clínico</dt>
+            <dd>
+              @if (atencion.casoId !== undefined) {
+                {{ numeroDeCaso(atencion.casoId) }}
+                @if (atencion.numeroEnCaso !== undefined) {
+                  — sesión número {{ atencion.numeroEnCaso }} del caso
+                }
+              } @else {
+                Sin caso
+              }
+            </dd>
+          </div>
+        </dl>
+
+        @if (casoIgnorado()) {
+          <p class="ayuda" role="status">
+            Esta atención ya estaba iniciada, así que conserva el caso con el que empezó y no el que
+            elegiste. Si corresponde otro, cambialo acá abajo.
+          </p>
+        }
 
         <!--
-          El correlativo es por historia clinica, no un id de base: es "la sesion numero 8 de este
-          paciente", que es como el profesional la cuenta.
+          Cambiar el caso de la atencion abierta (contrato 0.102.0). Es una escritura sobre la version
+          de la sesion: se bloquea mientras otra escritura viaja con esa misma version.
         -->
-        <dt>Numero de sesion</dt>
-        <dd>
-          <b>Sesion numero {{ atencion.numeroSesion }}</b> de este paciente
-        </dd>
-      } @else {
-        <dt>Estado</dt>
-        <dd>{{ atencion.estado }}</dd>
-      }
-
-      <dt>Caso clinico</dt>
-      <dd>
-        @if (atencion.casoId !== undefined) {
-          {{ numeroDeCaso(atencion.casoId) }}
-          @if (atencion.numeroEnCaso !== undefined) {
-            — sesion numero {{ atencion.numeroEnCaso }} del caso
-          }
-        } @else {
-          Sin caso
-        }
-      </dd>
-    </dl>
-
-    @if (casoIgnorado()) {
-      <p class="ayuda" role="status">
-        Esta atencion ya estaba iniciada, asi que conserva el caso con el que empezo y no el que
-        elegiste. Si corresponde otro, cambialo aca abajo.
-      </p>
-    }
-
-    <!--
-      Cambiar el caso de la atencion abierta (contrato 0.102.0). Es una escritura sobre la version
-      de la sesion: se bloquea mientras otra escritura viaja con esa misma version.
-    -->
-    @if (esGrupal() && !cerrada()) {
-      <p class="ayuda">
-        El caso de esta atencion lo fijo la derivacion del participante en la clase, y no se cambia
-        desde aca. Con la atencion abierta la derivacion ya no se puede revertir: si el caso era
-        otro, cerra esta atencion con lo que paso (ausente, si no hubo atencion) y deriva al
-        participante al caso que corresponde.
-      </p>
-    }
-
-    @if (!cerrada() && puedeCambiarCaso()) {
-      <div class="campo">
-        <label for="atencion-caso">Caso clinico de esta atencion</label>
-        <select
-          id="atencion-caso"
-          [disabled]="cambiandoCaso()"
-          (change)="elegirCasoNuevo($any($event.target).value)"
-        >
-          @if (!requiereCaso() || sesion()?.casoId === undefined) {
-            <!--
-              DP-43: si la oferta exige caso, quitarlo es 409. Solo queda la opcion cuando la
-              atencion ya no tiene caso (abierta antes de la regla), para que el selector la refleje.
-            -->
-            <option value="" [selected]="casoNuevo() === null" [disabled]="requiereCaso()">
-              Sin caso
-            </option>
-          }
-          @if (casoActualFueraDeLista(); as actual) {
-            <option [value]="actual" [selected]="casoNuevo() === actual" disabled>
-              {{ numeroDeCaso(actual) }} (ya no esta activo)
-            </option>
-          }
-          @for (caso of casos(); track caso.id) {
-            <option [value]="caso.id" [selected]="casoNuevo() === caso.id">
-              {{ rotuloDeCaso(caso) }}
-            </option>
-          }
-        </select>
-      </div>
-      <div class="acciones">
-        <button
-          type="button"
-          class="boton boton--secundario"
-          [disabled]="
-            casoSinCambios() ||
-            cambiandoCaso() ||
-            guardando() ||
-            tratamientoEnVuelo() ||
-            hayConflicto()
-          "
-          (click)="cambiarCaso()"
-        >
-          @if (cambiandoCaso()) {
-            Guardando el caso…
-          } @else {
-            Guardar el caso
-          }
-        </button>
-      </div>
-      @if (avisoCaso(); as aviso) {
-        <p class="ayuda" role="status">{{ aviso }}</p>
-      }
-    }
-
-    @if (avisoReemplazo(); as aviso) {
-      <p class="estado estado--ok" role="status">{{ aviso }}</p>
-    }
-
-    @if (!cerrada() && !esGrupal() && puedeReasignar()) {
-      <!--
-        DP-43 (U-24): solo el administrador de la sede. Cambia al dueno de la atencion; no da
-        permiso para escribir en la ajena.
-      -->
-      @if (!reemplazando()) {
-        <div class="acciones">
-          <button type="button" class="boton boton--secundario" (click)="abrirReemplazo()">
-            Reemplazar profesional
-          </button>
-        </div>
-      } @else {
-        <section class="tarjeta" aria-labelledby="titulo-reemplazo">
-          <h3 id="titulo-reemplazo">Reemplazar al profesional de esta atencion</h3>
+        @if (esGrupal() && !cerrada()) {
           <p class="ayuda">
-            Otro profesional continua la atencion abierta. Queda registrado quien reemplazo a quien
-            y por que. El turno no cambia.
+            El caso de esta atención lo fijó la derivación del participante en la clase, y no se
+            cambia desde acá. Con la atención abierta la derivación ya no se puede revertir: si el
+            caso era otro, cerrá esta atención con lo que pasó (ausente, si no hubo atención) y
+            derivá al participante al caso que corresponde.
           </p>
+        }
+
+        @if (!cerrada() && puedeCambiarCaso()) {
           <div class="campo">
-            <label for="atencion-profesional-nuevo">Profesional que continua</label>
+            <label for="atencion-caso">Caso clínico de esta atención</label>
             <select
-              id="atencion-profesional-nuevo"
-              (change)="elegirProfesional($any($event.target).value)"
+              id="atencion-caso"
+              [disabled]="cambiandoCaso()"
+              (change)="elegirCasoNuevo($any($event.target).value)"
             >
-              <option value="" [selected]="profesionalNuevo() === null">
-                Elegi un profesional
-              </option>
-              @for (profesional of profesionales(); track profesional.membershipId) {
-                <option
-                  [value]="profesional.membershipId"
-                  [selected]="profesionalNuevo() === profesional.membershipId"
-                  [disabled]="profesional.membershipId === atencion.profesionalId"
-                >
-                  {{ profesional.nombre }}
-                  @if (profesional.membershipId === atencion.profesionalId) {
-                    (atiende ahora)
-                  }
+              @if (!requiereCaso() || sesion()?.casoId === undefined) {
+                <!--
+                  DP-43: si la oferta exige caso, quitarlo es 409. Solo queda la opcion cuando la
+                  atencion ya no tiene caso (abierta antes de la regla), para que el selector la
+                  refleje.
+                -->
+                <option value="" [selected]="casoNuevo() === null" [disabled]="requiereCaso()">
+                  Sin caso
+                </option>
+              }
+              @if (casoActualFueraDeLista(); as actual) {
+                <option [value]="actual" [selected]="casoNuevo() === actual" disabled>
+                  {{ numeroDeCaso(actual) }} (ya no está activo)
+                </option>
+              }
+              @for (caso of casos(); track caso.id) {
+                <option [value]="caso.id" [selected]="casoNuevo() === caso.id">
+                  {{ rotuloDeCaso(caso) }}
                 </option>
               }
             </select>
           </div>
-          <app-confirmacion-con-motivo
-            idCampo="atencion-motivo-reemplazo"
-            titulo="Motivo del reemplazo"
-            etiqueta="Motivo (obligatorio)"
-            textoError="Escribi por que se reemplaza al profesional: es obligatorio."
-            textoConfirmar="Reemplazar"
-            [enviando]="enviandoReemplazo() || reemplazoSinDestino()"
-            (confirmado)="reemplazar($event)"
-            (cancelado)="cancelarReemplazo()"
-          />
-        </section>
-      }
-    }
-
-    @if (!cerrada()) {
-      <fieldset class="grupo">
-        <legend>Cuanto mostrar</legend>
-        <p class="ayuda">
-          Es una decision de esta pantalla sobre cuanto ves, no sobre que hace falta: cambiar de
-          modo no borra nada de lo que ya cargaste, y ningun campo se vuelve obligatorio.
-        </p>
-        <label class="opcion-radio">
-          <input
-            type="radio"
-            name="modo"
-            value="RAPIDA"
-            [checked]="!completa()"
-            (change)="cambiarModo(false)"
-          />
-          Sesion rapida
-        </label>
-        <label class="opcion-radio">
-          <input
-            type="radio"
-            name="modo"
-            value="COMPLETA"
-            [checked]="completa()"
-            (change)="cambiarModo(true)"
-          />
-          Evaluacion completa
-        </label>
-      </fieldset>
-    }
-  </section>
-}
-
-<!--
-  Modo lectura. Una sesion cerrada NO se edita: el borrador y la evaluacion devuelven 409
-  `sesion-cerrada`, asi que dejar los campos en pantalla seria ofrecer un guardado que el
-  servidor rechaza siempre. Lo que queda es lo que se registro.
--->
-@if (cerrada() && sesion(); as atencion) {
-  <section class="tarjeta" aria-labelledby="titulo-cerrada">
-    <h2 id="titulo-cerrada">Lo que quedo registrado</h2>
-
-    <p class="ayuda">
-      Esta atencion ya no se edita. Corregirla es una <b>enmienda</b>: con un motivo obligatorio, y
-      dejando la version anterior intacta y consultable.
-      @if (atencion.fueEnmendada) {
-        <b>Esta atencion ya fue enmendada</b>: lo que se ve aca es la ultima version.
-      }
-    </p>
-
-    @if (atencion.enmendableHasta) {
-      <p class="ayuda">
-        Se puede enmendar hasta el {{ instanteEnPalabras(atencion.enmendableHasta) }}.
-      </p>
-    }
-
-    <div class="acciones">
-      <a class="boton" [routerLink]="['/atencion', 'sesiones', atencion.id, 'enmienda']">
-        Enmendar esta atencion
-      </a>
-      <a
-        class="boton boton--secundario"
-        [routerLink]="['/atencion', 'sesiones', atencion.id, 'versiones']"
-      >
-        Ver las versiones
-      </a>
-    </div>
-
-    @if (atencion.cierre; as cierre) {
-      <dl class="detalle">
-        <dt>Asistencia</dt>
-        <dd>{{ etiquetaDeAsistencia(cierre.asistencia) }}</dd>
-
-        @if (cierre.notaDeCierre) {
-          <dt>Nota de cierre</dt>
-          <dd>{{ cierre.notaDeCierre }}</dd>
+          <div class="acciones">
+            <button
+              type="button"
+              class="boton boton--secundario"
+              [disabled]="
+                casoSinCambios() ||
+                cambiandoCaso() ||
+                guardando() ||
+                tratamientoEnVuelo() ||
+                hayConflicto()
+              "
+              (click)="cambiarCaso()"
+            >
+              @if (cambiandoCaso()) {
+                Guardando el caso…
+              } @else {
+                Guardar el caso
+              }
+            </button>
+          </div>
+          @if (avisoCaso(); as aviso) {
+            <p class="ayuda" role="status">{{ aviso }}</p>
+          }
         }
-        @if (cierre.respuestaTratamiento) {
-          <dt>Respuesta al tratamiento</dt>
-          <dd>{{ cierre.respuestaTratamiento }}</dd>
+
+        @if (avisoReemplazo(); as aviso) {
+          <p class="estado estado--ok" role="status">{{ aviso }}</p>
         }
-        @if (cierre.tolerancia) {
-          <dt>Tolerancia</dt>
-          <dd>{{ etiquetaDeTolerancia(cierre.tolerancia) }}</dd>
+
+        @if (!cerrada() && !esGrupal() && puedeReasignar()) {
+          <!--
+            DP-43 (U-24): solo el administrador de la sede. Cambia al dueno de la atencion; no da
+            permiso para escribir en la ajena.
+          -->
+          @if (!reemplazando()) {
+            <div class="acciones">
+              <button type="button" class="boton-texto" (click)="abrirReemplazo()">
+                Reemplazar profesional
+              </button>
+            </div>
+          } @else {
+            <hr class="separador" />
+            <section aria-labelledby="titulo-reemplazo">
+              <h3 id="titulo-reemplazo">Reemplazar al profesional de esta atención</h3>
+              <p class="ayuda">
+                Otro profesional continúa la atención abierta. Queda registrado quién reemplazó a
+                quién y por qué. El turno no cambia.
+              </p>
+              <div class="campo">
+                <label for="atencion-profesional-nuevo">Profesional que continúa</label>
+                <select
+                  id="atencion-profesional-nuevo"
+                  (change)="elegirProfesional($any($event.target).value)"
+                >
+                  <option value="" [selected]="profesionalNuevo() === null">
+                    Elegí un profesional
+                  </option>
+                  @for (profesional of profesionales(); track profesional.membershipId) {
+                    <option
+                      [value]="profesional.membershipId"
+                      [selected]="profesionalNuevo() === profesional.membershipId"
+                      [disabled]="profesional.membershipId === atencion.profesionalId"
+                    >
+                      {{ profesional.nombre }}
+                      @if (profesional.membershipId === atencion.profesionalId) {
+                        (atiende ahora)
+                      }
+                    </option>
+                  }
+                </select>
+              </div>
+              <app-confirmacion-con-motivo
+                idCampo="atencion-motivo-reemplazo"
+                titulo="Motivo del reemplazo"
+                etiqueta="Motivo (obligatorio)"
+                textoError="Escribí por qué se reemplaza al profesional: es obligatorio."
+                textoConfirmar="Reemplazar"
+                [enviando]="enviandoReemplazo() || reemplazoSinDestino()"
+                (confirmado)="reemplazar($event)"
+                (cancelado)="cancelarReemplazo()"
+              />
+            </section>
+          }
         }
-        @if (cierre.indicaciones) {
-          <dt>Indicaciones</dt>
-          <dd>{{ cierre.indicaciones }}</dd>
-        }
-        @if (cierre.proximaConducta) {
-          <dt>Proxima conducta</dt>
-          <dd>{{ etiquetaDeConducta(cierre.proximaConducta) }}</dd>
-        }
-      </dl>
-    }
+      </section>
 
-    @if (notasDelBorrador(atencion.borrador); as notasGuardadas) {
-      <h3 class="panel__titulo">Notas de la atencion</h3>
-      <pre class="comparacion">{{ notasGuardadas }}</pre>
-    }
-  </section>
+      <div class="atencion__principal">
+        <!--
+          Modo lectura. Una sesion cerrada NO se edita: el borrador y la evaluacion devuelven 409
+          `sesion-cerrada`, asi que dejar los campos en pantalla seria ofrecer un guardado que el
+          servidor rechaza siempre. Lo que queda es lo que se registro.
+        -->
+        @if (cerrada()) {
+          <section class="tarjeta" aria-labelledby="titulo-cerrada">
+            <h2 id="titulo-cerrada">Lo que quedó registrado</h2>
 
-  @if (bloques(); as b) {
-    <app-mediciones-de-sesion
-      [consultorioId]="b.consultorioId"
-      [sesionId]="b.sesionId"
-      [editable]="false"
-    />
-    <app-tratamientos-de-sesion
-      [consultorioId]="b.consultorioId"
-      [sesionId]="b.sesionId"
-      [editable]="false"
-    />
-  }
-}
+            <p class="aviso-irreversible">
+              Esta atención ya no se edita. Corregirla es una <b>enmienda</b>: con un motivo
+              obligatorio, y dejando la versión anterior intacta y consultable.
+              @if (atencion.fueEnmendada) {
+                <b>Esta atención ya fue enmendada</b>: lo que se ve acá es la última versión.
+              }
+              @if (atencion.enmendableHasta) {
+                <br />Se puede enmendar hasta el {{ instanteEnPalabras(atencion.enmendableHasta) }}.
+              }
+            </p>
 
-@if (!cerrada() && sesion()) {
-  <section class="tarjeta" aria-labelledby="titulo-evaluacion">
-    <h2 id="titulo-evaluacion">Evaluacion</h2>
+            @if (atencion.cierre; as cierre) {
+              <dl class="datos-atencion">
+                <div>
+                  <dt>Asistencia</dt>
+                  <dd>{{ etiquetaDeAsistencia(cierre.asistencia) }}</dd>
+                </div>
 
-    <p class="ayuda">
-      Ningun campo de esta pantalla es obligatorio. Un seguimiento normal se carga con el dolor y la
-      evolucion, y con eso alcanza.
-    </p>
+                @if (cierre.notaDeCierre) {
+                  <div>
+                    <dt>Nota de cierre</dt>
+                    <dd>{{ cierre.notaDeCierre }}</dd>
+                  </div>
+                }
+                @if (cierre.respuestaTratamiento) {
+                  <div>
+                    <dt>Respuesta al tratamiento</dt>
+                    <dd>{{ cierre.respuestaTratamiento }}</dd>
+                  </div>
+                }
+                @if (cierre.tolerancia) {
+                  <div>
+                    <dt>Tolerancia</dt>
+                    <dd>{{ etiquetaDeTolerancia(cierre.tolerancia) }}</dd>
+                  </div>
+                }
+                @if (cierre.indicaciones) {
+                  <div>
+                    <dt>Indicaciones</dt>
+                    <dd>{{ cierre.indicaciones }}</dd>
+                  </div>
+                }
+                @if (cierre.proximaConducta) {
+                  <div>
+                    <dt>Próxima conducta</dt>
+                    <dd>{{ etiquetaDeConducta(cierre.proximaConducta) }}</dd>
+                  </div>
+                }
+              </dl>
+            }
 
-    <fieldset class="grupo">
-      <legend>Dolor (escala 0 a 10)</legend>
+            @if (notasDelBorrador(atencion.borrador); as notasGuardadas) {
+              <h3 class="panel__titulo">Notas de la atención</h3>
+              <pre class="comparacion">{{ notasGuardadas }}</pre>
+            }
 
-      <p class="previa" [class.previa--vacia]="!hayPrevia()">
-        @if (hayPrevia()) {
-          <span class="previa__rotulo">La vez pasada:</span> {{ previa() }}
+            <div class="pie-tarjeta">
+              <a
+                class="boton boton--secundario"
+                [routerLink]="['/atencion', 'sesiones', atencion.id, 'versiones']"
+              >
+                Ver las versiones
+              </a>
+              <a class="boton" [routerLink]="['/atencion', 'sesiones', atencion.id, 'enmienda']">
+                Enmendar esta atención
+              </a>
+            </div>
+          </section>
+
+          @if (bloques(); as b) {
+            <app-mediciones-de-sesion
+              [consultorioId]="b.consultorioId"
+              [sesionId]="b.sesionId"
+              [editable]="false"
+            />
+            <app-tratamientos-de-sesion
+              [consultorioId]="b.consultorioId"
+              [sesionId]="b.sesionId"
+              [editable]="false"
+            />
+          }
         } @else {
-          Primera sesion evaluada de este paciente: no hay una anterior con que comparar.
-        }
-      </p>
+          <section class="tarjeta paso" aria-labelledby="titulo-evaluacion">
+            <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
+              <h2 id="titulo-evaluacion" class="paso__titulo">Evaluación</h2>
+              <app-ayuda titulo="Evaluación">
+                <p>
+                  Ningún campo de esta pantalla es obligatorio. Un seguimiento normal se carga con
+                  el dolor y la evolución, y con eso alcanza.
+                </p>
+                <p>
+                  <b>Sesión rápida</b> y <b>Evaluación completa</b> deciden cuánto ves, no qué hace
+                  falta: cambiar de modo no borra nada de lo que ya cargaste, y ningún campo se
+                  vuelve obligatorio.
+                </p>
+              </app-ayuda>
+              <fieldset class="segmentado paso__extremo">
+                <legend>Cuánto mostrar</legend>
+                <label class="segmentado__opcion">
+                  <input
+                    type="radio"
+                    name="modo"
+                    value="RAPIDA"
+                    [checked]="!completa()"
+                    (change)="cambiarModo(false)"
+                  />
+                  Sesión rápida
+                </label>
+                <label class="segmentado__opcion">
+                  <input
+                    type="radio"
+                    name="modo"
+                    value="COMPLETA"
+                    [checked]="completa()"
+                    (change)="cambiarModo(true)"
+                  />
+                  Evaluación completa
+                </label>
+              </fieldset>
+            </div>
 
-      <div class="escala">
-        @for (valor of escala; track valor) {
-          <button
-            type="button"
-            class="escala__paso"
-            [attr.aria-pressed]="dolorEva() === valor"
-            [attr.aria-label]="valor + ' de 10'"
-            (click)="elegirDolor(valor)"
-          >
-            {{ valor }}
-          </button>
-        }
-      </div>
-      <p class="ayuda">Volve a apretar el numero elegido para dejarlo sin cargar.</p>
-    </fieldset>
+            <fieldset class="grupo-plano">
+              <legend>Dolor (EVA, escala 0 a 10)</legend>
 
-    <div class="campo">
-      <label for="atencion-zona">Zona <span class="campo__opcional">(opcional)</span></label>
-      <input
-        id="atencion-zona"
-        name="atencion-zona"
-        type="text"
-        list="atencion-zonas"
-        maxlength="120"
-        [value]="dolorZona()"
-        aria-describedby="ayuda-zona"
-        (input)="dolorZona.set($any($event.target).value)"
-      />
-      <datalist id="atencion-zonas">
-        @for (zona of zonas; track zona) {
-          <option [value]="zona"></option>
-        }
-      </datalist>
-      <p id="ayuda-zona" class="ayuda">
-        Escribi la que quieras: la lista es solo una sugerencia.
-        @if (faltaZona()) {
-          <b>Elegiste un lado sin decir de que zona, y el servidor va a rechazarlo.</b>
-        }
-      </p>
-    </div>
+              <p class="previa" [class.previa--vacia]="!hayPrevia()">
+                @if (hayPrevia()) {
+                  <span class="previa__rotulo">La vez pasada:</span> {{ previa() }}
+                } @else {
+                  Primera sesión evaluada de este paciente: no hay una anterior con qué comparar.
+                }
+              </p>
 
-    <div class="campo">
-      <label for="atencion-lateralidad">
-        Lateralidad <span class="campo__opcional">(opcional)</span>
-      </label>
-      <select
-        id="atencion-lateralidad"
-        name="atencion-lateralidad"
-        aria-describedby="ayuda-lateralidad"
-        (change)="elegirLateralidad($any($event.target).value)"
-      >
-        <option value="" [selected]="dolorLateralidad() === null">Sin cargar</option>
-        @for (opcion of lateralidades; track opcion.valor) {
-          <option [value]="opcion.valor" [selected]="dolorLateralidad() === opcion.valor">
-            {{ opcion.etiqueta }}
-          </option>
-        }
-      </select>
-      <p id="ayuda-lateralidad" class="ayuda">
-        <b>«No aplica» no es lo mismo que dejarlo sin cargar</b>: una zona central no tiene lado, y
-        decirlo distingue «no corresponde» de «no lo cargue».
-      </p>
-    </div>
+              <div class="escala">
+                @for (valor of escala; track valor) {
+                  <button
+                    type="button"
+                    class="escala__paso"
+                    [attr.aria-pressed]="dolorEva() === valor"
+                    [attr.aria-label]="valor + ' de 10'"
+                    (click)="elegirDolor(valor)"
+                  >
+                    {{ valor }}
+                  </button>
+                }
+              </div>
+              <p class="ayuda">Volvé a apretar el número elegido para dejarlo sin cargar.</p>
+            </fieldset>
 
-    <fieldset class="grupo">
-      <legend>Evolucion respecto de la sesion anterior</legend>
-      <div class="chips">
-        @for (opcion of evoluciones; track opcion.valor) {
-          <button
-            type="button"
-            class="chip"
-            [attr.aria-pressed]="evolucion() === opcion.valor"
-            (click)="elegirEvolucion(opcion.valor)"
-          >
-            {{ opcion.etiqueta }}
-          </button>
-        }
-      </div>
-      <p class="ayuda">
-        «Sin referencia» es el de la primera sesion: decir «igual» cuando no hay contra que comparar
-        seria inventar un dato clinico.
-      </p>
-    </fieldset>
+            <div class="grilla-campos grilla-campos--dos">
+              <div class="campo">
+                <label for="atencion-zona"
+                  >Zona <span class="campo__opcional">(opcional)</span></label
+                >
+                <input
+                  id="atencion-zona"
+                  name="atencion-zona"
+                  type="text"
+                  list="atencion-zonas"
+                  maxlength="120"
+                  [value]="dolorZona()"
+                  aria-describedby="ayuda-zona"
+                  (input)="dolorZona.set($any($event.target).value)"
+                />
+                <datalist id="atencion-zonas">
+                  @for (zona of zonas; track zona) {
+                    <option [value]="zona"></option>
+                  }
+                </datalist>
+                <p id="ayuda-zona" class="ayuda">
+                  Escribí la que quieras: la lista es solo una sugerencia.
+                  @if (faltaZona()) {
+                    <b>Elegiste un lado sin decir de qué zona, y el servidor va a rechazarlo.</b>
+                  }
+                </p>
+              </div>
 
-    <div class="campo">
-      <label for="atencion-objetivo">
-        Objetivo de esta sesion <span class="campo__opcional">(opcional)</span>
-      </label>
-      <input
-        id="atencion-objetivo"
-        name="atencion-objetivo"
-        type="text"
-        maxlength="500"
-        [value]="objetivoSesion()"
-        (input)="objetivoSesion.set($any($event.target).value)"
-      />
-    </div>
+              <div class="campo">
+                <label for="atencion-lateralidad">
+                  Lateralidad <span class="campo__opcional">(opcional)</span>
+                </label>
+                <select
+                  id="atencion-lateralidad"
+                  name="atencion-lateralidad"
+                  aria-describedby="ayuda-lateralidad"
+                  (change)="elegirLateralidad($any($event.target).value)"
+                >
+                  <option value="" [selected]="dolorLateralidad() === null">Sin cargar</option>
+                  @for (opcion of lateralidades; track opcion.valor) {
+                    <option [value]="opcion.valor" [selected]="dolorLateralidad() === opcion.valor">
+                      {{ opcion.etiqueta }}
+                    </option>
+                  }
+                </select>
+                <p id="ayuda-lateralidad" class="ayuda">
+                  <b>«No aplica» no es lo mismo que dejarlo sin cargar</b>: una zona central no
+                  tiene lado, y decirlo distingue «no corresponde» de «no lo cargué».
+                </p>
+              </div>
+            </div>
 
-    @if (completa()) {
-      <div class="campo">
-        <label for="atencion-motivo">
-          Motivo clinico <span class="campo__opcional">(opcional)</span>
-        </label>
-        <input
-          id="atencion-motivo"
-          name="atencion-motivo"
-          type="text"
-          maxlength="500"
-          [value]="motivoClinico()"
-          aria-describedby="ayuda-motivo"
-          (input)="motivoClinico.set($any($event.target).value)"
-        />
-        <p id="ayuda-motivo" class="ayuda">
-          Lo que trae al paciente, en tus palabras. <b>No es un diagnostico</b>: el diagnostico es
-          un acto medico que este sistema no registra.
-        </p>
-      </div>
+            <fieldset class="grupo-plano">
+              <legend>Evolución respecto de la sesión anterior</legend>
+              <div class="chips">
+                @for (opcion of evoluciones; track opcion.valor) {
+                  <button
+                    type="button"
+                    class="chip"
+                    [attr.aria-pressed]="evolucion() === opcion.valor"
+                    (click)="elegirEvolucion(opcion.valor)"
+                  >
+                    {{ opcion.etiqueta }}
+                  </button>
+                }
+              </div>
+              <p class="ayuda">
+                «Sin referencia» es el de la primera sesión: decir «igual» cuando no hay contra qué
+                comparar sería inventar un dato clínico.
+              </p>
+            </fieldset>
 
-      <div class="campo">
-        <label for="atencion-limitacion">
-          Limitacion funcional <span class="campo__opcional">(opcional)</span>
-        </label>
-        <input
-          id="atencion-limitacion"
-          name="atencion-limitacion"
-          type="text"
-          maxlength="500"
-          [value]="limitacionFuncional()"
-          (input)="limitacionFuncional.set($any($event.target).value)"
-        />
-      </div>
-    }
+            <div class="campo">
+              <label for="atencion-objetivo">
+                Objetivo de esta sesión <span class="campo__opcional">(opcional)</span>
+              </label>
+              <input
+                id="atencion-objetivo"
+                name="atencion-objetivo"
+                type="text"
+                maxlength="500"
+                [value]="objetivoSesion()"
+                (input)="objetivoSesion.set($any($event.target).value)"
+              />
+            </div>
 
-    <div class="acciones">
-      <button
-        type="button"
-        class="boton"
-        [disabled]="guardando() || tratamientoEnVuelo()"
-        (click)="guardarEvaluacion()"
-      >
-        Guardar evaluacion
-      </button>
-    </div>
-  </section>
+            @if (completa()) {
+              <div class="grilla-campos grilla-campos--dos">
+                <div class="campo">
+                  <label for="atencion-motivo">
+                    Motivo clínico <span class="campo__opcional">(opcional)</span>
+                  </label>
+                  <input
+                    id="atencion-motivo"
+                    name="atencion-motivo"
+                    type="text"
+                    maxlength="500"
+                    [value]="motivoClinico()"
+                    aria-describedby="ayuda-motivo"
+                    (input)="motivoClinico.set($any($event.target).value)"
+                  />
+                  <p id="ayuda-motivo" class="ayuda">
+                    Lo que trae al paciente, en tus palabras. <b>No es un diagnóstico</b>: el
+                    diagnóstico es un acto médico que este sistema no registra.
+                  </p>
+                </div>
 
-  @if (bloques(); as b) {
-    <app-mediciones-de-sesion
-      [consultorioId]="b.consultorioId"
-      [sesionId]="b.sesionId"
-      (problema)="problemaDeBloque($event)"
-    />
-    <app-tratamientos-de-sesion
-      [consultorioId]="b.consultorioId"
-      [organizationId]="organizationId()"
-      [sesionId]="b.sesionId"
-      [ofertaId]="b.ofertaId"
-      [version]="version()"
-      [ocupado]="guardando() || cambiandoCaso() || hayConflicto()"
-      (versionCambio)="adoptarVersion($event)"
-      (enVuelo)="tratamientoEnVuelo.set($event)"
-      (problema)="problemaDeBloque($event)"
-    />
-  }
+                <div class="campo">
+                  <label for="atencion-limitacion">
+                    Limitación funcional <span class="campo__opcional">(opcional)</span>
+                  </label>
+                  <input
+                    id="atencion-limitacion"
+                    name="atencion-limitacion"
+                    type="text"
+                    maxlength="500"
+                    [value]="limitacionFuncional()"
+                    (input)="limitacionFuncional.set($any($event.target).value)"
+                  />
+                </div>
+              </div>
+            }
 
-  <section class="tarjeta" aria-labelledby="titulo-notas">
-    <h2 id="titulo-notas">Notas de la atencion</h2>
+            <div class="pie-tarjeta">
+              <button
+                type="button"
+                class="boton boton--secundario"
+                [disabled]="guardando() || tratamientoEnVuelo()"
+                (click)="guardarEvaluacion()"
+              >
+                Guardar evaluación
+              </button>
+            </div>
+          </section>
 
-    <div class="campo">
-      <label for="atencion-notas">
-        Lo que quieras anotar <span class="campo__opcional">(opcional)</span>
-      </label>
-      <textarea
-        id="atencion-notas"
-        name="atencion-notas"
-        rows="6"
-        maxlength="65000"
-        aria-describedby="ayuda-notas"
-        [value]="notas()"
-        (input)="escribirNotas($any($event.target).value)"
-      ></textarea>
-      <p id="ayuda-notas" class="ayuda">
-        Se guarda solo despues de un momento sin escribir. Si hubo un conflicto con otra pestaña, el
-        guardado automatico se frena hasta que lo resuelvas: lo que escribas mientras tanto no se
-        pierde, pero tampoco se manda.
-      </p>
-    </div>
-
-    <div class="acciones">
-      <button
-        type="button"
-        class="boton boton--secundario"
-        [disabled]="guardando() || tratamientoEnVuelo()"
-        (click)="guardarBorrador()"
-      >
-        Guardar ahora
-      </button>
-      @if (guardadoEn(); as cuando) {
-        <p class="ayuda" aria-live="polite">Ultimo guardado: {{ cuando }}</p>
-      }
-    </div>
-  </section>
-
-  <!--
-    Cierre de la atencion (AKINE-06.05). Dos obligatorios y nada mas: la asistencia siempre, y la
-    nota SOLO si el paciente vino. Todo lo demas se rotula "(opcional)" porque lo es: obligar a
-    completarlo para poder cerrar una sesion que ya termino produce campos rellenados por tramite,
-    que despues no se pueden leer como dato clinico.
-  -->
-  <section class="tarjeta" aria-labelledby="titulo-cierre">
-    <h2 id="titulo-cierre">Cerrar la atencion</h2>
-
-    <p class="ayuda">
-      Cerrar le asigna a esta sesion su numero dentro de la historia clinica del paciente, y la deja
-      sin poder editarse. <b>No cobra nada</b>: lo economico se maneja aparte.
-    </p>
-
-    <fieldset class="grupo">
-      <legend>Asistencia</legend>
-      <p class="ayuda">
-        Es lo unico que el cierre siempre necesita: sin esto no se sabe si hubo prestacion.
-        <b>Que no haya venido tambien es un cierre valido</b>, y es lo que evita que el turno quede
-        abierto para siempre.
-      </p>
-      @for (opcion of asistencias; track opcion.valor) {
-        <label class="opcion-radio">
-          <input
-            type="radio"
-            name="asistencia"
-            [value]="opcion.valor"
-            [checked]="asistencia() === opcion.valor"
-            (change)="elegirAsistencia(opcion.valor)"
-          />
-          {{ opcion.etiqueta }}
-        </label>
-      }
-    </fieldset>
-
-    @if (presente()) {
-      <div class="campo">
-        <label for="cierre-nota">Nota de cierre</label>
-        <textarea
-          id="cierre-nota"
-          name="cierre-nota"
-          rows="4"
-          maxlength="2000"
-          aria-describedby="ayuda-cierre-nota"
-          [attr.aria-invalid]="faltaNota() && avisoCierre() !== null"
-          [value]="notaDeCierre()"
-          (input)="notaDeCierre.set($any($event.target).value)"
-        ></textarea>
-        <p id="ayuda-cierre-nota" class="ayuda">
-          Que se hizo en la sesion. Hace falta porque el paciente vino: es lo unico que registra la
-          prestacion.
-        </p>
-      </div>
-
-      <div class="campo">
-        <label for="cierre-respuesta">
-          Respuesta al tratamiento <span class="campo__opcional">(opcional)</span>
-        </label>
-        <input
-          id="cierre-respuesta"
-          name="cierre-respuesta"
-          type="text"
-          maxlength="500"
-          [value]="respuestaTratamiento()"
-          (input)="respuestaTratamiento.set($any($event.target).value)"
-        />
-      </div>
-
-      <div class="campo">
-        <label for="cierre-tolerancia">
-          Tolerancia <span class="campo__opcional">(opcional)</span>
-        </label>
-        <select
-          id="cierre-tolerancia"
-          name="cierre-tolerancia"
-          aria-describedby="ayuda-cierre-tolerancia"
-          (change)="elegirTolerancia($any($event.target).value)"
-        >
-          <option value="" [selected]="tolerancia() === null">Sin cargar</option>
-          @for (opcion of tolerancias; track opcion.valor) {
-            <option [value]="opcion.valor" [selected]="tolerancia() === opcion.valor">
-              {{ opcion.etiqueta }}
-            </option>
+          @if (bloques(); as b) {
+            <app-mediciones-de-sesion
+              [consultorioId]="b.consultorioId"
+              [sesionId]="b.sesionId"
+              (problema)="problemaDeBloque($event)"
+            />
+            <app-tratamientos-de-sesion
+              [consultorioId]="b.consultorioId"
+              [organizationId]="organizationId()"
+              [sesionId]="b.sesionId"
+              [ofertaId]="b.ofertaId"
+              [version]="version()"
+              [ocupado]="guardando() || cambiandoCaso() || hayConflicto()"
+              (versionCambio)="adoptarVersion($event)"
+              (enVuelo)="tratamientoEnVuelo.set($event)"
+              (problema)="problemaDeBloque($event)"
+            />
           }
-        </select>
-        <p id="ayuda-cierre-tolerancia" class="ayuda">
-          Como tolero lo que se le hizo. <b>Es distinto del resultado</b>: se puede tolerar mal algo
-          que funciona.
-        </p>
+
+          <section class="tarjeta paso" aria-labelledby="titulo-notas">
+            <h2 id="titulo-notas" class="paso__titulo">Notas de la atención</h2>
+
+            <div class="campo">
+              <label for="atencion-notas">
+                Lo que quieras anotar <span class="campo__opcional">(opcional)</span>
+              </label>
+              <textarea
+                id="atencion-notas"
+                name="atencion-notas"
+                rows="6"
+                maxlength="65000"
+                aria-describedby="ayuda-notas"
+                [value]="notas()"
+                (input)="escribirNotas($any($event.target).value)"
+              ></textarea>
+              <p id="ayuda-notas" class="ayuda">
+                Se guarda solo después de un momento sin escribir. Si hubo un conflicto con otra
+                pestaña, el guardado automático se frena hasta que lo resuelvas: lo que escribas
+                mientras tanto no se pierde, pero tampoco se manda.
+              </p>
+            </div>
+
+            <div class="pie-tarjeta">
+              @if (guardadoEn(); as cuando) {
+                <p class="ayuda pie-tarjeta__nota" aria-live="polite">
+                  ✓ Último guardado: {{ cuando }}
+                </p>
+              }
+              <button
+                type="button"
+                class="boton boton--secundario"
+                [disabled]="guardando() || tratamientoEnVuelo()"
+                (click)="guardarBorrador()"
+              >
+                Guardar ahora
+              </button>
+            </div>
+          </section>
+
+          <!--
+            Cierre de la atencion (AKINE-06.05). Dos obligatorios y nada mas: la asistencia siempre, y
+            la nota SOLO si el paciente vino. Todo lo demas se rotula "(opcional)" porque lo es: obligar
+            a completarlo para poder cerrar una sesion que ya termino produce campos rellenados por
+            tramite, que despues no se pueden leer como dato clinico.
+          -->
+          <section class="tarjeta paso" aria-labelledby="titulo-cierre">
+            <h2 id="titulo-cierre" class="paso__titulo">Cerrar la atención</h2>
+
+            <fieldset class="grupo-plano">
+              <legend>Asistencia</legend>
+              <p class="ayuda">
+                Es lo único que el cierre siempre necesita: sin esto no se sabe si hubo prestación.
+                <b>Que no haya venido también es un cierre válido</b>, y es lo que evita que el
+                turno quede abierto para siempre.
+              </p>
+              <div class="segmentado">
+                @for (opcion of asistencias; track opcion.valor) {
+                  <label class="segmentado__opcion">
+                    <input
+                      type="radio"
+                      name="asistencia"
+                      [value]="opcion.valor"
+                      [checked]="asistencia() === opcion.valor"
+                      (change)="elegirAsistencia(opcion.valor)"
+                    />
+                    {{ opcion.etiqueta }}
+                  </label>
+                }
+              </div>
+            </fieldset>
+
+            @if (presente()) {
+              <div class="campo">
+                <label for="cierre-nota">Nota de cierre</label>
+                <textarea
+                  id="cierre-nota"
+                  name="cierre-nota"
+                  rows="4"
+                  maxlength="2000"
+                  aria-describedby="ayuda-cierre-nota"
+                  [attr.aria-invalid]="faltaNota() && avisoCierre() !== null"
+                  [value]="notaDeCierre()"
+                  (input)="notaDeCierre.set($any($event.target).value)"
+                ></textarea>
+                <p id="ayuda-cierre-nota" class="ayuda">
+                  Qué se hizo en la sesión. Hace falta porque el paciente vino: es lo único que
+                  registra la prestación.
+                </p>
+              </div>
+
+              <div class="grilla-campos grilla-campos--dos">
+                <div class="campo">
+                  <label for="cierre-respuesta">
+                    Respuesta al tratamiento <span class="campo__opcional">(opcional)</span>
+                  </label>
+                  <input
+                    id="cierre-respuesta"
+                    name="cierre-respuesta"
+                    type="text"
+                    maxlength="500"
+                    [value]="respuestaTratamiento()"
+                    (input)="respuestaTratamiento.set($any($event.target).value)"
+                  />
+                </div>
+
+                <div class="campo">
+                  <label for="cierre-tolerancia">
+                    Tolerancia <span class="campo__opcional">(opcional)</span>
+                  </label>
+                  <select
+                    id="cierre-tolerancia"
+                    name="cierre-tolerancia"
+                    aria-describedby="ayuda-cierre-tolerancia"
+                    (change)="elegirTolerancia($any($event.target).value)"
+                  >
+                    <option value="" [selected]="tolerancia() === null">Sin cargar</option>
+                    @for (opcion of tolerancias; track opcion.valor) {
+                      <option [value]="opcion.valor" [selected]="tolerancia() === opcion.valor">
+                        {{ opcion.etiqueta }}
+                      </option>
+                    }
+                  </select>
+                  <p id="ayuda-cierre-tolerancia" class="ayuda">
+                    Cómo toleró lo que se le hizo. <b>Es distinto del resultado</b>: se puede
+                    tolerar mal algo que funciona.
+                  </p>
+                </div>
+
+                <div class="campo">
+                  <label for="cierre-indicaciones">
+                    Indicaciones <span class="campo__opcional">(opcional)</span>
+                  </label>
+                  <textarea
+                    id="cierre-indicaciones"
+                    name="cierre-indicaciones"
+                    rows="3"
+                    maxlength="1000"
+                    aria-describedby="ayuda-cierre-indicaciones"
+                    [value]="indicaciones()"
+                    (input)="indicaciones.set($any($event.target).value)"
+                  ></textarea>
+                  <p id="ayuda-cierre-indicaciones" class="ayuda">Lo que el paciente se lleva.</p>
+                </div>
+
+                <div class="campo">
+                  <label for="cierre-conducta">
+                    Próxima conducta <span class="campo__opcional">(opcional)</span>
+                  </label>
+                  <select
+                    id="cierre-conducta"
+                    name="cierre-conducta"
+                    aria-describedby="ayuda-cierre-conducta"
+                    (change)="elegirConducta($any($event.target).value)"
+                  >
+                    <option value="" [selected]="proximaConducta() === null">Sin cargar</option>
+                    @for (opcion of conductas; track opcion.valor) {
+                      <option
+                        [value]="opcion.valor"
+                        [selected]="proximaConducta() === opcion.valor"
+                      >
+                        {{ opcion.etiqueta }}
+                      </option>
+                    }
+                  </select>
+                  <p id="ayuda-cierre-conducta" class="ayuda">
+                    Qué sigue. Es lo que convierte una sesión suelta en un tratamiento, y se puede
+                    dejar sin cargar si todavía no se decidió.
+                  </p>
+                </div>
+              </div>
+            } @else if (asistencia() !== null) {
+              <p class="ayuda">
+                No vino, así que no hay nada más que completar: pedir el resultado de una atención
+                que no ocurrió sería pedir que se invente.
+              </p>
+            }
+
+            <!-- Lo irreversible, a la vista y arriba del boton que lo dispara. -->
+            <p class="aviso-irreversible">
+              Cerrar le asigna a esta sesión su número dentro de la historia clínica del paciente, y
+              la deja sin poder editarse: después solo se corrige con una enmienda.
+              <b>No cobra nada</b>: lo económico se maneja aparte.
+            </p>
+
+            @if (avisoCierre(); as aviso) {
+              <p class="estado estado--error" role="alert">{{ aviso }}</p>
+            }
+
+            <div class="pie-tarjeta">
+              <button type="button" class="boton" [disabled]="cerrando()" (click)="cerrar()">
+                Cerrar la atención
+              </button>
+            </div>
+          </section>
+        }
       </div>
-
-      <div class="campo">
-        <label for="cierre-indicaciones">
-          Indicaciones <span class="campo__opcional">(opcional)</span>
-        </label>
-        <textarea
-          id="cierre-indicaciones"
-          name="cierre-indicaciones"
-          rows="3"
-          maxlength="1000"
-          aria-describedby="ayuda-cierre-indicaciones"
-          [value]="indicaciones()"
-          (input)="indicaciones.set($any($event.target).value)"
-        ></textarea>
-        <p id="ayuda-cierre-indicaciones" class="ayuda">Lo que el paciente se lleva.</p>
-      </div>
-
-      <div class="campo">
-        <label for="cierre-conducta">
-          Proxima conducta <span class="campo__opcional">(opcional)</span>
-        </label>
-        <select
-          id="cierre-conducta"
-          name="cierre-conducta"
-          aria-describedby="ayuda-cierre-conducta"
-          (change)="elegirConducta($any($event.target).value)"
-        >
-          <option value="" [selected]="proximaConducta() === null">Sin cargar</option>
-          @for (opcion of conductas; track opcion.valor) {
-            <option [value]="opcion.valor" [selected]="proximaConducta() === opcion.valor">
-              {{ opcion.etiqueta }}
-            </option>
-          }
-        </select>
-        <p id="ayuda-cierre-conducta" class="ayuda">
-          Que sigue. Es lo que convierte una sesion suelta en un tratamiento, y se puede dejar sin
-          cargar si todavia no se decidio.
-        </p>
-      </div>
-    } @else if (asistencia() !== null) {
-      <p class="ayuda">
-        No vino, asi que no hay nada mas que completar: pedir el resultado de una atencion que no
-        ocurrio seria pedir que se invente.
-      </p>
-    }
-
-    @if (avisoCierre(); as aviso) {
-      <p class="estado estado--error" role="alert">{{ aviso }}</p>
-    }
-
-    <div class="acciones">
-      <button type="button" class="boton" [disabled]="cerrando()" (click)="cerrar()">
-        Cerrar la atencion
-      </button>
     </div>
-  </section>
+  </div>
 }

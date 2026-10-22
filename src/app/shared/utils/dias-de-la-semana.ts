@@ -37,5 +37,5 @@ export const DIAS_DE_LA_SEMANA: readonly DiaDeLaSemana[] = [
  */
 export function etiquetaDeDia(numero: number | undefined): string {
   const dia = DIAS_DE_LA_SEMANA.find((candidato) => candidato.numero === numero);
-  return dia?.etiqueta ?? `Dia ${numero ?? '?'}`;
+  return dia?.etiqueta ?? `Día ${numero ?? '?'}`;
 }

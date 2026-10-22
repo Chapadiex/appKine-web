@@ -73,10 +73,10 @@ test.describe('Disponibilidad resuelta contra el backend real', () => {
     await ingresar(page, centro);
     await navegar(page, '/horarios/efectivo');
     await expect(
-      page.getByRole('heading', { name: 'Horario efectivo del profesional', level: 1 }),
+      page.getByRole('heading', { name: 'Horario del profesional', level: 1 }),
     ).toBeVisible();
     await page
-      .getByLabel('Profesional')
+      .getByLabel('Profesional', { exact: true })
       .selectOption({ value: String(centro.profesional.membershipId) });
     await page.getByLabel('Desde').fill(desde);
     await page.getByLabel('Hasta (exclusivo)').fill(hasta);
@@ -84,10 +84,10 @@ test.describe('Disponibilidad resuelta contra el backend real', () => {
     await page.getByRole('button', { name: 'Resolver el horario' }).click();
     expect((await consulta).status()).toBe(200);
 
-    await expect(page.getByText(`${conAtencion} de 7 dias con atencion.`)).toBeVisible();
+    await expect(page.getByText(`${conAtencion} de 7 días con atención.`)).toBeVisible();
     await expect(page.getByText(resuelto.timezone, { exact: true })).toBeVisible();
-    await expect(page.locator('li.dia-efectivo')).toHaveCount(7);
-    await expect(page.locator('li.dia-efectivo:not(.dia-efectivo--vacio)')).toHaveCount(
+    await expect(page.locator('tr.dia-efectivo')).toHaveCount(7);
+    await expect(page.locator('tr.dia-efectivo:not(.dia-efectivo--vacio)')).toHaveCount(
       conAtencion,
     );
   });

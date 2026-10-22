@@ -2,6 +2,7 @@ import { request as fabricaDeRequest } from '@playwright/test';
 
 import { emailUnico, nonce } from './support/akine';
 import { expect, ingresar, navegar, respuestaDe, test } from './support/agenda-real';
+import { abrirFiltros } from './support/filtros';
 import { cuentaActiva } from './support/cuentas';
 import { API, ApiAkine, Centro, ingresarComoPlataforma } from './support/sembrado';
 import { plataformaDisponible } from './support/sembrado-configuracion';
@@ -85,7 +86,7 @@ test.describe('Sedes contra el backend real', () => {
 
     // --- Baja con motivo desde el listado ---
     await page.getByRole('link', { name: 'Volver al listado de sedes' }).click();
-    const region = page.getByRole('region', { name: 'Sedes de la organizacion' });
+    const region = page.getByRole('region', { name: 'Sedes de la organización' });
     const fila = region.getByRole('row').filter({ hasText: nombre });
     await expect(fila).toBeVisible();
     await fila.getByRole('button', { name: 'Dar de baja' }).click();
@@ -97,6 +98,7 @@ test.describe('Sedes contra el backend real', () => {
       page.getByText('La sede quedo dada de baja. Sigue en el listado, con el motivo.'),
     ).toBeVisible();
 
+    await abrirFiltros(page);
     await page.getByLabel('Mostrar').selectOption({ label: 'Solo las dadas de baja' });
     const historico = region.getByRole('row').filter({ hasText: nombre });
     await expect(historico).toBeVisible();

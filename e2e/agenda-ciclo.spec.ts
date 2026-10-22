@@ -44,7 +44,7 @@ async function reservarYAbrirElCiclo(
 ): Promise<number> {
   await abrirReserva(page, oferta, fecha, slot, persona);
   const creado = respuestaDe(page, 'POST', RESERVA);
-  await page.getByRole('button', { name: 'Reservar el turno' }).click();
+  await page.getByRole('button', { name: 'Reservar turno' }).click();
   const { id } = (await (await creado).json()) as { id: number };
   await expect(page.getByRole('heading', { name: 'Turno RESERVADO', level: 2 })).toBeVisible();
 
@@ -113,7 +113,7 @@ test.describe('Ciclo del turno contra el backend real', () => {
     );
 
     await page.getByRole('button', { name: 'Mover a otro horario' }).click();
-    await expect(page.getByLabel('Dia destino')).toHaveValue(fecha);
+    await expect(page.getByLabel('Día destino')).toHaveValue(fecha);
     await page.getByRole('button', { name: rango(destino, centro.timezone) }).click();
     await page.getByLabel('Motivo del cambio').fill('El profesional llega mas tarde');
     await page.getByRole('button', { name: 'Mover el turno' }).click();

@@ -26,6 +26,7 @@ import {
   parteEnPalabras,
 } from '../../models/honorarios';
 import { EgresosApi } from '../../services/egresos-api';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 
 /** Lo que se pidio: el borrador se confirma contra exactamente esto. */
 interface Pedido {
@@ -66,9 +67,9 @@ type EstadoBorrador =
  */
 @Component({
   selector: 'app-liquidacion-de-honorarios-page',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [Ayuda, ReactiveFormsModule, RouterLink],
   templateUrl: './liquidacion-de-honorarios-page.html',
-  styleUrl: '../../billing.css',
+  styleUrls: ['../../billing.css', '../../economia.css'],
 })
 export class LiquidacionDeHonorariosPage {
   private readonly api = inject(EgresosApi);

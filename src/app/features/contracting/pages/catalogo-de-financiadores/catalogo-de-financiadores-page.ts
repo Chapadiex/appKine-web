@@ -9,6 +9,12 @@ import { TenantContextStore } from '../../../../core/services/tenant-context.sto
 import { ContractingApi, FiltroTipo } from '../../services/contracting-api';
 import { traducirErrorContracting } from '../../models/contracting-errors';
 import { TIPOS_DE_FINANCIADOR, etiquetaDeTipo } from '../../models/etiquetas-de-contracting';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
+import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
+import { Filtros } from '../../../../shared/components/filtros/filtros';
+import { Icono } from '../../../../shared/components/icono/icono';
 
 type Estado =
   | { readonly tipo: 'cargando' }
@@ -31,7 +37,7 @@ type Estado =
  */
 @Component({
   selector: 'app-catalogo-de-financiadores-page',
-  imports: [RouterLink],
+  imports: [ColumnaOrdenable, Paginacion, Ayuda, Filtros, Icono, RouterLink],
   templateUrl: './catalogo-de-financiadores-page.html',
   styleUrl: '../../contracting.css',
 })
@@ -47,6 +53,8 @@ export class CatalogoDeFinanciadoresPage {
   protected readonly estado = signal<Estado>({ tipo: 'cargando' });
   protected readonly busqueda = signal('');
   protected readonly filtroTipo = signal<FiltroTipo | ''>('');
+  /** Filtros avanzados (detras del embudo) fuera de su valor por defecto. */
+  protected readonly filtrosAvanzadosActivos = computed(() => Number(this.filtroTipo() !== ''));
   /** Id de la entrada con una adopcion en vuelo, o `null`. */
   protected readonly adoptando = signal<number | null>(null);
   protected readonly errorAccion = signal<string | null>(null);
@@ -57,6 +65,16 @@ export class CatalogoDeFinanciadoresPage {
   protected readonly entradas = computed(() => {
     const actual = this.estado();
     return actual.tipo === 'listo' ? actual.entradas : [];
+  });
+
+  /** Orden y paginado de la lista completa (plan Â§3.4): el catalogo llega entero. */
+  protected readonly tabla = tablaLocal(this.entradas, {
+    columnas: {
+      nombre: (entrada) => entrada.nombre,
+      tipo: (entrada) => this.etiquetaDeTipo(entrada.tipo),
+      planes: (entrada) => this.cantidadDePlanes(entrada),
+      enElCentro: (entrada) => Boolean(entrada.financiadorAdoptadoId),
+    },
   });
   protected readonly mensajeError = computed(() => {
     const actual = this.estado();

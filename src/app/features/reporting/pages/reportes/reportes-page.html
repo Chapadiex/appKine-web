@@ -1,17 +1,25 @@
-<h1>Reportes</h1>
+<div class="titulo-con-ayuda">
+  <h1>Reportes</h1>
+  <app-ayuda titulo="Sobre esta pantalla">
+    <p>
+      Elegí un reporte y un período, y generalo. Cada número dice de dónde sale y con qué fecha se
+      cortó el período. Los montos se muestran en pesos corrientes, sin ajuste por inflación.
+    </p>
+  </app-ayuda>
+</div>
 
-<p class="descripcion">
-  Cada numero dice de donde sale y con que fecha se corto el periodo. <b>No se suman entre si</b>:
-  una deuda, un cobro y un movimiento de caja pueden ser la misma plata contada en tres lugares.
+<p class="ayuda">
+  <b>Los números no se suman entre sí</b>: una deuda, un cobro y un movimiento de caja pueden ser la
+  misma plata contada en tres lugares.
 </p>
 
 <!-- ================================ Filtros =================================== -->
 
 <section class="tarjeta" aria-labelledby="titulo-filtros-reporte">
-  <h2 id="titulo-filtros-reporte">Que reporte y que periodo</h2>
+  <h2 id="titulo-filtros-reporte">Qué reporte y qué período</h2>
   <form [formGroup]="filtro" (ngSubmit)="generar()" novalidate>
     <div class="campos-en-linea">
-      <div class="campo">
+      <div class="campo campo--reporte">
         <label for="reporte-codigo">Reporte</label>
         <select id="reporte-codigo" formControlName="reporte">
           @for (opcion of opciones(); track opcion.codigo) {
@@ -41,10 +49,16 @@
           aria-describedby="ayuda-rango"
         />
       </div>
+
+      <div class="acciones acciones--filtro">
+        <button type="submit" class="boton" [disabled]="estado().tipo === 'cargando'">
+          Generar reporte
+        </button>
+      </div>
     </div>
 
     <p id="ayuda-rango" class="ayuda">
-      Los dos dias se incluyen. Como maximo {{ maximoDias }} dias, en la zona horaria de la sede.
+      Los dos días se incluyen. Como máximo {{ maximoDias }} días, en la zona horaria de la sede.
     </p>
     @if (problemaDeRango(); as problema) {
       <p class="campo__error" role="alert">{{ problema }}</p>
@@ -70,12 +84,6 @@
         </ul>
       </div>
     }
-
-    <div class="acciones">
-      <button type="submit" class="boton" [disabled]="estado().tipo === 'cargando'">
-        Generar reporte
-      </button>
-    </div>
   </form>
 </section>
 
@@ -99,13 +107,31 @@
 
 @if (reporte(); as r) {
   <section class="tarjeta" aria-labelledby="titulo-reporte">
-    <h2 id="titulo-reporte">{{ nombreDeReporte(r.reporte) }}</h2>
+    <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
+      <h2 id="titulo-reporte">{{ nombreDeReporte(r.reporte) }}</h2>
+      <app-ayuda titulo="Sobre el período">
+        <p>Un período que incluye hoy puede cambiar entre consultas.</p>
+      </app-ayuda>
+      <div class="encabezado__acciones">
+        <button
+          type="button"
+          class="boton boton--secundario"
+          (click)="exportar()"
+          [disabled]="exportando()"
+        >
+          {{ exportando() ? 'Preparando el archivo…' : 'Descargar CSV' }}
+        </button>
+      </div>
+    </div>
+    @if (errorExport(); as fallo) {
+      <p class="estado estado--error" role="alert">{{ fallo.mensaje }}</p>
+    }
     <p class="ayuda">
       Del {{ fecha(r.desde) }} al {{ fecha(r.hasta) }}
       @if (r.zona) {
         <span>(zona {{ r.zona }})</span>
       }
-      . Un periodo que incluye hoy puede cambiar entre consultas.
+      .
     </p>
 
     @if (actividadPropia()) {
@@ -131,7 +157,7 @@
 
     @if (advertencias().length > 0) {
       <div class="aviso" role="note" aria-labelledby="titulo-advertencias">
-        <h3 id="titulo-advertencias" class="aviso__titulo">Para leer bien estos numeros</h3>
+        <h3 id="titulo-advertencias" class="aviso__titulo">Para leer bien estos números</h3>
         <ul>
           @for (a of advertencias(); track $index) {
             <li>
@@ -144,33 +170,19 @@
         </ul>
       </div>
     }
-
-    <div class="acciones">
-      <button
-        type="button"
-        class="boton boton--secundario"
-        (click)="exportar()"
-        [disabled]="exportando()"
-      >
-        {{ exportando() ? 'Preparando el archivo…' : 'Descargar CSV' }}
-      </button>
-    </div>
-    @if (errorExport(); as fallo) {
-      <p class="estado estado--error" role="alert">{{ fallo.mensaje }}</p>
-    }
   </section>
 
   @if (!r.secciones || r.secciones.length === 0) {
-    <p class="estado estado--vacio">Este reporte no tiene ninguna seccion que puedas ver.</p>
+    <p class="estado estado--vacio">Este reporte no tiene ninguna sección que puedas ver.</p>
   }
 
   @for (seccion of r.secciones ?? []; track seccion.seccion; let i = $index) {
-    <section class="tarjeta" [attr.aria-labelledby]="'titulo-seccion-' + i">
+    <section class="tarjeta tarjeta--seccion" [attr.aria-labelledby]="'titulo-seccion-' + i">
       <h2 [id]="'titulo-seccion-' + i">{{ tituloDeSeccion(seccion.seccion, seccion.titulo) }}</h2>
 
       @for (a of advertenciasDe(seccion.seccion); track $index) {
         <p class="aviso" role="note">
-          <b>Para leer bien estos numeros:</b> {{ a.detalle || a.codigo }}
+          <b>Para leer bien estos números:</b> {{ a.detalle || a.codigo }}
         </p>
       }
 
@@ -196,7 +208,7 @@
           }
         </ul>
       } @else {
-        <p class="estado estado--vacio">Sin indicadores en esta seccion.</p>
+        <p class="estado estado--vacio">Sin indicadores en esta sección.</p>
       }
 
       @if (seccion.columnas && seccion.columnas.length > 0) {
@@ -230,7 +242,7 @@
             </table>
           </div>
         } @else {
-          <p class="estado estado--vacio">Sin detalle en el periodo.</p>
+          <p class="estado estado--vacio">Sin detalle en el período.</p>
         }
       }
     </section>

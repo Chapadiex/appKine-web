@@ -23,6 +23,7 @@ import {
   CasosParaDerivar,
   MotivoDeAcceso,
 } from '../../services/atencion-grupal-api';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 
 type Carga<T> =
   | { readonly tipo: 'cargando' }
@@ -65,8 +66,9 @@ const ETIQUETAS_DE_ASISTENCIA: Readonly<Record<string, string>> = {
  */
 @Component({
   selector: 'app-derivar-participante',
-  imports: [RouterLink, FocoAlMontar],
+  imports: [Ayuda, RouterLink, FocoAlMontar],
   templateUrl: './derivar-participante.html',
+  styleUrl: '../../atencion.css',
 })
 export class DerivarParticipante {
   private readonly api = inject(AtencionGrupalApi);
@@ -202,7 +204,7 @@ export class DerivarParticipante {
 
   protected etiquetaDeCaso(caso: CasoAdministrativoResponse): string {
     const partes = [
-      caso.numeroCaso === undefined ? 'Caso clinico sin numero' : `Caso clinico ${caso.numeroCaso}`,
+      caso.numeroCaso === undefined ? 'Caso clínico sin número' : `Caso clínico ${caso.numeroCaso}`,
     ];
     const apertura = instanteEnPalabras(caso.abiertoEn);
     if (apertura !== '') {

@@ -1,3 +1,8 @@
+import { Pestanas } from '../../../../shared/components/pestanas/pestanas';
+import {
+  ETIQUETA_PESTANAS_DE_SERVICIOS,
+  PESTANAS_DE_SERVICIOS,
+} from '../../models/pestanas-de-offering';
 import {
   Component,
   ElementRef,
@@ -44,6 +49,12 @@ import {
 } from '../../models/situacion-de-vigencia';
 import { textoRequerido } from '../../../../shared/validators/texto-requerido';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { Filtros } from '../../../../shared/components/filtros/filtros';
+import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
+import { Icono } from '../../../../shared/components/icono/icono';
+import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 
 /** Operacion abierta sobre una fila. Solo una a la vez. */
 type TipoAccion = 'editar' | 'baja';
@@ -109,11 +120,24 @@ type Heredable = '' | 'true' | 'false';
  */
 @Component({
   selector: 'app-ofertas-de-la-sede-page',
-  imports: [ReactiveFormsModule, RouterLink, PermisoDirective, ConfirmacionConMotivo],
+  imports: [
+    Pestanas,
+    Ayuda,
+    ColumnaOrdenable,
+    Filtros,
+    Icono,
+    Paginacion,
+    ReactiveFormsModule,
+    RouterLink,
+    PermisoDirective,
+    ConfirmacionConMotivo,
+  ],
   templateUrl: './ofertas-de-la-sede-page.html',
   styleUrl: '../../offering.css',
 })
 export class OfertasDeLaSedePage {
+  protected readonly pestanasDeServicios = PESTANAS_DE_SERVICIOS;
+  protected readonly etiquetaDePestanas = ETIQUETA_PESTANAS_DE_SERVICIOS;
   private readonly api = inject(OfferingApi);
   private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly tenantContext = inject(TenantContextStore);
@@ -155,6 +179,19 @@ export class OfertasDeLaSedePage {
     return actual.tipo === 'listo' ? actual.pagina : [];
   });
 
+  /** Orden y paginado de la lista completa (plan §3.4): el servidor no pagina ofertas. */
+  protected readonly tabla = tablaLocal(this.ofertas, {
+    columnas: {
+      nombre: (oferta) => oferta.nombreComercial,
+      servicio: (oferta) => this.nombreDelServicio(oferta),
+      modalidad: (oferta) => this.etiquetaDeModalidad(oferta.modalidad),
+      duracion: (oferta) => oferta.duracionMinutos,
+      precio: (oferta) => oferta.precioBase,
+      vigencia: (oferta) => oferta.vigenciaDesde,
+      estado: (oferta) => oferta.estado,
+    },
+  });
+
   protected readonly mensajeError = computed(() => {
     const actual = this.estado();
     return actual.tipo === 'error' ? actual.mensaje : null;
@@ -167,6 +204,11 @@ export class OfertasDeLaSedePage {
 
   protected readonly filtroEstado = signal<FiltroEstado>('ACTIVO');
   protected readonly filtroServicio = signal<number | null>(null);
+
+  /** Cuantos filtros del embudo estan fuera de su valor por defecto: el boton los cuenta. */
+  protected readonly filtrosAvanzadosActivos = computed(
+    () => Number(this.filtroEstado() !== 'ACTIVO') + Number(this.filtroServicio() !== null),
+  );
 
   /**
    * Servicios activos del catalogo global, para el selector del alta y el filtro.
@@ -566,8 +608,8 @@ export class OfertasDeLaSedePage {
         this.cerrarPanel();
         this.exito.set(
           'La oferta quedo dada de alta en esta sede. Si su vigencia arranca mas adelante, va a ' +
-            'figurar como activa pero todavia sin vigencia: es correcto, y empieza a ofrecerse sola ' +
-            'ese dia.',
+            'figurar como activa pero todavía sin vigencia: es correcto, y empieza a ofrecerse sola ' +
+            'ese día.',
         );
         this.cargar();
       },
@@ -667,7 +709,7 @@ export class OfertasDeLaSedePage {
         this.prepagoEnVuelo.set(null);
         this.exito.set(
           exigir
-            ? `"${oferta.nombreComercial}" exige prepago: la recepcion avisa cuando alguien llega ` +
+            ? `"${oferta.nombreComercial}" exige prepago: la recepción avisa cuando alguien llega ` +
                 'sin anticipo. Es un aviso, no impide atenderlo.'
             : `"${oferta.nombreComercial}" ya no exige prepago.`,
         );
@@ -709,7 +751,7 @@ export class OfertasDeLaSedePage {
     const version = original?.version;
     if (original === null || version === undefined) {
       this.errorAccion.set(
-        'No pudimos leer la version de esta oferta. Cerra el panel, recarga el listado y volve a intentar.',
+        'No pudimos leer la versión de esta oferta. Cerra el panel, recarga el listado y volvé a intentar.',
       );
       return null;
     }

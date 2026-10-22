@@ -126,7 +126,7 @@ describe('CoberturasDelPacientePage', () => {
     expect(contenido).not.toContain('Dada de baja');
   });
 
-  it('una lista vacia dice que se atiende como particular, que siempre esta disponible', async () => {
+  it('una lista vacía dice que se atiende como particular, que siempre esta disponible', async () => {
     const fixture = await montar([]);
 
     expect(texto(fixture)).toContain('se atiende como particular');
@@ -186,7 +186,7 @@ describe('CoberturasDelPacientePage', () => {
     await estabilizar(fixture);
     elegirEn(fixture, '#alta-cobertura-tipo', 'FINANCIADA');
 
-    expect(texto(fixture)).toContain('No tenes permiso para consultar los financiadores');
+    expect(texto(fixture)).toContain('No tenés permiso para consultar los financiadores');
     // La pantalla sigue en pie: el listado y el formulario estan.
     expect(texto(fixture)).toContain('Agregar cobertura');
   });
@@ -224,7 +224,7 @@ describe('CoberturasDelPacientePage', () => {
     apretar(fixture, 'Agregar cobertura');
 
     httpMock.expectNone(esAlta());
-    expect(texto(fixture)).toContain('Elegi el plan');
+    expect(texto(fixture)).toContain('Elegí el plan');
   });
 
   it('sin fecha de inicio no manda el alta: es contra esa fecha que se congela el plan', async () => {
@@ -328,7 +328,7 @@ describe('CoberturasDelPacientePage', () => {
     expect(texto(fixture)).toContain('No se borro');
   });
 
-  it('una cobertura dada de baja no ofrece ninguna accion', async () => {
+  it('una cobertura dada de baja no ofrece ninguna acción', async () => {
     const fixture = await montar([
       { ...OSDE, estado: 'INACTIVA', principal: false, deactivationReason: 'Error de carga.' },
     ]);
@@ -547,7 +547,7 @@ describe('CoberturasDelPacientePage', () => {
       fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>,
     ).find((b) => (b.textContent ?? '').trim() === rotulo);
     if (boton === undefined) {
-      throw new Error(`No hay ningun boton rotulado "${rotulo}".`);
+      throw new Error(`No hay ningún botón rotulado "${rotulo}".`);
     }
     boton.click();
     fixture.detectChanges();

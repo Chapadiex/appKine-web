@@ -47,8 +47,9 @@ interface Pantalla {
   readonly listo: (page: Page) => Promise<void>;
 }
 
+/** Dentro de `main`: la barra lateral (UX-01) repite los nombres de las secciones, escondida en el telefono. */
 const texto = (contenido: string) => async (page: Page) =>
-  expect(page.getByText(contenido).first()).toBeVisible();
+  expect(page.getByRole('main').getByText(contenido).first()).toBeVisible();
 
 const PANTALLAS: readonly Pantalla[] = [
   {
@@ -56,7 +57,7 @@ const PANTALLAS: readonly Pantalla[] = [
     ruta: '/auth/ingresar',
     conSesion: false,
     listo: async (page) =>
-      expect(page.getByRole('heading', { name: 'Iniciar sesion', level: 1 })).toBeVisible(),
+      expect(page.getByRole('heading', { name: 'Iniciar sesión', level: 1 })).toBeVisible(),
   },
   {
     nombre: 'agenda',
@@ -184,7 +185,7 @@ const PANTALLAS: readonly Pantalla[] = [
     nombre: 'ventana de enmienda',
     ruta: '/atencion/politica-de-enmienda',
     apiDp43: {},
-    listo: texto('45 dias'),
+    listo: texto('45 días'),
   },
 ];
 

@@ -1,0 +1,81 @@
+/*
+  Barra superior (UX-01). Superficie de pagina, no de marca: la marca es la barra lateral. Los
+  colores salen de los tokens de `src/design-system.css`.
+*/
+
+:host {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--esp-2) var(--esp-6);
+  width: 100%;
+  min-height: var(--alto-barra-superior);
+}
+
+.marca {
+  color: var(--color-texto-fuerte);
+  font-size: var(--tipo-lg);
+  font-weight: var(--peso-fuerte);
+  letter-spacing: 0.08em;
+  text-decoration: none;
+}
+
+/*
+  Boton de menu: 44 px de lado, que es el objetivo de toque en tablet. Solo existe ahi; en
+  escritorio la barra lateral esta siempre a la vista y el boton se esconde.
+*/
+.menu {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  padding: 0;
+  border: var(--borde-fino) solid var(--color-borde-control);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie);
+  color: var(--color-texto);
+  font-size: var(--tipo-lg);
+  cursor: pointer;
+}
+
+.menu:hover {
+  background: var(--color-superficie-sutil);
+}
+
+@media (max-width: 63.99rem) {
+  .menu {
+    display: inline-flex;
+  }
+}
+
+/* Indicador del contexto activo. */
+.contexto {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--esp-2) var(--esp-4);
+  margin: 0;
+  font-size: var(--tipo-sm);
+  color: var(--color-texto-suave);
+}
+
+.contexto__valor {
+  color: var(--color-texto-fuerte);
+  font-weight: var(--peso-medio);
+}
+
+.contexto__sede {
+  color: var(--color-texto-suave);
+  font-weight: var(--peso-normal);
+}
+
+/*
+  Subrayado permanente y no solo en hover: es un enlace al lado de un dato, y sin subrayado se
+  lee como parte del dato. `padding-block` para que el area de toque llegue a 24 px.
+*/
+.contexto__cambiar {
+  padding-block: var(--esp-2);
+  color: var(--color-enlace);
+  text-decoration: underline;
+}

@@ -22,7 +22,7 @@ import { provideApi } from './api/generated/provide-api';
  */
 const PROVIDERS = [provideHttpClient(), provideHttpClientTesting(), provideApi('')];
 
-@Component({ template: 'pagina de prueba' })
+@Component({ template: 'página de prueba' })
 class PaginaDePrueba {}
 
 /**

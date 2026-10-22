@@ -77,14 +77,14 @@ export interface ErrorOffering {
 /** Que se estaba tocando cuando fallo. Cambia el 403 y el 404, no el resto. */
 export type AmbitoOffering = 'servicio' | 'oferta';
 
-const MENSAJE_GENERICO = 'No pudimos completar la operacion. Volve a intentar en un momento.';
-const MENSAJE_DE_RED = 'No se pudo contactar al servidor. Revisa tu conexion y volve a intentar.';
+const MENSAJE_GENERICO = 'No pudimos completar la operación. Volvé a intentar en un momento.';
+const MENSAJE_DE_RED = 'No se pudo contactar al servidor. Revisa tu conexion y volvé a intentar.';
 const MENSAJE_LIMITE_SIN_PLAZO =
   'Demasiados intentos. Espera un momento antes de volver a intentar.';
 
 const MENSAJE_SIN_CONTEXTO =
-  'Las ofertas son de una sede concreta, asi que hay que saber en cual estas trabajando. Eligi ' +
-  'un consultorio y volve a entrar. Tu sesion sigue abierta.';
+  'Las ofertas son de una sede concreta, así que hay que saber en cual estas trabajando. Eligi ' +
+  'un consultorio y volvé a entrar. Tu sesión sigue abierta.';
 
 /**
  * `403` sobre el catalogo global.
@@ -97,12 +97,12 @@ const MENSAJE_SIN_CONTEXTO =
  */
 const MENSAJE_SIN_ROL_DE_PLATAFORMA =
   'El catalogo de servicios lo administra AKINE, no cada centro: dar de alta, editar o dar de ' +
-  'baja un servicio exige rol de plataforma. Podes seguir consultandolo, y lo que si administra ' +
+  'baja un servicio exige rol de plataforma. Podés seguir consultandolo, y lo que si administra ' +
   'tu centro son las ofertas de la sede, que es donde se define como se presta cada servicio.';
 
 const MENSAJE_SIN_PERMISO =
-  'No podes modificar las ofertas de esta sede: hace falta administrarla. Pediselo a quien la ' +
-  'administra. Consultarlas si podes, y por eso el listado se sigue viendo.';
+  'No podés modificar las ofertas de esta sede: hace falta administrarla. Pediselo a quien la ' +
+  'administra. Consultarlas si podés, y por eso el listado se sigue viendo.';
 
 const MENSAJE_NO_ENCONTRADO_SERVICIO =
   'Ese servicio ya no existe en el catalogo. Recarga el listado para ver los que hay ahora.';
@@ -118,13 +118,13 @@ const MENSAJE_NO_ENCONTRADO_OFERTA =
  * reintento automatico seria justamente pisar lo que el `409` existe para impedir.
  */
 const MENSAJE_CONCURRENCIA =
-  'Alguien mas modifico esto mientras lo estabas editando, asi que no guardamos tus cambios para ' +
+  'Alguien mas modifico esto mientras lo estabas editando, así que no guardamos tus cambios para ' +
   'no pisar los suyos. Volvimos a leer los datos actuales: revisalos y confirma de nuevo si ' +
   'seguis queriendo el cambio.';
 
 const MENSAJE_SUSCRIPCION_SUSPENDIDA =
-  'La suscripcion de la organizacion esta suspendida, asi que no se pueden registrar cambios. Se ' +
-  'resuelve desde la pantalla de suscripcion.';
+  'La suscripción de la organización esta suspendida, así que no se pueden registrar cambios. Se ' +
+  'resuelve desde la pantalla de suscripción.';
 
 /**
  * Dos precios activos de la misma oferta no pueden cubrir el mismo dia (RF-M16-009).
@@ -133,33 +133,33 @@ const MENSAJE_SUSCRIPCION_SUSPENDIDA =
  * nuevo, no editar el importe, que no se edita.
  */
 const MENSAJE_PRECIO_SOLAPADO =
-  'Ya hay otro precio particular activo de esta oferta que cubre alguno de esos dias, y dos ' +
-  'precios no pueden pisarse. Para subir un precio, cerrale la vigencia al actual el dia anterior ' +
-  'y carga el nuevo desde el dia siguiente.';
+  'Ya hay otro precio particular activo de esta oferta que cubre alguno de esos días, y dos ' +
+  'precios no pueden pisarse. Para subir un precio, cerrale la vigencia al actual el día anterior ' +
+  'y carga el nuevo desde el día siguiente.';
 
 const MENSAJE_PRECIO_INACTIVO =
-  'Ese precio ya esta dado de baja, asi que no admite cambios. Recarga la grilla para verlo con ' +
+  'Ese precio ya esta dado de baja, así que no admite cambios. Recarga la grilla para verlo con ' +
   'su estado actual y, si hace falta, carga otro.';
 
 const MENSAJE_HONORARIO_SOLAPADO =
-  'Ya hay otra tarifa de honorario activa de esta oferta que cubre alguno de esos dias, y dos ' +
-  'tarifas no pueden pisarse. Para cambiarla, cerrale la vigencia a la actual el dia anterior y ' +
-  'carga la nueva desde el dia siguiente.';
+  'Ya hay otra tarifa de honorario activa de esta oferta que cubre alguno de esos días, y dos ' +
+  'tarifas no pueden pisarse. Para cambiarla, cerrale la vigencia a la actual el día anterior y ' +
+  'carga la nueva desde el día siguiente.';
 
 const MENSAJE_HONORARIO_INACTIVO =
-  'Esa tarifa ya esta dada de baja, asi que no admite cambios. Recarga la grilla para verla con ' +
+  'Esa tarifa ya esta dada de baja, así que no admite cambios. Recarga la grilla para verla con ' +
   'su estado actual y, si hace falta, carga otra.';
 
 const MENSAJE_PRACTICA_NO_UTILIZABLE =
-  'Alguna de las practicas que agregaste esta dada de baja o fuera de vigencia en el catalogo, ' +
-  'asi que no se puede sumar a la oferta. Sacala de la lista y volve a guardar. Las que la oferta ' +
+  'Alguna de las prácticas que agregaste esta dada de baja o fuera de vigencia en el catalogo, ' +
+  'así que no se puede sumar a la oferta. Sacala de la lista y volvé a guardar. Las que la oferta ' +
   'ya tenia no se revalidan: siguen valiendo aunque el catalogo las haya dado de baja.';
 
 const MENSAJE_OFERTA_INACTIVA =
-  'Esta oferta esta dada de baja, asi que no admite cambios. Volve al listado de ofertas de la sede.';
+  'Esta oferta esta dada de baja, así que no admite cambios. Volvé al listado de ofertas de la sede.';
 
 const MENSAJE_CONSULTORIO_NO_OPERABLE =
-  'La sede no esta operable en este momento, asi que no se pueden cambiar sus ofertas.';
+  'La sede no esta operable en este momento, así que no se pueden cambiar sus ofertas.';
 
 const MENSAJE_SERVICIO_CODIGO_EN_USO =
   'Ya hay un servicio vigente con ese código en el catálogo. Usá otro código: el de un servicio ' +
@@ -178,7 +178,7 @@ const MENSAJE_OFERTA_YA_INACTIVA =
 
 const MENSAJE_CONFLICTO =
   'El servidor rechazo el cambio por un conflicto con lo que ya hay guardado. Recarga el listado ' +
-  'para ver el estado actual y volve a intentar.';
+  'para ver el estado actual y volvé a intentar.';
 
 /**
  * Traduce cualquier error de las pantallas de `offering`.
@@ -207,7 +207,7 @@ export function traducirErrorOffering(error: unknown, ambito: AmbitoOffering): E
     return {
       mensaje:
         segundos > 0
-          ? `Demasiados intentos. Espera ${segundos} segundos y volve a intentar.`
+          ? `Demasiados intentos. Espera ${segundos} segundos y volvé a intentar.`
           : MENSAJE_LIMITE_SIN_PLAZO,
       causa: 'limite',
       segundosDeEspera: segundos,

@@ -36,6 +36,12 @@ import {
 } from '../../models/etiquetas-de-pases';
 import { ErrorPase, errorSinContextoDePase, traducirErrorPase } from '../../models/pase-errors';
 import { ESQUEMA_POR_ABONO, ESQUEMA_POR_PACK, PasesApi } from '../../services/pases-api';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { Filtros } from '../../../../shared/components/filtros/filtros';
+import { Icono } from '../../../../shared/components/icono/icono';
+import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
+import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 
 /** El esquema de cobro que exige cada tipo de producto (RN-M29-005, RF-M29-007). */
 const ESQUEMA_DEL_TIPO: Readonly<Record<CrearProductoTipoEnum, string>> = {
@@ -70,7 +76,17 @@ const VIGENCIA_DIAS_MAXIMA = 3660;
  */
 @Component({
   selector: 'app-productos-de-pack-page',
-  imports: [ReactiveFormsModule, RouterLink, ConfirmacionConMotivo, FocoAlMontar],
+  imports: [
+    Ayuda,
+    ColumnaOrdenable,
+    Filtros,
+    Icono,
+    Paginacion,
+    ReactiveFormsModule,
+    RouterLink,
+    ConfirmacionConMotivo,
+    FocoAlMontar,
+  ],
   templateUrl: './productos-de-pack-page.html',
   styleUrl: '../../activity.css',
 })
@@ -90,6 +106,19 @@ export class ProductosDePackPage {
   protected readonly fecha = formatearFecha;
 
   protected readonly productos = signal<readonly Producto[] | null>(null);
+  /** Orden y paginado de la lista completa (plan §3.4): el servidor no pagina productos. */
+  protected readonly tabla = tablaLocal(
+    computed(() => this.productos() ?? []),
+    {
+      columnas: {
+        producto: (producto) => producto.nombre,
+        tipo: (producto) => this.tipoDeProducto(producto),
+        oferta: (producto) => this.nombreDeOferta(producto),
+        precio: (producto) => producto.precio,
+        estado: (producto) => (producto.active === false ? 'Dado de baja' : 'Vigente'),
+      },
+    },
+  );
   /** Ofertas activas que admiten producto: `POR_PACK` o `POR_ABONO`. */
   private readonly ofertasVendibles = signal<readonly OfertaResponse[]>([]);
   /** El tipo elegido en el formulario, como signal: filtra las ofertas que se ofrecen. */
@@ -101,6 +130,8 @@ export class ProductosDePackPage {
   protected readonly esquemaDelTipo = computed(() => ESQUEMA_DEL_TIPO[this.tipoElegido()]);
   private readonly nombresDeOferta = signal<ReadonlyMap<number, string>>(new Map());
   protected readonly incluirBajas = signal(false);
+  /** Filtros avanzados fuera de su valor por defecto: el contador del embudo. */
+  protected readonly filtrosAvanzadosActivos = computed(() => Number(this.incluirBajas()));
   protected readonly panel = signal<Panel>({ tipo: 'ninguno' });
   protected readonly error = signal<ErrorPase | null>(null);
   protected readonly errorAccion = signal<ErrorPase | null>(null);
@@ -353,7 +384,7 @@ export class ProductosDePackPage {
         this.enviando.set(false);
         this.aviso.set(
           editado === null
-            ? `Se creo "${producto.nombre}"${esAbono(producto) ? ' (abono)' : ''}. Todavia nadie tiene saldo: se vende desde la ficha de la persona, en Pacientes.`
+            ? `Se creo "${producto.nombre}"${esAbono(producto) ? ' (abono)' : ''}. Todavía nadie tiene saldo: se vende desde la ficha de la persona, en Pacientes.`
             : `Se guardo "${producto.nombre}". Los pases ya vendidos no cambian.`,
         );
         this.cerrarPanel();

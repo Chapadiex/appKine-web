@@ -48,7 +48,7 @@ export const routes: Routes = [
     path: ':tipo',
     canActivate: [permissionGuard(PERMISO_CATALOGO_READ)],
     loadComponent: () => import('./pages/catalogos/catalogos-page').then((m) => m.CatalogosPage),
-    title: 'AKINE - Catalogo clinico',
+    title: 'AKINE - Catalogo clínico',
     data: { [DATA_ANCHO]: ANCHO_AMPLIO },
   },
   {

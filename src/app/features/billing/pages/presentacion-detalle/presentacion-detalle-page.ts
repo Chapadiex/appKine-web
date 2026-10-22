@@ -39,6 +39,11 @@ import {
 import { fechaEnPalabras, importeEnPalabras } from '../../models/etiquetas-de-obligacion';
 import { medioEnPalabras } from '../../models/etiquetas-de-cobro';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { Filtros } from '../../../../shared/components/filtros/filtros';
+import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
+import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 
 type EstadoCarga =
   | { readonly tipo: 'cargando' }
@@ -74,9 +79,17 @@ interface Lectura {
  */
 @Component({
   selector: 'app-presentacion-detalle-page',
-  imports: [ReactiveFormsModule, RouterLink, ConfirmacionConMotivo],
+  imports: [
+    Ayuda,
+    ColumnaOrdenable,
+    Filtros,
+    Paginacion,
+    ReactiveFormsModule,
+    RouterLink,
+    ConfirmacionConMotivo,
+  ],
   templateUrl: './presentacion-detalle-page.html',
-  styleUrl: '../../billing.css',
+  styleUrls: ['../../billing.css', '../../economia.css'],
 })
 export class PresentacionDetallePage {
   private readonly api = inject(PresentacionesApi);
@@ -146,10 +159,33 @@ export class PresentacionDetallePage {
 
   /** Filtro de la tabla del lote por estado de la prestacion. Vacio = todas. */
   protected readonly filtroDeItem = signal<string>('');
+  /** Filtros avanzados fuera de su valor por defecto: el contador del embudo. */
+  protected readonly filtrosAvanzadosActivos = computed(() => Number(this.filtroDeItem() !== ''));
 
   protected readonly itemsVisibles = computed<readonly PresentacionItem[]>(() => {
     const filtro = this.filtroDeItem();
     return filtro === '' ? this.items() : this.items().filter((item) => item.estado === filtro);
+  });
+
+  /** Orden y paginado de las prestaciones del lote (plan §3.4): el lote las trae todas. */
+  protected readonly tablaItems = tablaLocal(this.itemsVisibles, {
+    columnas: {
+      prestacion: (item) => item.concepto ?? null,
+      fecha: (item) => item.fechaPrestacion ?? null,
+      paciente: (item) => item.personaId ?? null,
+      importe: (item) => item.importePresentado ?? null,
+      estado: (item) => estadoDeItemEnPalabras(item.estado),
+    },
+  });
+
+  /** Orden y paginado de la bandeja de elegibles: el backend devuelve un array. */
+  protected readonly tablaElegibles = tablaLocal(this.elegibles, {
+    columnas: {
+      prestacion: (obligacion) => obligacion.snapshotNombre ?? null,
+      devengada: (obligacion) => obligacion.devengadaEn ?? null,
+      paciente: (obligacion) => obligacion.personaId ?? null,
+      saldo: (obligacion) => obligacion.saldo ?? null,
+    },
   });
 
   /** Lo que impide confirmar (RF-M21-003): incluye `SIN_ORDEN` y `SIN_AUTORIZACION` (DP-37). */
@@ -235,7 +271,7 @@ export class PresentacionDetallePage {
     this.operar(
       `agregar-${obligacionId}`,
       (c, p) => this.api.agregarItem(c, p, obligacionId),
-      'Se agrego la prestacion al lote.',
+      'Se agrego la prestación al lote.',
     );
   }
 
@@ -245,7 +281,7 @@ export class PresentacionDetallePage {
     this.operar(
       `quitar-${itemId}`,
       (c, p) => this.api.quitarItem(c, p, itemId),
-      'Se quito la prestacion del lote. Vuelve a estar disponible.',
+      'Se quito la prestación del lote. Vuelve a estar disponible.',
     );
   }
 
@@ -262,7 +298,7 @@ export class PresentacionDetallePage {
     this.operar(
       'confirmar',
       (c, p) => this.api.confirmar(c, p),
-      'Lote presentado: tiene numero y su total quedo congelado. Todavia no se cobro nada.',
+      'Lote presentado: tiene número y su total quedo congelado. Todavía no se cobro nada.',
     );
   }
 
@@ -308,7 +344,7 @@ export class PresentacionDetallePage {
     this.operar(
       `debito-${itemId}`,
       (c, p) => this.api.debitar(c, p, itemId, importe, motivo.trim()),
-      'Debito registrado. Si fue por el total, la prestacion sale del lote y su deuda sigue ' +
+      'Debito registrado. Si fue por el total, la prestación sale del lote y su deuda sigue ' +
         'pendiente; si fue parcial, sigue en el lote y al cerrarlo se salda lo no debitado.',
     );
   }
@@ -345,7 +381,7 @@ export class PresentacionDetallePage {
     this.operar(
       'conciliar',
       (c, p) => this.api.conciliar(c, p),
-      'Lote cerrado. Cada prestacion aceptada salda su deuda por lo presentado; las debitadas en ' +
+      'Lote cerrado. Cada prestación aceptada salda su deuda por lo presentado; las debitadas en ' +
         'parte, por lo presentado menos lo debitado, que queda pendiente para otro lote.',
     );
   }

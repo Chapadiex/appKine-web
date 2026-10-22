@@ -77,19 +77,19 @@ describe('DerivarParticipante', () => {
 
   afterEach(() => http.verify());
 
-  it('muestra el veredicto y ofrece solo los casos activos, por su numero', async () => {
+  it('muestra el veredicto y ofrece solo los casos activos, por su número', async () => {
     const fixture = await montar();
     http.expectOne(DATOS).flush(DOS_CASOS);
     await estabilizar(fixture);
 
     const todo = texto(fixture);
     expect(todo).toContain('Presente');
-    expect(todo).toContain('Si, con perfil de paciente');
+    expect(todo).toContain('Sí, con perfil de paciente');
     expect(todo).toContain('Con 2 casos activos');
-    expect(todo).toContain('Caso clinico 1');
-    expect(todo).toContain('Caso clinico 2');
+    expect(todo).toContain('Caso clínico 1');
+    expect(todo).toContain('Caso clínico 2');
     expect(todo).toContain('de la oferta de esta clase');
-    expect(todo).not.toContain('Caso clinico 3');
+    expect(todo).not.toContain('Caso clínico 3');
     expect(radios(fixture)).toHaveLength(2);
     // Con dos no elige por nadie.
     expect(radios(fixture).some((r) => r.checked)).toBe(false);
@@ -102,7 +102,7 @@ describe('DerivarParticipante', () => {
 
     enviar(fixture);
     await estabilizar(fixture);
-    expect(texto(fixture)).toContain('Elegi a que caso se deriva');
+    expect(texto(fixture)).toContain('Elegí a qué caso se deriva');
     http.expectNone(DERIVAR);
 
     radios(fixture)[1].click();
@@ -151,7 +151,7 @@ describe('DerivarParticipante', () => {
     expect(botones(fixture, /Derivar al caso/)).toHaveLength(0);
   });
 
-  it('una oferta no clinica lo dice', async () => {
+  it('una oferta no clínica lo dice', async () => {
     const fixture = await montar({
       elegibilidad: {
         ...DERIVABLE,
@@ -160,7 +160,7 @@ describe('DerivarParticipante', () => {
         motivos: ['OFERTA_NO_CLINICA'],
       },
     });
-    expect(texto(fixture)).toContain('no genera registro clinico');
+    expect(texto(fixture)).toContain('no genera registro clínico');
   });
 
   it('sin perfil de paciente no lee casos y lleva a su ficha del padron', async () => {
@@ -168,15 +168,15 @@ describe('DerivarParticipante', () => {
       elegibilidad: { ...DERIVABLE, esPacienteVigente: false, requiereActivarPerfil: true },
     });
     http.expectNone(DATOS);
-    expect(texto(fixture)).toContain('Todavia no es paciente');
+    expect(texto(fixture)).toContain('Todavía no es paciente');
     expect(enlace(fixture, `/pacientes/${PERSONA}`)).not.toBeNull();
   });
 
-  it('sin historia o sin caso activo lleva a su historia clinica', async () => {
+  it('sin historia o sin caso activo lleva a su historia clínica', async () => {
     const fixture = await montar();
     http.expectOne(DATOS).flush({ personaId: PERSONA, tieneHistoriaClinica: false, casos: [] });
     await estabilizar(fixture);
-    expect(texto(fixture)).toContain('Todavia no tiene historia clinica.');
+    expect(texto(fixture)).toContain('Todavía no tiene historia clínica.');
     expect(enlace(fixture, `/historia-clinica/personas/${PERSONA}`)).not.toBeNull();
     expect(botones(fixture, /Derivar al caso/)).toHaveLength(0);
   });
@@ -185,7 +185,7 @@ describe('DerivarParticipante', () => {
     const fixture = await montar();
     http.expectOne(DATOS).flush({ ...DOS_CASOS, casos: [DOS_CASOS.casos[2]] });
     await estabilizar(fixture);
-    expect(texto(fixture)).toContain('No tiene ningun caso clinico activo.');
+    expect(texto(fixture)).toContain('No tiene ningún caso clínico activo.');
   });
 
   it('un 409 del backend se muestra con su texto propio', async () => {
@@ -196,7 +196,7 @@ describe('DerivarParticipante', () => {
     enviar(fixture);
     problema(http.expectOne(DERIVAR), 409, 'caso-no-activo');
     await estabilizar(fixture);
-    expect(alerta(fixture)).toContain('El caso elegido ya no esta activo');
+    expect(alerta(fixture)).toContain('El caso elegido ya no está activo');
     expect(derivadas).toHaveLength(0);
   });
 
@@ -234,7 +234,7 @@ describe('DerivarParticipante', () => {
         { status: 403, statusText: 'Forbidden' },
       );
     await estabilizar(fixture);
-    expect(alerta(fixture)).toContain('No tenes permiso para derivar');
+    expect(alerta(fixture)).toContain('No tenés permiso para derivar');
   });
 
   it('si la elegibilidad falla lo dice y se puede reintentar', async () => {
@@ -261,7 +261,7 @@ describe('DerivarParticipante', () => {
         { status: 403, statusText: 'Forbidden' },
       );
     await estabilizar(fixture);
-    expect(alerta(fixture)).toContain('No tenes permiso para derivar');
+    expect(alerta(fixture)).toContain('No tenés permiso para derivar');
   });
 
   it('cerrar avisa al panel', async () => {
@@ -358,7 +358,7 @@ describe('DerivarParticipante', () => {
   function boton(fixture: ComponentFixture<DerivarParticipante>, nombre: RegExp) {
     const encontrado = botones(fixture, nombre)[0];
     if (encontrado === undefined) {
-      throw new Error(`No hay boton ${nombre}`);
+      throw new Error(`No hay botón ${nombre}`);
     }
     return encontrado;
   }

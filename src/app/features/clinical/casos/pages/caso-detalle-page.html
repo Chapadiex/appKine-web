@@ -1,6 +1,17 @@
-<h1>Caso clinico</h1>
-
-<p><a class="enlace" [routerLink]="visita.rutaHistoria()">Volver a la historia clinica</a></p>
+<div class="titulo-con-ayuda titulo-clinico">
+  <a class="migas" [routerLink]="visita.rutaHistoria()">Historia clínica</a>
+  <span class="migas__separador" aria-hidden="true">/</span>
+  <h1>Caso clínico</h1>
+  @if (estado().tipo === 'listo') {
+    @if (caso(); as c) {
+      <div class="encabezado__acciones">
+        <a class="boton boton--secundario" [routerLink]="visita.rutaPlan(c.id!)">
+          Ver el plan de tratamiento
+        </a>
+      </div>
+    }
+  }
+</div>
 
 @switch (estado().tipo) {
   @case ('cargando') {
@@ -33,34 +44,48 @@
     @if (caso(); as c) {
       <section class="tarjeta" aria-labelledby="titulo-caso">
         <h2 id="titulo-caso">Caso {{ c.numeroCaso }} · {{ nombreDeOferta() }}</h2>
-        <dl class="detalle">
-          <dt>Estado</dt>
-          <dd data-testid="caso-estado">{{ estadoEnPalabras() }}</dd>
-          <dt>Abierto</dt>
-          <dd>{{ fechaYHora(c.abiertoEn) }}</dd>
+        <dl class="historia__datos">
+          <div>
+            <dt>Estado</dt>
+            <dd
+              data-testid="caso-estado"
+              class="marca-estado"
+              [class.marca-estado--activa]="activo()"
+            >
+              {{ estadoEnPalabras() }}
+            </dd>
+          </div>
+          <div>
+            <dt>Abierto</dt>
+            <dd>{{ fechaYHora(c.abiertoEn) }}</dd>
+          </div>
           @if (c.cerradoEn) {
-            <dt>Cerrado</dt>
-            <dd>{{ fechaYHora(c.cerradoEn) }}</dd>
+            <div>
+              <dt>Cerrado</dt>
+              <dd>{{ fechaYHora(c.cerradoEn) }}</dd>
+            </div>
           }
           @if (c.motivoCierre) {
-            <dt>Motivo del cierre</dt>
-            <dd class="historia__cuerpo">{{ c.motivoCierre }}</dd>
+            <div>
+              <dt>Motivo del cierre</dt>
+              <dd class="historia__cuerpo">{{ c.motivoCierre }}</dd>
+            </div>
           }
         </dl>
 
-        <h3>Diagnostico presuntivo</h3>
-        <p class="historia__cuerpo">{{ c.diagnosticoPresuntivo }}</p>
-        <h3>Objetivo terapeutico</h3>
-        @if (c.objetivoTerapeutico) {
-          <p class="historia__cuerpo">{{ c.objetivoTerapeutico }}</p>
-        } @else {
-          <p class="estado estado--vacio">Sin objetivo cargado.</p>
-        }
-
-        <div class="acciones">
-          <a class="boton boton--secundario" [routerLink]="visita.rutaPlan(c.id!)">
-            Ver el plan de tratamiento
-          </a>
+        <div class="historia__dos">
+          <div>
+            <h3>Diagnóstico presuntivo</h3>
+            <p class="historia__cuerpo">{{ c.diagnosticoPresuntivo }}</p>
+          </div>
+          <div>
+            <h3>Objetivo terapéutico</h3>
+            @if (c.objetivoTerapeutico) {
+              <p class="historia__cuerpo">{{ c.objetivoTerapeutico }}</p>
+            } @else {
+              <p class="estado estado--vacio">Sin objetivo cargado.</p>
+            }
+          </div>
         </div>
       </section>
 
@@ -81,11 +106,15 @@
       <div class="historia__columnas">
         <div class="historia__principal">
           <section class="tarjeta" aria-labelledby="titulo-equipo">
-            <h2 id="titulo-equipo">Equipo tratante</h2>
-            <p class="ayuda">
-              El rol no da ni quita permisos: dice quien responde por el caso. Quien sale del equipo
-              sigue figurando en el historial, porque trato el caso.
-            </p>
+            <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
+              <h2 id="titulo-equipo">Equipo tratante</h2>
+              <app-ayuda titulo="Equipo tratante">
+                <p>
+                  El rol no da ni quita permisos: dice quien responde por el caso. Quien sale del
+                  equipo sigue figurando en el historial, porque trato el caso.
+                </p>
+              </app-ayuda>
+            </div>
             @if (equipo().length === 0) {
               <p class="estado estado--vacio">El caso no tiene equipo asignado.</p>
             } @else {
@@ -128,7 +157,7 @@
                     [value]="nuevoIntegrante() ?? ''"
                     (change)="elegirNuevoIntegrante($any($event.target).value)"
                   >
-                    <option value="">Elegi un profesional habilitado</option>
+                    <option value="">Elegí un profesional habilitado</option>
                     @for (p of candidatos(); track p.membershipId) {
                       <option [value]="p.membershipId">{{ p.nombre }}</option>
                     }
@@ -232,16 +261,20 @@
           }
 
           <section class="tarjeta" aria-labelledby="titulo-cierre">
-            <h2 id="titulo-cierre">{{ activo() ? 'Cerrar el caso' : 'Reabrir el caso' }}</h2>
-            <p class="ayuda">
-              @if (activo()) {
-                Cerrar no borra nada: el caso sigue en la historia y se puede reabrir. El motivo
-                queda en el historial.
-              } @else {
-                Reabrir vuelve el caso a activo. La numeracion de sesiones continua donde quedo y el
-                cierre anterior sigue en el historial.
-              }
-            </p>
+            <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
+              <h2 id="titulo-cierre">{{ activo() ? 'Cerrar el caso' : 'Reabrir el caso' }}</h2>
+              <app-ayuda titulo="Cierre y reapertura">
+                <p>
+                  @if (activo()) {
+                    Cerrar no borra nada: el caso sigue en la historia y se puede reabrir. El motivo
+                    queda en el historial.
+                  } @else {
+                    Reabrir vuelve el caso a activo. La numeración de sesiones continúa donde quedó
+                    y el cierre anterior sigue en el historial.
+                  }
+                </p>
+              </app-ayuda>
+            </div>
             <form (submit)="$event.preventDefault(); cerrarOReabrir()">
               <div class="campo">
                 <label for="caso-motivo">

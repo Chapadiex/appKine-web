@@ -54,11 +54,11 @@ export interface TextosColaborador {
   readonly generico?: string;
 }
 
-const MENSAJE_GENERICO = 'No pudimos completar la operacion. Volve a intentar en un momento.';
-const MENSAJE_DE_RED = 'No se pudo contactar al servidor. Revisa tu conexion y volve a intentar.';
-const MENSAJE_SIN_CONTEXTO = 'Todavia no elegiste un contexto de trabajo.';
+const MENSAJE_GENERICO = 'No pudimos completar la operación. Volvé a intentar en un momento.';
+const MENSAJE_DE_RED = 'No se pudo contactar al servidor. Revisa tu conexion y volvé a intentar.';
+const MENSAJE_SIN_CONTEXTO = 'Todavía no elegiste un contexto de trabajo.';
 const MENSAJE_SIN_PERMISO =
-  'No tenes permiso para esta operacion en este contexto. Pediselo a quien administra la organizacion.';
+  'No tenés permiso para esta operación en este contexto. Pediselo a quien administra la organización.';
 const MENSAJE_AUTO_REVOCACION =
   'No podés quitarte a vos mismo tu último rol de administración: después no podrías deshacerlo. ' +
   'Pedile a otro administrador de la organización que lo haga.';
@@ -98,7 +98,7 @@ export function traducirErrorColaborador(
     return {
       mensaje:
         segundos > 0
-          ? `Demasiados intentos. Espera ${segundos} segundos y volve a intentar.`
+          ? `Demasiados intentos. Espera ${segundos} segundos y volvé a intentar.`
           : MENSAJE_LIMITE_SIN_PLAZO,
       causa: 'limite',
       segundosDeEspera: segundos,
@@ -183,8 +183,8 @@ export function traducirErrorGrant(error: unknown, rol: string): ErrorColaborado
   return {
     ...traducido,
     mensaje:
-      `${permiso} no se puede otorgar a un colaborador con rol ${rolVigente} segun la matriz ` +
-      'de permisos. Si el rol cambio hace poco, cerra el panel y volve a abrirlo para ver lo que admite.',
+      `${permiso} no se puede otorgar a un colaborador con rol ${rolVigente} según la matriz ` +
+      'de permisos. Si el rol cambio hace poco, cerra el panel y volvé a abrirlo para ver lo que admite.',
   };
 }
 

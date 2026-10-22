@@ -5,6 +5,7 @@ import { RouterLink } from '@angular/router';
 import { EstadoFormulario, traducirYEsperar } from '../../models/auth-errors';
 import { RegistroYActivacionService } from '../../../../api/generated/api/registro-y-activacion.service';
 import { crearEsperaPorLimite } from '../../../../shared/utils/espera-por-limite';
+import { Icono } from '../../../../shared/components/icono/icono';
 
 /**
  * Mensaje unico del `202`.
@@ -14,15 +15,15 @@ import { crearEsperaPorLimite } from '../../../../shared/utils/espera-por-limite
  * los clientes del SaaS igual y todo el trabajo del backend se tiraria.
  */
 export const MENSAJE_UNIFORME_ACTIVACION =
-  'Si el email esta registrado y la cuenta todavia no esta activa, te llega un correo con un ' +
-  'enlace nuevo. Revisa tambien la carpeta de correo no deseado.';
+  'Si el email esta registrado y la cuenta todavía no esta activa, te llega un correo con un ' +
+  'enlace nuevo. Revisa también la carpeta de correo no deseado.';
 
 /** Reenvio del enlace de activacion (M02, AKINE-01.02). */
 @Component({
   selector: 'app-resend-activation-page',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [Icono, ReactiveFormsModule, RouterLink],
   templateUrl: './resend-activation-page.html',
-  styleUrl: '../../auth.css',
+  styleUrls: ['../../auth.css', '../../../../shared/styles/acceso.css'],
 })
 export class ResendActivationPage {
   private readonly registro = inject(RegistroYActivacionService);

@@ -30,6 +30,8 @@ import {
   Justificacion,
   OrigenDelTimeline,
 } from '../../../services/historia-clinica-api';
+import { Ayuda } from '../../../../../shared/components/ayuda/ayuda';
+import { Filtros } from '../../../../../shared/components/filtros/filtros';
 
 /**
  * Los origenes que se pueden filtrar, con su rotulo. `Record` sobre el tipo del contrato: un origen
@@ -124,7 +126,7 @@ type Estado =
  */
 @Component({
   selector: 'app-timeline-clinico',
-  imports: [NgTemplateOutlet],
+  imports: [Ayuda, Filtros, NgTemplateOutlet],
   templateUrl: './timeline-clinico.html',
   styleUrl: '../historia-clinica.css',
 })
@@ -155,6 +157,14 @@ export class TimelineClinico {
   /** "Desde" despues de "Hasta": el backend responde 400, asi que ni se pregunta. */
   protected readonly rangoInvalido = computed(
     () => this.desde() !== '' && this.hasta() !== '' && this.desde() > this.hasta(),
+  );
+  /** Filtros avanzados fuera de su valor por defecto: el contador del embudo. */
+  protected readonly filtrosAvanzadosActivos = computed(
+    () =>
+      Number(this.casoId() !== null) +
+      Number(this.origenes().length > 0) +
+      Number(this.desde() !== '') +
+      Number(this.hasta() !== ''),
   );
   /** Algun filtro ademas del caso: cambia el mensaje de la lista vacia. */
   protected readonly hayFiltros = computed(

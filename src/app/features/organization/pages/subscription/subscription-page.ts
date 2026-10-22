@@ -1,3 +1,4 @@
+import { DatePipe } from '@angular/common';
 import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Observable, catchError, map, of, switchMap } from 'rxjs';
@@ -10,6 +11,7 @@ import { SubscriptionResponseStatusEnum } from '../../../../api/generated/model/
 import { SubscriptionTransitionResponse } from '../../../../api/generated/model/subscription-transition-response';
 import { SuscripcionesService } from '../../../../api/generated/api/suscripciones.service';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 
 /**
  * Suscripcion lista para pintar: la respuesta del backend mas el motivo de la suspension.
@@ -58,7 +60,7 @@ const HECHOS_A_REVISAR = 20;
  */
 @Component({
   selector: 'app-subscription-page',
-  imports: [RouterLink],
+  imports: [Ayuda, DatePipe, RouterLink],
   templateUrl: './subscription-page.html',
   styleUrl: '../../organization.css',
 })
@@ -143,6 +145,15 @@ export class SubscriptionPage {
     return limite.limitValue === undefined ? 'Sin tope' : String(limite.limitValue);
   }
 
+  /** Uso sobre el tope, de 0 a 100, para la barra. 0 si el limite es ilimitado: no hay barra. */
+  protected porcentajeDeUso(limite: LimitUsageResponse): number {
+    const tope = limite.limitValue;
+    if (tope === undefined || tope <= 0) {
+      return 0;
+    }
+    return Math.min(100, Math.round(((limite.currentUsage ?? 0) / tope) * 100));
+  }
+
   /**
    * Completa la suscripcion con el motivo de la suspension cuando corresponde.
    *
@@ -180,7 +191,7 @@ function aEstadoDeError(error: Error): EstadoSuscripcion {
   if (!(error instanceof AkineHttpError)) {
     return {
       tipo: 'error',
-      mensaje: 'Error inesperado al pedir la suscripcion.',
+      mensaje: 'Error inesperado al pedir la suscripción.',
       esDeRed: false,
       faltaContexto: false,
     };
@@ -198,7 +209,7 @@ function aEstadoDeError(error: Error): EstadoSuscripcion {
   if (error.faltaContexto) {
     return {
       tipo: 'error',
-      mensaje: 'Todavia no elegiste un contexto de trabajo.',
+      mensaje: 'Todavía no elegiste un contexto de trabajo.',
       esDeRed: false,
       faltaContexto: true,
     };
@@ -207,7 +218,7 @@ function aEstadoDeError(error: Error): EstadoSuscripcion {
   if (error.status === 403) {
     return {
       tipo: 'error',
-      mensaje: 'Tu cuenta no administra este centro, asi que no podes ver su suscripcion.',
+      mensaje: 'Tu cuenta no administra este centro, así que no podés ver su suscripción.',
       esDeRed: false,
       faltaContexto: false,
     };
@@ -216,7 +227,7 @@ function aEstadoDeError(error: Error): EstadoSuscripcion {
   if (error.status === 404) {
     return {
       tipo: 'error',
-      mensaje: 'No encontramos esta organizacion o ya no tenes acceso a ella.',
+      mensaje: 'No encontramos esta organización o ya no tenés acceso a ella.',
       esDeRed: false,
       faltaContexto: false,
     };

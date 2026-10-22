@@ -136,7 +136,7 @@ describe('OrdenesYAutorizacionesPage', () => {
     expect(rotulosDeBoton(fixture)).toContain('Corregir');
   });
 
-  it('una orden dada de baja no ofrece ninguna accion y muestra su motivo', async () => {
+  it('una orden dada de baja no ofrece ninguna acción y muestra su motivo', async () => {
     const fixture = await montar({
       ordenes: [{ ...ORDEN, estado: 'INACTIVA', deactivationReason: 'Cargada por error.' }],
     });
@@ -145,15 +145,15 @@ describe('OrdenesYAutorizacionesPage', () => {
     expect(texto(fixture)).toContain('Cargada por error.');
   });
 
-  it('avisa del vencimiento proximo cuando el backend lo calcula', async () => {
+  it('avisa del vencimiento próximo cuando el backend lo calcula', async () => {
     const fixture = await montar({ ordenes: [{ ...ORDEN, diasParaVencer: 3 }] });
 
     // El aviso sale de `diasParaVencer`, que se calcula al leer: no hay ningun job que mueva
     // estados y por eso nunca queda desactualizado.
-    expect(texto(fixture)).toContain('Vence en 3 dias');
+    expect(texto(fixture)).toContain('Vence en 3 días');
   });
 
-  it('una autorizacion rechazada sigue viva, muestra su motivo y no habilita', async () => {
+  it('una autorización rechazada sigue viva, muestra su motivo y no habilita', async () => {
     const fixture = await montar({
       autorizaciones: [
         {
@@ -172,7 +172,7 @@ describe('OrdenesYAutorizacionesPage', () => {
     expect(contenido).toContain('No habilita');
   });
 
-  it('el saldo se muestra con la salvedad de que el consumo todavia no se cablea', async () => {
+  it('el saldo se muestra con la salvedad de que el consumo todavía no se cablea', async () => {
     const fixture = await montar({ autorizaciones: [PENDIENTE] });
 
     // `cantidadConsumida` vale siempre 0 en esta version, y sin la aclaracion un "0 consumidas"
@@ -208,7 +208,7 @@ describe('OrdenesYAutorizacionesPage', () => {
     expect(texto(fixture)).toContain('pisa lo que se pidio');
   });
 
-  it('aprobar manda la accion APROBAR con la cantidad recortada y la version', async () => {
+  it('aprobar manda la acción APROBAR con la cantidad recortada y la versión', async () => {
     const fixture = await montar({ autorizaciones: [PENDIENTE] });
 
     apretar(fixture, 'Respuesta del financiador');
@@ -247,13 +247,13 @@ describe('OrdenesYAutorizacionesPage', () => {
 
     apretar(fixture, 'Respuesta del financiador');
     elegirEn(fixture, `#resolver-accion-${PENDIENTE.id}`, 'RECHAZAR');
-    escribirEn(fixture, `#resolver-motivo-${PENDIENTE.id}`, 'Sin cobertura para esa practica.');
+    escribirEn(fixture, `#resolver-motivo-${PENDIENTE.id}`, 'Sin cobertura para esa práctica.');
     apretar(fixture, 'Registrar la respuesta');
 
     const pedido = httpMock.expectOne(esResolver());
     const cuerpo = pedido.request.body as Record<string, unknown>;
     expect(cuerpo['accion']).toBe('RECHAZAR');
-    expect(cuerpo['motivo']).toBe('Sin cobertura para esa practica.');
+    expect(cuerpo['motivo']).toBe('Sin cobertura para esa práctica.');
     // Mandar una cantidad en un rechazo seria decir que se autorizo algo.
     expect(cuerpo['cantidadAutorizada']).toBeUndefined();
 
@@ -264,7 +264,7 @@ describe('OrdenesYAutorizacionesPage', () => {
     await estabilizar(fixture);
   });
 
-  it('una autorizacion APROBADA no ofrece resolverse otra vez: es terminal', async () => {
+  it('una autorización APROBADA no ofrece resolverse otra vez: es terminal', async () => {
     const fixture = await montar({
       autorizaciones: [{ ...PENDIENTE, estadoAutorizacion: 'APROBADA', habilita: true }],
     });
@@ -285,7 +285,7 @@ describe('OrdenesYAutorizacionesPage', () => {
       {
         type: 'https://akine.app/problems/autorizacion-transicion-no-permitida',
         status: 409,
-        detail: 'Una autorizacion APROBADA no admite la accion APROBAR.',
+        detail: 'Una autorización APROBADA no admite la acción APROBAR.',
         estadoActual: 'APROBADA',
         accion: 'APROBAR',
       },
@@ -295,11 +295,11 @@ describe('OrdenesYAutorizacionesPage', () => {
 
     // Es tambien la respuesta a la aprobacion concurrente: el segundo en llegar encuentra la
     // autorizacion ya resuelta.
-    expect(texto(fixture)).toContain('no admite la accion APROBAR');
+    expect(texto(fixture)).toContain('no admite la acción APROBAR');
     expect(rotulosDeBoton(fixture)).toContain('Recargar');
   });
 
-  it('el 409 de solapamiento resalta la autorizacion que se pisa', async () => {
+  it('el 409 de solapamiento resalta la autorización que se pisa', async () => {
     const otra = { ...PENDIENTE, id: 601, numero: 'AUT-2', estadoAutorizacion: 'APROBADA' };
     const fixture = await montar({ autorizaciones: [PENDIENTE, otra] });
 
@@ -358,10 +358,10 @@ describe('OrdenesYAutorizacionesPage', () => {
     expect(texto(fixture)).toContain('Escribi quien firmo la orden');
   });
 
-  it('el alta de autorizacion solo ofrece PENDIENTE y APROBADA como estado inicial', async () => {
+  it('el alta de autorización solo ofrece PENDIENTE y APROBADA como estado inicial', async () => {
     const fixture = await montar();
 
-    apretar(fixture, 'Registrar una autorizacion');
+    apretar(fixture, 'Registrar una autorización');
     const opciones = Array.from(
       (fixture.nativeElement as HTMLElement).querySelectorAll(
         '#autorizacion-estado option',
@@ -389,7 +389,7 @@ describe('OrdenesYAutorizacionesPage', () => {
     await estabilizar(fixture);
   });
 
-  it('elegir la opcion vacia desvincula, y no da de baja el documento', async () => {
+  it('elegir la opción vacía desvincula, y no da de baja el documento', async () => {
     const fixture = await montar({ ordenes: [{ ...ORDEN, adjuntoId: ADJUNTO.id }] });
 
     apretar(fixture, 'Escaneo');
@@ -407,7 +407,7 @@ describe('OrdenesYAutorizacionesPage', () => {
     expect(texto(fixture)).toContain('El archivo sigue estando en la ficha');
   });
 
-  it('corregir una orden manda la version y dice que el paciente no se cambia', async () => {
+  it('corregir una orden manda la versión y dice que el paciente no se cambia', async () => {
     const fixture = await montar({ ordenes: [{ ...ORDEN, vencida: true }] });
 
     apretar(fixture, 'Corregir');
@@ -428,16 +428,16 @@ describe('OrdenesYAutorizacionesPage', () => {
     await estabilizar(fixture);
   });
 
-  it('corregir una autorizacion no ofrece cambiar cobertura, practica ni estado', async () => {
+  it('corregir una autorización no ofrece cambiar cobertura, práctica ni estado', async () => {
     const fixture = await montar({ autorizaciones: [PENDIENTE] });
 
     apretar(fixture, 'Corregir');
     const panel = texto(fixture);
     // Las dos primeras son otra autorizacion; el estado se mueve con la respuesta del financiador.
-    expect(panel).toContain('no se corrigen aca');
+    expect(panel).toContain('no se corrigen acá');
 
     escribirEn(fixture, `#editar-aut-numero-${PENDIENTE.id}`, 'AUT-9');
-    apretar(fixture, 'Guardar la autorizacion');
+    apretar(fixture, 'Guardar la autorización');
 
     const pedido = httpMock.expectOne(esEdicionDeAutorizacion());
     const cuerpo = pedido.request.body as Record<string, unknown>;
@@ -450,7 +450,7 @@ describe('OrdenesYAutorizacionesPage', () => {
     await estabilizar(fixture);
   });
 
-  it('el comprobante de una autorizacion se elige entre los documentos ya cargados', async () => {
+  it('el comprobante de una autorización se elige entre los documentos ya cargados', async () => {
     const fixture = await montar({ autorizaciones: [PENDIENTE] });
 
     apretar(fixture, 'Comprobante');
@@ -497,11 +497,11 @@ describe('OrdenesYAutorizacionesPage', () => {
       );
     await estabilizar(fixture);
 
-    expect(texto(fixture)).toContain('No podes dar de alta ni editar');
+    expect(texto(fixture)).toContain('No podés dar de alta ni editar');
     expect(rotulosDeBoton(fixture)).toContain('Reintentar');
   });
 
-  it('el 403 del catalogo clinico no tira la pantalla: carga sin practicas y dice por que', async () => {
+  it('el 403 del catalogo clínico no tira la pantalla: carga sin prácticas y dice por que', async () => {
     tenantContext.select({
       organizationId: 1,
       organizationName: 'Centro Belgrano',
@@ -529,11 +529,11 @@ describe('OrdenesYAutorizacionesPage', () => {
     httpMock.expectOne(esListado(ADJUNTOS)).flush({ content: [] });
     await estabilizar(fixture);
 
-    expect(texto(fixture)).toContain('No tenes permiso para consultar el catalogo clinico');
+    expect(texto(fixture)).toContain('No tenés permiso para consultar el catalogo clínico');
     expect(rotulosDeBoton(fixture)).not.toContain('Reintentar');
   });
 
-  it('con el motivo vacio no manda la baja de la orden', async () => {
+  it('con el motivo vacío no manda la baja de la orden', async () => {
     const fixture = await montar({ ordenes: [ORDEN] });
 
     apretar(fixture, 'Dar de baja la orden');
@@ -542,14 +542,14 @@ describe('OrdenesYAutorizacionesPage', () => {
     httpMock.expectNone(esBajaDeOrden());
   });
 
-  it('la baja de la autorizacion aclara que no es rechazar ni vencer', async () => {
+  it('la baja de la autorización aclara que no es rechazar ni vencer', async () => {
     const fixture = await montar({ autorizaciones: [PENDIENTE] });
 
-    apretar(fixture, 'Dar de baja la autorizacion');
+    apretar(fixture, 'Dar de baja la autorización');
     expect(texto(fixture)).toContain('NO es rechazar y NO es vencer');
 
     escribirEn(fixture, `#baja-autorizacion-${PENDIENTE.id}`, 'Cargada por error.');
-    apretar(fixture, 'Confirmar la baja de la autorizacion');
+    apretar(fixture, 'Confirmar la baja de la autorización');
 
     const pedido = httpMock.expectOne(esBajaDeAutorizacion());
     expect((pedido.request.body as Record<string, unknown>)['reason']).toBe('Cargada por error.');
@@ -563,7 +563,7 @@ describe('OrdenesYAutorizacionesPage', () => {
   // 4. Elegibilidad
   // -------------------------------------------------------------------------------------
 
-  it('la lista vacia con elegible=true explica cual de las situaciones es', async () => {
+  it('la lista vacía con elegible=true explica cual de las situaciones es', async () => {
     const fixture = await montar();
 
     consultarElegibilidad(fixture);
@@ -576,7 +576,7 @@ describe('OrdenesYAutorizacionesPage', () => {
     await estabilizar(fixture);
 
     const contenido = texto(fixture);
-    expect(contenido).toContain('No le falta ningun papel');
+    expect(contenido).toContain('No le falta ningún papel');
     // Sin esto, "todo en orden" sobre un paciente sin convenio se lee como que el sistema no
     // verifico nada, y alguien sale a buscar la autorizacion igual.
     expect(contenido).toContain('no tiene convenio vigente con ese plan');
@@ -599,8 +599,8 @@ describe('OrdenesYAutorizacionesPage', () => {
 
     const contenido = texto(fixture);
     expect(contenido).toContain('Le falta documentacion');
-    expect(contenido).toContain('Orden medica: FALTA');
-    expect(contenido).toContain('Autorizacion: cumplido');
+    expect(contenido).toContain('Orden médica: FALTA');
+    expect(contenido).toContain('Autorización: cumplido');
     expect(contenido).toContain('Convenio OSDE 2026');
   });
 
@@ -617,13 +617,13 @@ describe('OrdenesYAutorizacionesPage', () => {
     expect(texto(fixture)).toContain('Es informativo');
   });
 
-  it('sin cobertura o sin practica no consulta nada', async () => {
+  it('sin cobertura o sin práctica no consulta nada', async () => {
     const fixture = await montar();
 
     apretar(fixture, 'Consultar');
 
     httpMock.expectNone(esElegibilidad());
-    expect(texto(fixture)).toContain('Elegi la cobertura');
+    expect(texto(fixture)).toContain('Elegí la cobertura');
   });
 
   it('sin ninguna cobertura activa lo dice y enlaza a cargarla', async () => {
@@ -639,7 +639,7 @@ describe('OrdenesYAutorizacionesPage', () => {
   // B-4 (DP-23): situacion de la orden e historial de la autorizacion
   // -------------------------------------------------------------------------------------
 
-  it('la orden muestra la situacion que deriva el backend y las sesiones consumidas', async () => {
+  it('la orden muestra la situación que deriva el backend y las sesiones consumidas', async () => {
     const fixture = await montar({
       ordenes: [{ ...ORDEN, situacion: 'EN_CURSO', sesionesConsumidas: 3 }],
     });
@@ -690,14 +690,14 @@ describe('OrdenesYAutorizacionesPage', () => {
       await estabilizar(fixture);
 
       const contenido = texto(fixture);
-      expect(contenido).toContain('Historial de la autorizacion AUT-1');
+      expect(contenido).toContain('Historial de la autorización AUT-1');
       expect(contenido).toContain('Nace como pendiente de respuesta');
       expect(contenido).toContain('Reconstruido al crear el historial');
-      expect(contenido).toContain('Consumo de una sesion');
+      expect(contenido).toContain('Consumo de una sesión');
       expect(contenido).toContain('Cantidad: 1');
       expect(contenido).toContain('Cuenta 42');
       expect(contenido).toContain('Vencida');
-      expect(contenido).toContain('Pagina 1 de 2');
+      expect(contenido).toContain('Página 1 de 2');
       await esperarSinViolaciones(fixture.nativeElement as HTMLElement);
 
       apretar(fixture, 'Hechos siguientes');
@@ -707,12 +707,12 @@ describe('OrdenesYAutorizacionesPage', () => {
       await estabilizar(fixture);
 
       apretar(fixture, 'Cerrar el historial');
-      expect(texto(fixture)).not.toContain('Historial de la autorizacion AUT-1');
+      expect(texto(fixture)).not.toContain('Historial de la autorización AUT-1');
     },
     TIMEOUT_AXE,
   );
 
-  it('el saldo y los consumos se abren por fila y una reversion relee solo el listado', async () => {
+  it('el saldo y los consumos se abren por fila y una reversión relee solo el listado', async () => {
     const fixture = await montar({ autorizaciones: [PENDIENTE] });
     const base = `/api/v1/autorizaciones/${PENDIENTE.id}`;
 
@@ -723,11 +723,11 @@ describe('OrdenesYAutorizacionesPage', () => {
       .flush([{ id: 1, tipo: 'CONSUMO', tipoOrigen: 'SESION', referenciaOrigen: 70 }]);
     httpMock.expectOne(esListado(`${base}/alertas`)).flush([]);
     await estabilizar(fixture);
-    expect(texto(fixture)).toContain('Saldo y consumos de la autorizacion AUT-1');
+    expect(texto(fixture)).toContain('Saldo y consumos de la autorización AUT-1');
 
     apretar(fixture, 'Revertir el consumo #1');
     escribirEn(fixture, '#revertir-consumo-1', 'Error de carga');
-    apretar(fixture, 'Confirmar la reversion');
+    apretar(fixture, 'Confirmar la reversión');
     httpMock
       .expectOne((p) => p.method === 'POST' && p.url === `${base}/reversiones`)
       .flush({ id: 2, tipo: 'REVERSION', movimientoOrigenId: 1 });
@@ -740,7 +740,7 @@ describe('OrdenesYAutorizacionesPage', () => {
     expect(texto(fixture)).toContain('Se revirtio el consumo #1');
 
     apretar(fixture, 'Cerrar el saldo');
-    expect(texto(fixture)).not.toContain('Saldo y consumos de la autorizacion AUT-1');
+    expect(texto(fixture)).not.toContain('Saldo y consumos de la autorización AUT-1');
   });
 
   function esHistorial(autorizacionId: number) {
@@ -913,7 +913,7 @@ describe('OrdenesYAutorizacionesPage', () => {
       fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>,
     ).find((b) => (b.textContent ?? '').trim() === rotulo);
     if (boton === undefined) {
-      throw new Error(`No hay ningun boton rotulado "${rotulo}".`);
+      throw new Error(`No hay ningún botón rotulado "${rotulo}".`);
     }
     boton.click();
     fixture.detectChanges();

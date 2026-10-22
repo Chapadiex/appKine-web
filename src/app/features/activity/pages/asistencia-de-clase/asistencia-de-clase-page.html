@@ -1,11 +1,11 @@
-<p><a class="enlace" routerLink="/asistencia">Volver a las clases del dia</a></p>
+<p><a class="enlace" routerLink="/asistencia">Volver a las clases del día</a></p>
 @if (puedeAtender()) {
   <p>
     <a class="enlace" [routerLink]="['/atencion/clases', claseId()]"
-      >Atencion clinica de la clase</a
+      >Atención clínica de la clase</a
     >
     <span class="ayuda">
-      — la atencion de cada participante que estuvo y fue derivado a un caso.</span
+      — la atención de cada participante que estuvo y fue derivado a un caso.</span
     >
   </p>
 }
@@ -35,9 +35,9 @@
 
       <section class="tarjeta" aria-labelledby="titulo-clase">
         <h2 id="titulo-clase" tabindex="-1">La clase</h2>
-        <p>
-          {{ fechaHora(clase.inicio, zona()) }} a {{ hora(clase.fin, zona()) }} ·
-          <b>{{ etiquetaDeEstadoDeClase(clase.estado) }}</b>
+        <p class="clase-meta">
+          <span>{{ fechaHora(clase.inicio, zona()) }} a {{ hora(clase.fin, zona()) }}</span>
+          <b class="clase-meta__estado">{{ etiquetaDeEstadoDeClase(clase.estado) }}</b>
         </p>
         <ul class="contadores" aria-label="Resumen de la asistencia">
           <li>Presentes: {{ clase.presentes ?? 0 }}</li>
@@ -55,7 +55,7 @@
         }
         @if (clase.estado === 'REALIZADA') {
           <p class="ayuda">
-            La clase ya cerro. Podes corregir una asistencia: cada correccion pide motivo y el
+            La clase ya cerro. Podés corregir una asistencia: cada correccion pide motivo y el
             resultado anterior queda en el historial.
           </p>
         }
@@ -149,7 +149,7 @@
           <p class="estado estado--vacio">La clase no tiene inscriptos.</p>
         } @else {
           @if (admite() && puedeMarcar()) {
-            <div class="acciones">
+            <div class="acciones acciones--barra">
               <button
                 type="button"
                 class="boton boton--secundario"
@@ -174,7 +174,7 @@
               <thead>
                 <tr>
                   <th scope="col">Participante</th>
-                  <th scope="col">Inscripcion</th>
+                  <th scope="col">Inscripción</th>
                   <th scope="col">Registrado</th>
                   @if (admite() && puedeMarcar()) {
                     <th scope="col">Marcar</th>
@@ -211,7 +211,12 @@
                               Asistencia de {{ nombre(p) }}
                             </legend>
                             @for (r of resultados; track r.valor) {
-                              <label class="opcion-radio">
+                              <label
+                                class="opcion-radio"
+                                [class.opcion-radio--presente]="r.valor === 'PRESENTE'"
+                                [class.opcion-radio--tarde]="r.valor === 'PRESENTE_TARDE'"
+                                [class.opcion-radio--ausente]="r.valor === 'AUSENTE'"
+                              >
                                 <input
                                   type="radio"
                                   [name]="'asistencia-' + p.inscripcion?.id"
@@ -297,12 +302,19 @@
                 (cambioDePagina)="irAPagina($event)"
               />
             } @else {
-              <p class="ayuda">Guarda o descarta los cambios para ver otra pagina.</p>
+              <p class="ayuda">Guarda o descarta los cambios para ver otra página.</p>
             }
           }
 
           @if (admite() && puedeMarcar()) {
-            <div class="acciones">
+            <div class="acciones acciones--pie">
+              <span class="pie-cambios" role="status">
+                @if (pendientes().length > 0) {
+                  {{ pendientes().length }} sin guardar
+                } @else {
+                  Sin cambios por guardar
+                }
+              </span>
               <button
                 type="button"
                 class="boton"

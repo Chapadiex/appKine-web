@@ -43,7 +43,7 @@ export type CausaContracting =
   | 'validacion'
   /** 404: no existe, o es de otro tenant. Los dos responden igual a proposito. */
   | 'no-encontrado'
-  /** 409 concurrent-modification: la `expectedVersion` enviada quedo vieja. Ver arriba. */
+  /** 409 concurrent-modification: la `expectedVersion` enviada quedó vieja. Ver arriba. */
   | 'concurrencia'
   /** 409 subscription-suspended: lo emite el filtro, antes del controller. */
   | 'suscripcion-suspendida'
@@ -51,7 +51,7 @@ export type CausaContracting =
   | 'codigo-repetido'
   /** 409 *-nombre-taken: idem con el nombre. */
   | 'nombre-repetido'
-  /** 409 financiador-cuit-taken: el CUIT normalizado a 11 digitos ya esta. */
+  /** 409 financiador-cuit-taken: el CUIT normalizado a 11 dígitos ya esta. */
   | 'cuit-repetido'
   /**
    * 409 *-solapado: hay otra fila activa que cubre parte del mismo periodo (RN-M16-002).
@@ -101,8 +101,8 @@ export type AmbitoContracting =
   // lo creo manda a recargar una grilla que no tiene nada que ver.
   | 'arancel-de-oferta';
 
-const MENSAJE_GENERICO = 'No pudimos completar la operacion. Volve a intentar en un momento.';
-const MENSAJE_DE_RED = 'No se pudo contactar al servidor. Revisa tu conexion y volve a intentar.';
+const MENSAJE_GENERICO = 'No pudimos completar la operación. Volvé a intentar en un momento.';
+const MENSAJE_DE_RED = 'No se pudo contactar al servidor. Revisa tu conexión y volvé a intentar.';
 const MENSAJE_LIMITE_SIN_PLAZO =
   'Demasiados intentos. Espera un momento antes de volver a intentar.';
 
@@ -113,9 +113,9 @@ const MENSAJE_LIMITE_SIN_PLAZO =
  * un listado vacio se lee como "me echaron", y el usuario vuelve a loguearse para nada.
  */
 const MENSAJE_SIN_CONTEXTO =
-  'Para administrar financiadores y convenios hay que saber en que sede estas trabajando: los ' +
+  'Para administrar financiadores y convenios hay que saber en que sede estás trabajando: los ' +
   'convenios son de una sede, y el permiso se evalua con esa sede aunque el financiador sea de ' +
-  'toda la organizacion. Eligi un consultorio y volve a entrar. Tu sesion sigue abierta.';
+  'toda la organización. Elegí un consultorio y volvé a entrar. Tu sesión sigue abierta.';
 
 /**
  * `403` sobre una mutacion.
@@ -125,22 +125,22 @@ const MENSAJE_SIN_CONTEXTO =
  * sugiera "no tenes acceso a esto" describiria mal lo que el usuario tiene delante.
  */
 const MENSAJE_SIN_PERMISO =
-  'No podes modificar la configuracion economica de esta sede: hace falta administrar convenios. ' +
-  'Pediselo a quien administra la sede o la organizacion. Consultarla si podes, y por eso el ' +
+  'No podés modificar la configuración económica de esta sede: hace falta administrar convenios. ' +
+  'Pedíselo a quien administra la sede o la organización. Consultarla si podés, y por eso el ' +
   'listado se sigue viendo.';
 
 const MENSAJE_NO_ENCONTRADO: Readonly<Record<AmbitoContracting, string>> = {
   financiador:
-    'Ese financiador ya no existe, o no es de tu organizacion. Recarga el catalogo para ver los ' +
+    'Ese financiador ya no existe, o no es de tu organización. Recarga el catálogo para ver los ' +
     'que hay ahora.',
   plan: 'Ese plan ya no existe. Recarga los planes del financiador para ver los que hay ahora.',
   convenio:
     'Ese convenio ya no existe, o no es de esta sede. Recarga el listado para ver los que hay ' +
     'ahora.',
-  arancel: 'Ese arancel ya no existe. Recarga la grilla del convenio para ver los que hay ahora.',
+  arancel: 'Ese arancel ya no existe. Recargá la grilla del convenio para ver los que hay ahora.',
   'arancel-de-oferta':
     'No encontramos la oferta elegida en esta sede: puede haberse dado de baja o ser de otra ' +
-    'sede. Recarga la pagina para ver las ofertas vigentes, o deja el arancel como general del ' +
+    'sede. Recargá la página para ver las ofertas vigentes, o dejá el arancel como general del ' +
     'convenio.',
 };
 
@@ -152,13 +152,13 @@ const MENSAJE_NO_ENCONTRADO: Readonly<Record<AmbitoContracting, string>> = {
  * automatico seria justamente pisar lo que el `409` existe para impedir.
  */
 const MENSAJE_CONCURRENCIA =
-  'Alguien mas modifico esto mientras lo estabas editando, asi que no guardamos tus cambios para ' +
+  'Alguien más modificó esto mientras lo estabas editando, así que no guardamos tus cambios para ' +
   'no pisar los suyos. Volvimos a leer los datos actuales: revisalos y confirma de nuevo si ' +
   'seguis queriendo el cambio.';
 
 const MENSAJE_SUSCRIPCION_SUSPENDIDA =
-  'La suscripcion de la organizacion esta suspendida, asi que no se pueden registrar cambios. Se ' +
-  'resuelve desde la pantalla de suscripcion.';
+  'La suscripción de la organización está suspendida, así que no se pueden registrar cambios. Se ' +
+  'resuelve desde la pantalla de suscripción.';
 
 /**
  * El codigo repetido, con la mitad que el backend no puede decir.
@@ -168,31 +168,31 @@ const MENSAJE_SUSCRIPCION_SUSPENDIDA =
  * mismo codigo lee "ya existe" y concluye que el sistema no lo dejo borrar.
  */
 const MENSAJE_CODIGO_REPETIDO =
-  'Ese codigo ya lo usa otra ficha vigente. El codigo identifica esta ficha para siempre —no se ' +
-  'puede cambiar despues, porque es lo que los historicos guardan—, asi que elegi otro. El codigo ' +
+  'Ese código ya lo usa otra ficha vigente. El código identifica esta ficha para siempre —no se ' +
+  'puede cambiar después, porque es lo que los históricos guardan—, así que elegí otro. El código ' +
   'de una ficha dada de baja si se puede reusar.';
 
 const MENSAJE_NOMBRE_REPETIDO =
-  'Ese nombre ya lo usa otra ficha vigente. A diferencia del codigo, el nombre si se puede ' +
-  'cambiar despues: si la otra ficha esta mal nombrada, corregila y volve a intentar.';
+  'Ese nombre ya lo usa otra ficha vigente. A diferencia del código, el nombre si se puede ' +
+  'cambiar después: si la otra ficha está mal nombrada, corregila y volvé a intentar.';
 
 const MENSAJE_CUIT_REPETIDO =
-  'Ese CUIT ya lo tiene otro financiador vigente. Se compara normalizado a 11 digitos, asi que ' +
-  '30-12345678-9 y 30123456789 son el mismo. Si son dos entidades distintas, dejalo vacio: varios ' +
+  'Ese CUIT ya lo tiene otro financiador vigente. Se compara normalizado a 11 dígitos, así que ' +
+  '30-12345678-9 y 30123456789 son el mismo. Si son dos entidades distintas, dejalo vacío: varios ' +
   'financiadores sin CUIT conviven sin chocar.';
 
 /**
- * El solapamiento de periodos, que es la regla central de M16.
+ * El solapamiento de períodos, que es la regla central de M16.
  *
  * <p>Es el unico mensaje que <b>ensena una operacion distinta</b>: la salida no es reintentar ni
  * recargar, sino cerrar la vigencia del que ya esta —que es el PUT, no la baja— y recien despues
  * crear el nuevo. Sin esa frase, renovar un convenio parece imposible.
  */
 const MENSAJE_SOLAPAMIENTO =
-  'Ya hay otro periodo activo que se pisa con el que estas cargando, y dos periodos del mismo ' +
+  'Ya hay otro período activo que se pisa con el que estás cargando, y dos períodos del mismo ' +
   'alcance no pueden convivir. Si lo que queres es renovar, primero cerra la vigencia del que ya ' +
-  'esta —editandolo y poniendole fecha de fin, que no es lo mismo que darlo de baja— y despues ' +
-  'carga el nuevo desde el dia siguiente.';
+  'esta —editándolo y poniéndole fecha de fin, que no es lo mismo que darlo de baja— y después ' +
+  'cargá el nuevo desde el día siguiente.';
 
 /**
  * Algo de la cadena esta dado de baja.
@@ -202,10 +202,10 @@ const MENSAJE_SOLAPAMIENTO =
  * evita el reporte de bug "di de baja la obra social y sus convenios siguen cobrando".
  */
 const MENSAJE_REFERENCIA_INACTIVA =
-  'Algo de lo que esto depende esta dado de baja, y una ficha dada de baja no admite altas nuevas ' +
+  'Algo de lo que esto depende está dado de baja, y una ficha dada de baja no admite altas nuevas ' +
   'ni ediciones. Lo que ya estaba cargado sigue valiendo —dar de baja nunca borra ni cascadea—: ' +
-  'lo unico que se impide es lo nuevo. Si hace falta volver a operar con ella, se da de alta otra ' +
-  'ficha; no hay reactivacion.';
+  'lo único que se impide es lo nuevo. Si hace falta volver a operar con ella, se da de alta otra ' +
+  'ficha; no hay reactivación.';
 
 /**
  * El arancel por oferta (RF-M16-008) sobre una oferta que no admite obra social.
@@ -213,20 +213,20 @@ const MENSAJE_REFERENCIA_INACTIVA =
  * <p>Ese arancel nunca resolveria: la cobertura aplicable corta antes, en la oferta.
  */
 const MENSAJE_OFERTA_SIN_OBRA_SOCIAL =
-  'Esa oferta no admite obra social, asi que un arancel del convenio para ella nunca se usaria. ' +
+  'Esa oferta no admite obra social, así que un arancel del convenio para ella nunca se usaría. ' +
   'Carga el arancel como general, o habilita la obra social en la oferta primero.';
 
 const MENSAJE_PRACTICA_FUERA_DE_LA_OFERTA =
-  'Esa oferta no declara la practica de este arancel. Agregale la practica a la oferta, o elegi ' +
+  'Esa oferta no declara la práctica de este arancel. Agregale la práctica a la oferta, o elegí ' +
   'otra oferta, o dejalo como arancel general del convenio.';
 
 const MENSAJE_YA_DADA_DE_BAJA =
-  'Esto ya estaba dado de baja, asi que no hay nada que hacer. Recarga el listado para verlo con ' +
+  'Esto ya estaba dado de baja, así que no hay nada que hacer. Recarga el listado para verlo con ' +
   'su estado actual.';
 
 const MENSAJE_CONFLICTO =
   'El servidor rechazo el cambio por un conflicto con lo que ya hay guardado. Recarga el listado ' +
-  'para ver el estado actual y volve a intentar.';
+  'para ver el estado actual y volvé a intentar.';
 
 /**
  * Traduce cualquier error de las pantallas de `contracting`.
@@ -253,7 +253,7 @@ export function traducirErrorContracting(
     return {
       mensaje:
         segundos > 0
-          ? `Demasiados intentos. Espera ${segundos} segundos y volve a intentar.`
+          ? `Demasiados intentos. Esperá ${segundos} segundos y volvé a intentar.`
           : MENSAJE_LIMITE_SIN_PLAZO,
       causa: 'limite',
       segundosDeEspera: segundos,
@@ -332,7 +332,7 @@ export function traducirErrorContracting(
  *
  * <p><b>El solapamiento NO entra</b>, y es la diferencia que importa: recargar no lo arregla,
  * porque el periodo que choca sigue estando ahi. Ofrecer "Recargar" ante un solapamiento manda
- * al usuario a apretar un boton que no cambia nada.
+ * al usuario a apretar un botón que no cambia nada.
  */
 export function hayQueRecargar(causa: CausaContracting | null): boolean {
   return causa === 'no-encontrado' || causa === 'conflicto' || causa === 'ya-dada-de-baja';

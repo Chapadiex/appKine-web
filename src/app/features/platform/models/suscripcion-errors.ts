@@ -28,19 +28,19 @@ export interface ErrorSuscripcion {
 
 const MENSAJES: Readonly<Record<CausaSuscripcion, string>> = {
   'version-vieja':
-    'Otro cambio llego a la suscripcion despues de que la leiste. No se aplico nada: volvimos a ' +
+    'Otro cambio llego a la suscripción después de que la leiste. No se aplico nada: volvimos a ' +
     'leerla, revisa como quedo y repeti el cambio si sigue haciendo falta.',
   suspendida:
-    'La suscripcion no esta activa, y el plan solo se cambia con la suscripcion activa. ' +
+    'La suscripción no esta activa, y el plan solo se cambia con la suscripción activa. ' +
     'Reactivala primero.',
   'no-encontrada':
     'El centro ya no esta vigente (pudo darse de baja), o el plan elegido ya no es contratable.',
   'sin-permiso':
-    'Tu cuenta ya no administra la plataforma, asi que no puede ver ni cambiar suscripciones.',
+    'Tu cuenta ya no administra la plataforma, así que no puede ver ni cambiar suscripciones.',
   validacion: 'El servidor rechazo el pedido. Revisa el plan elegido.',
-  red: 'No se pudo contactar al servidor. Revisa tu conexion y volve a intentar.',
+  red: 'No se pudo contactar al servidor. Revisa tu conexion y volvé a intentar.',
   limite: 'Demasiados intentos. Espera un momento antes de volver a intentar.',
-  otro: 'No pudimos completar la operacion. Volve a intentar en un momento.',
+  otro: 'No pudimos completar la operación. Volvé a intentar en un momento.',
 };
 
 export function traducirErrorSuscripcion(error: unknown): ErrorSuscripcion {

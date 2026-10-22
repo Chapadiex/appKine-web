@@ -30,6 +30,9 @@ import {
   personaInactiva,
 } from '../../models/etiquetas-de-person';
 import { textoRequerido } from '../../../../shared/validators/texto-requerido';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { Filtros } from '../../../../shared/components/filtros/filtros';
+import { Icono } from '../../../../shared/components/icono/icono';
 
 /** Operacion abierta sobre una fila. Solo una a la vez. */
 type TipoAccion = 'editar' | 'activar-perfil';
@@ -93,7 +96,16 @@ const TAMANO_DE_PAGINA = 20;
  */
 @Component({
   selector: 'app-padron-de-personas-page',
-  imports: [ReactiveFormsModule, PermisoDirective, ConfirmacionConMotivo, Paginacion, RouterLink],
+  imports: [
+    Ayuda,
+    Filtros,
+    Icono,
+    ReactiveFormsModule,
+    PermisoDirective,
+    ConfirmacionConMotivo,
+    Paginacion,
+    RouterLink,
+  ],
   templateUrl: './padron-de-personas-page.html',
   styleUrl: '../../person.css',
 })
@@ -153,6 +165,11 @@ export class PadronDePersonasPage {
   protected readonly texto = signal('');
   protected readonly filtroEstado = signal<FiltroEstadoPersona>('ACTIVO');
   protected readonly filtroPerfil = signal<FiltroPerfil>('TODOS');
+
+  /** Cuantos filtros del embudo estan fuera de su valor por defecto: el boton los cuenta. */
+  protected readonly filtrosAvanzadosActivos = computed(
+    () => Number(this.filtroEstado() !== 'ACTIVO') + Number(this.filtroPerfil() !== 'TODOS'),
+  );
   protected readonly pagina = signal(0);
 
   /** Fila y operacion abiertas, o `null`. Solo una a la vez. */
@@ -322,8 +339,8 @@ export class PadronDePersonasPage {
         this.enviando.set(false);
         this.altaAbierta.set(false);
         this.exito.set(
-          `${nombreCompleto(creada)} quedo registrada. Todavia no es paciente: si empieza una ` +
-            'atencion clinica, activale el perfil desde su fila.',
+          `${nombreCompleto(creada)} quedo registrada. Todavía no es paciente: si empieza una ` +
+            'atención clínica, activale el perfil desde su fila.',
         );
         this.cargar();
       },
@@ -433,8 +450,8 @@ export class PadronDePersonasPage {
         this.enviando.set(false);
         this.cerrarPaneles();
         this.exito.set(
-          `${nombreCompleto(actualizada)} ya es paciente. Esto no le crea historia clinica: eso ` +
-            'se maneja en el modulo clinico.',
+          `${nombreCompleto(actualizada)} ya es paciente. Esto no le crea historia clínica: eso ` +
+            'se maneja en el modulo clínico.',
         );
         this.cargar();
       },

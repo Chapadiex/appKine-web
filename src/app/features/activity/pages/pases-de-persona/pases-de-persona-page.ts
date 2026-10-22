@@ -18,6 +18,8 @@ import { PermissionsStore } from '../../../../core/services/permissions.store';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { ConfirmacionConMotivo } from '../../../../shared/components/confirmacion-con-motivo/confirmacion-con-motivo';
 import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
+import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 import { PermisoDirective } from '../../../../shared/directives/permiso.directive';
 import { FocoAlMontar } from '../../../../shared/directives/foco-al-montar.directive';
 import { nuevaClaveDeIntento } from '../../../../shared/utils/clave-de-intento';
@@ -37,6 +39,8 @@ import {
 } from '../../models/etiquetas-de-pases';
 import { ErrorPase, errorSinContextoDePase, traducirErrorPase } from '../../models/pase-errors';
 import { MOVIMIENTOS_POR_PAGINA, PasesApi } from '../../services/pases-api';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { CabeceraDePersona } from './cabecera-de-persona/cabecera-de-persona';
 
 /**
  * El ledger abierto, de a paginas (0.116.0). Mientras llega otra pagina se sigue mostrando la
@@ -92,9 +96,18 @@ const ENTERO_CON_SIGNO = /^[+-]?\d+$/;
  */
 @Component({
   selector: 'app-pases-de-persona-page',
-  imports: [RouterLink, PermisoDirective, ConfirmacionConMotivo, Paginacion, FocoAlMontar],
+  imports: [
+    CabeceraDePersona,
+    Ayuda,
+    ColumnaOrdenable,
+    RouterLink,
+    PermisoDirective,
+    ConfirmacionConMotivo,
+    Paginacion,
+    FocoAlMontar,
+  ],
   templateUrl: './pases-de-persona-page.html',
-  styleUrl: '../../activity.css',
+  styleUrls: ['../../activity.css', './pases-de-persona.css'],
 })
 export class PasesDePersonaPage {
   private readonly api = inject(PasesApi);
@@ -121,6 +134,22 @@ export class PasesDePersonaPage {
 
   protected readonly persona = signal<PersonaResponse | null>(null);
   protected readonly pases = signal<readonly Pase[] | null>(null);
+  /**
+   * Orden y paginado de la lista completa (plan §3.4). 100 por pagina y no 20: el enlace "renovado
+   * desde el periodo…" salta a otra fila de la tabla, y tiene que estar en la misma pagina.
+   */
+  protected readonly tabla = tablaLocal(
+    computed(() => this.pases() ?? []),
+    {
+      porPagina: 100,
+      columnas: {
+        pase: (pase) => pase.nombre,
+        vigencia: (pase) => pase.vigenciaDesde,
+        precio: (pase) => pase.precio,
+        estado: (pase) => this.estadoDePase(pase),
+      },
+    },
+  );
   protected readonly error = signal<ErrorPase | null>(null);
   protected readonly detalle = signal<Detalle | null>(null);
 
@@ -460,7 +489,7 @@ export class PasesDePersonaPage {
         this.renovando.set(null);
         this.avisoAccion.set(
           actualizado.renovacionAutomatica
-            ? `"${actualizado.nombre}" se va a renovar solo: unos dias antes del ` +
+            ? `"${actualizado.nombre}" se va a renovar solo: unos días antes del ` +
                 `${formatearFecha(actualizado.vigenciaHasta)} el sistema vende el periodo ` +
                 'siguiente, con el precio del producto de ese momento y su propia deuda. No cobra.'
             : `"${actualizado.nombre}" ya no se renueva solo. El periodo actual sigue como estaba.`,
@@ -522,7 +551,7 @@ export class PasesDePersonaPage {
       return;
     }
     if (!Number.isInteger(productoId) || productoId <= 0) {
-      this.errorVenta.set(validacion('Elegi el producto a vender.'));
+      this.errorVenta.set(validacion('Elegí el producto a vender.'));
       return;
     }
     const producto = this.productoDeLaVenta();
@@ -530,12 +559,12 @@ export class PasesDePersonaPage {
     const desde = this.periodoDesde();
     const hasta = this.periodoHasta();
     if (deAbono && desde === '') {
-      this.errorVenta.set(validacion('Indica desde que dia cubre el abono.'));
+      this.errorVenta.set(validacion('Indica desde que día cubre el abono.'));
       return;
     }
     if (deAbono && hasta !== '' && hasta < desde) {
       this.errorVenta.set(
-        validacion('El ultimo dia del periodo no puede ser anterior al primero.'),
+        validacion('El último día del periodo no puede ser anterior al primero.'),
       );
       return;
     }

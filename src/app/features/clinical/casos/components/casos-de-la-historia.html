@@ -1,9 +1,13 @@
 <section class="tarjeta" aria-labelledby="titulo-casos">
-  <h2 id="titulo-casos">Casos clinicos</h2>
-  <p class="ayuda">
-    Cada caso es un problema terapeutico dentro de la historia: una rodilla y un hombro son dos
-    casos. Un caso cerrado no se borra: se sigue leyendo entero y se puede reabrir con motivo.
-  </p>
+  <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
+    <h2 id="titulo-casos">Casos clínicos</h2>
+    <app-ayuda titulo="Casos clínicos">
+      <p>
+        Cada caso es un problema terapéutico dentro de la historia: una rodilla y un hombro son dos
+        casos. Un caso cerrado no se borra: se sigue leyendo entero y se puede reabrir con motivo.
+      </p>
+    </app-ayuda>
+  </div>
 
   @if (cargando()) {
     <p class="estado estado--cargando" role="status">Cargando los casos…</p>
@@ -21,35 +25,40 @@
     } @else {
       <ul class="casos" aria-label="Casos activos">
         @for (caso of activos(); track caso.id) {
-          <li class="casos__item">
-            <a class="enlace casos__titulo" [routerLink]="visita.rutaCaso(caso.id!)">
-              Caso {{ caso.numeroCaso }} · {{ nombreDeOferta(caso) }}
-            </a>
-            <p class="historia__cuerpo casos__diagnostico">{{ caso.diagnosticoPresuntivo }}</p>
-            <p class="ayuda">
-              {{ estadoDe(caso) }} · abierto el {{ fechaYHora(caso.abiertoEn) }} ·
-              {{ equipoDe(caso) }}
-            </p>
+          <li class="casos__item casos__fila">
+            <div>
+              <a class="enlace casos__titulo" [routerLink]="visita.rutaCaso(caso.id!)">
+                Caso {{ caso.numeroCaso }} · {{ nombreDeOferta(caso) }}
+              </a>
+              <p class="historia__cuerpo casos__diagnostico">{{ caso.diagnosticoPresuntivo }}</p>
+              <p class="ayuda">
+                Abierto el {{ fechaYHora(caso.abiertoEn) }} · {{ equipoDe(caso) }}
+              </p>
+            </div>
+            <span class="marca-estado marca-estado--activa">{{ estadoDe(caso) }}</span>
           </li>
         }
       </ul>
     }
 
-    <h3>Historicos</h3>
+    <h3>Históricos</h3>
     @if (cerrados().length === 0) {
       <p class="estado estado--vacio">No hay casos cerrados.</p>
     } @else {
       <ul class="casos" aria-label="Casos cerrados">
         @for (caso of cerrados(); track caso.id) {
-          <li class="casos__item">
-            <a class="enlace casos__titulo" [routerLink]="visita.rutaCaso(caso.id!)">
-              Caso {{ caso.numeroCaso }} · {{ nombreDeOferta(caso) }}
-            </a>
-            <p class="historia__cuerpo casos__diagnostico">{{ caso.diagnosticoPresuntivo }}</p>
-            <p class="ayuda">
-              {{ estadoDe(caso) }} · abierto el {{ fechaYHora(caso.abiertoEn) }} · cerrado el
-              {{ fechaYHora(caso.cerradoEn) }}
-            </p>
+          <li class="casos__item casos__fila">
+            <div>
+              <a class="enlace casos__titulo" [routerLink]="visita.rutaCaso(caso.id!)">
+                Caso {{ caso.numeroCaso }} · {{ nombreDeOferta(caso) }}
+              </a>
+              <p class="historia__cuerpo casos__diagnostico">{{ caso.diagnosticoPresuntivo }}</p>
+              <p class="ayuda">
+                Abierto el {{ fechaYHora(caso.abiertoEn) }} · cerrado el
+                {{ fechaYHora(caso.cerradoEn) }}
+              </p>
+            </div>
+            <span class="marca-estado">{{ estadoDe(caso) }}</span>
           </li>
         }
       </ul>
@@ -68,13 +77,13 @@
           [attr.aria-describedby]="intento() && faltaOferta() ? 'caso-oferta-error' : null"
           (change)="elegirOferta($any($event.target).value)"
         >
-          <option value="">Elegi una oferta</option>
+          <option value="">Elegí una oferta</option>
           @for (oferta of elegibles(); track oferta.id) {
             <option [value]="oferta.id">{{ oferta.nombreComercial }}</option>
           }
         </select>
         @if (intento() && faltaOferta()) {
-          <p id="caso-oferta-error" class="campo__error">Elegi la oferta del caso.</p>
+          <p id="caso-oferta-error" class="campo__error">Elegí la oferta del caso.</p>
         }
       </div>
 
@@ -123,7 +132,7 @@
         </select>
         <p id="caso-responsable-ayuda" class="ayuda">
           Solo se ofrecen los profesionales habilitados para esa oferta en esta sede. El equipo se
-          completa despues, desde el caso.
+          completa después, desde el caso.
         </p>
       </div>
 

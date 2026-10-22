@@ -61,7 +61,7 @@ describe('SolicitudesCatalogoPage', () => {
   afterEach(() => httpMock.verify());
 
   it(
-    'aprobar una practica publica con lo propuesto y la especialidad global elegida',
+    'aprobar una práctica publica con lo propuesto y la especialidad global elegida',
     async () => {
       const { fixture, anfitrion } = await montar([PRACTICA]);
       await esperarSinViolaciones(anfitrion);
@@ -89,7 +89,7 @@ describe('SolicitudesCatalogoPage', () => {
       expect(anfitrion.textContent).toContain('La nota es obligatoria');
 
       escribir(anfitrion, '#resolucion-especialidad', '5', 'change');
-      escribir(anfitrion, '#resolucion-nota', 'Alta segun nomenclador provincial');
+      escribir(anfitrion, '#resolucion-nota', 'Alta según nomenclador provincial');
       fixture.detectChanges();
       await esperarSinViolaciones(anfitrion);
       enviar(anfitrion);
@@ -97,7 +97,7 @@ describe('SolicitudesCatalogoPage', () => {
       const resolver = httpMock.expectOne(`${LISTADO}/9/resolve`);
       expect(resolver.request.body).toEqual({
         estado: 'APROBADA',
-        nota: 'Alta segun nomenclador provincial',
+        nota: 'Alta según nomenclador provincial',
         version: 4,
         codigo: 'DL-01',
         nombre: 'Drenaje linfatico',
@@ -113,7 +113,7 @@ describe('SolicitudesCatalogoPage', () => {
     TIMEOUT_AXE,
   );
 
-  it('un codigo ya tomado lo dice en el campo y aclara que la solicitud sigue pendiente', async () => {
+  it('un código ya tomado lo dice en el campo y aclara que la solicitud sigue pendiente', async () => {
     const { fixture, anfitrion } = await montar([ESPECIALIDAD]);
 
     clickEn(anfitrion, 'Revisar');
@@ -194,7 +194,7 @@ describe('SolicitudesCatalogoPage', () => {
     fixture.detectChanges();
     const detalle = anfitrion.querySelector('dl.detalle')?.textContent ?? '';
     expect(detalle).toContain('Centro Kinesio Sur');
-    expect(detalle).toContain('la pidio desde una de sus sedes');
+    expect(detalle).toContain('la pidió desde una de sus sedes');
     expect(detalle).not.toContain('sede 30');
   });
 
@@ -246,7 +246,7 @@ function clickEn(anfitrion: HTMLElement, texto: string): void {
     (candidato) => (candidato.textContent ?? '').trim() === texto,
   );
   if (boton === undefined) {
-    throw new Error(`No hay boton "${texto}"`);
+    throw new Error(`No hay botón "${texto}"`);
   }
   boton.click();
 }

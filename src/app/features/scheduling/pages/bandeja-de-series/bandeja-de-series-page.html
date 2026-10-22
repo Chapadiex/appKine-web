@@ -1,70 +1,18 @@
-<h1>Series de turnos</h1>
-
-<p class="descripcion">
-  Las series semanales reservadas en esta sede, de la mas nueva a la mas vieja. Una serie esta
-  vigente mientras le quede algun turno pendiente; cada turno sigue siendo una reserva propia.
-</p>
-
-<p><a class="enlace" routerLink="/agenda">Volver al buscador de agenda</a></p>
-
-<section class="tarjeta" aria-labelledby="titulo-filtros-series">
-  <h2 id="titulo-filtros-series">Que mostrar</h2>
-
-  <div class="filtros">
-    <div class="campo">
-      <label for="series-estado">Estado</label>
-      <select
-        id="series-estado"
-        name="series-estado"
-        [value]="filtroEstado()"
-        (change)="cambiarEstado($any($event.target).value)"
-      >
-        <option [value]="Estado.VIGENTE">Vigentes</option>
-        <option [value]="Estado.FINALIZADA">Finalizadas</option>
-        <option [value]="Estado.CANCELADA">Canceladas</option>
-        <option [value]="TODAS">Todas</option>
-      </select>
-    </div>
-
-    <div class="campo">
-      <label for="series-persona">Paciente: documento, apellido, nombre o telefono</label>
-      <input
-        id="series-persona"
-        name="series-persona"
-        type="search"
-        autocomplete="off"
-        (input)="buscarPersona($any($event.target).value)"
-      />
-    </div>
-  </div>
-
-  @if (persona(); as filtrada) {
+<div class="titulo-con-ayuda">
+  <h1>Series de turnos</h1>
+  <app-ayuda titulo="Sobre esta pantalla">
     <p>
-      Solo las series de <b>{{ filtrada.nombre || 'la persona #' + filtrada.id }}</b
-      >.
-      <button type="button" class="boton boton--secundario" (click)="quitarPersona()">
-        Ver las de todos los pacientes
-      </button>
+      Las series semanales reservadas en esta sede, de la más nueva a la más vieja. Una serie está
+      vigente mientras le quede algún turno pendiente; cada turno sigue siendo una reserva propia.
     </p>
-  }
+    <p>
+      Una serie se reserva desde la agenda: elegís un horario y, en la reserva, «Reservar una serie
+      semanal desde este horario».
+    </p>
+  </app-ayuda>
+</div>
 
-  @if (candidatas().length > 0) {
-    <ul class="lista-personas">
-      @for (candidata of candidatas(); track candidata.id) {
-        <li>
-          <button type="button" class="boton boton--secundario" (click)="elegirPersona(candidata)">
-            {{ candidata.apellido }}, {{ candidata.nombre }}
-            @if (candidata.numeroDocumento) {
-              — {{ candidata.tipoDocumento }} {{ candidata.numeroDocumento }}
-            }
-          </button>
-        </li>
-      }
-    </ul>
-  } @else if (buscoPersonas()) {
-    <p class="estado estado--vacio">Ninguna persona del padron coincide con esa busqueda.</p>
-  }
-</section>
+<app-pestanas [pestanas]="pestanas" [etiqueta]="etiquetaDePestanas" />
 
 <div aria-live="polite">
   @if (cargando()) {
@@ -86,50 +34,128 @@
   }
 </div>
 
-@if (resultado() !== null) {
-  <section class="tarjeta" aria-labelledby="titulo-tabla-series">
-    <h2 id="titulo-tabla-series">{{ total() }} {{ total() === 1 ? 'serie' : 'series' }}</h2>
+<section class="tarjeta tarjeta--plana" aria-labelledby="titulo-filtros-series">
+  <div class="tarjeta__cuerpo tarjeta__cuerpo--filtros">
+    <h2 id="titulo-filtros-series" class="visualmente-oculto">Qué mostrar</h2>
+
+    <!--
+      Regla de filtros (plan §3.4): la busqueda del paciente, que es por todo lo que lo identifica, a
+      la vista; el estado de la serie detras del embudo.
+    -->
+    <app-filtros [activos]="filtrosAvanzadosActivos()">
+      <div class="campo" filtro-principal>
+        <label class="visualmente-oculto" for="series-persona"
+          >Paciente: documento, apellido, nombre o teléfono</label
+        >
+        <div class="campo-busqueda">
+          <app-icono class="campo-busqueda__icono" nombre="buscar" />
+          <input
+            id="series-persona"
+            name="series-persona"
+            type="search"
+            autocomplete="off"
+            placeholder="Buscar paciente por documento, apellido, nombre o teléfono"
+            (input)="buscarPersona($any($event.target).value)"
+          />
+        </div>
+      </div>
+
+      <div class="campo">
+        <label for="series-estado">Estado</label>
+        <select
+          id="series-estado"
+          name="series-estado"
+          [value]="filtroEstado()"
+          (change)="cambiarEstado($any($event.target).value)"
+        >
+          <option [value]="Estado.VIGENTE">Vigentes</option>
+          <option [value]="Estado.FINALIZADA">Finalizadas</option>
+          <option [value]="Estado.CANCELADA">Canceladas</option>
+          <option [value]="TODAS">Todas</option>
+        </select>
+      </div>
+    </app-filtros>
+
+    @if (persona(); as filtrada) {
+      <p>
+        Solo las series de <b>{{ filtrada.nombre || 'la persona #' + filtrada.id }}</b
+        >.
+        <button type="button" class="boton-texto" (click)="quitarPersona()">
+          Ver las de todos los pacientes
+        </button>
+      </p>
+    }
+
+    @if (candidatas().length > 0) {
+      <ul class="lista-personas">
+        @for (candidata of candidatas(); track candidata.id) {
+          <li>
+            <button
+              type="button"
+              class="boton boton--secundario"
+              (click)="elegirPersona(candidata)"
+            >
+              {{ candidata.apellido }}, {{ candidata.nombre }}
+              @if (candidata.numeroDocumento) {
+                — {{ candidata.tipoDocumento }} {{ candidata.numeroDocumento }}
+              }
+            </button>
+          </li>
+        }
+      </ul>
+    } @else if (buscoPersonas()) {
+      <p class="estado estado--vacio">Ninguna persona del padrón coincide con esa búsqueda.</p>
+    }
+  </div>
+
+  @if (resultado() !== null) {
+    <div class="tarjeta__barra">
+      <h2 id="titulo-tabla-series">{{ total() }} {{ total() === 1 ? 'serie' : 'series' }}</h2>
+    </div>
 
     @if (filas().length === 0) {
-      <p class="estado estado--vacio">
-        No hay series que cumplan ese filtro. Una serie se reserva desde la agenda, eligiendo un
-        horario y "Reservar una serie semanal".
-      </p>
+      <div class="tarjeta__cuerpo">
+        <p class="estado estado--vacio">
+          No hay series que cumplan ese filtro. Una serie se reserva desde la agenda, eligiendo un
+          horario y "Reservar una serie semanal".
+        </p>
+      </div>
     } @else {
       <div class="tabla-scroll" tabindex="0" role="region" aria-label="Series de turnos de la sede">
         <table class="tabla">
           <caption class="visualmente-oculto">
-            Series de turnos de la sede, de la mas nueva a la mas vieja, con su regla y cuantos
+            Series de turnos de la sede, de la más nueva a la más vieja, con su patrón y cuántos
             turnos les quedan
           </caption>
           <thead>
             <tr>
               <th scope="col">Paciente</th>
+              <th scope="col">Patrón</th>
               <th scope="col">Oferta y profesional</th>
-              <th scope="col">Regla</th>
-              <th scope="col">Turnos</th>
-              <th scope="col">Proximo turno</th>
+              <th scope="col">Avance</th>
+              <th scope="col">Próximo turno</th>
               <th scope="col">Estado</th>
-              <th scope="col">Acciones</th>
+              <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
             </tr>
           </thead>
           <tbody>
             @for (fila of filas(); track fila.id) {
               <tr>
                 <th scope="row">
-                  {{ fila.personaNombre }}
+                  @if (fila.id) {
+                    <a class="enlace" [routerLink]="['/agenda', 'series', fila.id]">{{
+                      fila.personaNombre
+                    }}</a>
+                  } @else {
+                    {{ fila.personaNombre }}
+                  }
                   @if (fila.documento) {
-                    <br /><span class="ayuda">{{ fila.documento }}</span>
+                    <span class="celda-secundaria">{{ fila.documento }}</span>
                   }
                 </th>
                 <td>
-                  {{ fila.ofertaNombre }}
-                  <br /><span class="ayuda">{{ profesional(fila) }}</span>
-                </td>
-                <td>
-                  {{ textoDeDias(fila.diasSemana) }} a las {{ fila.hora?.slice(0, 5) }} <br /><span
-                    class="ayuda"
-                  >
+                  {{ textoDeDias(fila.diasSemana) }} a las {{ fila.hora?.slice(0, 5) }}
+                  <span class="celda-secundaria">
                     Desde {{ fechaEnPalabras(fila.fechaDesde) }}
                     @if (fila.fechaHasta) {
                       hasta {{ fechaEnPalabras(fila.fechaHasta) }}
@@ -138,6 +164,10 @@
                     }
                     (zona {{ fila.timezone }})
                   </span>
+                </td>
+                <td>
+                  {{ fila.ofertaNombre }}
+                  <span class="celda-secundaria">{{ profesional(fila) }}</span>
                 </td>
                 <td>{{ fila.turnosPendientes ?? 0 }} pendientes de {{ fila.totalTurnos ?? 0 }}</td>
                 <td>{{ proximoTurno(fila) || 'Ninguno' }}</td>
@@ -149,11 +179,15 @@
                     {{ textoDeEstadoDeSerie(fila.estado) }}
                   </span>
                 </td>
-                <td>
+                <td class="celda-acciones">
                   @if (fila.id) {
-                    <a class="enlace" [routerLink]="['/agenda', 'series', fila.id]">
-                      Ver serie<span class="visualmente-oculto"> de {{ fila.personaNombre }}</span>
-                    </a>
+                    <div class="acciones-fila">
+                      <a class="enlace" [routerLink]="['/agenda', 'series', fila.id]">
+                        Ver serie<span class="visualmente-oculto">
+                          de {{ fila.personaNombre }}</span
+                        >
+                      </a>
+                    </div>
                   }
                 </td>
               </tr>
@@ -163,11 +197,12 @@
       </div>
 
       <akine-paginacion
+        class="tarjeta__paginacion"
         [paginaActual]="pagina()"
         [totalPaginas]="totalPaginas()"
-        etiqueta="Paginas de series de turnos"
+        etiqueta="Páginas de series de turnos"
         (cambioDePagina)="irAPagina($event)"
       />
     }
-  </section>
-}
+  }
+</section>

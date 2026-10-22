@@ -25,6 +25,8 @@ import {
   parsearPlanilla,
 } from '../../models/planilla-de-aranceles';
 import { ventanaEnPalabras } from '../../models/vigencia-de-contracting';
+import { NgTemplateOutlet } from '@angular/common';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 
 /** Tamano maximo del archivo que se lee en el navegador. 500 filas de CSV entran holgadas. */
 const TAMANO_MAXIMO_DE_ARCHIVO = 512 * 1024;
@@ -68,7 +70,7 @@ interface Desenlace {
  */
 @Component({
   selector: 'app-importar-aranceles-page',
-  imports: [RouterLink, PermisoDirective],
+  imports: [Ayuda, NgTemplateOutlet, RouterLink, PermisoDirective],
   templateUrl: './importar-aranceles-page.html',
   styleUrl: '../../contracting.css',
 })

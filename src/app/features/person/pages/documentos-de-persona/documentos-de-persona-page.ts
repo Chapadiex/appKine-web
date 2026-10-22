@@ -1,6 +1,5 @@
 import { Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { RouterLink } from '@angular/router';
 
 import { AdjuntoPageResponse } from '../../../../api/generated/model/adjunto-page-response';
 import { AdjuntoResponse } from '../../../../api/generated/model/adjunto-response';
@@ -31,6 +30,10 @@ import {
   tamanoEnPalabras,
 } from '../../models/etiquetas-de-ficha';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { Filtros } from '../../../../shared/components/filtros/filtros';
+import { Icono } from '../../../../shared/components/icono/icono';
+import { CabeceraDePersona } from '../../components/cabecera-de-persona/cabecera-de-persona';
 
 const TAMANO_DE_PAGINA = 20;
 
@@ -90,7 +93,16 @@ type TipoAccion = 'reclasificar' | 'baja';
  */
 @Component({
   selector: 'app-documentos-de-persona-page',
-  imports: [ReactiveFormsModule, RouterLink, ConfirmacionConMotivo, Paginacion, PermisoDirective],
+  imports: [
+    CabeceraDePersona,
+    Ayuda,
+    Filtros,
+    Icono,
+    ReactiveFormsModule,
+    ConfirmacionConMotivo,
+    Paginacion,
+    PermisoDirective,
+  ],
   templateUrl: './documentos-de-persona-page.html',
   styleUrl: '../../person.css',
 })
@@ -121,6 +133,10 @@ export class DocumentosDePersonaPage {
 
   protected readonly filtroCategoria = signal<CategoriaDeAdjunto | ''>('');
   protected readonly filtro = signal<FiltroDeAdjuntos>('VIGENTES');
+  /** Filtros avanzados fuera de su valor por defecto: el contador del embudo. */
+  protected readonly filtrosAvanzadosActivos = computed(
+    () => Number(this.filtroCategoria() !== '') + Number(this.filtro() !== 'VIGENTES'),
+  );
   protected readonly pagina = signal(0);
 
   protected readonly panel = signal<{ readonly id: number; readonly tipo: TipoAccion } | null>(
@@ -226,7 +242,7 @@ export class DocumentosDePersonaPage {
     if (id === null) {
       this.estado.set({
         tipo: 'error',
-        mensaje: 'La direccion no identifica a ninguna persona del padron.',
+        mensaje: 'La dirección no identifica a ninguna persona del padron.',
         faltaContexto: false,
       });
       return;
@@ -313,7 +329,7 @@ export class DocumentosDePersonaPage {
           this.archivo.set(null);
           this.exito.set(
             `Se guardo ${nombreDeAdjunto(adjunto)}. Recorda que un documento adjunto no completa ` +
-              'ningun dato de la ficha: si es una credencial, la cobertura hay que cargarla aparte.',
+              'ningún dato de la ficha: si es una credencial, la cobertura hay que cargarla aparte.',
           );
           this.cargar();
         },

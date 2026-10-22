@@ -80,7 +80,7 @@ export const routes: Routes = [
       import('./pages/practicas-de-la-oferta/practicas-de-la-oferta-page').then(
         (m) => m.PracticasDeLaOfertaPage,
       ),
-    title: 'AKINE - Practicas de la oferta',
+    title: 'AKINE - Prácticas de la oferta',
     data: { [DATA_ANCHO]: ANCHO_AMPLIO },
   },
   {

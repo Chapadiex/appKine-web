@@ -120,10 +120,10 @@ describe('PadronDePersonasPage', () => {
 
     // Y la nota de arriba explica la distincion una sola vez, en vez de repetirla por fila.
     expect(texto).toContain('Persona y paciente no son lo mismo');
-    expect(texto).toContain('no crea historia clinica');
+    expect(texto).toContain('no crea historia clínica');
   });
 
-  it('muestra "Sin documento" y no una celda vacia', async () => {
+  it('muestra "Sin documento" y no una celda vacía', async () => {
     const fixture = await montar();
     const filas = fixture.nativeElement.querySelectorAll('tbody tr');
 
@@ -159,7 +159,7 @@ describe('PadronDePersonasPage', () => {
 
     // El mensaje de exito aclara que todavia no es paciente: es el momento donde el operador
     // podria suponer lo contrario.
-    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Todavia no es paciente');
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Todavía no es paciente');
   });
 
   it('el 409 de posible duplicado muestra las fichas y ofrece confirmar', async () => {
@@ -269,7 +269,7 @@ describe('PadronDePersonasPage', () => {
     expect(botonPorTexto(fixture, 'Es otra persona: darla de alta igual')).toBeNull();
   });
 
-  it('los filtros recargan con su parametro y vuelven a la primera pagina', async () => {
+  it('los filtros recargan con su parametro y vuelven a la primera página', async () => {
     const fixture = await montar();
 
     elegir(fixture, '#padron-filtro-perfil', 'CON_PERFIL');
@@ -287,7 +287,7 @@ describe('PadronDePersonasPage', () => {
     expect((fixture.nativeElement as HTMLElement).textContent).toContain('Gomez, Luis');
   });
 
-  it('la busqueda manda el texto tal como se tipeo: normalizar es del backend', async () => {
+  it('la búsqueda manda el texto tal como se tipeo: normalizar es del backend', async () => {
     const fixture = await montar();
 
     escribirYCambiar(fixture, '#padron-busqueda', '30.111.222');
@@ -302,17 +302,17 @@ describe('PadronDePersonasPage', () => {
     fixture.detectChanges();
   });
 
-  it('el buscador avisa que acepta numero de afiliado y lo manda en el mismo parametro q', async () => {
+  it('el buscador avisa que acepta número de afiliado y lo manda en el mismo parametro q', async () => {
     const fixture = await montar();
     const pantalla = fixture.nativeElement as HTMLElement;
 
     // El campo es el de siempre: no hay un parametro nuevo para el afiliado.
     const etiqueta = pantalla.querySelector('label[for="padron-busqueda"]');
-    expect(etiqueta?.textContent).toContain('numero de afiliado');
+    expect(etiqueta?.textContent).toContain('número de afiliado');
     expect(pantalla.querySelector('#padron-busqueda')?.getAttribute('aria-describedby')).toBe(
       'padron-busqueda-ayuda',
     );
-    expect(pantalla.textContent).toContain('numero de afiliado; no hace falta escribir puntos');
+    expect(pantalla.textContent).toContain('número de afiliado; no hace falta escribir puntos');
 
     escribirYCambiar(fixture, '#padron-busqueda', 'OSDE123456');
     const buscada = httpMock.expectOne(
@@ -375,12 +375,12 @@ describe('PadronDePersonasPage', () => {
     const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
     // Reintentar no arregla nada acá: lo que falta es elegir contexto. Y la sesion sigue abierta,
     // asi que el mensaje no puede sonar a que se venció.
-    expect(texto).toContain('sesion sigue abierta');
+    expect(texto).toContain('sesión sigue abierta');
     expect(texto).toContain('Elegir contexto de trabajo');
     expect(botonPorTexto(fixture, 'Reintentar')).toBeNull();
   });
 
-  it('un padron vacio no es un error, y lo dice como tal', async () => {
+  it('un padron vacío no es un error, y lo dice como tal', async () => {
     tenantContext.select({
       organizationId: 1,
       organizationName: 'Centro Belgrano',
@@ -441,19 +441,19 @@ describe('PadronDePersonasPage', () => {
     expect(enlace?.getAttribute('href')).toBe(`/pacientes/${SIN_PERFIL.id}`);
   });
 
-  it('activar el perfil avisa que no crea historia clinica', async () => {
+  it('activar el perfil avisa que no crea historia clínica', async () => {
     const fixture = await montar();
 
     botonPorTexto(fixture, 'Activar perfil de paciente')?.click();
     fixture.detectChanges();
 
     const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
-    expect(texto).toContain('NO le crea historia clinica');
+    expect(texto).toContain('NO le crea historia clínica');
     // Y avisa que repetir la accion no rompe nada: del lado del servidor es idempotente.
-    expect(texto).toContain('Si ya tenia perfil, la accion no cambia nada');
+    expect(texto).toContain('Si ya tenía perfil, la acción no cambia nada');
   });
 
-  it('activa el perfil con el motivo vacio, porque el panel lo declara opcional', async () => {
+  it('activa el perfil con el motivo vacío, porque el panel lo declara opcional', async () => {
     const fixture = await montar();
 
     abrir(fixture, 'Activar perfil de paciente');

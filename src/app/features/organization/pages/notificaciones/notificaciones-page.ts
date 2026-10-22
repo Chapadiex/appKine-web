@@ -18,6 +18,13 @@ import {
   textoTipo,
 } from '../../models/notificaciones';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
+import { Filtros } from '../../../../shared/components/filtros/filtros';
+import { Pestanas } from '../../../../shared/components/pestanas/pestanas';
+import {
+  ETIQUETA_PESTANAS_DE_COLABORADORES,
+  PESTANAS_DE_COLABORADORES,
+} from '../../models/pestanas-de-colaboradores';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 
 const POR_PAGINA = 20;
 
@@ -40,11 +47,14 @@ const POR_PAGINA = 20;
  */
 @Component({
   selector: 'app-notificaciones-page',
-  imports: [RouterLink, Paginacion],
+  imports: [Pestanas, Ayuda, Filtros, RouterLink, Paginacion],
   templateUrl: './notificaciones-page.html',
   styleUrl: '../../organization.css',
 })
 export class NotificacionesPage {
+  protected readonly pestanas = PESTANAS_DE_COLABORADORES;
+  protected readonly etiquetaDePestanas = ETIQUETA_PESTANAS_DE_COLABORADORES;
+
   private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly notificaciones = inject(NotificacionesService);
   private readonly tenantContext = inject(TenantContextStore);
@@ -70,6 +80,14 @@ export class NotificacionesPage {
     new Set(ESTADOS_POR_DEFECTO),
   );
   protected readonly sinEstados = computed(() => this.elegidos().size === 0);
+  /** 1 si los estados elegidos no son los de por defecto (regla de filtros, plan §3.4). */
+  protected readonly filtrosAvanzadosActivos = computed(() => {
+    const elegidos = this.elegidos();
+    const iguales =
+      elegidos.size === ESTADOS_POR_DEFECTO.length &&
+      ESTADOS_POR_DEFECTO.every((estado) => elegidos.has(estado));
+    return Number(!iguales);
+  });
 
   /** Id de la fila que se esta reintentando; deshabilita todos los botones mientras tanto. */
   protected readonly reintentando = signal<number | null>(null);
@@ -127,8 +145,8 @@ export class NotificacionesPage {
       next: () => {
         this.reintentando.set(null);
         this.exito.set(
-          `La notificacion ${notificationId} (${textoTipo(fila.tipo)} a ${fila.destinatario ?? '-'}) ` +
-            'volvio a la cola de envio. Sale en el proximo ciclo; el negocio que la origino no se repite.',
+          `La notificación ${notificationId} (${textoTipo(fila.tipo)} a ${fila.destinatario ?? '-'}) ` +
+            'volvio a la cola de envio. Sale en el próximo ciclo; el negocio que la origino no se repite.',
         );
         this.consultar();
       },
@@ -176,7 +194,7 @@ export class NotificacionesPage {
 function traducirErrorDeReintento(error: unknown, id: number): string {
   if (error instanceof AkineHttpError && !error.esDeRed) {
     if (error.status === 404) {
-      return `La notificacion ${id} ya no existe en esta organizacion. Se actualizo el listado.`;
+      return `La notificación ${id} ya no existe en esta organización. Se actualizo el listado.`;
     }
     if (error.status === 409) {
       const estado = error.extension('estado');
@@ -185,12 +203,12 @@ function traducirErrorDeReintento(error: unknown, id: number): string {
           ? `: ahora esta ${textoEstado(estado as EstadoNotificacion)}`
           : '';
       return (
-        `La notificacion ${id} ya no admite reintento${actual}. Solo se reintentan las fallidas ` +
+        `La notificación ${id} ya no admite reintento${actual}. Solo se reintentan las fallidas ` +
         'o agotadas. Se actualizo el listado.'
       );
     }
   }
   return traducirErrorColaborador(error, {
-    generico: 'No pudimos reintentar la notificacion. Volve a intentar en un momento.',
+    generico: 'No pudimos reintentar la notificación. Volvé a intentar en un momento.',
   }).mensaje;
 }

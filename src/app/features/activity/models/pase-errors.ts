@@ -53,38 +53,38 @@ export interface ErrorPase {
   readonly cobrado?: number;
 }
 
-const MENSAJE_GENERICO = 'No pudimos completar la operacion. Volve a intentar en un momento.';
-const MENSAJE_DE_RED = 'No se pudo contactar al servidor. Revisa tu conexion y volve a intentar.';
+const MENSAJE_GENERICO = 'No pudimos completar la operación. Volvé a intentar en un momento.';
+const MENSAJE_DE_RED = 'No se pudo contactar al servidor. Revisa tu conexion y volvé a intentar.';
 const MENSAJE_SIN_CONTEXTO =
-  'Los productos y los pases son de una sede. Eligi una organizacion y un consultorio, y volve a ' +
-  'entrar. Tu sesion sigue abierta.';
+  'Los productos y los pases son de una sede. Eligi una organización y un consultorio, y volvé a ' +
+  'entrar. Tu sesión sigue abierta.';
 const MENSAJE_SIN_PERMISO =
-  'No tenes permiso para esto en esta sede: el catalogo pide producto:read (y producto:manage para ' +
+  'No tenés permiso para esto en esta sede: el catalogo pide producto:read (y producto:manage para ' +
   'cambiarlo), y los pases pase:read (pase:manage para venderlos o cambiar la renovacion de un ' +
   'abono, y pase:adjust para ajustar el saldo o anularlos). Pediselo a quien administra el centro.';
 const MENSAJE_NO_ENCONTRADO = 'El producto, el pase o la persona no existe, o no es de esta sede.';
 const MENSAJE_NO_VENDIBLE =
   'Ese producto no se puede vender hoy: esta fuera de su ventana comercial. Revisa sus fechas en ' +
   'el catalogo.';
-const MENSAJE_NOMBRE = 'Ya hay un producto vigente con ese nombre en esta sede. Elegi otro nombre.';
+const MENSAJE_NOMBRE = 'Ya hay un producto vigente con ese nombre en esta sede. Elegí otro nombre.';
 const MENSAJE_VERSION_VIEJA =
-  'Alguien lo modifico mientras lo editabas. No se cambio nada: volve a leerlo y repeti el cambio.';
+  'Alguien lo modifico mientras lo editabas. No se cambio nada: volvé a leerlo y repeti el cambio.';
 const MENSAJE_CLAVE_REUSADA =
-  'Hubo un problema tecnico con este intento. No se vendio nada y no es un error tuyo: volve a ' +
+  'Hubo un problema tecnico con este intento. No se vendio nada y no es un error tuyo: volvé a ' +
   'intentarlo.';
 const MENSAJE_VALIDACION = 'Revisa los datos marcados.';
 const MENSAJE_ABONO_SUPERPUESTO =
   'Esta persona ya tiene ese abono en un periodo que se superpone con el elegido. No se vendio ' +
-  'nada: elegi un periodo que empiece despues de que termine el que ya tiene.';
+  'nada: elegí un periodo que empiece después de que termine el que ya tiene.';
 const MENSAJE_NO_AJUSTABLE =
-  'El pase no admite esa operacion. No se cambio nada: volve a leerlo para ver su estado y su saldo.';
+  'El pase no admite esa operación. No se cambio nada: volvé a leerlo para ver su estado y su saldo.';
 /** La extension `causa` de `pase-no-ajustable` (0.111.0), un valor estable para el cliente. */
 const MENSAJES_NO_AJUSTABLE: Readonly<Record<string, string>> = {
   ESTADO:
     'No se puede: el pase esta anulado o vencido, y en ese estado su saldo ya no se toca. No se ' +
     'cambio nada.',
   FUERA_DE_VIGENCIA:
-    'No se puede: la vigencia del pase ya termino, aunque todavia figure activo. No se cambio nada.',
+    'No se puede: la vigencia del pase ya termino, aunque todavía figure activo. No se cambio nada.',
   FUERA_DE_RANGO:
     'No se puede: el saldo quedaria por debajo de 0 o por encima de los creditos comprados. No se ' +
     'cambio nada: revisa la cantidad.',

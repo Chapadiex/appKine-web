@@ -27,20 +27,20 @@ export interface ErrorCatalogo {
 
 const MENSAJES: Readonly<Record<CausaCatalogo, string>> = {
   'version-vieja':
-    'Otro cambio llego a esta entrada despues de que la leiste. No se aplico nada: volvimos a ' +
+    'Otro cambio llego a esta entrada después de que la leiste. No se aplico nada: volvimos a ' +
     'leer el catalogo, revisa como quedo y repeti el cambio si sigue haciendo falta.',
   'codigo-repetido':
-    'Ese codigo ya lo usa otra entrada vigente. El codigo es unico y no se cambia despues.',
+    'Ese código ya lo usa otra entrada vigente. El código es unico y no se cambia después.',
   'nombre-repetido': 'Ese nombre ya lo usa otra entrada vigente.',
   'cuit-repetido': 'Ese CUIT ya lo tiene otra entrada vigente del catalogo.',
   inactivo: 'La entrada esta dada de baja y no admite planes nuevos.',
   'ya-dado-de-baja': 'Ya estaba dado de baja. No hubo que hacer nada.',
   'no-encontrado': 'Esa entrada ya no existe en el catalogo. Volvimos a leer la lista.',
-  'sin-permiso': 'Tu cuenta ya no administra la plataforma, asi que no puede tocar el catalogo.',
+  'sin-permiso': 'Tu cuenta ya no administra la plataforma, así que no puede tocar el catalogo.',
   validacion: 'El servidor rechazo el pedido. Revisa los campos.',
-  red: 'No se pudo contactar al servidor. Revisa tu conexion y volve a intentar.',
+  red: 'No se pudo contactar al servidor. Revisa tu conexion y volvé a intentar.',
   limite: 'Demasiados intentos. Espera un momento antes de volver a intentar.',
-  otro: 'No pudimos completar la operacion. Volve a intentar en un momento.',
+  otro: 'No pudimos completar la operación. Volvé a intentar en un momento.',
 };
 
 export function traducirErrorCatalogo(error: unknown): ErrorCatalogo {

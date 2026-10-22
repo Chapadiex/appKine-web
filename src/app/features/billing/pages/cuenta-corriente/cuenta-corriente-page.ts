@@ -38,6 +38,12 @@ import {
   sePuedeAnular,
 } from '../../models/etiquetas-de-obligacion';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
+import { Icono } from '../../../../shared/components/icono/icono';
+import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
+import { CabeceraDePersona } from './cabecera-de-persona/cabecera-de-persona';
 
 /** En cual de los tres estados esta el listado. No es paginado: el backend devuelve un array. */
 type EstadoCuenta =
@@ -92,9 +98,18 @@ type EstadoCuenta =
  */
 @Component({
   selector: 'app-cuenta-corriente-page',
-  imports: [RouterLink, ConfirmacionConMotivo, PermisoDirective],
+  imports: [
+    CabeceraDePersona,
+    Ayuda,
+    ColumnaOrdenable,
+    Icono,
+    Paginacion,
+    RouterLink,
+    ConfirmacionConMotivo,
+    PermisoDirective,
+  ],
   templateUrl: './cuenta-corriente-page.html',
-  styleUrl: '../../billing.css',
+  styleUrls: ['../../billing.css', './cuenta-corriente.css'],
 })
 export class CuentaCorrientePage {
   private readonly diaDeLaSede = inject(DiaDeLaSede);
@@ -159,6 +174,22 @@ export class CuentaCorrientePage {
   protected readonly obligaciones = computed<readonly Obligacion[]>(() => {
     const actual = this.estado();
     return actual.tipo === 'listo' ? actual.obligaciones : [];
+  });
+
+  /**
+   * Orden y paginado de la lista completa (plan §3.4). Cada fila trae su propio saldo —no es un
+   * saldo corrido—, asi que reordenar no cambia lo que dice ninguna fila; sin orden elegido queda
+   * el del servidor.
+   */
+  protected readonly tabla = tablaLocal(this.obligaciones, {
+    columnas: {
+      devengada: (obligacion) => obligacion.devengadaEn ?? null,
+      prestacion: (obligacion) => obligacion.snapshotNombre ?? null,
+      concepto: (obligacion) => conceptoEnPalabras(obligacion.concepto),
+      importe: (obligacion) => obligacion.importeOriginal ?? null,
+      saldo: (obligacion) => obligacion.saldo ?? null,
+      estado: (obligacion) => estadoEnPalabras(obligacion.estado),
+    },
   });
 
   protected readonly cargando = computed(() => this.estado().tipo === 'cargando');
@@ -296,8 +327,8 @@ export class CuentaCorrientePage {
       this.estado.set({
         tipo: 'error',
         mensaje:
-          'Para ver la cuenta corriente hay que saber en que sede estas. Eligi una organizacion y ' +
-          'un consultorio, y volve a entrar. Tu sesion sigue abierta.',
+          'Para ver la cuenta corriente hay que saber en que sede estas. Eligi una organización y ' +
+          'un consultorio, y volvé a entrar. Tu sesión sigue abierta.',
         faltaContexto: true,
       });
       return;
@@ -419,7 +450,7 @@ export class CuentaCorrientePage {
         this.objetivo.set(null);
         this.exito.set(
           `Se anulo la deuda de ${this.importe(anulada, anulada.importeOriginal)} por ` +
-            `"${anulada.snapshotNombre ?? 'la prestacion'}". Queda registrada como anulada, ` +
+            `"${anulada.snapshotNombre ?? 'la prestación'}". Queda registrada como anulada, ` +
             'con su motivo: no se borra.',
         );
         this.cargar();

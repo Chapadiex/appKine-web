@@ -122,7 +122,7 @@ describe('CicloDeTurnoPage', () => {
    * Sin `?fecha=` el destino de la reprogramacion arranca hoy, y hoy es el de la SEDE: a las 21:25
    * de Cordoba un navegador en UTC ya esta en el 10/10. La agenda trae la zona y el dia se corrige.
    */
-  it('sin `?fecha=` el dia destino es hoy en la sede, no en el navegador', async () => {
+  it('sin `?fecha=` el día destino es hoy en la sede, no en el navegador', async () => {
     fijarReloj('2026-10-10T00:25:00Z', { navegadorEnUtc: true });
     tenantContext.select({
       organizationId: 1,
@@ -208,8 +208,8 @@ describe('CicloDeTurnoPage', () => {
 
     const texto = textoDe(fixture);
     expect(texto).toContain('se retiro sin ser atendida');
-    expect(texto).toContain('Historial de la recepcion');
-    expect(texto).toContain('Se retiro sin ser atendido —');
+    expect(texto).toContain('Historial de la recepción');
+    expect(texto).toContain('Se retiro sin ser atendido');
     expect(texto).toContain('Se canso de esperar');
     expect(boton(fixture, 'Marcar que no vino')).toBeNull();
     expect(boton(fixture, 'Mover a otro horario')).toBeNull();
@@ -237,7 +237,7 @@ describe('CicloDeTurnoPage', () => {
     expect(textoDe(fixture)).toContain('El lugar NO se libero');
   });
 
-  it('cancelar manda motivo y version, y la version se refresca con la respuesta', async () => {
+  it('cancelar manda motivo y versión, y la versión se refresca con la respuesta', async () => {
     const fixture = await montar();
     clickear(fixture, 'Cancelar el turno');
     escribirMotivo(fixture, 'El paciente aviso que no puede venir');
@@ -259,7 +259,7 @@ describe('CicloDeTurnoPage', () => {
     const texto = textoDe(fixture);
     expect(texto).toContain('El lugar se libero');
     // Ciclo cerrado: no se ofrece ninguna transicion mas sobre un turno cancelado.
-    expect(texto).toContain('ya cerro su ciclo');
+    expect(texto).toContain('ya cerró su ciclo');
     expect(boton(fixture, 'Cancelar el turno')).toBeNull();
   });
 
@@ -269,13 +269,13 @@ describe('CicloDeTurnoPage', () => {
     // El primer slot esta completo; el segundo es de otro profesional. Mover un turno porque el
     // profesional se ausento es el caso normal, asi que el id sale del slot y no del turno.
     clickear(fixture, '09:45 a 10:30');
-    escribirMotivo(fixture, 'El profesional pidio el dia');
+    escribirMotivo(fixture, 'El profesional pidio el día');
     enviarPanel(fixture);
 
     const pedido = httpMock.expectOne(REPROGRAMACION);
     expect(pedido.request.body).toEqual({
       inicio: SIGUIENTE,
-      motivo: 'El profesional pidio el dia',
+      motivo: 'El profesional pidio el día',
       expectedVersion: 0,
       profesionalId: 77,
     });
@@ -292,14 +292,14 @@ describe('CicloDeTurnoPage', () => {
   it('sin horario elegido no manda nada y lo dice, en vez de fallar en el servidor', async () => {
     const fixture = await montar();
     clickear(fixture, 'Mover a otro horario');
-    escribirMotivo(fixture, 'El profesional pidio el dia');
+    escribirMotivo(fixture, 'El profesional pidio el día');
     enviarPanel(fixture);
 
     httpMock.expectNone(REPROGRAMACION);
-    expect(textoDe(fixture)).toContain('Elegi el horario destino');
+    expect(textoDe(fixture)).toContain('Elegí el horario destino');
   });
 
-  it('el turno con atencion se explica y ofrece la atencion, no un "error inesperado"', async () => {
+  it('el turno con atención se explica y ofrece la atención, no un "error inesperado"', async () => {
     const fixture = await montar();
     clickear(fixture, 'Cancelar el turno');
     escribirMotivo(fixture, 'Me equivoque de paciente');
@@ -316,10 +316,10 @@ describe('CicloDeTurnoPage', () => {
     await asentar(fixture);
 
     const texto = textoDe(fixture);
-    expect(texto).toContain('atencion clinica registrada');
-    expect(texto).not.toContain('No pudimos completar la operacion');
+    expect(texto).toContain('atención clínica registrada');
+    expect(texto).not.toContain('No pudimos completar la operación');
     // La unica salida real: reintentar devuelve el mismo 409 para siempre.
-    const enlace = enlaceCon(fixture, 'Ver la atencion clinica');
+    const enlace = enlaceCon(fixture, 'Ver la atención clínica');
     expect(enlace?.getAttribute('href')).toBe(`/atencion/turnos/${TURNO}`);
   });
 
@@ -355,7 +355,7 @@ describe('CicloDeTurnoPage', () => {
    * relectura: si otra persona movia el turno, "Releer el turno" traia la version nueva pero la
    * pantalla seguia mostrando el estado viejo y mandando la version vieja. El 409 no tenia salida.
    */
-  it('releer despues de un 409 reemplaza lo que dejo la ultima transicion', async () => {
+  it('releer después de un 409 reemplaza lo que dejo la última transicion', async () => {
     const fixture = await montar();
 
     clickear(fixture, 'Confirmar el turno');
@@ -368,12 +368,12 @@ describe('CicloDeTurnoPage', () => {
 
     // Mientras tanto otra persona lo reprogramo (version 2): cancelar con la 1 rebota.
     clickear(fixture, 'Cancelar el turno');
-    escribirMotivo(fixture, 'Con la version vieja');
+    escribirMotivo(fixture, 'Con la versión vieja');
     enviarPanel(fixture);
     httpMock
       .expectOne(CANCELACION)
       .flush(
-        { type: 'https://akine.app/problems/conflict', status: 409, detail: 'Version vieja.' },
+        { type: 'https://akine.app/problems/conflict', status: 409, detail: 'Versión vieja.' },
         { status: 409, statusText: 'Conflict' },
       );
     await asentar(fixture);
@@ -389,11 +389,11 @@ describe('CicloDeTurnoPage', () => {
     expect(textoDe(fixture)).toContain('Reservado');
 
     // El panel de cancelar sigue abierto: releer no tira lo que la persona ya escribio.
-    escribirMotivo(fixture, 'Con la version vigente');
+    escribirMotivo(fixture, 'Con la versión vigente');
     enviarPanel(fixture);
     const vigente = httpMock.expectOne(CANCELACION);
     expect(vigente.request.body).toEqual({
-      motivo: 'Con la version vigente',
+      motivo: 'Con la versión vigente',
       expectedVersion: 2,
     });
     vigente.flush({ id: TURNO, estado: 'CANCELADO', version: 3, inicio: INICIO, fin: SIGUIENTE });
@@ -447,7 +447,7 @@ describe('CicloDeTurnoPage', () => {
    * medias: historial completo, confirmar, y nada mas. Ahora la version sale de la lectura del
    * turno y la pantalla opera igual.
    */
-  it('sin la version en la URL opera igual: la lee del turno', async () => {
+  it('sin la versión en la URL opera igual: la lee del turno', async () => {
     const fixture = await montar({ version: '' });
 
     expect(textoDe(fixture)).not.toContain('solo se puede confirmar');
@@ -473,7 +473,7 @@ describe('CicloDeTurnoPage', () => {
    * trae. La degradacion sigue siendo la correcta —confirmar es idempotente y no lleva version—
    * y sigue estando explicada.
    */
-  it('si la lectura del turno falla y no hay version en la URL, solo ofrece confirmar', async () => {
+  it('si la lectura del turno falla y no hay versión en la URL, solo ofrece confirmar', async () => {
     const fixture = await montar({ version: '', lecturaFalla: true });
 
     const texto = textoDe(fixture);
@@ -494,7 +494,7 @@ describe('CicloDeTurnoPage', () => {
   it('sin `turno:manage` la pantalla es de lectura y no esconde que lo es', async () => {
     const fixture = await montar({ permisos: [PERMISO_TURNO_READ] });
 
-    expect(textoDe(fixture)).toContain('Solo podes mirar este turno');
+    expect(textoDe(fixture)).toContain('Solo podés mirar este turno');
     expect(boton(fixture, 'Confirmar el turno')).toBeNull();
     // El historial sigue visible: leer quien cancelo y por que es `turno:read`, no `turno:manage`.
     expect(textoDe(fixture)).toContain('Se reservo el turno');
@@ -550,7 +550,7 @@ describe('CicloDeTurnoPage', () => {
 
   function clickear(fixture: ComponentFixture<CicloDeTurnoPage>, texto: string): void {
     const elegido = boton(fixture, texto);
-    expect(elegido, `no se encontro el boton "${texto}"`).not.toBeNull();
+    expect(elegido, `no se encontro el botón "${texto}"`).not.toBeNull();
     elegido?.click();
     fixture.detectChanges();
   }

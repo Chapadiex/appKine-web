@@ -114,16 +114,16 @@ describe('HorarioEfectivoPage', () => {
 
     // 12:00Z en Buenos Aires son las 09:00: la hora es la de la sede, no la del navegador.
     expect(contenido).toContain('09:00 a 13:00');
-    expect(contenido).toContain('La produjo el horario semanal, bloque numero 5.');
+    expect(contenido).toContain('La produjo el horario semanal, bloque número 5.');
 
     // Y la apertura puntual NO se confunde con el horario habitual: es la diferencia entre
     // "asi trabaja siempre" y "asi trabaja esta semana".
     expect(contenido).toContain('10:00 a 14:00');
-    expect(contenido).toContain('La produjo una apertura puntual numero 31.');
+    expect(contenido).toContain('La produjo una apertura puntual número 31.');
 
     // La zona con la que se resolvio se rotula: un error de huso se ve, no se deduce.
     expect(contenido).toContain(ZONA);
-    expect(contenido).toContain('2 de 2 dias con atencion');
+    expect(contenido).toContain('2 de 2 días con atención');
   });
 
   it('una franja recortada dice que la recorto un cierre', async () => {
@@ -155,7 +155,7 @@ describe('HorarioEfectivoPage', () => {
     expect(contenido).toContain('termina antes de lo que dice la regla que la produjo');
   });
 
-  it('un dia vaciado por feriado muestra el NOMBRE del feriado', async () => {
+  it('un día vaciado por feriado muestra el NOMBRE del feriado', async () => {
     const fixture = await resolver({
       timezone: ZONA,
       dias: [
@@ -176,10 +176,10 @@ describe('HorarioEfectivoPage', () => {
     expect(contenido).toContain('Cerrado por el feriado: Navidad.');
     expect(contenido).toContain('La sede cierra los feriados de su calendario');
     expect(contenido).toContain('Ver los feriados de la sede');
-    expect(contenido).toContain('0 de 1 dias con atencion');
+    expect(contenido).toContain('0 de 1 días con atención');
   });
 
-  it('un dia tapado por un cierre nombra la excepcion y manda a la pantalla que la administra', async () => {
+  it('un día tapado por un cierre nombra la excepción y manda a la pantalla que la administra', async () => {
     const fixture = await resolver({
       timezone: ZONA,
       dias: [
@@ -196,7 +196,7 @@ describe('HorarioEfectivoPage', () => {
     const contenido = texto(fixture);
 
     expect(contenido).toContain('Cerrado por un cierre cargado.');
-    expect(contenido).toContain('La excepcion de cierre numero 77 cubre el dia entero.');
+    expect(contenido).toContain('La excepción de cierre número 77 cubre el día entero.');
     expect(contenido).toContain('Ver los cierres y las aperturas');
     // Es la unica de las cuatro razones que se resuelve dando de baja algo.
     expect(contenido).toContain('se deshace dandolo de baja');
@@ -214,7 +214,7 @@ describe('HorarioEfectivoPage', () => {
     );
   });
 
-  it('un dia sin vinculo vigente dice que no trabajaba ahi todavia, no que no atiende ese dia', async () => {
+  it('un día sin vinculo vigente dice que no trabajaba ahi todavía, no que no atiende ese día', async () => {
     const fixture = await resolver({
       timezone: ZONA,
       dias: [
@@ -230,15 +230,15 @@ describe('HorarioEfectivoPage', () => {
 
     const contenido = texto(fixture);
 
-    expect(contenido).toContain('Ana Diaz no estaba vinculado a la sede ese dia.');
-    expect(contenido).toContain('todavia no se habia incorporado');
+    expect(contenido).toContain('Ana Diaz no estaba vinculado a la sede ese día.');
+    expect(contenido).toContain('todavía no se habia incorporado');
     expect(contenido).toContain('ya se habia desvinculado');
     // La confusion que esta pantalla existe para evitar: los dos carteles NO son el mismo.
-    expect(contenido).not.toContain('No trabaja ese dia');
+    expect(contenido).not.toContain('No trabaja ese día');
     expect(contenido).not.toContain('Cerrado por');
   });
 
-  it('un dia sin ninguna regla dice que no trabaja ese dia y no ofrece ningun cierre que mirar', async () => {
+  it('un día sin ninguna regla dice que no trabaja ese día y no ofrece ningún cierre que mirar', async () => {
     const fixture = await resolver({
       timezone: ZONA,
       dias: [
@@ -254,14 +254,14 @@ describe('HorarioEfectivoPage', () => {
 
     const contenido = texto(fixture);
 
-    expect(contenido).toContain('No trabaja ese dia.');
-    expect(contenido).toContain('Ninguna regla abre ese dia');
-    expect(contenido).toContain('No hay ningun cierre ni feriado de por medio');
+    expect(contenido).toContain('No trabaja ese día.');
+    expect(contenido).toContain('Ninguna regla abre ese día');
+    expect(contenido).toContain('No hay ningún cierre ni feriado de por medio');
     expect(contenido).toContain('Ver el horario semanal');
     expect(contenido).not.toContain('Ver los cierres y las aperturas');
   });
 
-  it('una franja que llega al fin del dia se escribe 24:00', async () => {
+  it('una franja que llega al fin del día se escribe 24:00', async () => {
     const fixture = await resolver({
       timezone: ZONA,
       dias: [
@@ -317,7 +317,7 @@ describe('HorarioEfectivoPage', () => {
 
     expect(contenido).toContain('Feriado');
     expect(contenido).toContain('Navidad');
-    expect(contenido).toContain('y aun asi se atiende');
+    expect(contenido).toContain('y aun así se atiende');
     expect(contenido).toContain('09:00 a 13:00');
   });
 
@@ -357,7 +357,7 @@ describe('HorarioEfectivoPage', () => {
     escribir(fixture, '#efectivo-desde', '2026-01-01');
     escribir(fixture, '#efectivo-hasta', '2028-01-01');
     enviar(fixture, '#form-ventana');
-    expect(texto(fixture)).toContain('no puede superar los 366 dias');
+    expect(texto(fixture)).toContain('no puede superar los 366 días');
     httpMock.expectNone((peticion: HttpRequest<unknown>) => peticion.url === EFECTIVA);
 
     escribir(fixture, '#efectivo-hasta', '');
@@ -443,7 +443,7 @@ describe('HorarioEfectivoPage', () => {
    * opcion. El horario semanal ya distinguia los dos casos y ofrecia la salida —el horario
    * cuelga del vinculo, asi que se arregla en Colaboradores—; aca faltaba.
    */
-  it('sin profesionales vinculados lo dice y manda a Colaboradores, no a un desplegable vacio', async () => {
+  it('sin profesionales vinculados lo dice y manda a Colaboradores, no a un desplegable vacío', async () => {
     tenantContext.select({
       organizationId: ORG,
       organizationName: 'Belgrano',
@@ -473,7 +473,7 @@ describe('HorarioEfectivoPage', () => {
    * lo que el navegador dibujo: la pantalla queda diciendo "Ana Diaz" mientras el estado dice
    * que no hay nadie, y "Resolver" contesta "Eligi un profesional" con un nombre a la vista.
    */
-  it('al cambiar de sede el desplegable vuelve a "Elegi un profesional" y no queda con el anterior', async () => {
+  it('al cambiar de sede el desplegable vuelve a "Elegí un profesional" y no queda con el anterior', async () => {
     const fixture = await elegir(await montar());
 
     responder(fixture, { timezone: ZONA, dias: [MARTES] });
@@ -513,14 +513,14 @@ describe('HorarioEfectivoPage', () => {
     fixture.detectChanges();
     await estabilizar(fixture);
 
-    expect(texto(fixture)).toContain('Todavia no elegiste un consultorio');
+    expect(texto(fixture)).toContain('Todavía no elegiste un consultorio');
     httpMock.expectNone((peticion: HttpRequest<unknown>) => peticion.url === MEMBERSHIPS);
   });
 
-  it('una ventana que no devuelve dias lo dice, en vez de quedar en blanco', async () => {
+  it('una ventana que no devuelve días lo dice, en vez de quedar en blanco', async () => {
     const fixture = await resolver({ timezone: ZONA, dias: [] });
 
-    expect(texto(fixture)).toContain('no devolvio ningun dia');
+    expect(texto(fixture)).toContain('no devolvio ningún día');
   });
 
   it(
@@ -608,7 +608,7 @@ function abrir(fixture: { nativeElement: HTMLElement; detectChanges(): void }, e
     (candidato) => (candidato.textContent ?? '').trim() === etiqueta,
   );
   if (boton === undefined) {
-    throw new Error(`No existe el boton ${etiqueta}`);
+    throw new Error(`No existe el botón ${etiqueta}`);
   }
   boton.click();
   fixture.detectChanges();

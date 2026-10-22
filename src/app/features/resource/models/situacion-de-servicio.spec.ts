@@ -22,7 +22,7 @@ const AHORA = new Date('2026-08-25T12:00:00Z');
  * de ellos se confunda con `en-servicio` ni con `dado-de-baja`.
  */
 describe('situacionDeServicio', () => {
-  it('un espacio activo que entra en servicio despues explica por que no se ofrece todavia', () => {
+  it('un espacio activo que entra en servicio después explica por que no se ofrece todavía', () => {
     const situacion = situacionDeServicio(
       {
         estado: ACTIVO,

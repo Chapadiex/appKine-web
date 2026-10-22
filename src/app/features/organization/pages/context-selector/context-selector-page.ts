@@ -12,6 +12,7 @@ import {
 import { PARAM_MOTIVO, avisoDelMotivo } from '../../models/motivo-de-seleccion';
 import { SessionService } from '../../../../core/services/session.service';
 import { TenantContext } from '../../../../core/services/tenant-context.store';
+import { RUTA_LOGIN } from '../../../../core/models/rutas';
 
 /** Destino cuando nadie pidio volver a ningun lado. */
 const DESTINO_POR_DEFECTO = '/organizacion';
@@ -61,9 +62,10 @@ type EstadoContextos =
  * token que todavia no lo acompania.
  */
 @Component({
+  imports: [],
   selector: 'app-context-selector-page',
   templateUrl: './context-selector-page.html',
-  styleUrl: '../../organization.css',
+  styleUrls: ['../../organization.css', '../../../../shared/styles/acceso.css'],
 })
 export class ContextSelectorPage {
   private readonly session = inject(SessionService);
@@ -114,6 +116,46 @@ export class ContextSelectorPage {
   });
 
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+
+  /**
+   * Los contextos agrupados por centro (diseño del canvas, 22/10/2026): una tarjeta por
+   * organizacion con sus sedes debajo. El orden de llegada se respeta: el ultimo elegido sigue
+   * primero.
+   */
+  protected readonly centros = computed(() => {
+    const lista = this.contextos();
+    if (lista === null) return [];
+    const grupos = new Map<number, { nombre: string; sedes: TenantContext[] }>();
+    for (const contexto of lista) {
+      const grupo = grupos.get(contexto.organizationId) ?? {
+        nombre: contexto.organizationName,
+        sedes: [],
+      };
+      grupo.sedes.push(contexto);
+      grupos.set(contexto.organizationId, grupo);
+    }
+    return [...grupos.entries()].map(([id, grupo]) => ({ id, ...grupo }));
+  });
+
+  protected readonly saliendo = signal(false);
+
+  /** Dos letras para el cuadrado del centro: "Consultorio Centro" → "CC". */
+  protected iniciales(nombre: string): string {
+    return nombre
+      .split(/\s+/)
+      .filter((palabra) => palabra.length > 0)
+      .slice(0, 2)
+      .map((palabra) => palabra[0]!.toUpperCase())
+      .join('');
+  }
+
+  /** Salir sin elegir: la sesion se cierra y se vuelve al login. */
+  protected cerrarSesion(): void {
+    this.saliendo.set(true);
+    this.session.logout().subscribe({
+      complete: () => this.router.navigateByUrl(RUTA_LOGIN).catch(() => undefined),
+    });
+  }
 
   /** Contexto al que se esta entrando, o `null`. */
   protected readonly contextoEnCurso = computed(() => {
@@ -237,7 +279,7 @@ export class ContextSelectorPage {
     const es404 = error instanceof AkineHttpError && !error.esDeRed && error.status === 404;
 
     if (es404 && !automatico) {
-      this.aviso.set('Ese contexto ya no esta disponible. Elegi otro de la lista actualizada.');
+      this.aviso.set('Ese contexto ya no esta disponible. Elegí otro de la lista actualizada.');
       this.cargar();
       return;
     }
@@ -323,7 +365,7 @@ export class ContextSelectorPage {
     if (error.status === 403) {
       return {
         tipo: 'error',
-        mensaje: 'Tu sesion no esta activa. Volve a iniciar sesion.',
+        mensaje: 'Tu sesión no esta activa. Volvé a iniciar sesión.',
         esDeRed: false,
       };
     }

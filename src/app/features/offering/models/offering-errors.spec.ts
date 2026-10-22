@@ -90,7 +90,7 @@ describe('traducirErrorOffering', () => {
     ).toBe('prosa del backend');
   });
 
-  it('sin cuerpo de ProblemDetail cae al mensaje de respaldo y no muestra vacio', () => {
+  it('sin cuerpo de ProblemDetail cae al mensaje de respaldo y no muestra vacío', () => {
     const sinCuerpo = new AkineHttpError(409, null, false);
     expect(traducirErrorOffering(sinCuerpo, 'oferta').mensaje).toContain('conflicto');
   });

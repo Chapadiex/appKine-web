@@ -32,17 +32,17 @@ export interface ErrorAsistencia {
   readonly causa: CausaAsistencia;
 }
 
-const MENSAJE_GENERICO = 'No se pudo completar la operacion. Volve a intentar en un momento.';
-const MENSAJE_DE_RED = 'No se pudo contactar al servidor. Revisa la conexion y volve a intentar.';
+const MENSAJE_GENERICO = 'No se pudo completar la operación. Volvé a intentar en un momento.';
+const MENSAJE_DE_RED = 'No se pudo contactar al servidor. Revisa la conexion y volvé a intentar.';
 const MENSAJE_SIN_CONTEXTO =
-  'La asistencia es de una sede. Eligi una organizacion y un consultorio, y volve a entrar.';
+  'La asistencia es de una sede. Eligi una organización y un consultorio, y volvé a entrar.';
 const MENSAJE_SIN_PERMISO =
-  'No tenes permiso para esta operacion en esta sede. Tomar lista pide asistencia:manage, ver ' +
-  'los participantes inscripcion:read e iniciar o cerrar la clase clase:manage.';
+  'No tenés permiso para esta operación en esta sede. Tomar lista pide asistencia:manage, ver ' +
+  'los participantes inscripción:read e iniciar o cerrar la clase clase:manage.';
 const MENSAJE_NO_ENCONTRADO = 'La clase o el participante no existen en esta sede.';
-const MENSAJE_CLASE_NO_ADMITE = 'La clase no admite esta operacion en su estado actual.';
+const MENSAJE_CLASE_NO_ADMITE = 'La clase no admite esta operación en su estado actual.';
 const MENSAJE_SIN_LUGAR =
-  'Esa inscripcion no tiene lugar en la clase (esta cancelada o en lista de espera).';
+  'Esa inscripción no tiene lugar en la clase (esta cancelada o en lista de espera).';
 const MENSAJE_MOTIVO =
   'Cambiar una asistencia ya registrada es una correccion y necesita un motivo.';
 

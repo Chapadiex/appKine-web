@@ -200,9 +200,9 @@ test.describe('Escenario 11 - ningun error expone internals del servidor', () =>
 
   test('la pantalla de login no pinta internals cuando el backend rechaza', async ({ page }) => {
     await page.goto('/auth/ingresar');
-    await campo(page, 'Email').fill(emailUnico('qa.err.pantalla'));
-    await campo(page, 'Contrasena').fill(PASSWORD);
-    await page.getByRole('button', { name: 'Iniciar sesion' }).click();
+    await campo(page, 'Correo electrónico').fill(emailUnico('qa.err.pantalla'));
+    await campo(page, 'Contraseña').fill(PASSWORD);
+    await page.getByRole('button', { name: 'Ingresar' }).click();
 
     await expect(page.getByRole('alert')).toBeVisible();
     esperarSinInternals(await page.locator('body').innerText(), 'la pantalla de login con error');
@@ -246,7 +246,8 @@ test.describe('Escenario 11 - ningun error expone internals del servidor', () =>
     await expect(page.getByRole('alert')).toBeVisible();
 
     await page.goto('/organizacion');
-    await expect(page.getByRole('banner')).toBeVisible();
+    // Sin sesion termina en el login, que no tiene barra superior: alcanza con que pinte su titulo.
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
 
     esperarSinInternals(consola.join('\n'), 'la consola del navegador');
   });

@@ -142,7 +142,7 @@ describe('EspaciosPage', () => {
 
     // El box operativo y el futuro NO comparten el rotulo de estado.
     expect(contenido).toContain('Activo y en servicio');
-    expect(contenido).toContain('Activo, todavia sin servicio');
+    expect(contenido).toContain('Activo, todavía sin servicio');
     expect(contenido).toContain('no aparece en los selectores de reserva');
 
     // La capacidad se muestra como capacidad. En ningun lado se rotula un box como "libre" ni
@@ -160,7 +160,7 @@ describe('EspaciosPage', () => {
     expect(region?.getAttribute('aria-label')).toBeTruthy();
   });
 
-  it('sin sede elegida no consulta nada y ofrece elegir consultorio, no cerrar sesion', async () => {
+  it('sin sede elegida no consulta nada y ofrece elegir consultorio, no cerrar sesión', async () => {
     // Contexto con organizacion pero SIN sede: los espacios cuelgan de una sede concreta, asi
     // que la peticion seria invalida.
     tenantContext.select({ organizationId: 1, organizationName: 'Belgrano' });
@@ -179,15 +179,15 @@ describe('EspaciosPage', () => {
       .forEach((peticion) => peticion.flush({ permissions: [] }));
 
     const contenido = texto(fixture);
-    expect(contenido).toContain('Todavia no elegiste un consultorio');
+    expect(contenido).toContain('Todavía no elegiste un consultorio');
     // Lo importante: la salida es elegir sede, NO re-autenticarse. Las credenciales estan bien
     // y volver a entrar no elegiria ninguna sede, dejando al usuario en el mismo bucle.
-    expect(contenido).toContain('Tu sesion sigue abierta');
+    expect(contenido).toContain('Tu sesión sigue abierta');
     const salida = fixture.nativeElement.querySelector('a[href="/seleccionar-contexto"]');
     expect(salida).not.toBeNull();
   });
 
-  it('el listado vacio no es un error, y el filtro de inactivos lo dice distinto', async () => {
+  it('el listado vacío no es un error, y el filtro de inactivos lo dice distinto', async () => {
     const fixture = await montar();
 
     const selector: HTMLSelectElement | null =
@@ -248,7 +248,7 @@ describe('EspaciosPage', () => {
     expect(texto(fixture)).toContain('quedaron guardados');
   });
 
-  it('una version vieja no pisa nada: relee el espacio, avisa y deja el panel abierto', async () => {
+  it('una versión vieja no pisa nada: relee el espacio, avisa y deja el panel abierto', async () => {
     const fixture = await montar();
 
     abrir(fixture, 'Editar');
@@ -433,7 +433,7 @@ describe('EspaciosPage', () => {
     expect(botonPorTexto(fixture, 'Recargar el listado')).not.toBeNull();
   });
 
-  it('bajar la capacidad por debajo de lo comprometido explica con los dos numeros', async () => {
+  it('bajar la capacidad por debajo de lo comprometido explica con los dos números', async () => {
     // Es el unico 409 del modulo donde el usuario necesita DOS cifras para decidir: a cuanto
     // puede bajar hoy y cuanto hay tomado. Sin ellas solo queda "no pudimos completar".
     const fixture = await montarCon(PAGINA_MIXTA);
@@ -465,7 +465,7 @@ describe('EspaciosPage', () => {
     expect(contenido).toContain('turnos simultaneos');
   });
 
-  it('un nombre vacio bloquea el guardado: no sale ningun PATCH', async () => {
+  it('un nombre vacío bloquea el guardado: no sale ningún PATCH', async () => {
     // El backend lo rechaza igual, pero un 400 por un campo obligatorio vacio es un viaje que
     // no aporta nada y deja el panel sin explicar cual campo era.
     const fixture = await montar();
@@ -501,7 +501,7 @@ describe('EspaciosPage', () => {
     fixture.detectChanges();
   });
 
-  it('un nombre de solo espacios tambien lo bloquea, y no viaja un name vacio', async () => {
+  it('un nombre de solo espacios también lo bloquea, y no viaja un name vacío', async () => {
     // `Validators.required` solo mira la longitud: para el, '   ' es un nombre. Despues
     // `armarCambios()` lo recorta y manda `name: ''` contra una restriccion de base que el
     // operador no puede asociar a ningun campo de la pantalla.
@@ -523,7 +523,7 @@ describe('EspaciosPage', () => {
       { status: 403, statusText: 'Forbidden' },
     );
 
-    expect(texto(fixture)).toContain('No tenes permiso para administrar los espacios');
+    expect(texto(fixture)).toContain('No tenés permiso para administrar los espacios');
     expect(botonPorTexto(fixture, 'Reintentar')).not.toBeNull();
     expect(fixture.nativeElement.querySelector('a[href="/seleccionar-contexto"]')).toBeNull();
   });
@@ -536,7 +536,7 @@ describe('EspaciosPage', () => {
       { status: 403, statusText: 'Forbidden' },
     );
 
-    expect(texto(fixture)).toContain('todavia no elegiste ninguna');
+    expect(texto(fixture)).toContain('todavía no elegiste ninguna');
     expect(botonPorTexto(fixture, 'Reintentar')).toBeNull();
     expect(fixture.nativeElement.querySelector('a[href="/seleccionar-contexto"]')).not.toBeNull();
   });
@@ -562,7 +562,7 @@ describe('EspaciosPage', () => {
     expect(contenido).toContain('Sin fin previsto');
   });
 
-  it('sin permiso de gestion el listado se sigue viendo pero sin ninguna accion', async () => {
+  it('sin permiso de gestion el listado se sigue viendo pero sin ninguna acción', async () => {
     // El listado NO exige `consultorio:manage`: es la lectura que necesita un profesional para
     // saber en que box atiende. Esconder la tabla entera dejaria a media sede sin consultarla.
     const fixture = await montarCon(PAGINA, []);
@@ -648,7 +648,7 @@ function abrir(fixture: { nativeElement: HTMLElement; detectChanges(): void }, e
     (candidato) => (candidato.textContent ?? '').trim() === etiqueta,
   );
   if (boton === undefined) {
-    throw new Error(`No existe el boton ${etiqueta}`);
+    throw new Error(`No existe el botón ${etiqueta}`);
   }
   boton.click();
   fixture.detectChanges();

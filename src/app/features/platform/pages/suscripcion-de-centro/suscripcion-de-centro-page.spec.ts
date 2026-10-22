@@ -65,7 +65,7 @@ describe('SuscripcionDeCentroPage', () => {
 
   afterEach(() => httpMock.verify());
 
-  it('lee la suscripcion por la ruta de plataforma y cambia el plan con esa version', async () => {
+  it('lee la suscripción por la ruta de plataforma y cambia el plan con esa versión', async () => {
     const fixture = await buscar();
     httpMock.expectNone('/api/v1/organizations/4/subscription');
     httpMock.expectOne(LECTURA).flush(suscripcion(7));
@@ -91,7 +91,7 @@ describe('SuscripcionDeCentroPage', () => {
     expect(texto(fixture, '[data-testid="suscripcion-version"]')).toBe('8');
   });
 
-  it('una version vieja no aplica nada, lo dice y relee la suscripcion', async () => {
+  it('una versión vieja no aplica nada, lo dice y relee la suscripción', async () => {
     const fixture = await buscar();
     httpMock.expectOne(LECTURA).flush(suscripcion(7));
     await estabilizar(fixture);
@@ -111,15 +111,15 @@ describe('SuscripcionDeCentroPage', () => {
     expect(texto(fixture, '[data-testid="suscripcion-version"]')).toBe('9');
   });
 
-  it('con la suscripcion suspendida no ofrece cambiar el plan', async () => {
+  it('con la suscripción suspendida no ofrece cambiar el plan', async () => {
     const fixture = await buscar();
     httpMock.expectOne(LECTURA).flush(suscripcion(2, 'BASICO', 'SUSPENDIDA'));
     await estabilizar(fixture);
-    expect(texto(fixture)).toContain('el plan solo se cambia con la suscripcion activa');
+    expect(texto(fixture)).toContain('el plan solo se cambia con la suscripción activa');
     expect(fixture.nativeElement.querySelector('#suscripcion-plan-nuevo')).toBeNull();
   });
 
-  it('lista los centros al entrar y los elige por nombre, no por numero', async () => {
+  it('lista los centros al entrar y los elige por nombre, no por número', async () => {
     const fixture = await abrir();
     expect(texto(fixture, 'table')).toContain('Kinesio Norte');
     expect(texto(fixture, 'table')).toContain('kinesio-norte');
@@ -132,7 +132,7 @@ describe('SuscripcionDeCentroPage', () => {
     expect(texto(fixture, '#titulo-suscripcion')).toBe('Kinesio Norte');
   });
 
-  it('busca por texto y estado, y pagina con el filtro enviado, no con el que se escribe', async () => {
+  it('busca por texto y estado, y página con el filtro enviado, no con el que se escribe', async () => {
     const fixture = await abrir([KINESIO_NORTE, centro(5, 'Kinesio Sur')], 2, 25);
     expect(texto(fixture, '[data-testid="suscripcion-total-centros"]')).toBe('25 centros');
 
@@ -148,7 +148,7 @@ describe('SuscripcionDeCentroPage', () => {
 
     escribir(fixture, 'otra cosa');
     const siguiente = fixture.nativeElement.querySelector(
-      'nav[aria-label="Paginas de centros"] button:last-of-type',
+      'nav[aria-label="Páginas de centros"] button:last-of-type',
     ) as HTMLButtonElement;
     siguiente.click();
     const pagina2 = httpMock.expectOne((r) => r.url === LISTADO);
@@ -156,7 +156,7 @@ describe('SuscripcionDeCentroPage', () => {
     expect(pagina2.request.params.get('page')).toBe('1');
     pagina2.flush(pagina([], 1, 2, 21));
     await estabilizar(fixture);
-    expect(texto(fixture)).toContain('Ningun centro coincide con la busqueda');
+    expect(texto(fixture)).toContain('Ningún centro coincide con la búsqueda');
   });
 
   it('si el listado falla lo dice y deja reintentar', async () => {
@@ -194,7 +194,7 @@ describe('SuscripcionDeCentroPage', () => {
   });
 
   it(
-    'con una suscripcion cargada no tiene violaciones de accesibilidad',
+    'con una suscripción cargada no tiene violaciones de accesibilidad',
     async () => {
       const fixture = await buscar();
       httpMock.expectOne(LECTURA).flush(suscripcion(7));
@@ -233,7 +233,7 @@ describe('SuscripcionDeCentroPage', () => {
 
   function elegirCentro(fixture: ComponentFixture<SuscripcionDeCentroPage>, nombre: string): void {
     const boton = fixture.nativeElement.querySelector(
-      `button[aria-label="Ver la suscripcion de ${nombre}"]`,
+      `button[aria-label="Ver la suscripción de ${nombre}"]`,
     ) as HTMLButtonElement;
     boton.click();
     fixture.detectChanges();

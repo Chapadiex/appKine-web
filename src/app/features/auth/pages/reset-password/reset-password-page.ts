@@ -33,9 +33,12 @@ function contrasenasIguales(grupo: AbstractControl): ValidationErrors | null {
   selector: 'app-reset-password-page',
   imports: [ReactiveFormsModule, RouterLink],
   templateUrl: './reset-password-page.html',
-  styleUrl: '../../auth.css',
+  styleUrls: ['../../auth.css', '../../../../shared/styles/acceso.css'],
 })
 export class ResetPasswordPage {
+  /** Mostrar u ocultar la contraseña mientras se escribe (diseño del canvas). Solo cambia el input. */
+  protected readonly verPassword = signal(false);
+
   private readonly recuperacion = inject(RecuperacionService);
   private readonly ruta = inject(ActivatedRoute);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
@@ -115,8 +118,8 @@ export class ResetPasswordPage {
           this.estado.set({
             tipo: 'ok',
             mensaje:
-              'Tu contrasena quedo actualizada y se cerraron todas tus sesiones abiertas. ' +
-              'Entra de nuevo con la contrasena nueva.',
+              'Tu contraseña quedo actualizada y se cerraron todas tus sesiones abiertas. ' +
+              'Entra de nuevo con la contraseña nueva.',
           }),
         error: (error: unknown) => {
           const traducido = traducirYEsperar(error, this.espera, {

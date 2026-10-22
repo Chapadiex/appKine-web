@@ -144,11 +144,11 @@ export class MedicionesDeSesion {
       return '';
     }
     if (comparacion.sesionAnteriorId === undefined) {
-      return 'No hay una sesion cerrada anterior con que comparar: estas son las primeras mediciones.';
+      return 'No hay una sesión cerrada anterior con que comparar: estas son las primeras mediciones.';
     }
     return comparacion.acotadaAlCaso
-      ? 'Comparado contra la sesion cerrada anterior del mismo caso clinico.'
-      : 'Comparado contra la sesion cerrada anterior del paciente.';
+      ? 'Comparado contra la sesión cerrada anterior del mismo caso clínico.'
+      : 'Comparado contra la sesión cerrada anterior del paciente.';
   });
 
   constructor() {
@@ -242,7 +242,7 @@ export class MedicionesDeSesion {
   protected registrar(): void {
     const definicion = this.definicion();
     if (definicion?.id === undefined) {
-      this.aviso.set('Elegi que medida vas a cargar.');
+      this.aviso.set('Elegí que medida vas a cargar.');
       return;
     }
 
@@ -250,9 +250,9 @@ export class MedicionesDeSesion {
     if (valor === null) {
       this.aviso.set(
         this.esNumerica()
-          ? 'Falta el valor, o no es un numero.'
+          ? 'Falta el valor, o no es un número.'
           : definicion.tipo === MedicionDefinicionResponseTipoEnum.BOOLEANO
-            ? 'Elegi si el signo esta presente o no.'
+            ? 'Elegí si el signo esta presente o no.'
             : 'Falta el hallazgo.',
       );
       return;
@@ -270,7 +270,7 @@ export class MedicionesDeSesion {
       .subscribe({
         next: () => {
           this.guardando.set(false);
-          this.aviso.set(`Medicion registrada: ${definicion.name ?? 'medida'}.`);
+          this.aviso.set(`Medición registrada: ${definicion.name ?? 'medida'}.`);
           this.limpiarValor();
           this.cargar();
         },
@@ -296,7 +296,7 @@ export class MedicionesDeSesion {
       .subscribe({
         next: () => {
           this.guardando.set(false);
-          this.aviso.set(`Medicion quitada: ${medida.nombre ?? 'medida'}.`);
+          this.aviso.set(`Medición quitada: ${medida.nombre ?? 'medida'}.`);
           this.cargar();
         },
         error: (error: unknown) => this.fallo(error),

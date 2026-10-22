@@ -99,10 +99,10 @@ describe('ProductosDePackPage', () => {
       [...(fixture.nativeElement as HTMLElement).querySelectorAll('#producto-oferta option')].map(
         (o) => o.textContent?.trim(),
       );
-    expect(opciones()).toEqual(['Elegi una oferta', 'Pilates reformer']);
+    expect(opciones()).toEqual(['Elegí una oferta', 'Pilates reformer']);
     escribir(fixture, '#producto-oferta', '42');
     escribir(fixture, '#producto-tipo', 'ABONO');
-    expect(opciones()).toEqual(['Elegi una oferta', 'Gimnasio libre']);
+    expect(opciones()).toEqual(['Elegí una oferta', 'Gimnasio libre']);
     expect(
       (fixture.nativeElement as HTMLElement).querySelector<HTMLSelectElement>('#producto-oferta')
         ?.value,
@@ -130,7 +130,7 @@ describe('ProductosDePackPage', () => {
     await asentar(fixture);
     const texto = textoDe(fixture);
     expect(texto).toContain('Se creo "Abono mensual" (abono)');
-    expect(texto).toContain('Periodo de hasta 60 dias');
+    expect(texto).toContain('Periodo de hasta 60 días');
     expect(texto).toContain('Abono');
   });
 
@@ -161,7 +161,7 @@ describe('ProductosDePackPage', () => {
       pedido.flush({ ...PACK, id: 10, nombre: 'Pack 4' });
       responder([PACK]);
       await asentar(fixture);
-      expect(textoDe(fixture)).toContain('Se creo "Pack 4". Todavia nadie tiene saldo');
+      expect(textoDe(fixture)).toContain('Se creo "Pack 4". Todavía nadie tiene saldo');
     },
     TIMEOUT_AXE,
   );
@@ -185,7 +185,7 @@ describe('ProductosDePackPage', () => {
     const fixture = await montar([]);
     clickear(fixture, 'Nuevo producto');
     clickear(fixture, 'Crear producto');
-    expect(textoDe(fixture)).toContain('Elegi la oferta del producto.');
+    expect(textoDe(fixture)).toContain('Elegí la oferta del producto.');
     expect(textoDe(fixture)).toContain('El nombre es obligatorio.');
     httpMock.expectNone((r) => r.method === 'POST');
   });
@@ -195,7 +195,7 @@ describe('ProductosDePackPage', () => {
     clickear(fixture, 'Nuevo producto');
     escribir(fixture, '#producto-vigencia-dias', '4000');
     clickear(fixture, 'Crear producto');
-    expect(textoDe(fixture)).toContain('Entre 1 y 3660 dias.');
+    expect(textoDe(fixture)).toContain('Entre 1 y 3660 días.');
     const campo = (fixture.nativeElement as HTMLElement).querySelector('#producto-vigencia-dias');
     expect(campo?.getAttribute('aria-describedby')).toBe(
       'producto-vigencia-dias-ayuda producto-vigenciaDias-error',
@@ -227,7 +227,7 @@ describe('ProductosDePackPage', () => {
     expect(textoDe(fixture)).toContain('Ya hay un producto vigente con ese nombre');
   });
 
-  it('edita con la version leida y limpia la fecha de fin vaciada', async () => {
+  it('edita con la versión leida y limpia la fecha de fin vaciada', async () => {
     const fixture = await montar([{ ...PACK, vigenciaHasta: '2026-12-31' }]);
     clickear(fixture, 'Editar');
     expect(textoDe(fixture)).toContain('El tipo y la oferta de un producto no se cambia');
@@ -296,7 +296,7 @@ describe('ProductosDePackPage', () => {
       .flush({ status: 403 }, { status: 403, statusText: 'Forbidden' });
     httpMock.expectOne((r) => r.url === URL_OFERTAS).flush(OFERTAS);
     await asentar(fixture);
-    expect(textoDe(fixture)).toContain('No tenes permiso');
+    expect(textoDe(fixture)).toContain('No tenés permiso');
     clickear(fixture, 'Reintentar');
     responder();
     await asentar(fixture as ComponentFixture<ProductosDePackPage>);

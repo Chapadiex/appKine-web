@@ -94,7 +94,7 @@ describe('ClasesDelDiaPage', () => {
     TIMEOUT_AXE,
   );
 
-  it('cambiar la fecha pide ese dia; un dia sin clases lo dice', async () => {
+  it('cambiar la fecha pide ese día; un día sin clases lo dice', async () => {
     const fixture = await montar();
     await responder(fixture, DIA);
 
@@ -124,8 +124,8 @@ describe('ClasesDelDiaPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
     const el = fixture.nativeElement as HTMLElement;
-    expect(el.textContent).toContain('No tenes permiso');
-    (el.querySelector('button') as HTMLButtonElement).click();
+    expect(el.textContent).toContain('No tenés permiso');
+    (el.querySelector('button:not(.ayuda-contextual__boton)') as HTMLButtonElement).click();
     await responder(fixture, DIA);
     expect(el.textContent).toContain('Pilates grupal');
   });

@@ -6,6 +6,7 @@ import {
   paginaDePlataforma,
   plataformaDisponible,
 } from './support/sembrado-configuracion';
+import { abrirFiltros } from './support/filtros';
 
 /**
  * E2E de servicios y ofertas (M08, AKINE-02.06, 02.07 y B-3) contra el backend REAL: la plataforma
@@ -43,8 +44,8 @@ test.describe('Servicios y ofertas contra el backend real', () => {
     try {
       // --- La plataforma da de alta el servicio global ---
       await navegar(plataforma, '/servicios/catalogo');
-      await plataforma.getByRole('button', { name: 'Dar de alta un servicio' }).click();
-      await plataforma.getByLabel('Codigo', { exact: true }).fill(`E2E_SRV_${sufijo}`);
+      await plataforma.getByRole('button', { name: 'Nuevo servicio' }).click();
+      await plataforma.getByLabel('Código', { exact: true }).fill(`E2E_SRV_${sufijo}`);
       await plataforma.getByLabel('Nombre', { exact: true }).fill(nombreDelServicio);
       await plataforma.getByLabel('Naturaleza').selectOption('TERAPEUTICO');
       await plataforma.getByLabel('Modalidad por defecto').selectOption('INDIVIDUAL');
@@ -60,10 +61,10 @@ test.describe('Servicios y ofertas contra el backend real', () => {
       // --- El centro arma su oferta sobre ese servicio ---
       await ingresar(page, centro);
       await navegar(page, '/servicios/ofertas');
-      await page.getByRole('button', { name: 'Dar de alta una oferta' }).click();
+      await page.getByRole('button', { name: 'Publicar un servicio en la sede' }).click();
       await page.getByLabel('Servicio del catalogo').selectOption(String(servicioId));
       await page.getByLabel('Nombre comercial').fill(nombreDeLaOferta);
-      await page.getByLabel('Duracion (minutos)').fill('30');
+      await page.getByLabel('Duración (minutos)').fill('30');
       await page.getByLabel('Requiere espacio o box').uncheck();
       const altaDeLaOferta = respuestaDe(page, 'POST', /\/consultorios\/\d+\/ofertas$/);
       await page.getByRole('button', { name: 'Dar de alta', exact: true }).click();
@@ -72,6 +73,7 @@ test.describe('Servicios y ofertas contra el backend real', () => {
       ofertaId = ((await oferta.json()) as { id: number }).id;
       await expect(page.getByText('La oferta quedo dada de alta en esta sede.')).toBeVisible();
 
+      await abrirFiltros(page);
       await page.getByLabel('Servicio', { exact: true }).selectOption(String(servicioId));
       const fila = page.getByRole('row').filter({ hasText: nombreDeLaOferta });
       await expect(fila).toBeVisible();
@@ -85,7 +87,7 @@ test.describe('Servicios y ofertas contra el backend real', () => {
       const habilitacion = respuestaDe(page, 'PUT', /\/habilitaciones\/profesionales$/);
       await page.getByRole('button', { name: 'Guardar los profesionales' }).click();
       expect((await habilitacion).status()).toBe(200);
-      await expect(page.getByText('Guardamos la configuracion de la oferta.')).toBeVisible();
+      await expect(page.getByText('Guardamos la configuración de la oferta.')).toBeVisible();
 
       // --- Precio particular desde hoy ---
       await navegar(page, `/servicios/ofertas/${ofertaId}/precios`);
@@ -111,6 +113,7 @@ test.describe('Servicios y ofertas contra el backend real', () => {
       const baja = respuestaDe(plataforma, 'DELETE', new RegExp(`/servicios/${servicioId}$`));
       await panelDeBaja.getByRole('button', { name: 'Dar de baja' }).click();
       expect((await baja).ok()).toBe(true);
+      await abrirFiltros(plataforma);
       await plataforma.getByLabel('Mostrar').selectOption('INACTIVO');
       await expect(
         plataforma
@@ -142,6 +145,7 @@ test.describe('Servicios y ofertas contra el backend real', () => {
     expect(slots[0].profesionalId).toBe(centro.profesional.membershipId);
 
     await navegar(page, '/servicios/ofertas');
+    await abrirFiltros(page);
     await page.getByLabel('Mostrar').selectOption('ACTIVO');
     await expect(page.getByRole('row').filter({ hasText: nombreDeLaOferta })).toBeVisible();
   });

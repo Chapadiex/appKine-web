@@ -88,20 +88,20 @@ test.describe('Buscador de agenda contra el backend real', () => {
       page.getByRole('button', { name: rango(primerDia[0], centro.timezone) }),
     ).toHaveCount(2);
     await expect(
-      page.getByText('La sede cierra este dia por una excepcion cargada en el calendario.'),
+      page.getByText('La sede cierra este día por una excepción cargada en el calendario.'),
     ).toBeVisible();
     // Desde appKine-api #66 un dia sin ningun cupo libre viaja SIN slots y con `COMPLETO`: ya no
     // se dibuja el turno tomado con cupo 0, se dice que el dia se lleno.
     await expect(
       page.getByText(
-        'Todos los turnos de este dia ya estan reservados. La agenda esta bien: se lleno.',
+        'Todos los turnos de este día ya estan reservados. La agenda esta bien: se lleno.',
       ),
     ).toBeVisible();
     // El turno tomado tiene la misma franja (00:00 a 12:00) que los de d y d+3: el `toHaveCount(2)`
     // de arriba ya prueba que el dia lleno no agrega un boton.
-    await expect(page.getByText('La oferta no esta vigente este dia.')).toBeVisible();
+    await expect(page.getByText('La oferta no esta vigente este día.')).toBeVisible();
 
-    await expect(page.getByText('Ningun dia de este rango tiene turnos disponibles')).toHaveCount(
+    await expect(page.getByText('Ningún día de este rango tiene turnos disponibles')).toHaveCount(
       0,
     );
   });

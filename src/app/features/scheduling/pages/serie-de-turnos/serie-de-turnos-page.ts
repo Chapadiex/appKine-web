@@ -13,7 +13,12 @@ import { SlotDisponible } from '../../../../api/generated/model/slot-disponible'
 import { ConfirmacionConMotivo } from '../../../../shared/components/confirmacion-con-motivo/confirmacion-con-motivo';
 import { SelectorDeHorario } from '../../components/selector-de-horario/selector-de-horario';
 import { fechaEnPalabras, sumarDias } from '../../models/etiquetas-de-agenda';
-import { fechaHoraEnZona, textoDeEstado } from '../../models/etiquetas-de-turno';
+import {
+  detalleDeEstado,
+  fechaHoraEnZona,
+  nombreDeEstado,
+  textoDeEstado,
+} from '../../models/etiquetas-de-turno';
 import { ErrorSerie, OperacionDeSerie, traducirErrorSerie } from '../../models/series-errors';
 import {
   fechaEnZona,
@@ -25,6 +30,7 @@ import {
 } from '../../models/series';
 import { SchedulingApi } from '../../services/scheduling-api';
 import { AlcanceSerie, SeriesApi } from '../../services/series-api';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 
 /** Estados en los que un turno todavia se puede cancelar. El resto lo omite el backend. */
 const PENDIENTES: ReadonlySet<string> = new Set<string>([
@@ -86,7 +92,7 @@ interface Resultado {
  */
 @Component({
   selector: 'app-serie-de-turnos-page',
-  imports: [RouterLink, ConfirmacionConMotivo, SelectorDeHorario],
+  imports: [Ayuda, RouterLink, ConfirmacionConMotivo, SelectorDeHorario],
   templateUrl: './serie-de-turnos-page.html',
   styleUrl: '../../agenda.css',
 })
@@ -107,6 +113,8 @@ export class SerieDeTurnosPage {
   ];
   protected readonly fechaEnPalabras = fechaEnPalabras;
   protected readonly textoDeEstado = textoDeEstado;
+  protected readonly nombreDeEstado = nombreDeEstado;
+  protected readonly detalleDeEstado = detalleDeEstado;
   protected readonly textoDeAlcance = textoDeAlcance;
   protected readonly textoDeDias = textoDeDias;
   protected readonly textoDeOmitido = textoDeOmitido;
@@ -144,6 +152,23 @@ export class SerieDeTurnosPage {
   protected readonly primerPendiente = computed(
     () => (this.serie()?.turnos ?? []).find((turno) => this.esPendiente(turno)) ?? null,
   );
+
+  /**
+   * La fila de "Avance" del canvas, contada sobre los turnos que la serie ya trae. No hay dato
+   * nuevo: son los mismos estados de la tabla de abajo, agrupados.
+   */
+  protected readonly avance = computed(() => {
+    const turnos = this.serie()?.turnos ?? [];
+    const contar = (estado: string) => turnos.filter((t) => t.estado === estado).length;
+    const ultimo = turnos.length > 0 ? turnos[turnos.length - 1] : null;
+    return {
+      total: turnos.length,
+      pendientes: turnos.filter((t) => this.esPendiente(t)).length,
+      cancelados: contar('CANCELADO'),
+      ausentes: contar('AUSENTE'),
+      ultimo: ultimo ? this.fechaHora(ultimo.inicio) : '',
+    };
+  });
 
   constructor() {
     effect(() => {

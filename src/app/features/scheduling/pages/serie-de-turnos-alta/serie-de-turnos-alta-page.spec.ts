@@ -131,7 +131,7 @@ describe('SerieDeTurnosAltaPage', () => {
         );
       await asentar(fixture);
 
-      expect(texto(fixture)).toContain('No se reservo ningun turno');
+      expect(texto(fixture)).toContain('No se reservo ningún turno');
       expect(texto(fixture)).toContain('Rechazada al reservar');
       expect(boton(fixture, 'Volver a previsualizar')).not.toBeNull();
 

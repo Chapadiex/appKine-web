@@ -23,7 +23,7 @@ const RUTA_PRACTICAS = '/api/v1/catalogos/practicas';
 
 const OSDE = { id: 10, codigo: '410', nombre: 'OSDE', tipo: 'PREPAGA', estado: 'ACTIVO' };
 const PLAN = { id: 100, financiadorId: 10, codigo: '210', nombre: 'Plan 210', estado: 'ACTIVO' };
-const PRACTICA = { id: 55, codigo: 'KIN-01', name: 'Sesion de kinesiologia', tipo: 'PRACTICA' };
+const PRACTICA = { id: 55, codigo: 'KIN-01', name: 'Sesión de kinesiologia', tipo: 'PRACTICA' };
 
 /** Activa y con obra social: aparece en el selector. */
 const PILATES = {
@@ -122,7 +122,7 @@ describe('ArancelEfectivoPage', () => {
     expect(texto).toContain('inclusive');
 
     // Y los requisitos se declaran como lo que son: algo que verifica una persona.
-    expect(texto).toContain('no los hace cumplir todavia');
+    expect(texto).toContain('no los hace cumplir todavía');
   });
 
   it('sin oferta no manda ofertaId y dice que el arancel es el general del convenio', async () => {
@@ -247,9 +247,9 @@ describe('ArancelEfectivoPage', () => {
 
     httpMock.expectNone((p: HttpRequest<unknown>) => p.url === EFECTIVO);
     const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
-    expect(texto).toContain('Eligi el financiador del paciente');
+    expect(texto).toContain('Elegí el financiador del paciente');
     expect(texto).toContain('El plan es obligatorio');
-    expect(texto).toContain('Eligi que practica se presto');
+    expect(texto).toContain('Elegí que práctica se presto');
   });
 
   it('un 403 si es un error, y se muestra como tal', async () => {
@@ -281,7 +281,7 @@ describe('ArancelEfectivoPage', () => {
     expect(anfitrion.textContent).toContain('hace falta administrar convenios');
   });
 
-  it('dejar el financiador en vacio limpia el plan y no pide nada', async () => {
+  it('dejar el financiador en vacío limpia el plan y no pide nada', async () => {
     const fixture = await montar();
 
     elegir(fixture, '#consulta-financiador', '10');
@@ -318,9 +318,9 @@ describe('ArancelEfectivoPage', () => {
     // La consulta empieza en `/consultorios/{cid}`: sin sede no se puede ni armar.
     httpMock.expectNone((p: HttpRequest<unknown>) => p.url.includes('/aranceles/efectivo'));
     const anfitrion = fixture.nativeElement as HTMLElement;
-    expect(anfitrion.textContent).toContain('Eligi un consultorio');
+    expect(anfitrion.textContent).toContain('Elegí un consultorio');
     expect(anfitrion.querySelector('a[href="/seleccionar-contexto"]')).not.toBeNull();
-    expect(anfitrion.textContent).not.toContain('Sesion expirada');
+    expect(anfitrion.textContent).not.toContain('Sesión expirada');
   });
 
   it(

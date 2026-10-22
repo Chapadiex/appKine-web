@@ -1,10 +1,9 @@
-<h1>Vigencias del nomenclador</h1>
+<nav class="migas" aria-label="Ruta">
+  <a routerLink="/catalogo/nomencladores">Catálogo clínico</a>
+  <span aria-hidden="true">/</span>
+</nav>
 
-<p class="acciones">
-  <a class="boton boton--secundario" routerLink="/catalogo/nomencladores">
-    Volver a los nomencladores
-  </a>
-</p>
+<h1>Vigencias del nomenclador</h1>
 
 <!--
   La distincion que sostiene RN-M06-002 y que explica por que esta pantalla no tiene "Editar".
@@ -14,12 +13,12 @@
 <section class="tarjeta nota-alcance" aria-labelledby="titulo-nota-vigencias">
   <h2 id="titulo-nota-vigencias">Una vigencia no se corrige: se cierra y se abre otra</h2>
   <p>
-    Cada vigencia dice que <b>codigo</b> codificaba a que <b>practica</b>, con que valor y entre que
+    Cada vigencia dice que <b>código</b> codificaba a que <b>práctica</b>, con que valor y entre que
     fechas. Lo que se presento a un financiador mientras esa vigencia regia tiene que seguir
-    resolviendo con ese codigo y ese valor, aunque hoy sean otros.
+    resolviendo con ese código y ese valor, aunque hoy sean otros.
   </p>
   <p>
-    Por eso aca solo se puede <b>cargar</b> una vigencia nueva y <b>dar de baja</b> una que ya no
+    Por eso acá solo se puede <b>cargar</b> una vigencia nueva y <b>dar de baja</b> una que ya no
     rige. No hay edicion: reescribirla cambiaria el significado de presentaciones que ya se
     hicieron.
   </p>
@@ -38,10 +37,10 @@
     }
 
     @case ('sin-contexto') {
-      <p class="estado estado--vacio">Todavia no elegiste un consultorio.</p>
+      <p class="estado estado--vacio">Todavía no elegiste un consultorio.</p>
       <p class="ayuda">
-        El catalogo mezcla los conceptos de la plataforma con los de tu centro, asi que hay que
-        saber en cual estas trabajando. Tu sesion sigue abierta.
+        El catalogo mezcla los conceptos de la plataforma con los de tu centro, así que hay que
+        saber en cual estas trabajando. Tu sesión sigue abierta.
       </p>
       <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
     }
@@ -61,7 +60,7 @@
         <section class="tarjeta" aria-labelledby="titulo-nomenclador">
           <h2 id="titulo-nomenclador">{{ actual.name }}</h2>
           <p class="ayuda">
-            Codigo <b>{{ actual.codigo }}</b> &middot;
+            Código <b>{{ actual.codigo }}</b> &middot;
             <span class="etiqueta">{{ etiquetaDeAlcance(actual) }}</span>
             @if (actual.estado === 'INACTIVO') {
               &middot; <span class="marca-estado">Dado de baja</span>
@@ -75,8 +74,8 @@
 
       @if (esDeLaPlataforma()) {
         <p class="estado estado--vacio">
-          Este nomenclador lo mantiene AKINE: podes consultar sus vigencias, pero no cargarlas ni
-          darlas de baja desde aca.
+          Este nomenclador lo mantiene AKINE: podés consultar sus vigencias, pero no cargarlas ni
+          darlas de baja desde acá.
           <a routerLink="/catalogo/solicitudes">Pedile un cambio a la plataforma</a>.
         </p>
       } @else {
@@ -93,7 +92,7 @@
 
           <form [formGroup]="formularioAlta" (ngSubmit)="enviarAlta()" novalidate>
             <div class="campo">
-              <label for="alta-vigencia-codigo">Codigo</label>
+              <label for="alta-vigencia-codigo">Código</label>
               <input
                 id="alta-vigencia-codigo"
                 type="text"
@@ -106,25 +105,25 @@
               @if (errorEnElCodigo()) {
                 <p class="campo__error" role="alert">{{ errorAccion() }}</p>
               } @else if (mostrarErrorAlta('codigo')) {
-                <p class="campo__error">El codigo es obligatorio.</p>
+                <p class="campo__error">El código es obligatorio.</p>
               } @else {
                 <p class="ayuda">
-                  El codigo con el que el financiador identifica la practica. Se puede repetir a lo
-                  largo del tiempo, pero <b>dos vigencias del mismo codigo no pueden pisarse</b>:
+                  El código con el que el financiador identifica la práctica. Se puede repetir a lo
+                  largo del tiempo, pero <b>dos vigencias del mismo código no pueden pisarse</b>:
                   cerra la anterior antes de que empiece esta.
                 </p>
               }
             </div>
 
             <div class="campo">
-              <label for="alta-vigencia-practica">Practica que codifica</label>
+              <label for="alta-vigencia-practica">Práctica que codifica</label>
               <select
                 id="alta-vigencia-practica"
                 formControlName="practicaId"
                 [attr.aria-invalid]="mostrarErrorAlta('practicaId') ? 'true' : null"
                 aria-describedby="alta-vigencia-practica-ayuda"
               >
-                <option value="">Elegi una practica</option>
+                <option value="">Elegí una práctica</option>
                 @for (practica of practicas(); track practica.id) {
                   <option [value]="practica.id">
                     {{ practica.name }} ({{ etiquetaDeAlcance(practica) }})
@@ -133,15 +132,15 @@
               </select>
               @if (mostrarErrorAlta('practicaId')) {
                 <p class="campo__error" role="alert">
-                  Una vigencia siempre codifica una practica: elegi cual.
+                  Una vigencia siempre codifica una práctica: elegí cual.
                 </p>
               }
               <p class="ayuda" id="alta-vigencia-practica-ayuda">
-                Solo aparecen las practicas <b>activas</b>: una vigencia no puede codificar una dada
+                Solo aparecen las prácticas <b>activas</b>: una vigencia no puede codificar una dada
                 de baja.
                 @if (practicas().length === 0) {
                   <b>
-                    No pudimos traer las practicas. Recarga la pantalla; si sigue vacio, dalas de
+                    No pudimos traer las prácticas. Recarga la pantalla; si sigue vacío, dalas de
                     alta primero desde el catalogo.
                   </b>
                 }
@@ -161,14 +160,14 @@
                 <p class="campo__error">El nombre es obligatorio.</p>
               } @else {
                 <p class="ayuda">
-                  Como nombra el financiador a este codigo. Puede no coincidir con el nombre de la
-                  practica, y es a proposito: en la presentacion se usa el suyo.
+                  Como nombra el financiador a este código. Puede no coincidir con el nombre de la
+                  práctica, y es a proposito: en la presentación se usa el suyo.
                 </p>
               }
             </div>
 
             <div class="campo">
-              <label for="alta-vigencia-descripcion">Descripcion (opcional)</label>
+              <label for="alta-vigencia-descripcion">Descripción (opcional)</label>
               <input
                 id="alta-vigencia-descripcion"
                 type="text"
@@ -189,7 +188,7 @@
                 aria-describedby="alta-vigencia-valor-ayuda"
               />
               <p class="ayuda" id="alta-vigencia-valor-ayuda">
-                Es de <b>referencia</b>: lo que el nomenclador dice que vale esta practica. No es lo
+                Es de <b>referencia</b>: lo que el nomenclador dice que vale esta práctica. No es lo
                 que se le cobra al paciente ni lo que el financiador termina pagando.
               </p>
             </div>
@@ -229,38 +228,50 @@
       <section class="tarjeta" aria-labelledby="titulo-listado-vigencias">
         <h2 id="titulo-listado-vigencias">Vigencias cargadas</h2>
 
-        <div class="campo">
-          <label for="filtro-codigo-vigencia">Filtrar por codigo</label>
-          <input
-            id="filtro-codigo-vigencia"
-            type="search"
-            [value]="filtroCodigo()"
-            (change)="filtrarPorCodigo($any($event.target).value)"
-            autocomplete="off"
-            aria-describedby="filtro-codigo-vigencia-ayuda"
-          />
-          <p class="ayuda" id="filtro-codigo-vigencia-ayuda">
-            Un codigo suele tener varias vigencias a lo largo del tiempo: filtrarlo es la forma de
-            ver su historia completa.
-          </p>
-        </div>
+        <!--
+          Regla de filtros (plan §3.4): el codigo, que es lo que identifica a una vigencia, a la
+          vista; el estado, que casi nunca se toca, detras del embudo.
+        -->
+        <app-filtros [activos]="filtrosAvanzadosActivos()">
+          <div class="campo" filtro-principal>
+            <label class="visualmente-oculto" for="filtro-codigo-vigencia"
+              >Filtrar por código</label
+            >
+            <div class="campo-busqueda">
+              <app-icono class="campo-busqueda__icono" nombre="buscar" />
+              <input
+                id="filtro-codigo-vigencia"
+                type="search"
+                placeholder="Filtrar por código"
+                [value]="filtroCodigo()"
+                (change)="filtrarPorCodigo($any($event.target).value)"
+                autocomplete="off"
+                aria-describedby="filtro-codigo-vigencia-ayuda"
+              />
+            </div>
+            <p class="visualmente-oculto" id="filtro-codigo-vigencia-ayuda">
+              Un código suele tener varias vigencias a lo largo del tiempo: filtrarlo es la forma de
+              ver su historia completa.
+            </p>
+          </div>
 
-        <div class="campo">
-          <label for="filtro-estado-vigencia">Mostrar</label>
-          <select
-            id="filtro-estado-vigencia"
-            [value]="filtroEstado()"
-            (change)="cambiarFiltroEstado($any($event.target).value)"
-          >
-            <option value="ACTIVO">Solo las activas</option>
-            <option value="INACTIVO">Solo las dadas de baja</option>
-            <option value="TODOS">Todas</option>
-          </select>
-        </div>
+          <div class="campo">
+            <label for="filtro-estado-vigencia">Mostrar</label>
+            <select
+              id="filtro-estado-vigencia"
+              [value]="filtroEstado()"
+              (change)="cambiarFiltroEstado($any($event.target).value)"
+            >
+              <option value="ACTIVO">Solo las activas</option>
+              <option value="INACTIVO">Solo las dadas de baja</option>
+              <option value="TODOS">Todas</option>
+            </select>
+          </div>
+        </app-filtros>
 
         @if (vigencias().length === 0) {
           <p class="estado estado--vacio">
-            Este nomenclador todavia no tiene vigencias con el filtro elegido.
+            Este nomenclador todavía no tiene vigencias con el filtro elegido.
           </p>
         } @else {
           <div
@@ -271,22 +282,24 @@
           >
             <table class="tabla">
               <caption class="visualmente-oculto">
-                Vigencias del nomenclador, con su codigo, la practica que codifican, su valor de
+                Vigencias del nomenclador, con su código, la práctica que codifican, su valor de
                 referencia, su ventana y su estado.
               </caption>
               <thead>
                 <tr>
-                  <th scope="col">Codigo</th>
-                  <th scope="col">Nombre</th>
-                  <th scope="col">Practica</th>
-                  <th scope="col">Valor de referencia</th>
-                  <th scope="col">Ventana</th>
-                  <th scope="col">Estado</th>
+                  <th scope="col" appOrdenable [tabla]="tabla" columna="codigo">Código</th>
+                  <th scope="col" appOrdenable [tabla]="tabla" columna="nombre">Nombre</th>
+                  <th scope="col" appOrdenable [tabla]="tabla" columna="practica">Práctica</th>
+                  <th scope="col" appOrdenable [tabla]="tabla" columna="valor">
+                    Valor de referencia
+                  </th>
+                  <th scope="col" appOrdenable [tabla]="tabla" columna="ventana">Ventana</th>
+                  <th scope="col" appOrdenable [tabla]="tabla" columna="estado">Estado</th>
                   <th scope="col">Acciones</th>
                 </tr>
               </thead>
               <tbody>
-                @for (vigencia of vigencias(); track vigencia.id) {
+                @for (vigencia of tabla.visibles(); track vigencia.id) {
                   <tr [class.fila--revocada]="vigencia.estado === 'INACTIVO'">
                     <th scope="row">
                       {{ vigencia.codigo }}
@@ -299,7 +312,7 @@
                       @if (nombreDePractica(vigencia); as nombre) {
                         {{ nombre }}
                       } @else {
-                        <span class="ayuda">Practica #{{ vigencia.practicaId }}</span>
+                        <span class="ayuda">Práctica #{{ vigencia.practicaId }}</span>
                       }
                     </td>
                     <td>
@@ -352,7 +365,7 @@
                           idCampo="baja-vigencia-motivo"
                           [titulo]="'Dar de baja la vigencia ' + vigencia.codigo"
                           etiqueta="Motivo de la baja"
-                          ayuda="Queda registrado junto a la vigencia. Dar de baja no corrige nada: lo que ya se presento mientras esta vigencia regia conserva su codigo y su valor. Solo deja de ofrecerse de ahora en mas."
+                          ayuda="Queda registrado junto a la vigencia. Dar de baja no corrige nada: lo que ya se presentó mientras esta vigencia regía conserva su código y su valor. Solo deja de ofrecerse de ahora en más."
                           textoConfirmar="Dar de baja"
                           [enviando]="enviando()"
                           (confirmado)="enviarBaja($event)"
@@ -373,6 +386,16 @@
                 }
               </tbody>
             </table>
+          </div>
+
+          <div class="tabla-pie">
+            <span>{{ tabla.total() }} vigencias</span>
+            <app-paginacion
+              [paginaActual]="tabla.pagina()"
+              [totalPaginas]="tabla.totalPaginas()"
+              etiqueta="Paginas de vigencias"
+              (cambioDePagina)="tabla.irA($event)"
+            />
           </div>
         }
       </section>

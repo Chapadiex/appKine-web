@@ -43,8 +43,8 @@ test.describe('Documentos de la persona contra el backend real', () => {
     await subidaDe(page)
       .getByLabel('Archivo')
       .setInputFiles({ name: 'dni.pdf', mimeType: 'application/pdf', buffer: PDF });
-    await subidaDe(page).getByLabel('Categoria').selectOption({ value: 'DOCUMENTO_IDENTIDAD' });
-    await subidaDe(page).getByLabel('Titulo').fill(titulo);
+    await subidaDe(page).getByLabel('Categoría').selectOption({ value: 'DOCUMENTO_IDENTIDAD' });
+    await subidaDe(page).getByLabel('Título').fill(titulo);
     const subida = respuestaDe(page, 'POST', /\/personas\/\d+\/adjuntos$/);
     await page.getByRole('button', { name: 'Subir', exact: true }).click();
     const creada = await subida;
@@ -69,7 +69,7 @@ test.describe('Documentos de la persona contra el backend real', () => {
         mimeType: 'application/pdf',
         buffer: Buffer.from('esto es texto plano, no un PDF\n'),
       });
-    await subidaDe(page).getByLabel('Categoria').selectOption({ value: 'OTRO' });
+    await subidaDe(page).getByLabel('Categoría').selectOption({ value: 'OTRO' });
     const rechazo = respuestaDe(page, 'POST', /\/personas\/\d+\/adjuntos$/);
     await page.getByRole('button', { name: 'Subir', exact: true }).click();
     const respuesta = await rechazo;

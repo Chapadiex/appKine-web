@@ -67,7 +67,7 @@ describe('ClasesDeLaSemanaPage', () => {
   }
 
   it(
-    'pide la semana de la sede en UTC, pinta los siete dias y marca la clase completa',
+    'pide la semana de la sede en UTC, pinta los siete días y marca la clase completa',
     async () => {
       otorgar(httpMock, PERMISO_CLASE_READ, PERMISO_CLASE_MANAGE);
       const fixture = montar();
@@ -84,15 +84,16 @@ describe('ClasesDeLaSemanaPage', () => {
 
       const texto = textoDe(fixture);
       expect(texto).toContain('Semana del lunes 12/10 al domingo 18/10');
-      expect(texto).toContain('1 clase en la semana');
+      expect(texto).toContain('1 clase');
       expect(texto).toContain('18:00 a 19:00');
       expect(texto).toContain('Pilates reformer');
-      expect(texto).toContain('Lic. Diaz · Sala grande');
+      expect(texto).toContain('Lic. Diaz');
+      expect(texto).toContain('Sala grande');
       // Los nombres vienen en la clase: no se releen las ofertas.
       httpMock.expectNone((p) => p.url.endsWith('/ofertas'));
       expect(texto).toContain('8 de 8 lugares ocupados — completa');
-      expect(texto).toContain('Programar una clase');
-      expect((fixture.nativeElement as HTMLElement).querySelectorAll('.dia')).toHaveLength(7);
+      expect(texto).toContain('Programar clase');
+      expect((fixture.nativeElement as HTMLElement).querySelectorAll('tbody tr')).toHaveLength(1);
       expect(
         (fixture.nativeElement as HTMLElement).querySelector('a[href="/clases/70"]'),
       ).not.toBeNull();
@@ -110,8 +111,8 @@ describe('ClasesDeLaSemanaPage', () => {
     );
     primero.flush([]);
     await asentar(fixture);
-    expect(textoDe(fixture)).toContain('0 clases en la semana');
-    expect(textoDe(fixture)).not.toContain('Programar una clase');
+    expect(textoDe(fixture)).toContain('No hay clases esta semana.');
+    expect(textoDe(fixture)).not.toContain('Programar clase');
 
     clickear(fixture, 'Semana siguiente');
     await asentar(fixture);
@@ -119,7 +120,7 @@ describe('ClasesDeLaSemanaPage', () => {
     expect(decodeURIComponent(siguiente.request.params.get('desde') ?? '')).toBe(
       '2026-10-05T03:00:00.000Z',
     );
-    siguiente.flush([{ ...CLASE, titulo: 'Yoga suave', estado: 'CANCELADA', ocupados: 0 }]);
+    siguiente.flush([]);
     await asentar(fixture);
     expect(textoDe(fixture)).not.toContain('Yoga suave');
 

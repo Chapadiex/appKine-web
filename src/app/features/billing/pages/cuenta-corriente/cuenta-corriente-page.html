@@ -1,35 +1,29 @@
-<h1>Cuenta corriente</h1>
+<app-cabecera-de-persona [personaId]="personaId()" [persona]="persona()" />
 
-<p class="descripcion">
-  Lo que esta persona debe en <b>todo el centro</b>, no solo en esta sede: una deuda es una sola
-  aunque se haya generado atendiendose en dos consultorios de la misma organizacion.
-</p>
-
-@if (nombreDeLaPersona(); as quien) {
-  <p class="ayuda">
-    Deuda de <b>{{ quien }}</b
-    >.
-  </p>
-}
-
-<!-- El padron exige `paciente:read` (DP-22): sin el, el enlace llevaria a "no tenes permiso". -->
-<p *akinePermiso="PERMISO_PACIENTE_READ">
-  <a class="enlace" routerLink="/pacientes">Volver al padron</a>
-</p>
-
-<!--
-  Cobrar es una MUTACION de dinero y el enlace va detras del permiso: ofrecerlo a quien no lo tiene
-  seria mandarlo a llenar un formulario entero para recibir un 403 al confirmar. La lista de cobros
-  es lectura y se ofrece siempre, igual que esta pantalla.
-
-  Deuda, cobro y caja son tres cosas (regla maestra 5) y por eso son tres pantallas y no pestañas
-  de una sola: fusionarlas es como se termina leyendo un cobro como si fuera una deuda negativa.
--->
-<div class="acciones">
-  <a *akinePermiso="PERMISO_COBRO_REGISTER" class="boton" [routerLink]="rutaCobrar()">
-    Registrar un cobro
-  </a>
-  <a class="boton boton--secundario" [routerLink]="rutaCobros()">Ver los cobros registrados</a>
+<div class="titulo-con-ayuda titulo-de-seccion-persona">
+  <h1>Cuenta corriente</h1>
+  <app-ayuda titulo="Sobre esta pantalla">
+    <p>
+      Lo que esta persona debe en <b>todo el centro</b>, no solo en esta sede: una deuda es una sola
+      aunque se haya generado atendiéndose en dos consultorios de la misma organización.
+    </p>
+    <p>
+      Deuda, cobro y caja son tres cosas: por eso los cobros registrados son una pantalla aparte y
+      no una deuda negativa.
+    </p>
+  </app-ayuda>
+  <div class="encabezado__acciones">
+    <!--
+      La lista de cobros es lectura y se ofrece siempre. Cobrar es una MUTACION de dinero y va
+      detras del permiso: ofrecerlo a quien no lo tiene seria mandarlo a llenar un formulario
+      entero para recibir un 403 al confirmar.
+    -->
+    <a class="boton boton--secundario" [routerLink]="rutaCobros()">Ver los cobros registrados</a>
+    <a class="boton" [routerLink]="rutaCobrar()" *akinePermiso="PERMISO_COBRO_REGISTER">
+      <app-icono nombre="agregar" />
+      Registrar un cobro
+    </a>
+  </div>
 </div>
 
 @if (cargando()) {
@@ -59,159 +53,172 @@
 @if (vacia()) {
   <p class="estado estado--vacio">
     Esta persona no tiene ninguna deuda registrada. Las obligaciones se generan al cerrar una
-    atencion o al vender un pase: no se cargan a mano.
+    atención o al vender un pase: no se cargan a mano.
   </p>
 }
 
 @if (obligaciones().length > 0) {
-  <div class="tabla-scroll" tabindex="0" role="region" aria-labelledby="titulo-tabla-cuenta">
-    <h2 id="titulo-tabla-cuenta" class="visualmente-oculto">Deudas de la persona</h2>
-    <table class="tabla">
-      <thead>
-        <tr>
-          <th scope="col">Devengada</th>
-          <th scope="col">Prestacion</th>
-          <th scope="col">Concepto</th>
-          <th scope="col">Precio al devengar</th>
-          <th scope="col">Importe</th>
-          <th scope="col">Saldo</th>
-          <th scope="col">Estado</th>
-          <th scope="col">Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (obligacion of obligaciones(); track obligacion.id) {
-          <tr [class.fila--revocada]="!sePuedeAnular(obligacion)">
-            <td>{{ fechaEnPalabras(obligacion.devengadaEn) }}</td>
-            <td>
-              {{ obligacion.snapshotNombre }}
-              @if (esDeClase(obligacion)) {
-                <div class="ayuda">{{ conceptoDeClase(obligacion) }}</div>
-              } @else if (origenEnPalabras(obligacion.origen); as origen) {
-                <div class="ayuda">{{ origen }}</div>
-              }
-            </td>
-            <td>
-              {{ conceptoEnPalabras(obligacion.concepto) }}
-              @if (obligacion.convenio?.convenioNombre; as convenio) {
-                <div class="ayuda">Convenio {{ convenio }}</div>
-              }
-              <!--
+  <section class="tarjeta tarjeta--listado" aria-labelledby="titulo-tabla-cuenta">
+    <h2 id="titulo-tabla-cuenta">Deudas</h2>
+    <div class="tabla-scroll" tabindex="0" role="region" aria-label="Deudas de la persona">
+      <table class="tabla">
+        <thead>
+          <tr>
+            <th scope="col" appOrdenable [tabla]="tabla" columna="devengada">Devengada</th>
+            <th scope="col" appOrdenable [tabla]="tabla" columna="prestacion">Prestación</th>
+            <th scope="col" appOrdenable [tabla]="tabla" columna="concepto">Concepto</th>
+            <th scope="col">Precio al devengar</th>
+            <th scope="col" appOrdenable [tabla]="tabla" columna="importe">Importe</th>
+            <th scope="col" appOrdenable [tabla]="tabla" columna="saldo">Saldo</th>
+            <th scope="col" appOrdenable [tabla]="tabla" columna="estado">Estado</th>
+            <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (obligacion of tabla.visibles(); track obligacion.id) {
+            <tr [class.fila--revocada]="!sePuedeAnular(obligacion)">
+              <td>{{ fechaEnPalabras(obligacion.devengadaEn) }}</td>
+              <td>
+                {{ obligacion.snapshotNombre }}
+                @if (esDeClase(obligacion)) {
+                  <div class="ayuda">{{ conceptoDeClase(obligacion) }}</div>
+                } @else if (origenEnPalabras(obligacion.origen); as origen) {
+                  <div class="ayuda">{{ origen }}</div>
+                }
+              </td>
+              <td>
+                {{ conceptoEnPalabras(obligacion.concepto) }}
+                @if (obligacion.convenio?.convenioNombre; as convenio) {
+                  <div class="ayuda">Convenio {{ convenio }}</div>
+                }
+                <!--
                 DP-11: es una alerta para revisar, no un rechazo. La deuda existe y se cobra igual;
                 lo que hay que mirar es por que se facturo una practica que la oferta no declara.
               -->
-              @if (obligacion.alertaPracticaNoHabilitada) {
-                <div class="ayuda">
-                  <b>Revisar:</b> la practica facturada no esta habilitada en la oferta.
-                </div>
-              }
-            </td>
+                @if (obligacion.alertaPracticaNoHabilitada) {
+                  <div class="ayuda">
+                    <b>Revisar:</b> la práctica facturada no está habilitada en la oferta.
+                  </div>
+                }
+              </td>
 
-            <!--
+              <!--
               El precio congelado al momento de devengar, y el encabezado lo dice: editar la oferta
               manana no cambia una cuenta corriente ya emitida. Rotularlo "precio" a secas haria
               que alguien "corrija" una deuda vieja que esta bien.
             -->
-            <td class="importe">{{ importe(obligacion, obligacion.snapshotPrecio) }}</td>
-            <td class="importe">{{ importe(obligacion, obligacion.importeOriginal) }}</td>
-            <td class="importe">{{ importe(obligacion, obligacion.saldo) }}</td>
-            <td>
-              <span [class]="claseDeEstado(obligacion.estado)">
-                {{ estadoEnPalabras(obligacion.estado) }}
-              </span>
-            </td>
-            <td>
-              @if (sePuedeAnular(obligacion) && esDeVenta(obligacion)) {
-                <!--
+              <td class="importe">{{ importe(obligacion, obligacion.snapshotPrecio) }}</td>
+              <td class="importe">{{ importe(obligacion, obligacion.importeOriginal) }}</td>
+              <td class="importe">{{ importe(obligacion, obligacion.saldo) }}</td>
+              <td>
+                <span [class]="claseDeEstado(obligacion.estado)">
+                  {{ estadoEnPalabras(obligacion.estado) }}
+                </span>
+              </td>
+              <td>
+                @if (sePuedeAnular(obligacion) && esDeVenta(obligacion)) {
+                  <!--
                   La deuda de una venta no se anula sola: el backend responde 409
                   obligacion-de-venta porque dejaria el pase activo con sus creditos. Se anula el
                   pase, que anula pase y deuda juntos (contrato 0.114.0).
                 -->
-                <div class="acciones-fila">
-                  <a class="enlace" [routerLink]="rutaPases()">Anular desde los pases</a>
-                </div>
-                <span class="ayuda">Se anula el pase y esta deuda juntos.</span>
-              } @else if (sePuedeAnular(obligacion)) {
-                <div class="acciones-fila">
-                  <button
-                    type="button"
-                    class="boton boton--secundario"
-                    (click)="abrirAnulacion(obligacion)"
-                  >
-                    Anular
-                  </button>
-                </div>
-              } @else if (obligacion.motivoAnulacion) {
-                <span class="ayuda">Motivo: {{ obligacion.motivoAnulacion }}</span>
-              }
-            </td>
-          </tr>
+                  <div class="acciones-fila">
+                    <a class="enlace" [routerLink]="rutaPases()">Anular desde los pases</a>
+                  </div>
+                  <span class="ayuda">Se anula el pase y esta deuda juntos.</span>
+                } @else if (sePuedeAnular(obligacion)) {
+                  <div class="acciones-fila">
+                    <button
+                      type="button"
+                      class="boton boton--secundario"
+                      (click)="abrirAnulacion(obligacion)"
+                    >
+                      Anular
+                    </button>
+                  </div>
+                } @else if (obligacion.motivoAnulacion) {
+                  <span class="ayuda">Motivo: {{ obligacion.motivoAnulacion }}</span>
+                }
+              </td>
+            </tr>
 
-          @if (esObjetivo(obligacion)) {
-            <tr class="fila-panel">
-              <td colspan="8">
-                <!--
+            @if (esObjetivo(obligacion)) {
+              <tr class="fila-panel">
+                <td colspan="8">
+                  <!--
                   `motivoObligatorio` se deja en su default (`true`). Aca el motivo no se puede
                   omitir: una deuda que se borra sin explicacion es exactamente lo que una
                   auditoria busca, y la baja logica sin motivo no seria auditable.
                 -->
-                <akine-confirmacion-con-motivo
-                  [idCampo]="'anular-' + obligacion.id"
-                  [titulo]="'Anular la deuda de ' + importe(obligacion, obligacion.importeOriginal)"
-                  etiqueta="Motivo de la anulacion"
-                  ayuda="Queda registrado junto con la deuda. No se borra nada: la obligacion sigue
+                  <akine-confirmacion-con-motivo
+                    [idCampo]="'anular-' + obligacion.id"
+                    [titulo]="
+                      'Anular la deuda de ' + importe(obligacion, obligacion.importeOriginal)
+                    "
+                    etiqueta="Motivo de la anulacion"
+                    ayuda="Queda registrado junto con la deuda. No se borra nada: la obligacion sigue
                     existiendo, anulada y con este motivo."
-                  textoError="El motivo es obligatorio para anular una deuda."
-                  textoConfirmar="Anular la deuda"
-                  [enviando]="enviando()"
-                  (confirmado)="confirmarAnulacion($event)"
-                  (cancelado)="cerrarPanel()"
-                >
-                  <p class="ayuda">
-                    Corresponde a <b>{{ obligacion.snapshotNombre }}</b> del
-                    {{ fechaEnPalabras(obligacion.devengadaEn) }}.
-                  </p>
-                </akine-confirmacion-con-motivo>
+                    textoError="El motivo es obligatorio para anular una deuda."
+                    textoConfirmar="Anular la deuda"
+                    [enviando]="enviando()"
+                    (confirmado)="confirmarAnulacion($event)"
+                    (cancelado)="cerrarPanel()"
+                  >
+                    <p class="ayuda">
+                      Corresponde a <b>{{ obligacion.snapshotNombre }}</b> del
+                      {{ fechaEnPalabras(obligacion.devengadaEn) }}.
+                    </p>
+                  </akine-confirmacion-con-motivo>
 
-                @if (errorAccion(); as problema) {
-                  <p class="estado estado--error" role="alert">{{ mensajeDelRechazo() }}</p>
+                  @if (errorAccion(); as problema) {
+                    <p class="estado estado--error" role="alert">{{ mensajeDelRechazo() }}</p>
 
-                  @if (problema.causa === 'con-cobros') {
-                    <!--
+                    @if (problema.causa === 'con-cobros') {
+                      <!--
                       Explicitamente NO se dice "no se puede". Hay algo que hacer y es otra cosa:
                       una devolucion, que es su propio circuito (M19) y todavia no tiene pantalla.
                       Un "no se puede" pelado manda a pedir un permiso que no existe.
                     -->
-                    <p class="ayuda">
-                      Lo que corresponde en este caso es registrar una <b>devolucion</b>, que tiene
-                      su propio circuito y su propio registro. Todavia no se hace desde el sistema:
-                      hay que resolverlo por caja.
-                    </p>
-                  }
+                      <p class="ayuda">
+                        Lo que corresponde en este caso es registrar una <b>devolucion</b>, que
+                        tiene su propio circuito y su propio registro. Todavía no se hace desde el
+                        sistema: hay que resolverlo por caja.
+                      </p>
+                    }
 
-                  @if (problema.causa === 'de-venta') {
-                    <div class="acciones">
-                      <a class="boton boton--secundario" [routerLink]="rutaPases()">
-                        Ir a los pases de la persona
-                      </a>
-                    </div>
-                  }
+                    @if (problema.causa === 'de-venta') {
+                      <div class="acciones">
+                        <a class="boton boton--secundario" [routerLink]="rutaPases()">
+                          Ir a los pases de la persona
+                        </a>
+                      </div>
+                    }
 
-                  @if (recargable()) {
-                    <div class="acciones">
-                      <button type="button" class="boton boton--secundario" (click)="cargar()">
-                        Recargar la cuenta corriente
-                      </button>
-                    </div>
+                    @if (recargable()) {
+                      <div class="acciones">
+                        <button type="button" class="boton boton--secundario" (click)="cargar()">
+                          Recargar la cuenta corriente
+                        </button>
+                      </div>
+                    }
                   }
-                }
-              </td>
-            </tr>
+                </td>
+              </tr>
+            }
           }
-        }
-      </tbody>
-    </table>
-  </div>
+        </tbody>
+      </table>
+    </div>
+    <div class="tabla-pie">
+      <span>{{ tabla.total() }} deudas</span>
+      <app-paginacion
+        [paginaActual]="tabla.pagina()"
+        [totalPaginas]="tabla.totalPaginas()"
+        etiqueta="Páginas de deudas"
+        (cambioDePagina)="tabla.irA($event)"
+      />
+    </div>
+  </section>
 
   <!--
     El listado por persona trae solo lo que debe el PACIENTE (por diseno): la parte del financiador
@@ -220,7 +227,7 @@
   -->
   @if (hayCoseguros()) {
     <p class="ayuda">
-      En las prestaciones con cobertura aca se ve solo el <b>coseguro</b>, que es lo que paga la
+      En las prestaciones con cobertura acá se ve solo el <b>coseguro</b>, que es lo que paga la
       persona. La parte de la obra social no es una deuda del paciente: se gestiona en las
       presentaciones a financiadores.
       <a *akinePermiso="PERMISO_COBRO_REGISTER" class="enlace" routerLink="/presentaciones"
@@ -232,7 +239,7 @@
   <p class="ayuda">
     <b>No se muestra un total.</b> El backend no lo devuelve y sumarlo en la pantalla produciria
     centavos que no cuadran contra lo que hay guardado, que es peor que no tenerlo: el total es un
-    numero que despues alguien le dice a un paciente.
+    número que después alguien le dice a un paciente.
   </p>
 }
 
@@ -242,12 +249,12 @@
   cobro:register, no caja:operate.
 -->
 @if (estado().tipo === 'listo') {
-  <section aria-labelledby="titulo-saldo-a-favor">
+  <section class="tarjeta" aria-labelledby="titulo-saldo-a-favor">
     <h2 id="titulo-saldo-a-favor">Saldo a favor</h2>
 
     @if (cobrosNoCargaron()) {
       <p class="estado estado--error">
-        No se pudieron leer los cobros, asi que no sabemos si hay saldo a favor. La deuda de arriba
+        No se pudieron leer los cobros, así que no sabemos si hay saldo a favor. La deuda de arriba
         esta bien.
         <button type="button" class="boton boton--secundario" (click)="cargar()">
           Volver a leer
@@ -259,7 +266,7 @@
       </p>
     } @else {
       <p class="ayuda">
-        Plata que entro y todavia no se aplico a ninguna deuda (anticipos y sobrantes). Se imputa a
+        Plata que entro y todavía no se aplico a ninguna deuda (anticipos y sobrantes). Se imputa a
         deudas <b>de la misma sede y la misma moneda</b> que el cobro; devolverla en dinero se hace
         desde los cobros registrados.
       </p>
@@ -272,7 +279,7 @@
               <th scope="col">Cobrado</th>
               <th scope="col">Total del cobro</th>
               <th scope="col">Saldo a favor</th>
-              <th scope="col">Acciones</th>
+              <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
             </tr>
           </thead>
           <tbody>

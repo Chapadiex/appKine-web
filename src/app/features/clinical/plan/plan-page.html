@@ -1,10 +1,16 @@
-<h1>Plan de tratamiento</h1>
-
-<p>
-  <a class="enlace" [routerLink]="visita.rutaCaso(idDelCaso())">Volver al caso</a>
-  ·
-  <a class="enlace" [routerLink]="visita.rutaHistoria()">Volver a la historia clinica</a>
-</p>
+<div class="titulo-con-ayuda titulo-clinico">
+  <a class="migas" [routerLink]="visita.rutaHistoria()">Historia clínica</a>
+  <span class="migas__separador" aria-hidden="true">/</span>
+  <a class="migas" [routerLink]="visita.rutaCaso(idDelCaso())">
+    @if (caso(); as c) {
+      Caso {{ c.numeroCaso }}
+    } @else {
+      Caso clínico
+    }
+  </a>
+  <span class="migas__separador" aria-hidden="true">/</span>
+  <h1>Plan de tratamiento</h1>
+</div>
 
 @switch (estado().tipo) {
   @case ('cargando') {
@@ -35,10 +41,10 @@
 
   @case ('listo') {
     @if (caso(); as c) {
-      <p class="descripcion">
-        Caso {{ c.numeroCaso }}: {{ c.diagnosticoPresuntivo }}.
+      <p class="historia__meta">
+        <span>Caso {{ c.numeroCaso }}: {{ c.diagnosticoPresuntivo }}.</span>
         @if (!casoActivo()) {
-          <b>El caso esta cerrado:</b> para planificar hay que reabrirlo desde el caso.
+          <span><b>El caso está cerrado:</b> para planificar hay que reabrirlo desde el caso.</span>
         }
       </p>
     }
@@ -68,7 +74,7 @@
 
     @if (planes().length === 0) {
       <section class="tarjeta" aria-labelledby="titulo-sin-plan">
-        <h2 id="titulo-sin-plan">Este caso todavia no tiene plan</h2>
+        <h2 id="titulo-sin-plan">Este caso todavía no tiene plan</h2>
         <p class="estado estado--vacio">
           El plan define objetivos, frecuencia y cantidades estimadas. Nace en borrador: activarlo
           es una decision aparte. No agenda turnos.
@@ -100,42 +106,69 @@
         <div class="historia__principal">
           <section class="tarjeta" aria-labelledby="titulo-plan">
             <h2 id="titulo-plan">Plan {{ p.numeroPlan }}</h2>
-            <dl class="detalle">
-              <dt>Estado</dt>
-              <dd data-testid="plan-estado">{{ rotuloDeEstado(p.estado) }}</dd>
-              <dt>Version vigente</dt>
-              <dd>{{ p.versionVigente?.numeroVersion }}</dd>
+            <dl class="historia__datos">
+              <div>
+                <dt>Estado</dt>
+                <dd
+                  data-testid="plan-estado"
+                  class="marca-estado"
+                  [class.marca-estado--activa]="p.estado === 'ACTIVO'"
+                  [class.marca-estado--suspendida]="p.estado === 'SUSPENDIDO'"
+                >
+                  {{ rotuloDeEstado(p.estado) }}
+                </dd>
+              </div>
+              <div>
+                <dt>Versión vigente</dt>
+                <dd>{{ p.versionVigente?.numeroVersion }}</dd>
+              </div>
               @if (p.activadoEn) {
-                <dt>Activado</dt>
-                <dd>{{ fechaYHora(p.activadoEn) }}</dd>
-              }
-              @if (p.estado === 'SUSPENDIDO' && p.motivoSuspension) {
-                <dt>Motivo de la suspension</dt>
-                <dd class="historia__cuerpo">{{ p.motivoSuspension }}</dd>
-              }
-              @if (p.motivoFinalizacion) {
-                <dt>Motivo de la finalizacion</dt>
-                <dd class="historia__cuerpo">{{ p.motivoFinalizacion }}</dd>
+                <div>
+                  <dt>Activado</dt>
+                  <dd>{{ fechaYHora(p.activadoEn) }}</dd>
+                </div>
               }
               @if (p.versionVigente?.frecuenciaSemanal) {
-                <dt>Frecuencia propuesta</dt>
-                <dd>{{ p.versionVigente?.frecuenciaSemanal }} por semana</dd>
+                <div>
+                  <dt>Frecuencia propuesta</dt>
+                  <dd>{{ p.versionVigente?.frecuenciaSemanal }} por semana</dd>
+                </div>
               }
               @if (p.versionVigente?.duracionSemanas) {
-                <dt>Duracion estimada</dt>
-                <dd>{{ p.versionVigente?.duracionSemanas }} semanas</dd>
+                <div>
+                  <dt>Duración estimada</dt>
+                  <dd>{{ p.versionVigente?.duracionSemanas }} semanas</dd>
+                </div>
+              }
+              @if (p.estado === 'SUSPENDIDO' && p.motivoSuspension) {
+                <div>
+                  <dt>Motivo de la suspension</dt>
+                  <dd class="historia__cuerpo">{{ p.motivoSuspension }}</dd>
+                </div>
+              }
+              @if (p.motivoFinalizacion) {
+                <div>
+                  <dt>Motivo de la finalizacion</dt>
+                  <dd class="historia__cuerpo">{{ p.motivoFinalizacion }}</dd>
+                </div>
               }
             </dl>
-            <h3>Objetivos</h3>
-            <p class="historia__cuerpo">{{ p.versionVigente?.objetivos }}</p>
-            @if (p.versionVigente?.indicaciones) {
-              <h3>Indicaciones</h3>
-              <p class="historia__cuerpo">{{ p.versionVigente?.indicaciones }}</p>
-            }
+            <div class="historia__dos">
+              <div>
+                <h3>Objetivos</h3>
+                <p class="historia__cuerpo">{{ p.versionVigente?.objetivos }}</p>
+              </div>
+              @if (p.versionVigente?.indicaciones) {
+                <div>
+                  <h3>Indicaciones</h3>
+                  <p class="historia__cuerpo">{{ p.versionVigente?.indicaciones }}</p>
+                </div>
+              }
+            </div>
           </section>
 
           @if (advertencias().length > 0) {
-            <section class="tarjeta" aria-labelledby="titulo-avisos">
+            <section class="tarjeta plan__avisos" aria-labelledby="titulo-avisos">
               <h2 id="titulo-avisos">Avisos</h2>
               <ul data-testid="plan-avisos">
                 @for (aviso of advertencias(); track aviso) {
@@ -146,18 +179,23 @@
           }
 
           <section class="tarjeta" aria-labelledby="titulo-avance">
-            <h2 id="titulo-avance">Avance</h2>
+            <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
+              <h2 id="titulo-avance">Avance</h2>
+              <app-ayuda titulo="Avance">
+                <p>
+                  Lo realizado se cuenta de las sesiones cerradas del caso, por oferta: no se carga
+                  a mano.
+                </p>
+              </app-ayuda>
+            </div>
             @if (avance(); as a) {
-              <p class="ayuda">
-                De la version {{ a.numeroVersion }}. Lo realizado se cuenta de las sesiones cerradas
-                del caso, por oferta: no se carga a mano.
-              </p>
+              <p class="ayuda">De la versión {{ a.numeroVersion }}.</p>
               @if ((a.items ?? []).length === 0) {
                 <p class="estado estado--vacio">El plan no tiene items planificados.</p>
               } @else {
                 <ul class="casos" aria-label="Avance por item">
                   @for (item of a.items; track $index) {
-                    <li class="casos__item">
+                    <li class="casos__item avance__fila">
                       <b>{{ nombreDeOferta(item.ofertaId, item.ofertaNombre) }}</b>
                       <progress
                         class="avance__barra"
@@ -178,19 +216,28 @@
           </section>
 
           <section class="tarjeta" aria-labelledby="titulo-versiones">
-            <h2 id="titulo-versiones">Versiones</h2>
-            <p class="ayuda">
-              Modificar un plan activo deja una version nueva: la anterior sigue consultable y su
-              avance tambien.
-            </p>
+            <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
+              <h2 id="titulo-versiones">Versiones</h2>
+              <app-ayuda titulo="Versiones">
+                <p>
+                  Modificar un plan activo deja una versión nueva: la anterior sigue consultable y
+                  su avance también.
+                </p>
+              </app-ayuda>
+            </div>
             <ol class="casos" aria-label="Versiones del plan">
               @for (v of versiones(); track v.id) {
                 <li class="casos__item">
-                  <b>Version {{ v.numeroVersion }}</b> · {{ fechaYHora(v.registradaEn) }}
+                  <p class="plan__version-cabecera">
+                    <span>
+                      <b>Versión {{ v.numeroVersion }}</b>
+                      · {{ fechaYHora(v.registradaEn) }}
+                    </span>
+                  </p>
                   @if (v.motivoModificacion) {
                     <p class="historia__cuerpo">Motivo: {{ v.motivoModificacion }}</p>
                   }
-                  <ul>
+                  <ul class="plan__items">
                     @for (i of v.items ?? []; track i.id) {
                       <li>
                         {{ nombreDeOferta(i.ofertaId, i.ofertaNombre) }}:
@@ -215,7 +262,7 @@
                     class="boton boton--secundario"
                     (click)="verAvanceDe(v.numeroVersion)"
                   >
-                    Ver el avance de la version {{ v.numeroVersion }}
+                    Ver el avance de la versión {{ v.numeroVersion }}
                   </button>
                 </li>
               }
@@ -335,7 +382,7 @@
               />
             </div>
             <div class="campo">
-              <label for="plan-duracion">Duracion estimada (semanas)</label>
+              <label for="plan-duracion">Duración estimada (semanas)</label>
               <input
                 id="plan-duracion"
                 type="number"
@@ -362,7 +409,7 @@
                     [value]="fila.ofertaId ?? ''"
                     (change)="editarFila(i, 'ofertaId', $any($event.target).value)"
                   >
-                    <option value="">Elegi una oferta</option>
+                    <option value="">Elegí una oferta</option>
                     @for (oferta of elegibles(); track oferta.id) {
                       <option [value]="oferta.id">{{ oferta.nombreComercial }}</option>
                     }

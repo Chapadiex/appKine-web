@@ -17,7 +17,7 @@ import {
  * redaccion que las pierda no rompe ningun test de pantalla.
  */
 describe('etiquetas de person', () => {
-  it('una persona sin documento lo dice con palabras, no con una celda vacia', () => {
+  it('una persona sin documento lo dice con palabras, no con una celda vacía', () => {
     // Un guion o un hueco invitan a "completarlo" inventando un numero, que contamina el padron
     // con claves que despues chocan de verdad.
     expect(documentoEnUnaLinea(persona({}))).toBe('Sin documento');
@@ -43,9 +43,9 @@ describe('etiquetas de person', () => {
     expect(etiquetaDePerfil(persona({ esPaciente: true }))).toBe('Paciente');
   });
 
-  it('el detalle del perfil aclara que ser paciente no implica tener historia clinica', () => {
-    expect(perfilEnPalabras(persona({ esPaciente: true }))).toContain('historia clinica es otra');
-    expect(perfilEnPalabras(persona({ esPaciente: false }))).toContain('actividades no clinicas');
+  it('el detalle del perfil aclara que ser paciente no implica tener historia clínica', () => {
+    expect(perfilEnPalabras(persona({ esPaciente: true }))).toContain('historia clínica es otra');
+    expect(perfilEnPalabras(persona({ esPaciente: false }))).toContain('actividades no clínicas');
   });
 
   it('el nombre se arma como se busca a alguien en un mostrador', () => {

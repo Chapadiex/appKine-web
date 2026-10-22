@@ -8,7 +8,7 @@
 
     <div class="franja">
       <div class="campo">
-        <label [for]="idBase() + '-dia-' + i">Dia</label>
+        <label [for]="idBase() + '-dia-' + i">Día</label>
         <select [id]="idBase() + '-dia-' + i" formControlName="diaSemana">
           @for (dia of dias; track dia.numero) {
             <option [ngValue]="dia.numero">{{ dia.etiqueta }}</option>
@@ -67,6 +67,6 @@
       Agregar una franja
     </button>
   } @else {
-    <p class="ayuda">Llegaste al maximo de {{ maximo }} franjas.</p>
+    <p class="ayuda">Llegaste al máximo de {{ maximo }} franjas.</p>
   }
 </div>

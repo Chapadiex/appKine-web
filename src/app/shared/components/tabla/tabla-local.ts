@@ -1,0 +1,115 @@
+import { Signal, computed, linkedSignal, signal } from '@angular/core';
+
+/** Valor por el que se compara una fila en una columna. `null` y `undefined` van al final. */
+export type ValorOrdenable = string | number | boolean | Date | null | undefined;
+
+export type DireccionDeOrden = 'asc' | 'desc';
+
+export interface OrdenDeTabla {
+  readonly columna: string;
+  readonly direccion: DireccionDeOrden;
+}
+
+export interface OpcionesDeTabla<T> {
+  /** Como se lee cada columna ordenable de una fila. La clave es la que usa `appOrdenable`. */
+  readonly columnas: Readonly<Record<string, (fila: T) => ValorOrdenable>>;
+  /** Filas por pagina. Default 20. */
+  readonly porPagina?: number;
+  /** Orden al llegar. Sin el, las filas quedan en el orden en que las devolvio el servidor. */
+  readonly ordenInicial?: OrdenDeTabla;
+}
+
+/** El estado de una tabla de lista completa: orden, pagina y las filas que se ven. */
+export interface TablaLocal<T> {
+  /** Pagina mostrada, en base 0 (como la pide `app-paginacion`). */
+  readonly pagina: Signal<number>;
+  readonly totalPaginas: Signal<number>;
+  /** Total de filas, sin paginar: para "N resultados". */
+  readonly total: Signal<number>;
+  readonly orden: Signal<OrdenDeTabla | null>;
+  /** Las filas de la pagina actual, ya ordenadas. Es lo que recorre el `@for`. */
+  readonly visibles: Signal<readonly T[]>;
+  /** Ordena por la columna; si ya estaba, invierte; la tercera vez vuelve al orden original. */
+  ordenarPor(columna: string): void;
+  irA(pagina: number): void;
+}
+
+const comparador = new Intl.Collator('es', { sensitivity: 'base', numeric: true });
+
+function comparar(a: ValorOrdenable, b: ValorOrdenable): number {
+  const vacioA = a === null || a === undefined || a === '';
+  const vacioB = b === null || b === undefined || b === '';
+  if (vacioA || vacioB) return vacioA === vacioB ? 0 : vacioA ? 1 : -1;
+  if (a instanceof Date && b instanceof Date) return a.getTime() - b.getTime();
+  if (typeof a === 'number' && typeof b === 'number') return a - b;
+  if (typeof a === 'boolean' && typeof b === 'boolean') return Number(a) - Number(b);
+  return comparador.compare(String(a), String(b));
+}
+
+/**
+ * Paginado y ordenamiento de una tabla cuya lista llega **completa** del servidor (UX-01, regla de
+ * tablas del plan §3.4).
+ *
+ * <p><b>Solo para listas completas.</b> Ordenar una pagina de un listado paginado por el servidor
+ * ordena 20 filas de 2.000 y deja creer que se ordeno todo: en esos listados el orden es un
+ * pedido al backend (el contrato no declara `sort` en ninguna operacion) y la pagina la maneja
+ * `app-paginacion` con el `page` del servidor.
+ *
+ * <p><b>Volver a la primera pagina</b> cuando cambian las filas (otro filtro, una recarga) o el
+ * orden: quedarse en la pagina 4 de una lista que ahora tiene 2 es una pantalla vacia sin motivo.
+ *
+ * <p>El orden es estable: a igual valor, se respeta el orden original del servidor.
+ */
+export function tablaLocal<T>(
+  filas: Signal<readonly T[]>,
+  opciones: OpcionesDeTabla<T>,
+): TablaLocal<T> {
+  const porPagina = opciones.porPagina ?? 20;
+  const orden = signal<OrdenDeTabla | null>(opciones.ordenInicial ?? null);
+
+  const ordenadas = computed(() => {
+    const lista = filas();
+    const actual = orden();
+    const leer = actual ? opciones.columnas[actual.columna] : undefined;
+    if (!actual || !leer) return lista;
+    const signo = actual.direccion === 'asc' ? 1 : -1;
+    return lista
+      .map((fila, indice) => ({ fila, indice, valor: leer(fila) }))
+      .sort((x, y) => signo * comparar(x.valor, y.valor) || x.indice - y.indice)
+      .map((x) => x.fila);
+  });
+
+  const total = computed(() => filas().length);
+  const totalPaginas = computed(() => Math.max(1, Math.ceil(total() / porPagina)));
+
+  const pagina = linkedSignal<{ filas: readonly T[]; orden: OrdenDeTabla | null }, number>({
+    source: () => ({ filas: filas(), orden: orden() }),
+    computation: () => 0,
+  });
+
+  const visibles = computed(() => {
+    const desde = Math.min(pagina(), totalPaginas() - 1) * porPagina;
+    return ordenadas().slice(desde, desde + porPagina);
+  });
+
+  return {
+    pagina: pagina.asReadonly(),
+    totalPaginas,
+    total,
+    orden: orden.asReadonly(),
+    visibles,
+    ordenarPor(columna: string): void {
+      const actual = orden();
+      if (actual?.columna !== columna) {
+        orden.set({ columna, direccion: 'asc' });
+      } else if (actual.direccion === 'asc') {
+        orden.set({ columna, direccion: 'desc' });
+      } else {
+        orden.set(opciones.ordenInicial ?? null);
+      }
+    },
+    irA(destino: number): void {
+      pagina.set(Math.max(0, Math.min(destino, totalPaginas() - 1)));
+    },
+  };
+}

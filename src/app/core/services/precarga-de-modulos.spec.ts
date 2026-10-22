@@ -60,7 +60,7 @@ describe('PrecargaDeModulos', () => {
     expect(precargados()).toEqual(['chunk-Forms001.js', 'chunk-Api00001.js', 'chunk-Tabla001.js']);
   });
 
-  it('se engancha a cada pantalla que el router empieza a bajar, despues de pedir su chunk', async () => {
+  it('se engancha a cada pantalla que el router empieza a bajar, después de pedir su chunk', async () => {
     const eventos = new Subject<unknown>();
     TestBed.configureTestingModule({
       providers: [{ provide: Router, useValue: { events: eventos } }],

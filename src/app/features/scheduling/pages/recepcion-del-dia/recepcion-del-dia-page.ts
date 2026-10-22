@@ -11,6 +11,8 @@ import {
   PERMISO_TURNO_MANAGE,
 } from '../../../../core/models/permisos';
 import { ClasesDelDia } from '../../components/clases-del-dia/clases-del-dia';
+import { Pestanas } from '../../../../shared/components/pestanas/pestanas';
+import { ETIQUETA_PESTANAS_DE_AGENDA, pestanasDeAgenda } from '../../models/pestanas-de-agenda';
 import { PermissionsStore } from '../../../../core/services/permissions.store';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { PrepagoDeRecepcionEstadoEnum } from '../../../../api/generated/model/prepago-de-recepcion';
@@ -18,7 +20,12 @@ import { Recepcion, RecepcionEstadoEnum } from '../../../../api/generated/model/
 import { TurnoDelDia, TurnoDelDiaEstadoEnum } from '../../../../api/generated/model/turno-del-dia';
 import { SchedulingApi } from '../../services/scheduling-api';
 import { CausaAgenda, ErrorAgenda, traducirErrorRecepcion } from '../../models/agenda-errors';
-import { fechaEnPalabras, horaEnZona, hoyEnZona } from '../../models/etiquetas-de-agenda';
+import {
+  fechaEnPalabras,
+  horaEnZona,
+  hoyEnZona,
+  sumarDias,
+} from '../../models/etiquetas-de-agenda';
 import { textoDeEstado } from '../../models/etiquetas-de-turno';
 import {
   admiteParticular,
@@ -31,6 +38,11 @@ import {
   textoDeRecepcion,
 } from '../../models/etiquetas-de-recepcion';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
+import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
+import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { Icono } from '../../../../shared/components/icono/icono';
 
 /** La ruta que monta esta pantalla. Se reescribe la fecha sobre ella sin navegar. */
 const RUTA = '/agenda/recepcion';
@@ -124,7 +136,16 @@ const CAUSAS_QUE_RELEEN: ReadonlySet<CausaAgenda> = new Set<CausaAgenda>([
  */
 @Component({
   selector: 'app-recepcion-del-dia-page',
-  imports: [RouterLink, ConfirmacionConMotivo, ClasesDelDia],
+  imports: [
+    Paginacion,
+    ColumnaOrdenable,
+    Ayuda,
+    RouterLink,
+    ConfirmacionConMotivo,
+    ClasesDelDia,
+    Pestanas,
+    Icono,
+  ],
   templateUrl: './recepcion-del-dia-page.html',
   styleUrl: '../../agenda.css',
 })
@@ -133,6 +154,10 @@ export class RecepcionDelDiaPage {
   private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly tenantContext = inject(TenantContextStore);
   private readonly permisos = inject(PermissionsStore);
+
+  /** La ruta ya exigio `turno:read`: las tres pestanas de la agenda estan disponibles. */
+  protected readonly pestanas = pestanasDeAgenda(true);
+  protected readonly etiquetaDePestanas = ETIQUETA_PESTANAS_DE_AGENDA;
   private readonly location = inject(Location);
 
   /**
@@ -160,6 +185,31 @@ export class RecepcionDelDiaPage {
   private diaPorDefecto = false;
 
   protected readonly turnos = signal<readonly TurnoDelDia[]>([]);
+
+  /** Orden y paginado de la lista completa (plan §3.4): el servidor no la pagina. */
+  /**
+   * Busqueda del canvas sobre la lista ya leida: paciente o documento. Filtra en pantalla, no
+   * vuelve a pedir nada; los contadores del dia siguen contando la lista entera.
+   */
+  protected readonly busqueda = signal('');
+  protected readonly filtrados = computed(() => {
+    const texto = this.busqueda().trim().toLocaleLowerCase('es');
+    if (texto === '') {
+      return this.turnos();
+    }
+    return this.turnos().filter((t) =>
+      `${t.personaNombre ?? ''} ${t.documento ?? ''}`.toLocaleLowerCase('es').includes(texto),
+    );
+  });
+
+  protected readonly tabla = tablaLocal(this.filtrados, {
+    porPagina: 50,
+    columnas: {
+      hora: (turno) => (turno.inicio ? new Date(turno.inicio) : null),
+      paciente: (turno) => turno.personaNombre ?? null,
+      estado: (turno) => turno.estado ?? null,
+    },
+  });
   protected readonly cargando = signal(false);
   protected readonly error = signal<ErrorAgenda | null>(null);
   protected readonly exito = signal<string | null>(null);
@@ -221,6 +271,17 @@ export class RecepcionDelDiaPage {
     this.cargar();
   }
 
+  /** ‹ y › del selector compacto del titulo: el dia anterior o el siguiente. */
+  protected moverDia(sentido: -1 | 1): void {
+    this.cambiarDia(sumarDias(this.dia(), sentido));
+  }
+
+  /** "Hoy" es el de la sede cuando ya se conoce su zona; si no, el provisorio del navegador. */
+  protected irAHoy(): void {
+    const zona = this.timezone();
+    this.cambiarDia(zona === '' ? this.diaDeLaSede.hoy() : hoyEnZona(zona));
+  }
+
   /** Relee el dia. Es tambien la accion de `recargar-dia`. */
   protected cargar(): void {
     const consultorioId = this.tenantContext.consultorioId();
@@ -273,8 +334,8 @@ export class RecepcionDelDiaPage {
       turno,
       (c, t) => this.api.registrarLlegada(c, t),
       () =>
-        `Llegada registrada para ${nombre(turno)}. Falta validar como se atiende; la atencion se ` +
-        'registra desde la pantalla clinica.',
+        `Llegada registrada para ${nombre(turno)}. Falta validar como se atiende; la atención se ` +
+        'registra desde la pantalla clínica.',
       true,
     );
   }
@@ -287,8 +348,8 @@ export class RecepcionDelDiaPage {
       (recepcion) =>
         recepcion.estado === RecepcionEstadoEnum.OBSERVADA
           ? `La validacion de ${nombre(turno)} quedo observada. No impide pasar a espera; ` +
-            'tambien se puede continuar como Particular.'
-          : `Recepcion de ${nombre(turno)} validada: ya se sabe como se atiende.`,
+            'también se puede continuar como Particular.'
+          : `Recepción de ${nombre(turno)} validada: ya se sabe como se atiende.`,
     );
   }
 
@@ -300,7 +361,7 @@ export class RecepcionDelDiaPage {
         `${nombre(turno)} paso a la sala de espera: aguarda ser llamado.` +
         // El prepago pendiente avisa y no bloquea (DP-06): el servidor deja constancia en el evento.
         (this.prepagoPendiente(turno)
-          ? ' Paso sin el prepago que exige la prestacion; quedo registrado en la recepcion.'
+          ? ' Paso sin el prepago que exige la prestación; quedo registrado en la recepción.'
           : ''),
     );
   }
@@ -310,8 +371,8 @@ export class RecepcionDelDiaPage {
       turno,
       (c, t) => this.api.llamar(c, t, versionDe(turno)),
       () =>
-        `${nombre(turno)} fue llamado. Llamar no registra la atencion: eso lo hace la Sesion, ` +
-        'desde la pantalla clinica.',
+        `${nombre(turno)} fue llamado. Llamar no registra la atención: eso lo hace la Sesión, ` +
+        'desde la pantalla clínica.',
     );
   }
 
@@ -349,7 +410,7 @@ export class RecepcionDelDiaPage {
         (c, t) => this.api.retirarRecepcion(c, t, { expectedVersion: versionDe(turno), motivo }),
         () =>
           `${nombre(turno)} se retiro sin ser atendido. La llegada consta y el turno no cambia; ` +
-          'si vuelve, la atencion se puede abrir igual desde la pantalla clinica.',
+          'si vuelve, la atención se puede abrir igual desde la pantalla clínica.',
       );
     } else {
       this.transicion(
@@ -357,7 +418,7 @@ export class RecepcionDelDiaPage {
         (c, t) => this.api.anularRecepcion(c, t, { expectedVersion: versionDe(turno), motivo }),
         () =>
           `Llegada de ${nombre(turno)} anulada: el check-in fue un error y la llegada no vale. ` +
-          'Queda en el historial de la recepcion.',
+          'Queda en el historial de la recepción.',
       );
     }
     this.cerrarPanel();

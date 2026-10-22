@@ -93,7 +93,7 @@ export function situacionDeServicio(
   if (desde !== null && desde.getTime() > ahora.getTime()) {
     return {
       clave: 'aun-no',
-      resumen: 'Activo, todavia sin servicio',
+      resumen: 'Activo, todavía sin servicio',
       explicacion:
         `Entra en servicio el ${formatearInstante(espacio.validFrom, zona)}, y hasta entonces ` +
         NO_APARECE,
@@ -108,7 +108,7 @@ export function situacionDeServicio(
       resumen: 'Activo, fuera de servicio',
       explicacion:
         `Sigue activo, pero su vigencia termino el ${formatearInstante(espacio.validUntil, zona)}, ` +
-        `asi que ${NO_APARECE} Si volvio a estar disponible, edita el fin de vigencia en vez ` +
+        `así que ${NO_APARECE} Si volvio a estar disponible, edita el fin de vigencia en vez ` +
         'de darlo de alta de nuevo.',
       atenuada: true,
     };
@@ -117,7 +117,7 @@ export function situacionDeServicio(
   return {
     clave: 'fuera-de-ventana',
     resumen: 'Activo, sin servicio',
-    explicacion: `Hoy queda fuera de su ventana de vigencia, asi que ${NO_APARECE}`,
+    explicacion: `Hoy queda fuera de su ventana de vigencia, así que ${NO_APARECE}`,
     atenuada: true,
   };
 }

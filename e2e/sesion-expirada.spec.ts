@@ -108,21 +108,21 @@ test.describe('Sesion expirada contra el backend real', () => {
         url.pathname === '/auth/sesion-expirada' &&
         url.searchParams.get('volverA') === '/pacientes',
     );
-    await expect(page.getByRole('heading', { name: 'Tu sesion se cerro', level: 1 })).toBeVisible();
-    await expect(page.getByRole('alert')).toHaveText(
-      'No pudimos renovar tu sesion, asi que la cerramos.',
+    await expect(page.getByRole('heading', { name: 'Tu sesión expiró', level: 1 })).toBeVisible();
+    await expect(page.getByRole('alert')).toContainText(
+      'No pudimos renovarla, así que la cerramos.',
     );
 
     // --- "Volver a iniciar sesion" conserva el destino y lo cumple ---------------------------
-    await page.getByRole('link', { name: 'Volver a iniciar sesion' }).click();
+    await page.getByRole('link', { name: 'Volver a ingresar' }).click();
     await expect(page).toHaveURL(
       (url) =>
         url.pathname === '/auth/ingresar' && url.searchParams.get('volverA') === '/pacientes',
     );
     await deAUnLogin(async () => {
-      await page.getByLabel('Email').fill(email);
-      await page.getByLabel('Contrasena').fill(PASSWORD);
-      await page.getByRole('button', { name: 'Iniciar sesion' }).click();
+      await page.getByLabel('Correo electrónico').fill(email);
+      await page.getByLabel('Contraseña').fill(PASSWORD);
+      await page.getByRole('button', { name: 'Ingresar' }).click();
       await expect(page).toHaveURL((url) => url.pathname === '/pacientes', { timeout: 15_000 });
     });
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();

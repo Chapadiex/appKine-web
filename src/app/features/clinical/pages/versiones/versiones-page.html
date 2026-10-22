@@ -1,19 +1,34 @@
-<h1>Versiones de la atencion</h1>
-
-<p class="descripcion">
-  Cada enmienda deja una version nueva y la anterior queda intacta. La version 1 es lo que se asento
-  al cerrar.
-</p>
-
 @if (sesion(); as atencion) {
-  <p>
-    @if (atencion.turnoId !== undefined) {
+  @if (atencion.turnoId !== undefined) {
+    <p class="miga">
       <a class="enlace" [routerLink]="['/atencion', 'turnos', atencion.turnoId]">
-        Volver a la atencion
+        Volver a la atención
       </a>
-    }
-  </p>
+    </p>
+  }
 }
+
+<div class="titulo-con-ayuda">
+  <h1>Versiones de la atención</h1>
+  <app-ayuda titulo="Sobre esta pantalla">
+    <p>
+      Cada enmienda deja una versión nueva y la anterior queda intacta. La versión 1 es lo que se
+      asentó al cerrar. Las versiones son de solo lectura; la vigente es la última.
+    </p>
+  </app-ayuda>
+  @if (sesion(); as atencion) {
+    @if (atencion.numeroSesion !== undefined) {
+      <div class="encabezado__acciones">
+        <a
+          class="boton boton--secundario"
+          [routerLink]="['/atencion', 'sesiones', atencion.id, 'enmienda']"
+        >
+          Enmendar esta atención
+        </a>
+      </div>
+    }
+  }
+</div>
 
 @if (cargando()) {
   <p class="estado estado--cargando">Leyendo las versiones…</p>
@@ -30,170 +45,196 @@
 }
 
 @if (sesion(); as atencion) {
-  <section class="tarjeta" aria-labelledby="titulo-sesion-versiones">
-    <h2 id="titulo-sesion-versiones">
-      @if (atencion.numeroSesion !== undefined) {
-        Sesion numero {{ atencion.numeroSesion }}
-      } @else {
-        Atencion en curso
-      }
-    </h2>
-    <p class="ayuda">
-      Lo que no se enmienda vale igual en todas las versiones: la asistencia, los numeros de sesion
-      y las fechas de la atencion.
-    </p>
-    <dl class="detalle">
-      @if (asistencia()) {
-        <dt>Asistencia</dt>
-        <dd>{{ asistencia() }}</dd>
-      }
-      <dt>Cerrada</dt>
-      <dd>{{ instanteEnPalabras(atencion.cerradaEn) || 'Todavia no' }}</dd>
-      <dt>Versiones</dt>
-      <dd>{{ versiones().length }}</dd>
-    </dl>
-    @if (atencion.numeroSesion !== undefined) {
-      <div class="acciones">
-        <a class="boton" [routerLink]="['/atencion', 'sesiones', atencion.id, 'enmienda']">
-          Enmendar esta atencion
-        </a>
-      </div>
-    }
-  </section>
-
-  @if (versiones().length === 0 && !cargando()) {
-    <p class="ayuda">Esta atencion todavia no tiene versiones: se versiona a partir del cierre.</p>
-  }
-
-  @if (versiones().length > 1) {
-    <section class="tarjeta" aria-labelledby="titulo-comparar">
-      <h2 id="titulo-comparar">Que cambio</h2>
-
-      <div class="campo">
-        <label for="version-antes">Version anterior</label>
-        <select id="version-antes" (change)="elegirAntes($any($event.target).value)">
-          @for (version of versionesRecientesPrimero(); track version.numeroVersion) {
-            <option
-              [value]="version.numeroVersion"
-              [selected]="numeroAntes() === version.numeroVersion"
-            >
-              Version {{ version.numeroVersion }}
-            </option>
-          }
-        </select>
-      </div>
-      <div class="campo">
-        <label for="version-despues">Version posterior</label>
-        <select id="version-despues" (change)="elegirDespues($any($event.target).value)">
-          @for (version of versionesRecientesPrimero(); track version.numeroVersion) {
-            <option
-              [value]="version.numeroVersion"
-              [selected]="numeroDespues() === version.numeroVersion"
-            >
-              Version {{ version.numeroVersion }}
-            </option>
-          }
-        </select>
-      </div>
-
-      @if (despues(); as posterior) {
-        @if (posterior.motivoEnmienda) {
-          <p>
-            <b>Motivo de la version {{ posterior.numeroVersion }}:</b>
-            {{ posterior.motivoEnmienda }}
-            @if (posterior.registradaPorNombre) {
-              (enmendada por {{ posterior.registradaPorNombre }})
+  <div class="versiones">
+    <div class="versiones__grilla">
+      <div class="versiones__detalle">
+        <section class="tarjeta" aria-labelledby="titulo-sesion-versiones">
+          <h2 id="titulo-sesion-versiones">
+            @if (atencion.numeroSesion !== undefined) {
+              Sesión número {{ atencion.numeroSesion }}
+            } @else {
+              Atención en curso
             }
+          </h2>
+          <dl class="datos-atencion">
+            @if (asistencia()) {
+              <div>
+                <dt>Asistencia</dt>
+                <dd>{{ asistencia() }}</dd>
+              </div>
+            }
+            <div>
+              <dt>Cerrada</dt>
+              <dd>{{ instanteEnPalabras(atencion.cerradaEn) || 'Todavía no' }}</dd>
+            </div>
+            <div>
+              <dt>Versiones</dt>
+              <dd>{{ versiones().length }}</dd>
+            </div>
+          </dl>
+          <p class="ayuda">
+            Lo que no se enmienda vale igual en todas las versiones: la asistencia, los números de
+            sesión y las fechas de la atención.
+          </p>
+        </section>
+
+        @if (versiones().length === 0 && !cargando()) {
+          <p class="estado estado--vacio">
+            Esta atención todavía no tiene versiones: se versiona a partir del cierre.
           </p>
         }
-      }
 
-      <p class="ayuda" role="status">
-        @if (cantidadDeCambios() === 0) {
-          Las dos versiones dicen lo mismo.
-        } @else if (cantidadDeCambios() === 1) {
-          Cambio un campo.
-        } @else {
-          Cambiaron {{ cantidadDeCambios() }} campos.
-        }
-      </p>
+        @if (versiones().length > 1) {
+          <section class="tarjeta" aria-labelledby="titulo-comparar">
+            <h2 id="titulo-comparar">Qué cambió</h2>
 
-      <div class="tabla-scroll" role="region" aria-label="Comparacion de versiones" tabindex="0">
-        <table class="tabla">
-          <caption class="visualmente-oculto">
-            Version
-            {{
-              numeroAntes()
-            }}
-            contra version
-            {{
-              numeroDespues()
-            }}
-          </caption>
-          <thead>
-            <tr>
-              <th scope="col">Campo</th>
-              <th scope="col">Version {{ numeroAntes() }}</th>
-              <th scope="col">Version {{ numeroDespues() }}</th>
-              <th scope="col">Cambio</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (fila of comparacion(); track fila.clave) {
-              <tr>
-                <th scope="row">{{ fila.campo }}</th>
-                <td>{{ fila.antes || 'Sin cargar' }}</td>
-                <td>{{ fila.despues || 'Sin cargar' }}</td>
-                <td [class.cambio]="fila.cambio">{{ fila.cambio ? 'Cambio' : 'Igual' }}</td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      </div>
-    </section>
-  }
+            <div class="comparar-versiones">
+              <div class="campo">
+                <label for="version-antes">Versión anterior</label>
+                <select id="version-antes" (change)="elegirAntes($any($event.target).value)">
+                  @for (version of versionesRecientesPrimero(); track version.numeroVersion) {
+                    <option
+                      [value]="version.numeroVersion"
+                      [selected]="numeroAntes() === version.numeroVersion"
+                    >
+                      Versión {{ version.numeroVersion }}
+                    </option>
+                  }
+                </select>
+              </div>
+              <div class="campo">
+                <label for="version-despues">Versión posterior</label>
+                <select id="version-despues" (change)="elegirDespues($any($event.target).value)">
+                  @for (version of versionesRecientesPrimero(); track version.numeroVersion) {
+                    <option
+                      [value]="version.numeroVersion"
+                      [selected]="numeroDespues() === version.numeroVersion"
+                    >
+                      Versión {{ version.numeroVersion }}
+                    </option>
+                  }
+                </select>
+              </div>
+            </div>
 
-  @if (versiones().length > 0) {
-    <section class="tarjeta" aria-labelledby="titulo-historial">
-      <h2 id="titulo-historial">Todas las versiones</h2>
-      @for (version of versionesRecientesPrimero(); track version.numeroVersion) {
-        <details class="grupo">
-          <summary>
-            <b>Version {{ version.numeroVersion }}</b>
-            — {{ instanteEnPalabras(version.registradaEn) }}
-            @if (version.registradaPorNombre) {
-              por {{ version.registradaPorNombre }}
-            }
-            @if (version.numeroVersion === 1) {
-              (original, al cerrar)
-            }
-          </summary>
-          <dl class="detalle">
-            @if (version.motivoEnmienda) {
-              <dt>Motivo de la enmienda</dt>
-              <dd>{{ version.motivoEnmienda }}</dd>
-            }
-            <!--
-              Quien la escribio es por version: quien enmienda no suele ser quien cerro. El nombre lo
-              resuelve el backend; si la cuenta ya no se puede resolver queda el numero, que sigue
-              siendo trazable en la auditoria.
-            -->
-            @if (version.registradaPorNombre) {
-              <dt>Registrada por</dt>
-              <dd>{{ version.registradaPorNombre }}</dd>
-            } @else if (version.registradaPor !== undefined) {
-              <dt>Registrada por</dt>
-              <dd>Cuenta numero {{ version.registradaPor }}</dd>
-            }
-            @for (fila of contenidoDe(version); track fila.clave) {
-              @if (fila.valor) {
-                <dt>{{ fila.campo }}</dt>
-                <dd>{{ fila.valor }}</dd>
+            @if (despues(); as posterior) {
+              @if (posterior.motivoEnmienda) {
+                <p class="franja-info">
+                  <span>
+                    <b>Motivo de la versión {{ posterior.numeroVersion }}:</b>
+                    {{ posterior.motivoEnmienda }}
+                    @if (posterior.registradaPorNombre) {
+                      (enmendada por {{ posterior.registradaPorNombre }})
+                    }
+                  </span>
+                </p>
               }
             }
-          </dl>
-        </details>
+
+            <p class="ayuda" role="status">
+              @if (cantidadDeCambios() === 0) {
+                Las dos versiones dicen lo mismo.
+              } @else if (cantidadDeCambios() === 1) {
+                Cambió un campo.
+              } @else {
+                Cambiaron {{ cantidadDeCambios() }} campos.
+              }
+            </p>
+
+            <div
+              class="tabla-scroll"
+              role="region"
+              aria-label="Comparación de versiones"
+              tabindex="0"
+            >
+              <table class="tabla">
+                <caption class="visualmente-oculto">
+                  Versión
+                  {{
+                    numeroAntes()
+                  }}
+                  contra versión
+                  {{
+                    numeroDespues()
+                  }}
+                </caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Campo</th>
+                    <th scope="col">Versión {{ numeroAntes() }}</th>
+                    <th scope="col">Versión {{ numeroDespues() }}</th>
+                    <th scope="col">Cambio</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (fila of comparacion(); track fila.clave) {
+                    <tr>
+                      <th scope="row">{{ fila.campo }}</th>
+                      <td [class.valor-anterior]="fila.cambio">{{ fila.antes || 'Sin cargar' }}</td>
+                      <td [class.valor-nuevo]="fila.cambio">{{ fila.despues || 'Sin cargar' }}</td>
+                      <td [class.cambio]="fila.cambio">
+                        @if (fila.cambio) {
+                          <span class="marca-cambio">Cambió</span>
+                        } @else {
+                          Igual
+                        }
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </section>
+        }
+      </div>
+
+      @if (versiones().length > 0) {
+        <section class="tarjeta versiones__lista" aria-labelledby="titulo-historial">
+          <h2 id="titulo-historial">Todas las versiones</h2>
+          @for (version of versionesRecientesPrimero(); track version.numeroVersion) {
+            <details class="version-item">
+              <summary>
+                <span>
+                  <b>Versión {{ version.numeroVersion }}</b>
+                  @if (version.numeroVersion === 1) {
+                    (original, al cerrar)
+                  }
+                </span>
+                <span class="version-item__meta">
+                  {{ instanteEnPalabras(version.registradaEn) }}
+                  @if (version.registradaPorNombre) {
+                    por {{ version.registradaPorNombre }}
+                  }
+                </span>
+              </summary>
+              <dl class="detalle">
+                @if (version.motivoEnmienda) {
+                  <dt>Motivo de la enmienda</dt>
+                  <dd>{{ version.motivoEnmienda }}</dd>
+                }
+                <!--
+                  Quien la escribio es por version: quien enmienda no suele ser quien cerro. El nombre
+                  lo resuelve el backend; si la cuenta ya no se puede resolver queda el numero, que
+                  sigue siendo trazable en la auditoria.
+                -->
+                @if (version.registradaPorNombre) {
+                  <dt>Registrada por</dt>
+                  <dd>{{ version.registradaPorNombre }}</dd>
+                } @else if (version.registradaPor !== undefined) {
+                  <dt>Registrada por</dt>
+                  <dd>Cuenta número {{ version.registradaPor }}</dd>
+                }
+                @for (fila of contenidoDe(version); track fila.clave) {
+                  @if (fila.valor) {
+                    <dt>{{ fila.campo }}</dt>
+                    <dd>{{ fila.valor }}</dd>
+                  }
+                }
+              </dl>
+            </details>
+          }
+        </section>
       }
-    </section>
-  }
+    </div>
+  </div>
 }

@@ -42,6 +42,10 @@ import {
   sumarDias,
 } from '../../models/ventana-de-fechas';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
+import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
+import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 
 /** Ventana propuesta al entrar: el año que viene, que es donde estan los feriados que importan. */
 const DIAS_PROPUESTOS = 365;
@@ -76,7 +80,15 @@ const DIAS_PROPUESTOS = 365;
  */
 @Component({
   selector: 'app-calendario-sede-page',
-  imports: [ReactiveFormsModule, RouterLink, PermisoDirective, EditorDeFranjas],
+  imports: [
+    Paginacion,
+    ColumnaOrdenable,
+    Ayuda,
+    ReactiveFormsModule,
+    RouterLink,
+    PermisoDirective,
+    EditorDeFranjas,
+  ],
   templateUrl: './calendario-sede-page.html',
   styleUrl: '../../resource.css',
 })
@@ -128,6 +140,15 @@ export class CalendarioSedePage {
 
   private readonly vista = vistaDeListado<FeriadoResponse>(this.estado);
   protected readonly feriados = this.vista.filas;
+
+  /** Orden y paginado de la lista completa (plan §3.4): el servidor no la pagina. */
+  protected readonly tabla = tablaLocal(this.feriados, {
+    columnas: {
+      fecha: (feriado) => feriado.fecha ?? null,
+      feriado: (feriado) => feriado.nombre ?? null,
+      tipo: (feriado) => this.etiquetaDeTipoDeFeriado(feriado.tipo),
+    },
+  });
   protected readonly mensajeError = this.vista.mensajeError;
   protected readonly faltaContexto = this.vista.faltaContexto;
 
@@ -292,13 +313,13 @@ export class CalendarioSedePage {
     }
     if (dias <= 0) {
       this.errorVentana.set(
-        'El fin de la ventana tiene que ser posterior al inicio, y es exclusivo: un feriado que cae justo ese dia no aparece.',
+        'El fin de la ventana tiene que ser posterior al inicio, y es exclusivo: un feriado que cae justo ese día no aparece.',
       );
       return;
     }
     if (dias > MAXIMO_DIAS_VENTANA) {
       this.errorVentana.set(
-        `La ventana no puede superar los ${MAXIMO_DIAS_VENTANA} dias. Acorta el periodo y volve a consultar.`,
+        `La ventana no puede superar los ${MAXIMO_DIAS_VENTANA} días. Acorta el periodo y volvé a consultar.`,
       );
       return;
     }
@@ -374,7 +395,7 @@ export class CalendarioSedePage {
           this.exito.set(
             cierraPorFeriado
               ? 'Listo: la sede vuelve a cerrar los feriados de su calendario.'
-              : 'Listo: la sede pasa a atender los feriados. El horario habitual se aplica tambien esos dias, salvo que cargues un cierre explicito.',
+              : 'Listo: la sede pasa a atender los feriados. El horario habitual se aplica también esos días, salvo que cargues un cierre explicito.',
           );
         },
         error: (error: unknown) => {

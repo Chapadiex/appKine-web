@@ -120,7 +120,7 @@ export const routes: Routes = [
     canActivate: [contextGuard, permissionGuard(PERMISO_TURNO_READ)],
     loadComponent: () =>
       import('./pages/recepcion-del-dia/recepcion-del-dia-page').then((m) => m.RecepcionDelDiaPage),
-    title: 'AKINE - Recepcion del dia',
+    title: 'AKINE - Recepción del día',
     // Ancho amplio: la tabla tiene seis columnas y la ultima lleva dos acciones. A 46rem entra
     // detras del scroll horizontal el mismo dia que un nombre es largo.
     data: { [DATA_ANCHO]: ANCHO_AMPLIO },

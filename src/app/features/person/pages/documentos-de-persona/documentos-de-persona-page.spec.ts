@@ -89,7 +89,7 @@ describe('DocumentosDePersonaPage', () => {
   // 1. Listado
   // -------------------------------------------------------------------------------------
 
-  it('muestra el titulo, la categoria en castellano y el tamano legible', async () => {
+  it('muestra el titulo, la categoría en castellano y el tamano legible', async () => {
     const fixture = await montar([CREDENCIAL]);
     const contenido = texto(fixture);
 
@@ -99,12 +99,12 @@ describe('DocumentosDePersonaPage', () => {
     expect(contenido).toContain('2 MB');
   });
 
-  it('avisa que aca no va nada clinico y que un adjunto no reemplaza un dato', async () => {
+  it('avisa que acá no va nada clínico y que un adjunto no reemplaza un dato', async () => {
     const fixture = await montar([CREDENCIAL]);
     const contenido = texto(fixture);
 
     // Las dos confusiones mas caras del modulo, las dos arriba y no en letra chica.
-    expect(contenido).toContain('Aca no va nada clinico');
+    expect(contenido).toContain('Acá no va nada clínico');
     expect(contenido).toContain('no reemplaza un dato cargado');
   });
 
@@ -126,7 +126,7 @@ describe('DocumentosDePersonaPage', () => {
     await estabilizar(fixture);
   });
 
-  it('una lista vacia no es un error y dice que es normal', async () => {
+  it('una lista vacía no es un error y dice que es normal', async () => {
     const fixture = await montar([]);
 
     expect(texto(fixture)).toContain('No hay documentos cargados');
@@ -137,7 +137,7 @@ describe('DocumentosDePersonaPage', () => {
   // 2. Subida
   // -------------------------------------------------------------------------------------
 
-  it('la subida viaja como multipart, con la categoria y el titulo en la query', async () => {
+  it('la subida viaja como multipart, con la categoría y el titulo en la query', async () => {
     const fixture = await montar([]);
 
     abrirSubidaCon(fixture, 'DOCUMENTO_IDENTIDAD', 'DNI frente');
@@ -157,7 +157,7 @@ describe('DocumentosDePersonaPage', () => {
     await estabilizar(fixture);
 
     // El exito repite la regla que produce el error mas caro del modulo.
-    expect(texto(fixture)).toContain('no completa ningun dato de la ficha');
+    expect(texto(fixture)).toContain('no completa ningún dato de la ficha');
   });
 
   it('sin archivo elegido no manda nada', async () => {
@@ -172,7 +172,7 @@ describe('DocumentosDePersonaPage', () => {
     httpMock.expectNone(esSubida());
   });
 
-  it('sin categoria elegida no manda nada y marca el campo', async () => {
+  it('sin categoría elegida no manda nada y marca el campo', async () => {
     const fixture = await montar([]);
 
     apretar(fixture, 'Subir un documento');
@@ -180,7 +180,7 @@ describe('DocumentosDePersonaPage', () => {
     apretar(fixture, 'Subir');
 
     httpMock.expectNone(esSubida());
-    expect(texto(fixture)).toContain('Elegi la categoria del documento');
+    expect(texto(fixture)).toContain('Elegí la categoría del documento');
   });
 
   it('un archivo rechazado por TAMANO no dice que el formato este mal', async () => {
@@ -236,7 +236,7 @@ describe('DocumentosDePersonaPage', () => {
   // 3. Contenido no disponible
   // -------------------------------------------------------------------------------------
 
-  it('un contenido no disponible se avisa antes, y el boton de descargar queda deshabilitado', async () => {
+  it('un contenido no disponible se avisa antes, y el botón de descargar queda deshabilitado', async () => {
     const fixture = await montar([{ ...CREDENCIAL, estado: 'NO_DISPONIBLE' }]);
 
     expect(texto(fixture)).toContain('Contenido no disponible');
@@ -247,7 +247,7 @@ describe('DocumentosDePersonaPage', () => {
   // 4. Reclasificar y dar de baja
   // -------------------------------------------------------------------------------------
 
-  it('reclasificar manda un PATCH con la categoria nueva y dice que el archivo no se reemplaza', async () => {
+  it('reclasificar manda un PATCH con la categoría nueva y dice que el archivo no se reemplaza', async () => {
     const fixture = await montar([CREDENCIAL]);
 
     apretar(fixture, 'Reclasificar');
@@ -264,7 +264,7 @@ describe('DocumentosDePersonaPage', () => {
     await estabilizar(fixture);
   });
 
-  it('con el motivo vacio no manda la baja del documento', async () => {
+  it('con el motivo vacío no manda la baja del documento', async () => {
     const fixture = await montar([CREDENCIAL]);
 
     apretar(fixture, 'Dar de baja');
@@ -312,7 +312,7 @@ describe('DocumentosDePersonaPage', () => {
   // eligiendo contexto y el otro pidiendo el permiso.
   // -------------------------------------------------------------------------------------
 
-  it('una direccion que no identifica a nadie no dispara ninguna peticion', async () => {
+  it('una dirección que no identifica a nadie no dispara ninguna peticion', async () => {
     tenantContext.select({
       organizationId: 1,
       organizationName: 'Centro Belgrano',
@@ -330,7 +330,7 @@ describe('DocumentosDePersonaPage', () => {
     // Sin este corte sale un `GET /personas/NaN/adjuntos`, que el backend contesta con un 400
     // sobre un parametro que el operador nunca escribio.
     httpMock.expectNone(esListado());
-    expect(texto(fixture)).toContain('La direccion no identifica a ninguna persona');
+    expect(texto(fixture)).toContain('La dirección no identifica a ninguna persona');
   });
 
   it('un 403 por falta de permiso ofrece reintentar y no manda a elegir contexto', async () => {
@@ -355,7 +355,7 @@ describe('DocumentosDePersonaPage', () => {
     );
 
     // Y dice que la sesion sigue abierta: el reflejo ante un 403 es pensar que se deslogueo.
-    expect(texto(fixture)).toContain('Tu sesion sigue abierta');
+    expect(texto(fixture)).toContain('Tu sesión sigue abierta');
     expect(rotulosDeBoton(fixture)).not.toContain('Reintentar');
     expect(fixture.nativeElement.querySelector('a[href="/seleccionar-contexto"]')).not.toBeNull();
   });
@@ -414,7 +414,7 @@ describe('DocumentosDePersonaPage', () => {
     descarga.restaurar();
   });
 
-  it('una descarga rechazada muestra el problema real, con ningun panel abierto', async () => {
+  it('una descarga rechazada muestra el problema real, con ningún panel abierto', async () => {
     const fixture = await montar([CREDENCIAL]);
     const descarga = espiarDescarga();
 
@@ -489,7 +489,7 @@ describe('DocumentosDePersonaPage', () => {
     httpMock
       .expectOne(esReclasificar())
       .flush(
-        { type: 'https://akine.app/problems/concurrent-modification', detail: 'version vieja' },
+        { type: 'https://akine.app/problems/concurrent-modification', detail: 'versión vieja' },
         { status: 409, statusText: 'Conflict' },
       );
     await estabilizar(fixture);
@@ -525,7 +525,7 @@ describe('DocumentosDePersonaPage', () => {
   // 8. Filtro por categoria
   // -------------------------------------------------------------------------------------
 
-  it('filtrar por categoria manda el parametro y volver a todas lo omite', async () => {
+  it('filtrar por categoría manda el parametro y volver a todas lo omite', async () => {
     const fixture = await montar([CREDENCIAL]);
 
     elegirEn(fixture, '#documentos-filtro-categoria', 'CREDENCIAL_COBERTURA');
@@ -729,7 +729,7 @@ describe('DocumentosDePersonaPage', () => {
   function apretar(fixture: ComponentFixture<DocumentosDePersonaPage>, rotulo: string): void {
     const boton = botonDe(fixture, rotulo);
     if (boton === undefined) {
-      throw new Error(`No hay ningun boton rotulado "${rotulo}".`);
+      throw new Error(`No hay ningún botón rotulado "${rotulo}".`);
     }
     boton.click();
     fixture.detectChanges();

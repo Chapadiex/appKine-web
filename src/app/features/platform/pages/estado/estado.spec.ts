@@ -33,7 +33,7 @@ describe('Estado', () => {
     httpMock.verify();
   });
 
-  it('consulta el contrato tecnico de version al arrancar', async () => {
+  it('consulta el contrato tecnico de versión al arrancar', async () => {
     const fixture = TestBed.createComponent(Estado);
     fixture.detectChanges();
 
@@ -55,7 +55,7 @@ describe('Estado', () => {
     fixture.detectChanges();
 
     const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
-    expect(texto).toContain('Comprobando conexion');
+    expect(texto).toContain('Comprobando conexión');
 
     httpMock.expectOne('/api/v1/version').flush(RESPUESTA_VERSION);
   });
@@ -80,7 +80,7 @@ describe('Estado', () => {
     expect(html.querySelector('button')).toBeTruthy();
   });
 
-  it('el boton de reintento vuelve a consultar el backend', async () => {
+  it('el botón de reintento vuelve a consultar el backend', async () => {
     const fixture = TestBed.createComponent(Estado);
     fixture.detectChanges();
 
@@ -90,8 +90,10 @@ describe('Estado', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    const boton = (fixture.nativeElement as HTMLElement).querySelector('button');
-    boton?.click();
+    const boton = (fixture.nativeElement as HTMLElement).querySelector(
+      'button:not(.ayuda-contextual__boton)',
+    );
+    (boton as HTMLButtonElement | null)?.click();
     fixture.detectChanges();
 
     httpMock.expectOne('/api/v1/version').flush(RESPUESTA_VERSION);

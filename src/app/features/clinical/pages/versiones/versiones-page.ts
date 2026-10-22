@@ -9,6 +9,7 @@ import { ASISTENCIAS, etiquetaDe, instanteEnPalabras } from '../../models/etique
 import { Sesion } from '../../../../api/generated/model/sesion';
 import { SesionVersion } from '../../../../api/generated/model/sesion-version';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 
 /**
  * Historial de versiones de una sesion cerrada (AKINE-06.06, RF-M24-005, RN-M14-006).
@@ -26,7 +27,7 @@ import { TenantContextStore } from '../../../../core/services/tenant-context.sto
  */
 @Component({
   selector: 'app-versiones-page',
-  imports: [RouterLink],
+  imports: [Ayuda, RouterLink],
   templateUrl: './versiones-page.html',
   styleUrl: '../../atencion.css',
 })

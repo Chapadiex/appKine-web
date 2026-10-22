@@ -197,9 +197,9 @@ export function campo(page: Page, etiqueta: string | RegExp, opciones?: { exact?
 /** Login por PANTALLA: el camino real, contra el backend real. */
 export async function ingresarPorPantalla(page: Page, email: string): Promise<void> {
   await page.goto('/auth/ingresar');
-  await campo(page, 'Email').fill(email);
-  await campo(page, 'Contrasena').fill(PASSWORD);
-  await page.getByRole('button', { name: 'Iniciar sesion' }).click();
+  await campo(page, 'Correo electrónico').fill(email);
+  await campo(page, 'Contraseña').fill(PASSWORD);
+  await page.getByRole('button', { name: 'Ingresar' }).click();
 }
 
 /** Fragmentos internos que ninguna respuesta ni pantalla puede exponer (ADR-0005). */

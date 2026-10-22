@@ -51,14 +51,14 @@ test.describe('Auditoria con redaccion clinica contra el backend real', () => {
     await navegar(page, '/organizacion/auditoria');
     await page.getByLabel('Historial de una entidad').check();
     await page.getByLabel('Tipo de entidad').fill('HistoriaClinica');
-    await page.getByLabel('Numero de la entidad').fill(String(historia.id));
+    await page.getByLabel('Número de la entidad').fill(String(historia.id));
     const consulta = respuestaDe(page, 'GET', /\/audit-events$/);
     await page.getByRole('button', { name: 'Buscar' }).click();
     const respuesta = await consulta;
     expect(respuesta.status()).toBe(200);
     expect(await respuesta.text(), 'el servidor no manda el texto').not.toContain(justificacion);
 
-    const tabla = page.getByRole('region', { name: 'Hechos auditados de la organizacion' });
+    const tabla = page.getByRole('region', { name: 'Hechos auditados de la organización' });
     const apertura = tabla.getByRole('row').filter({ hasText: 'HISTORIA_CLINICA_OPENED' });
     await expect(apertura).toContainText(`HistoriaClinica ${historia.id}`);
     await expect(apertura).toContainText(REDACTADO);

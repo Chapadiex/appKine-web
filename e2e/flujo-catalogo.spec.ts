@@ -1,6 +1,7 @@
 import { expect, ingresar, navegar, respuestaDe, test } from './support/agenda-real';
 import { nonce } from './support/akine';
 import { paginaDePlataforma, plataformaDisponible } from './support/sembrado-configuracion';
+import { abrirFiltros } from './support/filtros';
 
 /**
  * E2E del catalogo clinico (M06, AKINE-02.05 y A-7) contra el backend REAL: alta de un concepto
@@ -25,9 +26,9 @@ test.describe('Catalogo clinico contra el backend real', () => {
     const nombre = `Especialidad propia ${sufijo}`;
 
     await navegar(page, '/catalogo/especialidades');
-    await expect(page.getByRole('heading', { name: 'Especialidades', level: 1 })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Catálogo clínico', level: 1 })).toBeVisible();
     await page.getByRole('button', { name: 'Dar de alta una especialidad de este centro' }).click();
-    await page.getByLabel('Codigo', { exact: true }).fill(`E2E_PROPIA_${sufijo}`);
+    await page.getByLabel('Código', { exact: true }).fill(`E2E_PROPIA_${sufijo}`);
     await page.getByLabel('Nombre', { exact: true }).fill(nombre);
     const alta = respuestaDe(page, 'POST', /\/catalogos\/especialidades$/);
     await page.getByRole('button', { name: 'Dar de alta', exact: true }).click();
@@ -38,6 +39,7 @@ test.describe('Catalogo clinico contra el backend real', () => {
       page.getByText('La especialidad quedo dada de alta para este centro.'),
     ).toBeVisible();
 
+    await abrirFiltros(page);
     await page.getByLabel('De quien').selectOption('ORGANIZACION');
     await page.getByLabel('Buscar').fill(nombre);
     await expect(page.getByRole('row').filter({ hasText: nombre })).toBeVisible();
@@ -63,7 +65,7 @@ test.describe('Catalogo clinico contra el backend real', () => {
     await page.getByRole('button', { name: 'Pedir un concepto a la plataforma' }).click();
     await page.getByLabel('Que tipo de concepto').selectOption('ESPECIALIDAD');
     await page.getByLabel('Nombre propuesto').fill(nombre);
-    await page.getByLabel('Codigo propuesto (opcional)').fill(`E2E_PEDIDA_${sufijo}`);
+    await page.getByLabel('Código propuesto (opcional)').fill(`E2E_PEDIDA_${sufijo}`);
     await page
       .getByLabel('Por que deberia estar en el catalogo comun')
       .fill('La usan todos los centros de la red y hoy cada uno la carga por su cuenta.');
@@ -78,7 +80,7 @@ test.describe('Catalogo clinico contra el backend real', () => {
     try {
       await navegar(plataforma, '/plataforma/solicitudes');
       await expect(
-        plataforma.getByRole('heading', { name: 'Solicitudes de catalogo', level: 1 }),
+        plataforma.getByRole('heading', { name: 'Solicitudes de catálogo', level: 1 }),
       ).toBeVisible();
       // RNF-M01-005: el centro que pidio, por su nombre y no por su organizationId.
       const filaDelPedido = plataforma.getByRole('row').filter({ hasText: nombre });
@@ -89,7 +91,7 @@ test.describe('Catalogo clinico contra el backend real', () => {
       await plataforma.getByRole('button', { name: `Revisar ${nombre}` }).click();
       await expect(plataforma.locator('dl.detalle')).toContainText(centro.nombreCentro);
       await plataforma.getByRole('button', { name: 'Aprobar y publicar' }).click();
-      await expect(plataforma.getByLabel('Codigo con el que se publica')).toHaveValue(
+      await expect(plataforma.getByLabel('Código con el que se publica')).toHaveValue(
         `E2E_PEDIDA_${sufijo}`,
       );
       await expect(plataforma.getByLabel('Nombre con el que se publica')).toHaveValue(nombre);
@@ -108,7 +110,7 @@ test.describe('Catalogo clinico contra el backend real', () => {
     // Se sale y se vuelve para que la pantalla relea: dos `navegar` seguidos sin esperar dejan al
     // router cancelar el primero y tomar el segundo como "misma URL", que no recarga nada.
     await navegar(page, '/catalogo/especialidades');
-    await expect(page.getByRole('heading', { name: 'Especialidades', level: 1 })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Catálogo clínico', level: 1 })).toBeVisible();
     const relectura = page.waitForResponse(
       (r) =>
         r.request().method() === 'GET' &&
@@ -121,6 +123,7 @@ test.describe('Catalogo clinico contra el backend real', () => {
     await expect(aprobada.getByText('Publicada para toda la red.')).toBeVisible();
 
     await navegar(page, '/catalogo/especialidades');
+    await abrirFiltros(page);
     await page.getByLabel('De quien').selectOption('GLOBAL');
     await page.getByLabel('Buscar').fill(nombre);
     await expect(page.getByRole('row').filter({ hasText: nombre })).toBeVisible();

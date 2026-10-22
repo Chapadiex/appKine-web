@@ -55,6 +55,11 @@ import {
 } from '../../models/etiquetas-de-documento';
 import { textoRequerido } from '../../../../shared/validators/texto-requerido';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
+import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
+import { CabeceraDePersona } from '../../components/cabecera-de-persona/cabecera-de-persona';
 
 /** Panel abierto sobre una orden. Solo uno a la vez en toda la pantalla. */
 type PanelDeOrden = 'editar' | 'baja' | 'documento';
@@ -142,6 +147,10 @@ interface PanelAbierto {
 @Component({
   selector: 'app-ordenes-y-autorizaciones-page',
   imports: [
+    CabeceraDePersona,
+    Ayuda,
+    ColumnaOrdenable,
+    Paginacion,
     ReactiveFormsModule,
     RouterLink,
     ConfirmacionConMotivo,
@@ -196,6 +205,26 @@ export class OrdenesYAutorizacionesPage {
   protected readonly persona = signal<PersonaResponse | null>(null);
   protected readonly ordenes = signal<readonly OrdenResponse[]>([]);
   protected readonly autorizaciones = signal<readonly AutorizacionResponse[]>([]);
+
+  /** Orden y paginado de las listas completas (plan §3.4): el backend devuelve arrays. */
+  protected readonly tablaOrdenes = tablaLocal(this.ordenes, {
+    columnas: {
+      emisor: (orden) => emisorEnPalabras(orden),
+      numero: (orden) => orden.numero ?? null,
+      emitida: (orden) => orden.fechaEmision ?? null,
+      vigencia: (orden) => orden.vigenciaDesde ?? null,
+      situacion: (orden) => situacionDeOrden(orden),
+    },
+  });
+
+  protected readonly tablaAutorizaciones = tablaLocal(this.autorizaciones, {
+    columnas: {
+      numero: (autorizacion) => autorizacion.numero ?? null,
+      estado: (autorizacion) => estadoDeAutorizacion(autorizacion),
+      vigencia: (autorizacion) => autorizacion.vigenciaDesde ?? null,
+      saldo: (autorizacion) => autorizacion.saldo ?? null,
+    },
+  });
   protected readonly coberturas = signal<readonly CoberturaResponse[]>([]);
   protected readonly practicas = signal<readonly CatalogoConceptoResponse[]>([]);
 
@@ -355,7 +384,7 @@ export class OrdenesYAutorizacionesPage {
     const id = this.identificador();
     if (id === null) {
       this.cargando.set(false);
-      this.errorDeCarga.set('La direccion no identifica a ninguna persona del padron.');
+      this.errorDeCarga.set('La dirección no identifica a ninguna persona del padron.');
       return;
     }
 
@@ -552,7 +581,7 @@ export class OrdenesYAutorizacionesPage {
     this.limpiarAvisos();
 
     this.api.crearAutorizacion(id, cuerpo).subscribe({
-      next: () => this.terminar('Se registro la autorizacion.'),
+      next: () => this.terminar('Se registro la autorización.'),
       error: (error: unknown) => this.fallo(error),
     });
   }
@@ -597,7 +626,7 @@ export class OrdenesYAutorizacionesPage {
     this.limpiarAvisos();
 
     this.api.editarAutorizacion(personaId, original.id, cuerpo).subscribe({
-      next: () => this.terminar('Se corrigio la autorizacion.'),
+      next: () => this.terminar('Se corrigio la autorización.'),
       error: (error: unknown) => this.fallo(error),
     });
   }
@@ -664,7 +693,7 @@ export class OrdenesYAutorizacionesPage {
       next: () =>
         this.terminar(
           accion === 'APROBAR'
-            ? 'La autorizacion quedo aprobada. Aprobada es terminal: si el financiador cambia de ' +
+            ? 'La autorización quedo aprobada. Aprobada es terminal: si el financiador cambia de ' +
                 'opinion, se da de baja esta y se carga otra.'
             : 'Se registro la respuesta del financiador.',
         ),
@@ -689,7 +718,7 @@ export class OrdenesYAutorizacionesPage {
     this.api.darDeBajaAutorizacion(personaId, abierto.id, motivo).subscribe({
       next: () =>
         this.terminar(
-          'La autorizacion quedo dada de baja. No se borro, y su numero se puede volver a usar.',
+          'La autorización quedo dada de baja. No se borro, y su número se puede volver a usar.',
         ),
       error: (error: unknown) => this.fallo(error),
     });

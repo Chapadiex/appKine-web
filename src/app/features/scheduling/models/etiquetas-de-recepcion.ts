@@ -26,7 +26,7 @@ const TEXTOS_DE_RECEPCION: Readonly<Record<RecepcionEstadoEnum, string>> = {
     'Observada — la validacion encontro algo; advierte, no impide pasar a espera',
   [RecepcionEstadoEnum.EN_ESPERA]: 'En espera — llego y aguarda ser llamado',
   [RecepcionEstadoEnum.LLAMADA]:
-    'Llamada — lo llamaron desde la sala; la atencion es otro registro',
+    'Llamada — lo llamaron desde la sala; la atención es otro registro',
   [RecepcionEstadoEnum.ANULADA]: 'Anulada — el check-in fue un error y la llegada no vale',
   [RecepcionEstadoEnum.CERRADA]: 'Cerrada — el turno se cancelo con la persona presente',
   [RecepcionEstadoEnum.RETIRADO]:
@@ -174,10 +174,10 @@ export function textoDePrepago(
       const sugerido = importeDePrepago(prepago.importeSugerido, prepago.moneda);
       const conSugerido = sugerido === '' ? '' : ` (sugerido ${sugerido})`;
       return contexto.antesDelCheckin
-        ? `Prepago pendiente si se atiende como particular${conSugerido}: esta prestacion exige ` +
+        ? `Prepago pendiente si se atiende como particular${conSugerido}: esta prestación exige ` +
             'un anticipo y no se registro. Si la cobertura la cubre, se resuelve al validar la ' +
             'llegada. Es un aviso, no impide atender.'
-        : `Prepago pendiente${conSugerido}: esta prestacion exige un anticipo y no se registro. ` +
+        : `Prepago pendiente${conSugerido}: esta prestación exige un anticipo y no se registro. ` +
             'Es un aviso, no impide atender.';
     }
     case PrepagoDeRecepcionEstadoEnum.REGISTRADO: {
@@ -186,12 +186,12 @@ export function textoDePrepago(
         return (
           `Prepago registrado${importe === '' ? '' : ` por ${importe}`} para un turno que no se ` +
           'va a atender: el anticipo queda a favor del paciente, para reintegrarlo o usarlo en ' +
-          'otra atencion.'
+          'otra atención.'
         );
       }
       return importe === ''
-        ? 'Prepago registrado. Se imputa solo al cerrar la sesion.'
-        : `Prepago registrado por ${importe}. Se imputa solo al cerrar la sesion; lo que sobre ` +
+        ? 'Prepago registrado. Se imputa solo al cerrar la sesión.'
+        : `Prepago registrado por ${importe}. Se imputa solo al cerrar la sesión; lo que sobre ` +
             'queda a favor del paciente.';
     }
     default:

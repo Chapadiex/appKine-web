@@ -87,7 +87,7 @@ test.describe('Series de turnos contra el backend real', () => {
     await expect(page.getByText(oferta.nombre)).toBeVisible();
 
     // La pantalla de la serie es otra: la persona se vuelve a elegir.
-    await page.getByLabel('Documento, apellido, nombre o telefono').fill(persona.apellido);
+    await page.getByLabel('Documento, apellido, nombre o teléfono').fill(persona.apellido);
     await page.getByRole('button', { name: `${persona.apellido}, ${persona.nombre}` }).click();
 
     const cantidad = page.getByLabel(/Cantidad de turnos/);
@@ -109,7 +109,7 @@ test.describe('Series de turnos contra el backend real', () => {
     await navegar(page, '/agenda/series');
     await expect(page.getByRole('heading', { name: 'Series de turnos', level: 1 })).toBeVisible();
     await page
-      .getByLabel('Paciente: documento, apellido, nombre o telefono')
+      .getByLabel('Paciente: documento, apellido, nombre o teléfono')
       .fill(persona.apellido);
     await page.getByRole('button', { name: `${persona.apellido}, ${persona.nombre}` }).click();
     await expect(page.getByRole('heading', { name: '1 serie' })).toBeVisible();

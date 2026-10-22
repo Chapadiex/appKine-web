@@ -179,8 +179,8 @@ export interface ErrorPersona {
 /** Los dos motivos por los que el backend rechaza un archivo. Son los del contrato. */
 export type MotivoDeRechazoDeArchivo = 'TIPO_NO_PERMITIDO' | 'DEMASIADO_GRANDE';
 
-const MENSAJE_GENERICO = 'No pudimos completar la operacion. Volve a intentar en un momento.';
-const MENSAJE_DE_RED = 'No se pudo contactar al servidor. Revisa tu conexion y volve a intentar.';
+const MENSAJE_GENERICO = 'No pudimos completar la operación. Volvé a intentar en un momento.';
+const MENSAJE_DE_RED = 'No se pudo contactar al servidor. Revisa tu conexion y volvé a intentar.';
 const MENSAJE_LIMITE_SIN_PLAZO =
   'Demasiados intentos. Espera un momento antes de volver a intentar.';
 
@@ -192,16 +192,16 @@ const MENSAJE_LIMITE_SIN_PLAZO =
  * editar exige ademas tener una sede elegida</b>: el permiso se evalua con la sede del contexto.
  */
 const MENSAJE_SIN_CONTEXTO =
-  'Para trabajar con el padron hay que saber en que centro estas. Eligi una organizacion y un ' +
-  'consultorio, y volve a entrar. Tu sesion sigue abierta.';
+  'Para trabajar con el padron hay que saber en que centro estas. Eligi una organización y un ' +
+  'consultorio, y volvé a entrar. Tu sesión sigue abierta.';
 
 const MENSAJE_SIN_PERMISO =
-  'No podes dar de alta ni editar personas: hace falta el permiso de gestion de pacientes. ' +
-  'Pediselo a quien administra el centro. Consultar el padron si podes, y por eso el listado se ' +
+  'No podés dar de alta ni editar personas: hace falta el permiso de gestion de pacientes. ' +
+  'Pediselo a quien administra el centro. Consultar el padron si podés, y por eso el listado se ' +
   'sigue viendo.';
 
 const MENSAJE_NO_ENCONTRADO =
-  'Esa persona ya no existe, o no es de esta organizacion. Recarga el listado para ver el padron ' +
+  'Esa persona ya no existe, o no es de esta organización. Recarga el listado para ver el padron ' +
   'actual.';
 
 /**
@@ -211,7 +211,7 @@ const MENSAJE_NO_ENCONTRADO =
  * personas con el mismo documento en la misma organizacion son un error de carga, siempre.
  */
 const MENSAJE_DOCUMENTO_EN_USO =
-  'Ya hay una persona registrada con ese documento en esta organizacion. Buscala en el padron ' +
+  'Ya hay una persona registrada con ese documento en esta organización. Buscala en el padron ' +
   'antes de crear una ficha nueva: si es la misma persona, editala en vez de duplicarla.';
 
 /**
@@ -222,26 +222,26 @@ const MENSAJE_DOCUMENTO_EN_USO =
  * operador con dos pacientes homonimos queda trabado.
  */
 const MENSAJE_POSIBLE_DUPLICADO =
-  'No creamos la ficha todavia: hay personas registradas que coinciden en el nombre completo o en ' +
-  'el telefono. Revisalas abajo. Si es una de ellas, abrila; si es otra persona distinta, ' +
+  'No creamos la ficha todavía: hay personas registradas que coinciden en el nombre completo o en ' +
+  'el teléfono. Revisalas abajo. Si es una de ellas, abrila; si es otra persona distinta, ' +
   'confirmalo y la damos de alta.';
 
 const MENSAJE_PERSONA_INACTIVA =
-  'Esa persona esta dada de baja, asi que no admite cambios. Su ficha se sigue pudiendo ' +
+  'Esa persona esta dada de baja, así que no admite cambios. Su ficha se sigue pudiendo ' +
   'consultar: los historicos no se borran.';
 
 const MENSAJE_CONCURRENCIA =
-  'Alguien mas modifico esta ficha mientras la estabas editando, asi que no guardamos tus cambios ' +
+  'Alguien mas modifico esta ficha mientras la estabas editando, así que no guardamos tus cambios ' +
   'para no pisar los suyos. Volvimos a leer los datos actuales: revisalos y confirma de nuevo si ' +
   'seguis queriendo el cambio.';
 
 const MENSAJE_SUSCRIPCION_SUSPENDIDA =
-  'La suscripcion de la organizacion esta suspendida, asi que no se pueden registrar cambios. Se ' +
-  'resuelve desde la pantalla de suscripcion.';
+  'La suscripción de la organización esta suspendida, así que no se pueden registrar cambios. Se ' +
+  'resuelve desde la pantalla de suscripción.';
 
 const MENSAJE_CONFLICTO =
   'El servidor rechazo el cambio por un conflicto con lo que ya hay guardado. Recarga el listado ' +
-  'para ver el estado actual y volve a intentar.';
+  'para ver el estado actual y volvé a intentar.';
 
 /**
  * La persona existe y no es paciente.
@@ -250,12 +250,12 @@ const MENSAJE_CONFLICTO =
  * una ficha que ve en pantalla y no tiene forma de deducir que le falta un paso que existe.
  */
 const MENSAJE_SIN_PERFIL =
-  'Esta persona todavia no es paciente, asi que no se le puede cargar esto. Activale el perfil de ' +
-  'paciente desde su ficha y volve a intentar. Activarlo no le crea historia clinica.';
+  'Esta persona todavía no es paciente, así que no se le puede cargar esto. Activale el perfil de ' +
+  'paciente desde su ficha y volvé a intentar. Activarlo no le crea historia clínica.';
 
 const MENSAJE_ARCHIVO_TIPO =
   'Ese archivo no se puede subir: solo se aceptan PDF, PNG y JPEG. El tipo se verifica por el ' +
-  'contenido y no por la extension, asi que renombrarlo no cambia nada. Volve a exportarlo o ' +
+  'contenido y no por la extension, así que renombrarlo no cambia nada. Volvé a exportarlo o ' +
   'escanealo en uno de esos formatos.';
 
 const MENSAJE_ARCHIVO_TAMANO =
@@ -263,8 +263,8 @@ const MENSAJE_ARCHIVO_TAMANO =
   'varios documentos.';
 
 const MENSAJE_ADJUNTO_INACTIVO =
-  'Ese documento esta dado de baja, asi que no se puede modificar. Se sigue pudiendo descargar: ' +
-  'los documentos dados de baja no se borran. Si necesitas otra version, subi el archivo nuevo.';
+  'Ese documento esta dado de baja, así que no se puede modificar. Se sigue pudiendo descargar: ' +
+  'los documentos dados de baja no se borran. Si necesitas otra versión, subi el archivo nuevo.';
 
 /**
  * La metadata existe y el binario no.
@@ -274,7 +274,7 @@ const MENSAJE_ADJUNTO_INACTIVO =
  */
 const MENSAJE_ADJUNTO_NO_DISPONIBLE =
   'El registro de ese documento existe, pero su contenido no esta disponible en el almacenamiento. ' +
-  'No lo vuelvas a subir sobre esta fila: avisale a quien administra el sistema, y si tenes el ' +
+  'No lo vuelvas a subir sobre esta fila: avisale a quien administra el sistema, y si tenés el ' +
   'archivo original cargalo como documento nuevo.';
 
 /**
@@ -291,42 +291,42 @@ const MENSAJE_PLAN_NO_SELECCIONABLE =
 
 const MENSAJE_COBERTURA_SUPERPUESTA =
   'El paciente ya tiene una cobertura de ese mismo plan vigente en ese periodo, y dos que se pisan ' +
-  'son un duplicado. Si cambio de plan, finaliza la vigencia de la anterior y despues carga la ' +
+  'son un duplicado. Si cambio de plan, finaliza la vigencia de la anterior y después carga la ' +
   'nueva. Dos coberturas de financiadores distintos si pueden convivir.';
 
 const MENSAJE_PRINCIPAL_SUPERPUESTA =
   'El paciente ya tiene una cobertura principal vigente en ese periodo. No la desmarcamos solas: un ' +
-  'click que cambia dos coberturas deja una que despues nadie puede explicar. Desmarca o finaliza ' +
-  'la que esta marcada y volve a intentar.';
+  'click que cambia dos coberturas deja una que después nadie puede explicar. Desmarca o finaliza ' +
+  'la que esta marcada y volvé a intentar.';
 
 const MENSAJE_COBERTURA_INACTIVA =
-  'Esa cobertura esta dada de baja, asi que no admite cambios. Se sigue leyendo, porque es lo que ' +
+  'Esa cobertura esta dada de baja, así que no admite cambios. Se sigue leyendo, porque es lo que ' +
   'explica con que cobertura se atendio al paciente antes. Si la cobertura vuelve, es un alta nueva.';
 
 const MENSAJE_COBERTURA_YA_INACTIVA =
   'Esa cobertura ya estaba dada de baja. No hicimos nada: el estado que buscabas ya es el que hay.';
 
 const MENSAJE_ORDEN_INACTIVA =
-  'Esa orden esta dada de baja, asi que no admite cambios. Ojo que dada de baja no es lo mismo que ' +
+  'Esa orden esta dada de baja, así que no admite cambios. Ojo que dada de baja no es lo mismo que ' +
   'vencida: una orden vencida se sigue listando y se sigue pudiendo corregir.';
 
 const MENSAJE_ORDEN_YA_INACTIVA =
   'Esa orden ya estaba dada de baja. No hicimos nada: el estado que buscabas ya es el que hay.';
 
 const MENSAJE_AUTORIZACION_INACTIVA =
-  'Esa autorizacion esta dada de baja, asi que no admite cambios. Dar de baja no es rechazar ni ' +
+  'Esa autorización esta dada de baja, así que no admite cambios. Dar de baja no es rechazar ni ' +
   'vencer: una rechazada sigue viva y explica por que no se pudo atender.';
 
 const MENSAJE_AUTORIZACION_YA_INACTIVA =
-  'Esa autorizacion ya estaba dada de baja. No hicimos nada: el estado que buscabas ya es el que hay.';
+  'Esa autorización ya estaba dada de baja. No hicimos nada: el estado que buscabas ya es el que hay.';
 
 const MENSAJE_AUTORIZACION_SUPERPUESTA =
-  'El paciente ya tiene una autorizacion aprobada de esa practica vigente en ese periodo, y dos que ' +
+  'El paciente ya tiene una autorización aprobada de esa práctica vigente en ese periodo, y dos que ' +
   'se pisan contarian el saldo dos veces. Dos consecutivas —renovar— si conviven: revisa las fechas.';
 
 const MENSAJE_CONSUMO_YA_REVERTIDO =
   'Ese consumo ya estaba revertido: la unidad volvio al saldo una vez y no vuelve dos. Recarga los ' +
-  'movimientos para ver la reversion que ya existe.';
+  'movimientos para ver la reversión que ya existe.';
 
 const MENSAJE_SALDO_DIVERGENTE =
   'No se revirtió el consumo: el saldo de la autorización no coincide con sus movimientos, así ' +
@@ -338,7 +338,7 @@ const MENSAJE_REVERSION_SIN_MOTIVO =
   'error de carga de otra cosa.';
 
 const MENSAJE_NUMERO_EN_USO =
-  'Ya hay un documento vigente con ese numero. Revisa si no lo cargaste antes: el numero de uno ' +
+  'Ya hay un documento vigente con ese número. Revisa si no lo cargaste antes: el número de uno ' +
   'dado de baja si se puede volver a usar.';
 
 /**
@@ -362,7 +362,7 @@ export function traducirErrorPersona(error: unknown): ErrorPersona {
     return {
       ...base(
         segundos > 0
-          ? `Demasiados intentos. Espera ${segundos} segundos y volve a intentar.`
+          ? `Demasiados intentos. Espera ${segundos} segundos y volvé a intentar.`
           : MENSAJE_LIMITE_SIN_PLAZO,
         'limite',
       ),

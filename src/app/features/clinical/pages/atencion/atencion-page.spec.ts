@@ -107,7 +107,7 @@ describe('AtencionPage', () => {
   // 1. El conflicto de version
   // -------------------------------------------------------------------------------------
 
-  it('ante un 409 de version NO pierde lo tipeado, y avisa que hubo conflicto', async () => {
+  it('ante un 409 de versión NO pierde lo tipeado, y avisa que hubo conflicto', async () => {
     const fixture = await montar();
 
     escribirNotas(fixture, 'Paciente refiere dolor al flexionar.');
@@ -121,7 +121,7 @@ describe('AtencionPage', () => {
     // Lo tipeado sigue en el textarea. Es lo unico que no puede fallar: el resto de la pantalla
     // se puede rehacer, un parrafo clinico que el profesional ya escribio no.
     expect(notas(fixture).value).toBe('Paciente refiere dolor al flexionar.');
-    expect(texto(fixture)).toContain('Otra pestaña guardo antes que vos');
+    expect(texto(fixture)).toContain('Otra pestaña guardó antes que vos');
     expect(texto(fixture)).toContain('no perdimos lo que escribiste');
   });
 
@@ -149,7 +149,7 @@ describe('AtencionPage', () => {
     }
   });
 
-  it('sin conflicto el autosave dispara solo, con la version leida', async () => {
+  it('sin conflicto el autosave dispara solo, con la versión leida', async () => {
     const fixture = await montar();
 
     vi.useFakeTimers();
@@ -170,7 +170,7 @@ describe('AtencionPage', () => {
     }
   });
 
-  it('al releer muestra lo del servidor AL LADO, conserva lo tipeado y guarda con la version nueva', async () => {
+  it('al releer muestra lo del servidor AL LADO, conserva lo tipeado y guarda con la versión nueva', async () => {
     const fixture = await montar();
 
     escribirNotas(fixture, 'Lo mio.');
@@ -235,7 +235,7 @@ describe('AtencionPage', () => {
     expect(visible).toContain('No es un problema de permisos');
     // Quien lee esto SI tiene `sesion:register`. Mandarlo a pedir un permiso que ya tiene es la
     // forma mas rapida de que nunca entienda lo que pasa.
-    expect(visible).not.toContain('No tenes permiso');
+    expect(visible).not.toContain('No tenés permiso');
   });
 
   it('turno-no-atendible muestra el motivo que dio el servidor', async () => {
@@ -254,7 +254,7 @@ describe('AtencionPage', () => {
       {
         type: 'https://akine.app/problems/turno-no-atendible',
         status: 409,
-        detail: 'Este turno no habilita una atencion.',
+        detail: 'Este turno no habilita una atención.',
         motivo: 'El turno esta cancelado',
       },
       { status: 409, statusText: 'Conflict' },
@@ -267,7 +267,7 @@ describe('AtencionPage', () => {
   it('validation-error explica la escala y la lateralidad sin zona', async () => {
     const fixture = await montar();
 
-    apretar(fixture, 'Guardar evaluacion');
+    apretar(fixture, 'Guardar evaluación');
     httpMock.expectOne(esEvaluacion()).flush(
       {
         type: 'https://akine.app/problems/validation-error',
@@ -285,7 +285,7 @@ describe('AtencionPage', () => {
   // 3. La previa
   // -------------------------------------------------------------------------------------
 
-  it('muestra la evaluacion previa dentro del bloque de dolor', async () => {
+  it('muestra la evaluación previa dentro del bloque de dolor', async () => {
     const fixture = await montar();
 
     const bloqueDeDolor = grupoDeDolor(fixture);
@@ -294,25 +294,25 @@ describe('AtencionPage', () => {
     expect(bloqueDeDolor).toContain('evolucion IGUAL');
   });
 
-  it('sin previa dice que es la primera sesion, en vez de dejar el hueco vacio', async () => {
+  it('sin previa dice que es la primera sesión, en vez de dejar el hueco vacío', async () => {
     const fixture = await montar(PRIMERA_SESION);
 
-    expect(grupoDeDolor(fixture)).toContain('Primera sesion evaluada de este paciente');
+    expect(grupoDeDolor(fixture)).toContain('Primera sesión evaluada de este paciente');
   });
 
   // -------------------------------------------------------------------------------------
   // 4. Ningun campo clinico es obligatorio
   // -------------------------------------------------------------------------------------
 
-  it('guarda la evaluacion con todos los campos clinicos vacios', async () => {
+  it('guarda la evaluación con todos los campos clínicos vacios', async () => {
     const fixture = await montar();
 
-    apretar(fixture, 'Guardar evaluacion');
+    apretar(fixture, 'Guardar evaluación');
     const pedido = httpMock.expectOne(esEvaluacion());
     const cuerpo = pedido.request.body as Record<string, unknown>;
 
     // Solo la version y el modo. Un `''` en cada campo guardaria una cadena vacia como si fuera
-    // un dato cargado, y "no lo cargue" tiene que seguir siendo distinguible.
+    // un dato cargado, y "no lo cargué" tiene que seguir siendo distinguible.
     expect(cuerpo['version']).toBe(3);
     expect(cuerpo['modo']).toBe('RAPIDA');
     expect(cuerpo['dolorEva']).toBeUndefined();
@@ -323,7 +323,7 @@ describe('AtencionPage', () => {
     await estabilizar(fixture);
   });
 
-  it('NO_APLICA viaja como valor cargado, que no es lo mismo que dejarlo vacio', async () => {
+  it('NO_APLICA viaja como valor cargado, que no es lo mismo que dejarlo vacío', async () => {
     const fixture = await montar();
 
     const lateralidad = fixture.nativeElement.querySelector(
@@ -334,7 +334,7 @@ describe('AtencionPage', () => {
     escribirEn(fixture, '#atencion-zona', 'Lumbar');
     fixture.detectChanges();
 
-    apretar(fixture, 'Guardar evaluacion');
+    apretar(fixture, 'Guardar evaluación');
     const pedido = httpMock.expectOne(esEvaluacion());
     expect((pedido.request.body as Record<string, unknown>)['dolorLateralidad']).toBe('NO_APLICA');
 
@@ -357,7 +357,7 @@ describe('AtencionPage', () => {
       (fixture.nativeElement.querySelector('#atencion-objetivo') as HTMLInputElement).value,
     ).toBe('Reducir dolor en flexion');
 
-    apretar(fixture, 'Guardar evaluacion');
+    apretar(fixture, 'Guardar evaluación');
     const pedido = httpMock.expectOne(esEvaluacion());
     expect((pedido.request.body as Record<string, unknown>)['modo']).toBe('COMPLETA');
     pedido.flush({ ...ABIERTA, version: 4 });
@@ -370,7 +370,7 @@ describe('AtencionPage', () => {
     apretar(fixture, '6');
     apretar(fixture, '6');
 
-    apretar(fixture, 'Guardar evaluacion');
+    apretar(fixture, 'Guardar evaluación');
     const pedido = httpMock.expectOne(esEvaluacion());
     expect((pedido.request.body as Record<string, unknown>)['dolorEva']).toBeUndefined();
     pedido.flush({ ...ABIERTA, version: 4 });
@@ -385,7 +385,7 @@ describe('AtencionPage', () => {
     const fixture = await montar();
 
     apretarRadio(fixture, 'AUSENTE');
-    apretar(fixture, 'Cerrar la atencion');
+    apretar(fixture, 'Cerrar la atención');
 
     // Sale igual, con el campo de nota ni siquiera renderizado. Si la pantalla lo exigiera, el
     // profesional tendria que escribir algo sobre una sesion que no existio para poder cerrar.
@@ -403,7 +403,7 @@ describe('AtencionPage', () => {
     const fixture = await montar();
 
     apretarRadio(fixture, 'PRESENTE');
-    apretar(fixture, 'Cerrar la atencion');
+    apretar(fixture, 'Cerrar la atención');
 
     // La nota es el UNICO campo condicionalmente obligatorio: sin ella no queda registrado que se
     // hizo. Y el rechazo tiene que ser visible: un boton que no hace nada es el defecto que ya
@@ -412,13 +412,13 @@ describe('AtencionPage', () => {
     expect(texto(fixture)).toContain('hace falta la nota de cierre');
   });
 
-  it('cerrar no exige tolerancia, indicaciones ni proxima conducta', async () => {
+  it('cerrar no exige tolerancia, indicaciones ni próxima conducta', async () => {
     const fixture = await montar();
 
     apretarRadio(fixture, 'PRESENTE');
     escribirEn(fixture, '#cierre-nota', 'Terapia manual lumbar, 30 minutos.');
     fixture.detectChanges();
-    apretar(fixture, 'Cerrar la atencion');
+    apretar(fixture, 'Cerrar la atención');
 
     const pedido = httpMock.expectOne(esCierre());
     const cuerpo = pedido.request.body as Record<string, unknown>;
@@ -431,11 +431,11 @@ describe('AtencionPage', () => {
     await estabilizar(fixture);
   });
 
-  it('despues de cerrar la pantalla queda en LECTURA y muestra el numero de sesion', async () => {
+  it('después de cerrar la pantalla queda en LECTURA y muestra el número de sesión', async () => {
     const fixture = await montar();
 
     apretarRadio(fixture, 'AUSENTE');
-    apretar(fixture, 'Cerrar la atencion');
+    apretar(fixture, 'Cerrar la atención');
     httpMock.expectOne(esCierre()).flush(CERRADA);
     await estabilizar(fixture);
 
@@ -443,11 +443,11 @@ describe('AtencionPage', () => {
     // con 409 `sesion-cerrada`.
     expect(fixture.nativeElement.querySelector('#atencion-notas')).toBeNull();
     expect(fixture.nativeElement.querySelector('#cierre-nota')).toBeNull();
-    expect(rotulosDeBoton(fixture)).not.toContain('Guardar evaluacion');
-    expect(rotulosDeBoton(fixture)).not.toContain('Cerrar la atencion');
+    expect(rotulosDeBoton(fixture)).not.toContain('Guardar evaluación');
+    expect(rotulosDeBoton(fixture)).not.toContain('Cerrar la atención');
 
     // El correlativo por historia clinica es lo que el profesional cuenta.
-    expect(texto(fixture)).toContain('Sesion numero 8');
+    expect(texto(fixture)).toContain('Sesión número 8');
   });
 
   it('los campos opcionales del cierre viajan si se cargan, y se leen con su rotulo', async () => {
@@ -458,7 +458,7 @@ describe('AtencionPage', () => {
     elegir(fixture, '#cierre-tolerancia', 'REGULAR');
     elegir(fixture, '#cierre-conducta', 'ALTA');
     fixture.detectChanges();
-    apretar(fixture, 'Cerrar la atencion');
+    apretar(fixture, 'Cerrar la atención');
 
     const pedido = httpMock.expectOne(esCierre());
     const cuerpo = pedido.request.body as Record<string, unknown>;
@@ -481,11 +481,11 @@ describe('AtencionPage', () => {
     expect(texto(fixture)).toContain('Alta');
   });
 
-  it('una sesion que ya venia cerrada se abre directamente en lectura', async () => {
+  it('una sesión que ya venia cerrada se abre directamente en lectura', async () => {
     const fixture = await montar(CERRADA);
 
     expect(fixture.nativeElement.querySelector('#atencion-notas')).toBeNull();
-    expect(texto(fixture)).toContain('Sesion numero 8');
+    expect(texto(fixture)).toContain('Sesión número 8');
   });
 
   it('un 409 sesion-cerrada al guardar relee y pasa a lectura, sin ofrecer reintentar', async () => {
@@ -498,7 +498,7 @@ describe('AtencionPage', () => {
       {
         type: 'https://akine.app/problems/sesion-cerrada',
         status: 409,
-        detail: 'La sesion ya esta cerrada.',
+        detail: 'La sesión ya esta cerrada.',
       },
       { status: 409, statusText: 'Conflict' },
     );
@@ -510,7 +510,7 @@ describe('AtencionPage', () => {
     await estabilizar(fixture);
 
     expect(fixture.nativeElement.querySelector('#atencion-notas')).toBeNull();
-    expect(texto(fixture)).toContain('Sesion numero 8');
+    expect(texto(fixture)).toContain('Sesión número 8');
     expect(rotulosDeBoton(fixture)).not.toContain('Reintentar');
   });
 
@@ -545,14 +545,14 @@ describe('AtencionPage', () => {
 
     // Nada se inicio todavia: el caso solo cuenta al crear la sesion.
     httpMock.expectNone(esIniciar());
-    expect(texto(fixture)).toContain('Antes de empezar: caso clinico');
+    expect(texto(fixture)).toContain('Antes de empezar: caso clínico');
     expect(texto(fixture)).not.toContain('Caso 3');
     const elegido = fixture.nativeElement.querySelector(
       'input[name="caso"]:checked',
     ) as HTMLInputElement;
     expect(elegido.value).toBe('31');
 
-    apretar(fixture, 'Iniciar la atencion');
+    apretar(fixture, 'Iniciar atención');
     const inicio = httpMock.expectOne(esIniciar());
     expect(inicio.request.params.get('casoId')).toBe('31');
     inicio.flush({ ...ABIERTA, casoId: 31 });
@@ -560,7 +560,7 @@ describe('AtencionPage', () => {
     responderBloques();
 
     expect(texto(fixture)).toContain('Caso 1');
-    expect(texto(fixture)).not.toContain('conserva el caso con el que empezo');
+    expect(texto(fixture)).not.toContain('conserva el caso con el que empezó');
   });
 
   it('"Sin caso" inicia sin casoId', async () => {
@@ -569,27 +569,27 @@ describe('AtencionPage', () => {
     await estabilizar(fixture);
 
     apretarRadio(fixture, '');
-    apretar(fixture, 'Iniciar la atencion');
+    apretar(fixture, 'Iniciar atención');
     const sinCaso = httpMock.expectOne(esIniciar());
     expect(sinCaso.request.params.has('casoId')).toBe(false);
     sinCaso.flush(ABIERTA);
     await estabilizar(fixture);
     responderBloques();
     expect(texto(fixture)).toContain('Sin caso');
-    expect(texto(fixture)).not.toContain('conserva el caso con el que empezo');
+    expect(texto(fixture)).not.toContain('conserva el caso con el que empezó');
   });
 
-  it('si la sesion ya existia con otro caso, conserva ese y lo dice', async () => {
+  it('si la sesión ya existia con otro caso, conserva ese y lo dice', async () => {
     const fixture = crearSinMontar();
     responderCasos([CASO_RODILLA, CASO_HOMBRO], 5);
     await estabilizar(fixture);
 
-    apretar(fixture, 'Iniciar la atencion');
+    apretar(fixture, 'Iniciar atención');
     httpMock.expectOne(esIniciar()).flush({ ...ABIERTA, casoId: 31 });
     await estabilizar(fixture);
     responderBloques();
 
-    expect(texto(fixture)).toContain('conserva el caso con el que empezo');
+    expect(texto(fixture)).toContain('conserva el caso con el que empezó');
     expect(texto(fixture)).toContain('Caso 1');
   });
 
@@ -598,7 +598,7 @@ describe('AtencionPage', () => {
     responderCasos([CASO_RODILLA]);
     await estabilizar(fixture);
 
-    apretar(fixture, 'Iniciar la atencion');
+    apretar(fixture, 'Iniciar atención');
     httpMock
       .expectOne(esIniciar())
       .flush(
@@ -607,8 +607,8 @@ describe('AtencionPage', () => {
       );
     await estabilizar(fixture);
 
-    expect(texto(fixture)).toContain('ya no esta activo');
-    expect(texto(fixture)).toContain('Antes de empezar: caso clinico');
+    expect(texto(fixture)).toContain('ya no está activo');
+    expect(texto(fixture)).toContain('Antes de empezar: caso clínico');
   });
 
   it('si no se pueden leer los casos, inicia igual sin caso', async () => {
@@ -631,7 +631,7 @@ describe('AtencionPage', () => {
     const fixture = crearSinMontar();
     responderCasos([CASO_RODILLA, CASO_HOMBRO]);
     await estabilizar(fixture);
-    apretar(fixture, 'Iniciar la atencion');
+    apretar(fixture, 'Iniciar atención');
     httpMock.expectOne(esIniciar()).flush({ ...ABIERTA, casoId: 31 });
     await estabilizar(fixture);
     responderBloques();
@@ -639,7 +639,7 @@ describe('AtencionPage', () => {
     return fixture;
   }
 
-  it('cambia el caso de la atencion abierta y el proximo autosave usa la version nueva', async () => {
+  it('cambia el caso de la atención abierta y el próximo autosave usa la versión nueva', async () => {
     const fixture = await abiertaConCaso();
     const selector = fixture.nativeElement.querySelector('#atencion-caso') as HTMLSelectElement;
     expect(selector.value).toBe('31');
@@ -655,7 +655,7 @@ describe('AtencionPage', () => {
     await estabilizar(fixture);
 
     expect(texto(fixture)).toContain('quedo asociada al Caso 2');
-    expect(texto(fixture)).not.toContain('Ultimo guardado');
+    expect(texto(fixture)).not.toContain('Último guardado');
     guardarAhora(fixture);
     const guardado = httpMock.expectOne(esBorrador());
     expect((guardado.request.body as { version: number }).version).toBe(4);
@@ -673,7 +673,7 @@ describe('AtencionPage', () => {
     expect(cambio.request.body).toEqual({ version: 3 });
     cambio.flush({ ...ABIERTA, version: 4 });
     await estabilizar(fixture);
-    expect(texto(fixture)).toContain('La atencion quedo sin caso');
+    expect(texto(fixture)).toContain('La atención quedo sin caso');
   });
 
   it('un caso que se cerro mientras se elegia lo dice y vuelve el selector al caso actual', async () => {
@@ -690,7 +690,7 @@ describe('AtencionPage', () => {
       );
     await estabilizar(fixture);
 
-    expect(texto(fixture)).toContain('ya no esta activo');
+    expect(texto(fixture)).toContain('ya no está activo');
     expect((fixture.nativeElement.querySelector('#atencion-caso') as HTMLSelectElement).value).toBe(
       '31',
     );
@@ -701,7 +701,7 @@ describe('AtencionPage', () => {
     expect(fixture.nativeElement.querySelector('#atencion-caso')).toBeNull();
   });
 
-  it('una sesion cerrada no ofrece cambiar el caso', async () => {
+  it('una sesión cerrada no ofrece cambiar el caso', async () => {
     const fixture = await montar({ ...CERRADA, casoId: 31 });
     expect(fixture.nativeElement.querySelector('#atencion-caso')).toBeNull();
   });
@@ -735,7 +735,7 @@ describe('AtencionPage', () => {
   // Bloques de examen y tratamientos
   // -------------------------------------------------------------------------------------
 
-  it('la version que devuelve un tratamiento es la que usa el proximo autosave', async () => {
+  it('la versión que devuelve un tratamiento es la que usa el próximo autosave', async () => {
     const fixture = await montar();
     const bloque = fixture.debugElement.query(By.directive(TratamientosDeSesion))
       .componentInstance as TratamientosDeSesion;
@@ -748,7 +748,7 @@ describe('AtencionPage', () => {
     guardado.flush({ ...ABIERTA, version: 10 });
   });
 
-  it('con un tratamiento en vuelo el autosave espera, en vez de competir por la version', async () => {
+  it('con un tratamiento en vuelo el autosave espera, en vez de competir por la versión', async () => {
     const fixture = await montar();
     const bloque = fixture.debugElement.query(By.directive(TratamientosDeSesion))
       .componentInstance as TratamientosDeSesion;
@@ -782,17 +782,17 @@ describe('AtencionPage', () => {
     );
     fixture.detectChanges();
 
-    expect(texto(fixture)).toContain('Otra pestaña guardo antes que vos');
+    expect(texto(fixture)).toContain('Otra pestaña guardó antes que vos');
   });
 
-  it('una sesion cerrada ofrece enmendar y ver las versiones', async () => {
+  it('una sesión cerrada ofrece enmendar y ver las versiones', async () => {
     const fixture = await montar({ ...CERRADA, fueEnmendada: true });
 
     const enlaces = Array.from(
       fixture.nativeElement.querySelectorAll('a') as NodeListOf<HTMLAnchorElement>,
     ).map((a) => [a.textContent?.trim(), a.getAttribute('href')]);
     expect(enlaces).toContainEqual([
-      'Enmendar esta atencion',
+      'Enmendar esta atención',
       `/atencion/sesiones/${SESION}/enmienda`,
     ]);
     expect(enlaces).toContainEqual(['Ver las versiones', `/atencion/sesiones/${SESION}/versiones`]);
@@ -803,7 +803,7 @@ describe('AtencionPage', () => {
   // Accesibilidad
   // -------------------------------------------------------------------------------------
 
-  it('cada paso de la escala se anuncia empezando por el numero que se ve (WCAG 2.5.3)', async () => {
+  it('cada paso de la escala se anuncia empezando por el número que se ve (WCAG 2.5.3)', async () => {
     const fixture = await montar();
     const pasos = Array.from(
       fixture.nativeElement.querySelectorAll('.escala__paso') as NodeListOf<HTMLButtonElement>,
@@ -826,7 +826,7 @@ describe('AtencionPage', () => {
   );
 
   it(
-    'la vista de lectura de una sesion cerrada no tiene violaciones de accesibilidad',
+    'la vista de lectura de una sesión cerrada no tiene violaciones de accesibilidad',
     async () => {
       const fixture = await montar(CERRADA);
       await esperarSinViolaciones(fixture.nativeElement as HTMLElement);
@@ -885,10 +885,10 @@ describe('AtencionPage', () => {
       responderBloques();
       await estabilizar(fixture);
 
-      expect(texto(fixture)).toContain('Atencion en curso');
+      expect(texto(fixture)).toContain('Atención en curso');
       expect(texto(fixture)).toContain('Participante de la clase grupal Rehabilitacion de rodilla');
       expect(texto(fixture)).not.toContain('clase 40');
-      expect(texto(fixture)).toContain('lo fijo la derivacion');
+      expect(texto(fixture)).toContain('lo fijó la derivación');
       expect(fixture.nativeElement.querySelector('#atencion-caso')).toBeNull();
       expect(fixture.nativeElement.querySelector('a[href="/atencion/clases/40"]')).not.toBeNull();
     });
@@ -903,7 +903,7 @@ describe('AtencionPage', () => {
         );
       await estabilizar(fixture);
       expect(texto(fixture)).toContain('no existen');
-      expect(texto(fixture)).not.toContain('Atencion en curso');
+      expect(texto(fixture)).not.toContain('Atención en curso');
     });
   });
 
@@ -914,7 +914,7 @@ describe('AtencionPage', () => {
   const CASO_REQUERIDO = {
     type: 'https://akine.app/problems/caso-clinico-requerido',
     status: 409,
-    detail: 'La oferta exige caso clinico.',
+    detail: 'La oferta exige caso clínico.',
   };
 
   it('el 409 caso-clinico-requerido al iniciar vuelve a preguntar, ya sin "Sin caso"', async () => {
@@ -923,16 +923,16 @@ describe('AtencionPage', () => {
     await estabilizar(fixture);
 
     apretarRadio(fixture, '');
-    apretar(fixture, 'Iniciar la atencion');
+    apretar(fixture, 'Iniciar atención');
     httpMock.expectOne(esIniciar()).flush(CASO_REQUERIDO, { status: 409, statusText: 'Conflict' });
     await estabilizar(fixture);
 
-    expect(texto(fixture)).toContain('exige un caso clinico');
-    expect(texto(fixture)).toContain('Antes de empezar: caso clinico');
+    expect(texto(fixture)).toContain('exige un caso clínico');
+    expect(texto(fixture)).toContain('Antes de empezar: caso clínico');
     expect(fixture.nativeElement.querySelector('input[name="caso"][value=""]')).toBeNull();
 
     apretarRadio(fixture, '31');
-    apretar(fixture, 'Iniciar la atencion');
+    apretar(fixture, 'Iniciar atención');
     const reintento = httpMock.expectOne(esIniciar());
     expect(reintento.request.params.get('casoId')).toBe('31');
     reintento.flush({ ...ABIERTA, casoId: 31 });
@@ -953,11 +953,11 @@ describe('AtencionPage', () => {
     expect(texto(fixture)).toContain('Abrir un caso');
   });
 
-  it('si la oferta exige caso, la atencion abierta no ofrece quitarlo', async () => {
+  it('si la oferta exige caso, la atención abierta no ofrece quitarlo', async () => {
     const fixture = crearSinMontar();
     responderCasos([CASO_RODILLA, CASO_HOMBRO]);
     await estabilizar(fixture);
-    apretar(fixture, 'Iniciar la atencion');
+    apretar(fixture, 'Iniciar atención');
     httpMock.expectOne(esIniciar()).flush({ ...ABIERTA, ofertaId: 4, casoId: 31 });
     await estabilizar(fixture);
     httpMock
@@ -981,14 +981,14 @@ describe('AtencionPage', () => {
     apretarRadio(fixture, 'PRESENTE');
     escribirEn(fixture, '#cierre-nota', 'Se trabajo movilidad.');
     fixture.detectChanges();
-    apretar(fixture, 'Cerrar la atencion');
+    apretar(fixture, 'Cerrar la atención');
     httpMock.expectOne(esCierre()).flush(CASO_REQUERIDO, { status: 409, statusText: 'Conflict' });
     await estabilizar(fixture);
-    expect(texto(fixture)).toContain('exige un caso clinico');
-    expect(texto(fixture)).toContain('Atencion en curso');
+    expect(texto(fixture)).toContain('exige un caso clínico');
+    expect(texto(fixture)).toContain('Atención en curso');
   });
 
-  it('el reemplazo del profesional solo se ofrece con sesion:reassign y manda motivo y version', async () => {
+  it('el reemplazo del profesional solo se ofrece con sesión:reassign y manda motivo y versión', async () => {
     const fixture = await montar({ ...ABIERTA, ofertaId: 4, profesionalId: 7 }, [
       PERMISO_SESION_REGISTER,
       PERMISO_SESION_REASSIGN,
@@ -1023,12 +1023,12 @@ describe('AtencionPage', () => {
     expect(texto(fixture)).toContain('ahora la continua Diaz, Bruno');
   });
 
-  it('sin sesion:reassign no se ofrece reemplazar', async () => {
+  it('sin sesión:reassign no se ofrece reemplazar', async () => {
     const fixture = await montar({ ...ABIERTA, ofertaId: 4, profesionalId: 7 });
     expect(rotulosDeBoton(fixture)).not.toContain('Reemplazar profesional');
   });
 
-  it('una atencion cerrada dice hasta cuando se puede enmendar', async () => {
+  it('una atención cerrada dice hasta cuando se puede enmendar', async () => {
     const fixture = await montar({ ...CERRADA, enmendableHasta: '2026-10-15T12:48:00Z' });
     expect(texto(fixture)).toContain('Se puede enmendar hasta');
   });
@@ -1124,7 +1124,7 @@ describe('AtencionPage', () => {
       {
         type: 'https://akine.app/problems/concurrent-modification',
         status: 409,
-        detail: 'La version quedo vieja.',
+        detail: 'La versión quedo vieja.',
       },
       { status: 409, statusText: 'Conflict' },
     );
@@ -1158,7 +1158,7 @@ describe('AtencionPage', () => {
       fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>,
     ).find((b) => (b.textContent ?? '').trim().startsWith(rotulo));
     if (boton === undefined) {
-      throw new Error(`No hay ningun boton rotulado "${rotulo}".`);
+      throw new Error(`No hay ningún botón rotulado "${rotulo}".`);
     }
     boton.click();
     fixture.detectChanges();
@@ -1186,7 +1186,7 @@ describe('AtencionPage', () => {
       (g.querySelector('legend')?.textContent ?? '').includes('Dolor'),
     );
     if (dolor === undefined) {
-      throw new Error('No hay ningun grupo de dolor.');
+      throw new Error('No hay ningún grupo de dolor.');
     }
     return dolor.textContent ?? '';
   }

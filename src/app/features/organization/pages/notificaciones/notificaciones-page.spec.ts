@@ -69,7 +69,7 @@ describe('NotificacionesPage', () => {
 
   afterEach(() => httpMock.verify());
 
-  it('al entrar pide FALLIDA y AGOTADA y muestra los textos en espanol', async () => {
+  it('al entrar pide FALLIDA y AGOTADA y muestra los textos en español', async () => {
     const fixture = montar();
     const pedido = esperarListado();
     expect(pedido.request.params.getAll('estado')).toEqual(['FALLIDA', 'AGOTADA']);
@@ -78,11 +78,13 @@ describe('NotificacionesPage', () => {
     await estabilizar(fixture);
 
     const contenido = texto(fixture);
-    expect(contenido).toContain('Invitacion a colaborar');
+    expect(contenido).toContain('Invitación a colaborar');
     expect(contenido).toContain('Agotada (sin mas intentos)');
     expect(contenido).toContain('j***@centro.test');
     expect(contenido).toContain('Conexion rechazada');
     // Solo la fila reintentable ofrece el boton.
+    expect(fixture.nativeElement.querySelector('.marca-estado--suspendida')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('.tabla-pie')).toBeTruthy();
     expect(botones(fixture)).toHaveLength(1);
   });
 
@@ -105,7 +107,7 @@ describe('NotificacionesPage', () => {
     alternar(fixture, 'ENVIADA');
     httpMock.expectNone(() => true);
     await estabilizar(fixture);
-    expect(texto(fixture)).toContain('Elegi al menos un estado');
+    expect(texto(fixture)).toContain('Elegí al menos un estado');
   });
 
   it('reintentar confirma y relee el listado', async () => {
@@ -120,11 +122,11 @@ describe('NotificacionesPage', () => {
     esperarListado().flush({ ...PAGINA, content: [], totalElements: 0 });
     await estabilizar(fixture);
 
-    expect(texto(fixture)).toContain('La notificacion 42');
+    expect(texto(fixture)).toContain('La notificación 42');
     expect(texto(fixture)).toContain('volvio a la cola de envio');
   });
 
-  it('el 409 nombra el estado actual en espanol y relee', async () => {
+  it('el 409 nombra el estado actual en español y relee', async () => {
     const fixture = montar();
     esperarListado().flush(PAGINA);
     await estabilizar(fixture);

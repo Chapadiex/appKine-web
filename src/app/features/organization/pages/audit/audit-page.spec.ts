@@ -67,7 +67,7 @@ describe('AuditPage', () => {
     expect(texto(fixture)).toContain('No hay hechos registrados');
   });
 
-  it('una ventana de mas de 90 dias no sale a la red', () => {
+  it('una ventana de mas de 90 días no sale a la red', () => {
     const fixture = montar();
 
     marcar(fixture, '#auditoria-filtro-ventana');
@@ -78,7 +78,7 @@ describe('AuditPage', () => {
     // El backend la rechazaria igual: el punto es que el usuario vea el limite en el campo
     // que lo causa y no gaste un rechazo del servidor para enterarse.
     httpMock.expectNone(esConsulta());
-    expect(texto(fixture)).toContain('no puede superar los 90 dias');
+    expect(texto(fixture)).toContain('no puede superar los 90 días');
   });
 
   it('un 403 por falta de permiso muestra el rechazo y NO ofrece elegir contexto', async () => {
@@ -94,13 +94,13 @@ describe('AuditPage', () => {
     httpMock
       .expectOne(esConsulta())
       .flush(
-        { title: 'Prohibido', detail: 'No tenes auditoria:read sobre esta sede.' },
+        { title: 'Prohibido', detail: 'No tenés auditoria:read sobre esta sede.' },
         { status: 403, statusText: 'Forbidden' },
       );
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect(texto(fixture)).toContain('No tenes auditoria:read sobre esta sede.');
+    expect(texto(fixture)).toContain('No tenés auditoria:read sobre esta sede.');
     expect(fixture.nativeElement.querySelector('a[href="/seleccionar-contexto"]')).toBeNull();
   });
 
@@ -123,7 +123,7 @@ describe('AuditPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect(texto(fixture)).toContain('Todavia no elegiste un contexto de trabajo.');
+    expect(texto(fixture)).toContain('Todavía no elegiste un contexto de trabajo.');
     expect(fixture.nativeElement.querySelector('a[href="/seleccionar-contexto"]')).not.toBeNull();
   });
 
@@ -176,10 +176,10 @@ describe('AuditPage', () => {
     escribir(fixture, '#auditoria-entityType', 'MEMBERSHIP');
     buscar(fixture);
     httpMock.expectNone(esConsulta());
-    expect(texto(fixture)).toContain('Indica el numero de la entidad.');
+    expect(texto(fixture)).toContain('Indica el número de la entidad.');
   });
 
-  it('el filtro por actor sin numero de cuenta tampoco sale a la red', () => {
+  it('el filtro por actor sin número de cuenta tampoco sale a la red', () => {
     const fixture = montar();
 
     marcar(fixture, '#auditoria-filtro-actor');
@@ -214,7 +214,7 @@ describe('AuditPage', () => {
     expect(texto(fixture)).toContain('posterior a la inicial');
   });
 
-  it('una ventana de exactamente 90 dias SI sale a la red, con el dia final entero', () => {
+  it('una ventana de exactamente 90 días SI sale a la red, con el día final entero', () => {
     // El borde del tope. Si la comparacion se pasa de estricta, el usuario no puede pedir la
     // ventana maxima que la propia pantalla le promete.
     const fixture = montar();
@@ -246,16 +246,16 @@ describe('AuditPage', () => {
     escribir(fixture, '#auditoria-desde', '2026-01-01');
     escribir(fixture, '#auditoria-hasta', '2026-06-30');
     buscar(fixture);
-    expect(texto(fixture)).toContain('no puede superar los 90 dias');
+    expect(texto(fixture)).toContain('no puede superar los 90 días');
 
     marcar(fixture, '#auditoria-filtro-actor');
 
-    expect(texto(fixture)).not.toContain('no puede superar los 90 dias');
+    expect(texto(fixture)).not.toContain('no puede superar los 90 días');
     // Y los intentos vuelven a cero: el campo del filtro nuevo no nace en rojo.
     expect(texto(fixture)).not.toContain('Indica la cuenta cuya actividad queres ver.');
   });
 
-  it('pasar de pagina conserva el filtro elegido y pide la pagina siguiente', async () => {
+  it('pasar de página conserva el filtro elegido y pide la página siguiente', async () => {
     // Si la paginacion rearmara los parametros desde cero, la pagina 2 vendria de otra
     // consulta y el usuario estaria leyendo hechos que no pidio.
     const fixture = montar();
@@ -297,10 +297,10 @@ describe('AuditPage', () => {
     buscar(fixture);
 
     httpMock.expectNone(() => true);
-    expect(texto(fixture)).toContain('Todavia no elegiste un contexto de trabajo.');
+    expect(texto(fixture)).toContain('Todavía no elegiste un contexto de trabajo.');
   });
 
-  it('cambiar de organizacion descarta los hechos de la anterior', async () => {
+  it('cambiar de organización descarta los hechos de la anterior', async () => {
     // Son hechos auditados de OTRO tenant: dejarlos en pantalla bajo el nombre de la nueva
     // organizacion es una fuga de datos entre tenants, aunque nadie vuelva a consultarlos.
     const fixture = montar();
@@ -325,7 +325,7 @@ describe('AuditPage', () => {
     fixture.detectChanges();
 
     expect(texto(fixture)).not.toContain('MEMBERSHIP_REVOKED');
-    expect(texto(fixture)).toContain('Elegi un filtro y presiona Buscar.');
+    expect(texto(fixture)).toContain('Elegí un filtro y presiona Buscar.');
   });
 
   it(

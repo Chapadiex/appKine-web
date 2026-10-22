@@ -12,9 +12,9 @@ export { EstadoNotificacion, TipoNotificacion };
  * tipo o un estado, esto deja de compilar en vez de mostrar el literal crudo en la tabla.
  */
 export const TEXTO_TIPO: Readonly<Record<TipoNotificacion, string>> = {
-  [TipoNotificacion.ACTIVACION_CUENTA]: 'Activacion de cuenta',
-  [TipoNotificacion.INVITACION_COLABORADOR]: 'Invitacion a colaborar',
-  [TipoNotificacion.RECUPERACION_PASSWORD]: 'Recuperacion de contrasena',
+  [TipoNotificacion.ACTIVACION_CUENTA]: 'Activación de cuenta',
+  [TipoNotificacion.INVITACION_COLABORADOR]: 'Invitación a colaborar',
+  [TipoNotificacion.RECUPERACION_PASSWORD]: 'Recuperacion de contraseña',
   [TipoNotificacion.CUENTA_YA_REGISTRADA]: 'Aviso de cuenta ya registrada',
   [TipoNotificacion.CLASE_MODIFICADA]: 'Clase modificada',
   [TipoNotificacion.CUPO_LIBERADO]: 'Cupo liberado',
@@ -31,7 +31,7 @@ export const TEXTO_ESTADO: Readonly<Record<EstadoNotificacion, string>> = {
   [EstadoNotificacion.PROCESANDO]: 'Enviandose',
   [EstadoNotificacion.ENVIADA]: 'Enviada',
   [EstadoNotificacion.FALLIDA]: 'Fallida',
-  [EstadoNotificacion.REINTENTABLE]: 'Esperando reintento automatico',
+  [EstadoNotificacion.REINTENTABLE]: 'Esperando reintento automático',
   [EstadoNotificacion.AGOTADA]: 'Agotada (sin mas intentos)',
 };
 

@@ -37,13 +37,13 @@ export function avisoDeDevengo(devengo: DevengoDeClase | undefined): AvisoDeDeve
       return {
         texto:
           'la deuda de la clase ya tiene cobros y sigue vigente. La asistencia quedo corregida ' +
-          'igual; para regularizar, se anula el cobro y despues la deuda desde la cuenta corriente.',
+          'igual; para regularizar, se anula el cobro y después la deuda desde la cuenta corriente.',
         aviso: true,
       };
     case 'SIN_PRECIO':
       return {
         texto:
-          'la oferta no tiene precio vigente el dia de la clase: no se genero deuda. La ' +
+          'la oferta no tiene precio vigente el día de la clase: no se genero deuda. La ' +
           'asistencia quedo registrada igual.',
         aviso: true,
       };

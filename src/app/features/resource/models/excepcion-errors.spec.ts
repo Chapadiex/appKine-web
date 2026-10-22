@@ -66,16 +66,16 @@ describe('traducirErrorExcepcion', () => {
     );
 
     expect(traducido.maximoDias).toBe(366);
-    expect(traducido.mensaje).toContain('366 dias');
+    expect(traducido.mensaje).toContain('366 días');
   });
 
   /** Sin la extension no se inventa un numero: se dice lo que se sabe. */
-  it('sin maximoDias el mensaje de ventana no menciona ningun tope', () => {
+  it('sin maximoDias el mensaje de ventana no menciona ningún tope', () => {
     const traducido = traducirErrorExcepcion(problema(400, 'ventana-demasiado-amplia'));
 
     expect(traducido.maximoDias).toBe(0);
     expect(traducido.mensaje).toContain('demasiado larga');
-    expect(traducido.mensaje).not.toContain('maximo es de');
+    expect(traducido.mensaje).not.toContain('máximo es de');
   });
 
   it('la sede dada de baja aclara que las excepciones cargadas si se pueden dar de baja', () => {
@@ -117,7 +117,7 @@ describe('traducirErrorExcepcion', () => {
   });
 
   /** Un `500` sin cuerpo de Problem Details no puede mostrar la prosa del backend. */
-  it('un 500 sin ProblemDetail usa el respaldo y no la palabra vacia', () => {
+  it('un 500 sin ProblemDetail usa el respaldo y no la palabra vacía', () => {
     const traducido = traducirErrorExcepcion(new AkineHttpError(500, null, false));
 
     expect(traducido.causa).toBe('otro');

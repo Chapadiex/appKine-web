@@ -10,7 +10,7 @@ import { PresentacionItemEstadoEnum } from '../../../api/generated/model/present
 import { ReparoDePresentacionHallazgoEnum } from '../../../api/generated/model/reparo-de-presentacion';
 
 /** Rotulos de M21 que agrego DP-37: reparos documentales y debito parcial. */
-describe('etiquetas de presentacion', () => {
+describe('etiquetas de presentación', () => {
   it('cada estado del item del contrato tiene rotulo propio y esta en el filtro', () => {
     for (const estado of Object.values(PresentacionItemEstadoEnum)) {
       expect(estadoDeItemEnPalabras(estado)).not.toBe(estado);

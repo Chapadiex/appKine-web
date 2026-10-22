@@ -1,6 +1,9 @@
-<h1>Suscripcion</h1>
-
-<p class="descripcion">Plan contratado, estado de la suscripcion y consumo de cada limite.</p>
+<div class="titulo-con-ayuda">
+  <h1>Suscripción</h1>
+  <app-ayuda titulo="Sobre esta pantalla">
+    <p>Plan contratado, estado de la suscripción y consumo de cada límite.</p>
+  </app-ayuda>
+</div>
 
 <section class="tarjeta" aria-labelledby="titulo-suscripcion">
   <h2 id="titulo-suscripcion">Estado y plan</h2>
@@ -8,13 +11,13 @@
   <div aria-live="polite">
     @switch (estado().tipo) {
       @case ('cargando') {
-        <p class="estado estado--cargando">Cargando la suscripcion&hellip;</p>
+        <p class="estado estado--cargando">Cargando la suscripción&hellip;</p>
       }
 
       @case ('sin-contexto') {
-        <p class="estado estado--vacio">Todavia no elegiste un contexto de trabajo.</p>
+        <p class="estado estado--vacio">Todavía no elegiste un contexto de trabajo.</p>
         <p class="ayuda">
-          La suscripcion pertenece a un centro concreto: primero hay que elegirlo.
+          La suscripción pertenece a un centro concreto: primero hay que elegirlo.
         </p>
         <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto</a>
       }
@@ -23,44 +26,50 @@
         @switch (estadoSuscripcion()) {
           @case ('ACTIVA') {
             <div class="banner banner--activa">
-              <h3>Suscripcion activa</h3>
+              <h3>Suscripción activa</h3>
               <p>El centro opera con normalidad.</p>
             </div>
           }
 
           @case ('SUSPENDIDA') {
             <div class="banner banner--suspendida" role="alert">
-              <h3>Suscripcion suspendida</h3>
+              <h3>Suscripción suspendida</h3>
               @if (motivo()) {
                 <p>Motivo: {{ motivo() }}</p>
               } @else {
-                <p>No pudimos recuperar el motivo declarado. Consultalo con administracion.</p>
+                <p>No pudimos recuperar el motivo declarado. Consultalo con administración.</p>
               }
               <p>
-                El centro queda en <strong>solo lectura</strong>: podes consultar todo, pero las
-                altas y modificaciones se rechazan hasta que se reactive. Nada se borro.
+                El centro queda en <strong>solo lectura</strong>: podés consultar todo, pero las
+                altas y modificaciones se rechazan hasta que se reactive. Nada se borró.
               </p>
             </div>
           }
 
           @case ('CANCELADA') {
             <div class="banner banner--cancelada" role="alert">
-              <h3>Suscripcion cancelada</h3>
+              <h3>Suscripción cancelada</h3>
               <p>Es un estado final. Para volver a operar hay que contratar de nuevo.</p>
             </div>
           }
         }
 
-        <dl class="detalle">
-          <dt>Plan contratado</dt>
-          <dd>{{ suscripcion()?.planName }}</dd>
-
-          <dt>Estado</dt>
-          <dd>{{ suscripcion()?.status }}</dd>
-
-          <dt>Alta de la suscripcion</dt>
-          <dd>{{ suscripcion()?.startedAt }}</dd>
-        </dl>
+        <div class="plan-actual">
+          <span class="plan-actual__dato">
+            <span class="plan-actual__etiqueta">Plan actual</span>
+            <span class="plan-actual__nombre">{{ suscripcion()?.planName }}</span>
+          </span>
+          <span
+            class="marca-estado"
+            [class.marca-estado--activa]="estadoSuscripcion() === 'ACTIVA'"
+            [class.marca-estado--suspendida]="estadoSuscripcion() === 'SUSPENDIDA'"
+            [class.marca-estado--revocada]="estadoSuscripcion() === 'CANCELADA'"
+            >{{ suscripcion()?.status }}</span
+          >
+          <span class="plan-actual__alta">
+            Alta de la suscripción: {{ suscripcion()?.startedAt | date: 'dd/MM/yyyy' }}
+          </span>
+        </div>
       }
 
       @case ('error') {
@@ -78,35 +87,35 @@
 
 @if (estado().tipo === 'listo') {
   <section class="tarjeta" aria-labelledby="titulo-limites">
-    <h2 id="titulo-limites">Limites del plan</h2>
+    <h2 id="titulo-limites">Límites del plan</h2>
 
     @if (limites().length === 0) {
-      <p class="estado estado--vacio">Este plan no declara limites.</p>
+      <p class="estado estado--vacio">Este plan no declara límites.</p>
     } @else {
-      <table class="limites">
-        <caption class="ayuda">
-          Consumo actual de cada limite frente al tope del plan.
-        </caption>
-        <thead>
-          <tr>
-            <th scope="col">Limite</th>
-            <th scope="col">En uso</th>
-            <th scope="col">Tope del plan</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (limite of limites(); track limite.code) {
-            <tr>
-              <th scope="row">{{ nombreDelLimite(limite) }}</th>
-              <td [class.excedido]="limite.exceeded">{{ limite.currentUsage }}</td>
-              <td>{{ topeDelLimite(limite) }}</td>
-            </tr>
-          }
-        </tbody>
-      </table>
+      <ul class="limites-lista" aria-label="Consumo actual de cada límite frente al tope del plan">
+        @for (limite of limites(); track limite.code) {
+          <li class="limite">
+            <div class="limite__cabecera">
+              <span class="limite__nombre">{{ nombreDelLimite(limite) }}</span>
+              <span class="limite__valor" [class.excedido]="limite.exceeded">
+                {{ limite.currentUsage }} de {{ topeDelLimite(limite) }}
+              </span>
+            </div>
+            @if (porcentajeDeUso(limite); as porcentaje) {
+              <span class="medidor" aria-hidden="true">
+                <span
+                  class="medidor__barra"
+                  [class.medidor__barra--alto]="porcentaje >= 80"
+                  [style.width.%]="porcentaje"
+                ></span>
+              </span>
+            }
+          </li>
+        }
+      </ul>
 
       <p class="ayuda">
-        Un limite excedido no borra nada: lo que ya existe sigue operativo y solo se rechazan las
+        Un límite excedido no borra nada: lo que ya existe sigue operativo y solo se rechazan las
         altas nuevas.
       </p>
     }

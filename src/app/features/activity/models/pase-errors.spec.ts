@@ -22,7 +22,7 @@ describe('traducirErrorPase', () => {
     );
     const nombre = traducirErrorPase(error(409, 'producto-nombre-en-uso'));
     expect(nombre.causa).toBe('nombre-en-uso');
-    expect(nombre.mensaje).toContain('Elegi otro nombre');
+    expect(nombre.mensaje).toContain('Elegí otro nombre');
   });
 
   it('el conflict generico muestra el detalle del servidor (oferta sin pack, baja)', () => {
@@ -31,7 +31,7 @@ describe('traducirErrorPase', () => {
     expect(r.mensaje).toBe('Detalle del servidor.');
   });
 
-  it('version vieja, clave reusada y validacion con campos', () => {
+  it('versión vieja, clave reusada y validacion con campos', () => {
     expect(traducirErrorPase(error(409, 'concurrent-modification')).causa).toBe('version-vieja');
     expect(traducirErrorPase(error(409, 'idempotency-key-conflict')).causa).toBe('clave-reusada');
     const v = traducirErrorPase(
@@ -51,7 +51,7 @@ describe('traducirErrorPase', () => {
     expect(conMotivo.causa).toBe('pase-no-ajustable');
     expect(conMotivo.mensaje).toBe('No se puede: el pase esta vencido. No se cambio nada.');
     expect(traducirErrorPase(error(409, 'pase-no-ajustable')).mensaje).toContain(
-      'no admite esa operacion',
+      'no admite esa operación',
     );
     for (const [causa, frase] of [
       ['ESTADO', 'esta anulado o vencido'],
@@ -74,7 +74,7 @@ describe('traducirErrorPase', () => {
     ).toBe('No se puede: el pase esta raro. No se cambio nada.');
     expect(
       traducirErrorPase(error(409, 'pase-no-ajustable', { causa: 'toString' })).mensaje,
-    ).toContain('no admite esa operacion');
+    ).toContain('no admite esa operación');
     const conMoneda = traducirErrorPase(
       error(409, 'pase-con-cobros', { cobrado: 1500.5, moneda: 'USD' }),
     );

@@ -52,7 +52,7 @@ describe('traducirErrorBloque', () => {
    * <p>Ramificar por el codigo equivocado dejaria el unico error del modulo donde hay que
    * RECARGAR antes de reintentar cayendo en la rama generica, que solo dice "volve a intentar".
    */
-  it('la version vieja de un bloque llega como concurrent-modification y manda a recargar', () => {
+  it('la versión vieja de un bloque llega como concurrent-modification y manda a recargar', () => {
     const traducido = traducirErrorBloque(problema(409, 'concurrent-modification'));
     expect(traducido.causa).toBe('concurrencia');
     expect(traducido.mensaje).toContain('Recarga el horario');
@@ -128,7 +128,7 @@ describe('traducirErrorBloque', () => {
     expect(traducirErrorBloque(problema(403, 'missing-tenant-context')).mensaje).toContain(
       'Eligi un consultorio',
     );
-    expect(traducirErrorBloque(problema(403, 'forbidden')).mensaje).toContain('No tenes permiso');
+    expect(traducirErrorBloque(problema(403, 'forbidden')).mensaje).toContain('No tenés permiso');
   });
 
   it('el 429 respeta el plazo del servidor y no inventa uno cuando no viene', () => {

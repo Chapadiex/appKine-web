@@ -33,7 +33,7 @@ describe('horas de pared', () => {
     }
   });
 
-  it('ordena por minutos, con la medianoche al final y sin ningun caso especial', () => {
+  it('ordena por minutos, con la medianoche al final y sin ningún caso especial', () => {
     expect(minutosDeHora('09:00')).toBeLessThan(minutosDeHora('12:00') ?? 0);
     expect(minutosDeHora('23:59')).toBeLessThan(minutosDeHora(HORA_MEDIANOCHE) ?? 0);
   });
@@ -50,7 +50,7 @@ describe('horas de pared', () => {
   });
 });
 
-describe('dias de la semana', () => {
+describe('días de la semana', () => {
   it('usa la numeracion ISO del contrato: lunes = 1, domingo = 7', () => {
     // NO la de `Date#getDay()`, que arranca en domingo = 0. Las dos se parecen lo suficiente
     // como para que un corrimiento de un dia pase inadvertido en revision.
@@ -59,8 +59,8 @@ describe('dias de la semana', () => {
     expect(etiquetaDeDia(7)).toBe('Domingo');
   });
 
-  it('un numero desconocido degrada a un rotulo legible en vez de romper la grilla', () => {
-    expect(etiquetaDeDia(9)).toBe('Dia 9');
-    expect(etiquetaDeDia(undefined)).toBe('Dia ?');
+  it('un número desconocido degrada a un rotulo legible en vez de romper la grilla', () => {
+    expect(etiquetaDeDia(9)).toBe('Día 9');
+    expect(etiquetaDeDia(undefined)).toBe('Día ?');
   });
 });

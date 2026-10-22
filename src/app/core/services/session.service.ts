@@ -352,14 +352,14 @@ export class SessionService {
     const contexto: AuthorizedContextResponse = conocido ?? {
       organizationId,
       consultorioId,
-      organizationName: `Organizacion ${organizationId}`,
+      organizationName: `Organización ${organizationId}`,
       consultorioName: `Consultorio ${consultorioId}`,
     };
 
     this.contextoElegido.set(contexto);
     const tenant = {
       organizationId,
-      organizationName: contexto.organizationName ?? `Organizacion ${organizationId}`,
+      organizationName: contexto.organizationName ?? `Organización ${organizationId}`,
       consultorioId,
       consultorioName: contexto.consultorioName,
     };

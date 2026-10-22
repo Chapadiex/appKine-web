@@ -11,6 +11,8 @@ import { ProfesionalHabilitado } from '../../../../api/generated/model/profesion
 import { SlotDisponible } from '../../../../api/generated/model/slot-disponible';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { SchedulingApi } from '../../services/scheduling-api';
+import { Pestanas } from '../../../../shared/components/pestanas/pestanas';
+import { ETIQUETA_PESTANAS_DE_AGENDA, pestanasDeAgenda } from '../../models/pestanas-de-agenda';
 import { recortarVentana, traducirErrorAgenda } from '../../models/agenda-errors';
 import {
   diaSinSlots,
@@ -23,6 +25,8 @@ import {
   textoSinSlots,
 } from '../../models/etiquetas-de-agenda';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
+import { Filtros } from '../../../../shared/components/filtros/filtros';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 
 /** Ventana por defecto: una semana. `hasta` es exclusivo. */
 const DIAS_POR_DEFECTO = 7;
@@ -69,7 +73,7 @@ const DIAS_POR_DEFECTO = 7;
  */
 @Component({
   selector: 'app-buscador-de-agenda-page',
-  imports: [RouterLink],
+  imports: [Ayuda, Filtros, RouterLink, Pestanas],
   templateUrl: './buscador-de-agenda-page.html',
   styleUrl: '../../agenda.css',
 })
@@ -88,8 +92,11 @@ export class BuscadorDeAgendaPage {
    * o un texto, <b>nunca</b> para esconderlo.
    */
   protected readonly puedeReservar = computed(() => this.permisos.tiene(PERMISO_TURNO_MANAGE));
-  /** La bandeja de series pide `turno:read` (E-8). UX: el backend rechaza igual. */
-  protected readonly puedeVerSeries = computed(() => this.permisos.tiene(PERMISO_TURNO_READ));
+  /** Recepcion y series piden `turno:read` (E-8). UX: el backend rechaza igual. */
+  protected readonly pestanas = computed(() =>
+    pestanasDeAgenda(this.permisos.tiene(PERMISO_TURNO_READ)),
+  );
+  protected readonly etiquetaDePestanas = ETIQUETA_PESTANAS_DE_AGENDA;
   protected readonly diaSinSlots = diaSinSlots;
   protected readonly fechaEnPalabras = fechaEnPalabras;
   protected readonly slotCompleto = slotCompleto;
@@ -101,6 +108,10 @@ export class BuscadorDeAgendaPage {
 
   protected readonly ofertaId = signal<number | null>(null);
   protected readonly profesionalId = signal<number | null>(null);
+  /** Filtros avanzados fuera de su valor por defecto (regla de filtros, plan §3.4). */
+  protected readonly filtrosAvanzadosActivos = computed(() =>
+    Number(this.profesionalId() !== null),
+  );
   protected readonly desde = signal(this.diaDeLaSede.hoy());
   protected readonly hasta = signal(sumarDias(this.diaDeLaSede.hoy(), DIAS_POR_DEFECTO));
 
@@ -240,6 +251,36 @@ export class BuscadorDeAgendaPage {
     this.buscar();
   }
 
+  /**
+   * ‹ y › del navegador del canvas: corre la ventana entera, con su mismo largo, hacia atras o
+   * hacia adelante. Mueve los dos bordes a la vez y consulta una sola vez.
+   */
+  protected moverVentana(sentido: -1 | 1): void {
+    const largo = Math.max(1, diasEntre(this.desde(), this.hasta()));
+    this.fijarVentana(sumarDias(this.desde(), sentido * largo), largo);
+  }
+
+  /** "Hoy": la ventana arranca en el dia de la sede y conserva su largo. */
+  protected irAHoy(): void {
+    const largo = Math.max(1, diasEntre(this.desde(), this.hasta()));
+    const tz = this.timezone();
+    this.fijarVentana(tz === '' ? this.diaDeLaSede.hoy() : hoyEnZona(tz), largo);
+  }
+
+  private fijarVentana(desde: string, largo: number): void {
+    this.avisoDeRecorte.set(null);
+    this.desdePorDefecto = false;
+    this.hastaPorDefecto = false;
+    this.desde.set(desde);
+    this.hasta.set(sumarDias(desde, largo));
+    this.buscar();
+  }
+
+  /** `19 – 25 de octubre de 2026`: el rango de la ventana en palabras, con el ultimo dia incluido. */
+  protected readonly etiquetaDeVentana = computed(() =>
+    rangoEnPalabras(this.desde(), sumarDias(this.hasta(), -1)),
+  );
+
   // -------------------------------------------------------------------------------------
   // La consulta
   // -------------------------------------------------------------------------------------
@@ -334,7 +375,7 @@ export class BuscadorDeAgendaPage {
       })
       .catch((error: unknown) => {
         console.error('No se pudo abrir la pantalla de reserva', error);
-        this.error.set('No pudimos abrir la pantalla de reserva. Volve a intentar.');
+        this.error.set('No pudimos abrir la pantalla de reserva. Volvé a intentar.');
       });
   }
 
@@ -349,4 +390,30 @@ export class BuscadorDeAgendaPage {
     this.error.set(traducido.mensaje);
     this.faltaContexto.set(traducido.causa === 'sin-contexto');
   }
+}
+
+/** Dias de calendario entre dos fechas locales `YYYY-MM-DD`. */
+function diasEntre(desde: string, hasta: string): number {
+  const ms = Date.parse(`${hasta}T00:00:00Z`) - Date.parse(`${desde}T00:00:00Z`);
+  return Number.isFinite(ms) ? Math.round(ms / 86_400_000) : 0;
+}
+
+/** `19 – 25 de octubre de 2026`, o con los dos meses si el rango los cruza. */
+function rangoEnPalabras(primero: string, ultimo: string): string {
+  const a = new Date(`${primero}T00:00:00Z`);
+  const b = new Date(`${ultimo}T00:00:00Z`);
+  if (Number.isNaN(a.getTime()) || Number.isNaN(b.getTime())) {
+    return '';
+  }
+  const formato = (opciones: Intl.DateTimeFormatOptions, dia: Date) =>
+    new Intl.DateTimeFormat('es-AR', { ...opciones, timeZone: 'UTC' }).format(dia);
+  const completo = formato({ day: 'numeric', month: 'long', year: 'numeric' }, b);
+  if (primero === ultimo) {
+    return completo;
+  }
+  const mismoMes = a.getUTCMonth() === b.getUTCMonth() && a.getUTCFullYear() === b.getUTCFullYear();
+  const inicio = mismoMes
+    ? formato({ day: 'numeric' }, a)
+    : formato({ day: 'numeric', month: 'long' }, a);
+  return `${inicio} – ${completo}`;
 }

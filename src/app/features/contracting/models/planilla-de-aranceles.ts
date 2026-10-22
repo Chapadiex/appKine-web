@@ -108,7 +108,7 @@ export function parsearPlanilla(texto: string): PlanillaParseada {
 
   if (utiles.length === 0) {
     return vacia([
-      { linea: null, mensaje: 'La planilla esta vacia: pega o subi al menos una fila.' },
+      { linea: null, mensaje: 'La planilla está vacía: pegá o subí al menos una fila.' },
     ]);
   }
 
@@ -133,7 +133,7 @@ export function parsearPlanilla(texto: string): PlanillaParseada {
       {
         linea: null,
         mensaje:
-          `La planilla tiene ${datos.length} filas y el maximo por importacion es ` +
+          `La planilla tiene ${datos.length} filas y el máximo por importación es ` +
           `${MAXIMO_DE_FILAS}. Partila en varias planillas y importalas de a una.`,
       },
     ]);
@@ -181,22 +181,22 @@ function motivoBase(fila: FilaImportacionArancelResponse): string {
       if (fila.filaEnConflicto !== undefined && fila.filaEnConflicto !== null) {
         return (
           `Se pisa con la fila ${fila.filaEnConflicto} de esta misma planilla: la misma ` +
-          'practica (y oferta) con periodos que se cruzan. Corregi una de las dos.'
+          'práctica (y oferta) con períodos que se cruzan. Corregí una de las dos.'
         );
       }
       if (fila.arancelExistenteId !== undefined && fila.arancelExistenteId !== null) {
         return (
-          `Se pisa con el arancel #${fila.arancelExistenteId}, que ya esta vigente en el ` +
-          'convenio. La importacion no cierra vigencias: cerrale primero la del que ya esta.'
+          `Se pisa con el arancel #${fila.arancelExistenteId}, que ya está vigente en el ` +
+          'convenio. La importación no cierra vigencias: cerrale primero la del que ya está.'
         );
       }
-      return 'Se pisa con otro arancel de la misma practica y oferta.';
+      return 'Se pisa con otro arancel de la misma práctica y oferta.';
     case 'not-found':
-      return 'La practica o la oferta no existe, o no es accesible desde esta sede.';
+      return 'La práctica o la oferta no existe, o no es accesible desde esta sede.';
     case 'oferta-sin-obra-social':
-      return 'Esa oferta no admite obra social, asi que no puede tener arancel de convenio.';
+      return 'Esa oferta no admite obra social, así que no puede tener arancel de convenio.';
     case 'practica-no-habilitada-en-oferta':
-      return 'Esa oferta no declara la practica: no se le puede poner precio dentro de ella.';
+      return 'Esa oferta no declara la práctica: no se le puede poner precio dentro de ella.';
     case 'validation-error':
       return 'Datos invalidos.';
     default:
@@ -264,7 +264,7 @@ function leerEncabezado(
   if (!columnas.includes('codigoPractica') && !columnas.includes('practicaId')) {
     return {
       linea,
-      mensaje: 'Falta la columna de la practica: codigoPractica o practicaId (o las dos).',
+      mensaje: 'Falta la columna de la práctica: codigoPractica o practicaId (o las dos).',
     };
   }
   return columnas;
@@ -324,7 +324,7 @@ function leerFila(
         const id = entero(valor);
         if (id === null) {
           problemas.push(
-            `${NOMBRE_DE_COLUMNA[columna]} tiene que ser un numero entero ("${valor}").`,
+            `${NOMBRE_DE_COLUMNA[columna]} tiene que ser un número entero ("${valor}").`,
           );
         } else {
           fila[columna] = id;
@@ -347,7 +347,7 @@ function leerFila(
         const fecha = fechaIso(valor);
         if (fecha === null) {
           problemas.push(
-            `${NOMBRE_DE_COLUMNA[columna]} no es una fecha valida ("${valor}"); usa AAAA-MM-DD o DD/MM/AAAA.`,
+            `${NOMBRE_DE_COLUMNA[columna]} no es una fecha válida ("${valor}"); usá AAAA-MM-DD o DD/MM/AAAA.`,
           );
         } else {
           fila[columna] = fecha;
@@ -359,7 +359,7 @@ function leerFila(
 
   const practicaIdMalEscrita = problemas.some((p) => p.startsWith('practicaId'));
   if (fila.codigoPractica === undefined && fila.practicaId === undefined && !practicaIdMalEscrita) {
-    problemas.push('Falta la practica: completa codigoPractica o practicaId.');
+    problemas.push('Falta la práctica: completa codigoPractica o practicaId.');
   }
   for (const columna of OBLIGATORIAS) {
     if (
@@ -386,7 +386,7 @@ function importeValido(valor: string, admiteComaDecimal: boolean): number | stri
   const normalizado = admiteComaDecimal ? valor.replace(',', '.') : valor;
   if (!/^\d+(\.\d+)?$/.test(normalizado)) {
     return (
-      `"${valor}" no es un importe valido: solo digitos, sin signo ni separador de miles` +
+      `"${valor}" no es un importe válido: solo dígitos, sin signo ni separador de miles` +
       (admiteComaDecimal ? ', con coma o punto decimal.' : ', con punto decimal.')
     );
   }

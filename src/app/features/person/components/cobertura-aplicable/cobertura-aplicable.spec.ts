@@ -61,7 +61,7 @@ const RESPUESTA_COBERTURA = {
 const PRACTICAS_DE_LA_OFERTA = {
   ofertaId: OFERTA,
   practicas: [
-    { practicaId: 55, nombre: 'Sesion de kinesiologia', codigo: 'KIN-01', estado: 'ACTIVO' },
+    { practicaId: 55, nombre: 'Sesión de kinesiologia', codigo: 'KIN-01', estado: 'ACTIVO' },
     { practicaId: 56, nombre: 'Fonoaudiologia', estado: 'ACTIVO' },
   ],
 };
@@ -92,7 +92,7 @@ describe('CoberturaAplicable', () => {
   it('sin oferta elegida no pregunta nada', async () => {
     const fixture = await montar(null);
     httpMock.expectNone(() => true);
-    expect(texto(fixture)).toContain('Elegi una oferta');
+    expect(texto(fixture)).toContain('Elegí una oferta');
   });
 
   it('explica la que aplica, con su arancel, y por que no las otras', async () => {
@@ -105,13 +105,13 @@ describe('CoberturaAplicable', () => {
 
     const contenido = texto(fixture);
     expect(contenido).toContain('atender con cobertura');
-    expect(contenido).toContain('Sesion de kinesiologia (KIN-01)');
+    expect(contenido).toContain('Sesión de kinesiologia (KIN-01)');
     // El arancel de la oferta manda sobre el general, y la pantalla dice cual salio.
     expect(contenido).toContain('Arancel propio de esta oferta en el convenio CONV-OSDE');
     expect(contenido).toContain('Pide orden medica.');
     expect(contenido).toContain('La credencial esta vencida');
     // Particular siempre esta disponible, aunque una cobertura aplique.
-    expect(contenido).toMatch(/Precio particular del dia:\s*\$\s*15\.000,00/);
+    expect(contenido).toMatch(/Precio particular del día:\s*\$\s*15\.000,00/);
     // La no aplicable dice por que, tambien por practica.
     expect(contenido).toContain('no tiene convenio vigente con este financiador');
     expect(contenido).toContain('Fonoaudiologia: Hay convenio, pero sin arancel vigente');

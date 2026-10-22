@@ -6,26 +6,27 @@ import { provideHttpClient } from '@angular/common/http';
 
 import { EstadoSesion, SessionService } from '../../core/services/session.service';
 import { NavegacionPrincipal } from './navegacion-principal';
-import { PERMISO_COLABORADOR_READ } from '../../core/models/permisos';
+import { PERMISO_COLABORADOR_READ, PERMISO_TURNO_READ } from '../../core/models/permisos';
 import { PermissionsStore } from '../../core/services/permissions.store';
 import { PlatformRoleStore } from '../../core/services/platform-role.store';
 import { RUTA_PERMISOS_EFECTIVOS } from '../../core/testing/rutas-api';
 import { TIMEOUT_AXE, esperarSinViolaciones } from '../../core/testing/axe';
 import { TenantContextStore } from '../../core/services/tenant-context.store';
 import { provideApi } from '../../api/generated/provide-api';
+import { seccionDe } from './secciones';
 
 @Component({ template: 'pagina' })
 class Pagina {}
 
 /**
- * Navegacion principal.
+ * Barra lateral.
  *
  * <p>Se prueba <b>lo que decide que se ve</b> y nada mas: que un enlace sin permiso no se
- * rinde, que sin contexto no hay navegacion, y que la seccion actual queda marcada para un
- * lector de pantalla. Que un enlace muestre su etiqueta no es comportamiento.
+ * rinde, que un grupo sin enlaces no se rinde, que sin contexto no hay barra, y que la seccion
+ * actual queda marcada para un lector de pantalla y es una sola. Que un enlace muestre su
+ * etiqueta no es comportamiento.
  *
- * <p>El router es real y no un doble: `aria-current` sale de `routerLinkActive`, y un doble
- * que devuelva `isActive` a gusto probaria el doble.
+ * <p>El router es real y no un doble: la seccion actual sale de la URL que el router navego.
  */
 describe('NavegacionPrincipal', () => {
   let estado: WritableSignal<EstadoSesion>;
@@ -47,9 +48,12 @@ describe('NavegacionPrincipal', () => {
         provideApi(''),
         provideRouter([
           { path: 'agenda', component: Pagina },
+          { path: 'agenda/recepcion', component: Pagina },
+          { path: 'agenda/ofertas/:id/reservar', component: Pagina },
           { path: 'pacientes', component: Pagina },
           { path: 'horarios', component: Pagina },
           { path: 'organizacion', component: Pagina },
+          { path: 'plataforma/solicitudes', component: Pagina },
         ]),
         { provide: SessionService, useValue: { estado, restaurando } },
         {
@@ -68,49 +72,20 @@ describe('NavegacionPrincipal', () => {
 
   /**
    * Sin contexto no hay ninguna seccion que funcione: con un token `pre_context` el backend
-   * corta todo endpoint de negocio con `403 missing-tenant-context`. Ofrecer el menu igual
-   * seria ofrecer siete pantallas que se abren vacias.
+   * corta todo endpoint de negocio con `403 missing-tenant-context`. La salida (elegir donde
+   * trabajar) vive en la barra superior.
    */
-  it('sin contexto no muestra la navegacion y ofrece elegir donde trabajar', () => {
+  it('sin contexto no dibuja la barra', () => {
     estado.set('sin-contexto');
 
     const fixture = montar();
-    const html = fixture.nativeElement as HTMLElement;
 
-    expect(html.querySelector('nav')).toBeNull();
-
-    const salida = html.querySelector<HTMLAnchorElement>('a.contexto__cambiar');
-    expect(salida?.getAttribute('href')).toBe('/seleccionar-contexto');
+    expect((fixture.nativeElement as HTMLElement).querySelector('nav')).toBeNull();
   });
 
   /**
-   * AKINE-A-7: un administrador de plataforma no tiene contexto, y el enlace a su consola es su
-   * unica salida desde la cabecera. Con contexto, va al final del menu.
-   */
-  it('ofrece la consola de plataforma solo a quien la administra, con o sin contexto', () => {
-    estado.set('sin-contexto');
-    const sinContexto = montar();
-    expect((sinContexto.nativeElement as HTMLElement).textContent).not.toContain('Consola');
-
-    adminDePlataforma.set(true);
-    sinContexto.detectChanges();
-    const consola = Array.from(
-      (sinContexto.nativeElement as HTMLElement).querySelectorAll<HTMLAnchorElement>('a'),
-    ).find((enlace) => enlace.textContent?.includes('Consola de plataforma'));
-    expect(consola?.getAttribute('href')).toBe('/plataforma/solicitudes');
-
-    estado.set('activa');
-    conContexto();
-    sinContexto.detectChanges();
-    responderPermisos([]);
-    sinContexto.detectChanges();
-    expect(enlaces(sinContexto)).toContain('Plataforma');
-  });
-
-  /**
-   * AKINE-LCP: el shell se dibuja con la restauracion de la sesion en vuelo. Entre el refresh y
-   * los nombres de los contextos, la organizacion tiene un rotulo provisorio: la barra espera.
-   * Los permisos, en cambio, se piden ya: es lo que adelanta.
+   * AKINE-LCP: el shell se dibuja con la restauracion de la sesion en vuelo. La barra espera;
+   * los permisos, en cambio, se piden ya: es lo que adelanta.
    */
   it('con la restauracion en vuelo no dibuja la barra, pero ya pide los permisos', () => {
     restaurando.set(true);
@@ -119,38 +94,32 @@ describe('NavegacionPrincipal', () => {
     const html = fixture.nativeElement as HTMLElement;
 
     expect(html.querySelector('nav')).toBeNull();
-    expect(html.querySelector('.contexto')).toBeNull();
     responderPermisos([]);
 
     restaurando.set(false);
     fixture.detectChanges();
     expect(html.querySelector('nav')).not.toBeNull();
-    expect(html.textContent).toContain('Centro Kine');
   });
 
-  /** Un anonimo esta en el login: no tiene a donde navegar y el selector tampoco le sirve. */
-  it('sin sesion no muestra nada', () => {
+  /** Un anonimo esta en el login: no tiene a donde navegar. */
+  it('sin sesión no muestra nada', () => {
     estado.set('anonimo');
 
     const fixture = montar();
 
-    expect((fixture.nativeElement as HTMLElement).querySelector('a')).toBeNull();
+    expect((fixture.nativeElement as HTMLElement).querySelector('nav')).toBeNull();
+    expect((fixture.nativeElement as HTMLElement).textContent?.trim()).toBe('');
   });
 
-  /**
-   * La regresion que importa: un enlace a una seccion que iba a terminar en "no tenes
-   * permiso". Horarios es la unica seccion cuya ruta lleva `permissionGuard`, y sin
-   * `colaborador:read` no puede aparecer.
-   */
-  it('esconde la seccion cuyo permiso falta y la muestra cuando llega', async () => {
+  it('esconde la sección cuyo permiso falta y la muestra cuando llega', async () => {
     conContexto();
     const fixture = montar();
     responderPermisos([]);
     fixture.detectChanges();
 
-    expect(enlaces(fixture)).not.toContain('Horarios');
+    expect(enlaces(fixture)).not.toContain('Horarios de profesionales');
     // DP-22: el padron exige `paciente:read`.
-    expect(enlaces(fixture)).not.toContain('Pacientes');
+    expect(enlaces(fixture)).not.toContain('Padrón');
     // Las que se autorizan por pertenencia no dependen de los permisos y se ven igual.
     expect(enlaces(fixture)).toContain('Agenda');
 
@@ -159,29 +128,110 @@ describe('NavegacionPrincipal', () => {
     httpMock.expectOne(RUTA_PERMISOS_EFECTIVOS).flush({ permissions: [PERMISO_COLABORADOR_READ] });
     fixture.detectChanges();
 
-    expect(enlaces(fixture)).toContain('Horarios');
+    expect(enlaces(fixture)).toContain('Horarios de profesionales');
   });
 
   /**
-   * `aria-current="page"` y no solo la clase CSS: el subrayado de color no existe para quien
-   * usa un lector de pantalla, y "donde estoy" es la unica pregunta que un menu tiene que
-   * poder responder.
+   * Un grupo sin secciones visibles no deja una cabecera huerfana, y uno con una sola seccion no se
+   * despliega: su enlace va directo. Sin permisos quedan Agenda (sola, directa) y los grupos con secciones sin permiso.
    */
-  it('marca la seccion actual con aria-current y solo esa', async () => {
+  it('no dibuja un grupo vacío y no despliega uno de una sola sección', () => {
     conContexto();
     const fixture = montar();
     responderPermisos([]);
+    fixture.detectChanges();
+
+    expect(rotulos(fixture)).toEqual([
+      'Servicios y catálogo',
+      'Espacios y horarios',
+      'Configuración',
+    ]);
+    expect(enlaces(fixture)).toContain('Agenda');
+
+    TestBed.inject(PermissionsStore).cargar().subscribe();
+    httpMock
+      .expectOne(RUTA_PERMISOS_EFECTIVOS)
+      .flush({ permissions: [PERMISO_TURNO_READ, 'clase:read', 'inscripcion:read'] });
+    fixture.detectChanges();
+
+    expect(rotulos(fixture)).toEqual([
+      'Atención',
+      'Actividades',
+      'Servicios y catálogo',
+      'Espacios y horarios',
+      'Configuración',
+    ]);
+  });
+
+  /** Acordeon: llega desplegado el grupo de la pantalla actual, y solo ese. */
+  it('despliega solo el grupo de la sección actual, y lo sigue al navegar', async () => {
+    conContexto();
+    const fixture = montar();
+    responderPermisos([PERMISO_TURNO_READ]);
+
+    await router.navigateByUrl('/agenda/recepcion');
+    fixture.detectChanges();
+    expect(desplegados(fixture)).toEqual(['Atención']);
+
+    await router.navigateByUrl('/organizacion');
+    fixture.detectChanges();
+    expect(desplegados(fixture)).toEqual(['Configuración']);
+  });
+
+  /**
+   * `aria-current="page"` y no solo la clase CSS: el color no existe para quien usa un lector de
+   * pantalla, y "donde estoy" es la unica pregunta que un menu tiene que poder responder. Y es
+   * UNA: en `/agenda/recepcion` gana la de ruta mas larga, no las dos.
+   */
+  it('marca la sección actual con aria-current y solo esa, por prefijo mas largo', async () => {
+    conContexto();
+    const fixture = montar();
+    responderPermisos([PERMISO_TURNO_READ]);
 
     await router.navigateByUrl('/agenda');
     fixture.detectChanges();
+    expect(marcados(fixture)).toEqual(['Agenda']);
 
-    const marcados = Array.from(
-      (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLAnchorElement>(
-        'a[aria-current="page"]',
-      ),
-    ).map((enlace) => enlace.textContent?.trim());
+    await router.navigateByUrl('/agenda/recepcion');
+    fixture.detectChanges();
+    expect(marcados(fixture)).toEqual(['Recepción del día']);
 
-    expect(marcados).toEqual(['Agenda']);
+    await router.navigateByUrl('/agenda/ofertas/7/reservar');
+    fixture.detectChanges();
+    expect(marcados(fixture)).toEqual(['Agenda']);
+  });
+
+  /** AKINE-A-7: con contexto, la consola del administrador de plataforma va al pie del menu. */
+  it('ofrece la consola de plataforma solo a quien la administra, y la marca como actual', async () => {
+    conContexto();
+    const fixture = montar();
+    responderPermisos([]);
+    fixture.detectChanges();
+    expect(enlaces(fixture)).not.toContain('Plataforma');
+
+    adminDePlataforma.set(true);
+    fixture.detectChanges();
+    expect(enlaces(fixture)).toContain('Plataforma');
+
+    await router.navigateByUrl('/plataforma/solicitudes');
+    fixture.detectChanges();
+    expect(marcados(fixture)).toEqual(['Plataforma']);
+  });
+
+  /** Navegar desde el panel de tablet lo cierra: el shell escucha `cerrar`. */
+  it('pide cerrar el panel al navegar', () => {
+    conContexto();
+    const fixture = montar();
+    responderPermisos([]);
+    fixture.detectChanges();
+
+    let cerrado = 0;
+    fixture.componentInstance.cerrar.subscribe(() => cerrado++);
+    (fixture.nativeElement as HTMLElement)
+      .querySelector<HTMLAnchorElement>('.nav__enlace')
+      ?.click();
+
+    expect(cerrado).toBe(1);
   });
 
   it(
@@ -196,6 +246,21 @@ describe('NavegacionPrincipal', () => {
     },
     TIMEOUT_AXE,
   );
+
+  describe('seccionDe', () => {
+    const secciones = [
+      { etiqueta: 'Agenda', ruta: '/agenda' },
+      { etiqueta: 'Recepcion', ruta: '/agenda/recepcion' },
+    ];
+
+    it('ignora la query y el fragmento, y no confunde prefijos de texto con segmentos', () => {
+      expect(seccionDe('/agenda/recepcion?fecha=2026-10-21', secciones)?.etiqueta).toBe(
+        'Recepcion',
+      );
+      expect(seccionDe('/agendas', secciones)).toBeNull();
+      expect(seccionDe('/otra', secciones)).toBeNull();
+    });
+  });
 
   // --- Ayudantes ---------------------------------------------------------------------
 
@@ -222,6 +287,26 @@ describe('NavegacionPrincipal', () => {
   function enlaces(fixture: ComponentFixture<NavegacionPrincipal>): (string | undefined)[] {
     return Array.from(
       (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLAnchorElement>('.nav__enlace'),
+    ).map((enlace) => enlace.textContent?.trim());
+  }
+
+  function rotulos(fixture: ComponentFixture<NavegacionPrincipal>): (string | undefined)[] {
+    return Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLElement>('.nav__rotulo'),
+    ).map((rotulo) => rotulo.textContent?.trim());
+  }
+
+  function desplegados(fixture: ComponentFixture<NavegacionPrincipal>): (string | undefined)[] {
+    return Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLDetailsElement>('details[open]'),
+    ).map((grupo) => grupo.querySelector('.nav__rotulo')?.textContent?.trim());
+  }
+
+  function marcados(fixture: ComponentFixture<NavegacionPrincipal>): (string | undefined)[] {
+    return Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLAnchorElement>(
+        'a[aria-current="page"]',
+      ),
     ).map((enlace) => enlace.textContent?.trim());
   }
 });

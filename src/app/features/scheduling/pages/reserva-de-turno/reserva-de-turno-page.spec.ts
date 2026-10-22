@@ -115,7 +115,7 @@ describe('ReservaDeTurnoPage', () => {
    * exactamente lo que no veia el defecto: el metodo siempre estuvo bien, lo que estaba mal era
    * quien lo llamaba.
    */
-  it('escribir en el buscador dispara la busqueda, sin salir del campo', async () => {
+  it('escribir en el buscador dispara la búsqueda, sin salir del campo', async () => {
     const fixture = await montar();
     const campo = (fixture.nativeElement as HTMLElement).querySelector(
       '#reserva-persona',
@@ -193,15 +193,15 @@ describe('ReservaDeTurnoPage', () => {
     fixture.detectChanges();
   });
 
-  it('slot-no-disponible ofrece recargar la agenda, y recargarla vuelve a pedir el dia', async () => {
+  it('slot-no-disponible ofrece recargar la agenda, y recargarla vuelve a pedir el día', async () => {
     const fixture = await montar();
     await elegirPersona(fixture);
     await rechazar(fixture, 'slot-no-disponible', {
-      motivo: 'el profesional dejo de atender ese dia',
+      motivo: 'el profesional dejo de atender ese día',
     });
 
     const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
-    expect(texto).toContain('Lo que cambio: el profesional dejo de atender ese dia');
+    expect(texto).toContain('Lo que cambio: el profesional dejo de atender ese día');
 
     clickear(fixture, 'Recargar la agenda');
     httpMock.expectOne(esAgenda()).flush(DIA);
@@ -325,11 +325,11 @@ describe('ReservaDeTurnoPage', () => {
     fixture.detectChanges();
 
     expect((fixture.nativeElement as HTMLElement).textContent).toContain(
-      'Ninguna: la recepcion usa la que aplique',
+      'Ninguna: la recepción usa la que aplique',
     );
   });
 
-  it('despues de reservar ofrece confirmar, y no ofrece cancelar', async () => {
+  it('después de reservar ofrece confirmar, y no ofrece cancelar', async () => {
     const fixture = await montar();
     await elegirPersona(fixture);
 
@@ -413,7 +413,7 @@ describe('ReservaDeTurnoPage', () => {
   }
 
   function reservar(fixture: ComponentFixture<ReservaDeTurnoPage>): void {
-    clickear(fixture, 'Reservar el turno');
+    clickear(fixture, 'Reservar turno');
   }
 
   /** Dispara el rechazo del backend con el tipo pedido y deja la pantalla actualizada. */

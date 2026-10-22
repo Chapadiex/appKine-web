@@ -7,7 +7,7 @@
  * `toISOString()` lo puede dejar en el 24 a las 21:00 —el bug clasico— sin que nada falle.
  *
  * <p>Por eso todo aca trabaja sobre el string, y las pocas veces que hace falta un `Date` se
- * construye con `new Date(anio, mes - 1, dia)`, que arma <b>mediodia local</b> del dia
+ * construye con `new Date(anio, mes - 1, día)`, que arma <b>mediodia local</b> del dia
  * correcto, y nunca con `new Date('2026-05-25')`, que segun la especificacion de JavaScript se
  * interpreta como <b>UTC</b> y en Argentina retrocede un dia.
  *

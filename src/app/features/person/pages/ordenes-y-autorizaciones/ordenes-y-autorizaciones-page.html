@@ -1,41 +1,28 @@
-<p class="acciones">
-  <a class="enlace" [routerLink]="rutaFicha()">Volver a la ficha</a>
-  <a class="enlace" routerLink="/pacientes">Volver al padron</a>
-</p>
+<app-cabecera-de-persona [personaId]="personaId()" [persona]="persona()" />
 
-<h1>
-  Ordenes y autorizaciones
-  @if (persona(); as ficha) {
-    — {{ nombreCompleto(ficha) }}
-  }
-</h1>
-
-<p class="descripcion">
-  Los papeles administrativos del paciente: la orden que firmo un medico y la autorizacion que dio
-  su financiador. Se muestran todos, incluidos los vencidos y los dados de baja, porque es lo que
-  permite explicar despues con que papel se lo atendio.
-</p>
-
-<!--
-  La distincion que sostiene toda la pantalla. Sin esto, alguien da de baja una orden vencida
-  -que sigue sirviendo para explicar el pasado y se puede corregir- o vuelve a pedir una
-  autorizacion rechazada en vez de leer por que se la rechazaron.
--->
-<section class="tarjeta nota-clave" aria-labelledby="titulo-nota-documentos">
-  <h2 id="titulo-nota-documentos">Vencido, rechazado y dado de baja no son lo mismo</h2>
-  <p>
-    <b>Vencido</b> se calcula solo, por la fecha. Un documento vencido no desaparece: se sigue
-    viendo y se sigue pudiendo corregir.
-  </p>
-  <p>
-    <b>Rechazada</b> es la respuesta del financiador. La autorizacion queda viva y es justamente lo
-    que explica por que no se pudo atender.
-  </p>
-  <p>
-    <b>Dado de baja</b> significa que ese papel <b>nunca debio cargarse</b>. Es lo unico que se usa
-    para corregir un error de carga.
-  </p>
-</section>
+<div class="titulo-con-ayuda titulo-de-seccion-persona">
+  <h1>Órdenes y autorizaciones</h1>
+  <app-ayuda titulo="Sobre esta pantalla">
+    <p>
+      Los papeles administrativos del paciente: la orden que firmo un medico y la autorización que
+      dio su financiador. Se muestran todos, incluidos los vencidos y los dados de baja, porque es
+      lo que permite explicar después con que papel se lo atendio.
+    </p>
+    <p class="ayuda-contextual__subtitulo">Vencido, rechazado y dado de baja no son lo mismo</p>
+    <p>
+      <b>Vencido</b> se calcula solo, por la fecha. Un documento vencido no desaparece: se sigue
+      viendo y se sigue pudiendo corregir.
+    </p>
+    <p>
+      <b>Rechazada</b> es la respuesta del financiador. La autorización queda viva y es justamente
+      lo que explica por que no se pudo atender.
+    </p>
+    <p>
+      <b>Dado de baja</b> significa que ese papel <b>nunca debio cargarse</b>. Es lo unico que se
+      usa para corregir un error de carga.
+    </p>
+  </app-ayuda>
+</div>
 
 <div aria-live="polite">
   @if (exito(); as mensaje) {
@@ -59,8 +46,8 @@
 } @else {
   @if (sinCoberturas()) {
     <p class="estado">
-      Este paciente no tiene ninguna cobertura activa cargada. Una autorizacion se pide contra una
-      cobertura, asi que primero hay que cargarla.
+      Este paciente no tiene ninguna cobertura activa cargada. Una autorización se pide contra una
+      cobertura, así que primero hay que cargarla.
     </p>
     <p class="acciones">
       <a class="boton" [routerLink]="rutaCoberturas()">Cargar una cobertura</a>
@@ -71,13 +58,16 @@
        Elegibilidad. Va primero porque es la pregunta con la que se llega a esta pantalla.
        ================================================================================= -->
   <section class="tarjeta" aria-labelledby="titulo-elegibilidad">
-    <h2 id="titulo-elegibilidad">Que le falta para atenderse</h2>
-
-    <p class="ayuda">
-      Confronta lo que <b>el convenio de esta sede</b> exige hoy con lo que el paciente tiene. No
-      consume ninguna sesion ni guarda nada, y se puede consultar todas las veces que haga falta.
-      <b>No dice que la prestacion sea facturable</b>: dice si la documentacion esta.
-    </p>
+    <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
+      <h2 id="titulo-elegibilidad">Qué le falta para atenderse</h2>
+      <app-ayuda titulo="Qué le falta para atenderse">
+        <p>
+          Confronta lo que <b>el convenio de esta sede</b> exige hoy con lo que el paciente tiene.
+          No consume ninguna sesión ni guarda nada, y se puede consultar todas las veces que haga
+          falta. <b>No dice que la prestación sea facturable</b>: dice si la documentacion esta.
+        </p>
+      </app-ayuda>
+    </div>
 
     <form [formGroup]="formularioElegibilidad" (ngSubmit)="consultarElegibilidad()" novalidate>
       <div class="filtros">
@@ -88,41 +78,41 @@
             formControlName="coberturaId"
             [attr.aria-invalid]="mostrarErrorDeElegibilidad('coberturaId') ? 'true' : null"
           >
-            <option value="">Elegi una cobertura</option>
+            <option value="">Elegí una cobertura</option>
             @for (cobertura of coberturas(); track cobertura.id) {
               <option [value]="cobertura.id">{{ coberturaEnUnaLinea(cobertura) }}</option>
             }
           </select>
           @if (mostrarErrorDeElegibilidad('coberturaId')) {
-            <p class="estado estado--error">Elegi la cobertura.</p>
+            <p class="estado estado--error">Elegí la cobertura.</p>
           }
         </div>
 
         <div class="campo">
-          <label for="elegibilidad-practica">Practica</label>
+          <label for="elegibilidad-practica">Práctica</label>
           <select
             id="elegibilidad-practica"
             formControlName="practicaId"
             [attr.aria-invalid]="mostrarErrorDeElegibilidad('practicaId') ? 'true' : null"
           >
-            <option value="">Elegi una practica</option>
+            <option value="">Elegí una práctica</option>
             @for (practica of practicas(); track practica.id) {
               <option [value]="practica.id">{{ practica.name }}</option>
             }
           </select>
           @if (practicasSinPermiso()) {
             <p class="estado estado--error" role="status">
-              No tenes permiso para consultar el catalogo clinico, asi que no hay practicas para
+              No tenés permiso para consultar el catalogo clínico, así que no hay prácticas para
               elegir. Pediselo a quien administra el centro.
             </p>
           }
           @if (mostrarErrorDeElegibilidad('practicaId')) {
-            <p class="estado estado--error">Elegi la practica.</p>
+            <p class="estado estado--error">Elegí la práctica.</p>
           }
         </div>
 
         <div class="campo">
-          <label for="elegibilidad-fecha">Para el dia</label>
+          <label for="elegibilidad-fecha">Para el día</label>
           <input
             id="elegibilidad-fecha"
             type="date"
@@ -143,7 +133,7 @@
     @if (elegibilidad(); as respuesta) {
       <div aria-live="polite">
         @if (respuesta.elegible) {
-          <p class="estado estado--ok">No le falta ningun papel para esa practica en esa fecha.</p>
+          <p class="estado estado--ok">No le falta ningún papel para esa práctica en esa fecha.</p>
         } @else {
           <p class="estado">
             Le falta documentacion. No es un error del sistema: es la lista de lo que hay que
@@ -175,7 +165,7 @@
         @if (respuesta.limiteSesionesMensual) {
           <p class="ayuda">
             El convenio declara un tope de {{ respuesta.limiteSesionesMensual }} sesiones por mes.
-            <b>Es informativo</b>: verificarlo exige contar sesiones ya atendidas, y eso todavia no
+            <b>Es informativo</b>: verificarlo exige contar sesiones ya atendidas, y eso todavía no
             esta cableado.
           </p>
         }
@@ -192,131 +182,140 @@
        Ordenes medicas
        ================================================================================= -->
   <section class="tarjeta" aria-labelledby="titulo-ordenes">
-    <h2 id="titulo-ordenes">Ordenes medicas</h2>
-
-    <p class="ayuda">
-      Es la <b>transcripcion administrativa</b> de lo que dice el papel que trajo el paciente. No es
-      registro clinico y no reemplaza nada de la historia clinica. Quien firma es un medico externo
-      al centro, asi que se escribe su nombre: no esta en ningun catalogo.
-    </p>
-
-    <p class="acciones">
-      <button
-        type="button"
-        class="boton"
-        (click)="abrirAltaDeOrden()"
-        *akinePermiso="permisoManage"
-      >
-        Registrar una orden
-      </button>
-    </p>
+    <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
+      <h2 id="titulo-ordenes">Órdenes médicas</h2>
+      <app-ayuda titulo="Órdenes médicas">
+        <p>
+          Es la <b>transcripcion administrativa</b> de lo que dice el papel que trajo el paciente.
+          No es registro clínico y no reemplaza nada de la historia clínica. Quien firma es un
+          medico externo al centro, así que se escribe su nombre: no esta en ningún catalogo.
+        </p>
+      </app-ayuda>
+      <div class="encabezado__acciones">
+        <button
+          type="button"
+          class="boton"
+          (click)="abrirAltaDeOrden()"
+          *akinePermiso="permisoManage"
+        >
+          Registrar una orden
+        </button>
+      </div>
+    </div>
 
     @if (altaDeOrden()) {
       <form [formGroup]="formularioOrden" (ngSubmit)="enviarOrden()" novalidate>
-        <div class="campo">
-          <label for="orden-emisor">Profesional que la firmo</label>
-          <input
-            id="orden-emisor"
-            type="text"
-            formControlName="profesionalEmisor"
-            [attr.aria-invalid]="mostrarErrorDeOrden('profesionalEmisor') ? 'true' : null"
-          />
-          @if (mostrarErrorDeOrden('profesionalEmisor')) {
-            <p class="estado estado--error">Escribi quien firmo la orden.</p>
-          }
-        </div>
-
-        <div class="campo">
-          <label for="orden-matricula">Matricula</label>
-          <input
-            id="orden-matricula"
-            type="text"
-            formControlName="matriculaEmisor"
-            aria-describedby="orden-matricula-ayuda"
-          />
-          <p class="ayuda" id="orden-matricula-ayuda">
-            Opcional. Si el papel esta ilegible, se deja vacia: no es motivo para no cargar la
-            orden.
-          </p>
-        </div>
-
-        <div class="campo">
-          <label for="orden-numero">Numero</label>
-          <input id="orden-numero" type="text" formControlName="numero" />
-        </div>
-
-        <div class="campo">
-          <label for="orden-emision">Fecha de emision</label>
-          <input
-            id="orden-emision"
-            type="date"
-            formControlName="fechaEmision"
-            [attr.aria-invalid]="mostrarErrorDeOrden('fechaEmision') ? 'true' : null"
-          />
-          @if (mostrarErrorDeOrden('fechaEmision')) {
-            <p class="estado estado--error">La fecha de emision es obligatoria.</p>
-          }
-        </div>
-
-        <div class="campo">
-          <label for="orden-desde">Vigente desde</label>
-          <input
-            id="orden-desde"
-            type="date"
-            formControlName="vigenciaDesde"
-            aria-describedby="orden-desde-ayuda"
-          />
-          <p class="ayuda" id="orden-desde-ayuda">
-            Opcional: sin fecha, vale desde la emision. Nunca puede ser anterior — una orden no
-            puede valer antes de haberse escrito.
-          </p>
-        </div>
-
-        <div class="campo">
-          <label for="orden-hasta">Vigente hasta</label>
-          <input id="orden-hasta" type="date" formControlName="vigenciaHasta" />
-        </div>
-
-        <div class="campo">
-          <label for="orden-sesiones">Sesiones prescriptas</label>
-          <input id="orden-sesiones" type="number" min="1" formControlName="sesionesPrescriptas" />
-        </div>
-
-        <div class="campo">
-          <label for="orden-cobertura">Cobertura</label>
-          <select
-            id="orden-cobertura"
-            formControlName="coberturaId"
-            aria-describedby="orden-cobertura-ayuda"
-          >
-            <option value="">Sin cobertura: vale para cualquiera</option>
-            @for (cobertura of coberturas(); track cobertura.id) {
-              <option [value]="cobertura.id">{{ coberturaEnUnaLinea(cobertura) }}</option>
+        <div class="grilla-campos grilla-campos--dos">
+          <div class="campo">
+            <label for="orden-emisor">Profesional que la firmo</label>
+            <input
+              id="orden-emisor"
+              type="text"
+              formControlName="profesionalEmisor"
+              [attr.aria-invalid]="mostrarErrorDeOrden('profesionalEmisor') ? 'true' : null"
+            />
+            @if (mostrarErrorDeOrden('profesionalEmisor')) {
+              <p class="estado estado--error">Escribi quien firmo la orden.</p>
             }
-          </select>
-          <p class="ayuda" id="orden-cobertura-ayuda">
-            Opcional. Una prescripcion la firma un medico, no un financiador: sin cobertura, la
-            orden sirve para todas.
-          </p>
-        </div>
+          </div>
 
-        <div class="campo">
-          <label for="orden-indicacion">Indicacion</label>
-          <textarea
-            id="orden-indicacion"
-            formControlName="indicacion"
-            rows="2"
-            aria-describedby="orden-indicacion-ayuda"
-          ></textarea>
-          <p class="ayuda" id="orden-indicacion-ayuda">
-            Copiala como esta en el papel. <b>No es registro clinico</b>: la evolucion del paciente
-            va en la historia clinica, no aca.
-          </p>
-        </div>
+          <div class="campo">
+            <label for="orden-matricula">Matricula</label>
+            <input
+              id="orden-matricula"
+              type="text"
+              formControlName="matriculaEmisor"
+              aria-describedby="orden-matricula-ayuda"
+            />
+            <p class="ayuda" id="orden-matricula-ayuda">
+              Opcional. Si el papel esta ilegible, se deja vacía: no es motivo para no cargar la
+              orden.
+            </p>
+          </div>
 
-        <div class="campo">
-          <label for="orden-observaciones">Observaciones</label>
-          <textarea id="orden-observaciones" formControlName="observaciones" rows="2"></textarea>
+          <div class="campo">
+            <label for="orden-numero">Número</label>
+            <input id="orden-numero" type="text" formControlName="numero" />
+          </div>
+
+          <div class="campo">
+            <label for="orden-emision">Fecha de emision</label>
+            <input
+              id="orden-emision"
+              type="date"
+              formControlName="fechaEmision"
+              [attr.aria-invalid]="mostrarErrorDeOrden('fechaEmision') ? 'true' : null"
+            />
+            @if (mostrarErrorDeOrden('fechaEmision')) {
+              <p class="estado estado--error">La fecha de emision es obligatoria.</p>
+            }
+          </div>
+
+          <div class="campo">
+            <label for="orden-desde">Vigente desde</label>
+            <input
+              id="orden-desde"
+              type="date"
+              formControlName="vigenciaDesde"
+              aria-describedby="orden-desde-ayuda"
+            />
+            <p class="ayuda" id="orden-desde-ayuda">
+              Opcional: sin fecha, vale desde la emision. Nunca puede ser anterior — una orden no
+              puede valer antes de haberse escrito.
+            </p>
+          </div>
+
+          <div class="campo">
+            <label for="orden-hasta">Vigente hasta</label>
+            <input id="orden-hasta" type="date" formControlName="vigenciaHasta" />
+          </div>
+
+          <div class="campo">
+            <label for="orden-sesiones">Sesiones prescriptas</label>
+            <input
+              id="orden-sesiones"
+              type="number"
+              min="1"
+              formControlName="sesionesPrescriptas"
+            />
+          </div>
+
+          <div class="campo">
+            <label for="orden-cobertura">Cobertura</label>
+            <select
+              id="orden-cobertura"
+              formControlName="coberturaId"
+              aria-describedby="orden-cobertura-ayuda"
+            >
+              <option value="">Sin cobertura: vale para cualquiera</option>
+              @for (cobertura of coberturas(); track cobertura.id) {
+                <option [value]="cobertura.id">{{ coberturaEnUnaLinea(cobertura) }}</option>
+              }
+            </select>
+            <p class="ayuda" id="orden-cobertura-ayuda">
+              Opcional. Una prescripcion la firma un medico, no un financiador: sin cobertura, la
+              orden sirve para todas.
+            </p>
+          </div>
+
+          <div class="campo">
+            <label for="orden-indicacion">Indicacion</label>
+            <textarea
+              id="orden-indicacion"
+              formControlName="indicacion"
+              rows="2"
+              aria-describedby="orden-indicacion-ayuda"
+            ></textarea>
+            <p class="ayuda" id="orden-indicacion-ayuda">
+              Copiala como esta en el papel. <b>No es registro clínico</b>: la evolucion del
+              paciente va en la historia clínica, no acá.
+            </p>
+          </div>
+
+          <div class="campo">
+            <label for="orden-observaciones">Observaciones</label>
+            <textarea id="orden-observaciones" formControlName="observaciones" rows="2"></textarea>
+          </div>
         </div>
 
         <p class="acciones">
@@ -341,7 +340,7 @@
   </section>
 
   @if (ordenes().length === 0) {
-    <p class="estado">Este paciente no tiene ordenes cargadas.</p>
+    <p class="estado estado--vacio">Este paciente no tiene órdenes cargadas.</p>
   } @else {
     <div class="tabla-scroll" tabindex="0" role="region" aria-labelledby="caption-ordenes">
       <table class="tabla">
@@ -353,18 +352,18 @@
         </caption>
         <thead>
           <tr>
-            <th scope="col">Emisor</th>
-            <th scope="col">Numero</th>
-            <th scope="col">Emitida</th>
-            <th scope="col">Vigencia</th>
+            <th scope="col" appOrdenable [tabla]="tablaOrdenes" columna="emisor">Emisor</th>
+            <th scope="col" appOrdenable [tabla]="tablaOrdenes" columna="numero">Número</th>
+            <th scope="col" appOrdenable [tabla]="tablaOrdenes" columna="emitida">Emitida</th>
+            <th scope="col" appOrdenable [tabla]="tablaOrdenes" columna="vigencia">Vigencia</th>
             <th scope="col">Sesiones</th>
-            <th scope="col">Situacion</th>
+            <th scope="col" appOrdenable [tabla]="tablaOrdenes" columna="situacion">Situación</th>
             <th scope="col">Escaneo</th>
-            <th scope="col">Acciones</th>
+            <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
           </tr>
         </thead>
         <tbody>
-          @for (orden of ordenes(); track orden.id) {
+          @for (orden of tablaOrdenes.visibles(); track orden.id) {
             <tr>
               <td>{{ emisorEnPalabras(orden) }}</td>
               <td>{{ orden.numero || '—' }}</td>
@@ -450,7 +449,7 @@
                       </div>
 
                       <div class="campo">
-                        <label for="editar-orden-numero-{{ orden.id }}">Numero</label>
+                        <label for="editar-orden-numero-{{ orden.id }}">Número</label>
                         <input
                           id="editar-orden-numero-{{ orden.id }}"
                           type="text"
@@ -550,7 +549,7 @@
                       Escaneo de la orden
                     </h2>
                     <p class="ayuda">
-                      Aca <b>no se sube nada</b>: se elige entre los documentos que ya tiene
+                      Acá <b>no se sube nada</b>: se elige entre los documentos que ya tiene
                       cargados la persona. Para subir uno nuevo, anda a
                       <a class="enlace" [routerLink]="rutaDocumentos()">Documentacion</a>.
                     </p>
@@ -618,154 +617,167 @@
         </tbody>
       </table>
     </div>
+    <div class="tabla-pie">
+      <span>{{ tablaOrdenes.total() }} órdenes</span>
+      <app-paginacion
+        [paginaActual]="tablaOrdenes.pagina()"
+        [totalPaginas]="tablaOrdenes.totalPaginas()"
+        etiqueta="Páginas de órdenes"
+        (cambioDePagina)="tablaOrdenes.irA($event)"
+      />
+    </div>
   }
 
   <!-- =================================================================================
        Autorizaciones
        ================================================================================= -->
   <section class="tarjeta" aria-labelledby="titulo-autorizaciones">
-    <h2 id="titulo-autorizaciones">Autorizaciones</h2>
-
-    <p class="ayuda">
-      Lo que el financiador contesto: cuantas sesiones autorizo y hasta cuando.
-      <b>Aprobada y rechazada son terminales</b>: una decision tomada no se deshace, se da de baja y
-      se carga otra.
-    </p>
-
-    <p class="acciones">
-      <button
-        type="button"
-        class="boton"
-        (click)="abrirAltaDeAutorizacion()"
-        [disabled]="sinCoberturas()"
-        *akinePermiso="permisoManage"
-      >
-        Registrar una autorizacion
-      </button>
-    </p>
+    <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
+      <h2 id="titulo-autorizaciones">Autorizaciones</h2>
+      <app-ayuda titulo="Autorizaciones">
+        <p>
+          Lo que el financiador contesto: cuantas sesiones autorizo y hasta cuando.
+          <b>Aprobada y rechazada son terminales</b>: una decision tomada no se deshace, se da de
+          baja y se carga otra.
+        </p>
+      </app-ayuda>
+      <div class="encabezado__acciones">
+        <button
+          type="button"
+          class="boton"
+          (click)="abrirAltaDeAutorizacion()"
+          [disabled]="sinCoberturas()"
+          *akinePermiso="permisoManage"
+        >
+          Registrar una autorización
+        </button>
+      </div>
+    </div>
 
     @if (altaDeAutorizacion()) {
       <form [formGroup]="formularioAutorizacion" (ngSubmit)="enviarAutorizacion()" novalidate>
-        <div class="campo">
-          <label for="autorizacion-numero">Numero</label>
-          <input
-            id="autorizacion-numero"
-            type="text"
-            formControlName="numero"
-            [attr.aria-invalid]="mostrarErrorDeAutorizacion('numero') ? 'true' : null"
-          />
-          @if (mostrarErrorDeAutorizacion('numero')) {
-            <p class="estado estado--error">El numero de la autorizacion es obligatorio.</p>
-          }
-        </div>
-
-        <div class="campo">
-          <label for="autorizacion-cobertura">Cobertura</label>
-          <select
-            id="autorizacion-cobertura"
-            formControlName="coberturaId"
-            [attr.aria-invalid]="mostrarErrorDeAutorizacion('coberturaId') ? 'true' : null"
-            aria-describedby="autorizacion-cobertura-ayuda"
-          >
-            <option value="">Elegi una cobertura</option>
-            @for (cobertura of coberturas(); track cobertura.id) {
-              <option [value]="cobertura.id">{{ coberturaEnUnaLinea(cobertura) }}</option>
+        <div class="grilla-campos grilla-campos--dos">
+          <div class="campo">
+            <label for="autorizacion-numero">Número</label>
+            <input
+              id="autorizacion-numero"
+              type="text"
+              formControlName="numero"
+              [attr.aria-invalid]="mostrarErrorDeAutorizacion('numero') ? 'true' : null"
+            />
+            @if (mostrarErrorDeAutorizacion('numero')) {
+              <p class="estado estado--error">El número de la autorización es obligatorio.</p>
             }
-          </select>
-          <p class="ayuda" id="autorizacion-cobertura-ayuda">
-            No se puede cambiar despues: cambiarla seria otra autorizacion, porque reescribiria
-            contra que se autorizo.
-          </p>
-          @if (mostrarErrorDeAutorizacion('coberturaId')) {
-            <p class="estado estado--error">Elegi la cobertura.</p>
-          }
-        </div>
+          </div>
 
-        <div class="campo">
-          <label for="autorizacion-practica">Practica</label>
-          <select
-            id="autorizacion-practica"
-            formControlName="practicaId"
-            [attr.aria-invalid]="mostrarErrorDeAutorizacion('practicaId') ? 'true' : null"
-          >
-            <option value="">Elegi una practica</option>
-            @for (practica of practicas(); track practica.id) {
-              <option [value]="practica.id">{{ practica.name }}</option>
-            }
-          </select>
-          @if (practicasSinPermiso()) {
-            <p class="estado estado--error" role="status">
-              No tenes permiso para consultar el catalogo clinico, asi que no hay practicas para
-              elegir. Pediselo a quien administra el centro.
+          <div class="campo">
+            <label for="autorizacion-cobertura">Cobertura</label>
+            <select
+              id="autorizacion-cobertura"
+              formControlName="coberturaId"
+              [attr.aria-invalid]="mostrarErrorDeAutorizacion('coberturaId') ? 'true' : null"
+              aria-describedby="autorizacion-cobertura-ayuda"
+            >
+              <option value="">Elegí una cobertura</option>
+              @for (cobertura of coberturas(); track cobertura.id) {
+                <option [value]="cobertura.id">{{ coberturaEnUnaLinea(cobertura) }}</option>
+              }
+            </select>
+            <p class="ayuda" id="autorizacion-cobertura-ayuda">
+              No se puede cambiar después: cambiarla seria otra autorización, porque reescribiria
+              contra que se autorizo.
             </p>
-          }
-          @if (mostrarErrorDeAutorizacion('practicaId')) {
-            <p class="estado estado--error">Elegi la practica.</p>
-          }
-        </div>
-
-        <div class="campo">
-          <label for="autorizacion-orden">Orden que la respalda</label>
-          <select id="autorizacion-orden" formControlName="ordenMedicaId">
-            <option value="">Sin orden</option>
-            @for (orden of ordenes(); track orden.id) {
-              <option [value]="orden.id">{{ rotuloDeOrden(orden) }}</option>
+            @if (mostrarErrorDeAutorizacion('coberturaId')) {
+              <p class="estado estado--error">Elegí la cobertura.</p>
             }
-          </select>
-        </div>
+          </div>
 
-        <div class="campo">
-          <label for="autorizacion-cantidad">Cantidad pedida</label>
-          <input
-            id="autorizacion-cantidad"
-            type="number"
-            min="1"
-            formControlName="cantidadAutorizada"
-          />
-        </div>
+          <div class="campo">
+            <label for="autorizacion-practica">Práctica</label>
+            <select
+              id="autorizacion-practica"
+              formControlName="practicaId"
+              [attr.aria-invalid]="mostrarErrorDeAutorizacion('practicaId') ? 'true' : null"
+            >
+              <option value="">Elegí una práctica</option>
+              @for (practica of practicas(); track practica.id) {
+                <option [value]="practica.id">{{ practica.name }}</option>
+              }
+            </select>
+            @if (practicasSinPermiso()) {
+              <p class="estado estado--error" role="status">
+                No tenés permiso para consultar el catalogo clínico, así que no hay prácticas para
+                elegir. Pediselo a quien administra el centro.
+              </p>
+            }
+            @if (mostrarErrorDeAutorizacion('practicaId')) {
+              <p class="estado estado--error">Elegí la práctica.</p>
+            }
+          </div>
 
-        <div class="campo">
-          <label for="autorizacion-desde">Vigente desde</label>
-          <input
-            id="autorizacion-desde"
-            type="date"
-            formControlName="vigenciaDesde"
-            [attr.aria-invalid]="mostrarErrorDeAutorizacion('vigenciaDesde') ? 'true' : null"
-          />
-          @if (mostrarErrorDeAutorizacion('vigenciaDesde')) {
-            <p class="estado estado--error">La fecha de inicio es obligatoria.</p>
-          }
-        </div>
+          <div class="campo">
+            <label for="autorizacion-orden">Orden que la respalda</label>
+            <select id="autorizacion-orden" formControlName="ordenMedicaId">
+              <option value="">Sin orden</option>
+              @for (orden of ordenes(); track orden.id) {
+                <option [value]="orden.id">{{ rotuloDeOrden(orden) }}</option>
+              }
+            </select>
+          </div>
 
-        <div class="campo">
-          <label for="autorizacion-hasta">Vigente hasta</label>
-          <input id="autorizacion-hasta" type="date" formControlName="vigenciaHasta" />
-        </div>
+          <div class="campo">
+            <label for="autorizacion-cantidad">Cantidad pedida</label>
+            <input
+              id="autorizacion-cantidad"
+              type="number"
+              min="1"
+              formControlName="cantidadAutorizada"
+            />
+          </div>
 
-        <div class="campo">
-          <label for="autorizacion-estado">Estado inicial</label>
-          <select
-            id="autorizacion-estado"
-            formControlName="estadoInicial"
-            aria-describedby="autorizacion-estado-ayuda"
-          >
-            <option value="PENDIENTE">Pendiente de respuesta</option>
-            <option value="APROBADA">Ya aprobada</option>
-          </select>
-          <p class="ayuda" id="autorizacion-estado-ayuda">
-            Solo estas dos. Observada y rechazada son la <b>respuesta</b> a un pedido y se aplican
-            despues, desde la fila. Si nace aprobada se verifica que no se pise con otra aprobada de
-            la misma practica.
-          </p>
-        </div>
+          <div class="campo">
+            <label for="autorizacion-desde">Vigente desde</label>
+            <input
+              id="autorizacion-desde"
+              type="date"
+              formControlName="vigenciaDesde"
+              [attr.aria-invalid]="mostrarErrorDeAutorizacion('vigenciaDesde') ? 'true' : null"
+            />
+            @if (mostrarErrorDeAutorizacion('vigenciaDesde')) {
+              <p class="estado estado--error">La fecha de inicio es obligatoria.</p>
+            }
+          </div>
 
-        <div class="campo">
-          <label for="autorizacion-observaciones">Observaciones</label>
-          <textarea
-            id="autorizacion-observaciones"
-            formControlName="observaciones"
-            rows="2"
-          ></textarea>
+          <div class="campo">
+            <label for="autorizacion-hasta">Vigente hasta</label>
+            <input id="autorizacion-hasta" type="date" formControlName="vigenciaHasta" />
+          </div>
+
+          <div class="campo">
+            <label for="autorizacion-estado">Estado inicial</label>
+            <select
+              id="autorizacion-estado"
+              formControlName="estadoInicial"
+              aria-describedby="autorizacion-estado-ayuda"
+            >
+              <option value="PENDIENTE">Pendiente de respuesta</option>
+              <option value="APROBADA">Ya aprobada</option>
+            </select>
+            <p class="ayuda" id="autorizacion-estado-ayuda">
+              Solo estas dos. Observada y rechazada son la <b>respuesta</b> a un pedido y se aplican
+              después, desde la fila. Si nace aprobada se verifica que no se pise con otra aprobada
+              de la misma práctica.
+            </p>
+          </div>
+
+          <div class="campo">
+            <label for="autorizacion-observaciones">Observaciones</label>
+            <textarea
+              id="autorizacion-observaciones"
+              formControlName="observaciones"
+              rows="2"
+            ></textarea>
+          </div>
         </div>
 
         <p class="acciones">
@@ -790,7 +802,7 @@
   </section>
 
   @if (autorizaciones().length === 0) {
-    <p class="estado">Este paciente no tiene autorizaciones cargadas.</p>
+    <p class="estado estado--vacio">Este paciente no tiene autorizaciones cargadas.</p>
   } @else {
     <div class="tabla-scroll" tabindex="0" role="region" aria-labelledby="caption-autorizaciones">
       <table class="tabla">
@@ -802,17 +814,19 @@
         </caption>
         <thead>
           <tr>
-            <th scope="col">Numero</th>
-            <th scope="col">Estado</th>
-            <th scope="col">Vigencia</th>
-            <th scope="col">Saldo</th>
+            <th scope="col" appOrdenable [tabla]="tablaAutorizaciones" columna="numero">Número</th>
+            <th scope="col" appOrdenable [tabla]="tablaAutorizaciones" columna="estado">Estado</th>
+            <th scope="col" appOrdenable [tabla]="tablaAutorizaciones" columna="vigencia">
+              Vigencia
+            </th>
+            <th scope="col" appOrdenable [tabla]="tablaAutorizaciones" columna="saldo">Saldo</th>
             <th scope="col">Veredicto</th>
             <th scope="col">Comprobante</th>
-            <th scope="col">Acciones</th>
+            <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
           </tr>
         </thead>
         <tbody>
-          @for (autorizacion of autorizaciones(); track autorizacion.id) {
+          @for (autorizacion of tablaAutorizaciones.visibles(); track autorizacion.id) {
             <tr [class.fila-senalada]="estaSenalada(autorizacion)">
               <td>
                 {{ autorizacion.numero }}
@@ -893,7 +907,7 @@
                     (click)="abrirBajaDeAutorizacion(autorizacion)"
                     *akinePermiso="permisoManage"
                   >
-                    Dar de baja la autorizacion
+                    Dar de baja la autorización
                   </button>
                 }
               </td>
@@ -907,7 +921,7 @@
                       Respuesta del financiador para la {{ autorizacion.numero }}
                     </h2>
                     <p class="ayuda">
-                      <b>Al aprobar, lo que pongas aca pisa lo que se pidio.</b> Si el financiador
+                      <b>Al aprobar, lo que pongas acá pisa lo que se pidio.</b> Si el financiador
                       otorgo menos sesiones o una ventana mas corta, corregi los campos: lo que vale
                       es lo que concedio. Aprobar y rechazar son <b>terminales</b>.
                     </p>
@@ -1006,11 +1020,11 @@
                 <td colspan="7">
                   <section aria-labelledby="titulo-editar-aut-{{ autorizacion.id }}">
                     <h2 id="titulo-editar-aut-{{ autorizacion.id }}" class="panel__titulo">
-                      Corregir la autorizacion {{ autorizacion.numero }}
+                      Corregir la autorización {{ autorizacion.numero }}
                     </h2>
                     <p class="ayuda">
-                      La cobertura, la practica y el estado <b>no se corrigen aca</b>: las dos
-                      primeras son otra autorizacion, y el estado se mueve con la respuesta del
+                      La cobertura, la práctica y el estado <b>no se corrigen acá</b>: las dos
+                      primeras son otra autorización, y el estado se mueve con la respuesta del
                       financiador.
                     </p>
 
@@ -1020,7 +1034,7 @@
                       novalidate
                     >
                       <div class="campo">
-                        <label for="editar-aut-numero-{{ autorizacion.id }}">Numero</label>
+                        <label for="editar-aut-numero-{{ autorizacion.id }}">Número</label>
                         <input
                           id="editar-aut-numero-{{ autorizacion.id }}"
                           type="text"
@@ -1084,7 +1098,7 @@
 
                       <p class="acciones">
                         <button type="submit" class="boton" [disabled]="enviando()">
-                          {{ enviando() ? 'Guardando...' : 'Guardar la autorizacion' }}
+                          {{ enviando() ? 'Guardando...' : 'Guardar la autorización' }}
                         </button>
                         <button
                           type="button"
@@ -1114,10 +1128,10 @@
                 <td colspan="7">
                   <section aria-labelledby="titulo-doc-aut-{{ autorizacion.id }}">
                     <h2 id="titulo-doc-aut-{{ autorizacion.id }}" class="panel__titulo">
-                      Comprobante de la autorizacion
+                      Comprobante de la autorización
                     </h2>
                     <p class="ayuda">
-                      Aca <b>no se sube nada</b>: se elige entre los documentos que ya tiene
+                      Acá <b>no se sube nada</b>: se elige entre los documentos que ya tiene
                       cargados la persona. Para subir uno nuevo, anda a
                       <a class="enlace" [routerLink]="rutaDocumentos()">Documentacion</a>.
                     </p>
@@ -1169,7 +1183,7 @@
                     titulo="Dar de baja la autorizacion {{ autorizacion.numero }}"
                     etiqueta="Motivo"
                     ayuda="Dar de baja NO es rechazar y NO es vencer. Rechazar es la respuesta del financiador y deja la autorizacion viva, explicando por que no se pudo atender. Dar de baja significa que nunca debio cargarse. No borra nada, y el numero se puede volver a usar."
-                    textoConfirmar="Confirmar la baja de la autorizacion"
+                    textoConfirmar="Confirmar la baja de la autorización"
                     [enviando]="enviando()"
                     (confirmado)="confirmarBajaDeAutorizacion($event)"
                     (cancelado)="cerrarPaneles()"
@@ -1204,10 +1218,10 @@
                 <td colspan="7">
                   <section aria-labelledby="titulo-historial-{{ autorizacion.id }}">
                     <h2 id="titulo-historial-{{ autorizacion.id }}" class="panel__titulo">
-                      Historial de la autorizacion {{ autorizacion.numero }}
+                      Historial de la autorización {{ autorizacion.numero }}
                     </h2>
                     <p class="ayuda">
-                      Cada hecho que cambio esta autorizacion, del mas viejo al mas nuevo. El
+                      Cada hecho que cambio esta autorización, del mas viejo al mas nuevo. El
                       vencimiento no es un hecho: se calcula contra la fecha de hoy.
                     </p>
 
@@ -1240,7 +1254,7 @@
                             }
 
                             @if ((respuesta.content ?? []).length === 0) {
-                              <p class="estado estado--vacio">Esta pagina no tiene hechos.</p>
+                              <p class="estado estado--vacio">Esta página no tiene hechos.</p>
                             } @else {
                               <ol class="lista-hitos">
                                 @for (
@@ -1288,7 +1302,7 @@
                                   Hechos anteriores
                                 </button>
                                 <span>
-                                  Pagina {{ (respuesta.page ?? 0) + 1 }} de
+                                  Página {{ (respuesta.page ?? 0) + 1 }} de
                                   {{ respuesta.totalPages }} ({{ respuesta.totalElements }} hechos)
                                 </span>
                                 <button
@@ -1324,6 +1338,15 @@
           }
         </tbody>
       </table>
+    </div>
+    <div class="tabla-pie">
+      <span>{{ tablaAutorizaciones.total() }} autorizaciones</span>
+      <app-paginacion
+        [paginaActual]="tablaAutorizaciones.pagina()"
+        [totalPaginas]="tablaAutorizaciones.totalPaginas()"
+        etiqueta="Páginas de autorizaciones"
+        (cambioDePagina)="tablaAutorizaciones.irA($event)"
+      />
     </div>
   }
 

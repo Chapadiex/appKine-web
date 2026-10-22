@@ -56,66 +56,66 @@ export interface ErrorAtencionGrupal {
   readonly derivacionIds?: readonly number[];
 }
 
-const MENSAJE_GENERICO = 'No se pudo completar la operacion. Volve a intentar en un momento.';
-const MENSAJE_DE_RED = 'No se pudo contactar al servidor. Revisa la conexion y volve a intentar.';
+const MENSAJE_GENERICO = 'No se pudo completar la operación. Volvé a intentar en un momento.';
+const MENSAJE_DE_RED = 'No se pudo contactar al servidor. Revisa la conexion y volvé a intentar.';
 
 const MENSAJE_SIN_CONTEXTO =
-  'La atencion clinica de una clase es de una sede. Eligi una organizacion y un consultorio, y ' +
-  'volve a entrar.';
+  'La atención clínica de una clase es de una sede. Eligi una organización y un consultorio, y ' +
+  'volvé a entrar.';
 
 const MENSAJE_SIN_PERMISO =
-  'No tenes permiso para esta operacion en esta sede. Atender a los participantes de una clase ' +
-  'pide sesion:register e inscripcion:read; ver o revertir una derivacion pide ademas acceso a la ' +
-  'historia clinica.';
+  'No tenés permiso para esta operación en esta sede. Atender a los participantes de una clase ' +
+  'pide sesión:register e inscripción:read; ver o revertir una derivación pide además acceso a la ' +
+  'historia clínica.';
 
 const MENSAJE_REQUIERE_JUSTIFICACION =
-  'No figura que atiendas a esta persona. Para abrir su atencion o ver sus derivaciones tenes que ' +
-  'declarar el motivo del acceso: queda registrado junto con cada operacion.';
+  'No figura que atiendas a esta persona. Para abrir su atención o ver sus derivaciones tenés que ' +
+  'declarar el motivo del acceso: queda registrado junto con cada operación.';
 
-const MENSAJE_NO_ENCONTRADO = 'La clase, el participante o la derivacion no existen en esta sede.';
+const MENSAJE_NO_ENCONTRADO = 'La clase, el participante o la derivación no existen en esta sede.';
 
 const MENSAJE_OFERTA_NO_CLINICA =
-  'Esta clase no genera registro clinico: su oferta no lo pide, asi que sus participantes no tienen ' +
-  'atencion clinica que abrir.';
+  'Esta clase no genera registro clínico: su oferta no lo pide, así que sus participantes no tienen ' +
+  'atención clínica que abrir.';
 
 const MENSAJE_SIN_ASISTENCIA =
   'No figura presente en la clase. Solo se atiende a quien estuvo: si fue un error de la lista, ' +
-  'corregi la asistencia (con motivo) y volve a intentar.';
+  'corregi la asistencia (con motivo) y volvé a intentar.';
 
 const MENSAJE_SIN_DERIVACION =
-  'No tiene una derivacion clinica vigente en esta clase. La atencion cuelga de una derivacion, ' +
-  'que es la que dice a que caso clinico pertenece: primero hay que derivarlo a un caso.';
+  'No tiene una derivación clínica vigente en esta clase. La atención cuelga de una derivación, ' +
+  'que es la que dice a que caso clínico pertenece: primero hay que derivarlo a un caso.';
 
 const MENSAJE_DERIVACION_AMBIGUA =
-  'Tiene mas de una derivacion vigente en esta clase —a casos distintos— y no se dijo de cual es ' +
-  'esta atencion. Elegi la derivacion: la atencion se numera dentro de su caso, y eso no se ' +
-  'corrige despues.';
+  'Tiene más de una derivación vigente en esta clase —a casos distintos— y no se dijo de cuál es ' +
+  'esta atención. Elegí la derivación: la atención se numera dentro de su caso, y eso no se ' +
+  'corrige después.';
 
 const MENSAJE_DERIVACION_CON_SESION =
-  'Esta derivacion no se puede revertir: ya se abrio una atencion clinica desde ella. La atencion ' +
-  'no se borra, y la derivacion es la que explica de donde vino el paciente. Si la atencion se ' +
-  'abrio por error, cerrala con lo que paso (ausente, si no hubo atencion) o enmenda su nota.';
+  'Esta derivación no se puede revertir: ya se abrió una atención clínica desde ella. La atención ' +
+  'no se borra, y la derivación es la que explica de dónde vino el paciente. Si la atención se ' +
+  'abrio por error, cerrala con lo que paso (ausente, si no hubo atención) o enmenda su nota.';
 
 const MENSAJE_CASO_DE_ATENCION_GRUPAL =
-  'El caso de una atencion de clase no se cambia: lo fijo la derivacion. Si correspondia otro ' +
-  'caso, cerra la atencion con lo que paso y deriva al participante al caso correcto.';
+  'El caso de una atención de clase no se cambia: lo fijó la derivación. Si correspondía otro ' +
+  'caso, cerra la atención con lo que paso y deriva al participante al caso correcto.';
 
 const MENSAJE_CASO_CERRADO =
-  'El caso clinico de la derivacion ya no esta activo, asi que no admite atenciones nuevas. Se ' +
-  'reabre desde la historia clinica, o se deriva al participante a otro caso.';
+  'El caso clínico de la derivación ya no está activo, así que no admite atenciones nuevas. Se ' +
+  'reabre desde la historia clínica, o se deriva al participante a otro caso.';
 
 const MENSAJE_SIN_PERFIL =
-  'La persona todavia no es paciente: hace falta activar su perfil de paciente.';
+  'La persona todavía no es paciente: hace falta activar su perfil de paciente.';
 
 const MENSAJE_CASO_NO_ACTIVO =
-  'El caso elegido ya no esta activo. Volve a cargar los casos y elegi uno activo, o reabrilo ' +
-  'desde la historia clinica.';
+  'El caso elegido ya no está activo. Volvé a cargar los casos y elegí uno activo, o reabrilo ' +
+  'desde la historia clínica.';
 
 const MENSAJE_AUTORIZACION_NO_ELEGIBLE =
-  'La autorizacion declarada no habilita el dia de la clase (vencida, agotada, aun no vigente o ' +
+  'La autorización declarada no habilita el día de la clase (vencida, agotada, aun no vigente o ' +
   'no aprobada).';
 
-const MENSAJE_MOTIVO = 'Revertir una derivacion necesita un motivo.';
+const MENSAJE_MOTIVO = 'Revertir una derivación necesita un motivo.';
 
 /**
  * Clave tipada con el catalogo del contrato: un `problemType` mal escrito o renombrado por el

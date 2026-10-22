@@ -1,32 +1,34 @@
-<h1>Padron de personas</h1>
-
-<p class="descripcion">
-  Todas las personas registradas en la organizacion. Una persona <b>no es</b> un paciente: alguien
-  puede reservar una clase o una actividad sin ningun perfil clinico. Convertirla en paciente es una
-  accion aparte, y se hace cuando empieza una atencion.
-</p>
-
-<!--
-  Va arriba y no en un tooltip, por lo mismo que la nota de vigencia en ofertas: es la causa del
-  malentendido mas probable del modulo -"la cargue y no aparece como paciente"- y quien lee la
-  tabla tiene que llegar a la columna Perfil sabiendo que son dos cosas distintas.
--->
-<section class="tarjeta nota-clave" aria-labelledby="titulo-nota-perfil">
-  <h2 id="titulo-nota-perfil">Persona y paciente no son lo mismo</h2>
-  <p>
-    <b>Persona</b> es la ficha administrativa: quien es, como contactarla. Con eso alcanza para
-    inscribirla a una clase, venderle un pase o registrarla en una actividad no clinica.
-  </p>
-  <p>
-    <b>Paciente</b> es un perfil clinico que se activa sobre esa misma persona, sin volver a cargar
-    ningun dato. Se activa cuando empieza una atencion clinica, y no antes: una ficha sin perfil no
-    esta incompleta.
-  </p>
-  <p>
-    Activar el perfil <b>no crea historia clinica</b>. La historia clinica es otra cosa y se maneja
-    en el modulo clinico.
-  </p>
-</section>
+<div class="titulo-con-ayuda">
+  <h1>Padrón de personas</h1>
+  <app-ayuda titulo="Sobre esta pantalla">
+    <p>
+      Todas las personas registradas en la organización. Una persona <b>no es</b> un paciente:
+      alguien puede reservar una clase o una actividad sin ningún perfil clínico. Convertirla en
+      paciente es una acción aparte, y se hace cuando empieza una atención.
+    </p>
+    <p class="ayuda-contextual__subtitulo">Persona y paciente no son lo mismo</p>
+    <p>
+      <b>Persona</b> es la ficha administrativa: quien es, como contactarla. Con eso alcanza para
+      inscribirla a una clase, venderle un pase o registrarla en una actividad no clínica.
+    </p>
+    <p>
+      <b>Paciente</b> es un perfil clínico que se activa sobre esa misma persona, sin volver a
+      cargar ningún dato. Se activa cuando empieza una atención clínica, y no antes: una ficha sin
+      perfil no esta incompleta.
+    </p>
+    <p>
+      Activar el perfil <b>no crea historia clínica</b>. La historia clínica es otra cosa y se
+      maneja en el modulo clínico.
+    </p>
+  </app-ayuda>
+  <!-- La accion principal de la pantalla, en la fila del titulo y a la derecha (plan §3.1). -->
+  <div class="encabezado__acciones" *akinePermiso="permisoManage">
+    <button type="button" class="boton" (click)="abrirAlta()">
+      <app-icono nombre="agregar" />
+      Dar de alta una persona
+    </button>
+  </div>
+</div>
 
 <div aria-live="polite">
   @if (exito(); as mensaje) {
@@ -35,30 +37,47 @@
 </div>
 
 <section class="tarjeta" aria-labelledby="titulo-busqueda">
-  <h2 id="titulo-busqueda">Buscar en el padron</h2>
-
-  <p class="ayuda">
-    Antes de dar de alta a alguien, buscalo: un mismo documento no puede repetirse, y dos fichas de
-    la misma persona hacen que su historia quede partida en dos. Podes buscar por documento,
-    apellido, nombre, telefono o numero de afiliado; no hace falta escribir puntos ni guiones.
-  </p>
-
-  <div class="campo">
-    <label for="padron-busqueda">Documento, apellido, nombre, telefono o numero de afiliado</label>
-    <input
-      id="padron-busqueda"
-      type="search"
-      name="padron-busqueda"
-      [value]="texto()"
-      (change)="buscar($any($event.target).value)"
-      aria-describedby="padron-busqueda-ayuda"
-    />
-    <p class="ayuda" id="padron-busqueda-ayuda">
-      Sin texto, se lista el padron completo ordenado por apellido.
-    </p>
+  <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
+    <h2 id="titulo-busqueda">Buscar en el padrón</h2>
+    <app-ayuda titulo="Buscar en el padrón">
+      <p>
+        Antes de dar de alta a alguien, buscalo: un mismo documento no puede repetirse, y dos fichas
+        de la misma persona hacen que su historia quede partida en dos.
+      </p>
+      <p>
+        Se busca por documento, apellido, nombre, teléfono o número de afiliado, sin puntos ni
+        guiones. Sin texto, se lista el padron completo ordenado por apellido.
+      </p>
+    </app-ayuda>
   </div>
 
-  <div class="filtros">
+  <!--
+    Regla de filtros (plan §3.4): la busqueda, que se usa siempre, a la vista; estado y perfil, que
+    casi nunca se tocan, detras del embudo.
+  -->
+  <app-filtros [activos]="filtrosAvanzadosActivos()">
+    <div class="campo" filtro-principal>
+      <label class="visualmente-oculto" for="padron-busqueda"
+        >Documento, apellido, nombre, teléfono o número de afiliado</label
+      >
+      <div class="campo-busqueda">
+        <app-icono class="campo-busqueda__icono" nombre="buscar" />
+        <input
+          id="padron-busqueda"
+          type="search"
+          name="padron-busqueda"
+          placeholder="Buscar por documento, apellido, nombre, teléfono o afiliado"
+          [value]="texto()"
+          (change)="buscar($any($event.target).value)"
+          aria-describedby="padron-busqueda-ayuda"
+        />
+      </div>
+      <p class="visualmente-oculto" id="padron-busqueda-ayuda">
+        Se busca por documento, apellido, nombre, teléfono o número de afiliado; no hace falta
+        escribir puntos ni guiones. Sin texto, se lista el padron completo ordenado por apellido.
+      </p>
+    </div>
+
     <div class="campo">
       <label for="padron-filtro-estado">Estado de la ficha</label>
       <select
@@ -74,7 +93,7 @@
     </div>
 
     <div class="campo">
-      <label for="padron-filtro-perfil">Perfil clinico</label>
+      <label for="padron-filtro-perfil">Perfil clínico</label>
       <select
         id="padron-filtro-perfil"
         name="padron-filtro-perfil"
@@ -86,102 +105,101 @@
         <option value="SIN_PERFIL">Solo personas sin perfil</option>
       </select>
     </div>
-  </div>
-
-  <p class="acciones">
-    <button type="button" class="boton" (click)="abrirAlta()" *akinePermiso="permisoManage">
-      Dar de alta una persona
-    </button>
-  </p>
+  </app-filtros>
 </section>
 
 @if (altaAbierta()) {
-  <section class="tarjeta" aria-labelledby="titulo-alta-persona">
-    <h2 id="titulo-alta-persona">Nueva persona</h2>
-
-    <p class="ayuda">
-      Esto registra una <b>persona</b>. No le crea perfil clinico ni historia clinica: si empieza
-      una atencion, se le activa el perfil despues, desde su fila.
-    </p>
+  <section class="tarjeta tarjeta--formulario" aria-labelledby="titulo-alta-persona">
+    <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
+      <h2 id="titulo-alta-persona">Nueva persona</h2>
+      <app-ayuda titulo="Nueva persona">
+        <p>
+          Esto registra una <b>persona</b>. No le crea perfil clínico ni historia clínica: si
+          empieza una atención, se le activa el perfil después, desde su fila.
+        </p>
+      </app-ayuda>
+    </div>
 
     <form [formGroup]="formularioAlta" (ngSubmit)="enviarAlta()" novalidate>
-      <div class="campo">
-        <label for="alta-persona-apellido">Apellido</label>
-        <input
-          id="alta-persona-apellido"
-          type="text"
-          formControlName="apellido"
-          [attr.aria-invalid]="mostrarErrorAlta('apellido') ? 'true' : null"
-        />
-        @if (mostrarErrorAlta('apellido')) {
-          <p class="estado estado--error">El apellido es obligatorio.</p>
-        }
-      </div>
-
-      <div class="campo">
-        <label for="alta-persona-nombre">Nombre</label>
-        <input
-          id="alta-persona-nombre"
-          type="text"
-          formControlName="nombre"
-          [attr.aria-invalid]="mostrarErrorAlta('nombre') ? 'true' : null"
-        />
-        @if (mostrarErrorAlta('nombre')) {
-          <p class="estado estado--error">El nombre es obligatorio.</p>
-        }
-      </div>
-
-      <div class="campo">
-        <label for="alta-persona-tipo-documento">Tipo de documento</label>
-        <select
-          id="alta-persona-tipo-documento"
-          formControlName="tipoDocumento"
-          aria-describedby="alta-persona-documento-ayuda"
-        >
-          <option value="">Sin documento</option>
-          @for (tipo of tiposDeDocumento; track tipo) {
-            <option [value]="tipo">{{ etiquetaDeTipoDocumento(tipo) }}</option>
+      <div class="grilla-campos grilla-campos--dos">
+        <div class="campo">
+          <label for="alta-persona-apellido">Apellido</label>
+          <input
+            id="alta-persona-apellido"
+            type="text"
+            formControlName="apellido"
+            [attr.aria-invalid]="mostrarErrorAlta('apellido') ? 'true' : null"
+          />
+          @if (mostrarErrorAlta('apellido')) {
+            <p class="estado estado--error">El apellido es obligatorio.</p>
           }
-        </select>
-      </div>
+        </div>
 
-      <div class="campo">
-        <label for="alta-persona-numero-documento">Numero de documento</label>
-        <input
-          id="alta-persona-numero-documento"
-          type="text"
-          formControlName="numeroDocumento"
-          aria-describedby="alta-persona-documento-ayuda"
-        />
-        <p class="ayuda" id="alta-persona-documento-ayuda">
-          El documento es opcional: una persona sin DNI —un menor, alguien recien llegado— es un
-          caso normal. <b>No inventes un numero para completar el campo.</b> Si lo cargas, el tipo y
-          el numero van juntos.
-        </p>
-      </div>
+        <div class="campo">
+          <label for="alta-persona-nombre">Nombre</label>
+          <input
+            id="alta-persona-nombre"
+            type="text"
+            formControlName="nombre"
+            [attr.aria-invalid]="mostrarErrorAlta('nombre') ? 'true' : null"
+          />
+          @if (mostrarErrorAlta('nombre')) {
+            <p class="estado estado--error">El nombre es obligatorio.</p>
+          }
+        </div>
 
-      <div class="campo">
-        <label for="alta-persona-fecha-nacimiento">Fecha de nacimiento</label>
-        <input id="alta-persona-fecha-nacimiento" type="date" formControlName="fechaNacimiento" />
-      </div>
+        <div class="campo">
+          <label for="alta-persona-tipo-documento">Tipo de documento</label>
+          <select
+            id="alta-persona-tipo-documento"
+            formControlName="tipoDocumento"
+            aria-describedby="alta-persona-documento-ayuda"
+          >
+            <option value="">Sin documento</option>
+            @for (tipo of tiposDeDocumento; track tipo) {
+              <option [value]="tipo">{{ etiquetaDeTipoDocumento(tipo) }}</option>
+            }
+          </select>
+        </div>
 
-      <div class="campo">
-        <label for="alta-persona-email">Correo de contacto</label>
-        <input
-          id="alta-persona-email"
-          type="email"
-          formControlName="email"
-          aria-describedby="alta-persona-email-ayuda"
-        />
-        <p class="ayuda" id="alta-persona-email-ayuda">
-          Es un dato de contacto administrativo, no una clave de acceso: la cuenta del portal es
-          otra cosa y puede no existir.
-        </p>
-      </div>
+        <div class="campo">
+          <label for="alta-persona-numero-documento">Número de documento</label>
+          <input
+            id="alta-persona-numero-documento"
+            type="text"
+            formControlName="numeroDocumento"
+            aria-describedby="alta-persona-documento-ayuda"
+          />
+          <p class="ayuda" id="alta-persona-documento-ayuda">
+            El documento es opcional: una persona sin DNI —un menor, alguien recien llegado— es un
+            caso normal. <b>No inventes un número para completar el campo.</b> Si lo cargas, el tipo
+            y el número van juntos.
+          </p>
+        </div>
 
-      <div class="campo">
-        <label for="alta-persona-telefono">Telefono</label>
-        <input id="alta-persona-telefono" type="tel" formControlName="telefono" />
+        <div class="campo">
+          <label for="alta-persona-fecha-nacimiento">Fecha de nacimiento</label>
+          <input id="alta-persona-fecha-nacimiento" type="date" formControlName="fechaNacimiento" />
+        </div>
+
+        <div class="campo">
+          <label for="alta-persona-email">Correo de contacto</label>
+          <input
+            id="alta-persona-email"
+            type="email"
+            formControlName="email"
+            aria-describedby="alta-persona-email-ayuda"
+          />
+          <p class="ayuda" id="alta-persona-email-ayuda">
+            Es un dato de contacto administrativo, no una clave de acceso: la cuenta del portal es
+            otra cosa y puede no existir.
+          </p>
+        </div>
+
+        <div class="campo">
+          <label for="alta-persona-telefono">Teléfono</label>
+          <input id="alta-persona-telefono" type="tel" formControlName="telefono" />
+        </div>
       </div>
 
       <div class="campo">
@@ -194,7 +212,7 @@
         ></textarea>
         <p class="ayuda" id="alta-persona-notas-ayuda">
           Datos administrativos: como llega, quien la acompaña, preferencias de turno.
-          <b>Nada clinico</b>: eso va en la historia clinica, no aca.
+          <b>Nada clínico</b>: eso va en la historia clínica, no acá.
         </p>
       </div>
 
@@ -282,7 +300,7 @@
   }
 } @else if (personas().length === 0) {
   <p class="estado">
-    No hay personas que coincidan con la busqueda. Si es alguien nuevo, dala de alta.
+    No hay personas que coincidan con la búsqueda. Si es alguien nuevo, dala de alta.
   </p>
 } @else {
   <div class="tabla-scroll" tabindex="0" role="region" aria-labelledby="caption-padron">
@@ -291,7 +309,7 @@
         {{
           totalPersonas()
         }}
-        persona(s) en el padron segun los filtros aplicados
+        persona(s) en el padron según los filtros aplicados
       </caption>
       <thead>
         <tr>
@@ -411,7 +429,7 @@
                     </div>
 
                     <div class="campo">
-                      <label for="edicion-numero-{{ persona.id }}">Numero de documento</label>
+                      <label for="edicion-numero-{{ persona.id }}">Número de documento</label>
                       <input
                         id="edicion-numero-{{ persona.id }}"
                         type="text"
@@ -438,7 +456,7 @@
                     </div>
 
                     <div class="campo">
-                      <label for="edicion-telefono-{{ persona.id }}">Telefono</label>
+                      <label for="edicion-telefono-{{ persona.id }}">Teléfono</label>
                       <input
                         id="edicion-telefono-{{ persona.id }}"
                         type="tel"
@@ -494,7 +512,7 @@
                   titulo="Activar el perfil de paciente de {{ nombreCompleto(persona) }}"
                   etiqueta="Motivo (opcional)"
                   [motivoObligatorio]="false"
-                  ayuda="Esto la habilita como paciente reutilizando su ficha: no se vuelve a cargar ningun dato. NO le crea historia clinica. Si ya tenia perfil, la accion no cambia nada."
+                  ayuda="Esto la habilita como paciente reutilizando su ficha: no se vuelve a cargar ningún dato. NO le crea historia clínica. Si ya tenía perfil, la acción no cambia nada."
                   textoConfirmar="Activar perfil"
                   [enviando]="enviando()"
                   (confirmado)="confirmarActivacion($event)"

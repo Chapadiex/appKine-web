@@ -8,9 +8,9 @@ export function tipoDeMovimientoEnPalabras(tipo: string | undefined): string {
     case MovimientoDeCajaTipoEnum.EGRESO:
       return 'Egreso';
     case MovimientoDeCajaTipoEnum.REVERSION_DE_INGRESO:
-      return 'Reversion de ingreso';
+      return 'Reversión de ingreso';
     case MovimientoDeCajaTipoEnum.REVERSION_DE_EGRESO:
-      return 'Reversion de egreso';
+      return 'Reversión de egreso';
     default:
       return tipo ?? '';
   }

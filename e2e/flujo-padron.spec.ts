@@ -20,13 +20,13 @@ test.describe('Padron de personas contra el backend real', () => {
     const fila = page.getByRole('row').filter({ hasText: apellido });
 
     await navegar(page, '/pacientes');
-    await expect(page.getByRole('heading', { name: 'Padron de personas', level: 1 })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Padrón de personas', level: 1 })).toBeVisible();
 
     // --- Alta por pantalla ---
     await page.getByRole('button', { name: 'Dar de alta una persona' }).click();
     await page.getByLabel('Apellido', { exact: true }).fill(apellido);
     await page.getByLabel('Nombre', { exact: true }).fill('Marta');
-    await page.getByLabel('Telefono', { exact: true }).fill('3515550101');
+    await page.getByLabel('Teléfono', { exact: true }).fill('3515550101');
     const alta = respuestaDe(page, 'POST', /\/personas$/);
     await page.getByRole('button', { name: 'Dar de alta', exact: true }).click();
     const creada = await alta;

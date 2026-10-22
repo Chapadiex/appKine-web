@@ -110,9 +110,7 @@ test.describe('Clases grupales contra el backend real', () => {
   }) => {
     // 1. Programar la clase por pantalla.
     await navegar(page, `/clases/nueva?fecha=${fecha}`);
-    await expect(
-      page.getByRole('heading', { name: 'Programar una clase', level: 1 }),
-    ).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Programar clase', level: 1 })).toBeVisible();
     const habilitaciones = respuestaDe(page, 'GET', /\/habilitaciones$/);
     await page.getByLabel('Oferta grupal').selectOption({ label: oferta.nombre });
     expect((await habilitaciones).status()).toBe(200);
@@ -214,9 +212,13 @@ test.describe('Clases grupales contra el backend real', () => {
     await expect(
       page.getByRole('link', { name: new RegExp(`Ver clase ${oferta.nombre}`) }),
     ).toBeVisible();
-    await expect(page.getByText(`${centro.profesional.nombre} · ${box.nombre}`)).toBeVisible();
+    const filaDeLaClase = page.getByRole('row').filter({
+      has: page.getByRole('link', { name: new RegExp(`Ver clase ${oferta.nombre}`) }),
+    });
+    await expect(filaDeLaClase).toContainText(centro.profesional.nombre);
+    await expect(filaDeLaClase).toContainText(box.nombre);
     await navegar(page, `/agenda/recepcion?fecha=${fecha}`);
-    const delDia = page.getByRole('region', { name: 'Clases grupales del dia' });
+    const delDia = page.getByRole('region', { name: 'Clases grupales del día' });
     await expect(delDia).toContainText(oferta.nombre);
     await expect(delDia).toContainText(`${CUPO} de ${CUPO} lugares ocupados`);
 

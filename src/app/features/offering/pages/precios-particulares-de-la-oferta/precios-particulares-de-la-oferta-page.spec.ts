@@ -74,7 +74,7 @@ describe('PreciosParticularesDeLaOfertaPage', () => {
 
   afterEach(() => httpMock.verify());
 
-  it('lista los precios con su situacion y el precio de lista de la oferta', async () => {
+  it('lista los precios con su situación y el precio de lista de la oferta', async () => {
     const fixture = await montar();
     const contenido = texto(fixture);
 
@@ -111,7 +111,7 @@ describe('PreciosParticularesDeLaOfertaPage', () => {
     );
     await estabilizar(fixture);
 
-    expect(texto(fixture)).toContain('cerrale la vigencia al actual el dia anterior');
+    expect(texto(fixture)).toContain('cerrale la vigencia al actual el día anterior');
   });
 
   it('sin precio de lista la moneda es obligatoria y viaja la que se escribe', async () => {
@@ -144,7 +144,7 @@ describe('PreciosParticularesDeLaOfertaPage', () => {
     expect(texto(fixture)).toContain('El precio quedo cargado');
   });
 
-  it('el alta con el importe vacio no manda nada', async () => {
+  it('el alta con el importe vacío no manda nada', async () => {
     const fixture = await montar();
     botones(fixture, 'Cargar un precio')[0].click();
     fixture.detectChanges();
@@ -154,7 +154,7 @@ describe('PreciosParticularesDeLaOfertaPage', () => {
     expect(texto(fixture)).toContain('El importe es obligatorio');
   });
 
-  it('cambiar el fin manda solo el fin y la version; vacio reabre la vigencia', async () => {
+  it('cambiar el fin manda solo el fin y la versión; vacío reabre la vigencia', async () => {
     const fixture = await montar();
     botones(fixture, 'Cambiar fin')[0].click();
     fixture.detectChanges();

@@ -1,3 +1,8 @@
+import { Pestanas } from '../../../../shared/components/pestanas/pestanas';
+import {
+  ETIQUETA_PESTANAS_DE_CONTRATACION,
+  PESTANAS_DE_CONTRATACION,
+} from '../../models/pestanas-de-contratacion';
 import {
   Component,
   ElementRef,
@@ -33,6 +38,12 @@ import {
   etiquetaDeTipo,
 } from '../../models/etiquetas-de-contracting';
 import { textoRequerido } from '../../../../shared/validators/texto-requerido';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
+import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
+import { Filtros } from '../../../../shared/components/filtros/filtros';
+import { Icono } from '../../../../shared/components/icono/icono';
 
 /** Operacion abierta sobre una fila. Solo una a la vez. */
 type TipoAccion = 'editar' | 'baja';
@@ -48,7 +59,7 @@ type TipoAccion = 'editar' | 'baja';
  *
  * <p>Sus rutas no llevan `{consultorioId}` —el tenant sale del token— pero las mutaciones evaluan
  * `convenio:manage` <b>con la sede del contexto</b>. Sin sede elegida, el backend responde 403 a
- * cada boton y la pantalla no tendria como explicarlo. Por eso la ruta lleva `contextGuard`,
+ * cada botón y la pantalla no tendria como explicarlo. Por eso la ruta lleva `contextGuard`,
  * igual que el padron de personas, y por eso el listado se recarga entero cuando cambia el
  * contexto: un panel de baja a medio llenar apuntando a un financiador de otra organizacion es
  * exactamente la fuga de tenant que el aislamiento evita.
@@ -56,7 +67,7 @@ type TipoAccion = 'editar' | 'baja';
  * <h2>2. El codigo es inmutable, y la edicion no lo incluye</h2>
  *
  * <p>No es una restriccion de formulario que se pueda relajar: el codigo es lo que las coberturas
- * y los convenios ya firmados <b>guardan</b>, asi que cambiarlo reescribiria el significado de
+ * y los convenios ya firmados <b>guardan</b>, asi que cambiarlo reescribiría el significado de
  * filas que no participan de esta llamada. El contrato ni siquiera lo acepta en el `PUT`. La
  * pantalla lo muestra deshabilitado con la explicacion al lado, en vez de esconderlo: quien
  * quiere corregir un codigo mal tipeado necesita entender que la salida es dar de baja y volver
@@ -82,11 +93,24 @@ type TipoAccion = 'editar' | 'baja';
  */
 @Component({
   selector: 'app-financiadores-page',
-  imports: [ReactiveFormsModule, RouterLink, PermisoDirective, ConfirmacionConMotivo],
+  imports: [
+    Pestanas,
+    ColumnaOrdenable,
+    Paginacion,
+    Ayuda,
+    Filtros,
+    Icono,
+    ReactiveFormsModule,
+    RouterLink,
+    PermisoDirective,
+    ConfirmacionConMotivo,
+  ],
   templateUrl: './financiadores-page.html',
   styleUrl: '../../contracting.css',
 })
 export class FinanciadoresPage {
+  protected readonly pestanas = PESTANAS_DE_CONTRATACION;
+  protected readonly etiquetaDePestanas = ETIQUETA_PESTANAS_DE_CONTRATACION;
   private readonly api = inject(ContractingApi);
   private readonly tenantContext = inject(TenantContextStore);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
@@ -111,6 +135,15 @@ export class FinanciadoresPage {
     return actual.tipo === 'listo' ? actual.pagina : [];
   });
 
+  /** Orden y paginado de la lista completa (plan Â§3.4): el servidor no pagina financiadores. */
+  protected readonly tabla = tablaLocal(this.financiadores, {
+    columnas: {
+      nombre: (financiador) => financiador.nombre,
+      tipo: (financiador) => this.etiquetaDeTipo(financiador.tipo),
+      estado: (financiador) => financiador.estado,
+    },
+  });
+
   protected readonly mensajeError = computed(() => {
     const actual = this.estado();
     return actual.tipo === 'error' ? actual.mensaje : null;
@@ -124,6 +157,11 @@ export class FinanciadoresPage {
   protected readonly filtroEstado = signal<FiltroEstado>('ACTIVO');
   protected readonly filtroTipo = signal<FiltroTipo | null>(null);
   protected readonly busqueda = signal('');
+
+  /** Filtros avanzados (detras del embudo) fuera de su valor por defecto. */
+  protected readonly filtrosAvanzadosActivos = computed(
+    () => Number(this.filtroEstado() !== 'ACTIVO') + Number(this.filtroTipo() !== null),
+  );
 
   /** Fila y operacion abiertas, o `null`. Solo una a la vez. */
   protected readonly panel = signal<{ readonly id: number; readonly tipo: TipoAccion } | null>(
@@ -149,7 +187,7 @@ export class FinanciadoresPage {
    *
    * <p>Un `<form>` sin `[formGroup]` <b>no emite `ngSubmit`</b>: esa directiva es la que lo
    * dispara, y sin ella el binding queda escuchando un evento del DOM que nadie manda, asi que el
-   * boton de buscar no hace absolutamente nada — sin error en consola ni en compilacion. Es el
+   * botón de buscar no hace absolutamente nada — sin error en consola ni en compilacion. Es el
    * mismo defecto que `ConfirmacionConMotivo` documenta en su javadoc, y ya se pago una vez.
    */
   protected readonly formularioBusqueda = this.formBuilder.nonNullable.group({ q: [''] });
@@ -214,7 +252,7 @@ export class FinanciadoresPage {
   }
 
   /**
-   * Busca por nombre, codigo o CUIT.
+   * Buscá por nombre, codigo o CUIT.
    *
    * <p>Se dispara con el <b>submit</b> del formulario de filtros y no en cada tecla. Una busqueda
    * en vivo necesita un debounce, y el debounce es de donde salio el defecto del buscador de
@@ -289,7 +327,7 @@ export class FinanciadoresPage {
         observaciones: financiador.observaciones ?? '',
       });
       // El foco se va con el panel: sin esto, quien navega por teclado aprieta "Editar" y el
-      // formulario aparece mas abajo mientras el foco sigue en el boton.
+      // formulario aparece mas abajo mientras el foco sigue en el botón.
       afterNextRender(() => this.enfocar('#editar-financiador-nombre'), {
         injector: this.injector,
       });
@@ -322,7 +360,7 @@ export class FinanciadoresPage {
    * <p>Los opcionales vacios <b>no viajan</b>. En el alta daria casi lo mismo, pero se hace igual
    * por coherencia con la edicion, donde un `''` y un campo ausente significan cosas distintas.
    *
-   * <p>El CUIT viaja tal como se escribio: el backend lo <b>normaliza a 11 digitos</b> antes de
+   * <p>El CUIT viaja tal como se escribio: el backend lo <b>normaliza a 11 dígitos</b> antes de
    * guardar y de comparar, asi que `30-12345678-9` y `30123456789` chocan entre si. Limpiarlo aca
    * seria una segunda implementacion de esa regla, y es la leccion que 03.01 pago con el
    * documento de una persona.
@@ -362,7 +400,7 @@ export class FinanciadoresPage {
       next: () => {
         this.cerrarPanel();
         this.exito.set(
-          'El financiador quedo dado de alta. Todavia no tiene planes: para poder firmar un ' +
+          'El financiador quedó dado de alta. Todavía no tiene planes: para poder firmar un ' +
             'convenio con el hace falta al menos uno, porque el convenio se firma contra un plan ' +
             'y no contra el financiador entero.',
         );
@@ -422,9 +460,9 @@ export class FinanciadoresPage {
       next: () => {
         this.cerrarPanel();
         this.exito.set(
-          'El financiador quedo dado de baja. Sus planes conservan sus filas y las coberturas y ' +
-            'convenios ya firmados siguen resolviendo: lo unico que se impide es crear planes ' +
-            'nuevos bajo el y ofrecerlo en selecciones nuevas. No hay reactivacion, pero su codigo ' +
+          'El financiador quedó dado de baja. Sus planes conservan sus filas y las coberturas y ' +
+            'convenios ya firmados siguen resolviendo: lo único que se impide es crear planes ' +
+            'nuevos bajo él y ofrecerlo en selecciones nuevas. No hay reactivación, pero su código ' +
             'queda libre para un alta nueva.',
         );
         this.cargar();
@@ -449,8 +487,8 @@ export class FinanciadoresPage {
     const version = original?.version;
     if (original === null || version === undefined) {
       this.errorAccion.set(
-        'No pudimos leer la version de este financiador. Cerra el panel, recarga el listado y ' +
-          'volve a intentar.',
+        'No pudimos leer la versión de este financiador. Cerrá el panel, recargá el listado y ' +
+          'volvé a intentar.',
       );
       return null;
     }

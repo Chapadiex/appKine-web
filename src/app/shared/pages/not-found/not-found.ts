@@ -1,14 +1,12 @@
-import { Component } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Location } from '@angular/common';
+import { Component, inject } from '@angular/core';
+import { Router, RouterLink } from '@angular/router';
 
 /**
- * Pagina 404.
+ * Pagina no encontrada (404 de ruta, dentro de la app).
  *
- * <p>Vive en `shared` y no en un feature porque no sabe nada de dominio: es la respuesta a
- * una ruta inexistente, sea cual sea (ADR-0004).
- *
- * <p>Ofrece una salida ademas del mensaje: un cartel de error sin accion deja al usuario
- * sin nada que hacer (ADR-0005).
+ * <p>Muestra la direccion pedida, para que quien llego por un enlace roto sepa cual era, y dos
+ * salidas: el inicio y volver atras.
  */
 @Component({
   selector: 'app-not-found',
@@ -16,4 +14,12 @@ import { RouterLink } from '@angular/router';
   templateUrl: './not-found.html',
   styleUrl: './not-found.css',
 })
-export class NotFound {}
+export class NotFound {
+  private readonly location = inject(Location);
+
+  protected readonly ruta = inject(Router).url;
+
+  protected volver(): void {
+    this.location.back();
+  }
+}

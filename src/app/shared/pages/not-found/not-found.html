@@ -1,7 +1,11 @@
-<h1>Pagina no encontrada</h1>
-
-<p class="descripcion" role="alert">La direccion a la que intentaste llegar no existe.</p>
-
-<p>
-  <a routerLink="/" class="enlace">Volver al inicio</a>
-</p>
+<!-- Pagina no encontrada (diseño del canvas "AKINE · Pantallas", 22/10/2026). -->
+<section class="pantalla-error" aria-labelledby="titulo-no-encontrada">
+  <span class="pantalla-error__codigo">Error 404</span>
+  <h1 id="titulo-no-encontrada">Página no encontrada</h1>
+  <p role="alert">La dirección a la que intentaste llegar no existe o se movió.</p>
+  <code class="pantalla-error__ruta">{{ ruta }}</code>
+  <div class="pantalla-error__acciones">
+    <a class="boton" routerLink="/">Ir al inicio</a>
+    <button type="button" class="boton boton--secundario" (click)="volver()">Volver atrás</button>
+  </div>
+</section>

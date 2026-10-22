@@ -29,6 +29,7 @@ import {
   RegistrarTratamientoLateralidadEnum,
 } from '../../../../api/generated/model/registrar-tratamiento';
 import { Tratamiento } from '../../../../api/generated/model/tratamiento';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 
 /** Causas que no son de este bloque sino de la atencion entera: las resuelve la pantalla. */
 const CAUSAS_DE_LA_ATENCION = new Set(['version-vieja', 'sesion-cerrada', 'sesion-ajena']);
@@ -69,7 +70,7 @@ export function parametroParaEnviar(p: ParametroEnEdicion): ParametroDeTratamien
     case ParametroDeTratamientoTipoDatoEnum.NUMERICO: {
       const numero = numeroDe(p.valor);
       if (numero === null) {
-        return `El parametro «${clave}» es numerico y su valor no es un numero.`;
+        return `El parametro «${clave}» es numerico y su valor no es un número.`;
       }
       const unidad = p.unidad.trim();
       return {
@@ -140,6 +141,7 @@ export function parametrosParaEnviar(
  * sesion, igual que el alta.
  */
 @Component({
+  imports: [Ayuda],
   selector: 'app-tratamientos-de-sesion',
   templateUrl: './tratamientos-de-sesion.html',
   styleUrl: '../../atencion.css',
@@ -296,7 +298,7 @@ export class TratamientosDeSesion {
   protected registrar(): void {
     const practicaId = this.practicaId();
     if (practicaId === null) {
-      this.aviso.set('Elegi que practica se realizo.');
+      this.aviso.set('Elegí que práctica se realizo.');
       return;
     }
     const parametros = parametrosParaEnviar(this.parametros());
@@ -310,7 +312,7 @@ export class TratamientosDeSesion {
       duracionTexto !== '' &&
       (duracion === null || !Number.isInteger(duracion) || duracion < 1)
     ) {
-      this.aviso.set('La duracion va en minutos enteros.');
+      this.aviso.set('La duración va en minutos enteros.');
       return;
     }
 

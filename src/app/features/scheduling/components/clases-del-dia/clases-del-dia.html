@@ -1,5 +1,5 @@
 <section class="tarjeta" aria-labelledby="titulo-clases-del-dia">
-  <h2 id="titulo-clases-del-dia">Clases grupales del dia</h2>
+  <h2 id="titulo-clases-del-dia">Clases grupales del día</h2>
 
   @if (error(); as fallo) {
     <p class="estado estado--error">{{ fallo.mensaje }}</p>
@@ -9,9 +9,9 @@
       </button>
     </div>
   } @else if (clases() === null) {
-    <p class="estado estado--cargando">Leyendo las clases del dia…</p>
+    <p class="estado estado--cargando">Leyendo las clases del día…</p>
   } @else if (clases()!.length === 0) {
-    <p class="estado estado--vacio">No hay clases que empiecen este dia.</p>
+    <p class="estado estado--vacio">No hay clases que empiecen este día.</p>
   } @else {
     <ul class="clases-del-dia">
       @for (clase of clases(); track clase.eventoId) {

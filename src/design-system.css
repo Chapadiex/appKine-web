@@ -59,68 +59,67 @@
  * ====================================================================================== */
 
 :root {
+  /*
+   * Paleta del diseño "AKINE · Pantallas" (canvas de Claude Design, 22/10/2026). Fondo gris
+   * frio, tarjetas blancas, azul de accion #1D5FBF y una barra lateral BLANCA: la marca deja de
+   * ser una barra oscura. Unica desviacion deliberada: el borde de un control. El canvas usa
+   * #D5DBE2 (1,4:1 contra blanco) y WCAG 1.4.11 exige 3:1 para identificar un control, asi que
+   * --color-borde-control queda en #808A99 (3,2:1 sobre el fondo #F5F6F8 de la pagina); los bordes decorativos si son los del canvas.
+   */
+
   /* --- Superficies -------------------------------------------------------------------- */
-  --color-superficie: #fff;
-  --color-superficie-sutil: #f4f7fa;
-  --color-superficie-atenuada: #f7f8fa;
-  --color-superficie-codigo: #eef2f6;
+  --color-superficie: #ffffff;
+  --color-superficie-sutil: #f5f6f8;
+  --color-superficie-atenuada: #f8f9fb;
+  --color-superficie-codigo: #eef1f4;
 
   /* --- Texto -------------------------------------------------------------------------- */
-  --color-texto: #10263f;
-  --color-texto-fuerte: #1b2733;
-  --color-texto-suave: #4a5a6a;
+  --color-texto: #1f2933;
+  --color-texto-fuerte: #1f2933;
+  --color-texto-suave: #5f6b7a;
 
   /* --- Bordes ------------------------------------------------------------------------- */
-  --color-borde: #d5dee7;
-  --color-borde-sutil: #e3e9ef;
+  --color-borde: #e1e5ea;
+  --color-borde-sutil: #eef1f4;
   /* Borde de un control operable: es el unico borde que WCAG 1.4.11 obliga a 3:1. */
-  --color-borde-control: #7b8a99;
-  --color-deshabilitado: #6a7684;
+  --color-borde-control: #808a99;
+  --color-deshabilitado: #6b7684;
 
   /* --- Marca y acciones --------------------------------------------------------------- */
-  --color-marca-fondo: #10263f;
-  --color-marca-texto: #fff;
-  --color-marca-texto-suave: #c8d8ea;
-  /*
-   * Superficie de un item sobre la barra de marca -hover y seccion actual de la navegacion-.
-   * Es un tono de la propia barra y NO `--color-superficie`: esa es la de la pagina, y usarla
-   * aca pintaria un recuadro blanco sobre la barra oscura.
-   */
-  --color-marca-superficie-activa: #1b3a5c;
-  /* Marcador de la seccion actual. Claro a proposito: tiene que verse sobre la barra oscura. */
-  --color-marca-borde: #7fb6ea;
-  --color-acento: #1b3a5c;
-  --color-acento-claro: #2f6fb2;
-  --color-accion-fondo: #10263f;
-  --color-accion-fondo-hover: #1b3a5c;
-  --color-accion-texto: #fff;
-  --color-enlace: #10263f;
-  --color-foco: #1b3a5c;
-  /*
-   * Anillo de foco SOBRE LA BARRA DE MARCA. `--color-foco` es casi el mismo azul que la barra:
-   * ahi daba 1,2:1 y el teclado no veia donde estaba parado (medido en AKINE-G-7). Es el celeste
-   * del marcador de seccion, que ya estaba elegido para verse sobre la barra: 6,8:1 en claro.
-   */
-  --color-foco-sobre-marca: #7fb6ea;
+  /* La barra lateral es blanca: "marca" es ahora la superficie de navegacion, no un color. */
+  --color-marca-fondo: #ffffff;
+  --color-marca-texto: #1f2933;
+  --color-marca-texto-suave: #3b4754;
+  --color-marca-superficie-activa: #eaf1fb;
+  --color-marca-borde: #1d5fbf;
+  --color-acento: #1d5fbf;
+  --color-acento-claro: #eaf1fb;
+  --color-accion-fondo: #1d5fbf;
+  --color-accion-fondo-hover: #164a96;
+  --color-accion-texto: #ffffff;
+  --color-enlace: #1d5fbf;
+  --color-foco: #1d5fbf;
+  --color-foco-sobre-marca: #1d5fbf;
 
   /* --- Estados ------------------------------------------------------------------------ */
-  --color-exito: #1d6b3f;
-  --color-exito-fondo: #eaf6ee;
-  --color-exito-texto: #135029;
-  --color-aviso: #7a4b00;
-  --color-aviso-fondo: #fdf5e6;
-  --color-aviso-texto: #6b4600;
-  --color-peligro: #a32020;
-  --color-peligro-fondo: #fdeded;
-  --color-peligro-texto: #7d1717;
+  --color-exito: #1e7b45;
+  --color-exito-fondo: #e6f4ec;
+  --color-exito-texto: #155c33;
+  --color-aviso: #8a5200;
+  --color-aviso-fondo: #fff3e0;
+  --color-aviso-texto: #7a4800;
+  --color-peligro: #a32820;
+  --color-peligro-fondo: #fcebea;
+  --color-peligro-texto: #8e2a2a;
 
   /* --- Desborde ---------------------------------------------------------------------- */
   /* Barra lateral de la tabla desplazable que anuncia contenido escondido. Grafico: 3:1. */
   --color-desborde: var(--color-borde-control);
 
   /* --- Tipografia --------------------------------------------------------------------- */
-  --fuente-base: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  --fuente-mono: ui-monospace, 'Cascadia Code', SFMono-Regular, Menlo, Consolas, monospace;
+  /* Roboto y Roboto Mono, servidas desde el propio bundle (@fontsource, sin CDN: la CSP no cambia). */
+  --fuente-base: Roboto, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --fuente-mono: 'Roboto Mono', ui-monospace, Menlo, Consolas, monospace;
   --tipo-2xs: 0.75rem;
   --tipo-xs: 0.8125rem;
   --tipo-sm: 0.875rem;
@@ -131,7 +130,7 @@
   --tipo-2xl: 1.5rem;
   --peso-normal: 400;
   --peso-medio: 500;
-  --peso-semi: 600;
+  --peso-semi: 500;
   --peso-fuerte: 700;
   --linea-base: 1.5;
 
@@ -147,9 +146,9 @@
   --esp-9: 2rem;
 
   /* --- Radios ------------------------------------------------------------------------- */
-  --radio-sm: 4px;
-  --radio-md: 6px;
-  --radio-lg: 8px;
+  --radio-sm: 6px;
+  --radio-md: 8px;
+  --radio-lg: 10px;
   --radio-pastilla: 999px;
 
   /* --- Bordes y foco ------------------------------------------------------------------ */
@@ -158,6 +157,10 @@
   --borde-acento: 4px;
   --foco-grosor: 3px;
   --foco-offset: 2px;
+
+  /* --- Shell (UX-01) ---------------------------------------------------------------- */
+  --ancho-barra-lateral: 15.5rem;
+  --alto-barra-superior: 3rem;
 }
 
 /*
@@ -195,8 +198,8 @@
     /* La barra ya es oscura: el item activo se separa ACLARANDO, no oscureciendo. */
     --color-marca-superficie-activa: #22313f;
     --color-marca-borde: #7fb6ea;
-    --color-acento: #4f9ae0;
-    --color-acento-claro: #7fb6ea;
+    --color-acento: #5aa2e5;
+    --color-acento-claro: #17304a;
     --color-accion-fondo: #4f9ae0;
     --color-accion-fondo-hover: #6aabe8;
     --color-accion-texto: #06121c;
@@ -236,7 +239,7 @@
 }
 
 /* Sobre la barra de marca el anillo cambia de color: `--color-foco` ahi no se ve. */
-.cabecera :focus-visible {
+.barra-lateral :focus-visible {
   outline-color: var(--color-foco-sobre-marca);
 }
 
@@ -244,7 +247,16 @@
 
 h1 {
   margin: 0 0 var(--esp-4);
-  font-size: var(--tipo-2xl);
+  color: var(--color-texto-fuerte);
+  font-size: var(--tipo-xl);
+  font-weight: var(--peso-fuerte);
+  line-height: 1.3;
+}
+
+h2,
+h3 {
+  color: var(--color-texto-fuerte);
+  letter-spacing: -0.01em;
 }
 
 .descripcion {
@@ -254,7 +266,7 @@ h1 {
 
 .ayuda {
   margin: 0 0 var(--esp-6);
-  font-size: var(--tipo-md);
+  font-size: var(--tipo-xs);
   color: var(--color-texto-suave);
 }
 
@@ -276,14 +288,17 @@ h1 {
 
 .tarjeta {
   border: var(--borde-fino) solid var(--color-borde);
-  border-radius: var(--radio-lg);
+  border-radius: var(--radio-md);
   padding: var(--esp-7) var(--esp-8);
   margin-bottom: var(--esp-8);
+  background: var(--color-superficie);
+  box-shadow: 0 1px 2px rgb(16 38 63 / 0.05);
 }
 
 .tarjeta h2 {
   margin: 0 0 var(--esp-6);
-  font-size: var(--tipo-lg);
+  font-size: var(--tipo-base);
+  font-weight: var(--peso-semi);
 }
 
 /* Titulo de un panel desplegado dentro de una fila o de una tarjeta. */
@@ -318,13 +333,26 @@ h1 {
 /* --- Botones y enlaces ---------------------------------------------------------------- */
 
 .boton {
-  padding: var(--esp-4) var(--esp-6);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--esp-4);
+  min-height: 2.5rem;
+  padding: var(--esp-4) var(--esp-7);
   border: var(--borde-fino) solid var(--color-accion-fondo);
   border-radius: var(--radio-md);
   background: var(--color-accion-fondo);
   color: var(--color-accion-texto);
   font: inherit;
+  font-size: var(--tipo-sm);
+  font-weight: var(--peso-semi);
+  line-height: 1.2;
+  text-decoration: none;
+  white-space: nowrap;
   cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease;
 }
 
 /* El `:not(:disabled)` viene de la copia de `auth.css` y es el comportamiento correcto: un
@@ -362,6 +390,19 @@ h1 {
   padding-block: var(--esp-2);
 }
 
+/*
+ * Objetivo tactil de 24 px (WCAG 2.5.8) para los enlaces sueltos y las rutas de navegacion:
+ * un enlace dentro de una oracion esta exento, pero uno solo en su renglon no.
+ */
+a.enlace,
+.migas a,
+a.migas,
+a[class*='__migas'] {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.5rem;
+}
+
 /* Foco visible: nunca se quita el outline sin reemplazo (ADR-0005). */
 .boton:focus-visible,
 .enlace:focus-visible {
@@ -385,7 +426,7 @@ h1 {
 }
 
 .campo label {
-  font-size: var(--tipo-md);
+  font-size: var(--tipo-sm);
   font-weight: var(--peso-semi);
 }
 
@@ -395,6 +436,8 @@ h1 {
 .campo select,
 .campo textarea {
   padding: var(--esp-4) 0.625rem;
+  min-height: 2.5rem;
+  box-sizing: border-box;
   border: var(--borde-fino) solid var(--color-borde-control);
   border-radius: var(--radio-md);
   background: var(--color-superficie);
@@ -577,20 +620,29 @@ h1 {
 .tabla {
   width: 100%;
   border-collapse: collapse;
-  font-size: var(--tipo-md);
+  font-size: var(--tipo-sm);
+  font-variant-numeric: tabular-nums;
 }
 
 .tabla th,
 .tabla td {
-  padding: var(--esp-4) var(--esp-5);
+  padding: var(--esp-5) var(--esp-5);
   border-bottom: 1px solid var(--color-borde-sutil);
   text-align: left;
-  vertical-align: top;
+  vertical-align: middle;
 }
 
+/* Encabezado chico y en mayusculas: se lee como rotulo de columna, no como un dato mas. */
 .tabla thead th {
-  color: var(--color-texto-suave);
-  font-weight: var(--peso-semi);
+  background: var(--color-superficie-atenuada);
+  color: var(--color-marca-texto-suave);
+  font-size: var(--tipo-2xs);
+  font-weight: var(--peso-medio);
+  white-space: nowrap;
+}
+
+.tabla tbody tr:hover > td {
+  background: var(--color-superficie-atenuada);
 }
 
 /* --- Filas y marcas de estado de una tabla --------------------------------------------- */
@@ -705,5 +757,448 @@ h1 {
 
   .detalle dd {
     margin-bottom: var(--esp-4);
+  }
+}
+
+/* --- Pestanas de seccion (UX-01) ------------------------------------------------------- */
+
+/*
+ * Navegacion secundaria: las pantallas hermanas de una seccion, debajo del titulo. Es una
+ * linea de enlaces con la actual subrayada, no una fila de botones bordeados: los botones
+ * decian "accion" y esto es "lugar". El contenedor desplaza en horizontal cuando no entran,
+ * en vez de partirse en dos filas.
+ */
+.pestanas {
+  margin-bottom: var(--esp-8);
+  border-bottom: var(--borde-fino) solid var(--color-borde);
+  overflow-x: auto;
+}
+
+.pestanas__lista {
+  display: flex;
+  gap: var(--esp-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* `margin-bottom` negativo para que el subrayado de la actual pise el borde del contenedor. */
+.pestanas__enlace {
+  display: inline-block;
+  margin-bottom: calc(-1 * var(--borde-fino));
+  padding: var(--esp-4) var(--esp-5);
+  border-bottom: var(--borde-medio) solid transparent;
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-sm);
+  font-weight: var(--peso-medio);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.pestanas__enlace:hover {
+  color: var(--color-texto);
+  border-bottom-color: var(--color-borde-control);
+}
+
+/* La actual se marca con subrayado Y peso, no solo con color (WCAG 1.4.1). */
+.pestanas__enlace--actual {
+  color: var(--color-texto-fuerte);
+  font-weight: var(--peso-semi);
+  border-bottom-color: var(--color-acento);
+}
+
+/* --- Titulo con ayuda contextual (UX-01) ----------------------------------------------- */
+
+/*
+ * El titulo de la pantalla y su boton "?" en una fila. El `h1` conserva su margen inferior: la
+ * fila lo absorbe para que la distancia a la descripcion sea la de siempre.
+ */
+.titulo-con-ayuda {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-4);
+  margin-bottom: var(--esp-7);
+}
+
+.titulo-con-ayuda > h1 {
+  margin: 0;
+}
+
+/*
+ * Accion principal de la pantalla ("Dar de alta una persona"), en la misma fila del titulo y del
+ * lado derecho (plan §3.1). En pantallas angostas baja a su propia linea.
+ */
+.encabezado__acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp-4);
+  margin-left: auto;
+}
+
+.titulo-con-ayuda {
+  flex-wrap: wrap;
+}
+
+.ayuda-contextual {
+  position: relative;
+  display: inline-flex;
+}
+
+/*
+ * Boton redondo de 32 px, con contorno de control (3:1, WCAG 1.4.11): sin borde no se distingue
+ * de un adorno. Dentro de un `h1` no va nunca: su nombre se sumaria al del encabezado.
+ */
+.ayuda-contextual__boton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  padding: 0;
+  border: var(--borde-fino) solid var(--color-borde-control);
+  border-radius: var(--radio-pastilla);
+  background: var(--color-superficie);
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-base);
+  cursor: pointer;
+}
+
+.ayuda-contextual__boton:hover,
+.ayuda-contextual__boton[aria-expanded='true'] {
+  background: var(--color-superficie-sutil);
+  color: var(--color-texto-fuerte);
+}
+
+/*
+ * El panel cuelga del boton, alineado a su borde izquierdo, por encima del contenido. Ancho de
+ * lectura (28rem) acotado al viewport para que en tablet no se salga por la derecha.
+ */
+.ayuda-contextual__panel {
+  position: absolute;
+  top: calc(100% + var(--esp-3));
+  left: 0;
+  z-index: 15;
+  width: min(28rem, calc(100vw - 2.5rem));
+  padding: var(--esp-6) var(--esp-7);
+  border: var(--borde-fino) solid var(--color-borde);
+  border-left: var(--borde-acento) solid var(--color-acento);
+  border-radius: var(--radio-lg);
+  background: var(--color-superficie);
+  color: var(--color-texto);
+  font-size: var(--tipo-sm);
+  font-weight: var(--peso-normal);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.16);
+}
+
+.ayuda-contextual__panel[hidden] {
+  display: none;
+}
+
+.ayuda-contextual__titulo {
+  margin: 0 0 var(--esp-4);
+  color: var(--color-texto-fuerte);
+  font-size: var(--tipo-md);
+  font-weight: var(--peso-semi);
+}
+
+.ayuda-contextual__panel p {
+  margin: 0 0 var(--esp-4);
+}
+
+.ayuda-contextual__subtitulo {
+  margin-top: var(--esp-6);
+  color: var(--color-texto-fuerte);
+  font-weight: var(--peso-semi);
+}
+
+/* Titulo de seccion con su "?": mismo ritmo que el h2 suelto de una tarjeta. */
+.titulo-con-ayuda--seccion {
+  margin-bottom: var(--esp-6);
+}
+
+.titulo-con-ayuda--seccion > h2 {
+  margin: 0;
+}
+
+.ayuda-contextual__panel p:last-child,
+.ayuda-contextual__panel ul:last-child {
+  margin-bottom: 0;
+}
+
+/* En una pantalla de 375 px el boton queda cerca del borde derecho: el panel se ancla a la derecha. */
+@media (max-width: 30rem) {
+  .ayuda-contextual__panel {
+    left: auto;
+    right: 0;
+  }
+}
+
+/* --- Barra de filtros (UX-01) ---------------------------------------------------------- */
+
+/*
+ * El campo basico ocupa la fila y el boton del embudo va pegado a su derecha, a la altura del
+ * control (alineados abajo: el campo tiene label arriba). El panel avanzado se despliega debajo,
+ * con los campos en fila mientras entren.
+ */
+.filtros-barra {
+  display: block;
+  margin-bottom: var(--esp-6);
+}
+
+.filtros-barra__fila {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--esp-4);
+}
+
+.filtros-barra__principal {
+  flex: 1;
+  min-width: 0;
+}
+
+.filtros-barra__principal .campo {
+  margin-bottom: 0;
+}
+
+/* Del alto de un control (2.6rem), con contorno de control (3:1, WCAG 1.4.11). */
+.filtros-barra__boton {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--esp-3);
+  flex-shrink: 0;
+  min-width: 2.75rem;
+  height: 2.75rem;
+  padding: 0 var(--esp-4);
+  border: var(--borde-fino) solid var(--color-borde-control);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie);
+  color: var(--color-texto);
+  font-size: var(--tipo-lg);
+  cursor: pointer;
+}
+
+.filtros-barra__boton--con-texto {
+  padding: 0 var(--esp-6);
+  font-size: var(--tipo-sm);
+  font-weight: var(--peso-medio);
+}
+
+.filtros-barra__boton:hover,
+.filtros-barra__boton[aria-expanded='true'] {
+  background: var(--color-superficie-sutil);
+}
+
+/* Cuantos filtros avanzados estan aplicados: el estado no se esconde con el panel. */
+.filtros-barra__contador {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  padding: 0 var(--esp-2);
+  border-radius: var(--radio-pastilla);
+  background: var(--color-accion-fondo);
+  color: var(--color-accion-texto);
+  font-size: var(--tipo-2xs);
+  font-weight: var(--peso-semi);
+}
+
+.filtros-barra__avanzados {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp-6);
+  margin-top: var(--esp-6);
+  padding: var(--esp-6);
+  border-radius: var(--radio-lg);
+  background: var(--color-superficie-sutil);
+}
+
+.filtros-barra__avanzados[hidden] {
+  display: none;
+}
+
+.filtros-barra__avanzados > .campo {
+  flex: 1 1 14rem;
+  margin-bottom: 0;
+}
+
+/* Campo de busqueda: lupa adentro, a la izquierda. La lupa es decorativa; el nombre lo da el label. */
+.campo-busqueda {
+  position: relative;
+}
+
+.campo-busqueda__icono {
+  position: absolute;
+  left: var(--esp-5);
+  bottom: 0.8rem;
+  color: var(--color-texto-suave);
+  pointer-events: none;
+}
+
+.campo .campo-busqueda input {
+  width: 100%;
+  padding-left: 2.5rem;
+}
+
+/* --- Tabla: columnas ordenables y pie (UX-01) ------------------------------------------- */
+
+/*
+ * El boton ocupa el encabezado entero y hereda su tipografia (chica, mayusculas): se ve como el
+ * rotulo de siempre, con el icono del orden al lado. El icono sin orden va tenue; con orden, pleno.
+ */
+.tabla__orden {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--esp-2);
+  margin: calc(-1 * var(--esp-2)) calc(-1 * var(--esp-3));
+  padding: var(--esp-2) var(--esp-3);
+  border: 0;
+  border-radius: var(--radio-sm);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+}
+
+.tabla__orden:hover {
+  color: var(--color-texto-fuerte);
+  background: var(--color-superficie-sutil);
+}
+
+.tabla__icono-orden {
+  font-size: var(--tipo-sm);
+  opacity: 0.55;
+}
+
+.tabla__columna-ordenable[aria-sort] {
+  color: var(--color-texto-fuerte);
+}
+
+.tabla__columna-ordenable[aria-sort] .tabla__icono-orden {
+  opacity: 1;
+}
+
+/* Debajo de la tabla: cuantos hay a la izquierda, el paginador a la derecha. */
+.tabla-pie {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--esp-4);
+  margin-top: var(--esp-5);
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-sm);
+}
+
+.tabla-pie .paginacion {
+  margin: 0;
+}
+
+/* Grilla de campos: dos columnas que bajan a una en pantallas angostas (plan §3.3). */
+.grilla-campos {
+  display: grid;
+  gap: var(--esp-5);
+}
+
+.grilla-campos--dos {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (max-width: 30rem) {
+  .grilla-campos--dos {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.grilla-campos > .campo {
+  margin-bottom: 0;
+}
+
+/* "Mas opciones": campos opcionales y poco frecuentes de un formulario, plegados. */
+.mas-opciones > summary {
+  padding-block: var(--esp-2);
+  color: var(--color-enlace);
+  font-size: var(--tipo-xs);
+  font-weight: var(--peso-medio);
+  cursor: pointer;
+}
+
+.mas-opciones[open] > summary {
+  margin-bottom: var(--esp-5);
+}
+
+.mas-opciones > .campo {
+  margin-bottom: var(--esp-5);
+}
+
+/* Accion terciaria: solo texto, centrada ("Rechazar la invitacion", "Ingresar con otra cuenta"). */
+.boton-texto {
+  align-self: center;
+  min-height: 2rem;
+  padding: 0 var(--esp-4);
+  border: 0;
+  border-radius: var(--radio-sm);
+  background: transparent;
+  color: var(--color-texto-suave);
+  font: inherit;
+  font-size: var(--tipo-xs);
+  cursor: pointer;
+}
+
+.boton-texto:hover:not(:disabled) {
+  color: var(--color-texto);
+  text-decoration: underline;
+}
+
+.pantalla-error {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--esp-5);
+  max-width: 30rem;
+  margin: 4rem auto 0;
+}
+
+.pantalla-error__codigo {
+  color: var(--color-texto-suave);
+  font-family: var(--fuente-mono);
+  font-size: var(--tipo-xs);
+  font-weight: var(--peso-medio);
+}
+
+.pantalla-error h1 {
+  margin: 0;
+}
+
+.pantalla-error p {
+  margin: 0;
+  color: var(--color-marca-texto-suave);
+  line-height: 1.5;
+}
+
+.pantalla-error__ruta {
+  padding: var(--esp-2) var(--esp-4);
+  border-radius: var(--radio-sm);
+  background: var(--color-superficie-codigo);
+  font-family: var(--fuente-mono);
+  font-size: var(--tipo-xs);
+}
+
+.pantalla-error__acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp-4);
+  padding-top: var(--esp-4);
+}
+
+/* En un telefono un rotulo largo parte en dos renglones en vez de empujar la pagina de costado. */
+@media (max-width: 40rem) {
+  .boton {
+    max-width: 100%;
+    white-space: normal;
   }
 }

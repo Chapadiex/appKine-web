@@ -1,9 +1,17 @@
-<h1>Dar de alta un espacio</h1>
-
-<p class="descripcion">
-  Un recurso fisico de <b>{{ nombreDeLaSede() }}</b> donde se atiende: un box, un gimnasio, un
-  gabinete, una sala grupal o una pileta. Queda en esta sede y no se puede mudar a otra.
-</p>
+<div class="titulo-con-ayuda">
+  <h1>Dar de alta un espacio</h1>
+  <app-ayuda titulo="Sobre esta pantalla">
+    <p>
+      Un recurso fisico de <b>{{ nombreDeLaSede() }}</b> donde se atiende: un box, un gimnasio, un
+      gabinete, una sala grupal o una pileta. Queda en esta sede y no se puede mudar a otra.
+    </p>
+    <p class="ayuda-contextual__subtitulo">Qué es obligatorio</p>
+    <p>
+      Lo único obligatorio es el nombre. El resto ya viene con lo más frecuente: un box para una
+      persona, en servicio desde ahora y sin fin previsto.
+    </p>
+  </app-ayuda>
+</div>
 
 <p class="acciones">
   <a class="enlace" routerLink="/espacios">Volver al listado de espacios</a>
@@ -13,7 +21,7 @@
   <section class="tarjeta" aria-labelledby="titulo-sin-sede">
     <h2 id="titulo-sin-sede">Falta elegir un consultorio</h2>
     <p>
-      Un espacio se crea dentro de una sede concreta y todavia no elegiste ninguna. Tu sesion sigue
+      Un espacio se crea dentro de una sede concreta y todavía no elegiste ninguna. Tu sesión sigue
       abierta: solo falta indicar donde estas trabajando.
     </p>
     <p>
@@ -28,7 +36,7 @@
     </p>
     <p class="ayuda">
       Si le pusiste una fecha de inicio futura, va a figurar como
-      <b>activo pero todavia sin servicio</b> hasta esa fecha, y hasta entonces no se va a ofrecer
+      <b>activo pero todavía sin servicio</b> hasta esa fecha, y hasta entonces no se va a ofrecer
       para reservar. El listado lo explica fila por fila.
     </p>
     <p class="acciones">
@@ -36,89 +44,86 @@
     </p>
   </section>
 } @else {
-  <section class="tarjeta" aria-labelledby="titulo-alta-espacio">
-    <h2 id="titulo-alta-espacio">Datos del espacio</h2>
-
-    <p class="ayuda">
-      Lo unico obligatorio es el nombre. El resto ya viene con lo mas frecuente: un box para una
-      persona, en servicio desde ahora y sin fin previsto.
-    </p>
-
+  <section class="tarjeta" aria-label="Datos del espacio">
     <form [formGroup]="formulario" (ngSubmit)="enviar()" novalidate>
-      <div class="campo">
-        <label for="espacio-name">Nombre del espacio</label>
-        <input
-          id="espacio-name"
-          type="text"
-          formControlName="name"
-          autocomplete="off"
-          [attr.aria-invalid]="mostrarError('name') || errorEnElNombre()"
-          [attr.aria-describedby]="descritoNombre()"
-        />
-        <p class="ayuda" id="espacio-name-ayuda">
-          Como lo llaman en el centro: "Box 3", "Gimnasio planta baja". Tiene que ser distinto del
-          de los otros espacios vigentes de esta sede.
-        </p>
-        @if (mostrarError('name')) {
-          <p class="campo__error" id="espacio-name-error">El espacio necesita un nombre.</p>
-        }
-        @if (errorEnElNombre()) {
-          <p class="campo__error" id="espacio-name-conflicto" role="alert">
-            {{ mensajeError() }}
+      <div class="grilla-campos grilla-campos--dos">
+        <div class="campo">
+          <label for="espacio-name">Nombre del espacio</label>
+          <input
+            id="espacio-name"
+            type="text"
+            formControlName="name"
+            autocomplete="off"
+            [attr.aria-invalid]="mostrarError('name') || errorEnElNombre()"
+            [attr.aria-describedby]="descritoNombre()"
+          />
+          <p class="ayuda" id="espacio-name-ayuda">
+            Como lo llaman en el centro: "Box 3", "Gimnasio planta baja". Tiene que ser distinto del
+            de los otros espacios vigentes de esta sede.
           </p>
-        }
-      </div>
-
-      <div class="campo">
-        <label for="espacio-tipo">Tipo de espacio</label>
-        <select id="espacio-tipo" formControlName="tipo" aria-describedby="espacio-tipo-ayuda">
-          @for (opcion of tipos; track opcion.valor) {
-            <option [value]="opcion.valor">{{ opcion.etiqueta }}</option>
+          @if (mostrarError('name')) {
+            <p class="campo__error" id="espacio-name-error">El espacio necesita un nombre.</p>
           }
-        </select>
-        <p class="ayuda" id="espacio-tipo-ayuda">
-          Es la clasificacion fisica del recurso.
-          <b>No habilita ningun servicio ni define quien puede usarlo</b>: elegir "Pileta" no
-          autoriza a nadie a hacer hidroterapia ahi. Eso se resuelve por Oferta de Servicio, que es
-          otra pantalla.
-        </p>
-      </div>
+          @if (errorEnElNombre()) {
+            <p class="campo__error" id="espacio-name-conflicto" role="alert">
+              {{ mensajeError() }}
+            </p>
+          }
+        </div>
 
-      <div class="campo">
-        <label for="espacio-capacidad">Personas simultaneas que admite</label>
-        <input
-          id="espacio-capacidad"
-          type="number"
-          min="1"
-          formControlName="capacidad"
-          [attr.aria-invalid]="mostrarError('capacidad')"
-          aria-describedby="espacio-capacidad-ayuda"
-        />
-        <p class="ayuda" id="espacio-capacidad-ayuda">
-          Cuantas personas caben a la vez. Un box individual admite 1; un gimnasio o una sala
-          grupal, varias.
-        </p>
-        @if (mostrarError('capacidad')) {
-          <p class="campo__error" id="espacio-capacidad-error">
-            La capacidad tiene que ser al menos 1.
+        <div class="campo">
+          <label for="espacio-tipo">Tipo de espacio</label>
+          <select id="espacio-tipo" formControlName="tipo" aria-describedby="espacio-tipo-ayuda">
+            @for (opcion of tipos; track opcion.valor) {
+              <option [value]="opcion.valor">{{ opcion.etiqueta }}</option>
+            }
+          </select>
+          <p class="ayuda" id="espacio-tipo-ayuda">
+            Es la clasificación física del recurso.
+            <b>No habilita ningún servicio ni define quien puede usarlo</b>: elegir "Pileta" no
+            autoriza a nadie a hacer hidroterapia ahi. Eso se resuelve por Oferta de Servicio, que
+            es otra pantalla.
           </p>
-        }
+        </div>
       </div>
 
-      <div class="campo">
-        <label for="espacio-notes">
-          Observacion <span class="campo__opcional">(opcional)</span>
-        </label>
-        <input
-          id="espacio-notes"
-          type="text"
-          formControlName="notes"
-          aria-describedby="espacio-notes-ayuda"
-        />
-        <p class="ayuda" id="espacio-notes-ayuda">
-          Nota operativa: "tiene camilla electrica", "sin ventana".
-          <b>Nunca informacion clinica de un paciente.</b>
-        </p>
+      <div class="grilla-campos grilla-campos--dos">
+        <div class="campo">
+          <label for="espacio-capacidad">Personas simultaneas que admite</label>
+          <input
+            id="espacio-capacidad"
+            type="number"
+            min="1"
+            formControlName="capacidad"
+            [attr.aria-invalid]="mostrarError('capacidad')"
+            aria-describedby="espacio-capacidad-ayuda"
+          />
+          <p class="ayuda" id="espacio-capacidad-ayuda">
+            Cuantas personas caben a la vez. Un box individual admite 1; un gimnasio o una sala
+            grupal, varias.
+          </p>
+          @if (mostrarError('capacidad')) {
+            <p class="campo__error" id="espacio-capacidad-error">
+              La capacidad tiene que ser al menos 1.
+            </p>
+          }
+        </div>
+
+        <div class="campo">
+          <label for="espacio-notes">
+            Observación <span class="campo__opcional">(opcional)</span>
+          </label>
+          <input
+            id="espacio-notes"
+            type="text"
+            formControlName="notes"
+            aria-describedby="espacio-notes-ayuda"
+          />
+          <p class="ayuda" id="espacio-notes-ayuda">
+            Nota operativa: "tiene camilla electrica", "sin ventana".
+            <b>Nunca información clínica de un paciente.</b>
+          </p>
+        </div>
       </div>
 
       <fieldset class="grupo">
@@ -142,8 +147,8 @@
               aria-describedby="espacio-validFrom-ayuda"
             />
             <p class="ayuda" id="espacio-validFrom-ayuda">
-              Vacio = desde ahora. Con una fecha futura, el espacio queda
-              <b>activo pero todavia sin servicio</b> hasta ese momento, y hasta entonces no aparece
+              Vacío = desde ahora. Con una fecha futura, el espacio queda
+              <b>activo pero todavía sin servicio</b> hasta ese momento, y hasta entonces no aparece
               en los selectores de reserva. Es lo correcto, no un error.
             </p>
           </div>
@@ -159,7 +164,7 @@
               aria-describedby="espacio-validUntil-ayuda"
             />
             <p class="ayuda" id="espacio-validUntil-ayuda">
-              Vacio = sin fin previsto. El fin es <b>exclusivo</b>: un espacio que termina el 30 a
+              Vacío = sin fin previsto. El fin es <b>exclusivo</b>: un espacio que termina el 30 a
               las 00:00 se ofrece hasta el 29 inclusive.
             </p>
           </div>
@@ -181,7 +186,7 @@
     <div aria-live="polite">
       @if (espera.activa()) {
         <p class="estado estado--error" role="alert">
-          Demasiados intentos. Podes volver a intentar en {{ espera.segundos() }} segundos.
+          Demasiados intentos. Podés volver a intentar en {{ espera.segundos() }} segundos.
         </p>
       }
 

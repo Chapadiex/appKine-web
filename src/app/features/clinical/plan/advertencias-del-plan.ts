@@ -24,15 +24,15 @@ export function advertenciasDelPlan(
 
   if (vivo && fin !== null && fin < hoy) {
     avisos.push(
-      `La duracion estimada del plan termino el ${diaEnPalabras(fin)}. Revisalo: modificarlo ` +
-        'deja una version nueva, y finalizarlo es una decision clinica.',
+      `La duración estimada del plan termino el ${diaEnPalabras(fin)}. Revisalo: modificarlo ` +
+        'deja una versión nueva, y finalizarlo es una decision clínica.',
     );
   }
 
   if (vivo && avance?.completo) {
     avisos.push(
       'Ya se realizaron todas las sesiones planificadas. El plan no se finaliza solo: la decision ' +
-        'es clinica.',
+        'es clínica.',
     );
   }
 
@@ -58,7 +58,7 @@ export function advertenciasDelPlan(
       const vigencia = vigenciaDeAutorizacion(item, hoy);
       if (vigencia?.estado === 'vencida') {
         avisos.push(
-          `${item.ofertaNombre ?? `Oferta #${item.ofertaId}`}: la autorizacion vencio el ` +
+          `${item.ofertaNombre ?? `Oferta #${item.ofertaId}`}: la autorización vencio el ` +
             `${diaEnPalabras(item.autorizacionVigenciaHasta)}. Las sesiones que siguen no la ` +
             'consumen.',
         );
@@ -130,19 +130,19 @@ export function vigenciaDeAutorizacion(
   const desde = item.autorizacionVigenciaDesde;
   const hasta = item.autorizacionVigenciaHasta;
   if (!desde && !hasta) {
-    return { estado: 'no-disponible', texto: 'autorizacion no disponible (dada de baja)' };
+    return { estado: 'no-disponible', texto: 'autorización no disponible (dada de baja)' };
   }
   if (hasta && hasta.slice(0, 10) < hoy) {
-    return { estado: 'vencida', texto: `autorizacion vencida el ${diaEnPalabras(hasta)}` };
+    return { estado: 'vencida', texto: `autorización vencida el ${diaEnPalabras(hasta)}` };
   }
   if (desde && desde.slice(0, 10) > hoy) {
     return {
       estado: 'futura',
-      texto: `autorizacion vigente recien desde el ${diaEnPalabras(desde)}`,
+      texto: `autorización vigente recien desde el ${diaEnPalabras(desde)}`,
     };
   }
   const tramo = hasta
     ? `hasta el ${diaEnPalabras(hasta)} inclusive`
     : `desde el ${diaEnPalabras(desde)}, sin vencimiento`;
-  return { estado: 'vigente', texto: `autorizacion vigente ${tramo}` };
+  return { estado: 'vigente', texto: `autorización vigente ${tramo}` };
 }

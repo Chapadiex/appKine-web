@@ -70,14 +70,16 @@ test.describe('Permisos de las pantallas de F9 por rol contra el backend real', 
     for (const ruta of ['/productos', `/pacientes/${persona.id}/pases`]) {
       await esperarSinPermiso(page, ruta, centro.nombreCentro);
     }
-    await expect(page.getByRole('link', { name: 'Productos de pack' })).toHaveCount(0);
+    await expect(
+      page.getByRole('link', { name: 'Productos de pack', includeHidden: true, exact: true }),
+    ).toHaveCount(0);
 
     // Control: lo que su rol si tiene abre su pantalla.
     await irA(page, `/asistencia/${clase.id}`);
     await expect(page.getByRole('heading', { name: /^Asistencia: /, level: 1 })).toBeVisible();
     await irA(page, `/atencion/clases/${clase.id}`);
     await expect(
-      page.getByRole('heading', { name: /^Atencion clinica: /, level: 1 }),
+      page.getByRole('heading', { name: /^Atención clínica: /, level: 1 }),
     ).toBeVisible();
   });
 
@@ -95,7 +97,7 @@ test.describe('Permisos de las pantallas de F9 por rol contra el backend real', 
     await expect(page.getByRole('link', { name: 'Atencion clinica' })).toHaveCount(0);
     await irA(page, `/asistencia/${clase.id}`);
     await expect(page.getByRole('heading', { name: /^Asistencia: /, level: 1 })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Atencion clinica de la clase' })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: 'Atención clínica de la clase' })).toHaveCount(0);
 
     // Control: productos y pases son de su rol.
     await irA(page, '/productos');
@@ -119,9 +121,10 @@ async function esperarSinPermiso(page: Page, ruta: string, nombreCentro: string)
   await irA(page, ruta);
   await expect(page, `${ruta} no se le abre`).toHaveURL(/\/sin-permiso$/);
   await expect(
-    page.getByRole('heading', { name: 'No tenes permiso para esta pantalla', level: 1 }),
+    page.getByRole('heading', { name: 'No tenés permiso para esta pantalla', level: 1 }),
   ).toBeVisible();
-  await expect(page.getByText(nombreCentro, { exact: true })).toBeVisible();
+  // En `main`: la barra superior (UX-01) tambien dice el centro activo.
+  await expect(page.getByRole('main').getByText(nombreCentro, { exact: true })).toBeVisible();
 }
 
 async function esperarForbidden(api: ApiAkine, ruta: string): Promise<void> {

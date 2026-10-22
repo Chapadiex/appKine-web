@@ -22,6 +22,12 @@ import {
 } from '../../models/clases';
 import { RUTA_CLASES, RUTA_NUEVA_CLASE } from '../../models/rutas-de-clases';
 import { ActivityApi } from '../../services/activity-api';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { Filtros } from '../../../../shared/components/filtros/filtros';
+import { Icono } from '../../../../shared/components/icono/icono';
+import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
+import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 
 const FECHA = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -43,7 +49,7 @@ interface DiaDeClases {
  */
 @Component({
   selector: 'app-clases-de-la-semana-page',
-  imports: [RouterLink, PermisoDirective],
+  imports: [Ayuda, ColumnaOrdenable, Filtros, Icono, Paginacion, RouterLink, PermisoDirective],
   templateUrl: './clases-de-la-semana-page.html',
   styleUrl: '../../activity.css',
 })
@@ -93,6 +99,34 @@ export class ClasesDeLaSemanaPage {
   });
 
   protected readonly total = computed(() => this.clases()?.length ?? 0);
+
+  protected readonly busqueda = signal('');
+
+  /** Las clases de la semana en una sola lista por hora de inicio, filtradas por la busqueda. */
+  private readonly filas = computed<readonly Clase[]>(() => {
+    const texto = this.busqueda().trim().toLowerCase();
+    return (this.clases() ?? [])
+      .filter(
+        (c) =>
+          texto === '' ||
+          `${nombreDeClase(c)} ${c.profesionalNombre ?? ''} ${c.espacioNombre ?? ''}`
+            .toLowerCase()
+            .includes(texto),
+      )
+      .sort((a, b) => (a.inicio ?? '').localeCompare(b.inicio ?? ''));
+  });
+
+  /** Orden y paginado de la lista completa de la semana: el servidor no pagina las clases. */
+  protected readonly tabla = tablaLocal(this.filas, {
+    porPagina: 10,
+    columnas: {
+      clase: (c) => nombreDeClase(c),
+      fecha: (c) => c.inicio,
+      profesional: (c) => c.profesionalNombre,
+      cupo: (c) => c.ocupados ?? 0,
+      estado: (c) => textoDeEstadoDeClase(c.estado),
+    },
+  });
 
   constructor() {
     // Cambiar de sede no puede dejar en pantalla las clases de la anterior; y la ventana depende
@@ -150,6 +184,16 @@ export class ClasesDeLaSemanaPage {
     if (FECHA.test(fecha)) {
       this.irA(lunesDeLaSemana(fecha));
     }
+  }
+
+  protected buscar(texto: string): void {
+    this.busqueda.set(texto);
+  }
+
+  /** "Mie 21/10": el dia de la clase, en la zona de la sede. */
+  protected diaCorto(clase: Clase): string {
+    const fecha = fechaDeSede(clase.inicio, this.zona());
+    return fecha === '' ? '' : diaEnPalabras(fecha);
   }
 
   protected rango(clase: Clase): string {

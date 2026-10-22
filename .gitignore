@@ -45,3 +45,6 @@ desktop.ini
 # --- Logs ---
 *.log
 logs/
+
+# --- Copias locales del catalogo de skills (Skill Hub, MCP) ---
+.skill-hub/

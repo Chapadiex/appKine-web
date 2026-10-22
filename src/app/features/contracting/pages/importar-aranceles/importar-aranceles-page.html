@@ -1,39 +1,52 @@
 @if (convenio(); as ficha) {
-  <h1>Importar aranceles a {{ ficha.nombre }}</h1>
+  <div class="titulo-con-ayuda">
+    <h1>Importar aranceles a {{ ficha.nombre }}</h1>
+    <app-ayuda titulo="Sobre esta pantalla">
+      <ng-container [ngTemplateOutlet]="ayudaDePantalla" />
+    </app-ayuda>
+  </div>
+  <!-- Datos del convenio: se ven siempre. La explicacion va en el "?". -->
   <p class="descripcion">
-    Codigo {{ ficha.codigo }} · moneda <b>{{ ficha.moneda }}</b> · {{ ventanaEnPalabras(ficha) }}.
-    Carga muchos aranceles de una vez desde una planilla: primero se ve una <b>vista previa</b>
-    fila por fila, y recien despues se confirma.
+    Código {{ ficha.codigo }} · moneda <b>{{ ficha.moneda }}</b> · {{ ventanaEnPalabras(ficha) }}.
   </p>
 } @else {
-  <h1>Importar aranceles al convenio #{{ convenioId }}</h1>
-  <p class="descripcion">
-    Carga muchos aranceles de una vez desde una planilla: primero se ve una <b>vista previa</b>
-    fila por fila, y recien despues se confirma.
-  </p>
+  <div class="titulo-con-ayuda">
+    <h1>Importar aranceles al convenio #{{ convenioId }}</h1>
+    <app-ayuda titulo="Sobre esta pantalla">
+      <ng-container [ngTemplateOutlet]="ayudaDePantalla" />
+    </app-ayuda>
+  </div>
 }
 
-<nav class="acciones" aria-label="Contratacion">
-  <a class="boton boton--secundario" [routerLink]="rutaDeLaGrilla">Volver a la grilla</a>
+<nav class="migas" aria-label="Ruta de navegación">
+  <a routerLink="/contratacion/convenios">Convenios de la sede</a>
+  <span class="migas__separador" aria-hidden="true">/</span>
+  <a [routerLink]="rutaDeLaGrilla">Aranceles</a>
+  <span class="migas__separador" aria-hidden="true">/</span>
 </nav>
 
-<section class="tarjeta nota-clave" aria-labelledby="titulo-nota-importacion">
-  <h2 id="titulo-nota-importacion">Todo o nada</h2>
+<!-- La ayuda de la pantalla: una sola copia para las dos ramas del titulo. -->
+<ng-template #ayudaDePantalla>
   <p>
-    La confirmacion carga <b>todas las filas o ninguna</b>: si una sola no entra, no se escribe nada
-    y se te muestra cual fallo y por que. La vista previa no reserva nada —si alguien carga un
-    arancel que se pisa entre la vista previa y la confirmacion, la confirmacion lo detecta—.
+    Carga muchos aranceles de una vez desde una planilla: primero se ve una <b>vista previa</b>
+    fila por fila, y recien después se confirma.
+  </p>
+  <p class="ayuda-contextual__subtitulo">Todo o nada</p>
+  <p>
+    La confirmación carga <b>todas las filas o ninguna</b>: si una sola no entra, no se escribe nada
+    y se te muestra cuál falló y por qué. La vista previa no reserva nada —si alguien carga un
+    arancel que se pisa entre la vista previa y la confirmación, la confirmación lo detecta—.
   </p>
   <p>
-    La importacion <b>solo agrega</b> aranceles: no edita ni cierra los vigentes. Para cargar el
-    nomenclador nuevo sobre uno abierto, primero cerrale la vigencia al que ya esta. Reintentar una
-    importacion ya aplicada no duplica nada: choca contra sus propias filas.
+    La importación <b>solo agrega</b> aranceles: no edita ni cierra los vigentes. Para cargar el
+    nomenclador nuevo sobre uno abierto, primero cerrale la vigencia al que ya está. Reintentar una
+    importación ya aplicada no duplica nada: choca contra sus propias filas.
   </p>
-</section>
+</ng-template>
 
 @if (convenioInactivo()) {
   <p class="estado estado--vacio">
-    Este convenio esta dado de baja, asi que <b>no admite aranceles nuevos</b>.
+    Este convenio está dado de baja, así que <b>no admite aranceles nuevos</b>.
   </p>
 } @else {
   <section class="tarjeta" aria-labelledby="titulo-planilla">
@@ -41,7 +54,7 @@
 
     <p class="ayuda" id="planilla-columnas">
       Una fila por arancel, con encabezado. Columnas: <b>codigoPractica</b> o <b>practicaId</b> (al
-      menos una), <b>ofertaId</b> (opcional: sin ella el arancel es el general de la practica),
+      menos una), <b>ofertaId</b> (opcional: sin ella el arancel es el general de la práctica),
       <b>importeTotal</b>, <b>importeFinanciador</b>, <b>coseguro</b>, <b>vigenciaDesde</b> y
       <b>vigenciaHasta</b> (opcional, inclusiva). Separador <b>;</b>, tabulador o coma. Importes sin
       separador de miles y con hasta dos decimales (coma decimal solo si el separador no es coma).
@@ -62,7 +75,7 @@
       />
       <p class="ayuda" id="importacion-archivo-ayuda">
         Desde Excel: "Guardar como" CSV. El archivo se lee en tu navegador y queda en el cuadro de
-        abajo, donde lo podes corregir.
+        abajo, donde lo podés corregir.
         @if (nombreDeArchivo(); as nombre) {
           Cargado: <b>{{ nombre }}</b
           >.
@@ -74,7 +87,7 @@
     </div>
 
     <div class="campo">
-      <label for="importacion-texto">O pegala aca</label>
+      <label for="importacion-texto">O pegala acá</label>
       <textarea
         id="importacion-texto"
         rows="10"
@@ -86,7 +99,7 @@
       ></textarea>
       <p class="ayuda" id="importacion-texto-estado" aria-live="polite">
         @if (texto().trim() === '') {
-          Todavia no hay filas.
+          Todavía no hay filas.
           <button type="button" class="boton boton--secundario" (click)="usarEjemplo()">
             Empezar desde el ejemplo
           </button>
@@ -100,7 +113,7 @@
 
     @if (erroresDeFormato().length > 0) {
       <div class="estado estado--error" role="alert">
-        <p>Corregi la planilla antes de pedir la vista previa:</p>
+        <p>Corregí la planilla antes de pedir la vista previa:</p>
         <ul class="errores-de-planilla">
           @for (error of erroresDeFormato(); track $index) {
             <li>
@@ -114,7 +127,7 @@
       </div>
     }
 
-    <p class="acciones" *akinePermiso="permisoManage">
+    <p class="acciones tarjeta__pie" *akinePermiso="permisoManage">
       <button
         type="button"
         class="boton"
@@ -132,33 +145,35 @@
 }
 
 @if (desenlace(); as resultado) {
-  <section class="tarjeta" aria-labelledby="titulo-resultado">
-    <h2 id="titulo-resultado">
-      {{ resultado.tipo === 'preview' ? 'Vista previa' : 'Confirmacion rechazada' }}
-    </h2>
+  <section class="tarjeta tarjeta--tabla" aria-labelledby="titulo-resultado">
+    <div class="tarjeta__cabecera">
+      <h2 id="titulo-resultado">
+        {{ resultado.tipo === 'preview' ? 'Vista previa' : 'Confirmación rechazada' }}
+      </h2>
+    </div>
 
     <div aria-live="polite">
       @if (resultado.tipo === 'rechazo') {
         <p class="estado estado--error" role="alert">
-          No se cargo ningun arancel: {{ filasRechazadas() }} de {{ resultado.filas.length }} filas
-          no entran, y la importacion es todo o nada. Algo pudo haber cambiado desde la vista
-          previa; corregi las filas marcadas y volve a pedirla.
+          No se cargo ningún arancel: {{ filasRechazadas() }} de {{ resultado.filas.length }} filas
+          no entran, y la importación es todo o nada. Algo pudo haber cambiado desde la vista
+          previa; corregi las filas marcadas y volvé a pedirla.
         </p>
       } @else if (filasRechazadas() > 0) {
         <p class="estado estado--error">
           {{ filasRechazadas() }} de {{ resultado.filas.length }} filas no entrarian. Como la
-          importacion es todo o nada, corregilas en la planilla y volve a pedir la vista previa.
+          importación es todo o nada, corregilas en la planilla y volvé a pedir la vista previa.
         </p>
       } @else {
         <p class="estado estado--ok">
-          Las {{ resultado.filas.length }} filas entran como aranceles nuevos. Todavia no se cargo
+          Las {{ resultado.filas.length }} filas entran como aranceles nuevos. Todavía no se cargo
           nada: falta confirmar.
         </p>
       }
 
       @if (!desenlaceVigente()) {
         <p class="estado estado--vacio">
-          Cambiaste la planilla despues de este resultado, asi que ya no la describe. Pedi la vista
+          Cambiaste la planilla después de este resultado, así que ya no la describe. Pedí la vista
           previa de nuevo para poder confirmar.
         </p>
       }
@@ -167,17 +182,17 @@
     <div class="tabla-scroll" tabindex="0" role="region" aria-label="Resultado por fila">
       <table class="tabla">
         <caption class="visualmente-oculto">
-          Resultado de cada fila de la planilla: la practica, los tres importes, la vigencia y si
+          Resultado de cada fila de la planilla: la práctica, los tres importes, la vigencia y si
           entra o por que no.
         </caption>
         <thead>
           <tr>
             <th scope="col">Fila</th>
-            <th scope="col">Practica</th>
+            <th scope="col">Práctica</th>
             <th scope="col">Oferta</th>
-            <th scope="col">Total</th>
-            <th scope="col">Financiador</th>
-            <th scope="col">Coseguro</th>
+            <th scope="col" class="importe">Total</th>
+            <th scope="col" class="importe">Financiador</th>
+            <th scope="col" class="importe">Coseguro</th>
             <th scope="col">Vigencia</th>
             <th scope="col">Resultado</th>
           </tr>
@@ -187,9 +202,9 @@
             @let enviada = filaEnviada(fila.fila);
             <tr [class.fila--revocada]="!esAlta(fila)">
               <th scope="row">
-                {{ fila.fila }}
+                <span class="celda-principal">{{ fila.fila }}</span>
                 @if (lineaDe(fila.fila); as linea) {
-                  <span class="ayuda">(linea {{ linea }})</span>
+                  <span class="celda-secundaria">(linea {{ linea }})</span>
                 }
               </th>
               <td>{{ practicaEnPalabras(fila) }}</td>
@@ -200,10 +215,10 @@
               <td>{{ vigenciaEnPalabras(enviada) }}</td>
               <td>
                 @if (esAlta(fila)) {
-                  <span class="marca-estado">Entra</span>
+                  <span class="marca-estado marca-estado--activa">Entra</span>
                 } @else {
-                  <span class="marca-estado">No entra</span>
-                  <p class="ayuda">{{ motivoDeFilaRechazada(fila) }}</p>
+                  <span class="marca-estado marca-estado--revocada">No entra</span>
+                  <span class="celda-secundaria">{{ motivoDeFilaRechazada(fila) }}</span>
                 }
               </td>
             </tr>

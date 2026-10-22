@@ -23,6 +23,8 @@ import {
   fechaHoraEnZona,
   horarioSegunHistorial,
   textoDeEstado,
+  nombreDeEstado,
+  detalleDeEstado,
   textoDeEvento,
 } from '../../models/etiquetas-de-turno';
 import {
@@ -34,6 +36,7 @@ import {
 } from '../../models/etiquetas-de-recepcion';
 import { PrepagoDeRecepcionEstadoEnum } from '../../../../api/generated/model/prepago-de-recepcion';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 
 /** Panel abierto. Uno solo a la vez: son tres confirmaciones sobre el mismo turno. */
 type Panel = 'ninguno' | 'cancelar' | 'ausencia' | 'reprogramar';
@@ -93,7 +96,7 @@ type Panel = 'ninguno' | 'cancelar' | 'ausencia' | 'reprogramar';
  */
 @Component({
   selector: 'app-ciclo-de-turno-page',
-  imports: [RouterLink, ConfirmacionConMotivo, SelectorDeHorario],
+  imports: [Ayuda, RouterLink, ConfirmacionConMotivo, SelectorDeHorario],
   templateUrl: './ciclo-de-turno-page.html',
   styleUrl: '../../agenda.css',
 })
@@ -113,6 +116,8 @@ export class CicloDeTurnoPage {
   readonly fecha = input<string>('');
 
   protected readonly textoDeEstado = textoDeEstado;
+  protected readonly nombreDeEstado = nombreDeEstado;
+  protected readonly detalleDeEstado = detalleDeEstado;
   protected readonly textoDeEvento = textoDeEvento;
 
   protected readonly textoDeEventoDeRecepcion = textoDeEventoDeRecepcion;
@@ -512,7 +517,7 @@ export class CicloDeTurnoPage {
         expectedVersion,
         profesionalId,
       }),
-      'Turno reprogramado. Es el mismo turno: conserva su numero, su paciente y su historial. Si ' +
+      'Turno reprogramado. Es el mismo turno: conserva su número, su paciente y su historial. Si ' +
         'estaba confirmado vuelve a quedar reservado, porque lo confirmado era otro horario.',
     );
   }

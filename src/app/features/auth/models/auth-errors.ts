@@ -61,10 +61,10 @@ export interface TextosDeError {
  * equivocada: la contrasena esta bien y el usuario la va a reescribir igual, dos veces,
  * antes de sospechar de la sesion.
  */
-const MENSAJE_SESION = 'Tu sesion ya no es valida. Volve a iniciar sesion para continuar.';
+const MENSAJE_SESION = 'Tu sesión ya no es valida. Volvé a iniciar sesión para continuar.';
 
-const MENSAJE_GENERICO = 'No pudimos completar la operacion. Volve a intentar en un momento.';
-const MENSAJE_DE_RED = 'No se pudo contactar al servidor. Revisa tu conexion y volve a intentar.';
+const MENSAJE_GENERICO = 'No pudimos completar la operación. Volvé a intentar en un momento.';
+const MENSAJE_DE_RED = 'No se pudo contactar al servidor. Revisa tu conexion y volvé a intentar.';
 
 /** Texto del 429 cuando el backend no dijo cuanto hay que esperar. */
 const MENSAJE_LIMITE_SIN_PLAZO =
@@ -85,7 +85,7 @@ export function traducirError(error: unknown, textos: TextosDeError = {}): Error
     return {
       mensaje:
         segundos > 0
-          ? `Demasiados intentos. Espera ${segundos} segundos y volve a intentar.`
+          ? `Demasiados intentos. Espera ${segundos} segundos y volvé a intentar.`
           : MENSAJE_LIMITE_SIN_PLAZO,
       causa: 'limite',
       segundosDeEspera: segundos,
@@ -109,7 +109,7 @@ export function traducirError(error: unknown, textos: TextosDeError = {}): Error
   // convertiria el login en un verificador de emails y tiraria el trabajo del backend.
   if (error.status === 401) {
     return {
-      mensaje: textos.credenciales ?? 'Email o contrasena incorrectos.',
+      mensaje: textos.credenciales ?? 'Email o contraseña incorrectos.',
       causa: 'credenciales',
       segundosDeEspera: 0,
     };

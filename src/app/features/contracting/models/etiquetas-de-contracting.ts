@@ -55,11 +55,11 @@ export const TIPOS_DE_FINANCIADOR = [
   {
     valor: FinanciadorResponseTipoEnum.MUTUAL,
     etiqueta: 'Mutual',
-    ayuda: 'Asociacion mutual o de socios.',
+    ayuda: 'Asociación mutual o de socios.',
   },
   {
     valor: FinanciadorResponseTipoEnum.ORGANISMO_PUBLICO,
-    etiqueta: 'Organismo publico',
+    etiqueta: 'Organismo público',
     ayuda: 'Programa o dependencia estatal que financia prestaciones.',
   },
   {
@@ -80,13 +80,13 @@ export const TIPOS_DE_FINANCIADOR = [
 export const MODALIDADES_DE_CONVENIO = [
   {
     valor: ConvenioResponseModalidadEnum.POR_PRESTACION,
-    etiqueta: 'Por prestacion',
-    ayuda: 'Se liquida cada practica realizada, con su propio arancel.',
+    etiqueta: 'Por prestación',
+    ayuda: 'Se liquida cada práctica realizada, con su propio arancel.',
   },
   {
     valor: ConvenioResponseModalidadEnum.POR_SESION,
-    etiqueta: 'Por sesion',
-    ayuda: 'Se liquida la sesion completa, sin importar cuantas practicas incluya.',
+    etiqueta: 'Por sesión',
+    ayuda: 'Se liquida la sesión completa, sin importar cuántas prácticas incluya.',
   },
   {
     valor: ConvenioResponseModalidadEnum.MODULO,
@@ -96,7 +96,7 @@ export const MODALIDADES_DE_CONVENIO = [
   {
     valor: ConvenioResponseModalidadEnum.CAPITA,
     etiqueta: 'Capita',
-    ayuda: 'Se liquida un monto por afiliado y por periodo, se atienda o no.',
+    ayuda: 'Se liquida un monto por afiliado y por período, se atienda o no.',
   },
 ] as const satisfies readonly OpcionEnumerada<ModalidadDeConvenio>[];
 
@@ -123,7 +123,7 @@ export function etiquetaDeModalidad(valor: string | undefined): string {
  * cuando no hay convenio— y las dos tienen que decir lo mismo.
  */
 export const NOTA_PARTICULAR =
-  'La atencion particular no es un financiador y no la vas a encontrar en esta lista: en AKINE ' +
+  'La atención particular no es un financiador y no la vas a encontrar en esta lista: en AKINE ' +
   'un paciente particular es, literalmente, uno que no tiene plan financiado. Si lo cargas como ' +
   'una ficha mas, alguien la va a poder renombrar o dar de baja y con eso romperia el cobro ' +
   'particular de todo el centro.';
@@ -132,10 +132,10 @@ export const NOTA_PARTICULAR =
  * Un importe redactado con su moneda, o la aclaracion de que no lo hay.
  *
  * <p><b>Importe y moneda viajan juntos o no viajan.</b> Un importe sin moneda no es un importe, y
- * este SaaS va a operar en mas de un pais: mostrar un numero pelado es exactamente la ambiguedad
+ * este SaaS va a operar en más de un pais: mostrar un numero pelado es exactamente la ambiguedad
  * que el CHECK de la base evita. El backend rechaza un copago sin moneda con un 400.
  *
- * <p>Un plan <b>sin copago no esta mal cargado</b>: `null` significa "sin copago declarado", que
+ * <p>Un plan <b>sin copago no está mal cargado</b>: `null` significa "sin copago declarado", que
  * <b>no</b> es lo mismo que cero. Por eso el texto de ausencia dice "sin declarar" y no "$ 0".
  */
 export function importeEnPalabras(
@@ -203,7 +203,7 @@ function enCentavos(importe: number): number {
  * <h2>Esto no es un error, y la pantalla no puede tratarlo como uno</h2>
  *
  * <p>`GET /aranceles/efectivo` responde <b>200</b> con `resuelto = false` y un motivo. El contrato
- * lo justifica: no encontrar convenio es el desenlace <b>mas frecuente</b> —la mayoria de los
+ * lo justifica: no encontrar convenio es el desenlace <b>más frecuente</b> —la mayoria de los
  * pacientes se atienden como particulares— y un 404 obligaria a la pantalla a tratar el caso
  * normal como una excepcion. Mostrar un cartel rojo, o peor, un vacio, seria exactamente eso.
  *
@@ -222,26 +222,26 @@ export interface ExplicacionSinArancel {
 export function explicarSinArancel(motivo: string | undefined): ExplicacionSinArancel {
   if (motivo === ArancelEfectivoResponseMotivoEnum.SIN_ARANCEL_VIGENTE) {
     return {
-      titulo: 'Hay convenio, pero esa practica no tiene precio cargado para esa fecha',
+      titulo: 'Hay convenio, pero esa práctica no tiene precio cargado para esa fecha',
       detalle:
-        'El convenio con ese financiador y ese plan se aplica en la fecha consultada, asi que la ' +
-        'cobertura existe. Lo que falta es el arancel de esta practica en particular: puede que ' +
-        'nunca se haya cargado, o que el que habia tenga la vigencia terminada.',
+        'El convenio con ese financiador y ese plan se aplica en la fecha consultada, así que la ' +
+        'cobertura existe. Lo que falta es el arancel de esta práctica en particular: puede que ' +
+        'nunca se haya cargado, o que el que había tenga la vigencia terminada.',
       queHacer:
-        'Carga el arancel de esa practica en la grilla del convenio. Hasta que exista, esta ' +
-        'prestacion no se puede liquidar contra el financiador.',
+        'Carga el arancel de esa práctica en la grilla del convenio. Hasta que exista, esta ' +
+        'prestación no se puede liquidar contra el financiador.',
     };
   }
 
   return {
     titulo: 'No hay convenio vigente para ese financiador y ese plan en esa fecha',
     detalle:
-      'Puede que nunca se haya firmado un convenio con ese plan en esta sede, que el que habia ' +
+      'Puede que nunca se haya firmado un convenio con ese plan en esta sede, que el que había ' +
       'tenga la vigencia terminada, o que este dado de baja. Sin convenio aplicable no se asume ' +
       'ninguna cobertura: es la regla, no una falla de la consulta.',
     queHacer:
-      'La prestacion se cobra como particular. Si el convenio deberia existir, cargalo en esta ' +
-      'sede; si lo que vencio es la vigencia, edita el convenio y estirale el fin.',
+      'La prestación se cobra como particular. Si el convenio debería existir, cargalo en esta ' +
+      'sede; si lo que venció es la vigencia, editá el convenio y estirale el fin.',
   };
 }
 

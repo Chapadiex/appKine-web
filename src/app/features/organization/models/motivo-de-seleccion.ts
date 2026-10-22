@@ -32,7 +32,7 @@ export const MOTIVO_SEDE_INACTIVA = 'sede-inactiva';
  */
 export function avisoDelMotivo(motivo: string | null): string | null {
   return motivo === MOTIVO_SEDE_INACTIVA
-    ? 'La sede en la que estabas trabajando quedo dada de baja, asi que no admite operaciones ' +
-        'nuevas. Elegi otra sede para seguir trabajando.'
+    ? 'La sede en la que estabas trabajando quedo dada de baja, así que no admite operaciones ' +
+        'nuevas. Elegí otra sede para seguir trabajando.'
     : null;
 }

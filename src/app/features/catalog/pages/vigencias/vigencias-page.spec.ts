@@ -37,7 +37,7 @@ const VIGENTE = {
   nomencladorId: 5,
   practicaId: 9,
   codigo: '250101',
-  name: 'Sesion de kinesiologia',
+  name: 'Sesión de kinesiologia',
   valorReferencia: 4500,
   validFrom: '2026-01-01T00:00:00Z',
   estado: 'ACTIVO',
@@ -64,7 +64,7 @@ const PRACTICAS = {
       tipo: 'PRACTICA',
       alcance: 'GLOBAL',
       codigo: 'KIN-SES',
-      name: 'Sesion de kinesiologia',
+      name: 'Sesión de kinesiologia',
       estado: 'ACTIVO',
       vigente: true,
       version: 1,
@@ -142,7 +142,7 @@ describe('VigenciasPage', () => {
     baja?.click();
     fixture.detectChanges();
 
-    expect(anfitrion.textContent).toContain('conserva su codigo y su valor');
+    expect(anfitrion.textContent).toContain('conserva su código y su valor');
 
     const motivo = anfitrion.querySelector<HTMLInputElement>('#baja-vigencia-motivo');
     if (motivo === null) {
@@ -170,7 +170,7 @@ describe('VigenciasPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect(anfitrion.textContent).toContain('conserva el codigo y el valor que tenia');
+    expect(anfitrion.textContent).toContain('conserva el código y el valor que tenia');
   });
 
   it('un nomenclador de la plataforma se consulta pero no se administra', async () => {
@@ -181,11 +181,15 @@ describe('VigenciasPage', () => {
     expect(anfitrion.textContent).toContain('250101');
     // Pero no hay ni alta ni baja: el backend responde 403 y ofrecerlo seria ofrecer un error.
     expect(anfitrion.textContent).toContain('lo mantiene AKINE');
-    expect(anfitrion.querySelectorAll('button').length).toBe(0);
+    // El embudo de los filtros y el orden de las columnas no son acciones sobre el nomenclador:
+    // no cuentan.
+    expect(
+      anfitrion.querySelectorAll('button:not(.filtros-barra__boton):not(.tabla__orden)').length,
+    ).toBe(0);
     expect(anfitrion.querySelector('a[href="/catalogo/solicitudes"]')).not.toBeNull();
   });
 
-  it('el alta exige codigo, nombre y practica, y omite lo opcional que quedo vacio', async () => {
+  it('el alta exige código, nombre y práctica, y omite lo opcional que quedo vacío', async () => {
     const fixture = await montar();
     const anfitrion = fixture.nativeElement as HTMLElement;
 
@@ -197,10 +201,10 @@ describe('VigenciasPage', () => {
     httpMock.expectNone(
       (peticion: HttpRequest<unknown>) => peticion.method === 'POST' && peticion.url === VIGENCIAS,
     );
-    expect(anfitrion.textContent).toContain('El codigo es obligatorio');
+    expect(anfitrion.textContent).toContain('El código es obligatorio');
 
     escribir(anfitrion, '#alta-vigencia-codigo', '260101');
-    escribir(anfitrion, '#alta-vigencia-name', 'Sesion de kinesiologia 2027');
+    escribir(anfitrion, '#alta-vigencia-name', 'Sesión de kinesiologia 2027');
     elegir(anfitrion, '#alta-vigencia-practica', '9');
     escribir(anfitrion, '#alta-vigencia-valor', '5200');
     fixture.detectChanges();
@@ -215,7 +219,7 @@ describe('VigenciasPage', () => {
     // numero aunque el `select` entregue texto.
     expect(alta.request.body).toEqual({
       codigo: '260101',
-      name: 'Sesion de kinesiologia 2027',
+      name: 'Sesión de kinesiologia 2027',
       practicaId: 9,
       valorReferencia: 5200,
     });
@@ -226,16 +230,16 @@ describe('VigenciasPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect(anfitrion.textContent).toContain('Las anteriores del mismo codigo no se tocaron');
+    expect(anfitrion.textContent).toContain('Las anteriores del mismo código no se tocaron');
   });
 
-  it('el filtro por codigo es lo que muestra la historia completa de un codigo', async () => {
+  it('el filtro por código es lo que muestra la historia completa de un código', async () => {
     const fixture = await montar();
     const anfitrion = fixture.nativeElement as HTMLElement;
 
     const campo = anfitrion.querySelector<HTMLInputElement>('#filtro-codigo-vigencia');
     if (campo === null) {
-      throw new Error('No existe el filtro por codigo');
+      throw new Error('No existe el filtro por código');
     }
     campo.value = '240101';
     campo.dispatchEvent(new Event('change'));
@@ -253,7 +257,7 @@ describe('VigenciasPage', () => {
     expect(anfitrion.querySelectorAll('tbody tr').length).toBe(1);
   });
 
-  it('un id que no es un numero no le pide nada al backend', async () => {
+  it('un id que no es un número no le pide nada al backend', async () => {
     tenantContext.select({
       organizationId: 1,
       organizationName: 'Centro Belgrano',
@@ -273,7 +277,7 @@ describe('VigenciasPage', () => {
       .forEach((peticion) => peticion.flush({ permissions: [] }));
 
     const anfitrion = fixture.nativeElement as HTMLElement;
-    expect(anfitrion.textContent).toContain('no apunta a ningun nomenclador');
+    expect(anfitrion.textContent).toContain('no apunta a ningún nomenclador');
   });
 
   it(
@@ -330,7 +334,7 @@ function pulsar(
     (candidato.textContent ?? '').trim().startsWith(etiqueta),
   );
   if (boton === undefined) {
-    throw new Error(`No existe el boton ${etiqueta}`);
+    throw new Error(`No existe el botón ${etiqueta}`);
   }
   boton.click();
   fixture.detectChanges();

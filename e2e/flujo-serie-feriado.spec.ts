@@ -80,7 +80,7 @@ test.describe('Serie con un feriado contra el backend real', () => {
     await expect(
       page.getByRole('heading', { name: 'Reservar una serie de turnos', level: 1 }),
     ).toBeVisible();
-    await page.getByLabel('Documento, apellido, nombre o telefono').fill(persona.apellido);
+    await page.getByLabel('Documento, apellido, nombre o teléfono').fill(persona.apellido);
     await page.getByRole('button', { name: `${persona.apellido}, ${persona.nombre}` }).click();
     const cantidad = page.getByLabel(/Cantidad de turnos/);
     await cantidad.fill('3');

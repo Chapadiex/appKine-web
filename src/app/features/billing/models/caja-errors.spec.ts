@@ -23,7 +23,7 @@ describe('traducirErrorCaja', () => {
     ['caja-diferencia-sin-motivo', 400, 'corregir'],
     ['movimiento-no-reversible', 409, 'recargar'],
     ['idempotency-key-conflict', 409, 'corregir'],
-  ])('%s se resuelve con la accion %s', (tipo, status, accion) => {
+  ])('%s se resuelve con la acción %s', (tipo, status, accion) => {
     expect(traducirErrorCaja(problema(tipo, status)).accion).toBe(accion);
   });
 
@@ -32,7 +32,7 @@ describe('traducirErrorCaja', () => {
   });
 
   it('sin tipo conocido decide por status y muestra el detail del backend', () => {
-    expect(traducirErrorCaja(problema('forbidden', 403)).mensaje).toContain('No tenes permiso');
+    expect(traducirErrorCaja(problema('forbidden', 403)).mensaje).toContain('No tenés permiso');
     expect(traducirErrorCaja(problema('validation-error', 400, 'Importe invalido')).mensaje).toBe(
       'Importe invalido',
     );

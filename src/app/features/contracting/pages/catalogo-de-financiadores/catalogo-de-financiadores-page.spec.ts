@@ -68,7 +68,7 @@ describe('CatalogoDeFinanciadoresPage', () => {
 
       expect(texto).toContain('OSDE');
       expect(texto).toContain('Ya agregado');
-      expect(texto).toContain('El catalogo cambio despues de agregarlo');
+      expect(texto).toContain('El catálogo cambio después de agregarlo');
       expect(enlaceA(fixture, '/contratacion/financiadores/77/planes')).not.toBeNull();
       expect(botones(fixture)).toContain('Agregar al centro OSDE');
 
@@ -132,12 +132,12 @@ describe('CatalogoDeFinanciadoresPage', () => {
     expect(pedido.request.params.get('tipo')).toBe('PREPAGA');
     pedido.flush([]);
     await asentar(fixture);
-    expect(textoDe(fixture)).toContain('Ninguna entrada del catalogo coincide');
+    expect(textoDe(fixture)).toContain('Ninguna entrada del catálogo coincide');
   });
 
   it('sin `convenio:manage` no ofrece agregar', async () => {
     const fixture = await montar([PERMISO_CONVENIO_READ]);
-    expect(textoDe(fixture)).toContain('Podes mirar el catalogo');
+    expect(textoDe(fixture)).toContain('Podés mirar el catálogo');
     expect(boton(fixture, 'Agregar al centro')).toBeNull();
   });
 

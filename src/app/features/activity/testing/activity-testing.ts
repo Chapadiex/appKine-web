@@ -57,11 +57,13 @@ export function textoDe(fixture: ComponentFixture<unknown>): string {
 export function boton(fixture: ComponentFixture<unknown>, texto: string): HTMLButtonElement {
   const encontrado = (
     Array.from(
-      (fixture.nativeElement as HTMLElement).querySelectorAll('button'),
+      (fixture.nativeElement as HTMLElement).querySelectorAll(
+        'button:not(.ayuda-contextual__boton):not(.filtros-barra__boton):not(.tabla__orden)',
+      ),
     ) as HTMLButtonElement[]
   ).find((b) => (b.textContent ?? '').replace(/\s+/g, ' ').includes(texto));
   if (encontrado === undefined) {
-    throw new Error(`no se encontro el boton "${texto}"`);
+    throw new Error(`no se encontro el botón "${texto}"`);
   }
   return encontrado as HTMLButtonElement;
 }

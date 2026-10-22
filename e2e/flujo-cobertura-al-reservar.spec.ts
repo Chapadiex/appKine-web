@@ -53,7 +53,7 @@ test.describe('Cobertura elegida al reservar contra el backend real', () => {
     await selector.selectOption(String(coberturaId));
 
     const creado = respuestaDe(page, 'POST', RESERVA);
-    await page.getByRole('button', { name: 'Reservar el turno' }).click();
+    await page.getByRole('button', { name: 'Reservar turno' }).click();
     const respuesta = await creado;
     expect(respuesta.status(), await respuesta.text()).toBe(201);
     expect(respuesta.request().postDataJSON()).toMatchObject({ coberturaId });

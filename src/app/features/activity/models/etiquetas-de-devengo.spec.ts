@@ -30,7 +30,7 @@ describe('avisoDeDevengo (U-39)', () => {
     expect(sinPrecio?.texto).toContain('quedo registrada igual');
   });
 
-  it('la anulacion dice que no se borra, y los demas efectos informan sin alarmar', () => {
+  it('la anulación dice que no se borra, y los demas efectos informan sin alarmar', () => {
     expect(avisoDeDevengo({ efecto: Efecto.ANULADA })?.texto).toContain('No se borra');
     expect(avisoDeDevengo({ efecto: Efecto.YA_DEVENGADA })?.texto).toContain('no se genero otra');
     expect(avisoDeDevengo({ efecto: Efecto.SIN_DEUDA })?.texto).toContain('no se anulo nada');

@@ -53,7 +53,7 @@ async function abrirElSaldo(page: Page, personaId: number, numero: string): Prom
     .filter({ has: page.getByRole('cell', { name: new RegExp(`^${numero}(\\s|$)`) }) })
     .getByRole('button', { name: 'Saldo y consumos' })
     .click();
-  const panel = page.getByRole('region', { name: `Saldo y consumos de la autorizacion ${numero}` });
+  const panel = page.getByRole('region', { name: `Saldo y consumos de la autorización ${numero}` });
   await expect(panel.getByRole('heading', { name: 'Saldo', level: 3 })).toBeVisible();
   return panel;
 }

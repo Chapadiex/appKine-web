@@ -36,13 +36,15 @@ test.describe('Acceso clinico desde el Paciente 360 (D-e)', () => {
     await navegar(page, `/pacientes/${sembrada.personaId}`);
 
     // La ficha sigue sin mostrar nada clinico: ofrece el camino, no el contenido.
-    await expect(page.getByText('Esta ficha no muestra nada clinico')).toBeVisible();
-    await page.getByRole('link', { name: 'Abrir la historia clinica' }).click();
+    await expect(
+      page.locator('app-ayuda').getByText('Esta ficha no muestra nada clínico', { exact: true }),
+    ).toBeAttached();
+    await page.getByRole('link', { name: 'Abrir la historia clínica' }).click();
 
     await expect(page).toHaveURL(new RegExp(`/historia-clinica/personas/${sembrada.personaId}$`));
     // El motivo no viaja en la URL ni antes ni despues de declararlo.
     await page.getByRole('textbox', { name: 'Motivo del acceso' }).fill(MOTIVO_DE_ACCESO);
-    await page.getByRole('button', { name: 'Ver la historia clinica' }).click();
+    await page.getByRole('button', { name: 'Ver la historia clínica' }).click();
     await expect(page.getByRole('heading', { name: sembrada.nombreCompleto })).toBeVisible();
     expect(page.url()).not.toContain(encodeURIComponent(MOTIVO_DE_ACCESO));
 
@@ -54,7 +56,7 @@ test.describe('Acceso clinico desde el Paciente 360 (D-e)', () => {
     );
     expect(Number(auditadas), 'la lectura quedo auditada con el motivo').toBeGreaterThan(0);
 
-    await page.getByRole('link', { name: 'Volver a la ficha de la persona' }).click();
+    await page.getByRole('link', { name: 'Ficha', exact: true }).click();
     await expect(page).toHaveURL(new RegExp(`/pacientes/${sembrada.personaId}$`));
   });
 
@@ -64,18 +66,20 @@ test.describe('Acceso clinico desde el Paciente 360 (D-e)', () => {
     await entrarComoAdministradora(page, sembrada);
     await navegar(page, `/pacientes/${sembrada.personaId}`);
 
-    await expect(page.getByText('Esta ficha no muestra nada clinico')).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Abrir la historia clinica' })).toHaveCount(0);
+    await expect(
+      page.locator('app-ayuda').getByText('Esta ficha no muestra nada clínico', { exact: true }),
+    ).toBeAttached();
+    await expect(page.getByRole('link', { name: 'Abrir la historia clínica' })).toHaveCount(0);
     // Lo que si ve el mostrador: que hay historia, sin contenido (matriz §32, api #109).
     await expect(
       page
-        .getByRole('region', { name: 'Historia clinica: datos administrativos' })
+        .getByRole('region', { name: 'Historia clínica: datos administrativos' })
         .getByText('Historia abierta el'),
     ).toBeVisible();
 
     // Por URL directa: el guard no existe a proposito, la autoridad es el backend.
     await navegar(page, `/historia-clinica/personas/${sembrada.personaId}`);
-    await expect(page.getByText('No tenes permiso para ver historias clinicas')).toBeVisible();
+    await expect(page.getByText('No tenés permiso para ver historias clínicas')).toBeVisible();
     // No se ofrece el motivo: sin permiso, declarar un motivo no habilita nada.
     await expect(page.getByRole('textbox', { name: 'Motivo del acceso' })).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Reintentar' })).toHaveCount(0);

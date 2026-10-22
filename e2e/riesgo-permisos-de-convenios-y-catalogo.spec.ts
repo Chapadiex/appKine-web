@@ -72,8 +72,12 @@ test.describe('Permisos de convenios y catalogo por rol contra el backend real (
     ]) {
       await esperarSinPermiso(page, ruta, centro.nombreCentro);
     }
-    await expect(page.getByRole('link', { name: 'Contratacion' })).toHaveCount(0);
-    await expect(page.getByRole('link', { name: 'Catalogo' })).toHaveCount(0);
+    await expect(
+      page.getByRole('link', { name: 'Convenios de la sede', includeHidden: true, exact: true }),
+    ).toHaveCount(0);
+    await expect(
+      page.getByRole('link', { name: 'Catálogo clínico', includeHidden: true, exact: true }),
+    ).toHaveCount(0);
   });
 
   test('PROFESIONAL: lee convenios y catalogo, y no administra el catalogo', async ({ page }) => {
@@ -85,15 +89,22 @@ test.describe('Permisos de convenios y catalogo por rol contra el backend real (
     expect(convenios.status(), await convenios.text()).toBe(200);
 
     await deAUnLogin(() => ingresarAlCentro(page, centro.emailProfesional, centro));
-    await expect(page.getByRole('link', { name: 'Contratacion' })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Catalogo' })).toBeVisible();
+    await expect(
+      page.getByRole('link', { name: 'Convenios de la sede', includeHidden: true, exact: true }),
+    ).toHaveCount(1);
+    await expect(
+      page.getByRole('link', { name: 'Catálogo clínico', includeHidden: true, exact: true }),
+    ).toHaveCount(1);
 
     await irA(page, '/contratacion/convenios');
     await expect(
       page.getByRole('heading', { name: 'Convenios de la sede', level: 1 }),
     ).toBeVisible();
     await irA(page, '/catalogo/especialidades');
-    await expect(page.getByRole('heading', { name: 'Especialidades', level: 1 })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Catálogo clínico', level: 1 })).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: /^Especialidades que este centro puede usar/, level: 2 }),
+    ).toBeVisible();
     await expect(page.getByRole('button', { name: /^Dar de alta una/ })).toHaveCount(0);
   });
 });
@@ -110,9 +121,10 @@ async function esperarSinPermiso(page: Page, ruta: string, nombreCentro: string)
   await irA(page, ruta);
   await expect(page, `${ruta} no se le abre`).toHaveURL(/\/sin-permiso$/);
   await expect(
-    page.getByRole('heading', { name: 'No tenes permiso para esta pantalla', level: 1 }),
+    page.getByRole('heading', { name: 'No tenés permiso para esta pantalla', level: 1 }),
   ).toBeVisible();
-  await expect(page.getByText(nombreCentro, { exact: true })).toBeVisible();
+  // En `main`: la barra superior (UX-01) tambien dice el centro activo.
+  await expect(page.getByRole('main').getByText(nombreCentro, { exact: true })).toBeVisible();
 }
 
 async function esperarForbidden(api: ApiAkine, ruta: string): Promise<void> {

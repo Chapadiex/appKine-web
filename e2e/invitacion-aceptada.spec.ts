@@ -55,27 +55,25 @@ test.describe('Aceptar una invitacion contra el backend real', () => {
     // --- El enlace abre la invitacion, sin sesion ------------------------------------------
     await page.goto(enlace.ruta);
     await expect(
-      page.getByRole('heading', {
-        name: `${centro.nombreCentro} te quiere en su equipo`,
-        level: 2,
-      }),
+      page.getByRole('heading', { name: 'Te invitaron a AKINE', level: 1 }),
     ).toBeVisible();
-    await expect(page.getByText(`La invitacion se envio a ${email}.`)).toBeVisible();
+    await expect(page.getByText(`${centro.nombreCentro} te invitó a colaborar`)).toBeVisible();
+    await expect(page.getByRole('definition').filter({ hasText: email })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Crea tu cuenta para aceptar' })).toBeVisible();
 
     // Sin nombre ni contrasena no sale nada.
-    await page.getByRole('button', { name: 'Aceptar la invitacion' }).click();
+    await page.getByRole('button', { name: 'Aceptar la invitación' }).click();
     await expect(page.getByText('El nombre es obligatorio.')).toBeVisible();
     await expect(
-      page.getByText('La contrasena tiene que tener al menos 10 caracteres.'),
+      page.getByText('La contraseña tiene que tener al menos 10 caracteres.'),
     ).toBeVisible();
 
     // --- Aceptar -----------------------------------------------------------------------------
     await page.getByLabel('Nombre', { exact: true }).fill('Ines');
     await page.getByLabel('Apellido (opcional)').fill('Invitada');
-    await page.getByLabel('Contrasena').fill(PASSWORD);
+    await page.getByLabel('Contraseña').fill(PASSWORD);
     const aceptacion = respuestaDe(page, 'POST', /\/auth\/invitations\/accept$/);
-    await page.getByRole('button', { name: 'Aceptar la invitacion' }).click();
+    await page.getByRole('button', { name: 'Aceptar la invitación' }).click();
     const aceptada = await aceptacion;
     expect(aceptada.status(), await aceptada.text()).toBe(200);
     const cuerpo = (await aceptada.json()) as {
@@ -89,8 +87,10 @@ test.describe('Aceptar una invitacion contra el backend real', () => {
       organizationId: centro.organizationId,
       consultorioId: centro.consultorioId,
     });
-    await expect(page.getByText('Listo: ya sos parte del equipo.')).toBeVisible();
-    await expect(page.getByText(/Tu cuenta quedo creada y activa/)).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: 'Ya sos parte del equipo', level: 1 }),
+    ).toBeVisible();
+    await expect(page.getByText(/Tu cuenta quedó creada y activa/)).toBeVisible();
 
     // --- El centro la ve aceptada y como miembro ---------------------------------------------
     const aceptadas = await api.exigir<{ email: string; roleCode: string }[]>(
@@ -102,7 +102,7 @@ test.describe('Aceptar una invitacion contra el backend real', () => {
     // --- El mismo enlace no sirve dos veces --------------------------------------------------
     await page.goto(enlace.ruta);
     await expect(page.getByRole('alert')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Aceptar la invitacion' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Aceptar la invitación' })).toHaveCount(0);
 
     // --- Entra con la contrasena que eligio, directo al centro -------------------------------
     await page.goto('/auth/ingresar');

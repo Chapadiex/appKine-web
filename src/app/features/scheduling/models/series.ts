@@ -148,7 +148,7 @@ export function clasificarOcurrencias(
   return fechas.map((fecha) => {
     const encontrado = dias.get(fecha);
     if (encontrado === undefined) {
-      return prevista(fecha, 'sin-horario', 'La agenda no devolvio este dia.');
+      return prevista(fecha, 'sin-horario', 'La agenda no devolvio este día.');
     }
     const { dia, timezone } = encontrado;
     const coincidentes = (dia.slots ?? []).filter(
@@ -228,8 +228,8 @@ export function fechaEnZona(instante: string | undefined, timezone: string): str
 const TEXTOS_DE_OMITIDO: Readonly<Record<TurnoOmitidoMotivoEnum, string>> = {
   [TurnoOmitidoMotivoEnum.YA_EMPEZO]: 'Ya empezo: el pasado no se toca',
   [TurnoOmitidoMotivoEnum.ESTADO_TERMINAL]: 'Ya estaba cancelado o ausente',
-  [TurnoOmitidoMotivoEnum.EN_ESPERA]: 'El paciente ya llego: se resuelve desde la recepcion',
-  [TurnoOmitidoMotivoEnum.CON_ATENCION]: 'Tiene una atencion clinica registrada',
+  [TurnoOmitidoMotivoEnum.EN_ESPERA]: 'El paciente ya llego: se resuelve desde la recepción',
+  [TurnoOmitidoMotivoEnum.CON_ATENCION]: 'Tiene una atención clínica registrada',
 };
 
 /** Por que un turno del alcance queda como esta. */

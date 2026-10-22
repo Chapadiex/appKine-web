@@ -25,7 +25,7 @@ describe('EsperaPorLimite', () => {
     expect(espera.activa()).toBe(false);
   });
 
-  it('no sigue descontando despues de llegar a cero', () => {
+  it('no sigue descontando después de llegar a cero', () => {
     const espera = new EsperaPorLimite();
     espera.iniciar(1);
 

@@ -1,3 +1,8 @@
+@import '@fontsource/roboto/latin-400.css';
+@import '@fontsource/roboto/latin-500.css';
+@import '@fontsource/roboto/latin-700.css';
+@import '@fontsource/roboto-mono/latin-400.css';
+@import '@fontsource/roboto-mono/latin-500.css';
 /*
  * Estilos globales minimos. El sistema de diseno -y su capa de tokens- vive en
  * `src/design-system.css`, que se carga despues (ver `angular.json`). Que este archivo use
@@ -25,7 +30,20 @@ body {
 
 body {
   font-family: var(--fuente-base);
+  font-size: var(--tipo-sm);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   line-height: var(--linea-base);
   color: var(--color-texto);
-  background: var(--color-superficie);
+  /* Gris muy claro de fondo y tarjetas blancas: las secciones se separan sin bordes gruesos. */
+  background: var(--color-superficie-sutil);
+}
+
+/* Enlaces: el azul de accion del sistema, no el del navegador. */
+a {
+  color: var(--color-enlace);
+}
+
+a:not(.boton):hover {
+  color: var(--color-accion-fondo-hover);
 }

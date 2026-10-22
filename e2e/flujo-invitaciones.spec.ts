@@ -1,5 +1,6 @@
 import { emailUnico } from './support/akine';
 import { expect, ingresar, navegar, respuestaDe, test } from './support/agenda-real';
+import { abrirFiltros } from './support/filtros';
 import { enlaceDelCorreo } from './support/cuentas';
 
 /**
@@ -33,9 +34,9 @@ test.describe('Invitaciones contra el backend real', () => {
     await page.getByRole('button', { name: 'Enviar la invitacion' }).click();
     const creada = await alta;
     expect(creada.status(), await creada.text()).toBe(201);
-    await expect(page.getByText('La invitacion salio por correo.')).toBeVisible();
+    await expect(page.getByText('La invitación salio por correo.')).toBeVisible();
     const fila = page
-      .getByRole('region', { name: 'Invitaciones enviadas por la organizacion' })
+      .getByRole('region', { name: 'Invitaciones enviadas por la organización' })
       .getByRole('row', { name: new RegExp(email.replace(/[.]/g, '\\.')) });
     await expect(fila).toContainText('Profesional');
     await expect(fila).toContainText('Pendiente');
@@ -47,24 +48,23 @@ test.describe('Invitaciones contra el backend real', () => {
       const anonima = await invitada.newPage();
       await anonima.goto(enlace.ruta);
       await expect(
-        anonima.getByRole('heading', { name: /te quiere en su equipo$/, level: 2 }),
+        anonima.getByRole('heading', { name: 'Te invitaron a AKINE', level: 1 }),
       ).toBeVisible();
 
       // --- Cancelar con motivo --------------------------------------------------------------
       await fila.getByRole('button', { name: 'Cancelar' }).click();
-      await page.getByLabel('Motivo de la cancelacion').fill(motivo);
+      await page.getByLabel('Motivo de la cancelación').fill(motivo);
       const cancelacion = respuestaDe(page, 'POST', /\/colaborador-invitaciones\/\d+\/cancel$/);
-      await page.getByRole('button', { name: 'Cancelar la invitacion' }).click();
+      await page.getByRole('button', { name: 'Cancelar la invitación' }).click();
       expect((await cancelacion).status()).toBeLessThan(300);
+      await abrirFiltros(page);
       await page.getByLabel('Mostrar').selectOption({ label: 'Las canceladas' });
       await expect(fila).toContainText(motivo);
 
       // El mismo enlace ya no abre nada.
       await anonima.reload();
       await expect(anonima.getByRole('alert')).toBeVisible();
-      await expect(anonima.getByRole('heading', { name: /te quiere en su equipo$/ })).toHaveCount(
-        0,
-      );
+      await expect(anonima.getByRole('heading', { name: 'Te invitaron a AKINE' })).toHaveCount(0);
     } finally {
       await invitada.close();
     }

@@ -75,7 +75,7 @@ export const routes: Routes = [
     path: 'turnos/:turnoId',
     canActivate: [contextGuard],
     loadComponent: () => import('./pages/atencion/atencion-page').then((m) => m.AtencionPage),
-    title: 'AKINE - Atencion clinica',
+    title: 'AKINE - Atención clínica',
   },
   {
     // Atencion de un participante de una clase (AKINE-08.05): ya existe —la abrio el panel de la
@@ -83,7 +83,7 @@ export const routes: Routes = [
     path: 'sesiones/:sesionId',
     canActivate: [contextGuard],
     loadComponent: () => import('./pages/atencion/atencion-page').then((m) => m.AtencionPage),
-    title: 'AKINE - Atencion clinica',
+    title: 'AKINE - Atención clínica',
   },
   {
     // Panel de atencion clinica de una clase (AKINE-08.05): una atencion por participante y Caso.
@@ -103,19 +103,19 @@ export const routes: Routes = [
     ],
     loadComponent: () =>
       import('./pages/atencion-grupal/atencion-grupal-page').then((m) => m.AtencionGrupalPage),
-    title: 'AKINE - Atencion clinica de la clase',
+    title: 'AKINE - Atención clínica de la clase',
     data: { [DATA_ANCHO]: ANCHO_AMPLIO },
   },
   {
     path: 'sesiones/:sesionId/enmienda',
     canActivate: [contextGuard],
     loadComponent: () => import('./pages/enmienda/enmienda-page').then((m) => m.EnmiendaPage),
-    title: 'AKINE - Enmendar una atencion',
+    title: 'AKINE - Enmendar una atención',
   },
   {
     path: 'sesiones/:sesionId/versiones',
     canActivate: [contextGuard],
     loadComponent: () => import('./pages/versiones/versiones-page').then((m) => m.VersionesPage),
-    title: 'AKINE - Versiones de una atencion',
+    title: 'AKINE - Versiones de una atención',
   },
 ];

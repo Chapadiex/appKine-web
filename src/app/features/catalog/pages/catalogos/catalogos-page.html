@@ -1,22 +1,23 @@
 @if (datos(); as tipoActual) {
-  <h1>{{ tipoActual.plural }}</h1>
+  <div class="titulo-con-ayuda">
+    <h1>Catálogo clínico</h1>
+    <app-ayuda titulo="Sobre esta pantalla">
+      <p>
+        {{ tipoActual.descripcion }}
+      </p>
+    </app-ayuda>
+    <div class="encabezado__acciones">
+      <a class="boton boton--secundario" routerLink="/catalogo/solicitudes">Pedir un alta</a>
+      <ng-container *akinePermiso="permisoManage">
+        <button type="button" class="boton" (click)="abrirAlta()">
+          <app-icono nombre="agregar" />
+          Dar de alta una {{ tipoActual.singular }} de este centro
+        </button>
+      </ng-container>
+    </div>
+  </div>
 
-  <p class="descripcion">{{ tipoActual.descripcion }}</p>
-
-  <nav class="acciones" aria-label="Tipos del catalogo clinico">
-    @for (otro of tipos; track otro.slug) {
-      <a
-        class="boton boton--secundario"
-        [routerLink]="['/catalogo', otro.slug]"
-        [attr.aria-current]="otro.slug === tipoActual.slug ? 'page' : null"
-      >
-        {{ otro.plural }}
-      </a>
-    }
-    <a class="boton boton--secundario" routerLink="/catalogo/solicitudes">
-      Pedir un concepto a la plataforma
-    </a>
-  </nav>
+  <app-pestanas [pestanas]="pestanasDeCatalogo" [etiqueta]="etiquetaDePestanas" />
 
   <!--
     La distincion que esta pantalla no puede aplanar (ADR-0021). Va arriba y no en un tooltip:
@@ -28,12 +29,12 @@
     <h2 id="titulo-nota-alcance">Hay dos catalogos en esta lista, y es a proposito</h2>
     <p>
       Los conceptos <b>de la plataforma</b> los mantiene AKINE y los ven todos los centros: son la
-      base comun para que un centro nuevo pueda trabajar el primer dia. No se pueden editar ni dar
-      de baja desde aca, y por eso sus filas no traen acciones.
+      base comun para que un centro nuevo pueda trabajar el primer día. No se pueden editar ni dar
+      de baja desde acá, y por eso sus filas no traen acciones.
     </p>
     <p>
       Los conceptos <b>de este centro</b> son tuyos: los das de alta vos, los ve solo tu
-      organizacion y los administras desde esta misma tabla. Si necesitas que algo entre al catalogo
+      organización y los administras desde esta misma tabla. Si necesitas que algo entre al catalogo
       comun, <a routerLink="/catalogo/solicitudes">pedilo a la plataforma</a>.
     </p>
   </section>
@@ -44,19 +45,13 @@
     }
   </div>
 
-  <p class="acciones">
-    <button type="button" class="boton" (click)="abrirAlta()" *akinePermiso="permisoManage">
-      Dar de alta una {{ tipoActual.singular }} de este centro
-    </button>
-  </p>
-
   @if (altaAbierta()) {
     <section class="tarjeta" aria-labelledby="titulo-alta-catalogo">
       <h2 id="titulo-alta-catalogo">Nueva {{ tipoActual.singular }} de este centro</h2>
 
       <form [formGroup]="formularioAlta" (ngSubmit)="enviarAlta()" novalidate>
         <div class="campo">
-          <label for="alta-catalogo-codigo">Codigo</label>
+          <label for="alta-catalogo-codigo">Código</label>
           <input
             id="alta-catalogo-codigo"
             type="text"
@@ -76,7 +71,7 @@
               {{ errorAccion() }}
             </p>
           } @else if (mostrarErrorAlta('codigo')) {
-            <p class="campo__error" id="alta-catalogo-codigo-error">El codigo es obligatorio.</p>
+            <p class="campo__error" id="alta-catalogo-codigo-error">El código es obligatorio.</p>
           } @else {
             <p class="ayuda" id="alta-catalogo-codigo-ayuda">
               La clave estable con la que este concepto se referencia. Elegila pensando que no se
@@ -119,7 +114,7 @@
               [attr.aria-invalid]="mostrarErrorAlta('especialidadId') ? 'true' : null"
               aria-describedby="alta-catalogo-especialidad-ayuda"
             >
-              <option value="">Elegi una especialidad</option>
+              <option value="">Elegí una especialidad</option>
               @for (especialidad of especialidades(); track especialidad.id) {
                 <option [value]="especialidad.id">
                   {{ especialidad.name }} ({{ etiquetaDeAlcance(especialidad) }})
@@ -128,15 +123,15 @@
             </select>
             @if (mostrarErrorAlta('especialidadId')) {
               <p class="campo__error" role="alert">
-                Una practica siempre cuelga de una especialidad: elegi cual.
+                Una práctica siempre cuelga de una especialidad: elegí cual.
               </p>
             }
             <p class="ayuda" id="alta-catalogo-especialidad-ayuda">
-              Solo aparecen las especialidades <b>activas</b>: una practica no puede colgar de una
+              Solo aparecen las especialidades <b>activas</b>: una práctica no puede colgar de una
               dada de baja. Estan las de la plataforma y las de tu centro.
               @if (especialidades().length === 0) {
                 <b>
-                  No pudimos traer las especialidades. Recarga la pantalla; si sigue vacio, dala de
+                  No pudimos traer las especialidades. Recarga la pantalla; si sigue vacío, dala de
                   alta primero desde la solapa Especialidades.
                 </b>
               }
@@ -145,7 +140,7 @@
         }
 
         <div class="campo">
-          <label for="alta-catalogo-descripcion">Descripcion (opcional)</label>
+          <label for="alta-catalogo-descripcion">Descripción (opcional)</label>
           <input
             id="alta-catalogo-descripcion"
             type="text"
@@ -159,7 +154,7 @@
           <input id="alta-catalogo-desde" type="datetime-local" formControlName="validFrom" />
           <p class="ayuda">
             Sin fecha, rige desde ya. Con una fecha futura el concepto queda activo pero
-            <b>todavia sin vigencia</b>: no aparece en los selectores hasta ese momento.
+            <b>todavía sin vigencia</b>: no aparece en los selectores hasta ese momento.
           </p>
         </div>
 
@@ -192,67 +187,77 @@
   <section class="tarjeta" aria-labelledby="titulo-listado-catalogo">
     <h2 id="titulo-listado-catalogo">{{ tipoActual.plural }} que este centro puede usar</h2>
 
-    <div class="campo">
-      <label for="busqueda-catalogo">Buscar</label>
-      <input
-        id="busqueda-catalogo"
-        type="search"
-        [value]="busqueda()"
-        (input)="teclear($any($event.target).value)"
-        autocomplete="off"
-        aria-describedby="busqueda-catalogo-ayuda"
-      />
-      <p class="ayuda" id="busqueda-catalogo-ayuda">
-        Busca por nombre y por codigo mientras escribis. No distingue mayusculas ni acentos.
-      </p>
-    </div>
+    <!--
+      Regla de filtros (plan §3.4): la busqueda, que se usa siempre, a la vista; estado, alcance y
+      especialidad, que casi nunca se tocan, detras del embudo.
+    -->
+    <app-filtros [activos]="filtrosAvanzadosActivos()">
+      <div class="campo" filtro-principal>
+        <label class="visualmente-oculto" for="busqueda-catalogo">Buscar</label>
+        <div class="campo-busqueda">
+          <app-icono class="campo-busqueda__icono" nombre="buscar" />
+          <input
+            id="busqueda-catalogo"
+            type="search"
+            placeholder="Buscar por nombre o código"
+            [value]="busqueda()"
+            (input)="teclear($any($event.target).value)"
+            autocomplete="off"
+            aria-describedby="busqueda-catalogo-ayuda"
+          />
+        </div>
+        <p class="visualmente-oculto" id="busqueda-catalogo-ayuda">
+          Busca por nombre y por código mientras escribis. No distingue mayusculas ni acentos.
+        </p>
+      </div>
 
-    <div class="campo">
-      <label for="filtro-estado-catalogo">Mostrar</label>
-      <select
-        id="filtro-estado-catalogo"
-        [value]="filtroEstado()"
-        (change)="cambiarFiltroEstado($any($event.target).value)"
-        aria-describedby="filtro-estado-catalogo-ayuda"
-      >
-        <option value="ACTIVO">Solo los activos</option>
-        <option value="INACTIVO">Solo los dados de baja</option>
-        <option value="TODOS">Todos</option>
-      </select>
-      <p class="ayuda" id="filtro-estado-catalogo-ayuda">
-        Los conceptos dados de baja no se borran: lo que ya se registro con ellos los sigue
-        referenciando y conserva su significado. Su codigo y su nombre, en cambio, quedan libres.
-      </p>
-    </div>
-
-    <div class="campo">
-      <label for="filtro-alcance-catalogo">De quien</label>
-      <select
-        id="filtro-alcance-catalogo"
-        [value]="filtroAlcance()"
-        (change)="cambiarFiltroAlcance($any($event.target).value)"
-      >
-        <option value="TODOS">De la plataforma y de este centro</option>
-        <option value="GLOBAL">Solo los de la plataforma</option>
-        <option value="ORGANIZACION">Solo los de este centro</option>
-      </select>
-    </div>
-
-    @if (tipoActual.exigeEspecialidad) {
       <div class="campo">
-        <label for="filtro-especialidad-catalogo">Especialidad</label>
+        <label for="filtro-estado-catalogo">Mostrar</label>
         <select
-          id="filtro-especialidad-catalogo"
-          [value]="filtroEspecialidad() ?? ''"
-          (change)="cambiarFiltroEspecialidad($any($event.target).value)"
+          id="filtro-estado-catalogo"
+          [value]="filtroEstado()"
+          (change)="cambiarFiltroEstado($any($event.target).value)"
+          aria-describedby="filtro-estado-catalogo-ayuda"
         >
-          <option value="">Todas</option>
-          @for (especialidad of especialidades(); track especialidad.id) {
-            <option [value]="especialidad.id">{{ especialidad.name }}</option>
-          }
+          <option value="ACTIVO">Solo los activos</option>
+          <option value="INACTIVO">Solo los dados de baja</option>
+          <option value="TODOS">Todos</option>
+        </select>
+        <p class="ayuda" id="filtro-estado-catalogo-ayuda">
+          Los conceptos dados de baja no se borran: lo que ya se registro con ellos los sigue
+          referenciando y conserva su significado. Su código y su nombre, en cambio, quedan libres.
+        </p>
+      </div>
+
+      <div class="campo">
+        <label for="filtro-alcance-catalogo">De quien</label>
+        <select
+          id="filtro-alcance-catalogo"
+          [value]="filtroAlcance()"
+          (change)="cambiarFiltroAlcance($any($event.target).value)"
+        >
+          <option value="TODOS">De la plataforma y de este centro</option>
+          <option value="GLOBAL">Solo los de la plataforma</option>
+          <option value="ORGANIZACION">Solo los de este centro</option>
         </select>
       </div>
-    }
+
+      @if (tipoActual.exigeEspecialidad) {
+        <div class="campo">
+          <label for="filtro-especialidad-catalogo">Especialidad</label>
+          <select
+            id="filtro-especialidad-catalogo"
+            [value]="filtroEspecialidad() ?? ''"
+            (change)="cambiarFiltroEspecialidad($any($event.target).value)"
+          >
+            <option value="">Todas</option>
+            @for (especialidad of especialidades(); track especialidad.id) {
+              <option [value]="especialidad.id">{{ especialidad.name }}</option>
+            }
+          </select>
+        </div>
+      }
+    </app-filtros>
 
     <div aria-live="polite">
       @switch (estado().tipo) {
@@ -261,10 +266,10 @@
         }
 
         @case ('sin-contexto') {
-          <p class="estado estado--vacio">Todavia no elegiste un consultorio.</p>
+          <p class="estado estado--vacio">Todavía no elegiste un consultorio.</p>
           <p class="ayuda">
-            El catalogo mezcla los conceptos de la plataforma con los de tu centro, asi que hay que
-            saber en cual estas trabajando. Tu sesion sigue abierta: solo falta elegir donde estas.
+            El catalogo mezcla los conceptos de la plataforma con los de tu centro, así que hay que
+            saber en cual estas trabajando. Tu sesión sigue abierta: solo falta elegir donde estas.
           </p>
           <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
         }
@@ -287,19 +292,19 @@
           } @else {
             <p class="ayuda">{{ totalConceptos() }} en total.</p>
 
-            <div class="tabla-scroll" tabindex="0" role="region" aria-label="Catalogo clinico">
+            <div class="tabla-scroll" tabindex="0" role="region" aria-label="Catalogo clínico">
               <table class="tabla">
                 <caption class="visualmente-oculto">
                   {{
                     tipoActual.plural
                   }}
-                  disponibles para este centro, con su codigo, de quien son, su estado y sus
+                  disponibles para este centro, con su código, de quien son, su estado y sus
                   acciones.
                 </caption>
                 <thead>
                   <tr>
                     <th scope="col">Nombre</th>
-                    <th scope="col">Codigo</th>
+                    <th scope="col">Código</th>
                     <th scope="col">De quien es</th>
                     <th scope="col">Estado</th>
                     <th scope="col">Acciones</th>
@@ -402,21 +407,21 @@
                                 <p class="campo__error">El nombre es obligatorio.</p>
                               } @else {
                                 <p class="ayuda">
-                                  Renombrar no cambia lo que ya quedo registrado: el codigo es la
+                                  Renombrar no cambia lo que ya quedo registrado: el código es la
                                   clave estable y no se edita.
                                 </p>
                               }
                             </div>
 
                             <div class="campo">
-                              <label for="editar-catalogo-descripcion">Descripcion</label>
+                              <label for="editar-catalogo-descripcion">Descripción</label>
                               <input
                                 id="editar-catalogo-descripcion"
                                 type="text"
                                 formControlName="descripcion"
                                 autocomplete="off"
                               />
-                              <p class="ayuda">Vaciar el campo borra la descripcion.</p>
+                              <p class="ayuda">Vaciar el campo borra la descripción.</p>
                             </div>
 
                             <div class="campo">
@@ -448,7 +453,7 @@
                                 Sacarle el fin de vigencia
                               </label>
                               <p class="ayuda" id="editar-catalogo-sin-fin-ayuda">
-                                Dejar el campo vacio significa <b>no lo toques</b>. Para que el
+                                Dejar el campo vacío significa <b>no lo toques</b>. Para que el
                                 concepto pase a no vencer nunca hay que marcar esto.
                               </p>
                             </div>
@@ -526,16 +531,15 @@
     </div>
   </section>
 } @else {
-  <h1>Ese catalogo no existe</h1>
+  <div class="titulo-con-ayuda">
+    <h1>Ese catálogo no existe</h1>
+    <app-ayuda titulo="Sobre esta pantalla">
+      <p>
+        La dirección que abriste no corresponde a ninguno de los tres catalogos clínicos. Puede que
+        el enlace este mal escrito, o que venga de una versión anterior de la aplicacion.
+      </p>
+    </app-ayuda>
+  </div>
 
-  <p class="descripcion">
-    La direccion que abriste no corresponde a ninguno de los tres catalogos clinicos. Puede que el
-    enlace este mal escrito, o que venga de una version anterior de la aplicacion.
-  </p>
-
-  <nav class="acciones" aria-label="Tipos del catalogo clinico">
-    @for (otro of tipos; track otro.slug) {
-      <a class="boton" [routerLink]="['/catalogo', otro.slug]">{{ otro.plural }}</a>
-    }
-  </nav>
+  <app-pestanas [pestanas]="pestanasDeCatalogo" [etiqueta]="etiquetaDePestanas" />
 }

@@ -1,3 +1,8 @@
+import { Pestanas } from '../../../../shared/components/pestanas/pestanas';
+import {
+  ETIQUETA_PESTANAS_DE_SERVICIOS,
+  PESTANAS_DE_SERVICIOS,
+} from '../../models/pestanas-de-offering';
 import {
   Component,
   ElementRef,
@@ -27,6 +32,12 @@ import {
 } from '../../models/etiquetas-de-offering';
 import { CausaOffering, hayQueRecargar, traducirErrorOffering } from '../../models/offering-errors';
 import { textoRequerido } from '../../../../shared/validators/texto-requerido';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { Filtros } from '../../../../shared/components/filtros/filtros';
+import { Icono } from '../../../../shared/components/icono/icono';
+import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
+import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 
 /** Operacion abierta sobre una fila. Solo una a la vez. */
 type TipoAccion = 'editar' | 'baja';
@@ -76,11 +87,23 @@ const ESPERA_DE_BUSQUEDA = 250;
  */
 @Component({
   selector: 'app-catalogo-de-servicios-page',
-  imports: [ReactiveFormsModule, RouterLink, ConfirmacionConMotivo],
+  imports: [
+    Pestanas,
+    Ayuda,
+    ColumnaOrdenable,
+    Filtros,
+    Icono,
+    Paginacion,
+    ReactiveFormsModule,
+    RouterLink,
+    ConfirmacionConMotivo,
+  ],
   templateUrl: './catalogo-de-servicios-page.html',
   styleUrl: '../../offering.css',
 })
 export class CatalogoDeServiciosPage {
+  protected readonly pestanasDeServicios = PESTANAS_DE_SERVICIOS;
+  protected readonly etiquetaDePestanas = ETIQUETA_PESTANAS_DE_SERVICIOS;
   private readonly api = inject(OfferingApi);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly formBuilder = inject(FormBuilder);
@@ -119,6 +142,17 @@ export class CatalogoDeServiciosPage {
     return actual.tipo === 'listo' ? actual.pagina : [];
   });
 
+  /** Orden y paginado de la lista completa (plan §3.4): el servidor no pagina servicios. */
+  protected readonly tabla = tablaLocal(this.servicios, {
+    columnas: {
+      nombre: (servicio) => servicio.nombre,
+      codigo: (servicio) => servicio.codigo,
+      naturaleza: (servicio) => this.etiquetaDeNaturaleza(servicio.naturaleza),
+      modalidad: (servicio) => this.etiquetaDeModalidad(servicio.modalidadDefault),
+      estado: (servicio) => servicio.estado,
+    },
+  });
+
   protected readonly mensajeError = computed(() => {
     const actual = this.estado();
     return actual.tipo === 'error' ? actual.mensaje : null;
@@ -126,6 +160,11 @@ export class CatalogoDeServiciosPage {
 
   protected readonly busqueda = signal('');
   protected readonly filtroEstado = signal<FiltroEstado>('ACTIVO');
+
+  /** Cuantos filtros del embudo estan fuera de su valor por defecto: el boton los cuenta. */
+  protected readonly filtrosAvanzadosActivos = computed(() =>
+    Number(this.filtroEstado() !== 'ACTIVO'),
+  );
 
   /** Fila y operacion abiertas, o `null`. Solo una a la vez. */
   protected readonly panel = signal<{ readonly id: number; readonly tipo: TipoAccion } | null>(
@@ -457,7 +496,7 @@ export class CatalogoDeServiciosPage {
       // Sin version no hay edicion posible: mandar `0` pisaria el cambio de otro, que es justo
       // lo que el control de concurrencia optimista existe para impedir.
       this.errorAccion.set(
-        'No pudimos leer la version de este servicio. Cerra el panel, recarga el listado y volve a intentar.',
+        'No pudimos leer la versión de este servicio. Cerra el panel, recarga el listado y volvé a intentar.',
       );
       return null;
     }

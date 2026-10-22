@@ -29,7 +29,7 @@ const DESTINO_POR_DEFECTO = '/organizacion';
   selector: 'app-login-page',
   imports: [ReactiveFormsModule, RouterLink],
   templateUrl: './login-page.html',
-  styleUrl: '../../auth.css',
+  styleUrls: ['../../auth.css', '../../../../shared/styles/acceso.css'],
 })
 export class LoginPage {
   private readonly session = inject(SessionService);
@@ -46,6 +46,9 @@ export class LoginPage {
 
   /** Se incrementa en cada envio. Es lo que hace reactiva la pintura de errores (zoneless). */
   protected readonly intentos = signal(0);
+
+  /** Mostrar u ocultar la contraseña mientras se escribe (diseño del canvas). Solo cambia el input. */
+  protected readonly verPassword = signal(false);
 
   protected readonly espera = crearEsperaPorLimite();
 
@@ -110,13 +113,13 @@ export class LoginPage {
         ? this.destino()
         : `${RUTA_SELECTOR_CONTEXTO}?${PARAM_VOLVER_A}=${encodeURIComponent(this.destino())}`;
 
-    this.estado.set({ tipo: 'ok', mensaje: 'Sesion iniciada. Te estamos llevando adentro.' });
+    this.estado.set({ tipo: 'ok', mensaje: 'Sesión iniciada. Te estamos llevando adentro.' });
 
     this.router.navigateByUrl(ruta).catch((error: unknown) => {
-      console.error('No se pudo navegar despues del login', error);
+      console.error('No se pudo navegar después del login', error);
       this.estado.set({
         tipo: 'error',
-        mensaje: 'Iniciaste sesion pero no pudimos abrir la pantalla siguiente.',
+        mensaje: 'Iniciaste sesión pero no pudimos abrir la pantalla siguiente.',
         causa: 'otro',
       });
     });

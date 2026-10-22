@@ -1,3 +1,5 @@
+import { Pestanas } from '../../../../shared/components/pestanas/pestanas';
+import { ETIQUETA_PESTANAS_DE_OFERTA, pestanasDeOferta } from '../../models/pestanas-de-offering';
 import {
   Component,
   ElementRef,
@@ -24,6 +26,11 @@ import { OfferingApi } from '../../services/offering-api';
 import { CausaOffering, hayQueRecargar, traducirErrorOffering } from '../../models/offering-errors';
 import { enPalabras } from '../../models/situacion-de-vigencia';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
+import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
+import { Icono } from '../../../../shared/components/icono/icono';
 
 /** La moneda que se propone cuando la oferta no tiene precio de lista: la del producto. */
 const MONEDA_POR_DEFECTO = 'ARS';
@@ -52,7 +59,16 @@ interface SituacionDeLaTarifa {
  */
 @Component({
   selector: 'app-honorarios-por-clase-de-la-oferta-page',
-  imports: [ReactiveFormsModule, RouterLink, ConfirmacionConMotivo],
+  imports: [
+    Pestanas,
+    ColumnaOrdenable,
+    Paginacion,
+    Icono,
+    Ayuda,
+    ReactiveFormsModule,
+    RouterLink,
+    ConfirmacionConMotivo,
+  ],
   templateUrl: './honorarios-por-clase-de-la-oferta-page.html',
   styleUrl: '../../offering.css',
 })
@@ -66,6 +82,8 @@ export class HonorariosPorClaseDeLaOfertaPage {
   private readonly injector = inject(Injector);
 
   protected readonly ofertaId = Number(this.ruta.snapshot.paramMap.get('ofertaId'));
+  protected readonly pestanasDeOferta = pestanasDeOferta(this.ofertaId);
+  protected readonly etiquetaDePestanas = ETIQUETA_PESTANAS_DE_OFERTA;
 
   protected readonly estado = signal<EstadoDeListado<readonly HonorarioPorClase[]>>({
     tipo: 'cargando',
@@ -81,6 +99,14 @@ export class HonorariosPorClaseDeLaOfertaPage {
     return [...actual.pagina].sort((una, otra) =>
       (otra.vigenciaDesde ?? '').localeCompare(una.vigenciaDesde ?? ''),
     );
+  });
+
+  /** Orden y paginado de la lista completa (plan Â§3.4): el servidor no pagina tarifas. */
+  protected readonly tabla = tablaLocal(this.tarifas, {
+    columnas: {
+      importe: (tarifa) => tarifa.importePorParticipante,
+      vigencia: (tarifa) => tarifa.vigenciaDesde,
+    },
   });
 
   protected readonly mensajeDeCarga = computed(() => {
@@ -170,7 +196,7 @@ export class HonorariosPorClaseDeLaOfertaPage {
       return { resumen: 'Rige hoy', atenuada: false };
     }
     if ((tarifa.vigenciaDesde ?? '') > this.diaDeLaSede.hoy()) {
-      return { resumen: 'Todavia no rige', atenuada: false };
+      return { resumen: 'Todavía no rige', atenuada: false };
     }
     return { resumen: 'Ya no rige', atenuada: true };
   }
@@ -277,7 +303,7 @@ export class HonorariosPorClaseDeLaOfertaPage {
       next: () => {
         this.cerrarPanel();
         this.exito.set(
-          'La tarifa quedo cargada. Se aplica a las clases de los dias que cubre; lo ya ' +
+          'La tarifa quedo cargada. Se aplica a las clases de los días que cubre; lo ya ' +
             'liquidado no cambia.',
         );
         this.cargar();
@@ -295,7 +321,7 @@ export class HonorariosPorClaseDeLaOfertaPage {
     }
     if (version === undefined) {
       this.errorAccion.set(
-        'No pudimos leer la version de esta tarifa. Cerra el panel, recarga la grilla y volve a ' +
+        'No pudimos leer la versión de esta tarifa. Cerra el panel, recarga la grilla y volvé a ' +
           'intentar.',
       );
       return;
@@ -342,8 +368,8 @@ export class HonorariosPorClaseDeLaOfertaPage {
       next: () => {
         this.cerrarPanel();
         this.exito.set(
-          'La tarifa quedo dada de baja y su periodo quedo libre. Las clases de esos dias no ' +
-            'entran en ninguna liquidacion hasta que cargues otra.',
+          'La tarifa quedo dada de baja y su periodo quedo libre. Las clases de esos días no ' +
+            'entran en ninguna liquidación hasta que cargues otra.',
         );
         this.cargar();
       },

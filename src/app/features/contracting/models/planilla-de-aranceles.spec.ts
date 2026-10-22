@@ -79,14 +79,14 @@ describe('parsearPlanilla', () => {
     expect(filas.map((fila) => fila.codigoPractica)).toEqual(['KIN-06']);
     expect(errores.map((error) => error.linea)).toEqual([2, 3, 4, 5, 6]);
     expect(errores[0].mensaje).toContain('mas de dos decimales');
-    expect(errores[1].mensaje).toContain('Falta la practica');
-    expect(errores[2].mensaje).toContain('no es un importe valido');
-    expect(errores[2].mensaje).toContain('no es una fecha valida');
-    expect(errores[3].mensaje).toContain('no es un importe valido');
+    expect(errores[1].mensaje).toContain('Falta la práctica');
+    expect(errores[2].mensaje).toContain('no es un importe válido');
+    expect(errores[2].mensaje).toContain('no es una fecha válida');
+    expect(errores[3].mensaje).toContain('no es un importe válido');
     expect(errores[4].mensaje).toContain('7 columnas');
   });
 
-  it('el encabezado se valida: columna desconocida, repetida, obligatoria o sin practica', () => {
+  it('el encabezado se valida: columna desconocida, repetida, obligatoria o sin práctica', () => {
     expect(parsearPlanilla('codigo;precio\nA;1').errores[0].mensaje).toContain('desconocida');
     expect(parsearPlanilla('codigo;codigoPractica\nA;B').errores[0].mensaje).toContain('repetida');
     expect(parsearPlanilla('codigo;total\nA;1').errores[0].mensaje).toContain('importeFinanciador');
@@ -95,7 +95,7 @@ describe('parsearPlanilla', () => {
     ).toContain('codigoPractica o practicaId');
   });
 
-  it('vacia, solo encabezado o mas de 500 filas: error global y ninguna fila', () => {
+  it('vacía, solo encabezado o mas de 500 filas: error global y ninguna fila', () => {
     expect(parsearPlanilla('  \n').errores[0].linea).toBeNull();
     expect(parsearPlanilla(CABECERA).errores[0].mensaje).toContain('ninguna fila');
 
@@ -130,7 +130,7 @@ describe('motivoDeFilaRechazada', () => {
       'no admite obra social',
     );
     expect(motivoDeFilaRechazada({ problemType: 'practica-no-habilitada-en-oferta' })).toContain(
-      'no declara la practica',
+      'no declara la práctica',
     );
     expect(
       motivoDeFilaRechazada({ problemType: 'validation-error', detalle: 'La terna no cuadra.' }),

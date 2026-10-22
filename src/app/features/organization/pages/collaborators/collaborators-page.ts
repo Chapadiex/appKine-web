@@ -1,3 +1,4 @@
+import { DatePipe } from '@angular/common';
 import { Component, ElementRef, computed, effect, inject, signal, untracked } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Observable } from 'rxjs';
@@ -22,6 +23,13 @@ import { TenantContextStore } from '../../../../core/services/tenant-context.sto
 import { traducirErrorColaborador, traducirErrorGrant } from '../../models/colaborador-errors';
 import { textoRequerido } from '../../../../shared/validators/texto-requerido';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
+import { Pestanas } from '../../../../shared/components/pestanas/pestanas';
+import {
+  ETIQUETA_PESTANAS_DE_COLABORADORES,
+  PESTANAS_DE_COLABORADORES,
+} from '../../models/pestanas-de-colaboradores';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { Icono } from '../../../../shared/components/icono/icono';
 
 /** Operacion abierta sobre una fila. Solo una a la vez. */
 type TipoAccion = 'editar' | 'suspender' | 'reactivar' | 'revocar' | 'permisos';
@@ -70,11 +78,24 @@ const POR_PAGINA = 20;
  */
 @Component({
   selector: 'app-collaborators-page',
-  imports: [ReactiveFormsModule, RouterLink, PermisoDirective, Paginacion, ConfirmacionConMotivo],
+  imports: [
+    DatePipe,
+    Pestanas,
+    Ayuda,
+    Icono,
+    ReactiveFormsModule,
+    RouterLink,
+    PermisoDirective,
+    Paginacion,
+    ConfirmacionConMotivo,
+  ],
   templateUrl: './collaborators-page.html',
   styleUrl: '../../organization.css',
 })
 export class CollaboratorsPage {
+  protected readonly pestanas = PESTANAS_DE_COLABORADORES;
+  protected readonly etiquetaDePestanas = ETIQUETA_PESTANAS_DE_COLABORADORES;
+
   private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly colaboradores = inject(ColaboradoresService);
   private readonly tenantContext = inject(TenantContextStore);
@@ -219,10 +240,21 @@ export class CollaboratorsPage {
     );
   }
 
+  /** Iniciales para el avatar: las de las dos primeras palabras del nombre (o la del correo). */
+  protected inicialesDe(colaborador: MembershipResponse): string {
+    const palabras = this.nombreDe(colaborador)
+      .split(/[\s@.]+/)
+      .filter(Boolean);
+    return palabras
+      .slice(0, 2)
+      .map((palabra) => palabra.charAt(0).toUpperCase())
+      .join('');
+  }
+
   /** Nombre de la sede, o el texto de alcance organizacion cuando `consultorioId` es null. */
   protected alcanceLegible(consultorioId: number | undefined): string {
     if (consultorioId === undefined || consultorioId === null) {
-      return 'Toda la organizacion';
+      return 'Toda la organización';
     }
     const sede = this.sedes.sedes().find((candidata) => candidata.id === consultorioId);
     return sede?.name ?? `Sede ${consultorioId}`;

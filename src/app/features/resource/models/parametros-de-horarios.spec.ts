@@ -18,7 +18,7 @@ describe('leerParametrosDeHorarios', () => {
     expect(parametros).toEqual({ membershipId: 42, desde: '2026-09-02', hasta: '2026-09-03' });
   });
 
-  it('sin nada en la query string no propone ningun filtro', () => {
+  it('sin nada en la query string no propone ningún filtro', () => {
     expect(leerParametrosDeHorarios(convertToParamMap({}))).toEqual({
       membershipId: null,
       desde: null,

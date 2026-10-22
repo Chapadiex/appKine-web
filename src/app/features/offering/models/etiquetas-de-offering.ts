@@ -51,7 +51,7 @@ export const NATURALEZAS = [
   {
     valor: ServicioResponseNaturalezaEnum.BIENESTAR,
     etiqueta: 'Bienestar',
-    ayuda: 'Actividad de salud general, sin objetivo clinico.',
+    ayuda: 'Actividad de salud general, sin objetivo clínico.',
   },
 ] as const satisfies readonly OpcionEnumerada<NaturalezaDeServicio>[];
 

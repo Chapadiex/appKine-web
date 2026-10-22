@@ -66,10 +66,10 @@ export function etiquetaDePerfil(persona: PersonaResponse): string {
  */
 export function perfilEnPalabras(persona: PersonaResponse): string {
   return persona.esPaciente === true
-    ? 'Tiene perfil clinico activo en esta organizacion. Eso la habilita como paciente; la ' +
-        'historia clinica es otra cosa y se maneja en el modulo clinico.'
-    : 'Todavia no es paciente. Puede reservar y participar de actividades no clinicas sin ' +
-        'ningun perfil clinico.';
+    ? 'Tiene perfil clínico activo en esta organización. Eso la habilita como paciente; la ' +
+        'historia clínica es otra cosa y se maneja en el modulo clínico.'
+    : 'Todavía no es paciente. Puede reservar y participar de actividades no clínicas sin ' +
+        'ningún perfil clínico.';
 }
 
 /** `true` cuando la ficha esta dada de baja y no admite cambios. */

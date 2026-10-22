@@ -1,6 +1,9 @@
-<h1>Organizacion</h1>
-
-<p class="descripcion">Datos del centro sobre el que estas trabajando.</p>
+<div class="titulo-con-ayuda">
+  <h1>Organización</h1>
+  <app-ayuda titulo="Sobre esta pantalla">
+    <p>Datos del centro sobre el que estás trabajando.</p>
+  </app-ayuda>
+</div>
 
 <section class="tarjeta" aria-labelledby="titulo-organizacion">
   <h2 id="titulo-organizacion">Datos del centro</h2>
@@ -12,9 +15,9 @@
       }
 
       @case ('sin-contexto') {
-        <p class="estado estado--vacio">Todavia no elegiste un contexto de trabajo.</p>
+        <p class="estado estado--vacio">Todavía no elegiste un contexto de trabajo.</p>
         <p class="ayuda">
-          Para ver los datos de un centro hay que indicar cual. Los datos de una organizacion no se
+          Para ver los datos de un centro hay que indicar cuál. Los datos de una organización no se
           muestran nunca fuera de su contexto.
         </p>
         <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto</a>
@@ -37,45 +40,9 @@
 
         @if (organizacion()?.active === false) {
           <p class="estado estado--error" role="alert">
-            Esta organizacion esta dada de baja. Solo podes consultarla.
+            Esta organización está dada de baja. Solo podés consultarla.
           </p>
         }
-
-        <p class="ayuda">
-          <a class="enlace" routerLink="/organizacion/suscripcion">Ver plan y suscripcion</a>
-        </p>
-
-        <p class="ayuda">
-          <a class="enlace" routerLink="/organizacion/sedes">Ver las sedes de la organizacion</a>
-        </p>
-
-        <!-- DP-43 (U-25): la ventana para enmendar sesiones es de la organizacion. -->
-        <p class="ayuda">
-          <a class="enlace" routerLink="/atencion/politica-de-enmienda">
-            Configurar la ventana para enmendar sesiones
-          </a>
-        </p>
-
-        <!--
-          Los espacios cuelgan de la SEDE del contexto activo, no de la organizacion, y por eso
-          su ruta no vive bajo `/organizacion`. El enlace esta igual: sin el, la pantalla no
-          tiene ninguna entrada desde la aplicacion y solo se llega escribiendo la URL.
-        -->
-        <p class="ayuda">
-          <a class="enlace" routerLink="/espacios">Ver los espacios y boxes de la sede activa</a>
-        </p>
-
-        <!--
-          Mismo caso que los espacios, y por el mismo motivo: el horario cuelga del vinculo de
-          cada profesional con la SEDE del contexto activo, asi que su ruta tampoco vive bajo
-          `/organizacion`. Sin este enlace la feature entera de horarios no tiene ninguna
-          entrada desde la aplicacion y solo se llega escribiendo la URL a mano.
-        -->
-        <p class="ayuda">
-          <a class="enlace" [routerLink]="rutaHorarios">
-            Ver los horarios de los profesionales de la sede activa
-          </a>
-        </p>
       }
 
       @case ('error') {
@@ -90,3 +57,43 @@
     }
   </div>
 </section>
+
+@if (estado().tipo === 'listo') {
+  <section class="tarjeta" aria-labelledby="titulo-accesos-organizacion">
+    <h2 id="titulo-accesos-organizacion">Configuración del centro</h2>
+
+    <ul class="accesos">
+      <li>
+        <a class="enlace" routerLink="/organizacion/suscripcion">Ver plan y suscripción</a>
+      </li>
+      <li>
+        <a class="enlace" routerLink="/organizacion/sedes">Ver las sedes de la organización</a>
+      </li>
+      <!-- DP-43 (U-25): la ventana para enmendar sesiones es de la organizacion. -->
+      <li>
+        <a class="enlace" routerLink="/atencion/politica-de-enmienda">
+          Configurar la ventana para enmendar sesiones
+        </a>
+      </li>
+      <!--
+        Los espacios cuelgan de la SEDE del contexto activo, no de la organizacion, y por eso
+        su ruta no vive bajo `/organizacion`. El enlace esta igual: sin el, la pantalla no
+        tiene ninguna entrada desde la aplicacion y solo se llega escribiendo la URL.
+      -->
+      <li>
+        <a class="enlace" routerLink="/espacios">Ver los espacios y boxes de la sede activa</a>
+      </li>
+      <!--
+        Mismo caso que los espacios, y por el mismo motivo: el horario cuelga del vinculo de
+        cada profesional con la SEDE del contexto activo, asi que su ruta tampoco vive bajo
+        `/organizacion`. Sin este enlace la feature entera de horarios no tiene ninguna
+        entrada desde la aplicacion y solo se llega escribiendo la URL a mano.
+      -->
+      <li>
+        <a class="enlace" [routerLink]="rutaHorarios">
+          Ver los horarios de los profesionales de la sede activa
+        </a>
+      </li>
+    </ul>
+  </section>
+}

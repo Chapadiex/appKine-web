@@ -26,6 +26,17 @@ import {
 } from '../../../../core/models/invitacion-errors';
 import { formatearInstante } from '../../../../shared/utils/instantes';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
+import { Filtros } from '../../../../shared/components/filtros/filtros';
+import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
+import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
+import { Pestanas } from '../../../../shared/components/pestanas/pestanas';
+import {
+  ETIQUETA_PESTANAS_DE_COLABORADORES,
+  PESTANAS_DE_COLABORADORES,
+} from '../../models/pestanas-de-colaboradores';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { Icono } from '../../../../shared/components/icono/icono';
 
 /** Filtro del listado. Los cuatro estados del contrato, mas "todas". */
 type FiltroEstado = 'TODAS' | 'PENDIENTE' | 'ACEPTADA' | 'RECHAZADA' | 'CANCELADA';
@@ -47,7 +58,7 @@ const ROLES = [
   { codigo: 'PROFESIONAL', etiqueta: 'Profesional' },
   { codigo: 'ADMINISTRATIVO', etiqueta: 'Administrativo' },
   { codigo: 'CONSULTORIO_ADMIN', etiqueta: 'Administrador de la sede' },
-  { codigo: 'ORG_ADMIN', etiqueta: 'Administrador de la organizacion' },
+  { codigo: 'ORG_ADMIN', etiqueta: 'Administrador de la organización' },
 ] as const;
 
 /**
@@ -79,11 +90,25 @@ const ROLES = [
  */
 @Component({
   selector: 'app-invitaciones-page',
-  imports: [ReactiveFormsModule, RouterLink, PermisoDirective, ConfirmacionConMotivo],
+  imports: [
+    Pestanas,
+    Paginacion,
+    ColumnaOrdenable,
+    Ayuda,
+    Icono,
+    Filtros,
+    ReactiveFormsModule,
+    RouterLink,
+    PermisoDirective,
+    ConfirmacionConMotivo,
+  ],
   templateUrl: './invitaciones-page.html',
   styleUrl: '../../organization.css',
 })
 export class InvitacionesPage {
+  protected readonly pestanas = PESTANAS_DE_COLABORADORES;
+  protected readonly etiquetaDePestanas = ETIQUETA_PESTANAS_DE_COLABORADORES;
+
   private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly invitaciones = inject(InvitacionesService);
   private readonly tenantContext = inject(TenantContextStore);
@@ -98,6 +123,10 @@ export class InvitacionesPage {
 
   protected readonly estado = signal<Estado>({ tipo: 'cargando' });
   protected readonly filtro = signal<FiltroEstado>('PENDIENTE');
+  /** Filtros avanzados fuera de su valor por defecto (regla de filtros, plan §3.4). */
+  protected readonly filtrosAvanzadosActivos = computed(() =>
+    Number(this.filtro() !== 'PENDIENTE'),
+  );
 
   protected readonly altaAbierta = signal(false);
 
@@ -113,6 +142,16 @@ export class InvitacionesPage {
   protected readonly filas = computed(() => {
     const actual = this.estado();
     return actual.tipo === 'listo' ? actual.invitaciones : [];
+  });
+
+  /** Orden y paginado de la lista completa (plan §3.4): el servidor no la pagina. */
+  protected readonly tabla = tablaLocal(this.filas, {
+    columnas: {
+      persona: (invitacion) => invitacion.email,
+      rol: (invitacion) => this.etiquetaDeRol(invitacion.roleCode),
+      enviada: (invitacion) => invitacion.createdAt ?? null,
+      estado: (invitacion) => this.rotuloDeEstado(invitacion),
+    },
   });
 
   protected readonly mensajeError = computed(() => {
@@ -307,7 +346,7 @@ export class InvitacionesPage {
         next: () => {
           this.cerrarPaneles();
           this.exito.set(
-            'La invitacion salio por correo. Va a figurar como pendiente hasta que la persona ' +
+            'La invitación salio por correo. Va a figurar como pendiente hasta que la persona ' +
               'responda: el vinculo se crea cuando acepta, no ahora.',
           );
           this.filtro.set('PENDIENTE');
@@ -339,8 +378,8 @@ export class InvitacionesPage {
       next: () => {
         this.enviando.set(false);
         this.exito.set(
-          'Le mandamos un enlace nuevo. El anterior dejo de servir en el mismo acto, asi que si ' +
-            'todavia tenia el correo viejo abierto, tiene que usar el ultimo.',
+          'Le mandamos un enlace nuevo. El anterior dejo de servir en el mismo acto, así que si ' +
+            'todavía tenia el correo viejo abierto, tiene que usar el último.',
         );
         this.cargar();
       },
@@ -370,7 +409,7 @@ export class InvitacionesPage {
         next: () => {
           this.cerrarPaneles();
           this.exito.set(
-            'La invitacion quedo cancelada y su enlace dejo de servir. Podes volver a invitar a ' +
+            'La invitación quedo cancelada y su enlace dejo de servir. Podés volver a invitar a ' +
               'esa persona mas adelante.',
           );
           this.cargar();

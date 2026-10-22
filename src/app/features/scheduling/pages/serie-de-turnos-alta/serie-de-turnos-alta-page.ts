@@ -30,6 +30,7 @@ import {
   textoDeDias,
   ventanasDeAgenda,
 } from '../../models/series';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 
 /** Cuanto se espera despues de la ultima tecla antes de consultar el padron. */
 const ESPERA_DE_BUSQUEDA_MS = 300;
@@ -65,7 +66,7 @@ type ModoDeFin = 'cantidad' | 'fecha';
  */
 @Component({
   selector: 'app-serie-de-turnos-alta-page',
-  imports: [RouterLink, PermisoDirective],
+  imports: [Ayuda, RouterLink, PermisoDirective],
   templateUrl: './serie-de-turnos-alta-page.html',
   styleUrl: '../../agenda.css',
 })
@@ -292,13 +293,13 @@ export class SerieDeTurnosAltaPage {
     const { fechas, excedeElTope } = expandirRegla(this.regla());
     if (excedeElTope) {
       this.aviso.set(
-        `La serie produce mas de ${MAXIMO_OCURRENCIAS} turnos, que es el maximo. Acorta la fecha ` +
+        `La serie produce mas de ${MAXIMO_OCURRENCIAS} turnos, que es el máximo. Acorta la fecha ` +
           'de fin.',
       );
       return;
     }
     if (fechas.length === 0) {
-      this.aviso.set('Con esos dias y esas fechas la serie no produce ningun turno.');
+      this.aviso.set('Con esos días y esas fechas la serie no produce ningún turno.');
       return;
     }
 
@@ -392,7 +393,7 @@ export class SerieDeTurnosAltaPage {
   /** Lo que falta para poder previsualizar, o cadena vacia. */
   private reglaIncompleta(): string {
     if (this.diasSemana().length === 0) {
-      return 'Elegi al menos un dia de la semana.';
+      return 'Elegí al menos un día de la semana.';
     }
     if (this.hora() === '') {
       return 'Indica la hora de los turnos.';

@@ -29,58 +29,101 @@
 
 /* --- Selector de contexto --------------------------------------------------------- */
 
-.lista {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
+/* --- Elegir contexto (diseño del canvas, 22/10/2026) ------------------------------- */
+
+.contextos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-6);
+}
+
+/* Un centro: su inicial y su nombre arriba, las sedes debajo. */
+.contexto-centro {
+  display: flex;
+  flex-direction: column;
   gap: var(--esp-4);
 }
 
+.contexto-centro__cabecera {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-4);
+}
+
+.contexto-centro__logo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: var(--radio-sm);
+  background: var(--color-accion-fondo);
+  color: var(--color-accion-texto);
+  font-size: var(--tipo-2xs);
+  font-weight: var(--peso-fuerte);
+}
+
+.contexto-centro__nombre {
+  font-weight: var(--peso-medio);
+}
+
+.contexto-centro__sedes {
+  display: grid;
+  gap: var(--esp-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/*
+ * Una sede: un boton de una fila, 48 px. Borde de CONTROL y no el decorativo: la opcion es un
+ * boton cuyo relleno es el de la tarjeta, y el borde es lo unico que lo delimita (WCAG 1.4.11).
+ */
 .opcion {
   display: flex;
-  flex-direction: column;
-  gap: var(--esp-1);
+  align-items: center;
+  gap: var(--esp-5);
   width: 100%;
-  padding: var(--esp-5) var(--esp-6);
-  /* Borde de CONTROL y no `--color-borde`: la opcion es un boton cuyo relleno es el de la pagina,
-     asi que el borde es lo unico que lo delimita, y con el decorativo daba 1,36:1 (WCAG 1.4.11). */
+  min-height: 3rem;
+  padding: var(--esp-3) var(--esp-6);
   border: var(--borde-fino) solid var(--color-borde-control);
   border-radius: var(--radio-md);
   background: var(--color-superficie);
+  color: var(--color-texto);
   font: inherit;
   text-align: left;
   cursor: pointer;
 }
 
 .opcion:hover {
-  border-color: var(--color-enlace);
-  background: var(--color-superficie-sutil);
+  border-color: var(--color-acento);
+  background: var(--color-marca-superficie-activa);
 }
 
-/* Foco visible: nunca se quita el outline sin reemplazo (ADR-0005). */
-.opcion:focus-visible {
-  outline: var(--foco-grosor) solid var(--color-foco);
-  outline-offset: var(--foco-offset);
-}
-
-.opcion__organizacion {
-  font-weight: var(--peso-semi);
+.opcion__textos {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
 }
 
 .opcion__consultorio {
-  font-size: var(--tipo-sm);
-  color: var(--color-texto-suave);
+  font-weight: var(--peso-medio);
 }
 
-/* El ultimo contexto elegido: borde de acento y la leyenda en texto (el color solo no alcanza). */
+/* El ultimo elegido: fondo celeste y la leyenda en texto (el color solo no alcanza). */
 .opcion--ultima {
-  border-left: var(--borde-acento) solid var(--color-acento);
+  border-color: var(--color-acento);
+  background: var(--color-marca-superficie-activa);
 }
 
 .opcion__ultima {
-  font-size: var(--tipo-sm);
-  font-weight: var(--peso-semi);
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-2xs);
+}
+
+.opcion__flecha {
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-lg);
 }
 
 /* --- Suscripcion ------------------------------------------------------------------ */
@@ -147,6 +190,76 @@
 .limites .excedido {
   color: var(--color-peligro);
   font-weight: var(--peso-semi);
+}
+
+/* Cabecera del plan y consumo por limite (diseño del canvas, 22/10/2026). */
+.plan-actual {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--esp-6);
+  padding-top: var(--esp-4);
+}
+
+.plan-actual__dato {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-1);
+}
+
+.plan-actual__etiqueta {
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-sm);
+}
+
+.plan-actual__nombre {
+  font-size: var(--tipo-lg);
+  font-weight: var(--peso-semi);
+}
+
+.plan-actual__alta {
+  margin-left: auto;
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-md);
+}
+
+.limites-lista {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: var(--esp-6) var(--esp-8);
+  margin: 0 0 var(--esp-6);
+  padding: 0;
+  list-style: none;
+}
+
+.limite {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-3);
+}
+
+.limite__cabecera {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--esp-4);
+  font-size: var(--tipo-md);
+}
+
+.limite__nombre {
+  font-weight: var(--peso-medio);
+}
+
+.limite__valor {
+  font-variant-numeric: tabular-nums;
+}
+
+.limite__valor.excedido {
+  color: var(--color-peligro);
+  font-weight: var(--peso-semi);
+}
+
+.limite .medidor {
+  max-width: none;
 }
 
 /* --- Permisos adicionales de un vinculo ------------------------------------------------ */
@@ -225,4 +338,172 @@
 
 .nota-invitaciones p:last-child {
   margin-bottom: 0;
+}
+
+/* --- Restyle al canvas (21/10/2026) -------------------------------------------------- */
+
+/* Dentro de una grilla de campos el ancho lo manda la columna, no el tope de lectura. */
+.grilla-campos > .campo,
+.asistente .campo {
+  max-width: none;
+}
+
+/* Lista de accesos de la pantalla de organizacion: enlaces en columna, sin vinietas. */
+.accesos {
+  display: grid;
+  gap: var(--esp-5);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--tipo-sm);
+}
+
+/* Barra de uso de un limite del plan: decorativa, el numero ya esta en la celda. */
+.medidor {
+  display: block;
+  width: 100%;
+  max-width: 10rem;
+  height: 0.375rem;
+  margin-top: var(--esp-3);
+  border-radius: var(--esp-2);
+  background: var(--color-superficie-codigo);
+}
+
+.medidor__barra {
+  display: block;
+  height: 100%;
+  border-radius: var(--esp-2);
+  background: var(--color-acento);
+}
+
+.medidor__barra--alto {
+  background: var(--color-aviso);
+}
+
+/* Persona con avatar de iniciales (tabla de colaboradores). */
+.persona {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-5);
+}
+
+.persona__avatar {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: var(--color-acento-claro);
+  color: var(--color-acento);
+  font-size: var(--tipo-2xs);
+  font-weight: var(--peso-medio);
+}
+
+.persona__datos {
+  min-width: 0;
+}
+
+/* Asistente de alta de sede: pasos a la izquierda, formulario a la derecha. */
+.asistente {
+  display: flex;
+  flex-wrap: wrap;
+  margin-bottom: var(--esp-8);
+  border: var(--borde-fino) solid var(--color-borde);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie);
+}
+
+.asistente__pasos {
+  flex: 1 1 14rem;
+  box-sizing: border-box;
+  margin: 0;
+  padding: var(--esp-6);
+  border-inline-end: var(--borde-fino) solid var(--color-borde);
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-3);
+}
+
+.asistente__paso {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--esp-5);
+  padding: var(--esp-4);
+  border-radius: var(--radio-md);
+}
+
+.asistente__paso[aria-current='step'] {
+  background: var(--color-marca-superficie-activa);
+}
+
+.asistente__marca {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border: var(--borde-fino) solid var(--color-borde-control);
+  border-radius: 50%;
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-2xs);
+  font-weight: var(--peso-medio);
+}
+
+.asistente__paso[aria-current='step'] .asistente__marca {
+  border-color: var(--color-acento);
+  background: var(--color-acento);
+  color: var(--color-accion-texto);
+}
+
+.asistente__paso--hecho .asistente__marca {
+  border-color: var(--color-exito);
+  background: var(--color-exito-fondo);
+  color: var(--color-exito-texto);
+}
+
+.asistente__titulo {
+  display: block;
+  font-weight: var(--peso-medio);
+}
+
+.asistente__sub {
+  display: block;
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-2xs);
+}
+
+.asistente__contenido {
+  flex: 999 1 28rem;
+  min-width: 0;
+  padding: var(--esp-7) var(--esp-8);
+}
+
+.asistente__contenido > h2 {
+  margin: 0 0 var(--esp-6);
+  font-size: var(--tipo-base);
+  font-weight: var(--peso-fuerte);
+}
+
+/* Pie de formulario: nota de obligatorios a la izquierda, acciones a la derecha. */
+.pie-formulario {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--esp-4);
+  margin-top: var(--esp-7);
+  padding-top: var(--esp-5);
+  border-top: var(--borde-fino) solid var(--color-borde);
+}
+
+.pie-formulario .ayuda {
+  margin: 0 auto 0 0;
+}
+
+/* Lo que no es un campo dentro de una grilla de campos (ayudas, avisos) ocupa la fila entera. */
+.grilla-campos > :not(.campo) {
+  grid-column: 1 / -1;
 }

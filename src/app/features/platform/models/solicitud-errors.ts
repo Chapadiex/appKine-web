@@ -34,27 +34,27 @@ export interface ErrorSolicitud {
 }
 
 const SIGUE_PENDIENTE =
-  'La solicitud sigue pendiente y no se publico nada: corregilo y volve a aprobar, o rechazala ' +
+  'La solicitud sigue pendiente y no se publico nada: corregilo y volvé a aprobar, o rechazala ' +
   'con una nota que diga que ya existe.';
 
 const MENSAJES: Readonly<Record<CausaSolicitud, string>> = {
-  'codigo-tomado': `El catalogo comun ya tiene un concepto vigente con ese codigo. ${SIGUE_PENDIENTE}`,
+  'codigo-tomado': `El catalogo comun ya tiene un concepto vigente con ese código. ${SIGUE_PENDIENTE}`,
   'nombre-tomado': `El catalogo comun ya tiene un concepto vigente con ese nombre. ${SIGUE_PENDIENTE}`,
   'especialidad-inactiva':
-    'La especialidad elegida esta dada de baja y no se le puede colgar una practica nueva. Elegi ' +
+    'La especialidad elegida esta dada de baja y no se le puede colgar una práctica nueva. Elegí ' +
     'otra. La solicitud sigue pendiente.',
   'ya-resuelta':
     'Otra persona resolvio o modifico esta solicitud mientras la revisabas. Volvimos a leer la ' +
     'bandeja: mira como quedo antes de hacer nada.',
   'sin-permiso':
-    'Tu cuenta ya no administra la plataforma, asi que no puede resolver solicitudes. Si es un ' +
+    'Tu cuenta ya no administra la plataforma, así que no puede resolver solicitudes. Si es un ' +
     'error, pediselo a otro administrador de plataforma.',
   'no-encontrado':
     'La solicitud o la especialidad elegida ya no existe en el catalogo comun. Recarga la bandeja.',
   validacion: 'Revisa los datos de la resolucion.',
-  red: 'No se pudo contactar al servidor. Revisa tu conexion y volve a intentar.',
+  red: 'No se pudo contactar al servidor. Revisa tu conexion y volvé a intentar.',
   limite: 'Demasiados intentos. Espera un momento antes de volver a intentar.',
-  otro: 'No pudimos completar la operacion. Volve a intentar en un momento.',
+  otro: 'No pudimos completar la operación. Volvé a intentar en un momento.',
 };
 
 function error(causa: CausaSolicitud, mensaje = MENSAJES[causa]): ErrorSolicitud {

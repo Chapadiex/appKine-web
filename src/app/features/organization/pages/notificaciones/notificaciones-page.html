@@ -1,38 +1,40 @@
-<h1>Notificaciones</h1>
+<div class="titulo-con-ayuda">
+  <h1>Notificaciones</h1>
+  <app-ayuda titulo="Sobre esta pantalla">
+    <p>
+      Correos que la organización intento enviar y no salieron —por ejemplo, porque el servidor de
+      correo estuvo caido—. Una notificación <b>fallida</b> o <b>agotada</b> se puede devolver a la
+      cola: solo se repite el envio, no la invitación ni el turno que la origino. Las direcciones se
+      muestran enmascaradas.
+    </p>
+  </app-ayuda>
+</div>
 
-<p class="descripcion">
-  Correos que la organizacion intento enviar y no salieron —por ejemplo, porque el servidor de
-  correo estuvo caido—. Una notificacion <b>fallida</b> o <b>agotada</b> se puede devolver a la
-  cola: solo se repite el envio, no la invitacion ni el turno que la origino. Las direcciones se
-  muestran enmascaradas.
-</p>
-
-<p class="acciones">
-  <a class="boton boton--secundario" routerLink="/organizacion/colaboradores/invitaciones">
-    Ver las invitaciones
-  </a>
-</p>
-
-<section class="tarjeta" aria-labelledby="titulo-filtro-notificaciones">
-  <h2 id="titulo-filtro-notificaciones">Que notificaciones ver</h2>
-  <fieldset class="grupo">
-    <legend>Estado</legend>
-    @for (opcion of estadosFiltrables; track opcion) {
-      <div class="opcion-radio">
-        <input
-          type="checkbox"
-          [id]="'notificaciones-estado-' + opcion"
-          [checked]="estaElegido(opcion)"
-          (change)="alternar(opcion, $event)"
-        />
-        <label [for]="'notificaciones-estado-' + opcion">{{ textoEstado(opcion) }}</label>
-      </div>
-    }
-  </fieldset>
-</section>
+<app-pestanas [pestanas]="pestanas" [etiqueta]="etiquetaDePestanas" />
 
 <section class="tarjeta" aria-labelledby="titulo-listado-notificaciones">
   <h2 id="titulo-listado-notificaciones">Listado</h2>
+
+  <!--
+    Regla de filtros (plan §3.4): el listado no tiene busqueda por texto en el backend, asi que
+    va solo el embudo, con el estado adentro. Arranca en Fallida + Agotada.
+  -->
+  <app-filtros [soloAvanzados]="true" [activos]="filtrosAvanzadosActivos()">
+    <fieldset class="grupo">
+      <legend>Estado</legend>
+      @for (opcion of estadosFiltrables; track opcion) {
+        <div class="opcion-radio">
+          <input
+            type="checkbox"
+            [id]="'notificaciones-estado-' + opcion"
+            [checked]="estaElegido(opcion)"
+            (change)="alternar(opcion, $event)"
+          />
+          <label [for]="'notificaciones-estado-' + opcion">{{ textoEstado(opcion) }}</label>
+        </div>
+      }
+    </fieldset>
+  </app-filtros>
 
   <div aria-live="polite">
     @if (exito(); as mensaje) {
@@ -44,7 +46,7 @@
 
     @switch (estado().tipo) {
       @case ('inicial') {
-        <p class="estado estado--vacio">Elegi al menos un estado para ver notificaciones.</p>
+        <p class="estado estado--vacio">Elegí al menos un estado para ver notificaciones.</p>
       }
 
       @case ('cargando') {
@@ -52,7 +54,7 @@
       }
 
       @case ('sin-contexto') {
-        <p class="estado estado--vacio">Todavia no elegiste un contexto de trabajo.</p>
+        <p class="estado estado--vacio">Todavía no elegiste un contexto de trabajo.</p>
         <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto</a>
       }
 
@@ -67,30 +69,25 @@
         @if (filas().length === 0) {
           <p class="estado estado--vacio">No hay notificaciones con esos estados.</p>
         } @else {
-          <p class="ayuda">
-            {{ totalNotificaciones() }} notificaciones, de la mas nueva a la mas vieja.
-          </p>
-
           <div
             class="tabla-scroll"
             tabindex="0"
             role="region"
-            aria-label="Notificaciones de la organizacion"
+            aria-label="Notificaciones de la organización"
           >
             <table class="tabla">
               <caption class="visualmente-oculto">
-                Notificaciones de la organizacion que coinciden con los estados elegidos
+                Notificaciones de la organización que coinciden con los estados elegidos
               </caption>
               <thead>
                 <tr>
-                  <th scope="col">Numero</th>
-                  <th scope="col">Tipo</th>
-                  <th scope="col">Destinatario</th>
+                  <th scope="col">Número</th>
+                  <th scope="col">Destinatario y tipo</th>
                   <th scope="col">Estado</th>
                   <th scope="col">Intentos</th>
-                  <th scope="col">Ultimo error</th>
+                  <th scope="col">Último error</th>
                   <th scope="col">Creada</th>
-                  <th scope="col">Ultimo cambio</th>
+                  <th scope="col">Último cambio</th>
                   <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
                 </tr>
               </thead>
@@ -98,11 +95,28 @@
                 @for (fila of filas(); track fila.id) {
                   <tr>
                     <th scope="row">{{ fila.id }}</th>
-                    <td>{{ textoTipo(fila.tipo) }}</td>
-                    <td>{{ fila.destinatario ?? '-' }}</td>
-                    <td>{{ textoEstado(fila.estado) }}</td>
+                    <td>
+                      <span class="colaborador__nombre">{{ fila.destinatario ?? '-' }}</span>
+                      <span class="colaborador__email">{{ textoTipo(fila.tipo) }}</span>
+                    </td>
+                    <td>
+                      <span
+                        class="marca-estado"
+                        [class.marca-estado--revocada]="fila.estado === 'FALLIDA'"
+                        [class.marca-estado--suspendida]="fila.estado === 'AGOTADA'"
+                        >{{ textoEstado(fila.estado) }}</span
+                      >
+                    </td>
                     <td>{{ fila.intentos ?? 0 }} de {{ fila.maxIntentos ?? '-' }}</td>
-                    <td>{{ fila.ultimoError ?? '-' }}</td>
+                    <td>
+                      @if (fila.ultimoError) {
+                        <span class="marca-estado marca-estado--suspendida">{{
+                          fila.ultimoError
+                        }}</span>
+                      } @else {
+                        -
+                      }
+                    </td>
                     <td>{{ formatearInstante(fila.creadaEn) ?? '-' }}</td>
                     <td>{{ formatearInstante(fila.actualizadaEn) ?? '-' }}</td>
                     <td>
@@ -113,7 +127,7 @@
                           [disabled]="reintentando() !== null"
                           [attr.aria-label]="
                             (reintentando() === fila.id ? 'Reintentando' : 'Reintentar') +
-                            ' la notificacion ' +
+                            ' la notificación ' +
                             fila.id
                           "
                           (click)="reintentar(fila)"
@@ -128,12 +142,15 @@
             </table>
           </div>
 
-          <akine-paginacion
-            etiqueta="Paginas de notificaciones"
-            [paginaActual]="paginaActual()"
-            [totalPaginas]="totalPaginas()"
-            (cambioDePagina)="irAPagina($event)"
-          />
+          <div class="tabla-pie">
+            <span>{{ totalNotificaciones() }} notificaciones, de la más nueva a la más vieja</span>
+            <akine-paginacion
+              etiqueta="Paginas de notificaciones"
+              [paginaActual]="paginaActual()"
+              [totalPaginas]="totalPaginas()"
+              (cambioDePagina)="irAPagina($event)"
+            />
+          </div>
         }
       }
     }

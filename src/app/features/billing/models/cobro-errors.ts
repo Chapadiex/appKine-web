@@ -124,18 +124,18 @@ export interface ErrorCobro {
  */
 export type OperacionDeCobro = 'registrar' | 'imputar' | 'anular' | 'reintegrar';
 
-const MENSAJE_GENERICO = 'No pudimos registrar el cobro. Volve a intentar en un momento.';
+const MENSAJE_GENERICO = 'No pudimos registrar el cobro. Volvé a intentar en un momento.';
 const MENSAJE_DE_RED =
-  'No se pudo contactar al servidor, asi que no sabemos si el cobro entro. Revisa la conexion y ' +
-  'volve a intentar: la clave de idempotencia hace que reintentar no cobre dos veces.';
-const MENSAJE_LIMITE = 'Demasiados intentos seguidos. Espera un momento y volve a intentar.';
+  'No se pudo contactar al servidor, así que no sabemos si el cobro entro. Revisa la conexion y ' +
+  'volvé a intentar: la clave de idempotencia hace que reintentar no cobre dos veces.';
+const MENSAJE_LIMITE = 'Demasiados intentos seguidos. Espera un momento y volvé a intentar.';
 
 const MENSAJE_SIN_CONTEXTO =
   'Para registrar un cobro hay que saber en que sede estas: el comprobante se numera por sede. ' +
-  'Eligi una organizacion y un consultorio, y volve a entrar. Tu sesion sigue abierta.';
+  'Eligi una organización y un consultorio, y volvé a entrar. Tu sesión sigue abierta.';
 
 const MENSAJE_SIN_PERMISO =
-  'No tenes permiso para registrar cobros en esta sede. Pediselo a quien administra el centro.';
+  'No tenés permiso para registrar cobros en esta sede. Pediselo a quien administra el centro.';
 
 /**
  * Anular y reintegrar mueven la caja, y por eso piden los dos permisos: el de cobros y el de
@@ -146,26 +146,26 @@ const MENSAJE_SIN_PERMISO_DE_CAJA =
   'registrar cobros y operar la caja. Pediselos a quien administra el centro.';
 
 const MENSAJE_COBRO_ANULADO =
-  'Ese cobro ya esta anulado, asi que no se hizo nada. Recarga para ver su estado actual.';
+  'Ese cobro ya esta anulado, así que no se hizo nada. Recarga para ver su estado actual.';
 
 const MENSAJE_CON_REINTEGROS =
   'Este cobro ya devolvio parte de su saldo a favor, y anularlo sacaria esa plata dos veces del ' +
   'cajon. No se anulo. Si hay que corregir lo devuelto, se registra un ingreso manual en la caja.';
 
 const MENSAJE_SALDO_A_FAVOR_INSUFICIENTE =
-  'El saldo a favor de este cobro ya no alcanza: otra operacion lo uso mientras tanto. No se ' +
-  'movio nada. Recarga y volve a armar la operacion con el saldo real.';
+  'El saldo a favor de este cobro ya no alcanza: otra operación lo uso mientras tanto. No se ' +
+  'movio nada. Recarga y volvé a armar la operación con el saldo real.';
 
 const MENSAJE_CAJA_NO_ABIERTA =
-  'La caja de esta sede no esta abierta, y esta operacion mueve efectivo del cajon. No se hizo ' +
-  'nada: abri la caja en la seccion Caja y volve a intentar.';
+  'La caja de esta sede no esta abierta, y esta operación mueve efectivo del cajon. No se hizo ' +
+  'nada: abri la caja en la sección Caja y volvé a intentar.';
 
 const MENSAJE_CAJA_SIN_EFECTIVO =
   'En el cajon no hay efectivo suficiente para esa salida, y un cajon no puede quedar en ' +
   'negativo. No se hizo nada: usa otro medio o revisa la caja.';
 
 const MENSAJE_NO_ENCONTRADO =
-  'La sede, la persona o el cobro no existen, o no son de esta organizacion. Volve al padron y ' +
+  'La sede, la persona o el cobro no existen, o no son de esta organización. Volvé al padron y ' +
   'entra de nuevo.';
 
 /**
@@ -176,8 +176,8 @@ const MENSAJE_NO_ENCONTRADO =
  * local: decirle al operador "revisa los importes" lo manda a buscar un error que no cometio.
  */
 const MENSAJE_NO_CUADRA =
-  'El servidor sumo los importes y no dan el total declarado, asi que no registro nada. Reviselos ' +
-  'y volve a confirmar; si vuelve a pasar con los mismos numeros, es un problema del sistema y no ' +
+  'El servidor sumo los importes y no dan el total declarado, así que no registro nada. Reviselos ' +
+  'y volvé a confirmar; si vuelve a pasar con los mismos números, es un problema del sistema y no ' +
   'de la carga.';
 
 /**
@@ -190,7 +190,7 @@ const MENSAJE_NO_CUADRA =
  */
 const MENSAJE_SALDO_INSUFICIENTE =
   'Esa deuda ya no tiene el saldo que figuraba cuando abriste esta pantalla: alguien cobro antes. ' +
-  'No se registro nada y ningun saldo quedo en negativo. Recarga la cuenta corriente y volve a ' +
+  'No se registro nada y ningún saldo quedo en negativo. Recarga la cuenta corriente y volvé a ' +
   'armar el cobro con los saldos reales.';
 
 const MENSAJE_NO_COBRABLE =
@@ -198,8 +198,8 @@ const MENSAJE_NO_COBRABLE =
   'reintentar tal cual va a volver a fallar.';
 
 const MENSAJE_CLAVE_REUSADA =
-  'Se reuso la clave de este intento con un cobro distinto, asi que el servidor no aplico nada. ' +
-  'No es un error tuyo: volve a confirmar y sale con una clave nueva.';
+  'Se reuso la clave de este intento con un cobro distinto, así que el servidor no aplico nada. ' +
+  'No es un error tuyo: volvé a confirmar y sale con una clave nueva.';
 
 /**
  * `prepago-no-admitido` (E-6): el turno es de otra persona o ya no es una reserva viva (se
@@ -208,16 +208,16 @@ const MENSAJE_CLAVE_REUSADA =
  */
 const MENSAJE_PREPAGO_NO_ADMITIDO =
   'Este turno ya no admite un prepago: puede que se haya cancelado, atendido o reprogramado, o que ' +
-  'no sea de esta persona. No se registro nada. Volve a la recepcion del dia para ver su estado ' +
+  'no sea de esta persona. No se registro nada. Volvé a la recepción del día para ver su estado ' +
   'actual.';
 
 /** `prepago-ya-registrado` (E-6): otro puesto ya cobro el prepago de este turno. */
 const MENSAJE_PREPAGO_YA_REGISTRADO =
-  'Este turno ya tiene un prepago registrado, asi que no se cobro de nuevo. Si hay que corregirlo, ' +
+  'Este turno ya tiene un prepago registrado, así que no se cobro de nuevo. Si hay que corregirlo, ' +
   'se anula ese cobro desde los cobros del paciente y se registra otro.';
 
 const MENSAJE_SUSCRIPCION_SUSPENDIDA =
-  'La suscripcion de la organizacion esta suspendida, asi que no se pueden registrar cobros.';
+  'La suscripción de la organización esta suspendida, así que no se pueden registrar cobros.';
 
 const MENSAJE_DATOS_INVALIDOS =
   'El servidor rechazo los datos del cobro. Revisa que cada importe sea mayor que cero y que ' +

@@ -1,77 +1,79 @@
-<h1>Horario efectivo del profesional</h1>
+<div class="titulo-con-ayuda">
+  <h1>Horario del profesional</h1>
+  <app-ayuda titulo="Sobre esta pantalla">
+    <p>
+      Qué días y horas <b>concretas</b> atiende un profesional en <b>{{ nombreDeLaSede() }}</b
+      >, una vez aplicadas todas las reglas juntas: su horario semanal, los cierres y aperturas de
+      la sede y los suyos, la vigencia de su vínculo y la política de feriados. Cada franja dice
+      <b>qué regla la produjo</b>, y cada día vacío dice <b>por qué</b> quedó vacío.
+    </p>
+    <p>Las excepciones siempre tienen prioridad sobre el horario semanal.</p>
+  </app-ayuda>
+  <div class="encabezado__acciones">
+    <a class="boton boton--secundario" [routerLink]="rutas.excepciones">
+      Cargar cierre o licencia
+    </a>
+  </div>
+</div>
 
-<p class="descripcion">
-  Que dias y horas <b>concretas</b> atiende un profesional en <b>{{ nombreDeLaSede() }}</b
-  >, una vez aplicadas todas las reglas juntas: su horario semanal, los cierres y aperturas de la
-  sede y los suyos, la vigencia de su vinculo y la politica de feriados. Cada franja dice
-  <b>que regla la produjo</b>, y cada dia vacio dice <b>por que</b> quedo vacio.
-</p>
+<app-pestanas [pestanas]="pestanas" [etiqueta]="etiquetaDePestanas" />
 
-<p class="acciones">
-  <a class="enlace" [routerLink]="rutas.semanal">Horario semanal del profesional</a>
-  <a class="enlace" [routerLink]="rutas.excepciones">Cierres y aperturas</a>
-  <a class="enlace" [routerLink]="rutas.calendario">Horario general y feriados de la sede</a>
-</p>
-
-<section class="tarjeta" aria-labelledby="titulo-consulta">
-  <h2 id="titulo-consulta">Que resolver</h2>
-
+<section class="tarjeta" aria-label="Qué resolver">
   <!--
     Los tres estados de la lista de profesionales, dichos por separado. Un desplegable con
     "Elegi un profesional" y nada mas se lee igual esten los tres casos: la sede sin nadie
     vinculado, la consulta caida y la lista todavia en vuelo.
   -->
-  <div class="campo">
+  <div class="barra-consulta">
     @if (errorProfesionales(); as mensaje) {
-      <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-      <p class="ayuda">
-        Mientras no se pueda leer la lista no se ofrece el desplegable: uno con una sola opcion
-        vacia se lee como una sede sin profesionales, que es otra cosa.
-      </p>
-      <button type="button" class="boton" (click)="cargarProfesionales()">
-        Reintentar la lista de profesionales
-      </button>
+      <div class="campo barra-consulta__ancho">
+        <p class="estado estado--error" role="alert">{{ mensaje }}</p>
+        <p class="ayuda">
+          Mientras no se pueda leer la lista no se ofrece el desplegable: uno con una sola opción
+          vacía se lee como una sede sin profesionales, que es otra cosa.
+        </p>
+        <button type="button" class="boton" (click)="cargarProfesionales()">
+          Reintentar la lista de profesionales
+        </button>
+      </div>
     } @else if (profesionalesConocidos() && listaCompleta() && profesionales().length === 0) {
-      <p class="estado estado--vacio">
-        No hay profesionales con un vinculo vigente que los habilite a atender en esta sede.
-      </p>
-      <p class="ayuda">
-        El horario se resuelve sobre el vinculo del profesional con la sede. Si falta alguien,
-        revisalo en Colaboradores: puede estar acotado a otra sede, suspendido o vencido.
-      </p>
-      <a class="boton boton--secundario" routerLink="/organizacion/colaboradores">
-        Ir a Colaboradores
-      </a>
+      <div class="campo barra-consulta__ancho">
+        <p class="estado estado--vacio">
+          No hay profesionales con un vinculo vigente que los habilite a atender en esta sede.
+        </p>
+        <p class="ayuda">
+          El horario se resuelve sobre el vinculo del profesional con la sede. Si falta alguien,
+          revisalo en Colaboradores: puede estar acotado a otra sede, suspendido o vencido.
+        </p>
+        <a class="boton boton--secundario" routerLink="/organizacion/colaboradores">
+          Ir a Colaboradores
+        </a>
+      </div>
     } @else {
-      <label for="efectivo-profesional">Profesional</label>
-      <select
-        id="efectivo-profesional"
-        [value]="membershipElegido() ?? ''"
-        (change)="elegirProfesional($any($event.target).value)"
-        aria-describedby="efectivo-profesional-ayuda"
-      >
-        <option value="">Elegi un profesional</option>
-        @for (profesional of profesionales(); track profesional.id ?? $index) {
-          <option [value]="profesional.id">
-            {{ profesional.accountName || profesional.accountEmail }}
-          </option>
-        }
-      </select>
-      <p class="ayuda" id="efectivo-profesional-ayuda">
-        Solo aparecen los vinculos vigentes que habilitan a atender en esta sede.
-      </p>
-      <!--
-        Con la lista recortada, "No hay profesionales" seria falso y no encontrar a alguien se
-        leeria como "no esta vinculado". Se dice que puede faltar gente, y por que.
-      -->
-      @if (profesionalesConocidos() && !listaCompleta()) {
-        <p class="ayuda">{{ textoListaIncompleta }}</p>
-      }
+      <div class="campo barra-consulta__profesional">
+        <label for="efectivo-profesional">Profesional</label>
+        <select
+          id="efectivo-profesional"
+          [value]="membershipElegido() ?? ''"
+          (change)="elegirProfesional($any($event.target).value)"
+        >
+          <option value="">Elegí un profesional</option>
+          @for (profesional of profesionales(); track profesional.id ?? $index) {
+            <option [value]="profesional.id">
+              {{ profesional.accountName || profesional.accountEmail }}
+            </option>
+          }
+        </select>
+      </div>
     }
-  </div>
 
-  <form id="form-ventana" [formGroup]="formularioVentana" (ngSubmit)="consultar()" novalidate>
-    <div class="ventana">
+    <form
+      id="form-ventana"
+      class="barra-consulta__formulario"
+      [formGroup]="formularioVentana"
+      (ngSubmit)="consultar()"
+      novalidate
+    >
       <div class="campo">
         <label for="efectivo-desde">Desde</label>
         <input id="efectivo-desde" type="date" formControlName="desde" />
@@ -79,28 +81,35 @@
 
       <div class="campo">
         <label for="efectivo-hasta">Hasta (exclusivo)</label>
-        <input
-          id="efectivo-hasta"
-          type="date"
-          formControlName="hasta"
-          aria-describedby="efectivo-hasta-ayuda"
-        />
-        <p class="ayuda" id="efectivo-hasta-ayuda">
-          El dia que escribas aca <b>no</b> se resuelve. El maximo es de {{ maximoDias }} dias.
-        </p>
+        <input id="efectivo-hasta" type="date" formControlName="hasta" />
       </div>
-    </div>
 
-    <div class="acciones">
-      <button type="submit" class="boton">Resolver el horario</button>
-    </div>
+      <div class="barra-consulta__acciones">
+        <button type="submit" class="boton">Resolver el horario</button>
+        <app-ayuda titulo="Sobre la consulta">
+          <p>Solo aparecen los vinculos vigentes que habilitan a atender en esta sede.</p>
+          <p>
+            El día que escribas en <b>Hasta</b> <b>no</b> se resuelve. El máximo es de
+            {{ maximoDias }} días.
+          </p>
+        </app-ayuda>
+      </div>
 
-    <div aria-live="polite">
-      @if (errorVentana(); as mensaje) {
-        <p class="campo__error" role="alert">{{ mensaje }}</p>
-      }
-    </div>
-  </form>
+      <div class="barra-consulta__ancho" aria-live="polite">
+        @if (errorVentana(); as mensaje) {
+          <p class="campo__error" role="alert">{{ mensaje }}</p>
+        }
+      </div>
+    </form>
+
+    <!--
+      Con la lista recortada, "No hay profesionales" seria falso y no encontrar a alguien se
+      leeria como "no esta vinculado". Se dice que puede faltar gente, y por que.
+    -->
+    @if (profesionalesConocidos() && !listaCompleta() && errorProfesionales() === null) {
+      <p class="ayuda barra-consulta__ancho">{{ textoListaIncompleta }}</p>
+    }
+  </div>
 </section>
 
 <div aria-live="polite">
@@ -117,9 +126,9 @@
 
     @case ('sin-contexto') {
       <section class="tarjeta">
-        <p class="estado estado--vacio">Todavia no elegiste un consultorio.</p>
+        <p class="estado estado--vacio">Todavía no elegiste un consultorio.</p>
         <p class="ayuda">
-          El horario efectivo se resuelve en una sede concreta. Tu sesion sigue abierta: solo falta
+          El horario efectivo se resuelve en una sede concreta. Tu sesión sigue abierta: solo falta
           elegir donde estas trabajando.
         </p>
         <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
@@ -139,82 +148,121 @@
 
     @case ('listo') {
       <section class="tarjeta" aria-labelledby="titulo-resultado">
-        <h2 id="titulo-resultado">
-          Horario de {{ nombreDelProfesional() }} entre
-          {{ etiquetaDeFecha(ventanaConsultada()?.desde) }} y
-          {{ etiquetaDeFecha(ventanaConsultada()?.hasta) }} (exclusivo)
-        </h2>
+        <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
+          <h2 id="titulo-resultado">
+            Horario de {{ nombreDelProfesional() }} entre
+            {{ etiquetaDeFecha(ventanaConsultada()?.desde) }} y
+            {{ etiquetaDeFecha(ventanaConsultada()?.hasta) }} (exclusivo)
+          </h2>
+          <app-ayuda titulo="Cómo se lee el horario">
+            <p>
+              Cada franja dice <b>qué regla la produjo</b> y cada día sin atención dice
+              <b>por qué</b> quedó vacío. Las excepciones siempre tienen prioridad sobre el horario
+              semanal.
+            </p>
+          </app-ayuda>
+        </div>
 
-        <p class="ayuda">
-          {{ diasConAtencion() }} de {{ dias().length }} dias con atencion.
+        <p class="resumen-efectivo">
+          <span class="resumen-efectivo__dato">
+            {{ diasConAtencion() }} de {{ dias().length }} días con atención.
+          </span>
           @if (timezone(); as zona) {
-            Las horas estan en la zona de la sede: <b>{{ zona }}</b
-            >. La respuesta la declara para que un error de huso se vea aca y no haya que deducirlo.
+            <span class="resumen-efectivo__zona">
+              Las horas estan en la zona de la sede: <b>{{ zona }}</b
+              >.
+            </span>
           }
         </p>
 
         @if (dias().length === 0) {
           <p class="estado estado--vacio">
-            La ventana consultada no devolvio ningun dia. Revisa el periodo y volve a consultar.
+            La ventana consultada no devolvio ningún día. Revisa el periodo y volvé a consultar.
           </p>
-        }
-
-        <ul class="lista-excepciones">
-          @for (dia of dias(); track dia.fecha ?? $index) {
-            <li class="dia-efectivo" [class.dia-efectivo--vacio]="!atiende(dia)">
-              <p class="excepcion__titulo">
-                {{ etiquetaDeFecha(dia.fecha) }}
-                @if (dia.esFeriado) {
-                  <span class="marca-feriado">Feriado</span>
-                }
-              </p>
-
-              @if (atiende(dia)) {
-                @if (dia.esFeriado) {
-                  <p class="ayuda">
-                    Es feriado
-                    @if (dia.feriadoNombre) {
-                      (<b>{{ dia.feriadoNombre }}</b
-                      >)
-                    }
-                    y aun asi se atiende: o la sede no cierra los feriados, o hay una apertura
-                    cargada para ese dia.
-                  </p>
-                }
-
-                <ul class="franjas">
-                  @for (franja of dia.franjas; track $index) {
-                    <li class="franja">
-                      <p class="bloque__horario">{{ rango(dia, franja) }}</p>
-                      <p class="ayuda">{{ etiquetaDeOrigen(franja) }}</p>
-                      @if (textoDeRecorte(franja); as recorte) {
-                        <p class="excepcion__alerta">{{ recorte }}</p>
+        } @else {
+          <div class="tabla-scroll" tabindex="0" role="region" aria-label="Días del período">
+            <table class="tabla">
+              <caption class="visualmente-oculto">
+                Días del período con las franjas que se atienden y la regla que las produjo
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col">Día</th>
+                  <th scope="col">Horario resuelto</th>
+                  <th scope="col">Estado</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (dia of dias(); track dia.fecha ?? $index) {
+                  <tr class="dia-efectivo" [class.dia-efectivo--vacio]="!atiende(dia)">
+                    <th scope="row">
+                      {{ etiquetaDeFecha(dia.fecha) }}
+                      @if (dia.esFeriado) {
+                        <span class="marca-feriado">Feriado</span>
                       }
-                    </li>
-                  }
-                </ul>
-              } @else {
-                @if (porQueVacio(dia); as motivo) {
-                  <p class="dia-efectivo__motivo">{{ motivo.titulo }}</p>
-                  <p class="ayuda">{{ motivo.detalle }}</p>
-                  <!--
-                    El salto lleva consigo de quien y de que dia se hablaba. Sin los params el
-                    destino abre con SUS filtros por defecto -toda la sede, noventa dias desde
-                    hoy- y la regla que la explicacion acaba de nombrar por su numero puede no
-                    estar ni en la lista.
-                  -->
-                  <a
-                    class="enlace"
-                    [routerLink]="motivo.enlace.ruta"
-                    [queryParams]="motivo.enlace.params"
-                  >
-                    {{ motivo.enlace.texto }}
-                  </a>
+                    </th>
+
+                    <td>
+                      @if (atiende(dia)) {
+                        @if (dia.esFeriado) {
+                          <p class="ayuda">
+                            Es feriado
+                            @if (dia.feriadoNombre) {
+                              (<b>{{ dia.feriadoNombre }}</b
+                              >)
+                            }
+                            y aun así se atiende: o la sede no cierra los feriados, o hay una
+                            apertura cargada para ese día.
+                          </p>
+                        }
+
+                        <ul class="franjas">
+                          @for (franja of dia.franjas; track $index) {
+                            <li class="franja">
+                              <p class="bloque__horario">{{ rango(dia, franja) }}</p>
+                              <p class="ayuda">{{ etiquetaDeOrigen(franja) }}</p>
+                              @if (textoDeRecorte(franja); as recorte) {
+                                <p class="excepcion__alerta">{{ recorte }}</p>
+                              }
+                            </li>
+                          }
+                        </ul>
+                      } @else {
+                        @if (porQueVacio(dia); as motivo) {
+                          <p class="dia-efectivo__motivo">{{ motivo.titulo }}</p>
+                          <p class="ayuda">{{ motivo.detalle }}</p>
+                          <!--
+                            El salto lleva consigo de quien y de que dia se hablaba. Sin los
+                            params el destino abre con SUS filtros por defecto -toda la sede,
+                            noventa dias desde hoy- y la regla que la explicacion acaba de
+                            nombrar por su numero puede no estar ni en la lista.
+                          -->
+                          <a
+                            class="enlace"
+                            [routerLink]="motivo.enlace.ruta"
+                            [queryParams]="motivo.enlace.params"
+                          >
+                            {{ motivo.enlace.texto }}
+                          </a>
+                        }
+                      }
+                    </td>
+
+                    <td>
+                      <span
+                        class="marca-estado"
+                        [class.marca-estado--activa]="atiende(dia)"
+                        [class.marca-estado--suspendida]="!atiende(dia)"
+                      >
+                        {{ atiende(dia) ? 'Atiende' : 'Sin atención' }}
+                      </span>
+                    </td>
+                  </tr>
                 }
-              }
-            </li>
-          }
-        </ul>
+              </tbody>
+            </table>
+          </div>
+        }
       </section>
     }
   }

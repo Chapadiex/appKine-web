@@ -45,14 +45,14 @@ describe('permissionGuard', () => {
 
   afterEach(() => httpMock.verify());
 
-  it('sin sesion manda al login recordando el destino', () => {
+  it('sin sesión manda al login recordando el destino', () => {
     const url = urlDe(correr(permissionGuard(PERMISO_COLABORADOR_READ), '/organizacion/1/equipo'));
 
     expect(url).toContain('/auth/ingresar');
     expect(url).toContain('volverA=%2Forganizacion%2F1%2Fequipo');
   });
 
-  it('autenticado pero sin contexto manda al selector, no a "no tenes permiso"', () => {
+  it('autenticado pero sin contexto manda al selector, no a "no tenés permiso"', () => {
     autenticar('pre_context');
 
     // Los permisos son DE un contexto: sin contexto la pregunta no tiene respuesta, y
@@ -130,7 +130,7 @@ describe('permissionGuard', () => {
     expect(urlDe(correr(permissionGuard(), '/organizacion/1/equipo'))).toContain('/sin-permiso');
   });
 
-  it('despues de cambiar de contexto vuelve a pedir los permisos', async () => {
+  it('después de cambiar de contexto vuelve a pedir los permisos', async () => {
     autenticar('context');
     cargarPermisos([PERMISO_COLABORADOR_MANAGE]);
 

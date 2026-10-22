@@ -1,19 +1,28 @@
-<p><a class="enlace" routerLink="/egresos">Volver a los egresos</a></p>
+<nav class="migas" aria-label="Ubicación">
+  <a class="enlace" routerLink="/egresos">Volver a los egresos</a>
+</nav>
 
-<h1>Liquidar honorarios por clase</h1>
+<div class="titulo-con-ayuda">
+  <h1>Liquidar honorarios por clase</h1>
+  <app-ayuda titulo="Sobre esta pantalla">
+    <p>
+      Cuánto le corresponde a un instructor por las clases que dictó en un período: la tarifa de la
+      oferta por cada participante presente, repartida en partes iguales entre los instructores de
+      la clase. Las clases que no entran se listan con su motivo.
+    </p>
+  </app-ayuda>
+</div>
 
-<p class="descripcion">
-  Cuanto le corresponde a un instructor por las clases que dicto en un periodo: la tarifa de la
-  oferta por cada participante presente, repartida en partes iguales entre los instructores de la
-  clase. Confirmar crea un <b>egreso en borrador</b>, imputado al servicio; no mueve la caja.
+<p class="ayuda">
+  Confirmar crea un <b>egreso en borrador</b>, imputado al servicio; no mueve la caja.
 </p>
 
 <!-- ================================ Pedido ================================ -->
 
 <section class="tarjeta" aria-labelledby="titulo-pedido">
-  <h2 id="titulo-pedido">Que liquidar</h2>
+  <h2 id="titulo-pedido">Qué liquidar</h2>
   <form [formGroup]="filtro" (ngSubmit)="calcular()" novalidate>
-    <div class="campos-en-linea">
+    <div class="grilla-compacta">
       <div class="campo">
         <label for="honorarios-colaborador">Colaborador</label>
         <select
@@ -21,16 +30,16 @@
           formControlName="colaborador"
           [attr.aria-invalid]="campoInvalido('colaborador') ? 'true' : null"
         >
-          <option value="">Elegi un colaborador</option>
+          <option value="">Elegí un colaborador</option>
           @for (vinculo of colaboradores(); track vinculo.id) {
             <option [value]="vinculo.id">{{ nombreDe(vinculo) }}</option>
           }
         </select>
         @if (sinColaboradores()) {
-          <p class="ayuda">No se pudo leer el padron de colaboradores.</p>
+          <p class="ayuda">No se pudo leer el padrón de colaboradores.</p>
         }
         @if (campoInvalido('colaborador')) {
-          <p class="campo__error" role="alert">Elegi a quien se le liquida.</p>
+          <p class="campo__error" role="alert">Elegí a quién se le liquida.</p>
         }
       </div>
 
@@ -49,7 +58,7 @@
         />
         @if (campoInvalido('hasta')) {
           <p class="campo__error" role="alert">
-            El periodo va completo y no puede terminar antes de empezar.
+            El período va completo y no puede terminar antes de empezar.
           </p>
         }
       </div>
@@ -79,16 +88,16 @@
   @for (hecha of confirmadas(); track hecha.id) {
     <section class="tarjeta" role="status" [attr.aria-labelledby]="'titulo-hecha-' + hecha.id">
       <h2 class="estado estado--ok" [id]="'titulo-hecha-' + hecha.id">
-        Liquidacion #{{ hecha.id }} confirmada por {{ importe(hecha.importeTotal, hecha.moneda) }}
+        Liquidación #{{ hecha.id }} confirmada por {{ importe(hecha.importeTotal, hecha.moneda) }}
       </h2>
-      <p>Se creo el egreso en borrador: falta cargarle el comprobante, confirmarlo y pagarlo.</p>
+      <p>Se creó el egreso en borrador: falta cargarle el comprobante, confirmarlo y pagarlo.</p>
       <div class="acciones">
         <a class="boton" [routerLink]="['/egresos', hecha.egresoId]">Ir al egreso</a>
         <a
           class="boton boton--secundario"
           [routerLink]="['/egresos/honorarios/liquidaciones', hecha.id]"
         >
-          Ver la liquidacion
+          Ver la liquidación
         </a>
       </div>
     </section>
@@ -96,7 +105,7 @@
 
   @if (errorConfirmacion(); as fallo) {
     <section class="tarjeta" role="alert" aria-labelledby="titulo-error-confirmacion">
-      <h2 id="titulo-error-confirmacion">No se confirmo la liquidacion</h2>
+      <h2 id="titulo-error-confirmacion">No se confirmó la liquidación</h2>
       <p class="estado estado--error">{{ fallo.mensaje }}</p>
     </section>
   }
@@ -125,14 +134,28 @@
 @if (borrador(); as b) {
   <section class="tarjeta" aria-labelledby="titulo-borrador">
     <h2 id="titulo-borrador">Borrador del {{ fecha(b.desde) }} al {{ fecha(b.hasta) }}</h2>
-    <p>
-      Total a liquidar: <b class="importe">{{ importe(b.importeTotal) }}</b> en
-      {{ b.clases?.length ?? 0 }} clases.
-    </p>
+    <dl class="cifras">
+      <div>
+        <dt>Total a liquidar</dt>
+        <dd class="importe">{{ importe(b.importeTotal) }}</dd>
+      </div>
+      <div>
+        <dt>Clases</dt>
+        <dd>{{ b.clases?.length ?? 0 }}</dd>
+      </div>
+      <div>
+        <dt>Servicios</dt>
+        <dd>{{ grupos().length }}</dd>
+      </div>
+      <div>
+        <dt>No entran</dt>
+        <dd>{{ excluidas().length }}</dd>
+      </div>
+    </dl>
     @if (mezclaOfertas()) {
       <p class="ayuda">
-        Las clases son de {{ grupos().length }} servicios distintos. Cada liquidacion es de un solo
-        servicio, porque su egreso se imputa a el: se confirma una por servicio.
+        Las clases son de {{ grupos().length }} servicios distintos. Cada liquidación es de un solo
+        servicio, porque su egreso se imputa a él: se confirma una por servicio.
       </p>
     }
     @if (grupos().length > 0) {
@@ -147,7 +170,7 @@
           aria-describedby="honorarios-concepto-ayuda"
         />
         <p class="ayuda" id="honorarios-concepto-ayuda">
-          Vacio, se usa "Honorarios por clase del" y el periodo.
+          Vacío, se usa "Honorarios por clase del" y el período.
         </p>
       </div>
     }
@@ -155,18 +178,23 @@
 
   @if (grupos().length === 0) {
     <p class="estado estado--vacio">
-      No hay clases para liquidar a este colaborador en el periodo.
+      No hay clases para liquidar a este colaborador en el período.
       @if (excluidas().length > 0) {
-        Abajo esta por que no entra cada una.
+        Abajo está por qué no entra cada una.
       }
     </p>
   }
 
   @for (grupo of grupos(); track grupo.ofertaId) {
-    <section class="tarjeta" [attr.aria-labelledby]="'titulo-grupo-' + grupo.ofertaId">
-      <h2 [id]="'titulo-grupo-' + grupo.ofertaId">
-        {{ grupo.ofertaNombre }}: {{ totalDelGrupo(grupo) }}
-      </h2>
+    <section
+      class="tarjeta tarjeta--tabla"
+      [attr.aria-labelledby]="'titulo-grupo-' + grupo.ofertaId"
+    >
+      <div class="tarjeta__cabecera">
+        <h2 [id]="'titulo-grupo-' + grupo.ofertaId">
+          {{ grupo.ofertaNombre }}: {{ totalDelGrupo(grupo) }}
+        </h2>
+      </div>
       <div
         class="tabla-scroll"
         tabindex="0"
@@ -178,19 +206,19 @@
             <tr>
               <th scope="col">Fecha</th>
               <th scope="col">Clase</th>
-              <th scope="col">Presentes</th>
-              <th scope="col">Por participante</th>
-              <th scope="col">Total de la clase</th>
+              <th scope="col" class="numero">Presentes</th>
+              <th scope="col" class="importe">Por participante</th>
+              <th scope="col" class="importe">Total de la clase</th>
               <th scope="col">Reparto</th>
-              <th scope="col">Le corresponde</th>
+              <th scope="col" class="importe">Le corresponde</th>
             </tr>
           </thead>
           <tbody>
             @for (linea of grupo.lineas; track linea.claseId) {
               <tr>
-                <td>{{ fecha(linea.fecha) }}</td>
+                <td class="celda-fecha">{{ fecha(linea.fecha) }}</td>
                 <td>{{ linea.titulo || grupo.ofertaNombre }}</td>
-                <td>{{ linea.presentes }}</td>
+                <td class="numero">{{ linea.presentes }}</td>
                 <td class="importe">{{ importe(linea.importePorParticipante, linea.moneda) }}</td>
                 <td class="importe">{{ importe(linea.importeClase, linea.moneda) }}</td>
                 <td>{{ parteEnPalabras(linea) }}</td>
@@ -202,7 +230,10 @@
           </tbody>
         </table>
       </div>
-      <div class="acciones">
+      <div class="acciones pie-de-tarjeta">
+        <span class="pie-de-tarjeta__resumen">
+          {{ grupo.lineas.length }} clases · total {{ totalDelGrupo(grupo) }}
+        </span>
         <button
           type="button"
           class="boton"
@@ -212,9 +243,9 @@
           @if (confirmando() === grupo.ofertaId) {
             Confirmando…
           } @else if (mezclaOfertas()) {
-            Confirmar la liquidacion de {{ grupo.ofertaNombre }}
+            Confirmar la liquidación de {{ grupo.ofertaNombre }}
           } @else {
-            Confirmar la liquidacion
+            Confirmar la liquidación
           }
         </button>
       </div>
@@ -222,8 +253,10 @@
   }
 
   @if (excluidas().length > 0) {
-    <section class="tarjeta" aria-labelledby="titulo-excluidas">
-      <h2 id="titulo-excluidas">Clases que no entran</h2>
+    <section class="tarjeta tarjeta--tabla" aria-labelledby="titulo-excluidas">
+      <div class="tarjeta__cabecera">
+        <h2 id="titulo-excluidas">Clases que no entran</h2>
+      </div>
       <div
         class="tabla-scroll"
         tabindex="0"
@@ -236,13 +269,13 @@
               <th scope="col">Fecha</th>
               <th scope="col">Clase</th>
               <th scope="col">Servicio</th>
-              <th scope="col">Por que no entra</th>
+              <th scope="col">Por qué no entra</th>
             </tr>
           </thead>
           <tbody>
             @for (excluida of excluidas(); track excluida.claseId) {
               <tr>
-                <td>{{ fecha(excluida.fecha) }}</td>
+                <td class="celda-fecha">{{ fecha(excluida.fecha) }}</td>
                 <td>{{ excluida.titulo || excluida.ofertaNombre }}</td>
                 <td>{{ excluida.ofertaNombre }}</td>
                 <td>

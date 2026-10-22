@@ -118,10 +118,10 @@ export class EditorDeFranjas {
       return 'Escribi las dos horas como HH:MM, por ejemplo 09:00. Para cerrar a la medianoche, 24:00.';
     }
     if (this.errorDeRango(franja)) {
-      return 'La hora de cierre tiene que ser posterior a la de apertura: una franja no cruza al dia siguiente.';
+      return 'La hora de cierre tiene que ser posterior a la de apertura: una franja no cruza al día siguiente.';
     }
     if (this.seSolapa(indice)) {
-      return 'Se pisa con otra franja del mismo dia. Pueden tocarse en un extremo, pero no superponerse.';
+      return 'Se pisa con otra franja del mismo día. Pueden tocarse en un extremo, pero no superponerse.';
     }
     return this.erroresDelServidor().get(indice) ?? null;
   }

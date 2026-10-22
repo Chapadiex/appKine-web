@@ -96,10 +96,10 @@ test.describe('Reserva de turno contra el backend real', () => {
 
     await elegirPersona(page, persona);
     const creado = respuestaDe(page, 'POST', RESERVA);
-    await page.getByRole('button', { name: 'Reservar el turno' }).click();
+    await page.getByRole('button', { name: 'Reservar turno' }).click();
     const { id: turnoId } = (await (await creado).json()) as { id: number };
     await expect(page.getByRole('heading', { name: 'Turno RESERVADO', level: 2 })).toBeVisible();
-    await expect(page.getByText('Todavia falta confirmarlo')).toBeVisible();
+    await expect(page.getByText('Todavía falta confirmarlo')).toBeVisible();
 
     await page.getByRole('button', { name: 'Confirmar el turno' }).click();
     await expect(page.getByRole('heading', { name: 'Turno CONFIRMADO', level: 2 })).toBeVisible();
@@ -127,7 +127,7 @@ test.describe('Reserva de turno contra el backend real', () => {
     await reservar(api, centro, oferta.id, (await crearPersona(api)).id, primero.desde);
 
     const rechazo = respuestaDe(page, 'POST', RESERVA);
-    await page.getByRole('button', { name: 'Reservar el turno' }).click();
+    await page.getByRole('button', { name: 'Reservar turno' }).click();
     const respuesta = await rechazo;
     expect(respuesta.status()).toBe(409);
     const problema = await problemaDe(respuesta);
@@ -146,7 +146,7 @@ test.describe('Reserva de turno contra el backend real', () => {
     await expect(page.getByText(rango(segundo, centro.timezone))).toBeVisible();
 
     const creado = respuestaDe(page, 'POST', RESERVA);
-    await page.getByRole('button', { name: 'Reservar el turno' }).click();
+    await page.getByRole('button', { name: 'Reservar turno' }).click();
     const turno = (await (await creado).json()) as { id: number };
     await expect(page.getByRole('heading', { name: 'Turno RESERVADO', level: 2 })).toBeVisible();
     expect((await verTurno(api, centro, turno.id)).inicio).toBe(segundo.desde);
@@ -174,7 +174,7 @@ test.describe('Reserva de turno contra el backend real', () => {
     });
 
     const rechazo = respuestaDe(page, 'POST', RESERVA);
-    await page.getByRole('button', { name: 'Reservar el turno' }).click();
+    await page.getByRole('button', { name: 'Reservar turno' }).click();
     const respuesta = await rechazo;
     expect(respuesta.status()).toBe(409);
     const problema = await problemaDe(respuesta);
@@ -187,7 +187,7 @@ test.describe('Reserva de turno contra el backend real', () => {
     await page.getByRole('button', { name: 'Recargar la agenda' }).click();
     await expect(page.getByRole('heading', { name: 'No se pudo reservar' })).toHaveCount(0);
     await expect(
-      page.getByText('Ese horario ya no figura en la agenda de este dia.'),
+      page.getByText('Ese horario ya no figura en la agenda de este día.'),
     ).toBeVisible();
   });
 
@@ -208,7 +208,7 @@ test.describe('Reserva de turno contra el backend real', () => {
     await reservar(api, centro, otraOferta.id, (await crearPersona(api)).id, slot.desde);
 
     const rechazo = respuestaDe(page, 'POST', RESERVA);
-    await page.getByRole('button', { name: 'Reservar el turno' }).click();
+    await page.getByRole('button', { name: 'Reservar turno' }).click();
     const respuesta = await rechazo;
     expect(respuesta.status()).toBe(409);
     const problema = await problemaDe(respuesta);
@@ -237,7 +237,7 @@ test.describe('Reserva de turno contra el backend real', () => {
     await abrirReserva(page, oferta, d, slot, sinPerfil);
 
     const rechazo = respuestaDe(page, 'POST', RESERVA);
-    await page.getByRole('button', { name: 'Reservar el turno' }).click();
+    await page.getByRole('button', { name: 'Reservar turno' }).click();
     const respuesta = await rechazo;
     expect(respuesta.status()).toBe(409);
     expect((await problemaDe(respuesta)).type).toBe(uriDeProblema('persona-sin-perfil-paciente'));
@@ -268,7 +268,7 @@ test.describe('Reserva de turno contra el backend real', () => {
     });
 
     await abrirReserva(page, oferta, d, slot, persona);
-    await page.getByRole('button', { name: 'Reservar el turno' }).dblclick();
+    await page.getByRole('button', { name: 'Reservar turno' }).dblclick();
     await expect(page.getByRole('heading', { name: 'Turno RESERVADO', level: 2 })).toBeVisible();
     await expect(page.getByRole('heading', { name: /^Turno /, level: 2 })).toHaveCount(1);
 

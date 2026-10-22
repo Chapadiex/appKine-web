@@ -98,7 +98,7 @@ export class CoberturaAplicable {
   protected nombreDePractica(practicaId: number | undefined): string {
     const practica = this.practicas().find((candidata) => candidata.practicaId === practicaId);
     if (practica === undefined) {
-      return `Practica #${practicaId ?? '?'}`;
+      return `Práctica #${practicaId ?? '?'}`;
     }
     return practica.codigo
       ? `${practica.nombre ?? ''} (${practica.codigo})`

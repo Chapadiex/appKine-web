@@ -85,14 +85,14 @@ describe('PracticasDeLaOfertaPage', () => {
     expect(contenido).toContain('devengo al financiador');
     expect(contenido).toContain('Fisiokinesioterapia');
     expect(contenido).toContain('(principal)');
-    expect(contenido).toContain('El catalogo dio de baja esta practica');
+    expect(contenido).toContain('El catalogo dio de baja esta práctica');
     expect(contenido).toContain('Quitada de la oferta');
     expect(radio(fixture, 0).checked).toBe(true);
     // Sin cambios no hay nada que guardar.
-    expect(botones(fixture, 'Guardar las practicas')[0].disabled).toBe(true);
+    expect(botones(fixture, 'Guardar las prácticas')[0].disabled).toBe(true);
   });
 
-  it('agregar desde el catalogo, cambiar la principal y guardar manda el conjunto con la version', async () => {
+  it('agregar desde el catalogo, cambiar la principal y guardar manda el conjunto con la versión', async () => {
     const fixture = await montar();
 
     escribir(fixture, '#buscar-practica', 'drenaje');
@@ -115,7 +115,7 @@ describe('PracticasDeLaOfertaPage', () => {
 
     radio(fixture, 2).click();
     fixture.detectChanges();
-    botones(fixture, 'Guardar las practicas')[0].click();
+    botones(fixture, 'Guardar las prácticas')[0].click();
 
     const reemplazo = httpMock.expectOne(
       (peticion: HttpRequest<unknown>) => peticion.method === 'PUT' && peticion.url === PRACTICAS,
@@ -127,10 +127,10 @@ describe('PracticasDeLaOfertaPage', () => {
     });
     reemplazo.flush({ ...CARGADA, ofertaVersion: 8, practicaPrincipalId: 200 });
     await estabilizar(fixture);
-    expect(texto(fixture)).toContain('Guardamos las practicas de la oferta.');
+    expect(texto(fixture)).toContain('Guardamos las prácticas de la oferta.');
   });
 
-  it('el 403 de la busqueda culpa al catalogo (catalogo:read) y no a la oferta', async () => {
+  it('el 403 de la búsqueda culpa al catalogo (catalogo:read) y no a la oferta', async () => {
     const fixture = await montar();
 
     escribir(fixture, '#buscar-practica', 'drenaje');
@@ -143,7 +143,7 @@ describe('PracticasDeLaOfertaPage', () => {
       );
     await estabilizar(fixture);
 
-    expect(texto(fixture)).toContain('No tenes permiso para consultar el catalogo clinico');
+    expect(texto(fixture)).toContain('No tenés permiso para consultar el catalogo clínico');
   });
 
   it('quitar la principal pasa la marca a la primera que queda; vaciar manda principal nula', async () => {
@@ -156,9 +156,9 @@ describe('PracticasDeLaOfertaPage', () => {
 
     botones(fixture, 'Quitar')[0].click();
     fixture.detectChanges();
-    expect(texto(fixture)).toContain('Una lista vacia NO significa "todas"');
+    expect(texto(fixture)).toContain('Una lista vacía NO significa "todas"');
 
-    botones(fixture, 'Guardar las practicas')[0].click();
+    botones(fixture, 'Guardar las prácticas')[0].click();
     const reemplazo = httpMock.expectOne(
       (peticion: HttpRequest<unknown>) => peticion.method === 'PUT',
     );
@@ -167,12 +167,12 @@ describe('PracticasDeLaOfertaPage', () => {
     await estabilizar(fixture);
   });
 
-  it('el 409 de version relee, y practica-no-utilizable explica que hay que sacarla', async () => {
+  it('el 409 de versión relee, y practica-no-utilizable explica que hay que sacarla', async () => {
     const fixture = await montar();
 
     botones(fixture, 'Quitar')[1].click();
     fixture.detectChanges();
-    botones(fixture, 'Guardar las practicas')[0].click();
+    botones(fixture, 'Guardar las prácticas')[0].click();
     httpMock
       .expectOne((peticion: HttpRequest<unknown>) => peticion.method === 'PUT')
       .flush(
@@ -185,7 +185,7 @@ describe('PracticasDeLaOfertaPage', () => {
 
     botones(fixture, 'Quitar')[1].click();
     fixture.detectChanges();
-    botones(fixture, 'Guardar las practicas')[0].click();
+    botones(fixture, 'Guardar las prácticas')[0].click();
     httpMock
       .expectOne((peticion: HttpRequest<unknown>) => peticion.method === 'PUT')
       .flush(
@@ -193,7 +193,7 @@ describe('PracticasDeLaOfertaPage', () => {
         { status: 409, statusText: 'Conflict' },
       );
     await estabilizar(fixture);
-    expect(texto(fixture)).toContain('Sacala de la lista y volve a guardar');
+    expect(texto(fixture)).toContain('Sacala de la lista y volvé a guardar');
   });
 
   it(

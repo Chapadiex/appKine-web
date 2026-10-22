@@ -31,36 +31,36 @@ export interface ErrorPlan {
 
 const MENSAJES: Readonly<Record<CausaPlan, string>> = {
   'requiere-justificacion':
-    'No figura que atiendas a esta persona en esta sede: para ver o cambiar su plan tenes que ' +
+    'No figura que atiendas a esta persona en esta sede: para ver o cambiar su plan tenés que ' +
     'declarar el motivo del acceso.',
   'sin-contexto':
     'Para trabajar con un plan de tratamiento hay que saber en que sede estas. Eligi una ' +
-    'organizacion y un consultorio, y volve a entrar.',
+    'organización y un consultorio, y volvé a entrar.',
   'sin-permiso':
-    'No tenes permiso para esta operacion en esta sede. Pediselo a quien administra el centro.',
-  'no-encontrado': 'Ese plan o ese caso no existen, o no son de esta organizacion.',
+    'No tenés permiso para esta operación en esta sede. Pediselo a quien administra el centro.',
+  'no-encontrado': 'Ese plan o ese caso no existen, o no son de esta organización.',
   'version-vieja':
-    'Alguien cambio este plan despues de que lo abriste. No pisamos nada: relee el plan y volve a ' +
-    'intentar sobre la version nueva.',
+    'Alguien cambio este plan después de que lo abriste. No pisamos nada: relee el plan y volvé a ' +
+    'intentar sobre la versión nueva.',
   'no-editable':
     'Este plan esta finalizado y no admite cambios. Un plan finalizado no se reabre: crea uno nuevo.',
   'transicion-invalida':
-    'El plan ya no esta en un estado que admita esa accion. Relee el plan para ver como quedo.',
+    'El plan ya no esta en un estado que admita esa acción. Relee el plan para ver como quedo.',
   'plan-vivo':
     'El caso ya tiene otro plan vigente que ocupa el lugar. Finalizalo antes de activar este, o ' +
     'reanuda ese.',
   'caso-no-activo':
-    'El caso esta cerrado, asi que no se puede planificar. Reabrilo con motivo desde el caso.',
+    'El caso esta cerrado, así que no se puede planificar. Reabrilo con motivo desde el caso.',
   'oferta-no-habilitada':
-    'Una de las ofertas del plan no esta habilitada hoy en esta sede. Elegi otra o habilitala.',
-  validacion: 'El servidor rechazo un dato del plan. Revisa los campos y volve a intentar.',
+    'Una de las ofertas del plan no esta habilitada hoy en esta sede. Elegí otra o habilitala.',
+  validacion: 'El servidor rechazo un dato del plan. Revisa los campos y volvé a intentar.',
   conflicto:
-    'El servidor rechazo la operacion por un conflicto con lo que ya hay guardado. Relee el plan.',
-  limite: 'Demasiados intentos seguidos. Espera un momento y volve a intentar.',
+    'El servidor rechazo la operación por un conflicto con lo que ya hay guardado. Relee el plan.',
+  limite: 'Demasiados intentos seguidos. Espera un momento y volvé a intentar.',
   red:
-    'No se pudo contactar al servidor, asi que lo ultimo que hiciste todavia no esta guardado. ' +
-    'Revisa la conexion y volve a intentar.',
-  otro: 'No pudimos completar la operacion. Volve a intentar en un momento.',
+    'No se pudo contactar al servidor, así que lo último que hiciste todavía no esta guardado. ' +
+    'Revisa la conexion y volvé a intentar.',
+  otro: 'No pudimos completar la operación. Volvé a intentar en un momento.',
 };
 
 export function traducirErrorPlan(error: unknown): ErrorPlan {

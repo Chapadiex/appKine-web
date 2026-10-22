@@ -1,14 +1,21 @@
-<h1>Colaboradores</h1>
+<div class="titulo-con-ayuda">
+  <h1>Colaboradores</h1>
+  <app-ayuda titulo="Sobre esta pantalla">
+    <p>
+      Quiénes tienen acceso a esta organización, con qué rol y sobre qué alcance. Los vínculos
+      suspendidos y revocados siguen en la lista: la baja es lógica y su historia sigue siendo
+      relevante.
+    </p>
+  </app-ayuda>
+  <div class="encabezado__acciones" *akinePermiso="permisoManage">
+    <a class="boton" routerLink="/organizacion/colaboradores/nuevo">
+      <app-icono nombre="agregar" />
+      Vincular colaborador
+    </a>
+  </div>
+</div>
 
-<p class="descripcion">
-  Quienes tienen acceso a esta organizacion, con que rol y sobre que alcance. Los vinculos
-  suspendidos y revocados siguen en la lista: la baja es logica y su historia sigue siendo
-  relevante.
-</p>
-
-<p class="acciones" *akinePermiso="permisoManage">
-  <a class="boton" routerLink="/organizacion/colaboradores/nuevo">Vincular a alguien</a>
-</p>
+<app-pestanas *akinePermiso="permisoManage" [pestanas]="pestanas" [etiqueta]="etiquetaDePestanas" />
 
 <div aria-live="polite">
   @if (exito(); as mensaje) {
@@ -17,7 +24,7 @@
 </div>
 
 <section class="tarjeta" aria-labelledby="titulo-colaboradores">
-  <h2 id="titulo-colaboradores">Vinculos de la organizacion</h2>
+  <h2 id="titulo-colaboradores">Vínculos de la organización</h2>
 
   <div aria-live="polite">
     @switch (estado().tipo) {
@@ -26,9 +33,9 @@
       }
 
       @case ('sin-contexto') {
-        <p class="estado estado--vacio">Todavia no elegiste un contexto de trabajo.</p>
+        <p class="estado estado--vacio">Todavía no elegiste un contexto de trabajo.</p>
         <p class="ayuda">
-          Los colaboradores son de una organizacion concreta, asi que hay que indicar cual.
+          Los colaboradores son de una organización concreta, así que hay que indicar cual.
         </p>
         <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto</a>
       }
@@ -45,24 +52,20 @@
 
       @case ('listo') {
         @if (colaboradoresDeLaPagina().length === 0) {
-          <p class="estado estado--vacio">Esta organizacion todavia no tiene colaboradores.</p>
+          <p class="estado estado--vacio">Esta organización todavía no tiene colaboradores.</p>
           <p class="ayuda">
-            Podes vincular a alguien que ya tenga cuenta en AKINE desde el boton de arriba.
+            Podés vincular a alguien que ya tenga cuenta en AKINE desde el botón de arriba.
           </p>
         } @else {
-          <p class="ayuda">
-            {{ totalColaboradores() }} vinculos en total, incluidos los suspendidos y revocados.
-          </p>
-
           <div
             class="tabla-scroll"
             tabindex="0"
             role="region"
-            aria-label="Colaboradores de la organizacion"
+            aria-label="Colaboradores de la organización"
           >
             <table class="tabla">
               <caption class="visualmente-oculto">
-                Colaboradores de la organizacion, con su rol, alcance y estado
+                Colaboradores de la organización, con su rol, alcance y estado
               </caption>
               <thead>
                 <tr>
@@ -78,13 +81,20 @@
                 @for (colaborador of colaboradoresDeLaPagina(); track colaborador.id) {
                   <tr [class.fila--revocada]="colaborador.estado === 'REVOCADA'">
                     <th scope="row">
-                      <span class="colaborador__nombre">{{ nombreDe(colaborador) }}</span>
-                      @if (colaborador.accountEmail) {
-                        <span class="colaborador__email">{{ colaborador.accountEmail }}</span>
-                      }
-                      @if (colaborador.founder) {
-                        <span class="etiqueta">Fundador</span>
-                      }
+                      <span class="persona">
+                        <span class="persona__avatar" aria-hidden="true">{{
+                          inicialesDe(colaborador)
+                        }}</span>
+                        <span class="persona__datos">
+                          <span class="colaborador__nombre">{{ nombreDe(colaborador) }}</span>
+                          @if (colaborador.accountEmail) {
+                            <span class="colaborador__email">{{ colaborador.accountEmail }}</span>
+                          }
+                          @if (colaborador.founder) {
+                            <span class="etiqueta">Fundador</span>
+                          }
+                        </span>
+                      </span>
                     </th>
                     <td>{{ etiquetaDeRol(colaborador.roleCode) }}</td>
                     <td>{{ alcanceLegible(colaborador.consultorioId) }}</td>
@@ -108,9 +118,11 @@
                       }
                     </td>
                     <td>
-                      {{ colaborador.validFrom }}
+                      {{ colaborador.validFrom | date: 'dd/MM/yyyy' }}
                       @if (colaborador.validUntil) {
-                        <span class="ayuda">hasta {{ colaborador.validUntil }}</span>
+                        <span class="ayuda"
+                          >hasta {{ colaborador.validUntil | date: 'dd/MM/yyyy' }}</span
+                        >
                       }
                     </td>
                     <td>
@@ -192,8 +204,8 @@
                           <fieldset class="grupo">
                             <legend>Alcance</legend>
                             <p class="ayuda" id="edicion-alcance-ayuda">
-                              "Toda la organizacion" es un alcance, no la ausencia de uno: por eso
-                              se elige explicitamente y no dejando la sede vacia.
+                              "Toda la organización" es un alcance, no la ausencia de uno: por eso
+                              se elige explicitamente y no dejando la sede vacía.
                             </p>
 
                             <div class="opcion-radio">
@@ -215,7 +227,7 @@
                                 value="organizacion"
                               />
                               <label for="edicion-alcance-organizacion">
-                                Toda la organizacion
+                                Toda la organización
                               </label>
                             </div>
 
@@ -233,7 +245,7 @@
                               <div class="campo">
                                 <label for="edicion-consultorioId">Sede</label>
                                 <select id="edicion-consultorioId" formControlName="consultorioId">
-                                  <option value="">Elegi una sede</option>
+                                  <option value="">Elegí una sede</option>
                                   @for (sede of sedes.sedes(); track sede.id) {
                                     <option [value]="sede.id">{{ sede.name }}</option>
                                   }
@@ -313,7 +325,7 @@
                                 }
                                 @case ('error') {
                                   <p class="banner banner--suspendida">
-                                    No pudimos consultar que queda pendiente a su nombre. Podes
+                                    No pudimos consultar que queda pendiente a su nombre. Podés
                                     revocar igual, pero revisa su agenda antes.
                                   </p>
                                 }
@@ -325,7 +337,7 @@
                                       <p>
                                         Revocar no los cancela ni los reasigna: quedan visibles para
                                         que alguien los resuelva. El aviso muestra una sola fuente:
-                                        si tiene turnos pendientes, no suma ademas sus bloques de
+                                        si tiene turnos pendientes, no suma además sus bloques de
                                         horario ni sus excepciones.
                                       </p>
                                     </div>
@@ -389,7 +401,7 @@
                                       [id]="'grant-no-vigente-' + grant.id"
                                     >
                                       El rol actual del colaborador no admite este permiso: sigue
-                                      registrado pero no concede acceso. Podes darlo de baja.
+                                      registrado pero no concede acceso. Podés darlo de baja.
                                     </p>
                                   }
                                   <button
@@ -439,7 +451,7 @@
                               @switch (otorgables().tipo) {
                                 @case ('error') {
                                   No pudimos consultar que permisos admite el rol
-                                  {{ etiquetaDeRol(colaborador.roleCode) }}. Cerra el panel y volve
+                                  {{ etiquetaDeRol(colaborador.roleCode) }}. Cerra el panel y volvé
                                   a abrirlo para reintentar.
                                 }
                                 @case ('listo') {
@@ -459,7 +471,7 @@
                             </p>
                             @if (mostrarErrorGrant('permissionCode')) {
                               <p class="campo__error" id="grant-permissionCode-error">
-                                Elegi el permiso que queres otorgar.
+                                Elegí el permiso que queres otorgar.
                               </p>
                             }
                           </div>
@@ -524,12 +536,17 @@
             </table>
           </div>
 
-          <akine-paginacion
-            etiqueta="Paginas de colaboradores"
-            [paginaActual]="paginaActual()"
-            [totalPaginas]="totalPaginas()"
-            (cambioDePagina)="irAPagina($event)"
-          />
+          <div class="tabla-pie">
+            <span>
+              {{ totalColaboradores() }} vínculos en total, incluidos los suspendidos y revocados
+            </span>
+            <akine-paginacion
+              etiqueta="Paginas de colaboradores"
+              [paginaActual]="paginaActual()"
+              [totalPaginas]="totalPaginas()"
+              (cambioDePagina)="irAPagina($event)"
+            />
+          </div>
         }
       }
     }
@@ -537,5 +554,5 @@
 </section>
 
 <p class="ayuda">
-  <a class="enlace" routerLink="/organizacion/auditoria">Ver la auditoria de la organizacion</a>
+  <a class="enlace" routerLink="/organizacion/auditoria">Ver la auditoría de la organización</a>
 </p>

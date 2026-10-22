@@ -10,7 +10,7 @@ const HC = 88;
 const TIMELINE = `/api/v1/historias-clinicas/${HC}/timeline`;
 const CASOS = `/api/v1/historias-clinicas/${HC}/casos`;
 
-function evento(referencia: number, titulo = 'Entrada clinica') {
+function evento(referencia: number, titulo = 'Entrada clínica') {
   return {
     ocurrioEn: `2026-09-${String(30 - referencia).padStart(2, '0')}T12:00:00Z`,
     origen: 'ENTRADA_CLINICA',
@@ -42,7 +42,7 @@ describe('TimelineClinico', () => {
 
   afterEach(() => httpMock.verify());
 
-  it('la segunda pagina va con el cursor de la primera y se suma a la lista', async () => {
+  it('la segunda página va con el cursor de la primera y se suma a la lista', async () => {
     const fixture = await montar();
     const primera = httpMock.expectOne((r) => r.url === TIMELINE);
     expect(primera.request.params.has('cursor')).toBe(false);
@@ -62,7 +62,7 @@ describe('TimelineClinico', () => {
     expect(texto(fixture)).toContain('Ese es el primer hecho de la historia.');
   });
 
-  it('un cursor rechazado reinicia desde la primera pagina', async () => {
+  it('un cursor rechazado reinicia desde la primera página', async () => {
     const fixture = await montar();
     httpMock
       .expectOne((r) => r.url === TIMELINE)
@@ -102,7 +102,7 @@ describe('TimelineClinico', () => {
     expect(filtrada.request.params.has('cursor')).toBe(false);
     filtrada.flush({ eventos: [] });
     await estabilizar(fixture);
-    expect(texto(fixture)).toContain('Este caso todavia no tiene hechos clinicos.');
+    expect(texto(fixture)).toContain('Este caso todavía no tiene hechos clínicos.');
   });
 
   it('los origenes marcados van al servidor y se reenvian con el cursor al cargar mas', async () => {
@@ -137,7 +137,7 @@ describe('TimelineClinico', () => {
     await estabilizar(fixture);
   });
 
-  it('el rango de dias viaja como instantes y un rango invertido no sale', async () => {
+  it('el rango de días viaja como instantes y un rango invertido no sale', async () => {
     const fixture = await montar();
     httpMock.expectOne((r) => r.url === TIMELINE).flush({ eventos: [evento(1)] });
     await estabilizar(fixture);
@@ -150,16 +150,16 @@ describe('TimelineClinico', () => {
     expect(conDesde.request.params.has('hasta')).toBe(false);
     conDesde.flush({ eventos: [] });
     await estabilizar(fixture);
-    expect(texto(fixture)).toContain('Ningun hecho clinico coincide con los filtros.');
+    expect(texto(fixture)).toContain('Ningún hecho clínico coincide con los filtros.');
 
     fecha(fixture, '#timeline-hasta', '2026-08-31');
     httpMock.expectNone((r) => r.url === TIMELINE);
     await estabilizar(fixture);
-    expect(texto(fixture)).toContain('"Desde" tiene que ser el mismo dia que "Hasta"');
+    expect(texto(fixture)).toContain('"Desde" tiene que ser el mismo día que "Hasta"');
     expect(filas(fixture)).toBe(0);
   });
 
-  it('rangoDeDias: del primer instante del desde al ultimo del hasta, en la zona de la sede', () => {
+  it('rangoDeDias: del primer instante del desde al último del hasta, en la zona de la sede', () => {
     expect(rangoDeDias('2026-09-01', '2026-09-15', 'America/Argentina/Cordoba')).toEqual({
       desde: '2026-09-01T03:00:00.000Z',
       hasta: '2026-09-16T02:59:59.999Z',
@@ -222,7 +222,7 @@ describe('TimelineClinico', () => {
   function boton(fixture: ComponentFixture<TimelineClinico>, rotulo: string): HTMLButtonElement {
     const encontrado = botonOpcional(fixture, rotulo);
     if (encontrado === null) {
-      throw new Error(`No hay boton "${rotulo}"`);
+      throw new Error(`No hay botón "${rotulo}"`);
     }
     return encontrado;
   }

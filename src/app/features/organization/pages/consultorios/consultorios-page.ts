@@ -1,4 +1,4 @@
-import { Component, ElementRef, effect, inject, signal, untracked } from '@angular/core';
+import { Component, ElementRef, computed, effect, inject, signal, untracked } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { catchError, of } from 'rxjs';
@@ -10,6 +10,7 @@ import { ConsultoriosService } from '../../../../api/generated/api/consultorios.
 import { EstadoDeListado, vistaDeListado } from '../../../../shared/utils/estado-de-listado';
 import { OrganizacionesService } from '../../../../api/generated/api/organizaciones.service';
 import { PERMISO_CONSULTORIO_MANAGE } from '../../../../core/models/permisos';
+import { Filtros } from '../../../../shared/components/filtros/filtros';
 import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
 import { PermisoDirective } from '../../../../shared/directives/permiso.directive';
 import { RUTA_SELECTOR_CONTEXTO } from '../../../../core/models/rutas';
@@ -21,6 +22,8 @@ import { MOTIVO_SEDE_INACTIVA, PARAM_MOTIVO } from '../../models/motivo-de-selec
 import { etiquetaDeZona, zonasHorarias } from '../../models/zonas-horarias';
 import { numeroDeclarado } from '../../../../shared/utils/numero-declarado';
 import { textoRequerido } from '../../../../shared/validators/texto-requerido';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { Icono } from '../../../../shared/components/icono/icono';
 
 /** Filtro de estado del listado. Los tres valores son los del contrato. */
 type FiltroEstado = 'ACTIVO' | 'INACTIVO' | 'TODOS';
@@ -78,7 +81,16 @@ const POR_PAGINA = 20;
  */
 @Component({
   selector: 'app-consultorios-page',
-  imports: [ReactiveFormsModule, RouterLink, PermisoDirective, Paginacion, ConfirmacionConMotivo],
+  imports: [
+    Ayuda,
+    Icono,
+    Filtros,
+    ReactiveFormsModule,
+    RouterLink,
+    PermisoDirective,
+    Paginacion,
+    ConfirmacionConMotivo,
+  ],
   templateUrl: './consultorios-page.html',
   styleUrl: '../../organization.css',
 })
@@ -103,6 +115,8 @@ export class ConsultoriosPage {
   /** Los cinco valores derivados del estado, con los nombres que la plantilla ya usaba. */
   private readonly vista = vistaDeListado<ConsultorioResponse>(this.estado);
   protected readonly filtro = signal<FiltroEstado>('ACTIVO');
+  /** Filtros avanzados fuera de su valor por defecto (regla de filtros, plan §3.4). */
+  protected readonly filtrosAvanzadosActivos = computed(() => Number(this.filtro() !== 'ACTIVO'));
   protected readonly paginaActual = signal(0);
 
   /** Fila y operacion abiertas, o `null`. Solo una a la vez. */
@@ -392,7 +406,7 @@ export class ConsultoriosPage {
       // Sin `version` no hay edicion posible: mandarla en `0` pisaria el cambio de otro, que
       // es exactamente lo que el control de concurrencia optimista existe para impedir.
       this.errorAccion.set(
-        'No pudimos leer la version de esta sede. Cerra el panel, recarga el listado y volve a intentar.',
+        'No pudimos leer la versión de esta sede. Cerra el panel, recarga el listado y volvé a intentar.',
       );
       return null;
     }

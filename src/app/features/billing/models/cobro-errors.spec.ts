@@ -147,15 +147,15 @@ describe('traducirErrorCobro', () => {
   // 3. Lo que no es propio del cobro
   // -------------------------------------------------------------------------------------
 
-  it('falta de contexto manda al selector y NUNCA se lee como sesion caida', () => {
+  it('falta de contexto manda al selector y NUNCA se lee como sesión caida', () => {
     const traducido = traducirErrorCobro(problema('missing-tenant-context', 403));
 
     expect(traducido.causa).toBe('sin-contexto');
     expect(traducido.accion).toBe('elegir-contexto');
-    expect(traducido.mensaje).toContain('sesion sigue abierta');
+    expect(traducido.mensaje).toContain('sesión sigue abierta');
   });
 
-  it('los genericos por status no ofrecen una accion de cobro', () => {
+  it('los genericos por status no ofrecen una acción de cobro', () => {
     const sinTipo = (status: number) => new AkineHttpError(status, cuerpo({ status }), false);
 
     expect(traducirErrorCobro(sinTipo(403)).causa).toBe('sin-permiso');

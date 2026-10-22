@@ -79,8 +79,9 @@ test.describe('Escenario 10 - cambio de contexto sin fuga de datos', () => {
     await page.getByRole('button', { name: centroA }).click();
 
     await expect(page).toHaveURL(/\/organizacion/);
-    await expect(page.getByRole('heading', { name: 'Organizacion' })).toBeVisible();
-    await expect(page.getByText(centroA, { exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Organización' })).toBeVisible();
+    // En `main`: la barra superior (UX-01) tambien dice el centro activo, y eso no es la pantalla.
+    await expect(page.getByRole('main').getByText(centroA, { exact: true })).toBeVisible();
     await expect(page.getByText(centroB, { exact: true })).toHaveCount(0);
 
     // --- Cambio a B: sin nuevo login, el token se renueva acotado a B (DP-02) ---
@@ -88,7 +89,7 @@ test.describe('Escenario 10 - cambio de contexto sin fuga de datos', () => {
     await page.getByRole('button', { name: centroB }).click();
 
     await expect(page).toHaveURL(/\/organizacion/);
-    await expect(page.getByText(centroB, { exact: true })).toBeVisible();
+    await expect(page.getByRole('main').getByText(centroB, { exact: true })).toBeVisible();
 
     // El nucleo del escenario: CERO residuo de A en toda la pantalla, no solo en el titulo.
     await expect(page.getByText(centroA, { exact: true })).toHaveCount(0);
@@ -96,10 +97,10 @@ test.describe('Escenario 10 - cambio de contexto sin fuga de datos', () => {
 
     // Y tampoco en la pantalla hermana, que cachea por su cuenta.
     await page.goto('/organizacion/suscripcion');
-    // `exact` no es opcional: sin el, el locator tambien empareja el h3 "Suscripcion activa",
+    // `exact` no es opcional: sin el, el locator tambien empareja el h3 "Suscripción activa",
     // que aparece recien cuando termino de cargar. Sin `exact` el test pasa o falla segun el
     // momento en que corra la asercion, que es la definicion de un flake.
-    await expect(page.getByRole('heading', { name: 'Suscripcion', exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Suscripción', exact: true })).toBeVisible();
     expect(await page.locator('body').innerText()).not.toContain(centroA);
   });
 
@@ -112,8 +113,8 @@ test.describe('Escenario 10 - cambio de contexto sin fuga de datos', () => {
     await ingresarPorPantalla(page, email);
     await page.getByRole('button', { name: centroA }).click();
 
-    await expect(page.getByRole('heading', { name: 'Organizacion' })).toBeVisible();
-    await expect(page.getByText(centroA, { exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Organización' })).toBeVisible();
+    await expect(page.getByRole('main').getByText(centroA, { exact: true })).toBeVisible();
     await expect(page.getByText('Zona horaria')).toBeVisible();
   });
 
@@ -149,7 +150,7 @@ test.describe('Escenario 10 - cambio de contexto sin fuga de datos', () => {
     // de organizacion no llego a pintarse y los nombres estan solo como opciones del selector.
     await expect(page).toHaveURL(/\/seleccionar-contexto/);
     const titulo = page.getByRole('heading', { level: 1 });
-    await expect(titulo).toHaveText('Elegi donde vas a trabajar');
+    await expect(titulo).toHaveText('¿Dónde vas a trabajar hoy?');
 
     // Antes se comparaba la cuenta de textos en `main` contra `button.count()`, y `count()` NO
     // reintenta: se evaluaba una sola vez, a veces mientras el selector todavia decia "Buscando tus
@@ -160,7 +161,7 @@ test.describe('Escenario 10 - cambio de contexto sin fuga de datos', () => {
     for (const centro of [centroA, centroB]) {
       await expect(page.getByRole('button', { name: centro })).toBeVisible();
     }
-    await expect(page.getByRole('heading', { name: 'Organizacion', exact: true })).toHaveCount(0);
+    await expect(page.getByRole('heading', { name: 'Organización', exact: true })).toHaveCount(0);
     // El alta self-service nombra al primer consultorio igual que a la organizacion, asi que cada
     // opcion puede mostrar el nombre dos veces. Lo que se exige es que TODA aparicion en `main`
     // este dentro de su opcion. El `count()` ya no corre en carrera: la lista esta pintada.
@@ -170,7 +171,10 @@ test.describe('Escenario 10 - cambio de contexto sin fuga de datos', () => {
         .getByText(centro, { exact: true })
         .count();
       expect(enSuOpcion).toBeGreaterThan(0);
-      await expect(page.locator('main').getByText(centro, { exact: true })).toHaveCount(enSuOpcion);
+      // +1: el rotulo del grupo del centro, que vive fuera del boton de la opcion.
+      await expect(page.locator('main').getByText(centro, { exact: true })).toHaveCount(
+        enSuOpcion + 1,
+      );
     }
   });
 

@@ -70,7 +70,7 @@ export type ClaveDeVigencia =
   | 'vigente'
   /** ACTIVA pero `vigenciaDesde` todavia no llego. */
   | 'aun-no'
-  /** ACTIVA pero `vigenciaHasta` ya paso. La vigencia esta cerrada, la ficha no dada de baja. */
+  /** ACTIVA pero `vigenciaHasta` ya pasó. La vigencia esta cerrada, la ficha no dada de baja. */
   | 'ya-no'
   /** ACTIVA y fuera de la ventana, sin poder precisar por cual de los dos extremos. */
   | 'fuera-de-ventana'
@@ -98,8 +98,8 @@ export type SujetoDeVigencia = 'plan' | 'convenio' | 'arancel';
 
 const CONSECUENCIA: Readonly<Record<SujetoDeVigencia, string>> = {
   plan: 'no se ofrece para coberturas nuevas',
-  convenio: 'no resuelve ningun arancel',
-  arancel: 'no le pone precio a esa practica',
+  convenio: 'no resuelve ningún arancel',
+  arancel: 'no le pone precio a esa práctica',
 };
 
 const NOMBRE: Readonly<Record<SujetoDeVigencia, string>> = {
@@ -131,8 +131,8 @@ export function situacionDeVigencia(
       clave: 'dada-de-baja',
       resumen: 'Dado de baja',
       explicacion:
-        `${NOMBRE[sujeto]} fue dado de baja y no hay reactivacion. Lo que ya se firmo o se ` +
-        'liquido bajo el sigue valiendo con su copia congelada: dar de baja nunca reescribe ' +
+        `${NOMBRE[sujeto]} fue dado de baja y no hay reactivación. Lo que ya se firmó o se ` +
+        'liquido bajo él sigue valiendo con su copia congelada: dar de baja nunca reescribe ' +
         'historicos.',
       atenuada: true,
     };
@@ -146,10 +146,10 @@ export function situacionDeVigencia(
   if (desde !== '' && desde > fecha) {
     return {
       clave: 'aun-no',
-      resumen: 'Activo, todavia sin vigencia',
+      resumen: 'Activo, todavía sin vigencia',
       explicacion:
         `Arranca el ${enPalabras(desde)}, y hasta entonces ${CONSECUENCIA[sujeto]}. No es un ` +
-        'error: ya esta cargado y empieza a aplicarse solo ese dia.',
+        'error: ya está cargado y empieza a aplicarse solo ese día.',
       atenuada: true,
     };
   }
@@ -160,9 +160,9 @@ export function situacionDeVigencia(
       clave: 'ya-no',
       resumen: 'Activo, vigencia terminada',
       explicacion:
-        `Sigue activo, pero su vigencia termino el ${enPalabras(hasta)} —ese dia todavia se ` +
+        `Sigue activo, pero su vigencia terminó el ${enPalabras(hasta)} —ese día todavía se ` +
         `aplico, porque el fin es inclusivo—, y desde entonces ${CONSECUENCIA[sujeto]}. Para que ` +
-        'vuelva a aplicarse, edita el fin de vigencia: dar de baja y volver a dar de alta seria ' +
+        'vuelva a aplicarse, editá el fin de vigencia: dar de baja y volver a dar de alta sería ' +
         'otra ficha.',
       atenuada: true,
     };
@@ -171,7 +171,7 @@ export function situacionDeVigencia(
   return {
     clave: 'fuera-de-ventana',
     resumen: 'Activo, sin vigencia en esa fecha',
-    explicacion: `En la fecha consultada queda fuera de su ventana, asi que ${CONSECUENCIA[sujeto]}.`,
+    explicacion: `En la fecha consultada queda fuera de su ventana, así que ${CONSECUENCIA[sujeto]}.`,
     atenuada: true,
   };
 }

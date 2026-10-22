@@ -1,3 +1,4 @@
+import { Pestanas } from '../../../../shared/components/pestanas/pestanas';
 import {
   Component,
   ElementRef,
@@ -32,7 +33,8 @@ import { UpdateCatalogoConceptoRequest } from '../../../../api/generated/model/u
 import { CausaCatalogo, traducirErrorCatalogo } from '../../models/catalogo-errors';
 import {
   DatosDeTipo,
-  TIPOS_DE_CATALOGO,
+  ETIQUETA_PESTANAS_DE_CATALOGO,
+  PESTANAS_DE_CATALOGO,
   TipoDeCatalogo,
   datosDeTipo,
   esGlobal,
@@ -46,6 +48,9 @@ import {
 } from '../../../../shared/utils/instantes';
 import { textoRequerido } from '../../../../shared/validators/texto-requerido';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { Filtros } from '../../../../shared/components/filtros/filtros';
+import { Icono } from '../../../../shared/components/icono/icono';
 
 /** Filtro de estado del listado. Los tres valores son los del contrato. */
 type FiltroEstado = 'ACTIVO' | 'INACTIVO' | 'TODOS';
@@ -104,11 +109,23 @@ const TOPE_DE_ESPECIALIDADES = 100;
  */
 @Component({
   selector: 'app-catalogos-page',
-  imports: [ReactiveFormsModule, RouterLink, PermisoDirective, Paginacion, ConfirmacionConMotivo],
+  imports: [
+    Pestanas,
+    Ayuda,
+    Filtros,
+    Icono,
+    ReactiveFormsModule,
+    RouterLink,
+    PermisoDirective,
+    Paginacion,
+    ConfirmacionConMotivo,
+  ],
   templateUrl: './catalogos-page.html',
   styleUrl: '../../catalog.css',
 })
 export class CatalogosPage {
+  protected readonly pestanasDeCatalogo = PESTANAS_DE_CATALOGO;
+  protected readonly etiquetaDePestanas = ETIQUETA_PESTANAS_DE_CATALOGO;
   /**
    * Tipo del catalogo, tomado del segmento `:tipo` de la ruta por `withComponentInputBinding`.
    *
@@ -126,7 +143,6 @@ export class CatalogosPage {
   private readonly injector = inject(Injector);
 
   protected readonly permisoManage = PERMISO_CATALOGO_MANAGE;
-  protected readonly tipos = TIPOS_DE_CATALOGO;
   protected readonly etiquetaDeAlcance = etiquetaDeAlcance;
   protected readonly esGlobal = esGlobal;
   protected readonly formatearInstante = (instante: string | undefined | null): string | null =>
@@ -145,6 +161,14 @@ export class CatalogosPage {
   protected readonly filtroEstado = signal<FiltroEstado>('ACTIVO');
   protected readonly filtroAlcance = signal<FiltroAlcance>('TODOS');
   protected readonly filtroEspecialidad = signal<number | null>(null);
+
+  /** Cuantos filtros del embudo estan fuera de su valor por defecto: el boton los cuenta. */
+  protected readonly filtrosAvanzadosActivos = computed(
+    () =>
+      Number(this.filtroEstado() !== 'ACTIVO') +
+      Number(this.filtroAlcance() !== 'TODOS') +
+      Number(this.filtroEspecialidad() !== null),
+  );
   protected readonly paginaActual = signal(0);
 
   /**
@@ -489,7 +513,7 @@ export class CatalogosPage {
           this.cerrarPanel();
           this.exito.set(
             `La ${datos.singular} quedo dada de alta para este centro. Solo la ve tu ` +
-              'organizacion: los conceptos de la plataforma los mantiene AKINE.',
+              'organización: los conceptos de la plataforma los mantiene AKINE.',
           );
           this.cargar();
           this.cargarEspecialidadesSiHacenFalta();
@@ -569,7 +593,7 @@ export class CatalogosPage {
           this.cerrarPanel();
           this.exito.set(
             'El concepto quedo dado de baja. Sigue en el listado, con su motivo, y lo que ya se ' +
-              'registro con el conserva su significado. Su codigo y su nombre quedan libres.',
+              'registro con el conserva su significado. Su código y su nombre quedan libres.',
           );
           this.cargar();
           this.cargarEspecialidadesSiHacenFalta();
@@ -582,7 +606,7 @@ export class CatalogosPage {
    * Traduce el cuerpo del `PATCH` distinguiendo <b>omitido</b> de <b>cadena vacia</b>.
    *
    * <p>El contrato le da a las dos formas significados opuestos: un campo <b>ausente</b> no se
-   * toca, y `descripcion: ""` <b>borra</b> la descripcion. Un formulario que mande siempre
+   * toca, y `descripción: ""` <b>borra</b> la descripcion. Un formulario que mande siempre
    * todos los campos no puede expresar "no lo toques".
    *
    * <p><b>`clearValidUntil` existe porque `null` no se puede pedir omitiendo.</b> "No toques
@@ -595,7 +619,7 @@ export class CatalogosPage {
       // Sin `version` no hay edicion posible: mandar `0` pisaria el cambio de otro, que es
       // justo lo que el control de concurrencia optimista existe para impedir.
       this.errorAccion.set(
-        'No pudimos leer la version de este concepto. Cerra el panel, recarga el listado y volve a intentar.',
+        'No pudimos leer la versión de este concepto. Cerra el panel, recarga el listado y volvé a intentar.',
       );
       return null;
     }

@@ -1,3 +1,5 @@
+import { Pestanas } from '../../../../shared/components/pestanas/pestanas';
+import { ETIQUETA_PESTANAS_DE_OFERTA, pestanasDeOferta } from '../../models/pestanas-de-offering';
 import {
   Component,
   ElementRef,
@@ -27,6 +29,11 @@ import { CausaOffering, hayQueRecargar, traducirErrorOffering } from '../../mode
 import { precioEnPalabras } from '../../models/etiquetas-de-offering';
 import { enPalabras } from '../../models/situacion-de-vigencia';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
+import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
+import { Icono } from '../../../../shared/components/icono/icono';
 
 /** Operacion abierta sobre una fila. Solo una a la vez. */
 type TipoAccion = 'fin' | 'baja';
@@ -56,7 +63,17 @@ interface SituacionDelPrecio {
  */
 @Component({
   selector: 'app-precios-particulares-de-la-oferta-page',
-  imports: [ReactiveFormsModule, RouterLink, PermisoDirective, ConfirmacionConMotivo],
+  imports: [
+    Pestanas,
+    ColumnaOrdenable,
+    Paginacion,
+    Icono,
+    Ayuda,
+    ReactiveFormsModule,
+    RouterLink,
+    PermisoDirective,
+    ConfirmacionConMotivo,
+  ],
   templateUrl: './precios-particulares-de-la-oferta-page.html',
   styleUrl: '../../offering.css',
 })
@@ -74,6 +91,8 @@ export class PreciosParticularesDeLaOfertaPage {
   protected readonly precioEnPalabras = precioEnPalabras;
 
   protected readonly ofertaId = Number(this.ruta.snapshot.paramMap.get('ofertaId'));
+  protected readonly pestanasDeOferta = pestanasDeOferta(this.ofertaId);
+  protected readonly etiquetaDePestanas = ETIQUETA_PESTANAS_DE_OFERTA;
   /** Lee el signal de la zona: lo que dependa de esto se actualiza cuando la zona llega. */
   private get hoy(): string {
     return this.diaDeLaSede.hoy();
@@ -93,6 +112,14 @@ export class PreciosParticularesDeLaOfertaPage {
     return [...actual.pagina].sort((uno, otro) =>
       (otro.vigenciaDesde ?? '').localeCompare(uno.vigenciaDesde ?? ''),
     );
+  });
+
+  /** Orden y paginado de la lista completa (plan Â§3.4): el servidor no pagina precios. */
+  protected readonly tabla = tablaLocal(this.precios, {
+    columnas: {
+      importe: (precio) => precio.importe,
+      vigencia: (precio) => precio.vigenciaDesde,
+    },
   });
 
   protected readonly mensajeDeCarga = computed(() => {
@@ -181,7 +208,7 @@ export class PreciosParticularesDeLaOfertaPage {
       return { resumen: 'Rige hoy', atenuada: false };
     }
     if ((precio.vigenciaDesde ?? '') > this.hoy) {
-      return { resumen: 'Todavia no rige', atenuada: false };
+      return { resumen: 'Todavía no rige', atenuada: false };
     }
     return { resumen: 'Ya no rige', atenuada: true };
   }
@@ -282,7 +309,7 @@ export class PreciosParticularesDeLaOfertaPage {
       next: () => {
         this.cerrarPanel();
         this.exito.set(
-          'El precio quedo cargado. Los dias que cubre manda sobre el precio de lista; lo ya ' +
+          'El precio quedo cargado. Los días que cubre manda sobre el precio de lista; lo ya ' +
             'devengado no cambia.',
         );
         this.cargar();
@@ -300,7 +327,7 @@ export class PreciosParticularesDeLaOfertaPage {
     }
     if (version === undefined) {
       this.errorAccion.set(
-        'No pudimos leer la version de este precio. Cerra el panel, recarga la grilla y volve a ' +
+        'No pudimos leer la versión de este precio. Cerra el panel, recarga la grilla y volvé a ' +
           'intentar.',
       );
       return;
@@ -347,7 +374,7 @@ export class PreciosParticularesDeLaOfertaPage {
       next: () => {
         this.cerrarPanel();
         this.exito.set(
-          'El precio quedo dado de baja y su periodo quedo libre. Esos dias vuelve a regir el ' +
+          'El precio quedo dado de baja y su periodo quedo libre. Esos días vuelve a regir el ' +
             'precio de lista, salvo que cargues otro.',
         );
         this.cargar();

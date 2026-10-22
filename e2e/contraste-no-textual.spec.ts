@@ -50,7 +50,7 @@ test.describe('Contraste no textual, foco y teclado', () => {
   test('login', async ({ page }) => {
     await instalarApiDeContraste(page);
     await page.goto('/auth/ingresar');
-    await expect(page.getByRole('heading', { name: 'Iniciar sesion', level: 1 })).toBeVisible({
+    await expect(page.getByRole('heading', { name: 'Iniciar sesión', level: 1 })).toBeVisible({
       timeout: LLEGADA,
     });
 
@@ -114,7 +114,7 @@ test.describe('Contraste no textual, foco y teclado', () => {
       // reintentar. Era una carrera contra el change detection: fallaba solo en un runner lento.
       const fila = page.getByRole('row').filter({ hasText: 'Ibarra, Dario' });
       const abrir = fila.getByRole('button', { name: 'Atender como Particular', exact: true });
-      const panel = page.getByRole('region', { name: 'Confirmar la transicion de la recepcion' });
+      const panel = page.getByRole('region', { name: 'Confirmar la transicion de la recepción' });
       await expect(abrir).toBeVisible({ timeout: LLEGADA });
 
       await abrir.focus();
@@ -133,7 +133,7 @@ test.describe('Contraste no textual, foco y teclado', () => {
 
       await page.getByRole('button', { name: 'Revertir' }).focus();
       await page.keyboard.press('Enter');
-      await expect(page.getByLabel('Motivo de la reversion')).toBeFocused();
+      await expect(page.getByLabel('Motivo de la reversión')).toBeFocused();
 
       await page.getByRole('button', { name: 'Cancelar' }).focus();
       await page.keyboard.press('Enter');

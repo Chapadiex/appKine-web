@@ -34,16 +34,18 @@ test.describe('Reenvio de activacion y vinculo directo contra el backend real', 
       const pagina = await anonimo.newPage();
       await pagina.goto('/auth/reenviar-activacion');
       await expect(
-        pagina.getByRole('heading', { name: 'Reenviar el correo de activacion', level: 1 }),
+        pagina.getByRole('heading', { name: 'Reenviar la activación', level: 1 }),
       ).toBeVisible();
-      await pagina.getByRole('textbox', { name: 'Email' }).fill(email);
-      await pagina.getByRole('button', { name: 'Enviar el enlace' }).click();
-      await expect(pagina.getByText('Solicitud recibida.')).toBeVisible();
+      await pagina.getByRole('textbox', { name: 'Correo electrónico' }).fill(email);
+      await pagina.getByRole('button', { name: 'Reenviar la activación' }).click();
+      await expect(pagina.getByRole('heading', { name: 'Revisá tu correo' })).toBeVisible();
 
       const segundo = await enlaceDelCorreo(email, ASUNTO.activacion, [primero.idCorreo]);
       expect(segundo.token).not.toBe(primero.token);
       await pagina.goto(segundo.ruta);
-      await expect(pagina.getByText('Tu cuenta quedo activa.')).toBeVisible();
+      await expect(
+        pagina.getByRole('heading', { name: 'Cuenta activada', level: 1 }),
+      ).toBeVisible();
     } finally {
       await anonimo.close();
     }
@@ -56,7 +58,7 @@ test.describe('Reenvio de activacion y vinculo directo contra el backend real', 
     await ingresar(page, { emailAdmin: email } as Centro);
     await navegar(page, '/organizacion/colaboradores/nuevo');
     await expect(
-      page.getByRole('heading', { name: 'Vincular a un colaborador', level: 1 }),
+      page.getByRole('heading', { name: 'Vincular colaborador', level: 1 }),
     ).toBeVisible();
     await page.getByLabel('Email de la cuenta').fill(centro.emailProfesional);
     await page.getByLabel('Rol', { exact: true }).selectOption({ value: 'PROFESIONAL' });
@@ -68,7 +70,7 @@ test.describe('Reenvio de activacion y vinculo directo contra el backend real', 
     const creado = await alta;
     expect(creado.status(), await creado.text()).toBe(201);
     const { membershipId } = (await creado.json()) as { membershipId: number };
-    await expect(page.getByText(`Vinculo creado (numero ${membershipId}).`)).toBeVisible();
+    await expect(page.getByText(`Vinculo creado (número ${membershipId}).`)).toBeVisible();
 
     await page.getByRole('link', { name: 'Volver al listado' }).click();
     await expect(page).toHaveURL(/\/organizacion\/colaboradores$/);

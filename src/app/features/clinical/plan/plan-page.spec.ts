@@ -61,7 +61,7 @@ describe('PlanPage', () => {
     httpMock.verify();
   });
 
-  it('crear manda el contenido del editor con numeros y sin campos vacios', async () => {
+  it('crear manda el contenido del editor con números y sin campos vacios', async () => {
     const fixture = await montar([]);
     clic(fixture, 'Crear un plan');
     escribir(fixture, '#plan-objetivos', 'Fortalecer cuadriceps');
@@ -83,7 +83,7 @@ describe('PlanPage', () => {
     expect(texto(fixture)).toContain('Se creo el plan en borrador.');
   });
 
-  it('activar manda la version leida; plan-vivo ofrece ir al que ocupa el lugar', async () => {
+  it('activar manda la versión leida; plan-vivo ofrece ir al que ocupa el lugar', async () => {
     const fixture = await montar([BORRADOR]);
     clic(fixture, 'Activar el plan');
     const activacion = httpMock.expectOne(`${PLAN}/activacion`);
@@ -110,7 +110,7 @@ describe('PlanPage', () => {
     TIMEOUT_AXE,
   );
 
-  it('cada item muestra la vigencia de su autorizacion y marca la vencida', async () => {
+  it('cada item muestra la vigencia de su autorización y marca la vencida', async () => {
     const version = {
       ...BORRADOR.versionVigente,
       items: [
@@ -144,8 +144,8 @@ describe('PlanPage', () => {
     );
     // El item sin autorizacion no dice nada: no hay vigencia que mostrar.
     expect(marcas.map((m) => m.textContent?.trim())).toEqual([
-      'autorizacion vencida el 31/01/2020',
-      'autorizacion vigente hasta el 31/12/2099 inclusive',
+      'autorización vencida el 31/01/2020',
+      'autorización vigente hasta el 31/12/2099 inclusive',
     ]);
     expect(marcas[0].classList).toContain('plan__vigencia--vencida');
     expect(marcas[1].classList).not.toContain('plan__vigencia--vencida');
@@ -206,7 +206,7 @@ describe('PlanPage', () => {
     const boton = Array.from(
       (fixture.nativeElement as HTMLElement).querySelectorAll('button'),
     ).find((b) => b.textContent?.trim() === rotulo);
-    if (!boton) throw new Error(`No hay boton "${rotulo}"`);
+    if (!boton) throw new Error(`No hay botón "${rotulo}"`);
     boton.click();
     fixture.detectChanges();
   }

@@ -2,6 +2,7 @@ import { Component, computed, inject } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import { PARAM_VOLVER_A, destinoInterno } from '../../../../core/models/rutas';
+import { Icono } from '../../../../shared/components/icono/icono';
 
 /**
  * Sesion expirada (M02, AKINE-01.02).
@@ -20,9 +21,9 @@ import { PARAM_VOLVER_A, destinoInterno } from '../../../../core/models/rutas';
  */
 @Component({
   selector: 'app-session-expired-page',
-  imports: [RouterLink],
+  imports: [Icono, RouterLink],
   templateUrl: './session-expired-page.html',
-  styleUrl: '../../auth.css',
+  styleUrls: ['../../auth.css', '../../../../shared/styles/acceso.css'],
 })
 export class SessionExpiredPage {
   private readonly ruta = inject(ActivatedRoute);

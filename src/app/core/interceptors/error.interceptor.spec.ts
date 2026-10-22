@@ -41,7 +41,7 @@ describe('errorInterceptor', () => {
         title: 'Error de validacion',
         status: 400,
         detail: 'La solicitud contiene campos invalidos',
-        errors: { email: 'debe ser una direccion valida' },
+        errors: { email: 'debe ser una dirección valida' },
       },
       { status: 400, statusText: 'Bad Request' },
     );
@@ -50,11 +50,11 @@ describe('errorInterceptor', () => {
     expect(error).toBeInstanceOf(AkineHttpError);
     expect(error.status).toBe(400);
     expect(error.message).toBe('La solicitud contiene campos invalidos');
-    expect(error.erroresPorCampo['email']).toBe('debe ser una direccion valida');
+    expect(error.erroresPorCampo['email']).toBe('debe ser una dirección valida');
     expect(error.esDeRed).toBe(false);
   });
 
-  it('un 401 NO toca el token: el ciclo de vida de la sesion es del authInterceptor', async () => {
+  it('un 401 NO toca el token: el ciclo de vida de la sesión es del authInterceptor', async () => {
     tokenStore.set('jwt-vencido');
     const capturado = esperarError(http.get('/api/v1/pacientes'));
 
@@ -86,7 +86,7 @@ describe('errorInterceptor', () => {
     expect(error.esRateLimited).toBe(true);
   });
 
-  it('esSinPermiso es el 403 de un permiso, no el de la suscripcion ni otro status', () => {
+  it('esSinPermiso es el 403 de un permiso, no el de la suscripción ni otro status', () => {
     const forbidden = new AkineHttpError(
       403,
       { type: 'https://akine.app/problems/forbidden' },
@@ -155,7 +155,7 @@ describe('errorInterceptor', () => {
     httpMock.expectOne('/api/v1/auth/login').flush(
       {
         type: 'https://akine.app/problems/invalid-credentials',
-        detail: 'Email o contrasena incorrectos',
+        detail: 'Email o contraseña incorrectos',
       },
       { status: 401, statusText: 'Unauthorized' },
     );
@@ -164,10 +164,10 @@ describe('errorInterceptor', () => {
     // ADR-0018: email inexistente, contrasena incorrecta y cuenta bloqueada devuelven los
     // tres esto mismo. Un solo mensaje, sin adivinar cual fue.
     expect(error.esCredencialesInvalidas).toBe(true);
-    expect(error.mensaje).toBe('Email o contrasena incorrectos');
+    expect(error.mensaje).toBe('Email o contraseña incorrectos');
   });
 
-  it('marca como sesion expirada los tres problemas que obligan a volver al login', async () => {
+  it('marca como sesión expirada los tres problemas que obligan a volver al login', async () => {
     for (const slug of ['invalid-refresh', 'invalid-token', 'unauthorized'] as const) {
       const capturado = esperarError(http.get('/api/v1/pacientes'));
 
@@ -179,7 +179,7 @@ describe('errorInterceptor', () => {
     }
   });
 
-  it('lee los errores de validacion tambien cuando vienen anidados en properties', async () => {
+  it('lee los errores de validacion también cuando vienen anidados en properties', async () => {
     const capturado = esperarError(http.post('/api/v1/auth/register', {}));
 
     // Hueco de contrato: ProblemDetail 0.3.0 declara `properties` pero no `errors`. Spring
@@ -352,14 +352,14 @@ describe('errorInterceptor', () => {
     httpMock.expectOne('/api/v1/consultorios/1/presentaciones/5/export').flush(
       JSON.stringify({
         type: 'https://akine.app/problems/not-found',
-        detail: 'la presentacion no existe',
+        detail: 'la presentación no existe',
       }),
       { status: 404, statusText: 'Not Found' },
     );
 
     const error = await capturado;
     expect(error.problemType).toBe('not-found');
-    expect(error.message).toBe('la presentacion no existe');
+    expect(error.message).toBe('la presentación no existe');
   });
 
   it('si el Blob del error no se puede leer, igual sale un AkineHttpError', async () => {
@@ -384,7 +384,7 @@ describe('errorInterceptor', () => {
     expect(error.problemType).toBeNull();
   });
 
-  it('un Blob vacio no se intenta parsear: un 500 sin cuerpo sigue siendo un 500', async () => {
+  it('un Blob vacío no se intenta parsear: un 500 sin cuerpo sigue siendo un 500', async () => {
     const capturado = esperarError(
       http.get('/api/v1/personas/7/adjuntos/3/contenido', { responseType: 'blob' }),
     );

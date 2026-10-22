@@ -1,0 +1,253 @@
+/*
+ * Pantallas de acceso (login, registro, recuperar, activar, invitacion, sesion expirada y
+ * elegir contexto). Fuera del CSS global para no pesar en la carga inicial: la enlazan por
+ * styleUrl solo las pantallas que la usan.
+ */
+
+/*
+ * Login, registro, recuperar, activar, invitacion, sesion expirada y elegir contexto: una sola
+ * tarjeta de 400 px (480 para elegir contexto) con el titulo adentro, los campos en columna, la
+ * accion principal a todo el ancho y las alternativas al pie, separadas por una linea.
+ */
+.acceso-tarjeta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-6);
+  /* Con 16 px de margen a cada lado en un telefono: la tarjeta es item de una grilla centrada
+     y un max-width en porcentaje no la achica. */
+  width: min(25rem, calc(100vw - 2rem));
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: var(--esp-8);
+  border: var(--borde-fino) solid var(--color-borde);
+  border-radius: var(--radio-lg);
+  background: var(--color-superficie);
+}
+
+.acceso-tarjeta--ancha {
+  width: min(30rem, calc(100vw - 2rem));
+}
+
+.acceso-tarjeta h1 {
+  margin: 0;
+  font-size: var(--tipo-xl);
+}
+
+.acceso-tarjeta .campo {
+  margin-bottom: 0;
+}
+
+.acceso-tarjeta .campo label {
+  font-size: var(--tipo-2xs);
+}
+
+.acceso-tarjeta form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-6);
+}
+
+.acceso-subtitulo {
+  margin: calc(-1 * var(--esp-4)) 0 0;
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-xs);
+}
+
+.acceso-texto {
+  margin: 0;
+  color: var(--color-texto-suave);
+  line-height: 1.5;
+}
+
+/* Accion principal a todo el ancho de la tarjeta. */
+.boton--bloque {
+  width: 100%;
+}
+
+/* Fila de etiqueta con un enlace a la derecha ("¿Olvidaste tu contraseña?"). */
+.acceso-fila-etiqueta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--esp-4);
+}
+
+.acceso-fila-etiqueta a {
+  font-size: var(--tipo-2xs);
+  font-weight: var(--peso-medio);
+}
+
+/* Campo de contraseña con el boton "Mostrar" adentro, a la derecha. */
+.campo-con-accion {
+  position: relative;
+}
+
+.campo .campo-con-accion input {
+  width: 100%;
+  padding-right: 4.5rem;
+}
+
+.campo-con-accion__boton {
+  position: absolute;
+  top: 50%;
+  right: var(--esp-2);
+  transform: translateY(-50%);
+  min-height: 1.875rem;
+  padding: 0 var(--esp-4);
+  border: 0;
+  border-radius: var(--radio-sm);
+  background: transparent;
+  color: var(--color-marca-texto-suave);
+  font: inherit;
+  font-size: var(--tipo-2xs);
+  font-weight: var(--peso-medio);
+  cursor: pointer;
+}
+
+.campo-con-accion__boton:hover {
+  background: var(--color-superficie-sutil);
+}
+
+/* Alternativas al pie de la tarjeta, separadas por una linea. */
+.acceso-alternativas {
+  margin: 0;
+  padding-top: var(--esp-5);
+  border-top: var(--borde-fino) solid var(--color-borde-sutil);
+  color: var(--color-marca-texto-suave);
+  font-size: var(--tipo-xs);
+  text-align: center;
+}
+
+.acceso-alternativas p {
+  margin: 0;
+}
+
+.acceso-alternativas p + p {
+  margin-top: var(--esp-3);
+}
+
+.acceso-alternativas a,
+.acceso-volver {
+  font-weight: var(--peso-medio);
+}
+
+.acceso-volver {
+  align-self: flex-start;
+  padding-block: var(--esp-2);
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-xs);
+  text-decoration: none;
+}
+
+/* Circulo de 44 px con un icono o signo: resultado de un paso (correo enviado, cuenta activada). */
+.acceso-icono {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 50%;
+  background: var(--color-marca-superficie-activa);
+  color: var(--color-acento);
+  font-size: 1.375rem;
+  font-weight: var(--peso-fuerte);
+}
+
+.acceso-icono--exito {
+  background: var(--color-exito-fondo);
+  color: var(--color-exito);
+}
+
+.acceso-icono--aviso {
+  background: var(--color-aviso-fondo);
+  color: var(--color-aviso);
+}
+
+.acceso-icono--neutro {
+  background: var(--color-superficie-codigo);
+  color: var(--color-marca-texto-suave);
+}
+
+/* Aviso de una linea dentro de la tarjeta: error de credenciales, cuenta sin activar. */
+.acceso-aviso {
+  margin: 0;
+  padding: var(--esp-4) var(--esp-5);
+  border-radius: var(--radio-md);
+  font-size: var(--tipo-xs);
+  line-height: 1.4;
+}
+
+.acceso-aviso--error {
+  background: var(--color-peligro-fondo);
+  color: var(--color-peligro-texto);
+}
+
+.acceso-aviso--aviso {
+  background: var(--color-aviso-fondo);
+  color: var(--color-aviso-texto);
+}
+
+.acceso-aviso--ok {
+  background: var(--color-exito-fondo);
+  color: var(--color-exito-texto);
+}
+
+/* Invitacion: quien invita, en una banda gris, y los datos en dos columnas. */
+.invitacion__quien {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-5);
+  padding: var(--esp-5);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie-sutil);
+  line-height: 1.4;
+}
+
+.nav-avatar-invitacion {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  background: var(--color-marca-superficie-activa);
+  color: var(--color-acento);
+  font-weight: var(--peso-medio);
+}
+
+.invitacion__datos {
+  display: grid;
+  grid-template-columns: 6rem minmax(0, 1fr);
+  gap: var(--esp-3) var(--esp-5);
+  margin: 0;
+  font-size: var(--tipo-xs);
+}
+
+.invitacion__datos dt {
+  color: var(--color-texto-suave);
+}
+
+.invitacion__datos dd {
+  margin: 0;
+}
+
+.invitacion__alta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-5);
+  padding-top: var(--esp-5);
+  border-top: var(--borde-fino) solid var(--color-borde-sutil);
+}
+
+.invitacion__alta h2 {
+  margin: 0;
+  font-size: var(--tipo-base);
+}
+
+/* Objetivo tactil de 24 px (WCAG 2.5.8) para los enlaces de la tarjeta. */
+.acceso-tarjeta a:not(.boton) {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.5rem;
+}

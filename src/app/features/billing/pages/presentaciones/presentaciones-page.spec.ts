@@ -113,7 +113,7 @@ describe('PresentacionesPage', () => {
     const fixture = await montar([]);
 
     enviar(fixture, 1);
-    expect(contenido(fixture)).toContain('Elegi a que financiador se presenta.');
+    expect(contenido(fixture)).toContain('Elegí a qué financiador se presenta.');
 
     elegir(fixture, '#alta-financiador', '10');
     escribir(fixture, '#alta-desde', '2026-09-30');
@@ -145,7 +145,7 @@ describe('PresentacionesPage', () => {
       .flush([LOTE]);
     await estabilizar(fixture);
 
-    expect(contenido(fixture)).toContain('No tenes permiso para consultar los financiadores');
+    expect(contenido(fixture)).toContain('No tenés permiso para consultar los financiadores');
     expect(contenido(fixture)).toContain('OSDE');
   });
 

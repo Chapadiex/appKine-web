@@ -170,7 +170,7 @@ describe('InstructoresDeClaseComponent', () => {
       { status: 409, statusText: 'Conflict' },
     );
     await asentar(fixture);
-    expect(textoDe(fixture)).toContain('anula el egreso de esa liquidacion');
+    expect(textoDe(fixture)).toContain('anula el egreso de esa liquidación');
 
     clickear(fixture, 'Cancelar');
     await asentar(fixture);
@@ -200,7 +200,7 @@ describe('InstructoresDeClaseComponent', () => {
     fixture.detectChanges();
     httpMock.expectOne(URL).flush(null, { status: 403, statusText: 'Forbidden' });
     await asentar(fixture);
-    expect(textoDe(fixture)).toContain('No tenes permiso');
+    expect(textoDe(fixture)).toContain('No tenés permiso');
     clickear(fixture, 'Reintentar');
     httpMock.expectOne(URL).flush({ claseId: ID });
     await asentar(fixture);

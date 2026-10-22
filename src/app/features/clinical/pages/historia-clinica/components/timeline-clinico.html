@@ -1,79 +1,88 @@
 <section class="tarjeta" aria-labelledby="titulo-timeline">
-  <h2 id="titulo-timeline">Timeline clinico</h2>
-
-  <p class="ayuda">
-    Del hecho mas reciente al mas antiguo. Cada fila es un indice: el contenido se abre al elegirla,
-    y esa lectura queda registrada.
-  </p>
-
-  @if (casos().length > 0) {
-    <div class="campo">
-      <label for="timeline-caso">Caso clinico</label>
-      <select
-        id="timeline-caso"
-        [value]="casoId() === null ? '' : casoId()"
-        (change)="filtrarPorCaso($any($event.target).value)"
-      >
-        <option value="">Todos los hechos de la historia</option>
-        @for (opcion of opcionesDeCaso(); track opcion.id) {
-          <option [value]="opcion.id">{{ opcion.rotulo }}</option>
-        }
-      </select>
-    </div>
-  }
-
-  <div class="timeline__filtros">
-    <fieldset class="timeline__origenes">
-      <legend>Que hechos mostrar</legend>
-      @for (opcion of opcionesDeOrigen; track opcion.valor) {
-        <label class="timeline__origen-opcion">
-          <input
-            type="checkbox"
-            [checked]="incluyeOrigen(opcion.valor)"
-            (change)="alternarOrigen(opcion.valor, $any($event.target).checked)"
-          />
-          {{ opcion.rotulo }}
-        </label>
-      }
-      <p class="ayuda">Sin ninguno marcado se muestran todos.</p>
-    </fieldset>
-    <div class="timeline__fechas">
-      <div class="campo">
-        <label for="timeline-desde">Desde el dia</label>
-        <input
-          id="timeline-desde"
-          type="date"
-          [value]="desde()"
-          [attr.aria-invalid]="rangoInvalido()"
-          [attr.aria-describedby]="rangoInvalido() ? 'timeline-rango-error' : null"
-          (change)="desde.set($any($event.target).value)"
-        />
-      </div>
-      <div class="campo">
-        <label for="timeline-hasta">Hasta el dia (inclusive)</label>
-        <input
-          id="timeline-hasta"
-          type="date"
-          [value]="hasta()"
-          [attr.aria-invalid]="rangoInvalido()"
-          [attr.aria-describedby]="rangoInvalido() ? 'timeline-rango-error' : null"
-          (change)="hasta.set($any($event.target).value)"
-        />
-      </div>
-    </div>
-    @if (rangoInvalido()) {
-      <p id="timeline-rango-error" class="campo__error" role="alert">
-        "Desde" tiene que ser el mismo dia que "Hasta" o uno anterior.
+  <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
+    <h2 id="titulo-timeline">Timeline clínico</h2>
+    <app-ayuda titulo="Timeline clinico">
+      <p>
+        Del hecho mas reciente al mas antiguo. Cada fila es un indice: el contenido se abre al
+        elegirla, y esa lectura queda registrada.
       </p>
-    }
-    @if (hayFiltros()) {
-      <div class="acciones">
-        <button type="button" class="boton boton--secundario" (click)="limpiarFiltros()">
-          Quitar los filtros
-        </button>
+    </app-ayuda>
+  </div>
+
+  <!--
+    Regla de filtros (plan §3.4): el timeline no tiene busqueda por texto en el backend, asi que
+    caso, origen y fechas van solos detras del embudo.
+  -->
+  <app-filtros [soloAvanzados]="true" [activos]="filtrosAvanzadosActivos()">
+    @if (casos().length > 0) {
+      <div class="campo">
+        <label for="timeline-caso">Caso clínico</label>
+        <select
+          id="timeline-caso"
+          [value]="casoId() === null ? '' : casoId()"
+          (change)="filtrarPorCaso($any($event.target).value)"
+        >
+          <option value="">Todos los hechos de la historia</option>
+          @for (opcion of opcionesDeCaso(); track opcion.id) {
+            <option [value]="opcion.id">{{ opcion.rotulo }}</option>
+          }
+        </select>
       </div>
     }
-  </div>
+
+    <div class="timeline__filtros">
+      <fieldset class="timeline__origenes">
+        <legend>Que hechos mostrar</legend>
+        @for (opcion of opcionesDeOrigen; track opcion.valor) {
+          <label class="timeline__origen-opcion">
+            <input
+              type="checkbox"
+              [checked]="incluyeOrigen(opcion.valor)"
+              (change)="alternarOrigen(opcion.valor, $any($event.target).checked)"
+            />
+            {{ opcion.rotulo }}
+          </label>
+        }
+        <p class="ayuda">Sin ninguno marcado se muestran todos.</p>
+      </fieldset>
+      <div class="timeline__fechas">
+        <div class="campo">
+          <label for="timeline-desde">Desde el día</label>
+          <input
+            id="timeline-desde"
+            type="date"
+            [value]="desde()"
+            [attr.aria-invalid]="rangoInvalido()"
+            [attr.aria-describedby]="rangoInvalido() ? 'timeline-rango-error' : null"
+            (change)="desde.set($any($event.target).value)"
+          />
+        </div>
+        <div class="campo">
+          <label for="timeline-hasta">Hasta el día (inclusive)</label>
+          <input
+            id="timeline-hasta"
+            type="date"
+            [value]="hasta()"
+            [attr.aria-invalid]="rangoInvalido()"
+            [attr.aria-describedby]="rangoInvalido() ? 'timeline-rango-error' : null"
+            (change)="hasta.set($any($event.target).value)"
+          />
+        </div>
+      </div>
+      @if (rangoInvalido()) {
+        <p id="timeline-rango-error" class="campo__error" role="alert">
+          "Desde" tiene que ser el mismo día que "Hasta" o uno anterior.
+        </p>
+      }
+      @if (hayFiltros()) {
+        <div class="acciones">
+          <button type="button" class="boton boton--secundario" (click)="limpiarFiltros()">
+            Quitar los filtros
+          </button>
+        </div>
+      }
+    </div>
+  </app-filtros>
 
   <p class="visualmente-oculto" aria-live="polite">{{ aviso() }}</p>
 
@@ -97,15 +106,15 @@
         @if (eventos().length === 0) {
           <p class="estado estado--vacio">
             @if (hayFiltros()) {
-              Ningun hecho clinico coincide con los filtros.
+              Ningún hecho clínico coincide con los filtros.
             } @else if (casoId() === null) {
-              Todavia no hay hechos clinicos registrados en esta historia.
+              Todavía no hay hechos clínicos registrados en esta historia.
             } @else {
-              Este caso todavia no tiene hechos clinicos.
+              Este caso todavía no tiene hechos clínicos.
             }
           </p>
         } @else {
-          <ol class="timeline" aria-label="Hechos clinicos, del mas reciente al mas antiguo">
+          <ol class="timeline" aria-label="Hechos clínicos, del mas reciente al mas antiguo">
             @for (fila of filas(); track fila.clave) {
               <li class="timeline__hecho">
                 @if (fila.conDetalle) {

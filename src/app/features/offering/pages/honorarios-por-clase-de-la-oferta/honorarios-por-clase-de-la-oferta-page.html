@@ -1,46 +1,54 @@
-<h1>Honorarios por clase de la oferta</h1>
+<nav class="migas" aria-label="Ruta">
+  <a routerLink="/servicios/ofertas">Ofertas de la sede</a>
+  <span aria-hidden="true">/</span>
+</nav>
+
+<div class="titulo-con-ayuda">
+  <h1>Honorarios por clase de la oferta</h1>
+  <app-ayuda titulo="Sobre esta pantalla">
+    <p>
+      Cuanto cobran los instructores de esta oferta por cada participante presente en una clase, por
+      periodo.
+    </p>
+    <p class="ayuda-contextual__subtitulo">
+      Por participante presente, repartido entre los instructores
+    </p>
+    <p>
+      Una clase vale la tarifa por la cantidad de participantes <b>presentes</b> (incluida la
+      llegada tarde). Si la clase tuvo instructores adicionales, ese total se reparte
+      <b>en partes iguales</b>
+      entre todos. Rige la tarifa vigente el día de la clase; una clase sin tarifa no entra en
+      ninguna liquidación.
+    </p>
+    <p>
+      Para <b>cambiar la tarifa</b>, cerrale la vigencia a la actual el día anterior y carga la
+      nueva. El importe no se edita: si una carga estaba mal, dala de baja y volvela a cargar. Lo ya
+      liquidado guardo su importe y no cambia.
+    </p>
+  </app-ayuda>
+  <div class="encabezado__acciones">
+    <a class="boton boton--secundario" routerLink="/egresos/honorarios">Liquidar honorarios</a>
+    <button type="button" class="boton" (click)="abrirAlta()">
+      <app-icono nombre="agregar" />
+      Cargar una tarifa
+    </button>
+  </div>
+</div>
 
 @if (oferta(); as detalle) {
   <p class="descripcion">
     Cuanto cobran los instructores de <b>{{ detalle.nombreComercial }}</b> por cada participante
     presente en una clase, por periodo.
   </p>
-} @else {
-  <p class="descripcion">
-    Cuanto cobran los instructores de esta oferta por cada participante presente en una clase, por
-    periodo.
-  </p>
-}
+} @else {}
 
-<nav class="acciones" aria-label="Servicios y ofertas">
-  <a class="boton boton--secundario" routerLink="/servicios/ofertas">Ofertas de la sede</a>
-  <a class="boton boton--secundario" routerLink="/egresos/honorarios">Liquidar honorarios</a>
-</nav>
-
-<section class="tarjeta nota-clave" aria-labelledby="titulo-nota-honorarios">
-  <h2 id="titulo-nota-honorarios">Por participante presente, repartido entre los instructores</h2>
-  <p>
-    Una clase vale la tarifa por la cantidad de participantes <b>presentes</b> (incluida la llegada
-    tarde). Si la clase tuvo instructores adicionales, ese total se reparte <b>en partes iguales</b>
-    entre todos. Rige la tarifa vigente el dia de la clase; una clase sin tarifa no entra en ninguna
-    liquidacion.
-  </p>
-  <p>
-    Para <b>cambiar la tarifa</b>, cerrale la vigencia a la actual el dia anterior y carga la nueva.
-    El importe no se edita: si una carga estaba mal, dala de baja y volvela a cargar. Lo ya
-    liquidado guardo su importe y no cambia.
-  </p>
-</section>
+<app-pestanas [pestanas]="pestanasDeOferta" [etiqueta]="etiquetaDePestanas" />
 
 <div aria-live="polite">
   @if (exito(); as mensaje) {
     <p class="estado estado--ok">{{ mensaje }}</p>
   }
 </div>
-
-<p class="acciones">
-  <button type="button" class="boton" (click)="abrirAlta()">Cargar una tarifa</button>
-</p>
 
 @if (altaAbierta()) {
   <section class="tarjeta" aria-labelledby="titulo-alta-honorario">
@@ -83,7 +91,7 @@
           </p>
         }
         <p class="ayuda" id="alta-honorario-moneda-ayuda">
-          Codigo de tres letras (ARS, USD). Se propone la del precio de lista de la oferta.
+          Código de tres letras (ARS, USD). Se propone la del precio de lista de la oferta.
         </p>
       </div>
 
@@ -110,7 +118,7 @@
             aria-describedby="alta-honorario-hasta-ayuda"
           />
           <p class="ayuda" id="alta-honorario-hasta-ayuda">
-            Es el <b>ultimo dia</b> en que rige, inclusive. Vacio, no tiene fin previsto.
+            Es el <b>último día</b> en que rige, inclusive. Vacío, no tiene fin previsto.
           </p>
         </div>
       </div>
@@ -146,7 +154,7 @@
       }
 
       @case ('sin-contexto') {
-        <p class="estado estado--vacio">Todavia no elegiste un consultorio.</p>
+        <p class="estado estado--vacio">Todavía no elegiste un consultorio.</p>
         <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
       }
 
@@ -162,25 +170,27 @@
       @case ('listo') {
         @if (tarifas().length === 0) {
           <p class="estado estado--vacio">
-            Esta oferta no tiene tarifas de honorario: sus clases no entran en ninguna liquidacion.
+            Esta oferta no tiene tarifas de honorario: sus clases no entran en ninguna liquidación.
           </p>
         } @else {
           <div class="tabla-scroll" tabindex="0" role="region" aria-label="Tarifas de honorario">
             <table class="tabla">
               <caption class="visualmente-oculto">
                 Tarifas de honorario de la oferta, con su importe por participante, su vigencia, la
-                situacion y las acciones.
+                situación y las acciones.
               </caption>
               <thead>
                 <tr>
-                  <th scope="col">Por participante</th>
-                  <th scope="col">Vigencia</th>
-                  <th scope="col">Situacion</th>
+                  <th scope="col" appOrdenable [tabla]="tabla" columna="importe">
+                    Por participante
+                  </th>
+                  <th scope="col" appOrdenable [tabla]="tabla" columna="vigencia">Vigencia</th>
+                  <th scope="col">Situación</th>
                   <th scope="col">Acciones</th>
                 </tr>
               </thead>
               <tbody>
-                @for (tarifa of tarifas(); track tarifa.id) {
+                @for (tarifa of tabla.visibles(); track tarifa.id) {
                   @let situacionDeLaFila = situacion(tarifa);
                   <tr
                     [class.fila--revocada]="tarifa.estado === 'INACTIVO'"
@@ -228,7 +238,7 @@
                               aria-describedby="fin-honorario-hasta-ayuda"
                             />
                             <p class="ayuda" id="fin-honorario-hasta-ayuda">
-                              Ultimo dia en que rige, inclusive. <b>Vacio, se reabre</b> y queda sin
+                              Último día en que rige, inclusive. <b>Vacío, se reabre</b> y queda sin
                               fin previsto. Extenderla puede chocar con otra tarifa de la oferta.
                             </p>
                           </div>
@@ -287,6 +297,16 @@
                 }
               </tbody>
             </table>
+          </div>
+
+          <div class="tabla-pie">
+            <span>{{ tabla.total() }} tarifas</span>
+            <app-paginacion
+              [paginaActual]="tabla.pagina()"
+              [totalPaginas]="tabla.totalPaginas()"
+              etiqueta="Paginas de tarifas"
+              (cambioDePagina)="tabla.irA($event)"
+            />
           </div>
         }
       }

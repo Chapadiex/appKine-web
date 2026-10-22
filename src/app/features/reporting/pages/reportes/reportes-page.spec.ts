@@ -18,7 +18,7 @@ const CATALOGO = {
       reporte: 'OPERATIVO',
       secciones: [
         { seccion: 'turnos', titulo: 'Turnos', permisoRequerido: 'turno:read', clinica: false },
-        { seccion: 'casos', titulo: 'Casos clinicos', permisoRequerido: 'hc:read', clinica: true },
+        { seccion: 'casos', titulo: 'Casos clínicos', permisoRequerido: 'hc:read', clinica: true },
       ],
     },
     { reporte: 'TURNOS', secciones: [] },
@@ -93,7 +93,7 @@ describe('ReportesPage', () => {
     expect(texto).toContain('M12 turno');
     expect(texto).toContain('inicio del turno, en la zona de la sede');
     expect(texto).toContain('ATENDIDO');
-    expect(texto).toContain('Casos clinicos: hace falta leer historia clinica (hc:read)');
+    expect(texto).toContain('Casos clínicos: hace falta leer historia clínica (hc:read)');
     expect(texto).toContain('Ves solo tu propia actividad');
     expect(texto).toContain('Los ausentes cuentan aparte');
     expect(texto).not.toContain('Solo lo tuyo');
@@ -101,7 +101,7 @@ describe('ReportesPage', () => {
   });
 
   it(
-    'rentabilidad y caja por servicio (DP-39): importes legibles, una columna por medio y la advertencia en su seccion',
+    'rentabilidad y caja por servicio (DP-39): importes legibles, una columna por medio y la advertencia en su sección',
     async () => {
       const fixture = await montar();
       escribir(fixture, '#reporte-desde', '2026-09-01');
@@ -141,7 +141,7 @@ describe('ReportesPage', () => {
           {
             seccion: 'rentabilidad-por-servicio',
             codigo: 'rentabilidad-sin-costos',
-            detalle: 'Ningun egreso del periodo esta imputado a un servicio',
+            detalle: 'Ningún egreso del periodo esta imputado a un servicio',
           },
           { codigo: 'general', detalle: 'Aviso de todo el reporte' },
         ],
@@ -163,8 +163,8 @@ describe('ReportesPage', () => {
       const rentabilidad = secciones.find((x) =>
         (x.textContent ?? '').includes('Rentabilidad por servicio'),
       )!;
-      expect(rentabilidad.textContent).toContain('Ningun egreso del periodo esta imputado');
-      expect(texto.match(/Ningun egreso del periodo/g)?.length).toBe(1);
+      expect(rentabilidad.textContent).toContain('Ningún egreso del periodo esta imputado');
+      expect(texto.match(/Ningún egreso del periodo/g)?.length).toBe(1);
       expect(texto).toContain('Aviso de todo el reporte');
       await esperarSinViolaciones(html);
     },
@@ -188,7 +188,7 @@ describe('ReportesPage', () => {
     escribir(fixture, '#reporte-desde', '2024-01-01');
     escribir(fixture, '#reporte-hasta', '2026-01-01');
     enviar(fixture);
-    expect(contenido(fixture)).toContain('como maximo 366');
+    expect(contenido(fixture)).toContain('como máximo 366');
 
     httpMock.expectNone((p) => p.url.startsWith(`${BASE}/`));
   });
@@ -202,14 +202,14 @@ describe('ReportesPage', () => {
     httpMock.expectOne(`${BASE}/OPERATIVO?desde=2026-09-01&hasta=2026-09-30`).flush(
       {
         type: 'https://akine.app/problems/rango-de-reporte-invalido',
-        detail: 'El periodo pedido son 400 dias y el maximo es 366',
+        detail: 'El periodo pedido son 400 días y el máximo es 366',
         maximoDias: 366,
       },
       { status: 400, statusText: 'Bad Request' },
     );
     await estabilizar(fixture);
 
-    expect(contenido(fixture)).toContain('El periodo pedido son 400 dias y el maximo es 366');
+    expect(contenido(fixture)).toContain('El periodo pedido son 400 días y el máximo es 366');
   });
 
   it('descarga el CSV pidiendolo como text/csv y con el periodo del reporte', async () => {

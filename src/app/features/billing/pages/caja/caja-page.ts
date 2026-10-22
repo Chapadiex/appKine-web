@@ -33,6 +33,7 @@ import {
 } from '../../models/etiquetas-de-cobro';
 import { fechaEnPalabras, importeEnPalabras } from '../../models/etiquetas-de-obligacion';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 
 type EstadoCaja =
   | { readonly tipo: 'cargando' }
@@ -76,9 +77,9 @@ const PAGINA_DE_MOVIMIENTOS = 50;
  */
 @Component({
   selector: 'app-caja-page',
-  imports: [RouterLink],
+  imports: [Ayuda, RouterLink],
   templateUrl: './caja-page.html',
-  styleUrl: '../../billing.css',
+  styleUrls: ['../../billing.css', '../../economia.css'],
 })
 export class CajaPage {
   private readonly diaDeLaSede = inject(DiaDeLaSede);
@@ -221,7 +222,7 @@ export class CajaPage {
         tipo: 'error',
         mensaje:
           'Para operar la caja hay que saber en que sede estas: cada consultorio tiene su cajon. ' +
-          'Eligi una organizacion y un consultorio, y volve a entrar. Tu sesion sigue abierta.',
+          'Eligi una organización y un consultorio, y volvé a entrar. Tu sesión sigue abierta.',
         faltaContexto: true,
       });
       return;

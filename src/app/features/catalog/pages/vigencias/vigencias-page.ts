@@ -27,6 +27,11 @@ import { aInstanteUtc, formatearInstante } from '../../../../shared/utils/instan
 import { textoRequerido } from '../../../../shared/validators/texto-requerido';
 import { numeroDeclarado } from '../../../../shared/utils/numero-declarado';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
+import { Filtros } from '../../../../shared/components/filtros/filtros';
+import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
+import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
+import { Icono } from '../../../../shared/components/icono/icono';
 
 /** Filtro de estado del listado. Los tres valores son los del contrato. */
 type FiltroEstado = 'ACTIVO' | 'INACTIVO' | 'TODOS';
@@ -68,7 +73,16 @@ const TOPE_DE_PRACTICAS = 100;
  */
 @Component({
   selector: 'app-vigencias-page',
-  imports: [ReactiveFormsModule, RouterLink, PermisoDirective, ConfirmacionConMotivo],
+  imports: [
+    ColumnaOrdenable,
+    Paginacion,
+    Filtros,
+    Icono,
+    ReactiveFormsModule,
+    RouterLink,
+    PermisoDirective,
+    ConfirmacionConMotivo,
+  ],
   templateUrl: './vigencias-page.html',
   styleUrl: '../../catalog.css',
 })
@@ -92,6 +106,11 @@ export class VigenciasPage {
 
   protected readonly filtroEstado = signal<FiltroEstado>('ACTIVO');
   protected readonly filtroCodigo = signal('');
+
+  /** Cuantos filtros del embudo estan fuera de su valor por defecto: el boton los cuenta. */
+  protected readonly filtrosAvanzadosActivos = computed(() =>
+    Number(this.filtroEstado() !== 'ACTIVO'),
+  );
 
   /** Practicas activas, para el selector del alta. Ver {@link cargarPracticas}. */
   protected readonly practicas = signal<readonly CatalogoConceptoResponse[]>([]);
@@ -121,6 +140,18 @@ export class VigenciasPage {
   protected readonly vigencias = computed(() => {
     const actual = this.estado();
     return actual.tipo === 'listo' ? actual.vigencias : [];
+  });
+
+  /** Orden y paginado de la lista completa (plan Â§3.4): el servidor no pagina vigencias. */
+  protected readonly tabla = tablaLocal(this.vigencias, {
+    columnas: {
+      codigo: (vigencia) => vigencia.codigo,
+      nombre: (vigencia) => vigencia.name,
+      practica: (vigencia) => this.nombreDePractica(vigencia),
+      valor: (vigencia) => vigencia.valorReferencia,
+      ventana: (vigencia) => vigencia.validFrom,
+      estado: (vigencia) => vigencia.estado,
+    },
   });
 
   protected readonly mensajeError = computed(() => {
@@ -189,7 +220,7 @@ export class VigenciasPage {
       this.estado.set({
         tipo: 'error',
         mensaje:
-          'La direccion que abriste no apunta a ningun nomenclador. Volve al catalogo y entra ' +
+          'La dirección que abriste no apunta a ningún nomenclador. Volvé al catalogo y entra ' +
           'desde el listado.',
         faltaContexto: false,
       });
@@ -341,7 +372,7 @@ export class VigenciasPage {
         next: () => {
           this.cerrarPaneles();
           this.exito.set(
-            'La vigencia quedo cargada. Las anteriores del mismo codigo no se tocaron: lo que se ' +
+            'La vigencia quedo cargada. Las anteriores del mismo código no se tocaron: lo que se ' +
               'presento con ellas sigue resolviendo con el valor que tenia entonces.',
           );
           this.cargar();
@@ -380,7 +411,7 @@ export class VigenciasPage {
           this.cerrarPaneles();
           this.exito.set(
             'La vigencia quedo dada de baja. Sigue en el listado, con su motivo, y lo que ya se ' +
-              'presento con ella conserva el codigo y el valor que tenia.',
+              'presento con ella conserva el código y el valor que tenia.',
           );
           this.cargar();
         },

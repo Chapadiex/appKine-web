@@ -37,10 +37,10 @@ describe('PoliticaDeEnmiendaPage', () => {
   afterEach(() => httpMock.verify());
 
   it(
-    'la politica por defecto se fija con version nula',
+    'la politica por defecto se fija con versión nula',
     async () => {
       const fixture = await montar({ ventanaDias: 30, porDefecto: true });
-      expect(texto(fixture)).toContain('30 dias');
+      expect(texto(fixture)).toContain('30 días');
       expect(texto(fixture)).toContain('valor por defecto');
       await esperarSinViolaciones(fixture.nativeElement);
 
@@ -50,12 +50,22 @@ describe('PoliticaDeEnmiendaPage', () => {
       expect(pedido.request.body).toEqual({ ventanaDias: 60 });
       pedido.flush({ ventanaDias: 60, porDefecto: false, version: 0 });
       await estabilizar(fixture);
-      expect(texto(fixture)).toContain('durante 60 dias');
+      expect(texto(fixture)).toContain('durante 60 días');
     },
     TIMEOUT_AXE,
   );
 
-  it('achicar la ventana avisa que alcanza a las cerradas y manda la version', async () => {
+  it('el ejemplo "Así se aplica" sigue los días escritos', async () => {
+    const fixture = await montar({ ventanaDias: 30, porDefecto: true });
+    expect(texto(fixture)).toContain('Así se aplica');
+    expect(texto(fixture)).toContain('Hasta 30 días después');
+    escribir(fixture, '1');
+    expect(texto(fixture)).toContain('Hasta 1 día después');
+    escribir(fixture, '0');
+    expect(texto(fixture)).toContain('Indicá los días para ver cómo se aplica');
+  });
+
+  it('achicar la ventana avisa que alcanza a las cerradas y manda la versión', async () => {
     const fixture = await montar({ ventanaDias: 60, porDefecto: false, version: 2 });
     escribir(fixture, '10');
     expect(texto(fixture)).toContain('alcanza a las sesiones ya cerradas');
@@ -69,18 +79,18 @@ describe('PoliticaDeEnmiendaPage', () => {
     await estabilizar(fixture);
     httpMock.expectOne((p) => p.method === 'GET').flush({ ventanaDias: 45, version: 3 });
     await estabilizar(fixture);
-    expect(texto(fixture)).toContain('45 dias');
+    expect(texto(fixture)).toContain('45 días');
   });
 
   it('fuera de rango no deja guardar', async () => {
     const fixture = await montar({ ventanaDias: 30, porDefecto: true });
     escribir(fixture, '4000');
-    expect(texto(fixture)).toContain('Indica un numero entero');
+    expect(texto(fixture)).toContain('Indicá un número entero');
     enviar(fixture);
     httpMock.expectNone((p) => p.method === 'PUT');
   });
 
-  it('el 403 explica que es del administrador de la organizacion', async () => {
+  it('el 403 explica que es del administrador de la organización', async () => {
     const fixture = TestBed.createComponent(PoliticaDeEnmiendaPage);
     fixture.detectChanges();
     httpMock
@@ -90,7 +100,7 @@ describe('PoliticaDeEnmiendaPage', () => {
         { status: 403, statusText: 'Forbidden' },
       );
     await estabilizar(fixture);
-    expect(texto(fixture)).toContain('quien administra la organizacion');
+    expect(texto(fixture)).toContain('quien administra la organización');
     (
       Array.from(
         fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>,

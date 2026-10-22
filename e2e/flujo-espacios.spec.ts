@@ -1,4 +1,5 @@
 import { expect, ingresar, navegar, problemaDe, respuestaDe, test } from './support/agenda-real';
+import { abrirFiltros } from './support/filtros';
 import { nonce } from './support/akine';
 import {
   crearOferta,
@@ -72,7 +73,7 @@ test.describe('Espacios y boxes contra el backend real', () => {
     expect(problema.type).toBe(uriDeProblema('espacio-has-active-references'));
     expect(problema['referenceCount']).toBe(1);
     await expect(page.getByRole('alert')).toContainText(
-      'No se puede dar de baja este espacio porque todavia tiene 1 turno pendiente',
+      'No se puede dar de baja este espacio porque todavía tiene 1 turno pendiente',
     );
 
     // --- Resuelto el turno, la baja pasa y el box queda en el historico con su motivo ---
@@ -86,6 +87,7 @@ test.describe('Espacios y boxes contra el backend real', () => {
     expect((await baja).status()).toBe(200);
     await expect(fila).toHaveCount(0);
 
+    await abrirFiltros(page);
     await page.getByLabel('Mostrar').selectOption({ label: 'Solo los dados de baja' });
     const historico = page.getByRole('row').filter({ hasText: nombre });
     await expect(historico).toBeVisible();

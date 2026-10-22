@@ -35,7 +35,7 @@ const EL_CONVENIO = {
   version: 2,
 };
 
-const PRACTICA = { id: 55, codigo: 'KIN-01', name: 'Sesion de kinesiologia', tipo: 'PRACTICA' };
+const PRACTICA = { id: 55, codigo: 'KIN-01', name: 'Sesión de kinesiologia', tipo: 'PRACTICA' };
 
 /** Admite obra social y declara la practica 55: es candidata para un arancel por oferta. */
 const PILATES = {
@@ -154,7 +154,7 @@ describe('ArancelesDelConvenioPage', () => {
     // Sin esta explicacion alguien edita el importe para "actualizarlo" y borra el rastro del
     // precio anterior. No falla nada: la historia simplemente deja de existir.
     expect(texto).toContain('Subir un precio no es editar el arancel');
-    expect(texto).toContain('cerrale la vigencia al arancel actual y carga otro');
+    expect(texto).toContain('cerrale la vigencia al arancel actual y cargá otro');
     // Y la regla economica, que no tiene porcentaje a proposito.
     expect(texto).toContain('financiador + coseguro = total');
   });
@@ -286,7 +286,7 @@ describe('ArancelesDelConvenioPage', () => {
     );
   });
 
-  it('el alta sin practica ni importes no manda nada', async () => {
+  it('el alta sin práctica ni importes no manda nada', async () => {
     const fixture = await montar();
 
     abrir(fixture, 'Cargar un arancel');
@@ -294,7 +294,7 @@ describe('ArancelesDelConvenioPage', () => {
 
     httpMock.expectNone((peticion: HttpRequest<unknown>) => peticion.method === 'POST');
     const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
-    expect(texto).toContain('Eligi a que practica');
+    expect(texto).toContain('Elegí a qué práctica');
     expect(texto).toContain('El importe total es obligatorio');
   });
 
@@ -369,7 +369,7 @@ describe('ArancelesDelConvenioPage', () => {
 
     abrir(fixture, 'Dar de baja');
     const panel = (fixture.nativeElement as HTMLElement).querySelector('tr.fila-panel');
-    expect(panel?.textContent).toContain('Libera el PERIODO');
+    expect(panel?.textContent).toContain('Libera el PERÍODO');
 
     escribir(fixture, '#baja-arancel-motivo', 'Se cargo con el precio equivocado');
     const confirmar = [
@@ -389,7 +389,7 @@ describe('ArancelesDelConvenioPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect((fixture.nativeElement as HTMLElement).textContent).toContain('su periodo quedo libre');
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('su período quedó libre');
   });
 
   it('el 409 de solapamiento no ofrece recargar la grilla', async () => {
@@ -421,7 +421,7 @@ describe('ArancelesDelConvenioPage', () => {
     ).toBe(false);
   });
 
-  it('el filtro y la fecha recargan, y el vacio explica que el convenio no resuelve nada', async () => {
+  it('el filtro y la fecha recargan, y el vacío explica que el convenio no resuelve nada', async () => {
     const fixture = await montar();
 
     cambiarSelect(fixture, '#filtro-estado-arancel', 'INACTIVO');
@@ -435,7 +435,7 @@ describe('ArancelesDelConvenioPage', () => {
     fixture.detectChanges();
 
     expect((fixture.nativeElement as HTMLElement).textContent).toContain(
-      'no resuelve ningun precio',
+      'no resuelve ningún precio',
     );
 
     cambiarSelect(fixture, '#filtro-fecha-arancel', '2025-09-10');
@@ -463,10 +463,10 @@ describe('ArancelesDelConvenioPage', () => {
       ),
     ).toBe(false);
     // Y las filas siguen ahi: hay que poder verlas para explicar una liquidacion vieja.
-    expect(texto).toContain('Sesion de kinesiologia');
+    expect(texto).toContain('Sesión de kinesiologia');
   });
 
-  it('el arancel por oferta: solo ofrece las ofertas que admiten obra social y declaran la practica', async () => {
+  it('el arancel por oferta: solo ofrece las ofertas que admiten obra social y declaran la práctica', async () => {
     const fixture = await montar();
     const filas = (fixture.nativeElement as HTMLElement).querySelectorAll('tbody tr');
     expect((filas[0] as HTMLElement).textContent).toContain('General del convenio');
@@ -507,7 +507,7 @@ describe('ArancelesDelConvenioPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
     expect((fixture.nativeElement as HTMLElement).textContent).toContain(
-      'Esa oferta no declara la practica de este arancel',
+      'Esa oferta no declara la práctica de este arancel',
     );
   });
 
@@ -632,7 +632,7 @@ function abrir(fixture: { nativeElement: HTMLElement; detectChanges(): void }, e
     (candidato) => (candidato.textContent ?? '').trim() === etiqueta,
   );
   if (boton === undefined) {
-    throw new Error(`No existe el boton ${etiqueta}`);
+    throw new Error(`No existe el botón ${etiqueta}`);
   }
   boton.click();
   fixture.detectChanges();

@@ -35,7 +35,7 @@ describe('textoSinSlots', () => {
     expect(textos.every((texto) => texto.length > 0)).toBe(true);
   });
 
-  it('el dia vacio sin motivo tampoco queda en blanco', () => {
+  it('el día vacío sin motivo tampoco queda en blanco', () => {
     // El contrato promete que nunca pasa. Si pasara, un espacio vacio es indistinguible de un
     // error del sistema, que es justamente lo que la etapa existe para evitar.
     expect(textoSinSlots({ fecha: '2026-09-15' })).toContain('no dijo por que');
@@ -81,7 +81,7 @@ describe('textoDeCupo', () => {
 });
 
 describe('rangoEnZona y fechaEnPalabras', () => {
-  it('arman el rango y la fecha sin correrse de dia', () => {
+  it('arman el rango y la fecha sin correrse de día', () => {
     expect(rangoEnZona({ desde: INSTANTE, hasta: '2026-09-15T12:45:00Z' }, ZONA)).toBe(
       '09:00 a 09:45',
     );
@@ -109,12 +109,12 @@ describe('sumarDias', () => {
 describe('hoyEnZona', () => {
   const NOCHE_EN_CORDOBA = new Date('2026-10-10T00:25:00Z');
 
-  it('da el dia de la sede aunque en UTC ya sea el dia siguiente', () => {
+  it('da el día de la sede aunque en UTC ya sea el día siguiente', () => {
     expect(hoyEnZona(ZONA, NOCHE_EN_CORDOBA)).toBe('2026-10-09');
     expect(hoyEnZona('UTC', NOCHE_EN_CORDOBA)).toBe('2026-10-10');
   });
 
-  it('sin zona, o con una que el navegador no conoce, cae al dia del navegador', () => {
+  it('sin zona, o con una que el navegador no conoce, cae al día del navegador', () => {
     expect(hoyEnZona('', NOCHE_EN_CORDOBA)).toBe(hoy(NOCHE_EN_CORDOBA));
     expect(hoyEnZona('Marte/Olympus_Mons', NOCHE_EN_CORDOBA)).toBe(hoy(NOCHE_EN_CORDOBA));
   });

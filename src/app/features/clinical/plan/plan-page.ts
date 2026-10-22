@@ -30,6 +30,7 @@ import { VisitaClinica } from '../services/visita-clinica';
 import { advertenciasDelPlan, vigenciaDeAutorizacion } from './advertencias-del-plan';
 import { PlanApi } from './plan-api';
 import { ErrorPlan, errorDeCausaPlan, traducirErrorPlan } from './plan-errors';
+import { Ayuda } from '../../../shared/components/ayuda/ayuda';
 
 /** Una fila del editor. Texto mientras se escribe; se valida y convierte al guardar. */
 interface FilaDeItem {
@@ -59,7 +60,7 @@ type Editor = { readonly modo: 'crear' } | { readonly modo: 'modificar'; readonl
  */
 @Component({
   selector: 'app-plan-page',
-  imports: [RouterLink, PedidoDeMotivo],
+  imports: [Ayuda, RouterLink, PedidoDeMotivo],
   templateUrl: './plan-page.html',
   styleUrl: '../pages/historia-clinica/historia-clinica.css',
 })
@@ -169,7 +170,7 @@ export class PlanPage {
   protected resumenDeAvance(item: AvanceDeItem): string {
     const autorizadas =
       item.autorizadas === undefined || item.autorizadas === null
-        ? 'sin autorizacion declarada'
+        ? 'sin autorización declarada'
         : `${item.autorizadas} autorizadas`;
     return (
       `${item.realizadas ?? 0} de ${item.planificadas ?? 0} realizadas · ${autorizadas} · ` +
@@ -270,7 +271,7 @@ export class PlanPage {
       ),
       plan?.estado === 'BORRADOR'
         ? 'Se guardo el borrador.'
-        : 'Se guardo una version nueva del plan. La anterior sigue consultable.',
+        : 'Se guardo una versión nueva del plan. La anterior sigue consultable.',
     );
   }
 

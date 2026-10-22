@@ -1,11 +1,36 @@
-<h1>Serie de turnos</h1>
-
-<p class="descripcion">
-  La regla con la que se genero la serie y sus turnos tal como estan hoy. Cada turno es propio: se
-  puede cancelar o mover solo, o junto con los demas.
-</p>
-
-<p><a class="enlace" routerLink="/agenda">Volver al buscador de agenda</a></p>
+<div class="titulo-con-ayuda">
+  <a class="miga" routerLink="/agenda/series">Series de turnos</a>
+  <span class="miga__separador" aria-hidden="true">/</span>
+  <h1>Serie de turnos</h1>
+  <app-ayuda titulo="Sobre esta pantalla">
+    <p>
+      La regla con la que se generó la serie y sus turnos tal como están hoy. Cada turno es propio:
+      se puede cancelar o mover solo, o junto con los demás.
+    </p>
+    <p>
+      Desde cada fila se reprograma o se cancela un turno puntual, o ese turno y los siguientes.
+      «Ver o mover» abre el ciclo del turno. Cancelar no borra nada: cada turno queda con su motivo
+      y su historial.
+    </p>
+  </app-ayuda>
+  <!-- Las acciones de la serie entera, en la fila del titulo (plan §3.1). -->
+  @if (serie() && puedeOperar()) {
+    <div class="encabezado__acciones">
+      @if (primerPendiente(); as pivote) {
+        <button
+          type="button"
+          class="boton boton--secundario"
+          (click)="reprogramarDesde(pivote, Alcance.TODA_LA_SERIE)"
+        >
+          Reprogramar toda la serie
+        </button>
+      }
+      <button type="button" class="boton boton--secundario" (click)="elegir(Alcance.TODA_LA_SERIE)">
+        Cancelar toda la serie
+      </button>
+    </div>
+  }
+</div>
 
 @if (cargando()) {
   <p class="estado estado--cargando">Leyendo la serie…</p>
@@ -15,7 +40,7 @@
   @if (resultado(); as hecho) {
     <p class="estado estado--ok">
       @if (hecho.operacion === 'reprogramar') {
-        Se movieron {{ hecho.alcance.afectados?.length ?? 0 }} turnos. Cada uno conserva su numero,
+        Se movieron {{ hecho.alcance.afectados?.length ?? 0 }} turnos. Cada uno conserva su número,
         su paciente y su historial, y vuelve a quedar reservado.
       } @else {
         Se cancelaron {{ hecho.alcance.afectados?.length ?? 0 }} turnos.
@@ -28,7 +53,7 @@
 
   @if (error(); as fallo) {
     <section class="tarjeta conflicto" aria-labelledby="titulo-conflicto-serie">
-      <h2 id="titulo-conflicto-serie">No se pudo completar la operacion</h2>
+      <h2 id="titulo-conflicto-serie">No se pudo completar la operación</h2>
       <p class="estado estado--error">{{ fallo.mensaje }}</p>
       @if (fallo.accion === 'releer-alcance' && pedido() !== null) {
         <div class="acciones">
@@ -47,56 +72,58 @@
 </div>
 
 @if (serie(); as actual) {
-  <section class="tarjeta" aria-labelledby="titulo-regla-serie">
-    <h2 id="titulo-regla-serie">Regla</h2>
-    <dl class="detalle">
-      <dt>Dias</dt>
-      <dd>{{ textoDeDias(actual.diasSemana) }}</dd>
-      <dt>Hora</dt>
-      <dd>
-        {{ actual.hora?.slice(0, 5) }} <span class="ayuda">(zona {{ timezone() }})</span>
-      </dd>
-      <dt>Desde</dt>
-      <dd>{{ fechaEnPalabras(actual.fechaDesde) }}</dd>
-      @if (actual.cantidad) {
-        <dt>Cantidad</dt>
-        <dd>{{ actual.cantidad }} turnos</dd>
-      }
-      @if (actual.fechaHasta) {
-        <dt>Hasta</dt>
-        <dd>{{ fechaEnPalabras(actual.fechaHasta) }}</dd>
-      }
-    </dl>
-    @if ((actual.ocurrenciasOmitidas?.length ?? 0) > 0) {
+  <!-- La regla en una linea, debajo del titulo, como en el canvas. -->
+  <h2 class="visualmente-oculto" id="titulo-regla-serie">Regla</h2>
+  <ul class="datos-en-linea" aria-labelledby="titulo-regla-serie">
+    <li>
+      {{ textoDeDias(actual.diasSemana) }} {{ actual.hora?.slice(0, 5) }}
+      <span class="ayuda">(zona {{ timezone() }})</span>
+    </li>
+    <li>Desde {{ fechaEnPalabras(actual.fechaDesde) }}</li>
+    @if (actual.cantidad) {
+      <li>{{ actual.cantidad }} turnos</li>
+    }
+    @if (actual.fechaHasta) {
+      <li>Hasta {{ fechaEnPalabras(actual.fechaHasta) }}</li>
+    }
+  </ul>
+
+  <dl class="indicadores" aria-label="Avance de la serie">
+    <div>
+      <dt>Turnos</dt>
+      <dd>{{ avance().total }}</dd>
+    </div>
+    <div>
+      <dt>Pendientes</dt>
+      <dd>{{ avance().pendientes }}</dd>
+    </div>
+    <div>
+      <dt>Cancelados</dt>
+      <dd>{{ avance().cancelados }}</dd>
+    </div>
+    <div>
+      <dt>Ausencias</dt>
+      <dd>{{ avance().ausentes }}</dd>
+    </div>
+    @if (avance().ultimo; as ultimo) {
+      <div>
+        <dt>Último turno</dt>
+        <dd>{{ ultimo }}</dd>
+      </div>
+    }
+  </dl>
+
+  @if ((actual.ocurrenciasOmitidas?.length ?? 0) > 0) {
+    <section class="tarjeta" aria-labelledby="titulo-omitidas">
       <!-- U-22: las fechas que la regla producia y el alta no reservo. No son turnos. -->
-      <h3>Fechas omitidas al reservar</h3>
+      <h3 id="titulo-omitidas">Fechas omitidas al reservar</h3>
       <ul>
         @for (omitida of actual.ocurrenciasOmitidas ?? []; track omitida.inicio) {
           <li>{{ fechaHora(omitida.inicio) }} — {{ textoDeOcurrenciaOmitida(omitida.motivo) }}</li>
         }
       </ul>
-    }
-    @if (puedeOperar()) {
-      <div class="acciones">
-        @if (primerPendiente(); as pivote) {
-          <button
-            type="button"
-            class="boton boton--secundario"
-            (click)="reprogramarDesde(pivote, Alcance.TODA_LA_SERIE)"
-          >
-            Reprogramar toda la serie
-          </button>
-        }
-        <button
-          type="button"
-          class="boton boton--secundario"
-          (click)="elegir(Alcance.TODA_LA_SERIE)"
-        >
-          Cancelar toda la serie
-        </button>
-      </div>
-    }
-  </section>
+    </section>
+  }
 
   @if (reprogramacion(); as mover) {
     <section class="tarjeta" aria-labelledby="titulo-reprogramar">
@@ -116,7 +143,7 @@
       >
         <p class="ayuda">
           Se elige el horario nuevo del turno de partida. Los demas se corren lo mismo, en hora de
-          la sede: si este pasa del lunes 09:00 al martes 10:00, todos pasan un dia y una hora mas
+          la sede: si este pasa del lunes 09:00 al martes 10:00, todos pasan un día y una hora mas
           tarde. Se mueven todos o ninguno, y los que estaban confirmados vuelven a quedar
           reservados.
         </p>
@@ -144,7 +171,7 @@
           [timezone]="timezone()"
           [elegido]="instanteDestino()"
           [faltaHorario]="faltaHorario()"
-          textoFaltaHorario="Elegi el horario nuevo del turno de partida antes de mover la serie."
+          textoFaltaHorario="Elegí el horario nuevo del turno de partida antes de mover la serie."
           (diaCambiado)="cambiarDiaDestino($event)"
           (slotElegido)="elegirDestino($event)"
         />
@@ -181,7 +208,7 @@
               }
             </ul>
             @if (instanteDestino() === '') {
-              <p class="ayuda">Elegi un horario para ver a donde pasaria cada uno.</p>
+              <p class="ayuda">Elegí un horario para ver a donde pasaria cada uno.</p>
             } @else {
               <p class="ayuda">
                 El horario nuevo de cada uno es una estimacion: el servidor lo calcula y revisa que
@@ -190,7 +217,7 @@
             }
           } @else {
             <p class="estado estado--vacio">
-              No hay ningun turno pendiente en ese alcance: no hay nada que mover.
+              No hay ningún turno pendiente en ese alcance: no hay nada que mover.
             </p>
           }
 
@@ -225,7 +252,7 @@
           </ul>
         } @else {
           <p class="estado estado--vacio">
-            No hay ningun turno pendiente en ese alcance: no hay nada que cancelar.
+            No hay ningún turno pendiente en ese alcance: no hay nada que cancelar.
           </p>
         }
 
@@ -263,26 +290,41 @@
     </section>
   }
 
-  <section class="tarjeta" aria-labelledby="titulo-turnos-serie">
-    <h2 id="titulo-turnos-serie">Turnos</h2>
+  <section class="tarjeta tarjeta--plana" aria-labelledby="titulo-turnos-serie">
+    <div class="tarjeta__barra">
+      <h2 id="titulo-turnos-serie">Turnos</h2>
+    </div>
     <div class="tabla-scroll" tabindex="0" role="region" aria-label="Turnos de la serie">
       <table class="tabla">
         <caption class="visualmente-oculto">
-          Turnos de la serie, del mas temprano al mas tarde, con su estado
+          Turnos de la serie, del más temprano al más tarde, con su estado
         </caption>
         <thead>
           <tr>
+            <th scope="col">N°</th>
             <th scope="col">Fecha y hora</th>
             <th scope="col">Estado</th>
-            <th scope="col">Acciones</th>
+            <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
           </tr>
         </thead>
         <tbody>
-          @for (turno of actual.turnos ?? []; track turno.id) {
+          @for (turno of actual.turnos ?? []; track turno.id; let i = $index) {
             <tr [class.fila--revocada]="turno.estado === 'CANCELADO'">
+              <td>{{ i + 1 }}</td>
               <td>{{ fechaHora(turno.inicio) }}</td>
-              <td>{{ textoDeEstado(turno.estado) }}</td>
               <td>
+                <span
+                  class="marca-estado"
+                  [class.marca-estado--activa]="turno.estado === 'CONFIRMADO'"
+                  [class.marca-estado--suspendida]="turno.estado === 'AUSENTE'"
+                  [class.marca-estado--revocada]="turno.estado === 'CANCELADO'"
+                  >{{ nombreDeEstado(turno.estado) }}</span
+                >
+                @if (detalleDeEstado(turno.estado); as detalle) {
+                  <span class="celda-secundaria">{{ detalle }}</span>
+                }
+              </td>
+              <td class="celda-acciones">
                 <div class="acciones-fila">
                   @if (puedeOperar() && esPendiente(turno)) {
                     <button

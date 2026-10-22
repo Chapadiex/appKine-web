@@ -49,6 +49,7 @@ import { fechaIsoEnPalabras } from '../../models/etiquetas-de-presentacion';
 import { CajaApi } from '../../services/caja-api';
 import { EgresosApi } from '../../services/egresos-api';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 
 type EstadoCarga =
   | { readonly tipo: 'cargando' }
@@ -96,9 +97,9 @@ type Operacion = 'editar' | 'confirmar' | 'pagar' | 'anular' | 'anular-pago';
  */
 @Component({
   selector: 'app-egreso-detalle-page',
-  imports: [ReactiveFormsModule, RouterLink, ConfirmacionConMotivo],
+  imports: [Ayuda, ReactiveFormsModule, RouterLink, ConfirmacionConMotivo],
   templateUrl: './egreso-detalle-page.html',
-  styleUrl: '../../billing.css',
+  styleUrls: ['../../billing.css', '../../economia.css'],
 })
 export class EgresoDetallePage {
   private readonly diaDeLaSede = inject(DiaDeLaSede);
@@ -349,7 +350,7 @@ export class EgresoDetallePage {
     this.operar(
       'anular-pago',
       this.api.anularPago(ids.consultorioId, ids.egresoId, pagoId, motivo),
-      'Pago anulado. La plata vuelve al cajon como reversion en la jornada de hoy y el saldo ' +
+      'Pago anulado. La plata vuelve al cajon como reversión en la jornada de hoy y el saldo ' +
         'vuelve al egreso.',
     );
   }

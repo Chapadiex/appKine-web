@@ -493,7 +493,7 @@ function resumirLote(
     .filter((item) => !item.resultado)
     .map((item) => ({
       inscripcionId: item.inscripcionId ?? -1,
-      nombre: nombres.get(item.inscripcionId ?? -1) ?? `Inscripcion ${item.inscripcionId}`,
+      nombre: nombres.get(item.inscripcionId ?? -1) ?? `Inscripción ${item.inscripcionId}`,
       mensaje: traducirFalloDeItem(item.problemType, item.detalle).mensaje,
     }));
   const consumos = (resultado.items ?? []).flatMap((item) => {
@@ -501,14 +501,14 @@ function resumirLote(
     const id = item.inscripcionId ?? -1;
     return texto === null
       ? []
-      : [{ inscripcionId: id, nombre: nombres.get(id) ?? `Inscripcion ${id}`, texto }];
+      : [{ inscripcionId: id, nombre: nombres.get(id) ?? `Inscripción ${id}`, texto }];
   });
   const devengos = (resultado.items ?? []).flatMap((item) => {
     const aviso = avisoDeDevengo(item.resultado?.devengoDeClase);
     const id = item.inscripcionId ?? -1;
     return aviso === null
       ? []
-      : [{ inscripcionId: id, nombre: nombres.get(id) ?? `Inscripcion ${id}`, ...aviso }];
+      : [{ inscripcionId: id, nombre: nombres.get(id) ?? `Inscripción ${id}`, ...aviso }];
   });
   return { exitosos: resultado.exitosos ?? 0, fallos, consumos, devengos };
 }

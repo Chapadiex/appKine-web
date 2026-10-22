@@ -1,58 +1,68 @@
-<h1>Turno #{{ turnoId() }}</h1>
-
-<p class="descripcion">
-  Un turno es una <b>reserva</b> de agenda. Su estado no dice que la atencion haya ocurrido: eso lo
-  registra la sesion clinica, que es otra pantalla.
-</p>
-
-<p><a class="enlace" routerLink="/agenda">Volver al buscador de agenda</a></p>
-
-<section class="tarjeta" aria-labelledby="titulo-estado">
-  <h2 id="titulo-estado">Estado</h2>
-
-  @if (cargando()) {
-    <p class="estado estado--cargando">Leyendo el historial del turno…</p>
+<div class="titulo-con-ayuda">
+  <a class="miga" routerLink="/agenda">Agenda</a>
+  <span class="miga__separador" aria-hidden="true">/</span>
+  <h1>Turno #{{ turnoId() }}</h1>
+  @if (estado() !== '') {
+    <!-- El estado de la RESERVA, con texto y no solo con color (WCAG 1.4.1). -->
+    <span
+      class="marca-estado"
+      [class.marca-estado--activa]="estado() === 'CONFIRMADO'"
+      [class.marca-estado--suspendida]="estado() === 'AUSENTE'"
+      [class.marca-estado--revocada]="estado() === 'CANCELADO'"
+      >{{ nombreDeEstado(estado()) }}</span
+    >
   }
-
-  <dl class="detalle">
-    <dt>Estado</dt>
-    <dd>{{ textoDeEstado(estado()) }}</dd>
-
-    @if (horario(); as cuando) {
-      <dt>Horario</dt>
-      <dd>
-        {{ cuando }}
-        <span class="ayuda">
-          @if (zonaConocida()) {
-            (zona {{ timezone() }})
-          } @else {
-            (en UTC: sin la oferta no se puede saber la zona de la sede)
-          }
-        </span>
-      </dd>
-    }
-
-    @if (textoDePrepago(); as prepago) {
-      <!-- E-8: se ve antes de la llegada. Avisa y no bloquea ninguna transicion (DP-06). -->
-      <dt>Prepago</dt>
-      <dd>{{ prepago }}</dd>
-    }
-    @if (serieId(); as serie) {
-      <dt>Serie</dt>
-      <dd>
-        <a class="enlace" [routerLink]="['/agenda', 'series', serie]">
-          Es parte de una serie semanal: verla
-        </a>
-      </dd>
-    }
-  </dl>
-
-  @if (estado() === '') {
-    <p class="estado estado--vacio">
-      Este turno no tiene ningun evento registrado, o no es de esta sede.
+  <app-ayuda titulo="Sobre esta pantalla">
+    <p>
+      Un turno es una <b>reserva</b> de agenda. Su estado no dice que la atención haya ocurrido: eso
+      lo registra la sesión clínica, que es otra pantalla.
     </p>
+    <p>
+      El historial registra cada cambio con fecha, hora y quién lo hizo. No se edita ni se borra:
+      cancelar y marcar ausencia dejan su rastro.
+    </p>
+  </app-ayuda>
+  <!-- Las transiciones del turno, en la fila del titulo como en el canvas (plan §3.1). -->
+  @if (!cicloCerrado() && puedeOperar() && panel() === 'ninguno') {
+    <div class="encabezado__acciones">
+      @if (puedeReprogramar()) {
+        <button
+          type="button"
+          class="boton boton--secundario"
+          [disabled]="enviando()"
+          (click)="abrir('reprogramar')"
+        >
+          Mover a otro horario
+        </button>
+      }
+      @if (puedeTransicionar()) {
+        @if (!retirado()) {
+          <button
+            type="button"
+            class="boton boton--secundario"
+            [disabled]="enviando()"
+            (click)="abrir('ausencia')"
+          >
+            Marcar que no vino
+          </button>
+        }
+        <button
+          type="button"
+          class="boton boton--secundario"
+          [disabled]="enviando()"
+          (click)="abrir('cancelar')"
+        >
+          Cancelar el turno
+        </button>
+      }
+      @if (estado() !== 'CONFIRMADO') {
+        <button type="button" class="boton" [disabled]="enviando()" (click)="confirmar()">
+          Confirmar el turno
+        </button>
+      }
+    </div>
   }
-</section>
+</div>
 
 <div aria-live="polite">
   @if (exito(); as mensaje) {
@@ -85,14 +95,14 @@
           -->
           <div class="acciones">
             <a class="boton" [routerLink]="['/atencion', 'turnos', turnoId()]">
-              Ver la atencion clinica de este turno
+              Ver la atención clínica de este turno
             </a>
           </div>
         }
         @case ('elegir-otro') {
           <p class="ayuda">
             El recurso ocupado es el <b>{{ fallo.recurso }}</b
-            >. Elegi otro horario del listado.
+            >. Elegí otro horario del listado.
           </p>
         }
         @case ('elegir-contexto') {
@@ -107,12 +117,12 @@
 
 @if (cicloCerrado()) {
   <p class="estado estado--vacio">
-    Este turno ya cerro su ciclo, asi que no admite mas cambios. Su historial queda igual: nada se
+    Este turno ya cerró su ciclo, así que no admite más cambios. Su historial queda igual: nada se
     borra.
   </p>
 } @else if (!puedeOperar()) {
   <p class="estado estado--vacio">
-    Solo podes mirar este turno. Operarlo necesita permiso de gestion de turnos en esta sede.
+    Solo podés mirar este turno. Operarlo necesita permiso de gestión de turnos en esta sede.
   </p>
 } @else {
   @if (versionConocida() === null) {
@@ -122,57 +132,17 @@
       ausente, y ofrecer los botones seria prometer un 409.
     -->
     <p class="estado estado--vacio">
-      Este turno se abrio sin sus datos de agenda, asi que solo se puede confirmar. Para cancelarlo,
+      Este turno se abrió sin sus datos de agenda, así que solo se puede confirmar. Para cancelarlo,
       moverlo o marcar la ausencia, abrilo desde la agenda.
     </p>
   }
 
   @if (retirado()) {
     <p class="ayuda">
-      La persona se retiro sin ser atendida: la llegada consta, asi que el turno ya no se puede
-      marcar como ausente ni mover a otro horario. La atencion se puede abrir igual desde la
-      pantalla clinica.
+      La persona se retiro sin ser atendida: la llegada consta, así que el turno ya no se puede
+      marcar como ausente ni mover a otro horario. La atención se puede abrir igual desde la
+      pantalla clínica.
     </p>
-  }
-
-  @if (panel() === 'ninguno') {
-    <div class="acciones">
-      @if (estado() !== 'CONFIRMADO') {
-        <button type="button" class="boton" [disabled]="enviando()" (click)="confirmar()">
-          Confirmar el turno
-        </button>
-      }
-      @if (puedeTransicionar()) {
-        <button
-          type="button"
-          class="boton boton--secundario"
-          [disabled]="enviando()"
-          (click)="abrir('cancelar')"
-        >
-          Cancelar el turno
-        </button>
-        @if (!retirado()) {
-          <button
-            type="button"
-            class="boton boton--secundario"
-            [disabled]="enviando()"
-            (click)="abrir('ausencia')"
-          >
-            Marcar que no vino
-          </button>
-        }
-      }
-      @if (puedeReprogramar()) {
-        <button
-          type="button"
-          class="boton boton--secundario"
-          [disabled]="enviando()"
-          (click)="abrir('reprogramar')"
-        >
-          Mover a otro horario
-        </button>
-      }
-    </div>
   }
 
   @if (panel() === 'cancelar') {
@@ -218,8 +188,8 @@
         (cancelado)="cerrar()"
       >
         <p class="ayuda">
-          La ausencia <b>no libera el lugar</b>: la hora se consumio igual y el profesional estuvo
-          ahi. Es la diferencia con cancelar. Solo se registra despues de la hora del turno.
+          La ausencia <b>no libera el lugar</b>: la hora se consumió igual y el profesional estuvo
+          ahí. Es la diferencia con cancelar. Solo se registra después de la hora del turno.
         </p>
       </akine-confirmacion-con-motivo>
     </section>
@@ -238,8 +208,8 @@
         (cancelado)="cerrar()"
       >
         <p class="ayuda">
-          Es el <b>mismo turno</b>: conserva su numero, su paciente y su historial. Si estaba
-          confirmado vuelve a quedar reservado, porque lo que el paciente confirmo era otro horario.
+          Es el <b>mismo turno</b>: conserva su número, su paciente y su historial. Si estaba
+          confirmado vuelve a quedar reservado, porque lo que el paciente confirmó era otro horario.
         </p>
 
         <app-selector-de-horario
@@ -257,87 +227,169 @@
   }
 }
 
-@if (eventosDeRecepcion().length > 0) {
-  <section class="tarjeta" aria-labelledby="titulo-historial-recepcion">
-    <h2 id="titulo-historial-recepcion">Historial de la recepcion</h2>
-    <p class="ayuda">
-      La llegada al mostrador es otra maquina que la reserva: estos pasos no cambian el turno.
-    </p>
-    <ol class="dias">
-      @for (evento of eventosDeRecepcion(); track evento.id) {
-        <li class="dia">
-          <p class="dia__fecha">
-            {{ textoDeEventoDeRecepcion(evento.tipo) }} — {{ instanteEnZona(evento.ocurridoEn) }}
-          </p>
-          <dl class="detalle">
-            <dt>Estado</dt>
-            <dd>
-              @if (evento.estadoAnterior) {
-                {{ nombreDeEstadoDeRecepcion(evento.estadoAnterior) }} →
-              }
-              {{ nombreDeEstadoDeRecepcion(evento.estadoNuevo) }}
-            </dd>
-            @if (evento.motivo) {
-              <dt>Motivo</dt>
-              <dd>{{ evento.motivo }}</dd>
-            }
-          </dl>
-        </li>
+<div class="columnas">
+  <section class="tarjeta tarjeta--plana columnas__mitad" aria-labelledby="titulo-estado">
+    <div class="tarjeta__cuerpo">
+      <h2 id="titulo-estado">Turno</h2>
+
+      @if (cargando()) {
+        <p class="estado estado--cargando">Leyendo el historial del turno…</p>
       }
-    </ol>
-  </section>
-}
 
-<section class="tarjeta" aria-labelledby="titulo-historial">
-  <h2 id="titulo-historial">Historial</h2>
-  <p class="ayuda">
-    Todas las transiciones, de la mas vieja a la mas nueva. Nada se borra: cancelar y marcar
-    ausencia dejan su rastro.
-  </p>
-
-  @if (eventos().length === 0) {
-    <p class="estado estado--vacio">Todavia no hay eventos para mostrar.</p>
-  } @else {
-    <ol class="dias">
-      @for (evento of eventos(); track evento.id) {
-        <li class="dia">
-          <p class="dia__fecha">
-            {{ textoDeEvento(evento.tipo) }} — {{ instanteEnZona(evento.ocurridoEn) }}
-          </p>
-          <dl class="detalle">
-            @if (evento.estadoAnterior) {
-              <dt>Cambio de estado</dt>
-              <dd>{{ evento.estadoAnterior }} → {{ evento.estadoNuevo }}</dd>
-            } @else {
-              <dt>Estado</dt>
-              <dd>{{ evento.estadoNuevo }}</dd>
-            }
-
-            @if (evento.inicioAnterior) {
-              <!-- Solo en una reprogramacion: de donde vino el turno (RF-M12-008). -->
-              <dt>Venia de</dt>
-              <dd>{{ instanteEnZona(evento.inicioAnterior) }}</dd>
-              <dt>Paso a</dt>
-              <dd>{{ instanteEnZona(evento.inicioNuevo) }}</dd>
-            }
-
-            @if (evento.motivo) {
-              <dt>Motivo</dt>
-              <dd>{{ evento.motivo }}</dd>
-            }
-
-            <dt>Quien</dt>
+      <dl class="detalle">
+        @if (turnoLeido(); as leido) {
+          @if (leido.personaNombre) {
+            <dt>Paciente</dt>
             <dd>
-              @if (evento.actorCuentaId) {
-                Cuenta #{{ evento.actorCuentaId }}
+              {{ leido.personaNombre }}
+              @if (leido.documento) {
+                <span class="ayuda">· {{ leido.documento }}</span>
+              }
+            </dd>
+          }
+          @if (leido.ofertaNombre) {
+            <dt>Prestación</dt>
+            <dd>{{ leido.ofertaNombre }}</dd>
+          }
+        }
+
+        @if (estado() !== '') {
+          <dt>Estado</dt>
+          <dd>{{ detalleDeEstado(estado()) || textoDeEstado(estado()) }}</dd>
+        }
+
+        @if (horario(); as cuando) {
+          <dt>Horario</dt>
+          <dd>
+            {{ cuando }}
+            <span class="ayuda">
+              @if (zonaConocida()) {
+                (zona {{ timezone() }})
               } @else {
-                <!-- Ausente cuando lo hizo el sistema, o en los eventos reconstruidos por V38. -->
-                Sin registrar
+                (en UTC: sin la oferta no se puede saber la zona de la sede)
               }
-            </dd>
-          </dl>
-        </li>
+            </span>
+          </dd>
+        }
+
+        @if (textoDePrepago(); as prepago) {
+          <!-- E-8: se ve antes de la llegada. Avisa y no bloquea ninguna transicion (DP-06). -->
+          <dt>Prepago</dt>
+          <dd>{{ prepago }}</dd>
+        }
+        @if (serieId(); as serie) {
+          <dt>Serie</dt>
+          <dd>
+            <a class="enlace" [routerLink]="['/agenda', 'series', serie]">
+              Es parte de una serie semanal: verla
+            </a>
+          </dd>
+        }
+      </dl>
+
+      @if (estado() === '') {
+        <p class="estado estado--vacio">
+          Este turno no tiene ningún evento registrado, o no es de esta sede.
+        </p>
       }
-    </ol>
-  }
-</section>
+    </div>
+
+    @if (eventosDeRecepcion().length > 0) {
+      <section class="tarjeta__cuerpo" aria-labelledby="titulo-historial-recepcion">
+        <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
+          <h2 id="titulo-historial-recepcion">Historial de la recepción</h2>
+          <app-ayuda titulo="Historial de la recepción">
+            <p>
+              La llegada al mostrador es otra máquina que la reserva: estos pasos no cambian el
+              turno.
+            </p>
+          </app-ayuda>
+        </div>
+        <ol class="historial">
+          @for (evento of eventosDeRecepcion(); track evento.id) {
+            <li>
+              <span class="historial__cuando">{{ instanteEnZona(evento.ocurridoEn) }}</span>
+              <div>
+                <p class="historial__que">{{ textoDeEventoDeRecepcion(evento.tipo) }}</p>
+                <dl class="detalle">
+                  <dt>Estado</dt>
+                  <dd>
+                    @if (evento.estadoAnterior) {
+                      {{ nombreDeEstadoDeRecepcion(evento.estadoAnterior) }} →
+                    }
+                    {{ nombreDeEstadoDeRecepcion(evento.estadoNuevo) }}
+                  </dd>
+                  @if (evento.motivo) {
+                    <dt>Motivo</dt>
+                    <dd>{{ evento.motivo }}</dd>
+                  }
+                </dl>
+              </div>
+            </li>
+          }
+        </ol>
+      </section>
+    }
+  </section>
+
+  <section class="tarjeta tarjeta--plana columnas__mitad" aria-labelledby="titulo-historial">
+    <div class="tarjeta__cuerpo">
+      <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
+        <h2 id="titulo-historial">Historial</h2>
+        <app-ayuda titulo="Historial">
+          <p>
+            Todas las transiciones, de la más vieja a la más nueva. Nada se borra: cancelar y marcar
+            ausencia dejan su rastro.
+          </p>
+        </app-ayuda>
+      </div>
+
+      @if (eventos().length === 0) {
+        <p class="estado estado--vacio">Todavía no hay eventos para mostrar.</p>
+      } @else {
+        <ol class="historial">
+          @for (evento of eventos(); track evento.id) {
+            <li>
+              <span class="historial__cuando">{{ instanteEnZona(evento.ocurridoEn) }}</span>
+              <div>
+                <p class="historial__que">{{ textoDeEvento(evento.tipo) }}</p>
+                <dl class="detalle">
+                  @if (evento.estadoAnterior) {
+                    <dt>Cambio de estado</dt>
+                    <dd>{{ evento.estadoAnterior }} → {{ evento.estadoNuevo }}</dd>
+                  } @else {
+                    <dt>Estado</dt>
+                    <dd>{{ evento.estadoNuevo }}</dd>
+                  }
+
+                  @if (evento.inicioAnterior) {
+                    <!-- Solo en una reprogramacion: de donde vino el turno (RF-M12-008). -->
+                    <dt>Venia de</dt>
+                    <dd>{{ instanteEnZona(evento.inicioAnterior) }}</dd>
+                    <dt>Paso a</dt>
+                    <dd>{{ instanteEnZona(evento.inicioNuevo) }}</dd>
+                  }
+
+                  @if (evento.motivo) {
+                    <dt>Motivo</dt>
+                    <dd>{{ evento.motivo }}</dd>
+                  }
+
+                  <dt>Quién</dt>
+                  <dd>
+                    @if (evento.actorCuentaId) {
+                      Cuenta #{{ evento.actorCuentaId }}
+                    } @else {
+                      <!-- Ausente cuando lo hizo el sistema, o en los eventos reconstruidos por V38. -->
+                      Sin registrar
+                    }
+                  </dd>
+                </dl>
+              </div>
+            </li>
+          }
+        </ol>
+      }
+    </div>
+  </section>
+</div>

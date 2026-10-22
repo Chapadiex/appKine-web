@@ -53,7 +53,7 @@ describe('ForgotPasswordPage', () => {
     expect(registrado).not.toContain('no existe');
   });
 
-  it('ante un 429 deshabilita el boton y muestra la espera declarada por el backend', async () => {
+  it('ante un 429 deshabilita el botón y muestra la espera declarada por el backend', async () => {
     const fixture = crear();
     escribir(fixture, 'kine@ejemplo.test');
     enviar(fixture);
@@ -70,10 +70,10 @@ describe('ForgotPasswordPage', () => {
     fixture.detectChanges();
 
     expect(boton(fixture).disabled).toBe(true);
-    expect(texto(fixture)).toContain('Volve a intentar en 30 segundos');
+    expect(texto(fixture)).toContain('Espera 30 segundos y volvé a intentar');
   });
 
-  it('no sale a la red sin email y enfoca el campo vacio', () => {
+  it('no sale a la red sin email y enfoca el campo vacío', () => {
     const fixture = crear();
     enviar(fixture);
     fixture.detectChanges();

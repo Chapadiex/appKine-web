@@ -94,3 +94,129 @@
   width: auto;
   margin: 0;
 }
+
+/* --- Restyle al canvas de Actividades (UX-01, 22/10/2026) ------------------------------- */
+
+/* Clases de la semana: busqueda con embudo a la izquierda, la semana y sus botones a la derecha. */
+.barra-semana {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--esp-5) var(--esp-7);
+}
+
+.barra-semana__filtros {
+  flex: 1 1 20rem;
+  min-width: 0;
+}
+
+.barra-semana__semana {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--esp-4) var(--esp-5);
+  margin-left: auto;
+}
+
+.barra-semana__rango {
+  font-size: var(--tipo-sm);
+  font-weight: var(--peso-medio);
+  display: inline-block;
+}
+
+.barra-semana .acciones {
+  margin-top: 0;
+}
+
+/* Formularios en grilla: tres columnas que bajan a una en pantallas angostas. */
+.grilla-campos--tres {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+@media (max-width: 40rem) {
+  .grilla-campos--tres {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.grilla-campos + .grilla-campos,
+.grilla-campos + .cuando,
+.cuando + .grilla-campos {
+  margin-top: var(--esp-6);
+}
+
+.cuando {
+  margin: var(--esp-6) 0 0;
+  padding: 0;
+  border: 0;
+}
+
+.cuando > legend {
+  padding: 0;
+  margin-bottom: var(--esp-4);
+  font-size: var(--tipo-xs);
+  font-weight: var(--peso-medio);
+}
+
+/* Pie de un formulario: acciones a la derecha, separadas del cuerpo por una linea. */
+.acciones--pie {
+  justify-content: flex-end;
+  padding-top: var(--esp-6);
+  border-top: var(--borde-fino) solid var(--color-borde-sutil);
+}
+
+/* Columnas de dos paneles (lista + formulario / detalle + lateral). */
+.dos-paneles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp-7);
+  align-items: flex-start;
+}
+
+.dos-paneles__principal {
+  flex: 3 1 36rem;
+  min-width: 0;
+}
+
+.dos-paneles__lateral {
+  flex: 2 1 20rem;
+  min-width: 0;
+}
+
+/* Fila de datos de la clase bajo el titulo: separados por espacio, en texto suave. */
+.datos-en-linea {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp-2) var(--esp-7);
+  margin: 0 0 var(--esp-6);
+  padding: 0;
+  list-style: none;
+  font-size: var(--tipo-sm);
+  color: var(--color-texto-suave);
+}
+
+/* Barra de progreso del cupo. */
+.cupo {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-4);
+}
+
+.cupo__barra {
+  flex: 1;
+  min-width: 4rem;
+  height: 0.375rem;
+  border-radius: 0.1875rem;
+  background: var(--color-superficie-atenuada);
+  overflow: hidden;
+}
+
+.cupo__relleno {
+  display: block;
+  height: 100%;
+  background: var(--color-acento);
+}
+
+.barra-semana__rango::first-letter {
+  text-transform: uppercase;
+}

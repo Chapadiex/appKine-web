@@ -84,7 +84,7 @@ const POLITICA = {
   cierraPorFeriado: true,
   existePersistida: true,
   feriados: [
-    { id: 9, fecha: '2026-09-10', nombre: 'Dia del maestro', pais: 'AR', tipo: 'INAMOVIBLE' },
+    { id: 9, fecha: '2026-09-10', nombre: 'Día del maestro', pais: 'AR', tipo: 'INAMOVIBLE' },
   ],
   version: 4,
 };
@@ -133,7 +133,7 @@ describe('Modo lectura de las pantallas de horarios', () => {
 
   afterEach(() => httpMock.verify());
 
-  it('el horario semanal muestra la semana entera y no ofrece ninguna accion', async () => {
+  it('el horario semanal muestra la semana entera y no ofrece ninguna acción', async () => {
     const fixture = await montarSemanal(SOLO_LECTURA);
     const contenido = texto(fixture);
 
@@ -189,7 +189,7 @@ describe('Modo lectura de las pantallas de horarios', () => {
 
     // La politica y los feriados son el dato de la pantalla: se ven igual.
     expect(contenido).toContain('AR');
-    expect(contenido).toContain('Dia del maestro');
+    expect(contenido).toContain('Día del maestro');
 
     // La casilla NO se oculta —muestra la politica vigente— pero no se puede tocar. Viva y sin
     // boton al lado, dejaria al profesional viendo "La sede pasa a atender los feriados" y

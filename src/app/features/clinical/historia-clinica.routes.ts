@@ -39,13 +39,13 @@ export const routes: Routes = [
           import('./pages/historia-clinica/historia-clinica-page').then(
             (m) => m.HistoriaClinicaPage,
           ),
-        title: 'AKINE - Historia clinica',
+        title: 'AKINE - Historia clínica',
       },
       {
         path: 'casos/:casoId',
         loadComponent: () =>
           import('./casos/pages/caso-detalle-page').then((m) => m.CasoDetallePage),
-        title: 'AKINE - Caso clinico',
+        title: 'AKINE - Caso clínico',
       },
       {
         path: 'casos/:casoId/plan',

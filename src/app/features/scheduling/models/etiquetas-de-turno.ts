@@ -39,7 +39,7 @@ const TEXTOS_DE_ESTADO: Readonly<Record<string, string>> = {
   [TurnoEstadoEnum.CANCELADO]: 'Cancelado — el lugar se libero y volvio a la agenda',
   [TurnoEstadoEnum.AUSENTE]: 'Ausente — el paciente no vino y la hora se consumio igual',
   // Solo historia: lo traen eventos anteriores a DP-16. Hoy la espera es de la Recepcion.
-  EN_ESPERA: 'En espera (historico) — la llegada se registraba en el turno, antes de la recepcion',
+  EN_ESPERA: 'En espera (historico) — la llegada se registraba en el turno, antes de la recepción',
 };
 
 const TEXTOS_DE_EVENTO: Readonly<Record<EventoDeTurnoTipoEnum, string>> = {
@@ -69,6 +69,20 @@ export function textoDeEstado(estado: string | undefined): string {
     return 'Estado desconocido';
   }
   return TEXTOS_DE_ESTADO[estado] ?? estado;
+}
+
+/**
+ * El nombre del estado solo ("Confirmado"), para la pastilla de estado. Es la parte de
+ * {@link textoDeEstado} antes de la raya: un solo texto de origen, partido en dos para mostrarlo.
+ */
+export function nombreDeEstado(estado: string | undefined): string {
+  return textoDeEstado(estado).split(' — ')[0];
+}
+
+/** Lo que significa el estado ("la reserva quedo confirmada…"), o vacio si no hay explicacion. */
+export function detalleDeEstado(estado: string | undefined): string {
+  const detalle = textoDeEstado(estado).split(' — ')[1] ?? '';
+  return detalle.charAt(0).toUpperCase() + detalle.slice(1);
 }
 
 /** Texto del evento, con el mismo respaldo que {@link textoDeEstado}. */

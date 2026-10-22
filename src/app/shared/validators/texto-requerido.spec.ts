@@ -11,7 +11,7 @@ describe('textoRequerido', () => {
     }
   });
 
-  it('rechaza el vacio y acepta el texto con contenido, aunque tenga espacios alrededor', () => {
+  it('rechaza el vacío y acepta el texto con contenido, aunque tenga espacios alrededor', () => {
     expect(textoRequerido(new FormControl(''))).toEqual({ required: true });
     expect(textoRequerido(new FormControl('Sede Centro'))).toBeNull();
     // Recortar es cosa de quien arma el cuerpo: aca solo se decide si hay dato.

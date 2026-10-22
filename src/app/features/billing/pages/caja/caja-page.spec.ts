@@ -36,7 +36,7 @@ const MANUAL = {
   medio: 'EFECTIVO',
   importe: 500.5,
   moneda: 'ARS',
-  concepto: 'Cambio para el dia',
+  concepto: 'Cambio para el día',
   registradoEn: '2026-10-07T11:05:00Z',
 };
 
@@ -84,7 +84,7 @@ describe('CajaPage', () => {
 
   it('sin jornada abierta ofrece abrir la caja y manda el saldo contado', async () => {
     const fixture = await montarCerrada();
-    expect(texto(fixture)).toContain('La caja esta cerrada');
+    expect(texto(fixture)).toContain('La caja está cerrada');
 
     tipear(fixture, '#apertura-saldo', '250,5');
     apretar(fixture, 'Abrir la caja');
@@ -95,7 +95,7 @@ describe('CajaPage', () => {
 
     await responderAbierta(fixture, []);
     expect(texto(fixture)).toContain('Caja abierta.');
-    expect(texto(fixture)).toContain('Todavia no hay movimientos');
+    expect(texto(fixture)).toContain('Todavía no hay movimientos');
   });
 
   it('con jornada abierta muestra el teorico, el desglose y los movimientos', async () => {
@@ -104,7 +104,7 @@ describe('CajaPage', () => {
     const contenido = texto(fixture);
     expect(contenido).toContain('1.500,50');
     expect(contenido).toContain('Tarjeta de debito');
-    expect(contenido).toContain('Cambio para el dia');
+    expect(contenido).toContain('Cambio para el día');
     expect(contenido).toContain('Cobro N.º 14');
     // Solo el manual se revierte desde aca: el de un cobro se anula desde el cobro.
     expect(botones(fixture, 'Revertir')).toHaveLength(1);
@@ -155,10 +155,10 @@ describe('CajaPage', () => {
     const fixture = await montarAbierta([MANUAL]);
 
     apretar(fixture, 'Revertir');
-    expect(boton(fixture, 'Confirmar la reversion').disabled).toBe(true);
+    expect(boton(fixture, 'Confirmar la reversión').disabled).toBe(true);
 
     tipear(fixture, `#motivo-reversion-${MANUAL.id}`, 'Cargado dos veces');
-    apretar(fixture, 'Confirmar la reversion');
+    apretar(fixture, 'Confirmar la reversión');
 
     const pedido = httpMock.expectOne(
       (p) => p.method === 'POST' && p.url === `${BASE}/movimientos/${MANUAL.id}/reversion`,
@@ -191,7 +191,7 @@ describe('CajaPage', () => {
     const fixture = await montarAbierta([]);
 
     tipear(fixture, '#cierre-declarado', '1400');
-    expect(texto(fixture)).toContain('Diferencia contra el teorico');
+    expect(texto(fixture)).toContain('Diferencia contra el teórico');
     expect(boton(fixture, 'Cerrar la caja').disabled).toBe(true);
 
     tipear(fixture, '#cierre-motivo', 'Vuelto mal dado');
@@ -218,14 +218,14 @@ describe('CajaPage', () => {
     const contenido = texto(fixture);
     expect(contenido).toContain('Arqueo registrado');
     expect(contenido).toContain('Faltante de');
-    expect(contenido).toContain('La caja esta cerrada');
+    expect(contenido).toContain('La caja está cerrada');
   });
 
   it('si el teorico cambio mientras se contaba, no cierra y ofrece recargar', async () => {
     const fixture = await montarAbierta([]);
 
     tipear(fixture, '#cierre-declarado', '1500,50');
-    expect(texto(fixture)).toContain('coincide con el teorico');
+    expect(texto(fixture)).toContain('coincide con el teórico');
     apretar(fixture, 'Cerrar la caja');
 
     const pedido = httpMock.expectOne(
@@ -249,7 +249,7 @@ describe('CajaPage', () => {
     await estabilizar(fixture);
 
     httpMock.expectNone(() => true);
-    expect(texto(fixture)).toContain('Eligi una organizacion');
+    expect(texto(fixture)).toContain('Eligi una organización');
   });
 
   it('si la carga falla ofrece reintentar', async () => {
@@ -267,7 +267,7 @@ describe('CajaPage', () => {
   });
 
   it(
-    'no tiene violaciones de accesibilidad con la caja abierta y una reversion en curso',
+    'no tiene violaciones de accesibilidad con la caja abierta y una reversión en curso',
     async () => {
       const fixture = await montarAbierta([MANUAL, DE_COBRO]);
       apretar(fixture, 'Revertir');
@@ -354,7 +354,7 @@ describe('CajaPage', () => {
   function boton(fixture: ComponentFixture<CajaPage>, rotulo: string): HTMLButtonElement {
     const [encontrado] = botones(fixture, rotulo);
     if (encontrado === undefined) {
-      throw new Error(`No hay ningun boton rotulado "${rotulo}".`);
+      throw new Error(`No hay ningún botón rotulado "${rotulo}".`);
     }
     return encontrado;
   }

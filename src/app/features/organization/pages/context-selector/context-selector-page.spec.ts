@@ -89,7 +89,7 @@ describe('ContextSelectorPage', () => {
     const fixture = TestBed.createComponent(ContextSelectorPage);
     fixture.detectChanges();
 
-    expect(texto(fixture)).toContain('Buscando tus contextos');
+    expect(texto(fixture)).toContain('Buscando tus centros');
 
     httpMock.expectOne(URL_CONTEXTOS).flush([]);
   });
@@ -139,7 +139,7 @@ describe('ContextSelectorPage', () => {
     const fixture = await pintar([CONTEXTO_BELGRANO]);
 
     expect(texto(fixture)).toContain('Centro Kinesico Belgrano');
-    expect(texto(fixture)).toContain('Tenes un solo contexto habilitado');
+    expect(texto(fixture)).toContain('Tenés un solo lugar de trabajo habilitado');
 
     httpMock.expectOne(URL_CANJE).flush(tokenDeContexto(1, 1));
   });
@@ -154,7 +154,7 @@ describe('ContextSelectorPage', () => {
     expect(tenantContext.context()).toBeNull();
   });
 
-  it('con varios contextos ofrece primero el ultimo elegido, con el foco, sin entrar solo', async () => {
+  it('con varios contextos ofrece primero el último elegido, con el foco, sin entrar solo', async () => {
     const fixture = await pintar([
       CONTEXTO_BELGRANO,
       { ...CONTEXTO_CABALLITO, lastSelected: true },
@@ -163,19 +163,19 @@ describe('ContextSelectorPage', () => {
     const opciones = Array.from(
       (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>('.opcion'),
     );
-    expect(opciones.map((o) => o.querySelector('.opcion__organizacion')?.textContent)).toEqual([
+    expect(opciones.map((o) => o.querySelector('.visualmente-oculto')?.textContent)).toEqual([
       'Centro Kinesico Caballito',
       'Centro Kinesico Belgrano',
     ]);
-    expect(opciones[0].textContent).toContain('El ultimo que elegiste');
-    expect(opciones[1].textContent).not.toContain('El ultimo que elegiste');
+    expect(opciones[0].textContent).toContain('El último que elegiste');
+    expect(opciones[1].textContent).not.toContain('El último que elegiste');
     expect(document.activeElement).toBe(opciones[0]);
     // Preseleccionar no es elegir: no hubo canje.
     TestBed.inject(HttpTestingController).expectNone(URL_CANJE);
     expect(tenantContext.context()).toBeNull();
   });
 
-  it('elegir una opcion canjea el token, fija el contexto y navega', async () => {
+  it('elegir una opción canjea el token, fija el contexto y navega', async () => {
     const navegar = vi.spyOn(router, 'navigateByUrl').mockResolvedValue(true);
 
     const fixture = await pintar([CONTEXTO_BELGRANO, CONTEXTO_CABALLITO]);
@@ -208,7 +208,7 @@ describe('ContextSelectorPage', () => {
     await estabilizar(fixture);
 
     expect(texto(fixture)).toContain('Entrando a Centro Kinesico Belgrano');
-    expect(texto(fixture)).not.toContain('Tenes un solo contexto habilitado');
+    expect(texto(fixture)).not.toContain('Tenés un solo lugar de trabajo habilitado');
 
     httpMock.expectOne(URL_CANJE).flush(tokenDeContexto(1, 1));
   });
@@ -224,25 +224,25 @@ describe('ContextSelectorPage', () => {
     httpMock.expectOne(URL_CANJE).flush(tokenDeContexto(1, 1));
   });
 
-  it('sin contextos distingue el vacio del error y no lo trata como fallo', async () => {
+  it('sin contextos distingue el vacío del error y no lo trata como fallo', async () => {
     const fixture = await pintar([]);
 
-    expect(texto(fixture)).toContain('No tenes organizaciones asignadas');
-    expect(texto(fixture)).toContain('Contacta a tu administrador');
+    expect(texto(fixture)).toContain('Tu cuenta todavía no tiene dónde trabajar');
+    expect(texto(fixture)).toContain('Pedile a quien administra un centro que te dé acceso');
     // Vacio no es error: no se anuncia como alerta.
     expect(fixture.nativeElement.querySelector('[role="alert"]')).toBeNull();
   });
 
-  it('descarta los contextos sin organizacion, que no son elegibles', async () => {
+  it('descarta los contextos sin organización, que no son elegibles', async () => {
     const fixture = await pintar([{ consultorioName: 'Huerfano' }]);
 
-    expect(texto(fixture)).toContain('No tenes organizaciones asignadas');
+    expect(texto(fixture)).toContain('Tu cuenta todavía no tiene dónde trabajar');
   });
 
   it('descarta los contextos sin consultorio: el canje exige los dos ids', async () => {
     const fixture = await pintar([{ organizationId: 3, organizationName: 'Centro Sin Sede' }]);
 
-    expect(texto(fixture)).toContain('No tenes organizaciones asignadas');
+    expect(texto(fixture)).toContain('Tu cuenta todavía no tiene dónde trabajar');
   });
 
   // --- Destino ---------------------------------------------------------------------
@@ -336,7 +336,9 @@ describe('ContextSelectorPage', () => {
     expect(texto(fixture)).toContain('Ese contexto ya no esta disponible');
     // Lo que prueba que no hay bucle: nadie volvio a pedir la lista solo.
     httpMock.expectNone(URL_CONTEXTOS);
-    expect(fixture.nativeElement.querySelector('button')).toBeTruthy();
+    expect(
+      fixture.nativeElement.querySelector('button:not(.ayuda-contextual__boton)'),
+    ).toBeTruthy();
   });
 
   it('un fallo de red al canjear se muestra como fallo de red, no como contexto invalido', async () => {
@@ -384,16 +386,16 @@ describe('ContextSelectorPage', () => {
     expect(texto(fixture)).toContain('No se pudo contactar al servidor');
     expect(fixture.nativeElement.querySelector('[role="alert"]')).toBeTruthy();
 
-    fixture.nativeElement.querySelector('button')?.click();
+    fixture.nativeElement.querySelector('button:not(.ayuda-contextual__boton)')?.click();
     fixture.detectChanges();
 
     httpMock.expectOne(URL_CONTEXTOS).flush([]);
     await estabilizar(fixture);
 
-    expect(texto(fixture)).toContain('No tenes organizaciones asignadas');
+    expect(texto(fixture)).toContain('Tu cuenta todavía no tiene dónde trabajar');
   });
 
-  it('un 403 dice que la sesion no esta activa, no que el servidor fallo', async () => {
+  it('un 403 dice que la sesión no esta activa, no que el servidor fallo', async () => {
     const fixture = TestBed.createComponent(ContextSelectorPage);
     fixture.detectChanges();
     httpMock
@@ -404,7 +406,7 @@ describe('ContextSelectorPage', () => {
       );
     await estabilizar(fixture);
 
-    expect(texto(fixture)).toContain('Volve a iniciar sesion');
+    expect(texto(fixture)).toContain('Volvé a iniciar sesión');
   });
 
   it('ante un 500 muestra el mensaje del backend, no uno generico nuestro', async () => {
@@ -420,7 +422,9 @@ describe('ContextSelectorPage', () => {
     await estabilizar(fixture);
 
     expect(texto(fixture)).toContain('Fallo al resolver contextos');
-    expect(fixture.nativeElement.querySelector('button')).toBeTruthy();
+    expect(
+      fixture.nativeElement.querySelector('button:not(.ayuda-contextual__boton)'),
+    ).toBeTruthy();
   });
 
   // --- Accesibilidad ---------------------------------------------------------------
@@ -438,7 +442,7 @@ describe('ContextSelectorPage', () => {
   );
 
   it(
-    'no tiene violaciones de axe con la lista vacia',
+    'no tiene violaciones de axe con la lista vacía',
     async () => {
       const fixture = await pintar([]);
 

@@ -155,7 +155,7 @@ describe('RegisterPage', () => {
     expect(conCuentaNueva).not.toContain('disponible.');
   });
 
-  it('muestra el detail literal del backend cuando la contrasena no cumple la politica', async () => {
+  it('muestra el detail literal del backend cuando la contraseña no cumple la politica', async () => {
     const fixture = crear();
     completarMinimo(fixture);
     enviar(fixture);
@@ -163,7 +163,7 @@ describe('RegisterPage', () => {
     httpMock.expectOne(URL_REGISTRO).flush(
       {
         type: 'https://akine.app/problems/validation-error',
-        detail: 'La contrasena debe tener al menos 12 caracteres y un numero.',
+        detail: 'La contraseña debe tener al menos 12 caracteres y un número.',
       },
       { status: 400, statusText: 'Bad Request' },
     );
@@ -171,11 +171,11 @@ describe('RegisterPage', () => {
     fixture.detectChanges();
 
     expect(texto(fixture)).toContain(
-      'La contrasena debe tener al menos 12 caracteres y un numero.',
+      'La contraseña debe tener al menos 12 caracteres y un número.',
     );
   });
 
-  it('ante un 429 deshabilita el boton y muestra la cuenta regresiva', async () => {
+  it('ante un 429 deshabilita el botón y muestra la cuenta regresiva', async () => {
     const fixture = crear();
     completarMinimo(fixture);
     enviar(fixture);
@@ -190,7 +190,7 @@ describe('RegisterPage', () => {
     fixture.detectChanges();
 
     expect(boton(fixture).disabled).toBe(true);
-    expect(texto(fixture)).toContain('Volve a intentar en 60 segundos');
+    expect(texto(fixture)).toContain('Volvé a intentar en 60 segundos');
   });
 
   it('ante un 429 sin Retry-After avisa del limite pero no inventa una cuenta regresiva', async () => {
@@ -208,7 +208,7 @@ describe('RegisterPage', () => {
     fixture.detectChanges();
 
     expect(texto(fixture)).toContain('Demasiados intentos');
-    expect(texto(fixture)).not.toContain('Volve a intentar en');
+    expect(texto(fixture)).not.toContain('Volvé a intentar en');
   });
 
   it('no llama al backend con el formulario incompleto y enfoca el primer campo con error', () => {
@@ -228,7 +228,7 @@ describe('RegisterPage', () => {
     fixture.detectChanges();
 
     httpMock.expectNone(URL_REGISTRO);
-    expect(texto(fixture)).toContain('Escribi un email valido');
+    expect(texto(fixture)).toContain('Escribí un correo válido');
   });
 
   async function mensajeDeExito(cuerpo: { message: string }): Promise<string> {

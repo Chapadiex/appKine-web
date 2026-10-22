@@ -37,18 +37,18 @@ export interface ErrorPresentacion {
   readonly recargar: boolean;
 }
 
-const MENSAJE_GENERICO = 'No se pudo completar la operacion. Volve a intentar en un momento.';
+const MENSAJE_GENERICO = 'No se pudo completar la operación. Volvé a intentar en un momento.';
 const MENSAJE_DE_RED =
-  'No se pudo contactar al servidor, asi que no sabemos si la operacion entro. Revisa la ' +
+  'No se pudo contactar al servidor, así que no sabemos si la operación entro. Revisa la ' +
   'conexion y recarga el lote antes de volver a intentar.';
 const MENSAJE_SIN_CONTEXTO =
-  'Las presentaciones son de una sede. Eligi una organizacion y un consultorio, y volve a ' +
-  'entrar. Tu sesion sigue abierta.';
+  'Las presentaciones son de una sede. Eligi una organización y un consultorio, y volvé a ' +
+  'entrar. Tu sesión sigue abierta.';
 const MENSAJE_SIN_PERMISO =
-  'No tenes permiso para gestionar presentaciones en esta sede (hace falta el permiso de ' +
+  'No tenés permiso para gestionar presentaciones en esta sede (hace falta el permiso de ' +
   'cobros). Pediselo a quien administra el centro.';
 const MENSAJE_NO_ENCONTRADO =
-  'El lote, la prestacion o el financiador no existen, o no son de esta organizacion.';
+  'El lote, la prestación o el financiador no existen, o no son de esta organización.';
 
 /** Por tipo: causa, si conviene releer, y el texto de respaldo si el servidor no mando detalle. */
 const POR_TIPO: Readonly<Record<string, readonly [CausaPresentacion, boolean, string]>> = {
@@ -60,19 +60,19 @@ const POR_TIPO: Readonly<Record<string, readonly [CausaPresentacion, boolean, st
   'presentacion-estado-invalido': [
     'estado-invalido',
     true,
-    'El lote no esta en un estado que admita esta operacion. Recargalo para ver como quedo.',
+    'El lote no esta en un estado que admita esta operación. Recargalo para ver como quedo.',
   ],
   'presentacion-vacia': ['vacia', false, 'Un lote sin prestaciones no se puede confirmar.'],
   'presentacion-con-hallazgos': [
     'con-hallazgos',
     true,
     'El lote tiene prestaciones con reparos: no se pueden reclamar, o les falta la orden o la ' +
-      'autorizacion que el convenio exigia. Corregilas en la ficha del paciente o quitalas del lote.',
+      'autorización que el convenio exigia. Corregilas en la ficha del paciente o quitalas del lote.',
   ],
   'obligacion-ya-presentada': [
     'ya-presentada',
     true,
-    'Esa prestacion ya esta en otro lote vivo: no se puede reclamar dos veces a la vez.',
+    'Esa prestación ya esta en otro lote vivo: no se puede reclamar dos veces a la vez.',
   ],
   'obligacion-no-presentable': [
     'no-presentable',
@@ -89,11 +89,11 @@ const POR_TIPO: Readonly<Record<string, readonly [CausaPresentacion, boolean, st
     false,
     'Queda saldo sin explicar: registra los debitos o el pago que faltan antes de cerrar.',
   ],
-  'item-no-debitable': ['item-no-debitable', true, 'La prestacion ya fue debitada o anulada.'],
+  'item-no-debitable': ['item-no-debitable', true, 'La prestación ya fue debitada o anulada.'],
   'factura-duplicada': [
     'factura-duplicada',
     false,
-    'Ese numero de factura ya esta en otro lote del mismo financiador.',
+    'Ese número de factura ya esta en otro lote del mismo financiador.',
   ],
   'caja-no-abierta': [
     'caja-no-abierta',
@@ -103,7 +103,7 @@ const POR_TIPO: Readonly<Record<string, readonly [CausaPresentacion, boolean, st
   'idempotency-key-conflict': [
     'clave-reusada',
     false,
-    'Se reuso la clave de este intento con datos distintos. Volve a confirmar.',
+    'Se reuso la clave de este intento con datos distintos. Volvé a confirmar.',
   ],
   'validation-error': ['datos-invalidos', false, 'El servidor rechazo los datos. Revisalos.'],
 };

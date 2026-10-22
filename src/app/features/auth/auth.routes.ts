@@ -23,7 +23,7 @@ export const routes: Routes = [
   {
     path: 'ingresar',
     loadComponent: () => import('./pages/login/login-page').then((m) => m.LoginPage),
-    title: 'AKINE - Iniciar sesion',
+    title: 'AKINE - Iniciar sesión',
   },
   {
     path: 'registro',
@@ -41,19 +41,19 @@ export const routes: Routes = [
       import('./pages/resend-activation/resend-activation-page').then(
         (m) => m.ResendActivationPage,
       ),
-    title: 'AKINE - Reenviar la activacion',
+    title: 'AKINE - Reenviar la activación',
   },
   {
     path: 'olvide-mi-contrasena',
     loadComponent: () =>
       import('./pages/forgot-password/forgot-password-page').then((m) => m.ForgotPasswordPage),
-    title: 'AKINE - Recuperar la contrasena',
+    title: 'AKINE - Recuperar la contraseña',
   },
   {
     path: 'restablecer',
     loadComponent: () =>
       import('./pages/reset-password/reset-password-page').then((m) => m.ResetPasswordPage),
-    title: 'AKINE - Poner una contrasena nueva',
+    title: 'AKINE - Poner una contraseña nueva',
   },
   // Invitacion a colaborar (M05, AKINE-02.03). Va con las de auth y no bajo `/organizacion`
   // porque quien la abre NO tiene sesion y muchas veces ni cuenta: lo que lo autoriza es el
@@ -62,12 +62,12 @@ export const routes: Routes = [
   {
     path: 'invitacion',
     loadComponent: () => import('./pages/invitacion/invitacion-page').then((m) => m.InvitacionPage),
-    title: 'AKINE - Invitacion a colaborar',
+    title: 'AKINE - Invitación a colaborar',
   },
   {
     path: 'sesion-expirada',
     loadComponent: () =>
       import('./pages/session-expired/session-expired-page').then((m) => m.SessionExpiredPage),
-    title: 'AKINE - Sesion expirada',
+    title: 'AKINE - Sesión expirada',
   },
 ];

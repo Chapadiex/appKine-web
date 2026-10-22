@@ -18,6 +18,7 @@ import { importeEnPalabras } from '../../models/etiquetas-de-obligacion';
 import { fechaIsoEnPalabras } from '../../models/etiquetas-de-presentacion';
 import { parteEnPalabras } from '../../models/honorarios';
 import { EgresosApi } from '../../services/egresos-api';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 
 /**
  * Una liquidacion de honorarios por clase confirmada, con su snapshot (DP-38, CA-M22-007-06).
@@ -28,9 +29,9 @@ import { EgresosApi } from '../../services/egresos-api';
  */
 @Component({
   selector: 'app-liquidacion-detalle-page',
-  imports: [RouterLink],
+  imports: [Ayuda, RouterLink],
   templateUrl: './liquidacion-detalle-page.html',
-  styleUrl: '../../billing.css',
+  styleUrls: ['../../billing.css', '../../economia.css'],
 })
 export class LiquidacionDetallePage {
   private readonly api = inject(EgresosApi);

@@ -30,7 +30,7 @@ const DEUDA = {
   importeOriginal: 8500.5,
   saldo: 8500.5,
   snapshotPrecio: 8500.5,
-  snapshotNombre: 'Kinesiologia - sesion',
+  snapshotNombre: 'Kinesiologia - sesión',
   devengadaEn: '2026-09-15T12:48:00Z',
   version: 0,
 };
@@ -88,6 +88,8 @@ describe('RegistroDeCobroPage', () => {
   });
 
   afterEach(() => {
+    // La cabecera de la persona (UX-01) pide los permisos para ofrecer sus pestañas.
+    httpMock.match('/api/v1/me/permissions').forEach((pedido) => pedido.flush({ permissions: [] }));
     httpMock.verify();
   });
 
@@ -174,7 +176,7 @@ describe('RegistroDeCobroPage', () => {
 
     const contenido = texto(fixture);
     expect(contenido).toContain('alguien cobro antes');
-    expect(contenido).toContain('ningun saldo quedo en negativo');
+    expect(contenido).toContain('ningún saldo quedo en negativo');
     expect(rotulosDeBoton(fixture)).toContain('Recargar los saldos y volver a armar el cobro');
 
     // Recargar relee de verdad y descarta la seleccion: los saldos que la justificaban cambiaron.
@@ -297,10 +299,10 @@ describe('RegistroDeCobroPage', () => {
     await estabilizar(fixture);
 
     httpMock.expectNone(esListado());
-    expect(texto(fixture)).toContain('Eligi una organizacion');
+    expect(texto(fixture)).toContain('Eligi una organización');
   });
 
-  it('sin deuda cobrable no dibuja un formulario vacio', async () => {
+  it('sin deuda cobrable no dibuja un formulario vacío', async () => {
     const fixture = await montar([PAGADA]);
 
     expect(texto(fixture)).toContain('no tiene ninguna deuda con saldo pendiente');
@@ -351,18 +353,18 @@ describe('RegistroDeCobroPage', () => {
       responderCobro(pedido);
       await estabilizar(fixture);
 
-      expect(texto(fixture)).toContain('Se imputa solo al cerrar la sesion');
-      expect(texto(fixture)).toContain('Volver a la recepcion del dia');
+      expect(texto(fixture)).toContain('Se imputa solo al cerrar la sesión');
+      expect(texto(fixture)).toContain('Volver a la recepción del día');
     });
 
     it('no deja confirmar sin una moneda valida', async () => {
       const fixture = await montarPrepago();
       escribirEn(fixture, '#moneda-prepago', 'pe');
       expect(botonDe(fixture, 'Registrar el prepago').disabled).toBe(true);
-      expect(texto(fixture)).toContain('codigo de tres letras');
+      expect(texto(fixture)).toContain('código de tres letras');
     });
 
-    it('traduce prepago-ya-registrado y prepago-no-admitido y ofrece volver a la recepcion', async () => {
+    it('traduce prepago-ya-registrado y prepago-no-admitido y ofrece volver a la recepción', async () => {
       const fixture = await montarPrepago();
 
       apretar(fixture, 'Registrar el prepago');
@@ -375,7 +377,7 @@ describe('RegistroDeCobroPage', () => {
       rechazar(httpMock.expectOne(esRegistro()), 'prepago-no-admitido');
       await estabilizar(fixture);
       expect(texto(fixture)).toContain('ya no admite un prepago');
-      expect(texto(fixture)).toContain('Volver a la recepcion del dia');
+      expect(texto(fixture)).toContain('Volver a la recepción del día');
     });
 
     async function montarPrepago(): Promise<ComponentFixture<RegistroDeCobroPage>> {
@@ -492,7 +494,7 @@ describe('RegistroDeCobroPage', () => {
       fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>,
     ).find((b) => (b.textContent ?? '').trim() === rotulo);
     if (boton === undefined) {
-      throw new Error(`No hay ningun boton rotulado "${rotulo}".`);
+      throw new Error(`No hay ningún botón rotulado "${rotulo}".`);
     }
     return boton;
   }

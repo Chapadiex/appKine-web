@@ -141,11 +141,11 @@ describe('traducirErrorObligacion', () => {
     expect(hayQueRecargar(traducido.causa)).toBe(false);
   });
 
-  it('missing-tenant-context manda a elegir contexto y aclara que la sesion sigue abierta', () => {
+  it('missing-tenant-context manda a elegir contexto y aclara que la sesión sigue abierta', () => {
     const traducido = traducirErrorObligacion(problema('missing-tenant-context', 400));
 
     expect(traducido.causa).toBe('sin-contexto');
-    expect(traducido.mensaje).toContain('sesion sigue abierta');
+    expect(traducido.mensaje).toContain('sesión sigue abierta');
   });
 
   it('subscription-suspended se distingue de un 403 comun', () => {
@@ -201,7 +201,7 @@ describe('traducirErrorObligacion', () => {
 
   it('un status que nadie previo no se disfraza de otra cosa', () => {
     expect(traducirErrorObligacion(problema('internal-error', 500)).causa).toBe('otro');
-    expect(traducirErrorObligacion(sinCuerpo(500)).mensaje).toContain('Volve a intentar');
+    expect(traducirErrorObligacion(sinCuerpo(500)).mensaje).toContain('Volvé a intentar');
   });
 });
 

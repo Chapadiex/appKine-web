@@ -1,49 +1,79 @@
 <!--
-  Layout raiz (AKINE-00.02).
+  Layout raiz (AKINE-00.02, rehecho en UX-01).
 
   Fija las garantias de accesibilidad WCAG 2.1 AA que toda pantalla hereda: skip link como
   primer elemento enfocable, landmarks semanticos y foco gestionable. Ver ADR-0005.
+
+  Dos columnas: la barra lateral (navegacion, superficie de marca) y la columna de pagina, con
+  la barra superior (`header`, landmark `banner`) y el contenido (`main`). Sin contexto la barra
+  lateral no se dibuja y la columna de pagina ocupa todo.
 -->
 <a class="skip-link" href="#contenido" (click)="saltarAlContenido($event)"
   >Saltar al contenido principal</a
 >
 
-<header class="cabecera">
-  <div class="cabecera__marca">
-    <span class="marca">AKINE</span>
-    <span class="subtitulo">Gestion de centros de kinesiologia y rehabilitacion</span>
-  </div>
+<div class="shell" [class.shell--sin-barra]="!conBarraLateral()" [class.shell--acceso]="esAcceso()">
+  <!--
+    La navegacion va DESPUES del skip link: el skip link tiene que seguir siendo el primer
+    elemento enfocable del documento (ADR-0005), y el salto al contenido existe justamente para
+    que el teclado no tenga que recorrer el menu entero en cada pantalla.
+  -->
+  <app-navegacion-principal [abierto]="menuAbierto()" (cerrar)="cerrarMenu()" />
 
   <!--
-    La navegacion va DESPUES del skip link y dentro de la cabecera: el skip link tiene que
-    seguir siendo el primer elemento enfocable del documento (ADR-0005), y el salto al
-    contenido existe justamente para que el teclado no tenga que recorrer el menu entero en
-    cada pantalla.
+    Fondo que cierra el panel en tablet al tocarlo. Es un boton y no un `div` con `click`: un
+    `div` no se alcanza por teclado ni tiene nombre. En escritorio no existe (CSS).
   -->
-  <app-navegacion-principal />
-</header>
-
-<!--
-  Aviso de servicio no disponible (503). La region viva existe SIEMPRE y solo cambia su
-  contenido: un lector de pantalla no anuncia una region que aparece ya cargada. Es `status` y
-  no `alert`: es transitorio, no interrumpe, y la pantalla que fallo muestra su propio error.
--->
-<div class="aviso-servicio-region" role="status" aria-live="polite">
-  @if (avisoDeServicio(); as aviso) {
-    <div class="aviso-servicio">
-      <p class="aviso-servicio__texto">{{ aviso }}</p>
-      <button type="button" class="aviso-servicio__cerrar" (click)="cerrarAvisoDeServicio()">
-        Cerrar aviso
-      </button>
-    </div>
+  @if (menuAbierto()) {
+    <button type="button" class="fondo-menu" (click)="cerrarMenu()">
+      <span class="visualmente-oculto">Cerrar el menu</span>
+    </button>
   }
-</div>
 
-<main
-  id="contenido"
-  class="contenido"
-  tabindex="-1"
-  [class.contenido--amplio]="ancho() === 'amplio'"
->
-  <router-outlet />
-</main>
+  <div class="pagina">
+    <!--
+      Pantallas de acceso (login, registro, contexto…): sin barra superior. El logo va arriba de la
+      tarjeta y el pie lleva los enlaces de ayuda (diseño del canvas, 22/10/2026).
+    -->
+    <header class="cabecera" [hidden]="esAcceso()">
+      <app-barra-superior [menuAbierto]="menuAbierto()" (alternarMenu)="alternarMenu()" />
+    </header>
+
+    <!--
+      Aviso de servicio no disponible (503). La region viva existe SIEMPRE y solo cambia su
+      contenido: un lector de pantalla no anuncia una region que aparece ya cargada. Es `status`
+      y no `alert`: es transitorio, no interrumpe, y la pantalla que fallo muestra su propio
+      error.
+    -->
+    <div class="aviso-servicio-region" role="status" aria-live="polite">
+      @if (avisoDeServicio(); as aviso) {
+        <div class="aviso-servicio">
+          <p class="aviso-servicio__texto">{{ aviso }}</p>
+          <button type="button" class="aviso-servicio__cerrar" (click)="cerrarAvisoDeServicio()">
+            Cerrar aviso
+          </button>
+        </div>
+      }
+    </div>
+
+    <main
+      id="contenido"
+      class="contenido"
+      tabindex="-1"
+      [class.contenido--amplio]="ancho() === 'amplio'"
+    >
+      @if (esAcceso()) {
+        <a class="acceso__marca" routerLink="/">
+          <span class="acceso__logo" aria-hidden="true">A</span>
+          <span>AKINE</span>
+        </a>
+      }
+      <router-outlet />
+      @if (esAcceso()) {
+        <footer class="acceso__pie">
+          <a routerLink="/estado">Estado del sistema</a>
+        </footer>
+      }
+    </main>
+  </div>
+</div>

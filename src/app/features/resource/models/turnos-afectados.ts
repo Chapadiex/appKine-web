@@ -33,7 +33,7 @@ export function turnosPrevistos(estado: ImpactoPrevio | null): number | null {
 export function resumenDeImpacto(impacto: ImpactoDisponibilidadResponse): string {
   const cantidad = impacto.turnosAfectados ?? 0;
   if (cantidad <= 0) {
-    return 'Ningun turno pendiente queda fuera de horario con este cambio.';
+    return 'Ningún turno pendiente queda fuera de horario con este cambio.';
   }
   const turnos = cantidad === 1 ? 'turno pendiente queda' : 'turnos pendientes quedan';
   return (
@@ -71,7 +71,7 @@ export function avisoDeTurnosAfectados(
 
   const base =
     cantidad <= 0
-      ? 'Ningun turno pendiente de este profesional quedo fuera de su horario.'
+      ? 'Ningún turno pendiente de este profesional quedo fuera de su horario.'
       : `${cantidad} ${cantidad === 1 ? 'turno pendiente' : 'turnos pendientes'} de este ` +
         'profesional en la sede ' +
         (cantidad === 1 ? 'quedo' : 'quedaron') +
@@ -99,7 +99,7 @@ export function avisoDeExcepcion(previsto: number | null): string | null {
   }
   const turnos = previsto === 1 ? 'turno pendiente quedaba' : 'turnos pendientes quedaban';
   return (
-    `Segun la consulta previa, ${previsto} ${turnos} fuera de horario. Ninguno se cancelo; ` +
+    `Según la consulta previa, ${previsto} ${turnos} fuera de horario. Ninguno se cancelo; ` +
     'revisalos en la agenda. Si alguien reservo mientras confirmabas, puede haber alguno mas.'
   );
 }

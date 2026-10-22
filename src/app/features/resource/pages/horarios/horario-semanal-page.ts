@@ -59,6 +59,13 @@ import {
   minutosDeHora,
   rangoHorario,
 } from '../../../../shared/utils/horas-de-pared';
+import { Icono } from '../../../../shared/components/icono/icono';
+import { Pestanas } from '../../../../shared/components/pestanas/pestanas';
+import {
+  ETIQUETA_PESTANAS_DE_HORARIOS,
+  PESTANAS_DE_HORARIOS,
+} from '../../models/pestanas-de-horarios';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 
 /** Operacion abierta sobre un bloque. Solo una a la vez, y nunca junto con el alta. */
 type TipoAccion = 'editar' | 'baja';
@@ -106,6 +113,9 @@ interface DiaConBloques {
 @Component({
   selector: 'app-horario-semanal-page',
   imports: [
+    Ayuda,
+    Icono,
+    Pestanas,
     ReactiveFormsModule,
     RouterLink,
     PermisoDirective,
@@ -139,6 +149,8 @@ export class HorarioSemanalPage {
 
   protected readonly permisoManage = PERMISO_CONSULTORIO_MANAGE;
   protected readonly rutas = RUTAS_HORARIOS;
+  protected readonly pestanas = PESTANAS_DE_HORARIOS;
+  protected readonly etiquetaDePestanas = ETIQUETA_PESTANAS_DE_HORARIOS;
   protected readonly textoModoLectura = TEXTO_MODO_LECTURA;
   protected readonly textoListaIncompleta = TEXTO_LISTA_INCOMPLETA;
   protected readonly modoLectura = modoLectura(inject(PermissionsStore));
@@ -762,7 +774,7 @@ export class HorarioSemanalPage {
       // Sin `version` no hay edicion posible: mandar `0` pisaria el cambio de otro, que es
       // exactamente lo que el control de concurrencia optimista existe para impedir.
       this.errorAccion.set(
-        'No pudimos leer la version de este bloque. Cerra el panel, recarga el horario y volve a intentar.',
+        'No pudimos leer la versión de este bloque. Cerra el panel, recarga el horario y volvé a intentar.',
       );
       return null;
     }

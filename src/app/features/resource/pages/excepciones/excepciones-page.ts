@@ -37,6 +37,7 @@ import { ExcepcionesDeDisponibilidadService } from '../../../../api/generated/ap
 import { FeriadoResponse } from '../../../../api/generated/model/feriado-response';
 import { MembershipResponse } from '../../../../api/generated/model/membership-response';
 import { PERMISO_CONSULTORIO_MANAGE } from '../../../../core/models/permisos';
+import { Filtros } from '../../../../shared/components/filtros/filtros';
 import { PermisoDirective } from '../../../../shared/directives/permiso.directive';
 import { PermissionsStore } from '../../../../core/services/permissions.store';
 import { RUTAS_HORARIOS } from '../../models/rutas-de-horarios';
@@ -72,6 +73,8 @@ import {
   sumarDias,
 } from '../../models/ventana-de-fechas';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
+import { Icono } from '../../../../shared/components/icono/icono';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 
 /** Cuantos dias de ventana se proponen al entrar. Un trimestre es lo que se planifica. */
 const DIAS_PROPUESTOS = 90;
@@ -84,9 +87,9 @@ const DIAS_PROPUESTOS = 90;
  * que no se puede acotar despues sin dar de baja lo cargado.
  */
 const MENSAJE_ALCANCE_DESCONOCIDO =
-  'No pudimos leer los profesionales de la sede, asi que no podemos ofrecerte a quien alcanza ' +
-  'la excepcion. Lo unico que quedaria elegible es "toda la sede", que alcanza a todos: no se ' +
-  'guarda nada hasta que la lista cargue. Volve a intentar con el boton de arriba.';
+  'No pudimos leer los profesionales de la sede, así que no podemos ofrecerte a quien alcanza ' +
+  'la excepción. Lo unico que quedaria elegible es "toda la sede", que alcanza a todos: no se ' +
+  'guarda nada hasta que la lista cargue. Volvé a intentar con el botón de arriba.';
 
 /**
  * El aviso que frena una apertura de sede antes de guardarla.
@@ -150,6 +153,9 @@ const MOTIVOS: readonly {
 @Component({
   selector: 'app-excepciones-page',
   imports: [
+    Ayuda,
+    Icono,
+    Filtros,
     ReactiveFormsModule,
     RouterLink,
     PermisoDirective,
@@ -258,6 +264,10 @@ export class ExcepcionesPage {
 
   /** Filtro del listado. `''` = alcance sede; un id = ese profesional MAS las de la sede. */
   protected readonly filtroMembership = signal<number | null>(null);
+  /** Filtros avanzados fuera de su valor por defecto (regla de filtros, plan §3.4). */
+  protected readonly filtrosAvanzadosActivos = computed(() =>
+    Number(this.filtroMembership() !== null),
+  );
 
   // --- Listado --------------------------------------------------------------------------
 
@@ -505,13 +515,13 @@ export class ExcepcionesPage {
     if (dias <= 0) {
       // `hasta == desde` es 400 y no "un dia": el fin es exclusivo.
       this.errorVentana.set(
-        'El fin de la ventana tiene que ser posterior al inicio. Es exclusivo: para mirar un solo dia, poné el dia siguiente.',
+        'El fin de la ventana tiene que ser posterior al inicio. Es exclusivo: para mirar un solo día, poné el día siguiente.',
       );
       return;
     }
     if (dias > MAXIMO_DIAS_VENTANA) {
       this.errorVentana.set(
-        `La ventana no puede superar los ${MAXIMO_DIAS_VENTANA} dias. Acorta el periodo y volve a consultar.`,
+        `La ventana no puede superar los ${MAXIMO_DIAS_VENTANA} días. Acorta el periodo y volvé a consultar.`,
       );
       return;
     }
@@ -894,7 +904,7 @@ export class ExcepcionesPage {
         next: () => {
           this.cerrarBaja();
           this.exito.set(
-            'La excepcion quedo dada de baja. La fila no se borra: sobrevive con sus fechas, su ' +
+            'La excepción quedo dada de baja. La fila no se borra: sobrevive con sus fechas, su ' +
               'motivo y su autor.',
           );
           this.avisoTurnos.set(avisoDeExcepcion(previsto));

@@ -60,7 +60,7 @@ describe('SubscriptionPage', () => {
     const fixture = TestBed.createComponent(SubscriptionPage);
     fixture.detectChanges();
 
-    expect(texto(fixture)).toContain('Todavia no elegiste un contexto');
+    expect(texto(fixture)).toContain('Todavía no elegiste un contexto');
     httpMock.expectNone(() => true);
   });
 
@@ -69,15 +69,15 @@ describe('SubscriptionPage', () => {
     const fixture = TestBed.createComponent(SubscriptionPage);
     fixture.detectChanges();
 
-    expect(texto(fixture)).toContain('Cargando la suscripcion');
+    expect(texto(fixture)).toContain('Cargando la suscripción');
     httpMock.expectOne(URL_SUSCRIPCION).flush(SUSCRIPCION_ACTIVA);
   });
 
-  it('con la suscripcion ACTIVA muestra plan y limites con su uso, sin pedir el historico', async () => {
+  it('con la suscripción ACTIVA muestra plan y limites con su uso, sin pedir el historico', async () => {
     seleccionar();
     const fixture = await cargarCon(SUSCRIPCION_ACTIVA);
 
-    expect(texto(fixture)).toContain('Suscripcion activa');
+    expect(texto(fixture)).toContain('Suscripción activa');
     expect(texto(fixture)).toContain('Basico');
     // Los codigos tecnicos no se muestran crudos.
     expect(texto(fixture)).toContain('Sedes habilitadas');
@@ -98,15 +98,15 @@ describe('SubscriptionPage', () => {
     expect(fixture.nativeElement.querySelector('.excedido')).toBeTruthy();
   });
 
-  it('sin limites declarados lo dice, en vez de mostrar una tabla vacia', async () => {
+  it('sin limites declarados lo dice, en vez de mostrar una lista vacía', async () => {
     seleccionar();
     const fixture = await cargarCon({ ...SUSCRIPCION_ACTIVA, limits: [] });
 
-    expect(texto(fixture)).toContain('Este plan no declara limites');
-    expect(fixture.nativeElement.querySelector('table')).toBeNull();
+    expect(texto(fixture)).toContain('Este plan no declara límites');
+    expect(fixture.nativeElement.querySelector('.limites-lista')).toBeNull();
   });
 
-  it('con la suscripcion SUSPENDIDA muestra el motivo del historico y avisa de solo lectura', async () => {
+  it('con la suscripción SUSPENDIDA muestra el motivo del historico y avisa de solo lectura', async () => {
     seleccionar();
     const fixture = TestBed.createComponent(SubscriptionPage);
     fixture.detectChanges();
@@ -132,7 +132,7 @@ describe('SubscriptionPage', () => {
     expect(fixture.nativeElement.querySelector('[role="alert"]')).toBeTruthy();
   });
 
-  it('si el historico falla igual se pinta la suscripcion, sin el motivo', async () => {
+  it('si el historico falla igual se pinta la suscripción, sin el motivo', async () => {
     seleccionar();
     const fixture = TestBed.createComponent(SubscriptionPage);
     fixture.detectChanges();
@@ -155,11 +155,11 @@ describe('SubscriptionPage', () => {
     expect(texto(fixture)).toContain('Basico');
   });
 
-  it('con la suscripcion CANCELADA lo dice como estado final', async () => {
+  it('con la suscripción CANCELADA lo dice como estado final', async () => {
     seleccionar();
     const fixture = await cargarCon({ ...SUSCRIPCION_ACTIVA, status: 'CANCELADA' });
 
-    expect(texto(fixture)).toContain('Suscripcion cancelada');
+    expect(texto(fixture)).toContain('Suscripción cancelada');
     expect(texto(fixture)).toContain('estado final');
   });
 
@@ -177,16 +177,16 @@ describe('SubscriptionPage', () => {
     expect(texto(fixture)).toContain('No se pudo contactar al servidor');
     expect(fixture.nativeElement.querySelector('[role="alert"]')).toBeTruthy();
 
-    fixture.nativeElement.querySelector('button')?.click();
+    fixture.nativeElement.querySelector('button:not(.ayuda-contextual__boton)')?.click();
     fixture.detectChanges();
     httpMock.expectOne(URL_SUSCRIPCION).flush(SUSCRIPCION_ACTIVA);
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect(texto(fixture)).toContain('Suscripcion activa');
+    expect(texto(fixture)).toContain('Suscripción activa');
   });
 
-  it('un 403 de administracion explica el permiso, no habla de sesion', async () => {
+  it('un 403 de administracion explica el permiso, no habla de sesión', async () => {
     seleccionar();
     const fixture = TestBed.createComponent(SubscriptionPage);
     fixture.detectChanges();
@@ -217,7 +217,7 @@ describe('SubscriptionPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.querySelector('button')).toBeNull();
+    expect(fixture.nativeElement.querySelector('button:not(.ayuda-contextual__boton)')).toBeNull();
     expect(fixture.nativeElement.querySelector('a[href="/seleccionar-contexto"]')).toBeTruthy();
   });
 
@@ -235,7 +235,7 @@ describe('SubscriptionPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect(texto(fixture)).toContain('No encontramos esta organizacion');
+    expect(texto(fixture)).toContain('No encontramos esta organización');
   });
 
   it('ante otro error del servidor muestra el detail del backend', async () => {
@@ -246,34 +246,33 @@ describe('SubscriptionPage', () => {
     httpMock.expectOne(URL_SUSCRIPCION).flush(
       {
         type: 'https://akine.app/problems/internal-error',
-        detail: 'Fallo al leer la suscripcion',
+        detail: 'Fallo al leer la suscripción',
       },
       { status: 500, statusText: 'Internal Server Error' },
     );
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect(texto(fixture)).toContain('Fallo al leer la suscripcion');
+    expect(texto(fixture)).toContain('Fallo al leer la suscripción');
   });
 
   // --- Accesibilidad ---------------------------------------------------------------
 
   it(
-    'no tiene violaciones de axe con la tabla de limites en pantalla',
+    'no tiene violaciones de axe con la lista de limites en pantalla',
     async () => {
       seleccionar();
       const fixture = await cargarCon(SUSCRIPCION_ACTIVA);
 
-      // La tabla de limites es lo mas denso de la feature: `caption`, `th scope="col"` y
-      // `th scope="row"`. Un scope mal puesto deja la tabla ilegible por lector de pantalla
-      // sin que se note mirandola.
+      // La lista de limites con sus medidores es lo mas denso de la feature: la barra es
+      // decorativa y el numero tiene que quedar legible sin ella.
       await esperarSinViolaciones(fixture.nativeElement);
     },
     TIMEOUT_AXE,
   );
 
   it(
-    'no tiene violaciones de axe con el banner de suscripcion suspendida',
+    'no tiene violaciones de axe con el banner de suscripción suspendida',
     async () => {
       seleccionar();
       const fixture = TestBed.createComponent(SubscriptionPage);

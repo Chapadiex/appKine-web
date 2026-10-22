@@ -67,12 +67,12 @@ test.describe('Suscripcion contra el backend real', () => {
       // --- Recien dada de alta: plan basico, una sede en uso de una ---------------------------
       await ingresar(page, { emailAdmin: email } as Centro);
       await navegar(page, '/organizacion/suscripcion');
-      await expect(page.getByRole('heading', { name: 'Suscripcion activa' })).toBeVisible();
-      const detalle = page.locator('dl.detalle');
+      await expect(page.getByRole('heading', { name: 'Suscripción activa' })).toBeVisible();
+      const detalle = page.locator('.plan-actual');
       await expect(detalle).toContainText(inicial.planName);
-      const sedes = page.getByRole('row', { name: /^Sedes habilitadas/ });
-      await expect(sedes.getByRole('cell').nth(0)).toHaveText('1');
-      await expect(sedes.getByRole('cell').nth(1)).toHaveText('1');
+      const sedes = page.getByRole('listitem').filter({ hasText: 'Sedes habilitadas' });
+      // Uso y tope en un solo rotulo, "1 de 1", desde el rediseño de la suscripcion.
+      await expect(sedes.locator('.limite__valor')).toHaveText('1 de 1');
 
       // --- La plataforma cambia el plan desde su consola, sin acceso de soporte ----------------
       const plataforma = await paginaDePlataforma(browser);
@@ -101,7 +101,7 @@ test.describe('Suscripcion contra el backend real', () => {
           new RegExp(`/platform/organizations/${organizationId}/subscription$`),
         );
         await fila
-          .getByRole('button', { name: `Ver la suscripcion de ${nombreDelCentro}` })
+          .getByRole('button', { name: `Ver la suscripción de ${nombreDelCentro}` })
           .click();
         expect((await lectura).status()).toBe(200);
         await expect(plataforma.getByRole('heading', { name: nombreDelCentro })).toBeVisible();
@@ -145,12 +145,12 @@ test.describe('Suscripcion contra el backend real', () => {
       await navegar(page, '/organizacion');
       await expect(page).toHaveURL(/\/organizacion$/);
       await navegar(page, '/organizacion/suscripcion');
-      const banner = page.getByRole('alert').filter({ hasText: 'Suscripcion suspendida' });
+      const banner = page.getByRole('alert').filter({ hasText: 'Suscripción suspendida' });
       await expect(banner).toContainText(`Motivo: ${motivo}`);
       await expect(banner).toContainText('solo lectura');
       await expect(detalle).toContainText(suspendida.planName);
       await expect(detalle).toContainText('SUSPENDIDA');
-      await expect(sedes.getByRole('cell').nth(1)).not.toHaveText('1');
+      await expect(sedes.locator('.limite__valor')).not.toHaveText('1 de 1');
 
       // Y es solo lectura de verdad: el alta de una sede se rechaza con el tipo declarado.
       const alta = await admin.pedir(

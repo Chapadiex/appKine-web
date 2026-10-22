@@ -35,6 +35,8 @@ import {
 } from '../../models/etiquetas-de-ficha';
 import { SECCION_COBERTURAS, coberturaDelResumen } from '../../models/etiquetas-de-cobertura';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { CabeceraDePersona } from '../../components/cabecera-de-persona/cabecera-de-persona';
 
 /** Confirmacion abierta sobre la ficha. Solo una a la vez. */
 type TipoDeBaja = 'persona' | 'perfil';
@@ -102,7 +104,14 @@ interface ConteoPorCategoria {
  */
 @Component({
   selector: 'app-ficha-de-persona-page',
-  imports: [RouterLink, ConfirmacionConMotivo, PermisoDirective, DatosAdministrativosDeHistoria],
+  imports: [
+    Ayuda,
+    CabeceraDePersona,
+    RouterLink,
+    ConfirmacionConMotivo,
+    PermisoDirective,
+    DatosAdministrativosDeHistoria,
+  ],
   templateUrl: './ficha-de-persona-page.html',
   styleUrl: '../../person.css',
 })
@@ -217,7 +226,7 @@ export class FichaDePersonaPage {
       // peticion: el backend responderia 400 y el mensaje hablaria de un parametro, no de lo que
       // el usuario hizo.
       this.cargando.set(false);
-      this.errorDeCarga.set('La direccion no identifica a ninguna persona del padron.');
+      this.errorDeCarga.set('La dirección no identifica a ninguna persona del padron.');
       return;
     }
 
@@ -286,7 +295,7 @@ export class FichaDePersonaPage {
       next: (actualizada) => {
         this.terminar(
           `${nombreCompleto(actualizada)} ya no tiene perfil de paciente. Su ficha sigue vigente: ` +
-            'puede seguir participando de actividades no clinicas.',
+            'puede seguir participando de actividades no clínicas.',
         );
       },
       error: (error: unknown) => this.fallo(error),

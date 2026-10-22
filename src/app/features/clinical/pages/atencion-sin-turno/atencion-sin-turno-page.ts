@@ -8,6 +8,7 @@ import { TenantContextStore } from '../../../../core/services/tenant-context.sto
 import { rotuloDeCaso } from '../../models/etiquetas-de-atencion';
 import { ErrorAtencion, traducirErrorAtencion } from '../../models/atencion-errors';
 import { ClinicalApi } from '../../services/clinical-api';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 
 /**
  * Atender a un paciente sin turno (DP-43, U-24, RF-M14-002).
@@ -28,7 +29,7 @@ import { ClinicalApi } from '../../services/clinical-api';
  */
 @Component({
   selector: 'app-atencion-sin-turno-page',
-  imports: [RouterLink],
+  imports: [Ayuda, RouterLink],
   templateUrl: './atencion-sin-turno-page.html',
   styleUrl: '../../atencion.css',
 })
@@ -118,13 +119,13 @@ export class AtencionSinTurnoPage {
     const motivo = this.motivo().trim();
     const faltante =
       personaId === undefined
-        ? 'Elegi a quien se atiende.'
+        ? 'Elegí a quien se atiende.'
         : ofertaId === null
-          ? 'Elegi la oferta con la que se atiende.'
+          ? 'Elegí la oferta con la que se atiende.'
           : motivo === ''
             ? 'Escribi por que se atiende sin turno: es obligatorio.'
             : this.requiereCaso() && this.casoId() === null
-              ? 'Esta prestacion exige un caso clinico: elegi uno.'
+              ? 'Esta prestación exige un caso clínico: elegí uno.'
               : '';
     if (faltante !== '' || consultorioId === null || personaId === undefined || ofertaId === null) {
       this.aviso.set(faltante);

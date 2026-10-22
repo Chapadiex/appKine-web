@@ -25,7 +25,7 @@ const ZONA = 'America/Argentina/Cordoba';
  * clasificacion marque lo que choca, y que el 409 de una ocurrencia nombre la fecha.
  */
 describe('series — expansion de la regla', () => {
-  it('cuenta ocurrencias, no semanas, y arranca el mismo dia si coincide', () => {
+  it('cuenta ocurrencias, no semanas, y arranca el mismo día si coincide', () => {
     // 2026-10-12 es lunes. Lunes y jueves, 4 turnos.
     const { fechas } = expandirRegla({ fechaDesde: '2026-10-12', diasSemana: [1, 4], cantidad: 4 });
     expect(fechas).toEqual(['2026-10-12', '2026-10-15', '2026-10-19', '2026-10-22']);
@@ -50,19 +50,19 @@ describe('series — expansion de la regla', () => {
     expect(expansion.fechas.length).toBe(52);
   });
 
-  it('sin dias o sin fin no produce nada', () => {
+  it('sin días o sin fin no produce nada', () => {
     expect(expandirRegla({ fechaDesde: '2026-10-12', diasSemana: [], cantidad: 3 }).fechas).toEqual(
       [],
     );
     expect(expandirRegla({ fechaDesde: '2026-10-12', diasSemana: [1] }).fechas).toEqual([]);
   });
 
-  it('dia ISO: domingo es 7', () => {
+  it('día ISO: domingo es 7', () => {
     expect(diaIso('2026-10-18')).toBe(7);
     expect(diaIso('2026-10-12')).toBe(1);
   });
 
-  it('parte el rango en ventanas de a lo sumo 62 dias, con hasta exclusivo', () => {
+  it('parte el rango en ventanas de a lo sumo 62 días, con hasta exclusivo', () => {
     expect(ventanasDeAgenda('2026-10-12', '2026-10-12')).toEqual([
       { desde: '2026-10-12', hasta: '2026-10-13' },
     ]);
@@ -92,7 +92,7 @@ describe('series — clasificacion contra la agenda', () => {
     ],
   };
 
-  it('libre, completo, feriado, otra hora y dia que no vino', () => {
+  it('libre, completo, feriado, otra hora y día que no vino', () => {
     const resultado = clasificarOcurrencias(
       ['2026-10-12', '2026-10-19', '2026-10-26', '2026-11-02', '2026-11-09'],
       '09:00',
@@ -152,7 +152,7 @@ describe('traducirErrorSerie', () => {
     );
     expect(error.accion).toBe('revisar-ocurrencias');
     expect(error.ocurrenciaInicio).toBe('2026-10-19T12:00:00Z');
-    expect(error.mensaje).toContain('No se reservo ningun turno');
+    expect(error.mensaje).toContain('No se reservo ningún turno');
     expect(error.mensaje).toContain('19/10/2026');
     expect(error.mensaje).toContain('profesional');
   });
@@ -166,7 +166,7 @@ describe('traducirErrorSerie', () => {
   it('sin turnos pendientes en el alcance', () => {
     const error = traducirErrorSerie(problema(409, 'turno-transicion-no-permitida'));
     expect(error.accion).toBe('releer-alcance');
-    expect(error.mensaje).toContain('ningun turno pendiente');
+    expect(error.mensaje).toContain('ningún turno pendiente');
   });
 
   it('en la reprogramacion, el destino sin lugar dice que no se movio ninguno', () => {
@@ -175,7 +175,7 @@ describe('traducirErrorSerie', () => {
       ZONA,
       'reprogramar',
     );
-    expect(error.mensaje).toContain('No se movio ningun turno');
+    expect(error.mensaje).toContain('No se movio ningún turno');
     expect(error.mensaje).toContain('20/10/2026');
     expect(error.mensaje).not.toContain('reservo');
     expect(traducirErrorSerie(problema(409, 'conflict'), ZONA, 'reprogramar').mensaje).toContain(

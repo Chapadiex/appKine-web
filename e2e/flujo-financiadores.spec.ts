@@ -40,7 +40,7 @@ test.describe('Financiadores y planes contra el backend real', () => {
     // --- Alta del financiador ---------------------------------------------------------------
     await page.getByRole('button', { name: 'Dar de alta un financiador' }).click();
     const formulario = page.getByRole('region', { name: 'Nuevo financiador' });
-    await formulario.getByLabel('Codigo', { exact: true }).fill(codigo);
+    await formulario.getByLabel('Código', { exact: true }).fill(codigo);
     await formulario.getByLabel('Nombre', { exact: true }).fill(nombre);
     await formulario.getByLabel('Tipo', { exact: true }).selectOption({ value: 'OBRA_SOCIAL' });
     const alta = respuestaDe(page, 'POST', /\/financiadores$/);
@@ -51,11 +51,12 @@ test.describe('Financiadores y planes contra el backend real', () => {
 
     // El listado acumula los financiadores de todas las corridas: se busca por nombre.
     await page.getByLabel('Buscar', { exact: true }).fill(nombre);
-    await page.getByRole('button', { name: 'Buscar', exact: true }).click();
+    // Sin boton a la vista (regla de filtros, UX-01): Enter envia el formulario de busqueda.
+    await page.getByLabel('Buscar', { exact: true }).press('Enter');
     const fila = page.getByRole('region', { name: 'Financiadores' }).getByRole('row', {
       name: new RegExp(nombre),
     });
-    await expect(fila).toContainText(`Codigo ${codigo}`);
+    await expect(fila).toContainText(`Código ${codigo}`);
     await expect(fila).toContainText('Activo');
     await fila.getByRole('link', { name: 'Planes' }).click();
 
@@ -68,13 +69,14 @@ test.describe('Financiadores y planes contra el backend real', () => {
     const plan = `Plan 310 ${sufijo}`;
     const desde = sumarDias(fechaLocal(centro.timezone), -1);
     await formularioDelPlan
-      .getByLabel('Codigo', { exact: true })
+      .getByLabel('Código', { exact: true })
       .fill(`P310${sufijo}`.slice(0, 20));
     await formularioDelPlan.getByLabel('Nombre', { exact: true }).fill(plan);
     await formularioDelPlan.getByLabel('Vigente desde').fill(desde);
     await formularioDelPlan.getByLabel('Copago (opcional)').fill('1500');
     await formularioDelPlan.getByLabel('Moneda').fill('ARS');
-    await formularioDelPlan.getByLabel('Requiere autorizacion previa').check();
+    await formularioDelPlan.getByText('Requisitos del plan', { exact: true }).click();
+    await formularioDelPlan.getByLabel('Requiere autorización previa').check();
     const altaDelPlan = respuestaDe(page, 'POST', /\/financiadores\/\d+\/planes$/);
     await formularioDelPlan.getByRole('button', { name: 'Dar de alta', exact: true }).click();
     const planCreado = await altaDelPlan;
@@ -113,11 +115,11 @@ test.describe('Financiadores y planes contra el backend real', () => {
       .selectOption({ value: String(financiadorId) });
     await formularioDelConvenio.getByLabel('Plan').selectOption({ value: String(guardado!.id) });
     await formularioDelConvenio
-      .getByLabel('Codigo', { exact: true })
+      .getByLabel('Código', { exact: true })
       .fill(`CV310${sufijo}`.slice(0, 20));
     await formularioDelConvenio.getByLabel('Nombre', { exact: true }).fill(convenio);
     await formularioDelConvenio
-      .getByLabel('Modalidad de liquidacion')
+      .getByLabel('Modalidad de liquidación')
       .selectOption({ value: 'POR_PRESTACION' });
     await formularioDelConvenio.getByLabel('Moneda').fill('ARS');
     await formularioDelConvenio.getByLabel('Vigente desde').fill(desde);
