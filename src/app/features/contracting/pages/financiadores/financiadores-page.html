@@ -17,10 +17,10 @@
   </app-ayuda>
   <div class="encabezado__acciones" *akinePermiso="permisoManage">
     <!-- DP-43 (U-12): una copia propia de una entrada del catálogo de la plataforma. -->
-    <a class="botón botón--secundario" routerLink="/contratacion/financiadores/catalogo">
+    <a class="boton boton--secundario" routerLink="/contratacion/financiadores/catalogo">
       Agregar desde el catálogo
     </a>
-    <button type="button" class="botón" (click)="abrirAlta()">
+    <button type="button" class="boton" (click)="abrirAlta()">
       <app-icono nombre="agregar" />
       Dar de alta un financiador
     </button>
@@ -153,12 +153,12 @@
       }
 
       <p class="acciones">
-        <button type="submit" class="botón" [disabled]="enviando()">
+        <button type="submit" class="boton" [disabled]="enviando()">
           {{ enviando() ? 'Guardando...' : 'Dar de alta' }}
         </button>
         <button
           type="button"
-          class="botón botón--secundario"
+          class="boton boton--secundario"
           (click)="cerrarPanel()"
           [disabled]="enviando()"
         >
@@ -248,16 +248,16 @@
 
       @case ('sin-contexto') {
         <p class="estado estado--vacio">Todavía no elegiste un consultorio.</p>
-        <a class="botón" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
+        <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
       }
 
       @case ('error') {
         <p class="estado estado--error" role="alert">{{ mensajeError() }}</p>
 
         @if (faltaContexto()) {
-          <a class="botón" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
+          <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
         } @else {
-          <button type="button" class="botón" (click)="cargar()">Reintentar</button>
+          <button type="button" class="boton" (click)="cargar()">Reintentar</button>
         }
       }
 
@@ -326,7 +326,7 @@
                         cobertura vieja. El enlace no lleva permiso, por lo mismo que el listado.
                       -->
                       <a
-                        class="botón botón--secundario"
+                        class="boton boton--secundario"
                         [routerLink]="['/contratacion/financiadores', financiador.id, 'planes']"
                       >
                         Planes
@@ -335,14 +335,14 @@
                         <ng-container *akinePermiso="permisoManage">
                           <button
                             type="button"
-                            class="botón botón--secundario"
+                            class="boton boton--secundario"
                             (click)="abrirPanel(financiador, 'editar')"
                           >
                             Editar
                           </button>
                           <button
                             type="button"
-                            class="botón botón--secundario"
+                            class="boton boton--secundario"
                             (click)="abrirPanel(financiador, 'baja')"
                           >
                             Dar de baja
@@ -460,19 +460,19 @@
                           }
 
                           <p class="acciones">
-                            <button type="submit" class="botón" [disabled]="enviando()">
+                            <button type="submit" class="boton" [disabled]="enviando()">
                               {{ enviando() ? 'Guardando...' : 'Guardar cambios' }}
                             </button>
                             <button
                               type="button"
-                              class="botón botón--secundario"
+                              class="boton boton--secundario"
                               (click)="cerrarPanel()"
                               [disabled]="enviando()"
                             >
                               Cancelar
                             </button>
                             @if (hayQueRecargar()) {
-                              <button type="button" class="botón" (click)="cargar()">
+                              <button type="button" class="boton" (click)="cargar()">
                                 Recargar el listado
                               </button>
                             }
@@ -500,7 +500,7 @@
                           <p class="estado estado--error" role="alert">{{ mensaje }}</p>
                         }
                         @if (hayQueRecargar()) {
-                          <button type="button" class="botón" (click)="cargar()">
+                          <button type="button" class="boton" (click)="cargar()">
                             Recargar el listado
                           </button>
                         }

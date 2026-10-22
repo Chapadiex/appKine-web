@@ -121,7 +121,18 @@
     <!-- Secciones que aportaron los modulos que el usuario SI puede ver. -->
     @for (seccion of secciones(); track seccion.seccion) {
       <section class="tarjeta" aria-labelledby="titulo-seccion-{{ seccion.seccion }}">
-        <h2 id="titulo-seccion-{{ seccion.seccion }}">{{ nombreDeSeccion(seccion.seccion) }}</h2>
+        <div class="titulo-con-ayuda">
+          <h2 id="titulo-seccion-{{ seccion.seccion }}">{{ nombreDeSeccion(seccion.seccion) }}</h2>
+          @if (seccion.seccion === seccionCoberturas) {
+            <app-ayuda titulo="Coberturas en la ficha">
+              <p>
+                El número de afiliado se muestra enmascarado; el completo está en Coberturas. Tener
+                una cobertura vigente no dice que aplique a una oferta concreta: eso se consulta en
+                Coberturas, eligiendo la oferta.
+              </p>
+            </app-ayuda>
+          }
+        </div>
 
         @if (seccion.indicadores?.length) {
           <dl class="datos">
@@ -172,13 +183,6 @@
             </ul>
           }
 
-          <app-ayuda titulo="Coberturas en la ficha">
-            <p>
-              El número de afiliado se muestra enmascarado; el completo está en Coberturas. Tener
-              una cobertura vigente no dice que aplique a una oferta concreta: eso se consulta en
-              Coberturas, eligiendo la oferta.
-            </p>
-          </app-ayuda>
           <p class="ficha-enlace">
             <a class="enlace" [routerLink]="rutaCoberturas()">Ver coberturas del paciente</a>
           </p>

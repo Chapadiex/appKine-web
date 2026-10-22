@@ -38,12 +38,12 @@
   @if (!convenioInactivo()) {
     <div class="encabezado__acciones" *akinePermiso="permisoManage">
       <a
-        class="botón botón--secundario"
+        class="boton boton--secundario"
         [routerLink]="['/contratacion/convenios', convenioId, 'aranceles', 'importar']"
       >
         Importar aranceles
       </a>
-      <button type="button" class="botón" (click)="abrirAlta()">
+      <button type="button" class="boton" (click)="abrirAlta()">
         <app-icono nombre="agregar" />
         Cargar un arancel
       </button>
@@ -248,12 +248,12 @@
       }
 
       <p class="acciones">
-        <button type="submit" class="botón" [disabled]="enviando()">
+        <button type="submit" class="boton" [disabled]="enviando()">
           {{ enviando() ? 'Guardando...' : 'Cargar arancel' }}
         </button>
         <button
           type="button"
-          class="botón botón--secundario"
+          class="boton boton--secundario"
           (click)="cerrarPanel()"
           [disabled]="enviando()"
         >
@@ -319,16 +319,16 @@
           Los convenios y sus aranceles son de una sede concreta. Tu sesión sigue abierta: solo
           falta elegir dónde estás.
         </p>
-        <a class="botón" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
+        <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
       }
 
       @case ('error') {
         <p class="estado estado--error" role="alert">{{ mensajeError() }}</p>
 
         @if (faltaContexto()) {
-          <a class="botón" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
+          <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
         } @else {
-          <button type="button" class="botón" (click)="cargar()">Reintentar</button>
+          <button type="button" class="boton" (click)="cargar()">Reintentar</button>
         }
       }
 
@@ -417,14 +417,14 @@
                         <ng-container *akinePermiso="permisoManage">
                           <button
                             type="button"
-                            class="botón botón--secundario"
+                            class="boton boton--secundario"
                             (click)="abrirPanel(arancel, 'editar')"
                           >
                             Editar
                           </button>
                           <button
                             type="button"
-                            class="botón botón--secundario"
+                            class="boton boton--secundario"
                             (click)="abrirPanel(arancel, 'baja')"
                           >
                             Dar de baja
@@ -517,19 +517,19 @@
                           }
 
                           <p class="acciones">
-                            <button type="submit" class="botón" [disabled]="enviando()">
+                            <button type="submit" class="boton" [disabled]="enviando()">
                               {{ enviando() ? 'Guardando...' : 'Guardar cambios' }}
                             </button>
                             <button
                               type="button"
-                              class="botón botón--secundario"
+                              class="boton boton--secundario"
                               (click)="cerrarPanel()"
                               [disabled]="enviando()"
                             >
                               Cancelar
                             </button>
                             @if (hayQueRecargar()) {
-                              <button type="button" class="botón" (click)="cargar()">
+                              <button type="button" class="boton" (click)="cargar()">
                                 Recargar la grilla
                               </button>
                             }
@@ -557,7 +557,7 @@
                           <p class="estado estado--error" role="alert">{{ mensaje }}</p>
                         }
                         @if (hayQueRecargar()) {
-                          <button type="button" class="botón" (click)="cargar()">
+                          <button type="button" class="boton" (click)="cargar()">
                             Recargar la grilla
                           </button>
                         }

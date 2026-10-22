@@ -49,7 +49,7 @@
       </div>
     </app-filtros>
     <div class="acciones">
-      <button type="submit" class="botón">Buscar</button>
+      <button type="submit" class="boton">Buscar</button>
     </div>
   </form>
 </section>
@@ -73,7 +73,7 @@
   }
   @case ('error') {
     <p class="estado estado--error" role="alert">{{ mensajeError() }}</p>
-    <button type="button" class="botón" (click)="cargar()">Reintentar</button>
+    <button type="button" class="boton" (click)="cargar()">Reintentar</button>
   }
   @case ('listo') {
     @if (entradas().length === 0) {
@@ -121,7 +121,7 @@
                   } @else if (puedeAdoptar()) {
                     <button
                       type="button"
-                      class="botón"
+                      class="boton"
                       [disabled]="adoptando() !== null"
                       (click)="adoptar(entrada)"
                     >

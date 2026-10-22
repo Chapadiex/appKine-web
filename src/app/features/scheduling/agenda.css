@@ -663,3 +663,18 @@ button.slot[aria-pressed='true'] {
   font-size: var(--tipo-2xs);
   font-weight: var(--peso-normal);
 }
+
+/* Buscador de la barra de la recepcion: un .campo sin margen y de ancho fijo. */
+.tarjeta__barra .campo--barra {
+  margin: 0;
+  width: min(20rem, 100%);
+}
+
+.recepcion__fecha {
+  display: inline-block;
+  font-weight: var(--peso-semi);
+}
+
+.recepcion__fecha::first-letter {
+  text-transform: uppercase;
+}

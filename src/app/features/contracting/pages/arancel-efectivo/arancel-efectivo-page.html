@@ -123,7 +123,7 @@
     </div>
 
     <p class="acciones">
-      <button type="submit" class="botón" [disabled]="consultando()">
+      <button type="submit" class="boton" [disabled]="consultando()">
         {{ consultando() ? 'Consultando...' : 'Consultar' }}
       </button>
     </p>
@@ -138,7 +138,7 @@
     -->
     <p class="estado estado--error" role="alert">{{ mensaje }}</p>
     @if (faltaContexto()) {
-      <a class="botón" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
+      <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
     }
   }
 

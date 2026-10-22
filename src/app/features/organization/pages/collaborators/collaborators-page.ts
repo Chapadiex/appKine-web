@@ -1,3 +1,4 @@
+import { DatePipe } from '@angular/common';
 import { Component, ElementRef, computed, effect, inject, signal, untracked } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Observable } from 'rxjs';
@@ -78,6 +79,7 @@ const POR_PAGINA = 20;
 @Component({
   selector: 'app-collaborators-page',
   imports: [
+    DatePipe,
     Pestanas,
     Ayuda,
     Icono,

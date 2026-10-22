@@ -118,9 +118,11 @@
                       }
                     </td>
                     <td>
-                      {{ colaborador.validFrom }}
+                      {{ colaborador.validFrom | date: 'dd/MM/yyyy' }}
                       @if (colaborador.validUntil) {
-                        <span class="ayuda">hasta {{ colaborador.validUntil }}</span>
+                        <span class="ayuda"
+                          >hasta {{ colaborador.validUntil | date: 'dd/MM/yyyy' }}</span
+                        >
                       }
                     </td>
                     <td>

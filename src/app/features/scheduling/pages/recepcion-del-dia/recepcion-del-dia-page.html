@@ -103,24 +103,26 @@
 
   <!-- La barra del canvas: buscar, actualizar, y lo que el mostrador mira sin leer la tabla. -->
   <div class="tarjeta__barra">
-    <div class="campo-busqueda">
-      <app-icono class="campo-busqueda__icono" nombre="buscar" />
-      <label class="visualmente-oculto" for="recepcion-busqueda">Paciente o documento</label>
-      <input
-        id="recepcion-busqueda"
-        name="recepcion-busqueda"
-        type="search"
-        autocomplete="off"
-        placeholder="Buscar paciente o documento"
-        [value]="busqueda()"
-        (input)="busqueda.set($any($event.target).value)"
-      />
+    <div class="campo campo--barra">
+      <div class="campo-busqueda">
+        <app-icono class="campo-busqueda__icono" nombre="buscar" />
+        <label class="visualmente-oculto" for="recepcion-busqueda">Paciente o documento</label>
+        <input
+          id="recepcion-busqueda"
+          name="recepcion-busqueda"
+          type="search"
+          autocomplete="off"
+          placeholder="Buscar paciente o documento"
+          [value]="busqueda()"
+          (input)="busqueda.set($any($event.target).value)"
+        />
+      </div>
     </div>
     <button type="button" class="boton boton--secundario" (click)="cargar()">
       Actualizar la lista
     </button>
     <span class="tarjeta__barra-fin">
-      <span class="dia__fecha">{{ fechaEnPalabras(dia()) }}</span> ·
+      <span class="recepcion__fecha">{{ fechaEnPalabras(dia()) }}</span> ·
       @if (hayTurnos()) {
         {{ turnos().length }} turno(s), <b>{{ enEspera() }} en espera</b> ·
       }

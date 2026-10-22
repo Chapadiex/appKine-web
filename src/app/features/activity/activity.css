@@ -121,7 +121,7 @@
 .barra-semana__rango {
   font-size: var(--tipo-sm);
   font-weight: var(--peso-medio);
-  text-transform: capitalize;
+  display: inline-block;
 }
 
 .barra-semana .acciones {
@@ -215,4 +215,8 @@
   display: block;
   height: 100%;
   background: var(--color-acento);
+}
+
+.barra-semana__rango::first-letter {
+  text-transform: uppercase;
 }

@@ -100,7 +100,7 @@
       <p class="ayuda" id="importacion-texto-estado" aria-live="polite">
         @if (texto().trim() === '') {
           Todavía no hay filas.
-          <button type="button" class="botón botón--secundario" (click)="usarEjemplo()">
+          <button type="button" class="boton boton--secundario" (click)="usarEjemplo()">
             Empezar desde el ejemplo
           </button>
         } @else if (erroresDeFormato().length === 0) {
@@ -130,7 +130,7 @@
     <p class="acciones" *akinePermiso="permisoManage">
       <button
         type="button"
-        class="botón"
+        class="boton"
         (click)="previsualizar()"
         [disabled]="!puedePrevisualizar()"
       >
@@ -227,7 +227,7 @@
 
     @if (resultado.tipo === 'preview') {
       <p class="acciones" *akinePermiso="permisoManage">
-        <button type="button" class="botón" (click)="confirmar()" [disabled]="!puedeConfirmar()">
+        <button type="button" class="boton" (click)="confirmar()" [disabled]="!puedeConfirmar()">
           {{
             enviando() === 'confirmar'
               ? 'Cargando...'
