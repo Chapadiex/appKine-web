@@ -31,6 +31,7 @@ import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-or
 import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
 import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 import { Icono } from '../../../../shared/components/icono/icono';
+import { Migas } from '../../../../shared/components/migas/migas';
 
 /** La moneda que se propone cuando la oferta no tiene precio de lista: la del producto. */
 const MONEDA_POR_DEFECTO = 'ARS';
@@ -60,6 +61,7 @@ interface SituacionDeLaTarifa {
 @Component({
   selector: 'app-honorarios-por-clase-de-la-oferta-page',
   imports: [
+    Migas,
     Pestanas,
     ColumnaOrdenable,
     Paginacion,

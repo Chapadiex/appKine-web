@@ -3,20 +3,14 @@
   como titulo. El nombre y el documento salen de la propia historia, que solo llega despues del
   motivo declarado: antes no se muestra nada de la persona que no estuviera ya en la URL.
 -->
-<app-cabecera-de-persona
-  [personaId]="personaIdTexto()"
-  [nombreComoTitulo]="true"
-  [nombreAlternativo]="historia()?.personaNombreCompleto || 'Historia clínica'"
-  [documentoAlternativo]="historia()?.personaDocumento || null"
-  [esPaciente]="true"
->
+<app-cabecera-de-ficha [modelo]="cabecera()" [tituloComoH1]="true">
   <app-ayuda cabeceraAyuda titulo="Sobre esta pantalla">
     <p>
       La historia clínica es de la persona en la organización. Reúne lo que se registró en cada caso
       y en cada sesión, y nada de lo escrito se borra: se enmienda.
     </p>
   </app-ayuda>
-</app-cabecera-de-persona>
+</app-cabecera-de-ficha>
 
 @switch (estado().tipo) {
   @case ('cargando') {

@@ -1,8 +1,7 @@
-<app-cabecera-de-persona [personaId]="personaId()" />
+<app-cabecera-de-ficha [modelo]="cabecera()" />
 
 <div class="titulo-con-ayuda titulo-de-seccion-persona">
-  <a class="migas" [routerLink]="rutaCuenta()">Cuenta corriente</a>
-  <span class="migas__separador" aria-hidden="true">/</span>
+  <app-migas enLinea [migas]="[{ etiqueta: 'Cuenta corriente', ruta: rutaCuenta() }]" />
   <h1>Cobros registrados</h1>
   <app-ayuda titulo="Sobre esta pantalla">
     <p>

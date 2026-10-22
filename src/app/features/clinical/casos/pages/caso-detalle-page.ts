@@ -9,6 +9,7 @@ import {
   untracked,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { Migas } from '../../../../shared/components/migas/migas';
 import { Observable, Subscription, forkJoin } from 'rxjs';
 
 import { CasoClinico } from '../../../../api/generated/model/caso-clinico';
@@ -58,7 +59,7 @@ type Operacion = 'editar' | 'equipo' | 'cerrar' | 'reabrir';
  */
 @Component({
   selector: 'app-caso-detalle-page',
-  imports: [Ayuda, RouterLink, PedidoDeMotivo],
+  imports: [Migas, Ayuda, RouterLink, PedidoDeMotivo],
   templateUrl: './caso-detalle-page.html',
   styleUrl: '../../pages/historia-clinica/historia-clinica.css',
 })

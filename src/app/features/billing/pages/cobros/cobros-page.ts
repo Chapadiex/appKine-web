@@ -10,7 +10,10 @@ import {
   signal,
   untracked,
 } from '@angular/core';
+import { cabeceraDePersona } from '../../../../core/services/cabecera-de-persona';
+import { CabeceraDeFicha } from '../../../../shared/components/cabecera-de-ficha/cabecera-de-ficha';
 import { RouterLink } from '@angular/router';
+import { Migas } from '../../../../shared/components/migas/migas';
 
 import { ConfirmacionConMotivo } from '../../../../shared/components/confirmacion-con-motivo/confirmacion-con-motivo';
 import { PERMISO_CAJA_OPERATE, PERMISO_COBRO_REGISTER } from '../../../../core/models/permisos';
@@ -37,7 +40,6 @@ import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
 import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
 import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
-import { CabeceraDePersona } from '../cuenta-corriente/cabecera-de-persona/cabecera-de-persona';
 
 /** En cual de los tres estados esta el listado. No es paginado: el backend devuelve un array. */
 type EstadoCobros =
@@ -85,7 +87,8 @@ interface OperacionAbierta {
 @Component({
   selector: 'app-cobros-page',
   imports: [
-    CabeceraDePersona,
+    Migas,
+    CabeceraDeFicha,
     Ayuda,
     ColumnaOrdenable,
     Paginacion,
@@ -105,6 +108,12 @@ export class CobrosPage {
 
   /** De la ruta padre. `withComponentInputBinding` lo liga solo. */
   readonly personaId = input.required<string>();
+
+  protected readonly cabecera = cabeceraDePersona(() => ({
+    personaId: this.personaId(),
+    persona: null,
+    actual: 'cuenta-corriente',
+  }));
 
   protected readonly medioEnPalabras = medioEnPalabras;
   protected readonly instanteEnPalabras = (valor: string | undefined): string =>

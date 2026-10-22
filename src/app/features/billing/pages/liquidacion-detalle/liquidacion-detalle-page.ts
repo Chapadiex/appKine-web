@@ -1,5 +1,6 @@
 import { Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { Migas } from '../../../../shared/components/migas/migas';
 
 import {
   LiquidacionDeHonorarios,
@@ -29,7 +30,7 @@ import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
  */
 @Component({
   selector: 'app-liquidacion-detalle-page',
-  imports: [Ayuda, RouterLink],
+  imports: [Migas, Ayuda, RouterLink],
   templateUrl: './liquidacion-detalle-page.html',
   styleUrls: ['../../billing.css', '../../economia.css'],
 })

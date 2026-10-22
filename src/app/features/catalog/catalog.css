@@ -56,31 +56,3 @@
   text-underline-offset: 0.25rem;
   font-weight: var(--peso-semi);
 }
-
-/*
- * El camino de vuelta al catalogo clinico, sobre el titulo de las pantallas que cuelgan de el
- * (pedidos y vigencias de un nomenclador). Es un enlace de texto y no un boton: es "donde
- * estoy" (migas), no una accion. Duplicado en `offering.css` a proposito: no hay import entre
- * features (AGENT.md 4.4). Sube a `design-system.css` cuando lo necesite una tercera feature.
- */
-.migas {
-  display: flex;
-  align-items: center;
-  gap: var(--esp-3);
-  margin-bottom: var(--esp-3);
-  font-size: var(--tipo-sm);
-}
-
-.migas a {
-  color: var(--color-texto-suave);
-  text-decoration: none;
-}
-
-.migas a:hover {
-  color: var(--color-acento);
-  text-decoration: underline;
-}
-
-.migas span {
-  color: var(--color-texto-suave);
-}

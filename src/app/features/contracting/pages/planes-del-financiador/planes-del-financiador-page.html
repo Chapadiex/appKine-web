@@ -28,10 +28,12 @@
   </p>
 }
 
-<nav class="migas" aria-label="Ruta de navegación">
-  <a routerLink="/contratacion/financiadores">Financiadores</a>
-  <span class="migas__separador" aria-hidden="true">/</span>
-</nav>
+<app-migas
+  [migas]="[
+    { etiqueta: 'Financiadores', ruta: '/contratacion/financiadores' },
+    { etiqueta: 'Planes' },
+  ]"
+/>
 
 <!-- La accion principal del titulo: una sola copia para las dos ramas del titulo. -->
 <ng-template #accionDelTitulo>

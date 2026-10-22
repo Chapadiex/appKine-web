@@ -1,4 +1,4 @@
-<app-cabecera-de-persona [personaId]="personaId()" [persona]="persona()" />
+<app-cabecera-de-ficha [modelo]="cabecera()" />
 
 @if (modoPrepago()) {
   <div class="titulo-con-ayuda titulo-de-seccion-persona">
@@ -18,8 +18,7 @@
   </div>
 } @else {
   <div class="titulo-con-ayuda titulo-de-seccion-persona">
-    <a class="migas" [routerLink]="rutaCuenta()">Cuenta corriente</a>
-    <span class="migas__separador" aria-hidden="true">/</span>
+    <app-migas enLinea [migas]="[{ etiqueta: 'Cuenta corriente', ruta: rutaCuenta() }]" />
     <h1>Registrar un cobro</h1>
     <app-ayuda titulo="Sobre esta pantalla">
       <p>

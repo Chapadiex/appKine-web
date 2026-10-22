@@ -1,4 +1,6 @@
 import { Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
+import { cabeceraDePersona } from '../../../../core/services/cabecera-de-persona';
+import { CabeceraDeFicha } from '../../../../shared/components/cabecera-de-ficha/cabecera-de-ficha';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 
@@ -34,7 +36,6 @@ import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-or
 import { Icono } from '../../../../shared/components/icono/icono';
 import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
 import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
-import { CabeceraDePersona } from '../../components/cabecera-de-persona/cabecera-de-persona';
 
 /** Operacion abierta sobre una fila. Solo una a la vez. */
 type TipoAccion = 'editar' | 'baja';
@@ -100,7 +101,7 @@ type EstadoDeCoberturas =
 @Component({
   selector: 'app-coberturas-del-paciente-page',
   imports: [
-    CabeceraDePersona,
+    CabeceraDeFicha,
     Ayuda,
     ColumnaOrdenable,
     Filtros,
@@ -138,6 +139,12 @@ export class CoberturasDelPacientePage {
 
   protected readonly estado = signal<EstadoDeCoberturas>({ tipo: 'cargando' });
   protected readonly persona = signal<PersonaResponse | null>(null);
+
+  protected readonly cabecera = cabeceraDePersona(() => ({
+    personaId: this.personaId(),
+    persona: this.persona(),
+    actual: 'coberturas',
+  }));
 
   protected readonly filtro = signal<FiltroDeCoberturas>('TODAS');
   /** Filtros avanzados fuera de su valor por defecto: el contador del embudo. */

@@ -1,4 +1,6 @@
 import { Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
+import { cabeceraDePersona } from '../../../../core/services/cabecera-de-persona';
+import { CabeceraDeFicha } from '../../../../shared/components/cabecera-de-ficha/cabecera-de-ficha';
 import { RouterLink } from '@angular/router';
 import { catchError, concat, of, tap } from 'rxjs';
 
@@ -43,7 +45,6 @@ import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-or
 import { Icono } from '../../../../shared/components/icono/icono';
 import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
 import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
-import { CabeceraDePersona } from './cabecera-de-persona/cabecera-de-persona';
 
 /** En cual de los tres estados esta el listado. No es paginado: el backend devuelve un array. */
 type EstadoCuenta =
@@ -99,7 +100,7 @@ type EstadoCuenta =
 @Component({
   selector: 'app-cuenta-corriente-page',
   imports: [
-    CabeceraDePersona,
+    CabeceraDeFicha,
     Ayuda,
     ColumnaOrdenable,
     Icono,
@@ -163,6 +164,12 @@ export class CuentaCorrientePage {
 
   protected readonly estado = signal<EstadoCuenta>({ tipo: 'cargando' });
   protected readonly persona = signal<PersonaResponse | null>(null);
+
+  protected readonly cabecera = cabeceraDePersona(() => ({
+    personaId: this.personaId(),
+    persona: this.persona(),
+    actual: 'cuenta-corriente',
+  }));
 
   /** Deuda que se esta anulando, o `null`. Solo una a la vez. */
   protected readonly objetivo = signal<Obligacion | null>(null);

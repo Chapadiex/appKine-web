@@ -1,4 +1,6 @@
 import { Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
+import { cabeceraDePersona } from '../../../../core/services/cabecera-de-persona';
+import { CabeceraDeFicha } from '../../../../shared/components/cabecera-de-ficha/cabecera-de-ficha';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { Observable, forkJoin, of, throwError } from 'rxjs';
@@ -59,7 +61,6 @@ import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
 import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
 import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
-import { CabeceraDePersona } from '../../components/cabecera-de-persona/cabecera-de-persona';
 
 /** Panel abierto sobre una orden. Solo uno a la vez en toda la pantalla. */
 type PanelDeOrden = 'editar' | 'baja' | 'documento';
@@ -147,7 +148,7 @@ interface PanelAbierto {
 @Component({
   selector: 'app-ordenes-y-autorizaciones-page',
   imports: [
-    CabeceraDePersona,
+    CabeceraDeFicha,
     Ayuda,
     ColumnaOrdenable,
     Paginacion,
@@ -203,6 +204,12 @@ export class OrdenesYAutorizacionesPage {
   protected readonly faltaContexto = signal(false);
 
   protected readonly persona = signal<PersonaResponse | null>(null);
+
+  protected readonly cabecera = cabeceraDePersona(() => ({
+    personaId: this.personaId(),
+    persona: this.persona(),
+    actual: 'autorizaciones',
+  }));
   protected readonly ordenes = signal<readonly OrdenResponse[]>([]);
   protected readonly autorizaciones = signal<readonly AutorizacionResponse[]>([]);
 

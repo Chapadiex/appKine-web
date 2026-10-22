@@ -32,6 +32,7 @@ import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-or
 import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
 import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 import { Icono } from '../../../../shared/components/icono/icono';
+import { Migas } from '../../../../shared/components/migas/migas';
 
 /** Filtro de estado del listado. Los tres valores son los del contrato. */
 type FiltroEstado = 'ACTIVO' | 'INACTIVO' | 'TODOS';
@@ -74,6 +75,7 @@ const TOPE_DE_PRACTICAS = 100;
 @Component({
   selector: 'app-vigencias-page',
   imports: [
+    Migas,
     ColumnaOrdenable,
     Paginacion,
     Filtros,

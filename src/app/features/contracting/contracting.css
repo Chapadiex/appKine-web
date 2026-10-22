@@ -132,40 +132,9 @@
   padding-left: var(--esp-6);
 }
 
-/*
- * Migas de pan de las pantallas hijas (aranceles, importar, planes, catalogo): el camino de
- * vuelta a la pantalla padre, encima del titulo. Reemplaza a los botones "Volver a ..." que se
- * veian como acciones. Es local porque `shared/` todavia no tiene el patron.
- */
-.migas {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--esp-4);
-  font-size: var(--tipo-sm);
-  color: var(--color-texto-suave, #5f6b7a);
-}
-
-.migas a {
-  color: inherit;
-  text-decoration: none;
-}
-
-.migas a:hover {
-  text-decoration: underline;
-}
-
-.migas__separador {
-  color: var(--color-texto-suave, #8a94a3);
-}
-
 /* El estado de la pantalla (vigente, activo) al lado del titulo. */
 .titulo-con-ayuda .marca-estado {
   align-self: center;
-}
-
-.migas__separador:last-child {
-  display: none;
 }
 
 /*

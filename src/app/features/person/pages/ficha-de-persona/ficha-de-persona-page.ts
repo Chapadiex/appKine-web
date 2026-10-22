@@ -1,4 +1,6 @@
 import { Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
+import { cabeceraDePersona } from '../../../../core/services/cabecera-de-persona';
+import { CabeceraDeFicha } from '../../../../shared/components/cabecera-de-ficha/cabecera-de-ficha';
 import { RouterLink } from '@angular/router';
 
 import { ConfirmacionConMotivo } from '../../../../shared/components/confirmacion-con-motivo/confirmacion-con-motivo';
@@ -36,7 +38,6 @@ import {
 import { SECCION_COBERTURAS, coberturaDelResumen } from '../../models/etiquetas-de-cobertura';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
-import { CabeceraDePersona } from '../../components/cabecera-de-persona/cabecera-de-persona';
 
 /** Confirmacion abierta sobre la ficha. Solo una a la vez. */
 type TipoDeBaja = 'persona' | 'perfil';
@@ -106,7 +107,7 @@ interface ConteoPorCategoria {
   selector: 'app-ficha-de-persona-page',
   imports: [
     Ayuda,
-    CabeceraDePersona,
+    CabeceraDeFicha,
     RouterLink,
     ConfirmacionConMotivo,
     PermisoDirective,
@@ -202,6 +203,12 @@ export class FichaDePersonaPage {
   protected readonly rutaCuentaCorriente = computed(
     () => `/pacientes/${this.personaId()}/cuenta-corriente` as const,
   );
+
+  protected readonly cabecera = cabeceraDePersona(() => ({
+    personaId: this.personaId(),
+    persona: this.persona(),
+    actual: 'ficha',
+  }));
   /** Pases de la persona (M29): ruta de `activity`, aca solo la URL. */
   protected readonly rutaPases = computed(() => `/pacientes/${this.personaId()}/pases` as const);
 

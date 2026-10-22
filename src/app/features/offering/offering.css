@@ -109,34 +109,6 @@
 }
 
 /*
- * El camino de vuelta a la lista de ofertas, sobre el titulo de cada pantalla de una oferta.
- *
- * Es un enlace de texto y no un boton: es "donde estoy" (migas), no una accion. La pestaña de
- * la seccion (Habilitaciones, Practicas, Precios, Honorarios) queda debajo del titulo.
- */
-.migas {
-  display: flex;
-  align-items: center;
-  gap: var(--esp-3);
-  margin-bottom: var(--esp-3);
-  font-size: var(--tipo-sm);
-}
-
-.migas a {
-  color: var(--color-texto-suave);
-  text-decoration: none;
-}
-
-.migas a:hover {
-  color: var(--color-acento);
-  text-decoration: underline;
-}
-
-.migas span {
-  color: var(--color-texto-suave);
-}
-
-/*
  * Habilitaciones de la oferta (diseno del canvas): cada seccion es una tarjeta con su titulo y su
  * resumen ("2 habilitados") arriba, una tabla de candidatos con la casilla en la primera columna
  * y el boton de guardar en un pie propio.
