@@ -68,11 +68,11 @@ test.describe('Suscripcion contra el backend real', () => {
       await ingresar(page, { emailAdmin: email } as Centro);
       await navegar(page, '/organizacion/suscripcion');
       await expect(page.getByRole('heading', { name: 'Suscripción activa' })).toBeVisible();
-      const detalle = page.locator('dl.detalle');
+      const detalle = page.locator('.plan-actual');
       await expect(detalle).toContainText(inicial.planName);
-      const sedes = page.getByRole('row', { name: /^Sedes habilitadas/ });
-      await expect(sedes.getByRole('cell').nth(0)).toHaveText('1');
-      await expect(sedes.getByRole('cell').nth(1)).toHaveText('1');
+      const sedes = page.getByRole('listitem').filter({ hasText: 'Sedes habilitadas' });
+      // Uso y tope en un solo rotulo, "1 de 1", desde el rediseño de la suscripcion.
+      await expect(sedes.locator('.limite__valor')).toHaveText('1 de 1');
 
       // --- La plataforma cambia el plan desde su consola, sin acceso de soporte ----------------
       const plataforma = await paginaDePlataforma(browser);
@@ -150,7 +150,7 @@ test.describe('Suscripcion contra el backend real', () => {
       await expect(banner).toContainText('solo lectura');
       await expect(detalle).toContainText(suspendida.planName);
       await expect(detalle).toContainText('SUSPENDIDA');
-      await expect(sedes.getByRole('cell').nth(1)).not.toHaveText('1');
+      await expect(sedes.locator('.limite__valor')).not.toHaveText('1 de 1');
 
       // Y es solo lectura de verdad: el alta de una sede se rechaza con el tipo declarado.
       const alta = await admin.pedir(

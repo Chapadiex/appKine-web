@@ -86,7 +86,7 @@ test.describe('Sedes contra el backend real', () => {
 
     // --- Baja con motivo desde el listado ---
     await page.getByRole('link', { name: 'Volver al listado de sedes' }).click();
-    const region = page.getByRole('region', { name: 'Sedes de la organizacion' });
+    const region = page.getByRole('region', { name: 'Sedes de la organización' });
     const fila = region.getByRole('row').filter({ hasText: nombre });
     await expect(fila).toBeVisible();
     await fila.getByRole('button', { name: 'Dar de baja' }).click();
