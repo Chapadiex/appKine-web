@@ -84,7 +84,7 @@ describe('traducirErrorContracting', () => {
       (ambito) => traducirErrorContracting(problema(404, 'not-found'), ambito).mensaje,
     );
 
-    expect(mensajes[0]).toContain('catalogo');
+    expect(mensajes[0]).toContain('catálogo');
     expect(mensajes[1]).toContain('planes del financiador');
     expect(mensajes[2]).toContain('no es de esta sede');
     expect(mensajes[3]).toContain('grilla del convenio');
@@ -143,7 +143,7 @@ describe('traducirErrorContracting', () => {
   it('un error de red no se confunde con un rechazo del servidor', () => {
     const traducido = traducirErrorContracting(new AkineHttpError(0, null, true), 'convenio');
     expect(traducido.causa).toBe('red');
-    expect(traducido.mensaje).toContain('Revisa tu conexion');
+    expect(traducido.mensaje).toContain('Revisa tu conexión');
   });
 
   it('lo que no es un AkineHttpError cae en el generico sin romper', () => {

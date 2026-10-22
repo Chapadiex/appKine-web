@@ -599,7 +599,7 @@ describe('OrdenesYAutorizacionesPage', () => {
 
     const contenido = texto(fixture);
     expect(contenido).toContain('Le falta documentacion');
-    expect(contenido).toContain('Orden medica: FALTA');
+    expect(contenido).toContain('Orden médica: FALTA');
     expect(contenido).toContain('Autorización: cumplido');
     expect(contenido).toContain('Convenio OSDE 2026');
   });

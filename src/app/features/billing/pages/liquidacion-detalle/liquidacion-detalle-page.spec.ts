@@ -95,7 +95,9 @@ describe('LiquidacionDetallePage', () => {
     httpMock.expectOne(URL).flush({ status: 404 }, { status: 404, statusText: 'Not Found' });
     await estabilizar(fixture);
     expect(contenido(fixture)).toContain('No se pudo cargar la liquidación');
-    (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('button')!.click();
+    Array.from((fixture.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>('button'))
+      .find((b) => b.textContent?.trim() === 'Reintentar')!
+      .click();
     httpMock.expectOne(URL).flush(LIQUIDACION);
     await estabilizar(fixture);
     expect(contenido(fixture)).toContain('Pilates lunes');

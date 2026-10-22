@@ -108,7 +108,7 @@ describe('ProductosDePackPage', () => {
         ?.value,
     ).toBe('');
     expect(textoDe(fixture)).toContain('Asistencias por periodo');
-    expect(textoDe(fixture)).toContain('Días maximos del periodo');
+    expect(textoDe(fixture)).toContain('Dias maximos del periodo');
   });
 
   it('crea un abono sobre una oferta POR_ABONO (RF-M29-007)', async () => {

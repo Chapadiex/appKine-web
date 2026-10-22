@@ -50,7 +50,7 @@ test.describe('Contraste no textual, foco y teclado', () => {
   test('login', async ({ page }) => {
     await instalarApiDeContraste(page);
     await page.goto('/auth/ingresar');
-    await expect(page.getByRole('heading', { name: 'Iniciar sesion', level: 1 })).toBeVisible({
+    await expect(page.getByRole('heading', { name: 'Iniciar sesión', level: 1 })).toBeVisible({
       timeout: LLEGADA,
     });
 

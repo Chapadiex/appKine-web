@@ -146,7 +146,7 @@ describe('EgresosPage', () => {
     await estabilizar(fixture);
 
     httpMock.expectNone((p) => p.method === 'POST');
-    expect(contenido(fixture)).toContain('Escribi a quien se le paga.');
+    expect(contenido(fixture)).toContain('Escribí a quién se le paga.');
     expect(contenido(fixture)).toContain('no puede terminar antes de empezar');
 
     escribir(fixture, '#alta-nombre', 'Inmobiliaria Sintetica');

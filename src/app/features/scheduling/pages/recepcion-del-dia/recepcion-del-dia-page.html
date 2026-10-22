@@ -18,11 +18,10 @@
     <button
       type="button"
       class="navegador-fecha__boton navegador-fecha__boton--flecha"
-      aria-label="Día anterior"
       title="Día anterior"
       (click)="moverDia(-1)"
     >
-      ‹
+      <span aria-hidden="true">‹</span><span class="visualmente-oculto">Día anterior</span>
     </button>
     <label class="visualmente-oculto" for="recepcion-fecha">Fecha</label>
     <input
@@ -35,11 +34,10 @@
     <button
       type="button"
       class="navegador-fecha__boton navegador-fecha__boton--flecha"
-      aria-label="Día siguiente"
       title="Día siguiente"
       (click)="moverDia(1)"
     >
-      ›
+      <span aria-hidden="true">›</span><span class="visualmente-oculto">Día siguiente</span>
     </button>
     <button type="button" class="navegador-fecha__boton" (click)="irAHoy()">Hoy</button>
   </div>
@@ -156,7 +154,7 @@
     `tabindex`, `role` y nombre en el contenedor que scrollea: sin ellos, las columnas escondidas
     tras el desborde quedan fuera del alcance del teclado (WCAG 2.1.1). Ver `design-system.css`.
   -->
-    <div class="tabla-scroll" tabindex="0" role="region" aria-label="Turnos del día">
+    <div class="tabla-scroll" tabindex="0" role="region" aria-label="Listado de turnos">
       <table class="tabla">
         <caption class="visualmente-oculto">
           Turnos de la sede en la fecha elegida, con el estado de la reserva, el de la recepción y

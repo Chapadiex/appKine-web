@@ -60,93 +60,110 @@
   }
 </div>
 
-@if (!puedeAdoptar()) {
-  <p class="estado estado--vacio">
-    Podés mirar el catálogo. Agregar un financiador al centro necesita permiso para administrar
-    convenios en esta sede.
-  </p>
-}
+<section class="tarjeta tarjeta--tabla" aria-labelledby="titulo-entradas-catalogo">
+  <div class="tarjeta__cabecera">
+    <h2 id="titulo-entradas-catalogo">Financiadores del catálogo</h2>
+  </div>
 
-@switch (estado().tipo) {
-  @case ('cargando') {
-    <p class="estado estado--cargando">Leyendo el catálogo&hellip;</p>
-  }
-  @case ('error') {
-    <p class="estado estado--error" role="alert">{{ mensajeError() }}</p>
-    <button type="button" class="boton" (click)="cargar()">Reintentar</button>
-  }
-  @case ('listo') {
-    @if (entradas().length === 0) {
-      <p class="estado estado--vacio">Ninguna entrada del catálogo coincide con la búsqueda.</p>
-    } @else {
-      <div class="tabla-scroll" tabindex="0" role="region" aria-label="Catálogo de financiadores">
-        <table class="tabla">
-          <caption class="visualmente-oculto">
-            Entradas activas del catálogo de la plataforma y si el centro ya tiene su copia
-          </caption>
-          <thead>
-            <tr>
-              <th scope="col" appOrdenable [tabla]="tabla" columna="nombre">Financiador</th>
-              <th scope="col" appOrdenable [tabla]="tabla" columna="tipo">Tipo</th>
-              <th scope="col">CUIT</th>
-              <th scope="col" appOrdenable [tabla]="tabla" columna="planes">Planes</th>
-              <th scope="col" appOrdenable [tabla]="tabla" columna="enElCentro">En el centro</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (entrada of tabla.visibles(); track entrada.id) {
-              <tr>
-                <th scope="row">
-                  {{ entrada.nombre }}
-                  <p class="ayuda">Código {{ entrada.codigo }}</p>
-                </th>
-                <td>{{ etiquetaDeTipo(entrada.tipo) }}</td>
-                <td>{{ entrada.cuit || 'Sin CUIT' }}</td>
-                <td>{{ cantidadDePlanes(entrada) }}</td>
-                <td>
-                  @if (entrada.financiadorAdoptadoId; as copia) {
-                    <span class="marca-estado marca-estado--activa">Ya agregado</span>
-                    <a
-                      class="enlace"
-                      [routerLink]="['/contratacion', 'financiadores', copia, 'planes']"
-                    >
-                      Ver la copia del centro
-                    </a>
-                    @if (entrada.actualizacionDisponible) {
-                      <p class="ayuda">
-                        El catálogo cambio después de agregarlo. La copia del centro no se actualiza
-                        sola: revisala y edita lo que haga falta.
-                      </p>
-                    }
-                  } @else if (puedeAdoptar()) {
-                    <button
-                      type="button"
-                      class="boton"
-                      [disabled]="adoptando() !== null"
-                      (click)="adoptar(entrada)"
-                    >
-                      Agregar al centro
-                      <span class="visualmente-oculto">{{ entrada.nombre }}</span>
-                    </button>
-                  } @else {
-                    <span class="ayuda">No agregado</span>
-                  }
-                </td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      </div>
-
-      <div class="tabla-pie">
-        <span>{{ tabla.total() }} financiadores</span>
-        <app-paginacion
-          [paginaActual]="tabla.pagina()"
-          [totalPaginas]="tabla.totalPaginas()"
-          etiqueta="Páginas de financiadores"
-          (cambioDePagina)="tabla.irA($event)"
-        />
-      </div>
+  <div aria-live="polite">
+    @if (!puedeAdoptar()) {
+      <p class="estado estado--vacio">
+        Podés mirar el catálogo. Agregar un financiador al centro necesita permiso para administrar
+        convenios en esta sede.
+      </p>
     }
-  }
-}
+
+    @switch (estado().tipo) {
+      @case ('cargando') {
+        <p class="estado estado--cargando">Leyendo el catálogo&hellip;</p>
+      }
+      @case ('error') {
+        <p class="estado estado--error" role="alert">{{ mensajeError() }}</p>
+        <button type="button" class="boton" (click)="cargar()">Reintentar</button>
+      }
+      @case ('listo') {
+        @if (entradas().length === 0) {
+          <p class="estado estado--vacio">Ninguna entrada del catálogo coincide con la búsqueda.</p>
+        } @else {
+          <div
+            class="tabla-scroll"
+            tabindex="0"
+            role="region"
+            aria-label="Catálogo de financiadores"
+          >
+            <table class="tabla">
+              <caption class="visualmente-oculto">
+                Entradas activas del catálogo de la plataforma y si el centro ya tiene su copia
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col" appOrdenable [tabla]="tabla" columna="nombre">Financiador</th>
+                  <th scope="col" appOrdenable [tabla]="tabla" columna="tipo">Tipo</th>
+                  <th scope="col">CUIT</th>
+                  <th scope="col" class="importe" appOrdenable [tabla]="tabla" columna="planes">
+                    Planes
+                  </th>
+                  <th scope="col" appOrdenable [tabla]="tabla" columna="enElCentro">
+                    En el centro
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (entrada of tabla.visibles(); track entrada.id) {
+                  <tr>
+                    <th scope="row" class="celda-ancha">
+                      <span class="celda-principal">{{ entrada.nombre }}</span>
+                      <span class="celda-secundaria">Código {{ entrada.codigo }}</span>
+                    </th>
+                    <td>{{ etiquetaDeTipo(entrada.tipo) }}</td>
+                    <td>{{ entrada.cuit || 'Sin CUIT' }}</td>
+                    <td class="importe">{{ cantidadDePlanes(entrada) }}</td>
+                    <td>
+                      @if (entrada.financiadorAdoptadoId; as copia) {
+                        <span class="marca-estado marca-estado--activa">Ya agregado</span>
+                        <a
+                          class="enlace"
+                          [routerLink]="['/contratacion', 'financiadores', copia, 'planes']"
+                        >
+                          Ver la copia del centro
+                        </a>
+                        @if (entrada.actualizacionDisponible) {
+                          <span class="celda-secundaria">
+                            El catálogo cambio después de agregarlo. La copia del centro no se
+                            actualiza sola: revisala y edita lo que haga falta.
+                          </span>
+                        }
+                      } @else if (puedeAdoptar()) {
+                        <button
+                          type="button"
+                          class="accion-texto"
+                          [disabled]="adoptando() !== null"
+                          (click)="adoptar(entrada)"
+                        >
+                          Agregar al centro
+                          <span class="visualmente-oculto">{{ entrada.nombre }}</span>
+                        </button>
+                      } @else {
+                        <span class="marca-estado">No agregado</span>
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+
+          <div class="tabla-pie">
+            <span>{{ tabla.total() }} financiadores</span>
+            <app-paginacion
+              [paginaActual]="tabla.pagina()"
+              [totalPaginas]="tabla.totalPaginas()"
+              etiqueta="Páginas de financiadores"
+              (cambioDePagina)="tabla.irA($event)"
+            />
+          </div>
+        }
+      }
+    }
+  </div>
+</section>

@@ -35,9 +35,9 @@
 
       <section class="tarjeta" aria-labelledby="titulo-clase">
         <h2 id="titulo-clase" tabindex="-1">La clase</h2>
-        <p>
-          {{ fechaHora(clase.inicio, zona()) }} a {{ hora(clase.fin, zona()) }} ·
-          <b>{{ etiquetaDeEstadoDeClase(clase.estado) }}</b>
+        <p class="clase-meta">
+          <span>{{ fechaHora(clase.inicio, zona()) }} a {{ hora(clase.fin, zona()) }}</span>
+          <b class="clase-meta__estado">{{ etiquetaDeEstadoDeClase(clase.estado) }}</b>
         </p>
         <ul class="contadores" aria-label="Resumen de la asistencia">
           <li>Presentes: {{ clase.presentes ?? 0 }}</li>
@@ -149,7 +149,7 @@
           <p class="estado estado--vacio">La clase no tiene inscriptos.</p>
         } @else {
           @if (admite() && puedeMarcar()) {
-            <div class="acciones">
+            <div class="acciones acciones--barra">
               <button
                 type="button"
                 class="boton boton--secundario"
@@ -211,7 +211,12 @@
                               Asistencia de {{ nombre(p) }}
                             </legend>
                             @for (r of resultados; track r.valor) {
-                              <label class="opcion-radio">
+                              <label
+                                class="opcion-radio"
+                                [class.opcion-radio--presente]="r.valor === 'PRESENTE'"
+                                [class.opcion-radio--tarde]="r.valor === 'PRESENTE_TARDE'"
+                                [class.opcion-radio--ausente]="r.valor === 'AUSENTE'"
+                              >
                                 <input
                                   type="radio"
                                   [name]="'asistencia-' + p.inscripcion?.id"
@@ -303,6 +308,13 @@
 
           @if (admite() && puedeMarcar()) {
             <div class="acciones acciones--pie">
+              <span class="pie-cambios" role="status">
+                @if (pendientes().length > 0) {
+                  {{ pendientes().length }} sin guardar
+                } @else {
+                  Sin cambios por guardar
+                }
+              </span>
               <button
                 type="button"
                 class="boton"

@@ -98,12 +98,12 @@ describe('SubscriptionPage', () => {
     expect(fixture.nativeElement.querySelector('.excedido')).toBeTruthy();
   });
 
-  it('sin limites declarados lo dice, en vez de mostrar una tabla vacía', async () => {
+  it('sin limites declarados lo dice, en vez de mostrar una lista vacía', async () => {
     seleccionar();
     const fixture = await cargarCon({ ...SUSCRIPCION_ACTIVA, limits: [] });
 
     expect(texto(fixture)).toContain('Este plan no declara límites');
-    expect(fixture.nativeElement.querySelector('table')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.limites-lista')).toBeNull();
   });
 
   it('con la suscripción SUSPENDIDA muestra el motivo del historico y avisa de solo lectura', async () => {
@@ -259,14 +259,13 @@ describe('SubscriptionPage', () => {
   // --- Accesibilidad ---------------------------------------------------------------
 
   it(
-    'no tiene violaciones de axe con la tabla de limites en pantalla',
+    'no tiene violaciones de axe con la lista de limites en pantalla',
     async () => {
       seleccionar();
       const fixture = await cargarCon(SUSCRIPCION_ACTIVA);
 
-      // La tabla de limites es lo mas denso de la feature: `caption`, `th scope="col"` y
-      // `th scope="row"`. Un scope mal puesto deja la tabla ilegible por lector de pantalla
-      // sin que se note mirandola.
+      // La lista de limites con sus medidores es lo mas denso de la feature: la barra es
+      // decorativa y el numero tiene que quedar legible sin ella.
       await esperarSinViolaciones(fixture.nativeElement);
     },
     TIMEOUT_AXE,

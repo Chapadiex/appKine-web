@@ -180,7 +180,7 @@ export class NavegacionPrincipal {
       complete: () => {
         this.saliendo.set(false);
         this.cerrar.emit();
-        void this.router.navigateByUrl(RUTA_LOGIN);
+        this.router.navigateByUrl(RUTA_LOGIN).catch(() => undefined);
       },
     });
   }

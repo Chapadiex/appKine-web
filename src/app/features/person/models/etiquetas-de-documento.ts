@@ -271,8 +271,8 @@ export function habilitaEnPalabras(autorizacion: AutorizacionResponse): string {
 // -----------------------------------------------------------------------------------------
 
 const NOMBRES_DE_REQUISITO: Record<string, string> = {
-  ORDEN: 'Orden medica',
-  AUTORIZACION: 'Autorizacion',
+  ORDEN: 'Orden médica',
+  AUTORIZACION: 'Autorización',
   CREDENCIAL: 'Credencial vigente',
 };
 

@@ -83,6 +83,8 @@ describe('NotificacionesPage', () => {
     expect(contenido).toContain('j***@centro.test');
     expect(contenido).toContain('Conexion rechazada');
     // Solo la fila reintentable ofrece el boton.
+    expect(fixture.nativeElement.querySelector('.marca-estado--suspendida')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('.tabla-pie')).toBeTruthy();
     expect(botones(fixture)).toHaveLength(1);
   });
 

@@ -8,8 +8,8 @@
 }
 
 /* Azul, y no el azul casi negro del sistema: en una pagina sin nada mas que texto, el unico
-   enlace tiene que distinguirse del parrafo. `--color-acento-claro` da 5.2:1 en modo claro y
-   8.18:1 en oscuro (WCAG 2.1 AA). */
+   enlace tiene que distinguirse del parrafo. `--color-enlace` (el `--color-acento-claro` de antes es hoy un tinte de fondo)
+   distingue el enlace en los dos temas (WCAG 2.1 AA). */
 .enlace {
-  color: var(--color-acento-claro);
+  color: var(--color-enlace);
 }

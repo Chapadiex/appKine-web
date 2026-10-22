@@ -9,7 +9,7 @@ import { TIMEOUT_AXE, esperarSinViolaciones } from '../../../core/testing/axe';
   template: `
     <h1>Pantalla</h1>
     <app-ayuda titulo="Persona y paciente no son lo mismo">
-      <p>Activar el perfil no crea historia clinica.</p>
+      <p>Activar el perfil no crea historia clínica.</p>
     </app-ayuda>
     <p id="afuera">Contenido de la pantalla</p>
   `,

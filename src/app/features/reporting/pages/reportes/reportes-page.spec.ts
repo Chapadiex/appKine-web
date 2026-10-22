@@ -164,7 +164,7 @@ describe('ReportesPage', () => {
         (x.textContent ?? '').includes('Rentabilidad por servicio'),
       )!;
       expect(rentabilidad.textContent).toContain('Ningún egreso del periodo esta imputado');
-      expect(texto.match(/Ningun egreso del periodo/g)?.length).toBe(1);
+      expect(texto.match(/Ningún egreso del periodo/g)?.length).toBe(1);
       expect(texto).toContain('Aviso de todo el reporte');
       await esperarSinViolaciones(html);
     },

@@ -127,7 +127,7 @@
       </div>
     }
 
-    <p class="acciones" *akinePermiso="permisoManage">
+    <p class="acciones tarjeta__pie" *akinePermiso="permisoManage">
       <button
         type="button"
         class="boton"
@@ -145,10 +145,12 @@
 }
 
 @if (desenlace(); as resultado) {
-  <section class="tarjeta" aria-labelledby="titulo-resultado">
-    <h2 id="titulo-resultado">
-      {{ resultado.tipo === 'preview' ? 'Vista previa' : 'Confirmación rechazada' }}
-    </h2>
+  <section class="tarjeta tarjeta--tabla" aria-labelledby="titulo-resultado">
+    <div class="tarjeta__cabecera">
+      <h2 id="titulo-resultado">
+        {{ resultado.tipo === 'preview' ? 'Vista previa' : 'Confirmación rechazada' }}
+      </h2>
+    </div>
 
     <div aria-live="polite">
       @if (resultado.tipo === 'rechazo') {
@@ -188,9 +190,9 @@
             <th scope="col">Fila</th>
             <th scope="col">Práctica</th>
             <th scope="col">Oferta</th>
-            <th scope="col">Total</th>
-            <th scope="col">Financiador</th>
-            <th scope="col">Coseguro</th>
+            <th scope="col" class="importe">Total</th>
+            <th scope="col" class="importe">Financiador</th>
+            <th scope="col" class="importe">Coseguro</th>
             <th scope="col">Vigencia</th>
             <th scope="col">Resultado</th>
           </tr>
@@ -200,9 +202,9 @@
             @let enviada = filaEnviada(fila.fila);
             <tr [class.fila--revocada]="!esAlta(fila)">
               <th scope="row">
-                {{ fila.fila }}
+                <span class="celda-principal">{{ fila.fila }}</span>
                 @if (lineaDe(fila.fila); as linea) {
-                  <span class="ayuda">(linea {{ linea }})</span>
+                  <span class="celda-secundaria">(linea {{ linea }})</span>
                 }
               </th>
               <td>{{ practicaEnPalabras(fila) }}</td>
@@ -213,10 +215,10 @@
               <td>{{ vigenciaEnPalabras(enviada) }}</td>
               <td>
                 @if (esAlta(fila)) {
-                  <span class="marca-estado">Entra</span>
+                  <span class="marca-estado marca-estado--activa">Entra</span>
                 } @else {
-                  <span class="marca-estado">No entra</span>
-                  <p class="ayuda">{{ motivoDeFilaRechazada(fila) }}</p>
+                  <span class="marca-estado marca-estado--revocada">No entra</span>
+                  <span class="celda-secundaria">{{ motivoDeFilaRechazada(fila) }}</span>
                 }
               </td>
             </tr>

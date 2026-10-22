@@ -23,7 +23,7 @@ export const MENSAJE_UNIFORME_RESET =
   selector: 'app-forgot-password-page',
   imports: [Icono, ReactiveFormsModule, RouterLink],
   templateUrl: './forgot-password-page.html',
-  styleUrl: '../../auth.css',
+  styleUrls: ['../../auth.css', '../../../../shared/styles/acceso.css'],
 })
 export class ForgotPasswordPage {
   private readonly recuperacion = inject(RecuperacionService);

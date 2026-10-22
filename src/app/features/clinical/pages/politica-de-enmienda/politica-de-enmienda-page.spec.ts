@@ -55,6 +55,16 @@ describe('PoliticaDeEnmiendaPage', () => {
     TIMEOUT_AXE,
   );
 
+  it('el ejemplo "Así se aplica" sigue los días escritos', async () => {
+    const fixture = await montar({ ventanaDias: 30, porDefecto: true });
+    expect(texto(fixture)).toContain('Así se aplica');
+    expect(texto(fixture)).toContain('Hasta 30 días después');
+    escribir(fixture, '1');
+    expect(texto(fixture)).toContain('Hasta 1 día después');
+    escribir(fixture, '0');
+    expect(texto(fixture)).toContain('Indicá los días para ver cómo se aplica');
+  });
+
   it('achicar la ventana avisa que alcanza a las cerradas y manda la versión', async () => {
     const fixture = await montar({ ventanaDias: 60, porDefecto: false, version: 2 });
     escribir(fixture, '10');

@@ -77,11 +77,19 @@
  */
 .resultado__partes {
   display: flex;
-  flex-wrap: wrap;
-  gap: var(--esp-4) var(--esp-6);
-  margin: var(--esp-4) 0 0;
-  padding: 0;
+  flex-direction: column;
+  gap: var(--esp-3);
+  margin: var(--esp-5) 0 0;
+  padding: var(--esp-5) 0 0;
+  border-top: var(--borde-fino) solid var(--color-borde-sutil);
   list-style: none;
+}
+
+/* Cada parte en su renglon: el rotulo a la izquierda y el importe a la derecha, como en el lienzo. */
+.resultado__partes li {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--esp-5);
 }
 
 /*
@@ -158,4 +166,147 @@
 
 .migas__separador:last-child {
   display: none;
+}
+
+/*
+ * Listados del lienzo (UX-01): la tarjeta lleva la tabla de borde a borde. Cabecera con el titulo,
+ * los filtros debajo y el pie con el conteo y el paginador, todo con el mismo margen lateral.
+ * Los estados (cargando, vacio, error) van en el cuerpo, con ese mismo margen.
+ */
+.tarjeta--tabla {
+  padding: 0;
+  overflow: hidden;
+}
+
+.tarjeta--tabla > .tarjeta__cabecera,
+.tarjeta--tabla > app-filtros {
+  padding: var(--esp-5) var(--esp-6) 0;
+}
+
+.tarjeta--tabla > .tarjeta__cabecera h2 {
+  margin: 0;
+}
+
+.tarjeta--tabla > app-filtros {
+  display: block;
+  padding-bottom: var(--esp-4);
+}
+
+.tarjeta--tabla > .tarjeta__cabecera:not(:has(+ app-filtros)) {
+  padding-bottom: var(--esp-4);
+}
+
+.tarjeta--tabla > [aria-live] > :not(.tabla-scroll):not(.tabla-pie) {
+  margin-inline: var(--esp-6);
+}
+
+.tarjeta--tabla > [aria-live] > .boton {
+  margin-bottom: var(--esp-6);
+}
+
+.tarjeta--tabla .tabla-scroll {
+  border-top: var(--borde-fino) solid var(--color-borde);
+}
+
+.tarjeta--tabla .tabla-pie {
+  margin: 0;
+  padding: var(--esp-4) var(--esp-6);
+  border-top: var(--borde-fino) solid var(--color-borde-sutil);
+}
+
+.tarjeta--tabla > .tarjeta__pie {
+  margin: 0;
+  padding: var(--esp-5) var(--esp-6);
+  border-top: var(--borde-fino) solid var(--color-borde-sutil);
+}
+
+/* Filas de 48 px del lienzo y encabezados en el tono atenuado. */
+.tarjeta--tabla .tabla td,
+.tarjeta--tabla .tabla tbody th {
+  padding-block: var(--esp-4);
+  min-height: 3rem;
+}
+
+.tarjeta--tabla .tabla tbody th {
+  font-weight: var(--peso-normal, 400);
+  text-align: left;
+}
+
+.tabla th.importe {
+  text-align: right;
+}
+
+/* Nombre y, debajo, el dato secundario: financiador y convenio, practica y alcance. */
+.celda-principal {
+  display: block;
+  font-weight: var(--peso-medio);
+}
+
+.celda-secundaria {
+  display: block;
+  margin-top: var(--esp-1);
+  font-size: var(--tipo-xs);
+  font-weight: var(--peso-normal, 400);
+  color: var(--color-texto-suave);
+}
+
+.celda-codigo {
+  font-family: var(--fuente-mono);
+  font-size: var(--tipo-xs);
+  white-space: nowrap;
+}
+
+.celda-ancha {
+  min-width: 11rem;
+}
+
+/* Requisitos del convenio, en una sola linea que envuelve. */
+.requisitos-lista {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp-1) var(--esp-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-xs);
+}
+
+/* Acciones de la fila: un enlace y botones de texto, sin el peso de un boton de formulario. */
+.celda-acciones {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.accion-texto {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.5rem;
+  padding: var(--esp-1) var(--esp-3);
+  border: 0;
+  background: transparent;
+  color: var(--color-enlace);
+  font: inherit;
+  font-size: var(--tipo-sm);
+  font-weight: var(--peso-medio);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.accion-texto:hover:not(:disabled) {
+  text-decoration: underline;
+}
+
+.accion-texto:focus-visible {
+  outline: var(--foco-grosor) solid var(--color-foco);
+  outline-offset: var(--foco-offset);
+}
+
+.accion-texto:disabled {
+  color: var(--color-texto-suave);
+  cursor: not-allowed;
+}
+
+.accion-texto--peligro {
+  color: var(--color-peligro-texto);
 }

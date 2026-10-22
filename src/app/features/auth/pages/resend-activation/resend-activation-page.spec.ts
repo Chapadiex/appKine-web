@@ -67,7 +67,7 @@ describe('ResendActivationPage', () => {
     fixture.detectChanges();
 
     expect(boton(fixture).disabled).toBe(true);
-    expect(texto(fixture)).toContain('Volvé a intentar en 60 segundos');
+    expect(texto(fixture)).toContain('Espera 60 segundos y volvé a intentar');
   });
 
   it('no sale a la red con un email invalido y enfoca el campo', () => {
@@ -78,7 +78,7 @@ describe('ResendActivationPage', () => {
 
     httpMock.expectNone(URL_REENVIO);
     expect(document.activeElement?.id).toBe('reenvio-email');
-    expect(texto(fixture)).toContain('Escribi un email valido');
+    expect(texto(fixture)).toContain('Escribí un correo válido');
   });
 
   // --- Accesibilidad ---------------------------------------------------------------

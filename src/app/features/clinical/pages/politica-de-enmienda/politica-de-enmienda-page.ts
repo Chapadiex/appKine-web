@@ -27,7 +27,7 @@ export const VENTANA_MAXIMA = 3650;
   selector: 'app-politica-de-enmienda-page',
   imports: [Ayuda, RouterLink],
   templateUrl: './politica-de-enmienda-page.html',
-  styleUrl: '../../atencion.css',
+  styleUrls: ['../../atencion.css', '../historia-clinica/historia-clinica.css'],
 })
 export class PoliticaDeEnmiendaPage {
   private readonly api = inject(ClinicalApi);
@@ -52,6 +52,7 @@ export class PoliticaDeEnmiendaPage {
   protected readonly achica = computed(
     () => this.diasValidos() && Number(this.dias()) < (this.politica()?.ventanaDias ?? 0),
   );
+  protected readonly unidad = computed(() => (Number(this.dias()) === 1 ? 'día' : 'días'));
   protected readonly sinCambios = computed(
     () => Number(this.dias()) === this.politica()?.ventanaDias,
   );

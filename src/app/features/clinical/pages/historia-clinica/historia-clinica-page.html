@@ -67,21 +67,27 @@
     @if (historia(); as hc) {
       <section class="tarjeta" aria-labelledby="titulo-paciente">
         <h2 id="titulo-paciente">Historia clínica</h2>
-        <dl class="detalle">
+        <dl class="historia__datos">
           @if (hc.personaDocumento) {
-            <dt>Documento</dt>
-            <dd>{{ hc.personaDocumento }}</dd>
+            <div>
+              <dt>Documento</dt>
+              <dd>{{ hc.personaDocumento }}</dd>
+            </div>
           }
-          <dt>Historia abierta</dt>
-          <dd>{{ fechaYHora(hc.abiertaEn) }}</dd>
-          <dt>Acceso</dt>
-          <dd>
-            @if (justificacion(); as motivo) {
-              Con motivo declarado: «{{ motivo }}»
-            } @else {
-              Por relación asistencial
-            }
-          </dd>
+          <div>
+            <dt>Historia abierta</dt>
+            <dd>{{ fechaYHora(hc.abiertaEn) }}</dd>
+          </div>
+          <div class="historia__acceso">
+            <dt>Acceso (cada lectura queda auditada)</dt>
+            <dd>
+              @if (justificacion(); as motivo) {
+                Con motivo declarado: «{{ motivo }}»
+              } @else {
+                Por relación asistencial
+              }
+            </dd>
+          </div>
         </dl>
 
         <div class="historia__resumen">

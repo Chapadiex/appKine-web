@@ -55,7 +55,7 @@ test.describe('Invitaciones contra el backend real', () => {
       await fila.getByRole('button', { name: 'Cancelar' }).click();
       await page.getByLabel('Motivo de la cancelacion').fill(motivo);
       const cancelacion = respuestaDe(page, 'POST', /\/colaborador-invitaciones\/\d+\/cancel$/);
-      await page.getByRole('button', { name: 'Cancelar la invitacion' }).click();
+      await page.getByRole('button', { name: 'Cancelar la invitación' }).click();
       expect((await cancelacion).status()).toBeLessThan(300);
       await abrirFiltros(page);
       await page.getByLabel('Mostrar').selectOption({ label: 'Las canceladas' });

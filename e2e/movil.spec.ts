@@ -57,7 +57,7 @@ const PANTALLAS: readonly Pantalla[] = [
     ruta: '/auth/ingresar',
     conSesion: false,
     listo: async (page) =>
-      expect(page.getByRole('heading', { name: 'Iniciar sesion', level: 1 })).toBeVisible(),
+      expect(page.getByRole('heading', { name: 'Iniciar sesión', level: 1 })).toBeVisible(),
   },
   {
     nombre: 'agenda',
@@ -185,7 +185,7 @@ const PANTALLAS: readonly Pantalla[] = [
     nombre: 'ventana de enmienda',
     ruta: '/atencion/politica-de-enmienda',
     apiDp43: {},
-    listo: texto('45 dias'),
+    listo: texto('45 días'),
   },
 ];
 

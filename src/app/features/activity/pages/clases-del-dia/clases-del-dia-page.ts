@@ -81,6 +81,11 @@ export class ClasesDelDiaPage {
     });
   }
 
+  protected porcentajeDeCupo(clase: EventoDeAgenda): number {
+    const capacidad = clase.capacidad ?? 0;
+    return capacidad > 0 ? Math.min(100, ((clase.ocupados ?? 0) / capacidad) * 100) : 0;
+  }
+
   protected cambiarFecha(valor: string): void {
     if (valor !== '') {
       this.fecha.set(valor);

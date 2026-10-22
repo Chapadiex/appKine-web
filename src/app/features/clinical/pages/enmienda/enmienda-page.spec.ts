@@ -114,7 +114,7 @@ describe('EnmiendaPage', () => {
     expect(valor(fixture, '#enmienda-nota')).toBe('Movilidad pasiva y activa.');
     expect(valor(fixture, '#enmienda-zona')).toBe('rodilla');
     expect(valor(fixture, '#enmienda-dolor')).toBe('6');
-    expect(texto(fixture)).toContain('Partis de la versión 2');
+    expect(texto(fixture)).toContain('Partís de la versión 2');
   });
 
   it('sin motivo no manda nada y dice por que', async () => {

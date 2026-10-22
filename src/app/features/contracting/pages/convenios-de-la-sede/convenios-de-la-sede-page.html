@@ -303,8 +303,10 @@
   </section>
 }
 
-<section class="tarjeta" aria-labelledby="titulo-listado-convenios">
-  <h2 id="titulo-listado-convenios">Convenios firmados en esta sede</h2>
+<section class="tarjeta tarjeta--tabla" aria-labelledby="titulo-listado-convenios">
+  <div class="tarjeta__cabecera">
+    <h2 id="titulo-listado-convenios">Convenios firmados en esta sede</h2>
+  </div>
 
   <!--
     Regla de filtros (plan §3.4): sin busqueda por texto en el backend, solo el embudo. La fecha
@@ -392,15 +394,14 @@
               </caption>
               <thead>
                 <tr>
-                  <th scope="col" appOrdenable [tabla]="tabla" columna="nombre">Convenio</th>
                   <th scope="col" appOrdenable [tabla]="tabla" columna="financiador">
                     Financiador
                   </th>
-                  <th scope="col" appOrdenable [tabla]="tabla" columna="modalidad">Modalidad</th>
                   <th scope="col" appOrdenable [tabla]="tabla" columna="vigencia">Vigencia</th>
+                  <th scope="col" appOrdenable [tabla]="tabla" columna="modalidad">Modalidad</th>
                   <th scope="col">Requisitos</th>
                   <th scope="col">Situación</th>
-                  <th scope="col">Acciones</th>
+                  <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
                 </tr>
               </thead>
               <tbody>
@@ -416,43 +417,44 @@
                     [class.fila--revocada]="convenio.estado === 'INACTIVO'"
                     [class.fila--atenuada]="situacionDeLaFila.atenuada"
                   >
-                    <th scope="row">
-                      {{ convenio.nombre }}
-                      <p class="ayuda">Código {{ convenio.codigo }} · {{ convenio.moneda }}</p>
+                    <th scope="row" class="celda-ancha">
+                      <span class="celda-principal">{{ nombreDelFinanciador(convenio) }}</span>
+                      <span class="celda-secundaria"
+                        >{{ convenio.nombre }} · Código {{ convenio.codigo }} ·
+                        {{ convenio.moneda }} · Plan #{{ convenio.planId }}</span
+                      >
                       @if (convenio.observaciones) {
-                        <p class="ayuda">{{ convenio.observaciones }}</p>
+                        <span class="celda-secundaria">{{ convenio.observaciones }}</span>
                       }
                     </th>
-                    <td>
-                      {{ nombreDelFinanciador(convenio) }}
-                      <p class="ayuda">Plan #{{ convenio.planId }}</p>
-                    </td>
-                    <td>{{ etiquetaDeModalidad(convenio.modalidad) }}</td>
                     <td>{{ ventanaEnPalabras(convenio) }}</td>
+                    <td>{{ etiquetaDeModalidad(convenio.modalidad) }}</td>
                     <td>
-                      @if (convenio.requiereOrden) {
-                        <p class="ayuda">Orden médica</p>
-                      }
-                      @if (convenio.requiereAutorizacion) {
-                        <p class="ayuda">Autorización previa</p>
-                      }
-                      @if (convenio.requiereCredencial) {
-                        <p class="ayuda">Credencial</p>
-                      }
-                      @if (convenio.limiteSesionesMensual) {
-                        <p class="ayuda">Hasta {{ convenio.limiteSesionesMensual }} sesiones/mes</p>
-                      }
-                      @if (convenio.documentacionRequerida) {
-                        <p class="ayuda">{{ convenio.documentacionRequerida }}</p>
-                      }
-                      @if (
-                        !convenio.requiereOrden &&
-                        !convenio.requiereAutorizacion &&
-                        !convenio.requiereCredencial &&
-                        !convenio.limiteSesionesMensual
-                      ) {
-                        <p class="ayuda">Sin requisitos declarados</p>
-                      }
+                      <ul class="requisitos-lista">
+                        @if (convenio.requiereOrden) {
+                          <li>Orden médica</li>
+                        }
+                        @if (convenio.requiereAutorizacion) {
+                          <li>Autorización previa</li>
+                        }
+                        @if (convenio.requiereCredencial) {
+                          <li>Credencial</li>
+                        }
+                        @if (convenio.limiteSesionesMensual) {
+                          <li>Hasta {{ convenio.limiteSesionesMensual }} sesiones/mes</li>
+                        }
+                        @if (convenio.documentacionRequerida) {
+                          <li>{{ convenio.documentacionRequerida }}</li>
+                        }
+                        @if (
+                          !convenio.requiereOrden &&
+                          !convenio.requiereAutorizacion &&
+                          !convenio.requiereCredencial &&
+                          !convenio.limiteSesionesMensual
+                        ) {
+                          <li>Sin requisitos declarados</li>
+                        }
+                      </ul>
                     </td>
                     <td>
                       <span
@@ -466,20 +468,20 @@
                         >{{ situacionDeLaFila.resumen }}</span
                       >
                       @if (situacionDeLaFila.explicacion; as explicacion) {
-                        <p class="ayuda">{{ explicacion }}</p>
+                        <span class="celda-secundaria">{{ explicacion }}</span>
                       }
                       @if (convenio.estado === 'INACTIVO' && convenio.deactivationReason) {
-                        <p class="ayuda">{{ convenio.deactivationReason }}</p>
+                        <span class="celda-secundaria">{{ convenio.deactivationReason }}</span>
                       }
                     </td>
-                    <td class="acciones-fila">
+                    <td class="celda-acciones">
                       <!--
                         Los aranceles se ven SIEMPRE, tambien los de un convenio dado de baja:
                         conservan sus filas y hay que poder consultarlos para explicar una
                         liquidacion vieja. El enlace no lleva permiso, por lo mismo que el listado.
                       -->
                       <a
-                        class="boton boton--secundario"
+                        class="accion-texto"
                         [routerLink]="['/contratacion/convenios', convenio.id, 'aranceles']"
                       >
                         Aranceles
@@ -488,14 +490,14 @@
                         <ng-container *akinePermiso="permisoManage">
                           <button
                             type="button"
-                            class="boton boton--secundario"
+                            class="accion-texto"
                             (click)="abrirPanel(convenio, 'editar')"
                           >
                             Editar
                           </button>
                           <button
                             type="button"
-                            class="boton boton--secundario"
+                            class="accion-texto accion-texto--peligro"
                             (click)="abrirPanel(convenio, 'baja')"
                           >
                             Dar de baja

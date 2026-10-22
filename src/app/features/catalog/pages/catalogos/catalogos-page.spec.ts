@@ -287,7 +287,7 @@ describe('CatalogosPage', () => {
       .forEach((peticion) => peticion.flush({ permissions: [] }));
 
     const anfitrion = fixture.nativeElement as HTMLElement;
-    expect(anfitrion.textContent).toContain('Ese catalogo no existe');
+    expect(anfitrion.textContent).toContain('Ese catálogo no existe');
     expect(anfitrion.querySelector('a[href="/catalogo/especialidades"]')).not.toBeNull();
     expect(anfitrion.querySelector('a[href="/catalogo/nomencladores"]')).not.toBeNull();
   });

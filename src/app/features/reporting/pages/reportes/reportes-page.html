@@ -49,6 +49,12 @@
           aria-describedby="ayuda-rango"
         />
       </div>
+
+      <div class="acciones acciones--filtro">
+        <button type="submit" class="boton" [disabled]="estado().tipo === 'cargando'">
+          Generar reporte
+        </button>
+      </div>
     </div>
 
     <p id="ayuda-rango" class="ayuda">
@@ -78,12 +84,6 @@
         </ul>
       </div>
     }
-
-    <div class="acciones">
-      <button type="submit" class="boton" [disabled]="estado().tipo === 'cargando'">
-        Generar reporte
-      </button>
-    </div>
   </form>
 </section>
 
@@ -109,6 +109,9 @@
   <section class="tarjeta" aria-labelledby="titulo-reporte">
     <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
       <h2 id="titulo-reporte">{{ nombreDeReporte(r.reporte) }}</h2>
+      <app-ayuda titulo="Sobre el período">
+        <p>Un período que incluye hoy puede cambiar entre consultas.</p>
+      </app-ayuda>
       <div class="encabezado__acciones">
         <button
           type="button"
@@ -128,7 +131,7 @@
       @if (r.zona) {
         <span>(zona {{ r.zona }})</span>
       }
-      . Un período que incluye hoy puede cambiar entre consultas.
+      .
     </p>
 
     @if (actividadPropia()) {

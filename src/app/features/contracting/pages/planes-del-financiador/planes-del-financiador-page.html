@@ -234,8 +234,10 @@
   </section>
 }
 
-<section class="tarjeta" aria-labelledby="titulo-listado-planes">
-  <h2 id="titulo-listado-planes">Planes cargados</h2>
+<section class="tarjeta tarjeta--tabla" aria-labelledby="titulo-listado-planes">
+  <div class="tarjeta__cabecera">
+    <h2 id="titulo-listado-planes">Planes cargados</h2>
+  </div>
 
   <!--
     Regla de filtros (plan §3.4): sin busqueda por texto en el backend, solo el embudo. La fecha
@@ -325,7 +327,7 @@
                   </th>
                   <th scope="col">Requisitos</th>
                   <th scope="col">Situación</th>
-                  <th scope="col">Acciones</th>
+                  <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
                 </tr>
               </thead>
               <tbody>
@@ -341,25 +343,27 @@
                     [class.fila--revocada]="plan.estado === 'INACTIVO'"
                     [class.fila--atenuada]="situacionDeLaFila.atenuada"
                   >
-                    <th scope="row">
-                      {{ plan.nombre }}
-                      <p class="ayuda">Código {{ plan.codigo }}</p>
+                    <th scope="row" class="celda-ancha">
+                      <span class="celda-principal">{{ plan.nombre }}</span>
+                      <span class="celda-secundaria">Código {{ plan.codigo }}</span>
                       @if (plan.descripcion) {
-                        <p class="ayuda">{{ plan.descripcion }}</p>
+                        <span class="celda-secundaria">{{ plan.descripcion }}</span>
                       }
                     </th>
                     <td>{{ ventanaEnPalabras(plan) }}</td>
                     <td class="importe">{{ importeEnPalabras(plan.copago, plan.moneda) }}</td>
                     <td>
-                      @if (plan.requiereAutorizacion) {
-                        <p class="ayuda">Requiere autorización previa</p>
-                      }
-                      @if (plan.requiereCredencial) {
-                        <p class="ayuda">Requiere credencial</p>
-                      }
-                      @if (!plan.requiereAutorizacion && !plan.requiereCredencial) {
-                        <p class="ayuda">Sin requisitos declarados</p>
-                      }
+                      <ul class="requisitos-lista">
+                        @if (plan.requiereAutorizacion) {
+                          <li>Requiere autorización previa</li>
+                        }
+                        @if (plan.requiereCredencial) {
+                          <li>Requiere credencial</li>
+                        }
+                        @if (!plan.requiereAutorizacion && !plan.requiereCredencial) {
+                          <li>Sin requisitos declarados</li>
+                        }
+                      </ul>
                     </td>
                     <td>
                       <span
@@ -373,25 +377,25 @@
                         >{{ situacionDeLaFila.resumen }}</span
                       >
                       @if (situacionDeLaFila.explicacion; as explicacion) {
-                        <p class="ayuda">{{ explicacion }}</p>
+                        <span class="celda-secundaria">{{ explicacion }}</span>
                       }
                       @if (plan.estado === 'INACTIVO' && plan.deactivationReason) {
-                        <p class="ayuda">{{ plan.deactivationReason }}</p>
+                        <span class="celda-secundaria">{{ plan.deactivationReason }}</span>
                       }
                     </td>
-                    <td class="acciones-fila">
+                    <td class="celda-acciones">
                       @if (plan.estado === 'ACTIVO') {
                         <ng-container *akinePermiso="permisoManage">
                           <button
                             type="button"
-                            class="boton boton--secundario"
+                            class="accion-texto"
                             (click)="abrirPanel(plan, 'editar')"
                           >
                             Editar
                           </button>
                           <button
                             type="button"
-                            class="boton boton--secundario"
+                            class="accion-texto accion-texto--peligro"
                             (click)="abrirPanel(plan, 'baja')"
                           >
                             Dar de baja

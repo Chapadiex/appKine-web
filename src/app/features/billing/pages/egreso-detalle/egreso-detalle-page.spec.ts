@@ -149,7 +149,7 @@ describe('EgresoDetallePage', () => {
   it('con efectivo avisa que la caja esta cerrada y un rechazo caja-no-abierta lleva a la caja', async () => {
     const fixture = await montar(CONFIRMADO, []);
     expect(campo<HTMLInputElement>(fixture, '#pago-importe').value).toBe('300000.00');
-    expect(contenido(fixture)).toContain('la caja de esta sede esta cerrada');
+    expect(contenido(fixture)).toContain('la caja de esta sede está cerrada');
 
     enviar(fixture, 0);
     const pago = httpMock.expectOne((p) => p.method === 'POST' && p.url === `${DETALLE}/pagos`);
@@ -169,7 +169,7 @@ describe('EgresoDetallePage', () => {
     elegir(fixture, '#pago-medio', 'TRANSFERENCIA');
     escribir(fixture, '#pago-importe', '100000');
     escribir(fixture, '#pago-referencia', 'TRF-123');
-    expect(contenido(fixture)).toContain('no toca el cajon');
+    expect(contenido(fixture)).toContain('no toca el cajón');
     enviar(fixture, 0);
     const parcial = httpMock.expectOne((p) => p.method === 'POST' && p.url === `${DETALLE}/pagos`);
     expect(parcial.request.body).toMatchObject({
@@ -196,7 +196,7 @@ describe('EgresoDetallePage', () => {
   it('con pagos vigentes no ofrece anular el egreso, y anular un pago pide motivo', async () => {
     const pagado = { ...CONFIRMADO, estado: 'PAGADO', saldoPendiente: 0, pagos: [PAGO] };
     const fixture = await montar(pagado);
-    expect(contenido(fixture)).toContain('Anula primero cada pago');
+    expect(contenido(fixture)).toContain('Anulá primero cada pago');
     expect(botonOpcional(fixture, 'Anular el egreso')).toBeUndefined();
     expect(contenido(fixture)).toContain('300.000,00');
 
@@ -308,7 +308,7 @@ describe('EgresoDetallePage', () => {
       liquidacionHonorariosId: 77,
     });
     expect(contenido(fixture)).toContain('Pilates grupal');
-    expect(contenido(fixture)).toContain('Nacio de una liquidación de honorarios por clase');
+    expect(contenido(fixture)).toContain('Nació de una liquidación de honorarios por clase');
     const enlace = (fixture.nativeElement as HTMLElement).querySelector<HTMLAnchorElement>(
       'a[href="/egresos/honorarios/liquidaciones/77"]',
     );

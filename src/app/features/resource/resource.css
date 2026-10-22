@@ -106,110 +106,6 @@
 }
 
 /*
- * Grilla de la semana del horario del profesional (M05, AKINE-02.04).
- *
- * `auto-fit` con un minimo de 13rem: en escritorio entran los siete dias uno al lado del otro
- * -que es como se lee un horario- y en tablet vertical envuelven solos. No hay `overflow-x`
- * porque no es una tabla: cada dia es una tarjeta y envolver no pierde ninguna columna.
- */
-.semana {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
-  gap: var(--esp-6);
-}
-
-.dia {
-  border: var(--borde-fino) solid var(--color-borde);
-  border-radius: var(--radio-md);
-  padding: var(--esp-5);
-}
-
-.dia__titulo {
-  margin: 0 0 var(--esp-4);
-  font-size: var(--tipo-base);
-}
-
-/* "No atiende" es informacion, no ausencia: se muestra, no se esconde. */
-.dia--vacio {
-  margin: 0;
-}
-
-.bloque {
-  border-top: var(--borde-fino) solid var(--color-borde-sutil);
-  padding-top: var(--esp-4);
-  margin-top: var(--esp-4);
-}
-
-.bloque:first-child {
-  border-top: none;
-  padding-top: 0;
-  margin-top: 0;
-}
-
-.bloque__horario {
-  margin: 0;
-  font-weight: var(--peso-semi);
-  color: var(--color-texto-fuerte);
-}
-
-/*
- * El bloque con el que se choca en un 409 de solapamiento.
- *
- * El borde de acento NO es lo unico que lo distingue: dentro de la fila hay un parrafo que lo
- * dice con palabras, porque el color solo no comunica (WCAG 1.4.1) y porque la marca tiene que
- * seguir sirviendo en una captura en escala de grises.
- */
-.bloque--conflicto {
-  border-left: var(--borde-acento) solid var(--color-peligro);
-  padding-left: var(--esp-4);
-  background: var(--color-peligro-fondo);
-}
-
-/*
- * Listado de excepciones de disponibilidad (M05, AKINE-02.04).
- *
- * Una lista de tarjetas y no una tabla: cada excepcion son cinco datos de largo desigual
- * -tipo, alcance, fechas, franja y motivo- y una tabla con esas columnas se parte en cualquier
- * pantalla que no sea de escritorio, que es justo donde se usa.
- */
-.lista-excepciones {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.excepcion {
-  border: var(--borde-fino) solid var(--color-borde);
-  border-left: var(--borde-acento) solid var(--color-acento);
-  border-radius: var(--radio-md);
-  padding: var(--esp-5);
-  margin-bottom: var(--esp-5);
-}
-
-/*
- * La apertura se distingue del cierre por el borde, pero NO solo por el borde: el titulo de
- * cada fila dice "Apertura" o "Cierre" con todas las letras (WCAG 1.4.1).
- */
-.excepcion--apertura {
-  border-left-color: var(--color-exito);
-}
-
-.excepcion__titulo {
-  margin: 0 0 var(--esp-2);
-  font-weight: var(--peso-semi);
-  color: var(--color-texto-fuerte);
-}
-
-.excepcion .ayuda {
-  margin: var(--esp-2) 0 0;
-}
-
-/* La consecuencia de una apertura de sede: se lee dentro de la fila, no en un cartel aparte. */
-.excepcion__alerta {
-  color: var(--color-aviso);
-}
-
-/*
  * El aviso que frena una apertura de sede sobre un feriado, y la explicacion de apagar el
  * cierre por feriado.
  *
@@ -232,31 +128,6 @@
 
 .aviso-apertura p:last-child {
   margin-bottom: 0;
-}
-
-/*
- * Horario efectivo de un profesional (M05, AKINE-02.04).
- *
- * Una lista vertical de dias y no una grilla de siete columnas: la ventana no es una semana
- * fija -se puede pedir un mes o un ano- y cada dia lleva ademas la explicacion de que regla lo
- * afecto, que es un parrafo, no una celda.
- */
-.dia-efectivo {
-  border: var(--borde-fino) solid var(--color-borde);
-  border-left: var(--borde-acento) solid var(--color-exito);
-  border-radius: var(--radio-md);
-  padding: var(--esp-5);
-  margin-bottom: var(--esp-5);
-}
-
-/*
- * El dia sin atencion. El color NO es lo unico que lo distingue: adentro hay un parrafo que
- * dice por que quedo vacio con todas las letras (WCAG 1.4.1), asi que la fila sigue
- * comunicando en escala de grises.
- */
-.dia-efectivo--vacio {
-  border-left-color: var(--color-aviso);
-  background: var(--color-aviso-fondo);
 }
 
 .dia-efectivo__motivo {
@@ -332,4 +203,285 @@ textarea:disabled {
   font-weight: var(--peso-normal);
   font-size: var(--tipo-xs);
   color: var(--color-texto-suave);
+}
+
+/*
+ * Barra de consulta (diseno del canvas): el profesional, la ventana y el boton de resolver en una
+ * sola fila que envuelve. El `form` de la ventana usa `display: contents` para que sus campos
+ * compartan fila con el desplegable del profesional, que vive afuera del formulario.
+ */
+.barra-consulta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--esp-6);
+}
+
+.barra-consulta .campo {
+  margin-bottom: 0;
+}
+
+.barra-consulta__profesional {
+  flex: 2 1 16rem;
+}
+
+.barra-consulta__formulario {
+  display: contents;
+}
+
+.barra-consulta__formulario .campo {
+  flex: 1 1 10rem;
+}
+
+.barra-consulta__acciones {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-4);
+}
+
+.barra-consulta__ancho {
+  flex: 1 1 100%;
+  margin: 0;
+}
+
+/* Encabezado de una tarjeta de contenido: titulo a la izquierda, resumen y "?" a la derecha. */
+.seccion-cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--esp-4);
+  margin-bottom: var(--esp-6);
+}
+
+.seccion-cabecera h2 {
+  margin: 0;
+}
+
+.seccion-cabecera__datos {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-4);
+}
+
+.seccion-cabecera__resumen {
+  font-size: var(--tipo-sm);
+  color: var(--color-texto-suave);
+}
+
+/*
+ * Horario semanal (diseno del canvas): un renglon por dia, con el nombre del dia a la izquierda
+ * y sus bloques a la derecha. Cada bloque es una fila con su horario, su vigencia y sus acciones.
+ * En pantallas angostas el dia pasa arriba de sus bloques.
+ */
+.semana {
+  display: flex;
+  flex-direction: column;
+  border: var(--borde-fino) solid var(--color-borde);
+  border-radius: var(--radio-md);
+}
+
+.dia {
+  display: grid;
+  grid-template-columns: 8rem minmax(0, 1fr);
+  gap: var(--esp-6);
+  padding: var(--esp-5) var(--esp-6);
+  border-top: var(--borde-fino) solid var(--color-borde-sutil);
+}
+
+.dia:first-child {
+  border-top: none;
+}
+
+@media (max-width: 40rem) {
+  .dia {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--esp-3);
+  }
+}
+
+.dia__titulo {
+  margin: 0;
+  padding-top: var(--esp-3);
+  font-size: var(--tipo-base);
+}
+
+/* "No atiende" es informacion, no ausencia: se muestra, no se esconde. */
+.dia--vacio {
+  margin: 0;
+  padding-top: var(--esp-3);
+  font-size: var(--tipo-sm);
+}
+
+.bloque {
+  margin-top: var(--esp-4);
+  padding: var(--esp-4) var(--esp-5);
+  border: var(--borde-fino) solid var(--color-borde);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie-atenuada);
+}
+
+.bloque:first-child {
+  margin-top: 0;
+}
+
+.bloque__resumen {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--esp-4);
+}
+
+.bloque__datos .ayuda {
+  margin: var(--esp-1) 0 0;
+}
+
+.bloque__horario {
+  margin: 0;
+  font-weight: var(--peso-semi);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-texto-fuerte);
+}
+
+/*
+ * El bloque con el que se choca en un 409 de solapamiento.
+ *
+ * El borde de acento NO es lo unico que lo distingue: dentro de la fila hay un parrafo que lo
+ * dice con palabras, porque el color solo no comunica (WCAG 1.4.1) y porque la marca tiene que
+ * seguir sirviendo en una captura en escala de grises.
+ */
+.bloque--conflicto {
+  border-left: var(--borde-acento) solid var(--color-peligro);
+  background: var(--color-peligro-fondo);
+}
+
+.bloque .estado {
+  margin: var(--esp-4) 0 0;
+}
+
+/*
+ * Formulario de alta o edicion (diseno del canvas): borde de acento, cuerpo con los campos y un
+ * pie con las acciones separado por una linea. En la pantalla de cierres y aperturas va como
+ * columna lateral junto a la lista.
+ */
+.panel-formulario {
+  margin-top: var(--esp-5);
+  border: var(--borde-fino) solid var(--color-borde-control);
+  border-top: var(--borde-acento) solid var(--color-acento);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie);
+}
+
+.panel-formulario__cuerpo {
+  padding: var(--esp-6);
+}
+
+.panel-formulario__cuerpo .campo {
+  margin-bottom: var(--esp-5);
+}
+
+.panel-formulario__pie {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--esp-4);
+  padding: var(--esp-5) var(--esp-6);
+  border-top: var(--borde-fino) solid var(--color-borde);
+}
+
+.panel-formulario__pie > .ayuda-contextual {
+  margin-right: auto;
+}
+
+.panel-formulario--lateral {
+  margin-top: 0;
+  padding: 0;
+}
+
+.panel-formulario--lateral form {
+  display: flex;
+  flex-direction: column;
+}
+
+.excepciones-columnas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp-8);
+  align-items: flex-start;
+}
+
+.excepciones-columnas > .tarjeta {
+  flex: 3 1 36rem;
+  min-width: 0;
+}
+
+.excepciones-columnas--con-alta > .panel-formulario--lateral {
+  flex: 2 1 22rem;
+  min-width: 0;
+}
+
+/*
+ * Cierres y aperturas (diseno del canvas): una tabla con el tipo marcado por un punto de color Y
+ * por su nombre -"Cierre" o "Apertura" con todas las letras (WCAG 1.4.1)-.
+ */
+.excepcion__punto {
+  display: inline-block;
+  width: 0.5rem;
+  height: 0.5rem;
+  margin-right: var(--esp-4);
+  border-radius: var(--radio-pastilla);
+  background: var(--color-acento);
+}
+
+.excepcion--apertura .excepcion__punto {
+  background: var(--color-exito);
+}
+
+.excepcion__titulo {
+  font-weight: var(--peso-semi);
+  color: var(--color-texto-fuerte);
+}
+
+.excepcion__dato {
+  margin: 0;
+}
+
+.tabla .excepcion .ayuda {
+  margin: var(--esp-1) 0 0;
+  font-weight: var(--peso-normal);
+}
+
+/* La consecuencia de una apertura de sede: se lee dentro del "?" de la fila. */
+.excepcion__alerta {
+  color: var(--color-aviso);
+}
+
+/*
+ * Horario efectivo (diseno del canvas, sin la grilla horaria): una fila por dia, con las
+ * franjas resueltas y la regla que las produjo. El dia sin atencion se distingue por el fondo Y
+ * por su marca "Sin atencion" y el parrafo que dice por que quedo vacio (WCAG 1.4.1).
+ */
+.dia-efectivo--vacio {
+  background: var(--color-aviso-fondo);
+}
+
+.resumen-efectivo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp-2) var(--esp-6);
+  margin: 0 0 var(--esp-6);
+  font-size: var(--tipo-sm);
+  color: var(--color-texto-suave);
+}
+
+.resumen-efectivo__dato {
+  font-weight: var(--peso-semi);
+  color: var(--color-texto-fuerte);
+}
+
+.tabla .dia-efectivo .ayuda {
+  margin: var(--esp-1) 0 0;
+  font-weight: var(--peso-normal);
 }

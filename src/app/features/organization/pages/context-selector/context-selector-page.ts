@@ -65,7 +65,7 @@ type EstadoContextos =
   imports: [],
   selector: 'app-context-selector-page',
   templateUrl: './context-selector-page.html',
-  styleUrl: '../../organization.css',
+  styleUrls: ['../../organization.css', '../../../../shared/styles/acceso.css'],
 })
 export class ContextSelectorPage {
   private readonly session = inject(SessionService);
@@ -142,7 +142,7 @@ export class ContextSelectorPage {
   /** Dos letras para el cuadrado del centro: "Consultorio Centro" → "CC". */
   protected iniciales(nombre: string): string {
     return nombre
-      .split(/s+/)
+      .split(/\s+/)
       .filter((palabra) => palabra.length > 0)
       .slice(0, 2)
       .map((palabra) => palabra[0]!.toUpperCase())
@@ -153,7 +153,7 @@ export class ContextSelectorPage {
   protected cerrarSesion(): void {
     this.saliendo.set(true);
     this.session.logout().subscribe({
-      complete: () => void this.router.navigateByUrl(RUTA_LOGIN),
+      complete: () => this.router.navigateByUrl(RUTA_LOGIN).catch(() => undefined),
     });
   }
 

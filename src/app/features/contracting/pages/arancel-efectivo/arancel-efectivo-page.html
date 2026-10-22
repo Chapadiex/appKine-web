@@ -159,12 +159,16 @@
         -->
         <ul class="resultado__partes">
           <li>
-            Pone el financiador:
-            <b>{{ importeEnPalabras(respuesta.importeFinanciador, respuesta.moneda, '-') }}</b>
+            <span>Pone el financiador:</span>
+            <b class="importe">{{
+              importeEnPalabras(respuesta.importeFinanciador, respuesta.moneda, '-')
+            }}</b>
           </li>
           <li>
-            Paga el paciente:
-            <b>{{ importeEnPalabras(respuesta.coseguro, respuesta.moneda, '-') }}</b>
+            <span>Paga el paciente:</span>
+            <b class="importe">{{
+              importeEnPalabras(respuesta.coseguro, respuesta.moneda, '-')
+            }}</b>
           </li>
         </ul>
 

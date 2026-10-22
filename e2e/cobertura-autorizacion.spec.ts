@@ -234,7 +234,7 @@ test.describe('Cobertura, orden y autorizacion de un paciente (B-6)', () => {
     await vigente.getByRole('button', { name: 'Corregir' }).click();
     const correccion = page.getByRole('region', { name: 'Corregir la autorizacion AUT-VIGENTE' });
     await correccion.getByLabel('Vigente hasta').fill(dia(-1));
-    await correccion.getByRole('button', { name: 'Guardar la autorizacion' }).click();
+    await correccion.getByRole('button', { name: 'Guardar la autorización' }).click();
 
     await expect(vigente).toContainText('No habilita: esta vencida');
     await expect(vigente).toContainText('Aprobada');

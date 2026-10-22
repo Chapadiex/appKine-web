@@ -192,6 +192,76 @@
   font-weight: var(--peso-semi);
 }
 
+/* Cabecera del plan y consumo por limite (diseño del canvas, 22/10/2026). */
+.plan-actual {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--esp-6);
+  padding-top: var(--esp-4);
+}
+
+.plan-actual__dato {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-1);
+}
+
+.plan-actual__etiqueta {
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-sm);
+}
+
+.plan-actual__nombre {
+  font-size: var(--tipo-lg);
+  font-weight: var(--peso-semi);
+}
+
+.plan-actual__alta {
+  margin-left: auto;
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-md);
+}
+
+.limites-lista {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: var(--esp-6) var(--esp-8);
+  margin: 0 0 var(--esp-6);
+  padding: 0;
+  list-style: none;
+}
+
+.limite {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-3);
+}
+
+.limite__cabecera {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--esp-4);
+  font-size: var(--tipo-md);
+}
+
+.limite__nombre {
+  font-weight: var(--peso-medio);
+}
+
+.limite__valor {
+  font-variant-numeric: tabular-nums;
+}
+
+.limite__valor.excedido {
+  color: var(--color-peligro);
+  font-weight: var(--peso-semi);
+}
+
+.limite .medidor {
+  max-width: none;
+}
+
 /* --- Permisos adicionales de un vinculo ------------------------------------------------ */
 
 .lista-grants {

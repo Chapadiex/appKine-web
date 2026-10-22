@@ -51,7 +51,7 @@ function filaDeAutorizacion(page: Page, numero: string): Locator {
 async function abrirElSaldo(page: Page, personaId: number, numero: string): Promise<Locator> {
   await navegar(page, `/pacientes/${personaId}/autorizaciones`);
   await filaDeAutorizacion(page, numero).getByRole('button', { name: 'Saldo y consumos' }).click();
-  const panel = page.getByRole('region', { name: `Saldo y consumos de la autorización ${número}` });
+  const panel = page.getByRole('region', { name: `Saldo y consumos de la autorización ${numero}` });
   await expect(panel.getByRole('heading', { name: 'Saldo', level: 3 })).toBeVisible();
   return panel;
 }
@@ -157,7 +157,7 @@ test.describe('Saldo, ledger y alerta de una autorizacion contra el backend real
     await alerta.getByRole('button', { name: `Revertir el consumo #${consumoId}` }).click();
     await panel.getByLabel('Motivo').fill('La sesion fue una cortesia: no corresponde consumir');
     const reversion = respuestaDe(page, 'POST', /\/autorizaciones\/\d+\/reversiones$/);
-    await panel.getByRole('button', { name: 'Confirmar la reversion' }).click();
+    await panel.getByRole('button', { name: 'Confirmar la reversión' }).click();
     expect((await reversion).status()).toBeLessThan(300);
     await expect(panel.getByText(`Se revirtio el consumo #${consumoId}`)).toBeVisible();
 

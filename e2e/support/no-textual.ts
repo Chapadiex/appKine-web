@@ -248,6 +248,11 @@ async function medirBordes(page: Page): Promise<MedicionDeBorde[]> {
         estilo.borderTopStyle !== 'none' && Number.parseFloat(estilo.borderTopWidth) > 0;
       const borde = conBorde ? estilo.borderTopColor : fondo;
       const relleno = a.opaco(estilo.backgroundColor) ? estilo.backgroundColor : null;
+      // Un boton sin caja (sin borde ni relleno: "?", orden de columna, accion de texto) se
+      // identifica por su texto o su icono, no por un contorno: 1.4.11 no exige un borde que el
+      // diseno no dibuja, y el contraste de ese texto ya lo mide `contraste.spec.ts`. Los campos
+      // de formulario no entran aca: siempre necesitan su contorno.
+      if (!conBorde && relleno === null && el.matches('button, a.boton')) continue;
       medidos.push({
         elemento: a.nombre(el),
         borde,
@@ -406,15 +411,24 @@ export async function auditarHover(page: Page, donde: string): Promise<MedicionD
     const caja = await candidato.boundingBox();
     if (caja === null || caja.x + caja.width <= 0) continue;
     await candidato.scrollIntoViewIfNeeded();
+    // Si en reposo no tiene caja (ver medirBordes), el tinte que le da el hover es una ayuda y
+    // no su contorno: se mide solo el texto. Se decide ANTES de pasar el mouse.
+    const sinCajaEnReposo = await candidato.evaluate((el) => {
+      const a = (window as unknown as { __akineA11y: Ayudantes }).__akineA11y;
+      const estilo = getComputedStyle(el);
+      const conBorde =
+        estilo.borderTopStyle !== 'none' && Number.parseFloat(estilo.borderTopWidth) > 0;
+      return !conBorde && !a.opaco(estilo.backgroundColor);
+    });
     await candidato.hover();
     medidos.push(
-      await candidato.evaluate((el) => {
+      await candidato.evaluate((el, sinCaja) => {
         const a = (window as unknown as { __akineA11y: Ayudantes }).__akineA11y;
         const estilo = getComputedStyle(el);
         const fondoTexto = a.fondoOpaco(el);
         const px = Number.parseFloat(estilo.fontSize);
         const negrita = Number.parseInt(estilo.fontWeight, 10) >= 700;
-        const conCaja = el.matches('button, .boton');
+        const conCaja = el.matches('button, .boton') && !sinCaja;
         let contorno: number | null = null;
         if (conCaja) {
           const exterior = a.fondoOpaco(el.parentElement);
@@ -435,7 +449,7 @@ export async function auditarHover(page: Page, donde: string): Promise<MedicionD
           minimoTexto: px >= 24 || (negrita && px >= 18.66) ? 3 : 4.5,
           ratioContorno: contorno,
         };
-      }),
+      }, sinCajaEnReposo),
     );
   }
   await page.mouse.move(0, 0);

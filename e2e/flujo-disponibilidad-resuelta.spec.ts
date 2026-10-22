@@ -84,10 +84,10 @@ test.describe('Disponibilidad resuelta contra el backend real', () => {
     await page.getByRole('button', { name: 'Resolver el horario' }).click();
     expect((await consulta).status()).toBe(200);
 
-    await expect(page.getByText(`${conAtencion} de 7 dias con atencion.`)).toBeVisible();
+    await expect(page.getByText(`${conAtencion} de 7 días con atención.`)).toBeVisible();
     await expect(page.getByText(resuelto.timezone, { exact: true })).toBeVisible();
-    await expect(page.locator('li.dia-efectivo')).toHaveCount(7);
-    await expect(page.locator('li.dia-efectivo:not(.dia-efectivo--vacio)')).toHaveCount(
+    await expect(page.locator('tr.dia-efectivo')).toHaveCount(7);
+    await expect(page.locator('tr.dia-efectivo:not(.dia-efectivo--vacio)')).toHaveCount(
       conAtencion,
     );
   });

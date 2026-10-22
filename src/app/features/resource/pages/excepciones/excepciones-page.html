@@ -124,491 +124,511 @@
   }
 </div>
 
-<section class="tarjeta" aria-label="Excepciones vigentes">
-  <div aria-live="polite">
-    @switch (estado().tipo) {
-      @case ('inicial') {
-        <p class="estado estado--vacio">Elegí un período y consultá.</p>
-      }
+<div
+  class="excepciones-columnas"
+  [class.excepciones-columnas--con-alta]="estado().tipo === 'listo' && altaAbierta()"
+>
+  <section class="tarjeta" aria-label="Excepciones vigentes">
+    <div aria-live="polite">
+      @switch (estado().tipo) {
+        @case ('inicial') {
+          <p class="estado estado--vacio">Elegí un período y consultá.</p>
+        }
 
-      @case ('cargando') {
-        <p class="estado estado--cargando">Buscando cierres y aperturas&hellip;</p>
-      }
+        @case ('cargando') {
+          <p class="estado estado--cargando">Buscando cierres y aperturas&hellip;</p>
+        }
 
-      @case ('sin-contexto') {
-        <p class="estado estado--vacio">Todavía no elegiste un consultorio.</p>
-        <p class="ayuda">
-          Los cierres y las aperturas son de una sede concreta. Tu sesión sigue abierta: solo falta
-          elegir donde estas trabajando.
-        </p>
-        <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
-      }
-
-      @case ('error') {
-        <p class="estado estado--error" role="alert">{{ mensajeError() }}</p>
-        @if (faltaContexto()) {
+        @case ('sin-contexto') {
+          <p class="estado estado--vacio">Todavía no elegiste un consultorio.</p>
+          <p class="ayuda">
+            Los cierres y las aperturas son de una sede concreta. Tu sesión sigue abierta: solo
+            falta elegir donde estas trabajando.
+          </p>
           <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
-        } @else {
-          <button type="button" class="boton" (click)="consultar()">Reintentar</button>
+        }
+
+        @case ('error') {
+          <p class="estado estado--error" role="alert">{{ mensajeError() }}</p>
+          @if (faltaContexto()) {
+            <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
+          } @else {
+            <button type="button" class="boton" (click)="consultar()">Reintentar</button>
+          }
+        }
+
+        @case ('listo') {
+          <!--
+            Modo lectura: los cierres y las aperturas se siguen listando enteros, con su alcance y
+            su motivo. Un profesional necesita ver que su martes esta cerrado; lo que no puede es
+            cargar ni dar de baja ninguno.
+          -->
+          @if (modoLectura()) {
+            <p class="ayuda">{{ textoModoLectura }}</p>
+          }
+
+          @if (vigentes().length === 0) {
+            <p class="estado estado--vacio">
+              No hay cierres ni aperturas vigentes en este periodo. El horario cargado se aplica tal
+              cual.
+            </p>
+          } @else {
+            <div class="tabla-scroll" tabindex="0" role="region" aria-label="Cierres y aperturas">
+              <table class="tabla">
+                <caption class="visualmente-oculto">
+                  Cierres y aperturas vigentes del período, con su alcance, fechas, franja y motivo
+                </caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Tipo</th>
+                    <th scope="col">Alcance</th>
+                    <th scope="col">Fechas</th>
+                    <th scope="col">Franja</th>
+                    <th scope="col">Motivo</th>
+                    <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (excepcion of vigentes(); track excepcion.id ?? $index) {
+                    <tr
+                      class="excepcion"
+                      [class.excepcion--apertura]="excepcion.tipo === 'APERTURA'"
+                    >
+                      <!--
+                        El numero de la fila se muestra porque hay una pantalla que lo NOMBRA: el
+                        horario efectivo explica un dia vacio diciendo "la excepcion de cierre
+                        numero 42 cubre el dia entero". Sin el numero visible aca, esa frase manda
+                        a buscar una fila que no se puede identificar entre varias parecidas.
+                      -->
+                      <th scope="row">
+                        <span class="excepcion__punto" aria-hidden="true"></span>
+                        <span class="excepcion__titulo">
+                          {{ excepcion.tipo === 'APERTURA' ? 'Apertura' : 'Cierre' }}
+                          <span class="excepcion__numero">número {{ excepcion.id }}</span>
+                        </span>
+                      </th>
+
+                      <td>
+                        {{ alcanceDe(excepcion) }}
+                        @if (esAperturaDeSede(excepcion)) {
+                          <app-ayuda titulo="Apertura de toda la sede">
+                            <p class="excepcion__alerta">
+                              Es una apertura de <b>toda la sede</b>: en un feriado que la sede
+                              cierre, reemplaza el horario habitual de todos los profesionales que
+                              atienden acá ese día.
+                            </p>
+                          </app-ayuda>
+                        }
+                      </td>
+
+                      <td>
+                        <p class="excepcion__dato">
+                          Del {{ etiquetaDeFecha(excepcion.fechaDesde) }} al
+                          {{ ultimoDiaCubierto(excepcion) }} inclusive
+                        </p>
+                        <p class="ayuda">
+                          (el fin cargado, {{ etiquetaDeFecha(excepcion.fechaHasta) }}, es
+                          exclusivo)
+                        </p>
+                      </td>
+
+                      <td>
+                        @if (esDiaCompleto(excepcion)) {
+                          Día completo
+                        } @else {
+                          {{ rangoHorario(excepcion.horaDesde, excepcion.horaHasta) }}
+                        }
+                      </td>
+
+                      <td>
+                        {{ etiquetaDeMotivo(excepcion.motivo) }}
+                        @if (excepcion.notes) {
+                          <p class="ayuda">{{ excepcion.notes }}</p>
+                        }
+                      </td>
+
+                      <td>
+                        <div class="acciones-fila" *akinePermiso="permisoManage">
+                          <button
+                            type="button"
+                            class="boton boton--secundario"
+                            (click)="abrirBaja(excepcion)"
+                          >
+                            Dar de baja
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+
+                    @if (bajaAbierta() === excepcion.id) {
+                      <tr class="fila-panel">
+                        <td colspan="6">
+                          <akine-confirmacion-con-motivo
+                            idCampo="baja-excepcion-reason"
+                            etiqueta="Motivo de la baja"
+                            textoConfirmar="Confirmar la baja"
+                            ayuda="Queda en la auditoria con tu nombre y la fecha: cancelar una licencia es un hecho que hay que poder reconstruir."
+                            [titulo]="
+                              'Dar de baja ' +
+                              (excepcion.tipo === 'APERTURA' ? 'la apertura' : 'el cierre') +
+                              ' de ' +
+                              alcanceDe(excepcion)
+                            "
+                            [enviando]="enviando() || impacto()?.tipo === 'consultando'"
+                            (confirmado)="enviarBaja($event)"
+                            (cancelado)="cerrarBaja()"
+                          >
+                            <p class="ayuda">
+                              La fila no se borra: queda inactiva con sus fechas intactas, su motivo
+                              y su autor. Si la excepción vuelve a hacer falta, se carga como una
+                              nueva.
+                            </p>
+                            <app-impacto-previo
+                              [estado]="impacto()"
+                              [nombreDe]="excepcion.membershipId ? null : nombreDeProfesional"
+                            />
+                          </akine-confirmacion-con-motivo>
+
+                          <div aria-live="polite">
+                            @if (errorAccion(); as mensaje) {
+                              <p class="estado estado--error" role="alert">{{ mensaje }}</p>
+                            }
+                            @if (hayQueRecargar()) {
+                              <button type="button" class="boton" (click)="consultar()">
+                                Recargar el periodo
+                              </button>
+                            }
+                          </div>
+                        </td>
+                      </tr>
+                    }
+                  }
+                </tbody>
+              </table>
+            </div>
+
+            <p class="tabla-pie">
+              <span>
+                {{ vigentes().length }} excepciones vigentes entre
+                {{ etiquetaDeFecha(ventanaConsultada()?.desde) }} y
+                {{ etiquetaDeFecha(ventanaConsultada()?.hasta) }} (exclusivo).
+              </span>
+              <span
+                >Las dadas de baja no se muestran: la fila sobrevive con su motivo y su autor.</span
+              >
+            </p>
+          }
         }
       }
+    </div>
+  </section>
 
-      @case ('listo') {
-        <!--
-          Modo lectura: los cierres y las aperturas se siguen listando enteros, con su alcance y
-          su motivo. Un profesional necesita ver que su martes esta cerrado; lo que no puede es
-          cargar ni dar de baja ninguno.
-        -->
-        @if (modoLectura()) {
-          <p class="ayuda">{{ textoModoLectura }}</p>
-        }
+  @if (estado().tipo === 'listo' && altaAbierta()) {
+    <aside class="tarjeta panel-formulario panel-formulario--lateral" aria-label="Nueva excepción">
+      <form
+        id="form-alta-excepcion"
+        [formGroup]="formularioAlta"
+        (ngSubmit)="enviarAlta()"
+        novalidate
+      >
+        <div class="panel-formulario__cuerpo">
+          <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
+            <h2 class="panel__titulo">Cargar un cierre o una apertura</h2>
+            <app-ayuda titulo="Antes de cargar">
+              <p>
+                <b>El fin es exclusivo.</b> Es el primer día que ya <b>no</b> queda cubierto: para
+                un solo día, el día siguiente. Para llegar al final del día, la hora es 24:00; las
+                00:00 serían el principio del día.
+              </p>
+              <p>
+                <b>"Toda la sede" no es dejar el campo vacío:</b> es una decisión, y alcanza a todos
+                los profesionales que atienden acá.
+              </p>
+            </app-ayuda>
+          </div>
 
-        @if (altaAbierta()) {
-          <form
-            id="form-alta-excepcion"
-            [formGroup]="formularioAlta"
-            (ngSubmit)="enviarAlta()"
-            novalidate
-          >
-            <h3 class="panel__titulo">Cargar un cierre o una apertura</h3>
+          <div class="campo">
+            <label for="alta-excepcion-tipo">Que se carga</label>
+            <select id="alta-excepcion-tipo" formControlName="tipo">
+              <option value="CIERRE">Cierre — deja de atenderse</option>
+              <option value="APERTURA">Apertura — se atiende donde normalmente no</option>
+            </select>
+          </div>
 
-            <div class="campo">
-              <label for="alta-excepcion-tipo">Que se carga</label>
-              <select id="alta-excepcion-tipo" formControlName="tipo">
-                <option value="CIERRE">Cierre — deja de atenderse</option>
-                <option value="APERTURA">Apertura — se atiende donde normalmente no</option>
-              </select>
-            </div>
+          <div class="campo">
+            <label for="alta-excepcion-motivo">Motivo</label>
+            <select id="alta-excepcion-motivo" formControlName="motivo">
+              @for (motivo of motivos; track motivo.valor) {
+                <option [value]="motivo.valor">{{ motivo.etiqueta }}</option>
+              }
+            </select>
+          </div>
 
-            <div class="campo">
-              <label for="alta-excepcion-motivo">Motivo</label>
-              <select id="alta-excepcion-motivo" formControlName="motivo">
-                @for (motivo of motivos; track motivo.valor) {
-                  <option [value]="motivo.valor">{{ motivo.etiqueta }}</option>
+          <!--
+            El alcance es el campo mas peligroso del formulario, y el unico cuya opcion por
+            defecto significa "todos". Si la lista de vinculos no cargo, el desplegable
+            colapsa a esa unica opcion: quien vino a cerrarle la semana a UNA persona no
+            encuentra su nombre y termina cerrando el centro entero. Por eso, con la lista
+            desconocida, no se ofrece ninguna eleccion de alcance.
+          -->
+          <div class="campo">
+            @if (profesionalesConocidos()) {
+              <label for="alta-excepcion-alcance">A quien alcanza</label>
+              <select id="alta-excepcion-alcance" formControlName="alcance">
+                <option value="">Toda la sede — todos los profesionales</option>
+                @for (profesional of profesionales(); track profesional.id ?? $index) {
+                  <option [value]="profesional.id">
+                    {{ profesional.accountName || profesional.accountEmail }}
+                  </option>
                 }
               </select>
-            </div>
+              <!--
+                Una lista recortada SI sirve para elegir —los que estan, estan de verdad— y por
+                eso el campo sigue en pie. Lo que hay que decir es que puede faltar gente: sin
+                esto, no encontrar a alguien se lee como "no esta vinculado a esta sede".
+              -->
+              @if (!listaCompleta()) {
+                <p class="ayuda">{{ textoListaIncompleta }}</p>
+              }
+            } @else {
+              <p class="estado estado--error" role="alert">
+                No pudimos leer los profesionales de la sede, así que no sabemos a quien podés
+                alcanzar. La unica opción que quedaria es <b>toda la sede</b>, que alcanza a todos:
+                no la ofrecemos a ciegas.
+              </p>
+              <button type="button" class="boton boton--secundario" (click)="cargarProfesionales()">
+                Reintentar los profesionales
+              </button>
+            }
+          </div>
 
-            <!--
-              El alcance es el campo mas peligroso del formulario, y el unico cuya opcion por
-              defecto significa "todos". Si la lista de vinculos no cargo, el desplegable
-              colapsa a esa unica opcion: quien vino a cerrarle la semana a UNA persona no
-              encuentra su nombre y termina cerrando el centro entero. Por eso, con la lista
-              desconocida, no se ofrece ninguna eleccion de alcance.
-            -->
+          <div class="grilla-campos grilla-campos--dos">
             <div class="campo">
-              @if (profesionalesConocidos()) {
-                <label for="alta-excepcion-alcance">A quien alcanza</label>
-                <select
-                  id="alta-excepcion-alcance"
-                  formControlName="alcance"
-                  aria-describedby="alta-excepcion-alcance-ayuda"
-                >
-                  <option value="">Toda la sede — todos los profesionales</option>
-                  @for (profesional of profesionales(); track profesional.id ?? $index) {
-                    <option [value]="profesional.id">
-                      {{ profesional.accountName || profesional.accountEmail }}
-                    </option>
-                  }
-                </select>
-                <p class="ayuda" id="alta-excepcion-alcance-ayuda">
-                  "Toda la sede" no es dejar el campo vacío: es una decision, y alcanza a todos los
-                  profesionales que atienden acá.
-                </p>
-                <!--
-                  Una lista recortada SI sirve para elegir —los que estan, estan de verdad— y por
-                  eso el campo sigue en pie. Lo que hay que decir es que puede faltar gente: sin
-                  esto, no encontrar a alguien se lee como "no esta vinculado a esta sede".
-                -->
-                @if (!listaCompleta()) {
-                  <p class="ayuda">{{ textoListaIncompleta }}</p>
-                }
-              } @else {
-                <p class="estado estado--error" role="alert">
-                  No pudimos leer los profesionales de la sede, así que no sabemos a quien podés
-                  alcanzar. La unica opción que quedaria es <b>toda la sede</b>, que alcanza a
-                  todos: no la ofrecemos a ciegas.
-                </p>
-                <button
-                  type="button"
-                  class="boton boton--secundario"
-                  (click)="cargarProfesionales()"
-                >
-                  Reintentar los profesionales
-                </button>
+              <label for="alta-excepcion-desde">Primer día</label>
+              <input id="alta-excepcion-desde" type="date" formControlName="fechaDesde" />
+              @if (mostrarError('fechaDesde')) {
+                <p class="campo__error">Indica el primer día cubierto.</p>
               }
             </div>
 
-            <div class="ventana">
-              <div class="campo">
-                <label for="alta-excepcion-desde">Primer día</label>
-                <input id="alta-excepcion-desde" type="date" formControlName="fechaDesde" />
-                @if (mostrarError('fechaDesde')) {
-                  <p class="campo__error">Indica el primer día cubierto.</p>
-                }
-              </div>
-
-              <div class="campo">
-                <label for="alta-excepcion-hasta">Fin (exclusivo)</label>
-                <input
-                  id="alta-excepcion-hasta"
-                  type="date"
-                  formControlName="fechaHasta"
-                  aria-describedby="alta-excepcion-hasta-ayuda"
-                />
-                @if (mostrarError('fechaHasta')) {
-                  <p class="campo__error">Indica el fin de la excepción.</p>
-                }
-                <p class="ayuda" id="alta-excepcion-hasta-ayuda">
-                  Primer día que ya <b>no</b> queda cubierto. Para un solo día, el día siguiente.
-                </p>
-              </div>
-            </div>
-
-            @if (errorDeGrupo('rangoFechas')) {
-              <p class="campo__error" role="alert">
-                El fin tiene que ser posterior al primer día. Con la misma fecha en los dos campos
-                no se cubre ningún día.
-              </p>
-            }
-
-            <label class="opcion-casilla">
-              <input
-                id="alta-excepcion-dia-completo"
-                type="checkbox"
-                formControlName="diaCompleto"
-              />
-              Día completo
-            </label>
-
-            @if (!formularioAlta.controls.diaCompleto.value) {
-              <div class="ventana">
-                <div class="campo">
-                  <label for="alta-excepcion-hora-desde">Desde (HH:MM)</label>
-                  <input
-                    id="alta-excepcion-hora-desde"
-                    type="text"
-                    inputmode="numeric"
-                    autocomplete="off"
-                    placeholder="10:00"
-                    [attr.pattern]="patronHora"
-                    formControlName="horaDesde"
-                    [attr.aria-invalid]="mostrarError('horaDesde')"
-                  />
-                  @if (mostrarError('horaDesde')) {
-                    <p class="campo__error">Escribi la hora de inicio como HH:MM.</p>
-                  }
-                </div>
-
-                <div class="campo">
-                  <label for="alta-excepcion-hora-hasta">Hasta (HH:MM, exclusiva)</label>
-                  <input
-                    id="alta-excepcion-hora-hasta"
-                    type="text"
-                    inputmode="numeric"
-                    autocomplete="off"
-                    placeholder="14:00"
-                    [attr.pattern]="patronHora"
-                    formControlName="horaHasta"
-                    [attr.aria-invalid]="mostrarError('horaHasta')"
-                    aria-describedby="alta-excepcion-hora-hasta-ayuda"
-                  />
-                  @if (mostrarError('horaHasta')) {
-                    <p class="campo__error">Escribi la hora de fin como HH:MM.</p>
-                  }
-                  <p class="ayuda" id="alta-excepcion-hora-hasta-ayuda">
-                    Para llegar al final del día, 24:00. Las 00:00 serian el principio del día.
-                  </p>
-                </div>
-              </div>
-            }
-
-            @if (errorDeGrupo('franjaIncompleta')) {
-              <p class="campo__error" role="alert">
-                Una franja necesita las dos horas. Si la excepción dura todo el día, marca "Día
-                completo".
-              </p>
-            }
-            @if (errorDeGrupo('rangoHoras')) {
-              <p class="campo__error" role="alert">
-                La hora de fin tiene que ser posterior a la de inicio.
-              </p>
-            }
-
             <div class="campo">
-              <label for="alta-excepcion-notas">
-                Nota operativa <span class="campo__opcional">(opcional)</span>
-              </label>
-              <textarea
-                id="alta-excepcion-notas"
-                rows="2"
-                formControlName="notes"
-                aria-describedby="alta-excepcion-notas-ayuda"
-              ></textarea>
-              <p class="ayuda" id="alta-excepcion-notas-ayuda">
-                Texto libre operativo. <b>Nunca información clínica</b>: esto no es una historia
-                clínica y lo lee cualquiera con acceso a la agenda.
-              </p>
+              <label for="alta-excepcion-hasta">Fin (exclusivo)</label>
+              <input id="alta-excepcion-hasta" type="date" formControlName="fechaHasta" />
+              @if (mostrarError('fechaHasta')) {
+                <p class="campo__error">Indica el fin de la excepción.</p>
+              }
             </div>
+          </div>
 
-            @if (esApertura() && esDeSede()) {
-              <p class="ayuda">
-                Vas a cargar una apertura de <b>toda la sede</b>. Si cae en un feriado que la sede
-                cierra, ese día reemplaza el horario habitual de todos: antes de guardar te lo vamos
-                a decir con los feriados concretos.
-              </p>
-            }
+          @if (errorDeGrupo('rangoFechas')) {
+            <p class="campo__error" role="alert">
+              El fin tiene que ser posterior al primer día. Con la misma fecha en los dos campos no
+              se cubre ningún día.
+            </p>
+          }
 
-            <div class="acciones">
-              <button
-                type="submit"
-                class="boton"
-                [disabled]="enviando() || !profesionalesConocidos()"
-              >
-                Cargar la excepción
-              </button>
-              <button type="button" class="boton boton--secundario" (click)="cerrarAlta()">
-                Cancelar
-              </button>
+          <label class="opcion-casilla">
+            <input id="alta-excepcion-dia-completo" type="checkbox" formControlName="diaCompleto" />
+            Día completo
+          </label>
+
+          @if (!formularioAlta.controls.diaCompleto.value) {
+            <div class="grilla-campos grilla-campos--dos">
+              <div class="campo">
+                <label for="alta-excepcion-hora-desde">Desde (HH:MM)</label>
+                <input
+                  id="alta-excepcion-hora-desde"
+                  type="text"
+                  inputmode="numeric"
+                  autocomplete="off"
+                  placeholder="10:00"
+                  [attr.pattern]="patronHora"
+                  formControlName="horaDesde"
+                  [attr.aria-invalid]="mostrarError('horaDesde')"
+                />
+                @if (mostrarError('horaDesde')) {
+                  <p class="campo__error">Escribi la hora de inicio como HH:MM.</p>
+                }
+              </div>
+
+              <div class="campo">
+                <label for="alta-excepcion-hora-hasta">Hasta (HH:MM, exclusiva)</label>
+                <input
+                  id="alta-excepcion-hora-hasta"
+                  type="text"
+                  inputmode="numeric"
+                  autocomplete="off"
+                  placeholder="14:00"
+                  [attr.pattern]="patronHora"
+                  formControlName="horaHasta"
+                  [attr.aria-invalid]="mostrarError('horaHasta')"
+                />
+                @if (mostrarError('horaHasta')) {
+                  <p class="campo__error">Escribi la hora de fin como HH:MM.</p>
+                }
+              </div>
             </div>
+          }
 
-            <!--
-              El aviso de la regla R10. No es un "estas seguro": dice cuantas personas quedan
-              afectadas y que su horario habitual de ese dia deja de aplicar, que es lo unico
-              que le permite a quien lo lee darse cuenta de que se equivoco de alcance.
-            -->
-            <div aria-live="assertive">
-              @if (avisoDeApertura(); as aviso) {
-                <div class="aviso-apertura" role="alert">
-                  <h4 class="panel__titulo">Esta apertura le cambia el día a toda la sede</h4>
+          @if (errorDeGrupo('franjaIncompleta')) {
+            <p class="campo__error" role="alert">
+              Una franja necesita las dos horas. Si la excepción dura todo el día, marca "Día
+              completo".
+            </p>
+          }
+          @if (errorDeGrupo('rangoHoras')) {
+            <p class="campo__error" role="alert">
+              La hora de fin tiene que ser posterior a la de inicio.
+            </p>
+          }
 
-                  @if (aviso.verificado) {
-                    <p>
-                      La sede cierra por feriado, y dentro del periodo que elegiste cae
-                      {{ aviso.feriados.length === 1 ? 'un feriado' : 'mas de un feriado' }}:
-                    </p>
-                    <ul class="lista-datos">
-                      @for (feriado of aviso.feriados; track feriado.id ?? $index) {
-                        <li>{{ etiquetaDeFecha(feriado.fecha) }} — {{ feriado.nombre }}</li>
-                      }
-                    </ul>
-                    <!--
-                      Dos maneras de no saber, un solo cartel: la consulta de vinculos fallo, o
-                      respondio bien pero recortada en la primera pagina. Desde donde esta parado
-                      quien lee, son lo mismo: el numero no se pudo medir. El texto dice "no pudo
-                      leerse completa" justamente para ser cierto en los dos casos.
-                    -->
-                    @if (cantidadAfectada() === null) {
-                      <p>
-                        <b>No sabemos a cuantos profesionales alcanza</b>: la lista de vinculos de
-                        la sede no pudo leerse completa. <b>No es cero:</b> una apertura de sede
-                        reemplaza el horario base de todos los que atiendan ese día.
-                      </p>
-                    } @else if (cantidadAfectada() === 0) {
-                      <p>
-                        Hoy no figura ningún profesional vinculado a esta sede,
-                        <b>pero la apertura igual reemplaza</b> el horario base de quien lo este ese
-                        día.
-                      </p>
-                    } @else {
-                      <p>
-                        <b
-                          >Ese día el horario habitual de {{ textoAfectados() }} no va a aplicar.</b
-                        >
-                        Solo se va a atender en la franja de esta apertura: la apertura de sede
-                        <b>reemplaza</b> el horario base de cada profesional, no se suma a el.
-                      </p>
+          <div class="campo">
+            <label for="alta-excepcion-notas">
+              Nota operativa <span class="campo__opcional">(opcional)</span>
+            </label>
+            <textarea
+              id="alta-excepcion-notas"
+              rows="2"
+              formControlName="notes"
+              aria-describedby="alta-excepcion-notas-ayuda"
+            ></textarea>
+            <p class="ayuda" id="alta-excepcion-notas-ayuda">
+              Texto libre operativo. <b>Nunca información clínica</b>: esto no es una historia
+              clínica y lo lee cualquiera con acceso a la agenda.
+            </p>
+          </div>
+
+          @if (esApertura() && esDeSede()) {
+            <p class="ayuda">
+              Vas a cargar una apertura de <b>toda la sede</b>. Si cae en un feriado que la sede
+              cierra, ese día reemplaza el horario habitual de todos: antes de guardar te lo vamos a
+              decir con los feriados concretos.
+            </p>
+          }
+
+          <!--
+            El aviso de la regla R10. No es un "estas seguro": dice cuantas personas quedan
+            afectadas y que su horario habitual de ese dia deja de aplicar, que es lo unico
+            que le permite a quien lo lee darse cuenta de que se equivoco de alcance.
+          -->
+          <div aria-live="assertive">
+            @if (avisoDeApertura(); as aviso) {
+              <div class="aviso-apertura" role="alert">
+                <h3 class="panel__titulo">Esta apertura le cambia el día a toda la sede</h3>
+
+                @if (aviso.verificado) {
+                  <p>
+                    La sede cierra por feriado, y dentro del periodo que elegiste cae
+                    {{ aviso.feriados.length === 1 ? 'un feriado' : 'mas de un feriado' }}:
+                  </p>
+                  <ul class="lista-datos">
+                    @for (feriado of aviso.feriados; track feriado.id ?? $index) {
+                      <li>{{ etiquetaDeFecha(feriado.fecha) }} — {{ feriado.nombre }}</li>
                     }
+                  </ul>
+                  <!--
+                    Dos maneras de no saber, un solo cartel: la consulta de vinculos fallo, o
+                    respondio bien pero recortada en la primera pagina. Desde donde esta parado
+                    quien lee, son lo mismo: el numero no se pudo medir. El texto dice "no pudo
+                    leerse completa" justamente para ser cierto en los dos casos.
+                  -->
+                  @if (cantidadAfectada() === null) {
+                    <p>
+                      <b>No sabemos a cuantos profesionales alcanza</b>: la lista de vinculos de la
+                      sede no pudo leerse completa. <b>No es cero:</b> una apertura de sede
+                      reemplaza el horario base de todos los que atiendan ese día.
+                    </p>
+                  } @else if (cantidadAfectada() === 0) {
+                    <p>
+                      Hoy no figura ningún profesional vinculado a esta sede,
+                      <b>pero la apertura igual reemplaza</b> el horario base de quien lo este ese
+                      día.
+                    </p>
                   } @else {
                     <p>
-                      <b>No pudimos consultar el calendario de feriados</b>, así que no sabemos si
-                      este periodo pisa alguno.
-                    </p>
-                    <p>
-                      Si lo pisa y la sede cierra por feriado, ese día
-                      <b>no va a aplicar el horario habitual</b> de
-                      @if (cantidadAfectada()) {
-                        {{ textoAfectados() }}
-                      } @else {
-                        todos los profesionales que atiendan en la sede
-                      }
-                      , y solo se va a atender en la franja de esta apertura.
+                      <b>Ese día el horario habitual de {{ textoAfectados() }} no va a aplicar.</b>
+                      Solo se va a atender en la franja de esta apertura: la apertura de sede
+                      <b>reemplaza</b> el horario base de cada profesional, no se suma a el.
                     </p>
                   }
+                } @else {
+                  <p>
+                    <b>No pudimos consultar el calendario de feriados</b>, así que no sabemos si
+                    este periodo pisa alguno.
+                  </p>
+                  <p>
+                    Si lo pisa y la sede cierra por feriado, ese día
+                    <b>no va a aplicar el horario habitual</b> de
+                    @if (cantidadAfectada()) {
+                      {{ textoAfectados() }}
+                    } @else {
+                      todos los profesionales que atiendan en la sede
+                    }
+                    , y solo se va a atender en la franja de esta apertura.
+                  </p>
+                }
 
-                  <div class="acciones">
-                    <button
-                      id="aviso-apertura-confirmar"
-                      type="button"
-                      class="boton"
-                      [disabled]="enviando()"
-                      (click)="confirmarApertura()"
-                    >
-                      Entiendo: cargar igual
-                    </button>
-                    <button
-                      type="button"
-                      class="boton boton--secundario"
-                      (click)="descartarAviso()"
-                    >
-                      Volver y cambiar el alcance
-                    </button>
-                  </div>
-                </div>
-              }
-            </div>
-
-            <!--
-              Impacto previo (A-11): cuantos turnos pendientes deja afuera esta excepcion. Si no
-              deja ninguno el alta sigue de largo y este bloque no llega a pedir nada.
-            -->
-            @if (impacto(); as estadoImpacto) {
-              <app-impacto-previo
-                [estado]="estadoImpacto"
-                [nombreDe]="esDeSede() ? nombreDeProfesional : null"
-              />
-              @if (altaConImpacto()) {
                 <div class="acciones">
                   <button
-                    id="impacto-alta-confirmar"
+                    id="aviso-apertura-confirmar"
                     type="button"
                     class="boton"
                     [disabled]="enviando()"
-                    (click)="confirmarImpacto()"
+                    (click)="confirmarApertura()"
                   >
-                    Cargar igual
+                    Entiendo: cargar igual
                   </button>
-                  <button
-                    type="button"
-                    class="boton boton--secundario"
-                    (click)="descartarImpacto()"
-                  >
-                    Volver y cambiar la excepción
+                  <button type="button" class="boton boton--secundario" (click)="descartarAviso()">
+                    Volver y cambiar el alcance
                   </button>
                 </div>
-              }
+              </div>
             }
+          </div>
 
-            <div aria-live="polite">
-              @if (errorAccion(); as mensaje) {
-                <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-              }
-            </div>
-          </form>
-        }
-
-        @if (vigentes().length === 0) {
-          <p class="estado estado--vacio">
-            No hay cierres ni aperturas vigentes en este periodo. El horario cargado se aplica tal
-            cual.
-          </p>
-        } @else {
-          <p class="tabla-pie">
-            <span>
-              {{ vigentes().length }} excepciones vigentes entre
-              {{ etiquetaDeFecha(ventanaConsultada()?.desde) }} y
-              {{ etiquetaDeFecha(ventanaConsultada()?.hasta) }} (exclusivo).
-            </span>
-            <span
-              >Las dadas de baja no se muestran: la fila sobrevive con su motivo y su autor.</span
-            >
-          </p>
-
-          <ul class="lista-excepciones">
-            @for (excepcion of vigentes(); track excepcion.id ?? $index) {
-              <li class="excepcion" [class.excepcion--apertura]="excepcion.tipo === 'APERTURA'">
-                <!--
-                  El numero de la fila se muestra porque hay una pantalla que lo NOMBRA: el
-                  horario efectivo explica un dia vacio diciendo "la excepcion de cierre numero
-                  42 cubre el dia entero". Sin el numero visible aca, esa frase manda a buscar
-                  una fila que no se puede identificar entre varias parecidas.
-                -->
-                <p class="excepcion__titulo">
-                  {{ excepcion.tipo === 'APERTURA' ? 'Apertura' : 'Cierre' }}
-                  <span class="excepcion__numero">número {{ excepcion.id }}</span> —
-                  {{ alcanceDe(excepcion) }}
-                </p>
-
-                <p class="ayuda">
-                  Del {{ etiquetaDeFecha(excepcion.fechaDesde) }} al
-                  {{ ultimoDiaCubierto(excepcion) }} inclusive (el fin cargado,
-                  {{ etiquetaDeFecha(excepcion.fechaHasta) }}, es exclusivo).
-                </p>
-
-                @if (esDiaCompleto(excepcion)) {
-                  <p class="ayuda">Día completo</p>
-                } @else {
-                  <p class="ayuda">
-                    Franja de {{ rangoHorario(excepcion.horaDesde, excepcion.horaHasta) }}
-                  </p>
-                }
-
-                <p class="ayuda">Motivo declarado: {{ etiquetaDeMotivo(excepcion.motivo) }}</p>
-
-                @if (excepcion.notes) {
-                  <p class="ayuda">{{ excepcion.notes }}</p>
-                }
-
-                @if (esAperturaDeSede(excepcion)) {
-                  <p class="ayuda excepcion__alerta">
-                    Es una apertura de <b>toda la sede</b>: en un feriado que la sede cierre,
-                    reemplaza el horario habitual de todos los profesionales que atienden acá ese
-                    día.
-                  </p>
-                }
-
-                <div class="acciones-fila" *akinePermiso="permisoManage">
-                  <button
-                    type="button"
-                    class="boton boton--secundario"
-                    (click)="abrirBaja(excepcion)"
-                  >
-                    Dar de baja
-                  </button>
-                </div>
-
-                @if (bajaAbierta() === excepcion.id) {
-                  <akine-confirmacion-con-motivo
-                    idCampo="baja-excepcion-reason"
-                    etiqueta="Motivo de la baja"
-                    textoConfirmar="Confirmar la baja"
-                    ayuda="Queda en la auditoria con tu nombre y la fecha: cancelar una licencia es un hecho que hay que poder reconstruir."
-                    [titulo]="
-                      'Dar de baja ' +
-                      (excepcion.tipo === 'APERTURA' ? 'la apertura' : 'el cierre') +
-                      ' de ' +
-                      alcanceDe(excepcion)
-                    "
-                    [enviando]="enviando() || impacto()?.tipo === 'consultando'"
-                    (confirmado)="enviarBaja($event)"
-                    (cancelado)="cerrarBaja()"
-                  >
-                    <p class="ayuda">
-                      La fila no se borra: queda inactiva con sus fechas intactas, su motivo y su
-                      autor. Si la excepción vuelve a hacer falta, se carga como una nueva.
-                    </p>
-                    <app-impacto-previo
-                      [estado]="impacto()"
-                      [nombreDe]="excepcion.membershipId ? null : nombreDeProfesional"
-                    />
-                  </akine-confirmacion-con-motivo>
-
-                  <div aria-live="polite">
-                    @if (errorAccion(); as mensaje) {
-                      <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-                    }
-                    @if (hayQueRecargar()) {
-                      <button type="button" class="boton" (click)="consultar()">
-                        Recargar el periodo
-                      </button>
-                    }
-                  </div>
-                }
-              </li>
+          <!--
+            Impacto previo (A-11): cuantos turnos pendientes deja afuera esta excepcion. Si no
+            deja ninguno el alta sigue de largo y este bloque no llega a pedir nada.
+          -->
+          @if (impacto(); as estadoImpacto) {
+            <app-impacto-previo
+              [estado]="estadoImpacto"
+              [nombreDe]="esDeSede() ? nombreDeProfesional : null"
+            />
+            @if (altaConImpacto()) {
+              <div class="acciones">
+                <button
+                  id="impacto-alta-confirmar"
+                  type="button"
+                  class="boton"
+                  [disabled]="enviando()"
+                  (click)="confirmarImpacto()"
+                >
+                  Cargar igual
+                </button>
+                <button type="button" class="boton boton--secundario" (click)="descartarImpacto()">
+                  Volver y cambiar la excepción
+                </button>
+              </div>
             }
-          </ul>
-        }
-      }
-    }
-  </div>
-</section>
+          }
+
+          <div aria-live="polite">
+            @if (errorAccion(); as mensaje) {
+              <p class="estado estado--error" role="alert">{{ mensaje }}</p>
+            }
+          </div>
+        </div>
+
+        <div class="panel-formulario__pie">
+          <button type="button" class="boton boton--secundario" (click)="cerrarAlta()">
+            Cancelar
+          </button>
+          <button type="submit" class="boton" [disabled]="enviando() || !profesionalesConocidos()">
+            Cargar la excepción
+          </button>
+        </div>
+      </form>
+    </aside>
+  }
+</div>

@@ -151,7 +151,7 @@ describe('FinanciadoresPage', () => {
     abrir(fixture, 'Dar de baja');
     const panel = (fixture.nativeElement as HTMLElement).querySelector('tr.fila-panel');
     expect(panel?.textContent).toContain('NO cascadea');
-    expect(panel?.textContent).toContain('No hay reactivacion');
+    expect(panel?.textContent).toContain('No hay reactivación');
 
     escribir(fixture, '#baja-financiador-motivo', 'Dejamos de trabajar con ellos');
     const confirmar = [
@@ -273,7 +273,7 @@ describe('FinanciadoresPage', () => {
     const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
     expect(texto).toContain('El código es obligatorio');
     expect(texto).toContain('El nombre es obligatorio');
-    expect(texto).toContain('Eligi que tipo de financiador es');
+    expect(texto).toContain('Elegí que tipo de financiador es');
   });
 
   it('la edicion manda todos los campos que cambiaron, y solo esos', async () => {

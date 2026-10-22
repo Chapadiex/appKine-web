@@ -373,7 +373,7 @@
                       </div>
                     } @else if (renovacionApagadaPorAutorizante(pase.renovacionOmitidaMotivo)) {
                       <div class="ayuda" role="note">
-                        La renovacion automática se apago porque
+                        La renovación automática se apagó porque
                         @if (pase.renovacionAutorizadaPor) {
                           {{ pase.renovacionAutorizadaPor }}, quien la autorizo,
                         } @else {
@@ -432,8 +432,8 @@
                         [disabled]="renovando() === pase.id"
                         [attr.aria-label]="
                           (pase.renovacionAutomatica
-                            ? 'Desactivar la renovacion automatica de '
-                            : 'Activar la renovacion automatica de ') + pase.nombre
+                            ? 'Desactivar la renovación automática de '
+                            : 'Activar la renovación automática de ') + pase.nombre
                         "
                         (click)="cambiarRenovacion(pase, !pase.renovacionAutomatica)"
                       >
@@ -544,7 +544,7 @@
       <akine-paginacion
         [paginaActual]="actual.numero"
         [totalPaginas]="actual.pagina.totalPages ?? 0"
-        etiqueta="Paginas de movimientos del pase"
+        etiqueta="Páginas de movimientos del pase"
         (cambioDePagina)="irAPaginaDeMovimientos($event)"
       />
     }

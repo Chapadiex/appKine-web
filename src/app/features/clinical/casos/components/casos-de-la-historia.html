@@ -25,15 +25,17 @@
     } @else {
       <ul class="casos" aria-label="Casos activos">
         @for (caso of activos(); track caso.id) {
-          <li class="casos__item">
-            <a class="enlace casos__titulo" [routerLink]="visita.rutaCaso(caso.id!)">
-              Caso {{ caso.numeroCaso }} · {{ nombreDeOferta(caso) }}
-            </a>
-            <p class="historia__cuerpo casos__diagnostico">{{ caso.diagnosticoPresuntivo }}</p>
-            <p class="ayuda">
-              {{ estadoDe(caso) }} · abierto el {{ fechaYHora(caso.abiertoEn) }} ·
-              {{ equipoDe(caso) }}
-            </p>
+          <li class="casos__item casos__fila">
+            <div>
+              <a class="enlace casos__titulo" [routerLink]="visita.rutaCaso(caso.id!)">
+                Caso {{ caso.numeroCaso }} · {{ nombreDeOferta(caso) }}
+              </a>
+              <p class="historia__cuerpo casos__diagnostico">{{ caso.diagnosticoPresuntivo }}</p>
+              <p class="ayuda">
+                Abierto el {{ fechaYHora(caso.abiertoEn) }} · {{ equipoDe(caso) }}
+              </p>
+            </div>
+            <span class="marca-estado marca-estado--activa">{{ estadoDe(caso) }}</span>
           </li>
         }
       </ul>
@@ -45,15 +47,18 @@
     } @else {
       <ul class="casos" aria-label="Casos cerrados">
         @for (caso of cerrados(); track caso.id) {
-          <li class="casos__item">
-            <a class="enlace casos__titulo" [routerLink]="visita.rutaCaso(caso.id!)">
-              Caso {{ caso.numeroCaso }} · {{ nombreDeOferta(caso) }}
-            </a>
-            <p class="historia__cuerpo casos__diagnostico">{{ caso.diagnosticoPresuntivo }}</p>
-            <p class="ayuda">
-              {{ estadoDe(caso) }} · abierto el {{ fechaYHora(caso.abiertoEn) }} · cerrado el
-              {{ fechaYHora(caso.cerradoEn) }}
-            </p>
+          <li class="casos__item casos__fila">
+            <div>
+              <a class="enlace casos__titulo" [routerLink]="visita.rutaCaso(caso.id!)">
+                Caso {{ caso.numeroCaso }} · {{ nombreDeOferta(caso) }}
+              </a>
+              <p class="historia__cuerpo casos__diagnostico">{{ caso.diagnosticoPresuntivo }}</p>
+              <p class="ayuda">
+                Abierto el {{ fechaYHora(caso.abiertoEn) }} · cerrado el
+                {{ fechaYHora(caso.cerradoEn) }}
+              </p>
+            </div>
+            <span class="marca-estado">{{ estadoDe(caso) }}</span>
           </li>
         }
       </ul>

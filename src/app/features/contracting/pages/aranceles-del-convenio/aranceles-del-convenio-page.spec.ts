@@ -154,7 +154,7 @@ describe('ArancelesDelConvenioPage', () => {
     // Sin esta explicacion alguien edita el importe para "actualizarlo" y borra el rastro del
     // precio anterior. No falla nada: la historia simplemente deja de existir.
     expect(texto).toContain('Subir un precio no es editar el arancel');
-    expect(texto).toContain('cerrale la vigencia al arancel actual y carga otro');
+    expect(texto).toContain('cerrale la vigencia al arancel actual y cargá otro');
     // Y la regla economica, que no tiene porcentaje a proposito.
     expect(texto).toContain('financiador + coseguro = total');
   });
@@ -294,7 +294,7 @@ describe('ArancelesDelConvenioPage', () => {
 
     httpMock.expectNone((peticion: HttpRequest<unknown>) => peticion.method === 'POST');
     const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
-    expect(texto).toContain('Eligi a que práctica');
+    expect(texto).toContain('Elegí a qué práctica');
     expect(texto).toContain('El importe total es obligatorio');
   });
 
@@ -369,7 +369,7 @@ describe('ArancelesDelConvenioPage', () => {
 
     abrir(fixture, 'Dar de baja');
     const panel = (fixture.nativeElement as HTMLElement).querySelector('tr.fila-panel');
-    expect(panel?.textContent).toContain('Libera el PERIODO');
+    expect(panel?.textContent).toContain('Libera el PERÍODO');
 
     escribir(fixture, '#baja-arancel-motivo', 'Se cargo con el precio equivocado');
     const confirmar = [
@@ -389,7 +389,7 @@ describe('ArancelesDelConvenioPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect((fixture.nativeElement as HTMLElement).textContent).toContain('su periodo quedo libre');
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('su período quedó libre');
   });
 
   it('el 409 de solapamiento no ofrece recargar la grilla', async () => {

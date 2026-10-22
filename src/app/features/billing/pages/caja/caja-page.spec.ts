@@ -84,7 +84,7 @@ describe('CajaPage', () => {
 
   it('sin jornada abierta ofrece abrir la caja y manda el saldo contado', async () => {
     const fixture = await montarCerrada();
-    expect(texto(fixture)).toContain('La caja esta cerrada');
+    expect(texto(fixture)).toContain('La caja está cerrada');
 
     tipear(fixture, '#apertura-saldo', '250,5');
     apretar(fixture, 'Abrir la caja');
@@ -191,7 +191,7 @@ describe('CajaPage', () => {
     const fixture = await montarAbierta([]);
 
     tipear(fixture, '#cierre-declarado', '1400');
-    expect(texto(fixture)).toContain('Diferencia contra el teorico');
+    expect(texto(fixture)).toContain('Diferencia contra el teórico');
     expect(boton(fixture, 'Cerrar la caja').disabled).toBe(true);
 
     tipear(fixture, '#cierre-motivo', 'Vuelto mal dado');
@@ -218,14 +218,14 @@ describe('CajaPage', () => {
     const contenido = texto(fixture);
     expect(contenido).toContain('Arqueo registrado');
     expect(contenido).toContain('Faltante de');
-    expect(contenido).toContain('La caja esta cerrada');
+    expect(contenido).toContain('La caja está cerrada');
   });
 
   it('si el teorico cambio mientras se contaba, no cierra y ofrece recargar', async () => {
     const fixture = await montarAbierta([]);
 
     tipear(fixture, '#cierre-declarado', '1500,50');
-    expect(texto(fixture)).toContain('coincide con el teorico');
+    expect(texto(fixture)).toContain('coincide con el teórico');
     apretar(fixture, 'Cerrar la caja');
 
     const pedido = httpMock.expectOne(

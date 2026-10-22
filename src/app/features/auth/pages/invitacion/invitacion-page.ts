@@ -55,7 +55,7 @@ type Estado =
   selector: 'app-invitacion-page',
   imports: [ReactiveFormsModule, RouterLink],
   templateUrl: './invitacion-page.html',
-  styleUrl: '../../auth.css',
+  styleUrls: ['../../auth.css', '../../../../shared/styles/acceso.css'],
 })
 export class InvitacionPage {
   private readonly invitaciones = inject(InvitacionesRecibidasService);

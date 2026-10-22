@@ -235,7 +235,7 @@ describe('etiquetas de ordenes y autorizaciones', () => {
   });
 
   it('un requisito se lee con su tipo, si esta cumplido y con que', () => {
-    expect(nombreDeRequisito({ tipo: TipoRequisito.ORDEN })).toBe('Orden medica');
+    expect(nombreDeRequisito({ tipo: TipoRequisito.ORDEN })).toBe('Orden médica');
     expect(nombreDeRequisito({})).toBe('Requisito');
     expect(
       requisitoEnPalabras({

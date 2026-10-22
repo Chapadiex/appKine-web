@@ -54,16 +54,22 @@
           }
         }
 
-        <dl class="detalle">
-          <dt>Plan contratado</dt>
-          <dd>{{ suscripcion()?.planName }}</dd>
-
-          <dt>Estado</dt>
-          <dd>{{ suscripcion()?.status }}</dd>
-
-          <dt>Alta de la suscripción</dt>
-          <dd>{{ suscripcion()?.startedAt }}</dd>
-        </dl>
+        <div class="plan-actual">
+          <span class="plan-actual__dato">
+            <span class="plan-actual__etiqueta">Plan actual</span>
+            <span class="plan-actual__nombre">{{ suscripcion()?.planName }}</span>
+          </span>
+          <span
+            class="marca-estado"
+            [class.marca-estado--activa]="estadoSuscripcion() === 'ACTIVA'"
+            [class.marca-estado--suspendida]="estadoSuscripcion() === 'SUSPENDIDA'"
+            [class.marca-estado--revocada]="estadoSuscripcion() === 'CANCELADA'"
+            >{{ suscripcion()?.status }}</span
+          >
+          <span class="plan-actual__alta">
+            Alta de la suscripción: {{ suscripcion()?.startedAt }}
+          </span>
+        </div>
       }
 
       @case ('error') {
@@ -86,38 +92,27 @@
     @if (limites().length === 0) {
       <p class="estado estado--vacio">Este plan no declara límites.</p>
     } @else {
-      <table class="limites">
-        <caption class="ayuda">
-          Consumo actual de cada límite frente al tope del plan.
-        </caption>
-        <thead>
-          <tr>
-            <th scope="col">Límite</th>
-            <th scope="col">En uso</th>
-            <th scope="col">Tope del plan</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (limite of limites(); track limite.code) {
-            <tr>
-              <th scope="row">{{ nombreDelLimite(limite) }}</th>
-              <td [class.excedido]="limite.exceeded">
-                {{ limite.currentUsage }}
-                @if (porcentajeDeUso(limite); as porcentaje) {
-                  <span class="medidor" aria-hidden="true">
-                    <span
-                      class="medidor__barra"
-                      [class.medidor__barra--alto]="porcentaje >= 80"
-                      [style.width.%]="porcentaje"
-                    ></span>
-                  </span>
-                }
-              </td>
-              <td>{{ topeDelLimite(limite) }}</td>
-            </tr>
-          }
-        </tbody>
-      </table>
+      <ul class="limites-lista" aria-label="Consumo actual de cada límite frente al tope del plan">
+        @for (limite of limites(); track limite.code) {
+          <li class="limite">
+            <div class="limite__cabecera">
+              <span class="limite__nombre">{{ nombreDelLimite(limite) }}</span>
+              <span class="limite__valor" [class.excedido]="limite.exceeded">
+                {{ limite.currentUsage }} de {{ topeDelLimite(limite) }}
+              </span>
+            </div>
+            @if (porcentajeDeUso(limite); as porcentaje) {
+              <span class="medidor" aria-hidden="true">
+                <span
+                  class="medidor__barra"
+                  [class.medidor__barra--alto]="porcentaje >= 80"
+                  [style.width.%]="porcentaje"
+                ></span>
+              </span>
+            }
+          </li>
+        }
+      </ul>
 
       <p class="ayuda">
         Un límite excedido no borra nada: lo que ya existe sigue operativo y solo se rechazan las

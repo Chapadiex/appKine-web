@@ -117,9 +117,9 @@ describe('NavegacionPrincipal', () => {
     responderPermisos([]);
     fixture.detectChanges();
 
-    expect(enlaces(fixture)).not.toContain('Horarios');
+    expect(enlaces(fixture)).not.toContain('Horarios de profesionales');
     // DP-22: el padron exige `paciente:read`.
-    expect(enlaces(fixture)).not.toContain('Pacientes');
+    expect(enlaces(fixture)).not.toContain('Padrón');
     // Las que se autorizan por pertenencia no dependen de los permisos y se ven igual.
     expect(enlaces(fixture)).toContain('Agenda');
 
@@ -128,12 +128,12 @@ describe('NavegacionPrincipal', () => {
     httpMock.expectOne(RUTA_PERMISOS_EFECTIVOS).flush({ permissions: [PERMISO_COLABORADOR_READ] });
     fixture.detectChanges();
 
-    expect(enlaces(fixture)).toContain('Horarios');
+    expect(enlaces(fixture)).toContain('Horarios de profesionales');
   });
 
   /**
    * Un grupo sin secciones visibles no deja una cabecera huerfana, y uno con una sola seccion no se
-   * despliega: su enlace va directo. Sin permisos quedan Agenda (sola, directa) y Configuracion.
+   * despliega: su enlace va directo. Sin permisos quedan Agenda (sola, directa) y los grupos con secciones sin permiso.
    */
   it('no dibuja un grupo vacío y no despliega uno de una sola sección', () => {
     conContexto();
@@ -141,7 +141,11 @@ describe('NavegacionPrincipal', () => {
     responderPermisos([]);
     fixture.detectChanges();
 
-    expect(rotulos(fixture)).toEqual(['Configuracion']);
+    expect(rotulos(fixture)).toEqual([
+      'Servicios y catálogo',
+      'Espacios y horarios',
+      'Configuración',
+    ]);
     expect(enlaces(fixture)).toContain('Agenda');
 
     TestBed.inject(PermissionsStore).cargar().subscribe();
@@ -150,7 +154,13 @@ describe('NavegacionPrincipal', () => {
       .flush({ permissions: [PERMISO_TURNO_READ, 'clase:read', 'inscripcion:read'] });
     fixture.detectChanges();
 
-    expect(rotulos(fixture)).toEqual(['Operacion', 'Actividades', 'Configuracion']);
+    expect(rotulos(fixture)).toEqual([
+      'Atención',
+      'Actividades',
+      'Servicios y catálogo',
+      'Espacios y horarios',
+      'Configuración',
+    ]);
   });
 
   /** Acordeon: llega desplegado el grupo de la pantalla actual, y solo ese. */
@@ -161,11 +171,11 @@ describe('NavegacionPrincipal', () => {
 
     await router.navigateByUrl('/agenda/recepcion');
     fixture.detectChanges();
-    expect(desplegados(fixture)).toEqual(['Operacion']);
+    expect(desplegados(fixture)).toEqual(['Atención']);
 
     await router.navigateByUrl('/organizacion');
     fixture.detectChanges();
-    expect(desplegados(fixture)).toEqual(['Configuracion']);
+    expect(desplegados(fixture)).toEqual(['Configuración']);
   });
 
   /**

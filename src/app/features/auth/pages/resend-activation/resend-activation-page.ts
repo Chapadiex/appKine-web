@@ -23,7 +23,7 @@ export const MENSAJE_UNIFORME_ACTIVACION =
   selector: 'app-resend-activation-page',
   imports: [Icono, ReactiveFormsModule, RouterLink],
   templateUrl: './resend-activation-page.html',
-  styleUrl: '../../auth.css',
+  styleUrls: ['../../auth.css', '../../../../shared/styles/acceso.css'],
 })
 export class ResendActivationPage {
   private readonly registro = inject(RegistroYActivacionService);

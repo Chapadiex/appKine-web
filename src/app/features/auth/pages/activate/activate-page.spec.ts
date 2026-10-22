@@ -45,7 +45,7 @@ describe('ActivatePage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect(texto(fixture)).toContain('Tu cuenta quedo activa');
+    expect(texto(fixture)).toContain('Cuenta activada');
     // Activar NO abre sesion: la salida es el login.
     expect(enlaces(fixture)).toContain('/auth/ingresar');
     httpMock.verify();
@@ -106,7 +106,7 @@ describe('ActivatePage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect(texto(fixture)).toContain('Tu cuenta quedo activa');
+    expect(texto(fixture)).toContain('Cuenta activada');
     httpMock.verify();
   });
 

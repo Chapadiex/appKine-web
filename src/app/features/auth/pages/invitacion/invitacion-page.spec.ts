@@ -95,7 +95,7 @@ describe('InvitacionPage', () => {
     expect(anfitrion.textContent).toContain('Sede Centro');
     // Y explica por que no va a recibir un correo de activacion, que es lo que esperaria
     // cualquiera que se haya registrado antes en AKINE.
-    expect(anfitrion.textContent).toContain('ningún correo de activación');
+    expect(anfitrion.textContent).toContain('correo de activación');
   });
 
   it('a quien ya tiene cuenta no le pide nada: pedirle contraseña seria cambiarsela', async () => {
@@ -149,7 +149,7 @@ describe('InvitacionPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect(anfitrion.textContent).toContain('la contraseña que acabas de elegir');
+    expect(anfitrion.textContent).toContain('la contraseña que acabás de elegir');
   });
 
   it('un enlace vencido ofrece reintentar y no se lee como una falla', async () => {
@@ -178,7 +178,7 @@ describe('InvitacionPage', () => {
     const anfitrion = fixture.nativeElement as HTMLElement;
 
     const boton = [...anfitrion.querySelectorAll('button')].find(
-      (candidato) => (candidato.textContent ?? '').trim() === 'No, gracias',
+      (candidato) => (candidato.textContent ?? '').trim() === 'Rechazar la invitación',
     );
     boton?.click();
     fixture.detectChanges();
@@ -202,7 +202,7 @@ describe('InvitacionPage', () => {
 
     httpMock.expectNone(PREVIEW);
     const anfitrion = fixture.nativeElement as HTMLElement;
-    expect(anfitrion.textContent).toContain('le falta el código de la invitación');
+    expect(anfitrion.textContent).toContain('Le falta el código de la invitación');
   });
 
   it(

@@ -450,7 +450,7 @@ describe('PadronDePersonasPage', () => {
     const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
     expect(texto).toContain('NO le crea historia clínica');
     // Y avisa que repetir la accion no rompe nada: del lado del servidor es idempotente.
-    expect(texto).toContain('Si ya tenia perfil, la acción no cambia nada');
+    expect(texto).toContain('Si ya tenía perfil, la acción no cambia nada');
   });
 
   it('activa el perfil con el motivo vacío, porque el panel lo declara opcional', async () => {

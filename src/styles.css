@@ -1,8 +1,8 @@
-@import '@fontsource/roboto/400.css';
-@import '@fontsource/roboto/500.css';
-@import '@fontsource/roboto/700.css';
-@import '@fontsource/roboto-mono/400.css';
-@import '@fontsource/roboto-mono/500.css';
+@import '@fontsource/roboto/latin-400.css';
+@import '@fontsource/roboto/latin-500.css';
+@import '@fontsource/roboto/latin-700.css';
+@import '@fontsource/roboto-mono/latin-400.css';
+@import '@fontsource/roboto-mono/latin-500.css';
 /*
  * Estilos globales minimos. El sistema de diseno -y su capa de tokens- vive en
  * `src/design-system.css`, que se carga despues (ver `angular.json`). Que este archivo use
@@ -44,6 +44,6 @@ a {
   color: var(--color-enlace);
 }
 
-a:hover {
+a:not(.boton):hover {
   color: var(--color-accion-fondo-hover);
 }

@@ -88,6 +88,8 @@ describe('RegistroDeCobroPage', () => {
   });
 
   afterEach(() => {
+    // La cabecera de la persona (UX-01) pide los permisos para ofrecer sus pestañas.
+    httpMock.match('/api/v1/me/permissions').forEach((pedido) => pedido.flush({ permissions: [] }));
     httpMock.verify();
   });
 

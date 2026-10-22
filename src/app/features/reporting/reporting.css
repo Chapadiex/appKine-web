@@ -129,3 +129,24 @@
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
+
+/* El boton de generar queda en la fila de filtros, alineado con la base de los campos. */
+.acciones--filtro {
+  margin-top: 0;
+  align-self: flex-end;
+  padding-bottom: var(--esp-6);
+}
+
+/* Fecha del reporte y avisos: datos en una linea compacta antes de las secciones. */
+.tarjeta--seccion .indicadores {
+  margin-top: var(--esp-5);
+}
+
+.tarjeta--seccion .indicador:last-child {
+  border-right: 0;
+}
+
+/* Tabla de detalle: encabezado atenuado y filas compactas, como el canvas. */
+.tarjeta--seccion .tabla thead th {
+  background: var(--color-superficie-atenuada);
+}

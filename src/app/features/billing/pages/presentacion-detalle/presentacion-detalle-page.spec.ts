@@ -123,7 +123,7 @@ describe('PresentacionDetallePage', () => {
     // El hallazgo se marca en el item y en la lista de la revision.
     expect(texto).toContain('Observada:');
     expect(texto).toContain('Es deuda del paciente');
-    expect(texto).toContain('1 observacion(es)');
+    expect(texto).toContain('1 observación(es)');
   });
 
   it('agregar y quitar mandan la operación y releen el lote entero', async () => {
@@ -224,7 +224,7 @@ describe('PresentacionDetallePage', () => {
   it('registra el debito de una prestación y la factura del lote', async () => {
     const fixture = await montarPresentada();
 
-    apretar(fixture, 'Registrar debito');
+    apretar(fixture, 'Registrar débito');
     escribir(fixture, '#debito-motivo', 'Falta orden medica');
     enviarFormulario(fixture, '#debito-motivo');
     const debito = httpMock.expectOne(`${DETALLE}/items/501/debito`);
@@ -335,7 +335,7 @@ describe('PresentacionDetallePage', () => {
     expect(texto).toContain('Observada: El convenio exigia orden medica');
     expect(texto).toContain('Cargala en la ficha del paciente');
     expect(texto).toContain('Aviso: La credencial estaba vencida');
-    expect(texto).toContain('1 observacion(es) que impiden confirmar');
+    expect(texto).toContain('1 observación(es) que impiden confirmar');
     expect(texto).toContain('1 aviso(s): no impiden confirmar');
     expect(botones(fixture, 'Confirmar y presentar')[0].disabled).toBe(true);
   });
@@ -384,7 +384,7 @@ describe('PresentacionDetallePage', () => {
     expect(botones(fixture, 'Confirmar y presentar')[0].disabled).toBe(true);
   });
 
-  it('una deuda PARCIAL en la bandeja vuelve por el saldo de un debito parcial', async () => {
+  it('una deuda PARCIAL en la bandeja vuelve por el saldo de un débito parcial', async () => {
     const fixture = crear();
     httpMock.expectOne(DETALLE).flush(BORRADOR);
     httpMock
@@ -393,7 +393,7 @@ describe('PresentacionDetallePage', () => {
     httpMock.expectOne(VALIDACION).flush({ confirmable: true, hallazgos: [], avisos: [] });
     await estabilizar(fixture);
 
-    expect(contenido(fixture)).toContain('vuelve por el saldo que dejo un debito parcial');
+    expect(contenido(fixture)).toContain('vuelve por el saldo que dejó un débito parcial');
     expect(contenido(fixture)).toContain('2.000,00');
   });
 
@@ -418,16 +418,16 @@ describe('PresentacionDetallePage', () => {
     expect(texto).toContain('Sigue en el lote: al cerrarlo se salda lo presentado menos lo');
     expect(texto).toContain('Debitado');
     expect(texto).toContain('4.000,00');
-    expect(texto).toContain('Debito: Sesión no autorizada');
+    expect(texto).toContain('Débito: Sesión no autorizada');
     // Solo lo INCLUIDO se puede debitar: el parcial ya tiene su debito.
-    expect(botones(fixture, 'Registrar debito')).toHaveLength(1);
+    expect(botones(fixture, 'Registrar débito')).toHaveLength(1);
 
     filtrar(fixture, 'DEBITADO_PARCIAL');
     expect(anfitrion.querySelectorAll('tbody tr')).toHaveLength(1);
     expect(contenido(fixture)).toContain('Debitada en parte');
 
     filtrar(fixture, 'ACEPTADO_PARCIAL');
-    expect(contenido(fixture)).toContain('Ninguna prestación del lote esta en ese estado.');
+    expect(contenido(fixture)).toContain('Ninguna prestación del lote está en ese estado.');
 
     filtrar(fixture, '');
     expect(anfitrion.querySelectorAll('.tabla tbody tr')).toHaveLength(2);

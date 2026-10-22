@@ -56,7 +56,7 @@
         @if (errorEnElEmail()) {
           <p class="campo__error" role="alert">{{ errorAccion() }}</p>
         } @else if (mostrarError('email')) {
-          <p class="campo__error">Escribi un email valido.</p>
+          <p class="campo__error">Escribí un correo válido.</p>
         } @else {
           <p class="ayuda">
             Es la dirección a la que va el enlace, y la que va a quedar como su usuario. No hace
@@ -251,10 +251,10 @@
                       <td colspan="5">
                         <app-confirmacion-con-motivo
                           idCampo="cancelar-invitacion-motivo"
-                          [titulo]="'Cancelar la invitacion a ' + invitacion.email"
-                          etiqueta="Motivo de la cancelacion"
-                          ayuda="Queda registrado junto a la invitacion. El enlace que recibio deja de servir en el acto. Podes volver a invitar a esa persona mas adelante."
-                          textoConfirmar="Cancelar la invitacion"
+                          [titulo]="'Cancelar la invitación a ' + invitacion.email"
+                          etiqueta="Motivo de la cancelación"
+                          ayuda="Queda registrado junto a la invitacion. El enlace que recibió deja de servir en el acto. Podés volver a invitar a esa persona mas adelante."
+                          textoConfirmar="Cancelar la invitación"
                           [enviando]="enviando()"
                           (confirmado)="enviarCancelacion($event)"
                           (cancelado)="cerrarPaneles()"

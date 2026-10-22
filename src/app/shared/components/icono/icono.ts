@@ -76,7 +76,9 @@ export type NombreDeIcono =
           <path d="M6 9l6 6 6-6" />
         }
         @case ('operacion') {
-          <path d="M7 3v3M17 3v3M4 8h16M5 5h14a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z" />
+          <path
+            d="M7 3v3M17 3v3M4 8h16M5 5h14a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z"
+          />
         }
         @case ('pacientes') {
           <circle cx="9" cy="8" r="3.5" />

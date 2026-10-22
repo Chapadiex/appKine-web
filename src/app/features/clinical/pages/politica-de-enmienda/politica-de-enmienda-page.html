@@ -25,61 +25,91 @@
 </div>
 
 @if (politica(); as actual) {
-  <section class="tarjeta tarjeta--angosta" aria-labelledby="titulo-politica">
-    <h2 id="titulo-politica">Ventana para enmendar sesiones</h2>
-    <p class="franja-info">
-      <span>
-        Vigente: <b>{{ actual.ventanaDias }} días</b> desde el cierre de cada sesión.
-        @if (actual.porDefecto) {
-          Es el valor por defecto: la organización todavía no fijó uno propio.
-        } @else if (actual.actualizadaEn) {
-          Fijada el {{ instanteEnPalabras(actual.actualizadaEn) }}.
-        }
-      </span>
-    </p>
+  <div class="politica__columnas">
+    <section class="tarjeta" aria-labelledby="titulo-politica">
+      <h2 id="titulo-politica">Ventana para enmendar sesiones</h2>
+      <p class="franja-info">
+        <span>
+          Vigente: <b>{{ actual.ventanaDias }} días</b> desde el cierre de cada sesión.
+          @if (actual.porDefecto) {
+            Es el valor por defecto: la organización todavía no fijó uno propio.
+          } @else if (actual.actualizadaEn) {
+            Fijada el {{ instanteEnPalabras(actual.actualizadaEn) }}.
+          }
+        </span>
+      </p>
 
-    <form (submit)="$event.preventDefault(); guardar()">
-      <div class="campo">
-        <label for="politica-dias">Días para enmendar</label>
-        <div class="busqueda-fila politica__dias">
-          <input
-            id="politica-dias"
-            type="number"
-            inputmode="numeric"
-            [min]="minima"
-            [max]="maxima"
-            [value]="dias()"
-            (input)="dias.set($any($event.target).value)"
-            aria-describedby="politica-dias-ayuda"
-            [attr.aria-invalid]="diasValidos() ? null : 'true'"
-          />
-          <span class="ayuda" aria-hidden="true">días desde el cierre</span>
+      <form (submit)="$event.preventDefault(); guardar()">
+        <div class="campo">
+          <label for="politica-dias">Días para enmendar</label>
+          <div class="busqueda-fila politica__dias">
+            <input
+              id="politica-dias"
+              type="number"
+              inputmode="numeric"
+              [min]="minima"
+              [max]="maxima"
+              [value]="dias()"
+              (input)="dias.set($any($event.target).value)"
+              aria-describedby="politica-dias-ayuda"
+              [attr.aria-invalid]="diasValidos() ? null : 'true'"
+            />
+            <span class="ayuda" aria-hidden="true">días desde el cierre</span>
+          </div>
+          <p class="ayuda" id="politica-dias-ayuda">De {{ minima }} a {{ maxima }} días.</p>
+          @if (!diasValidos()) {
+            <p class="campo__error" role="alert">
+              Indicá un número entero de {{ minima }} a {{ maxima }}.
+            </p>
+          }
         </div>
-        <p class="ayuda" id="politica-dias-ayuda">De {{ minima }} a {{ maxima }} días.</p>
-        @if (!diasValidos()) {
-          <p class="campo__error" role="alert">
-            Indicá un número entero de {{ minima }} a {{ maxima }}.
+        @if (achica()) {
+          <p class="aviso-irreversible">
+            <b>Achicar la ventana alcanza a las sesiones ya cerradas</b>: las que queden fuera dejan
+            de poder enmendarse desde hoy.
           </p>
         }
-      </div>
-      @if (achica()) {
-        <p class="aviso-irreversible">
-          <b>Achicar la ventana alcanza a las sesiones ya cerradas</b>: las que queden fuera dejan
-          de poder enmendarse desde hoy.
-        </p>
+        <div class="pie-tarjeta">
+          <p class="pie-tarjeta__nota">El motivo es obligatorio en toda enmienda.</p>
+          <button
+            type="submit"
+            class="boton"
+            [disabled]="enviando() || !diasValidos() || sinCambios()"
+          >
+            Guardar la ventana
+          </button>
+        </div>
+      </form>
+    </section>
+
+    <aside class="tarjeta" aria-labelledby="titulo-ejemplo">
+      <h2 id="titulo-ejemplo">Así se aplica</h2>
+      @if (diasValidos()) {
+        <ol class="politica__ejemplo" aria-label="Línea de tiempo de una sesión cerrada">
+          <li>
+            <span class="politica__punto" aria-hidden="true"></span>
+            <span><b>Se cierra la sesión</b>Desde ese momento corre la ventana.</span>
+          </li>
+          <li>
+            <span class="politica__punto" aria-hidden="true"></span>
+            <span>
+              <b>Hasta {{ dias() }} {{ unidad() }} después</b>
+              Se puede enmendar, siempre con motivo.
+            </span>
+          </li>
+          <li>
+            <span class="politica__punto politica__punto--fin" aria-hidden="true"></span>
+            <span>
+              <b>Pasada la ventana</b>
+              La atención queda como se registró: se lee con sus enmiendas, sin versiones nuevas.
+            </span>
+          </li>
+        </ol>
+      } @else {
+        <p class="estado estado--vacio">Indicá los días para ver cómo se aplica.</p>
       }
-      <div class="pie-tarjeta">
-        <p class="pie-tarjeta__nota">El motivo es obligatorio en toda enmienda.</p>
-        <button
-          type="submit"
-          class="boton"
-          [disabled]="enviando() || !diasValidos() || sinCambios()"
-        >
-          Guardar la ventana
-        </button>
-      </div>
-    </form>
-  </section>
+    </aside>
+  </div>
 } @else if (error() && !cargando()) {
   <button type="button" class="boton" (click)="cargar()">Reintentar</button>
 }

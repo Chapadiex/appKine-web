@@ -147,7 +147,7 @@
             [titulo]="'Revertir el consumo #' + movimientoId"
             etiqueta="Motivo"
             ayuda="Revertir devuelve la unidad al saldo con una fila de compensacion. No borra el consumo original: queda en el ledger diciendo que ocurrio. Sin motivo, quien audite no puede distinguir un error de carga de otra cosa."
-            textoConfirmar="Confirmar la reversion"
+            textoConfirmar="Confirmar la reversión"
             [enviando]="enviando()"
             (confirmado)="confirmarReversion($event)"
             (cancelado)="cancelarReversion()"

@@ -169,8 +169,10 @@
   </section>
 }
 
-<section class="tarjeta" aria-labelledby="titulo-listado-financiadores">
-  <h2 id="titulo-listado-financiadores">Financiadores de la organización</h2>
+<section class="tarjeta tarjeta--tabla" aria-labelledby="titulo-listado-financiadores">
+  <div class="tarjeta__cabecera">
+    <h2 id="titulo-listado-financiadores">Financiadores de la organización</h2>
+  </div>
 
   <!--
     La busqueda se dispara con el submit y no con cada tecla. El detalle esta en el javadoc de
@@ -284,28 +286,32 @@
                   <th scope="col">CUIT</th>
                   <th scope="col">Contacto</th>
                   <th scope="col" appOrdenable [tabla]="tabla" columna="estado">Estado</th>
-                  <th scope="col">Acciones</th>
+                  <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
                 </tr>
               </thead>
               <tbody>
                 @for (financiador of tabla.visibles(); track financiador.id) {
                   <tr [class.fila--revocada]="financiador.estado === 'INACTIVO'">
-                    <th scope="row">
-                      {{ financiador.nombre }}
-                      <p class="ayuda">Código {{ financiador.codigo }}</p>
-                      @if (financiador.catalogoId) {
-                        <!-- Informativo: la copia es del centro y el catalogo no la cambia. -->
-                        <span class="etiqueta">Del catálogo</span>
-                      }
+                    <th scope="row" class="celda-ancha">
+                      <span class="celda-principal">
+                        {{ financiador.nombre }}
+                        @if (financiador.catalogoId) {
+                          <!-- Informativo: la copia es del centro y el catalogo no la cambia. -->
+                          <span class="etiqueta">Del catálogo</span>
+                        }
+                      </span>
+                      <span class="celda-secundaria">Código {{ financiador.codigo }}</span>
                       @if (financiador.observaciones) {
-                        <p class="ayuda">{{ financiador.observaciones }}</p>
+                        <span class="celda-secundaria">{{ financiador.observaciones }}</span>
                       }
                     </th>
                     <td>{{ etiquetaDeTipo(financiador.tipo) }}</td>
                     <td>{{ financiador.cuit || 'Sin CUIT' }}</td>
                     <td>
                       {{ financiador.emailContacto || 'Sin email' }}
-                      <p class="ayuda">{{ financiador.telefonoContacto || 'Sin teléfono' }}</p>
+                      <span class="celda-secundaria">{{
+                        financiador.telefonoContacto || 'Sin teléfono'
+                      }}</span>
                     </td>
                     <td>
                       <span
@@ -316,17 +322,17 @@
                         {{ financiador.estado === 'INACTIVO' ? 'Dado de baja' : 'Activo' }}
                       </span>
                       @if (financiador.estado === 'INACTIVO' && financiador.deactivationReason) {
-                        <p class="ayuda">{{ financiador.deactivationReason }}</p>
+                        <span class="celda-secundaria">{{ financiador.deactivationReason }}</span>
                       }
                     </td>
-                    <td class="acciones-fila">
+                    <td class="celda-acciones">
                       <!--
                         Los planes se ven SIEMPRE, tambien los de un financiador dado de baja: sus
                         planes conservan sus filas y hay que poder consultarlos para explicar una
                         cobertura vieja. El enlace no lleva permiso, por lo mismo que el listado.
                       -->
                       <a
-                        class="boton boton--secundario"
+                        class="accion-texto"
                         [routerLink]="['/contratacion/financiadores', financiador.id, 'planes']"
                       >
                         Planes
@@ -335,14 +341,14 @@
                         <ng-container *akinePermiso="permisoManage">
                           <button
                             type="button"
-                            class="boton boton--secundario"
+                            class="accion-texto"
                             (click)="abrirPanel(financiador, 'editar')"
                           >
                             Editar
                           </button>
                           <button
                             type="button"
-                            class="boton boton--secundario"
+                            class="accion-texto accion-texto--peligro"
                             (click)="abrirPanel(financiador, 'baja')"
                           >
                             Dar de baja

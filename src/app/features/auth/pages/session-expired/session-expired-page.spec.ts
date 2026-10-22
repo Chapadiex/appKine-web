@@ -26,7 +26,7 @@ describe('SessionExpiredPage', () => {
     const fixture = crear();
 
     expect(fixture.nativeElement.querySelector('[role="alert"]')).toBeTruthy();
-    expect(texto(fixture)).toContain('No pudimos renovar tu sesión');
+    expect(texto(fixture)).toContain('No pudimos renovarla, así que la cerramos');
   });
 
   it('conserva el destino interno para retomar donde se corto', async () => {

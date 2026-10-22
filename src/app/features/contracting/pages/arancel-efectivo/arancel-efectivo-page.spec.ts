@@ -247,9 +247,9 @@ describe('ArancelEfectivoPage', () => {
 
     httpMock.expectNone((p: HttpRequest<unknown>) => p.url === EFECTIVO);
     const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
-    expect(texto).toContain('Eligi el financiador del paciente');
+    expect(texto).toContain('Elegí el financiador del paciente');
     expect(texto).toContain('El plan es obligatorio');
-    expect(texto).toContain('Eligi que práctica se presto');
+    expect(texto).toContain('Elegí que práctica se presto');
   });
 
   it('un 403 si es un error, y se muestra como tal', async () => {
@@ -318,7 +318,7 @@ describe('ArancelEfectivoPage', () => {
     // La consulta empieza en `/consultorios/{cid}`: sin sede no se puede ni armar.
     httpMock.expectNone((p: HttpRequest<unknown>) => p.url.includes('/aranceles/efectivo'));
     const anfitrion = fixture.nativeElement as HTMLElement;
-    expect(anfitrion.textContent).toContain('Eligi un consultorio');
+    expect(anfitrion.textContent).toContain('Elegí un consultorio');
     expect(anfitrion.querySelector('a[href="/seleccionar-contexto"]')).not.toBeNull();
     expect(anfitrion.textContent).not.toContain('Sesión expirada');
   });

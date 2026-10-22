@@ -100,7 +100,7 @@ describe('LiquidacionDeHonorariosPage', () => {
 
     enviarPedido(fixture);
     httpMock.expectNone((p) => p.url === BORRADOR_URL);
-    expect(texto(fixture)).toContain('Elegí a quien se le liquida.');
+    expect(texto(fixture)).toContain('Elegí a quién se le liquida.');
 
     elegir(fixture, '#honorarios-colaborador', '7');
     escribir(fixture, '#honorarios-hasta', '2026-09-01');

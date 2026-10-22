@@ -228,7 +228,7 @@ describe('RegisterPage', () => {
     fixture.detectChanges();
 
     httpMock.expectNone(URL_REGISTRO);
-    expect(texto(fixture)).toContain('Escribi un email valido');
+    expect(texto(fixture)).toContain('Escribí un correo válido');
   });
 
   async function mensajeDeExito(cuerpo: { message: string }): Promise<string> {

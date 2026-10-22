@@ -48,7 +48,7 @@ const MENSAJE_CLAVE_REUSADA =
   selector: 'app-register-page',
   imports: [Icono, ReactiveFormsModule, RouterLink],
   templateUrl: './register-page.html',
-  styleUrl: '../../auth.css',
+  styleUrls: ['../../auth.css', '../../../../shared/styles/acceso.css'],
 })
 export class RegisterPage {
   /** Mostrar u ocultar la contraseña mientras se escribe (diseño del canvas). Solo cambia el input. */

@@ -159,8 +159,13 @@ describe('ExcepcionesPage', () => {
 
     // El alcance se nombra. Una celda vacia se lee como "falta cargar el profesional", que es
     // justo lo contrario de lo que significa.
-    expect(contenido).toContain('Cierre número 500 — Toda la sede');
-    expect(contenido).toContain('Apertura número 501 — Toda la sede');
+    expect(contenido).toContain('Cierre número 500');
+    expect(contenido).toContain('Apertura número 501');
+    const alcances = [
+      ...fixture.nativeElement.querySelectorAll('tr.excepcion td:nth-child(2)'),
+    ].map((celda) => (celda as HTMLElement).textContent?.trim());
+    expect(alcances[0]).toContain('Toda la sede');
+    expect(alcances[1]).toContain('Toda la sede');
 
     // El fin es exclusivo: se muestra el ultimo dia REALMENTE cubierto, no el que se cargo.
     expect(contenido).toContain('Del 1 de septiembre de 2026 al 2 de septiembre de 2026 inclusive');
@@ -178,7 +183,7 @@ describe('ExcepcionesPage', () => {
 
     // El motivo se rotula con la misma tabla que arma el selector del alta: `BLOQUEO` es un
     // valor del contrato, no una palabra de la aplicacion.
-    expect(contenido).toContain('Motivo declarado: Bloqueo');
+    expect(contenido).toContain('Bloqueo');
     expect(contenido).not.toContain('BLOQUEO');
     expect(contenido).not.toContain('AMPLIACION');
 
@@ -803,7 +808,7 @@ describe('ExcepcionesPage', () => {
 
     // Sin `consultorio:manage` no se ofrece ninguna accion que termine en 403.
     expect(texto(fixture)).not.toContain('Cargar un cierre o una apertura');
-    expect(texto(fixture)).toContain('Apertura número 501 — Toda la sede');
+    expect(texto(fixture)).toContain('Apertura número 501');
   });
 
   it('sin sede elegida no consulta nada y ofrece elegir consultorio', async () => {

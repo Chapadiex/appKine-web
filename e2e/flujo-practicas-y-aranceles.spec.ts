@@ -57,7 +57,7 @@ test.describe('Practicas de una oferta contra el backend real', () => {
       page.getByRole('heading', { name: 'Prácticas de la oferta', level: 1 }),
     ).toBeVisible();
     await expect(page.getByText(/Sin practicas, la oferta no le devenga nada/)).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Guardar las practicas' })).toBeDisabled();
+    await expect(page.getByRole('button', { name: 'Guardar las prácticas' })).toBeDisabled();
 
     await agregarPractica(page, 'KIN_SESION');
     await agregarPractica(page, 'KIN_EVAL');
@@ -67,7 +67,7 @@ test.describe('Practicas de una oferta contra el backend real', () => {
     await expect(declarada(page, 'KIN_EVAL')).toContainText('(principal)');
 
     const guardado = respuestaDe(page, 'PUT', /\/ofertas\/\d+\/practicas$/);
-    await page.getByRole('button', { name: 'Guardar las practicas' }).click();
+    await page.getByRole('button', { name: 'Guardar las prácticas' }).click();
     expect((await guardado).status()).toBe(200);
     await expect(
       page.getByRole('status').filter({ hasText: 'Guardamos las prácticas de la oferta.' }),
@@ -89,7 +89,7 @@ test.describe('Practicas de una oferta contra el backend real', () => {
     await declarada(page, 'KIN_SESION')
       .getByRole('button', { name: /^Quitar / })
       .click();
-    await page.getByRole('button', { name: 'Guardar las practicas' }).click();
+    await page.getByRole('button', { name: 'Guardar las prácticas' }).click();
     await expect(
       page.getByRole('status').filter({ hasText: 'Guardamos las prácticas de la oferta.' }),
     ).toBeVisible();

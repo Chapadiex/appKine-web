@@ -54,30 +54,51 @@
   padding: 0;
   list-style: none;
   display: grid;
-  gap: var(--esp-3);
+  gap: 0;
+  border: var(--borde-fino) solid var(--color-borde);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie);
+  overflow: hidden;
+}
+
+.timeline__hecho {
+  border-bottom: var(--borde-fino) solid var(--color-borde-sutil);
+}
+
+.timeline__hecho:last-child {
+  border-bottom: 0;
 }
 
 /*
  * Cada hecho es un boton entero y no un enlace dentro de una fila: elegirlo no navega, abre el
- * detalle al lado. Grilla de tres zonas para que la fecha quede alineada en todas las filas.
+ * detalle al lado. Fecha, origen y titulo en una fila; la fecha queda alineada en todas.
  */
 .timeline__boton {
   display: grid;
-  grid-template-columns: 7rem minmax(0, 1fr);
-  grid-template-areas:
-    'origen titulo'
-    'origen fecha';
-  gap: var(--esp-1) var(--esp-4);
+  grid-template-columns: 9rem auto minmax(0, 1fr);
+  grid-template-areas: 'fecha origen titulo';
+  align-items: center;
+  gap: var(--esp-2) var(--esp-5);
   width: 100%;
-  padding: var(--esp-4) var(--esp-5);
-  border: var(--borde-fino) solid var(--color-borde);
-  border-left: var(--borde-acento) solid var(--color-borde);
-  border-radius: var(--radio-md);
+  min-height: 2.75rem;
+  padding: var(--esp-3) var(--esp-5);
+  border: 0;
+  border-left: var(--borde-acento) solid transparent;
+  border-radius: 0;
   background: var(--color-superficie);
   color: var(--color-texto);
   font-family: inherit;
-  font-size: var(--tipo-base);
+  font-size: var(--tipo-sm);
   text-align: left;
+}
+
+@media (max-width: 40rem) {
+  .timeline__boton {
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas:
+      'origen fecha'
+      'titulo titulo';
+  }
 }
 
 button.timeline__boton {
@@ -90,13 +111,13 @@ button.timeline__boton:hover {
 
 button.timeline__boton:focus-visible {
   outline: var(--foco-grosor) solid var(--color-foco);
-  outline-offset: var(--foco-offset);
+  outline-offset: calc(-1 * var(--foco-grosor));
 }
 
 /* El elegido se marca por el borde Y por aria-pressed: el color solo no alcanza (WCAG 1.4.1). */
 .timeline__boton--elegido {
   border-left-color: var(--color-acento);
-  background: var(--color-superficie-sutil);
+  background: var(--color-acento-claro);
   font-weight: var(--peso-medio);
 }
 
@@ -104,16 +125,22 @@ button.timeline__boton:focus-visible {
   color: var(--color-texto-suave);
 }
 
+/* El origen (entrada, adjunto, sesion, antecedente) como pastilla. */
 .timeline__origen {
   grid-area: origen;
-  align-self: center;
-  font-size: var(--tipo-sm);
+  justify-self: start;
+  padding: var(--esp-1) var(--esp-4);
+  border-radius: var(--radio-pastilla);
+  background: var(--color-superficie-codigo);
+  color: var(--color-texto);
+  font-size: var(--tipo-2xs);
   font-weight: var(--peso-semi);
-  color: var(--color-texto-suave);
 }
 
 .timeline__titulo {
   grid-area: titulo;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .timeline__tipo {
@@ -122,7 +149,8 @@ button.timeline__boton:focus-visible {
 
 .timeline__fecha {
   grid-area: fecha;
-  font-size: var(--tipo-sm);
+  font-size: var(--tipo-xs);
+  font-variant-numeric: tabular-nums;
   color: var(--color-texto-suave);
 }
 
@@ -217,14 +245,33 @@ button.timeline__boton:focus-visible {
   padding: 0;
   list-style: none;
   display: grid;
-  gap: var(--esp-3);
+  gap: 0;
+  border: var(--borde-fino) solid var(--color-borde);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie);
 }
 
 .casos__item {
   padding: var(--esp-4) var(--esp-5);
-  border: var(--borde-fino) solid var(--color-borde);
-  border-radius: var(--radio-md);
-  background: var(--color-superficie);
+  border-bottom: var(--borde-fino) solid var(--color-borde-sutil);
+}
+
+.casos__item:last-child {
+  border-bottom: 0;
+}
+
+/* Fila de un caso: titulo y diagnostico a la izquierda, estado a la derecha. */
+.casos__fila {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--esp-3) var(--esp-5);
+}
+
+.casos__fila > div {
+  flex: 1 1 18rem;
+  min-width: 0;
 }
 
 .casos__titulo {
@@ -298,4 +345,180 @@ button.timeline__boton:focus-visible {
 
 .migas__separador {
   color: var(--color-texto-suave);
+}
+
+/* --- UX-01: cuerpo de la historia, el caso, el plan y la politica ----------------------- */
+
+/* Datos de cabecera de una tarjeta: pares rotulo/valor en una grilla que envuelve. */
+.historia__datos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: var(--esp-4) var(--esp-6);
+  margin: 0 0 var(--esp-6);
+}
+
+.historia__datos > div {
+  min-width: 0;
+}
+
+.historia__datos dt {
+  font-size: var(--tipo-2xs);
+  color: var(--color-texto-suave);
+}
+
+.historia__datos dd {
+  margin: var(--esp-1) 0 0;
+  font-size: var(--tipo-sm);
+  overflow-wrap: anywhere;
+}
+
+/* El acceso declarado siempre a la vista: es lo que justifica ver contenido clinico. */
+.historia__acceso {
+  grid-column: 1 / -1;
+  padding: var(--esp-3) var(--esp-5);
+  border-left: var(--borde-acento) solid var(--color-acento);
+  border-radius: var(--radio-sm);
+  background: var(--color-acento-claro);
+}
+
+/* Dos bloques de texto lado a lado cuando entran (diagnostico y objetivo, objetivos e indicaciones). */
+.historia__dos {
+  display: grid;
+  gap: var(--esp-6);
+}
+
+@media (min-width: 48rem) {
+  .historia__dos {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+}
+
+.historia__dos h3 {
+  margin: 0 0 var(--esp-3);
+  font-size: var(--tipo-sm);
+  font-weight: var(--peso-semi);
+  color: var(--color-texto-suave);
+}
+
+.historia__dos .historia__cuerpo {
+  margin: 0;
+}
+
+/* Linea de datos bajo el titulo del caso o del plan. */
+.historia__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp-2) var(--esp-6);
+  margin: 0 0 var(--esp-6);
+  font-size: var(--tipo-sm);
+  color: var(--color-texto);
+}
+
+/* Avisos del plan: se leen antes que el resto, con el color de peligro y el texto. */
+.plan__avisos {
+  border-color: var(--color-peligro);
+  border-left-width: var(--borde-acento);
+  background: var(--color-peligro-fondo);
+  color: var(--color-peligro-texto);
+}
+
+.plan__avisos h2 {
+  color: var(--color-peligro-texto);
+}
+
+.plan__avisos ul {
+  margin: 0;
+  padding-left: var(--esp-6);
+}
+
+/* Avance por item: nombre, barra y resumen en una fila. */
+.avance__fila {
+  display: grid;
+  gap: var(--esp-2) var(--esp-6);
+  align-items: center;
+}
+
+@media (min-width: 48rem) {
+  .avance__fila {
+    grid-template-columns: minmax(0, 1fr) minmax(8rem, 14rem) minmax(0, 1fr);
+  }
+}
+
+.avance__fila p {
+  margin: 0;
+}
+
+/* Version del plan: cabecera, items en filas y accion al pie. */
+.plan__version-cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--esp-2) var(--esp-5);
+}
+
+.plan__items {
+  margin: var(--esp-3) 0 var(--esp-4);
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0;
+  font-size: var(--tipo-sm);
+}
+
+.plan__items li {
+  padding: var(--esp-2) 0;
+  border-top: var(--borde-fino) solid var(--color-borde-sutil);
+}
+
+.plan__vigencia {
+  font-weight: var(--peso-medio);
+}
+
+/* Politica de enmienda: formulario y ejemplo lado a lado. */
+.politica__columnas {
+  display: grid;
+  gap: var(--esp-6);
+  align-items: start;
+}
+
+@media (min-width: 60rem) {
+  .politica__columnas {
+    grid-template-columns: minmax(0, 3fr) minmax(16rem, 2fr);
+  }
+}
+
+.politica__ejemplo {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: var(--esp-5);
+}
+
+.politica__ejemplo li {
+  display: grid;
+  grid-template-columns: 0.75rem minmax(0, 1fr);
+  gap: var(--esp-4);
+}
+
+.politica__punto {
+  width: 0.625rem;
+  height: 0.625rem;
+  margin-top: var(--esp-3);
+  border-radius: 50%;
+  background: var(--color-acento);
+}
+
+.politica__punto--fin {
+  background: var(--color-texto-suave);
+}
+
+.politica__ejemplo b {
+  display: block;
+  font-weight: var(--peso-semi);
+}
+
+.politica__ejemplo span {
+  font-size: var(--tipo-sm);
 }

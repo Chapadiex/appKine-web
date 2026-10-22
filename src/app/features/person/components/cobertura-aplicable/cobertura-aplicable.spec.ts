@@ -111,7 +111,7 @@ describe('CoberturaAplicable', () => {
     expect(contenido).toContain('Pide orden medica.');
     expect(contenido).toContain('La credencial esta vencida');
     // Particular siempre esta disponible, aunque una cobertura aplique.
-    expect(contenido).toMatch(/Precio particular del dia:\s*\$\s*15\.000,00/);
+    expect(contenido).toMatch(/Precio particular del día:\s*\$\s*15\.000,00/);
     // La no aplicable dice por que, tambien por practica.
     expect(contenido).toContain('no tiene convenio vigente con este financiador');
     expect(contenido).toContain('Fonoaudiologia: Hay convenio, pero sin arancel vigente');

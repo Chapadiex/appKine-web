@@ -338,7 +338,7 @@ describe('PlanesDelFinanciadorPage', () => {
     const panel = (fixture.nativeElement as HTMLElement).querySelector('tr.fila-panel');
     // Es la advertencia que evita el error caro: dar de baja no se deshace y cerrar la vigencia si.
     expect(panel?.textContent).toContain('la operación NO es esta');
-    expect(panel?.textContent).toContain('no hay reactivacion');
+    expect(panel?.textContent).toContain('no hay reactivación');
 
     escribir(fixture, '#baja-plan-motivo', 'El financiador lo discontinuo');
     const confirmar = [

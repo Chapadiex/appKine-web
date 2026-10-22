@@ -209,7 +209,7 @@ describe('CicloDeTurnoPage', () => {
     const texto = textoDe(fixture);
     expect(texto).toContain('se retiro sin ser atendida');
     expect(texto).toContain('Historial de la recepción');
-    expect(texto).toContain('Se retiro sin ser atendido —');
+    expect(texto).toContain('Se retiro sin ser atendido');
     expect(texto).toContain('Se canso de esperar');
     expect(boton(fixture, 'Marcar que no vino')).toBeNull();
     expect(boton(fixture, 'Mover a otro horario')).toBeNull();
@@ -259,7 +259,7 @@ describe('CicloDeTurnoPage', () => {
     const texto = textoDe(fixture);
     expect(texto).toContain('El lugar se libero');
     // Ciclo cerrado: no se ofrece ninguna transicion mas sobre un turno cancelado.
-    expect(texto).toContain('ya cerro su ciclo');
+    expect(texto).toContain('ya cerró su ciclo');
     expect(boton(fixture, 'Cancelar el turno')).toBeNull();
   });
 

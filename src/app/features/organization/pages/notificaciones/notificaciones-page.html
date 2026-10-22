@@ -69,10 +69,6 @@
         @if (filas().length === 0) {
           <p class="estado estado--vacio">No hay notificaciones con esos estados.</p>
         } @else {
-          <p class="ayuda">
-            {{ totalNotificaciones() }} notificaciones, de la mas nueva a la mas vieja.
-          </p>
-
           <div
             class="tabla-scroll"
             tabindex="0"
@@ -86,8 +82,7 @@
               <thead>
                 <tr>
                   <th scope="col">Número</th>
-                  <th scope="col">Tipo</th>
-                  <th scope="col">Destinatario</th>
+                  <th scope="col">Destinatario y tipo</th>
                   <th scope="col">Estado</th>
                   <th scope="col">Intentos</th>
                   <th scope="col">Último error</th>
@@ -100,11 +95,28 @@
                 @for (fila of filas(); track fila.id) {
                   <tr>
                     <th scope="row">{{ fila.id }}</th>
-                    <td>{{ textoTipo(fila.tipo) }}</td>
-                    <td>{{ fila.destinatario ?? '-' }}</td>
-                    <td>{{ textoEstado(fila.estado) }}</td>
+                    <td>
+                      <span class="colaborador__nombre">{{ fila.destinatario ?? '-' }}</span>
+                      <span class="colaborador__email">{{ textoTipo(fila.tipo) }}</span>
+                    </td>
+                    <td>
+                      <span
+                        class="marca-estado"
+                        [class.marca-estado--revocada]="fila.estado === 'FALLIDA'"
+                        [class.marca-estado--suspendida]="fila.estado === 'AGOTADA'"
+                        >{{ textoEstado(fila.estado) }}</span
+                      >
+                    </td>
                     <td>{{ fila.intentos ?? 0 }} de {{ fila.maxIntentos ?? '-' }}</td>
-                    <td>{{ fila.ultimoError ?? '-' }}</td>
+                    <td>
+                      @if (fila.ultimoError) {
+                        <span class="marca-estado marca-estado--suspendida">{{
+                          fila.ultimoError
+                        }}</span>
+                      } @else {
+                        -
+                      }
+                    </td>
                     <td>{{ formatearInstante(fila.creadaEn) ?? '-' }}</td>
                     <td>{{ formatearInstante(fila.actualizadaEn) ?? '-' }}</td>
                     <td>
@@ -130,12 +142,15 @@
             </table>
           </div>
 
-          <akine-paginacion
-            etiqueta="Paginas de notificaciones"
-            [paginaActual]="paginaActual()"
-            [totalPaginas]="totalPaginas()"
-            (cambioDePagina)="irAPagina($event)"
-          />
+          <div class="tabla-pie">
+            <span>{{ totalNotificaciones() }} notificaciones, de la más nueva a la más vieja</span>
+            <akine-paginacion
+              etiqueta="Paginas de notificaciones"
+              [paginaActual]="paginaActual()"
+              [totalPaginas]="totalPaginas()"
+              (cambioDePagina)="irAPagina($event)"
+            />
+          </div>
         }
       }
     }

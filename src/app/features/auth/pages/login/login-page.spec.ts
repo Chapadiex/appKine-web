@@ -128,7 +128,7 @@ describe('LoginPage', () => {
 
     expect(session.llamadas).toEqual([]);
     expect(document.activeElement?.id).toBe('login-email');
-    expect(texto(fixture)).toContain('Escribi un email valido');
+    expect(texto(fixture)).toContain('Escribí un correo válido');
   });
 
   it('asocia el error al campo con aria-describedby', () => {

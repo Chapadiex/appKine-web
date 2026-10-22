@@ -48,6 +48,52 @@
     </div>
   </div>
 
+  <fieldset class="cuando">
+    <legend>Cuándo</legend>
+    <div class="grilla-campos grilla-campos--tres">
+      <div class="campo">
+        <label for="clase-fecha">Fecha</label>
+        <input
+          id="clase-fecha"
+          type="date"
+          formControlName="fecha"
+          [attr.aria-invalid]="invalido('fecha')"
+          [attr.aria-describedby]="invalido('fecha') ? 'clase-fecha-error' : null"
+        />
+        @if (invalido('fecha')) {
+          <p class="estado estado--error" id="clase-fecha-error">Elegí la fecha de la clase.</p>
+        }
+      </div>
+      <div class="campo">
+        <label for="clase-inicio">Hora de inicio</label>
+        <input
+          id="clase-inicio"
+          type="time"
+          formControlName="horaInicio"
+          [attr.aria-invalid]="invalido('horaInicio')"
+          [attr.aria-describedby]="invalido('horaInicio') ? 'clase-inicio-error' : null"
+        />
+        @if (invalido('horaInicio')) {
+          <p class="estado estado--error" id="clase-inicio-error">Indica a que hora empieza.</p>
+        }
+      </div>
+      <div class="campo">
+        <label for="clase-fin">Hora de fin</label>
+        <input
+          id="clase-fin"
+          type="time"
+          formControlName="horaFin"
+          [attr.aria-invalid]="invalido('horaFin')"
+          [attr.aria-describedby]="invalido('horaFin') ? 'clase-fin-error' : null"
+        />
+        @if (invalido('horaFin')) {
+          <p class="estado estado--error" id="clase-fin-error">Indica a que hora termina.</p>
+        }
+      </div>
+    </div>
+    <p class="ayuda">Fecha y horas en la zona de la sede.</p>
+  </fieldset>
+
   <div class="grilla-campos grilla-campos--tres">
     @if (exigeProfesional()) {
       <div class="campo">
@@ -113,52 +159,6 @@
       }
     </div>
   </div>
-
-  <fieldset class="cuando">
-    <legend>Cuándo</legend>
-    <div class="grilla-campos grilla-campos--tres">
-      <div class="campo">
-        <label for="clase-fecha">Fecha</label>
-        <input
-          id="clase-fecha"
-          type="date"
-          formControlName="fecha"
-          [attr.aria-invalid]="invalido('fecha')"
-          [attr.aria-describedby]="invalido('fecha') ? 'clase-fecha-error' : null"
-        />
-        @if (invalido('fecha')) {
-          <p class="estado estado--error" id="clase-fecha-error">Elegí la fecha de la clase.</p>
-        }
-      </div>
-      <div class="campo">
-        <label for="clase-inicio">Hora de inicio</label>
-        <input
-          id="clase-inicio"
-          type="time"
-          formControlName="horaInicio"
-          [attr.aria-invalid]="invalido('horaInicio')"
-          [attr.aria-describedby]="invalido('horaInicio') ? 'clase-inicio-error' : null"
-        />
-        @if (invalido('horaInicio')) {
-          <p class="estado estado--error" id="clase-inicio-error">Indica a que hora empieza.</p>
-        }
-      </div>
-      <div class="campo">
-        <label for="clase-fin">Hora de fin</label>
-        <input
-          id="clase-fin"
-          type="time"
-          formControlName="horaFin"
-          [attr.aria-invalid]="invalido('horaFin')"
-          [attr.aria-describedby]="invalido('horaFin') ? 'clase-fin-error' : null"
-        />
-        @if (invalido('horaFin')) {
-          <p class="estado estado--error" id="clase-fin-error">Indica a que hora termina.</p>
-        }
-      </div>
-    </div>
-    <p class="ayuda">Fecha y horas en la zona de la sede.</p>
-  </fieldset>
 
   <div aria-live="polite">
     @if (error(); as fallo) {

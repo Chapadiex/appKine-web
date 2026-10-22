@@ -240,7 +240,7 @@ describe('AtencionGrupalPage', () => {
     http.expectOne(elegibilidadDe(MARIA)).flush(MARIA_DERIVABLE);
     http.expectOne(DATOS_DE_MARIA).flush(UN_CASO_DE_MARIA);
     await estabilizar(fixture);
-    expect(alerta(fixture)).toContain('No tiene una derivacion clínica vigente');
+    expect(alerta(fixture)).toContain('No tiene una derivación clínica vigente');
     expect(texto(fixture)).toContain('Derivar a Sintetica, Maria a un caso clínico');
     expect(navegar).not.toHaveBeenCalled();
   });
@@ -371,7 +371,7 @@ describe('AtencionGrupalPage', () => {
     const resultado = texto(fixture);
     expect(resultado).toContain('Se abrieron 1 atención.');
     expect(resultado).toContain('1 no se pudieron abrir');
-    expect(resultado).toMatch(/Sintetica, Ana\s*: No tiene una derivacion clinica vigente/);
+    expect(resultado).toMatch(/Sintetica, Ana\s*: No tiene una derivación clínica vigente/);
     expect(navegar).not.toHaveBeenCalled();
   });
 
@@ -401,7 +401,7 @@ describe('AtencionGrupalPage', () => {
     // La lectura de derivaciones es clinica: no se hace hasta que alguien elige.
     http.expectNone(derivacionesDe(ANA));
 
-    boton(fixture, /^Elegir la derivacion/).click();
+    boton(fixture, /^Elegir la derivación/).click();
     http.expectOne(derivacionesDe(ANA)).flush({
       derivaciones: [
         { id: 40, casoClinicoId: 17, numeroCaso: 2, estado: 'VIGENTE' },
@@ -417,7 +417,7 @@ describe('AtencionGrupalPage', () => {
     expect(texto(fixture)).not.toContain('Caso clínico 3');
     expect(fixture.nativeElement.querySelector('#titulo-derivaciones')).toBeNull();
 
-    botones(fixture, /^Iniciar desde: Caso clinico 4/)[0].click();
+    botones(fixture, /^Iniciar desde: Caso clínico 4/)[0].click();
     const pedido = http.expectOne(atencionDe(ANA));
     expect(pedido.request.body).toEqual({ derivacionId: 42 });
     pedido.flush({ ...ABIERTA, sesionId: 903, derivacionId: 42, inscripcionId: ANA });
@@ -445,7 +445,7 @@ describe('AtencionGrupalPage', () => {
     });
     responderRecarga();
     await estabilizar(fixture);
-    boton(fixture, /^Elegir la derivacion/).click();
+    boton(fixture, /^Elegir la derivación/).click();
     http.expectOne(derivacionesDe(MARIA)).flush({
       derivaciones: [
         { id: 30, numeroCaso: 1, estado: 'VIGENTE' },
@@ -453,7 +453,7 @@ describe('AtencionGrupalPage', () => {
       ],
     });
     await estabilizar(fixture);
-    boton(fixture, /^Iniciar desde: Caso clinico 1/).click();
+    boton(fixture, /^Iniciar desde: Caso clínico 1/).click();
     problema(http.expectOne(atencionDe(MARIA)), 409, 'caso-clinico-cerrado');
     await estabilizar(fixture);
     expect(alerta(fixture)).toContain('caso');
@@ -462,7 +462,7 @@ describe('AtencionGrupalPage', () => {
     boton(fixture, /^No elegir ahora/).click();
     await estabilizar(fixture);
     expect(botones(fixture, /^Iniciar desde:/)).toHaveLength(0);
-    expect(botones(fixture, /^Elegir la derivacion/)).toHaveLength(1);
+    expect(botones(fixture, /^Elegir la derivación/)).toHaveLength(1);
   });
 
   it('si ninguna de las ofrecidas sigue vigente lo dice', async () => {
@@ -481,7 +481,7 @@ describe('AtencionGrupalPage', () => {
     });
     responderRecarga();
     await estabilizar(fixture);
-    boton(fixture, /^Elegir la derivacion/).click();
+    boton(fixture, /^Elegir la derivación/).click();
     http.expectOne(derivacionesDe(MARIA)).flush({
       derivaciones: [{ id: 30, numeroCaso: 1, estado: 'REVERTIDA' }],
     });
@@ -555,7 +555,7 @@ describe('AtencionGrupalPage', () => {
 
     it('pide motivo, y con 409 derivacion-con-sesion explica que la atención la fija', async () => {
       const fixture = await conDerivaciones([{ id: 30, casoClinicoId: 7, estado: 'VIGENTE' }]);
-      boton(fixture, /^Revertir la derivacion/).click();
+      boton(fixture, /^Revertir la derivación/).click();
       await estabilizar(fixture);
       boton(fixture, /Confirmar la reversión/).click();
       await estabilizar(fixture);
@@ -568,12 +568,12 @@ describe('AtencionGrupalPage', () => {
       expect(pedido.request.body).toEqual({ motivo: 'Derivada por error' });
       problema(pedido, 409, 'derivacion-con-sesion');
       await estabilizar(fixture);
-      expect(alerta(fixture)).toContain('ya se abrio una atención clínica desde ella');
+      expect(alerta(fixture)).toContain('ya se abrió una atención clínica desde ella');
     });
 
     it('revertida, relee las derivaciones y el panel, y lo confirma', async () => {
       const fixture = await conDerivaciones([{ id: 30, casoClinicoId: 7, estado: 'VIGENTE' }]);
-      boton(fixture, /^Revertir la derivacion/).click();
+      boton(fixture, /^Revertir la derivación/).click();
       await estabilizar(fixture);
       escribir(fixture, '#motivo-reversion-30', 'Derivada por error');
       boton(fixture, /Confirmar la reversión/).click();
@@ -589,7 +589,7 @@ describe('AtencionGrupalPage', () => {
       await estabilizar(fixture);
       expect(texto(fixture)).toContain('Derivacion revertida.');
       expect(texto(fixture)).toContain('Motivo de la reversión: Derivada por error');
-      expect(botones(fixture, /^Revertir la derivacion/)).toHaveLength(0);
+      expect(botones(fixture, /^Revertir la derivación/)).toHaveLength(0);
     });
 
     it('con la atención abierta desde la derivacion no ofrece revertir y dice por que', async () => {
@@ -598,7 +598,7 @@ describe('AtencionGrupalPage', () => {
         JUAN,
       );
       expect(texto(fixture)).toContain('la derivación no se puede revertir');
-      expect(botones(fixture, /^Revertir la derivacion/)).toHaveLength(0);
+      expect(botones(fixture, /^Revertir la derivación/)).toHaveLength(0);
     });
 
     it('el foco va al panel, al motivo y de vuelta al botón que abrio cada cosa', async () => {
@@ -613,7 +613,7 @@ describe('AtencionGrupalPage', () => {
       await estabilizar(fixture);
       expect(document.activeElement?.getAttribute('aria-labelledby')).toBe('titulo-derivaciones');
 
-      boton(fixture, /^Revertir la derivacion/).click();
+      boton(fixture, /^Revertir la derivación/).click();
       await estabilizar(fixture);
       expect(document.activeElement?.id).toBe('motivo-reversion-30');
 

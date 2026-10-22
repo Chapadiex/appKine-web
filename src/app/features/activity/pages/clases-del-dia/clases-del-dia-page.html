@@ -8,8 +8,7 @@
   </app-ayuda>
 </div>
 
-<section class="tarjeta" aria-labelledby="titulo-dia-clases">
-  <h2 id="titulo-dia-clases" class="visualmente-oculto">Día</h2>
+<div class="barra-dia" role="group" aria-label="Día">
   <div class="campo">
     <label for="clases-fecha">Fecha</label>
     <input
@@ -19,9 +18,9 @@
       (change)="cambiarFecha($any($event.target).value)"
       aria-describedby="ayuda-fecha-clases"
     />
-    <p id="ayuda-fecha-clases" class="ayuda">En la zona horaria de la sede.</p>
   </div>
-</section>
+  <p id="ayuda-fecha-clases" class="ayuda">En la zona horaria de la sede.</p>
+</div>
 
 @switch (estado().tipo) {
   @case ('cargando') {
@@ -72,7 +71,21 @@
                     >{{ etiquetaDeEstado(clase.estado) }}</span
                   >
                 </td>
-                <td>{{ clase.ocupados ?? 0 }} de {{ clase.capacidad ?? '—' }}</td>
+                <td>
+                  <span class="cupo">
+                    @if (clase.capacidad) {
+                      <span class="cupo__barra" aria-hidden="true"
+                        ><span
+                          class="cupo__relleno"
+                          [style.width.%]="porcentajeDeCupo(clase)"
+                        ></span
+                      ></span>
+                    }
+                    <span class="cupo__texto"
+                      >{{ clase.ocupados ?? 0 }} de {{ clase.capacidad ?? '—' }}</span
+                    >
+                  </span>
+                </td>
                 <td>
                   <a class="boton boton--secundario" [routerLink]="['/asistencia', clase.eventoId]">
                     Tomar asistencia

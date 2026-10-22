@@ -44,29 +44,49 @@
     @if (caso(); as c) {
       <section class="tarjeta" aria-labelledby="titulo-caso">
         <h2 id="titulo-caso">Caso {{ c.numeroCaso }} · {{ nombreDeOferta() }}</h2>
-        <dl class="detalle">
-          <dt>Estado</dt>
-          <dd data-testid="caso-estado">{{ estadoEnPalabras() }}</dd>
-          <dt>Abierto</dt>
-          <dd>{{ fechaYHora(c.abiertoEn) }}</dd>
+        <dl class="historia__datos">
+          <div>
+            <dt>Estado</dt>
+            <dd
+              data-testid="caso-estado"
+              class="marca-estado"
+              [class.marca-estado--activa]="activo()"
+            >
+              {{ estadoEnPalabras() }}
+            </dd>
+          </div>
+          <div>
+            <dt>Abierto</dt>
+            <dd>{{ fechaYHora(c.abiertoEn) }}</dd>
+          </div>
           @if (c.cerradoEn) {
-            <dt>Cerrado</dt>
-            <dd>{{ fechaYHora(c.cerradoEn) }}</dd>
+            <div>
+              <dt>Cerrado</dt>
+              <dd>{{ fechaYHora(c.cerradoEn) }}</dd>
+            </div>
           }
           @if (c.motivoCierre) {
-            <dt>Motivo del cierre</dt>
-            <dd class="historia__cuerpo">{{ c.motivoCierre }}</dd>
+            <div>
+              <dt>Motivo del cierre</dt>
+              <dd class="historia__cuerpo">{{ c.motivoCierre }}</dd>
+            </div>
           }
         </dl>
 
-        <h3>Diagnóstico presuntivo</h3>
-        <p class="historia__cuerpo">{{ c.diagnosticoPresuntivo }}</p>
-        <h3>Objetivo terapéutico</h3>
-        @if (c.objetivoTerapeutico) {
-          <p class="historia__cuerpo">{{ c.objetivoTerapeutico }}</p>
-        } @else {
-          <p class="estado estado--vacio">Sin objetivo cargado.</p>
-        }
+        <div class="historia__dos">
+          <div>
+            <h3>Diagnóstico presuntivo</h3>
+            <p class="historia__cuerpo">{{ c.diagnosticoPresuntivo }}</p>
+          </div>
+          <div>
+            <h3>Objetivo terapéutico</h3>
+            @if (c.objetivoTerapeutico) {
+              <p class="historia__cuerpo">{{ c.objetivoTerapeutico }}</p>
+            } @else {
+              <p class="estado estado--vacio">Sin objetivo cargado.</p>
+            }
+          </div>
+        </div>
       </section>
 
       <p class="estado estado--ok" role="status">{{ aviso() }}</p>
@@ -241,16 +261,20 @@
           }
 
           <section class="tarjeta" aria-labelledby="titulo-cierre">
-            <h2 id="titulo-cierre">{{ activo() ? 'Cerrar el caso' : 'Reabrir el caso' }}</h2>
-            <p class="ayuda">
-              @if (activo()) {
-                Cerrar no borra nada: el caso sigue en la historia y se puede reabrir. El motivo
-                queda en el historial.
-              } @else {
-                Reabrir vuelve el caso a activo. La numeracion de sesiones continua donde quedo y el
-                cierre anterior sigue en el historial.
-              }
-            </p>
+            <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
+              <h2 id="titulo-cierre">{{ activo() ? 'Cerrar el caso' : 'Reabrir el caso' }}</h2>
+              <app-ayuda titulo="Cierre y reapertura">
+                <p>
+                  @if (activo()) {
+                    Cerrar no borra nada: el caso sigue en la historia y se puede reabrir. El motivo
+                    queda en el historial.
+                  } @else {
+                    Reabrir vuelve el caso a activo. La numeración de sesiones continúa donde quedó
+                    y el cierre anterior sigue en el historial.
+                  }
+                </p>
+              </app-ayuda>
+            </div>
             <form (submit)="$event.preventDefault(); cerrarOReabrir()">
               <div class="campo">
                 <label for="caso-motivo">

@@ -264,8 +264,10 @@
   </section>
 }
 
-<section class="tarjeta" aria-labelledby="titulo-listado-aranceles">
-  <h2 id="titulo-listado-aranceles">Grilla de vigencias</h2>
+<section class="tarjeta tarjeta--tabla" aria-labelledby="titulo-listado-aranceles">
+  <div class="tarjeta__cabecera">
+    <h2 id="titulo-listado-aranceles">Grilla de vigencias</h2>
+  </div>
 
   <!--
     Regla de filtros (plan §3.4): sin busqueda por texto en el backend, solo el embudo. La fecha
@@ -369,7 +371,7 @@
                     Coseguro
                   </th>
                   <th scope="col">Situación</th>
-                  <th scope="col">Acciones</th>
+                  <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
                 </tr>
               </thead>
               <tbody>
@@ -380,9 +382,9 @@
                     [class.fila--revocada]="arancel.estado === 'INACTIVO'"
                     [class.fila--atenuada]="situacionDeLaFila.atenuada"
                   >
-                    <th scope="row">
-                      {{ nombreDeLaPractica(arancel) }}
-                      <p class="ayuda">{{ alcanceDelArancel(arancel) }}</p>
+                    <th scope="row" class="celda-ancha">
+                      <span class="celda-principal">{{ nombreDeLaPractica(arancel) }}</span>
+                      <span class="celda-secundaria">{{ alcanceDelArancel(arancel) }}</span>
                     </th>
                     <td>{{ ventanaEnPalabras(arancel) }}</td>
                     <td class="importe">
@@ -406,25 +408,25 @@
                         >{{ situacionDeLaFila.resumen }}</span
                       >
                       @if (situacionDeLaFila.explicacion; as explicacion) {
-                        <p class="ayuda">{{ explicacion }}</p>
+                        <span class="celda-secundaria">{{ explicacion }}</span>
                       }
                       @if (arancel.estado === 'INACTIVO' && arancel.deactivationReason) {
-                        <p class="ayuda">{{ arancel.deactivationReason }}</p>
+                        <span class="celda-secundaria">{{ arancel.deactivationReason }}</span>
                       }
                     </td>
-                    <td class="acciones-fila">
+                    <td class="celda-acciones">
                       @if (arancel.estado === 'ACTIVO') {
                         <ng-container *akinePermiso="permisoManage">
                           <button
                             type="button"
-                            class="boton boton--secundario"
+                            class="accion-texto"
                             (click)="abrirPanel(arancel, 'editar')"
                           >
                             Editar
                           </button>
                           <button
                             type="button"
-                            class="boton boton--secundario"
+                            class="accion-texto accion-texto--peligro"
                             (click)="abrirPanel(arancel, 'baja')"
                           >
                             Dar de baja

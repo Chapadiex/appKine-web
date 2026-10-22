@@ -91,7 +91,7 @@ test.describe('Contraste de color', () => {
     test('el login en reposo, con sus enlaces y su boton de accion', async ({ page }) => {
       await instalarApiDeContraste(page);
       await page.goto('/auth/ingresar');
-      await expect(page.getByRole('heading', { name: 'Iniciar sesion', level: 1 })).toBeVisible();
+      await expect(page.getByRole('heading', { name: 'Iniciar sesión', level: 1 })).toBeVisible();
 
       await auditarContraste(page, 'login en reposo');
     });
@@ -105,7 +105,7 @@ test.describe('Contraste de color', () => {
       await page.goto('/auth/ingresar');
       await page.getByRole('button', { name: 'Ingresar' }).click();
 
-      await expect(page.getByText('Escribi un email valido.')).toBeVisible();
+      await expect(page.getByText('Escribí un correo válido.')).toBeVisible();
       await expect(page.getByText('Escribí tu contraseña.')).toBeVisible();
 
       await auditarContraste(page, 'login con los dos campos en error');
@@ -311,7 +311,7 @@ test.describe('Contraste de color', () => {
       await expect(page.getByText('Atención cerrada', { exact: false })).toBeVisible();
       await page.getByRole('button', { name: /Derivaciones de Perez, Ana/ }).click();
       await expect(
-        page.getByText('Motivo de la reversion: Derivada al caso equivocado'),
+        page.getByText('Motivo de la reversión: Derivada al caso equivocado'),
       ).toBeVisible();
 
       await auditarContraste(page, 'atencion clinica de una clase con derivaciones');
@@ -387,7 +387,7 @@ test.describe('Contraste de color', () => {
       await page.getByRole('button', { name: /Iniciar para todos/ }).click();
 
       const resultado = page.getByRole('region', { name: 'Resultado' });
-      await expect(resultado.getByText('No tiene una derivacion clínica vigente')).toBeVisible();
+      await expect(resultado.getByText('No tiene una derivación clínica vigente')).toBeVisible();
       await expect(resultado).toBeFocused();
 
       await auditarContraste(page, 'atencion clinica de una clase con un lote parcial');
@@ -449,7 +449,7 @@ test.describe('Contraste de color', () => {
       await instalarApiDeContraste(page);
       await instalarApiDp43(page);
       await page.goto('/atencion/politica-de-enmienda');
-      await expect(page.getByText('45 dias')).toBeVisible();
+      await expect(page.getByText('45 días', { exact: true })).toBeVisible();
 
       await auditarContraste(page, 'ventana de enmienda');
     });

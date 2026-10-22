@@ -33,7 +33,7 @@ function contrasenasIguales(grupo: AbstractControl): ValidationErrors | null {
   selector: 'app-reset-password-page',
   imports: [ReactiveFormsModule, RouterLink],
   templateUrl: './reset-password-page.html',
-  styleUrl: '../../auth.css',
+  styleUrls: ['../../auth.css', '../../../../shared/styles/acceso.css'],
 })
 export class ResetPasswordPage {
   /** Mostrar u ocultar la contraseña mientras se escribe (diseño del canvas). Solo cambia el input. */

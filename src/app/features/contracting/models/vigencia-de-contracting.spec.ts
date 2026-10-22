@@ -77,7 +77,7 @@ describe('situacionDeVigencia', () => {
     );
 
     expect(situacion.clave).toBe('dada-de-baja');
-    expect(situacion.explicacion).toContain('no hay reactivacion');
+    expect(situacion.explicacion).toContain('no hay reactivación');
     expect(situacion.explicacion).toContain('nunca reescribe historicos');
   });
 

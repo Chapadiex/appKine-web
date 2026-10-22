@@ -29,7 +29,7 @@ const DESTINO_POR_DEFECTO = '/organizacion';
   selector: 'app-login-page',
   imports: [ReactiveFormsModule, RouterLink],
   templateUrl: './login-page.html',
-  styleUrl: '../../auth.css',
+  styleUrls: ['../../auth.css', '../../../../shared/styles/acceso.css'],
 })
 export class LoginPage {
   private readonly session = inject(SessionService);

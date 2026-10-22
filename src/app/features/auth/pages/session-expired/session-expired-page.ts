@@ -23,7 +23,7 @@ import { Icono } from '../../../../shared/components/icono/icono';
   selector: 'app-session-expired-page',
   imports: [Icono, RouterLink],
   templateUrl: './session-expired-page.html',
-  styleUrl: '../../auth.css',
+  styleUrls: ['../../auth.css', '../../../../shared/styles/acceso.css'],
 })
 export class SessionExpiredPage {
   private readonly ruta = inject(ActivatedRoute);

@@ -42,7 +42,7 @@ test.describe('Horarios y disponibilidad contra el backend real', () => {
 
     // --- Bloque semanal por pantalla ---
     await navegar(page, '/horarios');
-    await page.getByLabel('Elegi un profesional').selectOption({ label: profesional.nombre });
+    await page.getByLabel('Elegí un profesional').selectOption({ label: profesional.nombre });
     await expect(
       page.getByRole('heading', { name: `Semana de ${profesional.nombre}`, level: 2 }),
     ).toBeVisible();

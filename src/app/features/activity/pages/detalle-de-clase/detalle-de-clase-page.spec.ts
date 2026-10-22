@@ -176,7 +176,10 @@ describe('DetalleDeClasePage', () => {
     const texto = textoDe(fixture);
     expect(texto).not.toContain('Participantes');
     expect(texto).not.toContain('Inscribir a una persona');
-    expect(texto).not.toContain('Reprogramar');
+    expect((fixture.nativeElement as HTMLElement).querySelector('#boton-reprogramar')).toBeNull();
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector('#boton-cancelar-clase'),
+    ).toBeNull();
     httpMock.expectNone(INSCRIPCIONES);
   });
 
@@ -359,7 +362,7 @@ describe('DetalleDeClasePage', () => {
     await asentar(fixture);
     const texto = textoDe(fixture);
     expect(texto).toContain('Clase cancelada');
-    expect(texto).toContain('Cancelada — Profesional enfermo');
+    expect(texto).toContain('Motivo de la cancelación: Profesional enfermo');
     expect(texto).not.toContain('Inscribir a una persona');
   });
 
@@ -452,6 +455,6 @@ describe('DetalleDeClasePage', () => {
       .flush({ claseId: ID, principalMembershipId: 55, principalNombre: 'Lic. Diaz' });
     await asentar(fixture);
     expect(textoDe(fixture)).toContain('Cambiar los instructores adicionales');
-    expect(textoDe(fixture)).not.toContain('Reprogramar');
+    expect((fixture.nativeElement as HTMLElement).querySelector('#boton-reprogramar')).toBeNull();
   });
 });

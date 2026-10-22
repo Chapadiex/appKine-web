@@ -113,7 +113,7 @@ describe('PresentacionesPage', () => {
     const fixture = await montar([]);
 
     enviar(fixture, 1);
-    expect(contenido(fixture)).toContain('Elegí a que financiador se presenta.');
+    expect(contenido(fixture)).toContain('Elegí a qué financiador se presenta.');
 
     elegir(fixture, '#alta-financiador', '10');
     escribir(fixture, '#alta-desde', '2026-09-30');

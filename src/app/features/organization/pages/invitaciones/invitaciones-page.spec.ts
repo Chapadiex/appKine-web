@@ -318,7 +318,7 @@ describe('InvitacionesPage', () => {
     // Lo que importa es que NO se emita la peticion: un 400 del backend sobre el mismo campo
     // llega mas tarde, gasta un intento del rate limit y queda auditado en el tenant.
     httpMock.expectNone(esAlta());
-    expect(anfitrion.textContent).toContain('Escribi un email valido');
+    expect(anfitrion.textContent).toContain('Escribí un correo válido');
   });
 
   it('una persona ya vinculada aterriza en el campo del email y manda al listado de colaboradores', async () => {

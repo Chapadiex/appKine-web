@@ -80,9 +80,9 @@ describe('parsearPlanilla', () => {
     expect(errores.map((error) => error.linea)).toEqual([2, 3, 4, 5, 6]);
     expect(errores[0].mensaje).toContain('mas de dos decimales');
     expect(errores[1].mensaje).toContain('Falta la práctica');
-    expect(errores[2].mensaje).toContain('no es un importe valido');
-    expect(errores[2].mensaje).toContain('no es una fecha valida');
-    expect(errores[3].mensaje).toContain('no es un importe valido');
+    expect(errores[2].mensaje).toContain('no es un importe válido');
+    expect(errores[2].mensaje).toContain('no es una fecha válida');
+    expect(errores[3].mensaje).toContain('no es un importe válido');
     expect(errores[4].mensaje).toContain('7 columnas');
   });
 

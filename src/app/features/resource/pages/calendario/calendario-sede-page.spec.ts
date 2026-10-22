@@ -360,7 +360,11 @@ describe('CalendarioSedePage', () => {
       expect(texto(fixture)).not.toContain('Hay cambios sin guardar en el horario');
       expect(texto(fixture)).toContain('Navidad');
       // Sin impacto en la respuesta no hay aviso: en cero no se muestra nada.
-      expect(texto(fixture)).not.toContain('fuera del horario');
+      expect(
+        (fixture.nativeElement as HTMLElement).querySelector(
+          '[aria-label="Turnos fuera del horario"]',
+        ),
+      ).toBeNull();
     });
 
     it('si el horario nuevo deja turnos afuera lo dice, con la lista y sin cancelarlos', async () => {

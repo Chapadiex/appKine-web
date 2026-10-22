@@ -1098,7 +1098,7 @@
 
                       <p class="acciones">
                         <button type="submit" class="boton" [disabled]="enviando()">
-                          {{ enviando() ? 'Guardando...' : 'Guardar la autorizacion' }}
+                          {{ enviando() ? 'Guardando...' : 'Guardar la autorización' }}
                         </button>
                         <button
                           type="button"
@@ -1183,7 +1183,7 @@
                     titulo="Dar de baja la autorizacion {{ autorizacion.numero }}"
                     etiqueta="Motivo"
                     ayuda="Dar de baja NO es rechazar y NO es vencer. Rechazar es la respuesta del financiador y deja la autorizacion viva, explicando por que no se pudo atender. Dar de baja significa que nunca debio cargarse. No borra nada, y el numero se puede volver a usar."
-                    textoConfirmar="Confirmar la baja de la autorizacion"
+                    textoConfirmar="Confirmar la baja de la autorización"
                     [enviando]="enviando()"
                     (confirmado)="confirmarBajaDeAutorizacion($event)"
                     (cancelado)="cerrarPaneles()"

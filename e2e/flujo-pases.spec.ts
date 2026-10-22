@@ -333,7 +333,7 @@ test.describe('Pases contra el backend real', () => {
     // ---- Apagarla desde la fila: PUT con la version leida, y la fila lo dice.
     const renovacion = respuestaDe(page, 'PUT', RENOVACION);
     await filaDe(page, abono)
-      .getByRole('button', { name: `Desactivar la renovacion automatica de ${abono}` })
+      .getByRole('button', { name: `Desactivar la renovación automática de ${abono}` })
       .click();
     const respuestaRenovacion = await renovacion;
     expect(respuestaRenovacion.status()).toBe(200);
@@ -344,7 +344,7 @@ test.describe('Pases contra el backend real', () => {
     await expect(filaDe(page, abono)).toContainText('No se renueva solo.');
     await expect(
       filaDe(page, abono).getByRole('button', {
-        name: `Activar la renovacion automatica de ${abono}`,
+        name: `Activar la renovación automática de ${abono}`,
       }),
     ).toBeVisible();
   });
@@ -393,7 +393,7 @@ test.describe('Pases contra el backend real', () => {
     // Encabezado + 20 filas; la primera es la compra, la mas vieja.
     await expect(movimientos.getByRole('row')).toHaveCount(21);
     await expect(movimientos.getByRole('row').nth(1)).toContainText('Compra');
-    const paginas = page.getByRole('navigation', { name: 'Paginas de movimientos del pase' });
+    const paginas = page.getByRole('navigation', { name: 'Páginas de movimientos del pase' });
     await expect(paginas).toContainText('Pagina 1 de 2');
 
     const segunda = respuestaDe(page, 'GET', MOVIMIENTOS);

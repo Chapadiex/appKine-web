@@ -122,7 +122,7 @@ describe('traducirErrorPersona', () => {
     const traducido = traducirErrorPersona(problema('subscription-suspended', 409, {}));
 
     expect(traducido.causa).toBe('suscripcion-suspendida');
-    expect(traducido.mensaje).toContain('suscripcion');
+    expect(traducido.mensaje).toContain('suscripción');
   });
 
   it('C-4: la reversión repetida pide releer y la reversión sin motivo es validacion', () => {

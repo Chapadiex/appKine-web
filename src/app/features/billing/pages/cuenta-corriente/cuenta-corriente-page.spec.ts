@@ -153,7 +153,7 @@ describe('CuentaCorrientePage', () => {
     expect(contenido).toContain('Coseguro');
     expect(contenido).toContain('Convenio OSDE 210');
     expect(contenido).not.toContain('COSEGURO');
-    expect(contenido).toContain('la práctica facturada no esta habilitada en la oferta');
+    expect(contenido).toContain('la práctica facturada no está habilitada en la oferta');
     const enlace = (fixture.nativeElement as HTMLElement).querySelector(
       'a[href="/presentaciones"]',
     );

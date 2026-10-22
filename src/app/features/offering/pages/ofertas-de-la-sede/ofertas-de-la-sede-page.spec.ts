@@ -201,7 +201,7 @@ describe('OfertasDeLaSedePage', () => {
   it('el alta OMITE lo que quedo en heredar: heredar no es apagar', async () => {
     const fixture = await montar();
 
-    abrir(fixture, 'Dar de alta una oferta');
+    abrir(fixture, 'Publicar un servicio en la sede');
     elegir(fixture, '#alta-oferta-servicio', '1');
     escribir(fixture, '#alta-oferta-nombre', 'Kinesio respiratoria');
     escribir(fixture, '#alta-oferta-duracion', '45');
@@ -240,7 +240,7 @@ describe('OfertasDeLaSedePage', () => {
   it('el alta ofrece POR_CLASE, explica que devenga con la asistencia y lo manda (U-39)', async () => {
     const fixture = await montar();
 
-    abrir(fixture, 'Dar de alta una oferta');
+    abrir(fixture, 'Publicar un servicio en la sede');
     const host = fixture.nativeElement as HTMLElement;
     const opciones = [...host.querySelectorAll('#alta-oferta-esquema option')].map(
       (opcion) => (opcion as HTMLOptionElement).value,
@@ -516,7 +516,7 @@ describe('OfertasDeLaSedePage', () => {
     expect(anfitrion.textContent).toContain('Rehabilitacion respiratoria adultos');
 
     const botones = textoDeBotones(fixture);
-    expect(botones).not.toContain('Dar de alta una oferta');
+    expect(botones).not.toContain('Publicar un servicio en la sede');
     expect(botones).not.toContain('Editar');
     expect(botones).not.toContain('Dar de baja');
 
@@ -535,7 +535,7 @@ describe('OfertasDeLaSedePage', () => {
   it('el alta sin servicio ni nombre ni duración no emite ninguna peticion', async () => {
     const fixture = await montar();
 
-    abrir(fixture, 'Dar de alta una oferta');
+    abrir(fixture, 'Publicar un servicio en la sede');
     enviar(fixture, 'form[novalidate]');
 
     httpMock.expectNone(esAlta());
@@ -646,7 +646,7 @@ describe('OfertasDeLaSedePage', () => {
     expect(anfitrion.textContent).toContain('Masoterapia (MASO)');
 
     // Pero ofrecerlo en el alta seria empujar al usuario a un 409.
-    abrir(fixture, 'Dar de alta una oferta');
+    abrir(fixture, 'Publicar un servicio en la sede');
     const opciones = [
       ...anfitrion.querySelectorAll<HTMLOptionElement>('#alta-oferta-servicio option'),
     ].map((opcion) => opcion.textContent?.trim());
@@ -662,7 +662,7 @@ describe('OfertasDeLaSedePage', () => {
     // Sin catalogo el nombre no resuelve, y se muestra el id pelado en vez de una celda vacia.
     expect(anfitrion.textContent).toContain('Servicio #1');
 
-    abrir(fixture, 'Dar de alta una oferta');
+    abrir(fixture, 'Publicar un servicio en la sede');
     expect(anfitrion.textContent).toContain('No pudimos traer el catalogo de servicios');
   });
 
@@ -932,7 +932,7 @@ describe('OfertasDeLaSedePage', () => {
     fixture: ComponentFixture<OfertasDeLaSedePage>,
     campos?: { readonly duracion?: string; readonly capacidad?: string },
   ) {
-    abrir(fixture, 'Dar de alta una oferta');
+    abrir(fixture, 'Publicar un servicio en la sede');
     elegir(fixture, '#alta-oferta-servicio', '1');
     escribir(fixture, '#alta-oferta-nombre', 'Kinesio respiratoria');
     escribir(fixture, '#alta-oferta-duracion', campos?.duracion ?? '45');

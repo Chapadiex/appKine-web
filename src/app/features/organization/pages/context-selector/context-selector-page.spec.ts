@@ -89,7 +89,7 @@ describe('ContextSelectorPage', () => {
     const fixture = TestBed.createComponent(ContextSelectorPage);
     fixture.detectChanges();
 
-    expect(texto(fixture)).toContain('Buscando tus contextos');
+    expect(texto(fixture)).toContain('Buscando tus centros');
 
     httpMock.expectOne(URL_CONTEXTOS).flush([]);
   });
@@ -139,7 +139,7 @@ describe('ContextSelectorPage', () => {
     const fixture = await pintar([CONTEXTO_BELGRANO]);
 
     expect(texto(fixture)).toContain('Centro Kinesico Belgrano');
-    expect(texto(fixture)).toContain('Tenés un solo contexto habilitado');
+    expect(texto(fixture)).toContain('Tenés un solo lugar de trabajo habilitado');
 
     httpMock.expectOne(URL_CANJE).flush(tokenDeContexto(1, 1));
   });
@@ -163,7 +163,7 @@ describe('ContextSelectorPage', () => {
     const opciones = Array.from(
       (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>('.opcion'),
     );
-    expect(opciones.map((o) => o.querySelector('.opcion__organizacion')?.textContent)).toEqual([
+    expect(opciones.map((o) => o.querySelector('.visualmente-oculto')?.textContent)).toEqual([
       'Centro Kinesico Caballito',
       'Centro Kinesico Belgrano',
     ]);
@@ -208,7 +208,7 @@ describe('ContextSelectorPage', () => {
     await estabilizar(fixture);
 
     expect(texto(fixture)).toContain('Entrando a Centro Kinesico Belgrano');
-    expect(texto(fixture)).not.toContain('Tenés un solo contexto habilitado');
+    expect(texto(fixture)).not.toContain('Tenés un solo lugar de trabajo habilitado');
 
     httpMock.expectOne(URL_CANJE).flush(tokenDeContexto(1, 1));
   });
@@ -227,8 +227,8 @@ describe('ContextSelectorPage', () => {
   it('sin contextos distingue el vacío del error y no lo trata como fallo', async () => {
     const fixture = await pintar([]);
 
-    expect(texto(fixture)).toContain('No tenés organizaciones asignadas');
-    expect(texto(fixture)).toContain('Contacta a tu administrador');
+    expect(texto(fixture)).toContain('Tu cuenta todavía no tiene dónde trabajar');
+    expect(texto(fixture)).toContain('Pedile a quien administra un centro que te dé acceso');
     // Vacio no es error: no se anuncia como alerta.
     expect(fixture.nativeElement.querySelector('[role="alert"]')).toBeNull();
   });
@@ -236,13 +236,13 @@ describe('ContextSelectorPage', () => {
   it('descarta los contextos sin organización, que no son elegibles', async () => {
     const fixture = await pintar([{ consultorioName: 'Huerfano' }]);
 
-    expect(texto(fixture)).toContain('No tenés organizaciones asignadas');
+    expect(texto(fixture)).toContain('Tu cuenta todavía no tiene dónde trabajar');
   });
 
   it('descarta los contextos sin consultorio: el canje exige los dos ids', async () => {
     const fixture = await pintar([{ organizationId: 3, organizationName: 'Centro Sin Sede' }]);
 
-    expect(texto(fixture)).toContain('No tenés organizaciones asignadas');
+    expect(texto(fixture)).toContain('Tu cuenta todavía no tiene dónde trabajar');
   });
 
   // --- Destino ---------------------------------------------------------------------
@@ -392,7 +392,7 @@ describe('ContextSelectorPage', () => {
     httpMock.expectOne(URL_CONTEXTOS).flush([]);
     await estabilizar(fixture);
 
-    expect(texto(fixture)).toContain('No tenés organizaciones asignadas');
+    expect(texto(fixture)).toContain('Tu cuenta todavía no tiene dónde trabajar');
   });
 
   it('un 403 dice que la sesión no esta activa, no que el servidor fallo', async () => {

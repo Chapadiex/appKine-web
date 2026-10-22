@@ -122,7 +122,7 @@ describe('ResetPasswordPage', () => {
     const fixture = crear();
 
     expect(fixture.nativeElement.querySelector('form')).toBeNull();
-    expect(texto(fixture)).toContain('El enlace vino incompleto');
+    expect(texto(fixture)).toContain('Vino incompleto: falta el código');
     expect(enlaces(fixture)).toContain('/auth/olvide-mi-contrasena');
     httpMock.verify();
   });

@@ -68,7 +68,7 @@ export type CausaAtencion =
   | 'enmienda-cambia-practicas'
   /** 400 `enmienda-sin-motivo`: una enmienda sin motivo es una correccion silenciosa. */
   | 'enmienda-sin-motivo'
-  /** 409 `caso-clinico-cerrado` / `caso-no-activo`: el caso elegido ya no esta activo. */
+  /** 409 `caso-clinico-cerrado` / `caso-no-activo`: el caso elegido ya no está activo. */
   | 'caso-no-activo'
   /**
    * 409 `caso-de-atencion-grupal` (AKINE-08.05): la atencion es de un participante de una clase y
@@ -183,8 +183,8 @@ const MENSAJE_ENMIENDA_SIN_MOTIVO =
   'silencioso, que es justamente lo que el historial existe para evitar.';
 
 const MENSAJE_CASO_NO_ACTIVO =
-  'El caso elegido ya no esta activo. Elegí otro, o inicia la atención sin caso y reabrilo desde ' +
-  'la historia clínica si correspondia.';
+  'El caso elegido ya no está activo. Elegí otro, o iniciá la atención sin caso y reabrilo desde ' +
+  'la historia clínica si correspondía.';
 
 const MENSAJE_CASO_DE_ATENCION_GRUPAL =
   'El caso de esta atención no se puede cambiar: es la atención de un participante de una clase, ' +

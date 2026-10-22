@@ -70,7 +70,7 @@ describe('ForgotPasswordPage', () => {
     fixture.detectChanges();
 
     expect(boton(fixture).disabled).toBe(true);
-    expect(texto(fixture)).toContain('Volvé a intentar en 30 segundos');
+    expect(texto(fixture)).toContain('Espera 30 segundos y volvé a intentar');
   });
 
   it('no sale a la red sin email y enfoca el campo vacío', () => {

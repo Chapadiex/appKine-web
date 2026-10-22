@@ -320,9 +320,9 @@ describe('ConveniosDeLaSedePage', () => {
 
     httpMock.expectNone((peticion: HttpRequest<unknown>) => peticion.method === 'POST');
     const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
-    expect(texto).toContain('Eligi con que financiador se firma');
+    expect(texto).toContain('Elegí con qué financiador se firma');
     expect(texto).toContain('El plan es obligatorio');
-    expect(texto).toContain('Eligi como se liquida');
+    expect(texto).toContain('Elegí cómo se liquida');
     expect(texto).toContain('La moneda es obligatoria');
   });
 
@@ -387,7 +387,7 @@ describe('ConveniosDeLaSedePage', () => {
     fixture.detectChanges();
 
     expect((fixture.nativeElement as HTMLElement).textContent).toContain(
-      'El código y el periodo quedan libres',
+      'El código y el período quedan libres',
     );
   });
 

@@ -123,21 +123,19 @@
         <button
           type="button"
           class="navegador-fecha__boton navegador-fecha__boton--flecha"
-          aria-label="Semana anterior"
           title="Semana anterior"
           (click)="moverVentana(-1)"
         >
-          ‹
+          <span aria-hidden="true">‹</span><span class="visualmente-oculto">Semana anterior</span>
         </button>
         <button type="button" class="navegador-fecha__boton" (click)="irAHoy()">Hoy</button>
         <button
           type="button"
           class="navegador-fecha__boton navegador-fecha__boton--flecha"
-          aria-label="Semana siguiente"
           title="Semana siguiente"
           (click)="moverVentana(1)"
         >
-          ›
+          <span aria-hidden="true">›</span><span class="visualmente-oculto">Semana siguiente</span>
         </button>
         <span class="navegador-fecha__etiqueta">{{ etiquetaDeVentana() }}</span>
       </div>
