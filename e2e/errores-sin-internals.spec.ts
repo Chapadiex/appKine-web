@@ -246,7 +246,8 @@ test.describe('Escenario 11 - ningun error expone internals del servidor', () =>
     await expect(page.getByRole('alert')).toBeVisible();
 
     await page.goto('/organizacion');
-    await expect(page.getByRole('banner')).toBeVisible();
+    // Sin sesion termina en el login, que no tiene barra superior: alcanza con que pinte su titulo.
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
 
     esperarSinInternals(consola.join('\n'), 'la consola del navegador');
   });
