@@ -48,7 +48,7 @@ export function situacionDeOrden(orden: OrdenResponse): string {
   if (orden.vencida === true) {
     return 'Vencida';
   }
-  return orden.vigente === true ? 'Vigente' : 'Todavia no vigente';
+  return orden.vigente === true ? 'Vigente' : 'Todavía no vigente';
 }
 
 /**
@@ -61,10 +61,10 @@ const NOMBRES_DE_SITUACION: Record<OrdenResponseSituacionEnum, string> = {
   CUMPLIDA: 'Cumplida: se consumieron las sesiones prescriptas',
   VENCIDA: 'Vencida',
   EN_CURSO: 'En curso: ya tiene sesiones consumidas',
-  AUTORIZADA: 'Autorizada, sin sesiones consumidas todavia',
+  AUTORIZADA: 'Autorizada, sin sesiones consumidas todavía',
   EN_TRAMITE: 'En tramite con el financiador',
   RECHAZADA: 'Rechazada por el financiador',
-  SIN_AUTORIZACION: 'Sin autorizacion cargada',
+  SIN_AUTORIZACION: 'Sin autorización cargada',
 };
 
 /**
@@ -99,7 +99,7 @@ export function avisoDeVencimiento(dias: number | undefined): string {
   if (dias === 0) {
     return 'Vence hoy';
   }
-  return dias === 1 ? 'Vence manana' : `Vence en ${dias} dias`;
+  return dias === 1 ? 'Vence mañana' : `Vence en ${dias} días`;
 }
 
 /** Quien firmo, con matricula si la hay. La matricula es opcional: el papel puede ser ilegible. */
@@ -142,12 +142,12 @@ export function estadoDeAutorizacion(autorizacion: AutorizacionResponse): string
 const NOMBRES_DE_EVENTO: Record<EventoDeAutorizacionResponseTipoEnum, string> = {
   ALTA: 'Alta',
   APROBACION: 'Aprobacion del financiador',
-  OBSERVACION: 'Observacion del financiador',
+  OBSERVACION: 'Observación del financiador',
   RECHAZO: 'Rechazo del financiador',
   MODIFICACION: 'Correccion',
   DOCUMENTO: 'Comprobante',
-  CONSUMO: 'Consumo de una sesion',
-  REVERSION_DE_CONSUMO: 'Reversion de un consumo',
+  CONSUMO: 'Consumo de una sesión',
+  REVERSION_DE_CONSUMO: 'Reversión de un consumo',
   ANULACION: 'Baja',
 };
 
@@ -295,18 +295,18 @@ export function motivoDeElegibilidad(respuesta: ElegibilidadResponse): string {
   switch (respuesta.motivo) {
     case 'COBERTURA_PARTICULAR':
       return (
-        'La cobertura es particular, asi que no hay financiador que exija nada. No falta ningun ' +
+        'La cobertura es particular, así que no hay financiador que exija nada. No falta ningún ' +
         'papel.'
       );
     case 'SIN_CONVENIO_VIGENTE':
       return (
-        'Este centro no tiene convenio vigente con ese plan, asi que el paciente se atiende como ' +
+        'Este centro no tiene convenio vigente con ese plan, así que el paciente se atiende como ' +
         'particular. No es un error de carga.'
       );
     case 'SIN_ARANCEL_VIGENTE':
       return (
-        'Hay convenio, pero esa practica no tiene arancel cargado. Es un hueco de configuracion ' +
-        'del centro y no un motivo para negar la atencion: avisale a quien administra los ' +
+        'Hay convenio, pero esa práctica no tiene arancel cargado. Es un hueco de configuración ' +
+        'del centro y no un motivo para negar la atención: avisale a quien administra los ' +
         'convenios.'
       );
     default:

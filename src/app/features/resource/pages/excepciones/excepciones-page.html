@@ -59,7 +59,7 @@
             aria-describedby="ventana-hasta-ayuda"
           />
           <p class="ayuda" id="ventana-hasta-ayuda">
-            No se incluye este dia. El maximo es de {{ maximoDias }} dias.
+            No se incluye este día. El máximo es de {{ maximoDias }} días.
           </p>
         </div>
       </div>
@@ -86,8 +86,8 @@
           }
         </select>
         <p class="ayuda" id="filtro-alcance-ayuda">
-          Elegir un profesional muestra <b>las suyas y ademas las de toda la sede</b>, porque un
-          cierre del centro tambien le aplica a el. Sin elegir a nadie se ven solo las de la sede.
+          Elegir un profesional muestra <b>las suyas y además las de toda la sede</b>, porque un
+          cierre del centro también le aplica a el. Sin elegir a nadie se ven solo las de la sede.
         </p>
         @if (profesionalesConocidos() && !listaCompleta()) {
           <p class="ayuda">{{ textoListaIncompleta }}</p>
@@ -136,9 +136,9 @@
       }
 
       @case ('sin-contexto') {
-        <p class="estado estado--vacio">Todavia no elegiste un consultorio.</p>
+        <p class="estado estado--vacio">Todavía no elegiste un consultorio.</p>
         <p class="ayuda">
-          Los cierres y las aperturas son de una sede concreta. Tu sesion sigue abierta: solo falta
+          Los cierres y las aperturas son de una sede concreta. Tu sesión sigue abierta: solo falta
           elegir donde estas trabajando.
         </p>
         <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
@@ -212,8 +212,8 @@
                   }
                 </select>
                 <p class="ayuda" id="alta-excepcion-alcance-ayuda">
-                  "Toda la sede" no es dejar el campo vacio: es una decision, y alcanza a todos los
-                  profesionales que atienden aca.
+                  "Toda la sede" no es dejar el campo vacío: es una decision, y alcanza a todos los
+                  profesionales que atienden acá.
                 </p>
                 <!--
                   Una lista recortada SI sirve para elegir —los que estan, estan de verdad— y por
@@ -225,8 +225,8 @@
                 }
               } @else {
                 <p class="estado estado--error" role="alert">
-                  No pudimos leer los profesionales de la sede, asi que no sabemos a quien podes
-                  alcanzar. La unica opcion que quedaria es <b>toda la sede</b>, que alcanza a
+                  No pudimos leer los profesionales de la sede, así que no sabemos a quien podés
+                  alcanzar. La unica opción que quedaria es <b>toda la sede</b>, que alcanza a
                   todos: no la ofrecemos a ciegas.
                 </p>
                 <button
@@ -241,10 +241,10 @@
 
             <div class="ventana">
               <div class="campo">
-                <label for="alta-excepcion-desde">Primer dia</label>
+                <label for="alta-excepcion-desde">Primer día</label>
                 <input id="alta-excepcion-desde" type="date" formControlName="fechaDesde" />
                 @if (mostrarError('fechaDesde')) {
-                  <p class="campo__error">Indica el primer dia cubierto.</p>
+                  <p class="campo__error">Indica el primer día cubierto.</p>
                 }
               </div>
 
@@ -257,18 +257,18 @@
                   aria-describedby="alta-excepcion-hasta-ayuda"
                 />
                 @if (mostrarError('fechaHasta')) {
-                  <p class="campo__error">Indica el fin de la excepcion.</p>
+                  <p class="campo__error">Indica el fin de la excepción.</p>
                 }
                 <p class="ayuda" id="alta-excepcion-hasta-ayuda">
-                  Primer dia que ya <b>no</b> queda cubierto. Para un solo dia, el dia siguiente.
+                  Primer día que ya <b>no</b> queda cubierto. Para un solo día, el día siguiente.
                 </p>
               </div>
             </div>
 
             @if (errorDeGrupo('rangoFechas')) {
               <p class="campo__error" role="alert">
-                El fin tiene que ser posterior al primer dia. Con la misma fecha en los dos campos
-                no se cubre ningun dia.
+                El fin tiene que ser posterior al primer día. Con la misma fecha en los dos campos
+                no se cubre ningún día.
               </p>
             }
 
@@ -278,7 +278,7 @@
                 type="checkbox"
                 formControlName="diaCompleto"
               />
-              Dia completo
+              Día completo
             </label>
 
             @if (!formularioAlta.controls.diaCompleto.value) {
@@ -317,7 +317,7 @@
                     <p class="campo__error">Escribi la hora de fin como HH:MM.</p>
                   }
                   <p class="ayuda" id="alta-excepcion-hora-hasta-ayuda">
-                    Para llegar al final del dia, 24:00. Las 00:00 serian el principio del dia.
+                    Para llegar al final del día, 24:00. Las 00:00 serian el principio del día.
                   </p>
                 </div>
               </div>
@@ -325,7 +325,7 @@
 
             @if (errorDeGrupo('franjaIncompleta')) {
               <p class="campo__error" role="alert">
-                Una franja necesita las dos horas. Si la excepcion dura todo el dia, marca "Dia
+                Una franja necesita las dos horas. Si la excepción dura todo el día, marca "Día
                 completo".
               </p>
             }
@@ -346,15 +346,15 @@
                 aria-describedby="alta-excepcion-notas-ayuda"
               ></textarea>
               <p class="ayuda" id="alta-excepcion-notas-ayuda">
-                Texto libre operativo. <b>Nunca informacion clinica</b>: esto no es una historia
-                clinica y lo lee cualquiera con acceso a la agenda.
+                Texto libre operativo. <b>Nunca información clínica</b>: esto no es una historia
+                clínica y lo lee cualquiera con acceso a la agenda.
               </p>
             </div>
 
             @if (esApertura() && esDeSede()) {
               <p class="ayuda">
                 Vas a cargar una apertura de <b>toda la sede</b>. Si cae en un feriado que la sede
-                cierra, ese dia reemplaza el horario habitual de todos: antes de guardar te lo vamos
+                cierra, ese día reemplaza el horario habitual de todos: antes de guardar te lo vamos
                 a decir con los feriados concretos.
               </p>
             }
@@ -365,7 +365,7 @@
                 class="boton"
                 [disabled]="enviando() || !profesionalesConocidos()"
               >
-                Cargar la excepcion
+                Cargar la excepción
               </button>
               <button type="button" class="boton boton--secundario" (click)="cerrarAlta()">
                 Cancelar
@@ -380,7 +380,7 @@
             <div aria-live="assertive">
               @if (avisoDeApertura(); as aviso) {
                 <div class="aviso-apertura" role="alert">
-                  <h4 class="panel__titulo">Esta apertura le cambia el dia a toda la sede</h4>
+                  <h4 class="panel__titulo">Esta apertura le cambia el día a toda la sede</h4>
 
                   @if (aviso.verificado) {
                     <p>
@@ -402,18 +402,18 @@
                       <p>
                         <b>No sabemos a cuantos profesionales alcanza</b>: la lista de vinculos de
                         la sede no pudo leerse completa. <b>No es cero:</b> una apertura de sede
-                        reemplaza el horario base de todos los que atiendan ese dia.
+                        reemplaza el horario base de todos los que atiendan ese día.
                       </p>
                     } @else if (cantidadAfectada() === 0) {
                       <p>
-                        Hoy no figura ningun profesional vinculado a esta sede,
+                        Hoy no figura ningún profesional vinculado a esta sede,
                         <b>pero la apertura igual reemplaza</b> el horario base de quien lo este ese
-                        dia.
+                        día.
                       </p>
                     } @else {
                       <p>
                         <b
-                          >Ese dia el horario habitual de {{ textoAfectados() }} no va a aplicar.</b
+                          >Ese día el horario habitual de {{ textoAfectados() }} no va a aplicar.</b
                         >
                         Solo se va a atender en la franja de esta apertura: la apertura de sede
                         <b>reemplaza</b> el horario base de cada profesional, no se suma a el.
@@ -421,11 +421,11 @@
                     }
                   } @else {
                     <p>
-                      <b>No pudimos consultar el calendario de feriados</b>, asi que no sabemos si
+                      <b>No pudimos consultar el calendario de feriados</b>, así que no sabemos si
                       este periodo pisa alguno.
                     </p>
                     <p>
-                      Si lo pisa y la sede cierra por feriado, ese dia
+                      Si lo pisa y la sede cierra por feriado, ese día
                       <b>no va a aplicar el horario habitual</b> de
                       @if (cantidadAfectada()) {
                         {{ textoAfectados() }}
@@ -483,7 +483,7 @@
                     class="boton boton--secundario"
                     (click)="descartarImpacto()"
                   >
-                    Volver y cambiar la excepcion
+                    Volver y cambiar la excepción
                   </button>
                 </div>
               }
@@ -525,7 +525,7 @@
                 -->
                 <p class="excepcion__titulo">
                   {{ excepcion.tipo === 'APERTURA' ? 'Apertura' : 'Cierre' }}
-                  <span class="excepcion__numero">numero {{ excepcion.id }}</span> —
+                  <span class="excepcion__numero">número {{ excepcion.id }}</span> —
                   {{ alcanceDe(excepcion) }}
                 </p>
 
@@ -536,7 +536,7 @@
                 </p>
 
                 @if (esDiaCompleto(excepcion)) {
-                  <p class="ayuda">Dia completo</p>
+                  <p class="ayuda">Día completo</p>
                 } @else {
                   <p class="ayuda">
                     Franja de {{ rangoHorario(excepcion.horaDesde, excepcion.horaHasta) }}
@@ -552,8 +552,8 @@
                 @if (esAperturaDeSede(excepcion)) {
                   <p class="ayuda excepcion__alerta">
                     Es una apertura de <b>toda la sede</b>: en un feriado que la sede cierre,
-                    reemplaza el horario habitual de todos los profesionales que atienden aca ese
-                    dia.
+                    reemplaza el horario habitual de todos los profesionales que atienden acá ese
+                    día.
                   </p>
                 }
 
@@ -585,7 +585,7 @@
                   >
                     <p class="ayuda">
                       La fila no se borra: queda inactiva con sus fechas intactas, su motivo y su
-                      autor. Si la excepcion vuelve a hacer falta, se carga como una nueva.
+                      autor. Si la excepción vuelve a hacer falta, se carga como una nueva.
                     </p>
                     <app-impacto-previo
                       [estado]="impacto()"

@@ -103,7 +103,7 @@ describe('CatalogoFinanciadoresPage', () => {
     expect(texto(fixture)).toContain('quedo en el catalogo');
   });
 
-  it('edita sin el codigo y con la version leida', async () => {
+  it('edita sin el código y con la versión leida', async () => {
     const fixture = await montar();
     boton(fixture, 'Editar OSDE')?.click();
     fixture.detectChanges();
@@ -126,7 +126,7 @@ describe('CatalogoFinanciadoresPage', () => {
     await asentar(fixture);
   });
 
-  it('la version vieja relee el catalogo y lo explica', async () => {
+  it('la versión vieja relee el catalogo y lo explica', async () => {
     const fixture = await montar();
     boton(fixture, 'Editar OSDE')?.click();
     fixture.detectChanges();

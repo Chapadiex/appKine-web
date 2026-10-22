@@ -157,18 +157,18 @@ describe('FichaDePersonaPage', () => {
   // 1. Omitida por permisos contra vacia
   // -------------------------------------------------------------------------------------
 
-  it('una seccion omitida por permisos dice que falta permiso y nombra cual', async () => {
+  it('una sección omitida por permisos dice que falta permiso y nombra cual', async () => {
     const fixture = await montar(RESUMEN_COMPLETO);
     const contenido = texto(fixture);
 
     expect(contenido).toContain('sin permiso');
-    expect(contenido).toContain('No tenes permiso para ver esta seccion');
+    expect(contenido).toContain('No tenés permiso para ver esta sección');
     // El codigo del permiso es lo que hace accionable el aviso: sin el, quien administra el centro
     // tiene que adivinar que habilitar.
     expect(contenido).toContain('cobro:register');
   });
 
-  it('una seccion vacia dice que se consultó y no hay nada, y NO habla de permisos', async () => {
+  it('una sección vacía dice que se consultó y no hay nada, y NO habla de permisos', async () => {
     const fixture = await montar(RESUMEN_COMPLETO);
     const contenido = texto(fixture);
 
@@ -178,14 +178,14 @@ describe('FichaDePersonaPage', () => {
     expect(contenido).toContain('se consultó y no hay nada');
   });
 
-  it('la seccion omitida no se confunde con la vacia: aparecen las dos, cada una con su titulo', async () => {
+  it('la sección omitida no se confunde con la vacía: aparecen las dos, cada una con su titulo', async () => {
     const fixture = await montar(RESUMEN_COMPLETO);
     const titulos = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('h2')).map(
       (h) => (h.textContent ?? '').trim(),
     );
 
     expect(titulos).toContain('Coberturas');
-    expect(titulos).toContain('Situacion economica — sin permiso');
+    expect(titulos).toContain('Situación económica — sin permiso');
   });
 
   it('en la primera carga toma el resumen que la ruta ya pidio, sin volver a la red', async () => {
@@ -229,7 +229,7 @@ describe('FichaDePersonaPage', () => {
   // 2b. Coberturas vigentes (B-5)
   // -------------------------------------------------------------------------------------
 
-  it('la seccion de coberturas muestra financiador, plan, afiliado enmascarado, vigencia y la credencial vencida', async () => {
+  it('la sección de coberturas muestra financiador, plan, afiliado enmascarado, vigencia y la credencial vencida', async () => {
     const fixture = await montar(RESUMEN_COMPLETO);
     const raiz = fixture.nativeElement as HTMLElement;
     const seccion = raiz.querySelector('[aria-labelledby="titulo-seccion-coberturas"]');
@@ -265,7 +265,7 @@ describe('FichaDePersonaPage', () => {
     expect(contenido).not.toContain('Sin movimientos registrados');
   });
 
-  it('un indicador de dinero se formatea con su moneda y no se suma con ningun otro', async () => {
+  it('un indicador de dinero se formatea con su moneda y no se suma con ningún otro', async () => {
     const fixture = await montar({
       ...RESUMEN_COMPLETO,
       seccionesOmitidas: [],
@@ -293,7 +293,7 @@ describe('FichaDePersonaPage', () => {
     expect(texto(fixture)).toContain('no muestra nada clínico');
   });
 
-  it('con hc:read ofrece la historia clinica del paciente, sin mostrar nada de ella (D-e)', async () => {
+  it('con hc:read ofrece la historia clínica del paciente, sin mostrar nada de ella (D-e)', async () => {
     const fixture = await montar(RESUMEN_COMPLETO, [PERMISO_PACIENTE_MANAGE, PERMISO_HC_READ]);
 
     const enlace = enlaceA(fixture, 'Abrir la historia clínica');
@@ -337,7 +337,7 @@ describe('FichaDePersonaPage', () => {
     expect(texto(fixture)).toContain('No se borro nada');
   });
 
-  it('con el motivo vacio no manda ninguna baja', async () => {
+  it('con el motivo vacío no manda ninguna baja', async () => {
     const fixture = await montar(RESUMEN_COMPLETO);
 
     apretar(fixture, 'Dar de baja la ficha');
@@ -402,7 +402,7 @@ describe('FichaDePersonaPage', () => {
   // 4. Errores
   // -------------------------------------------------------------------------------------
 
-  it('un 404 no habla de permisos: la persona no existe o es de otra organizacion', async () => {
+  it('un 404 no habla de permisos: la persona no existe o es de otra organización', async () => {
     tenantContext.select({
       organizationId: 1,
       organizationName: 'Centro Belgrano',
@@ -424,11 +424,11 @@ describe('FichaDePersonaPage', () => {
       );
     await estabilizar(fixture);
 
-    expect(texto(fixture)).toContain('no es de esta organizacion');
+    expect(texto(fixture)).toContain('no es de esta organización');
     expect(rotulosDeBoton(fixture)).toContain('Reintentar');
   });
 
-  it('un personaId que no es un numero no dispara ninguna peticion', async () => {
+  it('un personaId que no es un número no dispara ninguna peticion', async () => {
     tenantContext.select({
       organizationId: 1,
       organizationName: 'Centro Belgrano',
@@ -523,7 +523,7 @@ describe('FichaDePersonaPage', () => {
       fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>,
     ).find((b) => (b.textContent ?? '').trim() === rotulo);
     if (boton === undefined) {
-      throw new Error(`No hay ningun boton rotulado "${rotulo}".`);
+      throw new Error(`No hay ningún botón rotulado "${rotulo}".`);
     }
     boton.click();
     fixture.detectChanges();

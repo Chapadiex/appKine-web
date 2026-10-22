@@ -489,7 +489,7 @@ export class PasesDePersonaPage {
         this.renovando.set(null);
         this.avisoAccion.set(
           actualizado.renovacionAutomatica
-            ? `"${actualizado.nombre}" se va a renovar solo: unos dias antes del ` +
+            ? `"${actualizado.nombre}" se va a renovar solo: unos días antes del ` +
                 `${formatearFecha(actualizado.vigenciaHasta)} el sistema vende el periodo ` +
                 'siguiente, con el precio del producto de ese momento y su propia deuda. No cobra.'
             : `"${actualizado.nombre}" ya no se renueva solo. El periodo actual sigue como estaba.`,
@@ -551,7 +551,7 @@ export class PasesDePersonaPage {
       return;
     }
     if (!Number.isInteger(productoId) || productoId <= 0) {
-      this.errorVenta.set(validacion('Elegi el producto a vender.'));
+      this.errorVenta.set(validacion('Elegí el producto a vender.'));
       return;
     }
     const producto = this.productoDeLaVenta();
@@ -559,12 +559,12 @@ export class PasesDePersonaPage {
     const desde = this.periodoDesde();
     const hasta = this.periodoHasta();
     if (deAbono && desde === '') {
-      this.errorVenta.set(validacion('Indica desde que dia cubre el abono.'));
+      this.errorVenta.set(validacion('Indica desde que día cubre el abono.'));
       return;
     }
     if (deAbono && hasta !== '' && hasta < desde) {
       this.errorVenta.set(
-        validacion('El ultimo dia del periodo no puede ser anterior al primero.'),
+        validacion('El último día del periodo no puede ser anterior al primero.'),
       );
       return;
     }

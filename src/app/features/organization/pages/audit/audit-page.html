@@ -76,7 +76,7 @@
           </div>
 
           <div class="campo">
-            <label for="auditoria-entityId">Numero de la entidad</label>
+            <label for="auditoria-entityId">Número de la entidad</label>
             <input
               id="auditoria-entityId"
               type="number"
@@ -87,7 +87,7 @@
             />
             @if (mostrarError('entityId')) {
               <p class="campo__error" id="auditoria-entityId-error">
-                Indica el numero de la entidad.
+                Indica el número de la entidad.
               </p>
             }
           </div>
@@ -95,7 +95,7 @@
 
         @case ('actor') {
           <div class="campo">
-            <label for="auditoria-actorAccountId">Numero de cuenta</label>
+            <label for="auditoria-actorAccountId">Número de cuenta</label>
             <input
               id="auditoria-actorAccountId"
               type="number"
@@ -139,7 +139,7 @@
           </div>
 
           <p class="ayuda" id="auditoria-ventana-ayuda">
-            La ventana no puede superar los 90 dias. El dia final se incluye entero.
+            La ventana no puede superar los 90 días. El día final se incluye entero.
           </p>
 
           <div aria-live="polite">
@@ -166,9 +166,9 @@
   <div aria-live="polite">
     @switch (estado().tipo) {
       @case ('inicial') {
-        <p class="estado estado--vacio">Elegi un filtro y presiona Buscar.</p>
+        <p class="estado estado--vacio">Elegí un filtro y presiona Buscar.</p>
         <p class="ayuda">
-          No se consulta nada al entrar: sin un filtro la consulta no es valida, asi que no habria
+          No se consulta nada al entrar: sin un filtro la consulta no es valida, así que no habria
           nada util que mostrar.
         </p>
       }
@@ -198,7 +198,7 @@
             class="tabla-scroll"
             tabindex="0"
             role="region"
-            aria-label="Hechos auditados de la organizacion"
+            aria-label="Hechos auditados de la organización"
           >
             <table class="tabla">
               <caption class="visualmente-oculto">

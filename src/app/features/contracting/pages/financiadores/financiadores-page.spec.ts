@@ -114,10 +114,10 @@ describe('FinanciadoresPage', () => {
     fixture.detectChanges();
 
     // El exito explica el paso siguiente: sin plan no se puede firmar ningun convenio.
-    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Todavia no tiene planes');
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Todavía no tiene planes');
   });
 
-  it('la edicion NO manda el codigo, y el campo ni siquiera se puede tipear', async () => {
+  it('la edicion NO manda el código, y el campo ni siquiera se puede tipear', async () => {
     const fixture = await montar();
 
     abrir(fixture, 'Editar');
@@ -209,7 +209,7 @@ describe('FinanciadoresPage', () => {
       .flush(
         {
           type: 'https://akine.app/problems/concurrent-modification',
-          detail: 'la version quedo vieja',
+          detail: 'la versión quedo vieja',
         },
         { status: 409, statusText: 'Conflict' },
       );
@@ -271,7 +271,7 @@ describe('FinanciadoresPage', () => {
 
     httpMock.expectNone((peticion: HttpRequest<unknown>) => peticion.method === 'POST');
     const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
-    expect(texto).toContain('El codigo es obligatorio');
+    expect(texto).toContain('El código es obligatorio');
     expect(texto).toContain('El nombre es obligatorio');
     expect(texto).toContain('Eligi que tipo de financiador es');
   });
@@ -336,7 +336,7 @@ describe('FinanciadoresPage', () => {
     ).toBe(false);
   });
 
-  it('un error del listado se puede reintentar, y el listado vacio explica que falta', async () => {
+  it('un error del listado se puede reintentar, y el listado vacío explica que falta', async () => {
     const fixture = await montar();
 
     cambiarEstado(fixture, 'INACTIVO');
@@ -374,7 +374,7 @@ describe('FinanciadoresPage', () => {
     expect(anfitrion.textContent).toContain('solo puede cobrar de forma particular');
   });
 
-  it('el filtro por tipo y la busqueda recargan con sus parametros', async () => {
+  it('el filtro por tipo y la búsqueda recargan con sus parametros', async () => {
     const fixture = await montar();
 
     elegir(fixture, '#filtro-tipo-financiador', 'ART');
@@ -467,7 +467,7 @@ function abrir(fixture: { nativeElement: HTMLElement; detectChanges(): void }, e
     (candidato) => (candidato.textContent ?? '').trim() === etiqueta,
   );
   if (boton === undefined) {
-    throw new Error(`No existe el boton ${etiqueta}`);
+    throw new Error(`No existe el botón ${etiqueta}`);
   }
   boton.click();
   fixture.detectChanges();

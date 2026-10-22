@@ -193,7 +193,7 @@ describe('PlanesDelFinanciadorPage', () => {
     expect(texto).toContain('se siguen pudiendo editar');
   });
 
-  it('la edicion manda solo lo que cambio, con la version y sin el codigo', async () => {
+  it('la edicion manda solo lo que cambio, con la versión y sin el código', async () => {
     const fixture = await montar();
 
     abrir(fixture, 'Editar');
@@ -256,7 +256,7 @@ describe('PlanesDelFinanciadorPage', () => {
     fixture.detectChanges();
 
     expect((fixture.nativeElement as HTMLElement).textContent).toContain(
-      'activo pero todavia sin vigencia',
+      'activo pero todavía sin vigencia',
     );
   });
 
@@ -269,7 +269,7 @@ describe('PlanesDelFinanciadorPage', () => {
 
     httpMock.expectNone((peticion: HttpRequest<unknown>) => peticion.method === 'POST');
     const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
-    expect(texto).toContain('El codigo es obligatorio');
+    expect(texto).toContain('El código es obligatorio');
     expect(texto).toContain('El nombre es obligatorio');
   });
 
@@ -331,13 +331,13 @@ describe('PlanesDelFinanciadorPage', () => {
     fixture.detectChanges();
   });
 
-  it('la baja del plan avisa que cerrar la vigencia era otra operacion', async () => {
+  it('la baja del plan avisa que cerrar la vigencia era otra operación', async () => {
     const fixture = await montar();
 
     abrir(fixture, 'Dar de baja');
     const panel = (fixture.nativeElement as HTMLElement).querySelector('tr.fila-panel');
     // Es la advertencia que evita el error caro: dar de baja no se deshace y cerrar la vigencia si.
-    expect(panel?.textContent).toContain('la operacion NO es esta');
+    expect(panel?.textContent).toContain('la operación NO es esta');
     expect(panel?.textContent).toContain('no hay reactivacion');
 
     escribir(fixture, '#baja-plan-motivo', 'El financiador lo discontinuo');
@@ -378,7 +378,7 @@ describe('PlanesDelFinanciadorPage', () => {
       .flush(
         {
           type: 'https://akine.app/problems/concurrent-modification',
-          detail: 'la version quedo vieja',
+          detail: 'la versión quedo vieja',
         },
         { status: 409, statusText: 'Conflict' },
       );
@@ -395,7 +395,7 @@ describe('PlanesDelFinanciadorPage', () => {
     );
   });
 
-  it('el filtro de estado recarga, y el vacio explica que sin plan no hay convenio', async () => {
+  it('el filtro de estado recarga, y el vacío explica que sin plan no hay convenio', async () => {
     const fixture = await montar();
 
     cambiarSelect(fixture, '#filtro-estado-plan', 'TODOS');
@@ -409,11 +409,11 @@ describe('PlanesDelFinanciadorPage', () => {
     fixture.detectChanges();
 
     expect((fixture.nativeElement as HTMLElement).textContent).toContain(
-      'no se puede firmar ningun convenio',
+      'no se puede firmar ningún convenio',
     );
   });
 
-  it('la fecha de vigencia no filtra: cambia contra que dia se calcula, y recarga', async () => {
+  it('la fecha de vigencia no filtra: cambia contra que día se calcula, y recarga', async () => {
     const fixture = await montar();
 
     cambiarFecha(fixture, '#filtro-fecha-plan', '2026-03-15');
@@ -508,7 +508,7 @@ function abrir(fixture: { nativeElement: HTMLElement; detectChanges(): void }, e
     (candidato) => (candidato.textContent ?? '').trim() === etiqueta,
   );
   if (boton === undefined) {
-    throw new Error(`No existe el boton ${etiqueta}`);
+    throw new Error(`No existe el botón ${etiqueta}`);
   }
   boton.click();
   fixture.detectChanges();

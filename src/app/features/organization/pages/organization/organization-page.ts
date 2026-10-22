@@ -112,7 +112,7 @@ function aEstadoDeError(error: Error): EstadoOrganizacion {
   if (!(error instanceof AkineHttpError)) {
     return {
       tipo: 'error',
-      mensaje: 'Error inesperado al pedir los datos de la organizacion.',
+      mensaje: 'Error inesperado al pedir los datos de la organización.',
       esDeRed: false,
       faltaContexto: false,
     };
@@ -130,7 +130,7 @@ function aEstadoDeError(error: Error): EstadoOrganizacion {
   if (error.faltaContexto) {
     return {
       tipo: 'error',
-      mensaje: 'Todavia no elegiste un contexto de trabajo.',
+      mensaje: 'Todavía no elegiste un contexto de trabajo.',
       esDeRed: false,
       faltaContexto: true,
     };
@@ -141,7 +141,7 @@ function aEstadoDeError(error: Error): EstadoOrganizacion {
     // distinguirlos permitiria enumerar los clientes del SaaS probando ids.
     return {
       tipo: 'error',
-      mensaje: 'No encontramos esta organizacion o ya no tenes acceso a ella.',
+      mensaje: 'No encontramos esta organización o ya no tenés acceso a ella.',
       esDeRed: false,
       faltaContexto: false,
     };

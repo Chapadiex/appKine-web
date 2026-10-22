@@ -242,7 +242,7 @@ export class DocumentosDePersonaPage {
     if (id === null) {
       this.estado.set({
         tipo: 'error',
-        mensaje: 'La direccion no identifica a ninguna persona del padron.',
+        mensaje: 'La dirección no identifica a ninguna persona del padron.',
         faltaContexto: false,
       });
       return;
@@ -329,7 +329,7 @@ export class DocumentosDePersonaPage {
           this.archivo.set(null);
           this.exito.set(
             `Se guardo ${nombreDeAdjunto(adjunto)}. Recorda que un documento adjunto no completa ` +
-              'ningun dato de la ficha: si es una credencial, la cobertura hay que cargarla aparte.',
+              'ningún dato de la ficha: si es una credencial, la cobertura hay que cargarla aparte.',
           );
           this.cargar();
         },

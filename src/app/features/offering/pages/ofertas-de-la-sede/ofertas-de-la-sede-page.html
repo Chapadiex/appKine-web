@@ -4,7 +4,7 @@
     <p>
       Como esta sede presta cada servicio del catalogo: con que nombre comercial, cuanto dura, para
       cuanta gente, a que precio y desde cuando. El servicio dice <b>que existe</b>; la oferta dice
-      <b>como lo hacemos aca</b>.
+      <b>como lo hacemos acá</b>.
     </p>
     <p class="ayuda-contextual__subtitulo">Activa y vigente hoy no son lo mismo</p>
     <p>
@@ -12,10 +12,10 @@
       no depende de la fecha.
     </p>
     <p>
-      <b>Vigente hoy</b> quiere decir que ademas hoy cae dentro de su ventana de vigencia, y por eso
+      <b>Vigente hoy</b> quiere decir que además hoy cae dentro de su ventana de vigencia, y por eso
       se ofrece para reservar. Una oferta activa que arranca el mes que viene figura como
-      <b>activa pero todavia sin vigencia</b>: no es un error, y va a empezar a ofrecerse sola ese
-      dia. Lo mismo pasa con los espacios entre <i>activo</i> y <i>en servicio</i>.
+      <b>activa pero todavía sin vigencia</b>: no es un error, y va a empezar a ofrecerse sola ese
+      día. Lo mismo pasa con los espacios entre <i>activo</i> y <i>en servicio</i>.
     </p>
     <p>
       La vigencia se calcula en la <b>zona horaria de la sede</b>, no en la de tu computadora: si
@@ -54,23 +54,23 @@
           [attr.aria-invalid]="mostrarErrorAlta('servicioId') ? 'true' : null"
           aria-describedby="alta-oferta-servicio-ayuda"
         >
-          <option value="">Elegi un servicio</option>
+          <option value="">Elegí un servicio</option>
           @for (servicio of serviciosOfertables(); track servicio.id) {
             <option [value]="servicio.id">{{ servicioEnUnaLinea(servicio) }}</option>
           }
         </select>
         @if (mostrarErrorAlta('servicioId')) {
           <p class="campo__error" role="alert">
-            Toda oferta cuelga de un servicio del catalogo: elegi cual.
+            Toda oferta cuelga de un servicio del catalogo: elegí cual.
           </p>
         }
         <p class="ayuda" id="alta-oferta-servicio-ayuda">
           Solo aparecen los servicios <b>activos</b>: sobre uno dado de baja no se pueden crear
-          ofertas nuevas. El servicio no se puede cambiar despues —cambiar de servicio no es editar
+          ofertas nuevas. El servicio no se puede cambiar después —cambiar de servicio no es editar
           esta oferta, es crear otra—.
           @if (serviciosOfertables().length === 0) {
             <b>
-              No pudimos traer el catalogo de servicios. Recarga la pantalla; si sigue vacio, revisa
+              No pudimos traer el catalogo de servicios. Recarga la pantalla; si sigue vacío, revisa
               el <a routerLink="/servicios/catalogo">catalogo</a>.
             </b>
           }
@@ -92,12 +92,12 @@
         }
         <p class="ayuda" id="alta-oferta-nombre-ayuda">
           Con este nombre la ve el paciente. Puede diferir del nombre del servicio: "Kinesiologia
-          respiratoria" en el catalogo y "Rehabilitacion respiratoria adultos" aca.
+          respiratoria" en el catalogo y "Rehabilitacion respiratoria adultos" acá.
         </p>
       </div>
 
       <div class="campo">
-        <label for="alta-oferta-descripcion">Descripcion (opcional)</label>
+        <label for="alta-oferta-descripcion">Descripción (opcional)</label>
         <input
           id="alta-oferta-descripcion"
           type="text"
@@ -120,14 +120,14 @@
           }
         </select>
         <p class="ayuda" id="alta-oferta-modalidad-ayuda">
-          <b>Heredar</b> no es apagar: si dejas esta opcion, la oferta toma la modalidad por defecto
+          <b>Heredar</b> no es apagar: si dejas esta opción, la oferta toma la modalidad por defecto
           del servicio elegido. Solo eligi una si esta sede la presta distinto.
         </p>
       </div>
 
       <div class="par-de-campos">
         <div class="campo">
-          <label for="alta-oferta-duracion">Duracion (minutos)</label>
+          <label for="alta-oferta-duracion">Duración (minutos)</label>
           <input
             id="alta-oferta-duracion"
             type="number"
@@ -137,7 +137,7 @@
           />
           @if (mostrarErrorAlta('duracionMinutos')) {
             <p class="campo__error" role="alert">
-              La duracion es obligatoria y tiene que ser mayor a cero.
+              La duración es obligatoria y tiene que ser mayor a cero.
             </p>
           }
         </div>
@@ -209,7 +209,7 @@
       </div>
 
       <div class="campo">
-        <label for="alta-oferta-caso">Requiere caso clinico</label>
+        <label for="alta-oferta-caso">Requiere caso clínico</label>
         <select
           id="alta-oferta-caso"
           formControlName="requiereCasoClinico"
@@ -220,14 +220,14 @@
           <option value="false">No lo requiere</option>
         </select>
         <p class="ayuda" id="alta-oferta-caso-ayuda">
-          Otra vez: <b>heredar no es decir que no</b>. Dejando esta opcion, la oferta toma lo que el
+          Otra vez: <b>heredar no es decir que no</b>. Dejando esta opción, la oferta toma lo que el
           servicio propone; eligiendo "No lo requiere" lo estas apagando explicitamente para esta
           sede.
         </p>
       </div>
 
       <div class="campo">
-        <label for="alta-oferta-registro">Genera registro clinico</label>
+        <label for="alta-oferta-registro">Genera registro clínico</label>
         <select
           id="alta-oferta-registro"
           formControlName="generaRegistroClinico"
@@ -239,7 +239,7 @@
         </select>
         <p class="ayuda" id="alta-oferta-registro-ayuda">
           Requerir un caso y generar registro son cosas distintas: se puede exigir el caso sin que
-          cada atencion escriba en la historia clinica.
+          cada atención escriba en la historia clínica.
         </p>
       </div>
 
@@ -260,7 +260,7 @@
           Requiere espacio o box
         </label>
         <p class="ayuda">
-          Estos dos <b>no heredan</b> del servicio: el catalogo no propone ningun valor para ellos,
+          Estos dos <b>no heredan</b> del servicio: el catalogo no propone ningún valor para ellos,
           porque dependen de como trabaja cada sede.
         </p>
       </div>
@@ -283,7 +283,7 @@
       </div>
       <p class="ayuda" id="alta-oferta-vigencia-ayuda">
         Sin fecha de inicio rige desde ya. Con una fecha futura la oferta queda
-        <b>activa pero todavia sin vigencia</b> hasta ese dia. El fin es <b>exclusivo</b>: el dia
+        <b>activa pero todavía sin vigencia</b> hasta ese día. El fin es <b>exclusivo</b>: el día
         que pongas es el primero en que ya no se ofrece. Sin fin, no vence nunca.
       </p>
 
@@ -330,7 +330,7 @@
       </select>
       <p class="ayuda" id="filtro-estado-oferta-ayuda">
         Este filtro es por <b>estado administrativo</b>, no por vigencia: "solo las activas" incluye
-        las que todavia no arrancaron y las que ya terminaron su ventana. La columna Estado dice
+        las que todavía no arrancaron y las que ya terminaron su ventana. La columna Estado dice
         cual es cual.
       </p>
     </div>
@@ -357,10 +357,10 @@
       }
 
       @case ('sin-contexto') {
-        <p class="estado estado--vacio">Todavia no elegiste un consultorio.</p>
+        <p class="estado estado--vacio">Todavía no elegiste un consultorio.</p>
         <p class="ayuda">
-          Las ofertas son de una sede concreta, asi que hay que saber en cual estas trabajando. Tu
-          sesion sigue abierta: solo falta elegir donde estas.
+          Las ofertas son de una sede concreta, así que hay que saber en cual estas trabajando. Tu
+          sesión sigue abierta: solo falta elegir donde estas.
         </p>
         <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
       }
@@ -378,7 +378,7 @@
       @case ('listo') {
         @if (ofertas().length === 0) {
           <p class="estado estado--vacio">
-            Esta sede todavia no tiene ofertas que coincidan con el filtro.
+            Esta sede todavía no tiene ofertas que coincidan con el filtro.
           </p>
           <p class="ayuda">
             Una oferta es lo que conecta un servicio del catalogo con esta sede. Sin ninguna, esta
@@ -388,7 +388,7 @@
           <div class="tabla-scroll" tabindex="0" role="region" aria-label="Ofertas de la sede">
             <table class="tabla">
               <caption class="visualmente-oculto">
-                Ofertas de la sede activa, con su servicio, modalidad, duracion, precio, ventana de
+                Ofertas de la sede activa, con su servicio, modalidad, duración, precio, ventana de
                 vigencia, estado y acciones.
               </caption>
               <thead>
@@ -396,7 +396,7 @@
                   <th scope="col" appOrdenable [tabla]="tabla" columna="nombre">Oferta</th>
                   <th scope="col" appOrdenable [tabla]="tabla" columna="servicio">Servicio</th>
                   <th scope="col" appOrdenable [tabla]="tabla" columna="modalidad">Modalidad</th>
-                  <th scope="col" appOrdenable [tabla]="tabla" columna="duracion">Duracion</th>
+                  <th scope="col" appOrdenable [tabla]="tabla" columna="duracion">Duración</th>
                   <th scope="col" appOrdenable [tabla]="tabla" columna="precio">Precio</th>
                   <th scope="col" appOrdenable [tabla]="tabla" columna="vigencia">Vigencia</th>
                   <th scope="col" appOrdenable [tabla]="tabla" columna="estado">Estado</th>
@@ -429,7 +429,7 @@
                       {{ precioEnPalabras(oferta) }}
                       @if (oferta.exigePrepago) {
                         <!-- E-6: la recepcion avisa si falta el anticipo; nunca bloquea. -->
-                        <p class="ayuda">Exige prepago en recepcion.</p>
+                        <p class="ayuda">Exige prepago en recepción.</p>
                       }
                     </td>
                     <td>
@@ -475,7 +475,7 @@
                           class="boton boton--secundario"
                           [routerLink]="['/servicios/ofertas', oferta.id, 'practicas']"
                         >
-                          Practicas
+                          Prácticas
                         </a>
                         <ng-container *akinePermiso="permisoManage">
                           @if (oferta.modalidad === 'GRUPAL') {
@@ -527,7 +527,7 @@
                             Se manda <b>solo lo que cambies</b>. Un campo que no toques queda como
                             esta. Para <b>sacarle</b> un valor —no cambiarlo, quitarlo— usa la
                             casilla que esta debajo de ese campo: vaciarlo a mano no alcanza, porque
-                            un campo vacio significa "no lo toques".
+                            un campo vacío significa "no lo toques".
                           </p>
 
                           <div class="campo">
@@ -549,7 +549,7 @@
                           </div>
 
                           <div class="campo">
-                            <label for="editar-oferta-descripcion">Descripcion</label>
+                            <label for="editar-oferta-descripcion">Descripción</label>
                             <input
                               id="editar-oferta-descripcion"
                               type="text"
@@ -574,14 +574,14 @@
                               }
                             </select>
                             <p class="ayuda">
-                              Aca no hay "heredar": la oferta ya tiene su modalidad resuelta. La
+                              Acá no hay "heredar": la oferta ya tiene su modalidad resuelta. La
                               herencia del servicio ocurre una sola vez, al darla de alta.
                             </p>
                           </div>
 
                           <div class="par-de-campos">
                             <div class="campo">
-                              <label for="editar-oferta-duracion">Duracion (minutos)</label>
+                              <label for="editar-oferta-duracion">Duración (minutos)</label>
                               <input
                                 id="editar-oferta-duracion"
                                 type="number"
@@ -689,7 +689,7 @@
                                 type="checkbox"
                                 formControlName="requiereCasoClinico"
                               />
-                              Requiere caso clinico
+                              Requiere caso clínico
                             </label>
                           </div>
 
@@ -700,7 +700,7 @@
                                 type="checkbox"
                                 formControlName="generaRegistroClinico"
                               />
-                              Genera registro clinico
+                              Genera registro clínico
                             </label>
                           </div>
 
@@ -759,7 +759,7 @@
                             </label>
                             <p class="ayuda" id="editar-oferta-limpiar-vigencia-ayuda">
                               Marcalo para <b>sacarle</b> la fecha de fin. Borrar el campo de arriba
-                              no hace eso: un campo vacio significa "no lo toques".
+                              no hace eso: un campo vacío significa "no lo toques".
                             </p>
                           </div>
 

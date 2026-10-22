@@ -31,7 +31,7 @@ async function preparar(parametros: Record<string, string>): Promise<HttpTesting
 describe('ResetPasswordPage', () => {
   afterEach(() => TestBed.resetTestingModule());
 
-  it('manda el token de la query con la contrasena nueva y confirma el cierre de sesiones', async () => {
+  it('manda el token de la query con la contraseña nueva y confirma el cierre de sesiones', async () => {
     const httpMock = await preparar({ token: 'token-sintetico-1' });
     const fixture = crear();
 
@@ -75,7 +75,7 @@ describe('ResetPasswordPage', () => {
     httpMock.verify();
   });
 
-  it('muestra el detail literal cuando la contrasena no cumple la politica', async () => {
+  it('muestra el detail literal cuando la contraseña no cumple la politica', async () => {
     const httpMock = await preparar({ token: 'token-sintetico-2' });
     const fixture = crear();
 
@@ -86,20 +86,20 @@ describe('ResetPasswordPage', () => {
     httpMock.expectOne(URL_CONFIRMAR).flush(
       {
         type: 'https://akine.app/problems/validation-error',
-        detail: 'La contrasena debe tener al menos 12 caracteres.',
+        detail: 'La contraseña debe tener al menos 12 caracteres.',
       },
       { status: 400, statusText: 'Bad Request' },
     );
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect(texto(fixture)).toContain('La contrasena debe tener al menos 12 caracteres.');
+    expect(texto(fixture)).toContain('La contraseña debe tener al menos 12 caracteres.');
     // Es un error de politica, no de enlace: no se ofrece pedir otro.
     expect(enlaces(fixture)).not.toContain('/auth/olvide-mi-contrasena');
     httpMock.verify();
   });
 
-  it('no sale a la red si las dos contrasenas no coinciden', async () => {
+  it('no sale a la red si las dos contraseñas no coinciden', async () => {
     const httpMock = await preparar({ token: 'token-sintetico-3' });
     const fixture = crear();
 
@@ -109,7 +109,7 @@ describe('ResetPasswordPage', () => {
     fixture.detectChanges();
 
     httpMock.expectNone(URL_CONFIRMAR);
-    expect(texto(fixture)).toContain('Las dos contrasenas no coinciden');
+    expect(texto(fixture)).toContain('Las dos contraseñas no coinciden');
 
     const repeticion = fixture.nativeElement.querySelector('#reset-repeticion') as HTMLInputElement;
     expect(repeticion.getAttribute('aria-invalid')).toBe('true');
@@ -127,7 +127,7 @@ describe('ResetPasswordPage', () => {
     httpMock.verify();
   });
 
-  it('ante un 429 deshabilita el boton y muestra la espera', async () => {
+  it('ante un 429 deshabilita el botón y muestra la espera', async () => {
     const httpMock = await preparar({ token: 'token-sintetico-4' });
     const fixture = crear();
 
@@ -146,7 +146,7 @@ describe('ResetPasswordPage', () => {
 
     const boton = fixture.nativeElement.querySelector('button[type="submit"]') as HTMLButtonElement;
     expect(boton.disabled).toBe(true);
-    expect(texto(fixture)).toContain('Volve a intentar en 60 segundos');
+    expect(texto(fixture)).toContain('Volvé a intentar en 60 segundos');
     httpMock.verify();
   });
 
@@ -162,7 +162,7 @@ describe('ResetPasswordPage', () => {
   );
 
   it(
-    'no tiene violaciones de axe con el error de contrasenas que no coinciden',
+    'no tiene violaciones de axe con el error de contraseñas que no coinciden',
     async () => {
       await preparar({ token: 'token-sintetico-6' });
       const fixture = crear();

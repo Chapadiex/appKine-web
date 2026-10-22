@@ -53,12 +53,12 @@ describe('SedesDelContexto', () => {
   // 1. Lo que pasa antes de que haya algo que ofrecer
   // -------------------------------------------------------------------------------------
 
-  it('arranca vacio y sin haber cargado', () => {
+  it('arranca vacío y sin haber cargado', () => {
     expect(sedes.cargadas()).toBe(false);
     expect(sedes.sedes()).toEqual([]);
   });
 
-  it('sin organizacion activa no sale ninguna peticion', () => {
+  it('sin organización activa no sale ninguna peticion', () => {
     sedes.asegurarCargadas();
 
     // Sin `orgId` la URL no se puede ni construir: pedirla igual daria un 404 que el usuario
@@ -67,7 +67,7 @@ describe('SedesDelContexto', () => {
     expect(sedes.cargadas()).toBe(false);
   });
 
-  it('una lista vacia igual cuenta como cargada', () => {
+  it('una lista vacía igual cuenta como cargada', () => {
     tenant.select(ORG_A);
     sedes.asegurarCargadas();
     pedido(1).flush({ content: [] });
@@ -78,7 +78,7 @@ describe('SedesDelContexto', () => {
     expect(sedes.sedes()).toEqual([]);
   });
 
-  it('una respuesta sin el campo content no rompe: se trata como lista vacia', () => {
+  it('una respuesta sin el campo content no rompe: se trata como lista vacía', () => {
     tenant.select(ORG_A);
     sedes.asegurarCargadas();
     pedido(1).flush({});
@@ -111,7 +111,7 @@ describe('SedesDelContexto', () => {
   // 2. Aislamiento entre tenants: las dos formas de filtrar sedes ajenas
   // -------------------------------------------------------------------------------------
 
-  it('cambiar de organizacion invalida el cache en el mismo tick, no cuando llegue la respuesta', () => {
+  it('cambiar de organización invalida el cache en el mismo tick, no cuando llegue la respuesta', () => {
     tenant.select(ORG_A);
     sedes.asegurarCargadas();
     pedido(1).flush({ content: [SEDE_10, SEDE_11] });
@@ -128,7 +128,7 @@ describe('SedesDelContexto', () => {
     pedido(2).flush({ content: [] });
   });
 
-  it('una respuesta que llega despues del cambio de contexto se descarta', () => {
+  it('una respuesta que llega después del cambio de contexto se descarta', () => {
     tenant.select(ORG_A);
     sedes.asegurarCargadas();
     const lenta = pedido(1);
@@ -190,7 +190,7 @@ describe('SedesDelContexto', () => {
     expect(sedes.sedes()).toEqual([]);
   });
 
-  it('despues de un error, volver a pedirlas sale de nuevo', () => {
+  it('después de un error, volver a pedirlas sale de nuevo', () => {
     tenant.select(ORG_A);
     sedes.asegurarCargadas();
     pedido(1).flush({}, { status: 500, statusText: 'X' });
@@ -230,7 +230,7 @@ describe('SedesDelContexto', () => {
     expect(sedes.sedeDelContextoInactiva()).toBe(false);
   });
 
-  it('un contexto de organizacion entera, sin sede, no dispara el aviso', () => {
+  it('un contexto de organización entera, sin sede, no dispara el aviso', () => {
     tenant.select({ organizationId: 1, organizationName: 'Centro Kine A' });
     sedes.asegurarCargadas();
     pedido(1).flush({ content: [SEDE_11] });

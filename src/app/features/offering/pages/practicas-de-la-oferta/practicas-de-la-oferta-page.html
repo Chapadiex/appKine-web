@@ -6,16 +6,16 @@
 <div class="titulo-con-ayuda">
   <h1>Prácticas de la oferta</h1>
   <app-ayuda titulo="Sobre esta pantalla">
-    <p>Que practicas del catalogo puede prestar esta oferta, y cual es la principal.</p>
+    <p>Que prácticas del catalogo puede prestar esta oferta, y cual es la principal.</p>
     <p class="ayuda-contextual__subtitulo">Para que sirve esta lista</p>
     <p>
-      La oferta es lo que el centro vende; la practica es lo que el financiador reconoce y paga. La
-      <b>cobertura aplicable</b> de un paciente se calcula sobre estas practicas, y cuando una
-      sesion cierra <b>sin tratamientos registrados</b>, el <b>devengo al financiador</b> y el
-      consumo de la autorizacion usan la <b>practica principal</b>. Si se registraron tratamientos,
-      manda la practica realizada.
+      La oferta es lo que el centro vende; la práctica es lo que el financiador reconoce y paga. La
+      <b>cobertura aplicable</b> de un paciente se calcula sobre estas prácticas, y cuando una
+      sesión cierra <b>sin tratamientos registrados</b>, el <b>devengo al financiador</b> y el
+      consumo de la autorización usan la <b>práctica principal</b>. Si se registraron tratamientos,
+      manda la práctica realizada.
     </p>
-    <p>Esta lista dice lo que la oferta <b>puede</b> prestar, no lo que se presto en una sesion.</p>
+    <p>Esta lista dice lo que la oferta <b>puede</b> prestar, no lo que se presto en una sesión.</p>
   </app-ayuda>
 </div>
 
@@ -23,15 +23,15 @@
 
 @switch (estado().tipo) {
   @case ('cargando') {
-    <p class="estado" role="status">Cargando las practicas de la oferta…</p>
+    <p class="estado" role="status">Cargando las prácticas de la oferta…</p>
   }
 
   @case ('sin-contexto') {
     <section class="estado estado--vacio">
-      <h2>Elegi una sede</h2>
+      <h2>Elegí una sede</h2>
       <p>
-        Las ofertas son de una sede concreta, asi que hay que saber en cual estas trabajando. Tu
-        sesion sigue abierta.
+        Las ofertas son de una sede concreta, así que hay que saber en cual estas trabajando. Tu
+        sesión sigue abierta.
       </p>
       <a class="boton" routerLink="/seleccionar-contexto">Elegir consultorio</a>
     </section>
@@ -49,22 +49,22 @@
     @if (errorAccion(); as mensaje) {
       <p class="estado estado--error" role="alert">{{ mensaje }}</p>
       @if (hayQueRecargar()) {
-        <button type="button" class="boton" (click)="cargar()">Recargar las practicas</button>
+        <button type="button" class="boton" (click)="cargar()">Recargar las prácticas</button>
       }
     }
 
     <section class="tarjeta" aria-labelledby="declaradas-titulo">
-      <h2 id="declaradas-titulo">Practicas declaradas</h2>
+      <h2 id="declaradas-titulo">Prácticas declaradas</h2>
 
       @if (seleccion().length === 0) {
         <p class="ayuda" role="status">
-          <b>Sin practicas, la oferta no le devenga nada a ningun financiador</b> y ninguna
-          cobertura le aplica. Una lista vacia NO significa "todas": es lo que corresponde a una
+          <b>Sin prácticas, la oferta no le devenga nada a ningún financiador</b> y ninguna
+          cobertura le aplica. Una lista vacía NO significa "todas": es lo que corresponde a una
           actividad que no se factura a obras sociales, como Pilates.
         </p>
       } @else {
         <fieldset class="grupo">
-          <legend>Practica principal</legend>
+          <legend>Práctica principal</legend>
           <ul>
             @for (fila of seleccion(); track fila.practicaId) {
               <li>
@@ -96,7 +96,7 @@
                 </button>
                 @if (fila.fueraDelCatalogo) {
                   <p class="ayuda">
-                    El catalogo dio de baja esta practica. La oferta la conserva y sigue valiendo,
+                    El catalogo dio de baja esta práctica. La oferta la conserva y sigue valiendo,
                     pero si era la principal conviene elegir otra.
                   </p>
                 }
@@ -122,9 +122,9 @@
       *akinePermiso="PERMISO_CONSULTORIO_MANAGE"
       aria-labelledby="agregar-titulo"
     >
-      <h2 id="agregar-titulo">Agregar una practica</h2>
+      <h2 id="agregar-titulo">Agregar una práctica</h2>
       <form novalidate (submit)="buscar($event)">
-        <label for="buscar-practica">Buscar en el catalogo por nombre o codigo</label>
+        <label for="buscar-practica">Buscar en el catalogo por nombre o código</label>
         <input
           id="buscar-practica"
           type="search"
@@ -143,8 +143,8 @@
       @if (resultados(); as encontradas) {
         @if (encontradas.length === 0) {
           <p class="estado estado--vacio" role="status">
-            No hay practicas vigentes con ese texto. Las practicas propias del centro se cargan en
-            <a routerLink="/catalogo/practicas">Catalogo clinico</a>.
+            No hay prácticas vigentes con ese texto. Las prácticas propias del centro se cargan en
+            <a routerLink="/catalogo/practicas">Catalogo clínico</a>.
           </p>
         } @else {
           <ul class="grupo">
@@ -176,7 +176,7 @@
           <h2 id="baja-titulo">Dadas de baja</h2>
           <app-ayuda titulo="Dadas de baja">
             <p>
-              Practicas que la oferta tuvo y se quitaron. Quedan como historia; para volver a sumar
+              Prácticas que la oferta tuvo y se quitaron. Quedan como historia; para volver a sumar
               una, buscala y agregala.
             </p>
           </app-ayuda>

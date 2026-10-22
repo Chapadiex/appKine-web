@@ -5,18 +5,18 @@
   <app-ayuda titulo="Sobre esta pantalla">
     <p>
       Con que cobertura se atiende hoy el paciente, y con cuales se atendio antes. Se muestran
-      todas, incluidas las vencidas y las dadas de baja: es lo que permite explicar despues como se
-      facturo cada atencion.
+      todas, incluidas las vencidas y las dadas de baja: es lo que permite explicar después como se
+      facturo cada atención.
     </p>
     <p class="ayuda-contextual__subtitulo">Cobertura del paciente no es convenio del centro</p>
     <p>
       Esto es <b>lo que el paciente tiene</b>: su obra social, su prepaga, o particular. Que la
       tenga <b>no significa</b> que este centro tenga convenio con ese financiador, ni que la
-      practica sea facturable a ese plan.
+      práctica sea facturable a ese plan.
     </p>
     <p>
       <b>Particular</b> siempre esta disponible, incluso para alguien con obra social: un paciente
-      puede elegir pagar particular una atencion.
+      puede elegir pagar particular una atención.
     </p>
   </app-ayuda>
   <div class="encabezado__acciones" *akinePermiso="permisoManage">
@@ -58,7 +58,7 @@
           />
           <p class="ayuda" id="alta-cobertura-desde-ayuda">
             El plan se congela contra <b>esta</b> fecha y no contra hoy: lo que se verifica es si
-            ese plan se podia elegir el dia en que la cobertura empieza a valer.
+            ese plan se podia elegir el día en que la cobertura empieza a valer.
           </p>
           @if (mostrarErrorAlta('vigenciaDesde')) {
             <p class="estado estado--error">La fecha de inicio es obligatoria.</p>
@@ -80,8 +80,8 @@
             </select>
             @if (financiadoresSinPermiso()) {
               <p class="estado estado--error" role="status">
-                No tenes permiso para consultar los financiadores de la organizacion, asi que no
-                podes cargar una cobertura financiada. Una particular si.
+                No tenés permiso para consultar los financiadores de la organización, así que no
+                podés cargar una cobertura financiada. Una particular si.
               </p>
             }
           </div>
@@ -332,7 +332,7 @@
                     <p class="ayuda">
                       <b>El plan no se puede cambiar</b>, y no es que falte el campo: cambiar de
                       plan es otra cobertura. Si el paciente cambio de obra social, ponele fecha de
-                      fin a esta y agrega la nueva — asi queda registrado con que cobertura se lo
+                      fin a esta y agrega la nueva — así queda registrado con que cobertura se lo
                       atendio antes.
                     </p>
 
@@ -375,8 +375,8 @@
                           aria-describedby="editar-hasta-ayuda-{{ cobertura.id }}"
                         />
                         <p class="ayuda" id="editar-hasta-ayuda-{{ cobertura.id }}">
-                          Poner una fecha aca <b>finaliza la vigencia</b>: la cobertura queda activa
-                          y sigue explicando el pasado, y deja de aplicar despues de ese dia.
+                          Poner una fecha acá <b>finaliza la vigencia</b>: la cobertura queda activa
+                          y sigue explicando el pasado, y deja de aplicar después de ese día.
                           <b>No es lo mismo que darla de baja</b>, que significa que nunca debio
                           cargarse.
                         </p>
@@ -514,8 +514,8 @@
       <app-ayuda titulo="Qué cobertura aplica a una oferta">
         <p>
           Una cobertura vigente puede no aplicar: depende de que la oferta admita obra social y de
-          que el centro tenga convenio y arancel para su practica ese dia. Esto
-          <b>solo consulta</b>: con que se atiende se elige en la recepcion.
+          que el centro tenga convenio y arancel para su práctica ese día. Esto
+          <b>solo consulta</b>: con que se atiende se elige en la recepción.
         </p>
       </app-ayuda>
     </div>

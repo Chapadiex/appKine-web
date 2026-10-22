@@ -33,7 +33,7 @@ describe('Estado', () => {
     httpMock.verify();
   });
 
-  it('consulta el contrato tecnico de version al arrancar', async () => {
+  it('consulta el contrato tecnico de versión al arrancar', async () => {
     const fixture = TestBed.createComponent(Estado);
     fixture.detectChanges();
 
@@ -80,7 +80,7 @@ describe('Estado', () => {
     expect(html.querySelector('button')).toBeTruthy();
   });
 
-  it('el boton de reintento vuelve a consultar el backend', async () => {
+  it('el botón de reintento vuelve a consultar el backend', async () => {
     const fixture = TestBed.createComponent(Estado);
     fixture.detectChanges();
 

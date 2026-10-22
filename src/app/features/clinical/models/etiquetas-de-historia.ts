@@ -21,7 +21,7 @@ export const CATEGORIAS_DE_ADJUNTO: Readonly<Record<AdjuntoClinicoResponseCatego
     ESTUDIO: 'Estudio',
     INFORME: 'Informe',
     IMAGEN: 'Imagen',
-    CONSENTIMIENTO_CLINICO: 'Consentimiento clinico',
+    CONSENTIMIENTO_CLINICO: 'Consentimiento clínico',
     EVOLUCION_ESCANEADA: 'Evolucion escaneada',
     OTRO: 'Otro',
   };

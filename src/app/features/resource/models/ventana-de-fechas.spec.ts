@@ -13,7 +13,7 @@ import {
  * error y aparece recien cuando un feriado sale un dia antes o un cierre cubre un dia de menos.
  */
 describe('ventana-de-fechas', () => {
-  it('sumar dias cruza fin de mes, fin de año y el 29 de febrero de un bisiesto', () => {
+  it('sumar días cruza fin de mes, fin de año y el 29 de febrero de un bisiesto', () => {
     expect(sumarDias('2026-01-31', 1)).toBe('2026-02-01');
     expect(sumarDias('2026-12-31', 1)).toBe('2027-01-01');
     expect(sumarDias('2028-02-28', 1)).toBe('2028-02-29');
@@ -21,12 +21,12 @@ describe('ventana-de-fechas', () => {
   });
 
   /** Un texto que no es una fecha no puede producir "NaN-NaN-NaN" en un campo del formulario. */
-  it('sumar dias sobre algo que no es una fecha devuelve vacio', () => {
+  it('sumar días sobre algo que no es una fecha devuelve vacío', () => {
     expect(sumarDias('', 1)).toBe('');
     expect(sumarDias('mañana', 1)).toBe('');
   });
 
-  it('los dias de la ventana se cuentan con el fin exclusivo, y la invertida da negativo', () => {
+  it('los días de la ventana se cuentan con el fin exclusivo, y la invertida da negativo', () => {
     expect(diasEntre('2026-06-01', '2026-06-02')).toBe(1);
     expect(diasEntre('2026-06-01', '2026-06-01')).toBe(0);
     expect(diasEntre('2026-06-02', '2026-06-01')).toBe(-1);
@@ -41,7 +41,7 @@ describe('ventana-de-fechas', () => {
    * <p>Es el motivo por el que las fechas se construyen al <b>mediodia</b> local: a medianoche,
    * un huso que adelanta el reloj deja la resta en 23 o en 25 horas y el redondeo se corre.
    */
-  it('una ventana que cruza un cambio de hora sigue midiendo los dias justos', () => {
+  it('una ventana que cruza un cambio de hora sigue midiendo los días justos', () => {
     expect(diasEntre('2026-10-15', '2026-11-15')).toBe(31);
     expect(diasEntre('2026-03-01', '2026-04-01')).toBe(31);
   });

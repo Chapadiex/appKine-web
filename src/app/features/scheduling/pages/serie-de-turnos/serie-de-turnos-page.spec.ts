@@ -186,7 +186,7 @@ describe('SerieDeTurnosPage', () => {
       // Sin horario no se manda nada.
       escribirMotivo(fixture, 'El profesional pasa a los martes', '#serie-reprogramar-motivo');
       enviar(fixture);
-      expect(texto(fixture)).toContain('Elegi el horario nuevo del turno de partida');
+      expect(texto(fixture)).toContain('Elegí el horario nuevo del turno de partida');
 
       cambiarDia(fixture, '2026-10-13');
       httpMock.expectOne((p) => p.url === URL_AGENDA).flush(AGENDA_MARTES);
@@ -289,7 +289,7 @@ describe('SerieDeTurnosPage', () => {
 
   function clickear(fixture: ComponentFixture<SerieDeTurnosPage>, textoBoton: string): void {
     const elegido = boton(fixture, textoBoton);
-    expect(elegido, `no se encontro el boton "${textoBoton}"`).not.toBeNull();
+    expect(elegido, `no se encontro el botón "${textoBoton}"`).not.toBeNull();
     elegido?.click();
     fixture.detectChanges();
   }

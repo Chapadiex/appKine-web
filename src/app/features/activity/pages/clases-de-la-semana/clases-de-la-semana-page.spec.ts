@@ -67,7 +67,7 @@ describe('ClasesDeLaSemanaPage', () => {
   }
 
   it(
-    'pide la semana de la sede en UTC, pinta los siete dias y marca la clase completa',
+    'pide la semana de la sede en UTC, pinta los siete días y marca la clase completa',
     async () => {
       otorgar(httpMock, PERMISO_CLASE_READ, PERMISO_CLASE_MANAGE);
       const fixture = montar();

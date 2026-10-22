@@ -13,9 +13,9 @@ function http(status: number, type?: string, detail?: string): AkineHttpError {
 describe('asistencia-errors', () => {
   it('usa el detail del servidor para la clase que no admite asistencia', () => {
     const error = traducirErrorAsistencia(
-      http(409, 'clase-transicion-no-permitida', 'La clase todavia no se inicio'),
+      http(409, 'clase-transicion-no-permitida', 'La clase todavía no se inicio'),
     );
-    expect(error).toEqual({ mensaje: 'La clase todavia no se inicio', causa: 'clase-no-admite' });
+    expect(error).toEqual({ mensaje: 'La clase todavía no se inicio', causa: 'clase-no-admite' });
   });
 
   it('distingue red, falta de contexto, permiso y no encontrado', () => {
@@ -31,13 +31,13 @@ describe('asistencia-errors', () => {
     expect(traducirErrorAsistencia(http(400, 'validation-error')).causa).toBe('motivo-obligatorio');
   });
 
-  it('traduce el problemType de un item del lote por su ultimo segmento', () => {
+  it('traduce el problemType de un item del lote por su último segmento', () => {
     expect(
       traducirFalloDeItem(
         'https://akine.app/problems/inscripcion-transicion-no-permitida',
-        'La inscripcion esta cancelada',
+        'La inscripción esta cancelada',
       ),
-    ).toEqual({ mensaje: 'La inscripcion esta cancelada', causa: 'inscripcion-sin-lugar' });
+    ).toEqual({ mensaje: 'La inscripción esta cancelada', causa: 'inscripcion-sin-lugar' });
     expect(traducirFalloDeItem('https://akine.app/problems/clase-completa', undefined).causa).toBe(
       'clase-completa',
     );

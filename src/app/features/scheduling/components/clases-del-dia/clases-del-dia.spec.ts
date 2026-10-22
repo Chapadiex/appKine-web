@@ -95,10 +95,10 @@ describe('ClasesDelDia', () => {
     httpMock.expectOne((p) => p.url === AGENDA).flush({ eventos: [] });
     await fixture.whenStable();
     fixture.detectChanges();
-    expect(texto(fixture)).toContain('No hay clases que empiecen este dia');
+    expect(texto(fixture)).toContain('No hay clases que empiecen este día');
   });
 
-  it('una clase sin oferta ni titulo se nombra por su id y una fecha vacia no pide nada', async () => {
+  it('una clase sin oferta ni titulo se nombra por su id y una fecha vacía no pide nada', async () => {
     const fixture = montar('');
     httpMock.expectNone((p) => p.url === AGENDA);
     fixture.componentRef.setInput('fecha', '2026-10-21');

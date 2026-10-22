@@ -171,7 +171,7 @@ describe('DetalleDeClasePage', () => {
     TIMEOUT_AXE,
   );
 
-  it('sin inscripcion:read no pide ni muestra participantes, y sin manage no ofrece acciones', async () => {
+  it('sin inscripción:read no pide ni muestra participantes, y sin manage no ofrece acciones', async () => {
     const fixture = await montar([PERMISO_CLASE_READ]);
     const texto = textoDe(fixture);
     expect(texto).not.toContain('Participantes');
@@ -288,14 +288,14 @@ describe('DetalleDeClasePage', () => {
       { status: 409, statusText: 'Conflict' },
     );
     await asentar(fixture);
-    expect(textoDe(fixture)).toContain('La inscripcion no admite esa operacion');
+    expect(textoDe(fixture)).toContain('La inscripción no admite esa operación');
     expect(textoDe(fixture)).toContain('Detalle: cancelada');
     responderClase();
     await asentar(fixture);
     httpMock.expectOne(INSCRIPCIONES).flush(PARTICIPANTES);
   });
 
-  it('reprograma con la version leida y cancela con motivo', async () => {
+  it('reprograma con la versión leida y cancela con motivo', async () => {
     const fixture = await montar();
     clickear(fixture, 'Reprogramar');
     httpMock.expectOne(HABILITACIONES).flush({
@@ -363,7 +363,7 @@ describe('DetalleDeClasePage', () => {
     expect(texto).not.toContain('Inscribir a una persona');
   });
 
-  it('cerrar un panel sin cambios devuelve el foco al boton que lo abrio', async () => {
+  it('cerrar un panel sin cambios devuelve el foco al botón que lo abrio', async () => {
     const fixture = await montar();
     clickear(fixture, 'Reprogramar');
     httpMock.expectOne(HABILITACIONES).flush({
@@ -385,7 +385,7 @@ describe('DetalleDeClasePage', () => {
     expect(document.activeElement?.id).toBe('boton-cancelar-clase');
   });
 
-  it('la version vieja al reprogramar se explica y relee', async () => {
+  it('la versión vieja al reprogramar se explica y relee', async () => {
     const fixture = await montar();
     clickear(fixture, 'Reprogramar');
     // Oferta sin restriccion de espacio y sede sin permiso para listar boxes: queda el actual.

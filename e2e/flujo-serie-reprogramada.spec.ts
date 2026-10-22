@@ -69,7 +69,7 @@ test.describe('Reprogramar una serie contra el backend real', () => {
     await expect(page.getByText('Se moverian estos 2 turnos:')).toBeVisible();
 
     // Mismo dia, el horario libre de al lado: el selector arranca en el dia del turno de partida.
-    await expect(page.getByLabel('Dia destino')).toHaveValue(sumarDias(fecha, 7));
+    await expect(page.getByLabel('Día destino')).toHaveValue(sumarDias(fecha, 7));
     const horaDestino = hora(destino.desde, centro.timezone);
     await page
       .getByRole('button', { name: new RegExp(`^${rango(destino, centro.timezone)}`) })

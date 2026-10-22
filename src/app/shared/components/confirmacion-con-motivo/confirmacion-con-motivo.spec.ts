@@ -63,7 +63,7 @@ describe('ConfirmacionConMotivo', () => {
     );
   });
 
-  it('con el motivo declarado opcional confirma con el campo vacio', async () => {
+  it('con el motivo declarado opcional confirma con el campo vacío', async () => {
     const fixture = await montar();
     fixture.componentInstance.obligatorio.set(false);
     fixture.detectChanges();

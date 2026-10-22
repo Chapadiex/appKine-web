@@ -90,7 +90,7 @@ const VIGENTES = [CIERRE_DE_SEDE, APERTURA_DE_SEDE];
 const FERIADO = {
   id: 9,
   fecha: '2026-09-10',
-  nombre: 'Dia del maestro',
+  nombre: 'Día del maestro',
   pais: 'AR',
   tipo: 'INAMOVIBLE',
 };
@@ -153,19 +153,19 @@ describe('ExcepcionesPage', () => {
 
   afterEach(() => httpMock.verify());
 
-  it('una excepcion sin profesional se muestra como alcance de toda la sede', async () => {
+  it('una excepción sin profesional se muestra como alcance de toda la sede', async () => {
     const fixture = await montar();
     const contenido = texto(fixture);
 
     // El alcance se nombra. Una celda vacia se lee como "falta cargar el profesional", que es
     // justo lo contrario de lo que significa.
-    expect(contenido).toContain('Cierre numero 500 — Toda la sede');
-    expect(contenido).toContain('Apertura numero 501 — Toda la sede');
+    expect(contenido).toContain('Cierre número 500 — Toda la sede');
+    expect(contenido).toContain('Apertura número 501 — Toda la sede');
 
     // El fin es exclusivo: se muestra el ultimo dia REALMENTE cubierto, no el que se cargo.
     expect(contenido).toContain('Del 1 de septiembre de 2026 al 2 de septiembre de 2026 inclusive');
 
-    expect(contenido).toContain('Dia completo');
+    expect(contenido).toContain('Día completo');
     // La medianoche se muestra como el string del contrato, con su traduccion al lado.
     expect(contenido).toContain('20:00 a medianoche (24:00)');
 
@@ -173,7 +173,7 @@ describe('ExcepcionesPage', () => {
     // La fila NO cuenta gente: el numero solo aparece donde decide algo -el aviso previo al
     // guardado- y solo cuando se lo pudo medir.
     expect(contenido).toContain(
-      'reemplaza el horario habitual de todos los profesionales que atienden aca',
+      'reemplaza el horario habitual de todos los profesionales que atienden acá',
     );
 
     // El motivo se rotula con la misma tabla que arma el selector del alta: `BLOQUEO` es un
@@ -195,7 +195,7 @@ describe('ExcepcionesPage', () => {
    * ausencia, <b>no esta en la lista</b>, y nada indica que un filtro lo esta tapando. El enlace
    * carga el profesional y el dia; aca se verifica que la pantalla los use de verdad.
    */
-  it('un enlace con profesional y dia abre la lista filtrada por eso y no por los valores por defecto', async () => {
+  it('un enlace con profesional y día abre la lista filtrada por eso y no por los valores por defecto', async () => {
     queryParams = { membershipId: String(ANA_ID), desde: '2026-09-02', hasta: '2026-09-03' };
 
     tenantContext.select({
@@ -267,8 +267,8 @@ describe('ExcepcionesPage', () => {
     const aviso = texto(fixture);
 
     // El aviso dice la CONSECUENCIA CONCRETA: cuantos profesionales y que les pasa.
-    expect(aviso).toContain('Esta apertura le cambia el dia a toda la sede');
-    expect(aviso).toContain('10 de septiembre de 2026 — Dia del maestro');
+    expect(aviso).toContain('Esta apertura le cambia el día a toda la sede');
+    expect(aviso).toContain('10 de septiembre de 2026 — Día del maestro');
     expect(aviso).toContain('el horario habitual de 2 profesionales no va a aplicar');
     expect(aviso).toContain('reemplaza');
     // Un "estas seguro" generico no serviria: hay que ver que se le cambia el dia a N personas.
@@ -430,7 +430,7 @@ describe('ExcepcionesPage', () => {
 
     // El desplegable de alcance no existe: la unica opcion que quedaria significa "todos".
     expect(fixture.nativeElement.querySelector('#alta-excepcion-alcance')).toBeNull();
-    expect(texto(fixture)).toContain('no sabemos a quien podes alcanzar');
+    expect(texto(fixture)).toContain('no sabemos a quien podés alcanzar');
 
     escribir(fixture, '#alta-excepcion-desde', '2026-09-10');
     escribir(fixture, '#alta-excepcion-hasta', '2026-09-30');
@@ -458,7 +458,7 @@ describe('ExcepcionesPage', () => {
    * apertura que se lo cambia a todos los que la sede tenga de verdad. Un numero mas chico que
    * el real es peor que ningun numero: el admin lo lee y confirma.
    */
-  it('con la nomina recortada por el tope, el aviso no afirma un numero', async () => {
+  it('con la nomina recortada por el tope, el aviso no afirma un número', async () => {
     const fixture = await montarConNominaRecortada();
 
     // La lista sirve para elegir —los que llegaron, llegaron— pero avisa que puede faltar gente.
@@ -480,13 +480,13 @@ describe('ExcepcionesPage', () => {
 
     const aviso = texto(fixture);
 
-    expect(aviso).toContain('Esta apertura le cambia el dia a toda la sede');
+    expect(aviso).toContain('Esta apertura le cambia el día a toda la sede');
     expect(aviso).toContain('No sabemos a cuantos profesionales alcanza');
     expect(aviso).toContain('No es cero');
 
     // Y sobre todo: NINGUN numero. Los dos que llegaron no son los de la sede.
     expect(aviso).not.toContain('de 2 profesionales');
-    expect(aviso).not.toContain('ningun profesional vinculado hoy a la sede');
+    expect(aviso).not.toContain('ningún profesional vinculado hoy a la sede');
 
     abrir(fixture, 'Volver y cambiar el alcance');
   });
@@ -510,7 +510,7 @@ describe('ExcepcionesPage', () => {
       .flush({ consultorioId: SEDE, pais: 'AR', cierraPorFeriado: true, feriados: [], version: 1 });
     await estabilizar(fixture);
 
-    expect(texto(fixture)).not.toContain('le cambia el dia a toda la sede');
+    expect(texto(fixture)).not.toContain('le cambia el día a toda la sede');
     sinImpacto();
 
     const alta = httpMock.expectOne(
@@ -592,7 +592,7 @@ describe('ExcepcionesPage', () => {
     expect(texto(fixture)).not.toContain('Turnos para revisar');
   });
 
-  it('un cierre de sede que deja turnos afuera nombra a cada profesional y espera confirmacion', async () => {
+  it('un cierre de sede que deja turnos afuera nombra a cada profesional y espera confirmación', async () => {
     const fixture = await montar();
 
     abrir(fixture, 'Cargar un cierre o una apertura');
@@ -644,7 +644,7 @@ describe('ExcepcionesPage', () => {
     await estabilizar(fixture);
 
     // ExcepcionResponse no trae la cuenta: el aviso la atribuye a la consulta previa.
-    expect(texto(fixture)).toContain('Segun la consulta previa, 2 turnos pendientes quedaban');
+    expect(texto(fixture)).toContain('Según la consulta previa, 2 turnos pendientes quedaban');
   });
 
   it('las fechas incoherentes y la franja a medias no salen a la red', async () => {
@@ -658,7 +658,7 @@ describe('ExcepcionesPage', () => {
     escribir(fixture, '#alta-excepcion-hasta', '2026-09-01');
     enviar(fixture, '#form-alta-excepcion');
     httpMock.expectNone((peticion: HttpRequest<unknown>) => peticion.method === 'POST');
-    expect(texto(fixture)).toContain('El fin tiene que ser posterior al primer dia');
+    expect(texto(fixture)).toContain('El fin tiene que ser posterior al primer día');
 
     // Una franja necesita las DOS horas: el contrato manda las dos o ninguna.
     escribir(fixture, '#alta-excepcion-hasta', '2026-09-02');
@@ -691,7 +691,7 @@ describe('ExcepcionesPage', () => {
       .expectOne(`${EXCEPCIONES}/${CIERRE_DE_SEDE.id}/impacto-de-baja`)
       .flush({ turnosAfectados: 0, turnos: [], evaluadoHasta: null });
     await estabilizar(fixture);
-    expect(texto(fixture)).toContain('Ningun turno pendiente queda fuera de horario');
+    expect(texto(fixture)).toContain('Ningún turno pendiente queda fuera de horario');
 
     // Sin motivo no sale a la red: el backend lo exige igual.
     enviar(fixture, 'akine-confirmacion-con-motivo form');
@@ -725,7 +725,7 @@ describe('ExcepcionesPage', () => {
     await estabilizar(fixture);
   });
 
-  it('filtrar por un profesional pide sus excepciones y ademas las de la sede', async () => {
+  it('filtrar por un profesional pide sus excepciones y además las de la sede', async () => {
     const fixture = await montar();
 
     seleccionar(fixture, '#filtro-alcance', String(ANA_ID));
@@ -737,7 +737,7 @@ describe('ExcepcionesPage', () => {
 
     // La semantica del filtro se dice en pantalla: sin ella, ver un cierre de sede en la lista
     // de una persona parece un error de la aplicacion.
-    expect(texto(fixture)).toContain('las suyas y ademas las de toda la sede');
+    expect(texto(fixture)).toContain('las suyas y además las de toda la sede');
 
     // Y volver a "toda la sede" saca el parametro en vez de mandarlo vacio.
     seleccionar(fixture, '#filtro-alcance', '');
@@ -759,10 +759,10 @@ describe('ExcepcionesPage', () => {
     escribir(fixture, '#ventana-hasta', '2030-01-01');
     enviar(fixture, '#form-ventana');
     httpMock.expectNone((peticion: HttpRequest<unknown>) => peticion.url === EXCEPCIONES);
-    expect(texto(fixture)).toContain('no puede superar los 366 dias');
+    expect(texto(fixture)).toContain('no puede superar los 366 días');
   });
 
-  it('si el listado de excepciones falla, se puede reintentar sin recargar la pagina', async () => {
+  it('si el listado de excepciones falla, se puede reintentar sin recargar la página', async () => {
     tenantContext.select({
       organizationId: ORG,
       organizationName: 'Belgrano',
@@ -790,7 +790,7 @@ describe('ExcepcionesPage', () => {
     );
     await estabilizar(fixture);
 
-    expect(texto(fixture)).toContain('No tenes permiso para administrar los cierres');
+    expect(texto(fixture)).toContain('No tenés permiso para administrar los cierres');
 
     abrir(fixture, 'Reintentar los profesionales');
     httpMock
@@ -803,7 +803,7 @@ describe('ExcepcionesPage', () => {
 
     // Sin `consultorio:manage` no se ofrece ninguna accion que termine en 403.
     expect(texto(fixture)).not.toContain('Cargar un cierre o una apertura');
-    expect(texto(fixture)).toContain('Apertura numero 501 — Toda la sede');
+    expect(texto(fixture)).toContain('Apertura número 501 — Toda la sede');
   });
 
   it('sin sede elegida no consulta nada y ofrece elegir consultorio', async () => {
@@ -817,12 +817,12 @@ describe('ExcepcionesPage', () => {
     httpMock.match(RUTA_PERMISOS_EFECTIVOS).forEach((p) => p.flush({ permissions: [] }));
 
     const contenido = texto(fixture);
-    expect(contenido).toContain('Todavia no elegiste un consultorio');
-    expect(contenido).toContain('Tu sesion sigue abierta');
+    expect(contenido).toContain('Todavía no elegiste un consultorio');
+    expect(contenido).toContain('Tu sesión sigue abierta');
     expect(fixture.nativeElement.querySelector('a[href="/seleccionar-contexto"]')).not.toBeNull();
   });
 
-  it('la pantalla vacia dice que el horario cargado se aplica tal cual', async () => {
+  it('la pantalla vacía dice que el horario cargado se aplica tal cual', async () => {
     const fixture = await montar([]);
 
     expect(texto(fixture)).toContain('No hay cierres ni aperturas vigentes en este periodo');
@@ -978,7 +978,7 @@ function abrir(fixture: { nativeElement: HTMLElement; detectChanges(): void }, e
     (candidato) => (candidato.textContent ?? '').trim() === etiqueta,
   );
   if (boton === undefined) {
-    throw new Error(`No existe el boton ${etiqueta}`);
+    throw new Error(`No existe el botón ${etiqueta}`);
   }
   boton.click();
   fixture.detectChanges();

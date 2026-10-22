@@ -102,7 +102,7 @@ describe('NewConsultorioPage', () => {
    * es `0` y `Number.isFinite(0)` es verdadero, asi que el alta viajaba con `slotMinutes: 0`.
    * `Validators.min(1)` no lo frena porque un control vacio le resulta valido.
    */
-  it('borrar la duracion del turno la omite del alta en vez de mandarla en cero', async () => {
+  it('borrar la duración del turno la omite del alta en vez de mandarla en cero', async () => {
     const fixture = montar();
 
     escribir(fixture, '#sede-name', 'Sede Norte');
@@ -185,10 +185,10 @@ describe('NewConsultorioPage', () => {
       fixture.detectChanges();
 
       expect(texto(fixture)).toContain('Se creo junto con su primer box');
-      expect(texto(fixture)).toContain('ningun turno se ofrece fuera de ese horario');
+      expect(texto(fixture)).toContain('ningún turno se ofrece fuera de ese horario');
     });
 
-    it('dos franjas del mismo dia que se pisan no dejan avanzar', () => {
+    it('dos franjas del mismo día que se pisan no dejan avanzar', () => {
       const fixture = montar();
 
       escribir(fixture, '#sede-name', 'Sede Norte');
@@ -201,7 +201,7 @@ describe('NewConsultorioPage', () => {
       enviar(fixture);
 
       expect(texto(fixture)).toContain('Paso 1 de 2');
-      expect(texto(fixture)).toContain('Se pisa con otra franja del mismo dia');
+      expect(texto(fixture)).toContain('Se pisa con otra franja del mismo día');
     });
 
     it('un 400 sobre una franja vuelve al paso 1 y marca esa franja, no un cartel generico', async () => {
@@ -265,7 +265,7 @@ function agregarFranja(fixture: { nativeElement: HTMLElement; detectChanges(): v
     candidato.textContent?.includes('Agregar una franja'),
   );
   if (boton === undefined) {
-    throw new Error('No existe el boton para agregar una franja');
+    throw new Error('No existe el botón para agregar una franja');
   }
   boton.click();
   fixture.detectChanges();

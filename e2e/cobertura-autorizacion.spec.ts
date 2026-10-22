@@ -168,7 +168,7 @@ test.describe('Cobertura, orden y autorizacion de un paciente (B-6)', () => {
     await ordenes.getByRole('button', { name: 'Registrar una orden' }).click();
     await ordenes.getByLabel('Profesional que la firmo').fill('Dra. Sintetica Prueba');
     await ordenes.getByLabel('Matricula').fill('12345');
-    await ordenes.getByLabel('Numero', { exact: true }).fill('ORD-1');
+    await ordenes.getByLabel('Número', { exact: true }).fill('ORD-1');
     await ordenes.getByLabel('Fecha de emision').fill(dia(-12));
     await ordenes.getByLabel('Vigente desde').fill(dia(-12));
     await ordenes.getByLabel('Vigente hasta').fill(dia(60));
@@ -298,11 +298,11 @@ async function registrarAutorizacion(
   },
 ): Promise<void> {
   const formulario = page.getByRole('region', { name: 'Autorizaciones' });
-  await formulario.getByRole('button', { name: 'Registrar una autorizacion' }).click();
-  await formulario.getByLabel('Numero').fill(datos.numero);
+  await formulario.getByRole('button', { name: 'Registrar una autorización' }).click();
+  await formulario.getByLabel('Número').fill(datos.numero);
   // La unica cobertura activa del paciente.
   await formulario.getByLabel('Cobertura').selectOption({ index: 1 });
-  await formulario.getByLabel('Practica').selectOption({ label: datos.practica });
+  await formulario.getByLabel('Práctica').selectOption({ label: datos.practica });
   if (datos.orden) {
     await formulario.getByLabel('Orden que la respalda').selectOption({ index: 1 });
   }

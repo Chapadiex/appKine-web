@@ -1,6 +1,6 @@
 <section class="tarjeta" aria-labelledby="titulo-timeline">
   <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
-    <h2 id="titulo-timeline">Timeline clinico</h2>
+    <h2 id="titulo-timeline">Timeline clínico</h2>
     <app-ayuda titulo="Timeline clinico">
       <p>
         Del hecho mas reciente al mas antiguo. Cada fila es un indice: el contenido se abre al
@@ -16,7 +16,7 @@
   <app-filtros [soloAvanzados]="true" [activos]="filtrosAvanzadosActivos()">
     @if (casos().length > 0) {
       <div class="campo">
-        <label for="timeline-caso">Caso clinico</label>
+        <label for="timeline-caso">Caso clínico</label>
         <select
           id="timeline-caso"
           [value]="casoId() === null ? '' : casoId()"
@@ -47,7 +47,7 @@
       </fieldset>
       <div class="timeline__fechas">
         <div class="campo">
-          <label for="timeline-desde">Desde el dia</label>
+          <label for="timeline-desde">Desde el día</label>
           <input
             id="timeline-desde"
             type="date"
@@ -58,7 +58,7 @@
           />
         </div>
         <div class="campo">
-          <label for="timeline-hasta">Hasta el dia (inclusive)</label>
+          <label for="timeline-hasta">Hasta el día (inclusive)</label>
           <input
             id="timeline-hasta"
             type="date"
@@ -71,7 +71,7 @@
       </div>
       @if (rangoInvalido()) {
         <p id="timeline-rango-error" class="campo__error" role="alert">
-          "Desde" tiene que ser el mismo dia que "Hasta" o uno anterior.
+          "Desde" tiene que ser el mismo día que "Hasta" o uno anterior.
         </p>
       }
       @if (hayFiltros()) {
@@ -106,15 +106,15 @@
         @if (eventos().length === 0) {
           <p class="estado estado--vacio">
             @if (hayFiltros()) {
-              Ningun hecho clinico coincide con los filtros.
+              Ningún hecho clínico coincide con los filtros.
             } @else if (casoId() === null) {
-              Todavia no hay hechos clinicos registrados en esta historia.
+              Todavía no hay hechos clínicos registrados en esta historia.
             } @else {
-              Este caso todavia no tiene hechos clinicos.
+              Este caso todavía no tiene hechos clínicos.
             }
           </p>
         } @else {
-          <ol class="timeline" aria-label="Hechos clinicos, del mas reciente al mas antiguo">
+          <ol class="timeline" aria-label="Hechos clínicos, del mas reciente al mas antiguo">
             @for (fila of filas(); track fila.clave) {
               <li class="timeline__hecho">
                 @if (fila.conDetalle) {

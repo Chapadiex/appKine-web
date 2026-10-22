@@ -522,7 +522,7 @@ export class AtencionPage {
       return '';
     }
     const numero = this.casos().find((caso) => caso.id === casoId)?.numeroCaso;
-    return numero === undefined ? 'Caso clinico asociado' : `Caso ${numero}`;
+    return numero === undefined ? 'Caso clínico asociado' : `Caso ${numero}`;
   }
 
   protected readonly rotuloDeCaso = rotuloDeCaso;
@@ -560,8 +560,8 @@ export class AtencionPage {
         this.casoNuevo.set(sesion.casoId ?? null);
         this.avisoCaso.set(
           sesion.casoId === undefined
-            ? 'La atencion quedo sin caso.'
-            : `La atencion quedo asociada al ${this.numeroDeCaso(sesion.casoId)}.`,
+            ? 'La atención quedo sin caso.'
+            : `La atención quedo asociada al ${this.numeroDeCaso(sesion.casoId)}.`,
         );
       },
       error: (error: unknown) => {
@@ -666,10 +666,10 @@ export class AtencionPage {
           this.version.set(sesion.version ?? 0);
           const nombre = this.nombreDelProfesional(sesion.profesionalId);
           this.avisoReemplazo.set(
-            'La atencion ahora la continua ' +
+            'La atención ahora la continua ' +
               nombre +
-              '. Desde aca solo ese profesional puede guardarla; el anterior va a ver que la ' +
-              'atencion es de otro profesional.',
+              '. Desde acá solo ese profesional puede guardarla; el anterior va a ver que la ' +
+              'atención es de otro profesional.',
           );
         },
         error: (error: unknown) => {
@@ -877,7 +877,7 @@ export class AtencionPage {
 
     if (asistencia === null) {
       this.avisoCierre.set(
-        'Falta decir si el paciente vino. Sin eso no se sabe si hubo prestacion, y es lo unico ' +
+        'Falta decir si el paciente vino. Sin eso no se sabe si hubo prestación, y es lo unico ' +
           'que el cierre siempre necesita.',
       );
       return;
@@ -885,8 +885,8 @@ export class AtencionPage {
 
     if (this.faltaNota()) {
       this.avisoCierre.set(
-        'El paciente vino, asi que hace falta la nota de cierre: es lo unico que registra que se ' +
-          'hizo en la sesion.',
+        'El paciente vino, así que hace falta la nota de cierre: es lo unico que registra que se ' +
+          'hizo en la sesión.',
       );
       return;
     }

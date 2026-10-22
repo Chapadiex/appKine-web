@@ -31,7 +31,7 @@ import { PermissionsStore } from '../../../core/services/permissions.store';
  * nombre el permiso equivocado hace que se otorgue el permiso equivocado.
  */
 export const TEXTO_MODO_LECTURA =
-  'Modo lectura: podes consultar todo lo que se muestra, pero no cambiarlo. ' +
+  'Modo lectura: podés consultar todo lo que se muestra, pero no cambiarlo. ' +
   'Cargar, editar o dar de baja necesita el permiso consultorio:manage; pediselo a quien ' +
   'administre el centro.';
 

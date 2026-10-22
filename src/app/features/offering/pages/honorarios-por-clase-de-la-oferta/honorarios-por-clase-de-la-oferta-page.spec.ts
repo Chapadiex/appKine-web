@@ -81,13 +81,13 @@ describe('HonorariosPorClaseDeLaOfertaPage', () => {
 
   afterEach(() => httpMock.verify());
 
-  it('lista las tarifas con su situacion y solo la activa ofrece acciones', async () => {
+  it('lista las tarifas con su situación y solo la activa ofrece acciones', async () => {
     const fixture = await montar();
     const contenido = texto(fixture);
     expect(contenido).toContain('Pilates grupal');
     expect(contenido).toContain('ARS 1500');
     expect(contenido).toContain('Rige hoy');
-    expect(contenido).toContain('Todavia no rige');
+    expect(contenido).toContain('Todavía no rige');
     expect(contenido).toContain('Dada de baja');
     expect(contenido).toContain('Tarifa mal cargada');
     expect(botones(fixture, 'Cambiar fin')).toHaveLength(2);
@@ -117,10 +117,10 @@ describe('HonorariosPorClaseDeLaOfertaPage', () => {
       { status: 409, statusText: 'Conflict' },
     );
     await estabilizar(fixture);
-    expect(texto(fixture)).toContain('cerrale la vigencia a la actual el dia anterior');
+    expect(texto(fixture)).toContain('cerrale la vigencia a la actual el día anterior');
   });
 
-  it('sin precio de lista propone ARS, la moneda vacia no se manda, y el alta relee la grilla', async () => {
+  it('sin precio de lista propone ARS, la moneda vacía no se manda, y el alta relee la grilla', async () => {
     const fixture = await montar({ id: OFERTA, nombreComercial: 'Yoga', estado: 'ACTIVO' });
     botones(fixture, 'Cargar una tarifa')[0].click();
     fixture.detectChanges();
@@ -152,7 +152,7 @@ describe('HonorariosPorClaseDeLaOfertaPage', () => {
     expect(texto(fixture)).toContain('La tarifa quedo cargada');
   });
 
-  it('el importe vacio o cero no manda nada', async () => {
+  it('el importe vacío o cero no manda nada', async () => {
     const fixture = await montar();
     botones(fixture, 'Cargar una tarifa')[0].click();
     fixture.detectChanges();
@@ -169,7 +169,7 @@ describe('HonorariosPorClaseDeLaOfertaPage', () => {
     expect(texto(fixture)).not.toContain('Nueva tarifa de honorario');
   });
 
-  it('cambiar el fin manda solo el fin y la version; vacio reabre', async () => {
+  it('cambiar el fin manda solo el fin y la versión; vacío reabre', async () => {
     const fixture = await montar();
     botones(fixture, 'Cambiar fin')[1].click();
     fixture.detectChanges();
@@ -200,7 +200,7 @@ describe('HonorariosPorClaseDeLaOfertaPage', () => {
     expect(texto(fixture)).toContain('La tarifa quedo sin fin previsto.');
   });
 
-  it('un 409 de version relee la grilla y deja el panel abierto', async () => {
+  it('un 409 de versión relee la grilla y deja el panel abierto', async () => {
     const fixture = await montar();
     botones(fixture, 'Cambiar fin')[1].click();
     fixture.detectChanges();
@@ -262,7 +262,7 @@ describe('HonorariosPorClaseDeLaOfertaPage', () => {
       .flush(null, { status: 204, statusText: 'No Content' });
     responderCarga(PILATES);
     await estabilizar(fixture);
-    expect(texto(fixture)).toContain('no entran en ninguna liquidacion hasta que cargues otra');
+    expect(texto(fixture)).toContain('no entran en ninguna liquidación hasta que cargues otra');
   });
 
   it('sin consultorio:manage muestra el 403 del backend con reintento', async () => {
@@ -288,7 +288,7 @@ describe('HonorariosPorClaseDeLaOfertaPage', () => {
     httpMock.expectOne(HONORARIOS).flush([]);
     httpMock.expectOne((p: HttpRequest<unknown>) => p.url === rutaOfertas(SEDE)).flush([]);
     await estabilizar(fixture);
-    expect(texto(fixture)).toContain('sus clases no entran en ninguna liquidacion');
+    expect(texto(fixture)).toContain('sus clases no entran en ninguna liquidación');
     expect(texto(fixture)).toContain('de esta oferta por cada participante');
   });
 

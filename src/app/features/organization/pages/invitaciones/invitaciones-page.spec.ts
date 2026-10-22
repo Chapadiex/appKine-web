@@ -85,7 +85,7 @@ describe('InvitacionesPage', () => {
 
   afterEach(() => httpMock.verify());
 
-  it('una invitacion vencida se distingue de una pendiente y dice que hay que reenviarla', async () => {
+  it('una invitación vencida se distingue de una pendiente y dice que hay que reenviarla', async () => {
     const fixture = await montar();
     const anfitrion = fixture.nativeElement as HTMLElement;
 
@@ -196,7 +196,7 @@ describe('InvitacionesPage', () => {
     fixture.detectChanges();
 
     const confirmar = [...anfitrion.querySelectorAll('button')].find(
-      (boton) => (boton.textContent ?? '').trim() === 'Cancelar la invitacion',
+      (boton) => (boton.textContent ?? '').trim() === 'Cancelar la invitación',
     );
     confirmar?.click();
     fixture.detectChanges();
@@ -211,7 +211,7 @@ describe('InvitacionesPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect(anfitrion.textContent).toContain('Podes volver a invitar a esa persona');
+    expect(anfitrion.textContent).toContain('Podés volver a invitar a esa persona');
   });
 
   it('cambiar de filtro con una relectura en vuelo descarta la vieja', async () => {
@@ -221,7 +221,7 @@ describe('InvitacionesPage', () => {
     abrir(fixture, 'Cancelar');
     escribir(anfitrion, '#cancelar-invitacion-motivo', 'Se cubrio el puesto');
     fixture.detectChanges();
-    confirmar(anfitrion, 'Cancelar la invitacion');
+    confirmar(anfitrion, 'Cancelar la invitación');
     fixture.detectChanges();
     httpMock
       .expectOne(
@@ -274,7 +274,7 @@ describe('InvitacionesPage', () => {
     );
     const anfitrion = fixture.nativeElement as HTMLElement;
 
-    expect(anfitrion.textContent).toContain('No tenes permiso para administrar las invitaciones');
+    expect(anfitrion.textContent).toContain('No tenés permiso para administrar las invitaciones');
     expect(rotulos(anfitrion)).toContain('Reintentar');
     expect(anfitrion.querySelector('a[href="/seleccionar-contexto"]')).toBeNull();
   });
@@ -293,7 +293,7 @@ describe('InvitacionesPage', () => {
     expect(anfitrion.querySelector('a[href="/seleccionar-contexto"]')).not.toBeNull();
   });
 
-  it('un listado vacio dice que no hay nada con ese filtro, y no es un error', async () => {
+  it('un listado vacío dice que no hay nada con ese filtro, y no es un error', async () => {
     const fixture = await montarConListado((pedido) => pedido.flush([]));
     const anfitrion = fixture.nativeElement as HTMLElement;
 
@@ -341,7 +341,7 @@ describe('InvitacionesPage', () => {
 
     // Es el mismo tratamiento que el duplicado: lo que hay que cambiar es el email, no el rol.
     expect(anfitrion.querySelector('#invitacion-email')?.getAttribute('aria-invalid')).toBe('true');
-    expect(anfitrion.textContent).toContain('ya trabaja en esta organizacion');
+    expect(anfitrion.textContent).toContain('ya trabaja en esta organización');
   });
 
   it('un 429 dice cuantos segundos hay que esperar y no repite el intento', async () => {
@@ -371,7 +371,7 @@ describe('InvitacionesPage', () => {
   // Rechazos del dominio al reenviar y al cancelar
   // -------------------------------------------------------------------------------------
 
-  it('reenviar una invitacion que ya fue resuelta lo dice y no relee el listado a ciegas', async () => {
+  it('reenviar una invitación que ya fue resuelta lo dice y no relee el listado a ciegas', async () => {
     const fixture = await montar();
     const anfitrion = fixture.nativeElement as HTMLElement;
 
@@ -392,14 +392,14 @@ describe('InvitacionesPage', () => {
     httpMock.expectNone(esListado());
   });
 
-  it('cancelar una invitacion que ya no existe deja el panel abierto con el mensaje', async () => {
+  it('cancelar una invitación que ya no existe deja el panel abierto con el mensaje', async () => {
     const fixture = await montar();
     const anfitrion = fixture.nativeElement as HTMLElement;
 
     abrir(fixture, 'Cancelar');
     escribir(anfitrion, '#cancelar-invitacion-motivo', 'Se cubrio el puesto');
     fixture.detectChanges();
-    confirmar(anfitrion, 'Cancelar la invitacion');
+    confirmar(anfitrion, 'Cancelar la invitación');
     fixture.detectChanges();
 
     httpMock
@@ -419,7 +419,7 @@ describe('InvitacionesPage', () => {
   // Filtro
   // -------------------------------------------------------------------------------------
 
-  it('una invitacion aceptada no ofrece reenviar ni cancelar', async () => {
+  it('una invitación aceptada no ofrece reenviar ni cancelar', async () => {
     const fixture = await montar();
     const anfitrion = fixture.nativeElement as HTMLElement;
 
@@ -486,7 +486,7 @@ function abrir(fixture: { nativeElement: HTMLElement; detectChanges(): void }, e
     (candidato) => (candidato.textContent ?? '').trim() === etiqueta,
   );
   if (boton === undefined) {
-    throw new Error(`No existe el boton ${etiqueta}`);
+    throw new Error(`No existe el botón ${etiqueta}`);
   }
   boton.click();
   fixture.detectChanges();
@@ -511,7 +511,7 @@ function confirmar(anfitrion: HTMLElement, etiqueta: string) {
     (candidato) => (candidato.textContent ?? '').trim() === etiqueta,
   );
   if (boton === undefined) {
-    throw new Error(`No existe el boton ${etiqueta}`);
+    throw new Error(`No existe el botón ${etiqueta}`);
   }
   boton.click();
 }

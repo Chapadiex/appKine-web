@@ -103,7 +103,7 @@ describe('PermisoDirective', () => {
     expect(botones().length).toBe(1);
   });
 
-  it('al cambiar de contexto el boton desaparece en el primer render', () => {
+  it('al cambiar de contexto el botón desaparece en el primer render', () => {
     tenant.select(ORG_A);
     cargar([PERMISO_COLABORADOR_MANAGE]);
     fixture.detectChanges();

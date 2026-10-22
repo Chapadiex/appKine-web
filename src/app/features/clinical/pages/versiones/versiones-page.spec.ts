@@ -93,7 +93,7 @@ describe('VersionesPage', () => {
 
   afterEach(() => httpMock.verify());
 
-  it('compara la ultima contra la anterior y nombra lo que cambio', async () => {
+  it('compara la última contra la anterior y nombra lo que cambio', async () => {
     const fixture = await montar();
 
     const filas = filasDeComparacion(fixture);
@@ -102,7 +102,7 @@ describe('VersionesPage', () => {
     expect(tratamiento?.[2]).toContain('Intensidad: 25 mA');
     expect(tratamiento?.[3]).toBe('Cambió');
 
-    const medicion = filas.find((f) => f[0].startsWith('Medicion: Flexion'));
+    const medicion = filas.find((f) => f[0].startsWith('Medición: Flexion'));
     expect(medicion?.[1]).toBe('90 grados');
     expect(medicion?.[2]).toBe('Sin cargar');
     expect(medicion?.[3]).toBe('Cambió');
@@ -112,7 +112,7 @@ describe('VersionesPage', () => {
     expect(texto(fixture)).toContain('La intensidad era otra');
   });
 
-  it('muestra quien registro cada version, y el numero de cuenta si el nombre no vino', async () => {
+  it('muestra quien registro cada versión, y el número de cuenta si el nombre no vino', async () => {
     const fixture = await montar();
 
     const resumenes = Array.from(
@@ -125,7 +125,7 @@ describe('VersionesPage', () => {
     expect(texto(fixture)).not.toContain('Cuenta número 52');
   });
 
-  it('elegir la misma version de los dos lados dice que no cambio nada', async () => {
+  it('elegir la misma versión de los dos lados dice que no cambio nada', async () => {
     const fixture = await montar();
     const antes = fixture.nativeElement.querySelector('#version-antes') as HTMLSelectElement;
     antes.value = '2';
@@ -144,7 +144,7 @@ describe('VersionesPage', () => {
     expect(resumenes[1]).toContain('original');
   });
 
-  it('con una sola version no ofrece comparar', async () => {
+  it('con una sola versión no ofrece comparar', async () => {
     const fixture = await montar([V1]);
     expect(fixture.nativeElement.querySelector('#version-antes')).toBeNull();
     expect(texto(fixture)).toContain('Todas las versiones');

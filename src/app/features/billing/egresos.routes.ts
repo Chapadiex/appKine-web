@@ -45,7 +45,7 @@ export const routes: Routes = [
       import('./pages/liquidacion-detalle/liquidacion-detalle-page').then(
         (m) => m.LiquidacionDetallePage,
       ),
-    title: 'AKINE - Liquidacion de honorarios',
+    title: 'AKINE - Liquidación de honorarios',
     data: { [DATA_ANCHO]: ANCHO_AMPLIO },
   },
   {

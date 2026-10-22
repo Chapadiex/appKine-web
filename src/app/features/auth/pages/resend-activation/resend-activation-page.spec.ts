@@ -52,7 +52,7 @@ describe('ResendActivationPage', () => {
     expect(registrado).not.toContain('no esta registrado');
   });
 
-  it('ante un 429 deshabilita el boton y muestra la espera', async () => {
+  it('ante un 429 deshabilita el botón y muestra la espera', async () => {
     const fixture = crear();
     escribir(fixture, 'pendiente@ejemplo.test');
     enviar(fixture);
@@ -67,7 +67,7 @@ describe('ResendActivationPage', () => {
     fixture.detectChanges();
 
     expect(boton(fixture).disabled).toBe(true);
-    expect(texto(fixture)).toContain('Volve a intentar en 60 segundos');
+    expect(texto(fixture)).toContain('Volvé a intentar en 60 segundos');
   });
 
   it('no sale a la red con un email invalido y enfoca el campo', () => {

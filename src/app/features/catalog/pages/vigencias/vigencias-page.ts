@@ -220,7 +220,7 @@ export class VigenciasPage {
       this.estado.set({
         tipo: 'error',
         mensaje:
-          'La direccion que abriste no apunta a ningun nomenclador. Volve al catalogo y entra ' +
+          'La dirección que abriste no apunta a ningún nomenclador. Volvé al catalogo y entra ' +
           'desde el listado.',
         faltaContexto: false,
       });
@@ -372,7 +372,7 @@ export class VigenciasPage {
         next: () => {
           this.cerrarPaneles();
           this.exito.set(
-            'La vigencia quedo cargada. Las anteriores del mismo codigo no se tocaron: lo que se ' +
+            'La vigencia quedo cargada. Las anteriores del mismo código no se tocaron: lo que se ' +
               'presento con ellas sigue resolviendo con el valor que tenia entonces.',
           );
           this.cargar();
@@ -411,7 +411,7 @@ export class VigenciasPage {
           this.cerrarPaneles();
           this.exito.set(
             'La vigencia quedo dada de baja. Sigue en el listado, con su motivo, y lo que ya se ' +
-              'presento con ella conserva el codigo y el valor que tenia.',
+              'presento con ella conserva el código y el valor que tenia.',
           );
           this.cargar();
         },

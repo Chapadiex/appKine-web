@@ -100,7 +100,7 @@ describe('LiquidacionDeHonorariosPage', () => {
 
     enviarPedido(fixture);
     httpMock.expectNone((p) => p.url === BORRADOR_URL);
-    expect(texto(fixture)).toContain('Elegi a quien se le liquida.');
+    expect(texto(fixture)).toContain('Elegí a quien se le liquida.');
 
     elegir(fixture, '#honorarios-colaborador', '7');
     escribir(fixture, '#honorarios-hasta', '2026-09-01');
@@ -116,13 +116,13 @@ describe('LiquidacionDeHonorariosPage', () => {
     expect(texto(fixture)).toContain('Pilates lunes');
     expect(texto(fixture)).toContain('Parte 1 de 2');
     expect(texto(fixture)).toContain('Ya liquidada a este colaborador');
-    expect(texto(fixture)).toContain('Ningun participante presente');
+    expect(texto(fixture)).toContain('Ningún participante presente');
     expect(
       (fixture.nativeElement as HTMLElement).querySelector('a[href="/egresos/600"]'),
     ).not.toBeNull();
 
     escribir(fixture, '#honorarios-concepto', 'Honorarios Pilates octubre');
-    boton(fixture, 'Confirmar la liquidacion').click();
+    boton(fixture, 'Confirmar la liquidación').click();
     const confirmacion = httpMock.expectOne((p) => p.method === 'POST' && p.url === LIQUIDACIONES);
     const cuerpo = confirmacion.request.body as Record<string, unknown>;
     expect(cuerpo).toMatchObject({
@@ -140,7 +140,7 @@ describe('LiquidacionDeHonorariosPage', () => {
     responderBorrador(borrador([], 0, [{ ...EXCLUIDAS[0], claseId: 101, egresoId: 900 }]));
     await estabilizar(fixture);
 
-    expect(texto(fixture)).toContain('Liquidacion #77 confirmada');
+    expect(texto(fixture)).toContain('Liquidación #77 confirmada');
     const html = fixture.nativeElement as HTMLElement;
     expect(html.querySelector('a[href="/egresos/900"]')).not.toBeNull();
     expect(html.querySelector('a[href="/egresos/honorarios/liquidaciones/77"]')).not.toBeNull();
@@ -152,8 +152,8 @@ describe('LiquidacionDeHonorariosPage', () => {
     await pedirBorrador(fixture, borrador([LINEA_PILATES, LINEA_YOGA], 1500, []));
 
     expect(texto(fixture)).toContain('se confirma una por servicio');
-    expect(boton(fixture, 'Confirmar la liquidacion de Pilates grupal')).toBeTruthy();
-    boton(fixture, 'Confirmar la liquidacion de Yoga').click();
+    expect(boton(fixture, 'Confirmar la liquidación de Pilates grupal')).toBeTruthy();
+    boton(fixture, 'Confirmar la liquidación de Yoga').click();
     const confirmacion = httpMock.expectOne((p) => p.method === 'POST');
     expect(confirmacion.request.body).toMatchObject({
       ofertaId: 32,
@@ -163,14 +163,14 @@ describe('LiquidacionDeHonorariosPage', () => {
     confirmacion.flush({ id: 78, egresoId: 901, importeTotal: 1000, moneda: 'ARS' });
     responderBorrador(borrador([LINEA_PILATES], 500, []));
     await estabilizar(fixture);
-    expect(texto(fixture)).toContain('Liquidacion #78 confirmada');
-    expect(boton(fixture, 'Confirmar la liquidacion')).toBeTruthy();
+    expect(texto(fixture)).toContain('Liquidación #78 confirmada');
+    expect(boton(fixture, 'Confirmar la liquidación')).toBeTruthy();
   });
 
   it('un borrador desactualizado no liquida: lo dice con el importe nuevo y relee', async () => {
     const fixture = await montar();
     await pedirBorrador(fixture, borrador([LINEA_PILATES], 500));
-    boton(fixture, 'Confirmar la liquidacion').click();
+    boton(fixture, 'Confirmar la liquidación').click();
     const primero = httpMock.expectOne((p) => p.method === 'POST');
     const clave = (primero.request.body as { idempotencyKey: string }).idempotencyKey;
     primero.flush(
@@ -188,7 +188,7 @@ describe('LiquidacionDeHonorariosPage', () => {
     expect(texto(fixture)).toContain('750,00');
 
     // El borrador nuevo sale con clave nueva: es otro pedido.
-    boton(fixture, 'Confirmar la liquidacion').click();
+    boton(fixture, 'Confirmar la liquidación').click();
     const segundo = httpMock.expectOne((p) => p.method === 'POST');
     expect(segundo.request.body).toMatchObject({ importeTotal: 750 });
     expect((segundo.request.body as { idempotencyKey: string }).idempotencyKey).not.toBe(clave);
@@ -204,14 +204,14 @@ describe('LiquidacionDeHonorariosPage', () => {
   it('un error de red reintenta con la misma clave; una clave reusada la renueva', async () => {
     const fixture = await montar();
     await pedirBorrador(fixture, borrador([LINEA_PILATES], 500));
-    boton(fixture, 'Confirmar la liquidacion').click();
+    boton(fixture, 'Confirmar la liquidación').click();
     const primero = httpMock.expectOne((p) => p.method === 'POST');
     const clave = (primero.request.body as { idempotencyKey: string }).idempotencyKey;
     primero.error(new ProgressEvent('error'), { status: 0 });
     await estabilizar(fixture);
-    expect(texto(fixture)).toContain('no sabemos si la operacion entro');
+    expect(texto(fixture)).toContain('no sabemos si la operación entro');
 
-    boton(fixture, 'Confirmar la liquidacion').click();
+    boton(fixture, 'Confirmar la liquidación').click();
     const reintento = httpMock.expectOne((p) => p.method === 'POST');
     expect((reintento.request.body as { idempotencyKey: string }).idempotencyKey).toBe(clave);
     reintento.flush(
@@ -220,7 +220,7 @@ describe('LiquidacionDeHonorariosPage', () => {
     );
     await estabilizar(fixture);
 
-    boton(fixture, 'Confirmar la liquidacion').click();
+    boton(fixture, 'Confirmar la liquidación').click();
     const tercero = httpMock.expectOne((p) => p.method === 'POST');
     expect((tercero.request.body as { idempotencyKey: string }).idempotencyKey).not.toBe(clave);
     tercero.flush({ id: 79, egresoId: 902, importeTotal: 500, moneda: 'ARS' });
@@ -337,7 +337,7 @@ describe('LiquidacionDeHonorariosPage', () => {
       ...(fixture.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>('button'),
     ].find((b) => (b.textContent ?? '').replace(/\s+/g, ' ').trim() === etiqueta);
     if (encontrado === undefined) {
-      throw new Error(`no hay boton "${etiqueta}"`);
+      throw new Error(`no hay botón "${etiqueta}"`);
     }
     return encontrado;
   }

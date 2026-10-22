@@ -327,8 +327,8 @@ export class CuentaCorrientePage {
       this.estado.set({
         tipo: 'error',
         mensaje:
-          'Para ver la cuenta corriente hay que saber en que sede estas. Eligi una organizacion y ' +
-          'un consultorio, y volve a entrar. Tu sesion sigue abierta.',
+          'Para ver la cuenta corriente hay que saber en que sede estas. Eligi una organización y ' +
+          'un consultorio, y volvé a entrar. Tu sesión sigue abierta.',
         faltaContexto: true,
       });
       return;
@@ -450,7 +450,7 @@ export class CuentaCorrientePage {
         this.objetivo.set(null);
         this.exito.set(
           `Se anulo la deuda de ${this.importe(anulada, anulada.importeOriginal)} por ` +
-            `"${anulada.snapshotNombre ?? 'la prestacion'}". Queda registrada como anulada, ` +
+            `"${anulada.snapshotNombre ?? 'la prestación'}". Queda registrada como anulada, ` +
             'con su motivo: no se borra.',
         );
         this.cargar();

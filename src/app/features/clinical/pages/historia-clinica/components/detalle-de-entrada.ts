@@ -140,7 +140,7 @@ export class DetalleDeEntrada {
           this.enviando.set(false);
           this.enmendando.set(false);
           this.estado.set({ tipo: 'lista', entrada: enmendada });
-          this.aviso.set(`Enmienda guardada como version ${enmendada.numeroVersion ?? ''}.`);
+          this.aviso.set(`Enmienda guardada como versión ${enmendada.numeroVersion ?? ''}.`);
           if (this.versiones() !== null) {
             this.verVersiones();
           }

@@ -264,14 +264,14 @@ export class AtencionGrupalPage {
 
   protected etiquetaDeAtencion(atencion: AtencionDeParticipante): string {
     if (atencion.estado !== AtencionDeParticipanteEstadoEnum.CERRADA) {
-      return 'Atencion en curso';
+      return 'Atención en curso';
     }
-    const partes = ['Atencion cerrada'];
+    const partes = ['Atención cerrada'];
     if (atencion.numeroEnCaso !== undefined) {
-      partes.push(`sesion ${atencion.numeroEnCaso} del caso`);
+      partes.push(`sesión ${atencion.numeroEnCaso} del caso`);
     }
     if (atencion.numeroSesion !== undefined) {
-      partes.push(`sesion ${atencion.numeroSesion} del paciente`);
+      partes.push(`sesión ${atencion.numeroSesion} del paciente`);
     }
     return partes.join(' · ');
   }
@@ -485,8 +485,8 @@ export class AtencionGrupalPage {
   /** El numero visible del Caso ("caso 3"), nunca su id. */
   protected numeroDeCaso(derivacion: DerivacionDeParticipante): string {
     return derivacion.numeroCaso === undefined
-      ? 'Caso clinico sin numero'
-      : `Caso clinico ${derivacion.numeroCaso}`;
+      ? 'Caso clínico sin número'
+      : `Caso clínico ${derivacion.numeroCaso}`;
   }
 
   protected cerrarDerivaciones(): void {
@@ -602,13 +602,13 @@ export class AtencionGrupalPage {
    * para el. Repetir al mismo Caso devuelve la existente (`yaExistia`), y tambien se dice.
    */
   protected alDerivar(fila: FilaDeAtencion, derivacion: DerivacionDeParticipante): void {
-    const caso = this.numeroDeCaso(derivacion).replace('Caso clinico', 'caso clinico');
+    const caso = this.numeroDeCaso(derivacion).replace('Caso clínico', 'caso clínico');
     this.derivando.set(null);
     this.errorDeAccion.set(null);
     this.derivadas.update((actual) => new Map(actual).set(fila.inscripcionId, caso));
     const verbo = derivacion.yaExistia === true ? 'ya estaba derivada' : 'quedo derivada';
     this.avisoDeDerivacion.set(
-      `${fila.nombre} ${verbo} al ${caso}. Ya se puede iniciar su atencion.`,
+      `${fila.nombre} ${verbo} al ${caso}. Ya se puede iniciar su atención.`,
     );
     this.cargar();
   }

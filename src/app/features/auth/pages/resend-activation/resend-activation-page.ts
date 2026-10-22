@@ -15,8 +15,8 @@ import { Icono } from '../../../../shared/components/icono/icono';
  * los clientes del SaaS igual y todo el trabajo del backend se tiraria.
  */
 export const MENSAJE_UNIFORME_ACTIVACION =
-  'Si el email esta registrado y la cuenta todavia no esta activa, te llega un correo con un ' +
-  'enlace nuevo. Revisa tambien la carpeta de correo no deseado.';
+  'Si el email esta registrado y la cuenta todavía no esta activa, te llega un correo con un ' +
+  'enlace nuevo. Revisa también la carpeta de correo no deseado.';
 
 /** Reenvio del enlace de activacion (M02, AKINE-01.02). */
 @Component({

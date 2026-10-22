@@ -47,7 +47,7 @@ test.describe('Horarios y disponibilidad contra el backend real', () => {
       page.getByRole('heading', { name: `Semana de ${profesional.nombre}`, level: 2 }),
     ).toBeVisible();
     await page.getByRole('button', { name: 'Agregar un bloque' }).click();
-    await page.getByLabel('Dia de la semana').selectOption(String(diaIso(f)));
+    await page.getByLabel('Día de la semana').selectOption(String(diaIso(f)));
     await page.getByLabel('Desde (HH:MM)').fill('09:00');
     await page.getByLabel('Hasta (HH:MM, exclusiva)').fill('12:00');
     const bloque = respuestaDe(page, 'POST', /\/profesionales\/\d+\/disponibilidad$/);
@@ -80,10 +80,10 @@ test.describe('Horarios y disponibilidad contra el backend real', () => {
     await page.getByLabel('A quien alcanza').selectOption({ label: profesional.nombre });
     await page.getByLabel('Primer dia').fill(cerrado);
     await page.getByLabel('Fin (exclusivo)').fill(sumarDias(cerrado, 1));
-    await expect(page.getByLabel('Dia completo')).toBeChecked();
+    await expect(page.getByLabel('Día completo')).toBeChecked();
 
     const impacto = respuestaDe(page, 'POST', /\/excepciones\/impacto-de-alta$/);
-    await page.getByRole('button', { name: 'Cargar la excepcion' }).click();
+    await page.getByRole('button', { name: 'Cargar la excepción' }).click();
     expect((await impacto).status()).toBe(200);
     await expect(page.getByText('Turnos afectados: 1.')).toBeVisible();
 
@@ -106,9 +106,9 @@ test.describe('Horarios y disponibilidad contra el backend real', () => {
     expect(despues.find((d) => d.fecha === habil)!.slots).toHaveLength(3);
 
     await abrirLaAgenda(page, oferta, f, sumarDias(cerrado, 1));
-    await expect(page.getByText('Feriado: la sede no atiende este dia.')).toBeVisible();
+    await expect(page.getByText('Feriado: la sede no atiende este día.')).toBeVisible();
     await expect(
-      page.getByText('La sede cierra este dia por una excepcion cargada en el calendario.'),
+      page.getByText('La sede cierra este día por una excepción cargada en el calendario.'),
     ).toBeVisible();
     // Las tres franjas del dia habil, y ninguna mas en toda la ventana.
     for (const slot of dia(habil).slots) {

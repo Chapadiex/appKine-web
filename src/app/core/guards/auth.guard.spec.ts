@@ -25,7 +25,7 @@ import { provideApi } from '../../api/generated/provide-api';
  * quien llegue por URL directa, y ninguna aserto de este archivo es una garantia de
  * seguridad.
  */
-describe('guards de sesion', () => {
+describe('guards de sesión', () => {
   let session: SessionService;
   let httpMock: HttpTestingController;
 
@@ -46,7 +46,7 @@ describe('guards de sesion', () => {
   afterEach(() => httpMock.verify());
 
   describe('authGuard', () => {
-    it('sin sesion manda al login recordando a donde queria ir', () => {
+    it('sin sesión manda al login recordando a donde queria ir', () => {
       const resultado = correr(authGuard, '/organizacion/1/suscripcion');
 
       expect(resultado).toBeInstanceOf(UrlTree);
@@ -56,13 +56,13 @@ describe('guards de sesion', () => {
       expect(url).toContain('volverA=%2Forganizacion%2F1%2Fsuscripcion');
     });
 
-    it('con sesion sin contexto deja pasar: eso lo decide contextGuard', () => {
+    it('con sesión sin contexto deja pasar: eso lo decide contextGuard', () => {
       autenticar('pre_context');
 
       expect(correr(authGuard, '/seleccionar-contexto')).toBe(true);
     });
 
-    it('con sesion activa deja pasar', () => {
+    it('con sesión activa deja pasar', () => {
       autenticar('context');
 
       expect(correr(authGuard, '/organizacion')).toBe(true);
@@ -83,7 +83,7 @@ describe('guards de sesion', () => {
       expect(url).toContain('volverA=%2Forganizacion');
     });
 
-    it('sin sesion manda al login, no al selector', () => {
+    it('sin sesión manda al login, no al selector', () => {
       const resultado = correr(contextGuard, '/organizacion');
 
       expect((resultado as UrlTree).toString()).toContain('/auth/ingresar');
@@ -118,7 +118,7 @@ describe('guards de sesion', () => {
       }
     });
 
-    it('sin la sede en el listado cae a la zona de la organizacion, y un error no rompe nada', () => {
+    it('sin la sede en el listado cae a la zona de la organización, y un error no rompe nada', () => {
       autenticar('context');
 
       expect(correr(contextGuard, '/organizacion')).toBe(true);
@@ -137,7 +137,7 @@ describe('guards de sesion', () => {
 
   // El arranque ya no espera la restauracion de la sesion (AKINE-LCP): la esperan los guards.
   describe('con la restauracion del arranque en vuelo', () => {
-    it('authGuard espera el refresh en vez de mandar al login a quien tiene sesion', () => {
+    it('authGuard espera el refresh en vez de mandar al login a quien tiene sesión', () => {
       session.iniciarRestauracion();
       const resultados: unknown[] = [];
 

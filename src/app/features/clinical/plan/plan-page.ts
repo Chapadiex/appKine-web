@@ -170,7 +170,7 @@ export class PlanPage {
   protected resumenDeAvance(item: AvanceDeItem): string {
     const autorizadas =
       item.autorizadas === undefined || item.autorizadas === null
-        ? 'sin autorizacion declarada'
+        ? 'sin autorización declarada'
         : `${item.autorizadas} autorizadas`;
     return (
       `${item.realizadas ?? 0} de ${item.planificadas ?? 0} realizadas · ${autorizadas} · ` +
@@ -271,7 +271,7 @@ export class PlanPage {
       ),
       plan?.estado === 'BORRADOR'
         ? 'Se guardo el borrador.'
-        : 'Se guardo una version nueva del plan. La anterior sigue consultable.',
+        : 'Se guardo una versión nueva del plan. La anterior sigue consultable.',
     );
   }
 

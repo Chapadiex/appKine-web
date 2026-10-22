@@ -106,7 +106,7 @@ test.describe('Contraste de color', () => {
       await page.getByRole('button', { name: 'Ingresar' }).click();
 
       await expect(page.getByText('Escribi un email valido.')).toBeVisible();
-      await expect(page.getByText('Escribi tu contrasena.')).toBeVisible();
+      await expect(page.getByText('Escribí tu contraseña.')).toBeVisible();
 
       await auditarContraste(page, 'login con los dos campos en error');
     });
@@ -346,7 +346,7 @@ test.describe('Contraste de color', () => {
       await page.getByLabel('Fecha', { exact: true }).fill('');
       await page.getByLabel('Cupo').fill('0');
       await page.getByRole('button', { name: 'Programar clase' }).click();
-      await expect(page.getByText('Elegi la fecha de la clase.')).toBeVisible();
+      await expect(page.getByText('Elegí la fecha de la clase.')).toBeVisible();
       await expect(page.getByText('El cupo es de 1 en adelante.')).toBeVisible();
       // El foco quedo en el primer campo en error (WCAG 3.3.1).
       await expect(page.getByLabel('Fecha', { exact: true })).toBeFocused();
@@ -387,7 +387,7 @@ test.describe('Contraste de color', () => {
       await page.getByRole('button', { name: /Iniciar para todos/ }).click();
 
       const resultado = page.getByRole('region', { name: 'Resultado' });
-      await expect(resultado.getByText('No tiene una derivacion clinica vigente')).toBeVisible();
+      await expect(resultado.getByText('No tiene una derivacion clínica vigente')).toBeVisible();
       await expect(resultado).toBeFocused();
 
       await auditarContraste(page, 'atencion clinica de una clase con un lote parcial');
@@ -426,7 +426,7 @@ test.describe('Contraste de color', () => {
       await instalarApiDeContraste(page);
       await instalarApiDp43(page);
       await page.goto('/contratacion/financiadores/catalogo');
-      await expect(page.getByText('El catalogo cambio despues de agregarlo')).toBeVisible();
+      await expect(page.getByText('El catálogo cambio después de agregarlo')).toBeVisible();
 
       await auditarContraste(page, 'catalogo de financiadores del centro');
     });
@@ -440,7 +440,7 @@ test.describe('Contraste de color', () => {
         .getByLabel('Oferta', { exact: true })
         .selectOption({ label: 'Rehabilitacion neurologica' });
       await page.getByRole('button', { name: 'Iniciar atención' }).click();
-      await expect(page.getByText('Elegi a quien se atiende.')).toBeVisible();
+      await expect(page.getByText('Elegí a quien se atiende.')).toBeVisible();
 
       await auditarContraste(page, 'atender sin turno con un aviso');
     });

@@ -91,7 +91,7 @@ test.describe('Honorarios por clase contra el backend real', () => {
     await expect(
       page.getByRole('heading', { name: 'Honorarios por clase de la oferta', level: 1 }),
     ).toBeVisible();
-    await expect(page.getByText('sus clases no entran en ninguna liquidacion')).toBeVisible();
+    await expect(page.getByText('sus clases no entran en ninguna liquidación')).toBeVisible();
     await page.getByRole('button', { name: 'Cargar una tarifa' }).click();
     await page.getByLabel('Importe por participante presente').fill(TARIFA);
     const alta = respuestaDe(page, 'POST', /\/honorarios-por-clase$/);

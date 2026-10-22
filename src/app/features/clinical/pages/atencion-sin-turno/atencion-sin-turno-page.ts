@@ -119,13 +119,13 @@ export class AtencionSinTurnoPage {
     const motivo = this.motivo().trim();
     const faltante =
       personaId === undefined
-        ? 'Elegi a quien se atiende.'
+        ? 'Elegí a quien se atiende.'
         : ofertaId === null
-          ? 'Elegi la oferta con la que se atiende.'
+          ? 'Elegí la oferta con la que se atiende.'
           : motivo === ''
             ? 'Escribi por que se atiende sin turno: es obligatorio.'
             : this.requiereCaso() && this.casoId() === null
-              ? 'Esta prestacion exige un caso clinico: elegi uno.'
+              ? 'Esta prestación exige un caso clínico: elegí uno.'
               : '';
     if (faltante !== '' || consultorioId === null || personaId === undefined || ofertaId === null) {
       this.aviso.set(faltante);

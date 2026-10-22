@@ -15,8 +15,8 @@ import {
 } from './etiquetas-de-recepcion';
 import { textoDeEstado } from './etiquetas-de-turno';
 
-describe('etiquetas de recepcion', () => {
-  it('ningun estado dice que el paciente fue atendido', () => {
+describe('etiquetas de recepción', () => {
+  it('ningún estado dice que el paciente fue atendido', () => {
     for (const estado of ['LLEGO', 'VALIDADA', 'OBSERVADA', 'EN_ESPERA', 'LLAMADA']) {
       expect(textoDeRecepcion(estado)).not.toMatch(/atendido|atendiendo/);
     }

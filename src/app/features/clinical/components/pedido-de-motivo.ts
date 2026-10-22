@@ -53,8 +53,8 @@ export class PedidoDeMotivo {
   private readonly visita = inject(VisitaClinica);
 
   /** Lo que se esta por ver, en palabras: "su historia clinica", "este caso". */
-  readonly que = input('su historia clinica');
-  readonly accion = input('Ver la historia clinica');
+  readonly que = input('su historia clínica');
+  readonly accion = input('Ver la historia clínica');
 
   protected readonly escrito = signal('');
   protected readonly intento = signal(false);

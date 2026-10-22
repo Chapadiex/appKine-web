@@ -160,8 +160,8 @@ export class PracticasDeLaOfertaPage {
         // el texto de `traducirErrorOffering` culparia a `consultorio:manage`.
         this.errorBusqueda.set(
           esSinPermiso(error)
-            ? 'No tenes permiso para consultar el catalogo clinico, asi que no podes buscar ' +
-                'practicas. Pediselo a quien administra el centro.'
+            ? 'No tenés permiso para consultar el catalogo clínico, así que no podés buscar ' +
+                'prácticas. Pediselo a quien administra el centro.'
             : traducirErrorOffering(error, 'oferta').mensaje,
         );
       },
@@ -182,7 +182,7 @@ export class PracticasDeLaOfertaPage {
       ...actuales,
       {
         practicaId,
-        nombre: concepto.name ?? `Practica #${practicaId}`,
+        nombre: concepto.name ?? `Práctica #${practicaId}`,
         codigo: concepto.codigo ?? '',
         fueraDelCatalogo: false,
       },
@@ -234,7 +234,7 @@ export class PracticasDeLaOfertaPage {
         next: (respuesta) => {
           this.guardando.set(false);
           this.pintar(respuesta);
-          this.exito.set('Guardamos las practicas de la oferta.');
+          this.exito.set('Guardamos las prácticas de la oferta.');
         },
         error: (error: unknown) => {
           this.guardando.set(false);
@@ -257,7 +257,7 @@ export class PracticasDeLaOfertaPage {
     this.seleccion.set(
       activas(respuesta).map((fila) => ({
         practicaId: fila.practicaId ?? 0,
-        nombre: fila.nombre ?? `Practica #${fila.practicaId}`,
+        nombre: fila.nombre ?? `Práctica #${fila.practicaId}`,
         codigo: fila.codigo ?? '',
         fueraDelCatalogo: fila.vigenteEnCatalogo === false,
       })),
@@ -271,13 +271,13 @@ function activas(respuesta: PracticasDeOfertaResponse) {
 }
 
 const MENSAJE_SIN_VERSION =
-  'No pudimos leer la version de la oferta, y sin ella no se puede guardar: mandar una inventada ' +
-  'pisaria la edicion de otra persona. Recarga las practicas y volve a intentar.';
+  'No pudimos leer la versión de la oferta, y sin ella no se puede guardar: mandar una inventada ' +
+  'pisaria la edicion de otra persona. Recarga las prácticas y volvé a intentar.';
 
 /**
  * El 404 del reemplazo tiene dos causas posibles y el backend no las distingue a proposito: la
  * oferta ya no existe, o una practica que se agrego no es visible para el centro.
  */
 const MENSAJE_NO_ENCONTRADO =
-  'No encontramos la oferta, o alguna de las practicas que agregaste no es visible para este ' +
-  'centro. Recarga las practicas y volve a armar la lista.';
+  'No encontramos la oferta, o alguna de las prácticas que agregaste no es visible para este ' +
+  'centro. Recarga las prácticas y volvé a armar la lista.';

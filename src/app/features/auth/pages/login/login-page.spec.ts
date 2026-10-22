@@ -53,7 +53,7 @@ describe('LoginPage', () => {
     router = TestBed.inject(Router);
   });
 
-  it('con la sesion sin contexto lleva al selector, no al destino final', async () => {
+  it('con la sesión sin contexto lleva al selector, no al destino final', async () => {
     const navegar = vi.spyOn(router, 'navigateByUrl').mockResolvedValue(true);
     session.estadoInterno.set('sin-contexto');
 
@@ -107,7 +107,7 @@ describe('LoginPage', () => {
     );
   });
 
-  it('con la sesion ya activa va al destino por defecto', async () => {
+  it('con la sesión ya activa va al destino por defecto', async () => {
     const navegar = vi.spyOn(router, 'navigateByUrl').mockResolvedValue(true);
     session.estadoInterno.set('activa');
 
@@ -154,14 +154,14 @@ describe('LoginPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect(texto(fixture)).toContain('Email o contrasena incorrectos');
+    expect(texto(fixture)).toContain('Email o contraseña incorrectos');
     expect(fixture.nativeElement.querySelector('[role="alert"]')).toBeTruthy();
     // El mensaje no puede delatar que la cuenta existe pero esta sin activar o bloqueada.
     expect(texto(fixture)).not.toContain('activar');
     expect(texto(fixture)).not.toContain('bloquead');
   });
 
-  it('ante un 429 con Retry-After deshabilita el boton y muestra los segundos que faltan', async () => {
+  it('ante un 429 con Retry-After deshabilita el botón y muestra los segundos que faltan', async () => {
     session.respuesta = throwError(() =>
       error(429, 'https://akine.app/problems/rate-limited', 'Demasiados intentos', 45),
     );
@@ -175,10 +175,10 @@ describe('LoginPage', () => {
 
     const boton = fixture.nativeElement.querySelector('button[type="submit"]') as HTMLButtonElement;
     expect(boton.disabled).toBe(true);
-    expect(texto(fixture)).toContain('Volve a intentar en 45 segundos');
+    expect(texto(fixture)).toContain('Volvé a intentar en 45 segundos');
   });
 
-  it('ante un 429 SIN Retry-After no inventa una cuenta regresiva ni bloquea el boton', async () => {
+  it('ante un 429 SIN Retry-After no inventa una cuenta regresiva ni bloquea el botón', async () => {
     // Un "espera 60 segundos" que no sale del backend miente en las dos direcciones: si el
     // limite era de 10 s hace esperar de mas, y si era de 5 minutos promete que a los 60 s
     // ya se puede. La autoridad del plazo es el backend, que rechaza igual si es pronto.
@@ -199,7 +199,7 @@ describe('LoginPage', () => {
     expect(texto(fixture)).not.toContain('segundos');
   });
 
-  it('ofrece las salidas de recuperacion y de reenvio de activacion', () => {
+  it('ofrece las salidas de recuperacion y de reenvio de activación', () => {
     const fixture = crear();
 
     const enlaces = [...fixture.nativeElement.querySelectorAll('a')].map((a: HTMLAnchorElement) =>

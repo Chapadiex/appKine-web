@@ -222,7 +222,7 @@ export class CajaPage {
         tipo: 'error',
         mensaje:
           'Para operar la caja hay que saber en que sede estas: cada consultorio tiene su cajon. ' +
-          'Eligi una organizacion y un consultorio, y volve a entrar. Tu sesion sigue abierta.',
+          'Eligi una organización y un consultorio, y volvé a entrar. Tu sesión sigue abierta.',
         faltaContexto: true,
       });
       return;

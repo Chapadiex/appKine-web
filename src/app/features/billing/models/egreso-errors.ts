@@ -47,10 +47,10 @@ export interface ErrorEgreso {
   readonly renovarClave?: boolean;
 }
 
-const MENSAJE_GENERICO = 'No se pudo completar la operacion. Volve a intentar en un momento.';
+const MENSAJE_GENERICO = 'No se pudo completar la operación. Volvé a intentar en un momento.';
 const MENSAJE_SIN_CONTEXTO =
-  'Los egresos son de una sede. Eligi una organizacion y un consultorio, y volve a entrar. Tu ' +
-  'sesion sigue abierta.';
+  'Los egresos son de una sede. Eligi una organización y un consultorio, y volvé a entrar. Tu ' +
+  'sesión sigue abierta.';
 
 export function errorSinContextoDeEgreso(): ErrorEgreso {
   return { mensaje: MENSAJE_SIN_CONTEXTO, causa: 'sin-contexto', recargar: false };
@@ -63,7 +63,7 @@ export function traducirErrorEgreso(error: unknown): ErrorEgreso {
   if (error.esDeRed) {
     return {
       mensaje:
-        'No se pudo contactar al servidor, asi que no sabemos si la operacion entro. Recarga ' +
+        'No se pudo contactar al servidor, así que no sabemos si la operación entro. Recarga ' +
         'antes de repetirla.',
       causa: 'red',
       recargar: true,
@@ -84,15 +84,15 @@ export function traducirErrorEgreso(error: unknown): ErrorEgreso {
       };
     case 'egreso-no-confirmable':
       return {
-        mensaje: 'El egreso ya no es un borrador, asi que no hay nada que confirmar. Recargalo.',
+        mensaje: 'El egreso ya no es un borrador, así que no hay nada que confirmar. Recargalo.',
         causa: 'no-confirmable',
         recargar: true,
       };
     case 'egreso-sin-comprobante':
       return {
         mensaje:
-          'Para confirmar hace falta el comprobante: cargale el tipo y el numero al borrador y ' +
-          'volve a confirmar.',
+          'Para confirmar hace falta el comprobante: cargale el tipo y el número al borrador y ' +
+          'volvé a confirmar.',
         causa: 'sin-comprobante',
         recargar: false,
       };
@@ -104,7 +104,7 @@ export function traducirErrorEgreso(error: unknown): ErrorEgreso {
         mensaje:
           'El egreso tiene pagos vigentes' +
           (yaPagado === null ? '' : ` (${importeEnPalabras(yaPagado, undefined)})`) +
-          '. Anula primero cada pago —eso devuelve la plata— y despues el egreso.',
+          '. Anula primero cada pago —eso devuelve la plata— y después el egreso.',
         causa: 'con-pagos',
         recargar: true,
       };
@@ -131,7 +131,7 @@ export function traducirErrorEgreso(error: unknown): ErrorEgreso {
     case 'egreso-comprobante-duplicado':
       return {
         mensaje:
-          'Ese comprobante de ese beneficiario ya esta cargado en otro egreso. Revisa el numero.',
+          'Ese comprobante de ese beneficiario ya esta cargado en otro egreso. Revisa el número.',
         causa: 'comprobante-duplicado',
         recargar: false,
       };
@@ -140,7 +140,7 @@ export function traducirErrorEgreso(error: unknown): ErrorEgreso {
     case 'beneficiario-no-vinculado':
       return {
         mensaje:
-          'Ese colaborador no tiene un vinculo vigente con la organizacion. Elegi otro o cargalo ' +
+          'Ese colaborador no tiene un vinculo vigente con la organización. Elegí otro o cargalo ' +
           'como beneficiario externo.',
         causa: 'beneficiario-no-vinculado',
         recargar: false,
@@ -182,10 +182,10 @@ export function traducirErrorEgreso(error: unknown): ErrorEgreso {
     case 'egreso-de-liquidacion':
       return {
         mensaje:
-          'Este egreso nacio de una liquidacion de honorarios: su importe, categoria, periodo y ' +
+          'Este egreso nacio de una liquidación de honorarios: su importe, categoría, periodo y ' +
           'servicio salen de las clases liquidadas y no se corrigen a mano. Se pueden cambiar el ' +
           'concepto y el comprobante. Si el importe esta mal, anula el egreso —eso libera las ' +
-          'clases— y volve a liquidar.',
+          'clases— y volvé a liquidar.',
         causa: 'de-liquidacion',
         recargar: true,
       };
@@ -193,10 +193,10 @@ export function traducirErrorEgreso(error: unknown): ErrorEgreso {
       const actual = error.numeroDeExtension('importeTotalActual');
       return {
         mensaje:
-          'El borrador cambio desde que lo miraste —otra liquidacion, una asistencia corregida o ' +
+          'El borrador cambio desde que lo miraste —otra liquidación, una asistencia corregida o ' +
           'una tarifa nueva—' +
           (actual === null ? '' : `: ahora da ${importeEnPalabras(actual, undefined)}`) +
-          '. No se liquido nada. Revisa el borrador actualizado y volve a confirmar.',
+          '. No se liquido nada. Revisa el borrador actualizado y volvé a confirmar.',
         causa: 'borrador-desactualizado',
         recargar: true,
       };
@@ -205,21 +205,21 @@ export function traducirErrorEgreso(error: unknown): ErrorEgreso {
       return {
         mensaje:
           'No queda ninguna clase para liquidar en ese periodo: ya se liquidaron o no tienen ' +
-          'honorario ni presentes. No se creo ningun egreso.',
+          'honorario ni presentes. No se creo ningún egreso.',
         causa: 'liquidacion-vacia',
         recargar: true,
       };
     case 'concurrent-modification':
       return {
         mensaje:
-          'Alguien cambio este egreso despues de que lo abriste, asi que no guardamos la ' +
-          'correccion sobre datos viejos. No se piso nada: recarga el egreso y volve a corregirlo.',
+          'Alguien cambio este egreso después de que lo abriste, así que no guardamos la ' +
+          'correccion sobre datos viejos. No se piso nada: recarga el egreso y volvé a corregirlo.',
         causa: 'version-vieja',
         recargar: true,
       };
     case 'idempotency-key-conflict':
       return {
-        mensaje: 'Se reuso la clave de este intento con datos distintos. Volve a confirmar.',
+        mensaje: 'Se reuso la clave de este intento con datos distintos. Volvé a confirmar.',
         causa: 'clave-reusada',
         recargar: false,
         renovarClave: true,
@@ -232,7 +232,7 @@ export function traducirErrorEgreso(error: unknown): ErrorEgreso {
   if (error.status === 403) {
     return {
       mensaje:
-        'No tenes permiso para gestionar egresos en esta sede (hace falta el permiso de caja). ' +
+        'No tenés permiso para gestionar egresos en esta sede (hace falta el permiso de caja). ' +
         'Pediselo a quien administra el centro.',
       causa: 'sin-permiso',
       recargar: false,
@@ -241,7 +241,7 @@ export function traducirErrorEgreso(error: unknown): ErrorEgreso {
   if (error.status === 404) {
     return {
       mensaje:
-        'El egreso, el pago, la liquidacion o la oferta elegida no existen, o no son de esta sede.',
+        'El egreso, el pago, la liquidación o la oferta elegida no existen, o no son de esta sede.',
       causa: 'no-encontrado',
       recargar: false,
     };

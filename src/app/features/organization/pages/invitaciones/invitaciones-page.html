@@ -9,11 +9,11 @@
     <p class="ayuda-contextual__subtitulo">Cómo funciona una invitación</p>
     <p>
       La persona recibe un correo con un enlace. <b>Puede no tener cuenta en AKINE</b>: si no la
-      tiene, la crea al aceptar, en el mismo paso, sin ningun correo de activacion aparte. El
+      tiene, la crea al aceptar, en el mismo paso, sin ningún correo de activación aparte. El
       vinculo nace <b>cuando acepta</b>, no cuando vos invitas.
     </p>
     <p>
-      Por eso <b>invitar no ocupa un lugar de tu plan y aceptar si</b>. Si tenes un solo lugar libre
+      Por eso <b>invitar no ocupa un lugar de tu plan y aceptar si</b>. Si tenés un solo lugar libre
       y mandas cinco invitaciones, entra la primera que responda y las otras cuatro se van a
       encontrar con que no hay lugar.
     </p>
@@ -41,7 +41,7 @@
 
 @if (altaAbierta()) {
   <section class="tarjeta" aria-labelledby="titulo-alta-invitacion">
-    <h2 id="titulo-alta-invitacion">Nueva invitacion</h2>
+    <h2 id="titulo-alta-invitacion">Nueva invitación</h2>
 
     <form [formGroup]="formularioAlta" (ngSubmit)="enviarAlta()" novalidate>
       <div class="campo">
@@ -59,7 +59,7 @@
           <p class="campo__error">Escribi un email valido.</p>
         } @else {
           <p class="ayuda">
-            Es la direccion a la que va el enlace, y la que va a quedar como su usuario. No hace
+            Es la dirección a la que va el enlace, y la que va a quedar como su usuario. No hace
             falta que ya tenga cuenta.
           </p>
         }
@@ -73,7 +73,7 @@
           }
         </select>
         <p class="ayuda">
-          Se puede cambiar despues, desde el listado de colaboradores, una vez que acepte.
+          Se puede cambiar después, desde el listado de colaboradores, una vez que acepte.
         </p>
       </div>
 
@@ -81,10 +81,10 @@
         <label for="invitacion-alcance">Donde trabajaria</label>
         <select id="invitacion-alcance" formControlName="alcance">
           <option value="SEDE">Solo en {{ nombreDeLaSede() }}</option>
-          <option value="ORGANIZACION">En toda la organizacion</option>
+          <option value="ORGANIZACION">En toda la organización</option>
         </select>
         <p class="ayuda">
-          El alcance acota lo que va a poder ver y hacer. "Toda la organizacion" incluye las sedes
+          El alcance acota lo que va a poder ver y hacer. "Toda la organización" incluye las sedes
           que abras mas adelante.
         </p>
       </div>
@@ -133,7 +133,7 @@
         <option value="TODAS">Todas</option>
       </select>
       <p class="ayuda" id="filtro-estado-invitacion-ayuda">
-        Una invitacion cuyo enlace vencio <b>sigue figurando pendiente</b>: vencer no es una
+        Una invitación cuyo enlace vencio <b>sigue figurando pendiente</b>: vencer no es una
         decision de nadie, es el reloj. La fila lo aclara, y la salida es reenviarla.
       </p>
     </div>
@@ -146,9 +146,9 @@
       }
 
       @case ('sin-contexto') {
-        <p class="estado estado--vacio">Todavia no elegiste un consultorio.</p>
+        <p class="estado estado--vacio">Todavía no elegiste un consultorio.</p>
         <p class="ayuda">
-          Una invitacion la emite una organizacion concreta, asi que hay que indicar cual. Tu sesion
+          Una invitación la emite una organización concreta, así que hay que indicar cual. Tu sesión
           sigue abierta: solo falta elegir donde estas trabajando.
         </p>
         <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
@@ -172,7 +172,7 @@
             class="tabla-scroll"
             tabindex="0"
             role="region"
-            aria-label="Invitaciones enviadas por la organizacion"
+            aria-label="Invitaciones enviadas por la organización"
           >
             <table class="tabla">
               <caption class="visualmente-oculto">
@@ -196,7 +196,7 @@
                     <th scope="row">
                       {{ invitacion.email }}
                       @if (invitacion.consultorioId === undefined) {
-                        <p class="ayuda">En toda la organizacion</p>
+                        <p class="ayuda">En toda la organización</p>
                       }
                     </th>
                     <td>{{ etiquetaDeRol(invitacion.roleCode) }}</td>
@@ -207,7 +207,7 @@
                       @if (invitacion.estado === 'PENDIENTE' && invitacion.vencida) {
                         <p class="ayuda">
                           El enlace que recibio ya no sirve. Reenviala para mandarle uno nuevo: es
-                          la misma invitacion, no una nueva.
+                          la misma invitación, no una nueva.
                         </p>
                       } @else if (invitacion.estado === 'PENDIENTE') {
                         <p class="ayuda">
@@ -291,6 +291,6 @@
 </section>
 
 <p class="ayuda" *akinePermiso="permisoManage">
-  Si un correo de invitacion no salio, podes reintentarlo desde
+  Si un correo de invitación no salio, podés reintentarlo desde
   <a class="enlace" routerLink="/organizacion/colaboradores/notificaciones">Notificaciones</a>.
 </p>

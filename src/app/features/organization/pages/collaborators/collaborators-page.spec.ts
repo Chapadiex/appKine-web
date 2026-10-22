@@ -103,7 +103,7 @@ describe('CollaboratorsPage', () => {
     expect(cuerpo).toEqual({ reason: 'Ascenso a coordinador', roleCode: 'CONSULTORIO_ADMIN' });
   });
 
-  it('ampliar a toda la organizacion manda changeScope sin consultorioId', async () => {
+  it('ampliar a toda la organización manda changeScope sin consultorioId', async () => {
     const fixture = await montar();
 
     abrirPanel(fixture, 'Cambiar rol o alcance');
@@ -119,7 +119,7 @@ describe('CollaboratorsPage', () => {
     expect('consultorioId' in cuerpo).toBe(false);
   });
 
-  it('cambiar de contexto cierra el panel abierto y relee contra la organizacion nueva', async () => {
+  it('cambiar de contexto cierra el panel abierto y relee contra la organización nueva', async () => {
     const fixture = await montar();
     abrirPanel(fixture, 'Suspender');
     expect(texto(fixture)).toContain('Suspender a la cuenta 100');
@@ -141,7 +141,7 @@ describe('CollaboratorsPage', () => {
     fixture.detectChanges();
 
     expect(texto(fixture)).not.toContain('Suspender a la cuenta 100');
-    expect(texto(fixture)).toContain('todavia no tiene colaboradores');
+    expect(texto(fixture)).toContain('todavía no tiene colaboradores');
   });
 
   it('suspender sin motivo no sale a la red; con motivo, relee el listado', async () => {
@@ -185,7 +185,7 @@ describe('CollaboratorsPage', () => {
       .flush(
         {
           type: 'https://akine.app/problems/last-admin-required',
-          detail: 'No podes revocar al ultimo administrador',
+          detail: 'No podés revocar al último administrador',
         },
         { status: 409, statusText: 'Conflict' },
       );
@@ -194,7 +194,7 @@ describe('CollaboratorsPage', () => {
 
     // El panel sigue abierto con el motivo escrito: cerrarlo obligaria a rehacer todo para
     // leer el mensaje, y el conflicto puede resolverse cambiando de fila, no de motivo.
-    expect(texto(fixture)).toContain('No podes revocar al ultimo administrador');
+    expect(texto(fixture)).toContain('No podés revocar al último administrador');
     expect(texto(fixture)).toContain('Revocar el vinculo de la cuenta 100');
   });
 
@@ -302,13 +302,13 @@ describe('CollaboratorsPage', () => {
       pedido.flush(
         {
           type: 'https://akine.app/problems/forbidden',
-          detail: 'No tenes permiso para ver los colaboradores',
+          detail: 'No tenés permiso para ver los colaboradores',
         },
         { status: 403, statusText: 'Forbidden' },
       ),
     );
 
-    expect(texto(fixture)).toContain('No tenes permiso para ver los colaboradores');
+    expect(texto(fixture)).toContain('No tenés permiso para ver los colaboradores');
     expect(rotulos(fixture)).toContain('Reintentar');
     expect(fixture.nativeElement.querySelector('a[href="/seleccionar-contexto"]')).toBeNull();
   });
@@ -329,7 +329,7 @@ describe('CollaboratorsPage', () => {
   // Que acciones ofrece cada fila
   // -------------------------------------------------------------------------------------
 
-  it('una fila revocada no ofrece ninguna accion, y una suspendida ofrece reactivar', async () => {
+  it('una fila revocada no ofrece ninguna acción, y una suspendida ofrece reactivar', async () => {
     const fixture = await montarCon((pedido) =>
       pedido.flush({
         ...PAGINA,
@@ -346,7 +346,7 @@ describe('CollaboratorsPage', () => {
     expect(ofrecidos.filter((rotulo) => rotulo === 'Revocar').length).toBe(1);
   });
 
-  it('sin colaborador:manage se ve la tabla completa y ningun boton de accion', async () => {
+  it('sin colaborador:manage se ve la tabla completa y ningún botón de acción', async () => {
     const fixture = await montarCon((pedido) => pedido.flush(PAGINA), []);
 
     // Ocultar no autoriza —el backend rechaza igual— pero mostrar acciones que siempre
@@ -385,7 +385,7 @@ describe('CollaboratorsPage', () => {
     enviar(fixture, 'form');
 
     httpMock.expectNone((peticion: HttpRequest<unknown>) => peticion.method === 'POST');
-    expect(texto(fixture)).toContain('Elegi el permiso que queres otorgar');
+    expect(texto(fixture)).toContain('Elegí el permiso que queres otorgar');
   });
 
   it('dar de baja un permiso sin escribir el motivo no sale a la red y lo avisa', async () => {
@@ -407,7 +407,7 @@ describe('CollaboratorsPage', () => {
   // Traduccion del alcance y de la fecha
   // -------------------------------------------------------------------------------------
 
-  it('mover a una sede concreta manda changeScope con el consultorioId como numero', async () => {
+  it('mover a una sede concreta manda changeScope con el consultorioId como número', async () => {
     const fixture = await montar();
 
     abrirPanel(fixture, 'Cambiar rol o alcance');
@@ -429,7 +429,7 @@ describe('CollaboratorsPage', () => {
     });
   });
 
-  it('un permiso con fecha de vencimiento rige hasta el final de ese dia', async () => {
+  it('un permiso con fecha de vencimiento rige hasta el final de ese día', async () => {
     const fixture = await montar();
     abrirPanel(fixture, 'Permisos adicionales');
     responderGrants([]);
@@ -582,7 +582,7 @@ describe('CollaboratorsPage', () => {
     expect(fixture.nativeElement.querySelector('#grant-no-vigente-5')).not.toBeNull();
   });
 
-  it('si la lista de otorgables falla, el selector queda vacio y lo explica', async () => {
+  it('si la lista de otorgables falla, el selector queda vacío y lo explica', async () => {
     const fixture = await montar();
     abrirPanel(fixture, 'Permisos adicionales');
     httpMock.expectOne('/api/v1/organizations/1/memberships/10/grants').flush([]);
@@ -682,7 +682,7 @@ function apretar(fixture: { nativeElement: HTMLElement; detectChanges(): void },
     (candidato) => (candidato.textContent ?? '').trim() === rotulo,
   );
   if (boton === undefined) {
-    throw new Error(`No existe el boton ${rotulo}`);
+    throw new Error(`No existe el botón ${rotulo}`);
   }
   boton.click();
   fixture.detectChanges();

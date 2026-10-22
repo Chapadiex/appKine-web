@@ -51,7 +51,7 @@ function filaDeAutorizacion(page: Page, numero: string): Locator {
 async function abrirElSaldo(page: Page, personaId: number, numero: string): Promise<Locator> {
   await navegar(page, `/pacientes/${personaId}/autorizaciones`);
   await filaDeAutorizacion(page, numero).getByRole('button', { name: 'Saldo y consumos' }).click();
-  const panel = page.getByRole('region', { name: `Saldo y consumos de la autorizacion ${numero}` });
+  const panel = page.getByRole('region', { name: `Saldo y consumos de la autorización ${número}` });
   await expect(panel.getByRole('heading', { name: 'Saldo', level: 3 })).toBeVisible();
   return panel;
 }
@@ -123,7 +123,7 @@ test.describe('Saldo, ledger y alerta de una autorizacion contra el backend real
     const consumo = panel.locator('li').filter({ hasText: /Consumo #\d+/ });
     await expect(consumo).toHaveCount(1);
     await expect(consumo).toContainText('Resta 1 al saldo');
-    await expect(consumo).toContainText(`Cierre de la sesion #${sesionId}`);
+    await expect(consumo).toContainText(`Cierre de la sesión #${sesionId}`);
     const consumoId = Number(/Consumo #(\d+)/.exec((await consumo.textContent()) ?? '')?.[1]);
     expect(consumoId).toBeGreaterThan(0);
 
@@ -149,9 +149,9 @@ test.describe('Saldo, ledger y alerta de una autorizacion contra el backend real
     await expect(dato(panel, 'Disponibles')).toHaveText(String(CANTIDAD - 1));
     await expect(dato(panel, 'Consumos a revisar')).toHaveText('1');
     const alerta = panel.locator('li').filter({ hasText: 'Consumo a revisar.' });
-    await expect(alerta).toContainText(`la sesion #${sesionId}`);
+    await expect(alerta).toContainText(`la sesión #${sesionId}`);
     await expect(alerta).toContainText(`(obligacion #${coseguro.id})`);
-    await expect(alerta).toContainText(`Motivo de la anulacion: ${motivoDeAnulacion}`);
+    await expect(alerta).toContainText(`Motivo de la anulación: ${motivoDeAnulacion}`);
 
     // --- Revertir desde la alerta: la unidad vuelve y la alerta se resuelve ----------------
     await alerta.getByRole('button', { name: `Revertir el consumo #${consumoId}` }).click();

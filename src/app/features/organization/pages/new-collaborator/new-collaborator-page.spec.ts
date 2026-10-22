@@ -39,7 +39,7 @@ describe('NewCollaboratorPage', () => {
 
   afterEach(() => httpMock.verify());
 
-  it('el alta sale sin orgId: la organizacion es la del contexto', async () => {
+  it('el alta sale sin orgId: la organización es la del contexto', async () => {
     const fixture = montar();
 
     escribir(fixture, '#alta-email', 'kine@ejemplo.test');

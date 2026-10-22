@@ -29,13 +29,13 @@ describe('clases: fechas en la zona de la sede', () => {
     expect(horaDeSede(instante ?? '', CORDOBA)).toBe('18:30');
   });
 
-  it('la medianoche de la sede ya es otro dia en UTC y no se corre', () => {
+  it('la medianoche de la sede ya es otro día en UTC y no se corre', () => {
     const instante = instanteDesdeHoraDeSede('2026-10-14', '22:00', CORDOBA);
     expect(instante).toBe('2026-10-15T01:00:00.000Z');
     expect(fechaDeSede(instante ?? '', CORDOBA)).toBe('2026-10-14');
   });
 
-  it('respeta un cambio de horario (Madrid, ultimo domingo de octubre)', () => {
+  it('respeta un cambio de horario (Madrid, último domingo de octubre)', () => {
     expect(instanteDesdeHoraDeSede('2026-07-01', '10:00', 'Europe/Madrid')).toBe(
       '2026-07-01T08:00:00.000Z',
     );
@@ -67,7 +67,7 @@ describe('clases: fechas en la zona de la sede', () => {
     expect(sumarDiasAFecha('2026-12-31', 1)).toBe('2027-01-01');
   });
 
-  it('nombra el dia y la hora', () => {
+  it('nombra el día y la hora', () => {
     expect(diaEnPalabras('2026-10-14')).toBe('miércoles 14/10');
     expect(diaEnPalabras('raro')).toBe('raro');
     expect(fechaHoraDeSede('2026-10-14T21:30:00Z', CORDOBA)).toBe('miércoles 14/10, 18:30');
@@ -91,7 +91,7 @@ describe('clases: estados y reglas de la pantalla', () => {
     expect(admiteCambios(null)).toBe(false);
   });
 
-  it('baja y confirmacion segun el estado de la inscripcion', () => {
+  it('baja y confirmación según el estado de la inscripción', () => {
     expect(admiteBaja({ estado: 'LISTA_ESPERA' })).toBe(true);
     expect(admiteBaja({ estado: 'ASISTIO' })).toBe(false);
     expect(admiteConfirmacion({ estado: 'RESERVADA' })).toBe(true);
@@ -106,7 +106,7 @@ describe('clases: estados y reglas de la pantalla', () => {
 });
 
 describe('nombreDeClase y espaciosHabilitadosEnServicio', () => {
-  it('nombra por titulo, despues por oferta y al final por id', () => {
+  it('nombra por titulo, después por oferta y al final por id', () => {
     expect(nombreDeClase({ id: 1, titulo: 'Yoga', ofertaNombre: 'Pilates' })).toBe('Yoga');
     expect(nombreDeClase({ id: 1, ofertaNombre: 'Pilates' })).toBe('Pilates');
     expect(nombreDeClase({ id: 1 })).toBe('Clase #1');

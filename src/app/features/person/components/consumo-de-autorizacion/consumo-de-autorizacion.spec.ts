@@ -116,14 +116,14 @@ describe('ConsumoDeAutorizacion', () => {
       const fixture = await montar();
       const contenido = texto(fixture);
 
-      expect(contenido).toContain('Saldo y consumos de la autorizacion AUT-1');
+      expect(contenido).toContain('Saldo y consumos de la autorización AUT-1');
       expect(contenido).toContain('Otorgadas');
       expect(contenido).toContain('Consumos a revisar');
       expect(contenido).toContain('Habilita a atender');
-      expect(contenido).toContain('Se anulo la deuda de la sesion #71 (obligacion #880)');
-      expect(contenido).toContain('Motivo de la anulacion: Cortesia del centro');
+      expect(contenido).toContain('Se anulo la deuda de la sesión #71 (obligacion #880)');
+      expect(contenido).toContain('Motivo de la anulación: Cortesia del centro');
       expect(contenido).toContain('No hay forma de descartar la alerta sin revertir');
-      expect(contenido).toContain('Cierre de la sesion #70');
+      expect(contenido).toContain('Cierre de la sesión #70');
       expect(contenido).toContain('Compensa el consumo #1');
       expect(contenido).toContain('Motivo: Error de carga');
       expect(contenido).toContain('Ya revertido');
@@ -146,15 +146,15 @@ describe('ConsumoDeAutorizacion', () => {
 
     apretar(fixture, 'Revertir el consumo #3');
     const motivo = fixture.nativeElement.querySelector('#revertir-consumo-3') as HTMLInputElement;
-    motivo.value = 'La sesion no se presto';
+    motivo.value = 'La sesión no se presto';
     motivo.dispatchEvent(new Event('input'));
     fixture.detectChanges();
-    apretar(fixture, 'Confirmar la reversion');
+    apretar(fixture, 'Confirmar la reversión');
 
     const pedido = httpMock.expectOne(
       (p) => p.method === 'POST' && p.url === `${BASE}/reversiones`,
     );
-    expect(pedido.request.body).toEqual({ movimientoId: 3, motivo: 'La sesion no se presto' });
+    expect(pedido.request.body).toEqual({ movimientoId: 3, motivo: 'La sesión no se presto' });
     pedido.flush({ id: 4, tipo: 'REVERSION', movimientoOrigenId: 3 });
 
     responderLectura({ ...SALDO, consumosARevisar: 0, saldo: 9, cantidadConsumida: 1 });
@@ -164,7 +164,7 @@ describe('ConsumoDeAutorizacion', () => {
     expect(texto(fixture)).toContain('Se revirtio el consumo #3');
   });
 
-  it('muestra el rechazo de una reversion repetida y la incoherencia del saldo', async () => {
+  it('muestra el rechazo de una reversión repetida y la incoherencia del saldo', async () => {
     const fixture = await montar({
       ...SALDO,
       coherente: false,
@@ -177,7 +177,7 @@ describe('ConsumoDeAutorizacion', () => {
     motivo.value = 'Duplicado';
     motivo.dispatchEvent(new Event('input'));
     fixture.detectChanges();
-    apretar(fixture, 'Confirmar la reversion');
+    apretar(fixture, 'Confirmar la reversión');
 
     httpMock
       .expectOne((p) => p.method === 'POST' && p.url === `${BASE}/reversiones`)
@@ -210,7 +210,7 @@ describe('ConsumoDeAutorizacion', () => {
     apretar(fixture, 'Reintentar');
     responderLectura(SALDO, [], []);
     await estabilizar(fixture);
-    expect(texto(fixture)).toContain('Todavia no consumio ninguna sesion');
+    expect(texto(fixture)).toContain('Todavía no consumio ninguna sesión');
     expect(texto(fixture)).toContain('No hay consumos a revisar');
   });
 
@@ -254,7 +254,7 @@ describe('ConsumoDeAutorizacion', () => {
       fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>,
     ).find((b) => (b.textContent ?? '').trim() === rotulo);
     if (boton === undefined) {
-      throw new Error(`No hay ningun boton rotulado "${rotulo}".`);
+      throw new Error(`No hay ningún botón rotulado "${rotulo}".`);
     }
     boton.click();
     fixture.detectChanges();

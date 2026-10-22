@@ -29,7 +29,7 @@ describe('traducirErrorPersona', () => {
     expect(blando.personaExistenteId).toBeNull();
   });
 
-  it('descarta los candidatos que no son numeros', () => {
+  it('descarta los candidatos que no son números', () => {
     // El cuerpo de un Problem Details lleva propiedades extra sin tipo. Un `null` colado en la
     // lista terminaria en un `GET /personas/null`.
     const traducido = traducirErrorPersona(
@@ -54,14 +54,14 @@ describe('traducirErrorPersona', () => {
     );
   });
 
-  it('la falta de contexto NO es una sesion vencida, y el mensaje lo dice', () => {
+  it('la falta de contexto NO es una sesión vencida, y el mensaje lo dice', () => {
     const traducido = traducirErrorPersona(problema('missing-tenant-context', 403, {}));
 
     expect(traducido.causa).toBe('sin-contexto');
-    expect(traducido.mensaje).toContain('sesion sigue abierta');
+    expect(traducido.mensaje).toContain('sesión sigue abierta');
   });
 
-  it('DP-21: la version vieja es concurrent-modification y conflict es de negocio', () => {
+  it('DP-21: la versión vieja es concurrent-modification y conflict es de negocio', () => {
     expect(traducirErrorPersona(problema('concurrent-modification', 409, {})).causa).toBe(
       'concurrencia',
     );
@@ -118,14 +118,14 @@ describe('traducirErrorPersona', () => {
     expect(traducido.mensaje).toContain('No pudimos completar');
   });
 
-  it('la suscripcion suspendida manda a la pantalla de suscripcion', () => {
+  it('la suscripción suspendida manda a la pantalla de suscripción', () => {
     const traducido = traducirErrorPersona(problema('subscription-suspended', 409, {}));
 
     expect(traducido.causa).toBe('suscripcion-suspendida');
     expect(traducido.mensaje).toContain('suscripcion');
   });
 
-  it('C-4: la reversion repetida pide releer y la reversion sin motivo es validacion', () => {
+  it('C-4: la reversión repetida pide releer y la reversión sin motivo es validacion', () => {
     const repetida = traducirErrorPersona(problema('movimiento-ya-revertido', 409, {}));
     expect(repetida.causa).toBe('consumo-ya-revertido');
     expect(repetida.mensaje).toContain('ya estaba revertido');
@@ -251,7 +251,7 @@ describe('traducirErrorPersona', () => {
     );
   });
 
-  it('la transicion no permitida usa el detalle del backend, que nombra estado y accion', () => {
+  it('la transicion no permitida usa el detalle del backend, que nombra estado y acción', () => {
     const traducido = traducirErrorPersona(
       problema('autorizacion-transicion-no-permitida', 409, {
         estadoActual: 'APROBADA',

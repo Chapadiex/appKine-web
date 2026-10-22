@@ -78,7 +78,7 @@ describe('TratamientosDeSesion', () => {
 
   afterEach(() => httpMock.verify());
 
-  it('ofrece solo las practicas vigentes de la oferta y preselecciona la principal', async () => {
+  it('ofrece solo las prácticas vigentes de la oferta y preselecciona la principal', async () => {
     const fixture = await montar();
 
     const opciones = Array.from(
@@ -94,7 +94,7 @@ describe('TratamientosDeSesion', () => {
     ).toBe('70');
   });
 
-  it('registra con la version recibida, parametros tipados, y devuelve la version nueva', async () => {
+  it('registra con la versión recibida, parametros tipados, y devuelve la versión nueva', async () => {
     const fixture = await montar();
     const versiones: number[] = [];
     const enVuelo: boolean[] = [];
@@ -131,7 +131,7 @@ describe('TratamientosDeSesion', () => {
     expect(texto(fixture)).toContain('Tratamiento registrado');
   });
 
-  it('un parametro sin nombre o un numero que no es numero no sale', async () => {
+  it('un parametro sin nombre o un número que no es número no sale', async () => {
     const fixture = await montar();
 
     apretar(fixture, 'Agregar un parámetro');
@@ -141,11 +141,11 @@ describe('TratamientosDeSesion', () => {
     escribir(fixture, '#parametro-clave-0', 'Series');
     escribir(fixture, '#parametro-valor-0', 'tres');
     apretar(fixture, 'Registrar el tratamiento');
-    expect(texto(fixture)).toContain('no es un numero');
+    expect(texto(fixture)).toContain('no es un número');
     httpMock.expectNone((p) => p.method === 'POST');
   });
 
-  it('la duracion va en minutos enteros', async () => {
+  it('la duración va en minutos enteros', async () => {
     const fixture = await montar();
     escribir(fixture, '#tratamiento-duracion', '7,5');
     apretar(fixture, 'Registrar el tratamiento');
@@ -174,7 +174,7 @@ describe('TratamientosDeSesion', () => {
     expect(fixture.nativeElement.querySelector('#parametro-clave-0')).toBeNull();
   });
 
-  it('la baja exige motivo y adopta la version que devuelve, sin releer la sesion', async () => {
+  it('la baja exige motivo y adopta la versión que devuelve, sin releer la sesión', async () => {
     const fixture = await montar(true, [REGISTRADO]);
     const versiones: number[] = [];
     const enVuelo: boolean[] = [];
@@ -207,7 +207,7 @@ describe('TratamientosDeSesion', () => {
     expect(fixture.nativeElement.querySelector('#baja-motivo-900')).toBeNull();
   });
 
-  it('un 409 de version se le pasa a la pantalla, que es la que sabe releer', async () => {
+  it('un 409 de versión se le pasa a la pantalla, que es la que sabe releer', async () => {
     const fixture = await montar();
     const problemas: unknown[] = [];
     fixture.componentInstance.problema.subscribe((p) => problemas.push(p));
@@ -229,7 +229,7 @@ describe('TratamientosDeSesion', () => {
     expect(fixture.nativeElement.querySelector('[role="alert"]')).toBeNull();
   });
 
-  it('una practica dada de baja se explica aca, sin molestar a la pantalla', async () => {
+  it('una práctica dada de baja se explica acá, sin molestar a la pantalla', async () => {
     const fixture = await montar();
     const problemas: unknown[] = [];
     fixture.componentInstance.problema.subscribe((p) => problemas.push(p));
@@ -247,13 +247,13 @@ describe('TratamientosDeSesion', () => {
     expect(texto(fixture)).toContain('no se puede asentar');
   });
 
-  it('una oferta sin practicas lo dice en vez de ofrecer un formulario vacio', async () => {
+  it('una oferta sin prácticas lo dice en vez de ofrecer un formulario vacío', async () => {
     const fixture = await montar(true, [], []);
     expect(texto(fixture)).toContain('no declara prácticas');
     expect(fixture.nativeElement.querySelector('#tratamiento-practica')).toBeNull();
   });
 
-  it('cerrada se lee sin formulario, sin practicas ni espacios', async () => {
+  it('cerrada se lee sin formulario, sin prácticas ni espacios', async () => {
     const fixture = await montar(false, [REGISTRADO]);
     expect(texto(fixture)).toContain('Electroterapia');
     expect(texto(fixture)).toContain('15 minutos');
@@ -266,7 +266,7 @@ describe('TratamientosDeSesion', () => {
     expect(texto(fixture)).toContain('sin decir de qué zona');
   });
 
-  it('parametroParaEnviar rechaza un texto vacio y un si/no sin elegir', () => {
+  it('parametroParaEnviar rechaza un texto vacío y un si/no sin elegir', () => {
     const base = { clave: 'Tecnica', valor: '', valorSiNo: null, unidad: '' };
     expect(
       typeof parametroParaEnviar({ ...base, tipoDato: ParametroDeTratamientoTipoDatoEnum.TEXTO }),
@@ -353,7 +353,7 @@ describe('TratamientosDeSesion', () => {
       fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>,
     ).find((b) => (b.textContent ?? '').trim().startsWith(rotulo));
     if (boton === undefined) {
-      throw new Error(`No hay ningun boton rotulado "${rotulo}".`);
+      throw new Error(`No hay ningún botón rotulado "${rotulo}".`);
     }
     boton.click();
     fixture.detectChanges();

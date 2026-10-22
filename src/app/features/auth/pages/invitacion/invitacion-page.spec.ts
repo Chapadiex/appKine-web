@@ -85,7 +85,7 @@ describe('InvitacionPage', () => {
     return fixture;
   }
 
-  it('pide nombre y contrasena solo cuando el invitado no tiene cuenta', async () => {
+  it('pide nombre y contraseña solo cuando el invitado no tiene cuenta', async () => {
     const conAlta = await montarLista();
     const anfitrion = conAlta.nativeElement as HTMLElement;
 
@@ -95,17 +95,17 @@ describe('InvitacionPage', () => {
     expect(anfitrion.textContent).toContain('Sede Centro');
     // Y explica por que no va a recibir un correo de activacion, que es lo que esperaria
     // cualquiera que se haya registrado antes en AKINE.
-    expect(anfitrion.textContent).toContain('ningun correo de activacion');
+    expect(anfitrion.textContent).toContain('ningún correo de activación');
   });
 
-  it('a quien ya tiene cuenta no le pide nada: pedirle contrasena seria cambiarsela', async () => {
+  it('a quien ya tiene cuenta no le pide nada: pedirle contraseña seria cambiarsela', async () => {
     TestBed.resetTestingModule();
     const fixture = await montarLista({ ...SIN_CUENTA, requiereRegistro: false });
     const anfitrion = fixture.nativeElement as HTMLElement;
 
     expect(anfitrion.querySelector('#invitacion-nombre')).toBeNull();
     expect(anfitrion.querySelector('#invitacion-password')).toBeNull();
-    expect(anfitrion.textContent).toContain('la contrasena de siempre');
+    expect(anfitrion.textContent).toContain('la contraseña de siempre');
 
     // Y aceptar manda SOLO el token: el backend ignoraria el resto, y mandarlo igual le haria
     // creer al usuario que cambio algo.
@@ -119,7 +119,7 @@ describe('InvitacionPage', () => {
     expect(anfitrion.textContent).toContain('con tu cuenta de siempre');
   });
 
-  it('el alta exige nombre y contrasena antes de mandar nada', async () => {
+  it('el alta exige nombre y contraseña antes de mandar nada', async () => {
     TestBed.resetTestingModule();
     const fixture = await montarLista();
     const anfitrion = fixture.nativeElement as HTMLElement;
@@ -149,7 +149,7 @@ describe('InvitacionPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect(anfitrion.textContent).toContain('la contrasena que acabas de elegir');
+    expect(anfitrion.textContent).toContain('la contraseña que acabas de elegir');
   });
 
   it('un enlace vencido ofrece reintentar y no se lee como una falla', async () => {
@@ -168,8 +168,8 @@ describe('InvitacionPage', () => {
     const anfitrion = fixture.nativeElement as HTMLElement;
     expect(anfitrion.textContent).toContain('vencio');
     // La salida concreta: la invitacion sigue en pie y quien invito puede reenviarla.
-    expect(anfitrion.textContent).toContain('La invitacion sigue en pie');
-    expect(anfitrion.textContent).not.toContain('Ir a iniciar sesion');
+    expect(anfitrion.textContent).toContain('La invitación sigue en pie');
+    expect(anfitrion.textContent).not.toContain('Ir a iniciar sesión');
   });
 
   it('rechazar es un click, sin formulario ni motivo', async () => {
@@ -190,7 +190,7 @@ describe('InvitacionPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect(anfitrion.textContent).toContain('Rechazaste la invitacion');
+    expect(anfitrion.textContent).toContain('Rechazaste la invitación');
     expect(anfitrion.textContent).toContain('No creamos ninguna cuenta');
   });
 
@@ -202,7 +202,7 @@ describe('InvitacionPage', () => {
 
     httpMock.expectNone(PREVIEW);
     const anfitrion = fixture.nativeElement as HTMLElement;
-    expect(anfitrion.textContent).toContain('le falta el codigo de la invitacion');
+    expect(anfitrion.textContent).toContain('le falta el código de la invitación');
   });
 
   it(

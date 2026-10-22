@@ -608,8 +608,8 @@ export class OfertasDeLaSedePage {
         this.cerrarPanel();
         this.exito.set(
           'La oferta quedo dada de alta en esta sede. Si su vigencia arranca mas adelante, va a ' +
-            'figurar como activa pero todavia sin vigencia: es correcto, y empieza a ofrecerse sola ' +
-            'ese dia.',
+            'figurar como activa pero todavía sin vigencia: es correcto, y empieza a ofrecerse sola ' +
+            'ese día.',
         );
         this.cargar();
       },
@@ -709,7 +709,7 @@ export class OfertasDeLaSedePage {
         this.prepagoEnVuelo.set(null);
         this.exito.set(
           exigir
-            ? `"${oferta.nombreComercial}" exige prepago: la recepcion avisa cuando alguien llega ` +
+            ? `"${oferta.nombreComercial}" exige prepago: la recepción avisa cuando alguien llega ` +
                 'sin anticipo. Es un aviso, no impide atenderlo.'
             : `"${oferta.nombreComercial}" ya no exige prepago.`,
         );
@@ -751,7 +751,7 @@ export class OfertasDeLaSedePage {
     const version = original?.version;
     if (original === null || version === undefined) {
       this.errorAccion.set(
-        'No pudimos leer la version de esta oferta. Cerra el panel, recarga el listado y volve a intentar.',
+        'No pudimos leer la versión de esta oferta. Cerra el panel, recarga el listado y volvé a intentar.',
       );
       return null;
     }

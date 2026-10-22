@@ -34,7 +34,7 @@ import { CategoriaDeAdjunto } from '../services/adjuntos-api';
  */
 const NOMBRES_DE_SECCION: Record<string, string> = {
   turnos: 'Turnos',
-  economia: 'Situacion economica',
+  economia: 'Situación económica',
   coberturas: 'Coberturas',
   documentos: 'Documentacion administrativa',
 };
@@ -61,10 +61,10 @@ export function nombreDeSeccion(seccion: string | undefined): string {
 export function omisionEnPalabras(omitida: SeccionOmitidaResponse): string {
   const permiso = omitida.permisoRequerido;
   if (permiso === undefined || permiso === '') {
-    return 'No tenes permiso para ver esta seccion. No es que no haya datos: no se consultaron.';
+    return 'No tenés permiso para ver esta sección. No es que no haya datos: no se consultaron.';
   }
   return (
-    'No tenes permiso para ver esta seccion, asi que no se consulto. No significa que no haya ' +
+    'No tenés permiso para ver esta sección, así que no se consulto. No significa que no haya ' +
     `datos. Hace falta el permiso ${permiso}: pediselo a quien administra el centro.`
   );
 }

@@ -384,7 +384,7 @@ export class OrdenesYAutorizacionesPage {
     const id = this.identificador();
     if (id === null) {
       this.cargando.set(false);
-      this.errorDeCarga.set('La direccion no identifica a ninguna persona del padron.');
+      this.errorDeCarga.set('La dirección no identifica a ninguna persona del padron.');
       return;
     }
 
@@ -581,7 +581,7 @@ export class OrdenesYAutorizacionesPage {
     this.limpiarAvisos();
 
     this.api.crearAutorizacion(id, cuerpo).subscribe({
-      next: () => this.terminar('Se registro la autorizacion.'),
+      next: () => this.terminar('Se registro la autorización.'),
       error: (error: unknown) => this.fallo(error),
     });
   }
@@ -626,7 +626,7 @@ export class OrdenesYAutorizacionesPage {
     this.limpiarAvisos();
 
     this.api.editarAutorizacion(personaId, original.id, cuerpo).subscribe({
-      next: () => this.terminar('Se corrigio la autorizacion.'),
+      next: () => this.terminar('Se corrigio la autorización.'),
       error: (error: unknown) => this.fallo(error),
     });
   }
@@ -693,7 +693,7 @@ export class OrdenesYAutorizacionesPage {
       next: () =>
         this.terminar(
           accion === 'APROBAR'
-            ? 'La autorizacion quedo aprobada. Aprobada es terminal: si el financiador cambia de ' +
+            ? 'La autorización quedo aprobada. Aprobada es terminal: si el financiador cambia de ' +
                 'opinion, se da de baja esta y se carga otra.'
             : 'Se registro la respuesta del financiador.',
         ),
@@ -718,7 +718,7 @@ export class OrdenesYAutorizacionesPage {
     this.api.darDeBajaAutorizacion(personaId, abierto.id, motivo).subscribe({
       next: () =>
         this.terminar(
-          'La autorizacion quedo dada de baja. No se borro, y su numero se puede volver a usar.',
+          'La autorización quedo dada de baja. No se borro, y su número se puede volver a usar.',
         ),
       error: (error: unknown) => this.fallo(error),
     });

@@ -387,6 +387,6 @@ export const routes: Routes = [
   {
     path: '**',
     loadComponent: () => import('./shared/pages/not-found/not-found').then((m) => m.NotFound),
-    title: 'AKINE - Pagina no encontrada',
+    title: 'AKINE - Página no encontrada',
   },
 ];

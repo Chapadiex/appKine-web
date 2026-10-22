@@ -73,46 +73,46 @@ export interface ErrorActividad {
   readonly campos: Readonly<Record<string, string>>;
 }
 
-const MENSAJE_GENERICO = 'No pudimos completar la operacion. Volve a intentar en un momento.';
-const MENSAJE_DE_RED = 'No se pudo contactar al servidor. Revisa tu conexion y volve a intentar.';
+const MENSAJE_GENERICO = 'No pudimos completar la operación. Volvé a intentar en un momento.';
+const MENSAJE_DE_RED = 'No se pudo contactar al servidor. Revisa tu conexion y volvé a intentar.';
 const MENSAJE_SIN_CONTEXTO =
-  'Las clases son de una sede. Eligi una organizacion y un consultorio, y volve a entrar. Tu ' +
-  'sesion sigue abierta.';
+  'Las clases son de una sede. Eligi una organización y un consultorio, y volvé a entrar. Tu ' +
+  'sesión sigue abierta.';
 const MENSAJE_SIN_PERMISO =
-  'No tenes permiso para esto en esta sede: mirar la grilla pide clase:read, programar clase:manage ' +
-  'y los participantes inscripcion:read o inscripcion:manage. Pediselo a quien administra el centro.';
+  'No tenés permiso para esto en esta sede: mirar la grilla pide clase:read, programar clase:manage ' +
+  'y los participantes inscripción:read o inscripción:manage. Pediselo a quien administra el centro.';
 const MENSAJE_NO_ENCONTRADO =
-  'La clase, la oferta, la persona o la inscripcion ya no existe, o no es de esta sede.';
+  'La clase, la oferta, la persona o la inscripción ya no existe, o no es de esta sede.';
 const MENSAJE_NO_PROGRAMABLE =
   'Esa oferta no puede sostener una clase: tiene que ser grupal, estar activa y vigente en la ' +
-  'fecha elegida. Elegi otra oferta.';
+  'fecha elegida. Elegí otra oferta.';
 const MENSAJE_TRANSICION_CLASE =
-  'La clase no admite esa operacion en su estado actual: ya empezo, ya termino o esta cancelada. ' +
-  'Volve a leerla.';
+  'La clase no admite esa operación en su estado actual: ya empezo, ya termino o esta cancelada. ' +
+  'Volvé a leerla.';
 const MENSAJE_COMPLETA =
-  'La clase no tiene lugares disponibles. Podes anotar a la persona en la lista de espera: entra ' +
+  'La clase no tiene lugares disponibles. Podés anotar a la persona en la lista de espera: entra ' +
   'sola en cuanto alguien se da de baja.';
 const MENSAJE_TRANSICION_INSCRIPCION =
-  'La inscripcion no admite esa operacion: esta en la lista de espera, ya fue cancelada o ya tiene ' +
-  'asistencia registrada. Volve a leer los participantes.';
+  'La inscripción no admite esa operación: esta en la lista de espera, ya fue cancelada o ya tiene ' +
+  'asistencia registrada. Volvé a leer los participantes.';
 const MENSAJE_HONORARIOS_LIQUIDADOS =
   'Esta clase ya tiene honorarios liquidados, y cambiar sus instructores cambiaria el reparto de ' +
-  'una liquidacion cerrada. Si hay que corregirlo, anula el egreso de esa liquidacion: eso la ' +
-  'libera y despues se cambian los instructores y se vuelve a liquidar.';
+  'una liquidación cerrada. Si hay que corregirlo, anula el egreso de esa liquidación: eso la ' +
+  'libera y después se cambian los instructores y se vuelve a liquidar.';
 const MENSAJE_RECURSO_OCUPADO =
-  'Ya hay un turno u otra clase que se cruza con ese horario. Elegi otro horario u otro profesional.';
+  'Ya hay un turno u otra clase que se cruza con ese horario. Elegí otro horario u otro profesional.';
 const MENSAJE_HORARIO =
   'El profesional no atiende en ese horario, no esta habilitado para la oferta, o el box no esta ' +
-  'disponible. Elegi otro horario, otro profesional u otro box.';
+  'disponible. Elegí otro horario, otro profesional u otro box.';
 const MENSAJE_YA_INSCRIPTA = 'Esa persona ya esta anotada en esta clase.';
 const MENSAJE_VERSION_VIEJA =
-  'Alguien modifico la clase mientras la mirabas. No se cambio nada: volve a leerla y repeti la ' +
+  'Alguien modifico la clase mientras la mirabas. No se cambio nada: volvé a leerla y repeti la ' +
   'operacion.';
 const MENSAJE_CLAVE_REUSADA =
   'Hubo un problema tecnico con este intento: la clave que lo identifica ya se habia usado para otro ' +
-  'pedido. No se hizo nada y no es un error tuyo. Volve a intentarlo.';
+  'pedido. No se hizo nada y no es un error tuyo. Volvé a intentarlo.';
 const MENSAJE_SUSCRIPCION =
-  'La suscripcion de la organizacion esta suspendida, asi que no se pueden programar clases ni ' +
+  'La suscripción de la organización esta suspendida, así que no se pueden programar clases ni ' +
   'inscribir personas.';
 const MENSAJE_LIMITE = 'Demasiados intentos. Espera un momento antes de volver a intentar.';
 const MENSAJE_VALIDACION = 'Revisa los datos marcados.';
@@ -216,10 +216,10 @@ function mensajeDeCompleta(error: AkineHttpError): string {
 function mensajeDeRecurso(error: AkineHttpError): string {
   const recurso = textoDeExtension(error, 'recurso');
   if (recurso === 'profesional') {
-    return 'El profesional ya tiene un turno u otra clase que se cruza con ese horario. Elegi otro horario u otro profesional.';
+    return 'El profesional ya tiene un turno u otra clase que se cruza con ese horario. Elegí otro horario u otro profesional.';
   }
   if (recurso === 'espacio') {
-    return 'El box ya tiene un turno u otra clase que se cruza con ese horario. Elegi otro horario.';
+    return 'El box ya tiene un turno u otra clase que se cruza con ese horario. Elegí otro horario.';
   }
   return MENSAJE_RECURSO_OCUPADO;
 }

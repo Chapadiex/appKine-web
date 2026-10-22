@@ -68,7 +68,7 @@ test.describe('Recepcion del dia contra el backend real', () => {
 
     await fila.getByRole('button', { name: 'Registrar la llegada' }).click();
     await expect(fila.getByText('LLEGO', { exact: true })).toBeVisible();
-    await expect(fila.getByText('Todavia no llego')).toHaveCount(0);
+    await expect(fila.getByText('Todavía no llego')).toHaveCount(0);
 
     // La oferta no declara practica: el servidor deja la recepcion OBSERVADA, que avisa y no
     // bloquea (RN-M13-003). La decision es del servidor; la pantalla no manda el resultado.
@@ -99,7 +99,7 @@ test.describe('Recepcion del dia contra el backend real', () => {
     await expect(fila.getByText('LLEGO', { exact: true })).toBeVisible();
 
     await fila.getByRole('button', { name: 'Atender como Particular' }).click();
-    const panel = page.getByRole('region', { name: 'Confirmar la transicion de la recepcion' });
+    const panel = page.getByRole('region', { name: 'Confirmar la transicion de la recepción' });
     await panel.getByLabel('Motivo (obligatorio)').fill('No trajo la credencial de la obra social');
     await panel.getByRole('button', { name: 'Atender como Particular' }).click();
 
@@ -147,13 +147,13 @@ test.describe('Recepcion del dia contra el backend real', () => {
     expect(problema.type).toBe(uriDeProblema('recepcion-transicion-no-permitida'));
 
     await expect(
-      page.getByRole('heading', { name: 'No se pudo completar la operacion' }),
+      page.getByRole('heading', { name: 'No se pudo completar la operación' }),
     ).toBeVisible();
     await expect(page.getByText('Lo que dijo el servidor:')).toBeVisible();
     // La pantalla corrige la fila sola con lo que dice el servidor: sin recepcion abierta, vuelve
     // a ofrecer el check-in. Releer el dia entero lo confirma.
     await expect(fila.getByRole('button', { name: 'Registrar la llegada' })).toBeVisible();
-    await page.getByRole('button', { name: 'Volver a leer el dia' }).click();
+    await page.getByRole('button', { name: 'Volver a leer el día' }).click();
     await expect(fila.getByText('Sin recepcion')).toBeVisible();
     await expect(fila.getByRole('button', { name: 'Registrar la llegada' })).toBeVisible();
   });
@@ -178,7 +178,7 @@ test.describe('Recepcion del dia contra el backend real', () => {
     await expect(fila.getByRole('button', { name: 'Atender como Particular' })).toBeVisible();
 
     await fila.getByRole('button', { name: 'Se retiro sin ser atendido' }).click();
-    const panel = page.getByRole('region', { name: 'Confirmar la transicion de la recepcion' });
+    const panel = page.getByRole('region', { name: 'Confirmar la transicion de la recepción' });
     await panel.getByRole('button', { name: 'Registrar el retiro' }).click();
     await expect(panel.getByText('Escribi por que se retiro: es obligatorio.')).toBeVisible();
 

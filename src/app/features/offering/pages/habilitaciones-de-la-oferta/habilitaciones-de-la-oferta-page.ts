@@ -293,7 +293,7 @@ export class HabilitacionesDeLaOfertaPage {
         this.guardando.set(false);
         this.estado.set({ tipo: 'listo', pagina: respuesta });
         this.sincronizarCasillas(respuesta);
-        this.exito.set('Guardamos la configuracion de la oferta.');
+        this.exito.set('Guardamos la configuración de la oferta.');
 
         // Guardar HACE AVANZAR la version de la oferta: el backend la carga con incremento
         // forzado, porque si no la version se queda quieta y el control optimista no serializa a
@@ -446,13 +446,13 @@ export class HabilitacionesDeLaOfertaPage {
  * administrador apretando un boton apagado sin saber que recargar lo destraba.
  */
 const MENSAJE_SIN_OFERTA =
-  'No pudimos leer la oferta, y sin su version no se puede guardar: mandar una version inventada ' +
+  'No pudimos leer la oferta, y sin su versión no se puede guardar: mandar una versión inventada ' +
   'pisaria la edicion de otra persona. Las casillas que marcaste NO se guardaron. Recarga la ' +
-  'configuracion y volve a marcarlas.';
+  'configuración y volvé a marcarlas.';
 
 /** Sin sede elegida no hay oferta: el problema es el contexto, no la oferta. */
 const MENSAJE_SIN_SEDE =
-  'No hay una sede elegida, y la oferta pertenece a una. Elegi la sede y volve a entrar.';
+  'No hay una sede elegida, y la oferta pertenece a una. Elegí la sede y volvé a entrar.';
 
 /**
  * La union de lo habilitado y lo candidato, ordenada por etiqueta.

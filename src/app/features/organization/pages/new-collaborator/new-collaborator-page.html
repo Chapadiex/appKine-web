@@ -3,7 +3,7 @@
   <app-ayuda titulo="Sobre esta pantalla">
     <p>
       Le da acceso a esta organización a una cuenta que ya existe en AKINE. No se crea la cuenta ni
-      se manda ningun correo: la persona tiene que haberse registrado antes.
+      se manda ningún correo: la persona tiene que haberse registrado antes.
     </p>
   </app-ayuda>
 </div>
@@ -39,20 +39,20 @@
           [attr.aria-invalid]="mostrarError('roleCode')"
           [attr.aria-describedby]="mostrarError('roleCode') ? 'alta-roleCode-error' : null"
         >
-          <option value="">Elegi un rol</option>
+          <option value="">Elegí un rol</option>
           @for (rol of roles; track rol.codigo) {
             <option [value]="rol.codigo">{{ rol.etiqueta }}</option>
           }
         </select>
         @if (mostrarError('roleCode')) {
-          <p class="campo__error" id="alta-roleCode-error">Elegi el rol que va a tener.</p>
+          <p class="campo__error" id="alta-roleCode-error">Elegí el rol que va a tener.</p>
         }
       </div>
     </div>
     <fieldset class="grupo">
       <legend>Alcance</legend>
       <p class="ayuda" id="alta-alcance-ayuda">
-        Sobre que puede trabajar. "Toda la organizacion" es un alcance explicito, no la ausencia de
+        Sobre que puede trabajar. "Toda la organización" es un alcance explicito, no la ausencia de
         una sede.
       </p>
 
@@ -64,7 +64,7 @@
           value="organizacion"
           aria-describedby="alta-alcance-ayuda"
         />
-        <label for="alta-alcance-organizacion">Toda la organizacion</label>
+        <label for="alta-alcance-organizacion">Toda la organización</label>
       </div>
 
       <div class="opcion-radio">
@@ -76,7 +76,7 @@
         <div class="campo">
           <label for="alta-consultorioId">Sede</label>
           <select id="alta-consultorioId" formControlName="consultorioId">
-            <option value="">Elegi una sede</option>
+            <option value="">Elegí una sede</option>
             @for (sede of sedes.sedes(); track sede.id) {
               <option [value]="sede.id">{{ sede.name }}</option>
             }
@@ -95,7 +95,7 @@
         [attr.aria-invalid]="mostrarError('reason')"
       />
       <p class="ayuda" id="alta-reason-ayuda">
-        Es lo que va a responder, meses despues, por que esta persona tiene acceso a los datos del
+        Es lo que va a responder, meses después, por que esta persona tiene acceso a los datos del
         centro.
       </p>
       @if (mostrarError('reason')) {
@@ -108,7 +108,7 @@
       <a class="boton boton--secundario" routerLink="/organizacion/colaboradores">Cancelar</a>
 
       @if (espera.activa()) {
-        <span class="ayuda">Volve a intentar en {{ espera.segundos() }} segundos.</span>
+        <span class="ayuda">Volvé a intentar en {{ espera.segundos() }} segundos.</span>
       }
     </div>
   </form>
@@ -120,10 +120,10 @@
       }
 
       @case ('ok') {
-        <p class="estado estado--ok">Vinculo creado (numero {{ membershipCreado() }}).</p>
+        <p class="estado estado--ok">Vinculo creado (número {{ membershipCreado() }}).</p>
         <p class="ayuda">
-          La persona ya puede elegir esta organizacion como contexto de trabajo la proxima vez que
-          entre. No recibe ningun aviso de AKINE.
+          La persona ya puede elegir esta organización como contexto de trabajo la próxima vez que
+          entre. No recibe ningún aviso de AKINE.
         </p>
         <a class="boton" routerLink="/organizacion/colaboradores">Volver al listado</a>
       }

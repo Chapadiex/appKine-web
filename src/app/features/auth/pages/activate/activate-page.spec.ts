@@ -32,7 +32,7 @@ async function preparar(parametros: Record<string, string>): Promise<HttpTesting
 describe('ActivatePage', () => {
   afterEach(() => TestBed.resetTestingModule());
 
-  it('activa con el token de la query y avisa que hay que iniciar sesion', async () => {
+  it('activa con el token de la query y avisa que hay que iniciar sesión', async () => {
     const httpMock = await preparar({ token: 'token-sintetico-1' });
     const fixture = TestBed.createComponent(ActivatePage);
     fixture.detectChanges();
@@ -128,7 +128,7 @@ describe('ActivatePage', () => {
 
     const reintentar = fixture.nativeElement.querySelector('button') as HTMLButtonElement;
     expect(reintentar.disabled).toBe(true);
-    expect(texto(fixture)).toContain('Volve a intentar en 60 segundos');
+    expect(texto(fixture)).toContain('Volvé a intentar en 60 segundos');
     httpMock.verify();
   });
 

@@ -81,7 +81,7 @@ describe('MedicionesDeSesion', () => {
     const fixture = await montar();
 
     const visible = texto(fixture);
-    expect(visible).toContain('mismo caso clinico');
+    expect(visible).toContain('mismo caso clínico');
     expect(visible).toContain('Subio 10');
     expect(visible).toContain('Unidades distintas: no se resta');
     expect(visible).toContain('2 de 18');
@@ -101,7 +101,7 @@ describe('MedicionesDeSesion', () => {
     pedido.flush({ id: 1 });
     await recargar(fixture);
 
-    expect(texto(fixture)).toContain('Medicion registrada: Flexion de rodilla');
+    expect(texto(fixture)).toContain('Medición registrada: Flexion de rodilla');
   });
 
   it('una de si o no manda valorBooleano y una de texto manda valorTexto', async () => {
@@ -134,12 +134,12 @@ describe('MedicionesDeSesion', () => {
     const fixture = await montar();
 
     apretar(fixture, 'Registrar la medición');
-    expect(texto(fixture)).toContain('Elegi que medida');
+    expect(texto(fixture)).toContain('Elegí que medida');
 
     elegir(fixture, '#medicion-definicion', '11');
     escribir(fixture, '#medicion-valor', 'mucho');
     apretar(fixture, 'Registrar la medición');
-    expect(texto(fixture)).toContain('no es un numero');
+    expect(texto(fixture)).toContain('no es un número');
     httpMock.expectNone((p) => p.method === 'PUT');
   });
 
@@ -188,10 +188,10 @@ describe('MedicionesDeSesion', () => {
     expect(borrado.request.params.get('lateralidad')).toBe('DERECHA');
     borrado.flush(null, { status: 204, statusText: 'No Content' });
     await recargar(fixture);
-    expect(texto(fixture)).toContain('Medicion quitada');
+    expect(texto(fixture)).toContain('Medición quitada');
   });
 
-  it('un 409 de propiedad o de cierre no se muestra aca: se lo pasa a la atencion', async () => {
+  it('un 409 de propiedad o de cierre no se muestra acá: se lo pasa a la atención', async () => {
     const fixture = await montar();
     const problemas: unknown[] = [];
     fixture.componentInstance.problema.subscribe((p) => problemas.push(p));
@@ -236,7 +236,7 @@ describe('MedicionesDeSesion', () => {
     expect(fixture.nativeElement.querySelector('#medicion-definicion')).toBeNull();
   });
 
-  it('sin sesion anterior lo dice, en vez de dejar la columna vacia sin explicacion', async () => {
+  it('sin sesión anterior lo dice, en vez de dejar la columna vacía sin explicacion', async () => {
     const fixture = await montar(true, { medidas: [] });
     expect(texto(fixture)).toContain('estas son las primeras mediciones');
     expect(texto(fixture)).toContain('Todavía no hay mediciones');
@@ -310,7 +310,7 @@ describe('MedicionesDeSesion', () => {
       fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>,
     ).find((b) => (b.textContent ?? '').trim().startsWith(rotulo));
     if (boton === undefined) {
-      throw new Error(`No hay ningun boton rotulado "${rotulo}".`);
+      throw new Error(`No hay ningún botón rotulado "${rotulo}".`);
     }
     boton.click();
     fixture.detectChanges();

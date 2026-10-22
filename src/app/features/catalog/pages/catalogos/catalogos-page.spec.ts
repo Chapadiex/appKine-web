@@ -63,7 +63,7 @@ const LISTADO = '/api/v1/catalogos/especialidades';
  *       error y no tiene forma de enterarse de que existe la solicitud.</li>
  *   <li>Que la busqueda sea incremental y con debounce: sin el, cada tecla es una peticion
  *       contra un catalogo de miles de filas y nadie lo nota en desarrollo.</li>
- *   <li>La semantica del `PATCH`: omitido no se toca, `descripcion: ''` borra. Un formulario
+ *   <li>La semantica del `PATCH`: omitido no se toca, `descripción: ''` borra. Un formulario
  *       que mande siempre todo borra datos que nadie pidio borrar, y responde `200`.</li>
  * </ol>
  */
@@ -118,14 +118,14 @@ describe('CatalogosPage', () => {
     expect(filaPropia.textContent).toContain('De este centro');
   });
 
-  it('la busqueda es incremental y con debounce: tres teclas, una sola peticion', async () => {
+  it('la búsqueda es incremental y con debounce: tres teclas, una sola peticion', async () => {
     const fixture = await montar();
     vi.useFakeTimers();
 
     const anfitrion = fixture.nativeElement as HTMLElement;
     const campo = anfitrion.querySelector<HTMLInputElement>('#busqueda-catalogo');
     if (campo === null) {
-      throw new Error('No existe el campo de busqueda');
+      throw new Error('No existe el campo de búsqueda');
     }
 
     for (const texto of ['p', 'pi', 'pil']) {
@@ -150,7 +150,7 @@ describe('CatalogosPage', () => {
     busqueda.flush({ ...PAGINA, content: [PROPIA], totalElements: 1 });
   });
 
-  it('el PATCH manda solo lo que cambio: la descripcion vaciada y nada mas', async () => {
+  it('el PATCH manda solo lo que cambio: la descripción vaciada y nada mas', async () => {
     const fixture = await montar();
 
     abrir(fixture, 'Editar');
@@ -162,7 +162,7 @@ describe('CatalogosPage', () => {
         peticion.method === 'PATCH' && peticion.url === `${LISTADO}/2`,
     );
 
-    // `descripcion: ''` es la forma que el contrato define para BORRAR: se manda, no se omite.
+    // `descripción: ''` es la forma que el contrato define para BORRAR: se manda, no se omite.
     // El nombre no se toco, asi que NO viaja: mandarlo igual pisaria lo que otro hubiera
     // cambiado entre medio, sin que nadie pida nada.
     expect(patch.request.body).toEqual({ version: 3, descripcion: '' });
@@ -175,7 +175,7 @@ describe('CatalogosPage', () => {
     expect(texto(fixture)).toContain('quedaron guardados');
   });
 
-  it('el alta crea siempre un concepto de este centro y omite lo que quedo vacio', async () => {
+  it('el alta crea siempre un concepto de este centro y omite lo que quedo vacío', async () => {
     const fixture = await montar();
     const anfitrion = fixture.nativeElement as HTMLElement;
 
@@ -186,7 +186,7 @@ describe('CatalogosPage', () => {
     httpMock.expectNone(
       (peticion: HttpRequest<unknown>) => peticion.method === 'POST' && peticion.url === LISTADO,
     );
-    expect(anfitrion.textContent).toContain('El codigo es obligatorio');
+    expect(anfitrion.textContent).toContain('El código es obligatorio');
 
     escribir(fixture, '#alta-catalogo-codigo', 'RPG');
     escribir(fixture, '#alta-catalogo-name', 'Reeducacion postural');
@@ -208,10 +208,10 @@ describe('CatalogosPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect(anfitrion.textContent).toContain('Solo la ve tu organizacion');
+    expect(anfitrion.textContent).toContain('Solo la ve tu organización');
   });
 
-  it('los dos filtros recargan con su parametro y vuelven a la primera pagina', async () => {
+  it('los dos filtros recargan con su parametro y vuelven a la primera página', async () => {
     const fixture = await montar();
     const anfitrion = fixture.nativeElement as HTMLElement;
 
@@ -240,7 +240,7 @@ describe('CatalogosPage', () => {
     expect(anfitrion.textContent).toContain('Pilates terapeutico');
   });
 
-  it('la baja manda el motivo y explica que el codigo queda libre', async () => {
+  it('la baja manda el motivo y explica que el código queda libre', async () => {
     const fixture = await montar();
     const anfitrion = fixture.nativeElement as HTMLElement;
 
@@ -311,7 +311,7 @@ describe('CatalogosPage', () => {
     // Con organizacion elegida la peticion SI se puede armar: el catalogo es de la
     // organizacion, no de la sede. Lo que no puede pasar es que se cierre la sesion.
     httpMock.match(esListado()).forEach((peticion) => peticion.flush(PAGINA));
-    expect(anfitrion.textContent).not.toContain('Sesion expirada');
+    expect(anfitrion.textContent).not.toContain('Sesión expirada');
   });
 
   it('el conflicto de concurrencia no pisa nada: relee y deja el panel abierto', async () => {
@@ -319,7 +319,7 @@ describe('CatalogosPage', () => {
     const anfitrion = fixture.nativeElement as HTMLElement;
 
     abrir(fixture, 'Editar');
-    escribir(fixture, '#editar-catalogo-name', 'Pilates clinico');
+    escribir(fixture, '#editar-catalogo-name', 'Pilates clínico');
     enviar(fixture, 'form[novalidate]');
 
     httpMock
@@ -348,11 +348,11 @@ describe('CatalogosPage', () => {
     expect(anfitrion.textContent).toContain('no guardamos tus cambios para no pisar los suyos');
     // El panel sigue abierto con lo que el usuario habia escrito.
     expect(anfitrion.querySelector<HTMLInputElement>('#editar-catalogo-name')?.value).toBe(
-      'Pilates clinico',
+      'Pilates clínico',
     );
   });
 
-  it('en practicas se ofrece la especialidad, y filtrarla viaja como especialidadId', async () => {
+  it('en prácticas se ofrece la especialidad, y filtrarla viaja como especialidadId', async () => {
     const fixture = await montarPracticas();
     const anfitrion = fixture.nativeElement as HTMLElement;
 
@@ -406,7 +406,7 @@ describe('CatalogosPage', () => {
     expect(anfitrion.querySelectorAll('tbody button').length).toBe(0);
   });
 
-  it('sin permiso de gestion la tabla se lee entera y no aparece ninguna accion', async () => {
+  it('sin permiso de gestion la tabla se lee entera y no aparece ninguna acción', async () => {
     tenantContext.select({
       organizationId: 1,
       organizationName: 'Centro Belgrano',
@@ -465,11 +465,11 @@ describe('CatalogosPage', () => {
     fixture.detectChanges();
   });
 
-  it('el alta de una practica manda especialidad, descripcion y ventana cuando se cargan', async () => {
+  it('el alta de una práctica manda especialidad, descripción y ventana cuando se cargan', async () => {
     const fixture = await montarPracticas();
     const anfitrion = fixture.nativeElement as HTMLElement;
 
-    abrir(fixture, 'Dar de alta una practica de este centro');
+    abrir(fixture, 'Dar de alta una práctica de este centro');
 
     escribir(fixture, '#alta-catalogo-codigo', 'DRE');
     escribir(fixture, '#alta-catalogo-name', 'Drenaje linfatico');
@@ -508,17 +508,17 @@ describe('CatalogosPage', () => {
     expect(anfitrion.textContent).toContain('quedo dada de alta para este centro');
   });
 
-  it('el alta de una practica sin especialidad no manda nada y lo dice en el campo', async () => {
+  it('el alta de una práctica sin especialidad no manda nada y lo dice en el campo', async () => {
     const fixture = await montarPracticas();
     const anfitrion = fixture.nativeElement as HTMLElement;
 
-    abrir(fixture, 'Dar de alta una practica de este centro');
+    abrir(fixture, 'Dar de alta una práctica de este centro');
     escribir(fixture, '#alta-catalogo-codigo', 'DRE');
     escribir(fixture, '#alta-catalogo-name', 'Drenaje linfatico');
     enviar(fixture, 'form[novalidate]');
 
     httpMock.expectNone((peticion: HttpRequest<unknown>) => peticion.method === 'POST');
-    expect(anfitrion.textContent).toContain('Una practica siempre cuelga de una especialidad');
+    expect(anfitrion.textContent).toContain('Una práctica siempre cuelga de una especialidad');
   });
 
   it(
@@ -620,7 +620,7 @@ function abrir(fixture: { nativeElement: HTMLElement; detectChanges(): void }, e
     (candidato) => (candidato.textContent ?? '').trim() === etiqueta,
   );
   if (boton === undefined) {
-    throw new Error(`No existe el boton ${etiqueta}`);
+    throw new Error(`No existe el botón ${etiqueta}`);
   }
   boton.click();
   fixture.detectChanges();

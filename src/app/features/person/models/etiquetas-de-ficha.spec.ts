@@ -30,7 +30,7 @@ describe('etiquetas de la ficha', () => {
   // Fechas: el bug del dia corrido
   // -------------------------------------------------------------------------------------
 
-  it('una fecha sin hora NO se corre un dia', () => {
+  it('una fecha sin hora NO se corre un día', () => {
     // `new Date('2026-09-15')` es medianoche UTC, y en el huso de Argentina eso se formatea como
     // el 14. Una vigencia que empieza el 15 mostrada como el 14 es un dato equivocado en la
     // pantalla que decide si al paciente se lo puede atender.
@@ -42,7 +42,7 @@ describe('etiquetas de la ficha', () => {
     expect(fechaEnPalabras('2026-09-15T18:00:00Z')).toContain('2026');
   });
 
-  it('lo ausente y lo invalido devuelven vacio, no "undefined" ni "Invalid Date"', () => {
+  it('lo ausente y lo invalido devuelven vacío, no "undefined" ni "Invalid Date"', () => {
     expect(fechaEnPalabras(undefined)).toBe('');
     expect(fechaEnPalabras(null)).toBe('');
     expect(fechaEnPalabras('')).toBe('');
@@ -53,7 +53,7 @@ describe('etiquetas de la ficha', () => {
   // Secciones e indicadores
   // -------------------------------------------------------------------------------------
 
-  it('una seccion que este frontend no conoce se muestra con su clave, no se pierde', () => {
+  it('una sección que este frontend no conoce se muestra con su clave, no se pierde', () => {
     // Las secciones las declaran los modulos que aportan y el contrato no las enumera. Si el
     // fallback fuera esconderlas, agregar un contribuyente del lado del backend produciria un
     // hueco invisible en la ficha.
@@ -105,7 +105,7 @@ describe('etiquetas de la ficha', () => {
   // Adjuntos
   // -------------------------------------------------------------------------------------
 
-  it('un adjunto sin titulo se muestra con el nombre del archivo, nunca vacio', () => {
+  it('un adjunto sin titulo se muestra con el nombre del archivo, nunca vacío', () => {
     // Una fila sin nombre no se puede elegir.
     expect(nombreDeAdjunto({ titulo: 'Credencial', nombreArchivo: 'a.pdf' })).toBe('Credencial');
     expect(nombreDeAdjunto({ titulo: '   ', nombreArchivo: 'a.pdf' })).toBe('a.pdf');
@@ -135,7 +135,7 @@ describe('etiquetas de la ficha', () => {
     expect(tamanoEnPalabras(-1)).toBe('');
   });
 
-  it('las categorias se traducen y las desconocidas se muestran crudas', () => {
+  it('las categorías se traducen y las desconocidas se muestran crudas', () => {
     expect(nombreDeCategoria('CREDENCIAL_COBERTURA')).toBe('Credencial de cobertura');
     expect(nombreDeCategoria('CATEGORIA_NUEVA')).toBe('CATEGORIA_NUEVA');
     expect(nombreDeCategoria(undefined)).toBe('');

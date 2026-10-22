@@ -303,14 +303,14 @@ export class HorarioEfectivoPage {
     }
     if (dias <= 0) {
       this.errorVentana.set(
-        'El fin de la ventana tiene que ser posterior al inicio, y es exclusivo: el dia que ' +
+        'El fin de la ventana tiene que ser posterior al inicio, y es exclusivo: el día que ' +
           'escribas en "hasta" no se resuelve.',
       );
       return;
     }
     if (dias > MAXIMO_DIAS_VENTANA) {
       this.errorVentana.set(
-        `La ventana no puede superar los ${MAXIMO_DIAS_VENTANA} dias. Acorta el periodo y volve a consultar.`,
+        `La ventana no puede superar los ${MAXIMO_DIAS_VENTANA} días. Acorta el periodo y volvé a consultar.`,
       );
       return;
     }

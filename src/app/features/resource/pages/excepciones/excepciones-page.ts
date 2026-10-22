@@ -87,9 +87,9 @@ const DIAS_PROPUESTOS = 90;
  * que no se puede acotar despues sin dar de baja lo cargado.
  */
 const MENSAJE_ALCANCE_DESCONOCIDO =
-  'No pudimos leer los profesionales de la sede, asi que no podemos ofrecerte a quien alcanza ' +
-  'la excepcion. Lo unico que quedaria elegible es "toda la sede", que alcanza a todos: no se ' +
-  'guarda nada hasta que la lista cargue. Volve a intentar con el boton de arriba.';
+  'No pudimos leer los profesionales de la sede, así que no podemos ofrecerte a quien alcanza ' +
+  'la excepción. Lo unico que quedaria elegible es "toda la sede", que alcanza a todos: no se ' +
+  'guarda nada hasta que la lista cargue. Volvé a intentar con el botón de arriba.';
 
 /**
  * El aviso que frena una apertura de sede antes de guardarla.
@@ -515,13 +515,13 @@ export class ExcepcionesPage {
     if (dias <= 0) {
       // `hasta == desde` es 400 y no "un dia": el fin es exclusivo.
       this.errorVentana.set(
-        'El fin de la ventana tiene que ser posterior al inicio. Es exclusivo: para mirar un solo dia, poné el dia siguiente.',
+        'El fin de la ventana tiene que ser posterior al inicio. Es exclusivo: para mirar un solo día, poné el día siguiente.',
       );
       return;
     }
     if (dias > MAXIMO_DIAS_VENTANA) {
       this.errorVentana.set(
-        `La ventana no puede superar los ${MAXIMO_DIAS_VENTANA} dias. Acorta el periodo y volve a consultar.`,
+        `La ventana no puede superar los ${MAXIMO_DIAS_VENTANA} días. Acorta el periodo y volvé a consultar.`,
       );
       return;
     }
@@ -904,7 +904,7 @@ export class ExcepcionesPage {
         next: () => {
           this.cerrarBaja();
           this.exito.set(
-            'La excepcion quedo dada de baja. La fila no se borra: sobrevive con sus fechas, su ' +
+            'La excepción quedo dada de baja. La fila no se borra: sobrevive con sus fechas, su ' +
               'motivo y su autor.',
           );
           this.avisoTurnos.set(avisoDeExcepcion(previsto));

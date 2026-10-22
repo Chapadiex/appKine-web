@@ -137,7 +137,7 @@
                     [value]="nuevoIntegrante() ?? ''"
                     (change)="elegirNuevoIntegrante($any($event.target).value)"
                   >
-                    <option value="">Elegi un profesional habilitado</option>
+                    <option value="">Elegí un profesional habilitado</option>
                     @for (p of candidatos(); track p.membershipId) {
                       <option [value]="p.membershipId">{{ p.nombre }}</option>
                     }

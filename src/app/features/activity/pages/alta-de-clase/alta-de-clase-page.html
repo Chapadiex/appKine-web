@@ -33,13 +33,13 @@
         [attr.aria-invalid]="invalido('ofertaId')"
         [attr.aria-describedby]="invalido('ofertaId') ? 'clase-oferta-error' : null"
       >
-        <option value="">Elegi una oferta</option>
+        <option value="">Elegí una oferta</option>
         @for (oferta of ofertas() ?? []; track oferta.id) {
           <option [value]="oferta.id">{{ oferta.nombreComercial }}</option>
         }
       </select>
       @if (invalido('ofertaId')) {
-        <p class="estado estado--error" id="clase-oferta-error">Elegi la oferta de la clase.</p>
+        <p class="estado estado--error" id="clase-oferta-error">Elegí la oferta de la clase.</p>
       }
     </div>
     <div class="campo">
@@ -53,7 +53,7 @@
       <div class="campo">
         <label for="clase-profesional">Profesional a cargo</label>
         <select id="clase-profesional" formControlName="profesionalId">
-          <option value="">Elegi un profesional</option>
+          <option value="">Elegí un profesional</option>
           @for (profesional of profesionales(); track profesional.membershipId) {
             <option [value]="profesional.membershipId">{{ profesional.nombre }}</option>
           }
@@ -127,7 +127,7 @@
           [attr.aria-describedby]="invalido('fecha') ? 'clase-fecha-error' : null"
         />
         @if (invalido('fecha')) {
-          <p class="estado estado--error" id="clase-fecha-error">Elegi la fecha de la clase.</p>
+          <p class="estado estado--error" id="clase-fecha-error">Elegí la fecha de la clase.</p>
         }
       </div>
       <div class="campo">

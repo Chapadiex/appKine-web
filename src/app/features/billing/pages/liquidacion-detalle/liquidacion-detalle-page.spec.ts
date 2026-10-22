@@ -89,12 +89,12 @@ describe('LiquidacionDetallePage', () => {
     expect(contenido(fixture)).toContain('Colaborador #7');
   });
 
-  it('una liquidacion ajena da 404 y se puede reintentar', async () => {
+  it('una liquidación ajena da 404 y se puede reintentar', async () => {
     seleccionarSede();
     const fixture = crear();
     httpMock.expectOne(URL).flush({ status: 404 }, { status: 404, statusText: 'Not Found' });
     await estabilizar(fixture);
-    expect(contenido(fixture)).toContain('No se pudo cargar la liquidacion');
+    expect(contenido(fixture)).toContain('No se pudo cargar la liquidación');
     (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('button')!.click();
     httpMock.expectOne(URL).flush(LIQUIDACION);
     await estabilizar(fixture);

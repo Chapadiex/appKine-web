@@ -92,7 +92,7 @@ describe('EgresoDetallePage', () => {
 
   it('un borrador sin comprobante no se confirma hasta guardarlo, sin tocar el beneficiario', async () => {
     const fixture = await montar(BORRADOR);
-    expect(contenido(fixture)).toContain('Todavia falta el comprobante');
+    expect(contenido(fixture)).toContain('Todavía falta el comprobante');
     expect(boton(fixture, 'Confirmar el egreso').disabled).toBe(true);
     expect(campo<HTMLInputElement>(fixture, '#edicion-importe').value).toBe('300000.00');
 
@@ -248,7 +248,7 @@ describe('EgresoDetallePage', () => {
     expect(contenido(fixture)).toContain('Cargado por error');
   });
 
-  it('una correccion con version vieja avisa sin pisar nada y ofrece recargar', async () => {
+  it('una correccion con versión vieja avisa sin pisar nada y ofrece recargar', async () => {
     const fixture = await montar(BORRADOR);
     escribir(fixture, '#edicion-concepto', 'Alquiler octubre corregido');
     enviar(fixture, 0);
@@ -257,7 +257,7 @@ describe('EgresoDetallePage', () => {
       .expectOne((p) => p.method === 'PUT' && p.url === DETALLE)
       .flush(...problema('concurrent-modification'));
     await estabilizar(fixture);
-    expect(contenido(fixture)).toContain('Alguien cambio este egreso despues de que lo abriste');
+    expect(contenido(fixture)).toContain('Alguien cambio este egreso después de que lo abriste');
 
     boton(fixture, 'Recargar el egreso').click();
     httpMock.expectOne(DETALLE).flush({ ...BORRADOR, concepto: 'Lo que guardo otro', version: 4 });
@@ -296,7 +296,7 @@ describe('EgresoDetallePage', () => {
     expect(contenido(fixture)).toContain('Sin imputar a un servicio');
   });
 
-  it('un egreso de liquidacion enlaza la liquidacion y solo deja corregir concepto y comprobante', async () => {
+  it('un egreso de liquidación enlaza la liquidación y solo deja corregir concepto y comprobante', async () => {
     const fixture = await montar({
       ...BORRADOR,
       tipoBeneficiario: 'COLABORADOR',
@@ -308,7 +308,7 @@ describe('EgresoDetallePage', () => {
       liquidacionHonorariosId: 77,
     });
     expect(contenido(fixture)).toContain('Pilates grupal');
-    expect(contenido(fixture)).toContain('Nacio de una liquidacion de honorarios por clase');
+    expect(contenido(fixture)).toContain('Nacio de una liquidación de honorarios por clase');
     const enlace = (fixture.nativeElement as HTMLElement).querySelector<HTMLAnchorElement>(
       'a[href="/egresos/honorarios/liquidaciones/77"]',
     );
@@ -333,7 +333,7 @@ describe('EgresoDetallePage', () => {
     });
     edicion.flush(...problema('egreso-de-liquidacion'));
     await estabilizar(fixture);
-    expect(contenido(fixture)).toContain('Este egreso nacio de una liquidacion de honorarios');
+    expect(contenido(fixture)).toContain('Este egreso nacio de una liquidación de honorarios');
   });
 
   it('un egreso que no existe muestra el error de carga', async () => {
@@ -404,7 +404,7 @@ describe('EgresoDetallePage', () => {
 
   function boton(fixture: ComponentFixture<EgresoDetallePage>, texto: string): HTMLButtonElement {
     const encontrado = botonOpcional(fixture, texto);
-    expect(encontrado, `boton "${texto}"`).toBeDefined();
+    expect(encontrado, `botón "${texto}"`).toBeDefined();
     return encontrado!;
   }
 

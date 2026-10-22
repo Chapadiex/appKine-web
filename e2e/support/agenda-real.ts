@@ -112,7 +112,7 @@ export async function problemaDe(
 
 /** Elige a la persona en el padron como lo hace el mostrador: escribiendo su apellido. */
 export async function elegirPersona(page: Page, persona: Persona): Promise<void> {
-  await page.getByLabel('Documento, apellido, nombre o telefono').fill(persona.apellido);
+  await page.getByLabel('Documento, apellido, nombre o teléfono').fill(persona.apellido);
   await page.getByRole('button', { name: `${persona.apellido}, ${persona.nombre}` }).click();
   await expect(page.getByText(`${persona.apellido}, ${persona.nombre}`)).toBeVisible();
 }

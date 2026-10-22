@@ -59,7 +59,7 @@ describe('CasoDetallePage', () => {
 
   afterEach(() => httpMock.verify());
 
-  it('sin relacion pide el motivo y lo manda en la relectura', async () => {
+  it('sin relación pide el motivo y lo manda en la relectura', async () => {
     const fixture = await montar();
     // forkJoin cancela el otro pedido cuando el primero falla: solo se contesta el vivo.
     for (const pedido of httpMock.match((r) => r.url.startsWith(CASO))) {
@@ -86,7 +86,7 @@ describe('CasoDetallePage', () => {
     expect(texto(fixture)).toContain('Lumbalgia');
   });
 
-  it('dos cambios de equipo seguidos mandan cada uno la version que devolvio el anterior', async () => {
+  it('dos cambios de equipo seguidos mandan cada uno la versión que devolvio el anterior', async () => {
     const fixture = await cargado();
 
     elegirRol(fixture, 'TRATANTE');
@@ -118,7 +118,7 @@ describe('CasoDetallePage', () => {
     httpMock.expectNone((r) => r.url === '/api/v1/consultorios/3/ofertas');
   });
 
-  it('una version vieja ofrece releer en vez de pisar', async () => {
+  it('una versión vieja ofrece releer en vez de pisar', async () => {
     const fixture = await cargado();
     escribir(fixture, '#caso-motivo', 'Alta');
     clic(fixture, 'Cerrar el caso');
@@ -187,7 +187,7 @@ describe('CasoDetallePage', () => {
     const boton = Array.from(
       (fixture.nativeElement as HTMLElement).querySelectorAll('button'),
     ).find((b) => b.textContent?.trim() === rotulo);
-    if (!boton) throw new Error(`No hay boton "${rotulo}"`);
+    if (!boton) throw new Error(`No hay botón "${rotulo}"`);
     boton.click();
     fixture.detectChanges();
   }

@@ -27,7 +27,7 @@ type Campo = (typeof CAMPOS)[number];
 
 /** `409 idempotency-key-conflict`: la clave del intento ya se uso con otros datos. */
 const MENSAJE_CLAVE_REUSADA =
-  'Ya hay un registro en curso con otros datos. Recarga la pagina e intenta de nuevo.';
+  'Ya hay un registro en curso con otros datos. Recarga la página e intenta de nuevo.';
 
 /**
  * Alta self-service de cuenta, organizacion y primer consultorio (M02, AKINE-01.02).
@@ -128,7 +128,7 @@ export class RegisterPage {
           // Texto unico: no delata si el email ya tenia cuenta.
           mensaje:
             'Si el email esta disponible o ya tenia cuenta, te llega un correo con los pasos ' +
-            'a seguir. Revisa tambien la carpeta de correo no deseado.',
+            'a seguir. Revisa también la carpeta de correo no deseado.',
         }),
       error: (error: unknown) => this.fallar(error),
     });

@@ -300,7 +300,7 @@ export class EnmiendaPage {
     }
     if (this.presente() && this.notaDeCierre().trim() === '') {
       this.aviso.set(
-        'El paciente vino, asi que la nota de cierre no puede quedar vacia: es lo que registra ' +
+        'El paciente vino, así que la nota de cierre no puede quedar vacía: es lo que registra ' +
           'que se hizo.',
       );
       return;
@@ -369,7 +369,7 @@ export class EnmiendaPage {
         duracionTexto !== '' &&
         (duracion === null || !Number.isInteger(duracion) || duracion < 1)
       ) {
-        return `${t.practicaNombre}: la duracion va en minutos enteros.`;
+        return `${t.practicaNombre}: la duración va en minutos enteros.`;
       }
       enviables.push({
         tratamientoId: t.tratamientoId,
@@ -401,7 +401,7 @@ export class EnmiendaPage {
       if (this.esNumerica(m)) {
         const numero = numeroDe(m.valor);
         if (numero === null) {
-          return `${m.nombre}: el valor no es un numero.`;
+          return `${m.nombre}: el valor no es un número.`;
         }
         enviables.push({ ...base, valorNumerico: numero });
       } else if (m.tipo === 'BOOLEANO') {

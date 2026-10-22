@@ -38,7 +38,7 @@ async function opcionesDelSelector(selector: Locator): Promise<string[]> {
 
 function filaDe(page: Page, email: string): Locator {
   return page
-    .getByRole('region', { name: 'Colaboradores de la organizacion' })
+    .getByRole('region', { name: 'Colaboradores de la organización' })
     .getByRole('row')
     .filter({ hasText: email });
 }

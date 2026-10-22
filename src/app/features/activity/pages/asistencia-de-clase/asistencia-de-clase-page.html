@@ -2,10 +2,10 @@
 @if (puedeAtender()) {
   <p>
     <a class="enlace" [routerLink]="['/atencion/clases', claseId()]"
-      >Atencion clinica de la clase</a
+      >Atención clínica de la clase</a
     >
     <span class="ayuda">
-      — la atencion de cada participante que estuvo y fue derivado a un caso.</span
+      — la atención de cada participante que estuvo y fue derivado a un caso.</span
     >
   </p>
 }
@@ -55,7 +55,7 @@
         }
         @if (clase.estado === 'REALIZADA') {
           <p class="ayuda">
-            La clase ya cerro. Podes corregir una asistencia: cada correccion pide motivo y el
+            La clase ya cerro. Podés corregir una asistencia: cada correccion pide motivo y el
             resultado anterior queda en el historial.
           </p>
         }
@@ -297,7 +297,7 @@
                 (cambioDePagina)="irAPagina($event)"
               />
             } @else {
-              <p class="ayuda">Guarda o descarta los cambios para ver otra pagina.</p>
+              <p class="ayuda">Guarda o descarta los cambios para ver otra página.</p>
             }
           }
 

@@ -95,7 +95,7 @@ describe('HabilitacionesDeLaOfertaPage', () => {
     expect(texto).toContain('NO significa que no pueda ninguno');
   });
 
-  it('guardar manda el conjunto completo con la version de la oferta y vuelve a pedirla', async () => {
+  it('guardar manda el conjunto completo con la versión de la oferta y vuelve a pedirla', async () => {
     const fixture = await montar();
 
     marcar(fixture, 0);
@@ -121,11 +121,11 @@ describe('HabilitacionesDeLaOfertaPage', () => {
     fixture.detectChanges();
 
     expect((fixture.nativeElement as HTMLElement).textContent).toContain(
-      'Guardamos la configuracion',
+      'Guardamos la configuración',
     );
   });
 
-  it('una habilitacion cuyo vinculo ya no esta vigente se muestra con su advertencia', async () => {
+  it('una habilitación cuyo vinculo ya no esta vigente se muestra con su advertencia', async () => {
     const fixture = await montar({
       ...SIN_RESTRINGIR,
       restringidaPorProfesional: true,
@@ -204,7 +204,7 @@ describe('HabilitacionesDeLaOfertaPage', () => {
     fixture.detectChanges();
   });
 
-  it('un 409 de concurrencia no pisa nada y relee la configuracion', async () => {
+  it('un 409 de concurrencia no pisa nada y relee la configuración', async () => {
     const fixture = await montar();
 
     marcar(fixture, 0);
@@ -242,7 +242,7 @@ describe('HabilitacionesDeLaOfertaPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Elegi una sede');
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Elegí una sede');
   });
 
   it('un error de carga se puede reintentar', async () => {
@@ -270,7 +270,7 @@ describe('HabilitacionesDeLaOfertaPage', () => {
     expect(botonPorTexto(fixture, 'Reintentar')).not.toBeNull();
   });
 
-  it('desmarcar al ultimo profesional avisa EN VIVO que la oferta queda abierta a todos', async () => {
+  it('desmarcar al último profesional avisa EN VIVO que la oferta queda abierta a todos', async () => {
     // El caso peligroso de la pantalla: quien desmarca la ultima casilla cree que restringe y
     // en realidad abre la oferta al centro entero. El aviso tiene que cambiar ANTES de guardar,
     // porque despues el cambio ya esta hecho.
@@ -356,9 +356,9 @@ describe('HabilitacionesDeLaOfertaPage', () => {
     expect(boton?.disabled).toBe(true);
 
     const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
-    expect(texto).toContain('sin su version no se puede guardar');
+    expect(texto).toContain('sin su versión no se puede guardar');
     expect(texto).toContain('NO se guardaron');
-    expect(botonPorTexto(fixture, 'Recargar la configuracion')).not.toBeNull();
+    expect(botonPorTexto(fixture, 'Recargar la configuración')).not.toBeNull();
 
     marcar(fixture, 0);
     boton?.click();
@@ -374,7 +374,7 @@ describe('HabilitacionesDeLaOfertaPage', () => {
    * del primero todavia en pantalla. El exito no se borra —es cierto, ese guardado si entro— pero
    * el aviso de que no hay version con que seguir tiene que estar al lado.
    */
-  it('si el refresco posterior a un guardado exitoso falla, el segundo boton no queda mudo', async () => {
+  it('si el refresco posterior a un guardado exitoso falla, el segundo botón no queda mudo', async () => {
     const fixture = await montar();
 
     marcar(fixture, 0);
@@ -390,10 +390,10 @@ describe('HabilitacionesDeLaOfertaPage', () => {
     fixture.detectChanges();
 
     const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
-    expect(texto).toContain('Guardamos la configuracion de la oferta.');
-    expect(texto).toContain('sin su version no se puede guardar');
+    expect(texto).toContain('Guardamos la configuración de la oferta.');
+    expect(texto).toContain('sin su versión no se puede guardar');
     expect(botonPorTexto(fixture, 'Guardar los espacios')?.disabled).toBe(true);
-    expect(botonPorTexto(fixture, 'Recargar la configuracion')).not.toBeNull();
+    expect(botonPorTexto(fixture, 'Recargar la configuración')).not.toBeNull();
   });
 
   it('un 403 al guardar explica que falta administrar la sede, y no oculta la lista', async () => {
@@ -420,12 +420,12 @@ describe('HabilitacionesDeLaOfertaPage', () => {
     const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
     expect(texto).toContain('hace falta administrarla');
     // Recargar no consigue el permiso que falta: ofrecerlo manda a dar vueltas.
-    expect(botonPorTexto(fixture, 'Recargar la configuracion')).toBeNull();
+    expect(botonPorTexto(fixture, 'Recargar la configuración')).toBeNull();
     // Y la configuracion se sigue viendo: consultarla si se puede.
     expect(casillas(fixture).length).toBeGreaterThan(0);
   });
 
-  it('un 404 al guardar ofrece recargar la configuracion', async () => {
+  it('un 404 al guardar ofrece recargar la configuración', async () => {
     // La oferta ya no existe o no es de esta sede: reintentar el mismo PUT falla igual.
     const fixture = await montar();
 
@@ -444,7 +444,7 @@ describe('HabilitacionesDeLaOfertaPage', () => {
 
     expect((fixture.nativeElement as HTMLElement).textContent).toContain('Esa oferta ya no existe');
 
-    botonPorTexto(fixture, 'Recargar la configuracion')?.click();
+    botonPorTexto(fixture, 'Recargar la configuración')?.click();
     fixture.detectChanges();
 
     httpMock.expectOne(HABILITACIONES).flush(SIN_RESTRINGIR);
@@ -479,10 +479,10 @@ describe('HabilitacionesDeLaOfertaPage', () => {
     expect((fixture.nativeElement as HTMLElement).textContent).toContain(
       'La oferta esta dada de baja y no admite habilitaciones nuevas.',
     );
-    expect(botonPorTexto(fixture, 'Recargar la configuracion')).not.toBeNull();
+    expect(botonPorTexto(fixture, 'Recargar la configuración')).not.toBeNull();
   });
 
-  it('sin permiso de administrar la sede no se ofrece ningun guardado', async () => {
+  it('sin permiso de administrar la sede no se ofrece ningún guardado', async () => {
     // Ofrecer un boton que termina en 403 es peor que no ofrecerlo: quien lo aprieta cree que
     // cambio la configuracion. La lectura si se permite, y por eso las casillas se ven.
     const fixture = await montar(SIN_RESTRINGIR, { otorgados: [] });
@@ -513,9 +513,9 @@ describe('HabilitacionesDeLaOfertaPage', () => {
     const fixture = await montar(SIN_RESTRINGIR, { candidatosCaidos: true });
 
     const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
-    expect(texto).toContain('Todavia no hay ningun profesional configurado');
-    expect(texto).toContain('asi que hoy la puede prestar cualquiera');
-    expect(texto).toContain('Todavia no hay ningun espacio configurado');
+    expect(texto).toContain('Todavía no hay ningún profesional configurado');
+    expect(texto).toContain('así que hoy la puede prestar cualquiera');
+    expect(texto).toContain('Todavía no hay ningún espacio configurado');
   });
 
   it(

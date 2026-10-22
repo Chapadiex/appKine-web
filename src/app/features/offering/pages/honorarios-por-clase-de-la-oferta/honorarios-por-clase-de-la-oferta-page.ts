@@ -196,7 +196,7 @@ export class HonorariosPorClaseDeLaOfertaPage {
       return { resumen: 'Rige hoy', atenuada: false };
     }
     if ((tarifa.vigenciaDesde ?? '') > this.diaDeLaSede.hoy()) {
-      return { resumen: 'Todavia no rige', atenuada: false };
+      return { resumen: 'Todavía no rige', atenuada: false };
     }
     return { resumen: 'Ya no rige', atenuada: true };
   }
@@ -303,7 +303,7 @@ export class HonorariosPorClaseDeLaOfertaPage {
       next: () => {
         this.cerrarPanel();
         this.exito.set(
-          'La tarifa quedo cargada. Se aplica a las clases de los dias que cubre; lo ya ' +
+          'La tarifa quedo cargada. Se aplica a las clases de los días que cubre; lo ya ' +
             'liquidado no cambia.',
         );
         this.cargar();
@@ -321,7 +321,7 @@ export class HonorariosPorClaseDeLaOfertaPage {
     }
     if (version === undefined) {
       this.errorAccion.set(
-        'No pudimos leer la version de esta tarifa. Cerra el panel, recarga la grilla y volve a ' +
+        'No pudimos leer la versión de esta tarifa. Cerra el panel, recarga la grilla y volvé a ' +
           'intentar.',
       );
       return;
@@ -368,8 +368,8 @@ export class HonorariosPorClaseDeLaOfertaPage {
       next: () => {
         this.cerrarPanel();
         this.exito.set(
-          'La tarifa quedo dada de baja y su periodo quedo libre. Las clases de esos dias no ' +
-            'entran en ninguna liquidacion hasta que cargues otra.',
+          'La tarifa quedo dada de baja y su periodo quedo libre. Las clases de esos días no ' +
+            'entran en ninguna liquidación hasta que cargues otra.',
         );
         this.cargar();
       },

@@ -31,8 +31,8 @@
     <section class="tarjeta" aria-labelledby="titulo-sin-historia">
       <h2 id="titulo-sin-historia">Todavía no tiene historia clínica</h2>
       <p class="estado estado--vacio">
-        Esta persona no tiene historia clinica en la organizacion. Se abre sola con la primera
-        sesion, o se puede abrir ahora para cargar antecedentes o adjuntos antes de atenderla.
+        Esta persona no tiene historia clínica en la organización. Se abre sola con la primera
+        sesión, o se puede abrir ahora para cargar antecedentes o adjuntos antes de atenderla.
       </p>
       @if (errorAlAbrir(); as problema) {
         <p class="estado estado--error" role="alert">{{ problema.mensaje }}</p>
@@ -42,7 +42,7 @@
           @if (abriendo()) {
             Abriendo…
           } @else {
-            Abrir la historia clinica
+            Abrir la historia clínica
           }
         </button>
       </div>
@@ -158,7 +158,7 @@
                 }
                 @case ('SESION') {
                   <p class="ayuda">
-                    Sesion cerrada. Lo que se registro en ella se consulta desde la atencion: el
+                    Sesión cerrada. Lo que se registro en ella se consulta desde la atención: el
                     timeline la muestra como hecho, sin repetir su contenido.
                   </p>
                 }
@@ -175,7 +175,7 @@
           <section class="tarjeta" aria-labelledby="titulo-registrar">
             <h2 id="titulo-registrar">Registrar en la historia</h2>
             <details class="historia__plegable">
-              <summary>Nueva entrada clinica</summary>
+              <summary>Nueva entrada clínica</summary>
               <app-nueva-entrada
                 [historiaClinicaId]="hc.id!"
                 [justificacion]="justificacion()"

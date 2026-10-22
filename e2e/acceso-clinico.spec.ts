@@ -44,7 +44,7 @@ test.describe('Acceso clinico desde el Paciente 360 (D-e)', () => {
     await expect(page).toHaveURL(new RegExp(`/historia-clinica/personas/${sembrada.personaId}$`));
     // El motivo no viaja en la URL ni antes ni despues de declararlo.
     await page.getByRole('textbox', { name: 'Motivo del acceso' }).fill(MOTIVO_DE_ACCESO);
-    await page.getByRole('button', { name: 'Ver la historia clinica' }).click();
+    await page.getByRole('button', { name: 'Ver la historia clínica' }).click();
     await expect(page.getByRole('heading', { name: sembrada.nombreCompleto })).toBeVisible();
     expect(page.url()).not.toContain(encodeURIComponent(MOTIVO_DE_ACCESO));
 
@@ -79,7 +79,7 @@ test.describe('Acceso clinico desde el Paciente 360 (D-e)', () => {
 
     // Por URL directa: el guard no existe a proposito, la autoridad es el backend.
     await navegar(page, `/historia-clinica/personas/${sembrada.personaId}`);
-    await expect(page.getByText('No tenes permiso para ver historias clinicas')).toBeVisible();
+    await expect(page.getByText('No tenés permiso para ver historias clínicas')).toBeVisible();
     // No se ofrece el motivo: sin permiso, declarar un motivo no habilita nada.
     await expect(page.getByRole('textbox', { name: 'Motivo del acceso' })).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Reintentar' })).toHaveCount(0);

@@ -23,7 +23,7 @@ describe('traducirError', () => {
     );
 
     expect(traducido.causa).toBe('credenciales');
-    expect(traducido.mensaje).toBe('Email o contrasena incorrectos.');
+    expect(traducido.mensaje).toBe('Email o contraseña incorrectos.');
   });
 
   it('da el MISMO resultado para credenciales malas, cuenta sin activar y cuenta bloqueada', () => {
@@ -39,7 +39,7 @@ describe('traducirError', () => {
     expect(new Set(causas.map((c) => c.causa))).toEqual(new Set(['credenciales']));
   });
 
-  it('un 401 unauthorized NO manda a revisar la contrasena: dice que la sesion se cayo', () => {
+  it('un 401 unauthorized NO manda a revisar la contraseña: dice que la sesión se cayo', () => {
     // El defecto que arregla: `unauthorized` caia en la rama de credenciales y mostraba
     // "Email o contrasena incorrectos" para un token que dejo de servir. El usuario reescribe
     // una contrasena que esta bien, dos veces, antes de sospechar de la sesion.
@@ -51,7 +51,7 @@ describe('traducirError', () => {
     expect(traducido.mensaje).not.toContain('contrasena');
   });
 
-  it('un 400 invalid-token sigue siendo el enlace de correo vencido, no la sesion', () => {
+  it('un 400 invalid-token sigue siendo el enlace de correo vencido, no la sesión', () => {
     // `invalid-token` esta tambien en `esSesionExpirada`. La rama de sesion se guarda con
     // `status === 401` justamente para no robarle este caso a las pantallas de activacion y
     // de restablecimiento, donde el mismo tipo significa "el enlace vencio".
@@ -61,17 +61,17 @@ describe('traducirError', () => {
     ).toBe('token');
   });
 
-  it('muestra el detail literal del backend ante un 400 de politica de contrasena', () => {
+  it('muestra el detail literal del backend ante un 400 de politica de contraseña', () => {
     const traducido = traducirError(
       problema(
         400,
         'https://akine.app/problems/validation-error',
-        'La contrasena debe tener al menos 12 caracteres y un numero.',
+        'La contraseña debe tener al menos 12 caracteres y un número.',
       ),
     );
 
     expect(traducido.causa).toBe('validacion');
-    expect(traducido.mensaje).toBe('La contrasena debe tener al menos 12 caracteres y un numero.');
+    expect(traducido.mensaje).toBe('La contraseña debe tener al menos 12 caracteres y un número.');
   });
 
   it('ante invalid-token da la salida de pedir un enlace nuevo, con el texto de la pantalla', () => {
@@ -84,7 +84,7 @@ describe('traducirError', () => {
     expect(traducido.mensaje).toBe('El enlace vencio. Pedi uno nuevo.');
   });
 
-  it('ante un 429 SIN Retry-After no inventa un plazo: mensaje sin numero', () => {
+  it('ante un 429 SIN Retry-After no inventa un plazo: mensaje sin número', () => {
     // Antes se usaba un piso de 60 s tomado de la nada. Un plazo inventado que no se
     // corresponde con el limite real del backend es peor que un mensaje sin numero: si el
     // limite era mas corto hace esperar de mas, y si era mas largo promete algo falso.
@@ -123,11 +123,11 @@ describe('traducirError', () => {
     expect(traducido.segundosDeEspera).toBe(30);
   });
 
-  it('un 403 se traduce como falta de permiso, no como sesion perdida', () => {
-    const traducido = traducirError(problema(403, null, 'No tenes permiso'));
+  it('un 403 se traduce como falta de permiso, no como sesión perdida', () => {
+    const traducido = traducirError(problema(403, null, 'No tenés permiso'));
 
     expect(traducido.causa).toBe('permiso');
-    expect(traducido.mensaje).toBe('No tenes permiso');
+    expect(traducido.mensaje).toBe('No tenés permiso');
   });
 
   it('distingue el fallo de red del error del servidor', () => {

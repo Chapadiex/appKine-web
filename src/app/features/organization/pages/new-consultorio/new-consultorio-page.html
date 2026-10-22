@@ -2,7 +2,7 @@
   <h1>Abrir una sede</h1>
   <app-ayuda titulo="Sobre esta pantalla">
     <p>
-      Una sede es un consultorio de esta organizacion: tiene su propia zona horaria, su propia
+      Una sede es un consultorio de esta organización: tiene su propia zona horaria, su propia
       agenda y sus propios turnos. Lo unico obligatorio es el nombre.
     </p>
   </app-ayuda>
@@ -45,7 +45,7 @@
         @if (paso() === 1) {
           Datos de la sede
         } @else {
-          Datos institucionales y confirmacion
+          Datos institucionales y confirmación
         }
       }
     </h2>
@@ -57,10 +57,10 @@
           @if (conBoxCreado()) {
             Se creo junto con su primer box.
           } @else {
-            Todavia no tiene boxes: se agregan desde Espacios.
+            Todavía no tiene boxes: se agregan desde Espacios.
           }
           @if (conHorarioCreado()) {
-            El horario general quedo cargado: ningun turno se ofrece fuera de ese horario.
+            El horario general quedo cargado: ningún turno se ofrece fuera de ese horario.
           } @else {
             Sin horario general: se puede cargar desde el calendario de la sede.
           }
@@ -100,7 +100,7 @@
               formControlName="timezone"
               aria-describedby="sede-timezone-ayuda"
             >
-              <option value="">La misma que la organizacion</option>
+              <option value="">La misma que la organización</option>
               <optgroup label="Argentina">
                 @for (zona of zonas.argentinas; track zona) {
                   <option [value]="zona">{{ etiquetaDeZona(zona) }}</option>
@@ -120,14 +120,14 @@
             horario de verano, asi que la agenda se correria una hora al cambiar la regla.
           -->
             <p class="ayuda" id="sede-timezone-ayuda">
-              Es la que rige el dia operativo y la agenda de esta sede. Si la sede esta en otra
-              provincia con horario distinto, elegila aca.
+              Es la que rige el día operativo y la agenda de esta sede. Si la sede esta en otra
+              provincia con horario distinto, elegila acá.
             </p>
           </div>
 
           <div class="campo">
             <label for="sede-slotMinutes">
-              Duracion del turno, en minutos <span class="campo__opcional">(opcional)</span>
+              Duración del turno, en minutos <span class="campo__opcional">(opcional)</span>
             </label>
             <input
               id="sede-slotMinutes"
@@ -138,11 +138,11 @@
               [attr.aria-invalid]="mostrarError('slotMinutes')"
             />
             <p class="ayuda" id="sede-slotMinutes-ayuda">
-              Es el intervalo por defecto de la agenda. Si lo dejas vacio, 30 minutos.
+              Es el intervalo por defecto de la agenda. Si lo dejas vacío, 30 minutos.
             </p>
             @if (mostrarError('slotMinutes')) {
               <p class="campo__error" id="sede-slotMinutes-error">
-                Tiene que ser un numero de minutos mayor que cero.
+                Tiene que ser un número de minutos mayor que cero.
               </p>
             }
           </div>
@@ -150,8 +150,8 @@
           <fieldset class="grupo" aria-describedby="sede-box-ayuda">
             <legend>Primer box <span class="campo__opcional">(opcional)</span></legend>
             <p class="ayuda" id="sede-box-ayuda">
-              Si lo cargas ahora, la sede y el box se crean juntos. Si lo dejas vacio, la sede se
-              crea sin boxes y los agregas despues desde Espacios.
+              Si lo cargas ahora, la sede y el box se crean juntos. Si lo dejas vacío, la sede se
+              crea sin boxes y los agregas después desde Espacios.
             </p>
 
             <div class="campo">
@@ -180,12 +180,12 @@
                 [attr.aria-invalid]="mostrarError('boxCapacidad')"
               />
               <p class="ayuda" id="sede-boxCapacidad-ayuda">
-                Cuantas personas atiende a la vez. Si lo dejas vacio, 1. Sin nombre no se crea el
+                Cuantas personas atiende a la vez. Si lo dejas vacío, 1. Sin nombre no se crea el
                 box.
               </p>
               @if (mostrarError('boxCapacidad')) {
                 <p class="campo__error" id="sede-boxCapacidad-error">
-                  Tiene que ser un numero mayor que cero.
+                  Tiene que ser un número mayor que cero.
                 </p>
               }
             </div>
@@ -200,9 +200,9 @@
               Horario general <span class="campo__opcional">(opcional)</span>
             </h3>
             <p class="ayuda">
-              Los dias y horas en que la sede esta abierta. <b>Limita la agenda</b>: ningun turno se
+              Los días y horas en que la sede esta abierta. <b>Limita la agenda</b>: ningún turno se
               ofrece fuera de este horario, aunque el profesional tenga disponibilidad. Sin horario
-              no se limita nada. Se puede cargar o cambiar despues desde el calendario de la sede.
+              no se limita nada. Se puede cargar o cambiar después desde el calendario de la sede.
             </p>
             <app-editor-de-franjas
               idBase="sede-horario"
@@ -218,13 +218,13 @@
           </div>
         } @else {
           <p class="ayuda">
-            Estos datos son administrativos y podés dejarlos para despues: se cargan y se corrigen
+            Estos datos son administrativos y podés dejarlos para después: se cargan y se corrigen
             desde la edicion de la sede en cualquier momento.
           </p>
 
           <div class="campo">
             <label for="sede-legalName">
-              Razon social <span class="campo__opcional">(opcional)</span>
+              Razón social <span class="campo__opcional">(opcional)</span>
             </label>
             <input id="sede-legalName" type="text" formControlName="legalName" />
           </div>
@@ -238,13 +238,13 @@
 
           <div class="campo">
             <label for="sede-addressLine">
-              Direccion <span class="campo__opcional">(opcional)</span>
+              Dirección <span class="campo__opcional">(opcional)</span>
             </label>
             <input id="sede-addressLine" type="text" formControlName="addressLine" />
           </div>
 
           <div class="campo">
-            <label for="sede-phone">Telefono <span class="campo__opcional">(opcional)</span></label>
+            <label for="sede-phone">Teléfono <span class="campo__opcional">(opcional)</span></label>
             <input id="sede-phone" type="tel" formControlName="phone" />
           </div>
 
@@ -273,7 +273,7 @@
             <dd>{{ resumen().nombre }}</dd>
             <dt>Zona horaria</dt>
             <dd>{{ resumen().zona }}</dd>
-            <dt>Duracion del turno</dt>
+            <dt>Duración del turno</dt>
             <dd>{{ resumen().turno }}</dd>
             <dt>Primer box</dt>
             <dd>{{ resumen().box }}</dd>

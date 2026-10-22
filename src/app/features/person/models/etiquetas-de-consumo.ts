@@ -30,8 +30,8 @@ export function origenDeMovimiento(movimiento: MovimientoResponse): string {
   }
   if (movimiento.tipoOrigen === 'SESION') {
     return movimiento.referenciaOrigen != null
-      ? `Cierre de la sesion #${movimiento.referenciaOrigen}`
-      : 'Cierre de una sesion';
+      ? `Cierre de la sesión #${movimiento.referenciaOrigen}`
+      : 'Cierre de una sesión';
   }
   if (movimiento.tipoOrigen === 'MANUAL') {
     return 'Registrado a mano';
@@ -87,20 +87,20 @@ export function veredictoDeSaldo(saldo: SaldoAutorizacionResponse): string {
     return `No habilita el ${dia}: no le queda saldo.`;
   }
   if (saldo.vigente === false) {
-    return `No habilita el ${dia}: su vigencia no cubre ese dia.`;
+    return `No habilita el ${dia}: su vigencia no cubre ese día.`;
   }
   return `No habilita el ${dia}: no esta aprobada o esta dada de baja.`;
 }
 
 /** La alerta "consumo a revisar" (DP-13), dicha como lo que es: una pregunta, no un error. */
 export function alertaEnPalabras(alerta: AlertaDeAutorizacionResponse, zona = ''): string {
-  const sesion = alerta.sesionId != null ? `la sesion #${alerta.sesionId}` : 'una sesion';
+  const sesion = alerta.sesionId != null ? `la sesión #${alerta.sesionId}` : 'una sesión';
   const obligacion = alerta.obligacionId != null ? ` (obligacion #${alerta.obligacionId})` : '';
   const cuando = formatearInstante(alerta.generadaEn, zona);
   return (
     `Se anulo la deuda de ${sesion}${obligacion}` +
     (cuando ? ` el ${cuando}` : '') +
-    ', pero el consumo de esta autorizacion sigue en pie.'
+    ', pero el consumo de esta autorización sigue en pie.'
   );
 }
 
@@ -117,15 +117,15 @@ export function resolucionDeAlerta(alerta: AlertaDeAutorizacionResponse, zona = 
 const MOTIVOS_NO_ELEGIBLE: Record<string, string> = {
   VENCIDA: 'No sirve: esta vencida. Hay que renovarla, ampliarle la cantidad no alcanza.',
   AGOTADA: 'No sirve: ya se consumieron todas las sesiones otorgadas.',
-  AUN_NO_VIGENTE: 'No sirve todavia: su vigencia empieza despues de ese dia.',
-  NO_APROBADA: 'No sirve: el financiador todavia no la aprobo, o la observo o rechazo.',
+  AUN_NO_VIGENTE: 'No sirve todavía: su vigencia empieza después de ese día.',
+  NO_APROBADA: 'No sirve: el financiador todavía no la aprobo, o la observo o rechazo.',
 };
 
 export function veredictoDeCandidata(candidata: AutorizacionElegibleResponse): string {
   if (candidata.habilita === true) {
-    return 'Sirve ese dia.';
+    return 'Sirve ese día.';
   }
-  return MOTIVOS_NO_ELEGIBLE[candidata.motivoNoElegible ?? ''] ?? 'No sirve ese dia.';
+  return MOTIVOS_NO_ELEGIBLE[candidata.motivoNoElegible ?? ''] ?? 'No sirve ese día.';
 }
 
 export function saldoDeCandidata(candidata: AutorizacionElegibleResponse): string {
@@ -140,7 +140,7 @@ export function vencimientoDeCandidata(candidata: AutorizacionElegibleResponse):
     return 'No vence';
   }
   const dias = candidata.diasParaVencer;
-  const faltan = dias != null && dias >= 0 ? ` (faltan ${dias} dias)` : '';
+  const faltan = dias != null && dias >= 0 ? ` (faltan ${dias} días)` : '';
   return `Hasta el ${fechaEnPalabras(candidata.vigenciaHasta)}${faltan}`;
 }
 

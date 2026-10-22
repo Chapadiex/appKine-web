@@ -118,8 +118,8 @@ export class ResetPasswordPage {
           this.estado.set({
             tipo: 'ok',
             mensaje:
-              'Tu contrasena quedo actualizada y se cerraron todas tus sesiones abiertas. ' +
-              'Entra de nuevo con la contrasena nueva.',
+              'Tu contraseña quedo actualizada y se cerraron todas tus sesiones abiertas. ' +
+              'Entra de nuevo con la contraseña nueva.',
           }),
         error: (error: unknown) => {
           const traducido = traducirYEsperar(error, this.espera, {

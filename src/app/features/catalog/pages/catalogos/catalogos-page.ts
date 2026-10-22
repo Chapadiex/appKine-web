@@ -513,7 +513,7 @@ export class CatalogosPage {
           this.cerrarPanel();
           this.exito.set(
             `La ${datos.singular} quedo dada de alta para este centro. Solo la ve tu ` +
-              'organizacion: los conceptos de la plataforma los mantiene AKINE.',
+              'organización: los conceptos de la plataforma los mantiene AKINE.',
           );
           this.cargar();
           this.cargarEspecialidadesSiHacenFalta();
@@ -593,7 +593,7 @@ export class CatalogosPage {
           this.cerrarPanel();
           this.exito.set(
             'El concepto quedo dado de baja. Sigue en el listado, con su motivo, y lo que ya se ' +
-              'registro con el conserva su significado. Su codigo y su nombre quedan libres.',
+              'registro con el conserva su significado. Su código y su nombre quedan libres.',
           );
           this.cargar();
           this.cargarEspecialidadesSiHacenFalta();
@@ -606,7 +606,7 @@ export class CatalogosPage {
    * Traduce el cuerpo del `PATCH` distinguiendo <b>omitido</b> de <b>cadena vacia</b>.
    *
    * <p>El contrato le da a las dos formas significados opuestos: un campo <b>ausente</b> no se
-   * toca, y `descripcion: ""` <b>borra</b> la descripcion. Un formulario que mande siempre
+   * toca, y `descripción: ""` <b>borra</b> la descripcion. Un formulario que mande siempre
    * todos los campos no puede expresar "no lo toques".
    *
    * <p><b>`clearValidUntil` existe porque `null` no se puede pedir omitiendo.</b> "No toques
@@ -619,7 +619,7 @@ export class CatalogosPage {
       // Sin `version` no hay edicion posible: mandar `0` pisaria el cambio de otro, que es
       // justo lo que el control de concurrencia optimista existe para impedir.
       this.errorAccion.set(
-        'No pudimos leer la version de este concepto. Cerra el panel, recarga el listado y volve a intentar.',
+        'No pudimos leer la versión de este concepto. Cerra el panel, recarga el listado y volvé a intentar.',
       );
       return null;
     }

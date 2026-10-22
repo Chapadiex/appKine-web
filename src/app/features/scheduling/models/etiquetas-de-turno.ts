@@ -39,7 +39,7 @@ const TEXTOS_DE_ESTADO: Readonly<Record<string, string>> = {
   [TurnoEstadoEnum.CANCELADO]: 'Cancelado — el lugar se libero y volvio a la agenda',
   [TurnoEstadoEnum.AUSENTE]: 'Ausente — el paciente no vino y la hora se consumio igual',
   // Solo historia: lo traen eventos anteriores a DP-16. Hoy la espera es de la Recepcion.
-  EN_ESPERA: 'En espera (historico) — la llegada se registraba en el turno, antes de la recepcion',
+  EN_ESPERA: 'En espera (historico) — la llegada se registraba en el turno, antes de la recepción',
 };
 
 const TEXTOS_DE_EVENTO: Readonly<Record<EventoDeTurnoTipoEnum, string>> = {

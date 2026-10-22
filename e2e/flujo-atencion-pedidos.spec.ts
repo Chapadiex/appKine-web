@@ -147,7 +147,7 @@ test.describe('Pedidos de la atencion clinica contra el backend real', () => {
     );
 
     // --- Cierre y autor de la version 1 --------------------------------------------------
-    await page.getByRole('radio', { name: 'Vino a la sesion' }).check();
+    await page.getByRole('radio', { name: 'Vino a la sesión' }).check();
     await page.getByLabel('Nota de cierre').fill('Educacion postural, buena tolerancia.');
     await page.getByRole('button', { name: 'Cerrar la atención' }).click();
     await expect(page.getByRole('heading', { name: 'Atención cerrada' })).toBeVisible();

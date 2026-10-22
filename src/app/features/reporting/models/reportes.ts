@@ -23,7 +23,7 @@ export const ADVERTENCIA_ACTIVIDAD_PROPIA = 'alcance-actividad-propia';
 export const REPORTES: readonly { readonly codigo: CodigoDeReporte; readonly nombre: string }[] = [
   { codigo: 'OPERATIVO', nombre: 'Operativo de la sede' },
   { codigo: 'TURNOS', nombre: 'Turnos' },
-  { codigo: 'CLINICO', nombre: 'Actividad clinica' },
+  { codigo: 'CLINICO', nombre: 'Actividad clínica' },
   { codigo: 'ECONOMICO', nombre: 'Economico' },
   { codigo: 'FINANCIADORES', nombre: 'Financiadores' },
   { codigo: 'CLASES', nombre: 'Clases' },
@@ -44,7 +44,7 @@ export function esCodigoDeReporte(valor: string | undefined): valor is CodigoDeR
 const PERMISOS_EN_PALABRAS: Readonly<Record<string, string>> = {
   'turno:read': 'ver la agenda',
   'sesion:register': 'registrar sesiones',
-  'hc:read': 'leer historia clinica',
+  'hc:read': 'leer historia clínica',
   'cobro:register': 'cobros',
   'caja:operate': 'operar la caja',
   'reporte:read': 'reportes de toda la sede',
@@ -65,7 +65,7 @@ export function permisoEnPalabras(codigo: string | undefined): string {
  */
 export function problemaDelRango(desde: string, hasta: string): string | null {
   if (!desde || !hasta) {
-    return 'Elegi el primer y el ultimo dia del periodo.';
+    return 'Elegí el primer y el último día del periodo.';
   }
   const inicio = diaEnUtc(desde);
   const fin = diaEnUtc(hasta);
@@ -78,7 +78,7 @@ export function problemaDelRango(desde: string, hasta: string): string | null {
   const dias = Math.round((fin - inicio) / 86_400_000) + 1;
   if (dias > MAXIMO_DIAS_DE_REPORTE) {
     return (
-      `El periodo tiene ${dias} dias y un reporte abarca como maximo ` +
+      `El periodo tiene ${dias} días y un reporte abarca como máximo ` +
       `${MAXIMO_DIAS_DE_REPORTE}. Acortalo.`
     );
   }

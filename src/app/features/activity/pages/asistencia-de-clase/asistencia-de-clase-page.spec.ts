@@ -108,7 +108,7 @@ describe('AsistenciaDeClasePage', () => {
       (b.textContent ?? '').includes(rotulo),
     );
     if (!encontrado) {
-      throw new Error(`No hay boton "${rotulo}"`);
+      throw new Error(`No hay botón "${rotulo}"`);
     }
     return encontrado as HTMLButtonElement;
   }
@@ -168,14 +168,14 @@ describe('AsistenciaDeClasePage', () => {
           {
             inscripcionId: 3,
             problemType: 'https://akine.app/problems/inscripcion-transicion-no-permitida',
-            detalle: 'La inscripcion esta cancelada',
+            detalle: 'La inscripción esta cancelada',
           },
         ],
       });
       await responderDetalle(fixture, detalle('EN_CURSO'));
 
       expect(texto(fixture)).toContain('Se guardaron 1 participante.');
-      expect(texto(fixture)).toContain('Ruiz, Caro: La inscripcion esta cancelada');
+      expect(texto(fixture)).toContain('Ruiz, Caro: La inscripción esta cancelada');
       // El resultado del lote se lleva el foco: el boton que lo disparo queda deshabilitado.
       expect(document.activeElement?.getAttribute('aria-labelledby')).toBe('titulo-resultado-lote');
       expect(
@@ -350,7 +350,7 @@ describe('AsistenciaDeClasePage', () => {
     await responderDetalle(fixture, detalle('EN_CURSO'));
   });
 
-  it('ofrece la atencion clinica de la clase (AKINE-08.05)', async () => {
+  it('ofrece la atención clínica de la clase (AKINE-08.05)', async () => {
     const fixture = await montar('REALIZADA');
     expect(el(fixture).querySelector(`a[href="/atencion/clases/${CLASE}"]`)).not.toBeNull();
   });
@@ -419,7 +419,7 @@ describe('AsistenciaDeClasePage', () => {
     expect(document.activeElement?.textContent).toContain('Clase cerrada');
   });
 
-  it('sin inscripcion:manage no ofrece cerrar la clase: el backend la rechazaria (0.120.0)', async () => {
+  it('sin inscripción:manage no ofrece cerrar la clase: el backend la rechazaria (0.120.0)', async () => {
     TestBed.inject(PermissionsStore).cargar().subscribe();
     httpMock
       .expectOne(RUTA_PERMISOS_EFECTIVOS)
@@ -477,7 +477,7 @@ describe('AsistenciaDeClasePage', () => {
     expect(texto(fixture)).toContain('No se pudo contactar al servidor');
     boton(fixture, 'Reintentar').click();
     await responderDetalle(fixture, detalle('EN_CURSO', { totalPages: 2 }));
-    expect(texto(fixture)).toContain('Pagina 1 de 2');
+    expect(texto(fixture)).toContain('Página 1 de 2');
     boton(fixture, 'Siguiente').click();
     const pagina = httpMock.expectOne((p) => p.url === `${BASE}/detalle-operativo`);
     expect(pagina.request.params.get('page')).toBe('1');

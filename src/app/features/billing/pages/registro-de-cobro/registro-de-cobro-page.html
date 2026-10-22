@@ -12,7 +12,7 @@
     </app-ayuda>
     <div class="encabezado__acciones">
       <a class="enlace" routerLink="/agenda/recepcion" [queryParams]="queryRecepcion()">
-        Volver a la recepcion del dia
+        Volver a la recepción del día
       </a>
     </div>
   </div>
@@ -52,9 +52,9 @@
 
 @if (sinDeudaCobrable()) {
   <p class="estado estado--vacio">
-    Esta persona no tiene ninguna deuda con saldo pendiente, asi que no hay nada que cobrar. Las
-    deudas se generan al cerrar una atencion: no se cargan a mano. Los anticipos —cobrar sin deuda—
-    necesitan la Caja y todavia no existen.
+    Esta persona no tiene ninguna deuda con saldo pendiente, así que no hay nada que cobrar. Las
+    deudas se generan al cerrar una atención: no se cargan a mano. Los anticipos —cobrar sin deuda—
+    necesitan la Caja y todavía no existen.
   </p>
 }
 
@@ -66,7 +66,7 @@
     <p class="estado estado--ok" role="status">
       Se registro el cobro por {{ totalDelCobro(registrado) }} con el comprobante
       <b>N.º {{ registrado.comprobanteNumero }}</b
-      >. El numero es correlativo por sede y es lo que se lleva el paciente.
+      >. El número es correlativo por sede y es lo que se lleva el paciente.
     </p>
 
     <dl class="detalle">
@@ -79,7 +79,7 @@
       @if (modoPrepago()) {
         <dt>Imputacion</dt>
         <dd>
-          Ninguna todavia: es un anticipo del turno. Se imputa solo al cerrar la sesion, y lo que
+          Ninguna todavía: es un anticipo del turno. Se imputa solo al cerrar la sesión, y lo que
           sobre queda a favor del paciente.
         </dd>
       } @else {
@@ -91,7 +91,7 @@
     @if (modoPrepago()) {
       <div class="acciones">
         <a class="boton" routerLink="/agenda/recepcion" [queryParams]="queryRecepcion()">
-          Volver a la recepcion del dia
+          Volver a la recepción del día
         </a>
         <a class="boton boton--secundario" [routerLink]="rutaCobros()">
           Ver los cobros y comprobantes
@@ -130,7 +130,7 @@
             (input)="cambiarMonedaDelPrepago($any($event.target).value)"
           />
           <p class="ayuda" id="ayuda-moneda-prepago">
-            Codigo de tres letras (ARS, USD). Viene de la oferta; el anticipo se imputa solo a una
+            Código de tres letras (ARS, USD). Viene de la oferta; el anticipo se imputa solo a una
             deuda en la misma moneda.
           </p>
         </div>
@@ -188,7 +188,7 @@
 
         <p class="ayuda">
           @if (modoPrepago()) {
-            Se propone el precio particular de la prestacion; es editable, el importe lo decide
+            Se propone el precio particular de la prestación; es editable, el importe lo decide
             quien cobra. El efectivo necesita la caja abierta.
           } @else {
             Puede ser mas de un medio: mitad efectivo y mitad tarjeta es normal. La suma tiene que
@@ -325,7 +325,7 @@
         <!-- Reintentar tal cual falla igual: lo util es ver el turno como esta ahora. -->
         <div class="acciones">
           <a class="boton" routerLink="/agenda/recepcion" [queryParams]="queryRecepcion()">
-            Volver a la recepcion del dia
+            Volver a la recepción del día
           </a>
           @if (fallo.causa === 'prepago-ya-registrado') {
             <a class="boton boton--secundario" [routerLink]="rutaCobros()">

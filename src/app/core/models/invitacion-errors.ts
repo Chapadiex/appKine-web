@@ -52,17 +52,17 @@ export interface ErrorInvitacion {
   readonly segundosDeEspera: number;
 }
 
-const MENSAJE_GENERICO = 'No pudimos completar la operacion. Volve a intentar en un momento.';
-const MENSAJE_DE_RED = 'No se pudo contactar al servidor. Revisa tu conexion y volve a intentar.';
+const MENSAJE_GENERICO = 'No pudimos completar la operación. Volvé a intentar en un momento.';
+const MENSAJE_DE_RED = 'No se pudo contactar al servidor. Revisa tu conexion y volvé a intentar.';
 const MENSAJE_LIMITE_SIN_PLAZO =
   'Demasiados intentos. Espera un momento antes de volver a intentar.';
 
 const MENSAJE_SIN_CONTEXTO =
-  'Una invitacion la emite una organizacion concreta y todavia no elegiste ninguna. Eligi un ' +
+  'Una invitación la emite una organización concreta y todavía no elegiste ninguna. Eligi un ' +
   'consultorio para administrar las invitaciones.';
 
 const MENSAJE_SIN_PERMISO =
-  'No tenes permiso para administrar las invitaciones de esta organizacion. Pediselo a quien la ' +
+  'No tenés permiso para administrar las invitaciones de esta organización. Pediselo a quien la ' +
   'administra.';
 
 /**
@@ -76,10 +76,10 @@ const MENSAJE_SIN_PERMISO =
  */
 const MENSAJE_NO_ENCONTRADO =
   'Este enlace no sirve. Puede que ya lo hayas usado, que lo hayan cancelado, o que este mal ' +
-  'copiado. Si esperabas una invitacion, pedile a quien te invito que te la reenvie.';
+  'copiado. Si esperabas una invitación, pedile a quien te invito que te la reenvie.';
 
 const MENSAJE_PENDIENTE_DUPLICADA =
-  'Ya hay una invitacion pendiente para esa persona en ese alcance. Si el enlace vencio o no le ' +
+  'Ya hay una invitación pendiente para esa persona en ese alcance. Si el enlace vencio o no le ' +
   'llego, usa "Reenviar" en la fila que ya esta: emitir otra dejaria dos enlaces validos dando ' +
   'vueltas.';
 
@@ -91,15 +91,15 @@ const MENSAJE_PENDIENTE_DUPLICADA =
  * manda al invitado a reportar que el sistema esta roto.
  */
 const MENSAJE_VENCIDA =
-  'Esta invitacion vencio. Pedile a quien te invito que te la reenvie: el enlace nuevo llega al ' +
-  'mismo correo y la invitacion sigue siendo la misma.';
+  'Esta invitación vencio. Pedile a quien te invito que te la reenvie: el enlace nuevo llega al ' +
+  'mismo correo y la invitación sigue siendo la misma.';
 
 const MENSAJE_YA_RESUELTA =
-  'Esta invitacion ya fue resuelta, seguramente por otra persona o desde otra pestaña. Recarga ' +
+  'Esta invitación ya fue resuelta, seguramente por otra persona o desde otra pestaña. Recarga ' +
   'para ver como quedo.';
 
 const MENSAJE_YA_VINCULADO =
-  'Esa persona ya trabaja en esta organizacion. Si lo que queres es cambiarle el rol o la sede, ' +
+  'Esa persona ya trabaja en esta organización. Si lo que queres es cambiarle el rol o la sede, ' +
   'hacelo desde el listado de colaboradores.';
 
 /**
@@ -110,13 +110,13 @@ const MENSAJE_YA_VINCULADO =
  * gente que nunca responde. La contracara es esta.
  */
 const MENSAJE_TOPE_DE_PLAN =
-  'La organizacion llego al tope de miembros de su plan. Emitir invitaciones no consume lugares ' +
-  '—los consume aceptarlas—, asi que puede haber mas invitaciones pendientes que lugares libres. ' +
+  'La organización llego al tope de miembros de su plan. Emitir invitaciones no consume lugares ' +
+  '—los consume aceptarlas—, así que puede haber mas invitaciones pendientes que lugares libres. ' +
   'Hay que liberar un lugar o cambiar de plan.';
 
 const MENSAJE_SUSCRIPCION_SUSPENDIDA =
-  'La suscripcion de la organizacion esta suspendida, asi que no se pueden registrar cambios. Se ' +
-  'resuelve desde la pantalla de suscripcion.';
+  'La suscripción de la organización esta suspendida, así que no se pueden registrar cambios. Se ' +
+  'resuelve desde la pantalla de suscripción.';
 
 /** Traduce cualquier error de las pantallas de invitaciones. */
 export function traducirErrorInvitacion(error: unknown): ErrorInvitacion {
@@ -133,7 +133,7 @@ export function traducirErrorInvitacion(error: unknown): ErrorInvitacion {
     return {
       mensaje:
         segundos > 0
-          ? `Demasiados intentos. Espera ${segundos} segundos y volve a intentar.`
+          ? `Demasiados intentos. Espera ${segundos} segundos y volvé a intentar.`
           : MENSAJE_LIMITE_SIN_PLAZO,
       causa: 'limite',
       segundosDeEspera: segundos,

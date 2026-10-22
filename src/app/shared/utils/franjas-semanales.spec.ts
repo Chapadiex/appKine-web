@@ -5,7 +5,7 @@ import {
 } from './franjas-semanales';
 
 describe('franjas-semanales', () => {
-  it('tocarse en un extremo no es solaparse; pisarse el mismo dia si', () => {
+  it('tocarse en un extremo no es solaparse; pisarse el mismo día si', () => {
     expect(
       indicesSolapados([
         { diaSemana: 1, horaDesde: '09:00', horaHasta: '12:00' },

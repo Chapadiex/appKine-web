@@ -66,7 +66,7 @@
       </a>
     } @else {
       <div class="campo">
-        <label for="selector-profesional">Elegi un profesional</label>
+        <label for="selector-profesional">Elegí un profesional</label>
         <select
           id="selector-profesional"
           [value]="membershipElegido() ?? ''"
@@ -87,7 +87,7 @@
         </select>
         <p class="ayuda" id="selector-profesional-ayuda">
           Solo aparecen los profesionales con vinculo vigente que los habilite en esta sede. Un
-          vinculo acotado a otra sede no puede tener horario aca.
+          vinculo acotado a otra sede no puede tener horario acá.
         </p>
         <!--
           Con la lista recortada, un desplegable al que le falta gente se lee como "esa persona
@@ -118,7 +118,7 @@
   <div aria-live="polite">
     @switch (estado().tipo) {
       @case ('inicial') {
-        <p class="estado estado--vacio">Elegi un profesional para ver su horario semanal.</p>
+        <p class="estado estado--vacio">Elegí un profesional para ver su horario semanal.</p>
       }
 
       @case ('cargando') {
@@ -126,10 +126,10 @@
       }
 
       @case ('sin-contexto') {
-        <p class="estado estado--vacio">Todavia no elegiste un consultorio.</p>
+        <p class="estado estado--vacio">Todavía no elegiste un consultorio.</p>
         <p class="ayuda">
-          El horario de un profesional se carga en una sede concreta, asi que hay que indicar cual.
-          Tu sesion sigue abierta: solo falta elegir donde estas trabajando.
+          El horario de un profesional se carga en una sede concreta, así que hay que indicar cual.
+          Tu sesión sigue abierta: solo falta elegir donde estas trabajando.
         </p>
         <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
       }
@@ -159,7 +159,7 @@
             <h3 class="panel__titulo">Agregar un bloque al horario</h3>
 
             <div class="campo">
-              <label for="alta-bloque-dia">Dia de la semana</label>
+              <label for="alta-bloque-dia">Día de la semana</label>
               <select id="alta-bloque-dia" formControlName="diaSemana">
                 @for (dia of dias; track dia.numero) {
                   <option [value]="dia.numero">{{ dia.etiqueta }}</option>
@@ -205,12 +205,12 @@
                 />
                 @if (mostrarError(true, 'horaHasta')) {
                   <p class="campo__error" id="alta-bloque-hasta-error">
-                    Escribi la hora de fin como HH:MM. Para el final del dia usa
+                    Escribi la hora de fin como HH:MM. Para el final del día usa
                     {{ horaMedianoche }}.
                   </p>
                 }
                 <p class="ayuda" id="alta-bloque-hasta-ayuda">
-                  El bloque termina justo antes de esta hora. Para llegar al final del dia,
+                  El bloque termina justo antes de esta hora. Para llegar al final del día,
                   {{ horaMedianoche }}.
                 </p>
               </div>
@@ -218,9 +218,9 @@
 
             @if (rangoInvertido(true)) {
               <p class="campo__error" role="alert">
-                La hora de fin tiene que ser posterior a la de inicio. Un bloque nunca cruza al dia
-                siguiente: si el profesional atiende de noche y sigue despues de las
-                {{ horaMedianoche }}, son dos bloques, uno en cada dia.
+                La hora de fin tiene que ser posterior a la de inicio. Un bloque nunca cruza al día
+                siguiente: si el profesional atiende de noche y sigue después de las
+                {{ horaMedianoche }}, son dos bloques, uno en cada día.
               </p>
             }
 
@@ -236,7 +236,7 @@
                   aria-describedby="alta-bloque-vigencia-desde-ayuda"
                 />
                 <p class="ayuda" id="alta-bloque-vigencia-desde-ayuda">
-                  Si lo dejas vacio, rige desde hoy.
+                  Si lo dejas vacío, rige desde hoy.
                 </p>
               </div>
 
@@ -251,7 +251,7 @@
                   aria-describedby="alta-bloque-vigencia-hasta-ayuda"
                 />
                 <p class="ayuda" id="alta-bloque-vigencia-hasta-ayuda">
-                  Primer dia en que ya <b>no</b> rige. Vacio es sin fin previsto, que es lo normal.
+                  Primer día en que ya <b>no</b> rige. Vacío es sin fin previsto, que es lo normal.
                 </p>
               </div>
             </div>
@@ -298,7 +298,7 @@
                       -->
                       <p class="bloque__horario">
                         {{ rangoHorario(bloque.horaDesde, bloque.horaHasta) }}
-                        <span class="bloque__numero">bloque numero {{ bloque.id }}</span>
+                        <span class="bloque__numero">bloque número {{ bloque.id }}</span>
                       </p>
 
                       @if (bloque.vigenciaHasta) {
@@ -356,7 +356,7 @@
                           </p>
 
                           <div class="campo">
-                            <label for="editar-bloque-dia">Dia de la semana</label>
+                            <label for="editar-bloque-dia">Día de la semana</label>
                             <select id="editar-bloque-dia" formControlName="diaSemana">
                               @for (opcion of dias; track opcion.numero) {
                                 <option [value]="opcion.numero">{{ opcion.etiqueta }}</option>
@@ -406,7 +406,7 @@
                                 </p>
                               }
                               <p class="ayuda" id="editar-bloque-hasta-ayuda">
-                                Para el final del dia, {{ horaMedianoche }}.
+                                Para el final del día, {{ horaMedianoche }}.
                               </p>
                             </div>
                           </div>
@@ -436,7 +436,7 @@
                                 aria-describedby="editar-bloque-vigencia-hasta-ayuda"
                               />
                               <p class="ayuda" id="editar-bloque-vigencia-hasta-ayuda">
-                                Primer dia en que ya no rige.
+                                Primer día en que ya no rige.
                               </p>
                             </div>
                           </div>
@@ -507,7 +507,7 @@
                           <p class="ayuda">
                             Si lo que queres es que el profesional deje de atender en esa franja a
                             partir de una fecha, <b>no lo des de baja</b>: edita el fin de vigencia
-                            del bloque. Asi el horario historico sigue explicando los turnos que ya
+                            del bloque. Así el horario historico sigue explicando los turnos que ya
                             se dieron.
                           </p>
                           <app-impacto-previo [estado]="impacto()" />

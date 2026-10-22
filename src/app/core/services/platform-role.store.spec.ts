@@ -42,7 +42,7 @@ describe('PlatformRoleStore y platformAdminGuard', () => {
 
   afterEach(() => httpMock.verify());
 
-  it('pregunta una sola vez por sesion y vuelve a preguntar despues de un logout', async () => {
+  it('pregunta una sola vez por sesión y vuelve a preguntar después de un logout', async () => {
     autenticar();
 
     const primera = firstValueFrom(store.resolver());
@@ -76,7 +76,7 @@ describe('PlatformRoleStore y platformAdminGuard', () => {
     expect(store.cargado()).toBe(false);
   });
 
-  it('el guard: sin sesion al login, sin rol a "sin permiso", con rol deja pasar', async () => {
+  it('el guard: sin sesión al login, sin rol a "sin permiso", con rol deja pasar', async () => {
     expect(urlDe(correr('/plataforma/solicitudes'))).toContain('/auth/ingresar');
 
     autenticar();

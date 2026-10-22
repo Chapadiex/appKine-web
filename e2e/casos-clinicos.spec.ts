@@ -39,7 +39,7 @@ test.describe('Casos clinicos (D-b)', () => {
     await casos.getByText('Abrir un caso').click();
     // Sin datos no se manda nada.
     await casos.getByRole('button', { name: 'Abrir el caso' }).click();
-    await expect(casos.getByText('Elegi la oferta del caso.')).toBeVisible();
+    await expect(casos.getByText('Elegí la oferta del caso.')).toBeVisible();
     await expect(casos.getByText('El diagnostico presuntivo es obligatorio.')).toBeVisible();
 
     await casos

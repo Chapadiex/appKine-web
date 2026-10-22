@@ -99,7 +99,7 @@ test.describe('Reserva de turno contra el backend real', () => {
     await page.getByRole('button', { name: 'Reservar turno' }).click();
     const { id: turnoId } = (await (await creado).json()) as { id: number };
     await expect(page.getByRole('heading', { name: 'Turno RESERVADO', level: 2 })).toBeVisible();
-    await expect(page.getByText('Todavia falta confirmarlo')).toBeVisible();
+    await expect(page.getByText('Todavía falta confirmarlo')).toBeVisible();
 
     await page.getByRole('button', { name: 'Confirmar el turno' }).click();
     await expect(page.getByRole('heading', { name: 'Turno CONFIRMADO', level: 2 })).toBeVisible();
@@ -187,7 +187,7 @@ test.describe('Reserva de turno contra el backend real', () => {
     await page.getByRole('button', { name: 'Recargar la agenda' }).click();
     await expect(page.getByRole('heading', { name: 'No se pudo reservar' })).toHaveCount(0);
     await expect(
-      page.getByText('Ese horario ya no figura en la agenda de este dia.'),
+      page.getByText('Ese horario ya no figura en la agenda de este día.'),
     ).toBeVisible();
   });
 

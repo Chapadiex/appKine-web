@@ -12,7 +12,7 @@ describe('numeroDeclarado', () => {
     expect(numeroDeclarado('   ')).toBeNull();
   });
 
-  it('devuelve el numero cuando hay uno, en texto o ya convertido', () => {
+  it('devuelve el número cuando hay uno, en texto o ya convertido', () => {
     expect(numeroDeclarado('45')).toBe(45);
     expect(numeroDeclarado(' 45 ')).toBe(45);
     expect(numeroDeclarado('0')).toBe(0);
@@ -20,7 +20,7 @@ describe('numeroDeclarado', () => {
     expect(numeroDeclarado(0)).toBe(0);
   });
 
-  it('un valor que no es un numero no se cuela como NaN ni como cero', () => {
+  it('un valor que no es un número no se cuela como NaN ni como cero', () => {
     expect(numeroDeclarado('abc')).toBeNull();
     expect(numeroDeclarado(Number.NaN)).toBeNull();
     expect(numeroDeclarado(Number.POSITIVE_INFINITY)).toBeNull();
@@ -28,7 +28,7 @@ describe('numeroDeclarado', () => {
     expect(numeroDeclarado(true)).toBeNull();
   });
 
-  it('el null lo escribe Angular, no el codigo de la pantalla', () => {
+  it('el null lo escribe Angular, no el código de la pantalla', () => {
     // La demostracion del mecanismo: un control atado a un <input type="number"> recibe `null`
     // del NumberValueAccessor cuando el campo queda vacio, aunque su tipo declarado sea string.
     const grupo = new FormGroup({ duracion: new FormControl<string>('45', { nonNullable: true }) });

@@ -342,7 +342,7 @@ export class ReservaDeTurnoPage {
           this.enviando.set(false);
           this.turno.set(turno);
           this.exito.set(
-            'Turno reservado. Todavia falta confirmarlo: confirmar es un estado de la reserva, no ' +
+            'Turno reservado. Todavía falta confirmarlo: confirmar es un estado de la reserva, no ' +
               'del cobro ni de la llegada del paciente.',
           );
         },

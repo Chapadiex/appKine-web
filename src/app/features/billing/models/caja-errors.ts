@@ -19,7 +19,7 @@ export interface ErrorCaja {
   readonly renovarClave?: boolean;
 }
 
-const MENSAJE_GENERICO = 'La caja no respondio como se esperaba. Volve a intentar en un momento.';
+const MENSAJE_GENERICO = 'La caja no respondio como se esperaba. Volvé a intentar en un momento.';
 
 export function traducirErrorCaja(error: unknown): ErrorCaja {
   if (!(error instanceof AkineHttpError)) {
@@ -28,14 +28,14 @@ export function traducirErrorCaja(error: unknown): ErrorCaja {
   if (error.esDeRed) {
     return {
       mensaje:
-        'No se pudo contactar al servidor, asi que no sabemos si la operacion entro. Recarga la ' +
+        'No se pudo contactar al servidor, así que no sabemos si la operación entro. Recarga la ' +
         'caja antes de repetirla.',
       accion: 'recargar',
     };
   }
   if (error.esRateLimited) {
     return {
-      mensaje: 'Demasiados intentos seguidos. Espera un momento y volve a intentar.',
+      mensaje: 'Demasiados intentos seguidos. Espera un momento y volvé a intentar.',
       accion: 'ninguna',
     };
   }
@@ -45,12 +45,12 @@ export function traducirErrorCaja(error: unknown): ErrorCaja {
       return {
         mensaje:
           'Para operar la caja hay que saber en que sede estas: cada consultorio tiene su cajon. ' +
-          'Eligi una organizacion y un consultorio.',
+          'Eligi una organización y un consultorio.',
         accion: 'elegir-contexto',
       };
     case 'subscription-suspended':
       return {
-        mensaje: 'La suscripcion de la organizacion esta suspendida, asi que la caja no opera.',
+        mensaje: 'La suscripción de la organización esta suspendida, así que la caja no opera.',
         accion: 'ninguna',
       };
     case 'caja-ya-abierta':
@@ -68,8 +68,8 @@ export function traducirErrorCaja(error: unknown): ErrorCaja {
     case 'caja-saldo-cambio':
       return {
         mensaje:
-          'Entraron o salieron movimientos en efectivo mientras contabas, asi que el saldo ' +
-          'teorico cambio. No se cerro nada: revisa el teorico nuevo y volve a confirmar el arqueo.',
+          'Entraron o salieron movimientos en efectivo mientras contabas, así que el saldo ' +
+          'teorico cambio. No se cerro nada: revisa el teorico nuevo y volvé a confirmar el arqueo.',
         accion: 'recargar',
       };
     case 'caja-saldo-insuficiente':
@@ -92,12 +92,12 @@ export function traducirErrorCaja(error: unknown): ErrorCaja {
     case 'movimiento-no-reversible':
       return {
         mensaje:
-          'Ese movimiento ya fue revertido o es una reversion, y no se puede revertir de nuevo.',
+          'Ese movimiento ya fue revertido o es una reversión, y no se puede revertir de nuevo.',
         accion: 'recargar',
       };
     case 'idempotency-key-conflict':
       return {
-        mensaje: 'Se reuso la clave de este intento con otro contenido. Volve a confirmar.',
+        mensaje: 'Se reuso la clave de este intento con otro contenido. Volvé a confirmar.',
         accion: 'corregir',
         renovarClave: true,
       };
@@ -108,7 +108,7 @@ export function traducirErrorCaja(error: unknown): ErrorCaja {
   if (error.status === 403) {
     return {
       mensaje:
-        'No tenes permiso para operar la caja de esta sede. Pediselo a quien administra el centro.',
+        'No tenés permiso para operar la caja de esta sede. Pediselo a quien administra el centro.',
       accion: 'ninguna',
     };
   }

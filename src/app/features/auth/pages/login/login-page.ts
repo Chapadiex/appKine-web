@@ -113,13 +113,13 @@ export class LoginPage {
         ? this.destino()
         : `${RUTA_SELECTOR_CONTEXTO}?${PARAM_VOLVER_A}=${encodeURIComponent(this.destino())}`;
 
-    this.estado.set({ tipo: 'ok', mensaje: 'Sesion iniciada. Te estamos llevando adentro.' });
+    this.estado.set({ tipo: 'ok', mensaje: 'Sesión iniciada. Te estamos llevando adentro.' });
 
     this.router.navigateByUrl(ruta).catch((error: unknown) => {
-      console.error('No se pudo navegar despues del login', error);
+      console.error('No se pudo navegar después del login', error);
       this.estado.set({
         tipo: 'error',
-        mensaje: 'Iniciaste sesion pero no pudimos abrir la pantalla siguiente.',
+        mensaje: 'Iniciaste sesión pero no pudimos abrir la pantalla siguiente.',
         causa: 'otro',
       });
     });

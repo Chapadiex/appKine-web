@@ -1,10 +1,10 @@
 <section [attr.aria-labelledby]="'titulo-consumo-' + autorizacionId()">
   <h2 [id]="'titulo-consumo-' + autorizacionId()" class="panel__titulo">
-    Saldo y consumos de la autorizacion {{ numero() }}
+    Saldo y consumos de la autorización {{ numero() }}
   </h2>
   <p class="ayuda">
-    Por que el saldo es el que es: lo otorgado, cada sesion que consumio y cada reversion. Nada de
-    esto consume: las unidades se descuentan solo al cerrar una sesion.
+    Por que el saldo es el que es: lo otorgado, cada sesión que consumio y cada reversión. Nada de
+    esto consume: las unidades se descuentan solo al cerrar una sesión.
   </p>
 
   <div aria-live="polite">
@@ -63,8 +63,8 @@
         }
         @if (alertasPendientes().length > 0) {
           <p class="ayuda">
-            Anular la deuda de una sesion <b>no devuelve la unidad</b>: la atencion pudo haber
-            ocurrido igual (una cortesia, un error de precio). Si la sesion no debio consumir, hay
+            Anular la deuda de una sesión <b>no devuelve la unidad</b>: la atención pudo haber
+            ocurrido igual (una cortesia, un error de precio). Si la sesión no debio consumir, hay
             que revertir el consumo con un motivo: eso devuelve la unidad y resuelve la alerta. No
             hay forma de descartar la alerta sin revertir.
           </p>
@@ -73,7 +73,7 @@
               <li>
                 <p><b>Consumo a revisar.</b> {{ alertaEnPalabras(alerta) }}</p>
                 @if (alerta.motivoOrigen) {
-                  <p>Motivo de la anulacion: {{ alerta.motivoOrigen }}</p>
+                  <p>Motivo de la anulación: {{ alerta.motivoOrigen }}</p>
                 }
                 @if (alerta.movimientoId !== undefined) {
                   <p class="acciones">
@@ -105,7 +105,7 @@
         <h3>Movimientos</h3>
         @if (datos.movimientos.length === 0) {
           <p class="estado estado--vacio">
-            Todavia no consumio ninguna sesion. El consumo nace al cerrar una sesion, no al dar el
+            Todavía no consumio ninguna sesión. El consumo nace al cerrar una sesión, no al dar el
             turno.
           </p>
         } @else {

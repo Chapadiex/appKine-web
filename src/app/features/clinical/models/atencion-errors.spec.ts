@@ -100,7 +100,7 @@ describe('traducirErrorAtencion', () => {
     const traducido = traducirErrorAtencion(problema('missing-tenant-context', 400, 'Sin sede.'));
 
     expect(traducido.causa).toBe('sin-contexto');
-    expect(traducido.mensaje).toContain('sesion sigue abierta');
+    expect(traducido.mensaje).toContain('sesión sigue abierta');
   });
 
   it('subscription-suspended se distingue del 403 comun', () => {
@@ -111,7 +111,7 @@ describe('traducirErrorAtencion', () => {
     ).toBe('suscripcion-suspendida');
   });
 
-  it('sesion-cerrada explica que corregir una atencion cerrada es una enmienda', () => {
+  it('sesion-cerrada explica que corregir una atención cerrada es una enmienda', () => {
     const traducido = traducirErrorAtencion(problema('sesion-cerrada', 409, 'Cerrada.'));
 
     expect(traducido.causa).toBe('sesion-cerrada');
@@ -162,15 +162,15 @@ describe('traducirErrorAtencion', () => {
   // El detalle del backend gana, pero solo cuando existe
   // -------------------------------------------------------------------------------------
 
-  it('sin cuerpo se usa el texto fijo en vez de dejar el mensaje vacio', () => {
+  it('sin cuerpo se usa el texto fijo en vez de dejar el mensaje vacío', () => {
     // `conDetalle` cae al respaldo solo cuando `problem` es null. Sin esta rama, un rechazo
     // sin ProblemDetail dejaria el panel de error en blanco.
     expect(sinCuerpo(409).problem).toBeNull();
-    expect(traducirErrorAtencion(sinCuerpo(409)).mensaje).toContain('Volve a abrir');
-    expect(traducirErrorAtencion(sinCuerpo(500)).mensaje).toContain('Volve a intentar');
+    expect(traducirErrorAtencion(sinCuerpo(409)).mensaje).toContain('Volvé a abrir');
+    expect(traducirErrorAtencion(sinCuerpo(500)).mensaje).toContain('Volvé a intentar');
   });
 
-  it('turno-no-atendible sin motivo utilizable deja el motivo vacio, no "undefined"', () => {
+  it('turno-no-atendible sin motivo utilizable deja el motivo vacío, no "undefined"', () => {
     // La extension puede venir con otro tipo; pintarla igual escribiria "undefined" en pantalla.
     const conMotivoNumerico = new AkineHttpError(
       409,

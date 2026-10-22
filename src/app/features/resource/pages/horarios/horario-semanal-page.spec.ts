@@ -155,7 +155,7 @@ describe('HorarioSemanalPage', () => {
 
   afterEach(() => httpMock.verify());
 
-  it('la semana muestra los siete dias y dos bloques contiguos conviven sin conflicto', async () => {
+  it('la semana muestra los siete días y dos bloques contiguos conviven sin conflicto', async () => {
     const fixture = await montar();
     const contenido = texto(fixture);
 
@@ -234,7 +234,7 @@ describe('HorarioSemanalPage', () => {
     // 1. El mensaje NOMBRA el otro bloque: sin esto hay que recorrer la semana comparando horas.
     expect(contenido).toContain('se pisa con el bloque del lunes de 09:00 a 12:00');
     // 2. Y aclara lo que el usuario esta por "corregir" mal: contiguo no es solapado.
-    expect(contenido).toContain('la manana de 09:00 a 12:00 y la tarde de 12:00 a 15:00 conviven');
+    expect(contenido).toContain('la mañana de 09:00 a 12:00 y la tarde de 12:00 a 15:00 conviven');
 
     // 3. La fila del bloque en conflicto queda senalada, y SOLO esa. El color no es lo unico
     //    que la distingue: dentro de la fila hay un texto que lo dice.
@@ -289,14 +289,14 @@ describe('HorarioSemanalPage', () => {
     httpMock.expectNone((peticion: HttpRequest<unknown>) => peticion.method === 'DELETE');
     expect(texto(fixture)).toContain('El motivo es obligatorio');
 
-    escribir(fixture, '#baja-bloque-reason', 'Dejo de atender los lunes a la manana');
+    escribir(fixture, '#baja-bloque-reason', 'Dejo de atender los lunes a la mañana');
     enviar(fixture, 'akine-confirmacion-con-motivo form');
 
     const baja = httpMock.expectOne(
       (peticion: HttpRequest<unknown>) => peticion.method === 'DELETE',
     );
     expect(baja.request.url).toBe(`${BLOQUES}/${LUNES_MANANA.id}`);
-    expect(baja.request.body).toEqual({ reason: 'Dejo de atender los lunes a la manana' });
+    expect(baja.request.body).toEqual({ reason: 'Dejo de atender los lunes a la mañana' });
 
     baja.flush({ ...LUNES_MANANA, estado: 'INACTIVO', turnosAfectados: 3 });
     httpMock.expectOne(BLOQUES).flush([LUNES_TARDE, MARTES_NOCHE]);
@@ -308,7 +308,7 @@ describe('HorarioSemanalPage', () => {
     expect(texto(fixture)).toContain('La consulta previa habia calculado 2');
   });
 
-  it('la edicion manda solo lo que cambio, y siempre la version', async () => {
+  it('la edicion manda solo lo que cambio, y siempre la versión', async () => {
     const fixture = await montar();
 
     abrir(fixture, 'Editar');
@@ -342,7 +342,7 @@ describe('HorarioSemanalPage', () => {
     expect(texto(fixture)).not.toContain('Turnos para revisar');
   });
 
-  it('un rango invertido no sale a la red, y volver a "Sin elegir" vacia la semana', async () => {
+  it('un rango invertido no sale a la red, y volver a "Sin elegir" vacía la semana', async () => {
     const fixture = await montar();
 
     abrir(fixture, 'Agregar un bloque');
@@ -364,7 +364,7 @@ describe('HorarioSemanalPage', () => {
     // Deseleccionar vuelve al estado inicial sin consultar nada: la semana que quedaba en
     // pantalla era de un profesional que ya no esta elegido.
     seleccionar(fixture, '#selector-profesional', '');
-    expect(texto(fixture)).toContain('Elegi un profesional para ver su horario semanal');
+    expect(texto(fixture)).toContain('Elegí un profesional para ver su horario semanal');
   });
 
   it('un bloque dado de baja no se edita: el formulario queda deshabilitado', async () => {
@@ -441,7 +441,7 @@ describe('HorarioSemanalPage', () => {
 
     // Nunca "ningun turno afectado": no saber no es cero.
     expect(texto(fixture)).toContain('No pudimos calcular de antemano');
-    expect(texto(fixture)).not.toContain('Ningun turno pendiente');
+    expect(texto(fixture)).not.toContain('Ningún turno pendiente');
 
     escribir(fixture, '#baja-bloque-reason', 'Cierre de la franja');
     enviar(fixture, 'akine-confirmacion-con-motivo form');
@@ -454,7 +454,7 @@ describe('HorarioSemanalPage', () => {
     expect(texto(fixture)).toContain('quedo dado de baja');
   });
 
-  it('si el listado de profesionales falla, se puede reintentar sin recargar la pagina', async () => {
+  it('si el listado de profesionales falla, se puede reintentar sin recargar la página', async () => {
     tenantContext.select({
       organizationId: ORG,
       organizationName: 'Belgrano',
@@ -535,13 +535,13 @@ describe('HorarioSemanalPage', () => {
    * 100". Con dos bloques parecidos en el mismo dia, esa frase no identifica ninguno si la
    * grilla no muestra el numero.
    */
-  it('cada bloque muestra su numero: es la referencia que usa el horario efectivo', async () => {
+  it('cada bloque muestra su número: es la referencia que usa el horario efectivo', async () => {
     const fixture = await montar();
     const contenido = texto(fixture);
 
-    expect(contenido).toContain('bloque numero 100');
-    expect(contenido).toContain('bloque numero 101');
-    expect(contenido).toContain('bloque numero 102');
+    expect(contenido).toContain('bloque número 100');
+    expect(contenido).toContain('bloque número 101');
+    expect(contenido).toContain('bloque número 102');
   });
 
   /** Venir desde una explicacion del horario efectivo abre la semana de esa persona. */
@@ -616,7 +616,7 @@ describe('HorarioSemanalPage', () => {
     expect(fixture.nativeElement.querySelector('#selector-profesional')).not.toBeNull();
   });
 
-  it('sin sede elegida no consulta ningun horario y ofrece elegir consultorio', async () => {
+  it('sin sede elegida no consulta ningún horario y ofrece elegir consultorio', async () => {
     // Contexto con organizacion pero SIN sede: el horario cuelga de una sede concreta.
     tenantContext.select({ organizationId: ORG, organizationName: 'Belgrano' });
 
@@ -630,9 +630,9 @@ describe('HorarioSemanalPage', () => {
     httpMock.match(RUTA_PERMISOS_EFECTIVOS).forEach((p) => p.flush({ permissions: [] }));
 
     const contenido = texto(fixture);
-    expect(contenido).toContain('Todavia no elegiste un consultorio');
+    expect(contenido).toContain('Todavía no elegiste un consultorio');
     // La salida es elegir sede, NO re-autenticarse: las credenciales estan bien.
-    expect(contenido).toContain('Tu sesion sigue abierta');
+    expect(contenido).toContain('Tu sesión sigue abierta');
     expect(fixture.nativeElement.querySelector('a[href="/seleccionar-contexto"]')).not.toBeNull();
   });
 
@@ -696,7 +696,7 @@ function abrir(fixture: { nativeElement: HTMLElement; detectChanges(): void }, e
     (candidato) => (candidato.textContent ?? '').trim() === etiqueta,
   );
   if (boton === undefined) {
-    throw new Error(`No existe el boton ${etiqueta}`);
+    throw new Error(`No existe el botón ${etiqueta}`);
   }
   boton.click();
   fixture.detectChanges();

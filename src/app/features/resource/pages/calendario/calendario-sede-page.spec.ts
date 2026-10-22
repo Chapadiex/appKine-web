@@ -17,7 +17,7 @@ const SEDE = 3;
 const CALENDARIO = rutaCalendarioSede(SEDE);
 
 const FERIADOS = [
-  { id: 9, fecha: '2026-09-10', nombre: 'Dia del maestro', pais: 'AR', tipo: 'INAMOVIBLE' },
+  { id: 9, fecha: '2026-09-10', nombre: 'Día del maestro', pais: 'AR', tipo: 'INAMOVIBLE' },
   { id: 10, fecha: '2026-12-25', nombre: 'Navidad', pais: 'AR', tipo: 'INAMOVIBLE' },
 ];
 
@@ -90,7 +90,7 @@ describe('CalendarioSedePage', () => {
     expect(contenido).toContain('Calendario nacional en uso:');
     expect(contenido).toContain('AR');
     expect(contenido).toContain('10 de septiembre de 2026');
-    expect(contenido).toContain('Dia del maestro');
+    expect(contenido).toContain('Día del maestro');
     expect(contenido).toContain('Navidad');
 
     // El tipo se rotula: `INAMOVIBLE` es un valor del `CHECK` de la migracion, no una palabra
@@ -110,7 +110,7 @@ describe('CalendarioSedePage', () => {
    * cuando alguien reconstruye por que una agenda quedo vacia— no cae adentro, y la pantalla se
    * abre sin el feriado del que hablaba el enlace.
    */
-  it('un enlace con un dia concreto consulta ese dia y no el año por defecto', async () => {
+  it('un enlace con un día concreto consulta ese día y no el año por defecto', async () => {
     queryParams = { desde: '2026-09-10', hasta: '2026-09-11' };
 
     tenantContext.select({
@@ -135,7 +135,7 @@ describe('CalendarioSedePage', () => {
     consulta.flush({ ...POLITICA, feriados: [FERIADOS[0]] });
     await estabilizar(fixture);
 
-    expect(texto(fixture)).toContain('Dia del maestro');
+    expect(texto(fixture)).toContain('Día del maestro');
   });
 
   it('apagar el interruptor dice que la sede pasa a atender los feriados', async () => {
@@ -149,9 +149,9 @@ describe('CalendarioSedePage', () => {
     expect(antes).toContain('La sede pasa a atender los feriados');
     expect(antes).toContain('salvo que exista un');
     expect(antes).toContain('cierre explicito');
-    expect(antes).toContain('tambien para los que ya pasaron');
+    expect(antes).toContain('también para los que ya pasaron');
     // Y ofrece la alternativa correcta para el caso frecuente: abrir UN feriado puntual.
-    expect(antes).toContain('carga una apertura de sede para ese dia');
+    expect(antes).toContain('carga una apertura de sede para ese día');
     expect(antes).toContain('Hay un cambio sin guardar');
 
     // Nada salio a la red todavia: apagar la casilla no guarda.
@@ -180,7 +180,7 @@ describe('CalendarioSedePage', () => {
     const despues = texto(fixture);
     expect(despues).toContain('la sede pasa a atender los feriados');
     // Vacia significa "no se pregunto", nunca "no hay feriados": la lista que ya estaba sigue.
-    expect(despues).toContain('Dia del maestro');
+    expect(despues).toContain('Día del maestro');
     expect(despues).toContain('son informativos');
     expect(despues).not.toContain('Hay un cambio sin guardar');
   });
@@ -241,7 +241,7 @@ describe('CalendarioSedePage', () => {
     await estabilizar(fixture);
 
     expect(texto(fixture)).toContain('La sede esta dada de baja');
-    expect(texto(fixture)).toContain('Dia del maestro');
+    expect(texto(fixture)).toContain('Día del maestro');
   });
 
   it('una ventana invertida o mas larga que el tope no sale a la red', async () => {
@@ -256,7 +256,7 @@ describe('CalendarioSedePage', () => {
     escribir(fixture, '#calendario-hasta', '2030-01-01');
     enviar(fixture, '#form-ventana');
     httpMock.expectNone((peticion: HttpRequest<unknown>) => peticion.method === 'GET');
-    expect(texto(fixture)).toContain('no puede superar los 366 dias');
+    expect(texto(fixture)).toContain('no puede superar los 366 días');
 
     // Una ventana valida si consulta, y con las fechas que se escribieron.
     escribir(fixture, '#calendario-hasta', '2026-06-01');
@@ -270,7 +270,7 @@ describe('CalendarioSedePage', () => {
     await estabilizar(fixture);
   });
 
-  it('un error de lectura se puede reintentar sin recargar la pagina', async () => {
+  it('un error de lectura se puede reintentar sin recargar la página', async () => {
     tenantContext.select({
       organizationId: ORG,
       organizationName: 'Belgrano',
@@ -305,7 +305,7 @@ describe('CalendarioSedePage', () => {
     await estabilizar(fixture);
 
     // Sin `consultorio:manage` se puede mirar, pero no se ofrece guardar: seria un 403 seguro.
-    expect(texto(fixture)).toContain('Dia del maestro');
+    expect(texto(fixture)).toContain('Día del maestro');
     expect(texto(fixture)).not.toContain('Guardar la politica');
   });
 
@@ -320,8 +320,8 @@ describe('CalendarioSedePage', () => {
     httpMock.match(RUTA_PERMISOS_EFECTIVOS).forEach((p) => p.flush({ permissions: [] }));
 
     const contenido = texto(fixture);
-    expect(contenido).toContain('Todavia no elegiste un consultorio');
-    expect(contenido).toContain('Tu sesion sigue abierta');
+    expect(contenido).toContain('Todavía no elegiste un consultorio');
+    expect(contenido).toContain('Tu sesión sigue abierta');
     expect(fixture.nativeElement.querySelector('a[href="/seleccionar-contexto"]')).not.toBeNull();
   });
 
@@ -407,7 +407,7 @@ describe('CalendarioSedePage', () => {
       expect(fixture.nativeElement.querySelector('a[href="/agenda"]')).not.toBeNull();
     });
 
-    it('borrar manda una lista vacia, que no es lo mismo que omitir el campo', async () => {
+    it('borrar manda una lista vacía, que no es lo mismo que omitir el campo', async () => {
       const fixture = await montar(CON_HORARIO);
 
       botonConTexto(fixture, 'Borrar el horario general').click();
@@ -527,7 +527,7 @@ function abrir(fixture: { nativeElement: HTMLElement; detectChanges(): void }, e
     (candidato) => (candidato.textContent ?? '').trim() === etiqueta,
   );
   if (boton === undefined) {
-    throw new Error(`No existe el boton ${etiqueta}`);
+    throw new Error(`No existe el botón ${etiqueta}`);
   }
   boton.click();
   fixture.detectChanges();
@@ -545,7 +545,7 @@ function botonConTexto(
     fixture.nativeElement.querySelectorAll<HTMLButtonElement>('button'),
   ).find((candidato) => candidato.textContent?.includes(etiqueta));
   if (boton === undefined) {
-    throw new Error(`No existe el boton "${etiqueta}"`);
+    throw new Error(`No existe el botón "${etiqueta}"`);
   }
   return boton;
 }

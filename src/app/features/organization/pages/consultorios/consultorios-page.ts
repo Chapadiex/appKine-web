@@ -406,7 +406,7 @@ export class ConsultoriosPage {
       // Sin `version` no hay edicion posible: mandarla en `0` pisaria el cambio de otro, que
       // es exactamente lo que el control de concurrencia optimista existe para impedir.
       this.errorAccion.set(
-        'No pudimos leer la version de esta sede. Cerra el panel, recarga el listado y volve a intentar.',
+        'No pudimos leer la versión de esta sede. Cerra el panel, recarga el listado y volvé a intentar.',
       );
       return null;
     }

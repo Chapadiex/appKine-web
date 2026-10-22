@@ -1,11 +1,11 @@
 @if (estado().tipo !== 'oculto') {
   <section class="tarjeta" aria-labelledby="titulo-historia-administrativa">
     <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
-      <h2 id="titulo-historia-administrativa">Historia clinica: datos administrativos</h2>
+      <h2 id="titulo-historia-administrativa">Historia clínica: datos administrativos</h2>
       <app-ayuda titulo="Historia clinica: datos administrativos">
         <p>
-          Si tiene historia, desde cuando, sus casos y quien la atiende. Nada clinico: el contenido
-          se consulta desde el modulo clinico, con su permiso y su justificacion.
+          Si tiene historia, desde cuando, sus casos y quien la atiende. Nada clínico: el contenido
+          se consulta desde el modulo clínico, con su permiso y su justificacion.
         </p>
       </app-ayuda>
     </div>
@@ -24,7 +24,7 @@
 
     @if (lectura(); as l) {
       @if (!l.datos.tieneHistoriaClinica) {
-        <p class="estado">Esta persona todavia no tiene historia clinica.</p>
+        <p class="estado">Esta persona todavía no tiene historia clínica.</p>
       } @else {
         <dl class="detalle">
           <dt>Historia abierta el</dt>

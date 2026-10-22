@@ -262,7 +262,7 @@ export class SolicitudesPage {
         this.cerrarAlta();
         this.exito.set(
           'Tu pedido quedo registrado. Lo resuelve la plataforma: vas a ver como quedo en este ' +
-            'mismo listado. Mientras tanto, si lo necesitas ya, podes darlo de alta como un ' +
+            'mismo listado. Mientras tanto, si lo necesitas ya, podés darlo de alta como un ' +
             'concepto de tu centro.',
         );
         this.cargar();

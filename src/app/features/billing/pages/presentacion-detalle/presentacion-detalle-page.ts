@@ -271,7 +271,7 @@ export class PresentacionDetallePage {
     this.operar(
       `agregar-${obligacionId}`,
       (c, p) => this.api.agregarItem(c, p, obligacionId),
-      'Se agrego la prestacion al lote.',
+      'Se agrego la prestación al lote.',
     );
   }
 
@@ -281,7 +281,7 @@ export class PresentacionDetallePage {
     this.operar(
       `quitar-${itemId}`,
       (c, p) => this.api.quitarItem(c, p, itemId),
-      'Se quito la prestacion del lote. Vuelve a estar disponible.',
+      'Se quito la prestación del lote. Vuelve a estar disponible.',
     );
   }
 
@@ -298,7 +298,7 @@ export class PresentacionDetallePage {
     this.operar(
       'confirmar',
       (c, p) => this.api.confirmar(c, p),
-      'Lote presentado: tiene numero y su total quedo congelado. Todavia no se cobro nada.',
+      'Lote presentado: tiene número y su total quedo congelado. Todavía no se cobro nada.',
     );
   }
 
@@ -344,7 +344,7 @@ export class PresentacionDetallePage {
     this.operar(
       `debito-${itemId}`,
       (c, p) => this.api.debitar(c, p, itemId, importe, motivo.trim()),
-      'Debito registrado. Si fue por el total, la prestacion sale del lote y su deuda sigue ' +
+      'Debito registrado. Si fue por el total, la prestación sale del lote y su deuda sigue ' +
         'pendiente; si fue parcial, sigue en el lote y al cerrarlo se salda lo no debitado.',
     );
   }
@@ -381,7 +381,7 @@ export class PresentacionDetallePage {
     this.operar(
       'conciliar',
       (c, p) => this.api.conciliar(c, p),
-      'Lote cerrado. Cada prestacion aceptada salda su deuda por lo presentado; las debitadas en ' +
+      'Lote cerrado. Cada prestación aceptada salda su deuda por lo presentado; las debitadas en ' +
         'parte, por lo presentado menos lo debitado, que queda pendiente para otro lote.',
     );
   }

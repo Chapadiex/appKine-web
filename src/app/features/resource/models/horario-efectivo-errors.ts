@@ -49,22 +49,22 @@ export interface ErrorHorarioEfectivo extends MensajeTraducido<CausaHorarioEfect
   readonly maximoDias: number;
 }
 
-const MENSAJE_GENERICO = 'No pudimos resolver el horario. Volve a intentar en un momento.';
-const MENSAJE_DE_RED = 'No se pudo contactar al servidor. Revisa tu conexion y volve a intentar.';
+const MENSAJE_GENERICO = 'No pudimos resolver el horario. Volvé a intentar en un momento.';
+const MENSAJE_DE_RED = 'No se pudo contactar al servidor. Revisa tu conexion y volvé a intentar.';
 const MENSAJE_LIMITE_SIN_PLAZO =
   'Demasiadas consultas. Espera un momento antes de volver a intentar.';
 
 const MENSAJE_SIN_CONTEXTO =
-  'El horario efectivo se resuelve en una sede concreta y todavia no elegiste ninguna. Eligi un ' +
-  'consultorio para ver que dias y horas atiende el profesional.';
+  'El horario efectivo se resuelve en una sede concreta y todavía no elegiste ninguna. Eligi un ' +
+  'consultorio para ver que días y horas atiende el profesional.';
 
 const MENSAJE_SIN_PERMISO =
-  'No tenes permiso para ver el horario de los profesionales de esta sede. Se necesita ' +
+  'No tenés permiso para ver el horario de los profesionales de esta sede. Se necesita ' +
   'colaborador:read, que es el mismo permiso con el que se lee el horario semanal; pediselo a ' +
   'quien administra la sede.';
 
 const MENSAJE_NO_ENCONTRADO =
-  'Ese profesional o esa sede ya no existen, o el vinculo pertenece a otra sede. Volve a elegir ' +
+  'Ese profesional o esa sede ya no existen, o el vinculo pertenece a otra sede. Volvé a elegir ' +
   'el profesional en la lista.';
 
 /** Traduce cualquier error de la consulta de disponibilidad efectiva. */
@@ -82,7 +82,7 @@ export function traducirErrorHorarioEfectivo(error: unknown): ErrorHorarioEfecti
     return {
       ...base(
         segundos > 0
-          ? `Demasiadas consultas. Espera ${segundos} segundos y volve a intentar.`
+          ? `Demasiadas consultas. Espera ${segundos} segundos y volvé a intentar.`
           : MENSAJE_LIMITE_SIN_PLAZO,
         'limite',
       ),
@@ -129,8 +129,8 @@ function mensajeDeVentana(maximoDias: number): string {
     return 'La ventana que pediste es demasiado larga. Consulta un periodo mas corto.';
   }
   return (
-    `La ventana que pediste es demasiado larga: el maximo es de ${maximoDias} dias. ` +
-    'Acorta el periodo y volve a consultar.'
+    `La ventana que pediste es demasiado larga: el máximo es de ${maximoDias} días. ` +
+    'Acorta el periodo y volvé a consultar.'
   );
 }
 

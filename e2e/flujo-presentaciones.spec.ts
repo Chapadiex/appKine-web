@@ -222,7 +222,7 @@ test.describe('Presentaciones a financiadores contra el backend real', () => {
     await elegibles
       .getByRole('button', { name: `Agregar la deuda ${sembrado.deFinanciador.id}` })
       .click();
-    await expect(page.getByText('Se agrego la prestacion al lote.')).toBeVisible();
+    await expect(page.getByText('Se agrego la prestación al lote.')).toBeVisible();
     const items = page.getByRole('region', { name: 'Tabla de prestaciones del lote' });
     await expect(
       items.getByRole('row').filter({ hasText: `Persona #${sembrado.persona.id}` }),

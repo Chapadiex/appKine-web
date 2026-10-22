@@ -70,7 +70,7 @@ describe('EgresosPage', () => {
     expect(campo<HTMLInputElement>(fixture, '#filtro-desde').value).toBe('2026-10-01');
   });
 
-  it('la fecha de registro es la del dia de la sede, no la del navegador', async () => {
+  it('la fecha de registro es la del día de la sede, no la del navegador', async () => {
     // 22:30 del 14/10 en Cordoba: en UTC, o en cualquier zona adelantada, ya es el 15.
     fijarReloj('2026-10-15T01:30:00Z', { zonaDelNavegador: 'Pacific/Kiritimati' });
     vi.spyOn(TestBed.inject(DiaDeLaSede), 'zona').mockReturnValue('America/Argentina/Cordoba');
@@ -80,7 +80,7 @@ describe('EgresosPage', () => {
     expect(contenido(fixture)).not.toContain('15/10/2026');
   });
 
-  it('filtrar manda estado, categoria y periodo al servidor', async () => {
+  it('filtrar manda estado, categoría y periodo al servidor', async () => {
     const fixture = await montar([]);
     expect(contenido(fixture)).toContain('No hay egresos con esos filtros');
 

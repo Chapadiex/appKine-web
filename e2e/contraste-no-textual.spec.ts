@@ -114,7 +114,7 @@ test.describe('Contraste no textual, foco y teclado', () => {
       // reintentar. Era una carrera contra el change detection: fallaba solo en un runner lento.
       const fila = page.getByRole('row').filter({ hasText: 'Ibarra, Dario' });
       const abrir = fila.getByRole('button', { name: 'Atender como Particular', exact: true });
-      const panel = page.getByRole('region', { name: 'Confirmar la transicion de la recepcion' });
+      const panel = page.getByRole('region', { name: 'Confirmar la transicion de la recepción' });
       await expect(abrir).toBeVisible({ timeout: LLEGADA });
 
       await abrir.focus();

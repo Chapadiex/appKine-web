@@ -485,7 +485,7 @@ async function atenderYCerrar(
 
     await expect(pagina).toHaveURL(new RegExp(`/atencion/sesiones/${atencion.sesionId}$`));
     await expect(pagina.getByRole('heading', { name: 'Atención en curso' })).toBeVisible();
-    await pagina.getByRole('radio', { name: 'Vino a la sesion' }).check();
+    await pagina.getByRole('radio', { name: 'Vino a la sesión' }).check();
     await pagina.getByLabel('Nota de cierre').fill('Trabajo grupal bien tolerado, sin dolor.');
     const cierre = respuestaDe(pagina, 'POST', /\/sesiones\/\d+\/cierre$/);
     await pagina.getByRole('button', { name: 'Cerrar la atención' }).click();

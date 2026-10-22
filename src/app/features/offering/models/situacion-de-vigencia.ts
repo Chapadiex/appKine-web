@@ -105,10 +105,10 @@ export function situacionDeVigencia(oferta: OfertaResponse, hoy: string): Situac
   if (desde !== '' && desde > hoy) {
     return {
       clave: 'aun-no',
-      resumen: 'Activa, todavia sin vigencia',
+      resumen: 'Activa, todavía sin vigencia',
       explicacion:
         `Arranca el ${enPalabras(desde)}, y hasta entonces ${NO_APARECE} No es un error: la ` +
-        'oferta ya esta cargada y va a empezar a ofrecerse sola ese dia.',
+        'oferta ya esta cargada y va a empezar a ofrecerse sola ese día.',
       atenuada: true,
     };
   }
@@ -120,7 +120,7 @@ export function situacionDeVigencia(oferta: OfertaResponse, hoy: string): Situac
       resumen: 'Activa, vigencia terminada',
       explicacion:
         `Sigue activa, pero su vigencia termino el ${enPalabras(hasta)} —el fin es exclusivo, ` +
-        `asi que ese dia ya no se ofrecio—, y por eso ${NO_APARECE} Si vuelve a ofrecerse, ` +
+        `así que ese día ya no se ofrecio—, y por eso ${NO_APARECE} Si vuelve a ofrecerse, ` +
         'edita el fin de vigencia en vez de dar de alta otra oferta igual.',
       atenuada: true,
     };
@@ -129,7 +129,7 @@ export function situacionDeVigencia(oferta: OfertaResponse, hoy: string): Situac
   return {
     clave: 'fuera-de-ventana',
     resumen: 'Activa, sin vigencia hoy',
-    explicacion: `Hoy queda fuera de su ventana de vigencia, asi que ${NO_APARECE}`,
+    explicacion: `Hoy queda fuera de su ventana de vigencia, así que ${NO_APARECE}`,
     atenuada: true,
   };
 }

@@ -79,8 +79,8 @@ export const TIMEOUT_AXE = 35_000;
 export const REGLAS_SIN_VEREDICTO_EN_JSDOM: ReadonlyMap<string, string> = new Map([
   [
     'color-contrast',
-    'jsdom no calcula layout ni resuelve el color heredado de un ancestro, asi que axe nunca ' +
-      'puede decidir el contraste aca. NO significa que el contraste no se verifique: se mide ' +
+    'jsdom no calcula layout ni resuelve el color heredado de un ancestro, así que axe nunca ' +
+      'puede decidir el contraste acá. NO significa que el contraste no se verifique: se mide ' +
       'en Chromium, con los dos temas, en `e2e/contraste.spec.ts` (`npm run a11y:contraste`), ' +
       'que es un gate propio del pipeline. Ese es el unico lugar del repositorio donde el ' +
       'contraste tiene un veredicto real.',
@@ -90,7 +90,7 @@ export const REGLAS_SIN_VEREDICTO_EN_JSDOM: ReadonlyMap<string, string> = new Ma
     'WCAG 2.5.3 (Etiqueta en el nombre): el nombre accesible de un control tiene que contener ' +
       'su texto visible. axe-core la etiqueta `wcag21a` desde 4.14 y, para comparar el texto, ' +
       'necesita saber que caracteres son visibles: lo resuelve dibujando en un `canvas`, que ' +
-      'jsdom no implementa, asi que aca termina SIEMPRE en `incomplete` ("Axe encountered an ' +
+      'jsdom no implementa, así que acá termina SIEMPRE en `incomplete` ("Axe encountered an ' +
       'error"). Se mide en Chromium, con los dos temas, en `e2e/contraste.spec.ts` ' +
       '(`npm run a11y:contraste`): `auditarContraste` corre la regla sobre cada pantalla que ' +
       'audita y falla tanto con una violacion como con un `incomplete`.',

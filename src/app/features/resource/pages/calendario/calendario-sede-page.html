@@ -28,8 +28,8 @@
           aria-describedby="calendario-hasta-ayuda"
         />
         <p class="ayuda" id="calendario-hasta-ayuda">
-          Un feriado que cae justo este dia <b>no</b> aparece. El maximo es de
-          {{ maximoDias }} dias.
+          Un feriado que cae justo este día <b>no</b> aparece. El máximo es de
+          {{ maximoDias }} días.
         </p>
       </div>
     </div>
@@ -64,9 +64,9 @@
 
     @case ('sin-contexto') {
       <section class="tarjeta">
-        <p class="estado estado--vacio">Todavia no elegiste un consultorio.</p>
+        <p class="estado estado--vacio">Todavía no elegiste un consultorio.</p>
         <p class="ayuda">
-          La politica de feriados es de una sede concreta. Tu sesion sigue abierta: solo falta
+          La politica de feriados es de una sede concreta. Tu sesión sigue abierta: solo falta
           elegir donde estas trabajando.
         </p>
         <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
@@ -91,7 +91,7 @@
         @if (politica(); as actual) {
           <p class="ayuda">
             Calendario nacional en uso: <b>{{ actual.pais }}</b
-            >. El pais no se cambia desde aca.
+            >. El país no se cambia desde acá.
           </p>
 
           @if (actual.existePersistida === false) {
@@ -127,16 +127,16 @@
             <div class="aviso-apertura">
               <p>
                 <b>La sede pasa a atender los feriados.</b> El horario habitual de cada profesional
-                se va a aplicar tambien esos dias, salvo que exista un <b>cierre explicito</b> que
+                se va a aplicar también esos días, salvo que exista un <b>cierre explicito</b> que
                 los tape.
               </p>
               <p class="ayuda">
                 Vale para todos los feriados del calendario, no solo para los de este periodo, y
-                tambien para los que ya pasaron.
+                también para los que ya pasaron.
               </p>
               <p class="ayuda">
                 Si lo que queres es abrir <b>un</b> feriado puntual, no apagues esto: carga una
-                apertura de sede para ese dia en Cierres y aperturas.
+                apertura de sede para ese día en Cierres y aperturas.
               </p>
             </div>
           }
@@ -174,7 +174,7 @@
             <h2 id="titulo-horario-general">Horario general de la sede</h2>
             <app-ayuda titulo="Horario general de la sede">
               <p>
-                Los dias y horas en que la sede esta abierta. <b>Limita la agenda</b>: ningun turno
+                Los días y horas en que la sede esta abierta. <b>Limita la agenda</b>: ningún turno
                 se ofrece ni se reserva fuera de este horario, aunque el profesional tenga
                 disponibilidad, y no abre nada que el profesional no tenga. Sin horario general no
                 se limita nada.

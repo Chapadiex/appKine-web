@@ -35,7 +35,7 @@ describe('etiquetas de turno', () => {
       inicioAnterior: '2026-09-15T12:00:00Z',
       inicioNuevo: '2026-09-22T15:00:00Z',
       finNuevo: '2026-09-22T15:45:00Z',
-      motivo: 'El profesional pidio el dia',
+      motivo: 'El profesional pidio el día',
       ocurridoEn: '2026-09-12T09:00:00Z',
     },
     {
@@ -47,11 +47,11 @@ describe('etiquetas de turno', () => {
     },
   ] as EventoDeTurno[];
 
-  it('el estado vigente es el del ultimo evento, no el de la reserva', () => {
+  it('el estado vigente es el del último evento, no el de la reserva', () => {
     expect(estadoSegunHistorial(HISTORIAL)).toBe('CONFIRMADO');
   });
 
-  it('el horario vigente lo fija la reprogramacion, aunque el ultimo evento no lo traiga', () => {
+  it('el horario vigente lo fija la reprogramacion, aunque el último evento no lo traiga', () => {
     // La confirmacion no mueve el horario y no publica ninguno. Quedarse con el ultimo evento a
     // secas mostraria el turno sin hora; quedarse con el primero lo mostraria en el dia viejo.
     expect(horarioSegunHistorial(HISTORIAL)).toEqual({

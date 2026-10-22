@@ -141,7 +141,7 @@ test.describe('Debito, quitar y descartar en presentaciones contra el backend re
     await filaDelLote(page, debitada).getByRole('button', { name: 'Quitar' }).click();
     expect((await quita).status()).toBeLessThan(300);
     await expect(
-      page.getByText('Se quito la prestacion del lote. Vuelve a estar disponible.'),
+      page.getByText('Se quito la prestación del lote. Vuelve a estar disponible.'),
     ).toBeVisible();
     await expect(filaDelLote(page, debitada)).toHaveCount(0);
     await expect(filaElegible(page, debitada)).toHaveCount(1);

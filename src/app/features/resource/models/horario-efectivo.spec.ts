@@ -20,7 +20,7 @@ const ZONA = 'America/Argentina/Buenos_Aires';
  * lint y produce el cartel equivocado. Este spec es lo unico que lo atrapa.
  */
 describe('explicacionDeVacio', () => {
-  it('el feriado se nombra: un dia que solo dice "cerrado" manda a buscar un cierre que no existe', () => {
+  it('el feriado se nombra: un día que solo dice "cerrado" manda a buscar un cierre que no existe', () => {
     const explicacion = explicacionDeVacio(
       { fecha: '2026-12-25', razonVacio: RAZON_VACIO_FERIADO, feriadoNombre: 'Navidad' },
       'Ana Diaz',
@@ -40,14 +40,14 @@ describe('explicacionDeVacio', () => {
     expect(explicacion.titulo).toContain('feriado del calendario nacional');
   });
 
-  it('el cierre nombra la excepcion concreta cuando el backend publica su id', () => {
+  it('el cierre nombra la excepción concreta cuando el backend publica su id', () => {
     const explicacion = explicacionDeVacio(
       { fecha: '2026-09-02', razonVacio: RAZON_VACIO_CIERRE, reglaVacio: 77 },
       'Ana Diaz',
     );
 
     expect(explicacion.titulo).toContain('cierre cargado');
-    expect(explicacion.detalle).toContain('numero 77');
+    expect(explicacion.detalle).toContain('número 77');
     expect(explicacion.enlace.ruta).toBe('/horarios/excepciones');
   });
 
@@ -59,7 +59,7 @@ describe('explicacionDeVacio', () => {
    * aterriza en una lista donde ese cierre —si es de Ana, que es el caso corriente de una
    * ausencia— no aparece, y nada indica que un filtro lo esta tapando.
    */
-  it('el enlace del cierre lleva al profesional y al dia del que hablaba la explicacion', () => {
+  it('el enlace del cierre lleva al profesional y al día del que hablaba la explicacion', () => {
     const explicacion = explicacionDeVacio(
       { fecha: '2026-09-02', razonVacio: RAZON_VACIO_CIERRE, reglaVacio: 77 },
       'Ana Diaz',
@@ -74,7 +74,7 @@ describe('explicacionDeVacio', () => {
     });
   });
 
-  it('sin profesional elegido el enlace lleva solo el dia, y nunca un id inventado', () => {
+  it('sin profesional elegido el enlace lleva solo el día, y nunca un id inventado', () => {
     const explicacion = explicacionDeVacio(
       { fecha: '2026-09-02', razonVacio: RAZON_VACIO_CIERRE, reglaVacio: 77 },
       'Ana Diaz',
@@ -83,7 +83,7 @@ describe('explicacionDeVacio', () => {
     expect(explicacion.enlace.params).toEqual({ desde: '2026-09-02', hasta: '2026-09-03' });
   });
 
-  it('el feriado tambien viaja con su dia: la ventana por defecto del calendario es un año', () => {
+  it('el feriado también viaja con su día: la ventana por defecto del calendario es un año', () => {
     const explicacion = explicacionDeVacio(
       { fecha: '2026-12-25', razonVacio: RAZON_VACIO_FERIADO, feriadoNombre: 'Navidad' },
       'Ana Diaz',
@@ -94,30 +94,30 @@ describe('explicacionDeVacio', () => {
     expect(explicacion.enlace.params).toEqual({ desde: '2026-12-25', hasta: '2026-12-26' });
   });
 
-  it('el dia sin ninguna regla manda al horario semanal ya abierto en esa persona', () => {
+  it('el día sin ninguna regla manda al horario semanal ya abierto en esa persona', () => {
     const explicacion = explicacionDeVacio({ fecha: '2026-09-05', razonVacio: null }, 'Ana', 42);
 
     expect(explicacion.enlace.ruta).toBe('/horarios');
     expect(explicacion.enlace.params).toEqual({ membershipId: '42' });
   });
 
-  it('un dia sin fecha no inventa ventana: el destino abre con la suya', () => {
+  it('un día sin fecha no inventa ventana: el destino abre con la suya', () => {
     const explicacion = explicacionDeVacio({ razonVacio: RAZON_VACIO_CIERRE }, 'Ana', 42);
 
     expect(explicacion.enlace.params).toEqual({ membershipId: '42' });
   });
 
-  it('un cierre sin id explica igual y no inventa un numero', () => {
+  it('un cierre sin id explica igual y no inventa un número', () => {
     const explicacion = explicacionDeVacio(
       { fecha: '2026-09-02', razonVacio: RAZON_VACIO_CIERRE },
       'Ana Diaz',
     );
 
-    expect(explicacion.detalle).toContain('Una excepcion de cierre cubre el dia entero');
+    expect(explicacion.detalle).toContain('Una excepción de cierre cubre el día entero');
     expect(explicacion.detalle).not.toContain('numero');
   });
 
-  it('VINCULO habla de la persona y se distingue de "no atiende ese dia"', () => {
+  it('VINCULO habla de la persona y se distingue de "no atiende ese día"', () => {
     const explicacion = explicacionDeVacio(
       { fecha: '2026-09-03', razonVacio: RAZON_VACIO_VINCULO },
       'Ana Diaz',
@@ -125,23 +125,23 @@ describe('explicacionDeVacio', () => {
 
     expect(explicacion.titulo).toContain('Ana Diaz');
     expect(explicacion.titulo).toContain('no estaba vinculado');
-    expect(explicacion.detalle).toContain('todavia no se habia incorporado');
+    expect(explicacion.detalle).toContain('todavía no se habia incorporado');
     expect(explicacion.detalle).toContain('desvinculado');
     // La confusion que este texto existe para evitar.
-    expect(explicacion.titulo).not.toContain('No trabaja ese dia');
+    expect(explicacion.titulo).not.toContain('No trabaja ese día');
     expect(explicacion.enlace.ruta).toBe('/organizacion/colaboradores');
   });
 
-  it('sin razon es la AUSENCIA de reglas, y no ofrece ningun cierre para ir a mirar', () => {
+  it('sin razón es la AUSENCIA de reglas, y no ofrece ningún cierre para ir a mirar', () => {
     const explicacion = explicacionDeVacio({ fecha: '2026-09-05', razonVacio: null }, 'Ana Diaz');
 
-    expect(explicacion.titulo).toBe('No trabaja ese dia.');
-    expect(explicacion.detalle).toContain('Ninguna regla abre ese dia');
-    expect(explicacion.detalle).toContain('No hay ningun cierre ni feriado');
+    expect(explicacion.titulo).toBe('No trabaja ese día.');
+    expect(explicacion.detalle).toContain('Ninguna regla abre ese día');
+    expect(explicacion.detalle).toContain('No hay ningún cierre ni feriado');
     expect(explicacion.enlace.ruta).toBe('/horarios');
   });
 
-  it('una razon desconocida cae en el texto de "ninguna regla" y no rompe la pantalla', () => {
+  it('una razón desconocida cae en el texto de "ninguna regla" y no rompe la pantalla', () => {
     // El contrato puede sumar un motivo nuevo sin que este cliente se entere: el tipo generado
     // es `string | null` y no hay enum que lo frene.
     const explicacion = explicacionDeVacio(
@@ -149,7 +149,7 @@ describe('explicacionDeVacio', () => {
       'Ana Diaz',
     );
 
-    expect(explicacion.titulo).toBe('No trabaja ese dia.');
+    expect(explicacion.titulo).toBe('No trabaja ese día.');
   });
 });
 
@@ -157,14 +157,14 @@ describe('etiquetaDeOrigen y textoDeRecorte', () => {
   it('distingue el horario semanal de una apertura puntual, con el id de la fila', () => {
     expect(
       etiquetaDeOrigen({ origen: FranjaResueltaResponseOrigenEnum.BLOQUE, reglaId: 5 }),
-    ).toContain('horario semanal, bloque numero 5');
+    ).toContain('horario semanal, bloque número 5');
 
     expect(
       etiquetaDeOrigen({ origen: FranjaResueltaResponseOrigenEnum.APERTURA, reglaId: 9 }),
-    ).toContain('apertura puntual numero 9');
+    ).toContain('apertura puntual número 9');
   });
 
-  it('sin id de regla no inventa un numero', () => {
+  it('sin id de regla no inventa un número', () => {
     expect(etiquetaDeOrigen({ origen: FranjaResueltaResponseOrigenEnum.BLOQUE })).toBe(
       'La produjo el horario semanal, bloque.',
     );
@@ -192,7 +192,7 @@ describe('rangoDeFranja', () => {
     expect(rango).toBe('09:00 a 13:00');
   });
 
-  it('una franja que llega al fin del dia se escribe 24:00 y no 00:00', () => {
+  it('una franja que llega al fin del día se escribe 24:00 y no 00:00', () => {
     // El contrato manda el INICIO DEL DIA SIGUIENTE. Mostrado tal cual diria "20:00 a 00:00",
     // que se lee como una franja invertida.
     const rango = rangoDeFranja(
@@ -204,7 +204,7 @@ describe('rangoDeFranja', () => {
     expect(rango).toBe('20:00 a 24:00');
   });
 
-  it('la medianoche del propio dia sigue siendo 00:00', () => {
+  it('la medianoche del propio día sigue siendo 00:00', () => {
     const rango = rangoDeFranja(
       { desde: '2026-09-01T03:00:00Z', hasta: '2026-09-01T15:00:00Z' },
       '2026-09-01',
@@ -246,7 +246,7 @@ describe('rangoDeFranja', () => {
     expect(rangoDeFranja({ desde: '2026-09-01T12:00:00Z' }, '2026-09-01', ZONA)).toBe('');
   });
 
-  it('sin fecha del dia no se puede decidir el 24:00 y se imprime la hora tal cual', () => {
+  it('sin fecha del día no se puede decidir el 24:00 y se imprime la hora tal cual', () => {
     expect(
       rangoDeFranja(
         { desde: '2026-09-01T23:00:00Z', hasta: '2026-09-02T03:00:00Z' },

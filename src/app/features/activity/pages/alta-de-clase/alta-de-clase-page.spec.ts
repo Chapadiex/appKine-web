@@ -74,13 +74,13 @@ describe('AltaDeClasePage', () => {
   }
 
   it(
-    'ofrece solo las grupales, toma cupo y duracion de la oferta y programa en hora de la sede',
+    'ofrece solo las grupales, toma cupo y duración de la oferta y programa en hora de la sede',
     async () => {
       const fixture = await montar();
       const opciones = Array.from(
         (fixture.nativeElement as HTMLElement).querySelectorAll('#clase-oferta option'),
       ).map((o) => o.textContent?.trim());
-      expect(opciones).toEqual(['Elegi una oferta', 'Pilates reformer']);
+      expect(opciones).toEqual(['Elegí una oferta', 'Pilates reformer']);
 
       escribir(fixture, '#clase-oferta', '42');
       httpMock.expectOne(HABILITACIONES).flush({
@@ -93,7 +93,7 @@ describe('AltaDeClasePage', () => {
         espacios: [
           { espacioId: 9, nombre: 'Sala grande', estado: 'ACTIVO', enServicio: true },
           { espacioId: 10, nombre: 'Box dado de baja', estado: 'ACTIVO', enServicio: false },
-          { espacioId: 11, nombre: 'Habilitacion vencida', estado: 'INACTIVO' },
+          { espacioId: 11, nombre: 'Habilitación vencida', estado: 'INACTIVO' },
         ],
       });
       await asentar(fixture);
@@ -130,7 +130,7 @@ describe('AltaDeClasePage', () => {
     TIMEOUT_AXE,
   );
 
-  it('una oferta sin restriccion ofrece los profesionales de la organizacion', async () => {
+  it('una oferta sin restriccion ofrece los profesionales de la organización', async () => {
     const fixture = await montar();
     escribir(fixture, '#clase-oferta', '42');
     httpMock
@@ -226,7 +226,7 @@ describe('AltaDeClasePage', () => {
     const raiz = fixture.nativeElement as HTMLElement;
     (raiz.querySelector('button[type="submit"]') as HTMLButtonElement).click();
     fixture.detectChanges();
-    expect(textoDe(fixture)).toContain('Elegi la oferta de la clase');
+    expect(textoDe(fixture)).toContain('Elegí la oferta de la clase');
     httpMock.expectNone(PROGRAMAR);
   });
 
@@ -242,7 +242,7 @@ describe('AltaDeClasePage', () => {
     await asentar(fixture);
 
     httpMock.expectNone(PROGRAMAR);
-    expect(textoDe(fixture)).toContain('Elegi la fecha de la clase.');
+    expect(textoDe(fixture)).toContain('Elegí la fecha de la clase.');
     expect(textoDe(fixture)).toContain('El cupo es de 1 en adelante.');
     expect(raiz.querySelector('#clase-fecha')?.getAttribute('aria-describedby')).toBe(
       'clase-fecha-error',
@@ -277,7 +277,7 @@ describe('AltaDeClasePage', () => {
       .expectOne((p) => p.url === URL_OFERTAS)
       .flush(null, { status: 500, statusText: 'Server Error' });
     await asentar(fixture);
-    expect(textoDe(fixture)).toContain('No pudimos completar la operacion');
+    expect(textoDe(fixture)).toContain('No pudimos completar la operación');
   });
 });
 

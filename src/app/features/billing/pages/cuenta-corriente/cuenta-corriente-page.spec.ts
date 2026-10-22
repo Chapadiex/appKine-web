@@ -53,7 +53,7 @@ const PENDIENTE = {
   importeOriginal: 8500.5,
   saldo: 8500.5,
   snapshotPrecio: 8500.5,
-  snapshotNombre: 'Kinesiologia - sesion',
+  snapshotNombre: 'Kinesiologia - sesión',
   devengadaEn: '2026-09-15T12:48:00Z',
   version: 0,
 };
@@ -113,7 +113,7 @@ describe('CuentaCorrientePage', () => {
     expect(texto(fixture)).toContain('$');
   });
 
-  it('no muestra ningun total: no se suma plata en la pantalla', async () => {
+  it('no muestra ningún total: no se suma plata en la pantalla', async () => {
     // Dos deudas cuya suma en punto flotante da 0.30000000000000004. Si la pantalla sumara, ese
     // numero -o su redondeo- terminaria en el DOM.
     const fixture = await montar([
@@ -135,7 +135,7 @@ describe('CuentaCorrientePage', () => {
     expect(texto(fixture)).toContain('Precio al devengar');
   });
 
-  it('dice el concepto de cada deuda, avisa la practica no habilitada y manda la parte de la obra social a presentaciones', async () => {
+  it('dice el concepto de cada deuda, avisa la práctica no habilitada y manda la parte de la obra social a presentaciones', async () => {
     const fixture = await montar([
       { ...PENDIENTE, id: 9001, concepto: 'PARTICULAR' },
       {
@@ -153,7 +153,7 @@ describe('CuentaCorrientePage', () => {
     expect(contenido).toContain('Coseguro');
     expect(contenido).toContain('Convenio OSDE 210');
     expect(contenido).not.toContain('COSEGURO');
-    expect(contenido).toContain('la practica facturada no esta habilitada en la oferta');
+    expect(contenido).toContain('la práctica facturada no esta habilitada en la oferta');
     const enlace = (fixture.nativeElement as HTMLElement).querySelector(
       'a[href="/presentaciones"]',
     );
@@ -184,7 +184,7 @@ describe('CuentaCorrientePage', () => {
     expect(contenido).toContain('Se anula el pase y esta deuda juntos.');
   });
 
-  it('la deuda de una venta de abono tampoco se anula desde aca', async () => {
+  it('la deuda de una venta de abono tampoco se anula desde acá', async () => {
     const fixture = await montar([
       { ...PENDIENTE, sesionId: undefined, origen: 'VENTA_ABONO', paseId: 78 },
     ]);
@@ -193,7 +193,7 @@ describe('CuentaCorrientePage', () => {
     expect(enlaceA(fixture, `/pacientes/${PERSONA}/pases`)).not.toBeNull();
   });
 
-  it('la deuda de una clase asistida dice "Clase del dd/mm" y se anula como la de una sesion (U-39)', async () => {
+  it('la deuda de una clase asistida dice "Clase del dd/mm" y se anula como la de una sesión (U-39)', async () => {
     const DE_CLASE = {
       ...PENDIENTE,
       sesionId: undefined,
@@ -272,14 +272,14 @@ describe('CuentaCorrientePage', () => {
     expect(contenido).not.toContain('Revisar:');
   });
 
-  it('una lista vacia no es un error, y dice de donde salen las deudas', async () => {
+  it('una lista vacía no es un error, y dice de donde salen las deudas', async () => {
     const fixture = await montar([]);
 
     // Que alguien no deba nada es el caso bueno. Y la aclaracion importa: sin ella, un
     // administrativo puede buscar el boton de "cargar una deuda", que no existe ni va a existir
     // -la obligacion se deriva del cierre de la sesion-.
     expect(texto(fixture)).toContain('no tiene ninguna deuda registrada');
-    expect(texto(fixture)).toContain('al cerrar una atencion');
+    expect(texto(fixture)).toContain('al cerrar una atención');
   });
 
   it('un 403 al cargar dice que falta el permiso, no un error generico', async () => {
@@ -308,7 +308,7 @@ describe('CuentaCorrientePage', () => {
       );
     await estabilizar(fixture);
 
-    expect(texto(fixture)).toContain('No tenes permiso');
+    expect(texto(fixture)).toContain('No tenés permiso');
     // Reintentar, y NO mandar a elegir contexto: el contexto esta, lo que falta es el permiso.
     expect(rotulosDeBoton(fixture)).toContain('Reintentar');
   });
@@ -398,7 +398,7 @@ describe('CuentaCorrientePage', () => {
   // 3. El motivo
   // -------------------------------------------------------------------------------------
 
-  it('con el motivo vacio no manda la anulacion', async () => {
+  it('con el motivo vacío no manda la anulación', async () => {
     const fixture = await montar([PENDIENTE]);
 
     apretar(fixture, 'Anular');
@@ -409,7 +409,7 @@ describe('CuentaCorrientePage', () => {
     httpMock.expectNone(esAnular());
   });
 
-  it('anular manda motivo y version, y la deuda queda anulada, no borrada', async () => {
+  it('anular manda motivo y versión, y la deuda queda anulada, no borrada', async () => {
     const fixture = await montar([PENDIENTE]);
     anular(fixture, 'Cargada con la oferta equivocada.');
 
@@ -604,7 +604,7 @@ describe('CuentaCorrientePage', () => {
       fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>,
     ).find((b) => (b.textContent ?? '').trim() === rotulo);
     if (boton === undefined) {
-      throw new Error(`No hay ningun boton rotulado "${rotulo}".`);
+      throw new Error(`No hay ningún botón rotulado "${rotulo}".`);
     }
     boton.click();
     fixture.detectChanges();

@@ -68,7 +68,7 @@ describe('DisponibilidadPage', () => {
     httpMock.verify();
   });
 
-  it('rechaza la ventana de mas de 31 dias sin salir a la red y muestra capacidad, no ocupacion', async () => {
+  it('rechaza la ventana de mas de 31 días sin salir a la red y muestra capacidad, no ocupacion', async () => {
     tenantContext.select({
       organizationId: 1,
       organizationName: 'Belgrano',
@@ -83,7 +83,7 @@ describe('DisponibilidadPage', () => {
 
     // Arranca en `inicial`: sin ventana elegida la peticion seria invalida, asi que consultar
     // al entrar seria un 400 garantizado en cada visita.
-    expect(texto(fixture)).toContain('Elegi un periodo');
+    expect(texto(fixture)).toContain('Elegí un periodo');
     httpMock.expectNone(() => true);
 
     // Ventana de dos meses: se corta aca.
@@ -92,7 +92,7 @@ describe('DisponibilidadPage', () => {
     enviar(fixture);
 
     httpMock.expectNone(() => true);
-    expect(texto(fixture)).toContain('no puede pasar de 31 dias');
+    expect(texto(fixture)).toContain('no puede pasar de 31 días');
 
     // Ahora una ventana valida.
     escribir(fixture, '#ventana-hasta', '2026-09-01T10:00');

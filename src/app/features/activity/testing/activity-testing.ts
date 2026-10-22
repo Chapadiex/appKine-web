@@ -63,7 +63,7 @@ export function boton(fixture: ComponentFixture<unknown>, texto: string): HTMLBu
     ) as HTMLButtonElement[]
   ).find((b) => (b.textContent ?? '').replace(/\s+/g, ' ').includes(texto));
   if (encontrado === undefined) {
-    throw new Error(`no se encontro el boton "${texto}"`);
+    throw new Error(`no se encontro el botón "${texto}"`);
   }
   return encontrado as HTMLButtonElement;
 }

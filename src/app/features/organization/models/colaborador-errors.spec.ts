@@ -33,7 +33,7 @@ describe('traducirErrorColaborador', () => {
     ['400 de validacion', problema(400, 'validation-error'), 'validacion'],
     ['404 no encontrado', problema(404, 'not-found'), 'no-encontrado'],
     ['409 vinculo duplicado', problema(409, 'membership-already-exists'), 'conflicto'],
-    ['409 ultimo administrador', problema(409, 'last-admin-required'), 'conflicto'],
+    ['409 último administrador', problema(409, 'last-admin-required'), 'conflicto'],
     ['409 auto-revocacion', problema(409, 'self-revoke-not-allowed'), 'auto-revocacion'],
     ['409 vinculo no activo', problema(409, 'membership-not-active'), 'vinculo-no-activo'],
     ['500 del servidor', problema(500, 'internal-error'), 'otro'],
@@ -47,12 +47,12 @@ describe('traducirErrorColaborador', () => {
 
   it('muestra el detail del backend y no un texto generico nuestro', () => {
     const traducido = traducirErrorColaborador(
-      problema(409, 'last-admin-required', 'No podes revocar al ultimo administrador'),
+      problema(409, 'last-admin-required', 'No podés revocar al último administrador'),
     );
 
     // AGENT.md seccion 8: el backend ya lo redacto para el usuario final, y en los conflictos
     // es la unica informacion accionable. Un "ocurrio un error" tira eso a la basura.
-    expect(traducido.mensaje).toBe('No podes revocar al ultimo administrador');
+    expect(traducido.mensaje).toBe('No podés revocar al último administrador');
   });
 
   it('membership-not-active nombra el estado actual del vinculo y manda a recargar', () => {
@@ -153,7 +153,7 @@ describe('traducirErrorGrant', () => {
   });
 
   it('un validation-error conserva el mensaje del backend', () => {
-    const error = problema(400, 'validation-error', 'Ese codigo no existe');
+    const error = problema(400, 'validation-error', 'Ese código no existe');
     expect(traducirErrorGrant(error, 'Profesional')).toEqual(traducirErrorColaborador(error));
   });
 

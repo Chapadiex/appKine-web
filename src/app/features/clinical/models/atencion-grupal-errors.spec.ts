@@ -77,7 +77,7 @@ describe('traducirErrorAtencionGrupal', () => {
 });
 
 describe('traducirFalloDeAtencion', () => {
-  it('traduce el problemType del item por su ultimo segmento', () => {
+  it('traduce el problemType del item por su último segmento', () => {
     expect(
       traducirFalloDeAtencion('https://akine.app/problems/participacion-sin-derivacion', 'x').causa,
     ).toBe('sin-derivacion');

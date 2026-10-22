@@ -34,7 +34,7 @@ export function textoDeBloqueo(motivo: string): string {
 
 const BLOQUEOS: Readonly<Record<string, string>> = {
   OFERTA_NO_CLINICA:
-    'La oferta de esta clase no genera registro clinico: sus participantes no se derivan.',
+    'La oferta de esta clase no genera registro clínico: sus participantes no se derivan.',
   SIN_ASISTENCIA: 'No tiene asistencia registrada en esta clase: primero se toma lista.',
   AUSENTE:
     'Figura ausente. Solo se deriva a quien estuvo: si fue un error de la lista, corregi la ' +
@@ -42,12 +42,12 @@ const BLOQUEOS: Readonly<Record<string, string>> = {
 };
 
 const MENSAJE_SIN_PERMISO =
-  'No tenes permiso para derivar en esta sede. Derivar pide ver las inscripciones de la clase ' +
-  '(inscripcion:read) y escribir en la historia clinica (hc:write).';
+  'No tenés permiso para derivar en esta sede. Derivar pide ver las inscripciones de la clase ' +
+  '(inscripción:read) y escribir en la historia clínica (hc:write).';
 
 const MENSAJE_DATOS_INVALIDOS =
-  'El servidor no acepto los datos de la derivacion. Revisa el caso elegido y volve a intentar.';
+  'El servidor no acepto los datos de la derivacion. Revisa el caso elegido y volvé a intentar.';
 
 const MENSAJE_SIN_PERFIL =
-  'La persona todavia no es paciente. Su perfil de paciente se activa desde el padron, y despues ' +
-  'se le abre un caso en la historia clinica.';
+  'La persona todavía no es paciente. Su perfil de paciente se activa desde el padron, y después ' +
+  'se le abre un caso en la historia clínica.';

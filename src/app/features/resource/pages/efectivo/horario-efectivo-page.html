@@ -28,8 +28,8 @@
     @if (errorProfesionales(); as mensaje) {
       <p class="estado estado--error" role="alert">{{ mensaje }}</p>
       <p class="ayuda">
-        Mientras no se pueda leer la lista no se ofrece el desplegable: uno con una sola opcion
-        vacia se lee como una sede sin profesionales, que es otra cosa.
+        Mientras no se pueda leer la lista no se ofrece el desplegable: uno con una sola opción
+        vacía se lee como una sede sin profesionales, que es otra cosa.
       </p>
       <button type="button" class="boton" (click)="cargarProfesionales()">
         Reintentar la lista de profesionales
@@ -53,7 +53,7 @@
         (change)="elegirProfesional($any($event.target).value)"
         aria-describedby="efectivo-profesional-ayuda"
       >
-        <option value="">Elegi un profesional</option>
+        <option value="">Elegí un profesional</option>
         @for (profesional of profesionales(); track profesional.id ?? $index) {
           <option [value]="profesional.id">
             {{ profesional.accountName || profesional.accountEmail }}
@@ -89,7 +89,7 @@
           aria-describedby="efectivo-hasta-ayuda"
         />
         <p class="ayuda" id="efectivo-hasta-ayuda">
-          El dia que escribas aca <b>no</b> se resuelve. El maximo es de {{ maximoDias }} dias.
+          El día que escribas acá <b>no</b> se resuelve. El máximo es de {{ maximoDias }} días.
         </p>
       </div>
     </div>
@@ -120,9 +120,9 @@
 
     @case ('sin-contexto') {
       <section class="tarjeta">
-        <p class="estado estado--vacio">Todavia no elegiste un consultorio.</p>
+        <p class="estado estado--vacio">Todavía no elegiste un consultorio.</p>
         <p class="ayuda">
-          El horario efectivo se resuelve en una sede concreta. Tu sesion sigue abierta: solo falta
+          El horario efectivo se resuelve en una sede concreta. Tu sesión sigue abierta: solo falta
           elegir donde estas trabajando.
         </p>
         <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
@@ -149,16 +149,16 @@
         </h2>
 
         <p class="ayuda">
-          {{ diasConAtencion() }} de {{ dias().length }} dias con atencion.
+          {{ diasConAtencion() }} de {{ dias().length }} días con atención.
           @if (timezone(); as zona) {
             Las horas estan en la zona de la sede: <b>{{ zona }}</b
-            >. La respuesta la declara para que un error de huso se vea aca y no haya que deducirlo.
+            >. La respuesta la declara para que un error de huso se vea acá y no haya que deducirlo.
           }
         </p>
 
         @if (dias().length === 0) {
           <p class="estado estado--vacio">
-            La ventana consultada no devolvio ningun dia. Revisa el periodo y volve a consultar.
+            La ventana consultada no devolvio ningún día. Revisa el periodo y volvé a consultar.
           </p>
         }
 
@@ -180,8 +180,8 @@
                       (<b>{{ dia.feriadoNombre }}</b
                       >)
                     }
-                    y aun asi se atiende: o la sede no cierra los feriados, o hay una apertura
-                    cargada para ese dia.
+                    y aun así se atiende: o la sede no cierra los feriados, o hay una apertura
+                    cargada para ese día.
                   </p>
                 }
 

@@ -88,17 +88,17 @@ export interface ErrorBloque extends MensajeTraducido<CausaBloque> {
   readonly conflicto: BloqueEnConflicto | null;
 }
 
-const MENSAJE_GENERICO = 'No pudimos completar la operacion. Volve a intentar en un momento.';
-const MENSAJE_DE_RED = 'No se pudo contactar al servidor. Revisa tu conexion y volve a intentar.';
+const MENSAJE_GENERICO = 'No pudimos completar la operación. Volvé a intentar en un momento.';
+const MENSAJE_DE_RED = 'No se pudo contactar al servidor. Revisa tu conexion y volvé a intentar.';
 const MENSAJE_LIMITE_SIN_PLAZO =
   'Demasiados intentos. Espera un momento antes de volver a intentar.';
 
 const MENSAJE_SIN_CONTEXTO =
-  'El horario de un profesional se carga en una sede concreta y todavia no elegiste ninguna. ' +
+  'El horario de un profesional se carga en una sede concreta y todavía no elegiste ninguna. ' +
   'Eligi un consultorio para ver y editar su horario semanal.';
 
 const MENSAJE_SIN_PERMISO =
-  'No tenes permiso para administrar el horario de los profesionales de esta sede. Pediselo a ' +
+  'No tenés permiso para administrar el horario de los profesionales de esta sede. Pediselo a ' +
   'quien la administra.';
 
 const MENSAJE_NO_ENCONTRADO =
@@ -114,8 +114,8 @@ const MENSAJE_YA_INACTIVO =
   'ver como quedo.';
 
 const MENSAJE_CONCURRENCIA =
-  'Alguien mas modifico este bloque mientras lo estabas editando, asi que no guardamos tus ' +
-  'cambios para no pisar los suyos. Recarga el horario, revisa como quedo y volve a intentar si ' +
+  'Alguien mas modifico este bloque mientras lo estabas editando, así que no guardamos tus ' +
+  'cambios para no pisar los suyos. Recarga el horario, revisa como quedo y volvé a intentar si ' +
   'seguis queriendo el cambio.';
 
 /**
@@ -125,8 +125,8 @@ const MENSAJE_CONCURRENCIA =
  * profesional no existe", que es otra cosa y se resuelve en otra pantalla.
  */
 const MENSAJE_NO_VINCULADO =
-  'Este profesional no tiene un vinculo vigente que lo habilite a atender en esta sede, asi que ' +
-  'no se le puede cargar horario aca. Revisalo en Colaboradores: puede estar acotado a otra ' +
+  'Este profesional no tiene un vinculo vigente que lo habilite a atender en esta sede, así que ' +
+  'no se le puede cargar horario acá. Revisalo en Colaboradores: puede estar acotado a otra ' +
   'sede, suspendido o vencido.';
 
 const MENSAJE_SEDE_INACTIVA =
@@ -134,8 +134,8 @@ const MENSAJE_SEDE_INACTIVA =
   'editar y dar de baja, que es con lo que se ordena el horario de un centro que cierra.';
 
 const MENSAJE_SUSCRIPCION_SUSPENDIDA =
-  'La suscripcion de la organizacion esta suspendida, asi que no se pueden registrar cambios. ' +
-  'Se resuelve desde la pantalla de suscripcion.';
+  'La suscripción de la organización esta suspendida, así que no se pueden registrar cambios. ' +
+  'Se resuelve desde la pantalla de suscripción.';
 
 /**
  * Redacta el solapamiento nombrando <b>el otro bloque</b>.
@@ -165,7 +165,7 @@ function mensajeDeSolapamiento(conflicto: BloqueEnConflicto): string {
     `El horario que pediste se pisa con el bloque${dia} de ` +
     `${rangoHorario(conflicto.horaDesde, conflicto.horaHasta)}, que quedo marcado en la grilla. ` +
     'Corregi uno de los dos. Ojo: dos bloques que se tocan en un extremo NO se pisan, porque la ' +
-    'hora de fin es exclusiva: la manana de 09:00 a 12:00 y la tarde de 12:00 a 15:00 conviven.'
+    'hora de fin es exclusiva: la mañana de 09:00 a 12:00 y la tarde de 12:00 a 15:00 conviven.'
   );
 }
 
@@ -196,7 +196,7 @@ export function traducirErrorBloque(error: unknown): ErrorBloque {
     return {
       ...base(
         segundos > 0
-          ? `Demasiados intentos. Espera ${segundos} segundos y volve a intentar.`
+          ? `Demasiados intentos. Espera ${segundos} segundos y volvé a intentar.`
           : MENSAJE_LIMITE_SIN_PLAZO,
         'limite',
       ),

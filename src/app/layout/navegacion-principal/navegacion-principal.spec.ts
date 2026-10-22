@@ -102,7 +102,7 @@ describe('NavegacionPrincipal', () => {
   });
 
   /** Un anonimo esta en el login: no tiene a donde navegar. */
-  it('sin sesion no muestra nada', () => {
+  it('sin sesión no muestra nada', () => {
     estado.set('anonimo');
 
     const fixture = montar();
@@ -111,7 +111,7 @@ describe('NavegacionPrincipal', () => {
     expect((fixture.nativeElement as HTMLElement).textContent?.trim()).toBe('');
   });
 
-  it('esconde la seccion cuyo permiso falta y la muestra cuando llega', async () => {
+  it('esconde la sección cuyo permiso falta y la muestra cuando llega', async () => {
     conContexto();
     const fixture = montar();
     responderPermisos([]);
@@ -135,7 +135,7 @@ describe('NavegacionPrincipal', () => {
    * Un grupo sin secciones visibles no deja una cabecera huerfana, y uno con una sola seccion no se
    * despliega: su enlace va directo. Sin permisos quedan Agenda (sola, directa) y Configuracion.
    */
-  it('no dibuja un grupo vacio y no despliega uno de una sola seccion', () => {
+  it('no dibuja un grupo vacío y no despliega uno de una sola sección', () => {
     conContexto();
     const fixture = montar();
     responderPermisos([]);
@@ -154,7 +154,7 @@ describe('NavegacionPrincipal', () => {
   });
 
   /** Acordeon: llega desplegado el grupo de la pantalla actual, y solo ese. */
-  it('despliega solo el grupo de la seccion actual, y lo sigue al navegar', async () => {
+  it('despliega solo el grupo de la sección actual, y lo sigue al navegar', async () => {
     conContexto();
     const fixture = montar();
     responderPermisos([PERMISO_TURNO_READ]);
@@ -173,7 +173,7 @@ describe('NavegacionPrincipal', () => {
    * pantalla, y "donde estoy" es la unica pregunta que un menu tiene que poder responder. Y es
    * UNA: en `/agenda/recepcion` gana la de ruta mas larga, no las dos.
    */
-  it('marca la seccion actual con aria-current y solo esa, por prefijo mas largo', async () => {
+  it('marca la sección actual con aria-current y solo esa, por prefijo mas largo', async () => {
     conContexto();
     const fixture = montar();
     responderPermisos([PERMISO_TURNO_READ]);
@@ -184,7 +184,7 @@ describe('NavegacionPrincipal', () => {
 
     await router.navigateByUrl('/agenda/recepcion');
     fixture.detectChanges();
-    expect(marcados(fixture)).toEqual(['Recepcion del dia']);
+    expect(marcados(fixture)).toEqual(['Recepción del día']);
 
     await router.navigateByUrl('/agenda/ofertas/7/reservar');
     fixture.detectChanges();

@@ -44,7 +44,7 @@ describe('BarraSuperior', () => {
     const fixture = montar();
     const html = fixture.nativeElement as HTMLElement;
 
-    expect(enlace(html, 'Elegi donde vas a trabajar')?.getAttribute('href')).toBe(
+    expect(enlace(html, 'Elegí donde vas a trabajar')?.getAttribute('href')).toBe(
       '/seleccionar-contexto',
     );
     expect(enlace(html, 'Consola de plataforma')).toBeUndefined();
@@ -88,7 +88,7 @@ describe('BarraSuperior', () => {
     expect(html.querySelector('.marca')).not.toBeNull();
   });
 
-  it('el boton de menu refleja si el panel esta abierto y avisa al shell', () => {
+  it('el botón de menu refleja si el panel esta abierto y avisa al shell', () => {
     conContexto('Centro Kine', 'Sede Centro');
     const fixture = montar();
     const boton = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>(

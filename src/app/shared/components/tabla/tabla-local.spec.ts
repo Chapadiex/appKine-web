@@ -69,7 +69,7 @@ describe('tablaLocal', () => {
     });
   });
 
-  it('pagina, y vuelve a la primera pagina cuando cambian las filas', () => {
+  it('página, y vuelve a la primera página cuando cambian las filas', () => {
     TestBed.runInInjectionContext(() => {
       const muchas = Array.from({ length: 45 }, (_, i) => ({ id: i, nombre: `F${i}`, alta: null }));
       const filas = signal<readonly Fila[]>(muchas);
@@ -103,7 +103,7 @@ describe('tablaLocal', () => {
     const celdas = () =>
       Array.from(html.querySelectorAll('tbody td:first-child')).map((c) => c.textContent?.trim());
 
-    it('el boton del encabezado ordena y aria-sort lo dice, solo en la columna ordenada', () => {
+    it('el botón del encabezado ordena y aria-sort lo dice, solo en la columna ordenada', () => {
       expect(th().getAttribute('aria-sort')).toBeNull();
 
       th().querySelector('button')!.click();

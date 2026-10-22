@@ -229,8 +229,8 @@ export class CobrosPage {
       this.estado.set({
         tipo: 'error',
         mensaje:
-          'Para ver los cobros hay que saber en que sede estas. Eligi una organizacion y un ' +
-          'consultorio, y volve a entrar. Tu sesion sigue abierta.',
+          'Para ver los cobros hay que saber en que sede estas. Eligi una organización y un ' +
+          'consultorio, y volvé a entrar. Tu sesión sigue abierta.',
         faltaContexto: true,
       });
       return;
@@ -369,7 +369,7 @@ export class CobrosPage {
       next: () =>
         this.terminar(
           `Se anulo el comprobante N.º ${cobro.comprobanteNumero}. Sus imputaciones devolvieron ` +
-            'saldo a las deudas y sus movimientos de caja se revirtieron. El numero queda usado: ' +
+            'saldo a las deudas y sus movimientos de caja se revirtieron. El número queda usado: ' +
             'no se borra nada.',
         ),
       error: (error: unknown) => this.fallar(error, 'anular'),

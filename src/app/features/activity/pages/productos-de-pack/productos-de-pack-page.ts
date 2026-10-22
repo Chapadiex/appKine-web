@@ -384,7 +384,7 @@ export class ProductosDePackPage {
         this.enviando.set(false);
         this.aviso.set(
           editado === null
-            ? `Se creo "${producto.nombre}"${esAbono(producto) ? ' (abono)' : ''}. Todavia nadie tiene saldo: se vende desde la ficha de la persona, en Pacientes.`
+            ? `Se creo "${producto.nombre}"${esAbono(producto) ? ' (abono)' : ''}. Todavía nadie tiene saldo: se vende desde la ficha de la persona, en Pacientes.`
             : `Se guardo "${producto.nombre}". Los pases ya vendidos no cambian.`,
         );
         this.cerrarPanel();

@@ -5,7 +5,7 @@ import { AkineHttpError } from '../../../core/interceptors/error.interceptor';
  *
  * <p>Se ramifica por `problemType` y nunca por el texto de `detail`: ese campo es prosa
  * para humanos y cambia cuando alguien corrige una redaccion. Un
- * `if (mensaje.includes('ultima sede'))` se rompe con una tilde.
+ * `if (mensaje.includes('última sede'))` se rompe con una tilde.
  *
  * <p><b>No importa nada de `features/auth`.</b> Un feature no importa de otro (AGENT.md
  * seccion 4). Tampoco se fusiona con `colaborador-errors.ts`, que es del mismo feature pero
@@ -57,11 +57,11 @@ export interface TextosConsultorio {
   readonly generico?: string;
 }
 
-const MENSAJE_GENERICO = 'No pudimos completar la operacion. Volve a intentar en un momento.';
-const MENSAJE_DE_RED = 'No se pudo contactar al servidor. Revisa tu conexion y volve a intentar.';
-const MENSAJE_SIN_CONTEXTO = 'Todavia no elegiste un contexto de trabajo.';
+const MENSAJE_GENERICO = 'No pudimos completar la operación. Volvé a intentar en un momento.';
+const MENSAJE_DE_RED = 'No se pudo contactar al servidor. Revisa tu conexion y volvé a intentar.';
+const MENSAJE_SIN_CONTEXTO = 'Todavía no elegiste un contexto de trabajo.';
 const MENSAJE_SIN_PERMISO =
-  'No tenes permiso para administrar las sedes de esta organizacion. Pediselo a quien la administra.';
+  'No tenés permiso para administrar las sedes de esta organización. Pediselo a quien la administra.';
 const MENSAJE_LIMITE_SIN_PLAZO =
   'Demasiados intentos. Espera un momento antes de volver a intentar.';
 
@@ -84,13 +84,13 @@ function mensajeDeReferenciasActivas(error: AkineHttpError): string {
 
   if (typeof tipo === 'string' && cantidad !== null) {
     return (
-      `No se puede dar de baja esta sede porque todavia tiene ${cantidad} ` +
-      `${tipo} sin resolver. Resolvelos primero y volve a intentar.`
+      `No se puede dar de baja esta sede porque todavía tiene ${cantidad} ` +
+      `${tipo} sin resolver. Resolvelos primero y volvé a intentar.`
     );
   }
   return (
-    'No se puede dar de baja esta sede porque todavia hay operaciones vigentes que dependen ' +
-    'de ella. Resolvelas primero y volve a intentar.'
+    'No se puede dar de baja esta sede porque todavía hay operaciones vigentes que dependen ' +
+    'de ella. Resolvelas primero y volvé a intentar.'
   );
 }
 
@@ -114,23 +114,23 @@ function mensajeDeTopeDelPlan(error: AkineHttpError): string {
   if (tope === 1) {
     return (
       'Tu plan actual incluye una sola sede y ya la estas usando. Para abrir otra sede ' +
-      'necesitas cambiar a un plan que incluya mas de una: podes hacerlo desde la pantalla ' +
-      'de suscripcion. La sede que ya tenes sigue funcionando normalmente.'
+      'necesitas cambiar a un plan que incluya mas de una: podés hacerlo desde la pantalla ' +
+      'de suscripción. La sede que ya tenés sigue funcionando normalmente.'
     );
   }
 
   if (tope !== null && enUso !== null) {
     return (
-      `Tu plan actual incluye hasta ${tope} sedes y ya tenes ${enUso}. Para abrir otra ` +
-      'necesitas cambiar a un plan que incluya mas: podes hacerlo desde la pantalla de ' +
-      'suscripcion. Las sedes que ya tenes siguen funcionando normalmente.'
+      `Tu plan actual incluye hasta ${tope} sedes y ya tenés ${enUso}. Para abrir otra ` +
+      'necesitas cambiar a un plan que incluya mas: podés hacerlo desde la pantalla de ' +
+      'suscripción. Las sedes que ya tenés siguen funcionando normalmente.'
     );
   }
 
   // Sin los datos del limite se dice lo mismo sin numeros, que sigue siendo accionable.
   return (
     'Tu plan actual no permite abrir otra sede. Para sumar una necesitas cambiar a un plan ' +
-    'que incluya mas sedes: podes hacerlo desde la pantalla de suscripcion.'
+    'que incluya mas sedes: podés hacerlo desde la pantalla de suscripción.'
   );
 }
 
@@ -144,23 +144,23 @@ function mensajeDeTopeDelPlan(error: AkineHttpError): string {
  * trabajar. El texto lo explica y dice cual es la salida.
  */
 const MENSAJE_ULTIMA_SEDE =
-  'Esta es la unica sede activa de la organizacion y por eso no se puede dar de baja: una ' +
-  'organizacion tiene que conservar al menos una sede donde trabajar, o nadie podria elegir ' +
+  'Esta es la unica sede activa de la organización y por eso no se puede dar de baja: una ' +
+  'organización tiene que conservar al menos una sede donde trabajar, o nadie podria elegir ' +
   'un contexto para entrar. Si estas mudando el centro, primero da de alta la sede nueva y ' +
-  'despues da de baja esta.';
+  'después da de baja esta.';
 
 const MENSAJE_FUNCION_FUERA_DEL_PLAN =
-  'Esta funcion no esta incluida en el plan que tenes contratado. No es un problema de ' +
+  'Esta función no esta incluida en el plan que tenés contratado. No es un problema de ' +
   'permisos: para usarla hay que cambiar a un plan que la incluya, y eso se hace desde la ' +
-  'pantalla de suscripcion.';
+  'pantalla de suscripción.';
 
 const MENSAJE_CONCURRENCIA =
-  'Alguien mas edito esta sede mientras la estabas modificando, asi que no guardamos tus ' +
+  'Alguien mas edito esta sede mientras la estabas modificando, así que no guardamos tus ' +
   'cambios para no pisar los suyos. Volvimos a leer los datos actuales: revisalos y confirma ' +
   'de nuevo si seguis queriendo el cambio.';
 
 const MENSAJE_CLAVE_REPETIDA =
-  'Cambiaste los datos despues de un intento anterior que quedo a medias. Volve a enviar el ' +
+  'Cambiaste los datos después de un intento anterior que quedo a medias. Volvé a enviar el ' +
   'alta: se manda como un intento nuevo.';
 
 /**
@@ -190,7 +190,7 @@ export function traducirErrorConsultorio(
     return {
       mensaje:
         segundos > 0
-          ? `Demasiados intentos. Espera ${segundos} segundos y volve a intentar.`
+          ? `Demasiados intentos. Espera ${segundos} segundos y volvé a intentar.`
           : MENSAJE_LIMITE_SIN_PLAZO,
       causa: 'limite',
       segundosDeEspera: segundos,

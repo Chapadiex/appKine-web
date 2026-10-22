@@ -144,7 +144,7 @@ describe('CobrosPage', () => {
     await estabilizar(fixture);
 
     httpMock.expectNone(esListado());
-    expect(texto(fixture)).toContain('Eligi una organizacion');
+    expect(texto(fixture)).toContain('Eligi una organización');
   });
 
   // -------------------------------------------------------------------------------------
@@ -296,7 +296,7 @@ describe('CobrosPage', () => {
       fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>,
     ).find((b) => (b.textContent ?? '').trim() === rotulo);
     if (boton === undefined) {
-      throw new Error(`No hay ningun boton rotulado "${rotulo}".`);
+      throw new Error(`No hay ningún botón rotulado "${rotulo}".`);
     }
     boton.click();
     fixture.detectChanges();

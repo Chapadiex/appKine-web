@@ -2,23 +2,23 @@
   <h1>Padrón de personas</h1>
   <app-ayuda titulo="Sobre esta pantalla">
     <p>
-      Todas las personas registradas en la organizacion. Una persona <b>no es</b> un paciente:
-      alguien puede reservar una clase o una actividad sin ningun perfil clinico. Convertirla en
-      paciente es una accion aparte, y se hace cuando empieza una atencion.
+      Todas las personas registradas en la organización. Una persona <b>no es</b> un paciente:
+      alguien puede reservar una clase o una actividad sin ningún perfil clínico. Convertirla en
+      paciente es una acción aparte, y se hace cuando empieza una atención.
     </p>
     <p class="ayuda-contextual__subtitulo">Persona y paciente no son lo mismo</p>
     <p>
       <b>Persona</b> es la ficha administrativa: quien es, como contactarla. Con eso alcanza para
-      inscribirla a una clase, venderle un pase o registrarla en una actividad no clinica.
+      inscribirla a una clase, venderle un pase o registrarla en una actividad no clínica.
     </p>
     <p>
-      <b>Paciente</b> es un perfil clinico que se activa sobre esa misma persona, sin volver a
-      cargar ningun dato. Se activa cuando empieza una atencion clinica, y no antes: una ficha sin
+      <b>Paciente</b> es un perfil clínico que se activa sobre esa misma persona, sin volver a
+      cargar ningún dato. Se activa cuando empieza una atención clínica, y no antes: una ficha sin
       perfil no esta incompleta.
     </p>
     <p>
-      Activar el perfil <b>no crea historia clinica</b>. La historia clinica es otra cosa y se
-      maneja en el modulo clinico.
+      Activar el perfil <b>no crea historia clínica</b>. La historia clínica es otra cosa y se
+      maneja en el modulo clínico.
     </p>
   </app-ayuda>
   <!-- La accion principal de la pantalla, en la fila del titulo y a la derecha (plan §3.1). -->
@@ -45,7 +45,7 @@
         de la misma persona hacen que su historia quede partida en dos.
       </p>
       <p>
-        Se busca por documento, apellido, nombre, telefono o numero de afiliado, sin puntos ni
+        Se busca por documento, apellido, nombre, teléfono o número de afiliado, sin puntos ni
         guiones. Sin texto, se lista el padron completo ordenado por apellido.
       </p>
     </app-ayuda>
@@ -58,7 +58,7 @@
   <app-filtros [activos]="filtrosAvanzadosActivos()">
     <div class="campo" filtro-principal>
       <label class="visualmente-oculto" for="padron-busqueda"
-        >Documento, apellido, nombre, telefono o numero de afiliado</label
+        >Documento, apellido, nombre, teléfono o número de afiliado</label
       >
       <div class="campo-busqueda">
         <app-icono class="campo-busqueda__icono" nombre="buscar" />
@@ -66,14 +66,14 @@
           id="padron-busqueda"
           type="search"
           name="padron-busqueda"
-          placeholder="Buscar por documento, apellido, nombre, telefono o afiliado"
+          placeholder="Buscar por documento, apellido, nombre, teléfono o afiliado"
           [value]="texto()"
           (change)="buscar($any($event.target).value)"
           aria-describedby="padron-busqueda-ayuda"
         />
       </div>
       <p class="visualmente-oculto" id="padron-busqueda-ayuda">
-        Se busca por documento, apellido, nombre, telefono o numero de afiliado; no hace falta
+        Se busca por documento, apellido, nombre, teléfono o número de afiliado; no hace falta
         escribir puntos ni guiones. Sin texto, se lista el padron completo ordenado por apellido.
       </p>
     </div>
@@ -114,8 +114,8 @@
       <h2 id="titulo-alta-persona">Nueva persona</h2>
       <app-ayuda titulo="Nueva persona">
         <p>
-          Esto registra una <b>persona</b>. No le crea perfil clinico ni historia clinica: si
-          empieza una atencion, se le activa el perfil despues, desde su fila.
+          Esto registra una <b>persona</b>. No le crea perfil clínico ni historia clínica: si
+          empieza una atención, se le activa el perfil después, desde su fila.
         </p>
       </app-ayuda>
     </div>
@@ -172,8 +172,8 @@
           />
           <p class="ayuda" id="alta-persona-documento-ayuda">
             El documento es opcional: una persona sin DNI —un menor, alguien recien llegado— es un
-            caso normal. <b>No inventes un numero para completar el campo.</b> Si lo cargas, el tipo
-            y el numero van juntos.
+            caso normal. <b>No inventes un número para completar el campo.</b> Si lo cargas, el tipo
+            y el número van juntos.
           </p>
         </div>
 
@@ -300,7 +300,7 @@
   }
 } @else if (personas().length === 0) {
   <p class="estado">
-    No hay personas que coincidan con la busqueda. Si es alguien nuevo, dala de alta.
+    No hay personas que coincidan con la búsqueda. Si es alguien nuevo, dala de alta.
   </p>
 } @else {
   <div class="tabla-scroll" tabindex="0" role="region" aria-labelledby="caption-padron">
@@ -309,7 +309,7 @@
         {{
           totalPersonas()
         }}
-        persona(s) en el padron segun los filtros aplicados
+        persona(s) en el padron según los filtros aplicados
       </caption>
       <thead>
         <tr>
@@ -429,7 +429,7 @@
                     </div>
 
                     <div class="campo">
-                      <label for="edicion-numero-{{ persona.id }}">Numero de documento</label>
+                      <label for="edicion-numero-{{ persona.id }}">Número de documento</label>
                       <input
                         id="edicion-numero-{{ persona.id }}"
                         type="text"
@@ -456,7 +456,7 @@
                     </div>
 
                     <div class="campo">
-                      <label for="edicion-telefono-{{ persona.id }}">Telefono</label>
+                      <label for="edicion-telefono-{{ persona.id }}">Teléfono</label>
                       <input
                         id="edicion-telefono-{{ persona.id }}"
                         type="tel"

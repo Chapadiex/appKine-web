@@ -172,8 +172,8 @@ test.describe('Registro, activacion y login (M02)', () => {
   }) => {
     await page.goto('/auth/restablecer?token=este-token-no-existe');
 
-    await campo(page, 'Contrasena nueva').fill(PASSWORD);
-    await campo(page, 'Repetir la contrasena').fill(PASSWORD);
+    await campo(page, 'Contraseña nueva').fill(PASSWORD);
+    await campo(page, 'Repetir la contraseña').fill(PASSWORD);
     await page.getByRole('button', { name: 'Guardar contraseña' }).click();
 
     await expect(page.getByRole('alert')).toBeVisible();

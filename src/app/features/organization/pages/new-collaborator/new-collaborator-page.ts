@@ -169,7 +169,7 @@ export class NewCollaboratorPage {
       // necesita saber cual de los dos campos mirar.
       noEncontrado:
         'No existe una cuenta con ese email, o la sede elegida no pertenece a esta ' +
-        'organizacion. Revisa los dos campos.',
+        'organización. Revisa los dos campos.',
     });
 
     if (traducido.causa === 'limite') {

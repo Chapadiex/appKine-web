@@ -40,7 +40,7 @@
   @if (resultado(); as hecho) {
     <p class="estado estado--ok">
       @if (hecho.operacion === 'reprogramar') {
-        Se movieron {{ hecho.alcance.afectados?.length ?? 0 }} turnos. Cada uno conserva su numero,
+        Se movieron {{ hecho.alcance.afectados?.length ?? 0 }} turnos. Cada uno conserva su número,
         su paciente y su historial, y vuelve a quedar reservado.
       } @else {
         Se cancelaron {{ hecho.alcance.afectados?.length ?? 0 }} turnos.
@@ -53,7 +53,7 @@
 
   @if (error(); as fallo) {
     <section class="tarjeta conflicto" aria-labelledby="titulo-conflicto-serie">
-      <h2 id="titulo-conflicto-serie">No se pudo completar la operacion</h2>
+      <h2 id="titulo-conflicto-serie">No se pudo completar la operación</h2>
       <p class="estado estado--error">{{ fallo.mensaje }}</p>
       @if (fallo.accion === 'releer-alcance' && pedido() !== null) {
         <div class="acciones">
@@ -143,7 +143,7 @@
       >
         <p class="ayuda">
           Se elige el horario nuevo del turno de partida. Los demas se corren lo mismo, en hora de
-          la sede: si este pasa del lunes 09:00 al martes 10:00, todos pasan un dia y una hora mas
+          la sede: si este pasa del lunes 09:00 al martes 10:00, todos pasan un día y una hora mas
           tarde. Se mueven todos o ninguno, y los que estaban confirmados vuelven a quedar
           reservados.
         </p>
@@ -208,7 +208,7 @@
               }
             </ul>
             @if (instanteDestino() === '') {
-              <p class="ayuda">Elegi un horario para ver a donde pasaria cada uno.</p>
+              <p class="ayuda">Elegí un horario para ver a donde pasaria cada uno.</p>
             } @else {
               <p class="ayuda">
                 El horario nuevo de cada uno es una estimacion: el servidor lo calcula y revisa que
@@ -217,7 +217,7 @@
             }
           } @else {
             <p class="estado estado--vacio">
-              No hay ningun turno pendiente en ese alcance: no hay nada que mover.
+              No hay ningún turno pendiente en ese alcance: no hay nada que mover.
             </p>
           }
 
@@ -252,7 +252,7 @@
           </ul>
         } @else {
           <p class="estado estado--vacio">
-            No hay ningun turno pendiente en ese alcance: no hay nada que cancelar.
+            No hay ningún turno pendiente en ese alcance: no hay nada que cancelar.
           </p>
         }
 

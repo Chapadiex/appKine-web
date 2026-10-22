@@ -146,7 +146,7 @@ describe('ImportarArancelesPage', () => {
     expect((fixture.nativeElement as HTMLElement).textContent).toContain('ya no la describe');
   });
 
-  it('una fila rechazada en el preview se explica y bloquea la confirmacion', async () => {
+  it('una fila rechazada en el preview se explica y bloquea la confirmación', async () => {
     const fixture = await montar();
     pegar(fixture, PLANILLA);
     boton(fixture, 'Vista previa').click();
@@ -200,14 +200,14 @@ describe('ImportarArancelesPage', () => {
     await estable(fixture);
 
     const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
-    expect(texto).toContain('Confirmacion rechazada');
-    expect(texto).toContain('No se cargo ningun arancel: 1 de 2 filas');
+    expect(texto).toContain('Confirmación rechazada');
+    expect(texto).toContain('No se cargo ningún arancel: 1 de 2 filas');
     expect(texto).toContain('Se pisa con el arancel #900');
     expect(botonOpcional(fixture, 'Confirmar 2 aranceles')).toBeUndefined();
     expect(navegar).not.toHaveBeenCalled();
   });
 
-  it('otro error de la confirmacion se traduce sin perder el preview', async () => {
+  it('otro error de la confirmación se traduce sin perder el preview', async () => {
     const fixture = await montar();
     await previsualizarTodasEntran(fixture);
 
@@ -333,7 +333,7 @@ function botonOpcional(
 function boton(fixture: ComponentFixture<unknown>, etiqueta: string): HTMLButtonElement {
   const encontrado = botonOpcional(fixture, etiqueta);
   if (encontrado === undefined) {
-    throw new Error(`No existe el boton ${etiqueta}`);
+    throw new Error(`No existe el botón ${etiqueta}`);
   }
   return encontrado;
 }

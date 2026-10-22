@@ -53,7 +53,7 @@
 @if (vacia()) {
   <p class="estado estado--vacio">
     Esta persona no tiene ninguna deuda registrada. Las obligaciones se generan al cerrar una
-    atencion o al vender un pase: no se cargan a mano.
+    atención o al vender un pase: no se cargan a mano.
   </p>
 }
 
@@ -181,7 +181,7 @@
                     -->
                       <p class="ayuda">
                         Lo que corresponde en este caso es registrar una <b>devolucion</b>, que
-                        tiene su propio circuito y su propio registro. Todavia no se hace desde el
+                        tiene su propio circuito y su propio registro. Todavía no se hace desde el
                         sistema: hay que resolverlo por caja.
                       </p>
                     }
@@ -227,7 +227,7 @@
   -->
   @if (hayCoseguros()) {
     <p class="ayuda">
-      En las prestaciones con cobertura aca se ve solo el <b>coseguro</b>, que es lo que paga la
+      En las prestaciones con cobertura acá se ve solo el <b>coseguro</b>, que es lo que paga la
       persona. La parte de la obra social no es una deuda del paciente: se gestiona en las
       presentaciones a financiadores.
       <a *akinePermiso="PERMISO_COBRO_REGISTER" class="enlace" routerLink="/presentaciones"
@@ -239,7 +239,7 @@
   <p class="ayuda">
     <b>No se muestra un total.</b> El backend no lo devuelve y sumarlo en la pantalla produciria
     centavos que no cuadran contra lo que hay guardado, que es peor que no tenerlo: el total es un
-    numero que despues alguien le dice a un paciente.
+    número que después alguien le dice a un paciente.
   </p>
 }
 
@@ -254,7 +254,7 @@
 
     @if (cobrosNoCargaron()) {
       <p class="estado estado--error">
-        No se pudieron leer los cobros, asi que no sabemos si hay saldo a favor. La deuda de arriba
+        No se pudieron leer los cobros, así que no sabemos si hay saldo a favor. La deuda de arriba
         esta bien.
         <button type="button" class="boton boton--secundario" (click)="cargar()">
           Volver a leer
@@ -266,7 +266,7 @@
       </p>
     } @else {
       <p class="ayuda">
-        Plata que entro y todavia no se aplico a ninguna deuda (anticipos y sobrantes). Se imputa a
+        Plata que entro y todavía no se aplico a ninguna deuda (anticipos y sobrantes). Se imputa a
         deudas <b>de la misma sede y la misma moneda</b> que el cobro; devolverla en dinero se hace
         desde los cobros registrados.
       </p>

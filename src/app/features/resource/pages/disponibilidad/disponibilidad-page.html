@@ -31,7 +31,7 @@
   <section class="tarjeta" aria-labelledby="titulo-sin-sede-disp">
     <h2 id="titulo-sin-sede-disp">Falta elegir un consultorio</h2>
     <p>
-      Los espacios son de una sede concreta y todavia no elegiste ninguna. Tu sesion sigue abierta:
+      Los espacios son de una sede concreta y todavía no elegiste ninguna. Tu sesión sigue abierta:
       solo falta indicar donde estas trabajando.
     </p>
     <p>
@@ -94,7 +94,7 @@
       @switch (estado().tipo) {
         @case ('inicial') {
           <p class="estado estado--vacio">
-            Elegi un periodo y toca "Ver que espacios hay" para consultarlo.
+            Elegí un periodo y toca "Ver que espacios hay" para consultarlo.
           </p>
         }
 
@@ -103,7 +103,7 @@
         }
 
         @case ('sin-contexto') {
-          <p class="estado estado--vacio">Todavia no elegiste un consultorio.</p>
+          <p class="estado estado--vacio">Todavía no elegiste un consultorio.</p>
           <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
         }
 
@@ -127,7 +127,7 @@
 
           @if (enServicio().length === 0) {
             <p class="estado estado--vacio">
-              Ningun espacio de esta sede esta en servicio durante todo ese periodo.
+              Ningún espacio de esta sede esta en servicio durante todo ese periodo.
             </p>
             <p class="ayuda">
               Puede ser que los espacios existan pero su ventana de vigencia no cubra el periodo

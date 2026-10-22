@@ -214,7 +214,7 @@ test.describe('Clases grupales contra el backend real', () => {
     ).toBeVisible();
     await expect(page.getByText(`${centro.profesional.nombre} · ${box.nombre}`)).toBeVisible();
     await navegar(page, `/agenda/recepcion?fecha=${fecha}`);
-    const delDia = page.getByRole('region', { name: 'Clases grupales del dia' });
+    const delDia = page.getByRole('region', { name: 'Clases grupales del día' });
     await expect(delDia).toContainText(oferta.nombre);
     await expect(delDia).toContainText(`${CUPO} de ${CUPO} lugares ocupados`);
 

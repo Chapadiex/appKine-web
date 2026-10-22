@@ -80,7 +80,7 @@ describe('etiquetas-de-asistencia', () => {
     expect(etiquetaDeEvento('CORRECCION')).toBe('Correccion');
     expect(etiquetaDeEvento(undefined)).toBe('Evento');
     expect(nombreDeParticipante(SIN_MARCAR)).toBe('Gomez, Ana');
-    expect(nombreDeParticipante(EN_ESPERA)).toBe('Inscripcion 3');
+    expect(nombreDeParticipante(EN_ESPERA)).toBe('Inscripción 3');
   });
 
   it('formatea en la zona de la sede y tolera vacios', () => {

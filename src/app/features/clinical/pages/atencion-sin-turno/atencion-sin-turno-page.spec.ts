@@ -50,7 +50,7 @@ describe('AtencionSinTurnoPage', () => {
   afterEach(() => httpMock.verify());
 
   it(
-    'abre la atencion con oferta, persona y motivo, y navega a ella',
+    'abre la atención con oferta, persona y motivo, y navega a ella',
     async () => {
       const fixture = await montar();
       const navegar = vi.spyOn(router, 'navigate').mockResolvedValue(true);
@@ -152,7 +152,7 @@ describe('AtencionSinTurnoPage', () => {
     expect(texto(fixture)).toContain('ya se habia mandado con otros datos');
   });
 
-  it('la busqueda sin resultados lo dice', async () => {
+  it('la búsqueda sin resultados lo dice', async () => {
     const fixture = await montar();
     escribir(fixture, '#sin-turno-persona', 'zzz');
     enviarBusqueda(fixture);
@@ -227,7 +227,7 @@ describe('AtencionSinTurnoPage', () => {
       fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>,
     ).find((b) => (b.textContent ?? '').trim().startsWith(rotulo));
     if (boton === undefined) {
-      throw new Error(`No hay ningun boton rotulado "${rotulo}".`);
+      throw new Error(`No hay ningún botón rotulado "${rotulo}".`);
     }
     boton.click();
     fixture.detectChanges();

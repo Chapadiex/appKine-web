@@ -313,13 +313,13 @@ export class CalendarioSedePage {
     }
     if (dias <= 0) {
       this.errorVentana.set(
-        'El fin de la ventana tiene que ser posterior al inicio, y es exclusivo: un feriado que cae justo ese dia no aparece.',
+        'El fin de la ventana tiene que ser posterior al inicio, y es exclusivo: un feriado que cae justo ese día no aparece.',
       );
       return;
     }
     if (dias > MAXIMO_DIAS_VENTANA) {
       this.errorVentana.set(
-        `La ventana no puede superar los ${MAXIMO_DIAS_VENTANA} dias. Acorta el periodo y volve a consultar.`,
+        `La ventana no puede superar los ${MAXIMO_DIAS_VENTANA} días. Acorta el periodo y volvé a consultar.`,
       );
       return;
     }
@@ -395,7 +395,7 @@ export class CalendarioSedePage {
           this.exito.set(
             cierraPorFeriado
               ? 'Listo: la sede vuelve a cerrar los feriados de su calendario.'
-              : 'Listo: la sede pasa a atender los feriados. El horario habitual se aplica tambien esos dias, salvo que cargues un cierre explicito.',
+              : 'Listo: la sede pasa a atender los feriados. El horario habitual se aplica también esos días, salvo que cargues un cierre explicito.',
           );
         },
         error: (error: unknown) => {

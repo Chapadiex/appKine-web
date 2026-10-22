@@ -88,7 +88,7 @@
     }
     @if (errorDeAccion(); as fallo) {
       <section class="tarjeta conflicto" aria-labelledby="titulo-error-accion" role="alert">
-        <h2 id="titulo-error-accion">No se pudo completar la operacion</h2>
+        <h2 id="titulo-error-accion">No se pudo completar la operación</h2>
         <p class="estado estado--error">{{ fallo.mensaje }}</p>
         @if (fallo.motivo) {
           <p class="ayuda">Detalle: {{ fallo.motivo }}</p>
@@ -248,7 +248,7 @@
               </ul>
             } @else if (buscoPersonas()) {
               <p class="estado estado--vacio">
-                Ninguna persona del padron coincide con esa busqueda.
+                Ninguna persona del padron coincide con esa búsqueda.
               </p>
             }
           }
@@ -280,10 +280,10 @@
             @if (puedeAtender()) {
               <p>
                 <a class="enlace" [routerLink]="['/atencion/clases', actual.id]"
-                  >Atencion clinica</a
+                  >Atención clínica</a
                 >
                 <span class="ayuda">
-                  — abrir la atencion de cada participante que estuvo y fue derivado a un
+                  — abrir la atención de cada participante que estuvo y fue derivado a un
                   caso.</span
                 >
               </p>
@@ -292,7 +292,7 @@
           @if (participantes() === null) {
             <p class="estado estado--cargando">Leyendo los participantes…</p>
           } @else if (conLugar().length === 0) {
-            <p class="estado estado--vacio">Todavia no hay nadie inscripto con lugar.</p>
+            <p class="estado estado--vacio">Todavía no hay nadie inscripto con lugar.</p>
           } @else {
             <div class="tabla-scroll" tabindex="0" role="region" aria-label="Inscriptos con lugar">
               <table class="tabla">

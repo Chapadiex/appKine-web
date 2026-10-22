@@ -44,7 +44,7 @@ describe('etiquetaDeNaturaleza y etiquetaDeModalidad', () => {
     }
   });
 
-  it('un valor que no conocemos se muestra crudo, no vacio', () => {
+  it('un valor que no conocemos se muestra crudo, no vacío', () => {
     // Preferir el codigo del backend a un guion: si el contrato suma una naturaleza y esta
     // pantalla no se actualizo, es mejor que el usuario vea NUEVA_NATURALEZA a que vea nada.
     expect(etiquetaDeNaturaleza('NUEVA_NATURALEZA')).toBe('NUEVA_NATURALEZA');
@@ -71,7 +71,7 @@ describe('modalidadConCapacidad', () => {
     ).toBe('Grupal (hasta 8)');
   });
 
-  it('una grupal sin capacidad no inventa un numero', () => {
+  it('una grupal sin capacidad no inventa un número', () => {
     expect(modalidadConCapacidad(oferta({ modalidad: OfertaResponseModalidadEnum.GRUPAL }))).toBe(
       'Grupal',
     );
@@ -90,7 +90,7 @@ describe('precioEnPalabras', () => {
     );
   });
 
-  it('un precio sin moneda NO se muestra como numero pelado', () => {
+  it('un precio sin moneda NO se muestra como número pelado', () => {
     // Precio y moneda viajan juntos o no viajan: mostrar 18000 sin decir de que moneda es
     // exactamente la ambiguedad que el check de la base existe para evitar.
     expect(precioEnPalabras(oferta({ precioBase: 18000 }))).toBe('Sin precio cargado');
@@ -113,13 +113,13 @@ describe('servicioInactivo', () => {
 });
 
 describe('servicioEnUnaLinea', () => {
-  it('el codigo acompania al nombre, que es lo que el equipo tiene memorizado', () => {
+  it('el código acompania al nombre, que es lo que el equipo tiene memorizado', () => {
     expect(servicioEnUnaLinea(servicio({ codigo: 'KRES' }))).toBe(
       'Kinesiologia respiratoria (KRES)',
     );
   });
 
-  it('sin codigo no deja un parentesis vacio colgando', () => {
+  it('sin código no deja un parentesis vacío colgando', () => {
     expect(servicioEnUnaLinea(servicio({}))).toBe('Kinesiologia respiratoria');
     expect(servicioEnUnaLinea(servicio({ codigo: '' }))).toBe('Kinesiologia respiratoria');
   });

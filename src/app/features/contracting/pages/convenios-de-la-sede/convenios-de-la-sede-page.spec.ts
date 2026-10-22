@@ -195,7 +195,7 @@ describe('ConveniosDeLaSedePage', () => {
     fixture.detectChanges();
 
     expect((fixture.nativeElement as HTMLElement).textContent).toContain(
-      'Todavia no resuelve ningun precio',
+      'Todavía no resuelve ningún precio',
     );
   });
 
@@ -239,7 +239,7 @@ describe('ConveniosDeLaSedePage', () => {
     ).toBe(false);
   });
 
-  it('la edicion no manda codigo, financiador, plan ni moneda: son la identidad del convenio', async () => {
+  it('la edicion no manda código, financiador, plan ni moneda: son la identidad del convenio', async () => {
     const fixture = await montar();
 
     abrir(fixture, 'Editar');
@@ -365,7 +365,7 @@ describe('ConveniosDeLaSedePage', () => {
 
     abrir(fixture, 'Dar de baja');
     const panel = (fixture.nativeElement as HTMLElement).querySelector('tr.fila-panel');
-    expect(panel?.textContent).toContain('la operacion NO es esta');
+    expect(panel?.textContent).toContain('la operación NO es esta');
     expect(panel?.textContent).toContain('No cascadea a los aranceles');
 
     escribir(fixture, '#baja-convenio-motivo', 'Se rescindio el contrato');
@@ -387,7 +387,7 @@ describe('ConveniosDeLaSedePage', () => {
     fixture.detectChanges();
 
     expect((fixture.nativeElement as HTMLElement).textContent).toContain(
-      'El codigo y el periodo quedan libres',
+      'El código y el periodo quedan libres',
     );
   });
 
@@ -406,7 +406,7 @@ describe('ConveniosDeLaSedePage', () => {
       .flush(
         {
           type: 'https://akine.app/problems/concurrent-modification',
-          detail: 'la version quedo vieja',
+          detail: 'la versión quedo vieja',
         },
         { status: 409, statusText: 'Conflict' },
       );
@@ -423,7 +423,7 @@ describe('ConveniosDeLaSedePage', () => {
     );
   });
 
-  it('el filtro y la fecha recargan, y el vacio manda al catalogo de financiadores', async () => {
+  it('el filtro y la fecha recargan, y el vacío manda al catalogo de financiadores', async () => {
     const fixture = await montar();
 
     cambiarSelect(fixture, '#filtro-estado-convenio', 'TODOS');
@@ -455,7 +455,7 @@ describe('ConveniosDeLaSedePage', () => {
     expect(anfitrion.textContent).toContain('Activo y vigente');
   });
 
-  it('sin convenio:manage el listado se ve pero no aparece ninguna accion', async () => {
+  it('sin convenio:manage el listado se ve pero no aparece ninguna acción', async () => {
     // Entrar lo decide `convenio:read` en la ruta (DP-36); las acciones, `convenio:manage`.
     // Recepcion lee los convenios y no los administra.
     const fixture = await montar([]);
@@ -491,9 +491,9 @@ describe('ConveniosDeLaSedePage', () => {
     fixture.detectChanges();
 
     const anfitrion = fixture.nativeElement as HTMLElement;
-    expect(anfitrion.textContent).toContain('Todavia no elegiste un consultorio');
+    expect(anfitrion.textContent).toContain('Todavía no elegiste un consultorio');
     expect(anfitrion.querySelector('a[href="/seleccionar-contexto"]')).not.toBeNull();
-    expect(anfitrion.textContent).not.toContain('Sesion expirada');
+    expect(anfitrion.textContent).not.toContain('Sesión expirada');
   });
 
   it(
@@ -565,7 +565,7 @@ function abrir(fixture: { nativeElement: HTMLElement; detectChanges(): void }, e
     (candidato) => (candidato.textContent ?? '').trim() === etiqueta,
   );
   if (boton === undefined) {
-    throw new Error(`No existe el boton ${etiqueta}`);
+    throw new Error(`No existe el botón ${etiqueta}`);
   }
   boton.click();
   fixture.detectChanges();

@@ -89,7 +89,7 @@ test.describe('Prepago antes del check-in contra el backend real', () => {
     await expect(page.getByRole('heading', { name: 'Cobro registrado' })).toBeVisible();
     await expect(page.getByText(/Ninguna todavia: es un anticipo del turno/)).toBeVisible();
 
-    await page.getByRole('link', { name: 'Volver a la recepcion del dia' }).first().click();
+    await page.getByRole('link', { name: 'Volver a la recepción del día' }).first().click();
     await expect(page.getByRole('heading', { name: 'Recepción del día', level: 1 })).toBeVisible();
     const despues = page.getByRole('row').filter({ hasText: persona.apellido });
     await expect(despues.getByText('Prepago registrado', { exact: true })).toBeVisible();
@@ -151,7 +151,7 @@ test.describe('Prepago antes del check-in contra el backend real', () => {
 
     await expect(page.getByRole('heading', { name: 'No se registro el cobro' })).toBeVisible();
     await expect(
-      page.getByRole('link', { name: 'Volver a la recepcion del dia' }).last(),
+      page.getByRole('link', { name: 'Volver a la recepción del día' }).last(),
     ).toBeVisible();
   });
 });

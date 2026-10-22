@@ -11,7 +11,7 @@
     <p>
       Habilitar dice <b>quien puede prestar</b> esta oferta y <b>donde</b>. No le da a nadie acceso
       al sistema ni le cambia lo que puede administrar: eso lo decide su rol. Un administrador sin
-      habilitacion sigue configurando esta oferta aunque no la preste.
+      habilitación sigue configurando esta oferta aunque no la preste.
     </p>
   </app-ayuda>
 </div>
@@ -26,15 +26,15 @@
 
 @switch (estado().tipo) {
   @case ('cargando') {
-    <p class="estado" role="status">Cargando la configuracion de la oferta…</p>
+    <p class="estado" role="status">Cargando la configuración de la oferta…</p>
   }
 
   @case ('sin-contexto') {
     <section class="estado estado--vacio">
-      <h2>Elegi una sede</h2>
+      <h2>Elegí una sede</h2>
       <p>
-        Las ofertas son de una sede concreta, asi que hay que saber en cual estas trabajando. Tu
-        sesion sigue abierta.
+        Las ofertas son de una sede concreta, así que hay que saber en cual estas trabajando. Tu
+        sesión sigue abierta.
       </p>
       <a class="boton" routerLink="/seleccionar-contexto">Elegir consultorio</a>
     </section>
@@ -73,7 +73,7 @@
       @if (errorAccion(); as mensaje) {
         <p class="estado estado--error" role="alert">{{ mensaje }}</p>
         @if (hayQueRecargar()) {
-          <button type="button" class="boton" (click)="cargar()">Recargar la configuracion</button>
+          <button type="button" class="boton" (click)="cargar()">Recargar la configuración</button>
         }
       }
 
@@ -96,7 +96,7 @@
 
         @if (candidatosProfesional().length === 0) {
           <p class="estado estado--vacio">
-            Todavia no hay ningun profesional configurado para esta oferta, asi que hoy la puede
+            Todavía no hay ningún profesional configurado para esta oferta, así que hoy la puede
             prestar cualquiera. Los profesionales de la sede se administran en
             <a routerLink="/organizacion/colaboradores">Colaboradores</a>.
           </p>
@@ -154,7 +154,7 @@
 
         @if (candidatosEspacio().length === 0) {
           <p class="estado estado--vacio">
-            Todavia no hay ningun espacio configurado, asi que la oferta se puede prestar en
+            Todavía no hay ningún espacio configurado, así que la oferta se puede prestar en
             cualquiera. Los espacios de la sede se administran en
             <a routerLink="/espacios">Espacios y boxes</a>.
           </p>

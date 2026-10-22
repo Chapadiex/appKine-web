@@ -113,21 +113,21 @@ export interface ErrorAtencion {
   readonly enmendableHasta?: string;
 }
 
-const MENSAJE_GENERICO = 'No pudimos completar la operacion. Volve a intentar en un momento.';
+const MENSAJE_GENERICO = 'No pudimos completar la operación. Volvé a intentar en un momento.';
 const MENSAJE_DE_RED =
-  'No se pudo contactar al servidor, asi que lo ultimo que escribiste todavia no esta guardado. ' +
-  'No cierres esta pantalla: revisa la conexion y volve a guardar.';
-const MENSAJE_LIMITE = 'Demasiados intentos seguidos. Espera un momento y volve a guardar.';
+  'No se pudo contactar al servidor, así que lo último que escribiste todavía no esta guardado. ' +
+  'No cierres esta pantalla: revisa la conexion y volvé a guardar.';
+const MENSAJE_LIMITE = 'Demasiados intentos seguidos. Espera un momento y volvé a guardar.';
 
 const MENSAJE_SIN_CONTEXTO =
-  'Para registrar una atencion hay que saber en que sede estas. Eligi una organizacion y un ' +
-  'consultorio, y volve a entrar. Tu sesion sigue abierta.';
+  'Para registrar una atención hay que saber en que sede estas. Eligi una organización y un ' +
+  'consultorio, y volvé a entrar. Tu sesión sigue abierta.';
 
 const MENSAJE_SIN_PERMISO =
-  'No tenes permiso para registrar atenciones en esta sede. Pediselo a quien administra el centro.';
+  'No tenés permiso para registrar atenciones en esta sede. Pediselo a quien administra el centro.';
 
 const MENSAJE_NO_ENCONTRADO =
-  'Ese turno o esa atencion no existen, o no son de esta sede. Volve a la agenda y entra de nuevo.';
+  'Ese turno o esa atención no existen, o no son de esta sede. Volvé a la agenda y entra de nuevo.';
 
 /**
  * `sesion-ajena` explicado como lo que es: propiedad, no permiso.
@@ -136,12 +136,12 @@ const MENSAJE_NO_ENCONTRADO =
  * `sesion:register`; lo que no tiene es esta atencion, que es de otro profesional.
  */
 const MENSAJE_SESION_AJENA =
-  'Esta atencion la esta registrando otro profesional. No es un problema de permisos: la atencion ' +
+  'Esta atención la esta registrando otro profesional. No es un problema de permisos: la atención ' +
   'es de quien la lleva, y solo esa persona puede escribir en ella. Si el turno quedo asignado a ' +
   'quien no corresponde, se corrige desde la agenda.';
 
 const MENSAJE_VERSION_VIEJA =
-  'Otra pestaña guardo esta atencion despues de que vos la abriste. No pisamos nada y no perdimos ' +
+  'Otra pestaña guardo esta atención después de que vos la abriste. No pisamos nada y no perdimos ' +
   'lo que escribiste.';
 
 /**
@@ -153,12 +153,12 @@ const MENSAJE_VERSION_VIEJA =
  * obligatorio y una version nueva que deja la anterior intacta.
  */
 const MENSAJE_SESION_CERRADA =
-  'Esta atencion ya esta cerrada, asi que no admite mas cambios. Lo que estaba guardado al ' +
-  'cerrarla quedo registrado. Corregir una sesion cerrada es una enmienda: se hace desde la ' +
-  'atencion cerrada, con un motivo, y deja la version anterior intacta.';
+  'Esta atención ya esta cerrada, así que no admite mas cambios. Lo que estaba guardado al ' +
+  'cerrarla quedo registrado. Corregir una sesión cerrada es una enmienda: se hace desde la ' +
+  'atención cerrada, con un motivo, y deja la versión anterior intacta.';
 
 const MENSAJE_TIPO_INCOMPATIBLE =
-  'El valor no corresponde al tipo de esa medida: una numerica pide un numero, una de texto un ' +
+  'El valor no corresponde al tipo de esa medida: una numerica pide un número, una de texto un ' +
   'hallazgo y una de si/no una de las dos opciones. Se manda exactamente uno.';
 
 const MENSAJE_DEFINICION_INACTIVA =
@@ -166,7 +166,7 @@ const MENSAJE_DEFINICION_INACTIVA =
   'siguen legibles.';
 
 const MENSAJE_PRACTICA_NO_UTILIZABLE =
-  'Esa practica no se puede asentar en esta atencion: se dio de baja en el catalogo o la oferta ' +
+  'Esa práctica no se puede asentar en esta atención: se dio de baja en el catalogo o la oferta ' +
   'del turno no la incluye.';
 
 const MENSAJE_PARAMETRO_INVALIDO =
@@ -174,8 +174,8 @@ const MENSAJE_PARAMETRO_INVALIDO =
   'numericos.';
 
 const MENSAJE_ENMIENDA_CAMBIA_PRACTICAS =
-  'La enmienda cambiaria las practicas realizadas en la sesion, y eso no se corrige enmendando: ' +
-  'esas practicas eligieron al cierre que autorizacion se consumio. Se puede corregir todo lo ' +
+  'La enmienda cambiaria las prácticas realizadas en la sesión, y eso no se corrige enmendando: ' +
+  'esas prácticas eligieron al cierre que autorización se consumio. Se puede corregir todo lo ' +
   'demas de cada tratamiento.';
 
 const MENSAJE_ENMIENDA_SIN_MOTIVO =
@@ -183,63 +183,63 @@ const MENSAJE_ENMIENDA_SIN_MOTIVO =
   'silencioso, que es justamente lo que el historial existe para evitar.';
 
 const MENSAJE_CASO_NO_ACTIVO =
-  'El caso elegido ya no esta activo. Elegi otro, o inicia la atencion sin caso y reabrilo desde ' +
-  'la historia clinica si correspondia.';
+  'El caso elegido ya no esta activo. Elegí otro, o inicia la atención sin caso y reabrilo desde ' +
+  'la historia clínica si correspondia.';
 
 const MENSAJE_CASO_DE_ATENCION_GRUPAL =
-  'El caso de esta atencion no se puede cambiar: es la atencion de un participante de una clase, ' +
-  'y su caso lo fijo la derivacion clinica. Si correspondia otro caso, cerra esta atencion con lo ' +
+  'El caso de esta atención no se puede cambiar: es la atención de un participante de una clase, ' +
+  'y su caso lo fijo la derivacion clínica. Si correspondia otro caso, cerra esta atención con lo ' +
   'que paso y deriva al participante al caso correcto desde la clase.';
 
 const MENSAJE_SUSCRIPCION_SUSPENDIDA =
-  'La suscripcion de la organizacion esta suspendida, asi que no se pueden registrar atenciones.';
+  'La suscripción de la organización esta suspendida, así que no se pueden registrar atenciones.';
 
 const MENSAJE_CONFLICTO =
-  'El servidor rechazo la operacion por un conflicto con lo que ya hay guardado. Volve a abrir ' +
-  'la atencion para ver el estado actual.';
+  'El servidor rechazo la operación por un conflicto con lo que ya hay guardado. Volvé a abrir ' +
+  'la atención para ver el estado actual.';
 
 /**
  * Por que la deuda de esta sesion es el precio particular, segun el `motivo` de
  * `oferta-sin-precio`. Un motivo desconocido no rompe el mensaje: simplemente no se explica.
  */
 const RAZON_PRECIO_PARTICULAR: Readonly<Record<string, string>> = {
-  PARTICULAR_POR_RECEPCION: 'la recepcion se resolvio como particular',
+  PARTICULAR_POR_RECEPCION: 'la recepción se resolvio como particular',
   OFERTA_SIN_OBRA_SOCIAL: 'la oferta no admite obra social',
   SIN_COBERTURA_APLICABLE: 'el paciente no tiene una cobertura con convenio y arancel aplicables',
 };
 
 const MENSAJE_VALIDACION =
-  'El servidor rechazo un dato clinico. El dolor va de 0 a 10, y la lateralidad exige una zona: ' +
+  'El servidor rechazo un dato clínico. El dolor va de 0 a 10, y la lateralidad exige una zona: ' +
   '"derecha" de que.';
 
 const MENSAJE_CASO_REQUERIDO =
-  'Esta prestacion exige un caso clinico: elegi uno de los casos activos del paciente (o abri uno ' +
-  'desde su historia clinica) y volve a intentar. No se registro nada.';
+  'Esta prestación exige un caso clínico: elegí uno de los casos activos del paciente (o abri uno ' +
+  'desde su historia clínica) y volvé a intentar. No se registro nada.';
 
 const MENSAJE_PROFESIONAL_NO_HABILITADO =
-  'Ese profesional no esta habilitado para prestar esta oferta. Elegi otra oferta u otro ' +
+  'Ese profesional no esta habilitado para prestar esta oferta. Elegí otra oferta u otro ' +
   'profesional, o pedi que lo habiliten en la oferta.';
 
 const MENSAJE_PROFESIONAL_NO_ASIGNABLE =
-  'Ese profesional no puede continuar la atencion: necesita un vinculo vigente en esta sede y ' +
+  'Ese profesional no puede continuar la atención: necesita un vinculo vigente en esta sede y ' +
   'permiso para registrar sesiones.';
 
 const MENSAJE_OFERTA_NO_VIGENTE =
-  'Esa oferta no esta vigente hoy en esta sede, asi que no se puede atender con ella. Elegi otra.';
+  'Esa oferta no esta vigente hoy en esta sede, así que no se puede atender con ella. Elegí otra.';
 
 const MENSAJE_CLAVE_REUSADA =
-  'Ese pedido ya se habia mandado con otros datos. No se abrio otra atencion: revisa los datos y ' +
-  'volve a intentar.';
+  'Ese pedido ya se habia mandado con otros datos. No se abrio otra atención: revisa los datos y ' +
+  'volvé a intentar.';
 
 function mensajeFueraDeVentana(error: AkineHttpError): ErrorAtencion {
   const hasta = textoDeExtension(error, 'enmendableHasta');
   const dias = error.numeroDeExtension('ventanaDias');
   const cuando =
     hasta === '' ? '' : ` Se podia enmendar hasta el ${instanteEnPalabras(hasta) || hasta}.`;
-  const ventana = dias === null ? '' : ` La organizacion admite enmiendas durante ${dias} dias.`;
+  const ventana = dias === null ? '' : ` La organización admite enmiendas durante ${dias} días.`;
   return {
     mensaje:
-      'Esta sesion ya no se puede enmendar: paso la ventana desde su cierre.' +
+      'Esta sesión ya no se puede enmendar: paso la ventana desde su cierre.' +
       cuando +
       ventana +
       ' El original queda como esta; si hace falta corregirlo, habla con quien administra el centro.',
@@ -276,7 +276,7 @@ export function traducirErrorAtencion(error: unknown): ErrorAtencion {
       return { mensaje: MENSAJE_SESION_AJENA, causa: 'sesion-ajena', motivo: '' };
     case 'turno-no-atendible':
       return {
-        mensaje: conDetalle(error, 'Este turno no habilita una atencion.'),
+        mensaje: conDetalle(error, 'Este turno no habilita una atención.'),
         causa: 'turno-no-atendible',
         motivo: textoDeExtension(error, 'motivo'),
       };
@@ -390,7 +390,7 @@ export function traducirErrorDeBorrador(error: unknown): ErrorAtencion {
       return {
         mensaje:
           `Las notas no se guardaron: ${contenido}. Lo que escribiste sigue en pantalla y no se ` +
-          'perdio; revisalo y volve a guardar.',
+          'perdio; revisalo y volvé a guardar.',
         causa: 'validacion',
         motivo: '',
       };
@@ -408,11 +408,11 @@ function mensajeSinPrecio(error: AkineHttpError): string {
   const razon = RAZON_PRECIO_PARTICULAR[textoDeExtension(error, 'motivo')];
   const dia = fechaLegible(textoDeExtension(error, 'dia'));
   return (
-    'No se pudo cerrar la atencion: el paciente debe el precio particular' +
+    'No se pudo cerrar la atención: el paciente debe el precio particular' +
     (razon ? ` porque ${razon}` : '') +
     ', y la oferta no tiene un precio vigente' +
-    (dia ? ` para el ${dia}` : ' para ese dia') +
-    '. La atencion sigue abierta y no se perdio nada: carga el precio de la oferta y volve a ' +
+    (dia ? ` para el ${dia}` : ' para ese día') +
+    '. La atención sigue abierta y no se perdio nada: carga el precio de la oferta y volvé a ' +
     'cerrarla.'
   );
 }
@@ -434,7 +434,7 @@ function mensajeFueraDeRango(error: AkineHttpError): ErrorAtencion {
           ? ` El catalogo admite hasta ${maximo}.`
           : '';
   return {
-    mensaje: `El valor esta fuera del rango de esa medida.${rango} Revisa la unidad y volve a cargarlo.`,
+    mensaje: `El valor esta fuera del rango de esa medida.${rango} Revisa la unidad y volvé a cargarlo.`,
     causa: 'fuera-de-rango',
     motivo: '',
     minimo,

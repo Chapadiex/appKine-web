@@ -35,7 +35,7 @@
       @case ('sin-contexto') {
         <p class="estado estado--vacio">Todavía no elegiste un contexto de trabajo.</p>
         <p class="ayuda">
-          Los colaboradores son de una organizacion concreta, asi que hay que indicar cual.
+          Los colaboradores son de una organización concreta, así que hay que indicar cual.
         </p>
         <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto</a>
       }
@@ -52,20 +52,20 @@
 
       @case ('listo') {
         @if (colaboradoresDeLaPagina().length === 0) {
-          <p class="estado estado--vacio">Esta organizacion todavia no tiene colaboradores.</p>
+          <p class="estado estado--vacio">Esta organización todavía no tiene colaboradores.</p>
           <p class="ayuda">
-            Podes vincular a alguien que ya tenga cuenta en AKINE desde el boton de arriba.
+            Podés vincular a alguien que ya tenga cuenta en AKINE desde el botón de arriba.
           </p>
         } @else {
           <div
             class="tabla-scroll"
             tabindex="0"
             role="region"
-            aria-label="Colaboradores de la organizacion"
+            aria-label="Colaboradores de la organización"
           >
             <table class="tabla">
               <caption class="visualmente-oculto">
-                Colaboradores de la organizacion, con su rol, alcance y estado
+                Colaboradores de la organización, con su rol, alcance y estado
               </caption>
               <thead>
                 <tr>
@@ -202,8 +202,8 @@
                           <fieldset class="grupo">
                             <legend>Alcance</legend>
                             <p class="ayuda" id="edicion-alcance-ayuda">
-                              "Toda la organizacion" es un alcance, no la ausencia de uno: por eso
-                              se elige explicitamente y no dejando la sede vacia.
+                              "Toda la organización" es un alcance, no la ausencia de uno: por eso
+                              se elige explicitamente y no dejando la sede vacía.
                             </p>
 
                             <div class="opcion-radio">
@@ -225,7 +225,7 @@
                                 value="organizacion"
                               />
                               <label for="edicion-alcance-organizacion">
-                                Toda la organizacion
+                                Toda la organización
                               </label>
                             </div>
 
@@ -243,7 +243,7 @@
                               <div class="campo">
                                 <label for="edicion-consultorioId">Sede</label>
                                 <select id="edicion-consultorioId" formControlName="consultorioId">
-                                  <option value="">Elegi una sede</option>
+                                  <option value="">Elegí una sede</option>
                                   @for (sede of sedes.sedes(); track sede.id) {
                                     <option [value]="sede.id">{{ sede.name }}</option>
                                   }
@@ -323,7 +323,7 @@
                                 }
                                 @case ('error') {
                                   <p class="banner banner--suspendida">
-                                    No pudimos consultar que queda pendiente a su nombre. Podes
+                                    No pudimos consultar que queda pendiente a su nombre. Podés
                                     revocar igual, pero revisa su agenda antes.
                                   </p>
                                 }
@@ -335,7 +335,7 @@
                                       <p>
                                         Revocar no los cancela ni los reasigna: quedan visibles para
                                         que alguien los resuelva. El aviso muestra una sola fuente:
-                                        si tiene turnos pendientes, no suma ademas sus bloques de
+                                        si tiene turnos pendientes, no suma además sus bloques de
                                         horario ni sus excepciones.
                                       </p>
                                     </div>
@@ -399,7 +399,7 @@
                                       [id]="'grant-no-vigente-' + grant.id"
                                     >
                                       El rol actual del colaborador no admite este permiso: sigue
-                                      registrado pero no concede acceso. Podes darlo de baja.
+                                      registrado pero no concede acceso. Podés darlo de baja.
                                     </p>
                                   }
                                   <button
@@ -449,7 +449,7 @@
                               @switch (otorgables().tipo) {
                                 @case ('error') {
                                   No pudimos consultar que permisos admite el rol
-                                  {{ etiquetaDeRol(colaborador.roleCode) }}. Cerra el panel y volve
+                                  {{ etiquetaDeRol(colaborador.roleCode) }}. Cerra el panel y volvé
                                   a abrirlo para reintentar.
                                 }
                                 @case ('listo') {
@@ -469,7 +469,7 @@
                             </p>
                             @if (mostrarErrorGrant('permissionCode')) {
                               <p class="campo__error" id="grant-permissionCode-error">
-                                Elegi el permiso que queres otorgar.
+                                Elegí el permiso que queres otorgar.
                               </p>
                             }
                           </div>

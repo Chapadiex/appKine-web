@@ -58,9 +58,9 @@ export function motivoDeExclusionEnPalabras(motivo: string | undefined): string 
     case Motivo.YA_LIQUIDADA:
       return 'Ya liquidada a este colaborador';
     case Motivo.SIN_HONORARIO:
-      return 'La oferta no tenia tarifa de honorario ese dia';
+      return 'La oferta no tenia tarifa de honorario ese día';
     case Motivo.SIN_PRESENTES:
-      return 'Ningun participante presente';
+      return 'Ningún participante presente';
     case Motivo.SIN_IMPORTE:
       return 'La parte de este instructor da cero';
     default:

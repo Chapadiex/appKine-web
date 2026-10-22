@@ -179,8 +179,8 @@ export class DisponibilidadPage {
 
     if (duracion <= 0) {
       this.errorVentana.set(
-        'El fin de la ventana tiene que ser posterior al inicio. El fin es exclusivo, asi que ' +
-          'una ventana que empieza y termina en el mismo instante no contiene ningun momento.',
+        'El fin de la ventana tiene que ser posterior al inicio. El fin es exclusivo, así que ' +
+          'una ventana que empieza y termina en el mismo instante no contiene ningún momento.',
       );
       this.enfocar('#ventana-hasta');
       return;
@@ -188,7 +188,7 @@ export class DisponibilidadPage {
 
     if (duracion > MAXIMO_DE_DIAS * MILISEGUNDOS_POR_DIA) {
       this.errorVentana.set(
-        `La ventana no puede pasar de ${MAXIMO_DE_DIAS} dias. Consulta un mes por vez.`,
+        `La ventana no puede pasar de ${MAXIMO_DE_DIAS} días. Consulta un mes por vez.`,
       );
       this.enfocar('#ventana-hasta');
       return;

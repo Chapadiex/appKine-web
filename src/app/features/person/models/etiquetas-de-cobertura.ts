@@ -107,11 +107,11 @@ export function motivoDeNoAplicable(motivo: string | undefined): string {
     case 'OFERTA_NO_ADMITE_OBRA_SOCIAL':
       return 'La oferta no admite obra social: se atiende como particular aunque el paciente tenga cobertura.';
     case 'OFERTA_SIN_PRACTICAS':
-      return 'La oferta no declara practicas, asi que no hay nada que facturarle al financiador.';
+      return 'La oferta no declara prácticas, así que no hay nada que facturarle al financiador.';
     case 'SIN_CONVENIO_VIGENTE':
-      return 'El centro no tiene convenio vigente con este financiador y plan para ese dia.';
+      return 'El centro no tiene convenio vigente con este financiador y plan para ese día.';
     case 'SIN_ARANCEL_VIGENTE':
-      return 'Hay convenio, pero sin arancel vigente para la practica ese dia.';
+      return 'Hay convenio, pero sin arancel vigente para la práctica ese día.';
     default:
       return 'No aplica a esta oferta.';
   }
@@ -207,7 +207,7 @@ function degradado(hito: HitoResponse, principal: boolean): CoberturaDelResumen 
     principal,
     descripcion:
       titulo === ''
-        ? 'Cobertura sin descripcion'
+        ? 'Cobertura sin descripción'
         : titulo.replace(/\b(\d{4})-(\d{2})-(\d{2})\b/g, '$3/$2/$1'),
     afiliado: '',
     vigencia: desde === '' ? '' : `Vigente desde el ${desde}.`,

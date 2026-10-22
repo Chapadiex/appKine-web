@@ -167,26 +167,26 @@ export interface ErrorAgenda {
   readonly motivo: string;
 }
 
-const MENSAJE_GENERICO = 'No pudimos completar la operacion. Volve a intentar en un momento.';
-const MENSAJE_DE_RED = 'No se pudo contactar al servidor. Revisa tu conexion y volve a intentar.';
+const MENSAJE_GENERICO = 'No pudimos completar la operación. Volvé a intentar en un momento.';
+const MENSAJE_DE_RED = 'No se pudo contactar al servidor. Revisa tu conexion y volvé a intentar.';
 const MENSAJE_LIMITE_SIN_PLAZO =
   'Demasiados intentos. Espera un momento antes de volver a intentar.';
 
 const MENSAJE_SIN_CONTEXTO =
-  'Para ver la agenda hay que saber en que centro estas. Eligi una organizacion y un consultorio, ' +
-  'y volve a entrar. Tu sesion sigue abierta.';
+  'Para ver la agenda hay que saber en que centro estas. Eligi una organización y un consultorio, ' +
+  'y volvé a entrar. Tu sesión sigue abierta.';
 
 const MENSAJE_SIN_PERMISO =
-  'No tenes permiso para consultar o reservar turnos en esta sede. Pediselo a quien administra el ' +
+  'No tenés permiso para consultar o reservar turnos en esta sede. Pediselo a quien administra el ' +
   'centro.';
 
 const MENSAJE_NO_ENCONTRADO =
-  'Eso ya no existe, o no es de esta sede. Volve al buscador y elegi una oferta del listado ' +
+  'Eso ya no existe, o no es de esta sede. Volvé al buscador y elegí una oferta del listado ' +
   'actual.';
 
 const MENSAJE_OFERTA_NO_AGENDABLE =
   'Esta oferta no se puede agendar: esta dada de baja, o su vigencia no toca las fechas que ' +
-  'pediste. Elegi otra oferta, u otro rango de fechas.';
+  'pediste. Elegí otra oferta, u otro rango de fechas.';
 
 const MENSAJE_SLOT_NO_DISPONIBLE =
   'Ese horario dejo de estar disponible mientras lo mirabas. No reservamos nada. Recarga la ' +
@@ -197,12 +197,12 @@ const MENSAJE_SLOT_COMPLETO =
   'cupo: probá con el turno siguiente.';
 
 const MENSAJE_RECURSO_OCUPADO =
-  'Ya hay otro turno que se cruza con este intervalo. Elegi otro horario, o el mismo horario con ' +
+  'Ya hay otro turno que se cruza con este intervalo. Elegí otro horario, o el mismo horario con ' +
   'otro profesional.';
 
 const MENSAJE_SIN_PERFIL_PACIENTE =
-  'Esa persona todavia no tiene perfil de paciente, asi que no se le puede reservar una atencion. ' +
-  'Activaselo desde el padron y volve: no hay que volver a cargar ningun dato.';
+  'Esa persona todavía no tiene perfil de paciente, así que no se le puede reservar una atención. ' +
+  'Activaselo desde el padron y volvé: no hay que volver a cargar ningún dato.';
 
 /**
  * La clave de idempotencia se reuso con otro contenido.
@@ -212,12 +212,12 @@ const MENSAJE_SIN_PERFIL_PACIENTE =
  */
 const MENSAJE_CLAVE_REUSADA =
   'Hubo un problema tecnico con este intento de reserva: la clave que lo identifica ya se habia ' +
-  'usado para otro pedido distinto. No se reservo nada y no es un error tuyo. Volve a intentarlo: ' +
+  'usado para otro pedido distinto. No se reservo nada y no es un error tuyo. Volvé a intentarlo: ' +
   'arrancamos el intento de cero.';
 
 const MENSAJE_SUSCRIPCION_SUSPENDIDA =
-  'La suscripcion de la organizacion esta suspendida, asi que no se pueden reservar turnos. Se ' +
-  'resuelve desde la pantalla de suscripcion.';
+  'La suscripción de la organización esta suspendida, así que no se pueden reservar turnos. Se ' +
+  'resuelve desde la pantalla de suscripción.';
 
 /**
  * El ciclo del turno no admite la operacion.
@@ -227,7 +227,7 @@ const MENSAJE_SUSCRIPCION_SUSPENDIDA =
  * por que, que es exactamente lo que el tipo propio existe para evitar.
  */
 const MENSAJE_TRANSICION_NO_PERMITIDA =
-  'Este turno no admite esa operacion en su estado actual. Volve a leer su historial: puede que ' +
+  'Este turno no admite esa operación en su estado actual. Volvé a leer su historial: puede que ' +
   'otra persona lo haya cambiado, o que ya haya pasado su hora.';
 
 /**
@@ -239,12 +239,12 @@ const MENSAJE_TRANSICION_NO_PERMITIDA =
  * administrativa puede borrar la prueba de que la atencion ocurrio.
  */
 const MENSAJE_TURNO_CON_ATENCION =
-  'Este turno ya tiene una atencion clinica registrada, asi que no se puede cancelar, reprogramar ' +
-  'ni marcar como ausente: eso borraria la prueba de que la atencion ocurrio. Si la atencion se ' +
-  'abrio por error, resolvela desde la pantalla de atencion clinica.';
+  'Este turno ya tiene una atención clínica registrada, así que no se puede cancelar, reprogramar ' +
+  'ni marcar como ausente: eso borraria la prueba de que la atención ocurrio. Si la atención se ' +
+  'abrio por error, resolvela desde la pantalla de atención clínica.';
 
 const MENSAJE_CONFLICTO =
-  'El servidor rechazo la operacion por un conflicto con lo que ya hay guardado. Recarga la ' +
+  'El servidor rechazo la operación por un conflicto con lo que ya hay guardado. Recarga la ' +
   'agenda para ver el estado actual.';
 
 /** Traduce cualquier error de las dos pantallas de agenda. */
@@ -262,7 +262,7 @@ export function traducirErrorAgenda(error: unknown): ErrorAgenda {
     return {
       ...base(
         segundos > 0
-          ? `Demasiados intentos. Espera ${segundos} segundos y volve a intentar.`
+          ? `Demasiados intentos. Espera ${segundos} segundos y volvé a intentar.`
           : MENSAJE_LIMITE_SIN_PLAZO,
         'limite',
         'ninguna',
@@ -365,7 +365,7 @@ const MENSAJE_LLEGADA_NO_APLICABLE =
  * disculparse, y la fila se relee sola.
  */
 const MENSAJE_RECEPCION_NO_PERMITIDA =
-  'La recepcion de ese turno ya no esta en el estado que esa accion necesita. Registrar la ' +
+  'La recepción de ese turno ya no esta en el estado que esa acción necesita. Registrar la ' +
   'llegada dos veces no es un problema —es idempotente—, pero anular, llamar o pasar a espera ' +
   'si: puede que otra persona ya lo haya hecho desde otro puesto. Actualizamos la fila con lo ' +
   'que dice el servidor.';
@@ -430,9 +430,9 @@ export function recortarVentana(desde: string, maxDias: number): string | null {
 function mensajeDeVentana(error: AkineHttpError): string {
   const maximo = error.numeroDeExtension('maxDays');
   return maximo === null
-    ? 'El rango de fechas es demasiado amplio. Pedi menos dias.'
-    : `El rango de fechas era demasiado amplio: la agenda se consulta de a ${maximo} dias como ` +
-        'maximo. Lo recortamos y volvimos a pedirla.';
+    ? 'El rango de fechas es demasiado amplio. Pedi menos días.'
+    : `El rango de fechas era demasiado amplio: la agenda se consulta de a ${maximo} días como ` +
+        'máximo. Lo recortamos y volvimos a pedirla.';
 }
 
 function base(mensaje: string, causa: CausaAgenda, accion: AccionSugerida): ErrorAgenda {

@@ -52,7 +52,7 @@ describe('PermissionsStore', () => {
     expect(store.tieneAlguno('caja:operate')).toBe(false);
   });
 
-  it('distingue "no tiene ninguno" de "todavia no cargaron"', () => {
+  it('distingue "no tiene ninguno" de "todavía no cargaron"', () => {
     tenant.select(ORG_A);
     cargar([]);
 
@@ -70,7 +70,7 @@ describe('PermissionsStore', () => {
     expect(store.tieneAlguno()).toBe(false);
   });
 
-  it('una respuesta sin el campo permissions no rompe: se trata como conjunto vacio', () => {
+  it('una respuesta sin el campo permissions no rompe: se trata como conjunto vacío', () => {
     tenant.select(ORG_A);
     store.cargar().subscribe();
     httpMock.expectOne(RUTA_PERMISOS_EFECTIVOS).flush({});
@@ -135,7 +135,7 @@ describe('PermissionsStore', () => {
     expect(store.tiene(PERMISO_COLABORADOR_MANAGE)).toBe(false);
   });
 
-  it('el logout (clear del contexto) tambien los invalida', () => {
+  it('el logout (clear del contexto) también los invalida', () => {
     tenant.select(ORG_A);
     cargar([PERMISO_COLABORADOR_READ]);
 
@@ -145,7 +145,7 @@ describe('PermissionsStore', () => {
     expect(store.tiene(PERMISO_COLABORADOR_READ)).toBe(false);
   });
 
-  it('una respuesta que llega despues del cambio de contexto se descarta', () => {
+  it('una respuesta que llega después del cambio de contexto se descarta', () => {
     tenant.select(ORG_A);
     store.cargar().subscribe();
     const enVuelo = httpMock.expectOne(RUTA_PERMISOS_EFECTIVOS);
@@ -180,7 +180,7 @@ describe('PermissionsStore', () => {
     expect(store.permisos().size).toBe(0);
   });
 
-  it('no escribe los permisos en ningun storage del navegador', () => {
+  it('no escribe los permisos en ningún storage del navegador', () => {
     // Se espia el prototipo y no los globales prohibidos por ESLint (ADR-0001): la regla
     // impide escribir 'localStorage' en el codigo, y este test tiene que poder afirmar lo
     // mismo sin nombrarlos. Un permiso persistido es doblemente malo: lo lee un XSS y

@@ -58,14 +58,14 @@ export interface ErrorCatalogo {
   readonly segundosDeEspera: number;
 }
 
-const MENSAJE_GENERICO = 'No pudimos completar la operacion. Volve a intentar en un momento.';
-const MENSAJE_DE_RED = 'No se pudo contactar al servidor. Revisa tu conexion y volve a intentar.';
+const MENSAJE_GENERICO = 'No pudimos completar la operación. Volvé a intentar en un momento.';
+const MENSAJE_DE_RED = 'No se pudo contactar al servidor. Revisa tu conexion y volvé a intentar.';
 const MENSAJE_LIMITE_SIN_PLAZO =
   'Demasiados intentos. Espera un momento antes de volver a intentar.';
 
 const MENSAJE_SIN_CONTEXTO =
-  'El catalogo mezcla los conceptos de la plataforma con los de tu centro, asi que hay que saber ' +
-  'en cual estas trabajando. Eligi un consultorio y volve a entrar.';
+  'El catalogo mezcla los conceptos de la plataforma con los de tu centro, así que hay que saber ' +
+  'en cual estas trabajando. Eligi un consultorio y volvé a entrar.';
 
 /**
  * `403` sobre el catalogo.
@@ -77,7 +77,7 @@ const MENSAJE_SIN_CONTEXTO =
  * camino para pedirla.
  */
 const MENSAJE_SIN_PERMISO =
-  'No podes modificar esto. O no administras este centro -pediselo a quien lo administra-, o el ' +
+  'No podés modificar esto. O no administras este centro -pediselo a quien lo administra-, o el ' +
   'concepto es de la plataforma: esos los mantiene AKINE y se piden desde la pantalla de ' +
   'solicitudes al catalogo global.';
 
@@ -95,12 +95,12 @@ const MENSAJE_NO_ENCONTRADO =
  * <b>de la plataforma</b>, que el filtro por alcance esconde si esta puesto en los del centro.
  */
 const MENSAJE_CODIGO_TOMADO =
-  'Ya hay un concepto vigente con ese codigo. Ojo con dos cosas: el codigo de uno dado de baja SI ' +
+  'Ya hay un concepto vigente con ese código. Ojo con dos cosas: el código de uno dado de baja SI ' +
   'se puede reusar -mira el filtro Todos-, y el que choca puede ser un concepto de la plataforma, ' +
   'que el filtro por alcance puede estar escondiendo.';
 
 const MENSAJE_NOMBRE_TOMADO =
-  'Ya hay un concepto vigente con ese nombre. Igual que con el codigo: el de uno dado de baja se ' +
+  'Ya hay un concepto vigente con ese nombre. Igual que con el código: el de uno dado de baja se ' +
   'puede reusar, y el que choca puede ser uno de la plataforma que el filtro esta escondiendo.';
 
 const MENSAJE_CONCEPTO_INACTIVO =
@@ -112,17 +112,17 @@ const MENSAJE_YA_INACTIVO =
   'el estado actual.';
 
 const MENSAJE_REFERENCIA_INACTIVA =
-  'La especialidad o la practica que elegiste esta dada de baja, asi que no se le puede colgar ' +
-  'nada nuevo. Elegi una vigente, o dala de alta primero.';
+  'La especialidad o la práctica que elegiste esta dada de baja, así que no se le puede colgar ' +
+  'nada nuevo. Elegí una vigente, o dala de alta primero.';
 
 const MENSAJE_ALCANCE_CRUZADO =
   'Un concepto de la plataforma no puede depender de uno de tu centro: lo verian todos los ' +
-  'centros y ninguno tendria acceso a lo que cuelga. Elegi una referencia que tambien sea de la ' +
+  'centros y ninguno tendria acceso a lo que cuelga. Elegí una referencia que también sea de la ' +
   'plataforma.';
 
 const MENSAJE_VIGENCIAS_SOLAPADAS =
-  'Ya hay una vigencia de ese codigo que se pisa con la ventana que estas cargando. Dos vigencias ' +
-  'del mismo codigo no pueden convivir: cerra la anterior antes de que empiece la nueva.';
+  'Ya hay una vigencia de ese código que se pisa con la ventana que estas cargando. Dos vigencias ' +
+  'del mismo código no pueden convivir: cerra la anterior antes de que empiece la nueva.';
 
 const MENSAJE_SOLICITUD_DUPLICADA =
   'Ya hay una solicitud pendiente por ese mismo concepto. Esperala: pedirlo dos veces no la ' +
@@ -133,13 +133,13 @@ const MENSAJE_SOLICITUD_RESUELTA =
   'quedo.';
 
 const MENSAJE_CONCURRENCIA =
-  'Alguien mas modifico este concepto mientras lo estabas editando, asi que no guardamos tus ' +
+  'Alguien mas modifico este concepto mientras lo estabas editando, así que no guardamos tus ' +
   'cambios para no pisar los suyos. Volvimos a leer los datos actuales: revisalos y confirma de ' +
   'nuevo si seguis queriendo el cambio.';
 
 const MENSAJE_SUSCRIPCION_SUSPENDIDA =
-  'La suscripcion de la organizacion esta suspendida, asi que no se pueden registrar cambios. Se ' +
-  'resuelve desde la pantalla de suscripcion.';
+  'La suscripción de la organización esta suspendida, así que no se pueden registrar cambios. Se ' +
+  'resuelve desde la pantalla de suscripción.';
 
 /**
  * Hay conceptos vigentes que cuelgan de este.
@@ -155,13 +155,13 @@ function mensajeDeDependientes(error: AkineHttpError): string {
 
   if (typeof tipo === 'string' && cantidad !== null) {
     return (
-      `No se puede dar de baja este concepto porque todavia hay ${cantidad} ${tipo} vigentes que ` +
+      `No se puede dar de baja este concepto porque todavía hay ${cantidad} ${tipo} vigentes que ` +
       'dependen de el. Dalos de baja primero, o mudalos a otro.'
     );
   }
   return (
-    'No se puede dar de baja este concepto porque todavia hay conceptos vigentes que dependen de ' +
-    'el. Resolvelos primero y volve a intentar.'
+    'No se puede dar de baja este concepto porque todavía hay conceptos vigentes que dependen de ' +
+    'el. Resolvelos primero y volvé a intentar.'
   );
 }
 
@@ -187,7 +187,7 @@ export function traducirErrorCatalogo(error: unknown): ErrorCatalogo {
     return {
       mensaje:
         segundos > 0
-          ? `Demasiados intentos. Espera ${segundos} segundos y volve a intentar.`
+          ? `Demasiados intentos. Espera ${segundos} segundos y volvé a intentar.`
           : MENSAJE_LIMITE_SIN_PLAZO,
       causa: 'limite',
       segundosDeEspera: segundos,

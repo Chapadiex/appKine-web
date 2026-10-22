@@ -72,13 +72,13 @@
           [attr.aria-describedby]="intento() && faltaOferta() ? 'caso-oferta-error' : null"
           (change)="elegirOferta($any($event.target).value)"
         >
-          <option value="">Elegi una oferta</option>
+          <option value="">Elegí una oferta</option>
           @for (oferta of elegibles(); track oferta.id) {
             <option [value]="oferta.id">{{ oferta.nombreComercial }}</option>
           }
         </select>
         @if (intento() && faltaOferta()) {
-          <p id="caso-oferta-error" class="campo__error">Elegi la oferta del caso.</p>
+          <p id="caso-oferta-error" class="campo__error">Elegí la oferta del caso.</p>
         }
       </div>
 
@@ -127,7 +127,7 @@
         </select>
         <p id="caso-responsable-ayuda" class="ayuda">
           Solo se ofrecen los profesionales habilitados para esa oferta en esta sede. El equipo se
-          completa despues, desde el caso.
+          completa después, desde el caso.
         </p>
       </div>
 

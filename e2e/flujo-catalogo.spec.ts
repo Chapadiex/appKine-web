@@ -28,7 +28,7 @@ test.describe('Catalogo clinico contra el backend real', () => {
     await navegar(page, '/catalogo/especialidades');
     await expect(page.getByRole('heading', { name: 'Catálogo clínico', level: 1 })).toBeVisible();
     await page.getByRole('button', { name: 'Dar de alta una especialidad de este centro' }).click();
-    await page.getByLabel('Codigo', { exact: true }).fill(`E2E_PROPIA_${sufijo}`);
+    await page.getByLabel('Código', { exact: true }).fill(`E2E_PROPIA_${sufijo}`);
     await page.getByLabel('Nombre', { exact: true }).fill(nombre);
     const alta = respuestaDe(page, 'POST', /\/catalogos\/especialidades$/);
     await page.getByRole('button', { name: 'Dar de alta', exact: true }).click();
@@ -65,7 +65,7 @@ test.describe('Catalogo clinico contra el backend real', () => {
     await page.getByRole('button', { name: 'Pedir un concepto a la plataforma' }).click();
     await page.getByLabel('Que tipo de concepto').selectOption('ESPECIALIDAD');
     await page.getByLabel('Nombre propuesto').fill(nombre);
-    await page.getByLabel('Codigo propuesto (opcional)').fill(`E2E_PEDIDA_${sufijo}`);
+    await page.getByLabel('Código propuesto (opcional)').fill(`E2E_PEDIDA_${sufijo}`);
     await page
       .getByLabel('Por que deberia estar en el catalogo comun')
       .fill('La usan todos los centros de la red y hoy cada uno la carga por su cuenta.');
@@ -91,7 +91,7 @@ test.describe('Catalogo clinico contra el backend real', () => {
       await plataforma.getByRole('button', { name: `Revisar ${nombre}` }).click();
       await expect(plataforma.locator('dl.detalle')).toContainText(centro.nombreCentro);
       await plataforma.getByRole('button', { name: 'Aprobar y publicar' }).click();
-      await expect(plataforma.getByLabel('Codigo con el que se publica')).toHaveValue(
+      await expect(plataforma.getByLabel('Código con el que se publica')).toHaveValue(
         `E2E_PEDIDA_${sufijo}`,
       );
       await expect(plataforma.getByLabel('Nombre con el que se publica')).toHaveValue(nombre);

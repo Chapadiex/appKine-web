@@ -26,7 +26,7 @@ describe('situacionDeVigencia', () => {
     expect(situacion.explicacion).toBeNull();
   });
 
-  it('EL FIN ES INCLUSIVO: el ultimo dia todavia se aplica, y el dia siguiente no', () => {
+  it('EL FIN ES INCLUSIVO: el último día todavía se aplica, y el día siguiente no', () => {
     // Es la diferencia con `offering`, donde el fin es EXCLUSIVO. Si esta rama se escribe con
     // `<=`, un convenio que termina hoy figura como terminado mientras el backend lo sigue
     // aplicando, y las dos mitades de la pantalla se contradicen.
@@ -48,11 +48,11 @@ describe('situacionDeVigencia', () => {
       'convenio',
     );
     expect(yaVencido.clave).toBe('ya-no');
-    expect(yaVencido.explicacion).toContain('ese dia todavia se aplico');
+    expect(yaVencido.explicacion).toContain('ese día todavía se aplico');
     expect(yaVencido.explicacion).toContain('el fin es inclusivo');
   });
 
-  it('activo pero todavia sin vigencia se distingue de activo y vigente', () => {
+  it('activo pero todavía sin vigencia se distingue de activo y vigente', () => {
     // El caso que la pantalla existe para no aplanar: `estado` dice ACTIVO y `vigente` dice
     // false, y las dos cosas son correctas al mismo tiempo.
     const situacion = situacionDeVigencia(
@@ -62,7 +62,7 @@ describe('situacionDeVigencia', () => {
     );
 
     expect(situacion.clave).toBe('aun-no');
-    expect(situacion.resumen).toContain('todavia sin vigencia');
+    expect(situacion.resumen).toContain('todavía sin vigencia');
     expect(situacion.explicacion).toContain('No es un error');
     expect(situacion.atenuada).toBe(true);
   });
@@ -88,10 +88,10 @@ describe('situacionDeVigencia', () => {
       'no se ofrece para coberturas nuevas',
     );
     expect(situacionDeVigencia(sinVigencia, HOY, 'convenio').explicacion).toContain(
-      'no resuelve ningun arancel',
+      'no resuelve ningún arancel',
     );
     expect(situacionDeVigencia(sinVigencia, HOY, 'arancel').explicacion).toContain(
-      'no le pone precio a esa practica',
+      'no le pone precio a esa práctica',
     );
   });
 
@@ -117,7 +117,7 @@ describe('ventanaEnPalabras', () => {
 });
 
 describe('enPalabras', () => {
-  it('no pierde un dia por pasar la fecha por Date, que interpreta UTC', () => {
+  it('no pierde un día por pasar la fecha por Date, que interpreta UTC', () => {
     // `new Date('2026-05-25')` es medianoche UTC: en Argentina es el 24 a las 21. Es el bug que
     // `features/resource` ya documento para los feriados.
     expect(enPalabras('2026-05-25')).toBe('25 de mayo de 2026');

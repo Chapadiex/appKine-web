@@ -774,7 +774,7 @@ export class HorarioSemanalPage {
       // Sin `version` no hay edicion posible: mandar `0` pisaria el cambio de otro, que es
       // exactamente lo que el control de concurrencia optimista existe para impedir.
       this.errorAccion.set(
-        'No pudimos leer la version de este bloque. Cerra el panel, recarga el horario y volve a intentar.',
+        'No pudimos leer la versión de este bloque. Cerra el panel, recarga el horario y volvé a intentar.',
       );
       return null;
     }

@@ -181,11 +181,11 @@ describe('PasesDePersonaPage', () => {
   it('vende con clave de intento, avisa la deuda y relee; el reintento usa la misma clave', async () => {
     const fixture = await montar([]);
     clickear(fixture, 'Vender pase');
-    expect(textoDe(fixture)).toContain('Elegi el producto a vender.');
+    expect(textoDe(fixture)).toContain('Elegí el producto a vender.');
     httpMock.expectNone((r) => r.method === 'POST');
 
     escribir(fixture, '#vender-producto', '9');
-    expect(textoDe(fixture)).toContain('Vale 60 dias desde hoy');
+    expect(textoDe(fixture)).toContain('Vale 60 días desde hoy');
     clickear(fixture, 'Vender pase');
     const primero = httpMock.expectOne(`${BASE}/pases`);
     const clave = primero.request.body.idempotencyKey as string;
@@ -275,7 +275,7 @@ describe('PasesDePersonaPage', () => {
   it('vende un abono con su periodo; cambiar el periodo cambia la clave', async () => {
     const fixture = await montar([]);
     escribir(fixture, '#vender-producto', '10');
-    expect(textoDe(fixture)).toContain('Abono: cubre 12 creditos en un periodo de hasta 31 dias');
+    expect(textoDe(fixture)).toContain('Abono: cubre 12 creditos en un periodo de hasta 31 días');
     const desde = (fixture.nativeElement as HTMLElement).querySelector<HTMLInputElement>(
       '#vender-periodo-desde',
     );
@@ -319,7 +319,7 @@ describe('PasesDePersonaPage', () => {
   });
 
   it(
-    'el estado es el del backend: VENCIDO, ANULADO con motivo y un abono que todavia no empieza',
+    'el estado es el del backend: VENCIDO, ANULADO con motivo y un abono que todavía no empieza',
     async () => {
       const fixture = await montar([
         { ...PASE, id: 1, estado: 'VENCIDO', vigente: false, creditosDisponibles: 0 },
@@ -374,7 +374,7 @@ describe('PasesDePersonaPage', () => {
   });
 
   it(
-    'ajusta el saldo con motivo y version; fuera de rango no sale a la red',
+    'ajusta el saldo con motivo y versión; fuera de rango no sale a la red',
     async () => {
       const fixture = await montar([PASE], PRODUCTOS, ADMIN);
       clickear(fixture, 'Ver movimientos');
@@ -390,7 +390,7 @@ describe('PasesDePersonaPage', () => {
       httpMock.expectNone((r) => r.method === 'POST');
 
       escribir(fixture, '#ajuste-cantidad', '0');
-      expect(textoDe(fixture)).toContain('Un numero entero distinto de cero.');
+      expect(textoDe(fixture)).toContain('Un número entero distinto de cero.');
       escribir(fixture, '#ajuste-cantidad', '-5');
       expect(textoDe(fixture)).toContain('El saldo quedaria en 0 de 8.');
       escribir(fixture, '#ajuste-motivo', ' Cortesia ');
@@ -424,7 +424,7 @@ describe('PasesDePersonaPage', () => {
     TIMEOUT_AXE,
   );
 
-  it('un ajuste rechazado muestra el motivo; la version vieja relee', async () => {
+  it('un ajuste rechazado muestra el motivo; la versión vieja relee', async () => {
     const fixture = await montar([PASE], PRODUCTOS, ADMIN);
     clickear(fixture, 'Ajustar saldo');
     escribir(fixture, '#ajuste-cantidad', '1');
@@ -477,7 +477,7 @@ describe('PasesDePersonaPage', () => {
     TIMEOUT_AXE,
   );
 
-  it('la anulacion repetida y la venta sin deuda se dicen', async () => {
+  it('la anulación repetida y la venta sin deuda se dicen', async () => {
     const fixture = await montar([PASE], PRODUCTOS, ADMIN);
     clickear(fixture, 'Anular');
     escribir(fixture, '#anulacion-motivo', 'Otra vez');
@@ -538,7 +538,7 @@ describe('PasesDePersonaPage', () => {
     expect(texto).toContain('2 usados');
   });
 
-  it('una anulacion rechazada por creditos usados se explica por la causa', async () => {
+  it('una anulación rechazada por creditos usados se explica por la causa', async () => {
     const fixture = await montar([PASE], PRODUCTOS, ADMIN);
     clickear(fixture, 'Anular');
     escribir(fixture, '#anulacion-motivo', 'Vendido por error');
@@ -565,7 +565,7 @@ describe('PasesDePersonaPage', () => {
   }
 
   it(
-    'el ledger se lee de a paginas, del mas viejo al mas nuevo, con la posicion dicha en texto',
+    'el ledger se lee de a páginas, del mas viejo al mas nuevo, con la posicion dicha en texto',
     async () => {
       const fixture = await montar();
       clickear(fixture, 'Ver movimientos');
@@ -573,9 +573,9 @@ describe('PasesDePersonaPage', () => {
       pedirMovimientos(0).flush(pagina(movimientosDe(1, 20), 0, 45));
       await asentar(fixture);
       expect(textoDe(fixture)).toContain('Movimientos 1 a 20 de 45, del mas viejo al mas nuevo.');
-      expect(textoDe(fixture)).toContain('Pagina 1 de 3');
+      expect(textoDe(fixture)).toContain('Página 1 de 3');
       const nav = (fixture.nativeElement as HTMLElement).querySelector(
-        'nav[aria-label="Paginas de movimientos del pase"]',
+        'nav[aria-label="Páginas de movimientos del pase"]',
       );
       expect(nav).not.toBeNull();
       await esperarSinViolaciones(fixture.nativeElement);
@@ -586,7 +586,7 @@ describe('PasesDePersonaPage', () => {
         '[aria-label="Movimientos del pase"]',
       );
       expect(region?.getAttribute('aria-busy')).toBe('true');
-      expect(textoDe(fixture)).toContain('Pagina 2 de 3');
+      expect(textoDe(fixture)).toContain('Página 2 de 3');
       pedirMovimientos(1).flush(pagina(movimientosDe(21, 20), 1, 45));
       await asentar(fixture);
       expect(textoDe(fixture)).toContain('Movimientos 21 a 40 de 45');
@@ -608,7 +608,7 @@ describe('PasesDePersonaPage', () => {
     TIMEOUT_AXE,
   );
 
-  it('despues de un ajuste el ledger termina en la pagina del movimiento nuevo', async () => {
+  it('después de un ajuste el ledger termina en la página del movimiento nuevo', async () => {
     const fixture = await montar([PASE], PRODUCTOS, ADMIN);
     clickear(fixture, 'Ver movimientos');
     pedirMovimientos(0).flush(pagina(movimientosDe(1, 20), 0, 20));
@@ -630,7 +630,7 @@ describe('PasesDePersonaPage', () => {
     expect(textoDe(fixture)).toContain('Saldo actual: 6 creditos de 8');
   });
 
-  it('una pagina que ya no existe lleva a la ultima', async () => {
+  it('una página que ya no existe lleva a la última', async () => {
     const fixture = await montar([PASE], PRODUCTOS, ADMIN);
     clickear(fixture, 'Ver movimientos');
     pedirMovimientos(0).flush(pagina(movimientosDe(1, 20), 0, 20));
@@ -650,7 +650,7 @@ describe('PasesDePersonaPage', () => {
     expect(textoDe(fixture)).toContain('20 movimientos, del mas viejo al mas nuevo.');
   });
 
-  it('vende un abono con renovacion automatica; pedirla o no cambia la clave', async () => {
+  it('vende un abono con renovacion automática; pedirla o no cambia la clave', async () => {
     const fixture = await montar([]);
     escribir(fixture, '#vender-producto', '10');
     const casilla = (fixture.nativeElement as HTMLElement).querySelector<HTMLInputElement>(
@@ -749,15 +749,15 @@ describe('PasesDePersonaPage', () => {
       );
       expect(texto).toContain('Se renueva solo al terminar el periodo.');
       expect(texto).toContain(
-        'No se pudo renovar: el producto esta dado de baja. La renovacion automatica quedo apagada.',
+        'No se pudo renovar: el producto esta dado de baja. La renovacion automática quedo apagada.',
       );
       expect(texto).toContain('No se renueva solo.');
       // El periodo ya renovado no se configura: la renovacion paso al nuevo.
-      expect(boton(fixture, 'Activar la renovacion automatica de Abono mensual')).toBeNull();
-      expect(boton(fixture, 'Desactivar la renovacion automatica de Abono mensual')).not.toBeNull();
-      expect(boton(fixture, 'Activar la renovacion automatica de Abono funcional')).not.toBeNull();
+      expect(boton(fixture, 'Activar la renovacion automática de Abono mensual')).toBeNull();
+      expect(boton(fixture, 'Desactivar la renovacion automática de Abono mensual')).not.toBeNull();
+      expect(boton(fixture, 'Activar la renovacion automática de Abono funcional')).not.toBeNull();
       // Un pack no tiene renovacion.
-      expect(texto).not.toContain('renovacion automatica de Pack');
+      expect(texto).not.toContain('renovacion automática de Pack');
       await esperarSinViolaciones(fixture.nativeElement);
 
       const enlace = [
@@ -779,13 +779,13 @@ describe('PasesDePersonaPage', () => {
     ]);
     const texto = textoDe(fixture);
     expect(texto).toContain(
-      'La renovacion automatica se apago porque Lucia Sintetica, quien la autorizo,',
+      'La renovacion automática se apago porque Lucia Sintetica, quien la autorizo,',
     );
     expect(texto).toContain(
       'ya no puede vender en esta sede (se lo desvinculo o perdio el permiso)',
     );
     expect(texto).not.toContain('No se pudo renovar');
-    expect(boton(fixture, 'Activar la renovacion automatica de Abono yoga')).not.toBeNull();
+    expect(boton(fixture, 'Activar la renovacion automática de Abono yoga')).not.toBeNull();
   });
 
   it('el periodo siguiente sale de renovadoPorPaseId, no de deducirlo de la lista', async () => {
@@ -796,13 +796,13 @@ describe('PasesDePersonaPage', () => {
     const texto = textoDe(fixture);
     expect(texto).toContain('Ya se renovo: sigue en otro periodo.');
     expect(texto).toContain('La renovacion la autorizo Lucia Sintetica.');
-    expect(boton(fixture, 'Activar la renovacion automatica de Abono yoga')).toBeNull();
+    expect(boton(fixture, 'Activar la renovacion automática de Abono yoga')).toBeNull();
   });
 
   it('sin renovadoPorPaseId no da por renovado al anterior aunque otro diga renovarlo', async () => {
     const fixture = await montar([ABONO_NOV, ABONO_OCT]);
     expect(textoDe(fixture)).not.toContain('Ya se renovo');
-    expect(boton(fixture, 'Activar la renovacion automatica de Abono mensual')).not.toBeNull();
+    expect(boton(fixture, 'Activar la renovacion automática de Abono mensual')).not.toBeNull();
   });
 
   it('un periodo que renueva a otro que no esta en la lista lo dice sin enlace', async () => {
@@ -810,16 +810,16 @@ describe('PasesDePersonaPage', () => {
     expect(textoDe(fixture)).toContain('Renovado automaticamente desde otro periodo.');
   });
 
-  it('activa y desactiva la renovacion con la version leida, y relee', async () => {
+  it('activa y desactiva la renovacion con la versión leida, y relee', async () => {
     const fixture = await montar([ABONO_SIN]);
-    boton(fixture, 'Activar la renovacion automatica de Abono yoga')!.click();
+    boton(fixture, 'Activar la renovacion automática de Abono yoga')!.click();
     fixture.detectChanges();
     const prender = httpMock.expectOne(`${BASE}/pases/31/renovacion`);
     expect(prender.request.method).toBe('PUT');
     expect(prender.request.body).toEqual({ activa: true, version: 2 });
     expect(textoDe(fixture)).toContain('Guardando…');
     // Un segundo click mientras viaja no sale a la red.
-    boton(fixture, 'Activar la renovacion automatica de Abono yoga')!.click();
+    boton(fixture, 'Activar la renovacion automática de Abono yoga')!.click();
     httpMock.expectNone(`${BASE}/pases/31/renovacion`);
     prender.flush({ ...ABONO_SIN, renovacionAutomatica: true, version: 3 });
     responderPases([{ ...ABONO_SIN, renovacionAutomatica: true, version: 3 }]);
@@ -827,7 +827,7 @@ describe('PasesDePersonaPage', () => {
     expect(textoDe(fixture)).toContain('"Abono yoga" se va a renovar solo');
     expect(textoDe(fixture)).toContain('31/10/2026');
 
-    boton(fixture, 'Desactivar la renovacion automatica de Abono yoga')!.click();
+    boton(fixture, 'Desactivar la renovacion automática de Abono yoga')!.click();
     const apagar = httpMock.expectOne(`${BASE}/pases/31/renovacion`);
     expect(apagar.request.body).toEqual({ activa: false, version: 3 });
     apagar.flush({ ...ABONO_SIN, version: 4 });
@@ -838,7 +838,7 @@ describe('PasesDePersonaPage', () => {
 
   it('YA_RENOVADO tiene su mensaje y relee los pases', async () => {
     const fixture = await montar([ABONO_SIN]);
-    boton(fixture, 'Activar la renovacion automatica de Abono yoga')!.click();
+    boton(fixture, 'Activar la renovacion automática de Abono yoga')!.click();
     httpMock
       .expectOne(`${BASE}/pases/31/renovacion`)
       .flush(...conflicto('pase-no-ajustable', { causa: 'YA_RENOVADO' }));
@@ -850,7 +850,7 @@ describe('PasesDePersonaPage', () => {
     const texto = textoDe(fixture);
     expect(texto).toContain('este periodo del abono ya se renovo');
     expect(texto).toContain('hacelo sobre el periodo siguiente');
-    expect(boton(fixture, 'Activar la renovacion automatica de Abono yoga')).toBeNull();
+    expect(boton(fixture, 'Activar la renovacion automática de Abono yoga')).toBeNull();
   });
 
   it('sin pase:manage no ofrece configurar la renovacion', async () => {
@@ -861,7 +861,7 @@ describe('PasesDePersonaPage', () => {
     responderPases([ABONO_SIN]);
     await asentar(fixture);
     expect(textoDe(fixture)).toContain('No se renueva solo.');
-    expect(boton(fixture, 'Activar la renovacion automatica de Abono yoga')).toBeNull();
+    expect(boton(fixture, 'Activar la renovacion automática de Abono yoga')).toBeNull();
   });
 
   function boton(

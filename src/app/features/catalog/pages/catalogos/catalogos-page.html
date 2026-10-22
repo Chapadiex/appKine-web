@@ -29,12 +29,12 @@
     <h2 id="titulo-nota-alcance">Hay dos catalogos en esta lista, y es a proposito</h2>
     <p>
       Los conceptos <b>de la plataforma</b> los mantiene AKINE y los ven todos los centros: son la
-      base comun para que un centro nuevo pueda trabajar el primer dia. No se pueden editar ni dar
-      de baja desde aca, y por eso sus filas no traen acciones.
+      base comun para que un centro nuevo pueda trabajar el primer día. No se pueden editar ni dar
+      de baja desde acá, y por eso sus filas no traen acciones.
     </p>
     <p>
       Los conceptos <b>de este centro</b> son tuyos: los das de alta vos, los ve solo tu
-      organizacion y los administras desde esta misma tabla. Si necesitas que algo entre al catalogo
+      organización y los administras desde esta misma tabla. Si necesitas que algo entre al catalogo
       comun, <a routerLink="/catalogo/solicitudes">pedilo a la plataforma</a>.
     </p>
   </section>
@@ -51,7 +51,7 @@
 
       <form [formGroup]="formularioAlta" (ngSubmit)="enviarAlta()" novalidate>
         <div class="campo">
-          <label for="alta-catalogo-codigo">Codigo</label>
+          <label for="alta-catalogo-codigo">Código</label>
           <input
             id="alta-catalogo-codigo"
             type="text"
@@ -71,7 +71,7 @@
               {{ errorAccion() }}
             </p>
           } @else if (mostrarErrorAlta('codigo')) {
-            <p class="campo__error" id="alta-catalogo-codigo-error">El codigo es obligatorio.</p>
+            <p class="campo__error" id="alta-catalogo-codigo-error">El código es obligatorio.</p>
           } @else {
             <p class="ayuda" id="alta-catalogo-codigo-ayuda">
               La clave estable con la que este concepto se referencia. Elegila pensando que no se
@@ -114,7 +114,7 @@
               [attr.aria-invalid]="mostrarErrorAlta('especialidadId') ? 'true' : null"
               aria-describedby="alta-catalogo-especialidad-ayuda"
             >
-              <option value="">Elegi una especialidad</option>
+              <option value="">Elegí una especialidad</option>
               @for (especialidad of especialidades(); track especialidad.id) {
                 <option [value]="especialidad.id">
                   {{ especialidad.name }} ({{ etiquetaDeAlcance(especialidad) }})
@@ -123,15 +123,15 @@
             </select>
             @if (mostrarErrorAlta('especialidadId')) {
               <p class="campo__error" role="alert">
-                Una practica siempre cuelga de una especialidad: elegi cual.
+                Una práctica siempre cuelga de una especialidad: elegí cual.
               </p>
             }
             <p class="ayuda" id="alta-catalogo-especialidad-ayuda">
-              Solo aparecen las especialidades <b>activas</b>: una practica no puede colgar de una
+              Solo aparecen las especialidades <b>activas</b>: una práctica no puede colgar de una
               dada de baja. Estan las de la plataforma y las de tu centro.
               @if (especialidades().length === 0) {
                 <b>
-                  No pudimos traer las especialidades. Recarga la pantalla; si sigue vacio, dala de
+                  No pudimos traer las especialidades. Recarga la pantalla; si sigue vacío, dala de
                   alta primero desde la solapa Especialidades.
                 </b>
               }
@@ -140,7 +140,7 @@
         }
 
         <div class="campo">
-          <label for="alta-catalogo-descripcion">Descripcion (opcional)</label>
+          <label for="alta-catalogo-descripcion">Descripción (opcional)</label>
           <input
             id="alta-catalogo-descripcion"
             type="text"
@@ -154,7 +154,7 @@
           <input id="alta-catalogo-desde" type="datetime-local" formControlName="validFrom" />
           <p class="ayuda">
             Sin fecha, rige desde ya. Con una fecha futura el concepto queda activo pero
-            <b>todavia sin vigencia</b>: no aparece en los selectores hasta ese momento.
+            <b>todavía sin vigencia</b>: no aparece en los selectores hasta ese momento.
           </p>
         </div>
 
@@ -199,7 +199,7 @@
           <input
             id="busqueda-catalogo"
             type="search"
-            placeholder="Buscar por nombre o codigo"
+            placeholder="Buscar por nombre o código"
             [value]="busqueda()"
             (input)="teclear($any($event.target).value)"
             autocomplete="off"
@@ -207,7 +207,7 @@
           />
         </div>
         <p class="visualmente-oculto" id="busqueda-catalogo-ayuda">
-          Busca por nombre y por codigo mientras escribis. No distingue mayusculas ni acentos.
+          Busca por nombre y por código mientras escribis. No distingue mayusculas ni acentos.
         </p>
       </div>
 
@@ -225,7 +225,7 @@
         </select>
         <p class="ayuda" id="filtro-estado-catalogo-ayuda">
           Los conceptos dados de baja no se borran: lo que ya se registro con ellos los sigue
-          referenciando y conserva su significado. Su codigo y su nombre, en cambio, quedan libres.
+          referenciando y conserva su significado. Su código y su nombre, en cambio, quedan libres.
         </p>
       </div>
 
@@ -266,10 +266,10 @@
         }
 
         @case ('sin-contexto') {
-          <p class="estado estado--vacio">Todavia no elegiste un consultorio.</p>
+          <p class="estado estado--vacio">Todavía no elegiste un consultorio.</p>
           <p class="ayuda">
-            El catalogo mezcla los conceptos de la plataforma con los de tu centro, asi que hay que
-            saber en cual estas trabajando. Tu sesion sigue abierta: solo falta elegir donde estas.
+            El catalogo mezcla los conceptos de la plataforma con los de tu centro, así que hay que
+            saber en cual estas trabajando. Tu sesión sigue abierta: solo falta elegir donde estas.
           </p>
           <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
         }
@@ -292,19 +292,19 @@
           } @else {
             <p class="ayuda">{{ totalConceptos() }} en total.</p>
 
-            <div class="tabla-scroll" tabindex="0" role="region" aria-label="Catalogo clinico">
+            <div class="tabla-scroll" tabindex="0" role="region" aria-label="Catalogo clínico">
               <table class="tabla">
                 <caption class="visualmente-oculto">
                   {{
                     tipoActual.plural
                   }}
-                  disponibles para este centro, con su codigo, de quien son, su estado y sus
+                  disponibles para este centro, con su código, de quien son, su estado y sus
                   acciones.
                 </caption>
                 <thead>
                   <tr>
                     <th scope="col">Nombre</th>
-                    <th scope="col">Codigo</th>
+                    <th scope="col">Código</th>
                     <th scope="col">De quien es</th>
                     <th scope="col">Estado</th>
                     <th scope="col">Acciones</th>
@@ -407,21 +407,21 @@
                                 <p class="campo__error">El nombre es obligatorio.</p>
                               } @else {
                                 <p class="ayuda">
-                                  Renombrar no cambia lo que ya quedo registrado: el codigo es la
+                                  Renombrar no cambia lo que ya quedo registrado: el código es la
                                   clave estable y no se edita.
                                 </p>
                               }
                             </div>
 
                             <div class="campo">
-                              <label for="editar-catalogo-descripcion">Descripcion</label>
+                              <label for="editar-catalogo-descripcion">Descripción</label>
                               <input
                                 id="editar-catalogo-descripcion"
                                 type="text"
                                 formControlName="descripcion"
                                 autocomplete="off"
                               />
-                              <p class="ayuda">Vaciar el campo borra la descripcion.</p>
+                              <p class="ayuda">Vaciar el campo borra la descripción.</p>
                             </div>
 
                             <div class="campo">
@@ -453,7 +453,7 @@
                                 Sacarle el fin de vigencia
                               </label>
                               <p class="ayuda" id="editar-catalogo-sin-fin-ayuda">
-                                Dejar el campo vacio significa <b>no lo toques</b>. Para que el
+                                Dejar el campo vacío significa <b>no lo toques</b>. Para que el
                                 concepto pase a no vencer nunca hay que marcar esto.
                               </p>
                             </div>
@@ -535,8 +535,8 @@
     <h1>Ese catálogo no existe</h1>
     <app-ayuda titulo="Sobre esta pantalla">
       <p>
-        La direccion que abriste no corresponde a ninguno de los tres catalogos clinicos. Puede que
-        el enlace este mal escrito, o que venga de una version anterior de la aplicacion.
+        La dirección que abriste no corresponde a ninguno de los tres catalogos clínicos. Puede que
+        el enlace este mal escrito, o que venga de una versión anterior de la aplicacion.
       </p>
     </app-ayuda>
   </div>

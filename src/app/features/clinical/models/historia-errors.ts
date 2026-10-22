@@ -29,30 +29,30 @@ export interface ErrorHistoria {
 
 const MENSAJES: Readonly<Record<CausaHistoria, string>> = {
   'requiere-justificacion':
-    'No figura que atiendas a esta persona en esta sede, asi que para ver su historia clinica ' +
-    'tenes que declarar el motivo. El acceso queda registrado con ese motivo.',
+    'No figura que atiendas a esta persona en esta sede, así que para ver su historia clínica ' +
+    'tenés que declarar el motivo. El acceso queda registrado con ese motivo.',
   'sin-permiso':
-    'No tenes permiso para ver historias clinicas en esta sede. Pediselo a quien administra el centro.',
+    'No tenés permiso para ver historias clínicas en esta sede. Pediselo a quien administra el centro.',
   'sin-contexto':
-    'Para ver una historia clinica hay que saber en que sede estas. Eligi una organizacion y un ' +
-    'consultorio, y volve a entrar.',
-  'sin-historia': 'Esta persona todavia no tiene historia clinica en la organizacion.',
+    'Para ver una historia clínica hay que saber en que sede estas. Eligi una organización y un ' +
+    'consultorio, y volvé a entrar.',
+  'sin-historia': 'Esta persona todavía no tiene historia clínica en la organización.',
   'no-encontrado':
-    'Eso no existe o no es de esta organizacion. Volve a cargar la historia para ver el estado actual.',
+    'Eso no existe o no es de esta organización. Volvé a cargar la historia para ver el estado actual.',
   'version-vieja':
-    'Alguien enmendo esta entrada despues de que la abriste. No pisamos su correccion ni perdimos ' +
-    'la tuya: relee la entrada y volve a enmendar sobre la version nueva.',
+    'Alguien enmendo esta entrada después de que la abriste. No pisamos su correccion ni perdimos ' +
+    'la tuya: relee la entrada y volvé a enmendar sobre la versión nueva.',
   'cursor-invalido':
     'No se pudo seguir paginando el timeline. Lo volvimos a cargar desde el principio.',
   'archivo-no-aceptado':
-    'El archivo no se acepto: el tipo o el tamano no estan permitidos para un adjunto clinico.',
+    'El archivo no se acepto: el tipo o el tamano no estan permitidos para un adjunto clínico.',
   'adjunto-no-disponible':
     'El archivo no esta disponible en el almacenamiento, aunque su registro existe. Avisale a ' +
     'quien administra el sistema: no es algo que se resuelva reintentando.',
   validacion: 'El servidor rechazo un dato. Revisa lo que escribiste.',
-  limite: 'Demasiados pedidos seguidos. Espera un momento y volve a intentar.',
-  red: 'No se pudo contactar al servidor. Revisa la conexion y volve a intentar.',
-  otro: 'No pudimos completar la operacion. Volve a intentar en un momento.',
+  limite: 'Demasiados pedidos seguidos. Espera un momento y volvé a intentar.',
+  red: 'No se pudo contactar al servidor. Revisa la conexion y volvé a intentar.',
+  otro: 'No pudimos completar la operación. Volvé a intentar en un momento.',
 };
 
 /**

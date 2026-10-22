@@ -146,7 +146,7 @@ test.describe('Reprogramar una clase contra el backend real', () => {
       'https://akine.app/problems/concurrent-modification',
     );
     await expect(
-      page.getByRole('alert').filter({ hasText: 'No se pudo completar la operacion' }),
+      page.getByRole('alert').filter({ hasText: 'No se pudo completar la operación' }),
     ).toBeVisible();
 
     const despues = await api.exigir<ClaseLeida>('GET', ruta);

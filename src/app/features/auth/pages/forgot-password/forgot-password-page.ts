@@ -15,8 +15,8 @@ import { Icono } from '../../../../shared/components/icono/icono';
  * verificador de direcciones.
  */
 export const MENSAJE_UNIFORME_RESET =
-  'Si el email esta registrado, te llega un correo con el enlace para poner una contrasena ' +
-  'nueva. Revisa tambien la carpeta de correo no deseado.';
+  'Si el email esta registrado, te llega un correo con el enlace para poner una contraseña ' +
+  'nueva. Revisa también la carpeta de correo no deseado.';
 
 /** Pedido de restablecimiento de contrasena (M02, AKINE-01.02). */
 @Component({

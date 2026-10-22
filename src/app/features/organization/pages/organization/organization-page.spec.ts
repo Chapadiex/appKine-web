@@ -101,7 +101,7 @@ describe('OrganizationPage', () => {
     expect(texto(fixture)).toContain('horarios de los profesionales');
   });
 
-  it('avisa cuando la organizacion esta dada de baja', async () => {
+  it('avisa cuando la organización esta dada de baja', async () => {
     tenantContext.select({ organizationId: 1, organizationName: 'Belgrano' });
     const fixture = TestBed.createComponent(OrganizationPage);
     fixture.detectChanges();
@@ -195,7 +195,7 @@ describe('OrganizationPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect(texto(fixture)).toContain('No encontramos esta organizacion');
+    expect(texto(fixture)).toContain('No encontramos esta organización');
   });
 
   it('ante otro error del servidor muestra el detail del backend', async () => {

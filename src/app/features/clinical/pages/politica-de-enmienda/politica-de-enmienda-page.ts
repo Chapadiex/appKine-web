@@ -94,7 +94,7 @@ export class PoliticaDeEnmiendaPage {
         this.adoptar(politica);
         this.exito.set(
           `Listo: las sesiones se pueden enmendar durante ${politica.ventanaDias ?? this.dias()} ` +
-            'dias desde su cierre, tambien las que ya estaban cerradas.',
+            'días desde su cierre, también las que ya estaban cerradas.',
         );
       },
       error: (error: unknown) => {
@@ -121,7 +121,7 @@ function traducirErrorDePolitica(error: unknown): ErrorAtencion {
     ? {
         ...traducido,
         mensaje:
-          'La ventana de enmienda la fija quien administra la organizacion. Tu cuenta no tiene ' +
+          'La ventana de enmienda la fija quien administra la organización. Tu cuenta no tiene ' +
           'ese alcance en este contexto.',
       }
     : traducido;

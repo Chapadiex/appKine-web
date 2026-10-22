@@ -28,7 +28,7 @@ describe('etiquetas de los enumerados', () => {
     expect(MODALIDADES_DE_CONVENIO.every((opcion) => opcion.ayuda.length > 0)).toBe(true);
   });
 
-  it('un codigo desconocido se muestra crudo en vez de desaparecer', () => {
+  it('un código desconocido se muestra crudo en vez de desaparecer', () => {
     // Si el backend agrega un valor antes que el frontend, la celda tiene que decir algo. Un
     // guion o un vacio dejaria la fila sin explicacion y parecerian datos corruptos.
     expect(etiquetaDeTipo('PREPAGA')).toBe('Prepaga');
@@ -39,7 +39,7 @@ describe('etiquetas de los enumerados', () => {
     expect(etiquetaDeModalidad('POR_MODULO_NUEVO')).toBe('POR_MODULO_NUEVO');
   });
 
-  it('el codigo acompana al nombre, salvo cuando seria repetirlo', () => {
+  it('el código acompana al nombre, salvo cuando seria repetirlo', () => {
     expect(enUnaLinea({ codigo: '410', nombre: 'OSDE' })).toBe('OSDE (410)');
     expect(enUnaLinea({ codigo: 'OSDE', nombre: 'OSDE' })).toBe('OSDE');
     expect(enUnaLinea({ nombre: 'OSDE' })).toBe('OSDE');
@@ -47,7 +47,7 @@ describe('etiquetas de los enumerados', () => {
 });
 
 describe('importes', () => {
-  it('sin moneda no se muestra un numero pelado', () => {
+  it('sin moneda no se muestra un número pelado', () => {
     // Importe y moneda viajan juntos o no viajan: un importe sin moneda no es un importe, y este
     // SaaS va a operar en más de un pais.
     expect(importeEnPalabras(1500, 'ARS')).toBe('ARS 1500.00');

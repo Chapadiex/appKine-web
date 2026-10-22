@@ -204,7 +204,7 @@ export class DerivarParticipante {
 
   protected etiquetaDeCaso(caso: CasoAdministrativoResponse): string {
     const partes = [
-      caso.numeroCaso === undefined ? 'Caso clinico sin numero' : `Caso clinico ${caso.numeroCaso}`,
+      caso.numeroCaso === undefined ? 'Caso clínico sin número' : `Caso clínico ${caso.numeroCaso}`,
     ];
     const apertura = instanteEnPalabras(caso.abiertoEn);
     if (apertura !== '') {

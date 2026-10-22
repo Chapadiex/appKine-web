@@ -113,7 +113,7 @@ test.describe('Atencion clinica contra el backend real', () => {
 
     await examen.getByLabel('Valor en grados').fill('95');
     await examen.getByRole('button', { name: 'Registrar la medición' }).click();
-    await expect(examen.getByRole('status')).toContainText('Medicion registrada');
+    await expect(examen.getByRole('status')).toContainText('Medición registrada');
     const filaRom = examen.getByRole('row').filter({ hasText: `Flexion de rodilla E2E ${sufijo}` });
     await expect(filaRom).toContainText('95 grados');
     await expect(filaRom).toContainText('Derecha');
@@ -142,7 +142,7 @@ test.describe('Atencion clinica contra el backend real', () => {
     expect((await borrador).ok()).toBe(true);
 
     // --- Cierre --------------------------------------------------------------------------------
-    await page.getByRole('radio', { name: 'Vino a la sesion' }).check();
+    await page.getByRole('radio', { name: 'Vino a la sesión' }).check();
     await page.getByLabel('Nota de cierre').fill('Movilidad y fisioterapia, buena tolerancia.');
     await page.getByRole('button', { name: 'Cerrar la atención' }).click();
     await expect(page.getByRole('heading', { name: 'Atención cerrada' })).toBeVisible();

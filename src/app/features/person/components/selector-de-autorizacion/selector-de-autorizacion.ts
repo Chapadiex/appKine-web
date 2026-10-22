@@ -133,7 +133,7 @@ export class SelectorDeAutorizacion {
 
   protected nombreDePractica(practicaId: number | undefined): string {
     const practica = this.practicas().find((candidata) => candidata.id === practicaId);
-    return practica?.name ?? `Practica #${practicaId ?? '?'}`;
+    return practica?.name ?? `Práctica #${practicaId ?? '?'}`;
   }
 
   /**
@@ -147,6 +147,6 @@ export class SelectorDeAutorizacion {
     if (elegida === null || candidata.habilita !== true || candidata.id === elegida.id) {
       return '';
     }
-    return `Tambien sirve, pero vence despues que la ${elegida.numero ?? `#${elegida.id}`}: se usa cuando esa se agote o venza.`;
+    return `También sirve, pero vence después que la ${elegida.numero ?? `#${elegida.id}`}: se usa cuando esa se agote o venza.`;
   }
 }

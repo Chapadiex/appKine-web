@@ -99,7 +99,7 @@ describe('traducirErrorCatalogo', () => {
         referenceCount: 12,
       }),
     );
-    expect(conDatos.mensaje).toContain('12 practicas');
+    expect(conDatos.mensaje).toContain('12 prácticas');
 
     // Y si no los manda, el mensaje sigue siendo accionable en vez de romperse.
     const sinDatos = traducirErrorCatalogo(problema(409, 'catalogo-has-active-references'));

@@ -54,7 +54,7 @@ export function nombreDeVinculo(vinculo: MembershipResponse | undefined): string
  */
 export function textoDeProfesionales(cantidad: number): string {
   if (cantidad <= 0) {
-    return 'ningun profesional vinculado hoy a la sede';
+    return 'ningún profesional vinculado hoy a la sede';
   }
   if (cantidad === 1) {
     return '1 profesional';
@@ -106,6 +106,6 @@ export function esListaCompleta(respuesta: {
  * entender por que pasa y que no es un error de sus datos.
  */
 export const TEXTO_LISTA_INCOMPLETA =
-  `Esta organizacion tiene mas de ${TOPE_DE_VINCULOS} vinculos y aca se muestran solo los ` +
-  'primeros, asi que la lista puede estar incompleta. Si no encontras a alguien, no significa ' +
+  `Esta organización tiene mas de ${TOPE_DE_VINCULOS} vinculos y acá se muestran solo los ` +
+  'primeros, así que la lista puede estar incompleta. Si no encontras a alguien, no significa ' +
   'que no este vinculado a esta sede.';

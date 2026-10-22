@@ -7,7 +7,7 @@ describe('nuevaClaveDeIntento', () => {
     expect(claves.size).toBe(3);
   });
 
-  it('genera una clave no vacia', () => {
+  it('genera una clave no vacía', () => {
     expect(nuevaClaveDeIntento().length).toBeGreaterThan(10);
   });
 

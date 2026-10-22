@@ -18,7 +18,7 @@ describe('dinero', () => {
     expect(sumaDeCentavos(medios)).toBe(centavosDeTexto('0,30'));
   });
 
-  it('parsea desde el TEXTO, que es donde el flotante todavia no rompio nada', () => {
+  it('parsea desde el TEXTO, que es donde el flotante todavía no rompio nada', () => {
     // `Number('0.29') * 100` da 28.999999999999996: el valor ya se perdio antes de sumar.
     expect(centavosDeTexto('0.29')).toBe(29);
     expect(centavosDeTexto('8500,50')).toBe(850050);

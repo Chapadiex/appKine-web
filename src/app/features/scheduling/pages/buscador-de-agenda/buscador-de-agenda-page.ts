@@ -375,7 +375,7 @@ export class BuscadorDeAgendaPage {
       })
       .catch((error: unknown) => {
         console.error('No se pudo abrir la pantalla de reserva', error);
-        this.error.set('No pudimos abrir la pantalla de reserva. Volve a intentar.');
+        this.error.set('No pudimos abrir la pantalla de reserva. Volvé a intentar.');
       });
   }
 

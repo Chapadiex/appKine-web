@@ -226,7 +226,7 @@ export class FichaDePersonaPage {
       // peticion: el backend responderia 400 y el mensaje hablaria de un parametro, no de lo que
       // el usuario hizo.
       this.cargando.set(false);
-      this.errorDeCarga.set('La direccion no identifica a ninguna persona del padron.');
+      this.errorDeCarga.set('La dirección no identifica a ninguna persona del padron.');
       return;
     }
 
@@ -295,7 +295,7 @@ export class FichaDePersonaPage {
       next: (actualizada) => {
         this.terminar(
           `${nombreCompleto(actualizada)} ya no tiene perfil de paciente. Su ficha sigue vigente: ` +
-            'puede seguir participando de actividades no clinicas.',
+            'puede seguir participando de actividades no clínicas.',
         );
       },
       error: (error: unknown) => this.fallo(error),

@@ -58,7 +58,7 @@ const ROLES = [
   { codigo: 'PROFESIONAL', etiqueta: 'Profesional' },
   { codigo: 'ADMINISTRATIVO', etiqueta: 'Administrativo' },
   { codigo: 'CONSULTORIO_ADMIN', etiqueta: 'Administrador de la sede' },
-  { codigo: 'ORG_ADMIN', etiqueta: 'Administrador de la organizacion' },
+  { codigo: 'ORG_ADMIN', etiqueta: 'Administrador de la organización' },
 ] as const;
 
 /**
@@ -346,7 +346,7 @@ export class InvitacionesPage {
         next: () => {
           this.cerrarPaneles();
           this.exito.set(
-            'La invitacion salio por correo. Va a figurar como pendiente hasta que la persona ' +
+            'La invitación salio por correo. Va a figurar como pendiente hasta que la persona ' +
               'responda: el vinculo se crea cuando acepta, no ahora.',
           );
           this.filtro.set('PENDIENTE');
@@ -378,8 +378,8 @@ export class InvitacionesPage {
       next: () => {
         this.enviando.set(false);
         this.exito.set(
-          'Le mandamos un enlace nuevo. El anterior dejo de servir en el mismo acto, asi que si ' +
-            'todavia tenia el correo viejo abierto, tiene que usar el ultimo.',
+          'Le mandamos un enlace nuevo. El anterior dejo de servir en el mismo acto, así que si ' +
+            'todavía tenia el correo viejo abierto, tiene que usar el último.',
         );
         this.cargar();
       },
@@ -409,7 +409,7 @@ export class InvitacionesPage {
         next: () => {
           this.cerrarPaneles();
           this.exito.set(
-            'La invitacion quedo cancelada y su enlace dejo de servir. Podes volver a invitar a ' +
+            'La invitación quedo cancelada y su enlace dejo de servir. Podés volver a invitar a ' +
               'esa persona mas adelante.',
           );
           this.cargar();

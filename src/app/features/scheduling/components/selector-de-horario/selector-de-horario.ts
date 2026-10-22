@@ -28,7 +28,7 @@ export class SelectorDeHorario {
   /** `desde` del slot elegido, o vacio. */
   readonly elegido = input('');
   readonly faltaHorario = input(false);
-  readonly textoFaltaHorario = input('Elegi el horario destino antes de mover el turno.');
+  readonly textoFaltaHorario = input('Elegí el horario destino antes de mover el turno.');
 
   readonly diaCambiado = output<string>();
   readonly slotElegido = output<SlotDisponible>();

@@ -61,25 +61,25 @@ export interface ErrorExcepcion extends MensajeTraducido<CausaExcepcion> {
   readonly maximoDias: number;
 }
 
-const MENSAJE_GENERICO = 'No pudimos completar la operacion. Volve a intentar en un momento.';
-const MENSAJE_DE_RED = 'No se pudo contactar al servidor. Revisa tu conexion y volve a intentar.';
+const MENSAJE_GENERICO = 'No pudimos completar la operación. Volvé a intentar en un momento.';
+const MENSAJE_DE_RED = 'No se pudo contactar al servidor. Revisa tu conexion y volvé a intentar.';
 const MENSAJE_LIMITE_SIN_PLAZO =
   'Demasiados intentos. Espera un momento antes de volver a intentar.';
 
 const MENSAJE_SIN_CONTEXTO =
-  'Los cierres, las aperturas y los feriados son de una sede concreta y todavia no elegiste ' +
+  'Los cierres, las aperturas y los feriados son de una sede concreta y todavía no elegiste ' +
   'ninguna. Eligi un consultorio para verlos y editarlos.';
 
 const MENSAJE_SIN_PERMISO =
-  'No tenes permiso para administrar los cierres y las aperturas de esta sede. Pediselo a quien ' +
+  'No tenés permiso para administrar los cierres y las aperturas de esta sede. Pediselo a quien ' +
   'la administra.';
 
 const MENSAJE_NO_ENCONTRADO =
-  'Esa excepcion ya no existe o pertenece a otra sede. Recarga la ventana para ver las que hay ' +
+  'Esa excepción ya no existe o pertenece a otra sede. Recarga la ventana para ver las que hay ' +
   'ahora.';
 
 const MENSAJE_YA_INACTIVA =
-  'Esa excepcion ya estaba dada de baja, seguramente por otra persona. Recarga la ventana para ' +
+  'Esa excepción ya estaba dada de baja, seguramente por otra persona. Recarga la ventana para ' +
   'ver como quedo. No es lo mismo que no existir: la fila sigue ahi, con su motivo y su autor.';
 
 /**
@@ -94,13 +94,13 @@ const MENSAJE_SEDE_INACTIVA =
   'pueden dar de baja, que es con lo que se ordena el calendario de un centro que cierra.';
 
 const MENSAJE_NO_VINCULADO =
-  'Ese profesional no tiene un vinculo vigente que lo habilite a atender en esta sede, asi que ' +
-  'no se le puede cargar una excepcion aca. Revisalo en Colaboradores: puede estar acotado a ' +
+  'Ese profesional no tiene un vinculo vigente que lo habilite a atender en esta sede, así que ' +
+  'no se le puede cargar una excepción acá. Revisalo en Colaboradores: puede estar acotado a ' +
   'otra sede, suspendido o vencido.';
 
 const MENSAJE_SUSCRIPCION_SUSPENDIDA =
-  'La suscripcion de la organizacion esta suspendida, asi que no se pueden registrar cambios. ' +
-  'Se resuelve desde la pantalla de suscripcion.';
+  'La suscripción de la organización esta suspendida, así que no se pueden registrar cambios. ' +
+  'Se resuelve desde la pantalla de suscripción.';
 
 /** Traduce cualquier error de las pantallas de excepciones y de calendario de la sede. */
 export function traducirErrorExcepcion(error: unknown): ErrorExcepcion {
@@ -117,7 +117,7 @@ export function traducirErrorExcepcion(error: unknown): ErrorExcepcion {
     return {
       ...base(
         segundos > 0
-          ? `Demasiados intentos. Espera ${segundos} segundos y volve a intentar.`
+          ? `Demasiados intentos. Espera ${segundos} segundos y volvé a intentar.`
           : MENSAJE_LIMITE_SIN_PLAZO,
         'limite',
       ),
@@ -177,8 +177,8 @@ function mensajeDeVentana(maximoDias: number): string {
     return 'La ventana que pediste es demasiado larga. Consulta un periodo mas corto.';
   }
   return (
-    `La ventana que pediste es demasiado larga: el maximo es de ${maximoDias} dias. ` +
-    'Acorta el periodo y volve a consultar.'
+    `La ventana que pediste es demasiado larga: el máximo es de ${maximoDias} días. ` +
+    'Acorta el periodo y volvé a consultar.'
   );
 }
 

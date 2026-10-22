@@ -114,8 +114,8 @@ export function explicacionDeVacio(
       return {
         titulo: nombreDelFeriado(dia),
         detalle:
-          'La sede cierra los feriados de su calendario, asi que el horario habitual no se ' +
-          'aplica. Si este feriado en particular se atiende, se carga una apertura para ese dia.',
+          'La sede cierra los feriados de su calendario, así que el horario habitual no se ' +
+          'aplica. Si este feriado en particular se atiende, se carga una apertura para ese día.',
         enlace: {
           ruta: RUTA_HORARIOS_CALENDARIO,
           texto: 'Ver los feriados de la sede',
@@ -141,9 +141,9 @@ export function explicacionDeVacio(
 
     case RAZON_VACIO_VINCULO:
       return {
-        titulo: `${nombreDelProfesional} no estaba vinculado a la sede ese dia.`,
+        titulo: `${nombreDelProfesional} no estaba vinculado a la sede ese día.`,
         detalle:
-          'No es que no atienda ese dia de la semana: ese dia todavia no se habia incorporado, ' +
+          'No es que no atienda ese día de la semana: ese día todavía no se habia incorporado, ' +
           'o ya se habia desvinculado. Su horario semanal puede estar cargado igual, y no ' +
           'aplica fuera de la vigencia del vinculo.',
         enlace: {
@@ -157,10 +157,10 @@ export function explicacionDeVacio(
       // `null` -o cualquier cosa que no reconozcamos- es la AUSENCIA de reglas: ninguna abrio
       // el dia. Ofrecer aca un cierre para dar de baja mandaria a buscar algo que no existe.
       return {
-        titulo: 'No trabaja ese dia.',
+        titulo: 'No trabaja ese día.',
         detalle:
-          'Ninguna regla abre ese dia: no hay bloque del horario semanal que lo cubra ni ' +
-          'apertura que lo habilite. No hay ningun cierre ni feriado de por medio.',
+          'Ninguna regla abre ese día: no hay bloque del horario semanal que lo cubra ni ' +
+          'apertura que lo habilite. No hay ningún cierre ni feriado de por medio.',
         enlace: {
           ruta: RUTA_HORARIOS,
           texto: 'Ver el horario semanal',
@@ -183,9 +183,9 @@ function nombreDelFeriado(dia: DiaEfectivoResponse): string {
 function detalleDelCierre(dia: DiaEfectivoResponse): string {
   const regla = dia.reglaVacio;
   if (regla === undefined || regla === null) {
-    return 'Una excepcion de cierre cubre el dia entero.';
+    return 'Una excepción de cierre cubre el día entero.';
   }
-  return `La excepcion de cierre numero ${regla} cubre el dia entero.`;
+  return `La excepción de cierre número ${regla} cubre el día entero.`;
 }
 
 /**
@@ -197,7 +197,7 @@ function detalleDelCierre(dia: DiaEfectivoResponse): string {
  */
 export function etiquetaDeOrigen(franja: FranjaResueltaResponse): string {
   const id = franja.reglaId;
-  const referencia = id === undefined || id === null ? '' : ` numero ${id}`;
+  const referencia = id === undefined || id === null ? '' : ` número ${id}`;
   if (franja.origen === FranjaResueltaResponseOrigenEnum.APERTURA) {
     return `La produjo una apertura puntual${referencia}.`;
   }
@@ -215,7 +215,7 @@ export function textoDeRecorte(franja: FranjaResueltaResponse): string | null {
   }
   return (
     'Recortada por un cierre: la franja termina antes de lo que dice la regla que la produjo. ' +
-    'El resto del tramo quedo tapado por esa excepcion.'
+    'El resto del tramo quedo tapado por esa excepción.'
   );
 }
 

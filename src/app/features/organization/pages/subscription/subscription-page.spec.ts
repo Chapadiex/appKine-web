@@ -73,7 +73,7 @@ describe('SubscriptionPage', () => {
     httpMock.expectOne(URL_SUSCRIPCION).flush(SUSCRIPCION_ACTIVA);
   });
 
-  it('con la suscripcion ACTIVA muestra plan y limites con su uso, sin pedir el historico', async () => {
+  it('con la suscripción ACTIVA muestra plan y limites con su uso, sin pedir el historico', async () => {
     seleccionar();
     const fixture = await cargarCon(SUSCRIPCION_ACTIVA);
 
@@ -98,7 +98,7 @@ describe('SubscriptionPage', () => {
     expect(fixture.nativeElement.querySelector('.excedido')).toBeTruthy();
   });
 
-  it('sin limites declarados lo dice, en vez de mostrar una tabla vacia', async () => {
+  it('sin limites declarados lo dice, en vez de mostrar una tabla vacía', async () => {
     seleccionar();
     const fixture = await cargarCon({ ...SUSCRIPCION_ACTIVA, limits: [] });
 
@@ -106,7 +106,7 @@ describe('SubscriptionPage', () => {
     expect(fixture.nativeElement.querySelector('table')).toBeNull();
   });
 
-  it('con la suscripcion SUSPENDIDA muestra el motivo del historico y avisa de solo lectura', async () => {
+  it('con la suscripción SUSPENDIDA muestra el motivo del historico y avisa de solo lectura', async () => {
     seleccionar();
     const fixture = TestBed.createComponent(SubscriptionPage);
     fixture.detectChanges();
@@ -132,7 +132,7 @@ describe('SubscriptionPage', () => {
     expect(fixture.nativeElement.querySelector('[role="alert"]')).toBeTruthy();
   });
 
-  it('si el historico falla igual se pinta la suscripcion, sin el motivo', async () => {
+  it('si el historico falla igual se pinta la suscripción, sin el motivo', async () => {
     seleccionar();
     const fixture = TestBed.createComponent(SubscriptionPage);
     fixture.detectChanges();
@@ -155,7 +155,7 @@ describe('SubscriptionPage', () => {
     expect(texto(fixture)).toContain('Basico');
   });
 
-  it('con la suscripcion CANCELADA lo dice como estado final', async () => {
+  it('con la suscripción CANCELADA lo dice como estado final', async () => {
     seleccionar();
     const fixture = await cargarCon({ ...SUSCRIPCION_ACTIVA, status: 'CANCELADA' });
 
@@ -186,7 +186,7 @@ describe('SubscriptionPage', () => {
     expect(texto(fixture)).toContain('Suscripción activa');
   });
 
-  it('un 403 de administracion explica el permiso, no habla de sesion', async () => {
+  it('un 403 de administracion explica el permiso, no habla de sesión', async () => {
     seleccionar();
     const fixture = TestBed.createComponent(SubscriptionPage);
     fixture.detectChanges();
@@ -235,7 +235,7 @@ describe('SubscriptionPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect(texto(fixture)).toContain('No encontramos esta organizacion');
+    expect(texto(fixture)).toContain('No encontramos esta organización');
   });
 
   it('ante otro error del servidor muestra el detail del backend', async () => {
@@ -246,14 +246,14 @@ describe('SubscriptionPage', () => {
     httpMock.expectOne(URL_SUSCRIPCION).flush(
       {
         type: 'https://akine.app/problems/internal-error',
-        detail: 'Fallo al leer la suscripcion',
+        detail: 'Fallo al leer la suscripción',
       },
       { status: 500, statusText: 'Internal Server Error' },
     );
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect(texto(fixture)).toContain('Fallo al leer la suscripcion');
+    expect(texto(fixture)).toContain('Fallo al leer la suscripción');
   });
 
   // --- Accesibilidad ---------------------------------------------------------------
@@ -273,7 +273,7 @@ describe('SubscriptionPage', () => {
   );
 
   it(
-    'no tiene violaciones de axe con el banner de suscripcion suspendida',
+    'no tiene violaciones de axe con el banner de suscripción suspendida',
     async () => {
       seleccionar();
       const fixture = TestBed.createComponent(SubscriptionPage);

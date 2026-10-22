@@ -133,26 +133,26 @@ export function hallazgoEnPalabras(hallazgo: string | undefined): string {
     case ReparoDePresentacionHallazgoEnum.FINANCIADOR_DISTINTO:
       return 'La deuda es de otro financiador.';
     case ReparoDePresentacionHallazgoEnum.SEDE_DISTINTA:
-      return 'La prestacion se dio en otra sede, y el convenio es de la sede.';
+      return 'La prestación se dio en otra sede, y el convenio es de la sede.';
     case ReparoDePresentacionHallazgoEnum.FUERA_DEL_PERIODO:
-      return 'La prestacion cae fuera del periodo del lote.';
+      return 'La prestación cae fuera del periodo del lote.';
     case ReparoDePresentacionHallazgoEnum.MONEDA_DISTINTA:
       return 'La deuda esta en otra moneda que el lote.';
     case ReparoDePresentacionHallazgoEnum.SIN_ORDEN:
       return (
         'El convenio exigia orden medica y el paciente no tenia una vigente para esa cobertura el ' +
-        'dia de la prestacion. Cargala en la ficha del paciente (ordenes y autorizaciones) o quita ' +
-        'la prestacion del lote.'
+        'día de la prestación. Cargala en la ficha del paciente (ordenes y autorizaciones) o quita ' +
+        'la prestación del lote.'
       );
     case ReparoDePresentacionHallazgoEnum.SIN_AUTORIZACION:
       return (
-        'El convenio exigia autorizacion y no hay una aprobada de esa cobertura y practica que ' +
-        'cubra el dia de la prestacion. Cargala en la ficha del paciente (ordenes y ' +
-        'autorizaciones) o quita la prestacion del lote.'
+        'El convenio exigia autorización y no hay una aprobada de esa cobertura y práctica que ' +
+        'cubra el día de la prestación. Cargala en la ficha del paciente (ordenes y ' +
+        'autorizaciones) o quita la prestación del lote.'
       );
     case ReparoDePresentacionHallazgoEnum.CREDENCIAL_FALTANTE:
       return (
-        'La credencial estaba vencida el dia de la prestacion, o la cobertura no tiene numero de ' +
+        'La credencial estaba vencida el día de la prestación, o la cobertura no tiene número de ' +
         'afiliado. No impide presentar, pero el financiador puede debitarla: regularizala en la ' +
         'ficha del paciente.'
       );

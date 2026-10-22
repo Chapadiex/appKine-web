@@ -334,8 +334,8 @@ export class RecepcionDelDiaPage {
       turno,
       (c, t) => this.api.registrarLlegada(c, t),
       () =>
-        `Llegada registrada para ${nombre(turno)}. Falta validar como se atiende; la atencion se ` +
-        'registra desde la pantalla clinica.',
+        `Llegada registrada para ${nombre(turno)}. Falta validar como se atiende; la atención se ` +
+        'registra desde la pantalla clínica.',
       true,
     );
   }
@@ -348,8 +348,8 @@ export class RecepcionDelDiaPage {
       (recepcion) =>
         recepcion.estado === RecepcionEstadoEnum.OBSERVADA
           ? `La validacion de ${nombre(turno)} quedo observada. No impide pasar a espera; ` +
-            'tambien se puede continuar como Particular.'
-          : `Recepcion de ${nombre(turno)} validada: ya se sabe como se atiende.`,
+            'también se puede continuar como Particular.'
+          : `Recepción de ${nombre(turno)} validada: ya se sabe como se atiende.`,
     );
   }
 
@@ -361,7 +361,7 @@ export class RecepcionDelDiaPage {
         `${nombre(turno)} paso a la sala de espera: aguarda ser llamado.` +
         // El prepago pendiente avisa y no bloquea (DP-06): el servidor deja constancia en el evento.
         (this.prepagoPendiente(turno)
-          ? ' Paso sin el prepago que exige la prestacion; quedo registrado en la recepcion.'
+          ? ' Paso sin el prepago que exige la prestación; quedo registrado en la recepción.'
           : ''),
     );
   }
@@ -371,8 +371,8 @@ export class RecepcionDelDiaPage {
       turno,
       (c, t) => this.api.llamar(c, t, versionDe(turno)),
       () =>
-        `${nombre(turno)} fue llamado. Llamar no registra la atencion: eso lo hace la Sesion, ` +
-        'desde la pantalla clinica.',
+        `${nombre(turno)} fue llamado. Llamar no registra la atención: eso lo hace la Sesión, ` +
+        'desde la pantalla clínica.',
     );
   }
 
@@ -410,7 +410,7 @@ export class RecepcionDelDiaPage {
         (c, t) => this.api.retirarRecepcion(c, t, { expectedVersion: versionDe(turno), motivo }),
         () =>
           `${nombre(turno)} se retiro sin ser atendido. La llegada consta y el turno no cambia; ` +
-          'si vuelve, la atencion se puede abrir igual desde la pantalla clinica.',
+          'si vuelve, la atención se puede abrir igual desde la pantalla clínica.',
       );
     } else {
       this.transicion(
@@ -418,7 +418,7 @@ export class RecepcionDelDiaPage {
         (c, t) => this.api.anularRecepcion(c, t, { expectedVersion: versionDe(turno), motivo }),
         () =>
           `Llegada de ${nombre(turno)} anulada: el check-in fue un error y la llegada no vale. ` +
-          'Queda en el historial de la recepcion.',
+          'Queda en el historial de la recepción.',
       );
     }
     this.cerrarPanel();

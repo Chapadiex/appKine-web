@@ -25,7 +25,7 @@
       <app-ayuda titulo="Vender un pase">
         <p>
           Vender crea el pase con sus creditos y una deuda a nombre de la persona. No cobra: el pago
-          se registra despues, desde la cuenta corriente.
+          se registra después, desde la cuenta corriente.
         </p>
       </app-ayuda>
     </div>
@@ -57,11 +57,11 @@
             @if (abono(producto)) {
               <p class="ayuda">
                 Abono: cubre {{ creditos(producto.creditos) }} en un periodo de hasta
-                {{ producto.vigenciaDias }} dias, que se elige ahora.
+                {{ producto.vigenciaDias }} días, que se elige ahora.
               </p>
             } @else {
               <p class="ayuda">
-                Vale {{ producto.vigenciaDias }} dias desde hoy, contando el dia de hoy.
+                Vale {{ producto.vigenciaDias }} días desde hoy, contando el día de hoy.
               </p>
             }
           }
@@ -87,7 +87,7 @@
                 (input)="cambiarPeriodo('hasta', $any($event.target).value)"
               />
               <p class="ayuda" id="vender-periodo-hasta-ayuda">
-                Vacio: dura los {{ producto.vigenciaDias }} dias del producto.
+                Vacío: dura los {{ producto.vigenciaDias }} días del producto.
               </p>
             </div>
             <div class="campo">
@@ -102,9 +102,9 @@
                 Renovar automaticamente
               </label>
               <p class="ayuda" id="vender-renovacion-ayuda">
-                Unos dias antes de que termine el periodo, el sistema vende el siguiente con el
+                Unos días antes de que termine el periodo, el sistema vende el siguiente con el
                 precio del producto de ese momento y una deuda nueva. No cobra. Se puede apagar
-                despues.
+                después.
               </p>
             </div>
           }
@@ -228,7 +228,7 @@
           </p>
         } @else if (ajusteIntentado() && cantidadDelAjuste() === null) {
           <p class="estado estado--error" id="ajuste-cantidad-error">
-            Un numero entero distinto de cero.
+            Un número entero distinto de cero.
           </p>
         }
       </div>
@@ -373,7 +373,7 @@
                       </div>
                     } @else if (renovacionApagadaPorAutorizante(pase.renovacionOmitidaMotivo)) {
                       <div class="ayuda" role="note">
-                        La renovacion automatica se apago porque
+                        La renovacion automática se apago porque
                         @if (pase.renovacionAutorizadaPor) {
                           {{ pase.renovacionAutorizadaPor }}, quien la autorizo,
                         } @else {
@@ -385,7 +385,7 @@
                     } @else if (pase.renovacionOmitidaMotivo) {
                       <div class="ayuda">
                         No se pudo renovar: {{ pase.renovacionOmitidaMotivo }}. La renovacion
-                        automatica quedo apagada.
+                        automática quedo apagada.
                       </div>
                     } @else if (pase.estado !== 'ANULADO') {
                       <div class="ayuda">No se renueva solo.</div>

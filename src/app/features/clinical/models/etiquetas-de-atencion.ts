@@ -86,7 +86,7 @@ export const ESCALA_EVA: readonly number[] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
  * "presente" obligaria a dejar la atencion sin cerrar o a mentir.
  */
 export const ASISTENCIAS: readonly Opcion<CerrarSesionAsistenciaEnum>[] = [
-  { valor: CerrarSesionAsistenciaEnum.PRESENTE, etiqueta: 'Vino a la sesion' },
+  { valor: CerrarSesionAsistenciaEnum.PRESENTE, etiqueta: 'Vino a la sesión' },
   { valor: CerrarSesionAsistenciaEnum.AUSENTE, etiqueta: 'No vino' },
 ];
 

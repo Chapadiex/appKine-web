@@ -95,7 +95,7 @@ describe('BandejaDeSeriesPage', () => {
     TIMEOUT_AXE,
   );
 
-  it('filtra por estado y por persona, y vuelve a la primera pagina', async () => {
+  it('filtra por estado y por persona, y vuelve a la primera página', async () => {
     const fixture = await montar();
     esperarListado().flush(pagina([{ ...FILA, profesionalId: undefined }], 3));
     await asentar(fixture);
@@ -196,7 +196,7 @@ describe('BandejaDeSeriesPage', () => {
         (fixture.nativeElement as HTMLElement).querySelectorAll('button'),
       ) as HTMLButtonElement[]
     ).find((b) => (b.textContent ?? '').includes(texto));
-    expect(boton, `no se encontro el boton "${texto}"`).toBeDefined();
+    expect(boton, `no se encontro el botón "${texto}"`).toBeDefined();
     boton?.click();
     fixture.detectChanges();
   }

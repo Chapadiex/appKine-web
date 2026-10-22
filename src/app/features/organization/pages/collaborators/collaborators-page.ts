@@ -252,7 +252,7 @@ export class CollaboratorsPage {
   /** Nombre de la sede, o el texto de alcance organizacion cuando `consultorioId` es null. */
   protected alcanceLegible(consultorioId: number | undefined): string {
     if (consultorioId === undefined || consultorioId === null) {
-      return 'Toda la organizacion';
+      return 'Toda la organización';
     }
     const sede = this.sedes.sedes().find((candidata) => candidata.id === consultorioId);
     return sede?.name ?? `Sede ${consultorioId}`;

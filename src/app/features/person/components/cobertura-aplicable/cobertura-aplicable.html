@@ -1,7 +1,7 @@
 <div aria-live="polite">
   @switch (estado().tipo) {
     @case ('sin-oferta') {
-      <p class="estado estado--vacio">Elegi una oferta para ver que cobertura aplica.</p>
+      <p class="estado estado--vacio">Elegí una oferta para ver que cobertura aplica.</p>
     }
 
     @case ('cargando') {
@@ -33,7 +33,7 @@
         </p>
 
         <p>
-          Precio particular del dia:
+          Precio particular del día:
           @if (resultado.precioParticular !== undefined && resultado.precioParticular !== null) {
             <b>{{ importe(resultado.precioParticular) }}</b>
           } @else {
@@ -129,7 +129,7 @@
           (resultado.aplicables?.length ?? 0) === 0 && (resultado.noAplicables?.length ?? 0) === 0
         ) {
           <p class="estado estado--vacio">
-            El paciente no tiene coberturas financiadas vigentes ese dia: se atiende como
+            El paciente no tiene coberturas financiadas vigentes ese día: se atiende como
             particular.
           </p>
         }

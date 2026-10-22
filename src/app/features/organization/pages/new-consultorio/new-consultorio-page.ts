@@ -183,7 +183,7 @@ export class NewConsultorioPage {
     const capacidad = numeroDeclarado(valores.boxCapacidad);
     return {
       nombre: valores.name.trim(),
-      zona: valores.timezone === '' ? 'La misma que la organizacion' : valores.timezone,
+      zona: valores.timezone === '' ? 'La misma que la organización' : valores.timezone,
       turno:
         numeroDeclarado(valores.slotMinutes) === null
           ? '30 minutos (el valor por defecto)'

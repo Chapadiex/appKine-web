@@ -289,7 +289,7 @@ export class CoberturasDelPacientePage {
     if (id === null) {
       this.estado.set({
         tipo: 'error',
-        mensaje: 'La direccion no identifica a ninguna persona del padron.',
+        mensaje: 'La dirección no identifica a ninguna persona del padron.',
         faltaContexto: false,
       });
       return;
@@ -397,7 +397,7 @@ export class CoberturasDelPacientePage {
       // Una FINANCIADA sin plan no tiene sentido y la base la rechaza. Se corta aca para nombrar
       // el campo, en vez de mandar un cuerpo que produce un 400 sobre un parametro.
       this.formularioAlta.markAllAsTouched();
-      this.errorAccion.set('Elegi el plan de la cobertura financiada.');
+      this.errorAccion.set('Elegí el plan de la cobertura financiada.');
       return;
     }
 

@@ -519,7 +519,7 @@ export class DetalleDeClasePage {
     this.api.confirmar(consultorioId, claseId, inscripcionId).subscribe({
       next: () => {
         this.enviando.set(false);
-        this.avisar(`Inscripcion de ${this.nombreDe(participante)} confirmada.`);
+        this.avisar(`Inscripción de ${this.nombreDe(participante)} confirmada.`);
         this.releer();
       },
       error: (error: unknown) => this.fallo(error),

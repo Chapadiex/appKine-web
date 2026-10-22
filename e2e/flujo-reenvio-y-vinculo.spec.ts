@@ -68,7 +68,7 @@ test.describe('Reenvio de activacion y vinculo directo contra el backend real', 
     const creado = await alta;
     expect(creado.status(), await creado.text()).toBe(201);
     const { membershipId } = (await creado.json()) as { membershipId: number };
-    await expect(page.getByText(`Vinculo creado (numero ${membershipId}).`)).toBeVisible();
+    await expect(page.getByText(`Vinculo creado (número ${membershipId}).`)).toBeVisible();
 
     await page.getByRole('link', { name: 'Volver al listado' }).click();
     await expect(page).toHaveURL(/\/organizacion\/colaboradores$/);

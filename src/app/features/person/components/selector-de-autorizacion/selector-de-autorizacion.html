@@ -1,13 +1,13 @@
 <section class="tarjeta" aria-labelledby="titulo-selector-autorizacion">
   <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
-    <h2 id="titulo-selector-autorizacion">De que autorizacion se descontaria</h2>
+    <h2 id="titulo-selector-autorizacion">De que autorización se descontaria</h2>
     <app-ayuda titulo="De que autorizacion se descontaria">
       <p>
-        Todas las autorizaciones activas del paciente con su veredicto para ese dia, en el orden en
-        que el cierre de una sesion las gasta: primero las que sirven y, entre ellas, la que vence
+        Todas las autorizaciones activas del paciente con su veredicto para ese día, en el orden en
+        que el cierre de una sesión las gasta: primero las que sirven y, entre ellas, la que vence
         antes.
         <b>No consume nada.</b> Lo que de verdad se desconto queda en "Saldo y consumos" de cada
-        autorizacion.
+        autorización.
       </p>
     </app-ayuda>
   </div>
@@ -15,24 +15,24 @@
   <form [formGroup]="formulario" (ngSubmit)="consultar()" novalidate>
     <div class="filtros">
       <div class="campo">
-        <label for="selector-practica">Practica</label>
+        <label for="selector-practica">Práctica</label>
         <select
           id="selector-practica"
           formControlName="practicaId"
           aria-describedby="selector-practica-ayuda"
         >
-          <option value="">Todas las practicas</option>
+          <option value="">Todas las prácticas</option>
           @for (practica of practicas(); track practica.id) {
             <option [value]="practica.id">{{ practica.name }}</option>
           }
         </select>
         <p class="ayuda" id="selector-practica-ayuda">
-          Elegila para ver cual se usaria. La autorizacion es por practica.
+          Elegila para ver cual se usaria. La autorización es por práctica.
         </p>
       </div>
 
       <div class="campo">
-        <label for="selector-fecha">Para el dia</label>
+        <label for="selector-fecha">Para el día</label>
         <input
           id="selector-fecha"
           type="date"
@@ -60,17 +60,17 @@
         @if (elegida(); as elegida) {
           <p class="estado estado--ok">
             Se descontaria de la <b>{{ elegida.numero }}</b
-            >: sirve ese dia y es, entre las que sirven para esta practica, la que vence antes.
+            >: sirve ese día y es, entre las que sirven para esta práctica, la que vence antes.
           </p>
         } @else {
           <p class="estado">
-            Ninguna autorizacion sirve para esta practica ese dia. Si se atiende igual, la sesion
+            Ninguna autorización sirve para esta práctica ese día. Si se atiende igual, la sesión
             cierra sin consumir: abajo esta por que no sirve cada una.
           </p>
         }
         <p class="ayuda">
-          Al cerrar, el sistema ademas descarta las autorizaciones cuya cobertura no este vigente
-          ese dia y las atadas al plan de otro caso clinico. Esta consulta no evalua esas dos
+          Al cerrar, el sistema además descarta las autorizaciones cuya cobertura no este vigente
+          ese día y las atadas al plan de otro caso clínico. Esta consulta no evalua esas dos
           condiciones.
         </p>
       }
@@ -80,7 +80,7 @@
           @if (practicaConsultada() === null) {
             Este paciente no tiene autorizaciones activas.
           } @else {
-            No hay autorizaciones activas para esta practica.
+            No hay autorizaciones activas para esta práctica.
           }
         </p>
       } @else {
@@ -110,7 +110,7 @@
 
       @if (deOtrasPracticas() > 0) {
         <p class="ayuda">
-          {{ deOtrasPracticas() }} autorizacion(es) de otras practicas no se muestran: no sirven
+          {{ deOtrasPracticas() }} autorizacion(es) de otras prácticas no se muestran: no sirven
           para esta.
         </p>
       }

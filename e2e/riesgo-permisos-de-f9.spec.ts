@@ -97,7 +97,7 @@ test.describe('Permisos de las pantallas de F9 por rol contra el backend real', 
     await expect(page.getByRole('link', { name: 'Atencion clinica' })).toHaveCount(0);
     await irA(page, `/asistencia/${clase.id}`);
     await expect(page.getByRole('heading', { name: /^Asistencia: /, level: 1 })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Atencion clinica de la clase' })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: 'Atención clínica de la clase' })).toHaveCount(0);
 
     // Control: productos y pases son de su rol.
     await irA(page, '/productos');

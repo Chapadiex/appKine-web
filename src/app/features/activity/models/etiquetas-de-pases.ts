@@ -68,7 +68,7 @@ export function avisoDeVigencia(pase: Pase, hoy: string): string | null {
     return `Empieza el ${fechaCorta(pase.vigenciaDesde)}`;
   }
   if (pase.vigenciaHasta && pase.vigenciaHasta < hoy) {
-    return 'Termino su vigencia; el vencimiento se registra en la proxima hora';
+    return 'Termino su vigencia; el vencimiento se registra en la próxima hora';
   }
   return 'No cubre clases hoy';
 }

@@ -33,15 +33,15 @@ describe('Ayuda', () => {
   const boton = () => html.querySelector<HTMLButtonElement>('.ayuda-contextual__boton')!;
   const panel = () => html.querySelector<HTMLElement>('.ayuda-contextual__panel')!;
 
-  it('arranca cerrada, con el contenido en el DOM y el boton nombrado por el titulo', () => {
+  it('arranca cerrada, con el contenido en el DOM y el botón nombrado por el titulo', () => {
     expect(boton().getAttribute('aria-expanded')).toBe('false');
     expect(boton().getAttribute('aria-controls')).toBe(panel().id);
     expect(boton().textContent).toContain('Ayuda: Persona y paciente no son lo mismo');
     expect(panel().hidden).toBe(true);
-    expect(panel().textContent).toContain('no crea historia clinica');
+    expect(panel().textContent).toContain('no crea historia clínica');
   });
 
-  it('el boton la abre y la cierra', () => {
+  it('el botón la abre y la cierra', () => {
     boton().click();
     fixture.detectChanges();
     expect(boton().getAttribute('aria-expanded')).toBe('true');
@@ -52,7 +52,7 @@ describe('Ayuda', () => {
     expect(panel().hidden).toBe(true);
   });
 
-  it('Escape la cierra y devuelve el foco al boton', () => {
+  it('Escape la cierra y devuelve el foco al botón', () => {
     boton().click();
     fixture.detectChanges();
 

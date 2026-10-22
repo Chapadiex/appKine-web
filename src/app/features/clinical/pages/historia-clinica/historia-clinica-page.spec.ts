@@ -35,7 +35,7 @@ const PAGINA = {
       origen: 'ENTRADA_CLINICA',
       referencia: 41,
       tipo: 'EVOLUCION',
-      titulo: 'Entrada clinica',
+      titulo: 'Entrada clínica',
     },
   ],
 };
@@ -83,7 +83,7 @@ describe('HistoriaClinicaPage', () => {
     httpMock.verify();
   });
 
-  it('sin relacion asistencial pide motivo, y despues lo manda en cada pedido de la visita', async () => {
+  it('sin relación asistencial pide motivo, y después lo manda en cada pedido de la visita', async () => {
     const fixture = await montar();
 
     const primero = httpMock.expectOne((r) => r.url === HISTORIA_POR_PERSONA);
@@ -132,7 +132,7 @@ describe('HistoriaClinicaPage', () => {
     await estabilizar(fixture);
     expect(texto(fixture)).toContain('Todavía no tiene historia clínica');
 
-    boton(fixture, 'Abrir la historia clinica').click();
+    boton(fixture, 'Abrir la historia clínica').click();
     httpMock.expectOne((r) => r.url === HISTORIA_POR_PERSONA && r.method === 'PUT').flush(HISTORIA);
     await estabilizar(fixture);
     httpMock.expectOne((r) => r.url === TIMELINE).flush({ eventos: [] });
@@ -140,7 +140,7 @@ describe('HistoriaClinicaPage', () => {
     await estabilizar(fixture);
 
     expect(texto(fixture)).toContain('Prueba, Lucia');
-    expect(texto(fixture)).toContain('Todavia no hay hechos clinicos registrados');
+    expect(texto(fixture)).toContain('Todavía no hay hechos clínicos registrados');
   });
 
   it('sin permiso no ofrece reintentar: no es algo que se resuelva insistiendo', async () => {
@@ -153,7 +153,7 @@ describe('HistoriaClinicaPage', () => {
       );
     await estabilizar(fixture);
 
-    expect(texto(fixture)).toContain('No tenes permiso para ver historias clinicas');
+    expect(texto(fixture)).toContain('No tenés permiso para ver historias clínicas');
     expect(botonOpcional(fixture, 'Reintentar')).toBeNull();
   });
 
@@ -204,7 +204,7 @@ describe('HistoriaClinicaPage', () => {
   ): HTMLButtonElement {
     const encontrado = botonOpcional(fixture, rotulo);
     if (encontrado === null) {
-      throw new Error(`No hay boton "${rotulo}"`);
+      throw new Error(`No hay botón "${rotulo}"`);
     }
     return encontrado;
   }
@@ -214,7 +214,7 @@ describe('HistoriaClinicaPage', () => {
     const campo = raiz.querySelector('#motivo-acceso') as HTMLInputElement;
     campo.value = motivo;
     campo.dispatchEvent(new Event('input'));
-    boton(fixture, 'Ver la historia clinica').click();
+    boton(fixture, 'Ver la historia clínica').click();
     fixture.detectChanges();
   }
 });

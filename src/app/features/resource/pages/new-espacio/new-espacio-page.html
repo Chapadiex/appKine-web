@@ -21,7 +21,7 @@
   <section class="tarjeta" aria-labelledby="titulo-sin-sede">
     <h2 id="titulo-sin-sede">Falta elegir un consultorio</h2>
     <p>
-      Un espacio se crea dentro de una sede concreta y todavia no elegiste ninguna. Tu sesion sigue
+      Un espacio se crea dentro de una sede concreta y todavía no elegiste ninguna. Tu sesión sigue
       abierta: solo falta indicar donde estas trabajando.
     </p>
     <p>
@@ -36,7 +36,7 @@
     </p>
     <p class="ayuda">
       Si le pusiste una fecha de inicio futura, va a figurar como
-      <b>activo pero todavia sin servicio</b> hasta esa fecha, y hasta entonces no se va a ofrecer
+      <b>activo pero todavía sin servicio</b> hasta esa fecha, y hasta entonces no se va a ofrecer
       para reservar. El listado lo explica fila por fila.
     </p>
     <p class="acciones">
@@ -80,7 +80,7 @@
           </select>
           <p class="ayuda" id="espacio-tipo-ayuda">
             Es la clasificación física del recurso.
-            <b>No habilita ningun servicio ni define quien puede usarlo</b>: elegir "Pileta" no
+            <b>No habilita ningún servicio ni define quien puede usarlo</b>: elegir "Pileta" no
             autoriza a nadie a hacer hidroterapia ahi. Eso se resuelve por Oferta de Servicio, que
             es otra pantalla.
           </p>
@@ -111,7 +111,7 @@
 
         <div class="campo">
           <label for="espacio-notes">
-            Observacion <span class="campo__opcional">(opcional)</span>
+            Observación <span class="campo__opcional">(opcional)</span>
           </label>
           <input
             id="espacio-notes"
@@ -147,8 +147,8 @@
               aria-describedby="espacio-validFrom-ayuda"
             />
             <p class="ayuda" id="espacio-validFrom-ayuda">
-              Vacio = desde ahora. Con una fecha futura, el espacio queda
-              <b>activo pero todavia sin servicio</b> hasta ese momento, y hasta entonces no aparece
+              Vacío = desde ahora. Con una fecha futura, el espacio queda
+              <b>activo pero todavía sin servicio</b> hasta ese momento, y hasta entonces no aparece
               en los selectores de reserva. Es lo correcto, no un error.
             </p>
           </div>
@@ -164,7 +164,7 @@
               aria-describedby="espacio-validUntil-ayuda"
             />
             <p class="ayuda" id="espacio-validUntil-ayuda">
-              Vacio = sin fin previsto. El fin es <b>exclusivo</b>: un espacio que termina el 30 a
+              Vacío = sin fin previsto. El fin es <b>exclusivo</b>: un espacio que termina el 30 a
               las 00:00 se ofrece hasta el 29 inclusive.
             </p>
           </div>
@@ -186,7 +186,7 @@
     <div aria-live="polite">
       @if (espera.activa()) {
         <p class="estado estado--error" role="alert">
-          Demasiados intentos. Podes volver a intentar en {{ espera.segundos() }} segundos.
+          Demasiados intentos. Podés volver a intentar en {{ espera.segundos() }} segundos.
         </p>
       }
 

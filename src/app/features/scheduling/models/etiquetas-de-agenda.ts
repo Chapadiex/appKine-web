@@ -25,28 +25,28 @@ import { SlotDisponible } from '../../../api/generated/model/slot-disponible';
  * arreglar.
  */
 const TEXTOS_SIN_SLOTS: Readonly<Record<DiaDeAgendaMotivoSinSlotsEnum, string>> = {
-  [DiaDeAgendaMotivoSinSlotsEnum.FERIADO]: 'Feriado: la sede no atiende este dia.',
+  [DiaDeAgendaMotivoSinSlotsEnum.FERIADO]: 'Feriado: la sede no atiende este día.',
   [DiaDeAgendaMotivoSinSlotsEnum.CIERRE]:
-    'La sede cierra este dia por una excepcion cargada en el calendario.',
+    'La sede cierra este día por una excepción cargada en el calendario.',
   [DiaDeAgendaMotivoSinSlotsEnum.VINCULO]:
-    'El profesional no tiene vinculo vigente con el centro este dia.',
+    'El profesional no tiene vinculo vigente con el centro este día.',
   [DiaDeAgendaMotivoSinSlotsEnum.SIN_HORARIO]:
-    'Ningun profesional habilitado tiene horario cargado este dia. Se carga desde Horarios.',
+    'Ningún profesional habilitado tiene horario cargado este día. Se carga desde Horarios.',
   [DiaDeAgendaMotivoSinSlotsEnum.OFERTA_NO_VIGENTE]:
-    'La oferta no esta vigente este dia. Su vigencia se edita desde Ofertas de la sede.',
+    'La oferta no esta vigente este día. Su vigencia se edita desde Ofertas de la sede.',
   [DiaDeAgendaMotivoSinSlotsEnum.SIN_PROFESIONAL]:
-    'La oferta necesita un profesional y ninguno de los habilitados atiende este dia.',
+    'La oferta necesita un profesional y ninguno de los habilitados atiende este día.',
   [DiaDeAgendaMotivoSinSlotsEnum.SIN_ESPACIO]:
-    'La oferta necesita un espacio y ninguno de los habilitados esta en servicio este dia.',
+    'La oferta necesita un espacio y ninguno de los habilitados esta en servicio este día.',
   [DiaDeAgendaMotivoSinSlotsEnum.FRANJA_MAS_CORTA_QUE_LA_OFERTA]:
-    'Las franjas de atencion de este dia son mas cortas que la duracion de la oferta, asi que no ' +
-    'entra ningun turno completo.',
+    'Las franjas de atención de este día son mas cortas que la duración de la oferta, así que no ' +
+    'entra ningún turno completo.',
   [DiaDeAgendaMotivoSinSlotsEnum.COMPLETO]:
-    'Todos los turnos de este dia ya estan reservados. La agenda esta bien: se lleno.',
+    'Todos los turnos de este día ya estan reservados. La agenda esta bien: se lleno.',
   [DiaDeAgendaMotivoSinSlotsEnum.FUERA_DE_HORARIO_SEDE]:
-    'La sede no atiende en las horas del profesional este dia. El horario general de la sede se edita desde Horarios.',
+    'La sede no atiende en las horas del profesional este día. El horario general de la sede se edita desde Horarios.',
   [DiaDeAgendaMotivoSinSlotsEnum.PASADO]:
-    'Este dia ya no tiene turnos por delante: los horarios que quedaban ya empezaron.',
+    'Este día ya no tiene turnos por delante: los horarios que quedaban ya empezaron.',
 };
 
 /**
@@ -62,7 +62,7 @@ export function textoSinSlots(dia: DiaDeAgenda): string {
   if (motivo !== undefined && motivo in TEXTOS_SIN_SLOTS) {
     return TEXTOS_SIN_SLOTS[motivo];
   }
-  return 'Este dia no tiene turnos disponibles y el servidor no dijo por que.';
+  return 'Este día no tiene turnos disponibles y el servidor no dijo por que.';
 }
 
 /** `true` cuando el dia hay que dibujarlo con su motivo y no con una grilla. */

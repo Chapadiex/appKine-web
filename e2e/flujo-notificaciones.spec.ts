@@ -126,10 +126,10 @@ test.describe('Notificaciones fallidas con reintento contra el backend real', ()
     await expect(filaFallida).not.toContainText(email);
 
     const reintento = respuestaDe(page, 'POST', /\/notifications\/\d+\/retry$/);
-    await filaFallida.getByRole('button', { name: `Reintentar la notificacion ${id}` }).click();
+    await filaFallida.getByRole('button', { name: `Reintentar la notificación ${id}` }).click();
     expect((await reintento).status()).toBeLessThan(300);
     await expect(
-      page.getByRole('status').filter({ hasText: `La notificacion ${id} (Turno reservado` }),
+      page.getByRole('status').filter({ hasText: `La notificación ${id} (Turno reservado` }),
     ).toBeVisible();
     // Ya no esta fallida: el listado se relee y la fila sale de la vista por defecto.
     await expect(filaFallida).toHaveCount(0);

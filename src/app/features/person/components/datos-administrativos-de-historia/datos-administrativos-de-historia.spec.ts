@@ -99,7 +99,7 @@ describe('DatosAdministrativosDeHistoria', () => {
     httpMock.expectOne(DATOS).flush({ personaId: PERSONA, tieneHistoriaClinica: false });
     await estabilizar(fixture);
 
-    expect(contenido(fixture)).toContain('todavia no tiene historia clinica');
+    expect(contenido(fixture)).toContain('todavía no tiene historia clínica');
   });
 
   it('si los nombres no se pueden leer, muestra los identificadores', async () => {
@@ -114,7 +114,7 @@ describe('DatosAdministrativosDeHistoria', () => {
     expect(texto).toContain('Profesional #31 (responsable)');
   });
 
-  it('un 404 —no es paciente— oculta la seccion entera', async () => {
+  it('un 404 —no es paciente— oculta la sección entera', async () => {
     const fixture = crear();
     httpMock
       .expectOne(DATOS)
@@ -140,7 +140,7 @@ describe('DatosAdministrativosDeHistoria', () => {
     httpMock.expectOne(DATOS).flush({ personaId: PERSONA, tieneHistoriaClinica: false });
     await estabilizar(fixture);
 
-    expect(contenido(fixture)).toContain('todavia no tiene historia clinica');
+    expect(contenido(fixture)).toContain('todavía no tiene historia clínica');
   });
 
   it(

@@ -2,16 +2,16 @@
   <h1>Catálogo de servicios</h1>
   <app-ayuda titulo="Sobre esta pantalla">
     <p>
-      Que existe como concepto: kinesiologia respiratoria, pilates terapeutico, evaluacion postural.
+      Que existe como concepto: kinesiologia respiratoria, pilates terapeutico, evaluación postural.
       Es el catalogo comun de AKINE y lo ven todos los centros. Como lo presta tu sede —con que
-      nombre, duracion, precio y desde cuando— se define en las ofertas.
+      nombre, duración, precio y desde cuando— se define en las ofertas.
     </p>
     <p class="ayuda-contextual__subtitulo">Este catalogo lo administra AKINE, no tu centro</p>
     <p>
       Cualquiera puede <b>consultarlo</b>: es la lista de la que se elige al crear una oferta. Dar
       de alta, editar o dar de baja un servicio, en cambio, exige <b>rol de plataforma</b>.
       @if (puedeAdministrar()) {
-        Tu cuenta lo tiene: lo que cambies aca lo ven todos los centros.
+        Tu cuenta lo tiene: lo que cambies acá lo ven todos los centros.
       } @else if (rolConsultado()) {
         Tu cuenta no lo tiene, por eso esas acciones no aparecen en esta pantalla.
       }
@@ -19,7 +19,7 @@
     <p>
       Lo que si administra tu centro son las
       <a routerLink="/servicios/ofertas">ofertas de la sede</a>: ahi se define el nombre comercial,
-      la duracion, el precio y la vigencia con la que cada servicio se presta aca.
+      la duración, el precio y la vigencia con la que cada servicio se presta acá.
     </p>
   </app-ayuda>
   @if (puedeAdministrar()) {
@@ -46,7 +46,7 @@
 
     <form [formGroup]="formularioAlta" (ngSubmit)="enviarAlta()" novalidate>
       <div class="campo">
-        <label for="alta-servicio-codigo">Codigo</label>
+        <label for="alta-servicio-codigo">Código</label>
         <input
           id="alta-servicio-codigo"
           type="text"
@@ -59,7 +59,7 @@
         />
         @if (mostrarErrorAlta('codigo')) {
           <p class="campo__error" id="alta-servicio-codigo-error" role="alert">
-            El codigo es obligatorio.
+            El código es obligatorio.
           </p>
         } @else {
           <p class="ayuda" id="alta-servicio-codigo-ayuda">
@@ -88,7 +88,7 @@
       </div>
 
       <div class="campo">
-        <label for="alta-servicio-descripcion">Descripcion (opcional)</label>
+        <label for="alta-servicio-descripcion">Descripción (opcional)</label>
         <input
           id="alta-servicio-descripcion"
           type="text"
@@ -105,7 +105,7 @@
           [attr.aria-invalid]="mostrarErrorAlta('naturaleza') ? 'true' : null"
           aria-describedby="alta-servicio-naturaleza-ayuda"
         >
-          <option value="">Elegi una naturaleza</option>
+          <option value="">Elegí una naturaleza</option>
           @for (opcion of naturalezas; track opcion.valor) {
             <option [value]="opcion.valor">{{ opcion.etiqueta }} — {{ opcion.ayuda }}</option>
           }
@@ -114,8 +114,8 @@
           <p class="campo__error" role="alert">La naturaleza es obligatoria.</p>
         }
         <p class="ayuda" id="alta-servicio-naturaleza-ayuda">
-          Sirve para <b>clasificar</b> y nada mas: por si sola no impone ningun comportamiento
-          clinico (RN-M06-005). Que haga falta un caso clinico o que se genere registro lo deciden
+          Sirve para <b>clasificar</b> y nada mas: por si sola no impone ningún comportamiento
+          clínico (RN-M06-005). Que haga falta un caso clínico o que se genere registro lo deciden
           los dos campos de abajo, y cada oferta los puede cambiar.
         </p>
       </div>
@@ -128,7 +128,7 @@
           [attr.aria-invalid]="mostrarErrorAlta('modalidadDefault') ? 'true' : null"
           aria-describedby="alta-servicio-modalidad-ayuda"
         >
-          <option value="">Elegi una modalidad</option>
+          <option value="">Elegí una modalidad</option>
           @for (opcion of modalidades; track opcion.valor) {
             <option [value]="opcion.valor">{{ opcion.etiqueta }} — {{ opcion.ayuda }}</option>
           }
@@ -149,7 +149,7 @@
             type="checkbox"
             formControlName="requiereCasoClinicoDefault"
           />
-          Por defecto, requiere caso clinico
+          Por defecto, requiere caso clínico
         </label>
         <p class="ayuda">
           Propuesta para las ofertas nuevas: cada centro decide en la suya. Un servicio de bienestar
@@ -164,11 +164,11 @@
             type="checkbox"
             formControlName="generaRegistroClinicoDefault"
           />
-          Por defecto, genera registro clinico
+          Por defecto, genera registro clínico
         </label>
         <p class="ayuda">
-          Tambien es propuesta. Requerir un caso y generar registro son cosas distintas: se puede
-          exigir el caso sin que cada atencion escriba en la historia.
+          También es propuesta. Requerir un caso y generar registro son cosas distintas: se puede
+          exigir el caso sin que cada atención escriba en la historia.
         </p>
       </div>
 
@@ -208,7 +208,7 @@
         <input
           id="busqueda-servicio"
           type="search"
-          placeholder="Buscar por nombre o codigo"
+          placeholder="Buscar por nombre o código"
           [value]="busqueda()"
           (input)="teclear($any($event.target).value)"
           autocomplete="off"
@@ -216,7 +216,7 @@
         />
       </div>
       <p class="visualmente-oculto" id="busqueda-servicio-ayuda">
-        Busca por nombre y por codigo mientras escribis. No distingue mayusculas ni acentos.
+        Busca por nombre y por código mientras escribis. No distingue mayusculas ni acentos.
       </p>
     </div>
 
@@ -257,18 +257,18 @@
           <div class="tabla-scroll" tabindex="0" role="region" aria-label="Catalogo de servicios">
             <table class="tabla">
               <caption class="visualmente-oculto">
-                Servicios del catalogo global, con su codigo, naturaleza, modalidad por defecto,
-                valores clinicos por defecto, estado y acciones.
+                Servicios del catalogo global, con su código, naturaleza, modalidad por defecto,
+                valores clínicos por defecto, estado y acciones.
               </caption>
               <thead>
                 <tr>
                   <th scope="col" appOrdenable [tabla]="tabla" columna="nombre">Nombre</th>
-                  <th scope="col" appOrdenable [tabla]="tabla" columna="codigo">Codigo</th>
+                  <th scope="col" appOrdenable [tabla]="tabla" columna="codigo">Código</th>
                   <th scope="col" appOrdenable [tabla]="tabla" columna="naturaleza">Naturaleza</th>
                   <th scope="col" appOrdenable [tabla]="tabla" columna="modalidad">
                     Modalidad por defecto
                   </th>
-                  <th scope="col">Valores clinicos por defecto</th>
+                  <th scope="col">Valores clínicos por defecto</th>
                   <th scope="col" appOrdenable [tabla]="tabla" columna="estado">Estado</th>
                   @if (puedeAdministrar()) {
                     <th scope="col">Acciones</th>
@@ -352,21 +352,21 @@
                               <p class="campo__error" role="alert">El nombre es obligatorio.</p>
                             } @else {
                               <p class="ayuda">
-                                Renombrar no cambia lo que ya quedo registrado: el codigo
+                                Renombrar no cambia lo que ya quedo registrado: el código
                                 <b>{{ servicio.codigo }}</b> es la clave estable y no se edita.
                               </p>
                             }
                           </div>
 
                           <div class="campo">
-                            <label for="editar-servicio-descripcion">Descripcion</label>
+                            <label for="editar-servicio-descripcion">Descripción</label>
                             <input
                               id="editar-servicio-descripcion"
                               type="text"
                               formControlName="descripcion"
                               autocomplete="off"
                             />
-                            <p class="ayuda">Vaciar el campo deja el servicio sin descripcion.</p>
+                            <p class="ayuda">Vaciar el campo deja el servicio sin descripción.</p>
                           </div>
 
                           <div class="campo">
@@ -391,7 +391,7 @@
                             </select>
                             <p class="ayuda" id="editar-servicio-modalidad-ayuda">
                               Cambiarla <b>no toca ninguna oferta ya creada</b>: es la propuesta
-                              para las proximas.
+                              para las próximas.
                             </p>
                           </div>
 
@@ -402,7 +402,7 @@
                                 type="checkbox"
                                 formControlName="requiereCasoClinicoDefault"
                               />
-                              Por defecto, requiere caso clinico
+                              Por defecto, requiere caso clínico
                             </label>
                           </div>
 
@@ -413,7 +413,7 @@
                                 type="checkbox"
                                 formControlName="generaRegistroClinicoDefault"
                               />
-                              Por defecto, genera registro clinico
+                              Por defecto, genera registro clínico
                             </label>
                           </div>
 

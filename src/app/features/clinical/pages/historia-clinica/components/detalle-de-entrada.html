@@ -21,7 +21,7 @@
         <dt>Ocurrio</dt>
         <dd>{{ fechaYHora(e.ocurrioEn) }}</dd>
 
-        <dt>Version</dt>
+        <dt>Versión</dt>
         <dd>
           {{ e.numeroVersion }}
           @if (e.enmendada) {
@@ -30,7 +30,7 @@
         </dd>
 
         @if (e.enmendada && e.motivoEnmienda) {
-          <dt>Motivo de la ultima enmienda</dt>
+          <dt>Motivo de la última enmienda</dt>
           <dd>{{ e.motivoEnmienda }}</dd>
         }
       </dl>
@@ -49,7 +49,7 @@
       } @else {
         <form class="historia__formulario" (submit)="$event.preventDefault(); enmendar()">
           <p class="ayuda">
-            La enmienda no borra lo escrito: crea la version {{ (e.numeroVersion ?? 0) + 1 }} y la
+            La enmienda no borra lo escrito: crea la versión {{ (e.numeroVersion ?? 0) + 1 }} y la
             anterior queda en el historial con su autor y su fecha.
           </p>
 
@@ -66,7 +66,7 @@
               (input)="cuerpoNuevo.set($any($event.target).value)"
             ></textarea>
             @if (intentoEnviar() && faltaCuerpo()) {
-              <p id="enmienda-cuerpo-error" class="campo__error">El texto no puede quedar vacio.</p>
+              <p id="enmienda-cuerpo-error" class="campo__error">El texto no puede quedar vacío.</p>
             }
           </div>
 
@@ -84,7 +84,7 @@
             />
             @if (intentoEnviar() && faltaMotivo()) {
               <p id="enmienda-motivo-error" class="campo__error">
-                Decí por que se corrige: queda en el historial junto con la version.
+                Decí por que se corrige: queda en el historial junto con la versión.
               </p>
             }
           </div>
@@ -134,7 +134,7 @@
           @for (version of lista; track version.numeroVersion) {
             <li>
               <p class="historia__version-cabecera">
-                <b>Version {{ version.numeroVersion }}</b> · {{ fechaYHora(version.registradaEn) }}
+                <b>Versión {{ version.numeroVersion }}</b> · {{ fechaYHora(version.registradaEn) }}
                 @if (version.numeroVersion === 1) {
                   · original
                 }

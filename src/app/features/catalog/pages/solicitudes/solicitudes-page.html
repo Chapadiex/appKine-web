@@ -8,7 +8,7 @@
   <app-ayuda titulo="Sobre esta pantalla">
     <p>
       El catalogo comun -el que ven todos los centros- lo mantiene AKINE. Si falta algo que deberia
-      estar ahi, se pide desde aca.
+      estar ahi, se pide desde acá.
     </p>
   </app-ayuda>
   <div class="encabezado__acciones" *akinePermiso="permisoManage">
@@ -57,13 +57,13 @@
           formControlName="tipo"
           [attr.aria-invalid]="mostrarError('tipo') ? 'true' : null"
         >
-          <option value="">Elegi el tipo</option>
+          <option value="">Elegí el tipo</option>
           <option value="ESPECIALIDAD">Especialidad</option>
-          <option value="PRACTICA">Practica</option>
+          <option value="PRACTICA">Práctica</option>
           <option value="NOMENCLADOR">Nomenclador</option>
         </select>
         @if (mostrarError('tipo')) {
-          <p class="campo__error" role="alert">Elegi que tipo de concepto estas pidiendo.</p>
+          <p class="campo__error" role="alert">Elegí que tipo de concepto estas pidiendo.</p>
         }
       </div>
 
@@ -89,7 +89,7 @@
       </div>
 
       <div class="campo">
-        <label for="solicitud-codigo">Codigo propuesto (opcional)</label>
+        <label for="solicitud-codigo">Código propuesto (opcional)</label>
         <input
           id="solicitud-codigo"
           type="text"
@@ -97,7 +97,7 @@
           autocomplete="off"
         />
         <p class="ayuda">
-          Si el concepto ya tiene un codigo oficial -el de un nomenclador nacional, por ejemplo-,
+          Si el concepto ya tiene un código oficial -el de un nomenclador nacional, por ejemplo-,
           ponelo: es lo que hace que el pedido se resuelva sin idas y vueltas.
         </p>
       </div>
@@ -116,7 +116,7 @@
         }
         <p class="ayuda" id="solicitud-justificacion-ayuda">
           Es lo unico con lo que la plataforma decide. Un pedido que dice "hace falta" se rechaza;
-          uno que nombra la resolucion, el financiador o la practica concreta, no.
+          uno que nombra la resolucion, el financiador o la práctica concreta, no.
         </p>
       </div>
 
@@ -171,9 +171,9 @@
       }
 
       @case ('sin-contexto') {
-        <p class="estado estado--vacio">Todavia no elegiste un consultorio.</p>
+        <p class="estado estado--vacio">Todavía no elegiste un consultorio.</p>
         <p class="ayuda">
-          Un pedido lo hace un centro concreto, asi que hay que indicar cual. Tu sesion sigue
+          Un pedido lo hace un centro concreto, así que hay que indicar cual. Tu sesión sigue
           abierta.
         </p>
         <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
@@ -192,7 +192,7 @@
       @case ('listo') {
         @if (solicitudes().length === 0) {
           <p class="estado estado--vacio">
-            Este centro todavia no hizo ningun pedido con el filtro elegido.
+            Este centro todavía no hizo ningún pedido con el filtro elegido.
           </p>
         } @else {
           <div
@@ -220,7 +220,7 @@
                     <th scope="row">
                       {{ solicitud.nombrePropuesto }}
                       @if (solicitud.codigoPropuesto) {
-                        <p class="ayuda">Codigo propuesto: {{ solicitud.codigoPropuesto }}</p>
+                        <p class="ayuda">Código propuesto: {{ solicitud.codigoPropuesto }}</p>
                       }
                       <p class="ayuda">{{ solicitud.justificacion }}</p>
                     </th>
@@ -241,7 +241,7 @@
                       }
                       @if (solicitud.estado === 'PENDIENTE') {
                         <p class="ayuda">
-                          Mientras tanto podes darlo de alta como un concepto de tu centro: sirve
+                          Mientras tanto podés darlo de alta como un concepto de tu centro: sirve
                           para todo, salvo para que lo vean los demas centros.
                         </p>
                       }

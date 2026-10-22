@@ -28,7 +28,7 @@ describe('instantes', () => {
     expect(new Date(aInstanteUtc(campo) ?? '').getTime()).toBe(new Date(original).getTime());
   });
 
-  it('lo ausente y lo invalido degradan a vacio en vez de viajar como "Invalid Date"', () => {
+  it('lo ausente y lo invalido degradan a vacío en vez de viajar como "Invalid Date"', () => {
     // Un valor invalido tiene que OMITIRSE del cuerpo. Si viajara, el backend responderia un
     // 400 que no dice cual de los campos de fecha estaba mal.
     expect(aInstanteUtc('')).toBeNull();
@@ -66,7 +66,7 @@ describe('instantes', () => {
     const KIRITIMATI = 'Pacific/Kiritimati';
     const NOCHE_EN_CORDOBA = '2026-10-15T01:30:00Z';
 
-    it('formatea el instante en el dia y la hora de la sede', () => {
+    it('formatea el instante en el día y la hora de la sede', () => {
       expect(formatearFecha(NOCHE_EN_CORDOBA, CORDOBA)).toBe('14/10/2026');
       expect(formatearFecha(NOCHE_EN_CORDOBA, KIRITIMATI)).toBe('15/10/2026');
       expect(formatearInstante(NOCHE_EN_CORDOBA, CORDOBA)).toContain('14/10/2026');

@@ -208,7 +208,7 @@ export class PreciosParticularesDeLaOfertaPage {
       return { resumen: 'Rige hoy', atenuada: false };
     }
     if ((precio.vigenciaDesde ?? '') > this.hoy) {
-      return { resumen: 'Todavia no rige', atenuada: false };
+      return { resumen: 'Todavía no rige', atenuada: false };
     }
     return { resumen: 'Ya no rige', atenuada: true };
   }
@@ -309,7 +309,7 @@ export class PreciosParticularesDeLaOfertaPage {
       next: () => {
         this.cerrarPanel();
         this.exito.set(
-          'El precio quedo cargado. Los dias que cubre manda sobre el precio de lista; lo ya ' +
+          'El precio quedo cargado. Los días que cubre manda sobre el precio de lista; lo ya ' +
             'devengado no cambia.',
         );
         this.cargar();
@@ -327,7 +327,7 @@ export class PreciosParticularesDeLaOfertaPage {
     }
     if (version === undefined) {
       this.errorAccion.set(
-        'No pudimos leer la version de este precio. Cerra el panel, recarga la grilla y volve a ' +
+        'No pudimos leer la versión de este precio. Cerra el panel, recarga la grilla y volvé a ' +
           'intentar.',
       );
       return;
@@ -374,7 +374,7 @@ export class PreciosParticularesDeLaOfertaPage {
       next: () => {
         this.cerrarPanel();
         this.exito.set(
-          'El precio quedo dado de baja y su periodo quedo libre. Esos dias vuelve a regir el ' +
+          'El precio quedo dado de baja y su periodo quedo libre. Esos días vuelve a regir el ' +
             'precio de lista, salvo que cargues otro.',
         );
         this.cargar();

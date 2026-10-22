@@ -27,10 +27,10 @@ interface PracticaDeOferta {
 
 /** Busca una practica del catalogo por su codigo y la agrega a la seleccion. */
 async function agregarPractica(page: Page, codigo: string): Promise<void> {
-  await page.getByLabel('Buscar en el catalogo por nombre o codigo').fill(codigo);
+  await page.getByLabel('Buscar en el catalogo por nombre o código').fill(codigo);
   await page.getByRole('button', { name: 'Buscar', exact: true }).click();
   const resultado = page
-    .getByRole('region', { name: 'Agregar una practica' })
+    .getByRole('region', { name: 'Agregar una práctica' })
     .getByRole('listitem')
     .filter({ hasText: codigo });
   await resultado.getByRole('button', { name: /^Agregar / }).click();
@@ -39,7 +39,7 @@ async function agregarPractica(page: Page, codigo: string): Promise<void> {
 
 function declarada(page: Page, codigo: string): Locator {
   return page
-    .getByRole('group', { name: 'Practica principal' })
+    .getByRole('group', { name: 'Práctica principal' })
     .getByRole('listitem')
     .filter({ hasText: codigo });
 }
@@ -70,7 +70,7 @@ test.describe('Practicas de una oferta contra el backend real', () => {
     await page.getByRole('button', { name: 'Guardar las practicas' }).click();
     expect((await guardado).status()).toBe(200);
     await expect(
-      page.getByRole('status').filter({ hasText: 'Guardamos las practicas de la oferta.' }),
+      page.getByRole('status').filter({ hasText: 'Guardamos las prácticas de la oferta.' }),
     ).toBeVisible();
 
     const leidas = await api.exigir<{ practicaPrincipalId: number; practicas: PracticaDeOferta[] }>(
@@ -91,7 +91,7 @@ test.describe('Practicas de una oferta contra el backend real', () => {
       .click();
     await page.getByRole('button', { name: 'Guardar las practicas' }).click();
     await expect(
-      page.getByRole('status').filter({ hasText: 'Guardamos las practicas de la oferta.' }),
+      page.getByRole('status').filter({ hasText: 'Guardamos las prácticas de la oferta.' }),
     ).toBeVisible();
     await expect(declarada(page, 'KIN_SESION')).toHaveCount(0);
     await expect(page.getByRole('region', { name: 'Dadas de baja' })).toBeVisible();

@@ -517,7 +517,7 @@ export class CicloDeTurnoPage {
         expectedVersion,
         profesionalId,
       }),
-      'Turno reprogramado. Es el mismo turno: conserva su numero, su paciente y su historial. Si ' +
+      'Turno reprogramado. Es el mismo turno: conserva su número, su paciente y su historial. Si ' +
         'estaba confirmado vuelve a quedar reservado, porque lo confirmado era otro horario.',
     );
   }

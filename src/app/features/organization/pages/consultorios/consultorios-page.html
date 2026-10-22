@@ -39,7 +39,7 @@
 </div>
 
 <section class="tarjeta" aria-labelledby="titulo-sedes">
-  <h2 id="titulo-sedes">Sedes de la organizacion</h2>
+  <h2 id="titulo-sedes">Sedes de la organización</h2>
 
   <!--
     Regla de filtros (plan §3.4): el listado no tiene busqueda por texto en el backend, asi que
@@ -74,7 +74,7 @@
       @case ('sin-contexto') {
         <p class="estado estado--vacio">Todavía no elegiste un contexto de trabajo.</p>
         <p class="ayuda">
-          Las sedes son de una organizacion concreta, asi que hay que indicar cual.
+          Las sedes son de una organización concreta, así que hay que indicar cual.
         </p>
         <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto</a>
       }
@@ -101,11 +101,11 @@
             class="tabla-scroll"
             tabindex="0"
             role="region"
-            aria-label="Sedes de la organizacion"
+            aria-label="Sedes de la organización"
           >
             <table class="tabla">
               <caption class="visualmente-oculto">
-                Sedes de la organizacion, con su zona horaria, agenda y estado
+                Sedes de la organización, con su zona horaria, agenda y estado
               </caption>
               <thead>
                 <tr>
@@ -230,7 +230,7 @@
                           <p class="ayuda" id="editar-ayuda-patch">
                             Se envia solo lo que cambies.
                             <b>Vaciar un dato institucional lo borra</b>; los campos que dejes como
-                            estan no se tocan, asi que un cambio de telefono no pisa la direccion
+                            estan no se tocan, así que un cambio de teléfono no pisa la dirección
                             que cargo otra persona.
                           </p>
 
@@ -276,13 +276,13 @@
                               }
                             </select>
                             <p class="ayuda" id="editar-timezone-ayuda">
-                              Cambiar la zona horaria mueve el dia operativo de esta sede y como se
+                              Cambiar la zona horaria mueve el día operativo de esta sede y como se
                               leen los horarios de su agenda.
                             </p>
                           </div>
 
                           <div class="campo">
-                            <label for="editar-slotMinutes">Duracion del turno, en minutos</label>
+                            <label for="editar-slotMinutes">Duración del turno, en minutos</label>
                             <input
                               id="editar-slotMinutes"
                               type="number"
@@ -297,7 +297,7 @@
 
                           <div class="campo">
                             <label for="editar-legalName">
-                              Razon social <span class="campo__opcional">(opcional)</span>
+                              Razón social <span class="campo__opcional">(opcional)</span>
                             </label>
                             <input
                               id="editar-legalName"
@@ -322,7 +322,7 @@
 
                           <div class="campo">
                             <label for="editar-addressLine">
-                              Direccion <span class="campo__opcional">(opcional)</span>
+                              Dirección <span class="campo__opcional">(opcional)</span>
                             </label>
                             <input
                               id="editar-addressLine"
@@ -334,7 +334,7 @@
 
                           <div class="campo">
                             <label for="editar-phone">
-                              Telefono <span class="campo__opcional">(opcional)</span>
+                              Teléfono <span class="campo__opcional">(opcional)</span>
                             </label>
                             <input
                               id="editar-phone"

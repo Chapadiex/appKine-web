@@ -72,7 +72,7 @@ export function tieneLugar(participante: ParticipanteOperativo): boolean {
 
 export function nombreDeParticipante(participante: ParticipanteOperativo): string {
   const nombre = [participante.apellido, participante.nombre].filter(Boolean).join(', ');
-  return nombre || `Inscripcion ${participante.inscripcion?.id ?? ''}`.trim();
+  return nombre || `Inscripción ${participante.inscripcion?.id ?? ''}`.trim();
 }
 
 /** Lo que el operador eligio para un participante, antes de guardar. */

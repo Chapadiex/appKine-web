@@ -107,7 +107,7 @@ describe('ConsultoriosPage', () => {
     expect(texto(fixture)).toContain('Se mudo el centro a la sede Centro');
   });
 
-  it('el PATCH manda solo lo que cambio: lo vaciado como cadena vacia y lo intacto ni aparece', async () => {
+  it('el PATCH manda solo lo que cambio: lo vaciado como cadena vacía y lo intacto ni aparece', async () => {
     const fixture = await montar();
 
     abrir(fixture, 'Editar');
@@ -146,7 +146,7 @@ describe('ConsultoriosPage', () => {
    * con `#editar-phone` de arriba es del contrato, no del gesto: la cadena vacia SI es la forma de
    * borrar un campo institucional.
    */
-  it('vaciar la duracion del turno no manda un cero: el campo directamente no viaja', async () => {
+  it('vaciar la duración del turno no manda un cero: el campo directamente no viaja', async () => {
     const fixture = await montar();
 
     abrir(fixture, 'Editar');
@@ -170,7 +170,7 @@ describe('ConsultoriosPage', () => {
     fixture.detectChanges();
   });
 
-  it('una version vieja no pisa nada: relee la sede, avisa y deja el panel abierto', async () => {
+  it('una versión vieja no pisa nada: relee la sede, avisa y deja el panel abierto', async () => {
     const fixture = await montar();
 
     abrir(fixture, 'Editar');
@@ -182,7 +182,7 @@ describe('ConsultoriosPage', () => {
       .flush(
         {
           type: 'https://akine.app/problems/concurrent-modification',
-          detail: 'La version enviada quedo vieja',
+          detail: 'La versión enviada quedo vieja',
         },
         { status: 409, statusText: 'Conflict' },
       );
@@ -275,7 +275,7 @@ describe('ConsultoriosPage', () => {
     expect(botones(fixture)).toContain('Dar de baja');
   });
 
-  it('sin consultorio:manage la tabla se ve entera y no hay ni una accion', async () => {
+  it('sin consultorio:manage la tabla se ve entera y no hay ni una acción', async () => {
     // El `GET` no exige el permiso a proposito: quien no administra sedes igual tiene que
     // poder verlas. Lo que no puede es tener botones que el backend le va a rechazar con un
     // 403, y menos el de dar de baja. Si `*akinePermiso` se cayera de la plantilla nadie se
@@ -414,14 +414,14 @@ describe('ConsultoriosPage', () => {
     httpMock.expectOne('/api/v1/organizations/1/consultorios/3/deactivate').flush(
       {
         type: 'https://akine.app/problems/last-consultorio-required',
-        detail: 'Es la ultima sede activa',
+        detail: 'Es la última sede activa',
       },
       { status: 409, statusText: 'Conflict' },
     );
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect(texto(fixture)).toContain('unica sede activa de la organizacion');
+    expect(texto(fixture)).toContain('unica sede activa de la organización');
     expect(navegar).not.toHaveBeenCalled();
     // El panel sigue abierto: el motivo escrito no se pierde por un rechazo del servidor.
     expect(fixture.nativeElement.querySelector('#baja-reason')).not.toBeNull();
@@ -482,7 +482,7 @@ describe('ConsultoriosPage', () => {
     consola.mockRestore();
   });
 
-  it('si la relectura posterior al 409 tambien falla, el mensaje queda y el panel no se cierra', async () => {
+  it('si la relectura posterior al 409 también falla, el mensaje queda y el panel no se cierra', async () => {
     // Caso encadenado: el servidor conflictua y ademas se cae. Si la relectura fallida cerrara
     // el panel o tirara la excepcion, el usuario perderia lo escrito ADEMAS del cambio.
     const fixture = await montar();
@@ -496,7 +496,7 @@ describe('ConsultoriosPage', () => {
       .flush(
         {
           type: 'https://akine.app/problems/concurrent-modification',
-          detail: 'La version enviada quedo vieja',
+          detail: 'La versión enviada quedo vieja',
         },
         { status: 409, statusText: 'Conflict' },
       );

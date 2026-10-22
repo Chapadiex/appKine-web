@@ -101,7 +101,7 @@ test.describe('Suscripcion contra el backend real', () => {
           new RegExp(`/platform/organizations/${organizationId}/subscription$`),
         );
         await fila
-          .getByRole('button', { name: `Ver la suscripcion de ${nombreDelCentro}` })
+          .getByRole('button', { name: `Ver la suscripción de ${nombreDelCentro}` })
           .click();
         expect((await lectura).status()).toBe(200);
         await expect(plataforma.getByRole('heading', { name: nombreDelCentro })).toBeVisible();

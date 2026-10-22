@@ -74,7 +74,7 @@
 
     @if (planes().length === 0) {
       <section class="tarjeta" aria-labelledby="titulo-sin-plan">
-        <h2 id="titulo-sin-plan">Este caso todavia no tiene plan</h2>
+        <h2 id="titulo-sin-plan">Este caso todavía no tiene plan</h2>
         <p class="estado estado--vacio">
           El plan define objetivos, frecuencia y cantidades estimadas. Nace en borrador: activarlo
           es una decision aparte. No agenda turnos.
@@ -109,7 +109,7 @@
             <dl class="detalle">
               <dt>Estado</dt>
               <dd data-testid="plan-estado">{{ rotuloDeEstado(p.estado) }}</dd>
-              <dt>Version vigente</dt>
+              <dt>Versión vigente</dt>
               <dd>{{ p.versionVigente?.numeroVersion }}</dd>
               @if (p.activadoEn) {
                 <dt>Activado</dt>
@@ -128,7 +128,7 @@
                 <dd>{{ p.versionVigente?.frecuenciaSemanal }} por semana</dd>
               }
               @if (p.versionVigente?.duracionSemanas) {
-                <dt>Duracion estimada</dt>
+                <dt>Duración estimada</dt>
                 <dd>{{ p.versionVigente?.duracionSemanas }} semanas</dd>
               }
             </dl>
@@ -155,7 +155,7 @@
             <h2 id="titulo-avance">Avance</h2>
             @if (avance(); as a) {
               <p class="ayuda">
-                De la version {{ a.numeroVersion }}. Lo realizado se cuenta de las sesiones cerradas
+                De la versión {{ a.numeroVersion }}. Lo realizado se cuenta de las sesiones cerradas
                 del caso, por oferta: no se carga a mano.
               </p>
               @if ((a.items ?? []).length === 0) {
@@ -188,15 +188,15 @@
               <h2 id="titulo-versiones">Versiones</h2>
               <app-ayuda titulo="Versiones">
                 <p>
-                  Modificar un plan activo deja una version nueva: la anterior sigue consultable y
-                  su avance tambien.
+                  Modificar un plan activo deja una versión nueva: la anterior sigue consultable y
+                  su avance también.
                 </p>
               </app-ayuda>
             </div>
             <ol class="casos" aria-label="Versiones del plan">
               @for (v of versiones(); track v.id) {
                 <li class="casos__item">
-                  <b>Version {{ v.numeroVersion }}</b> · {{ fechaYHora(v.registradaEn) }}
+                  <b>Versión {{ v.numeroVersion }}</b> · {{ fechaYHora(v.registradaEn) }}
                   @if (v.motivoModificacion) {
                     <p class="historia__cuerpo">Motivo: {{ v.motivoModificacion }}</p>
                   }
@@ -225,7 +225,7 @@
                     class="boton boton--secundario"
                     (click)="verAvanceDe(v.numeroVersion)"
                   >
-                    Ver el avance de la version {{ v.numeroVersion }}
+                    Ver el avance de la versión {{ v.numeroVersion }}
                   </button>
                 </li>
               }
@@ -345,7 +345,7 @@
               />
             </div>
             <div class="campo">
-              <label for="plan-duracion">Duracion estimada (semanas)</label>
+              <label for="plan-duracion">Duración estimada (semanas)</label>
               <input
                 id="plan-duracion"
                 type="number"
@@ -372,7 +372,7 @@
                     [value]="fila.ofertaId ?? ''"
                     (change)="editarFila(i, 'ofertaId', $any($event.target).value)"
                   >
-                    <option value="">Elegi una oferta</option>
+                    <option value="">Elegí una oferta</option>
                     @for (oferta of elegibles(); track oferta.id) {
                       <option [value]="oferta.id">{{ oferta.nombreComercial }}</option>
                     }

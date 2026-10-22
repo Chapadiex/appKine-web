@@ -53,8 +53,8 @@ export interface ErrorEspacio {
   readonly segundosDeEspera: number;
 }
 
-const MENSAJE_GENERICO = 'No pudimos completar la operacion. Volve a intentar en un momento.';
-const MENSAJE_DE_RED = 'No se pudo contactar al servidor. Revisa tu conexion y volve a intentar.';
+const MENSAJE_GENERICO = 'No pudimos completar la operación. Volvé a intentar en un momento.';
+const MENSAJE_DE_RED = 'No se pudo contactar al servidor. Revisa tu conexion y volvé a intentar.';
 const MENSAJE_LIMITE_SIN_PLAZO =
   'Demasiados intentos. Espera un momento antes de volver a intentar.';
 
@@ -67,11 +67,11 @@ const MENSAJE_LIMITE_SIN_PLAZO =
  * girando en el mismo bucle.
  */
 const MENSAJE_SIN_CONTEXTO =
-  'Los espacios son de una sede concreta y todavia no elegiste ninguna. Eligi un consultorio ' +
+  'Los espacios son de una sede concreta y todavía no elegiste ninguna. Eligi un consultorio ' +
   'para ver y administrar sus boxes.';
 
 const MENSAJE_SIN_PERMISO =
-  'No tenes permiso para administrar los espacios de esta sede. Pediselo a quien la administra.';
+  'No tenés permiso para administrar los espacios de esta sede. Pediselo a quien la administra.';
 
 const MENSAJE_NO_ENCONTRADO =
   'Ese espacio ya no existe, o pertenece a otra sede. Recarga el listado para ver los que hay ahora.';
@@ -86,8 +86,8 @@ const MENSAJE_NO_ENCONTRADO =
  * concluye que la pantalla esta rota.
  */
 const MENSAJE_NOMBRE_TOMADO =
-  'Ya hay otro espacio vigente en esta sede con ese nombre. Elegi otro. Ojo: el nombre de un ' +
-  'espacio dado de baja SI se puede reusar, asi que si el que choca es uno que diste de baja, ' +
+  'Ya hay otro espacio vigente en esta sede con ese nombre. Elegí otro. Ojo: el nombre de un ' +
+  'espacio dado de baja SI se puede reusar, así que si el que choca es uno que diste de baja, ' +
   'revisa el filtro "Todos" del listado para ver cual es.';
 
 const MENSAJE_ESPACIO_INACTIVO =
@@ -99,7 +99,7 @@ const MENSAJE_YA_INACTIVO =
   'ver el estado actual.';
 
 const MENSAJE_CONCURRENCIA =
-  'Alguien mas modifico este espacio mientras lo estabas editando, asi que no guardamos tus ' +
+  'Alguien mas modifico este espacio mientras lo estabas editando, así que no guardamos tus ' +
   'cambios para no pisar los suyos. Volvimos a leer los datos actuales: revisalos y confirma ' +
   'de nuevo si seguis queriendo el cambio.';
 
@@ -108,8 +108,8 @@ const MENSAJE_SEDE_INACTIVA =
   'se conserva, pero no se puede sumar nada.';
 
 const MENSAJE_SUSCRIPCION_SUSPENDIDA =
-  'La suscripcion de la organizacion esta suspendida, asi que no se pueden registrar cambios. ' +
-  'Se resuelve desde la pantalla de suscripcion.';
+  'La suscripción de la organización esta suspendida, así que no se pueden registrar cambios. ' +
+  'Se resuelve desde la pantalla de suscripción.';
 
 /**
  * La capacidad pedida no alcanza para lo ya comprometido. <b>Codigo reservado.</b>
@@ -172,14 +172,14 @@ function mensajeDeReferenciasActivas(error: AkineHttpError): string {
 
   if (typeof tipo === 'string' && cantidad !== null) {
     return (
-      `No se puede dar de baja este espacio porque todavia tiene ${cantidad} ` +
+      `No se puede dar de baja este espacio porque todavía tiene ${cantidad} ` +
       `${etiquetaDeReferencia(tipo, cantidad)} sin ` +
-      'resolver. Resolvelos primero y volve a intentar.'
+      'resolver. Resolvelos primero y volvé a intentar.'
     );
   }
   return (
-    'No se puede dar de baja este espacio porque todavia hay operaciones vigentes que dependen ' +
-    'de el. Resolvelas primero y volve a intentar.'
+    'No se puede dar de baja este espacio porque todavía hay operaciones vigentes que dependen ' +
+    'de el. Resolvelas primero y volvé a intentar.'
   );
 }
 
@@ -206,7 +206,7 @@ export function traducirErrorEspacio(error: unknown): ErrorEspacio {
     return {
       mensaje:
         segundos > 0
-          ? `Demasiados intentos. Espera ${segundos} segundos y volve a intentar.`
+          ? `Demasiados intentos. Espera ${segundos} segundos y volvé a intentar.`
           : MENSAJE_LIMITE_SIN_PLAZO,
       causa: 'limite',
       segundosDeEspera: segundos,

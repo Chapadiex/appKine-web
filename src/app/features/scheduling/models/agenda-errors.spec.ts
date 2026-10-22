@@ -39,12 +39,12 @@ describe('traducirErrorAgenda', () => {
 
   it('slot-no-disponible manda a recargar la agenda y trae el motivo', () => {
     const traducido = traducirErrorAgenda(
-      conflicto('slot-no-disponible', { motivo: 'el profesional dejo de atender ese dia' }),
+      conflicto('slot-no-disponible', { motivo: 'el profesional dejo de atender ese día' }),
     );
 
     expect(traducido.causa).toBe('slot-no-disponible');
     expect(traducido.accion).toBe('recargar-agenda');
-    expect(traducido.motivo).toBe('el profesional dejo de atender ese dia');
+    expect(traducido.motivo).toBe('el profesional dejo de atender ese día');
   });
 
   it('slot-completo NO manda a recargar: ofrece el siguiente, y trae el cupo total', () => {
@@ -99,14 +99,14 @@ describe('traducirErrorAgenda', () => {
     expect(traducido.motivo).toBe('ya empezo y no se puede mover');
   });
 
-  it('turno-con-atencion explica por que y manda a la atencion, no a reintentar', () => {
+  it('turno-con-atencion explica por que y manda a la atención, no a reintentar', () => {
     const traducido = traducirErrorAgenda(conflicto('turno-con-atencion'));
 
     expect(traducido.causa).toBe('turno-con-atencion');
     // Reintentar devuelve el mismo 409 para siempre: lo que hay que resolver es la Sesion.
     expect(traducido.accion).toBe('resolver-atencion');
     // El requisito era explicito: esto NO se muestra como "error inesperado".
-    expect(traducido.mensaje).toContain('atencion clinica registrada');
+    expect(traducido.mensaje).toContain('atención clínica registrada');
     expect(traducido.mensaje).toContain('no se puede cancelar, reprogramar ni marcar como ausente');
   });
 
@@ -128,10 +128,10 @@ describe('traducirErrorAgenda', () => {
    * DP-21: la version vieja llega como `concurrent-modification`, y la agenda no le da causa
    * propia: cae en `conflicto`, conserva el `detail` y manda a recargar, que es lo correcto.
    */
-  it('la version vieja llega como conflicto generico y conserva el mensaje del backend', () => {
+  it('la versión vieja llega como conflicto generico y conserva el mensaje del backend', () => {
     const traducido = traducirErrorAgenda(
       conflicto('concurrent-modification', {
-        detail: 'El recurso fue modificado por otra operacion. Vuelva a leerlo y reintente.',
+        detail: 'El recurso fue modificado por otra operación. Vuelva a leerlo y reintente.',
       }),
     );
 
@@ -172,7 +172,7 @@ describe('traducirErrorAgenda', () => {
     expect(traducido.mensaje).toContain('62');
   });
 
-  it('lee las extensiones tambien cuando llegan anidadas bajo properties', () => {
+  it('lee las extensiones también cuando llegan anidadas bajo properties', () => {
     const error = new AkineHttpError(
       409,
       cuerpo({
@@ -188,7 +188,7 @@ describe('traducirErrorAgenda', () => {
     expect(traducirErrorAgenda(error).cupoTotal).toBe(3);
   });
 
-  it('los rechazos que NO son de agenda no ofrecen una accion de agenda', () => {
+  it('los rechazos que NO son de agenda no ofrecen una acción de agenda', () => {
     // Cada uno lleva a otro lado, y ninguno se arregla recargando la grilla: sin contexto se
     // elige contexto, sin permiso no hay nada que el usuario pueda hacer solo, y la suscripcion
     // suspendida se resuelve en otra pantalla.
@@ -257,7 +257,7 @@ describe('traducirErrorAgenda', () => {
     expect(otro.mensaje).toBe('Algo raro paso.');
   });
 
-  it('sin red y con rate limit no se inventa una accion', () => {
+  it('sin red y con rate limit no se inventa una acción', () => {
     const red = traducirErrorAgenda(new AkineHttpError(0, null, true));
     expect(red.causa).toBe('red');
 
@@ -312,18 +312,18 @@ describe('traducirErrorRecepcion', () => {
     );
   }
 
-  it('el 409 de la recepcion explica la asimetria y NO es un "error inesperado"', () => {
+  it('el 409 de la recepción explica la asimetria y NO es un "error inesperado"', () => {
     const traducido = traducirErrorRecepcion(
       conflicto('recepcion-transicion-no-permitida', {
-        motivo: 'no hay recepcion abierta: no hay ninguna llegada que anular',
+        motivo: 'no hay recepción abierta: no hay ninguna llegada que anular',
       }),
     );
 
     expect(traducido.causa).toBe('recepcion-transicion-no-permitida');
     // Registrar es idempotente y anular no: el texto lo dice.
     expect(traducido.mensaje).toContain('idempotente');
-    expect(traducido.mensaje).not.toContain('No pudimos completar la operacion');
-    expect(traducido.motivo).toBe('no hay recepcion abierta: no hay ninguna llegada que anular');
+    expect(traducido.mensaje).not.toContain('No pudimos completar la operación');
+    expect(traducido.motivo).toBe('no hay recepción abierta: no hay ninguna llegada que anular');
     expect(traducido.accion).toBe('recargar-dia');
   });
 
@@ -381,7 +381,7 @@ describe('recortarVentana', () => {
     expect(recortarVentana('2026-09-15', 62)).toBe('2026-11-16');
   });
 
-  it('sin un maximo utilizable no inventa un ancho', () => {
+  it('sin un máximo utilizable no inventa un ancho', () => {
     // Adivinar la regla del servidor daria un segundo 400 y un bucle de reintentos.
     expect(recortarVentana('2026-09-15', 0)).toBeNull();
     expect(recortarVentana('2026-09-15', -1)).toBeNull();

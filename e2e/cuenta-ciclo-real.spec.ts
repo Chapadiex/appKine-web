@@ -85,15 +85,15 @@ test.describe('Cuenta de punta a punta contra el backend real (A-6)', () => {
       const restablecimiento = await enlaceDelCorreo(email, ASUNTO.restablecimiento);
       expect(restablecimiento.ruta).toMatch(/^\/auth\/restablecer\?token=/);
       await page.goto(restablecimiento.ruta);
-      await campo(page, 'Contrasena nueva').fill(PASSWORD_NUEVA);
-      await campo(page, 'Repetir la contrasena').fill(PASSWORD_NUEVA);
+      await campo(page, 'Contraseña nueva').fill(PASSWORD_NUEVA);
+      await campo(page, 'Repetir la contraseña').fill(PASSWORD_NUEVA);
       await page.getByRole('button', { name: 'Guardar contraseña' }).click();
       await expect(page.getByText('Listo.', { exact: true })).toBeVisible();
 
       // El mismo enlace ya no sirve: ni por pantalla ni por la API.
       await page.goto(restablecimiento.ruta);
-      await campo(page, 'Contrasena nueva').fill(PASSWORD_NUEVA);
-      await campo(page, 'Repetir la contrasena').fill(PASSWORD_NUEVA);
+      await campo(page, 'Contraseña nueva').fill(PASSWORD_NUEVA);
+      await campo(page, 'Repetir la contraseña').fill(PASSWORD_NUEVA);
       await page.getByRole('button', { name: 'Guardar contraseña' }).click();
       await expect(page.getByRole('alert')).toBeVisible();
       await esperarProblema(
@@ -275,9 +275,9 @@ test.describe('Cuenta de punta a punta contra el backend real (A-6)', () => {
         await expect(page).toHaveURL(/\/organizacion/);
         await page.goto('/organizacion/auditoria');
         await page.getByLabel('Actividad de una persona').check();
-        await page.getByLabel('Numero de cuenta').fill(String(vinculo.accountId));
+        await page.getByLabel('Número de cuenta').fill(String(vinculo.accountId));
         await page.getByRole('button', { name: 'Buscar' }).click();
-        const tabla = page.getByRole('region', { name: 'Hechos auditados de la organizacion' });
+        const tabla = page.getByRole('region', { name: 'Hechos auditados de la organización' });
         await expect(tabla.getByRole('cell', { name: 'PERMISSION_DENIED' }).first()).toBeVisible();
       } finally {
         await profesionalEnElCentro?.cerrar();

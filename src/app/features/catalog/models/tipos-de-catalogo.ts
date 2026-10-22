@@ -32,7 +32,7 @@ export const TIPOS_DE_CATALOGO: readonly DatosDeTipo[] = [
     plural: 'Especialidades',
     descripcion:
       'La disciplina bajo la que se atiende: kinesiologia, fonoaudiologia, nutricion. Es de lo ' +
-      'que cuelgan las practicas.',
+      'que cuelgan las prácticas.',
     exigeEspecialidad: false,
   },
   {
@@ -40,7 +40,7 @@ export const TIPOS_DE_CATALOGO: readonly DatosDeTipo[] = [
     singular: 'práctica',
     plural: 'Prácticas',
     descripcion:
-      'Lo que efectivamente se hace en una sesion. Cada practica pertenece a una especialidad y ' +
+      'Lo que efectivamente se hace en una sesión. Cada práctica pertenece a una especialidad y ' +
       'es lo que los nomencladores codifican.',
     exigeEspecialidad: true,
   },
@@ -49,7 +49,7 @@ export const TIPOS_DE_CATALOGO: readonly DatosDeTipo[] = [
     singular: 'nomenclador',
     plural: 'Nomencladores',
     descripcion:
-      'El listado de codigos con el que se le factura a un financiador. Sus codigos no viven en ' +
+      'El listado de códigos con el que se le factura a un financiador. Sus códigos no viven en ' +
       'el nomenclador: viven en sus vigencias, que son las que cambian con el tiempo.',
     exigeEspecialidad: false,
   },

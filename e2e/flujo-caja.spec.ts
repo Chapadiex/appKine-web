@@ -103,7 +103,7 @@ test.describe('Caja diaria contra el backend real', () => {
       page.getByRole('status').filter({ hasText: 'Movimiento revertido.' }),
     ).toBeVisible();
     await expect(movimiento(page, concepto).first()).toContainText('Revertido');
-    await expect(movimiento(page, 'Reversion de ingreso')).toHaveCount(1);
+    await expect(movimiento(page, 'Reversión de ingreso')).toHaveCount(1);
     await expect(dato(page, 'Debería haber en el cajón')).toContainText('1.000,00');
 
     // Mientras se cuenta, otra computadora mete efectivo: el cierre se rechaza, no se registra
@@ -320,6 +320,6 @@ test.describe('Egreso pagado en efectivo contra el backend real', () => {
 
     await navegar(page, '/caja');
     await expect(dato(page, 'Debería haber en el cajón')).toContainText('5.000,00');
-    await expect(movimiento(page, 'Reversion de egreso')).toHaveCount(1);
+    await expect(movimiento(page, 'Reversión de egreso')).toHaveCount(1);
   });
 });

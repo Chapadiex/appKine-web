@@ -233,7 +233,7 @@ export class AuditPage {
 
     if (fin.getTime() - inicio.getTime() > DIAS_MAXIMOS * MILISEGUNDOS_POR_DIA) {
       this.errorVentana.set(
-        `La ventana no puede superar los ${DIAS_MAXIMOS} dias. Acorta el rango y volve a buscar.`,
+        `La ventana no puede superar los ${DIAS_MAXIMOS} días. Acorta el rango y volvé a buscar.`,
       );
       this.enfocar('#auditoria-desde');
       return null;

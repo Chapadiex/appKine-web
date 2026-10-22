@@ -339,8 +339,8 @@ export class PadronDePersonasPage {
         this.enviando.set(false);
         this.altaAbierta.set(false);
         this.exito.set(
-          `${nombreCompleto(creada)} quedo registrada. Todavia no es paciente: si empieza una ` +
-            'atencion clinica, activale el perfil desde su fila.',
+          `${nombreCompleto(creada)} quedo registrada. Todavía no es paciente: si empieza una ` +
+            'atención clínica, activale el perfil desde su fila.',
         );
         this.cargar();
       },
@@ -450,8 +450,8 @@ export class PadronDePersonasPage {
         this.enviando.set(false);
         this.cerrarPaneles();
         this.exito.set(
-          `${nombreCompleto(actualizada)} ya es paciente. Esto no le crea historia clinica: eso ` +
-            'se maneja en el modulo clinico.',
+          `${nombreCompleto(actualizada)} ya es paciente. Esto no le crea historia clínica: eso ` +
+            'se maneja en el modulo clínico.',
         );
         this.cargar();
       },

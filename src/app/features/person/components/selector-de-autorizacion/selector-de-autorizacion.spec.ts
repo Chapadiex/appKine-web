@@ -90,7 +90,7 @@ describe('SelectorDeAutorizacion', () => {
   afterEach(() => httpMock.verify());
 
   it(
-    'para una practica dice de cual se descontaria y por que no de las otras',
+    'para una práctica dice de cual se descontaria y por que no de las otras',
     async () => {
       const fixture = montar();
       elegir(fixture, '#selector-practica', String(KINESIO.id));
@@ -105,20 +105,20 @@ describe('SelectorDeAutorizacion', () => {
       const contenido = texto(fixture);
       expect(contenido).toContain('Se descontaria de la KIN-1');
       expect(contenido).toContain('La que se usaria');
-      expect(contenido).toContain('Tambien sirve, pero vence despues que la KIN-1');
+      expect(contenido).toContain('También sirve, pero vence después que la KIN-1');
       expect(contenido).toContain('No sirve: esta vencida');
       expect(contenido).toContain('Convenio OSDE 210');
       expect(contenido).toContain('cobertura no este vigente');
       // La de fonoaudiologia vence antes, pero es de otra practica: no se muestra ni se elige.
       expect(contenido).not.toContain('FONO-1');
-      expect(contenido).toContain('1 autorizacion(es) de otras practicas no se muestran');
+      expect(contenido).toContain('1 autorizacion(es) de otras prácticas no se muestran');
 
       await esperarSinViolaciones(fixture.nativeElement as HTMLElement);
     },
     TIMEOUT_AXE,
   );
 
-  it('sin practica muestra todas, sin elegir ninguna, y consulta contra hoy', async () => {
+  it('sin práctica muestra todas, sin elegir ninguna, y consulta contra hoy', async () => {
     const fixture = montar();
     apretar(fixture, 'Ver candidatas');
     const pedido = httpMock.expectOne((p) => p.url === ELEGIBLES);
@@ -140,7 +140,7 @@ describe('SelectorDeAutorizacion', () => {
       .expectOne((p) => p.url === ELEGIBLES)
       .flush([{ ...CANDIDATAS[0], habilita: false, motivoNoElegible: 'AGOTADA', saldo: 0 }]);
     await estabilizar(fixture);
-    expect(texto(fixture)).toContain('Ninguna autorizacion sirve para esta practica');
+    expect(texto(fixture)).toContain('Ninguna autorización sirve para esta práctica');
     expect(texto(fixture)).toContain('ya se consumieron todas');
 
     contexto.select({
@@ -150,7 +150,7 @@ describe('SelectorDeAutorizacion', () => {
       consultorioName: 'Sede Norte',
     });
     await estabilizar(fixture);
-    expect(texto(fixture)).not.toContain('Ninguna autorizacion sirve');
+    expect(texto(fixture)).not.toContain('Ninguna autorización sirve');
   });
 
   it('un paciente sin autorizaciones y un error se distinguen', async () => {
@@ -165,7 +165,7 @@ describe('SelectorDeAutorizacion', () => {
       .expectOne((p) => p.url === ELEGIBLES)
       .flush({ status: 404 }, { status: 404, statusText: 'Not Found' });
     await estabilizar(fixture);
-    expect(texto(fixture)).toContain('no es de esta organizacion');
+    expect(texto(fixture)).toContain('no es de esta organización');
   });
 
   function montar(): ComponentFixture<SelectorDeAutorizacion> {
@@ -208,7 +208,7 @@ describe('SelectorDeAutorizacion', () => {
       fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>,
     ).find((b) => (b.textContent ?? '').trim() === rotulo);
     if (boton === undefined) {
-      throw new Error(`No hay ningun boton rotulado "${rotulo}".`);
+      throw new Error(`No hay ningún botón rotulado "${rotulo}".`);
     }
     boton.click();
     fixture.detectChanges();

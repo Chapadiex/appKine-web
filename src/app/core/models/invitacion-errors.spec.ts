@@ -59,7 +59,7 @@ describe('traducirErrorInvitacion', () => {
     expect(seResuelveReenviando(null)).toBe(false);
   });
 
-  it('el enlace vencido dice que la invitacion sigue en pie, no que no existe', () => {
+  it('el enlace vencido dice que la invitación sigue en pie, no que no existe', () => {
     // Es el unico caso donde el backend responde 409 en vez del 404 uniforme, y el texto tiene
     // que aprovecharlo: confundirlo con "no existe" manda al invitado a reportar una falla
     // cuando lo unico que necesita es pedir un reenvio.

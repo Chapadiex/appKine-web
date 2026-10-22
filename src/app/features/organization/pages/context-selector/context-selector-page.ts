@@ -279,7 +279,7 @@ export class ContextSelectorPage {
     const es404 = error instanceof AkineHttpError && !error.esDeRed && error.status === 404;
 
     if (es404 && !automatico) {
-      this.aviso.set('Ese contexto ya no esta disponible. Elegi otro de la lista actualizada.');
+      this.aviso.set('Ese contexto ya no esta disponible. Elegí otro de la lista actualizada.');
       this.cargar();
       return;
     }
@@ -365,7 +365,7 @@ export class ContextSelectorPage {
     if (error.status === 403) {
       return {
         tipo: 'error',
-        mensaje: 'Tu sesion no esta activa. Volve a iniciar sesion.',
+        mensaje: 'Tu sesión no esta activa. Volvé a iniciar sesión.',
         esDeRed: false,
       };
     }

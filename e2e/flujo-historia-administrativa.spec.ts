@@ -125,7 +125,7 @@ test.describe('Historia clinica administrativa en el Paciente 360 contra el back
     await expect(
       page
         .getByRole('region', { name: 'Historia clinica: datos administrativos' })
-        .getByText('Esta persona todavia no tiene historia clinica.'),
+        .getByText('Esta persona todavía no tiene historia clínica.'),
     ).toBeVisible();
   });
 });

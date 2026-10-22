@@ -98,7 +98,7 @@ describe('BuscadorDeAgendaPage', () => {
    * la ventana arrancaba un dia tarde y el recorte a 62 dias terminaba un dia despues. La primera
    * agenda trae la zona de la sede: la ventana por defecto se corre a su dia y se vuelve a pedir.
    */
-  it('la ventana por defecto arranca el dia de la SEDE aunque el navegador ya este en el siguiente', async () => {
+  it('la ventana por defecto arranca el día de la SEDE aunque el navegador ya este en el siguiente', async () => {
     fijarReloj('2026-10-10T00:25:00Z', { navegadorEnUtc: true });
     const fixture = await montar();
 
@@ -120,7 +120,7 @@ describe('BuscadorDeAgendaPage', () => {
     expect(raiz.querySelectorAll('.dia').length).toBe(3);
   });
 
-  it('un `hasta` elegido a mano se respeta al correr la ventana al dia de la sede', async () => {
+  it('un `hasta` elegido a mano se respeta al correr la ventana al día de la sede', async () => {
     fijarReloj('2026-10-10T00:25:00Z', { navegadorEnUtc: true });
     const fixture = await montar();
     elegirOferta(fixture);
@@ -141,7 +141,7 @@ describe('BuscadorDeAgendaPage', () => {
     deLaSede.flush(AGENDA_CON_TRES_DIAS);
   });
 
-  it('ningun dia de la ventana se omite: el dia sin turnos muestra su motivo', async () => {
+  it('ningún día de la ventana se omite: el día sin turnos muestra su motivo', async () => {
     const fixture = await montarConAgenda();
     const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
     const dias = (fixture.nativeElement as HTMLElement).querySelectorAll('.dia');

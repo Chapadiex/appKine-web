@@ -108,13 +108,13 @@ describe('EnmiendaPage', () => {
 
   afterEach(() => httpMock.verify());
 
-  it('precarga la ULTIMA version, no la primera', async () => {
+  it('precarga la ULTIMA versión, no la primera', async () => {
     const fixture = await montar();
 
     expect(valor(fixture, '#enmienda-nota')).toBe('Movilidad pasiva y activa.');
     expect(valor(fixture, '#enmienda-zona')).toBe('rodilla');
     expect(valor(fixture, '#enmienda-dolor')).toBe('6');
-    expect(texto(fixture)).toContain('Partis de la version 2');
+    expect(texto(fixture)).toContain('Partis de la versión 2');
   });
 
   it('sin motivo no manda nada y dice por que', async () => {
@@ -129,7 +129,7 @@ describe('EnmiendaPage', () => {
     escribir(fixture, '#enmienda-motivo', 'Corrijo la nota');
     escribir(fixture, '#enmienda-nota', '   ');
     apretar(fixture, 'Registrar la enmienda');
-    expect(texto(fixture)).toContain('la nota de cierre no puede quedar vacia');
+    expect(texto(fixture)).toContain('la nota de cierre no puede quedar vacía');
     httpMock.expectNone((p) => p.method === 'POST');
   });
 
@@ -160,7 +160,7 @@ describe('EnmiendaPage', () => {
     expect(navegar).toHaveBeenCalledWith(['/atencion', 'sesiones', SESION, 'versiones']);
   });
 
-  it('al tocar un tratamiento manda la lista entera, con su id, practica y parametros', async () => {
+  it('al tocar un tratamiento manda la lista entera, con su id, práctica y parametros', async () => {
     const fixture = await montar();
     vi.spyOn(router, 'navigate').mockResolvedValue(true);
 
@@ -191,7 +191,7 @@ describe('EnmiendaPage', () => {
   it('quitar un tratamiento lo saca de la lista: lo que no aparece se da de baja', async () => {
     const fixture = await montar();
     escribir(fixture, '#enmienda-motivo', 'No se hizo');
-    marcar(fixture, 'Quitar Electroterapia de la sesion');
+    marcar(fixture, 'Quitar Electroterapia de la sesión');
     apretar(fixture, 'Registrar la enmienda');
 
     const pedido = httpMock.expectOne((p) => p.method === 'POST');
@@ -200,16 +200,16 @@ describe('EnmiendaPage', () => {
       {
         type: 'https://akine.app/problems/enmienda-cambia-practicas',
         status: 409,
-        detail: 'Cambia practicas.',
+        detail: 'Cambia prácticas.',
       },
       { status: 409, statusText: 'Conflict' },
     );
   });
 
-  it('enmienda-cambia-practicas explica que la practica no se corrige enmendando', async () => {
+  it('enmienda-cambia-practicas explica que la práctica no se corrige enmendando', async () => {
     const fixture = await montar();
     escribir(fixture, '#enmienda-motivo', 'No se hizo');
-    marcar(fixture, 'Quitar Electroterapia de la sesion');
+    marcar(fixture, 'Quitar Electroterapia de la sesión');
     apretar(fixture, 'Registrar la enmienda');
     httpMock
       .expectOne((p) => p.method === 'POST')
@@ -217,7 +217,7 @@ describe('EnmiendaPage', () => {
         {
           type: 'https://akine.app/problems/enmienda-cambia-practicas',
           status: 409,
-          detail: 'Cambia practicas.',
+          detail: 'Cambia prácticas.',
         },
         { status: 409, statusText: 'Conflict' },
       );
@@ -225,7 +225,7 @@ describe('EnmiendaPage', () => {
     expect(texto(fixture)).toContain('no se corrige enmendando');
   });
 
-  it('al tocar una medicion manda las mediciones, con el lado y el valor del tipo', async () => {
+  it('al tocar una medición manda las mediciones, con el lado y el valor del tipo', async () => {
     const fixture = await montar();
     escribir(fixture, '#enmienda-motivo', 'Error de tipeo en el ROM');
     escribir(fixture, '#enmienda-medicion-0', '110');
@@ -246,7 +246,7 @@ describe('EnmiendaPage', () => {
     expect(texto(fixture)).toContain('otro profesional');
   });
 
-  it('un 409 de version ofrece releer, y al releer conserva el motivo', async () => {
+  it('un 409 de versión ofrece releer, y al releer conserva el motivo', async () => {
     const fixture = await montar();
     escribir(fixture, '#enmienda-motivo', 'Mi motivo');
     escribir(fixture, '#enmienda-zona', 'tobillo');
@@ -303,11 +303,11 @@ describe('EnmiendaPage', () => {
     await estabilizar(fixture);
 
     expect(texto(fixture)).toContain('ya no se puede enmendar');
-    expect(texto(fixture)).toContain('durante 30 dias');
+    expect(texto(fixture)).toContain('durante 30 días');
     expect(botonEnmendar(fixture).disabled).toBe(true);
   });
 
-  it('sin sesion:amend lo dice y no deja mandar', async () => {
+  it('sin sesión:amend lo dice y no deja mandar', async () => {
     TestBed.inject(PermissionsStore).cargar().subscribe();
     httpMock.expectOne(RUTA_PERMISOS_EFECTIVOS).flush({ permissions: [PERMISO_SESION_REGISTER] });
     const fixture = await montar();
@@ -315,7 +315,7 @@ describe('EnmiendaPage', () => {
     expect(botonEnmendar(fixture).disabled).toBe(true);
   });
 
-  it('con sesion:amend deja mandar', async () => {
+  it('con sesión:amend deja mandar', async () => {
     TestBed.inject(PermissionsStore).cargar().subscribe();
     httpMock.expectOne(RUTA_PERMISOS_EFECTIVOS).flush({ permissions: [PERMISO_SESION_AMEND] });
     const fixture = await montar();
@@ -323,7 +323,7 @@ describe('EnmiendaPage', () => {
     expect(botonEnmendar(fixture).disabled).toBe(false);
   });
 
-  it('una atencion abierta no se enmienda: lo dice', async () => {
+  it('una atención abierta no se enmienda: lo dice', async () => {
     const fixture = await montar({ ...CERRADA, numeroSesion: undefined }, []);
     expect(texto(fixture)).toContain('Esta atención sigue abierta');
     expect(fixture.nativeElement.querySelector('#enmienda-motivo')).toBeNull();
@@ -388,7 +388,7 @@ describe('EnmiendaPage', () => {
       fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>,
     ).find((b) => (b.textContent ?? '').trim().startsWith(rotulo));
     if (boton === undefined) {
-      throw new Error(`No hay ningun boton rotulado "${rotulo}".`);
+      throw new Error(`No hay ningún botón rotulado "${rotulo}".`);
     }
     boton.click();
     fixture.detectChanges();

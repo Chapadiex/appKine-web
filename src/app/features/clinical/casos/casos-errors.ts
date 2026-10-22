@@ -31,36 +31,36 @@ export interface ErrorCaso {
 
 const MENSAJES: Readonly<Record<CausaCaso, string>> = {
   'requiere-justificacion':
-    'No figura que atiendas a esta persona en esta sede: para ver o cambiar sus casos tenes que ' +
+    'No figura que atiendas a esta persona en esta sede: para ver o cambiar sus casos tenés que ' +
     'declarar el motivo del acceso.',
-  validacion: 'El servidor rechazo un dato del caso clinico. Revisa los campos y volve a intentar.',
+  validacion: 'El servidor rechazo un dato del caso clínico. Revisa los campos y volvé a intentar.',
   'sin-contexto':
-    'Para trabajar con casos clinicos hay que saber en que sede estas. Eligi una organizacion y un ' +
-    'consultorio, y volve a entrar. Tu sesion sigue abierta.',
+    'Para trabajar con casos clínicos hay que saber en que sede estas. Eligi una organización y un ' +
+    'consultorio, y volvé a entrar. Tu sesión sigue abierta.',
   'sin-permiso':
-    'No tenes permiso para esta operacion en esta sede. Pediselo a quien administra el centro.',
+    'No tenés permiso para esta operación en esta sede. Pediselo a quien administra el centro.',
   'no-encontrado':
-    'Ese caso no existe o no es de esta organizacion. Volve a la historia clinica para ver los casos.',
+    'Ese caso no existe o no es de esta organización. Volvé a la historia clínica para ver los casos.',
   'version-vieja':
-    'Alguien cambio este caso despues de que lo abriste. No pisamos nada y no perdimos lo que ' +
-    'escribiste: relee el caso y volve a intentar sobre la version nueva.',
+    'Alguien cambio este caso después de que lo abriste. No pisamos nada y no perdimos lo que ' +
+    'escribiste: relee el caso y volvé a intentar sobre la versión nueva.',
   'caso-cerrado':
     'Este caso esta cerrado y no admite cambios. Si hay que retomarlo, primero reabrilo con motivo.',
   'posible-duplicado':
     'Ya hay un caso activo de la misma oferta para esta persona. Revisalo antes de crear otro: si ' +
     'de todas formas corresponde uno nuevo, confirma para seguir.',
   'oferta-no-vigente':
-    'Esa oferta no esta vigente hoy en esta sede, asi que no puede motivar un caso. Elegi otra.',
+    'Esa oferta no esta vigente hoy en esta sede, así que no puede motivar un caso. Elegí otra.',
   'suscripcion-suspendida':
-    'La suscripcion de la organizacion esta suspendida, asi que no se pueden gestionar casos clinicos.',
+    'La suscripción de la organización esta suspendida, así que no se pueden gestionar casos clínicos.',
   conflicto:
-    'El servidor rechazo la operacion por un conflicto con lo que ya hay guardado. Relee el caso ' +
+    'El servidor rechazo la operación por un conflicto con lo que ya hay guardado. Relee el caso ' +
     'para ver el estado actual.',
-  limite: 'Demasiados intentos seguidos. Espera un momento y volve a intentar.',
+  limite: 'Demasiados intentos seguidos. Espera un momento y volvé a intentar.',
   red:
-    'No se pudo contactar al servidor, asi que lo ultimo que hiciste todavia no esta guardado. ' +
-    'Revisa la conexion y volve a intentar.',
-  otro: 'No pudimos completar la operacion. Volve a intentar en un momento.',
+    'No se pudo contactar al servidor, así que lo último que hiciste todavía no esta guardado. ' +
+    'Revisa la conexion y volvé a intentar.',
+  otro: 'No pudimos completar la operación. Volvé a intentar en un momento.',
 };
 
 /** Las causas en las que el `detail` del backend dice mas que el mensaje de la pantalla. */

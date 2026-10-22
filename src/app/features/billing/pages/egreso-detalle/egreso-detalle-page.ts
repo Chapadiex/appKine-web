@@ -350,7 +350,7 @@ export class EgresoDetallePage {
     this.operar(
       'anular-pago',
       this.api.anularPago(ids.consultorioId, ids.egresoId, pagoId, motivo),
-      'Pago anulado. La plata vuelve al cajon como reversion en la jornada de hoy y el saldo ' +
+      'Pago anulado. La plata vuelve al cajon como reversión en la jornada de hoy y el saldo ' +
         'vuelve al egreso.',
     );
   }

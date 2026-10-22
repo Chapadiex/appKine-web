@@ -76,7 +76,7 @@ describe('Filtros', () => {
     expect(panel().hidden).toBe(false);
   });
 
-  it('sin campo basico, el boton lleva su texto a la vista', () => {
+  it('sin campo basico, el botón lleva su texto a la vista', () => {
     fixture.componentInstance.solo.set(true);
     fixture.detectChanges();
 
