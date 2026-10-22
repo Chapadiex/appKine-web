@@ -1,0 +1,63 @@
+/*
+ * Banda de una ficha (UX-01): migas, titulo, datos y estado arriba, y las pestanas de las
+ * pantallas hermanas debajo. Las migas las dibuja `app-migas` con los estilos de
+ * design-system.css.
+ */
+.cabecera-ficha {
+  margin-bottom: var(--esp-7);
+  border: var(--borde-fino) solid var(--color-borde);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie);
+}
+
+.cabecera-ficha__fila {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--esp-3) var(--esp-4);
+  padding: var(--esp-5) var(--esp-7) var(--esp-4);
+}
+
+.cabecera-ficha__titulo {
+  margin: 0;
+  font-size: var(--tipo-xl);
+  font-weight: var(--peso-fuerte);
+  color: var(--color-texto-fuerte);
+  text-decoration: none;
+}
+
+a.cabecera-ficha__titulo:hover {
+  text-decoration: underline;
+}
+
+.cabecera-ficha__dato {
+  color: var(--color-texto);
+  font-variant-numeric: tabular-nums;
+}
+
+.cabecera-ficha__perfil {
+  padding: var(--esp-1) var(--esp-4);
+  border-radius: var(--radio-pastilla);
+  background: var(--color-acento-claro);
+  color: var(--color-texto-fuerte);
+  font-size: var(--tipo-xs);
+  font-weight: var(--peso-semi);
+}
+
+.cabecera-ficha__acciones {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--esp-4);
+  margin-left: auto;
+}
+
+.cabecera-ficha__acciones:empty {
+  display: none;
+}
+
+.cabecera-ficha .pestanas {
+  margin-bottom: 0;
+  padding: 0 var(--esp-5);
+  border-bottom: 0;
+}

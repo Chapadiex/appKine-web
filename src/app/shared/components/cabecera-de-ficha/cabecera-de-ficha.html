@@ -1,0 +1,35 @@
+@let m = modelo();
+<div class="cabecera-ficha">
+  <div class="cabecera-ficha__fila">
+    @if (m.migas.length > 0) {
+      <app-migas [migas]="m.migas" enLinea />
+    }
+    @if (tituloComoH1()) {
+      <h1 class="cabecera-ficha__titulo">{{ m.titulo }}</h1>
+    } @else if (m.rutaTitulo) {
+      <a class="cabecera-ficha__titulo" [routerLink]="m.rutaTitulo">{{ m.titulo }}</a>
+    } @else {
+      <span class="cabecera-ficha__titulo">{{ m.titulo }}</span>
+    }
+    @for (dato of m.datos; track $index) {
+      <span class="cabecera-ficha__dato">{{ dato }}</span>
+    }
+    @for (marca of m.marcas; track $index) {
+      @if (marca.tono === 'neutra') {
+        <span class="cabecera-ficha__perfil">{{ marca.texto }}</span>
+      } @else {
+        <span
+          class="marca-estado"
+          [class.marca-estado--activa]="marca.tono === 'activa'"
+          [class.marca-estado--revocada]="marca.tono === 'revocada'"
+          >{{ marca.texto }}</span
+        >
+      }
+    }
+    <ng-content select="[cabeceraAyuda]" />
+    <div class="cabecera-ficha__acciones">
+      <ng-content />
+    </div>
+  </div>
+  <app-pestanas [pestanas]="m.pestanas" [etiqueta]="m.etiquetaPestanas" />
+</div>
