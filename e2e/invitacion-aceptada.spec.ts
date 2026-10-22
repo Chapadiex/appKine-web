@@ -55,12 +55,10 @@ test.describe('Aceptar una invitacion contra el backend real', () => {
     // --- El enlace abre la invitacion, sin sesion ------------------------------------------
     await page.goto(enlace.ruta);
     await expect(
-      page.getByRole('heading', {
-        name: `${centro.nombreCentro} te quiere en su equipo`,
-        level: 2,
-      }),
+      page.getByRole('heading', { name: 'Te invitaron a AKINE', level: 1 }),
     ).toBeVisible();
-    await expect(page.getByText(`La invitacion se envio a ${email}.`)).toBeVisible();
+    await expect(page.getByText(`${centro.nombreCentro} te invitó a colaborar`)).toBeVisible();
+    await expect(page.getByRole('definition').filter({ hasText: email })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Crea tu cuenta para aceptar' })).toBeVisible();
 
     // Sin nombre ni contrasena no sale nada.
@@ -89,8 +87,10 @@ test.describe('Aceptar una invitacion contra el backend real', () => {
       organizationId: centro.organizationId,
       consultorioId: centro.consultorioId,
     });
-    await expect(page.getByText('Listo: ya sos parte del equipo.')).toBeVisible();
-    await expect(page.getByText(/Tu cuenta quedo creada y activa/)).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: 'Ya sos parte del equipo', level: 1 }),
+    ).toBeVisible();
+    await expect(page.getByText(/Tu cuenta quedó creada y activa/)).toBeVisible();
 
     // --- El centro la ve aceptada y como miembro ---------------------------------------------
     const aceptadas = await api.exigir<{ email: string; roleCode: string }[]>(

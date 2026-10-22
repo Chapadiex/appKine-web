@@ -51,7 +51,7 @@ test.describe('Historia clinica - timeline (D-a)', () => {
     await expect(page.getByRole('heading', { name: sembrada.nombreCompleto })).toBeVisible();
     await expect(page.getByText(`Con motivo declarado: «${MOTIVO_DE_ACCESO}»`)).toBeVisible();
 
-    const timeline = page.getByRole('list', { name: /Hechos clinicos/ });
+    const timeline = page.getByRole('list', { name: /Hechos clínicos/ });
     await expect(timeline.getByRole('button', { name: /Entrada clinica/ })).toBeVisible();
     await expect(timeline.getByRole('button', { name: /Adjunto clinico/ })).toBeVisible();
     // El indice no trae contenido: el texto de la entrada no esta en la lista.
@@ -116,7 +116,7 @@ test.describe('Historia clinica - timeline (D-a)', () => {
   test('registrar una entrada nueva la suma al timeline', async ({ page }) => {
     await abrirHistoriaConMotivo(page, sembrada);
 
-    const timeline = page.getByRole('list', { name: /Hechos clinicos/ });
+    const timeline = page.getByRole('list', { name: /Hechos clínicos/ });
     await expect(timeline.getByRole('listitem').first()).toBeVisible();
     const antes = await timeline.getByRole('listitem').count();
 
@@ -135,7 +135,7 @@ test.describe('Historia clinica - timeline (D-a)', () => {
     page,
   }) => {
     await abrirHistoriaConMotivo(page, sembrada);
-    const timeline = page.getByRole('list', { name: /Hechos clinicos/ });
+    const timeline = page.getByRole('list', { name: /Hechos clínicos/ });
     await expect(timeline.getByRole('button', { name: /Entrada clinica/ }).first()).toBeVisible();
 
     // Solo adjuntos: el servidor recibe el origen y no devuelve entradas.
@@ -158,7 +158,7 @@ test.describe('Historia clinica - timeline (D-a)', () => {
 
     // Un rango invertido no sale: el backend lo rechazaria con 400.
     await page.getByLabel('Hasta el día (inclusive)').fill('2098-12-31');
-    await expect(page.getByText(/tiene que ser el mismo dia que/)).toBeVisible();
+    await expect(page.getByText(/tiene que ser el mismo día que/)).toBeVisible();
 
     await page.getByRole('button', { name: 'Quitar los filtros' }).click();
     await expect(timeline.getByRole('button', { name: /Entrada clinica/ }).first()).toBeVisible();

@@ -64,7 +64,7 @@ test.describe('Recepcion del dia contra el backend real', () => {
     centro,
   }) => {
     const fila = await abrirLaRecepcion(page, persona);
-    await expect(fila.getByText('Sin recepcion')).toBeVisible();
+    await expect(fila.getByText('Sin recepción')).toBeVisible();
 
     await fila.getByRole('button', { name: 'Registrar la llegada' }).click();
     await expect(fila.getByText('LLEGO', { exact: true })).toBeVisible();
@@ -74,7 +74,7 @@ test.describe('Recepcion del dia contra el backend real', () => {
     // bloquea (RN-M13-003). La decision es del servidor; la pantalla no manda el resultado.
     await fila.getByRole('button', { name: 'Validar cobertura' }).click();
     await expect(fila.getByText('OBSERVADA', { exact: true })).toBeVisible();
-    await expect(fila.getByText(/Observacion: OFERTA_SIN_PRACTICA/)).toBeVisible();
+    await expect(fila.getByText(/Observaci[oó]n: OFERTA_SIN_PRACTICA/)).toBeVisible();
 
     await fila.getByRole('button', { name: 'Pasar a espera' }).click();
     await expect(fila.getByText('EN_ESPERA', { exact: true })).toBeVisible();
@@ -154,7 +154,7 @@ test.describe('Recepcion del dia contra el backend real', () => {
     // a ofrecer el check-in. Releer el dia entero lo confirma.
     await expect(fila.getByRole('button', { name: 'Registrar la llegada' })).toBeVisible();
     await page.getByRole('button', { name: 'Volver a leer el día' }).click();
-    await expect(fila.getByText('Sin recepcion')).toBeVisible();
+    await expect(fila.getByText('Sin recepción')).toBeVisible();
     await expect(fila.getByRole('button', { name: 'Registrar la llegada' })).toBeVisible();
   });
 
@@ -208,7 +208,7 @@ test.describe('Recepcion del dia contra el backend real', () => {
     await expect(page.getByRole('button', { name: 'Marcar que no vino' })).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Mover a otro horario' })).toHaveCount(0);
     const historial = page.getByRole('region', { name: 'Historial de la recepción' });
-    await expect(historial.getByText(/Se retiro sin ser atendido —/)).toBeVisible();
+    await expect(historial.getByText('Se retiro sin ser atendido', { exact: true })).toBeVisible();
     await expect(historial.getByText('Se canso de esperar')).toBeVisible();
   });
 

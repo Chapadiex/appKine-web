@@ -4,7 +4,6 @@ import { ingresar, navegar, respuestaDe } from './support/agenda-real';
 import {
   CentroPropio,
   cerrarCentroPropio,
-  dato,
   expect,
   sembrarCentroPropio,
 } from './support/centro-propio';
@@ -83,7 +82,7 @@ test.describe('Reprogramar una clase contra el backend real', () => {
     await expect(page.locator('#aviso-clase')).toHaveText(
       'Clase reprogramada. Si cambio el horario, los inscriptos reciben un aviso.',
     );
-    await expect(dato(page, 'Horario')).toContainText('16:00 a 17:30');
+    await expect(page.locator('.datos-en-linea')).toContainText('16:00 a 17:30');
     await expect(
       page.locator('section', { has: page.getByRole('heading', { name: 'Historial' }) }),
     ).toContainText('Reprogramada');

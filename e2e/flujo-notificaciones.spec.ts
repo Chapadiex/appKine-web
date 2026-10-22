@@ -115,7 +115,7 @@ test.describe('Notificaciones fallidas con reintento contra el backend real', ()
     await expect(page.getByLabel('Agotada (sin mas intentos)')).toBeChecked();
     await expect(page.getByLabel('Enviada')).not.toBeChecked();
 
-    const tabla = page.getByRole('region', { name: 'Notificaciones de la organizacion' });
+    const tabla = page.getByRole('region', { name: 'Notificaciones de la organización' });
     const filaFallida = tabla
       .getByRole('row')
       .filter({ has: page.getByRole('rowheader', { name: String(id), exact: true }) });

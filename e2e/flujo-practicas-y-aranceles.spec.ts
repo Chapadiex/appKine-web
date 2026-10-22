@@ -56,7 +56,7 @@ test.describe('Practicas de una oferta contra el backend real', () => {
     await expect(
       page.getByRole('heading', { name: 'Prácticas de la oferta', level: 1 }),
     ).toBeVisible();
-    await expect(page.getByText(/Sin practicas, la oferta no le devenga nada/)).toBeVisible();
+    await expect(page.getByText(/Sin prácticas, la oferta no le devenga nada/)).toBeVisible();
     await expect(page.getByRole('button', { name: 'Guardar las prácticas' })).toBeDisabled();
 
     await agregarPractica(page, 'KIN_SESION');

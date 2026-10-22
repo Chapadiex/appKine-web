@@ -43,7 +43,9 @@ test.describe('Reenvio de activacion y vinculo directo contra el backend real', 
       const segundo = await enlaceDelCorreo(email, ASUNTO.activacion, [primero.idCorreo]);
       expect(segundo.token).not.toBe(primero.token);
       await pagina.goto(segundo.ruta);
-      await expect(pagina.getByText('Tu cuenta quedo activa.')).toBeVisible();
+      await expect(
+        pagina.getByRole('heading', { name: 'Cuenta activada', level: 1 }),
+      ).toBeVisible();
     } finally {
       await anonimo.close();
     }

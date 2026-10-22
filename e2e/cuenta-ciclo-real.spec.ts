@@ -58,7 +58,7 @@ test.describe('Cuenta de punta a punta contra el backend real (A-6)', () => {
       const activacion = await enlaceDelCorreo(email, ASUNTO.activacion);
       expect(activacion.ruta).toMatch(/^\/auth\/activar\?token=/);
       await page.goto(activacion.ruta);
-      await expect(page.getByText('Tu cuenta quedo activa.')).toBeVisible();
+      await expect(page.getByRole('heading', { name: 'Cuenta activada', level: 1 })).toBeVisible();
 
       // El enlace es de un solo uso: abrirlo de nuevo falla con un mensaje y sin internals, y el
       // backend lo rechaza con su tipo propio.
@@ -73,7 +73,7 @@ test.describe('Cuenta de punta a punta contra el backend real (A-6)', () => {
       // --- Login por pantalla: con un solo contexto entra directo a su centro -----------------
       await ingresarCon(page, email, PASSWORD);
       await expect(page).toHaveURL(/\/organizacion/);
-      await expect(page.getByText(centro, { exact: true })).toBeVisible();
+      await expect(page.getByRole('main').getByText(centro, { exact: true })).toBeVisible();
 
       // --- Restablecimiento: se pide sin sesion, como quien se olvido la contrasena -----------
       await page.context().clearCookies();
@@ -88,7 +88,9 @@ test.describe('Cuenta de punta a punta contra el backend real (A-6)', () => {
       await campo(page, 'Contraseña nueva').fill(PASSWORD_NUEVA);
       await campo(page, 'Repetir la contraseña').fill(PASSWORD_NUEVA);
       await page.getByRole('button', { name: 'Guardar contraseña' }).click();
-      await expect(page.getByText('Listo.', { exact: true })).toBeVisible();
+      await expect(
+        page.getByRole('heading', { name: 'Contraseña guardada', level: 1 }),
+      ).toBeVisible();
 
       // El mismo enlace ya no sirve: ni por pantalla ni por la API.
       await page.goto(restablecimiento.ruta);
@@ -116,7 +118,7 @@ test.describe('Cuenta de punta a punta contra el backend real (A-6)', () => {
 
       await ingresarCon(page, email, PASSWORD_NUEVA);
       await expect(page).toHaveURL(/\/organizacion/);
-      await expect(page.getByText(centro, { exact: true })).toBeVisible();
+      await expect(page.getByRole('main').getByText(centro, { exact: true })).toBeVisible();
 
       // --- Auditoria del tenant, por la API: el alta self-service quedo en SU organizacion -----
       const fundadora = await ApiAkine.como(email, { password: PASSWORD_NUEVA });
@@ -206,7 +208,7 @@ test.describe('Cuenta de punta a punta contra el backend real (A-6)', () => {
         await expect(
           page.getByRole('heading', { name: 'No tenés permiso para esta pantalla' }),
         ).toBeVisible();
-        await expect(page.getByText(centro, { exact: true })).toBeVisible();
+        await expect(page.getByRole('main').getByText(centro, { exact: true })).toBeVisible();
 
         // La consola de plataforma tampoco: tener un centro propio no es ser de la plataforma.
         await page.goto('/plataforma');

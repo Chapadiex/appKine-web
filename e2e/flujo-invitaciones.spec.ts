@@ -48,12 +48,12 @@ test.describe('Invitaciones contra el backend real', () => {
       const anonima = await invitada.newPage();
       await anonima.goto(enlace.ruta);
       await expect(
-        anonima.getByRole('heading', { name: /te quiere en su equipo$/, level: 2 }),
+        anonima.getByRole('heading', { name: 'Te invitaron a AKINE', level: 1 }),
       ).toBeVisible();
 
       // --- Cancelar con motivo --------------------------------------------------------------
       await fila.getByRole('button', { name: 'Cancelar' }).click();
-      await page.getByLabel('Motivo de la cancelacion').fill(motivo);
+      await page.getByLabel('Motivo de la cancelación').fill(motivo);
       const cancelacion = respuestaDe(page, 'POST', /\/colaborador-invitaciones\/\d+\/cancel$/);
       await page.getByRole('button', { name: 'Cancelar la invitación' }).click();
       expect((await cancelacion).status()).toBeLessThan(300);
@@ -64,9 +64,7 @@ test.describe('Invitaciones contra el backend real', () => {
       // El mismo enlace ya no abre nada.
       await anonima.reload();
       await expect(anonima.getByRole('alert')).toBeVisible();
-      await expect(anonima.getByRole('heading', { name: /te quiere en su equipo$/ })).toHaveCount(
-        0,
-      );
+      await expect(anonima.getByRole('heading', { name: 'Te invitaron a AKINE' })).toHaveCount(0);
     } finally {
       await invitada.close();
     }

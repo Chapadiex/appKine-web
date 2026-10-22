@@ -35,12 +35,12 @@ test.describe('Registro, activacion y login (M02)', () => {
     await campo(page, 'Apellido').fill('Prueba');
     await campo(page, 'Correo electrónico').fill(email);
     await campo(page, 'Contraseña').fill(PASSWORD);
-    await campo(page, 'Nombre del centro').fill(centro);
+    await campo(page, 'Nombre del consultorio o centro').fill(centro);
 
     await esperarCupoDeRegistro();
     await page.getByRole('button', { name: 'Crear cuenta' }).click();
 
-    await expect(page.getByText('Listo, ya lo estamos procesando.')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Revisá tu correo', level: 1 })).toBeVisible();
 
     // La respuesta es uniforme (ADR-0018): la pantalla no puede decir si el email era nuevo.
     // Lo unico que prueba que el alta ocurrio de verdad es la base.
@@ -59,10 +59,10 @@ test.describe('Registro, activacion y login (M02)', () => {
     await campo(page, 'Apellido').fill('Prueba');
     await campo(page, 'Correo electrónico').fill(email);
     await campo(page, 'Contraseña').fill(PASSWORD);
-    await campo(page, 'Nombre del centro').fill(`Centro Sin Activar ${nonce()}`);
+    await campo(page, 'Nombre del consultorio o centro').fill(`Centro Sin Activar ${nonce()}`);
     await esperarCupoDeRegistro();
     await page.getByRole('button', { name: 'Crear cuenta' }).click();
-    await expect(page.getByText('Listo, ya lo estamos procesando.')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Revisá tu correo', level: 1 })).toBeVisible();
 
     await ingresarPorPantalla(page, email);
 
@@ -95,10 +95,10 @@ test.describe('Registro, activacion y login (M02)', () => {
     await campo(page, 'Apellido').fill('Prueba');
     await campo(page, 'Correo electrónico').fill(email);
     await campo(page, 'Contraseña').fill(PASSWORD);
-    await campo(page, 'Nombre del centro').fill(centro);
+    await campo(page, 'Nombre del consultorio o centro').fill(centro);
     await esperarCupoDeRegistro();
     await page.getByRole('button', { name: 'Crear cuenta' }).click();
-    await expect(page.getByText('Listo, ya lo estamos procesando.')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Revisá tu correo', level: 1 })).toBeVisible();
 
     await expect(() => {
       expect(estadoDeCuenta(email)).toBe('PENDIENTE_ACTIVACION');
@@ -120,7 +120,7 @@ test.describe('Registro, activacion y login (M02)', () => {
     await expect(page).toHaveURL(/\/organizacion/);
     // `exact`: desde la navegacion principal el nombre del centro aparece tambien en la cabecera,
     // como "· <centro>", y sin `exact` el localizador choca en modo estricto.
-    await expect(page.getByText(centro, { exact: true })).toBeVisible();
+    await expect(page.getByRole('main').getByText(centro, { exact: true })).toBeVisible();
   });
 
   test('el pedido de restablecimiento responde igual exista o no la cuenta', async ({ page }) => {
@@ -131,10 +131,10 @@ test.describe('Registro, activacion y login (M02)', () => {
     await campo(page, 'Apellido').fill('Prueba');
     await campo(page, 'Correo electrónico').fill(email);
     await campo(page, 'Contraseña').fill(PASSWORD);
-    await campo(page, 'Nombre del centro').fill(`Centro Reset ${nonce()}`);
+    await campo(page, 'Nombre del consultorio o centro').fill(`Centro Reset ${nonce()}`);
     await esperarCupoDeRegistro();
     await page.getByRole('button', { name: 'Crear cuenta' }).click();
-    await expect(page.getByText('Listo, ya lo estamos procesando.')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Revisá tu correo', level: 1 })).toBeVisible();
     activarCuentaPorSql(email);
 
     await page.goto('/auth/olvide-mi-contrasena');

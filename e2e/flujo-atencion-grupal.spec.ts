@@ -112,7 +112,7 @@ test.describe('Atencion clinica grupal contra el backend real', () => {
     const tarjeta = page.getByRole('region', { name: /^Derivar a .* a un caso clínico$/ });
     await expect(tarjeta).toContainText('Sí, con perfil de paciente');
     await expect(tarjeta).toContainText('Con 1 caso activo');
-    const destino = tarjeta.getByRole('radio', { name: /Caso clinico 1/ });
+    const destino = tarjeta.getByRole('radio', { name: /Caso clínico 1/ });
     await expect(destino).toBeChecked();
     await tarjeta
       .getByRole('textbox', { name: /Motivo de la derivación/ })
@@ -131,8 +131,8 @@ test.describe('Atencion clinica grupal contra el backend real', () => {
     expect(derivada.status()).toBe(201);
     const derivacion = (await derivada.json()) as { id: number; casoClinicoId: number };
     expect(derivacion.casoClinicoId).toBe(caso.id);
-    await expect(page.getByText(/quedo derivada al caso clinico 1/)).toBeVisible();
-    await expect(fila).toContainText('Derivada al caso clinico 1');
+    await expect(page.getByText(/quedo derivada al caso clínico 1/)).toBeVisible();
+    await expect(fila).toContainText('Derivada al caso clínico 1');
 
     // --- Iniciar atención: sin relacion asistencial el backend puede pedir motivo ---------
     const inicio = respuestaDe(page, 'POST', /\/inscripciones\/\d+\/atencion-clinica$/);

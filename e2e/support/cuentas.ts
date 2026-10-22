@@ -116,10 +116,10 @@ export async function registrarPorPantalla(
   await campo(page, 'Apellido').fill('Prueba');
   await campo(page, 'Correo electrónico').fill(datos.email);
   await campo(page, 'Contraseña').fill(datos.password ?? PASSWORD);
-  await campo(page, 'Nombre del centro').fill(datos.centro);
+  await campo(page, 'Nombre del consultorio o centro').fill(datos.centro);
   await esperarCupoDeRegistro();
   await page.getByRole('button', { name: 'Crear cuenta' }).click();
-  await expect(page.getByText('Listo, ya lo estamos procesando.')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Revisá tu correo', level: 1 })).toBeVisible();
 }
 
 /** Login por pantalla con una contrasena cualquiera (el de `support/akine.ts` usa la fija). */

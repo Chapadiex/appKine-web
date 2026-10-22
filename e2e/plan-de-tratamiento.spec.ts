@@ -24,7 +24,7 @@ import {
  * <p>El ciclo entero sobre un caso: crear el plan con el editor estructurado (oferta elegida de una
  * lista, cantidades planificadas y autorizadas), activarlo, ver el avance DERIVADO por el backend
  * —0 realizadas: nada se carga a mano— con el aviso de "planificadas mas que autorizadas",
- * modificarlo (version 2), mirar el avance de la version 1, suspender, reanudar y finalizar.
+ * modificarlo (version 2), mirar el avance de la versión 1, suspender, reanudar y finalizar.
  */
 test.describe('Plan de tratamiento (D-c)', () => {
   test.describe.configure({ mode: 'default', timeout: 180_000 });
@@ -104,10 +104,10 @@ test.describe('Plan de tratamiento (D-c)', () => {
     await expect(page.getByText('Se guardo una versión nueva del plan.')).toBeVisible();
 
     const versiones = page.getByRole('list', { name: 'Versiones del plan' });
-    await expect(versiones.getByRole('listitem').filter({ hasText: /^Version/ })).toHaveCount(2);
+    await expect(versiones.getByRole('listitem').filter({ hasText: /^Versión/ })).toHaveCount(2);
     await expect(versiones).toContainText('Respuesta lenta al tratamiento');
     await expect(avance).toContainText('0 de 12 realizadas');
-    await page.getByRole('button', { name: 'Ver el avance de la version 1' }).click();
+    await page.getByRole('button', { name: 'Ver el avance de la versión 1' }).click();
     await expect(avance).toContainText('0 de 10 realizadas');
 
     // --- Suspender, reanudar, finalizar ---------------------------------------------------------
@@ -141,7 +141,7 @@ test.describe('Plan de tratamiento (D-c)', () => {
     // Salir de la visita (a la ficha) la termina: volver por URL vuelve a pedir el motivo.
     await page.getByRole('link', { name: 'Ficha', exact: true }).click();
     await expect(
-      page.locator('app-ayuda').getByText('Esta ficha no muestra nada clínico'),
+      page.locator('app-ayuda').getByText('Esta ficha no muestra nada clínico', { exact: true }),
     ).toBeAttached();
     await navegar(page, `/historia-clinica/personas/${sembrada.personaId}/casos/${casoId}/plan`);
     await expect(page.getByRole('heading', { name: 'Declara el motivo del acceso' })).toBeVisible();
@@ -245,7 +245,7 @@ test.describe('Plan de tratamiento (D-c)', () => {
     const [anio, mes, dia] = hasta.split('-');
     const vigencia = page.getByTestId('plan-vigencia-autorizacion');
     await expect(vigencia).toHaveText(
-      `autorizacion vigente hasta el ${dia}/${mes}/${anio} inclusive`,
+      `autorización vigente hasta el ${dia}/${mes}/${anio} inclusive`,
     );
     await expect(vigencia).not.toHaveClass(/plan__vigencia--vencida/);
   });

@@ -101,7 +101,10 @@ test.describe('Permisos de convenios y catalogo por rol contra el backend real (
       page.getByRole('heading', { name: 'Convenios de la sede', level: 1 }),
     ).toBeVisible();
     await irA(page, '/catalogo/especialidades');
-    await expect(page.getByRole('heading', { name: 'Especialidades', level: 1 })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Catálogo clínico', level: 1 })).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: /^Especialidades que este centro puede usar/, level: 2 }),
+    ).toBeVisible();
     await expect(page.getByRole('button', { name: /^Dar de alta una/ })).toHaveCount(0);
   });
 });

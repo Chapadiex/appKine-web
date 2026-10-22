@@ -212,7 +212,11 @@ test.describe('Clases grupales contra el backend real', () => {
     await expect(
       page.getByRole('link', { name: new RegExp(`Ver clase ${oferta.nombre}`) }),
     ).toBeVisible();
-    await expect(page.getByText(`${centro.profesional.nombre} · ${box.nombre}`)).toBeVisible();
+    const filaDeLaClase = page.getByRole('row').filter({
+      has: page.getByRole('link', { name: new RegExp(`Ver clase ${oferta.nombre}`) }),
+    });
+    await expect(filaDeLaClase).toContainText(centro.profesional.nombre);
+    await expect(filaDeLaClase).toContainText(box.nombre);
     await navegar(page, `/agenda/recepcion?fecha=${fecha}`);
     const delDia = page.getByRole('region', { name: 'Clases grupales del día' });
     await expect(delDia).toContainText(oferta.nombre);

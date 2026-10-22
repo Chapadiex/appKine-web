@@ -248,7 +248,7 @@ test.describe('Pases contra el backend real', () => {
     const alta = respuestaDe(page, 'POST', PRODUCTOS);
     await page.getByRole('button', { name: 'Crear producto' }).click();
     expect((await alta).status()).toBe(201);
-    await expect(filaDe(page, abono)).toContainText('Periodo de hasta 30 dias');
+    await expect(filaDe(page, abono)).toContainText('Periodo de hasta 30 días');
 
     // ---- Venta del periodo que empieza hoy.
     const { persona } = clase;
@@ -394,7 +394,7 @@ test.describe('Pases contra el backend real', () => {
     await expect(movimientos.getByRole('row')).toHaveCount(21);
     await expect(movimientos.getByRole('row').nth(1)).toContainText('Compra');
     const paginas = page.getByRole('navigation', { name: 'Páginas de movimientos del pase' });
-    await expect(paginas).toContainText('Pagina 1 de 2');
+    await expect(paginas).toContainText('Página 1 de 2');
 
     const segunda = respuestaDe(page, 'GET', MOVIMIENTOS);
     await paginas.getByRole('button', { name: 'Siguiente' }).click();

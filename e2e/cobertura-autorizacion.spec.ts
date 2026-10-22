@@ -36,7 +36,7 @@ function dia(dias: number): string {
  * Fila de la tabla de autorizaciones por su numero.
  *
  * <p>Por la celda que EMPIEZA con el numero: el panel de correccion es otra fila de la misma tabla
- * y su celda dice "Corregir la autorizacion AUT-...".
+ * y su celda dice "Corregir la autorización AUT-...".
  */
 function filaDeAutorizacion(page: Page, numero: string) {
   return page
@@ -191,7 +191,7 @@ test.describe('Cobertura, orden y autorizacion de un paciente (B-6)', () => {
     await expect(vigente).toContainText('Aprobada');
     await expect(vigente).toContainText('10 de 10');
     await expect(vigente).toContainText('Habilita a atender');
-    await expect(vigente).toContainText('Vence en 5 dias');
+    await expect(vigente).toContainText('Vence en 5 días');
 
     // --- 7. Otra aprobada de la misma practica que se pisa: 409 tipado y la fila senalada --
     const superpuesta = page.waitForResponse(
@@ -228,18 +228,18 @@ test.describe('Cobertura, orden y autorizacion de un paciente (B-6)', () => {
     // El estado sigue siendo el que decidio el financiador: vencida no es un estado, es una fecha.
     await expect(vencida).toContainText('Aprobada');
     await expect(vencida).toContainText('No habilita: esta vencida');
-    await expect(vencida).not.toContainText(/Vence (hoy|manana|en)/);
+    await expect(vencida).not.toContainText(/Vence (hoy|manana|mañana|en)/);
 
     // --- 9. Vencimiento de la vigente: el fin pasa a ayer y deja de habilitar ---------------
     await vigente.getByRole('button', { name: 'Corregir' }).click();
-    const correccion = page.getByRole('region', { name: 'Corregir la autorizacion AUT-VIGENTE' });
+    const correccion = page.getByRole('region', { name: 'Corregir la autorización AUT-VIGENTE' });
     await correccion.getByLabel('Vigente hasta').fill(dia(-1));
     await correccion.getByRole('button', { name: 'Guardar la autorización' }).click();
 
     await expect(vigente).toContainText('No habilita: esta vencida');
     await expect(vigente).toContainText('Aprobada');
     await expect(vigente).not.toContainText('Habilita a atender');
-    await expect(vigente).not.toContainText(/Vence (hoy|manana|en)/);
+    await expect(vigente).not.toContainText(/Vence (hoy|manana|mañana|en)/);
 
     // Y despues de recargar sigue igual: lo calcula el backend, no la pantalla.
     await page.reload();

@@ -168,7 +168,8 @@ test.describe('Circuito de F9 de punta a punta contra el backend real', () => {
 
     // --- 2. Venta del pase: a Ana por pantalla, a Carla por la API ---------------------------
     await navegar(page, `/pacientes/${ana.id}/pases`);
-    await expect(page.getByRole('heading', { level: 1 })).toContainText(ana.apellido);
+    await expect(page.getByRole('heading', { name: 'Pases', level: 1 })).toBeVisible();
+    await expect(page.locator('app-cabecera-de-persona')).toContainText(ana.apellido);
     const selector = page.getByLabel('Producto');
     const opcion = await selector.locator('option', { hasText: producto }).getAttribute('value');
     await selector.selectOption(opcion ?? '');
@@ -448,7 +449,7 @@ async function atenderYCerrar(
     // Derivar por pantalla: el unico Caso activo queda elegido.
     await fila.getByRole('button', { name: /Derivar a un caso/ }).click();
     const tarjeta = pagina.getByRole('region', { name: /^Derivar a .* a un caso clínico$/ });
-    await expect(tarjeta.getByRole('radio', { name: /Caso clinico 1/ })).toBeChecked();
+    await expect(tarjeta.getByRole('radio', { name: /Caso clínico 1/ })).toBeChecked();
     await tarjeta
       .getByRole('textbox', { name: /Motivo de la derivación/ })
       .fill(motivoDeDerivacion);
@@ -465,7 +466,7 @@ async function atenderYCerrar(
     }
     expect(derivada.status()).toBe(201);
     expect(((await derivada.json()) as { casoClinicoId: number }).casoClinicoId).toBe(casoId);
-    await expect(fila).toContainText('Derivada al caso clinico 1');
+    await expect(fila).toContainText('Derivada al caso clínico 1');
 
     const inicio = respuestaDe(pagina, 'POST', /\/inscripciones\/\d+\/atencion-clinica$/);
     await fila.getByRole('button', { name: /Iniciar atención/ }).click();

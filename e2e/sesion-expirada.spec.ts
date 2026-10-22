@@ -109,8 +109,8 @@ test.describe('Sesion expirada contra el backend real', () => {
         url.searchParams.get('volverA') === '/pacientes',
     );
     await expect(page.getByRole('heading', { name: 'Tu sesión expiró', level: 1 })).toBeVisible();
-    await expect(page.getByRole('alert')).toHaveText(
-      'No pudimos renovar tu sesion, asi que la cerramos.',
+    await expect(page.getByRole('alert')).toContainText(
+      'No pudimos renovarla, así que la cerramos.',
     );
 
     // --- "Volver a iniciar sesion" conserva el destino y lo cumple ---------------------------

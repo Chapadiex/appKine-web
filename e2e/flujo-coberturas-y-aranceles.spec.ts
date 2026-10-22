@@ -109,7 +109,7 @@ test.describe('Coberturas y aranceles por oferta contra el backend real', () => 
     await expect(
       page.getByText(`Sugerencia: atender con cobertura — ${financiador.nombre}`),
     ).toBeVisible();
-    await expect(page.getByText(/Precio particular del dia:/)).toContainText(pesos(PARTICULAR));
+    await expect(page.getByText(/Precio particular del día:/)).toContainText(pesos(PARTICULAR));
     const aplica = page.locator('.lista-cobertura li').filter({ hasText: financiador.nombre });
     await expect(aplica).toContainText(pesos(PROPIO.total));
     await expect(aplica).toContainText('Arancel propio de esta oferta en el convenio');

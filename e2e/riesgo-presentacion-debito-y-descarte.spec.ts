@@ -187,7 +187,7 @@ test.describe('Debito, quitar y descartar en presentaciones contra el backend re
     await agregar(page, debitada);
 
     await page.getByRole('button', { name: 'Confirmar y presentar' }).click();
-    await expect(page.getByText(/Lote presentado: tiene numero/)).toBeVisible();
+    await expect(page.getByText(/Lote presentado: tiene número/)).toBeVisible();
     await expect(dato(page, 'Presentado')).toContainText('19.200,00');
 
     // Presentado, el lote es evidencia: no se descarta ni se le quitan prestaciones.
@@ -223,7 +223,7 @@ test.describe('Debito, quitar y descartar en presentaciones contra el backend re
     expect((await rechazo).status()).toBeLessThan(300);
     await expect(page.getByText(/Debito registrado\./)).toBeVisible();
     await expect(filaDelLote(page, debitada)).toContainText('Debitada');
-    await expect(filaDelLote(page, debitada)).toContainText('Debito: Afiliado sin credencial');
+    await expect(filaDelLote(page, debitada)).toContainText('Débito: Afiliado sin credencial');
     await expect(dato(page, 'Saldo')).toContainText('9.600,00');
 
     // Un segundo debito sobre el mismo item: ya no es debitable.
@@ -296,7 +296,7 @@ test.describe('Debito, quitar y descartar en presentaciones contra el backend re
     await abrirBorrador(page, propio, financiador);
     await agregar(page, parcial);
     await page.getByRole('button', { name: 'Confirmar y presentar' }).click();
-    await expect(page.getByText(/Lote presentado: tiene numero/)).toBeVisible();
+    await expect(page.getByText(/Lote presentado: tiene número/)).toBeVisible();
 
     // Debito por una parte de lo presentado.
     await filaDelLote(page, parcial).getByRole('button', { name: 'Registrar débito' }).click();
@@ -308,7 +308,7 @@ test.describe('Debito, quitar y descartar en presentaciones contra el backend re
     await expect(page.getByText(/Debito registrado\./)).toBeVisible();
     await expect(filaDelLote(page, parcial)).toContainText('Debitada en parte');
     await expect(filaDelLote(page, parcial)).toContainText('Sigue en el lote');
-    await expect(filaDelLote(page, parcial)).toContainText('Debito: Sesion sin firma');
+    await expect(filaDelLote(page, parcial)).toContainText('Débito: Sesion sin firma');
     await expect(filaDelLote(page, parcial)).toContainText('4.000,00');
     // Ya tiene su debito: no se le registra otro.
     await expect(
@@ -362,7 +362,7 @@ test.describe('Debito, quitar y descartar en presentaciones contra el backend re
     await abrirBorrador(page, propio, financiador, false);
     await expect(filaElegible(page, parcial)).toContainText('4.000,00');
     await expect(filaElegible(page, parcial)).toContainText(
-      'vuelve por el saldo que dejo un debito parcial',
+      'vuelve por el saldo que dejó un débito parcial',
     );
   });
 });

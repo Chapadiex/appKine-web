@@ -232,7 +232,7 @@ test.describe('Presentaciones a financiadores contra el backend real', () => {
     await expect(page.getByText('Ninguna prestación tiene observaciones.')).toBeVisible();
 
     await page.getByRole('button', { name: 'Confirmar y presentar' }).click();
-    await expect(page.getByText(/Lote presentado: tiene numero/)).toBeVisible();
+    await expect(page.getByText(/Lote presentado: tiene número/)).toBeVisible();
     await expect(dato(page, 'Estado')).toHaveText('Presentada');
     await expect(page.getByRole('heading', { level: 1 })).toContainText('N.º');
     await expect(dato(page, 'Presentado')).toContainText('9.600,00');
@@ -427,7 +427,7 @@ test.describe('Reparos documentales de un lote contra el backend real (DP-37)', 
     const confirmar = page.getByRole('button', { name: 'Confirmar y presentar' });
     await expect(confirmar).toBeEnabled();
     await confirmar.click();
-    await expect(page.getByText(/Lote presentado: tiene numero/)).toBeVisible();
+    await expect(page.getByText(/Lote presentado: tiene número/)).toBeVisible();
     await expect(dato(page, 'Presentado')).toContainText('9.600,00');
   });
 });

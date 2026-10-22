@@ -157,7 +157,7 @@ test.describe('Atencion clinica contra el backend real', () => {
     await expect(page.getByLabel('Nota de cierre')).toHaveValue(
       'Movilidad y fisioterapia, buena tolerancia.',
     );
-    await page.getByRole('button', { name: 'Registrar la enmienda' }).click();
+    await page.getByRole('button', { name: 'Registrar la enmienda', exact: true }).click();
     await expect(
       page.getByRole('region', { name: 'Registrar la enmienda' }).getByRole('status'),
     ).toContainText('Falta el motivo');
@@ -166,7 +166,7 @@ test.describe('Atencion clinica contra el backend real', () => {
     await page.getByLabel('Intensidad (mA)').fill('25');
     await page.getByLabel('Valor en grados').fill('100');
     const enmienda = respuestaDe(page, 'POST', /\/enmiendas$/);
-    await page.getByRole('button', { name: 'Registrar la enmienda' }).click();
+    await page.getByRole('button', { name: 'Registrar la enmienda', exact: true }).click();
     expect((await enmienda).ok()).toBe(true);
 
     // --- Versiones ---------------------------------------------------------------------------
@@ -178,7 +178,7 @@ test.describe('Atencion clinica contra el backend real', () => {
     await expect(filaTratamiento).toContainText('Intensidad: 20 mA');
     await expect(filaTratamiento).toContainText('Intensidad: 25 mA');
     await expect(filaTratamiento.getByRole('cell').last()).toHaveText('Cambió');
-    const filaMedicion = comparacion.getByRole('row').filter({ hasText: 'Medicion:' });
+    const filaMedicion = comparacion.getByRole('row').filter({ hasText: 'Medición:' });
     await expect(filaMedicion).toContainText('95 grados');
     await expect(filaMedicion).toContainText('100 grados');
     await expect(

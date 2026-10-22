@@ -171,7 +171,10 @@ test.describe('Escenario 10 - cambio de contexto sin fuga de datos', () => {
         .getByText(centro, { exact: true })
         .count();
       expect(enSuOpcion).toBeGreaterThan(0);
-      await expect(page.locator('main').getByText(centro, { exact: true })).toHaveCount(enSuOpcion);
+      // +1: el rotulo del grupo del centro, que vive fuera del boton de la opcion.
+      await expect(page.locator('main').getByText(centro, { exact: true })).toHaveCount(
+        enSuOpcion + 1,
+      );
     }
   });
 

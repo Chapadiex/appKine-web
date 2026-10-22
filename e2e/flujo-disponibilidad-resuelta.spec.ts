@@ -76,7 +76,7 @@ test.describe('Disponibilidad resuelta contra el backend real', () => {
       page.getByRole('heading', { name: 'Horario del profesional', level: 1 }),
     ).toBeVisible();
     await page
-      .getByLabel('Profesional')
+      .getByLabel('Profesional', { exact: true })
       .selectOption({ value: String(centro.profesional.membershipId) });
     await page.getByLabel('Desde').fill(desde);
     await page.getByLabel('Hasta (exclusivo)').fill(hasta);

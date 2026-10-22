@@ -20,15 +20,15 @@ test.describe('Baseline AKINE-00.01', () => {
     await expect(page.getByRole('heading', { name: 'Estado del sistema', level: 1 })).toBeVisible();
 
     // Prueba la cadena completa: Angular -> cliente generado -> proxy -> Spring Boot -> MySQL.
-    await expect(page.getByText('Conectado')).toBeVisible();
-    await expect(page.getByText('akine-api')).toBeVisible();
+    await expect(page.getByRole('paragraph').filter({ hasText: /^Conectado$/ })).toBeVisible();
+    await expect(page.getByText('akine-api', { exact: true })).toBeVisible();
   });
 
   test('el frontend consume la misma version de contrato que publica el backend', async ({
     page,
   }) => {
     await page.goto('/estado');
-    await expect(page.getByText('Conectado')).toBeVisible();
+    await expect(page.getByRole('paragraph').filter({ hasText: /^Conectado$/ })).toBeVisible();
 
     const publicado = await page.getByRole('definition').nth(2).textContent();
     const consumido = await page.getByRole('definition').nth(3).textContent();
@@ -91,10 +91,10 @@ test.describe('Estructura de rutas (AKINE-00.02)', () => {
     await expect(page.getByRole('alert')).toBeVisible();
 
     // Y ofrece una salida: un cartel sin accion deja al usuario sin nada que hacer.
-    // 'Volver al inicio' apunta a `/`, que ahora redirige a la Agenda; sin sesion eso termina
+    // 'Ir al inicio' apunta a `/`, que ahora redirige a la Agenda; sin sesion eso termina
     // en el login. Lo que este test pinea es que la salida EXISTE y lleva a algun lado, no a
     // cual: el destino de la raiz lo pinea `app.routes.spec.ts`.
-    await page.getByRole('link', { name: 'Volver al inicio' }).click();
+    await page.getByRole('link', { name: 'Ir al inicio' }).click();
     await expect(page.getByRole('heading', { level: 1 })).not.toHaveText('Página no encontrada');
   });
 

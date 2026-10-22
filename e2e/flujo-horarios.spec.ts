@@ -78,7 +78,7 @@ test.describe('Horarios y disponibilidad contra el backend real', () => {
     await page.getByRole('button', { name: 'Cargar un cierre o una apertura' }).click();
     await page.getByLabel('Que se carga').selectOption('CIERRE');
     await page.getByLabel('A quien alcanza').selectOption({ label: profesional.nombre });
-    await page.getByLabel('Primer dia').fill(cerrado);
+    await page.getByLabel('Primer día').fill(cerrado);
     await page.getByLabel('Fin (exclusivo)').fill(sumarDias(cerrado, 1));
     await expect(page.getByLabel('Día completo')).toBeChecked();
 

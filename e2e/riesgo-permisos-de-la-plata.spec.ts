@@ -92,14 +92,16 @@ test.describe('Permisos sobre la plata con una profesional contra el backend rea
       await expect(
         page.getByRole('heading', { name: 'No tenés permiso para esta pantalla', level: 1 }),
       ).toBeVisible();
-      await expect(page.getByText(centro.nombreCentro, { exact: true })).toBeVisible();
+      await expect(
+        page.getByRole('main').getByText(centro.nombreCentro, { exact: true }),
+      ).toBeVisible();
     }
 
     // La cuenta corriente no tiene guard (la lectura la decide el backend): abre, dice por que no
     // muestra nada y no ofrece cobrar.
     await navegar(page, `/pacientes/${persona.id}/cuenta-corriente`);
     await expect(page.getByRole('heading', { name: 'Cuenta corriente', level: 1 })).toBeVisible();
-    await expect(page.getByText(/No tenes permiso para ver ni anular deudas/)).toBeVisible();
+    await expect(page.getByText(/No tenés permiso para ver ni anular deudas/)).toBeVisible();
     await expect(page.getByRole('link', { name: 'Registrar un cobro' })).toHaveCount(0);
   });
 

@@ -106,7 +106,7 @@ test.describe('Vigencias de un nomenclador contra el backend real', () => {
     await ingresar(page, centro);
     await navegar(page, `/catalogo/nomencladores/${nomenclador.id}/vigencias`);
     await expect(page.getByRole('heading', { name: nomenclador.name, level: 2 })).toBeVisible();
-    await expect(page.getByText(`Codigo NOM-${sufijo}`)).toBeVisible();
+    await expect(page.getByText(`Código NOM-${sufijo}`)).toBeVisible();
     await expect(
       page.getByText('Este nomenclador todavía no tiene vigencias con el filtro elegido.'),
     ).toBeVisible();
