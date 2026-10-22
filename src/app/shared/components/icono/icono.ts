@@ -22,7 +22,8 @@ export type NombreDeIcono =
   | 'contratacion'
   | 'horarios'
   | 'salir'
-  | 'plataforma';
+  | 'plataforma'
+  | 'mas';
 
 /**
  * Icono SVG en linea (UX-01, decision §9.3 del plan: sin libreria). Trazos propios de 24 px.
@@ -112,6 +113,11 @@ export type NombreDeIcono =
         }
         @case ('plataforma') {
           <path d="M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6l8-3z" />
+        }
+        @case ('mas') {
+          <circle cx="5" cy="12" r="1.4" />
+          <circle cx="12" cy="12" r="1.4" />
+          <circle cx="19" cy="12" r="1.4" />
         }
       }
     </svg>

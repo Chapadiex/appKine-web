@@ -1255,3 +1255,121 @@ a.enlace,
     white-space: normal;
   }
 }
+
+/*
+ * Acciones de una fila (`app-acciones-de-fila`): la principal a la vista y el resto en un panel
+ * que cuelga del boton "⋯", alineado a la derecha porque la columna de acciones es la ultima.
+ * Las acciones del panel van en columna y a todo el ancho, como items de una lista.
+ */
+.acciones-de-fila {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--esp-3);
+}
+
+.acciones-de-fila__boton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: var(--borde-fino) solid var(--color-borde-control);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie);
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-base);
+  cursor: pointer;
+}
+
+.acciones-de-fila__boton:hover,
+.acciones-de-fila__boton[aria-expanded='true'] {
+  background: var(--color-superficie-sutil);
+  color: var(--color-texto-fuerte);
+}
+
+.acciones-de-fila__panel {
+  position: absolute;
+  top: calc(100% + var(--esp-2));
+  right: 0;
+  z-index: 15;
+  display: flex;
+  flex-direction: column;
+  min-width: 12rem;
+  padding: var(--esp-2) 0;
+  border: var(--borde-fino) solid var(--color-borde);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.16);
+}
+
+.acciones-de-fila__panel[hidden] {
+  display: none;
+}
+
+.acciones-de-fila__panel > button,
+.acciones-de-fila__panel > a {
+  display: flex;
+  align-items: center;
+  min-height: 2rem;
+  padding: var(--esp-2) var(--esp-5);
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--color-texto);
+  font: inherit;
+  font-size: var(--tipo-sm);
+  text-align: left;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.acciones-de-fila__panel > button:hover:not(:disabled),
+.acciones-de-fila__panel > a:hover {
+  background: var(--color-superficie-sutil);
+}
+
+.acciones-de-fila__panel > button:disabled {
+  color: var(--color-deshabilitado);
+  cursor: not-allowed;
+}
+
+.acciones-de-fila__panel > .accion--peligro {
+  color: var(--color-peligro-texto);
+}
+
+/* Filtros rapidos con conteo (`app-filtros-rapidos`): un conmutador de un valor. */
+.filtros-rapidos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp-3);
+}
+
+.filtros-rapidos__opcion {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--esp-3);
+  min-height: 2rem;
+  padding: var(--esp-2) var(--esp-5);
+  border: var(--borde-fino) solid var(--color-borde-control);
+  border-radius: var(--radio-pastilla);
+  background: var(--color-superficie);
+  color: var(--color-texto);
+  font: inherit;
+  font-size: var(--tipo-sm);
+  cursor: pointer;
+}
+
+.filtros-rapidos__opcion[aria-pressed='true'] {
+  border-color: var(--color-acento);
+  background: var(--color-acento-claro);
+  color: var(--color-texto-fuerte);
+  font-weight: var(--peso-semi);
+}
+
+.filtros-rapidos__cantidad {
+  color: var(--color-texto-suave);
+  font-variant-numeric: tabular-nums;
+}
