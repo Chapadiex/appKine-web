@@ -1194,3 +1194,11 @@ a[class*='__migas'] {
   gap: var(--esp-4);
   padding-top: var(--esp-4);
 }
+
+/* En un telefono un rotulo largo parte en dos renglones en vez de empujar la pagina de costado. */
+@media (max-width: 40rem) {
+  .boton {
+    max-width: 100%;
+    white-space: normal;
+  }
+}
