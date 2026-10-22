@@ -1,14 +1,5 @@
 <div class="titulo-con-ayuda titulo-clinico">
-  <a class="migas" [routerLink]="visita.rutaHistoria()">Historia clínica</a>
-  <span class="migas__separador" aria-hidden="true">/</span>
-  <a class="migas" [routerLink]="visita.rutaCaso(idDelCaso())">
-    @if (caso(); as c) {
-      Caso {{ c.numeroCaso }}
-    } @else {
-      Caso clínico
-    }
-  </a>
-  <span class="migas__separador" aria-hidden="true">/</span>
+  <app-migas enLinea [migas]="migas()" />
   <h1>Plan de tratamiento</h1>
 </div>
 

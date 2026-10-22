@@ -1,5 +1,8 @@
 import { Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
+import { cabeceraDePersona } from '../../../../core/services/cabecera-de-persona';
+import { CabeceraDeFicha } from '../../../../shared/components/cabecera-de-ficha/cabecera-de-ficha';
 import { RouterLink } from '@angular/router';
+import { Migas } from '../../../../shared/components/migas/migas';
 import { catchError, of } from 'rxjs';
 
 import { BillingApi } from '../../services/billing-api';
@@ -21,7 +24,6 @@ import {
 } from '../../models/dinero';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
-import { CabeceraDePersona } from '../cuenta-corriente/cabecera-de-persona/cabecera-de-persona';
 
 /** Un medio de pago que se esta cargando. `id` es solo para el `track` del `@for`. */
 interface LineaDeMedio {
@@ -94,7 +96,7 @@ type EstadoDeuda =
  */
 @Component({
   selector: 'app-registro-de-cobro-page',
-  imports: [Ayuda, CabeceraDePersona, RouterLink],
+  imports: [Migas, Ayuda, CabeceraDeFicha, RouterLink],
   templateUrl: './registro-de-cobro-page.html',
   styleUrls: ['../../billing.css', '../cuenta-corriente/cuenta-corriente.css'],
 })
@@ -134,6 +136,12 @@ export class RegistroDeCobroPage {
 
   protected readonly estado = signal<EstadoDeuda>({ tipo: 'cargando' });
   protected readonly persona = signal<PersonaResponse | null>(null);
+
+  protected readonly cabecera = cabeceraDePersona(() => ({
+    personaId: this.personaId(),
+    persona: this.persona(),
+    actual: 'cuenta-corriente',
+  }));
 
   /** Importe tipeado por obligacion elegida. Estar en el mapa ES estar elegida. */
   protected readonly imputaciones = signal<ReadonlyMap<number, string>>(new Map());

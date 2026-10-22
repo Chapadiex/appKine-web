@@ -1,5 +1,7 @@
 import { DOCUMENT } from '@angular/common';
 import { Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
+import { cabeceraDePersona } from '../../../../core/services/cabecera-de-persona';
+import { CabeceraDeFicha } from '../../../../shared/components/cabecera-de-ficha/cabecera-de-ficha';
 import { RouterLink } from '@angular/router';
 
 import { Pase } from '../../../../api/generated/model/pase';
@@ -40,7 +42,6 @@ import {
 import { ErrorPase, errorSinContextoDePase, traducirErrorPase } from '../../models/pase-errors';
 import { MOVIMIENTOS_POR_PAGINA, PasesApi } from '../../services/pases-api';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
-import { CabeceraDePersona } from './cabecera-de-persona/cabecera-de-persona';
 
 /**
  * El ledger abierto, de a paginas (0.116.0). Mientras llega otra pagina se sigue mostrando la
@@ -97,7 +98,7 @@ const ENTERO_CON_SIGNO = /^[+-]?\d+$/;
 @Component({
   selector: 'app-pases-de-persona-page',
   imports: [
-    CabeceraDePersona,
+    CabeceraDeFicha,
     Ayuda,
     ColumnaOrdenable,
     RouterLink,
@@ -133,6 +134,13 @@ export class PasesDePersonaPage {
   protected readonly abono = esAbono;
 
   protected readonly persona = signal<PersonaResponse | null>(null);
+
+  protected readonly cabecera = cabeceraDePersona(() => ({
+    personaId: this.personaId(),
+    persona: this.persona(),
+    nombreAlternativo: this.nombre(),
+    actual: 'pases',
+  }));
   protected readonly pases = signal<readonly Pase[] | null>(null);
   /**
    * Orden y paginado de la lista completa (plan §3.4). 100 por pagina y no 20: el enlace "renovado

@@ -247,12 +247,6 @@
   font-weight: var(--peso-medio);
 }
 
-/* Miga de pan arriba del titulo de un detalle: de donde se vino. */
-.migas {
-  margin-bottom: var(--esp-4);
-  font-size: var(--tipo-xs);
-}
-
 /*
  * Datos de un registro en grilla de tres columnas, rotulo arriba y valor abajo, como en el lienzo.
  * Cada par va en su propio `div` para que el `dd` quede inmediatamente despues de su `dt`.

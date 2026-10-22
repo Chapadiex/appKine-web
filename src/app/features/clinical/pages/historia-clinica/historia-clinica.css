@@ -328,23 +328,9 @@ button.timeline__boton:focus-visible {
   color: var(--color-texto-suave);
 }
 
-/* Migas del caso y del plan (Historia clínica / Caso / Plan), en la fila del titulo. */
+/* Titulo de las pantallas hijas de la historia (Caso / Plan), en la fila con las migas. */
 .titulo-clinico > h1 {
   font-size: var(--tipo-lg);
-}
-
-.migas {
-  font-size: var(--tipo-sm);
-  color: var(--color-texto-suave);
-  text-decoration: none;
-}
-
-.migas:hover {
-  text-decoration: underline;
-}
-
-.migas__separador {
-  color: var(--color-texto-suave);
 }
 
 /* --- UX-01: cuerpo de la historia, el caso, el plan y la politica ----------------------- */

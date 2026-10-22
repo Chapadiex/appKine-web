@@ -20,21 +20,6 @@
   border-color: var(--color-acento);
 }
 
-/* Miga hacia la pantalla madre (Cuenta corriente / Cobros registrados), en la fila del titulo. */
-.migas {
-  font-size: var(--tipo-sm);
-  color: var(--color-texto-suave);
-  text-decoration: none;
-}
-
-.migas:hover {
-  text-decoration: underline;
-}
-
-.migas__separador {
-  color: var(--color-texto-suave);
-}
-
 /*
  * Registro de un cobro: el formulario a la izquierda y el resumen (totales, faltantes y el boton
  * de confirmar) a la derecha, como en el diseño. En pantallas angostas el resumen baja.

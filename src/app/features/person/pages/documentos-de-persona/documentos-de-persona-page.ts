@@ -1,4 +1,6 @@
 import { Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
+import { cabeceraDePersona } from '../../../../core/services/cabecera-de-persona';
+import { CabeceraDeFicha } from '../../../../shared/components/cabecera-de-ficha/cabecera-de-ficha';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { AdjuntoPageResponse } from '../../../../api/generated/model/adjunto-page-response';
@@ -33,7 +35,6 @@ import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { Filtros } from '../../../../shared/components/filtros/filtros';
 import { Icono } from '../../../../shared/components/icono/icono';
-import { CabeceraDePersona } from '../../components/cabecera-de-persona/cabecera-de-persona';
 
 const TAMANO_DE_PAGINA = 20;
 
@@ -94,7 +95,7 @@ type TipoAccion = 'reclasificar' | 'baja';
 @Component({
   selector: 'app-documentos-de-persona-page',
   imports: [
-    CabeceraDePersona,
+    CabeceraDeFicha,
     Ayuda,
     Filtros,
     Icono,
@@ -130,6 +131,12 @@ export class DocumentosDePersonaPage {
 
   protected readonly estado = signal<EstadoDeListado<AdjuntoPageResponse>>({ tipo: 'cargando' });
   protected readonly persona = signal<PersonaResponse | null>(null);
+
+  protected readonly cabecera = cabeceraDePersona(() => ({
+    personaId: this.personaId(),
+    persona: this.persona(),
+    actual: 'documentos',
+  }));
 
   protected readonly filtroCategoria = signal<CategoriaDeAdjunto | ''>('');
   protected readonly filtro = signal<FiltroDeAdjuntos>('VIGENTES');

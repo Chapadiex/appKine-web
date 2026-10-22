@@ -169,7 +169,7 @@ test.describe('Circuito de F9 de punta a punta contra el backend real', () => {
     // --- 2. Venta del pase: a Ana por pantalla, a Carla por la API ---------------------------
     await navegar(page, `/pacientes/${ana.id}/pases`);
     await expect(page.getByRole('heading', { name: 'Pases', level: 1 })).toBeVisible();
-    await expect(page.locator('app-cabecera-de-persona')).toContainText(ana.apellido);
+    await expect(page.locator('app-cabecera-de-ficha')).toContainText(ana.apellido);
     const selector = page.getByLabel('Producto');
     const opcion = await selector.locator('option', { hasText: producto }).getAttribute('value');
     await selector.selectOption(opcion ?? '');

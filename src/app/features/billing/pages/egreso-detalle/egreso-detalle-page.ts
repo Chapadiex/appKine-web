@@ -13,6 +13,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { Migas } from '../../../../shared/components/migas/migas';
 import { Observable } from 'rxjs';
 
 import { Egreso } from '../../../../api/generated/model/egreso';
@@ -97,7 +98,7 @@ type Operacion = 'editar' | 'confirmar' | 'pagar' | 'anular' | 'anular-pago';
  */
 @Component({
   selector: 'app-egreso-detalle-page',
-  imports: [Ayuda, ReactiveFormsModule, RouterLink, ConfirmacionConMotivo],
+  imports: [Migas, Ayuda, ReactiveFormsModule, RouterLink, ConfirmacionConMotivo],
   templateUrl: './egreso-detalle-page.html',
   styleUrls: ['../../billing.css', '../../economia.css'],
 })

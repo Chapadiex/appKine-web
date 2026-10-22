@@ -1,6 +1,4 @@
-<nav class="migas" aria-label="Ubicación">
-  <a class="enlace" routerLink="/presentaciones">Volver a las presentaciones</a>
-</nav>
+<app-migas [migas]="[{ etiqueta: 'Presentaciones', ruta: '/presentaciones' }]" />
 
 @if (carga().tipo === 'cargando' && lote() === null) {
   <h1>Lote de presentación</h1>

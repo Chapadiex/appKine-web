@@ -1,6 +1,9 @@
-<nav class="migas" aria-label="Ubicación">
-  <a class="enlace" routerLink="/egresos/honorarios">Volver a liquidar honorarios</a>
-</nav>
+<app-migas
+  [migas]="[
+    { etiqueta: 'Egresos', ruta: '/egresos' },
+    { etiqueta: 'Liquidar honorarios', ruta: '/egresos/honorarios' },
+  ]"
+/>
 
 <div class="titulo-con-ayuda">
   <h1>Liquidación de honorarios</h1>

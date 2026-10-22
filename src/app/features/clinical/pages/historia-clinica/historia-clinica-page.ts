@@ -1,4 +1,6 @@
 import { Component, DestroyRef, computed, effect, inject, signal, untracked } from '@angular/core';
+import { cabeceraDePersona } from '../../../../core/services/cabecera-de-persona';
+import { CabeceraDeFicha } from '../../../../shared/components/cabecera-de-ficha/cabecera-de-ficha';
 import { Subscription } from 'rxjs';
 
 import { AntecedenteResponse } from '../../../../api/generated/model/antecedente-response';
@@ -22,7 +24,6 @@ import { NuevoAdjunto } from './components/nuevo-adjunto';
 import { TimelineClinico, claveDe } from './components/timeline-clinico';
 import { VisorDeAdjunto } from './components/visor-de-adjunto';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
-import { CabeceraDePersona } from './components/cabecera-de-persona/cabecera-de-persona';
 
 type Estado =
   | { readonly tipo: 'cargando' }
@@ -53,7 +54,7 @@ type Estado =
 @Component({
   selector: 'app-historia-clinica-page',
   imports: [
-    CabeceraDePersona,
+    CabeceraDeFicha,
     Ayuda,
     TimelineClinico,
     DetalleDeEntrada,
@@ -87,6 +88,15 @@ export class HistoriaClinicaPage {
 
   /** El id de la persona como texto, para las pestañas de la cabecera. */
   protected readonly personaIdTexto = computed(() => String(this.visita.personaId() ?? ''));
+
+  protected readonly cabecera = cabeceraDePersona(() => ({
+    personaId: this.personaIdTexto(),
+    persona: null,
+    actual: 'historia',
+    nombreAlternativo: this.historia()?.personaNombreCompleto || 'Historia clínica',
+    documentoAlternativo: this.historia()?.personaDocumento || null,
+    esPaciente: true,
+  }));
 
   protected readonly historia = computed(() => {
     const estado = this.estado();

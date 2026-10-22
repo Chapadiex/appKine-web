@@ -1,5 +1,5 @@
 import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { catchError, of } from 'rxjs';
 
 import { AkineHttpError } from '../../../../core/interceptors/error.interceptor';
@@ -27,6 +27,7 @@ import {
 import { ventanaEnPalabras } from '../../models/vigencia-de-contracting';
 import { NgTemplateOutlet } from '@angular/common';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { Migas } from '../../../../shared/components/migas/migas';
 
 /** Tamano maximo del archivo que se lee en el navegador. 500 filas de CSV entran holgadas. */
 const TAMANO_MAXIMO_DE_ARCHIVO = 512 * 1024;
@@ -70,7 +71,7 @@ interface Desenlace {
  */
 @Component({
   selector: 'app-importar-aranceles-page',
-  imports: [Ayuda, NgTemplateOutlet, RouterLink, PermisoDirective],
+  imports: [Migas, Ayuda, NgTemplateOutlet, PermisoDirective],
   templateUrl: './importar-aranceles-page.html',
   styleUrl: '../../contracting.css',
 })
@@ -89,6 +90,12 @@ export class ImportarArancelesPage {
 
   protected readonly convenioId = Number(this.ruta.snapshot.paramMap.get('convenioId'));
   protected readonly rutaDeLaGrilla = `/contratacion/convenios/${this.convenioId}/aranceles`;
+
+  protected readonly migas = computed(() => [
+    { etiqueta: 'Convenios de la sede', ruta: '/contratacion/convenios' },
+    { etiqueta: 'Aranceles', ruta: this.rutaDeLaGrilla },
+    { etiqueta: 'Importar aranceles' },
+  ]);
 
   protected readonly convenio = signal<ConvenioResponse | null>(null);
   protected readonly moneda = computed(() => this.convenio()?.moneda);

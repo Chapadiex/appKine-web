@@ -1,6 +1,4 @@
-<nav class="migas" aria-label="Ubicación">
-  <a class="enlace" routerLink="/egresos">Volver a los egresos</a>
-</nav>
+<app-migas [migas]="[{ etiqueta: 'Egresos', ruta: '/egresos' }]" />
 
 <div class="titulo-con-ayuda">
   <h1>{{ egreso()?.concepto ?? 'Egreso' }}</h1>

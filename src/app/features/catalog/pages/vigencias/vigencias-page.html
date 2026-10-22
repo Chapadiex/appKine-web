@@ -1,7 +1,9 @@
-<nav class="migas" aria-label="Ruta">
-  <a routerLink="/catalogo/nomencladores">Catálogo clínico</a>
-  <span aria-hidden="true">/</span>
-</nav>
+<app-migas
+  [migas]="[
+    { etiqueta: 'Catálogo clínico', ruta: '/catalogo/nomencladores' },
+    { etiqueta: 'Vigencias' },
+  ]"
+/>
 
 <h1>Vigencias del nomenclador</h1>
 

@@ -1,7 +1,9 @@
-<nav class="migas" aria-label="Ruta">
-  <a routerLink="/catalogo/especialidades">Catálogo clínico</a>
-  <span aria-hidden="true">/</span>
-</nav>
+<app-migas
+  [migas]="[
+    { etiqueta: 'Catálogo clínico', ruta: '/catalogo/especialidades' },
+    { etiqueta: 'Pedidos al catálogo' },
+  ]"
+/>
 
 <div class="titulo-con-ayuda">
   <h1>Pedidos al catálogo de la plataforma</h1>

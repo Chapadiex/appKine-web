@@ -1,6 +1,7 @@
 import { Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { Migas } from '../../../../shared/components/migas/migas';
 import { Observable, forkJoin, of } from 'rxjs';
 import { catchError, switchMap } from 'rxjs/operators';
 
@@ -80,6 +81,7 @@ interface Lectura {
 @Component({
   selector: 'app-presentacion-detalle-page',
   imports: [
+    Migas,
     Ayuda,
     ColumnaOrdenable,
     Filtros,

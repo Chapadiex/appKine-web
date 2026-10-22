@@ -9,6 +9,7 @@ import {
   untracked,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { Migas } from '../../../shared/components/migas/migas';
 import { Observable, Subscription, forkJoin } from 'rxjs';
 
 import { AvanceDelPlan } from '../../../api/generated/model/avance-del-plan';
@@ -60,7 +61,7 @@ type Editor = { readonly modo: 'crear' } | { readonly modo: 'modificar'; readonl
  */
 @Component({
   selector: 'app-plan-page',
-  imports: [Ayuda, RouterLink, PedidoDeMotivo],
+  imports: [Migas, Ayuda, RouterLink, PedidoDeMotivo],
   templateUrl: './plan-page.html',
   styleUrl: '../pages/historia-clinica/historia-clinica.css',
 })
@@ -107,6 +108,14 @@ export class PlanPage {
   protected readonly intentoTransicion = signal(false);
 
   protected readonly idDelCaso = computed(() => Number(this.casoId()));
+
+  protected readonly migas = computed(() => [
+    { etiqueta: 'Historia clínica', ruta: this.visita.rutaHistoria() },
+    {
+      etiqueta: this.caso() ? `Caso ${this.caso()?.numeroCaso}` : 'Caso clínico',
+      ruta: this.visita.rutaCaso(this.idDelCaso()),
+    },
+  ]);
   protected readonly plan = computed(
     () => this.planes().find((p) => p.id === this.planId()) ?? null,
   );

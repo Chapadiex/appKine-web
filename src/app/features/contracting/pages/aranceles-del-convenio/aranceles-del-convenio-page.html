@@ -28,10 +28,12 @@
   </p>
 }
 
-<nav class="migas" aria-label="Ruta de navegación">
-  <a routerLink="/contratacion/convenios">Convenios de la sede</a>
-  <span class="migas__separador" aria-hidden="true">/</span>
-</nav>
+<app-migas
+  [migas]="[
+    { etiqueta: 'Convenios de la sede', ruta: '/contratacion/convenios' },
+    { etiqueta: 'Aranceles' },
+  ]"
+/>
 
 <!-- La accion principal del titulo: una sola copia para las dos ramas del titulo. -->
 <ng-template #accionDelTitulo>

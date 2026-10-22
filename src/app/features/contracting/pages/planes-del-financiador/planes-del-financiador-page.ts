@@ -44,6 +44,7 @@ import { Paginacion } from '../../../../shared/components/paginacion/paginacion'
 import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 import { Icono } from '../../../../shared/components/icono/icono';
 import { Filtros } from '../../../../shared/components/filtros/filtros';
+import { Migas } from '../../../../shared/components/migas/migas';
 
 /** Operacion abierta sobre una fila. Solo una a la vez. */
 type TipoAccion = 'editar' | 'baja';
@@ -100,6 +101,7 @@ type TipoAccion = 'editar' | 'baja';
 @Component({
   selector: 'app-planes-del-financiador-page',
   imports: [
+    Migas,
     ColumnaOrdenable,
     Paginacion,
     Icono,

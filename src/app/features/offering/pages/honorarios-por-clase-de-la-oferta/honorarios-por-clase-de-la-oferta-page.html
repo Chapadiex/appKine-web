@@ -1,7 +1,9 @@
-<nav class="migas" aria-label="Ruta">
-  <a routerLink="/servicios/ofertas">Ofertas de la sede</a>
-  <span aria-hidden="true">/</span>
-</nav>
+<app-migas
+  [migas]="[
+    { etiqueta: 'Ofertas de la sede', ruta: '/servicios/ofertas' },
+    { etiqueta: 'Honorarios por clase' },
+  ]"
+/>
 
 <div class="titulo-con-ayuda">
   <h1>Honorarios por clase de la oferta</h1>

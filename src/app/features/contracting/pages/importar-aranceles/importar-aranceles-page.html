@@ -18,12 +18,7 @@
   </div>
 }
 
-<nav class="migas" aria-label="Ruta de navegación">
-  <a routerLink="/contratacion/convenios">Convenios de la sede</a>
-  <span class="migas__separador" aria-hidden="true">/</span>
-  <a [routerLink]="rutaDeLaGrilla">Aranceles</a>
-  <span class="migas__separador" aria-hidden="true">/</span>
-</nav>
+<app-migas [migas]="migas()" />
 
 <!-- La ayuda de la pantalla: una sola copia para las dos ramas del titulo. -->
 <ng-template #ayudaDePantalla>

@@ -13,6 +13,7 @@ import { OfferingApi } from '../../services/offering-api';
 import { esSinPermiso } from '../../../../core/interceptors/error.interceptor';
 import { CausaOffering, hayQueRecargar, traducirErrorOffering } from '../../models/offering-errors';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { Migas } from '../../../../shared/components/migas/migas';
 
 /** Una practica de la lista que se va a guardar. */
 interface FilaPractica {
@@ -51,7 +52,7 @@ interface FilaPractica {
  */
 @Component({
   selector: 'app-practicas-de-la-oferta-page',
-  imports: [Pestanas, Ayuda, RouterLink, PermisoDirective],
+  imports: [Migas, Pestanas, Ayuda, RouterLink, PermisoDirective],
   templateUrl: './practicas-de-la-oferta-page.html',
   styleUrl: '../../offering.css',
 })

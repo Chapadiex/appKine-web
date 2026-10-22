@@ -1,16 +1,16 @@
 /*
- * Banda de la persona (UX-01): nombre, documento y estado arriba, y las pestanas del hub de la
- * ficha debajo. Mismo dibujo en person, billing, activity y clinical: cada feature tiene su copia
- * porque no pueden importarse entre si (ADR-0004).
+ * Banda de una ficha (UX-01): migas, titulo, datos y estado arriba, y las pestanas de las
+ * pantallas hermanas debajo. Las migas las dibuja `app-migas` con los estilos de
+ * design-system.css.
  */
-.cabecera-persona {
+.cabecera-ficha {
   margin-bottom: var(--esp-7);
   border: var(--borde-fino) solid var(--color-borde);
   border-radius: var(--radio-md);
   background: var(--color-superficie);
 }
 
-.cabecera-persona__fila {
+.cabecera-ficha__fila {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -18,21 +18,7 @@
   padding: var(--esp-5) var(--esp-7) var(--esp-4);
 }
 
-.cabecera-persona__migas {
-  font-size: var(--tipo-sm);
-  color: var(--color-texto-suave);
-  text-decoration: none;
-}
-
-.cabecera-persona__migas:hover {
-  text-decoration: underline;
-}
-
-.cabecera-persona__separador {
-  color: var(--color-texto-suave);
-}
-
-.cabecera-persona__nombre {
+.cabecera-ficha__titulo {
   margin: 0;
   font-size: var(--tipo-xl);
   font-weight: var(--peso-fuerte);
@@ -40,16 +26,16 @@
   text-decoration: none;
 }
 
-a.cabecera-persona__nombre:hover {
+a.cabecera-ficha__titulo:hover {
   text-decoration: underline;
 }
 
-.cabecera-persona__dato {
+.cabecera-ficha__dato {
   color: var(--color-texto);
   font-variant-numeric: tabular-nums;
 }
 
-.cabecera-persona__perfil {
+.cabecera-ficha__perfil {
   padding: var(--esp-1) var(--esp-4);
   border-radius: var(--radio-pastilla);
   background: var(--color-acento-claro);
@@ -58,7 +44,7 @@ a.cabecera-persona__nombre:hover {
   font-weight: var(--peso-semi);
 }
 
-.cabecera-persona__acciones {
+.cabecera-ficha__acciones {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -66,11 +52,11 @@ a.cabecera-persona__nombre:hover {
   margin-left: auto;
 }
 
-.cabecera-persona__acciones:empty {
+.cabecera-ficha__acciones:empty {
   display: none;
 }
 
-.cabecera-persona .pestanas {
+.cabecera-ficha .pestanas {
   margin-bottom: 0;
   padding: 0 var(--esp-5);
   border-bottom: 0;

@@ -34,6 +34,7 @@ import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-or
 import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
 import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 import { Icono } from '../../../../shared/components/icono/icono';
+import { Migas } from '../../../../shared/components/migas/migas';
 
 /** Operacion abierta sobre una fila. Solo una a la vez. */
 type TipoAccion = 'fin' | 'baja';
@@ -64,6 +65,7 @@ interface SituacionDelPrecio {
 @Component({
   selector: 'app-precios-particulares-de-la-oferta-page',
   imports: [
+    Migas,
     Pestanas,
     ColumnaOrdenable,
     Paginacion,
