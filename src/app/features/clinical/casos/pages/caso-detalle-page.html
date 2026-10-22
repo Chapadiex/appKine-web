@@ -1,6 +1,17 @@
-<h1>Caso clinico</h1>
-
-<p><a class="enlace" [routerLink]="visita.rutaHistoria()">Volver a la historia clinica</a></p>
+<div class="titulo-con-ayuda titulo-clinico">
+  <a class="migas" [routerLink]="visita.rutaHistoria()">Historia clínica</a>
+  <span class="migas__separador" aria-hidden="true">/</span>
+  <h1>Caso clínico</h1>
+  @if (estado().tipo === 'listo') {
+    @if (caso(); as c) {
+      <div class="encabezado__acciones">
+        <a class="boton boton--secundario" [routerLink]="visita.rutaPlan(c.id!)">
+          Ver el plan de tratamiento
+        </a>
+      </div>
+    }
+  }
+</div>
 
 @switch (estado().tipo) {
   @case ('cargando') {
@@ -48,20 +59,14 @@
           }
         </dl>
 
-        <h3>Diagnostico presuntivo</h3>
+        <h3>Diagnóstico presuntivo</h3>
         <p class="historia__cuerpo">{{ c.diagnosticoPresuntivo }}</p>
-        <h3>Objetivo terapeutico</h3>
+        <h3>Objetivo terapéutico</h3>
         @if (c.objetivoTerapeutico) {
           <p class="historia__cuerpo">{{ c.objetivoTerapeutico }}</p>
         } @else {
           <p class="estado estado--vacio">Sin objetivo cargado.</p>
         }
-
-        <div class="acciones">
-          <a class="boton boton--secundario" [routerLink]="visita.rutaPlan(c.id!)">
-            Ver el plan de tratamiento
-          </a>
-        </div>
       </section>
 
       <p class="estado estado--ok" role="status">{{ aviso() }}</p>

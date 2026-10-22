@@ -72,7 +72,7 @@ test.describe('Coberturas y aranceles por oferta contra el backend real', () => 
       page.getByRole('heading', { name: `Aranceles de ${convenio.nombre}`, level: 1 }),
     ).toBeVisible();
     await page.getByRole('button', { name: 'Cargar un arancel' }).click();
-    await page.getByLabel('Practica').selectOption({ value: String(practicaId) });
+    await page.getByLabel('Práctica').selectOption({ value: String(practicaId) });
     await page.getByLabel('Oferta (opcional)').selectOption({ label: `Solo en ${oferta.nombre}` });
     await page.getByLabel('Importe total').fill(String(PROPIO.total));
     await page.getByLabel('Pone el financiador').fill(String(PROPIO.financiador));
@@ -118,7 +118,7 @@ test.describe('Coberturas y aranceles por oferta contra el backend real', () => 
     await navegar(page, '/contratacion/arancel-efectivo');
     await page.getByLabel('Financiador').selectOption({ value: String(financiador.id) });
     await page.getByLabel('Plan').selectOption({ value: String(financiador.planId) });
-    await page.getByLabel('Practica').selectOption({ value: String(practicaId) });
+    await page.getByLabel('Práctica').selectOption({ value: String(practicaId) });
     await page.getByLabel('Oferta (opcional)').selectOption({ label: oferta.nombre });
     await page.getByRole('button', { name: 'Consultar' }).click();
     const resultado = page.getByRole('region', { name: /, el / });

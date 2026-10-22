@@ -155,7 +155,7 @@ test.describe('Cobertura, orden y autorizacion de un paciente (B-6)', () => {
     await nueva.getByLabel('Financiador').selectOption({ label: financiador });
     await expect(nueva.getByLabel('Plan').getByRole('option', { name: plan })).toBeAttached();
     await nueva.getByLabel('Plan').selectOption({ label: plan });
-    await nueva.getByLabel('Numero de afiliado').fill('E2E-0001');
+    await nueva.getByLabel('Número de afiliado').fill('E2E-0001');
     await nueva.getByLabel('Marcarla como cobertura principal').check();
     await nueva.getByRole('button', { name: 'Agregar cobertura' }).click();
 
@@ -164,7 +164,7 @@ test.describe('Cobertura, orden y autorizacion de un paciente (B-6)', () => {
 
     // --- 5. Orden medica ----------------------------------------------------------------
     await page.goto(`/pacientes/${personaId}/autorizaciones`);
-    const ordenes = page.getByRole('region', { name: 'Ordenes medicas' });
+    const ordenes = page.getByRole('region', { name: 'Órdenes médicas' });
     await ordenes.getByRole('button', { name: 'Registrar una orden' }).click();
     await ordenes.getByLabel('Profesional que la firmo').fill('Dra. Sintetica Prueba');
     await ordenes.getByLabel('Matricula').fill('12345');

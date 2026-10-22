@@ -37,8 +37,8 @@ function filaDe(page: Page, persona: Persona): Locator {
 /** Entra como entra el mostrador: desde la agenda, por su unico enlace, que no lleva fecha. */
 async function abrirLaRecepcion(page: Page, persona: Persona): Promise<Locator> {
   await navegar(page, '/agenda');
-  await page.getByRole('link', { name: 'Recepcion', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Recepcion del dia', level: 1 })).toBeVisible();
+  await page.getByRole('link', { name: 'Recepción', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Recepción del día', level: 1 })).toBeVisible();
   const fila = filaDe(page, persona);
   await expect(fila).toBeVisible();
   return fila;
@@ -207,7 +207,7 @@ test.describe('Recepcion del dia contra el backend real', () => {
     await expect(page.getByText('se retiro sin ser atendida')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Marcar que no vino' })).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Mover a otro horario' })).toHaveCount(0);
-    const historial = page.getByRole('region', { name: 'Historial de la recepcion' });
+    const historial = page.getByRole('region', { name: 'Historial de la recepción' });
     await expect(historial.getByText(/Se retiro sin ser atendido —/)).toBeVisible();
     await expect(historial.getByText('Se canso de esperar')).toBeVisible();
   });

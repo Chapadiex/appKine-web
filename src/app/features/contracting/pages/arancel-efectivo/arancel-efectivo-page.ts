@@ -1,3 +1,8 @@
+import { Pestanas } from '../../../../shared/components/pestanas/pestanas';
+import {
+  ETIQUETA_PESTANAS_DE_CONTRATACION,
+  PESTANAS_DE_CONTRATACION,
+} from '../../models/pestanas-de-contratacion';
 import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -27,13 +32,13 @@ import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 /**
  * Consulta del arancel efectivo de una practica para una fecha (M16, RF-M16-006 y RF-M16-010).
  *
- * <p>Contesta una sola pregunta —<b>cuanto sale esto para este paciente ese dia</b>— y la contesta
+ * <p>Contesta una sola pregunta —<b>cuánto sale esto para este paciente ese dia</b>— y la contesta
  * con su derivacion: que convenio la produjo y con que dos vigencias.
  *
  * <h2>1. "No hay arancel" NO es un error, y esta pantalla existe sobre todo por eso</h2>
  *
  * <p>El endpoint responde <b>200</b> con `resuelto = false` y un motivo. El contrato lo justifica:
- * no encontrar convenio es el desenlace <b>mas frecuente</b> —la mayoria de los pacientes se
+ * no encontrar convenio es el desenlace <b>más frecuente</b> —la mayoria de los pacientes se
  * atienden como particulares— y un `404` obligaria a la pantalla a tratar el caso normal como una
  * excepcion.
  *
@@ -51,7 +56,7 @@ import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
  *
  * <p>Consultar una fecha pasada devuelve el arancel que regia entonces, que es lo que hace que una
  * atencion retroactiva se cobre bien y que una liquidacion vieja se pueda explicar. Arranca en hoy
- * porque es el caso mas frecuente, pero el campo esta a la vista y la ayuda dice para que sirve
+ * porque es el caso más frecuente, pero el campo esta a la vista y la ayuda dice para que sirve
  * moverlo.
  *
  * <h2>3. El resultado es unico porque no puede haber dos candidatas</h2>
@@ -69,11 +74,13 @@ import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
  */
 @Component({
   selector: 'app-arancel-efectivo-page',
-  imports: [Ayuda, ReactiveFormsModule, RouterLink],
+  imports: [Pestanas, Ayuda, ReactiveFormsModule, RouterLink],
   templateUrl: './arancel-efectivo-page.html',
   styleUrl: '../../contracting.css',
 })
 export class ArancelEfectivoPage {
+  protected readonly pestanas = PESTANAS_DE_CONTRATACION;
+  protected readonly etiquetaDePestanas = ETIQUETA_PESTANAS_DE_CONTRATACION;
   private readonly api = inject(ConveniosApi);
   private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly catalogo = inject(ContractingApi);
@@ -152,7 +159,7 @@ export class ArancelEfectivoPage {
     if (consultada !== null) {
       return (
         `Arancel general del convenio: la oferta ${this.nombreDeOferta(consultada)} no tiene ` +
-        'precio propio para esta practica, asi que rige el general.'
+        'precio propio para esta práctica, así que rige el general.'
       );
     }
     return 'Arancel general del convenio: vale para cualquier oferta que no tenga precio propio.';
@@ -226,8 +233,8 @@ export class ArancelEfectivoPage {
 
     if (consultorioId === null) {
       this.error.set(
-        'Los convenios son de una sede concreta, asi que hay que saber en cual estas trabajando. ' +
-          'Eligi un consultorio y volve a entrar. Tu sesion sigue abierta.',
+        'Los convenios son de una sede concreta, así que hay que saber en cual estás trabajando. ' +
+          'Elegí un consultorio y volvé a entrar. Tu sesión sigue abierta.',
       );
       this.faltaContexto.set(true);
       return;
@@ -274,7 +281,7 @@ export class ArancelEfectivoPage {
   protected practicaElegida(): string {
     const id = Number(this.formulario.getRawValue().practicaId);
     const practica = this.practicas().find((candidata) => candidata.id === id);
-    return practica === undefined ? 'la practica' : (practica.name ?? 'la practica');
+    return practica === undefined ? 'la práctica' : (practica.name ?? 'la práctica');
   }
 
   private nombreDeOferta(id: number): string {

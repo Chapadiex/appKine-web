@@ -128,7 +128,7 @@ test.describe('Egresos con dos operadores a la vez contra el backend real', () =
     await expect(page.getByRole('button', { name: 'Anular el egreso' })).toBeVisible();
     await pagar(propio, egreso.id, 500);
     await page.getByRole('button', { name: 'Anular el egreso' }).click();
-    await page.getByLabel('Motivo de la anulacion').fill('Se cargo por duplicado');
+    await page.getByLabel('Motivo de la anulación').fill('Se cargo por duplicado');
     const anulacion = respuestaDe(page, 'POST', /\/egresos\/\d+\/anulacion$/);
     await page.getByRole('button', { name: 'Anular el egreso', exact: true }).last().click();
     const conPagos = await anulacion;
@@ -144,12 +144,12 @@ test.describe('Egresos con dos operadores a la vez contra el backend real', () =
     await expect(page.getByText(/Tiene pagos vigentes/)).toBeVisible();
     await expect(page.getByRole('button', { name: 'Anular el egreso' })).toHaveCount(0);
     await page.getByRole('button', { name: /^Anular el pago/ }).click();
-    await page.getByLabel('Motivo de la anulacion').fill('Pago cargado por error');
+    await page.getByLabel('Motivo de la anulación').fill('Pago cargado por error');
     await page.getByRole('button', { name: 'Anular el pago', exact: true }).click();
     await expect(page.getByRole('status').filter({ hasText: 'Pago anulado' })).toBeVisible();
 
     await page.getByRole('button', { name: 'Anular el egreso' }).click();
-    await page.getByLabel('Motivo de la anulacion').fill('Se cargo por duplicado');
+    await page.getByLabel('Motivo de la anulación').fill('Se cargo por duplicado');
     await page.getByRole('button', { name: 'Anular el egreso', exact: true }).last().click();
     await expect(page.getByRole('status').filter({ hasText: 'Egreso anulado' })).toBeVisible();
     await expect(dato(page, 'Estado')).toContainText('Anulado');

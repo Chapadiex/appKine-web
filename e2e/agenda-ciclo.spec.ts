@@ -44,7 +44,7 @@ async function reservarYAbrirElCiclo(
 ): Promise<number> {
   await abrirReserva(page, oferta, fecha, slot, persona);
   const creado = respuestaDe(page, 'POST', RESERVA);
-  await page.getByRole('button', { name: 'Reservar el turno' }).click();
+  await page.getByRole('button', { name: 'Reservar turno' }).click();
   const { id } = (await (await creado).json()) as { id: number };
   await expect(page.getByRole('heading', { name: 'Turno RESERVADO', level: 2 })).toBeVisible();
 

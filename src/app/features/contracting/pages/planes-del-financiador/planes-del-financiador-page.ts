@@ -73,7 +73,7 @@ type TipoAccion = 'editar' | 'baja';
  *       reactivacion.</li>
  * </ul>
  *
- * <p>Por eso el fin de vigencia es un campo del formulario de edicion y no un boton "cerrar", y
+ * <p>Por eso el fin de vigencia es un campo del formulario de edicion y no un botón "cerrar", y
  * por eso el panel de baja advierte que es terminal.
  *
  * <h2>2. `vigenciaHasta` es INCLUSIVA, y aca no es como en las ofertas</h2>
@@ -92,7 +92,7 @@ type TipoAccion = 'editar' | 'baja';
  *
  * <h2>4. Un financiador dado de baja no admite planes nuevos, pero sus planes se siguen editando</h2>
  *
- * <p>Es la contracara de que la baja no cascadee. La pantalla esconde el boton de alta —seria
+ * <p>Es la contracara de que la baja no cascadee. La pantalla esconde el botón de alta —seria
  * ofrecer un `409 financiador-inactivo` garantizado— y explica por que, pero deja editar los
  * planes existentes: dejar de trabajar con una obra social no puede tener como efecto que sus
  * planes queden congelados con un error de tipeo.
@@ -302,7 +302,7 @@ export class PlanesDelFinanciadorPage {
       codigo: '',
       nombre: '',
       descripcion: '',
-      // Arranca hoy y no vacio: el caso abrumadoramente mas frecuente es un plan que empieza a
+      // Arranca hoy y no vacio: el caso abrumadoramente más frecuente es un plan que empieza a
       // ofrecerse ya. Dejarlo vacio obligaria a tipear la fecha de hoy en cada alta.
       vigenciaDesde: this.diaDeLaSede.hoy(),
       vigenciaHasta: '',
@@ -421,8 +421,8 @@ export class PlanesDelFinanciadorPage {
       next: () => {
         this.cerrarPanel();
         this.exito.set(
-          'El plan quedo dado de alta. Si su vigencia arranca mas adelante va a figurar como ' +
-            'activo pero todavia sin vigencia: es correcto, y empieza a ofrecerse solo ese dia.',
+          'El plan quedó dado de alta. Si su vigencia arranca mas adelante va a figurar como ' +
+            'activo pero todavía sin vigencia: es correcto, y empieza a ofrecerse solo ese día.',
         );
         this.cargar();
       },
@@ -455,7 +455,7 @@ export class PlanesDelFinanciadorPage {
         this.cerrarPanel();
         this.exito.set(
           'Los datos del plan quedaron guardados. Si le pusiste fecha de fin, el plan sigue ' +
-            'ACTIVO: cerrar la vigencia no es darlo de baja, y ese ultimo dia todavia se ofrece.',
+            'ACTIVO: cerrar la vigencia no es darlo de baja, y ese último día todavía se ofrece.',
         );
         this.cargar();
       },
@@ -475,8 +475,8 @@ export class PlanesDelFinanciadorPage {
       next: () => {
         this.cerrarPanel();
         this.exito.set(
-          'El plan quedo dado de baja. Las coberturas ya firmadas bajo el siguen resolviendo con ' +
-            'su copia congelada: lo unico que se impide es elegirlo de ahora en mas. Su codigo y ' +
+          'El plan quedó dado de baja. Las coberturas ya firmadas bajo él siguen resolviendo con ' +
+            'su copia congelada: lo único que se impide es elegirlo de ahora en más. Su código y ' +
             'su nombre quedan libres para un plan nuevo del mismo financiador.',
         );
         this.cargar();
@@ -499,7 +499,7 @@ export class PlanesDelFinanciadorPage {
     const version = original?.version;
     if (original === null || version === undefined) {
       this.errorAccion.set(
-        'No pudimos leer la version de este plan. Cerra el panel, recarga el listado y volve a ' +
+        'No pudimos leer la versión de este plan. Cerrá el panel, recargá el listado y volvé a ' +
           'intentar.',
       );
       return null;

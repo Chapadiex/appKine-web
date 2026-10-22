@@ -1,5 +1,5 @@
 <div class="titulo-con-ayuda">
-  <h1>Catalogo de servicios</h1>
+  <h1>Catálogo de servicios</h1>
   <app-ayuda titulo="Sobre esta pantalla">
     <p>
       Que existe como concepto: kinesiologia respiratoria, pilates terapeutico, evaluacion postural.
@@ -26,18 +26,13 @@
     <div class="encabezado__acciones">
       <button type="button" class="boton" (click)="abrirAlta()">
         <app-icono nombre="agregar" />
-        Dar de alta un servicio
+        Nuevo servicio
       </button>
     </div>
   }
 </div>
 
-<nav class="acciones" aria-label="Servicios y ofertas">
-  <a class="boton boton--secundario" routerLink="/servicios/catalogo" aria-current="page">
-    Catalogo de servicios
-  </a>
-  <a class="boton boton--secundario" routerLink="/servicios/ofertas">Ofertas de la sede</a>
-</nav>
+<app-pestanas [pestanas]="pestanasDeServicios" [etiqueta]="etiquetaDePestanas" />
 
 <div aria-live="polite">
   @if (exito(); as mensaje) {
@@ -47,7 +42,7 @@
 
 @if (altaAbierta()) {
   <section class="tarjeta" aria-labelledby="titulo-alta-servicio">
-    <h2 id="titulo-alta-servicio">Nuevo servicio del catalogo global</h2>
+    <h2 id="titulo-alta-servicio">Nuevo servicio del catálogo global</h2>
 
     <form [formGroup]="formularioAlta" (ngSubmit)="enviarAlta()" novalidate>
       <div class="campo">
@@ -199,7 +194,7 @@
 }
 
 <section class="tarjeta" aria-labelledby="titulo-listado-servicios">
-  <h2 id="titulo-listado-servicios">Servicios del catalogo</h2>
+  <h2 id="titulo-listado-servicios">Servicios del catálogo</h2>
 
   <!--
     Regla de filtros (plan §3.4): la busqueda, que se usa siempre, a la vista; el estado, que casi

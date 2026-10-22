@@ -25,17 +25,12 @@
   <div class="encabezado__acciones" *akinePermiso="permisoManage">
     <button type="button" class="boton" (click)="abrirAlta()">
       <app-icono nombre="agregar" />
-      Dar de alta una oferta
+      Publicar un servicio en la sede
     </button>
   </div>
 </div>
 
-<nav class="acciones" aria-label="Servicios y ofertas">
-  <a class="boton boton--secundario" routerLink="/servicios/catalogo">Catalogo de servicios</a>
-  <a class="boton boton--secundario" routerLink="/servicios/ofertas" aria-current="page">
-    Ofertas de la sede
-  </a>
-</nav>
+<app-pestanas [pestanas]="pestanasDeServicios" [etiqueta]="etiquetaDePestanas" />
 
 <div aria-live="polite">
   @if (exito(); as mensaje) {

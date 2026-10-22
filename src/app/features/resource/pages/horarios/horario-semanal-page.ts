@@ -59,6 +59,12 @@ import {
   minutosDeHora,
   rangoHorario,
 } from '../../../../shared/utils/horas-de-pared';
+import { Icono } from '../../../../shared/components/icono/icono';
+import { Pestanas } from '../../../../shared/components/pestanas/pestanas';
+import {
+  ETIQUETA_PESTANAS_DE_HORARIOS,
+  PESTANAS_DE_HORARIOS,
+} from '../../models/pestanas-de-horarios';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 
 /** Operacion abierta sobre un bloque. Solo una a la vez, y nunca junto con el alta. */
@@ -108,6 +114,8 @@ interface DiaConBloques {
   selector: 'app-horario-semanal-page',
   imports: [
     Ayuda,
+    Icono,
+    Pestanas,
     ReactiveFormsModule,
     RouterLink,
     PermisoDirective,
@@ -141,6 +149,8 @@ export class HorarioSemanalPage {
 
   protected readonly permisoManage = PERMISO_CONSULTORIO_MANAGE;
   protected readonly rutas = RUTAS_HORARIOS;
+  protected readonly pestanas = PESTANAS_DE_HORARIOS;
+  protected readonly etiquetaDePestanas = ETIQUETA_PESTANAS_DE_HORARIOS;
   protected readonly textoModoLectura = TEXTO_MODO_LECTURA;
   protected readonly textoListaIncompleta = TEXTO_LISTA_INCOMPLETA;
   protected readonly modoLectura = modoLectura(inject(PermissionsStore));

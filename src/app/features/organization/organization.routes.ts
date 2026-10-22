@@ -48,13 +48,13 @@ export const routes: Routes = [
     path: '',
     loadComponent: () =>
       import('./pages/organization/organization-page').then((m) => m.OrganizationPage),
-    title: 'AKINE - Organizacion',
+    title: 'AKINE - Organización',
   },
   {
     path: 'suscripcion',
     loadComponent: () =>
       import('./pages/subscription/subscription-page').then((m) => m.SubscriptionPage),
-    title: 'AKINE - Suscripcion',
+    title: 'AKINE - Suscripción',
   },
 
   // Alta antes que el listado: si `colaboradores/nuevo` quedara despues de `colaboradores`
@@ -124,7 +124,7 @@ export const routes: Routes = [
     path: 'auditoria',
     canActivate: [permissionGuard(PERMISO_AUDITORIA_READ)],
     loadComponent: () => import('./pages/audit/audit-page').then((m) => m.AuditPage),
-    title: 'AKINE - Auditoria',
+    title: 'AKINE - Auditoría',
     data: { [DATA_ANCHO]: ANCHO_AMPLIO },
   },
 ];

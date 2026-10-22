@@ -1,278 +1,313 @@
 <div class="titulo-con-ayuda">
-  <h1>Reservar un turno</h1>
+  <a class="miga" routerLink="/agenda">Agenda</a>
+  <span class="miga__separador" aria-hidden="true">/</span>
+  <h1>Reservar turno</h1>
   <app-ayuda titulo="Sobre esta pantalla">
     <p>
-      Un turno es una <b>reserva</b> de agenda. No dice que la atencion haya ocurrido: eso lo
-      registra la sesion clinica, que es otra pantalla.
+      Un turno es una <b>reserva</b> de agenda. No dice que la atención haya ocurrido: eso lo
+      registra la sesión clínica, que es otra pantalla.
+    </p>
+    <p>
+      El horario elegido define fecha, hora, profesional y lugar. Acá solo elegís a quién se le
+      reserva y, si querés, la cobertura con la que se piensa atender. Si el horario se ocupa
+      mientras completás el formulario, se te avisa antes de confirmar.
     </p>
   </app-ayuda>
 </div>
 
-<p><a class="enlace" routerLink="/agenda">Volver al buscador de agenda</a></p>
+<div class="columnas">
+  <div class="columnas__principal">
+    <section class="tarjeta tarjeta--plana" aria-labelledby="titulo-persona">
+      <div class="tarjeta__cuerpo">
+        <h2 id="titulo-persona" class="rotulo-bloque">Paciente *</h2>
 
-<section class="tarjeta" aria-labelledby="titulo-resumen">
-  <h2 id="titulo-resumen">Resumen</h2>
-
-  @if (cargando()) {
-    <p class="estado estado--cargando">Releyendo la agenda de este dia…</p>
-  }
-
-  @if (slot(); as elegido) {
-    <dl class="detalle">
-      <dt>Oferta</dt>
-      <dd>{{ nombreComercial() }}</dd>
-
-      <dt>Dia</dt>
-      <dd>{{ fechaEnPalabras(fecha()) }}</dd>
-
-      <dt>Horario</dt>
-      <dd>
-        {{ horario() }} <span class="ayuda">({{ duracion() }} min · zona {{ timezone() }})</span>
-      </dd>
-
-      @if (nombreDelProfesional(); as profesional) {
-        <dt>Profesional</dt>
-        <dd>{{ profesional }}</dd>
-      }
-
-      @if (textoDeCupo(elegido); as cupo) {
-        <dt>Cupo</dt>
-        <dd>{{ cupo }}</dd>
-      }
-
-      <dt>Paciente</dt>
-      <dd>
-        @if (persona(); as elegida) {
-          {{ elegida.apellido }}, {{ elegida.nombre }}
-        } @else {
-          Todavia no elegiste a quien se le reserva.
-        }
-      </dd>
-    </dl>
-  } @else if (!cargando()) {
-    <p class="estado estado--vacio">
-      Ese horario ya no figura en la agenda de este dia. Volve al buscador y elegi otro.
-    </p>
-  }
-
-  <!-- Serie de turnos (AKINE E-3): el mismo slot viaja por la query, como llego aca. -->
-  @if (!reservado()) {
-    <p>
-      <a
-        class="enlace"
-        [routerLink]="['/agenda', 'ofertas', ofertaId(), 'reservar-serie']"
-        [queryParams]="{ fecha: fecha(), inicio: instante(), profesionalId: profesionalId() }"
-      >
-        Reservar una serie semanal desde este horario
-      </a>
-    </p>
-  }
-</section>
-
-@if (!reservado()) {
-  <section class="tarjeta" aria-labelledby="titulo-persona">
-    <h2 id="titulo-persona">A quien se le reserva</h2>
-
-    <div class="campo">
-      <label for="reserva-persona">Documento, apellido, nombre o telefono</label>
-      <input
-        id="reserva-persona"
-        name="reserva-persona"
-        type="search"
-        autocomplete="off"
-        (input)="buscarPersona($any($event.target).value)"
-      />
-    </div>
-
-    @if (candidatas().length > 0) {
-      <ul class="lista-personas">
-        @for (candidata of candidatas(); track candidata.id) {
-          <li>
-            <button
-              type="button"
-              class="boton boton--secundario"
-              (click)="elegirPersona(candidata)"
+        <!-- La ficha del canvas: quien queda elegido, con sus iniciales. -->
+        <div class="ficha-persona">
+          @if (persona(); as elegida) {
+            <span class="ficha-persona__iniciales" aria-hidden="true"
+              >{{ elegida.nombre?.charAt(0) }}{{ elegida.apellido?.charAt(0) }}</span
             >
-              {{ candidata.apellido }}, {{ candidata.nombre }}
-              @if (candidata.numeroDocumento) {
-                — {{ candidata.tipoDocumento }} {{ candidata.numeroDocumento }}
-              }
-            </button>
-          </li>
-        }
-      </ul>
-    } @else if (buscoPersonas()) {
-      <p class="estado estado--vacio">
-        Ninguna persona del padron coincide con esa busqueda. Si es alguien nuevo, cargala primero
-        en el padron.
-      </p>
-    }
-
-    @if (persona() !== null && coberturas().length > 0) {
-      <div class="campo">
-        <label for="reserva-cobertura">Cobertura con la que se piensa atender (opcional)</label>
-        <select
-          id="reserva-cobertura"
-          aria-describedby="reserva-cobertura-ayuda"
-          (change)="elegirCobertura($any($event.target).value)"
-        >
-          <option value="" [selected]="coberturaId() === null">Sin elegir</option>
-          @for (cobertura of coberturas(); track cobertura.id) {
-            <option [value]="cobertura.id" [selected]="coberturaId() === cobertura.id">
-              {{ coberturaParaReservar(cobertura) }}
-            </option>
-          }
-        </select>
-        <p class="ayuda" id="reserva-cobertura-ayuda">
-          Solo las vigentes el dia del turno. Sin elegir, la recepcion usa la primera que aplique;
-          lo elegido es una preferencia que la recepcion revisa al validar.
-        </p>
-      </div>
-    }
-  </section>
-}
-
-<div aria-live="polite">
-  @if (exito(); as mensaje) {
-    <p class="estado estado--ok">{{ mensaje }}</p>
-  }
-
-  @if (error(); as fallo) {
-    <section class="tarjeta conflicto" aria-labelledby="titulo-conflicto">
-      <h2 id="titulo-conflicto">No se pudo reservar</h2>
-      <p class="estado estado--error">{{ fallo.mensaje }}</p>
-
-      <!--
-        Cada uno de los cinco conflictos lleva a UNA accion distinta. Es la razon por la que el
-        backend los publica como tipos separados y no como un `conflict` generico: con un solo
-        tipo, todo esto seria un cartel sin salida.
-      -->
-      @switch (accion()) {
-        @case ('recargar-agenda') {
-          @if (fallo.motivo) {
-            <p class="ayuda">Lo que cambio: {{ fallo.motivo }}</p>
-          }
-          <div class="acciones">
-            <button type="button" class="boton" (click)="recargar()">Recargar la agenda</button>
-          </div>
-        }
-        @case ('ofrecer-siguiente') {
-          <p class="ayuda">
-            Ese horario admite {{ fallo.cupoTotal }} reservas y ya no queda ninguna.
-          </p>
-          @if (siguienteConCupo(); as siguiente) {
-            <div class="acciones">
-              <button type="button" class="boton" (click)="tomarElSiguiente()">
-                Tomar el siguiente: {{ hora(siguiente.desde) }}
-              </button>
-            </div>
+            <span class="ficha-persona__datos">{{ elegida.apellido }}, {{ elegida.nombre }}</span>
           } @else {
-            <p class="ayuda">
-              No queda ningun horario posterior con cupo este dia. Volve al buscador y proba otra
-              fecha.
+            <span class="ficha-persona__datos ficha-persona__vacia">
+              Todavía no elegiste a quién se le reserva.
+            </span>
+          }
+        </div>
+
+        @if (!reservado()) {
+          <div class="campo">
+            <label for="reserva-persona">Documento, apellido, nombre o telefono</label>
+            <input
+              id="reserva-persona"
+              name="reserva-persona"
+              type="search"
+              autocomplete="off"
+              (input)="buscarPersona($any($event.target).value)"
+            />
+          </div>
+
+          @if (candidatas().length > 0) {
+            <ul class="lista-personas">
+              @for (candidata of candidatas(); track candidata.id) {
+                <li>
+                  <button
+                    type="button"
+                    class="boton boton--secundario"
+                    (click)="elegirPersona(candidata)"
+                  >
+                    {{ candidata.apellido }}, {{ candidata.nombre }}
+                    @if (candidata.numeroDocumento) {
+                      — {{ candidata.tipoDocumento }} {{ candidata.numeroDocumento }}
+                    }
+                  </button>
+                </li>
+              }
+            </ul>
+          } @else if (buscoPersonas()) {
+            <p class="estado estado--vacio">
+              Ninguna persona del padrón coincide con esa búsqueda. Si es alguien nuevo, cargala
+              primero en el padrón.
             </p>
           }
-        }
-        @case ('elegir-otro') {
-          <p class="ayuda">
-            El recurso ocupado es el <b>{{ fallo.recurso }}</b
-            >. Elegi otro horario, o el mismo horario con otro profesional.
+
+          @if (persona() !== null && coberturas().length > 0) {
+            <div class="campo">
+              <label for="reserva-cobertura"
+                >Cobertura con la que se piensa atender (opcional)</label
+              >
+              <select
+                id="reserva-cobertura"
+                aria-describedby="reserva-cobertura-ayuda"
+                (change)="elegirCobertura($any($event.target).value)"
+              >
+                <option value="" [selected]="coberturaId() === null">Sin elegir</option>
+                @for (cobertura of coberturas(); track cobertura.id) {
+                  <option [value]="cobertura.id" [selected]="coberturaId() === cobertura.id">
+                    {{ coberturaParaReservar(cobertura) }}
+                  </option>
+                }
+              </select>
+              <p class="ayuda" id="reserva-cobertura-ayuda">
+                Solo las vigentes el día del turno. Sin elegir, la recepción usa la primera que
+                aplique; lo elegido es una preferencia que la recepción revisa al validar.
+              </p>
+            </div>
+          }
+
+          <!-- Serie de turnos (AKINE E-3): el mismo slot viaja por la query, como llego aca. -->
+          <p class="descripcion">
+            ¿Necesita varias sesiones?
+            <a
+              class="enlace"
+              [routerLink]="['/agenda', 'ofertas', ofertaId(), 'reservar-serie']"
+              [queryParams]="{ fecha: fecha(), inicio: instante(), profesionalId: profesionalId() }"
+            >
+              Reservar una serie semanal desde este horario
+            </a>
           </p>
-          <div class="acciones">
-            <a class="boton" routerLink="/agenda">Elegir otro horario o profesional</a>
-          </div>
         }
-        @case ('activar-perfil') {
-          <div class="acciones" *akinePermiso="PERMISO_PACIENTE_READ">
-            <a class="boton" routerLink="/pacientes">Activar el perfil de paciente</a>
-          </div>
-        }
-        @case ('reintentar-con-clave-nueva') {
-          <div class="acciones">
-            <button type="button" class="boton" [disabled]="enviando()" (click)="reintentar()">
-              Volver a intentar la reserva
+      </div>
+
+      @if (!reservado()) {
+        <div class="tarjeta__pie">
+          <p class="tarjeta__pie-nota">* Campos obligatorios</p>
+          <a class="boton boton--secundario" routerLink="/agenda">Cancelar</a>
+          <button
+            type="button"
+            class="boton"
+            [disabled]="persona() === null || slot() === null || enviando()"
+            (click)="reservar()"
+          >
+            Reservar turno
+          </button>
+        </div>
+      }
+    </section>
+
+    <div aria-live="polite">
+      @if (exito(); as mensaje) {
+        <p class="estado estado--ok">{{ mensaje }}</p>
+      }
+
+      @if (error(); as fallo) {
+        <section class="tarjeta conflicto" aria-labelledby="titulo-conflicto">
+          <h2 id="titulo-conflicto">No se pudo reservar</h2>
+          <p class="estado estado--error">{{ fallo.mensaje }}</p>
+
+          <!--
+            Cada uno de los cinco conflictos lleva a UNA accion distinta. Es la razon por la que el
+            backend los publica como tipos separados y no como un `conflict` generico: con un solo
+            tipo, todo esto seria un cartel sin salida.
+          -->
+          @switch (accion()) {
+            @case ('recargar-agenda') {
+              @if (fallo.motivo) {
+                <p class="ayuda">Lo que cambio: {{ fallo.motivo }}</p>
+              }
+              <div class="acciones">
+                <button type="button" class="boton" (click)="recargar()">Recargar la agenda</button>
+              </div>
+            }
+            @case ('ofrecer-siguiente') {
+              <p class="ayuda">
+                Ese horario admite {{ fallo.cupoTotal }} reservas y ya no queda ninguna.
+              </p>
+              @if (siguienteConCupo(); as siguiente) {
+                <div class="acciones">
+                  <button type="button" class="boton" (click)="tomarElSiguiente()">
+                    Tomar el siguiente: {{ hora(siguiente.desde) }}
+                  </button>
+                </div>
+              } @else {
+                <p class="ayuda">
+                  No queda ningún horario posterior con cupo este día. Volvé a la agenda y probá
+                  otra fecha.
+                </p>
+              }
+            }
+            @case ('elegir-otro') {
+              <p class="ayuda">
+                El recurso ocupado es el <b>{{ fallo.recurso }}</b
+                >. Elegí otro horario, o el mismo horario con otro profesional.
+              </p>
+              <div class="acciones">
+                <a class="boton" routerLink="/agenda">Elegir otro horario o profesional</a>
+              </div>
+            }
+            @case ('activar-perfil') {
+              <div class="acciones" *akinePermiso="PERMISO_PACIENTE_READ">
+                <a class="boton" routerLink="/pacientes">Activar el perfil de paciente</a>
+              </div>
+            }
+            @case ('reintentar-con-clave-nueva') {
+              <div class="acciones">
+                <button type="button" class="boton" [disabled]="enviando()" (click)="reintentar()">
+                  Volver a intentar la reserva
+                </button>
+              </div>
+            }
+            @case ('elegir-contexto') {
+              <div class="acciones">
+                <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto de trabajo</a>
+              </div>
+            }
+          }
+        </section>
+      }
+    </div>
+
+    @if (turno(); as reserva) {
+      <section class="tarjeta tarjeta--plana" aria-labelledby="titulo-turno">
+        <div class="tarjeta__cuerpo">
+          <h2 id="titulo-turno">Turno {{ reserva.estado }}</h2>
+          <dl class="detalle">
+            <dt>Número</dt>
+            <dd>{{ reserva.id }}</dd>
+            <dt>Horario</dt>
+            <dd>{{ hora(reserva.inicio) }} a {{ hora(reserva.fin) }} ({{ timezone() }})</dd>
+            <dt>Cobertura elegida</dt>
+            <dd>
+              {{
+                coberturaDelTurno(reserva.coberturaId) || 'Ninguna: la recepción usa la que aplique'
+              }}
+            </dd>
+            @if (reserva.espacioId) {
+              <dt>Box</dt>
+              <dd>#{{ reserva.espacioId }} — lo elige el servidor al reservar</dd>
+            }
+          </dl>
+          <!--
+            Unica puerta de entrada al ciclo del turno, y por eso lleva `version`, `ofertaId` y
+            `fecha` en la query: el contrato no publica ninguna lectura de un turno, asi que si esos
+            datos no viajan por la URL la pantalla de destino no puede cancelar, mover ni marcar
+            ausencia. El detalle esta en `pages/ciclo-de-turno`.
+          -->
+          @if (reserva.id) {
+            <p>
+              <a
+                class="enlace"
+                [routerLink]="['/agenda', 'turnos', reserva.id]"
+                [queryParams]="{ version: reserva.version, ofertaId: ofertaId(), fecha: fecha() }"
+              >
+                Cancelar, mover o ver el historial de este turno
+              </a>
+            </p>
+          }
+
+          <!--
+            Unica puerta de entrada a la atencion clinica, y por eso vive aca: el contrato no
+            publica ningun listado de turnos, asi que sin este enlace la pantalla de atencion solo
+            se alcanza escribiendo la URL a mano.
+
+            Es un `routerLink` con un string, NO un import de `features/clinical`: AGENT.md 4.5
+            prohibe que un feature importe de otro, y una URL no arrastra nada.
+
+            Turno y Sesion siguen siendo dos cosas distintas -regla maestra 4- y el texto lo dice:
+            esto no "abre el turno", registra la atencion.
+          -->
+          @if (reserva.id) {
+            <p>
+              <a class="enlace" [routerLink]="['/atencion', 'turnos', reserva.id]">
+                Registrar la atención de este turno
+              </a>
+            </p>
+          }
+        </div>
+
+        @if (!confirmado()) {
+          <div class="tarjeta__pie">
+            <button type="button" class="boton" [disabled]="enviando()" (click)="confirmar()">
+              Confirmar el turno
             </button>
           </div>
         }
-        @case ('elegir-contexto') {
-          <div class="acciones">
-            <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto de trabajo</a>
-          </div>
+      </section>
+    }
+  </div>
+
+  <!-- El panel lateral del canvas: el horario elegido, sus datos, y la salida a la agenda. -->
+  <aside class="columnas__lateral" aria-labelledby="titulo-resumen">
+    <section class="tarjeta resumen-lateral">
+      <div class="resumen-lateral__encabezado">
+        <h2 id="titulo-resumen">Horario elegido</h2>
+        @if (slot(); as elegido) {
+          @if (textoDeCupo(elegido); as cupo) {
+            <span class="marca-estado marca-estado--activa">{{ cupo }}</span>
+          }
         }
+      </div>
+
+      @if (cargando()) {
+        <p class="estado estado--cargando">Releyendo la agenda de este día…</p>
       }
+
+      @if (slot(); as elegido) {
+        <p class="resumen-lateral__destacado">{{ fechaEnPalabras(fecha()) }}</p>
+        <dl class="detalle">
+          <dt>Horario</dt>
+          <dd>
+            {{ horario() }}
+            <span class="ayuda">({{ duracion() }} min · zona {{ timezone() }})</span>
+          </dd>
+
+          <dt>Oferta</dt>
+          <dd>{{ nombreComercial() }}</dd>
+
+          @if (nombreDelProfesional(); as profesional) {
+            <dt>Profesional</dt>
+            <dd>{{ profesional }}</dd>
+          }
+        </dl>
+      } @else if (!cargando()) {
+        <p class="estado estado--vacio">
+          Ese horario ya no figura en la agenda de este dia. Volvé a la agenda y elegí otro.
+        </p>
+      }
+
+      <p class="resumen-lateral__pie">
+        <a class="enlace" routerLink="/agenda">Elegir otro horario en la agenda</a>
+      </p>
     </section>
-  }
+  </aside>
 </div>
-
-<div class="acciones">
-  @if (!reservado()) {
-    <button
-      type="button"
-      class="boton"
-      [disabled]="persona() === null || slot() === null || enviando()"
-      (click)="reservar()"
-    >
-      Reservar el turno
-    </button>
-  } @else if (!confirmado()) {
-    <button type="button" class="boton" [disabled]="enviando()" (click)="confirmar()">
-      Confirmar el turno
-    </button>
-  }
-</div>
-
-@if (turno(); as reserva) {
-  <section class="tarjeta" aria-labelledby="titulo-turno">
-    <h2 id="titulo-turno">Turno {{ reserva.estado }}</h2>
-    <dl class="detalle">
-      <dt>Numero</dt>
-      <dd>{{ reserva.id }}</dd>
-      <dt>Horario</dt>
-      <dd>{{ hora(reserva.inicio) }} a {{ hora(reserva.fin) }} ({{ timezone() }})</dd>
-      <dt>Cobertura elegida</dt>
-      <dd>
-        {{ coberturaDelTurno(reserva.coberturaId) || 'Ninguna: la recepcion usa la que aplique' }}
-      </dd>
-      @if (reserva.espacioId) {
-        <dt>Box</dt>
-        <dd>#{{ reserva.espacioId }} — lo elige el servidor al reservar</dd>
-      }
-    </dl>
-    <!--
-      Unica puerta de entrada al ciclo del turno, y por eso lleva `version`, `ofertaId` y `fecha`
-      en la query: el contrato no publica ninguna lectura de un turno, asi que si esos datos no
-      viajan por la URL la pantalla de destino no puede cancelar, mover ni marcar ausencia.
-      El detalle esta en `pages/ciclo-de-turno`.
-    -->
-    @if (reserva.id) {
-      <p>
-        <a
-          class="enlace"
-          [routerLink]="['/agenda', 'turnos', reserva.id]"
-          [queryParams]="{ version: reserva.version, ofertaId: ofertaId(), fecha: fecha() }"
-        >
-          Cancelar, mover o ver el historial de este turno
-        </a>
-      </p>
-    }
-
-    <!--
-      Unica puerta de entrada a la atencion clinica, y por eso vive aca: el contrato no publica
-      ningun listado de turnos, asi que sin este enlace la pantalla de atencion solo se alcanza
-      escribiendo la URL a mano.
-
-      Es un `routerLink` con un string, NO un import de `features/clinical`: AGENT.md 4.5 prohibe
-      que un feature importe de otro, y una URL no arrastra nada.
-
-      Turno y Sesion siguen siendo dos cosas distintas -regla maestra 4- y el texto lo dice: esto
-      no "abre el turno", registra la atencion.
-    -->
-    @if (reserva.id) {
-      <p>
-        <a class="enlace" [routerLink]="['/atencion', 'turnos', reserva.id]">
-          Registrar la atencion de este turno
-        </a>
-      </p>
-    }
-  </section>
-}

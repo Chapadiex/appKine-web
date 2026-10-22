@@ -51,7 +51,7 @@ describe('OrganizationPage', () => {
     const fixture = TestBed.createComponent(OrganizationPage);
     fixture.detectChanges();
 
-    expect(texto(fixture)).toContain('Todavia no elegiste un contexto');
+    expect(texto(fixture)).toContain('Todavía no elegiste un contexto');
     expect(fixture.nativeElement.querySelector('a[href="/seleccionar-contexto"]')).toBeTruthy();
     httpMock.expectNone(() => true);
   });

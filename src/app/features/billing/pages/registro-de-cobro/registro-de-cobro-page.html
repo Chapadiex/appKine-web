@@ -1,42 +1,34 @@
+<app-cabecera-de-persona [personaId]="personaId()" [persona]="persona()" />
+
 @if (modoPrepago()) {
-  <div class="titulo-con-ayuda">
+  <div class="titulo-con-ayuda titulo-de-seccion-persona">
     <h1>Registrar un prepago</h1>
     <app-ayuda titulo="Sobre esta pantalla">
       <p>
-        Esto registra un <b>anticipo</b> por el turno de hoy. No hay deuda todavia: se genera al
-        cerrar la atencion, y en ese momento el anticipo se imputa solo. Si sobra, queda a favor del
+        Esto registra un <b>anticipo</b> por el turno de hoy. No hay deuda todavía: se genera al
+        cerrar la atención, y en ese momento el anticipo se imputa solo. Si sobra, queda a favor del
         paciente; si el paciente no viene, el anticipo queda disponible para reintegrarlo.
       </p>
     </app-ayuda>
+    <div class="encabezado__acciones">
+      <a class="enlace" routerLink="/agenda/recepcion" [queryParams]="queryRecepcion()">
+        Volver a la recepcion del dia
+      </a>
+    </div>
   </div>
 } @else {
-  <div class="titulo-con-ayuda">
+  <div class="titulo-con-ayuda titulo-de-seccion-persona">
+    <a class="migas" [routerLink]="rutaCuenta()">Cuenta corriente</a>
+    <span class="migas__separador" aria-hidden="true">/</span>
     <h1>Registrar un cobro</h1>
     <app-ayuda titulo="Sobre esta pantalla">
       <p>
         Esto registra <b>dinero recibido</b> y lo imputa a deuda. <b>No es la caja</b>: el arqueo y
-        el turno de caja son otro circuito (M20) y viven en la seccion Caja.
+        el turno de caja son otro circuito (M20) y viven en la sección Caja.
       </p>
     </app-ayuda>
   </div>
 }
-
-@if (nombreDeLaPersona(); as quien) {
-  <p class="ayuda">
-    Cobro a <b>{{ quien }}</b
-    >.
-  </p>
-}
-
-<p>
-  @if (modoPrepago()) {
-    <a class="enlace" routerLink="/agenda/recepcion" [queryParams]="queryRecepcion()">
-      Volver a la recepcion del dia
-    </a>
-  } @else {
-    <a class="enlace" [routerLink]="rutaCuenta()">Volver a la cuenta corriente</a>
-  }
-</p>
 
 @if (cargando()) {
   <p class="estado estado--cargando">Cargando las deudas de la persona…</p>
@@ -122,192 +114,198 @@
 <!-- ============================ Formulario ========================================== -->
 
 @if ((deudas().length > 0 || (modoPrepago() && !cargando())) && !registrado()) {
-  @if (modoPrepago()) {
-    <div class="campo">
-      <label for="moneda-prepago">Moneda del prepago</label>
-      <input
-        id="moneda-prepago"
-        type="text"
-        autocomplete="off"
-        maxlength="3"
-        [value]="monedaDelPrepago()"
-        [attr.aria-invalid]="moneda() === null"
-        aria-describedby="ayuda-moneda-prepago"
-        (input)="cambiarMonedaDelPrepago($any($event.target).value)"
-      />
-      <p class="ayuda" id="ayuda-moneda-prepago">
-        Codigo de tres letras (ARS, USD). Viene de la oferta; el anticipo se imputa solo a una deuda
-        en la misma moneda.
-      </p>
-    </div>
-  } @else {
-    <fieldset class="grupo">
-      <legend>Deudas a las que se imputa</legend>
+  <div class="cobro-columnas">
+    <section class="tarjeta cobro-formulario" aria-label="Datos del cobro">
+      @if (modoPrepago()) {
+        <div class="campo">
+          <label for="moneda-prepago">Moneda del prepago</label>
+          <input
+            id="moneda-prepago"
+            type="text"
+            autocomplete="off"
+            maxlength="3"
+            [value]="monedaDelPrepago()"
+            [attr.aria-invalid]="moneda() === null"
+            aria-describedby="ayuda-moneda-prepago"
+            (input)="cambiarMonedaDelPrepago($any($event.target).value)"
+          />
+          <p class="ayuda" id="ayuda-moneda-prepago">
+            Codigo de tres letras (ARS, USD). Viene de la oferta; el anticipo se imputa solo a una
+            deuda en la misma moneda.
+          </p>
+        </div>
+      } @else {
+        <fieldset class="grupo">
+          <legend>Deudas a las que se imputa</legend>
 
-      <p class="ayuda">
-        Se propone el saldo completo de cada deuda elegida. Es editable: un pago parcial deja la
-        deuda en «pagada en parte» y no la cierra.
-      </p>
+          <p class="ayuda">
+            Se propone el saldo completo de cada deuda elegida. Es editable: un pago parcial deja la
+            deuda en «pagada en parte» y no la cierra.
+          </p>
 
-      @for (deuda of deudas(); track deuda.id) {
-        <div class="linea-deuda">
-          <div class="opcion-radio">
-            <input
-              type="checkbox"
-              [id]="'deuda-' + deuda.id"
-              [checked]="estaElegida(deuda)"
-              (change)="alternar(deuda)"
-            />
-            <label [for]="'deuda-' + deuda.id">
-              {{ deuda.snapshotNombre }} — {{ fechaEnPalabras(deuda.devengadaEn) }} — saldo
-              <b>{{ saldoEnPalabras(deuda) }}</b>
-              <span class="ayuda">(de {{ importeOriginalEnPalabras(deuda) }})</span>
-            </label>
-          </div>
+          @for (deuda of deudas(); track deuda.id) {
+            <div class="linea-deuda">
+              <div class="opcion-radio">
+                <input
+                  type="checkbox"
+                  [id]="'deuda-' + deuda.id"
+                  [checked]="estaElegida(deuda)"
+                  (change)="alternar(deuda)"
+                />
+                <label [for]="'deuda-' + deuda.id">
+                  {{ deuda.snapshotNombre }} — {{ fechaEnPalabras(deuda.devengadaEn) }} — saldo
+                  <b>{{ saldoEnPalabras(deuda) }}</b>
+                  <span class="ayuda">(de {{ importeOriginalEnPalabras(deuda) }})</span>
+                </label>
+              </div>
 
-          @if (estaElegida(deuda)) {
-            <div class="campo campo--sangrado">
-              <label [for]="'imputacion-' + deuda.id">Importe a imputar a esta deuda</label>
+              @if (estaElegida(deuda)) {
+                <div class="campo campo--sangrado">
+                  <label [for]="'imputacion-' + deuda.id">Importe a imputar a esta deuda</label>
+                  <input
+                    [id]="'imputacion-' + deuda.id"
+                    type="text"
+                    inputmode="decimal"
+                    autocomplete="off"
+                    [value]="importeDe(deuda)"
+                    [attr.aria-invalid]="excede(deuda)"
+                    [attr.aria-describedby]="'ayuda-imputacion-' + deuda.id"
+                    (input)="cambiarImporte(deuda, $any($event.target).value)"
+                  />
+                  <p class="ayuda" [id]="'ayuda-imputacion-' + deuda.id">
+                    Hasta {{ saldoEnPalabras(deuda) }}. Un saldo no puede quedar negativo: el
+                    servidor descuenta solo si alcanza.
+                  </p>
+                </div>
+              }
+            </div>
+          }
+        </fieldset>
+      }
+
+      <fieldset class="grupo">
+        <legend>Cómo entró la plata</legend>
+
+        <p class="ayuda">
+          @if (modoPrepago()) {
+            Se propone el precio particular de la prestacion; es editable, el importe lo decide
+            quien cobra. El efectivo necesita la caja abierta.
+          } @else {
+            Puede ser mas de un medio: mitad efectivo y mitad tarjeta es normal. La suma tiene que
+            dar lo mismo que las imputaciones.
+          }
+        </p>
+
+        @for (linea of medios(); track linea.id) {
+          <div class="linea-medio">
+            <div class="campo">
+              <label [for]="'medio-' + $index">Medio de pago</label>
+              <select
+                [id]="'medio-' + $index"
+                [value]="linea.medio"
+                (change)="cambiarMedio(linea, $any($event.target).value)"
+              >
+                @for (opcion of mediosDisponibles; track opcion) {
+                  <option [value]="opcion">{{ medioEnPalabras(opcion) }}</option>
+                }
+              </select>
+            </div>
+
+            <div class="campo">
+              <label [for]="'importe-medio-' + $index">Importe recibido</label>
               <input
-                [id]="'imputacion-' + deuda.id"
+                [id]="'importe-medio-' + $index"
                 type="text"
                 inputmode="decimal"
                 autocomplete="off"
-                [value]="importeDe(deuda)"
-                [attr.aria-invalid]="excede(deuda)"
-                [attr.aria-describedby]="'ayuda-imputacion-' + deuda.id"
-                (input)="cambiarImporte(deuda, $any($event.target).value)"
+                [value]="linea.importe"
+                [attr.aria-invalid]="medioInvalido(linea)"
+                (input)="cambiarImporteDeMedio(linea, $any($event.target).value)"
               />
-              <p class="ayuda" [id]="'ayuda-imputacion-' + deuda.id">
-                Hasta {{ saldoEnPalabras(deuda) }}. Un saldo no puede quedar negativo: el servidor
-                descuenta solo si alcanza.
-              </p>
             </div>
-          }
-        </div>
-      }
-    </fieldset>
-  }
 
-  <fieldset class="grupo">
-    <legend>Como entro la plata</legend>
+            <div class="campo">
+              <label [for]="'referencia-' + $index">
+                Referencia <span class="campo__opcional">(opcional)</span>
+              </label>
+              <input
+                [id]="'referencia-' + $index"
+                type="text"
+                autocomplete="off"
+                maxlength="120"
+                [value]="linea.referencia"
+                (input)="cambiarReferencia(linea, $any($event.target).value)"
+              />
+            </div>
 
-    <p class="ayuda">
-      @if (modoPrepago()) {
-        Se propone el precio particular de la prestacion; es editable, el importe lo decide quien
-        cobra. El efectivo necesita la caja abierta.
-      } @else {
-        Puede ser mas de un medio: mitad efectivo y mitad tarjeta es normal. La suma tiene que dar
-        lo mismo que las imputaciones.
-      }
-    </p>
-
-    @for (linea of medios(); track linea.id) {
-      <div class="linea-medio">
-        <div class="campo">
-          <label [for]="'medio-' + $index">Medio de pago</label>
-          <select
-            [id]="'medio-' + $index"
-            [value]="linea.medio"
-            (change)="cambiarMedio(linea, $any($event.target).value)"
-          >
-            @for (opcion of mediosDisponibles; track opcion) {
-              <option [value]="opcion">{{ medioEnPalabras(opcion) }}</option>
-            }
-          </select>
-        </div>
-
-        <div class="campo">
-          <label [for]="'importe-medio-' + $index">Importe recibido</label>
-          <input
-            [id]="'importe-medio-' + $index"
-            type="text"
-            inputmode="decimal"
-            autocomplete="off"
-            [value]="linea.importe"
-            [attr.aria-invalid]="medioInvalido(linea)"
-            (input)="cambiarImporteDeMedio(linea, $any($event.target).value)"
-          />
-        </div>
-
-        <div class="campo">
-          <label [for]="'referencia-' + $index">
-            Referencia <span class="campo__opcional">(opcional)</span>
-          </label>
-          <input
-            [id]="'referencia-' + $index"
-            type="text"
-            autocomplete="off"
-            maxlength="120"
-            [value]="linea.referencia"
-            (input)="cambiarReferencia(linea, $any($event.target).value)"
-          />
-        </div>
+            <div class="acciones">
+              @if (puedeCompletar()) {
+                <button
+                  type="button"
+                  class="boton boton--secundario"
+                  (click)="completarConElTotal(linea)"
+                >
+                  Completar con el total imputado
+                </button>
+              }
+              @if (medios().length > 1) {
+                <button type="button" class="boton boton--secundario" (click)="quitarMedio(linea)">
+                  Quitar este medio
+                </button>
+              }
+            </div>
+          </div>
+        }
 
         <div class="acciones">
-          @if (puedeCompletar()) {
-            <button
-              type="button"
-              class="boton boton--secundario"
-              (click)="completarConElTotal(linea)"
-            >
-              Completar con el total imputado
-            </button>
-          }
-          @if (medios().length > 1) {
-            <button type="button" class="boton boton--secundario" (click)="quitarMedio(linea)">
-              Quitar este medio
-            </button>
-          }
+          <button type="button" class="boton boton--secundario" (click)="agregarMedio()">
+            Agregar otro medio de pago
+          </button>
         </div>
-      </div>
-    }
+      </fieldset>
+    </section>
 
-    <div class="acciones">
-      <button type="button" class="boton boton--secundario" (click)="agregarMedio()">
-        Agregar otro medio de pago
-      </button>
-    </div>
-  </fieldset>
-
-  <!--
+    <aside class="cobro-lateral">
+      <!--
     Los dos totales se muestran siempre y uno al lado del otro. Es la unica forma de que el
     operador vea la diferencia antes de que el servidor la rechace, y la comparacion se hace en
     centavos enteros: con flotantes, dos importes que se ven iguales pueden no serlo.
   -->
-  <section class="tarjeta" aria-labelledby="titulo-totales">
-    <h2 id="titulo-totales">Totales</h2>
-    <dl class="detalle">
-      @if (modoPrepago()) {
-        <dt>Queda a favor del paciente (anticipo)</dt>
-        <dd class="importe">{{ totalDeMediosEnPalabras() || '—' }}</dd>
-      } @else {
-        <dt>Imputado a deuda</dt>
-        <dd class="importe">{{ totalImputadoEnPalabras() || '—' }}</dd>
-      }
-
-      <dt>Recibido por medios</dt>
-      <dd class="importe">{{ totalDeMediosEnPalabras() || '—' }}</dd>
-    </dl>
-  </section>
-
-  <div aria-live="polite">
-    @if (problemas().length > 0) {
-      <section class="tarjeta" aria-labelledby="titulo-faltantes">
-        <h2 id="titulo-faltantes">Falta esto para poder cobrar</h2>
-        <ul class="lista-faltantes">
-          @for (problema of problemas(); track problema) {
-            <li>{{ problema }}</li>
+      <section class="tarjeta" aria-labelledby="titulo-totales">
+        <h2 id="titulo-totales">Totales</h2>
+        <dl class="detalle">
+          @if (modoPrepago()) {
+            <dt>Queda a favor del paciente (anticipo)</dt>
+            <dd class="importe">{{ totalDeMediosEnPalabras() || '—' }}</dd>
+          } @else {
+            <dt>Imputado a deuda</dt>
+            <dd class="importe">{{ totalImputadoEnPalabras() || '—' }}</dd>
           }
-        </ul>
-      </section>
-    }
-  </div>
 
-  <div class="acciones">
-    <button type="button" class="boton" [disabled]="!puedeConfirmar()" (click)="confirmar()">
-      {{ modoPrepago() ? 'Registrar el prepago' : 'Registrar el cobro' }}
-    </button>
+          <dt>Recibido por medios</dt>
+          <dd class="importe">{{ totalDeMediosEnPalabras() || '—' }}</dd>
+        </dl>
+      </section>
+
+      <div aria-live="polite">
+        @if (problemas().length > 0) {
+          <section class="tarjeta" aria-labelledby="titulo-faltantes">
+            <h2 id="titulo-faltantes">Falta esto para poder cobrar</h2>
+            <ul class="lista-faltantes">
+              @for (problema of problemas(); track problema) {
+                <li>{{ problema }}</li>
+              }
+            </ul>
+          </section>
+        }
+      </div>
+
+      <div class="acciones cobro-confirmar">
+        <button type="button" class="boton" [disabled]="!puedeConfirmar()" (click)="confirmar()">
+          {{ modoPrepago() ? 'Registrar el prepago' : 'Registrar el cobro' }}
+        </button>
+      </div>
+    </aside>
   </div>
 }
 

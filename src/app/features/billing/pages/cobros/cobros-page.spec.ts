@@ -134,7 +134,7 @@ describe('CobrosPage', () => {
   it('sin cobros ofrece el camino para registrar el primero', async () => {
     const fixture = await montar([]);
 
-    expect(texto(fixture)).toContain('no tiene ningun cobro registrado');
+    expect(texto(fixture)).toContain('no tiene ningún cobro registrado');
   });
 
   it('sin sede en el contexto no pide nada y manda al selector', async () => {
@@ -175,7 +175,7 @@ describe('CobrosPage', () => {
     expect(texto(fixture)).toContain('Se anulo el comprobante N.º 142');
     expect(texto(fixture)).toContain('no se borra nada');
     expect(texto(fixture)).toContain('Anulado');
-    expect(texto(fixture)).not.toContain('no tiene ningun cobro');
+    expect(texto(fixture)).not.toContain('no tiene ningún cobro');
     expect(boton(fixture, 'Anular')?.disabled).toBe(true);
     expect(texto(fixture)).toContain('No se puede anular: ya esta anulado.');
   });

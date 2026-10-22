@@ -83,17 +83,17 @@ test.describe('Pedidos de la atencion clinica contra el backend real', () => {
     await ingresarAlCentro(page, centro.emailProfesional, centro);
     await navegar(page, `/atencion/turnos/${turno.id}`);
     await expect(
-      page.getByRole('heading', { name: 'Antes de empezar: caso clinico' }),
+      page.getByRole('heading', { name: 'Antes de empezar: caso clínico' }),
     ).toBeVisible();
     await page.getByRole('radio', { name: 'Sin caso' }).check();
     const inicio = respuestaDe(page, 'POST', /\/sesiones\/turnos\/\d+$/);
-    await page.getByRole('button', { name: 'Iniciar la atencion' }).click();
+    await page.getByRole('button', { name: 'Iniciar atención' }).click();
     const sesion = (await (await inicio).json()) as { id: number; casoId?: number };
     expect(sesion.casoId ?? null).toBeNull();
-    await expect(page.getByRole('heading', { name: 'Atencion en curso' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Atención en curso' })).toBeVisible();
 
     // --- Se asocia un caso con la atencion abierta, y despues se cambia ------------------
-    const selector = page.getByLabel('Caso clinico de esta atencion');
+    const selector = page.getByLabel('Caso clínico de esta atención');
     await selector.selectOption(String(segundo.id));
     const asociar = respuestaDe(page, 'PUT', /\/sesiones\/\d+\/caso$/);
     await page.getByRole('button', { name: 'Guardar el caso' }).click();
@@ -122,7 +122,7 @@ test.describe('Pedidos de la atencion clinica contra el backend real', () => {
 
     await tratamiento.getByRole('button', { name: /^Dar de baja/ }).click();
     await tratamiento
-      .getByRole('textbox', { name: /Por que se da de baja/ })
+      .getByRole('textbox', { name: /Por qué se da de baja/ })
       .fill('Se cargo en la sesion equivocada');
     const baja = respuestaDe(page, 'DELETE', /\/tratamientos\/\d+$/);
     await tratamiento.getByRole('button', { name: 'Confirmar la baja' }).click();
@@ -149,9 +149,9 @@ test.describe('Pedidos de la atencion clinica contra el backend real', () => {
     // --- Cierre y autor de la version 1 --------------------------------------------------
     await page.getByRole('radio', { name: 'Vino a la sesion' }).check();
     await page.getByLabel('Nota de cierre').fill('Educacion postural, buena tolerancia.');
-    await page.getByRole('button', { name: 'Cerrar la atencion' }).click();
-    await expect(page.getByRole('heading', { name: 'Atencion cerrada' })).toBeVisible();
-    await expect(page.getByLabel('Caso clinico de esta atencion')).toHaveCount(0);
+    await page.getByRole('button', { name: 'Cerrar la atención' }).click();
+    await expect(page.getByRole('heading', { name: 'Atención cerrada' })).toBeVisible();
+    await expect(page.getByLabel('Caso clínico de esta atención')).toHaveCount(0);
 
     const versiones = respuestaDe(page, 'GET', /\/sesiones\/\d+\/versiones$/);
     await page.getByRole('link', { name: 'Ver las versiones' }).click();

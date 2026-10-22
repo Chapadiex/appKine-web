@@ -2,35 +2,30 @@
   <h1>Espacios en servicio</h1>
   <app-ayuda titulo="Sobre esta pantalla">
     <p>
-      Que espacios de <b>{{ nombreDeLaSede() }}</b> se pueden ofrecer durante un periodo: los que
-      estan activos y con su vigencia cubriendo la ventana entera. Los dados de baja y los que
+      Qué espacios de <b>{{ nombreDeLaSede() }}</b> se pueden ofrecer durante un período: los que
+      están activos y con su vigencia cubriendo la ventana entera. Los dados de baja y los que
       quedan fuera de su ventana operativa no aparecen.
     </p>
+    <!--
+      El aviso que el contrato pide poner ANTES de leer la tabla: es la diferencia entre leerla
+      bien y planificar sobre un dato que no existe todavía.
+    -->
+    <p class="ayuda-contextual__subtitulo">
+      Esto dice si el espacio está en servicio, no si está libre
+    </p>
+    <p>
+      Que un espacio figure en esta lista quiere decir que está habilitado para ofrecerse en esa
+      ventana, no que nadie lo esté usando: <b>acá no hay ninguna reserva que contar</b>.
+    </p>
+    <p>
+      Por eso la tabla muestra la <b>capacidad</b> configurada de cada espacio —cuántas personas
+      admite a la vez— y no cuántos lugares quedan.
+    </p>
   </app-ayuda>
+  <div class="encabezado__acciones">
+    <a class="boton boton--secundario" routerLink="/espacios">Espacios y boxes</a>
+  </div>
 </div>
-
-<p class="acciones">
-  <a class="enlace" routerLink="/espacios">Volver al listado de espacios</a>
-</p>
-
-<!--
-  El aviso que el propio contrato pide poner ANTES de escribir esta pantalla. No es una
-  aclaracion legal al pie: es la diferencia entre leer bien la tabla y planificar sobre un dato
-  que no existe todavia.
--->
-<section class="tarjeta nota-servicio" aria-labelledby="titulo-nota-ocupacion">
-  <h2 id="titulo-nota-ocupacion">Esto dice si el espacio esta en servicio, no si esta libre</h2>
-  <p>
-    La agenda de turnos todavia no existe en AKINE, asi que
-    <b>aca no hay ninguna reserva que contar</b>. Que un espacio figure en esta lista quiere decir
-    que esta habilitado para ofrecerse en esa ventana, no que nadie lo este usando.
-  </p>
-  <p>
-    Por eso la tabla muestra la <b>capacidad</b> configurada de cada espacio -cuantas personas
-    admite a la vez- y no cuantos lugares quedan. Cuando exista la agenda, la ocupacion real va a
-    poder consultarse desde ahi.
-  </p>
-</section>
 
 @if (sinSede()) {
   <section class="tarjeta" aria-labelledby="titulo-sin-sede-disp">
@@ -44,9 +39,7 @@
     </p>
   </section>
 } @else {
-  <section class="tarjeta" aria-labelledby="titulo-ventana">
-    <h2 id="titulo-ventana">Periodo a consultar</h2>
-
+  <section class="tarjeta" aria-label="Período a consultar">
     <form [formGroup]="formulario" (ngSubmit)="consultar()" novalidate>
       <div class="ventana">
         <div class="campo">
@@ -78,8 +71,8 @@
             <p class="campo__error" id="ventana-hasta-error">Indica hasta cuando.</p>
           }
           <p class="ayuda" id="ventana-hasta-ayuda">
-            El fin es <b>exclusivo</b>: no se incluye a si mismo. Como maximo
-            {{ maximoDeDias }} dias por consulta.
+            El fin es <b>exclusivo</b>: no se incluye a sí mismo. Como máximo
+            {{ maximoDeDias }} días por consulta.
           </p>
         </div>
       </div>
@@ -96,9 +89,7 @@
     </div>
   </section>
 
-  <section class="tarjeta" aria-labelledby="titulo-resultado">
-    <h2 id="titulo-resultado">Espacios en servicio en ese periodo</h2>
-
+  <section class="tarjeta" aria-label="Espacios en servicio en ese período">
     <div aria-live="polite">
       @switch (estado().tipo) {
         @case ('inicial') {
@@ -145,10 +136,6 @@
             </p>
             <a class="boton boton--secundario" routerLink="/espacios">Revisar los espacios</a>
           } @else {
-            <p class="ayuda">
-              {{ enServicio().length }} espacios se pueden ofrecer durante todo ese periodo.
-            </p>
-
             <div
               class="tabla-scroll"
               tabindex="0"

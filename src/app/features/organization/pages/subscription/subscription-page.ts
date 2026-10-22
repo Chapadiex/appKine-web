@@ -144,6 +144,15 @@ export class SubscriptionPage {
     return limite.limitValue === undefined ? 'Sin tope' : String(limite.limitValue);
   }
 
+  /** Uso sobre el tope, de 0 a 100, para la barra. 0 si el limite es ilimitado: no hay barra. */
+  protected porcentajeDeUso(limite: LimitUsageResponse): number {
+    const tope = limite.limitValue;
+    if (tope === undefined || tope <= 0) {
+      return 0;
+    }
+    return Math.min(100, Math.round(((limite.currentUsage ?? 0) / tope) * 100));
+  }
+
   /**
    * Completa la suscripcion con el motivo de la suspension cuando corresponde.
    *

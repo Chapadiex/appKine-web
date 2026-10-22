@@ -67,7 +67,7 @@ test.describe('Suscripcion contra el backend real', () => {
       // --- Recien dada de alta: plan basico, una sede en uso de una ---------------------------
       await ingresar(page, { emailAdmin: email } as Centro);
       await navegar(page, '/organizacion/suscripcion');
-      await expect(page.getByRole('heading', { name: 'Suscripcion activa' })).toBeVisible();
+      await expect(page.getByRole('heading', { name: 'Suscripción activa' })).toBeVisible();
       const detalle = page.locator('dl.detalle');
       await expect(detalle).toContainText(inicial.planName);
       const sedes = page.getByRole('row', { name: /^Sedes habilitadas/ });
@@ -145,7 +145,7 @@ test.describe('Suscripcion contra el backend real', () => {
       await navegar(page, '/organizacion');
       await expect(page).toHaveURL(/\/organizacion$/);
       await navegar(page, '/organizacion/suscripcion');
-      const banner = page.getByRole('alert').filter({ hasText: 'Suscripcion suspendida' });
+      const banner = page.getByRole('alert').filter({ hasText: 'Suscripción suspendida' });
       await expect(banner).toContainText(`Motivo: ${motivo}`);
       await expect(banner).toContainText('solo lectura');
       await expect(detalle).toContainText(suspendida.planName);

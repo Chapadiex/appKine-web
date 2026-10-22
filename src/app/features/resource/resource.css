@@ -95,6 +95,17 @@
 }
 
 /*
+ * Horario general y feriados de la sede, lado a lado (diseno del canvas): dos columnas en
+ * escritorio, una debajo de la otra cuando no entran. Cada `.tarjeta` conserva su propio margen.
+ */
+.calendario-columnas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 26rem), 1fr));
+  gap: var(--esp-8);
+  align-items: start;
+}
+
+/*
  * Grilla de la semana del horario del profesional (M05, AKINE-02.04).
  *
  * `auto-fit` con un minimo de 13rem: en escritorio entran los siete dias uno al lado del otro

@@ -270,7 +270,7 @@ describe('ConsultoriosPage', () => {
     // activa mas una inactiva son tres instancias de `*akinePermiso`.
     httpMock.expectNone('/api/v1/me/permissions');
 
-    expect(texto(fixture)).toContain('Abrir una sede nueva');
+    expect(texto(fixture)).toContain('Abrir una sede');
     expect(botones(fixture)).toContain('Editar');
     expect(botones(fixture)).toContain('Dar de baja');
   });
@@ -286,7 +286,7 @@ describe('ConsultoriosPage', () => {
     expect(texto(fixture)).toContain('Sede Centro');
     expect(botones(fixture)).not.toContain('Editar');
     expect(botones(fixture)).not.toContain('Dar de baja');
-    expect(texto(fixture)).not.toContain('Abrir una sede nueva');
+    expect(texto(fixture)).not.toContain('Abrir una sede');
   });
 
   it('un error de red ofrece reintentar, y la falta de contexto manda a elegirlo', async () => {
@@ -327,7 +327,7 @@ describe('ConsultoriosPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect(texto(fixture)).toContain('Todavia no elegiste un contexto');
+    expect(texto(fixture)).toContain('Todavía no elegiste un contexto');
     // Ya no se ofrece reintentar: la salida es cambiar de contexto.
     expect(botones(fixture)).not.toContain('Reintentar');
     expect(fixture.nativeElement.querySelector('a[href="/seleccionar-contexto"]')).not.toBeNull();

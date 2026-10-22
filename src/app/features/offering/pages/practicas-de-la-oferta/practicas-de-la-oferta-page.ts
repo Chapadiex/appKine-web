@@ -1,3 +1,5 @@
+import { Pestanas } from '../../../../shared/components/pestanas/pestanas';
+import { ETIQUETA_PESTANAS_DE_OFERTA, pestanasDeOferta } from '../../models/pestanas-de-offering';
 import { Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 
@@ -49,7 +51,7 @@ interface FilaPractica {
  */
 @Component({
   selector: 'app-practicas-de-la-oferta-page',
-  imports: [Ayuda, RouterLink, PermisoDirective],
+  imports: [Pestanas, Ayuda, RouterLink, PermisoDirective],
   templateUrl: './practicas-de-la-oferta-page.html',
   styleUrl: '../../offering.css',
 })
@@ -61,6 +63,8 @@ export class PracticasDeLaOfertaPage {
   protected readonly PERMISO_CONSULTORIO_MANAGE = PERMISO_CONSULTORIO_MANAGE;
 
   protected readonly ofertaId = Number(this.ruta.snapshot.paramMap.get('ofertaId'));
+  protected readonly pestanasDeOferta = pestanasDeOferta(this.ofertaId);
+  protected readonly etiquetaDePestanas = ETIQUETA_PESTANAS_DE_OFERTA;
 
   protected readonly estado = signal<EstadoDeListado<PracticasDeOfertaResponse>>({
     tipo: 'cargando',

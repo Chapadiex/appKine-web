@@ -2,44 +2,37 @@
   <h1>Espacios y boxes</h1>
   <app-ayuda titulo="Sobre esta pantalla">
     <p>
-      Los recursos fisicos de <b>{{ nombreDeLaSede() }}</b> donde se atiende: boxes, gimnasios,
+      Los recursos físicos de <b>{{ nombreDeLaSede() }}</b> donde se atiende: boxes, gimnasios,
       gabinetes, salas grupales y piletas. Un espacio pertenece a una sola sede y no se puede mudar:
       el que se muda es uno que se da de baja y otro que se crea.
     </p>
+    <!--
+      La distinción que esta pantalla no puede aplanar. Es la causa del reporte de bug más
+      probable del módulo —"el box existe y no me aparece en la agenda"—, así que se explica acá
+      y, fila por fila, en la columna Estado.
+    -->
+    <p class="ayuda-contextual__subtitulo">Activo no es lo mismo que en servicio</p>
+    <p>
+      <b>Activo</b> es el estado administrativo: quiere decir que el espacio no fue dado de baja.
+      <b>En servicio</b> quiere decir que además hoy está dentro de su ventana de vigencia y por eso
+      se puede reservar.
+    </p>
+    <p>
+      Un box que ya cargaste pero que abre el mes que viene figura
+      <b>activo y todavía sin servicio</b>: es correcto que no aparezca en los selectores de reserva
+      hasta esa fecha. La columna Estado lo dice fila por fila, con el motivo.
+    </p>
   </app-ayuda>
-  <div class="encabezado__acciones" *akinePermiso="permisoManage">
-    <a class="boton" routerLink="/espacios/nuevo">
+  <div class="encabezado__acciones">
+    <a class="boton boton--secundario" routerLink="/espacios/disponibilidad">
+      Ver espacios en servicio
+    </a>
+    <a class="boton" routerLink="/espacios/nuevo" *akinePermiso="permisoManage">
       <app-icono nombre="agregar" />
       Dar de alta un espacio
     </a>
   </div>
 </div>
-
-<p class="acciones">
-  <a class="boton boton--secundario" routerLink="/espacios/disponibilidad">
-    Ver que espacios estan en servicio
-  </a>
-</p>
-
-<!--
-  La distincion que esta pantalla no puede aplanar. Va arriba y no escondida en un tooltip:
-  es la causa del reporte de bug mas probable del modulo -"el box existe y no me aparece en
-  la agenda"- y quien lee la tabla tiene que llegar a la columna Estado ya sabiendo que son
-  dos cosas distintas.
--->
-<section class="tarjeta nota-servicio" aria-labelledby="titulo-nota-servicio">
-  <h2 id="titulo-nota-servicio">Activo no es lo mismo que en servicio</h2>
-  <p>
-    <b>Activo</b> es el estado administrativo: quiere decir que el espacio no fue dado de baja.
-    <b>En servicio</b> quiere decir que ademas hoy esta dentro de su ventana de vigencia y por eso
-    se puede reservar.
-  </p>
-  <p>
-    Un box que ya cargaste pero que abre el mes que viene figura
-    <b>activo y todavia sin servicio</b>: es correcto que no aparezca en los selectores de reserva
-    hasta esa fecha. La columna Estado lo dice fila por fila, con el motivo.
-  </p>
-</section>
 
 <div aria-live="polite">
   @if (exito(); as mensaje) {
@@ -47,9 +40,7 @@
   }
 </div>
 
-<section class="tarjeta" aria-labelledby="titulo-espacios">
-  <h2 id="titulo-espacios">Espacios de la sede</h2>
-
+<section class="tarjeta" aria-label="Espacios de la sede">
   <!--
     Regla de filtros (plan §3.4): el listado no tiene busqueda por texto en el backend, asi que
     va solo el embudo; "Mostrar" es un filtro avanzado.
@@ -108,8 +99,6 @@
             <p class="estado estado--vacio">No hay espacios que mostrar con este filtro.</p>
           }
         } @else {
-          <p class="ayuda">{{ totalEspacios() }} espacios con el filtro elegido.</p>
-
           <div class="tabla-scroll" tabindex="0" role="region" aria-label="Espacios de la sede">
             <table class="tabla">
               <caption class="visualmente-oculto">
@@ -121,7 +110,7 @@
                   <th scope="col">Capacidad</th>
                   <th scope="col">Vigencia</th>
                   <th scope="col">Estado</th>
-                  <th scope="col">Acciones</th>
+                  <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
                 </tr>
               </thead>
               <tbody>
@@ -447,12 +436,15 @@
             </table>
           </div>
 
-          <akine-paginacion
-            etiqueta="Paginas de espacios"
-            [paginaActual]="paginaActual()"
-            [totalPaginas]="totalPaginas()"
-            (cambioDePagina)="irAPagina($event)"
-          />
+          <div class="tabla-pie">
+            <span>{{ totalEspacios() }} espacios</span>
+            <akine-paginacion
+              etiqueta="Paginas de espacios"
+              [paginaActual]="paginaActual()"
+              [totalPaginas]="totalPaginas()"
+              (cambioDePagina)="irAPagina($event)"
+            />
+          </div>
         }
       }
     }

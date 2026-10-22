@@ -1,6 +1,5 @@
 import { Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { RouterLink } from '@angular/router';
 
 import { AdjuntoPageResponse } from '../../../../api/generated/model/adjunto-page-response';
 import { AdjuntoResponse } from '../../../../api/generated/model/adjunto-response';
@@ -34,6 +33,7 @@ import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { Filtros } from '../../../../shared/components/filtros/filtros';
 import { Icono } from '../../../../shared/components/icono/icono';
+import { CabeceraDePersona } from '../../components/cabecera-de-persona/cabecera-de-persona';
 
 const TAMANO_DE_PAGINA = 20;
 
@@ -94,11 +94,11 @@ type TipoAccion = 'reclasificar' | 'baja';
 @Component({
   selector: 'app-documentos-de-persona-page',
   imports: [
+    CabeceraDePersona,
     Ayuda,
     Filtros,
     Icono,
     ReactiveFormsModule,
-    RouterLink,
     ConfirmacionConMotivo,
     Paginacion,
     PermisoDirective,

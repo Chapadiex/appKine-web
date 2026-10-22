@@ -1,13 +1,16 @@
 @if (financiador(); as ficha) {
   <div class="titulo-con-ayuda">
     <h1>Planes de {{ ficha.nombre }}</h1>
+    @if (financiadorInactivo()) {
+      <span class="marca-estado marca-estado--revocada">Dado de baja</span>
+    }
     <app-ayuda titulo="Sobre esta pantalla">
       <ng-container [ngTemplateOutlet]="ayudaDePantalla" />
     </app-ayuda>
     <ng-container [ngTemplateOutlet]="accionDelTitulo" />
   </div>
   <!-- Datos del financiador: se ven siempre. La explicacion va en el "?". -->
-  <p class="descripcion">{{ etiquetaDeTipo(ficha.tipo) }} · codigo {{ ficha.codigo }}.</p>
+  <p class="descripcion">{{ etiquetaDeTipo(ficha.tipo) }} · código {{ ficha.codigo }}.</p>
 } @else {
   <!--
     Degradacion honesta: si la lectura del financiador fallo, la pantalla igual sirve. Se dice que
@@ -25,18 +28,16 @@
   </p>
 }
 
-<nav class="acciones" aria-label="Contratacion">
-  <a class="boton boton--secundario" routerLink="/contratacion/financiadores">
-    Volver a financiadores
-  </a>
-  <a class="boton boton--secundario" routerLink="/contratacion/convenios">Convenios de la sede</a>
+<nav class="migas" aria-label="Ruta de navegación">
+  <a routerLink="/contratacion/financiadores">Financiadores</a>
+  <span class="migas__separador" aria-hidden="true">/</span>
 </nav>
 
 <!-- La accion principal del titulo: una sola copia para las dos ramas del titulo. -->
 <ng-template #accionDelTitulo>
   @if (!financiadorInactivo()) {
     <div class="encabezado__acciones" *akinePermiso="permisoManage">
-      <button type="button" class="boton" (click)="abrirAlta()">
+      <button type="button" class="botón" (click)="abrirAlta()">
         <app-icono nombre="agregar" />
         Dar de alta un plan
       </button>
@@ -53,17 +54,17 @@
   <p class="ayuda-contextual__subtitulo">Cerrar la vigencia no es dar de baja</p>
   <p>
     <b>Cerrar la vigencia</b> es ponerle fecha de fin desde <i>Editar</i>. El plan queda
-    <b>activo y consultable</b>, y lo unico que cambia es que deja de ofrecerse despues de esa
+    <b>activo y consultable</b>, y lo único que cambia es que deja de ofrecerse después de esa
     fecha. Se deshace volviendo a editar.
   </p>
   <p>
-    <b>Dar de baja</b> es otra cosa: exige motivo, saca el plan de toda seleccion nueva y
-    <b>no tiene vuelta atras</b> —no hay reactivacion—. Las coberturas ya firmadas siguen
+    <b>Dar de baja</b> es otra cosa: exige motivo, saca el plan de toda selección nueva y
+    <b>no tiene vuelta atras</b> —no hay reactivación—. Las coberturas ya firmadas siguen
     resolviendo con su copia congelada en los dos casos: nada se borra.
   </p>
   <p>
-    La fecha de fin es <b>inclusiva</b>: el dia que pongas es el ultimo en que el plan
-    <b>todavia</b> se ofrece. Ojo, porque en las ofertas de servicio la convencion es la contraria.
+    La fecha de fin es <b>inclusiva</b>: el día que pongas es el último en que el plan
+    <b>todavía</b> se ofrece. Ojo, porque en las ofertas de servicio la convención es la contraria.
   </p>
 </ng-template>
 
@@ -75,7 +76,7 @@
 
 @if (financiadorInactivo()) {
   <p class="estado estado--vacio">
-    Este financiador esta dado de baja, asi que <b>no admite planes nuevos</b>. Sus planes actuales
+    Este financiador está dado de baja, así que <b>no admite planes nuevos</b>. Sus planes actuales
     se siguen pudiendo editar y consultar: dejar de trabajar con una obra social no puede tener como
     efecto que sus planes queden congelados con un error de tipeo.
   </p>
@@ -86,9 +87,9 @@
     <h2 id="titulo-alta-plan">Nuevo plan</h2>
 
     <form [formGroup]="formularioAlta" (ngSubmit)="enviarAlta()" novalidate>
-      <div class="par-de-campos">
+      <div class="grilla-campos grilla-campos--dos">
         <div class="campo">
-          <label for="alta-plan-codigo">Codigo</label>
+          <label for="alta-plan-codigo">Código</label>
           <input
             id="alta-plan-codigo"
             type="text"
@@ -98,11 +99,11 @@
             aria-describedby="alta-plan-codigo-ayuda"
           />
           @if (mostrarErrorAlta('codigo')) {
-            <p class="campo__error" role="alert">El codigo es obligatorio.</p>
+            <p class="campo__error" role="alert">El código es obligatorio.</p>
           }
           <p class="ayuda" id="alta-plan-codigo-ayuda">
-            <b>No se puede cambiar despues</b>, igual que el del financiador. Es unico
-            <b>dentro de este financiador</b> y no de toda la organizacion: dos financiadores
+            <b>No se puede cambiar después</b>, igual que el del financiador. Es único
+            <b>dentro de este financiador</b> y no de toda la organización: dos financiadores
             distintos pueden tener los dos un plan 210, que es como se llaman de verdad.
           </p>
         </div>
@@ -123,7 +124,7 @@
       </div>
 
       <div class="campo">
-        <label for="alta-plan-descripcion">Descripcion (opcional)</label>
+        <label for="alta-plan-descripcion">Descripción (opcional)</label>
         <input
           id="alta-plan-descripcion"
           type="text"
@@ -132,7 +133,7 @@
         />
       </div>
 
-      <div class="par-de-campos">
+      <div class="grilla-campos grilla-campos--dos">
         <div class="campo">
           <label for="alta-plan-desde">Vigente desde</label>
           <input
@@ -157,12 +158,12 @@
         </div>
       </div>
       <p class="ayuda" id="alta-plan-vigencia-ayuda">
-        El fin es <b>inclusivo</b>: el dia que pongas es el ultimo en que el plan todavia se ofrece,
-        y puede coincidir con el inicio —un plan que vale un solo dia es un estado real—. Sin fin,
+        El fin es <b>inclusivo</b>: el día que pongas es el último en que el plan todavía se ofrece,
+        y puede coincidir con el inicio —un plan que vale un solo día es un estado real—. Sin fin,
         no vence: queda "sin fin previsto", que no es lo mismo que para siempre.
       </p>
 
-      <div class="par-de-campos">
+      <div class="grilla-campos grilla-campos--dos">
         <div class="campo">
           <label for="alta-plan-copago">Copago (opcional)</label>
           <input id="alta-plan-copago" type="number" min="0" step="0.01" formControlName="copago" />
@@ -182,44 +183,47 @@
       </div>
       <p class="ayuda" id="alta-plan-copago-ayuda">
         Copago y moneda <b>van juntos o no van ninguno</b>: un importe sin moneda no es un importe.
-        Tres letras, como ARS o USD. Dejar el copago vacio significa <b>sin copago declarado</b>,
+        Tres letras, como ARS o USD. Dejar el copago vacío significa <b>sin copago declarado</b>,
         que <b>no</b> es lo mismo que cero — cero quiere decir que el paciente no paga nada.
       </p>
 
-      <div class="campo">
-        <label class="opcion-casilla" for="alta-plan-autorizacion">
-          <input
-            id="alta-plan-autorizacion"
-            type="checkbox"
-            formControlName="requiereAutorizacion"
-          />
-          Requiere autorizacion previa
-        </label>
-      </div>
+      <details class="mas-opciones">
+        <summary>Requisitos del plan</summary>
+        <div class="campo">
+          <label class="opcion-casilla" for="alta-plan-autorizacion">
+            <input
+              id="alta-plan-autorizacion"
+              type="checkbox"
+              formControlName="requiereAutorizacion"
+            />
+            Requiere autorización previa
+          </label>
+        </div>
 
-      <div class="campo">
-        <label class="opcion-casilla" for="alta-plan-credencial">
-          <input id="alta-plan-credencial" type="checkbox" formControlName="requiereCredencial" />
-          Requiere credencial
-        </label>
-        <p class="ayuda">
-          Estos dos se <b>guardan y se muestran</b>, y hoy todavia no bloquean nada: quien los
-          aplique es el modulo de ordenes y autorizaciones. Cargalos igual, porque el dia que se
-          apliquen van a leerse de aca.
-        </p>
-      </div>
+        <div class="campo">
+          <label class="opcion-casilla" for="alta-plan-credencial">
+            <input id="alta-plan-credencial" type="checkbox" formControlName="requiereCredencial" />
+            Requiere credencial
+          </label>
+          <p class="ayuda">
+            Estos dos se <b>guardan y se muestran</b>, y hoy todavía no bloquean nada: quien los
+            aplique es el modulo de órdenes y autorizaciones. Cargalos igual, porque el día que se
+            apliquen van a leerse de acá.
+          </p>
+        </div>
+      </details>
 
       @if (errorAccion(); as mensaje) {
         <p class="estado estado--error" role="alert">{{ mensaje }}</p>
       }
 
       <p class="acciones">
-        <button type="submit" class="boton" [disabled]="enviando()">
+        <button type="submit" class="botón" [disabled]="enviando()">
           {{ enviando() ? 'Guardando...' : 'Dar de alta' }}
         </button>
         <button
           type="button"
-          class="boton boton--secundario"
+          class="botón botón--secundario"
           (click)="cerrarPanel()"
           [disabled]="enviando()"
         >
@@ -252,13 +256,13 @@
       </select>
       <p class="ayuda" id="filtro-estado-plan-ayuda">
         Este filtro es por <b>estado administrativo</b>, no por vigencia: "solo los activos" incluye
-        los que todavia no arrancaron y los que ya terminaron su ventana. La columna Situacion dice
-        cual es cual.
+        los que todavía no arrancaron y los que ya terminaron su ventana. La columna Situación dice
+        cuál es cuál.
       </p>
     </div>
 
     <div class="campo">
-      <label for="filtro-fecha-plan">Vigencia al dia</label>
+      <label for="filtro-fecha-plan">Vigencia al día</label>
       <input
         id="filtro-fecha-plan"
         type="date"
@@ -268,7 +272,7 @@
       />
       <p class="ayuda" id="filtro-fecha-plan-ayuda">
         No filtra: <b>cambia la fecha contra la que se calcula la vigencia</b>. Ponerle una fecha
-        pasada responde "que planes se podian elegir ese dia", que es lo que hace falta para
+        pasada responde "que planes se podian elegir ese día", que es lo que hace falta para
         explicar una cobertura vieja.
       </p>
     </div>
@@ -281,17 +285,17 @@
       }
 
       @case ('sin-contexto') {
-        <p class="estado estado--vacio">Todavia no elegiste un consultorio.</p>
-        <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
+        <p class="estado estado--vacio">Todavía no elegiste un consultorio.</p>
+        <a class="botón" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
       }
 
       @case ('error') {
         <p class="estado estado--error" role="alert">{{ mensajeError() }}</p>
 
         @if (faltaContexto()) {
-          <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
+          <a class="botón" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
         } @else {
-          <button type="button" class="boton" (click)="cargar()">Reintentar</button>
+          <button type="button" class="botón" (click)="cargar()">Reintentar</button>
         }
       }
 
@@ -301,24 +305,26 @@
             Este financiador no tiene planes que coincidan con el filtro.
           </p>
           <p class="ayuda">
-            Sin al menos un plan no se puede firmar ningun convenio con este financiador: el
-            convenio se firma <b>contra un plan</b>, y eso es lo que hace que la resolucion del
+            Sin al menos un plan no se puede firmar ningún convenio con este financiador: el
+            convenio se firma <b>contra un plan</b>, y eso es lo que hace que la resolución del
             arancel tenga como mucho una candidata para cada fecha.
           </p>
         } @else {
           <div class="tabla-scroll" tabindex="0" role="region" aria-label="Planes de cobertura">
             <table class="tabla">
               <caption class="visualmente-oculto">
-                Planes del financiador, con su codigo, vigencia, copago, requisitos, situacion y
+                Planes del financiador, con su código, vigencia, copago, requisitos, situación y
                 acciones.
               </caption>
               <thead>
                 <tr>
                   <th scope="col" appOrdenable [tabla]="tabla" columna="nombre">Plan</th>
                   <th scope="col" appOrdenable [tabla]="tabla" columna="vigencia">Vigencia</th>
-                  <th scope="col" appOrdenable [tabla]="tabla" columna="copago">Copago</th>
+                  <th scope="col" class="importe" appOrdenable [tabla]="tabla" columna="copago">
+                    Copago
+                  </th>
                   <th scope="col">Requisitos</th>
-                  <th scope="col">Situacion</th>
+                  <th scope="col">Situación</th>
                   <th scope="col">Acciones</th>
                 </tr>
               </thead>
@@ -337,7 +343,7 @@
                   >
                     <th scope="row">
                       {{ plan.nombre }}
-                      <p class="ayuda">Codigo {{ plan.codigo }}</p>
+                      <p class="ayuda">Código {{ plan.codigo }}</p>
                       @if (plan.descripcion) {
                         <p class="ayuda">{{ plan.descripcion }}</p>
                       }
@@ -346,7 +352,7 @@
                     <td class="importe">{{ importeEnPalabras(plan.copago, plan.moneda) }}</td>
                     <td>
                       @if (plan.requiereAutorizacion) {
-                        <p class="ayuda">Requiere autorizacion previa</p>
+                        <p class="ayuda">Requiere autorización previa</p>
                       }
                       @if (plan.requiereCredencial) {
                         <p class="ayuda">Requiere credencial</p>
@@ -356,7 +362,16 @@
                       }
                     </td>
                     <td>
-                      <span class="marca-estado">{{ situacionDeLaFila.resumen }}</span>
+                      <span
+                        class="marca-estado"
+                        [class.marca-estado--activa]="situacionDeLaFila.clave === 'vigente'"
+                        [class.marca-estado--revocada]="situacionDeLaFila.clave === 'dada-de-baja'"
+                        [class.marca-estado--suspendida]="
+                          situacionDeLaFila.clave !== 'vigente' &&
+                          situacionDeLaFila.clave !== 'dada-de-baja'
+                        "
+                        >{{ situacionDeLaFila.resumen }}</span
+                      >
                       @if (situacionDeLaFila.explicacion; as explicacion) {
                         <p class="ayuda">{{ explicacion }}</p>
                       }
@@ -369,14 +384,14 @@
                         <ng-container *akinePermiso="permisoManage">
                           <button
                             type="button"
-                            class="boton boton--secundario"
+                            class="botón botón--secundario"
                             (click)="abrirPanel(plan, 'editar')"
                           >
                             Editar
                           </button>
                           <button
                             type="button"
-                            class="boton boton--secundario"
+                            class="botón botón--secundario"
                             (click)="abrirPanel(plan, 'baja')"
                           >
                             Dar de baja
@@ -399,12 +414,12 @@
                           <p class="ayuda">
                             Se manda <b>solo lo que cambies</b>. Poner una fecha en "vigente hasta"
                             es lo que <b>cierra la vigencia</b>, y el plan queda activo igual.
-                            Borrar esa fecha, en cambio, <b>no la saca</b>: un campo vacio significa
-                            "no lo toques". El <b>codigo no se puede cambiar</b>.
+                            Borrar esa fecha, en cambio, <b>no la saca</b>: un campo vacío significa
+                            "no lo toques". El <b>código no se puede cambiar</b>.
                           </p>
 
                           <div class="campo">
-                            <label for="editar-plan-codigo">Codigo</label>
+                            <label for="editar-plan-codigo">Código</label>
                             <input
                               id="editar-plan-codigo"
                               type="text"
@@ -428,7 +443,7 @@
                           </div>
 
                           <div class="campo">
-                            <label for="editar-plan-descripcion">Descripcion</label>
+                            <label for="editar-plan-descripcion">Descripción</label>
                             <input
                               id="editar-plan-descripcion"
                               type="text"
@@ -437,7 +452,7 @@
                             />
                           </div>
 
-                          <div class="par-de-campos">
+                          <div class="grilla-campos grilla-campos--dos">
                             <div class="campo">
                               <label for="editar-plan-desde">Vigente desde</label>
                               <input
@@ -456,12 +471,12 @@
                                 aria-describedby="editar-plan-hasta-ayuda"
                               />
                               <p class="ayuda" id="editar-plan-hasta-ayuda">
-                                El fin es <b>inclusivo</b>: ese dia el plan todavia se ofrece.
+                                El fin es <b>inclusivo</b>: ese día el plan todavía se ofrece.
                               </p>
                             </div>
                           </div>
 
-                          <div class="par-de-campos">
+                          <div class="grilla-campos grilla-campos--dos">
                             <div class="campo">
                               <label for="editar-plan-copago">Copago</label>
                               <input
@@ -485,46 +500,49 @@
                             </div>
                           </div>
 
-                          <div class="campo">
-                            <label class="opcion-casilla" for="editar-plan-autorizacion">
-                              <input
-                                id="editar-plan-autorizacion"
-                                type="checkbox"
-                                formControlName="requiereAutorizacion"
-                              />
-                              Requiere autorizacion previa
-                            </label>
-                          </div>
+                          <details class="mas-opciones">
+                            <summary>Requisitos del plan</summary>
+                            <div class="campo">
+                              <label class="opcion-casilla" for="editar-plan-autorizacion">
+                                <input
+                                  id="editar-plan-autorizacion"
+                                  type="checkbox"
+                                  formControlName="requiereAutorizacion"
+                                />
+                                Requiere autorización previa
+                              </label>
+                            </div>
 
-                          <div class="campo">
-                            <label class="opcion-casilla" for="editar-plan-credencial">
-                              <input
-                                id="editar-plan-credencial"
-                                type="checkbox"
-                                formControlName="requiereCredencial"
-                              />
-                              Requiere credencial
-                            </label>
-                          </div>
+                            <div class="campo">
+                              <label class="opcion-casilla" for="editar-plan-credencial">
+                                <input
+                                  id="editar-plan-credencial"
+                                  type="checkbox"
+                                  formControlName="requiereCredencial"
+                                />
+                                Requiere credencial
+                              </label>
+                            </div>
+                          </details>
 
                           @if (errorAccion(); as mensaje) {
                             <p class="estado estado--error" role="alert">{{ mensaje }}</p>
                           }
 
                           <p class="acciones">
-                            <button type="submit" class="boton" [disabled]="enviando()">
+                            <button type="submit" class="botón" [disabled]="enviando()">
                               {{ enviando() ? 'Guardando...' : 'Guardar cambios' }}
                             </button>
                             <button
                               type="button"
-                              class="boton boton--secundario"
+                              class="botón botón--secundario"
                               (click)="cerrarPanel()"
                               [disabled]="enviando()"
                             >
                               Cancelar
                             </button>
                             @if (hayQueRecargar()) {
-                              <button type="button" class="boton" (click)="cargar()">
+                              <button type="button" class="botón" (click)="cargar()">
                                 Recargar el listado
                               </button>
                             }
@@ -541,7 +559,7 @@
                           idCampo="baja-plan-motivo"
                           [titulo]="'Dar de baja ' + plan.nombre"
                           etiqueta="Motivo de la baja"
-                          ayuda="Queda registrado junto al plan y se muestra en el listado. Ojo: si lo que queres es que el plan deje de ofrecerse a partir de una fecha pero siga vigente hasta entonces, la operacion NO es esta — es cerrar la vigencia desde Editar. Dar de baja es terminal y no hay reactivacion. Las coberturas ya firmadas bajo este plan siguen resolviendo con su copia congelada, y su codigo y su nombre quedan libres."
+                          ayuda="Queda registrado junto al plan y se muestra en el listado. Ojo: si lo que queres es que el plan deje de ofrecerse a partir de una fecha pero siga vigente hasta entonces, la operación NO es esta — es cerrar la vigencia desde Editar. Dar de baja es terminal y no hay reactivación. Las coberturas ya firmadas bajo este plan siguen resolviendo con su copia congelada, y su código y su nombre quedan libres."
                           textoConfirmar="Dar de baja"
                           [enviando]="enviando()"
                           (confirmado)="enviarBaja($event)"
@@ -552,7 +570,7 @@
                           <p class="estado estado--error" role="alert">{{ mensaje }}</p>
                         }
                         @if (hayQueRecargar()) {
-                          <button type="button" class="boton" (click)="cargar()">
+                          <button type="button" class="botón" (click)="cargar()">
                             Recargar el listado
                           </button>
                         }
@@ -569,7 +587,7 @@
             <app-paginacion
               [paginaActual]="tabla.pagina()"
               [totalPaginas]="tabla.totalPaginas()"
-              etiqueta="Paginas de planes"
+              etiqueta="Páginas de planes"
               (cambioDePagina)="tabla.irA($event)"
             />
           </div>

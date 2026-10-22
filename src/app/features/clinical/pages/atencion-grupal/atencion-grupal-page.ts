@@ -121,6 +121,7 @@ const ETIQUETAS_DE_ASISTENCIA: Readonly<Record<string, string>> = {
   selector: 'app-atencion-grupal-page',
   imports: [Ayuda, RouterLink, FocoAlMontar, PermisoDirective, DerivarParticipante],
   templateUrl: './atencion-grupal-page.html',
+  styleUrl: '../../atencion.css',
 })
 export class AtencionGrupalPage {
   private readonly api = inject(AtencionGrupalApi);

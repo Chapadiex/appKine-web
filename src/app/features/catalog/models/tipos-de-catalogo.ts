@@ -1,4 +1,5 @@
 import { CatalogoConceptoResponse } from '../../../api/generated/model/catalogo-concepto-response';
+import { Pestana } from '../../../shared/components/pestanas/pestanas';
 
 /**
  * Los tres tipos del catalogo clinico, tal como viajan <b>en la ruta</b> (M06, AKINE-02.05).
@@ -36,8 +37,8 @@ export const TIPOS_DE_CATALOGO: readonly DatosDeTipo[] = [
   },
   {
     slug: 'practicas',
-    singular: 'practica',
-    plural: 'Practicas',
+    singular: 'práctica',
+    plural: 'Prácticas',
     descripcion:
       'Lo que efectivamente se hace en una sesion. Cada practica pertenece a una especialidad y ' +
       'es lo que los nomencladores codifican.',
@@ -81,3 +82,13 @@ export function etiquetaDeAlcance(concepto: CatalogoConceptoResponse): string {
 export function esGlobal(concepto: CatalogoConceptoResponse): boolean {
   return concepto.alcance === 'GLOBAL';
 }
+
+/** `aria-label` de las pestanas del catalogo clinico. */
+export const ETIQUETA_PESTANAS_DE_CATALOGO = 'Tipo de catálogo';
+
+/** Una pestana por tipo: cada una es una ruta propia (`/catalogo/:tipo`). */
+export const PESTANAS_DE_CATALOGO: readonly Pestana[] = TIPOS_DE_CATALOGO.map((tipo) => ({
+  etiqueta: tipo.plural,
+  ruta: `/catalogo/${tipo.slug}`,
+  exacta: true,
+}));

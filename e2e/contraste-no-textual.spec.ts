@@ -133,7 +133,7 @@ test.describe('Contraste no textual, foco y teclado', () => {
 
       await page.getByRole('button', { name: 'Revertir' }).focus();
       await page.keyboard.press('Enter');
-      await expect(page.getByLabel('Motivo de la reversion')).toBeFocused();
+      await expect(page.getByLabel('Motivo de la reversión')).toBeFocused();
 
       await page.getByRole('button', { name: 'Cancelar' }).focus();
       await page.keyboard.press('Enter');

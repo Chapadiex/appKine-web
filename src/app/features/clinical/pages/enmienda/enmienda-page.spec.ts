@@ -258,9 +258,9 @@ describe('EnmiendaPage', () => {
         { status: 409, statusText: 'Conflict' },
       );
     await estabilizar(fixture);
-    expect(texto(fixture)).toContain('Alguien enmendo esta atencion');
+    expect(texto(fixture)).toContain('Alguien enmendó esta atención');
 
-    apretar(fixture, 'Releer la ultima version');
+    apretar(fixture, 'Releer la última versión');
     responder({ ...CERRADA, version: 13 }, [
       V1,
       V2,
@@ -280,7 +280,7 @@ describe('EnmiendaPage', () => {
 
   it('una ventana vencida no deja mandar la enmienda', async () => {
     const fixture = await montar({ ...CERRADA, enmendableHasta: '2026-01-01T00:00:00Z' });
-    expect(texto(fixture)).toContain('La ventana para enmendar esta atencion cerro');
+    expect(texto(fixture)).toContain('La ventana para enmendar esta atención cerró');
     expect(botonEnmendar(fixture).disabled).toBe(true);
   });
 
@@ -325,7 +325,7 @@ describe('EnmiendaPage', () => {
 
   it('una atencion abierta no se enmienda: lo dice', async () => {
     const fixture = await montar({ ...CERRADA, numeroSesion: undefined }, []);
-    expect(texto(fixture)).toContain('Esta atencion sigue abierta');
+    expect(texto(fixture)).toContain('Esta atención sigue abierta');
     expect(fixture.nativeElement.querySelector('#enmienda-motivo')).toBeNull();
   });
 

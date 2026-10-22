@@ -44,7 +44,7 @@ test.describe('Servicios y ofertas contra el backend real', () => {
     try {
       // --- La plataforma da de alta el servicio global ---
       await navegar(plataforma, '/servicios/catalogo');
-      await plataforma.getByRole('button', { name: 'Dar de alta un servicio' }).click();
+      await plataforma.getByRole('button', { name: 'Nuevo servicio' }).click();
       await plataforma.getByLabel('Codigo', { exact: true }).fill(`E2E_SRV_${sufijo}`);
       await plataforma.getByLabel('Nombre', { exact: true }).fill(nombreDelServicio);
       await plataforma.getByLabel('Naturaleza').selectOption('TERAPEUTICO');
@@ -61,7 +61,7 @@ test.describe('Servicios y ofertas contra el backend real', () => {
       // --- El centro arma su oferta sobre ese servicio ---
       await ingresar(page, centro);
       await navegar(page, '/servicios/ofertas');
-      await page.getByRole('button', { name: 'Dar de alta una oferta' }).click();
+      await page.getByRole('button', { name: 'Publicar un servicio en la sede' }).click();
       await page.getByLabel('Servicio del catalogo').selectOption(String(servicioId));
       await page.getByLabel('Nombre comercial').fill(nombreDeLaOferta);
       await page.getByLabel('Duracion (minutos)').fill('30');

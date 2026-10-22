@@ -32,7 +32,7 @@ test.describe('Casos clinicos (D-b)', () => {
 
   test('abrir, editar, cambiar el equipo dos veces, cerrar y reabrir', async ({ page }) => {
     await abrirHistoriaConMotivo(page, sembrada);
-    const casos = page.getByRole('region', { name: 'Casos clinicos' });
+    const casos = page.getByRole('region', { name: 'Casos clínicos' });
     await expect(casos.getByText('No hay casos activos.')).toBeVisible();
 
     // --- Alta compacta ---------------------------------------------------------------------
@@ -105,7 +105,7 @@ test.describe('Casos clinicos (D-b)', () => {
     await expect(page.getByRole('button', { name: 'Guardar el equipo' })).toHaveCount(0);
 
     // En la historia aparece en historicos.
-    await page.getByRole('link', { name: 'Volver a la historia clinica' }).click();
+    await page.getByRole('link', { name: 'Historia clínica', exact: true }).click();
     const cerrados = page.getByRole('list', { name: 'Casos cerrados' });
     await expect(cerrados.getByRole('link', { name: /Caso 1/ })).toBeVisible();
     await cerrados.getByRole('link', { name: /Caso 1/ }).click();
@@ -129,7 +129,7 @@ test.describe('Casos clinicos (D-b)', () => {
     page,
   }) => {
     await abrirHistoriaConMotivo(page, sembrada);
-    const casos = page.getByRole('region', { name: 'Casos clinicos' });
+    const casos = page.getByRole('region', { name: 'Casos clínicos' });
     await expect(casos.getByRole('list', { name: 'Casos activos' })).toBeVisible();
     await casos.getByText('Abrir un caso').click();
     await casos

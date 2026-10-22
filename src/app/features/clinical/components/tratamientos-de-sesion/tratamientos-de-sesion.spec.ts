@@ -105,7 +105,7 @@ describe('TratamientosDeSesion', () => {
     elegir(fixture, '#tratamiento-lateralidad', 'DERECHA');
     escribir(fixture, '#tratamiento-duracion', '15');
     elegir(fixture, '#tratamiento-espacio', '30');
-    apretar(fixture, 'Agregar un parametro');
+    apretar(fixture, 'Agregar un parámetro');
     escribir(fixture, '#parametro-clave-0', 'Intensidad');
     escribir(fixture, '#parametro-valor-0', '20');
     escribir(fixture, '#parametro-unidad-0', 'mA');
@@ -134,7 +134,7 @@ describe('TratamientosDeSesion', () => {
   it('un parametro sin nombre o un numero que no es numero no sale', async () => {
     const fixture = await montar();
 
-    apretar(fixture, 'Agregar un parametro');
+    apretar(fixture, 'Agregar un parámetro');
     apretar(fixture, 'Registrar el tratamiento');
     expect(texto(fixture)).toContain('sin nombre');
 
@@ -155,7 +155,7 @@ describe('TratamientosDeSesion', () => {
 
   it('cambiar el tipo de un parametro limpia el valor, y quitarlo lo saca de la lista', async () => {
     const fixture = await montar();
-    apretar(fixture, 'Agregar un parametro');
+    apretar(fixture, 'Agregar un parámetro');
     escribir(fixture, '#parametro-valor-0', '20');
     elegir(fixture, '#parametro-tipo-0', 'BOOLEANO');
     expect(fixture.nativeElement.querySelector('#parametro-unidad-0')).toBeNull();
@@ -169,8 +169,8 @@ describe('TratamientosDeSesion', () => {
     pedido.flush({ ...REGISTRADO, parametros: [] });
     await estabilizar(fixture);
 
-    apretar(fixture, 'Agregar un parametro');
-    apretar(fixture, 'Quitar el parametro 1');
+    apretar(fixture, 'Agregar un parámetro');
+    apretar(fixture, 'Quitar el parámetro 1');
     expect(fixture.nativeElement.querySelector('#parametro-clave-0')).toBeNull();
   });
 
@@ -249,7 +249,7 @@ describe('TratamientosDeSesion', () => {
 
   it('una oferta sin practicas lo dice en vez de ofrecer un formulario vacio', async () => {
     const fixture = await montar(true, [], []);
-    expect(texto(fixture)).toContain('no declara practicas');
+    expect(texto(fixture)).toContain('no declara prácticas');
     expect(fixture.nativeElement.querySelector('#tratamiento-practica')).toBeNull();
   });
 
@@ -263,7 +263,7 @@ describe('TratamientosDeSesion', () => {
   it('avisa la lateralidad sin zona antes de que el servidor la rechace', async () => {
     const fixture = await montar();
     elegir(fixture, '#tratamiento-lateralidad', 'IZQUIERDA');
-    expect(texto(fixture)).toContain('sin decir de que zona');
+    expect(texto(fixture)).toContain('sin decir de qué zona');
   });
 
   it('parametroParaEnviar rechaza un texto vacio y un si/no sin elegir', () => {
@@ -290,7 +290,7 @@ describe('TratamientosDeSesion', () => {
     'no tiene violaciones de accesibilidad',
     async () => {
       const fixture = await montar(true, [REGISTRADO]);
-      apretar(fixture, 'Agregar un parametro');
+      apretar(fixture, 'Agregar un parámetro');
       await esperarSinViolaciones(fixture.nativeElement as HTMLElement);
     },
     TIMEOUT_AXE,

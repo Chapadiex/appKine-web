@@ -1,10 +1,10 @@
 <div class="titulo-con-ayuda">
-  <h1>Solicitudes de catalogo</h1>
+  <h1>Solicitudes de catálogo</h1>
   <app-ayuda titulo="Sobre esta pantalla">
     <p>
-      Pedidos de los centros para sumar un concepto al catalogo comun. Aprobar publica el concepto
-      global en el mismo acto, con el codigo y el nombre que dejes en el formulario; rechazar le
-      deja tu nota al centro que lo pidio.
+      Pedidos de los centros para sumar un concepto al catálogo común. Aprobar publica el concepto
+      global en el mismo acto, con el código y el nombre que dejes en el formulario; rechazar le
+      deja tu nota al centro que lo pidió. Solo lo ve el equipo de AKINE.
     </p>
   </app-ayuda>
 </div>
@@ -31,23 +31,23 @@
     </h2>
 
     <dl class="detalle">
-      <dt>Codigo propuesto</dt>
-      <dd>{{ solicitud.codigoPropuesto || 'Sin codigo propuesto' }}</dd>
-      <dt>Justificacion</dt>
+      <dt>Código propuesto</dt>
+      <dd>{{ solicitud.codigoPropuesto || 'Sin código propuesto' }}</dd>
+      <dt>Para qué</dt>
       <dd>{{ solicitud.justificacion }}</dd>
       <dt>Centro</dt>
       <dd>
         {{ nombreDeCentro(solicitud) }}
         @if (solicitud.consultorioId) {
-          (la pidio desde una de sus sedes)
+          (la pidió desde una de sus sedes)
         }
       </dd>
-      <dt>Pedida el</dt>
+      <dt>Recibida</dt>
       <dd>{{ formatearInstante(solicitud.createdAt) ?? 'Sin fecha' }}</dd>
       <dt>Estado</dt>
       <dd>{{ etiquetaDeEstado(solicitud.estado) }}</dd>
       @if (solicitud.resolucionNota) {
-        <dt>Nota de la resolucion</dt>
+        <dt>Nota de la resolución</dt>
         <dd>{{ solicitud.resolucionNota }}</dd>
       }
       @if (solicitud.resueltaAt) {
@@ -85,7 +85,7 @@
 
           @if (desenlace() === 'APROBAR') {
             <div class="campo">
-              <label for="resolucion-codigo">Codigo con el que se publica</label>
+              <label for="resolucion-codigo">Código con el que se publica</label>
               <input
                 id="resolucion-codigo"
                 type="text"
@@ -97,7 +97,7 @@
                 <p class="campo__error" role="alert">{{ errorAccion() }}</p>
               } @else {
                 <p class="ayuda">
-                  Precargado con el propuesto. Si queda vacio se usa el propuesto, y sin ninguno el
+                  Precargado con el propuesto. Si queda vacío se usa el propuesto, y sin ninguno el
                   servidor no puede publicar.
                 </p>
               }
@@ -122,7 +122,7 @@
             </div>
 
             <div class="campo">
-              <label for="resolucion-descripcion">Descripcion (opcional)</label>
+              <label for="resolucion-descripcion">Descripción (opcional)</label>
               <textarea
                 id="resolucion-descripcion"
                 rows="3"
@@ -132,11 +132,11 @@
 
             @if (esPractica()) {
               <div class="campo">
-                <label for="resolucion-especialidad">Especialidad del catalogo comun</label>
+                <label for="resolucion-especialidad">Especialidad del catálogo común</label>
                 @switch (especialidades().tipo) {
                   @case ('error') {
                     <p class="estado estado--error" role="alert">
-                      No se pudieron leer las especialidades del catalogo comun.
+                      No se pudieron leer las especialidades del catálogo común.
                     </p>
                   }
                   @case ('cargando') {
@@ -152,7 +152,7 @@
                       : null
                   "
                 >
-                  <option value="">Elegi la especialidad</option>
+                  <option value="">Elegí la especialidad</option>
                   @for (especialidad of opcionesDeEspecialidad(); track especialidad.id) {
                     <option [value]="especialidad.id">
                       {{ especialidad.name }}
@@ -164,7 +164,7 @@
                 </select>
                 @if (mostrarError('especialidadId')) {
                   <p class="campo__error" role="alert">
-                    Una practica del catalogo comun necesita su especialidad.
+                    Una práctica del catálogo común necesita su especialidad.
                   </p>
                 }
               </div>
@@ -186,8 +186,8 @@
               <p class="campo__error" role="alert">La nota es obligatoria.</p>
             }
             <p class="ayuda" id="resolucion-nota-ayuda">
-              El centro la ve en sus pedidos. Si el concepto ya existe en el catalogo comun, decilo
-              aca y rechaza.
+              El centro la ve en sus pedidos. Si el concepto ya existe en el catálogo común, decilo
+              acá y rechazá.
             </p>
           </div>
 
@@ -227,7 +227,7 @@
 <section class="tarjeta" aria-labelledby="titulo-bandeja">
   <h2 id="titulo-bandeja">Bandeja</h2>
 
-  <!-- Regla de filtros (plan §3.4): la bandeja no tiene busqueda por texto; solo el embudo. -->
+  <!-- Regla de filtros (plan §3.4): la bandeja no tiene búsqueda por texto; solo el embudo. -->
   <app-filtros [soloAvanzados]="true" [activos]="filtrosAvanzadosActivos()">
     <div class="campo">
       <label for="filtro-estado-bandeja">Mostrar</label>
@@ -257,18 +257,18 @@
         @if (solicitudes().length === 0) {
           <p class="estado estado--vacio">No hay solicitudes con el filtro elegido.</p>
         } @else {
-          <div class="tabla-scroll" tabindex="0" role="region" aria-label="Solicitudes de catalogo">
+          <div class="tabla-scroll" tabindex="0" role="region" aria-label="Solicitudes de catálogo">
             <table class="tabla">
               <caption class="visualmente-oculto">
-                Solicitudes de los centros al catalogo comun, con su tipo, el centro que la pidio,
-                la fecha y su estado.
+                Solicitudes de los centros al catálogo común, con la fecha, el centro, el tipo, el
+                pedido y su estado.
               </caption>
               <thead>
                 <tr>
-                  <th scope="col" appOrdenable [tabla]="tabla" columna="nombre">Concepto pedido</th>
-                  <th scope="col" appOrdenable [tabla]="tabla" columna="tipo">Tipo</th>
+                  <th scope="col" appOrdenable [tabla]="tabla" columna="fecha">Recibida</th>
                   <th scope="col" appOrdenable [tabla]="tabla" columna="centro">Centro</th>
-                  <th scope="col" appOrdenable [tabla]="tabla" columna="fecha">Pedida el</th>
+                  <th scope="col" appOrdenable [tabla]="tabla" columna="tipo">Tipo</th>
+                  <th scope="col" appOrdenable [tabla]="tabla" columna="nombre">Pedido</th>
                   <th scope="col" appOrdenable [tabla]="tabla" columna="estado">Estado</th>
                   <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
                 </tr>
@@ -276,17 +276,21 @@
               <tbody>
                 @for (solicitud of tabla.visibles(); track solicitud.id) {
                   <tr [class.fila--revocada]="solicitud.estado === 'RECHAZADA'">
+                    <td>{{ formatearInstante(solicitud.createdAt) ?? 'Sin fecha' }}</td>
+                    <td>{{ nombreDeCentro(solicitud) }}</td>
+                    <td>{{ etiquetaDeTipo(solicitud.tipo) }}</td>
                     <th scope="row">
                       {{ solicitud.nombrePropuesto }}
                       @if (solicitud.codigoPropuesto) {
                         ({{ solicitud.codigoPropuesto }})
                       }
                     </th>
-                    <td>{{ etiquetaDeTipo(solicitud.tipo) }}</td>
-                    <td>{{ nombreDeCentro(solicitud) }}</td>
-                    <td>{{ formatearInstante(solicitud.createdAt) ?? 'Sin fecha' }}</td>
                     <td>
-                      <span class="marca-estado">{{ etiquetaDeEstado(solicitud.estado) }}</span>
+                      <span
+                        class="marca-estado"
+                        [class]="'marca-estado ' + claseDeEstado(solicitud.estado)"
+                        >{{ etiquetaDeEstado(solicitud.estado) }}</span
+                      >
                     </td>
                     <td class="acciones-fila">
                       <button
@@ -309,7 +313,7 @@
             <app-paginacion
               [paginaActual]="tabla.pagina()"
               [totalPaginas]="tabla.totalPaginas()"
-              etiqueta="Paginas de solicitudes"
+              etiqueta="Páginas de solicitudes"
               (cambioDePagina)="tabla.irA($event)"
             />
           </div>

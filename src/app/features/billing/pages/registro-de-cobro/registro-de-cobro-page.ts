@@ -21,6 +21,7 @@ import {
 } from '../../models/dinero';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { CabeceraDePersona } from '../cuenta-corriente/cabecera-de-persona/cabecera-de-persona';
 
 /** Un medio de pago que se esta cargando. `id` es solo para el `track` del `@for`. */
 interface LineaDeMedio {
@@ -93,9 +94,9 @@ type EstadoDeuda =
  */
 @Component({
   selector: 'app-registro-de-cobro-page',
-  imports: [Ayuda, RouterLink],
+  imports: [Ayuda, CabeceraDePersona, RouterLink],
   templateUrl: './registro-de-cobro-page.html',
-  styleUrl: '../../billing.css',
+  styleUrls: ['../../billing.css', '../cuenta-corriente/cuenta-corriente.css'],
 })
 export class RegistroDeCobroPage {
   private readonly diaDeLaSede = inject(DiaDeLaSede);

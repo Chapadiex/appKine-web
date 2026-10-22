@@ -43,6 +43,7 @@ import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-or
 import { Icono } from '../../../../shared/components/icono/icono';
 import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
 import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
+import { CabeceraDePersona } from './cabecera-de-persona/cabecera-de-persona';
 
 /** En cual de los tres estados esta el listado. No es paginado: el backend devuelve un array. */
 type EstadoCuenta =
@@ -98,6 +99,7 @@ type EstadoCuenta =
 @Component({
   selector: 'app-cuenta-corriente-page',
   imports: [
+    CabeceraDePersona,
     Ayuda,
     ColumnaOrdenable,
     Icono,
@@ -107,7 +109,7 @@ type EstadoCuenta =
     PermisoDirective,
   ],
   templateUrl: './cuenta-corriente-page.html',
-  styleUrl: '../../billing.css',
+  styleUrls: ['../../billing.css', './cuenta-corriente.css'],
 })
 export class CuentaCorrientePage {
   private readonly diaDeLaSede = inject(DiaDeLaSede);

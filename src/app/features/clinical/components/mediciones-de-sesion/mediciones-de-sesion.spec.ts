@@ -93,7 +93,7 @@ describe('MedicionesDeSesion', () => {
     elegir(fixture, '#medicion-definicion', '11');
     elegir(fixture, '#medicion-lado', 'IZQUIERDA');
     escribir(fixture, '#medicion-valor', '97,5');
-    apretar(fixture, 'Registrar la medicion');
+    apretar(fixture, 'Registrar la medición');
 
     const pedido = httpMock.expectOne((p) => p.method === 'PUT' && p.url === `${BASE}/11`);
     expect(pedido.request.params.get('lateralidad')).toBe('IZQUIERDA');
@@ -113,7 +113,7 @@ describe('MedicionesDeSesion', () => {
     )[1] as HTMLInputElement;
     no.click();
     fixture.detectChanges();
-    apretar(fixture, 'Registrar la medicion');
+    apretar(fixture, 'Registrar la medición');
     const booleana = httpMock.expectOne((p) => p.method === 'PUT' && p.url === `${BASE}/12`);
     expect(booleana.request.body).toEqual({ valorBooleano: false });
     booleana.flush({ id: 2 });
@@ -122,7 +122,7 @@ describe('MedicionesDeSesion', () => {
     elegir(fixture, '#medicion-definicion', '13');
     escribir(fixture, '#medicion-valor', 'claudicante');
     escribir(fixture, '#medicion-nota', 'en pasillo');
-    apretar(fixture, 'Registrar la medicion');
+    apretar(fixture, 'Registrar la medición');
     const textual = httpMock.expectOne((p) => p.method === 'PUT' && p.url === `${BASE}/13`);
     expect(textual.request.params.get('lateralidad')).toBe('NO_APLICA');
     expect(textual.request.body).toEqual({ valorTexto: 'claudicante', nota: 'en pasillo' });
@@ -133,12 +133,12 @@ describe('MedicionesDeSesion', () => {
   it('sin valor no manda nada y dice que falta', async () => {
     const fixture = await montar();
 
-    apretar(fixture, 'Registrar la medicion');
+    apretar(fixture, 'Registrar la medición');
     expect(texto(fixture)).toContain('Elegi que medida');
 
     elegir(fixture, '#medicion-definicion', '11');
     escribir(fixture, '#medicion-valor', 'mucho');
-    apretar(fixture, 'Registrar la medicion');
+    apretar(fixture, 'Registrar la medición');
     expect(texto(fixture)).toContain('no es un numero');
     httpMock.expectNone((p) => p.method === 'PUT');
   });
@@ -149,7 +149,7 @@ describe('MedicionesDeSesion', () => {
     elegir(fixture, '#medicion-definicion', '11');
     expect(texto(fixture)).toContain('Admite de 0 a 180 grados');
     escribir(fixture, '#medicion-valor', '200');
-    apretar(fixture, 'Registrar la medicion');
+    apretar(fixture, 'Registrar la medición');
     httpMock
       .expectOne((p) => p.method === 'PUT')
       .flush(
@@ -231,7 +231,7 @@ describe('MedicionesDeSesion', () => {
       );
     await estabilizar(fixture);
 
-    expect(texto(fixture)).toContain('No tenes permiso para consultar el catalogo de medidas');
+    expect(texto(fixture)).toContain('No tenés permiso para consultar el catálogo de medidas');
     expect(fixture.nativeElement.querySelector('[role="alert"]')).toBeNull();
     expect(fixture.nativeElement.querySelector('#medicion-definicion')).toBeNull();
   });
@@ -239,7 +239,7 @@ describe('MedicionesDeSesion', () => {
   it('sin sesion anterior lo dice, en vez de dejar la columna vacia sin explicacion', async () => {
     const fixture = await montar(true, { medidas: [] });
     expect(texto(fixture)).toContain('estas son las primeras mediciones');
-    expect(texto(fixture)).toContain('Todavia no hay mediciones');
+    expect(texto(fixture)).toContain('Todavía no hay mediciones');
   });
 
   it(

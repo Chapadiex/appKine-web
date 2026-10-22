@@ -36,6 +36,7 @@ import {
 import { SECCION_COBERTURAS, coberturaDelResumen } from '../../models/etiquetas-de-cobertura';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { CabeceraDePersona } from '../../components/cabecera-de-persona/cabecera-de-persona';
 
 /** Confirmacion abierta sobre la ficha. Solo una a la vez. */
 type TipoDeBaja = 'persona' | 'perfil';
@@ -105,6 +106,7 @@ interface ConteoPorCategoria {
   selector: 'app-ficha-de-persona-page',
   imports: [
     Ayuda,
+    CabeceraDePersona,
     RouterLink,
     ConfirmacionConMotivo,
     PermisoDirective,

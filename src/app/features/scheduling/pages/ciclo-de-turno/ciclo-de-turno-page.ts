@@ -23,6 +23,8 @@ import {
   fechaHoraEnZona,
   horarioSegunHistorial,
   textoDeEstado,
+  nombreDeEstado,
+  detalleDeEstado,
   textoDeEvento,
 } from '../../models/etiquetas-de-turno';
 import {
@@ -114,6 +116,8 @@ export class CicloDeTurnoPage {
   readonly fecha = input<string>('');
 
   protected readonly textoDeEstado = textoDeEstado;
+  protected readonly nombreDeEstado = nombreDeEstado;
+  protected readonly detalleDeEstado = detalleDeEstado;
   protected readonly textoDeEvento = textoDeEvento;
 
   protected readonly textoDeEventoDeRecepcion = textoDeEventoDeRecepcion;

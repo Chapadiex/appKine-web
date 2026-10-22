@@ -76,17 +76,17 @@ describe('CatalogoFinanciadoresPage', () => {
     expect(pedido.request.params.get('tipo')).toBe('PREPAGA');
     pedido.flush([]);
     await asentar(fixture);
-    expect(texto(fixture)).toContain('Ninguna entrada del catalogo coincide');
+    expect(texto(fixture)).toContain('Ninguna entrada del catálogo coincide');
   });
 
   it('da de alta un financiador y relee', async () => {
     const fixture = await montar();
-    boton(fixture, 'Agregar un financiador al catalogo')?.click();
+    boton(fixture, 'Nuevo financiador')?.click();
     fixture.detectChanges();
 
     // Vacio no manda nada.
     enviarFormulario(fixture);
-    expect(texto(fixture)).toContain('El codigo es obligatorio');
+    expect(texto(fixture)).toContain('El código es obligatorio');
     httpMock.expectNone((p) => p.method === 'POST');
 
     escribir(fixture, '#catalogo-financiador-codigo', 'IOSFA');

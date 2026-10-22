@@ -6,6 +6,22 @@
       centro: esa es <a routerLink="/organizacion/colaboradores">Colaboradores</a>, y una persona
       pasa de acá a esa cuando acepta.
     </p>
+    <p class="ayuda-contextual__subtitulo">Cómo funciona una invitación</p>
+    <p>
+      La persona recibe un correo con un enlace. <b>Puede no tener cuenta en AKINE</b>: si no la
+      tiene, la crea al aceptar, en el mismo paso, sin ningun correo de activacion aparte. El
+      vinculo nace <b>cuando acepta</b>, no cuando vos invitas.
+    </p>
+    <p>
+      Por eso <b>invitar no ocupa un lugar de tu plan y aceptar si</b>. Si tenes un solo lugar libre
+      y mandas cinco invitaciones, entra la primera que responda y las otras cuatro se van a
+      encontrar con que no hay lugar.
+    </p>
+    <p>
+      Si la persona <b>ya tiene cuenta</b> y solo querés vincularla, es mas directo
+      <a routerLink="/organizacion/colaboradores/nuevo">darla de alta</a>: queda vinculada en el
+      acto, sin esperar que responda.
+    </p>
   </app-ayuda>
   <div class="encabezado__acciones" *akinePermiso="permisoManage">
     <button type="button" class="boton" (click)="abrirAlta()">
@@ -15,35 +31,7 @@
   </div>
 </div>
 
-<p class="acciones">
-  <a class="boton boton--secundario" routerLink="/organizacion/colaboradores">
-    Ver los colaboradores
-  </a>
-</p>
-
-<!--
-  Las dos cosas que hay que saber ANTES de invitar. Van arriba y no escondidas: la primera evita
-  el reporte de bug mas probable del modulo y la segunda evita que alguien planifique
-  incorporaciones contando lugares que no reservo.
--->
-<section class="tarjeta nota-invitaciones" aria-labelledby="titulo-nota-invitaciones">
-  <h2 id="titulo-nota-invitaciones">Como funciona una invitacion</h2>
-  <p>
-    La persona recibe un correo con un enlace. <b>Puede no tener cuenta en AKINE</b>: si no la
-    tiene, la crea al aceptar, en el mismo paso, sin ningun correo de activacion aparte. El vinculo
-    nace <b>cuando acepta</b>, no cuando vos invitas.
-  </p>
-  <p>
-    Por eso <b>invitar no ocupa un lugar de tu plan y aceptar si</b>. Si tenes un solo lugar libre y
-    mandas cinco invitaciones, entra la primera que responda y las otras cuatro se van a encontrar
-    con que no hay lugar.
-  </p>
-  <p>
-    Si la persona <b>ya tiene cuenta</b> y solo querés vincularla, es mas directo
-    <a routerLink="/organizacion/colaboradores/nuevo">darla de alta</a>: queda vinculada en el acto,
-    sin esperar que responda.
-  </p>
-</section>
+<app-pestanas [pestanas]="pestanas" [etiqueta]="etiquetaDePestanas" />
 
 <div aria-live="polite">
   @if (exito(); as mensaje) {

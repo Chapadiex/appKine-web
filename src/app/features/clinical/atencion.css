@@ -39,19 +39,22 @@
 .escala {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--esp-3);
+  gap: var(--esp-2);
   margin-bottom: var(--esp-4);
 }
 
+/* 40 px y no los 32 del lienzo: se aprieta con el dedo en una tablet (WCAG 2.5.8). */
 .escala__paso {
-  min-width: 2.5rem;
-  padding: var(--esp-4) var(--esp-3);
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
   border: var(--borde-fino) solid var(--color-borde-control);
-  border-radius: var(--radio-md);
+  border-radius: var(--radio-sm);
   background: var(--color-superficie);
   color: var(--color-texto);
   font-family: inherit;
-  font-size: var(--tipo-base);
+  font-size: var(--tipo-sm);
+  font-weight: var(--peso-medio);
   font-variant-numeric: tabular-nums;
   cursor: pointer;
 }
@@ -65,13 +68,15 @@
 }
 
 .chip {
-  padding: var(--esp-4) var(--esp-6);
+  min-height: 2.25rem;
+  padding: var(--esp-2) var(--esp-6);
   border: var(--borde-fino) solid var(--color-borde-control);
   border-radius: var(--radio-pastilla);
   background: var(--color-superficie);
   color: var(--color-texto);
   font-family: inherit;
-  font-size: var(--tipo-md);
+  font-size: var(--tipo-xs);
+  font-weight: var(--peso-medio);
   cursor: pointer;
 }
 
@@ -81,12 +86,18 @@
  * `aria-pressed` es el estado real y de ahi sale el estilo: asi no hay una clase que pueda
  * quedar desincronizada de lo que anuncia el lector de pantalla.
  */
-.escala__paso[aria-pressed='true'],
-.chip[aria-pressed='true'] {
+.escala__paso[aria-pressed='true'] {
   border-color: var(--color-accion-fondo);
   background: var(--color-accion-fondo);
   color: var(--color-accion-texto);
   font-weight: var(--peso-semi);
+}
+
+/* El chip elegido va en azul claro, como en el lienzo. */
+.chip[aria-pressed='true'] {
+  border-color: var(--color-acento);
+  background: var(--color-acento-claro);
+  color: var(--color-acento);
 }
 
 .escala__paso:hover,
@@ -146,4 +157,524 @@
 /* En la comparacion de versiones, lo que cambio se dice con palabras y ademas se marca. */
 .cambio {
   font-weight: 600;
+}
+
+/* --- Lienzo de la atencion clinica (UX) ------------------------------------------------- */
+
+/* El enlace de vuelta, arriba del titulo: es la miga de pan del lienzo. */
+.miga {
+  margin: 0 0 var(--esp-3);
+  font-size: var(--tipo-xs);
+}
+
+.miga .enlace {
+  color: var(--color-texto-suave);
+  text-decoration: none;
+}
+
+.miga .enlace:hover {
+  color: var(--color-enlace);
+  text-decoration: underline;
+}
+
+/* La marca de estado al lado del titulo (En curso / Cerrada). */
+.titulo-con-ayuda > .marca-estado {
+  align-self: center;
+}
+
+/*
+ * La atencion: columna clinica y, al costado, los datos de la atencion.
+ *
+ * Una sola columna hasta que el contenedor mide ~56rem: en una tablet (768-1024 px con la barra
+ * lateral) dos columnas dejan los campos clinicos demasiado angostos. En una columna los datos de
+ * la atencion van arriba, que es el orden del DOM; en dos se corren a la derecha y quedan fijos.
+ */
+.atencion {
+  container-type: inline-size;
+}
+
+.atencion__grilla {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0 var(--esp-6);
+  align-items: start;
+}
+
+@container (min-width: 56rem) {
+  .atencion__grilla {
+    grid-template-columns: minmax(0, 7fr) minmax(17rem, 3fr);
+  }
+
+  .atencion__lateral {
+    grid-column: 2;
+    grid-row: 1;
+    position: sticky;
+    top: var(--esp-6);
+  }
+
+  .atencion__principal {
+    grid-column: 1;
+    grid-row: 1;
+  }
+}
+
+.atencion__lateral.tarjeta {
+  padding: var(--esp-6);
+}
+
+.atencion__lateral h2 {
+  margin: 0 0 var(--esp-5);
+  font-size: var(--tipo-sm);
+  font-weight: var(--peso-medio);
+  color: var(--color-texto-suave);
+}
+
+.atencion__lateral h3 {
+  margin: 0 0 var(--esp-4);
+  font-size: var(--tipo-sm);
+  font-weight: var(--peso-medio);
+}
+
+/* Pares dato/valor apilados: en la columna angosta un `auto 1fr` parte las etiquetas. */
+.datos-atencion {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: var(--esp-5);
+  margin: 0 0 var(--esp-6);
+  font-size: var(--tipo-sm);
+}
+
+.datos-atencion dt {
+  font-size: var(--tipo-2xs);
+  color: var(--color-texto-suave);
+}
+
+.datos-atencion dd {
+  margin: 0;
+  font-weight: var(--peso-medio);
+}
+
+.separador {
+  margin: var(--esp-6) 0;
+  border: 0;
+  border-top: var(--borde-fino) solid var(--color-borde);
+}
+
+/*
+ * Pasos numerados de la atencion abierta (1 Evaluacion, 2 Examen fisico, 3 Tratamiento...).
+ *
+ * El numero sale de un contador CSS y no del texto: no lo lee el lector de pantalla ni cambia el
+ * nombre accesible de la seccion. Los bloques de mediciones y tratamientos suman su propio paso
+ * con la misma clase aunque son otro componente: el contador es del DOM, no del componente.
+ */
+.atencion__principal {
+  counter-reset: paso;
+}
+
+.paso {
+  counter-increment: paso;
+}
+
+.paso .paso__titulo {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-5);
+}
+
+.paso .paso__titulo::before {
+  content: counter(paso);
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  background: var(--color-accion-fondo);
+  color: var(--color-accion-texto);
+  font-size: var(--tipo-2xs);
+  font-weight: var(--peso-medio);
+}
+
+/* Lo que acompana al titulo del paso del lado derecho (el modo de la evaluacion). */
+.paso__extremo {
+  margin-left: auto;
+}
+
+/*
+ * Control segmentado sobre radios reales (Sesion rapida | Evaluacion completa, Vino | No vino).
+ *
+ * El `input` sigue siendo el control: se oculta a la vista pero no al teclado ni al lector, y el
+ * estado visual sale de `:checked`, no de una clase que pueda desincronizarse.
+ */
+.segmentado {
+  display: inline-flex;
+  flex-wrap: wrap;
+  min-width: 0;
+  margin: 0 0 var(--esp-6);
+  padding: 0;
+  border: var(--borde-fino) solid var(--color-borde-control);
+  border-radius: var(--radio-md);
+  overflow: hidden;
+}
+
+.paso__extremo.segmentado {
+  margin-bottom: 0;
+}
+
+.segmentado legend {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.segmentado__opcion {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.5rem;
+  padding: 0 var(--esp-6);
+  background: var(--color-superficie);
+  color: var(--color-texto);
+  font-size: var(--tipo-xs);
+  font-weight: var(--peso-medio);
+  cursor: pointer;
+}
+
+.segmentado__opcion + .segmentado__opcion {
+  border-left: var(--borde-fino) solid var(--color-borde-control);
+}
+
+.segmentado__opcion input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.segmentado__opcion:has(input:checked) {
+  background: var(--color-acento-claro);
+  color: var(--color-acento);
+}
+
+.segmentado__opcion:has(input:focus-visible) {
+  outline: var(--foco-grosor) solid var(--color-foco);
+  outline-offset: calc(-1 * var(--foco-grosor));
+}
+
+/* Un grupo de campos sin marco (EVA, Evolucion), con el rotulo chico del lienzo. */
+.grupo-plano {
+  min-width: 0;
+  margin: 0 0 var(--esp-6);
+  padding: 0;
+  border: 0;
+}
+
+.grupo-plano > legend {
+  margin: 0 0 var(--esp-3);
+  padding: 0;
+  font-size: var(--tipo-sm);
+  font-weight: var(--peso-semi);
+}
+
+/* El aviso de lo irreversible: siempre a la vista, arriba del boton que lo dispara. */
+.aviso-irreversible {
+  margin: 0 0 var(--esp-6);
+  padding: var(--esp-4) var(--esp-5);
+  border-radius: var(--radio-md);
+  background: var(--color-acento-claro);
+  color: var(--color-texto);
+  font-size: var(--tipo-xs);
+}
+
+/* Barra de pie de una tarjeta: nota a la izquierda, acciones a la derecha. */
+.pie-tarjeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--esp-4);
+  margin-top: var(--esp-6);
+  padding-top: var(--esp-5);
+  border-top: var(--borde-fino) solid var(--color-borde);
+}
+
+.pie-tarjeta__nota {
+  margin: 0 auto 0 0;
+  font-size: var(--tipo-2xs);
+  color: var(--color-texto-suave);
+}
+
+.pie-tarjeta .ayuda,
+.pie-tarjeta .estado {
+  margin: 0;
+}
+
+/* Formularios angostos (iniciar sin turno, politica, caso antes de iniciar): ~860 px. */
+.tarjeta--angosta {
+  max-width: 54rem;
+}
+
+/* Elegir entre pocas opciones grandes (el caso antes de iniciar, el caso destino). */
+.opciones-tarjeta {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+  gap: var(--esp-4);
+  min-width: 0;
+  margin: 0 0 var(--esp-6);
+  padding: 0;
+  border: 0;
+}
+
+.opciones-tarjeta > legend {
+  margin-bottom: var(--esp-4);
+  padding: 0;
+  font-size: var(--tipo-sm);
+  font-weight: var(--peso-semi);
+}
+
+.opciones-tarjeta .opcion-radio {
+  margin: 0;
+  min-height: 3rem;
+  padding: var(--esp-4) var(--esp-5);
+  border: var(--borde-fino) solid var(--color-borde);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie);
+  cursor: pointer;
+}
+
+.opciones-tarjeta .opcion-radio:has(input:checked) {
+  border-color: var(--color-acento);
+  background: var(--color-acento-claro);
+}
+
+/* La persona elegida en "Atender sin turno": iniciales y la accion para cambiarla. */
+.persona-elegida {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--esp-5);
+  margin: 0 0 var(--esp-6);
+  padding: var(--esp-5) var(--esp-6);
+  border: var(--borde-fino) solid var(--color-borde);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie-atenuada);
+}
+
+.persona-elegida__iniciales {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: var(--color-acento-claro);
+  color: var(--color-acento);
+  font-size: var(--tipo-2xs);
+  font-weight: var(--peso-medio);
+}
+
+.persona-elegida__nombre {
+  flex: 1;
+  font-weight: var(--peso-medio);
+}
+
+/* Las personas que coinciden con la busqueda: filas, no botones apilados sueltos. */
+.lista-candidatas {
+  margin: 0 0 var(--esp-6);
+  padding: 0;
+  list-style: none;
+  border: var(--borde-fino) solid var(--color-borde);
+  border-radius: var(--radio-md);
+  overflow: hidden;
+}
+
+.lista-candidatas li + li {
+  border-top: var(--borde-fino) solid var(--color-borde-sutil);
+}
+
+.lista-candidatas button {
+  width: 100%;
+  min-height: 2.75rem;
+  padding: var(--esp-4) var(--esp-6);
+  border: 0;
+  background: var(--color-superficie);
+  color: var(--color-texto);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.lista-candidatas button:hover {
+  background: var(--color-superficie-sutil);
+}
+
+.lista-candidatas button:focus-visible {
+  outline: var(--foco-grosor) solid var(--color-foco);
+  outline-offset: calc(-1 * var(--foco-grosor));
+}
+
+/* Franja informativa (la ventana de enmienda): fondo azul claro, como en el lienzo. */
+.franja-info {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--esp-3) var(--esp-6);
+  margin: 0 0 var(--esp-6);
+  padding: var(--esp-4) var(--esp-5);
+  border-radius: var(--radio-md);
+  background: var(--color-acento-claro);
+  color: var(--color-texto);
+  font-size: var(--tipo-xs);
+}
+
+.franja-info > .enlace {
+  margin-left: auto;
+}
+
+/* Versiones: la lista a la izquierda y la comparacion a la derecha cuando entran. */
+.versiones {
+  container-type: inline-size;
+}
+
+.versiones__grilla {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0 var(--esp-6);
+  align-items: start;
+}
+
+@container (min-width: 52rem) {
+  .versiones__grilla {
+    grid-template-columns: minmax(15rem, 1fr) minmax(0, 3fr);
+  }
+
+  .versiones__lista {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .versiones__detalle {
+    grid-column: 2;
+    grid-row: 1;
+  }
+}
+
+.version-item {
+  border-bottom: var(--borde-fino) solid var(--color-borde-sutil);
+}
+
+.version-item:last-child {
+  border-bottom: 0;
+}
+
+.version-item > summary {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-1);
+  padding: var(--esp-5) 0;
+  cursor: pointer;
+}
+
+.version-item[open] > summary {
+  color: var(--color-acento);
+}
+
+.version-item .detalle {
+  margin-bottom: var(--esp-5);
+}
+
+.version-item__meta {
+  font-size: var(--tipo-2xs);
+  color: var(--color-texto-suave);
+}
+
+/* "Version anterior" y "Version posterior", uno al lado del otro. */
+.comparar-versiones {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--esp-5);
+}
+
+@media (max-width: 30rem) {
+  .comparar-versiones {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Encabezado de tarjeta con acciones a la derecha (participantes de la clase). */
+.encabezado-tarjeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--esp-4);
+  margin: 0 0 var(--esp-6);
+}
+
+.tarjeta .encabezado-tarjeta h2 {
+  margin: 0;
+}
+
+.encabezado-tarjeta > .acciones {
+  margin: 0 0 0 auto;
+}
+
+.lista-plana {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lista-plana > li {
+  padding: var(--esp-5) 0;
+  border-bottom: var(--borde-fino) solid var(--color-borde-sutil);
+}
+
+.lista-plana > li:last-child {
+  border-bottom: 0;
+}
+
+.lista-plana p {
+  margin: 0 0 var(--esp-3);
+}
+
+/* Campo de busqueda con su boton al lado (Atender sin turno). */
+.busqueda-fila {
+  display: flex;
+  gap: var(--esp-4);
+}
+
+.busqueda-fila input {
+  flex: 1;
+  min-width: 0;
+}
+
+/* En la comparacion, lo que cambio: lo anterior tachado y lo nuevo resaltado, ademas de "Cambió". */
+.valor-anterior {
+  color: var(--color-peligro-texto);
+  text-decoration: line-through;
+}
+
+.valor-nuevo {
+  background: var(--color-exito-fondo);
+  color: var(--color-exito-texto);
+}
+
+.politica__dias {
+  align-items: center;
+}
+
+.busqueda-fila.politica__dias input {
+  flex: 0 0 7rem;
+}
+
+.politica__dias .ayuda {
+  margin: 0;
 }

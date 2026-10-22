@@ -79,7 +79,7 @@ const PAGINA_DE_MOVIMIENTOS = 50;
   selector: 'app-caja-page',
   imports: [Ayuda, RouterLink],
   templateUrl: './caja-page.html',
-  styleUrl: '../../billing.css',
+  styleUrls: ['../../billing.css', '../../economia.css'],
 })
 export class CajaPage {
   private readonly diaDeLaSede = inject(DiaDeLaSede);

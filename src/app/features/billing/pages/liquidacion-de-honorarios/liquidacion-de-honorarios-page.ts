@@ -69,7 +69,7 @@ type EstadoBorrador =
   selector: 'app-liquidacion-de-honorarios-page',
   imports: [Ayuda, ReactiveFormsModule, RouterLink],
   templateUrl: './liquidacion-de-honorarios-page.html',
-  styleUrl: '../../billing.css',
+  styleUrls: ['../../billing.css', '../../economia.css'],
 })
 export class LiquidacionDeHonorariosPage {
   private readonly api = inject(EgresosApi);

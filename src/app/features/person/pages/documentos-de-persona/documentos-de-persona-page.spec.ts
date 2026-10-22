@@ -180,7 +180,7 @@ describe('DocumentosDePersonaPage', () => {
     apretar(fixture, 'Subir');
 
     httpMock.expectNone(esSubida());
-    expect(texto(fixture)).toContain('Elegi la categoria del documento');
+    expect(texto(fixture)).toContain('Elegí la categoría del documento');
   });
 
   it('un archivo rechazado por TAMANO no dice que el formato este mal', async () => {

@@ -1,18 +1,26 @@
-<div class="titulo-con-ayuda">
-  <h1>Historia clinica</h1>
-  <app-ayuda titulo="Sobre esta pantalla">
+<!--
+  La historia es una pestaña de la ficha (UX-01): la cabecera de la persona arriba, con el nombre
+  como titulo. El nombre y el documento salen de la propia historia, que solo llega despues del
+  motivo declarado: antes no se muestra nada de la persona que no estuviera ya en la URL.
+-->
+<app-cabecera-de-persona
+  [personaId]="personaIdTexto()"
+  [nombreComoTitulo]="true"
+  [nombreAlternativo]="historia()?.personaNombreCompleto || 'Historia clínica'"
+  [documentoAlternativo]="historia()?.personaDocumento || null"
+  [esPaciente]="true"
+>
+  <app-ayuda cabeceraAyuda titulo="Sobre esta pantalla">
     <p>
-      La historia clinica es de la persona en la organizacion. Reune lo que se registro en cada caso
-      y en cada sesion, y nada de lo escrito se borra: se enmienda.
+      La historia clínica es de la persona en la organización. Reúne lo que se registró en cada caso
+      y en cada sesión, y nada de lo escrito se borra: se enmienda.
     </p>
   </app-ayuda>
-</div>
-
-<p><a class="enlace" [routerLink]="rutaFicha()">Volver a la ficha de la persona</a></p>
+</app-cabecera-de-persona>
 
 @switch (estado().tipo) {
   @case ('cargando') {
-    <p class="estado estado--cargando" role="status">Cargando la historia clinica…</p>
+    <p class="estado estado--cargando" role="status">Cargando la historia clínica…</p>
   }
 
   @case ('requiere-justificacion') {
@@ -21,7 +29,7 @@
 
   @case ('sin-historia') {
     <section class="tarjeta" aria-labelledby="titulo-sin-historia">
-      <h2 id="titulo-sin-historia">Todavia no tiene historia clinica</h2>
+      <h2 id="titulo-sin-historia">Todavía no tiene historia clínica</h2>
       <p class="estado estado--vacio">
         Esta persona no tiene historia clinica en la organizacion. Se abre sola con la primera
         sesion, o se puede abrir ahora para cargar antecedentes o adjuntos antes de atenderla.
@@ -43,7 +51,7 @@
 
   @case ('error') {
     <section class="tarjeta" role="alert" aria-labelledby="titulo-error">
-      <h2 id="titulo-error">No se pudo abrir la historia clinica</h2>
+      <h2 id="titulo-error">No se pudo abrir la historia clínica</h2>
       <p class="estado estado--error">{{ error()?.mensaje }}</p>
       @if (error()?.causa !== 'sin-permiso' && error()?.causa !== 'sin-contexto') {
         <div class="acciones">
@@ -58,7 +66,7 @@
   @case ('lista') {
     @if (historia(); as hc) {
       <section class="tarjeta" aria-labelledby="titulo-paciente">
-        <h2 id="titulo-paciente">{{ hc.personaNombreCompleto }}</h2>
+        <h2 id="titulo-paciente">Historia clínica</h2>
         <dl class="detalle">
           @if (hc.personaDocumento) {
             <dt>Documento</dt>
@@ -71,30 +79,35 @@
             @if (justificacion(); as motivo) {
               Con motivo declarado: «{{ motivo }}»
             } @else {
-              Por relacion asistencial
+              Por relación asistencial
             }
           </dd>
         </dl>
 
-        <h3>Resumen clinico</h3>
-        @if (hc.resumen) {
-          <p class="historia__cuerpo">{{ hc.resumen }}</p>
-        } @else {
-          <p class="estado estado--vacio">Sin resumen cargado.</p>
-        }
-
-        <h3>Antecedentes vigentes</h3>
-        @if (hc.antecedentes?.length) {
-          <ul class="historia__antecedentes">
-            @for (antecedente of hc.antecedentes; track antecedente.id) {
-              <li>
-                <b>{{ rotuloDeAntecedente(antecedente) }}:</b> {{ antecedente.descripcion }}
-              </li>
+        <div class="historia__resumen">
+          <div>
+            <h3>Resumen clínico</h3>
+            @if (hc.resumen) {
+              <p class="historia__cuerpo">{{ hc.resumen }}</p>
+            } @else {
+              <p class="estado estado--vacio">Sin resumen cargado.</p>
             }
-          </ul>
-        } @else {
-          <p class="estado estado--vacio">Sin antecedentes registrados.</p>
-        }
+          </div>
+          <div>
+            <h3>Antecedentes vigentes</h3>
+            @if (hc.antecedentes?.length) {
+              <ul class="historia__antecedentes">
+                @for (antecedente of hc.antecedentes; track antecedente.id) {
+                  <li>
+                    <b>{{ rotuloDeAntecedente(antecedente) }}:</b> {{ antecedente.descripcion }}
+                  </li>
+                }
+              </ul>
+            } @else {
+              <p class="estado estado--vacio">Sin antecedentes registrados.</p>
+            }
+          </div>
+        </div>
       </section>
 
       <app-casos-de-la-historia [historiaClinicaId]="hc.id!" (cambiaron)="huboCambios()" />

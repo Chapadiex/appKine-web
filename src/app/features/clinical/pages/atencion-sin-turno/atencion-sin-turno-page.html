@@ -1,47 +1,48 @@
+<p class="miga">
+  <a class="enlace" routerLink="/agenda/recepcion">Volver a la recepción del día</a>
+</p>
+
 <div class="titulo-con-ayuda">
   <h1>Atender sin turno</h1>
   <app-ayuda titulo="Sobre esta pantalla">
     <p>
-      Para un paciente que se atiende sin reserva. No ocupa ni libera agenda: abre la atencion
-      clinica directamente, y la atiende quien la inicia. El motivo es obligatorio, porque sin turno
-      nada mas explica por que el paciente estaba aca.
+      Para un paciente que se atiende sin reserva, por ejemplo con dolor agudo. No ocupa ni libera
+      agenda: abre la atención clínica directamente, y la atiende quien la inicia. El motivo es
+      obligatorio, porque sin turno nada más explica por qué el paciente estaba acá.
     </p>
   </app-ayuda>
 </div>
 
-<p><a class="enlace" routerLink="/agenda/recepcion">Volver a la recepcion del dia</a></p>
-
-<section class="tarjeta" aria-labelledby="titulo-sin-turno-persona">
-  <h2 id="titulo-sin-turno-persona">A quien se atiende</h2>
+<section class="tarjeta tarjeta--angosta" aria-labelledby="titulo-sin-turno-persona">
+  <h2 id="titulo-sin-turno-persona">A quién se atiende</h2>
   @if (persona(); as elegida) {
-    <p>
-      <b>{{ elegida.apellido }}, {{ elegida.nombre }}</b>
-      <button type="button" class="boton boton--secundario" (click)="persona.set(null)">
+    <div class="persona-elegida">
+      <span class="persona-elegida__iniciales" aria-hidden="true">
+        {{ elegida.nombre?.charAt(0) }}{{ elegida.apellido?.charAt(0) }}
+      </span>
+      <b class="persona-elegida__nombre">{{ elegida.apellido }}, {{ elegida.nombre }}</b>
+      <button type="button" class="boton-texto" (click)="persona.set(null)">
         Elegir otra persona
       </button>
-    </p>
+    </div>
   } @else {
     <form (submit)="$event.preventDefault(); buscarPersona(busqueda.value)">
       <div class="campo">
-        <label for="sin-turno-persona">Documento, apellido, nombre o telefono</label>
-        <input #busqueda id="sin-turno-persona" type="search" autocomplete="off" />
-      </div>
-      <div class="acciones">
-        <button type="submit" class="boton boton--secundario">Buscar</button>
+        <label for="sin-turno-persona">Documento, apellido, nombre o teléfono</label>
+        <div class="busqueda-fila">
+          <input #busqueda id="sin-turno-persona" type="search" autocomplete="off" />
+          <button type="submit" class="boton boton--secundario">Buscar</button>
+        </div>
       </div>
     </form>
     @if (buscoPersonas() && candidatas().length === 0) {
-      <p class="estado estado--vacio">Nadie del padron coincide con la busqueda.</p>
+      <p class="estado estado--vacio">Nadie del padrón coincide con la búsqueda.</p>
     }
     @if (candidatas().length > 0) {
-      <ul>
+      <ul class="lista-candidatas">
         @for (candidata of candidatas(); track candidata.id) {
           <li>
-            <button
-              type="button"
-              class="boton boton--secundario"
-              (click)="elegirPersona(candidata)"
-            >
+            <button type="button" (click)="elegirPersona(candidata)">
               {{ candidata.apellido }}, {{ candidata.nombre }}
               @if (candidata.numeroDocumento) {
                 ({{ candidata.numeroDocumento }})
@@ -54,52 +55,53 @@
   }
 </section>
 
-<section class="tarjeta" aria-labelledby="titulo-sin-turno-atencion">
-  <h2 id="titulo-sin-turno-atencion">La atencion</h2>
-  <div class="campo">
-    <label for="sin-turno-oferta">Oferta</label>
-    <select id="sin-turno-oferta" (change)="elegirOferta($any($event.target).value)">
-      <option value="" [selected]="ofertaId() === null">Elegi una oferta</option>
-      @for (oferta of ofertas(); track oferta.id) {
-        <option [value]="oferta.id" [selected]="ofertaId() === oferta.id">
-          {{ oferta.nombreComercial }}
-        </option>
-      }
-    </select>
-  </div>
+<section class="tarjeta tarjeta--angosta" aria-labelledby="titulo-sin-turno-atencion">
+  <h2 id="titulo-sin-turno-atencion">La atención</h2>
 
-  <p class="ayuda">La atiende quien la inicia: vos.</p>
-
-  @if (persona() !== null) {
+  <div class="grilla-campos grilla-campos--dos">
     <div class="campo">
-      <label for="sin-turno-caso">
-        Caso clinico
-        @if (requiereCaso()) {
-          (obligatorio para esta oferta)
-        } @else {
-          (opcional)
-        }
-      </label>
-      <select id="sin-turno-caso" (change)="elegirCaso($any($event.target).value)">
-        <option value="" [selected]="casoId() === null" [disabled]="requiereCaso()">
-          Sin caso
-        </option>
-        @for (caso of casos(); track caso.id) {
-          <option [value]="caso.id" [selected]="casoId() === caso.id">
-            {{ rotuloDeCaso(caso) }}
+      <label for="sin-turno-oferta">Oferta</label>
+      <select id="sin-turno-oferta" (change)="elegirOferta($any($event.target).value)">
+        <option value="" [selected]="ofertaId() === null">Elegí una oferta</option>
+        @for (oferta of ofertas(); track oferta.id) {
+          <option [value]="oferta.id" [selected]="ofertaId() === oferta.id">
+            {{ oferta.nombreComercial }}
           </option>
         }
       </select>
-      @if (requiereCaso() && casos().length === 0 && persona()?.id; as personaId) {
-        <p class="ayuda">
-          El paciente no tiene casos activos.
-          <a class="enlace" [routerLink]="['/historia-clinica', 'personas', personaId]">
-            Abrir un caso en su historia clinica
-          </a>
-        </p>
-      }
     </div>
-  }
+
+    @if (persona() !== null) {
+      <div class="campo">
+        <label for="sin-turno-caso">
+          Caso clínico
+          @if (requiereCaso()) {
+            (obligatorio para esta oferta)
+          } @else {
+            (opcional)
+          }
+        </label>
+        <select id="sin-turno-caso" (change)="elegirCaso($any($event.target).value)">
+          <option value="" [selected]="casoId() === null" [disabled]="requiereCaso()">
+            Sin caso
+          </option>
+          @for (caso of casos(); track caso.id) {
+            <option [value]="caso.id" [selected]="casoId() === caso.id">
+              {{ rotuloDeCaso(caso) }}
+            </option>
+          }
+        </select>
+        @if (requiereCaso() && casos().length === 0 && persona()?.id; as personaId) {
+          <p class="ayuda">
+            El paciente no tiene casos activos.
+            <a class="enlace" [routerLink]="['/historia-clinica', 'personas', personaId]">
+              Abrir un caso en su historia clínica
+            </a>
+          </p>
+        }
+      </div>
+    }
+  </div>
 
   <div class="campo">
     <label for="sin-turno-motivo">Motivo (obligatorio)</label>
@@ -113,6 +115,11 @@
     ></textarea>
   </div>
 
+  <p class="ayuda">
+    Se registra como atención sin turno: no ocupa un hueco de la agenda. La atiende quien la inicia:
+    vos.
+  </p>
+
   <div aria-live="polite">
     @if (aviso()) {
       <p class="estado estado--error" role="alert">{{ aviso() }}</p>
@@ -122,9 +129,10 @@
     }
   </div>
 
-  <div class="acciones">
+  <div class="pie-tarjeta">
+    <a class="boton-texto" routerLink="/agenda/recepcion">Cancelar</a>
     <button type="button" class="boton" [disabled]="enviando()" (click)="atender()">
-      Iniciar la atencion
+      Iniciar atención
     </button>
   </div>
 </section>

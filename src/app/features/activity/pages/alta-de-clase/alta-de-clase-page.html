@@ -1,9 +1,9 @@
 <div class="titulo-con-ayuda">
-  <h1>Programar una clase</h1>
+  <h1>Programar clase</h1>
   <app-ayuda titulo="Sobre esta pantalla">
     <p>
-      Una clase es un evento grupal unico sobre una oferta grupal, con su cupo. No genera un turno
-      por persona: las inscripciones se hacen despues, desde el detalle de la clase. Cada clase se
+      Una clase es un evento grupal único sobre una oferta grupal, con su cupo. No genera un turno
+      por persona: las inscripciones se hacen después, desde el detalle de la clase. Cada clase se
       programa por separado. El box se puede elegir; si no se elige y la oferta lo necesita, el
       sistema toma uno libre.
     </p>
@@ -24,109 +24,75 @@
     </p>
   }
 
-  <div class="campo">
-    <label for="clase-oferta">Oferta grupal</label>
-    <select
-      id="clase-oferta"
-      formControlName="ofertaId"
-      [attr.aria-invalid]="invalido('ofertaId')"
-      [attr.aria-describedby]="invalido('ofertaId') ? 'clase-oferta-error' : null"
-    >
-      <option value="">Elegi una oferta</option>
-      @for (oferta of ofertas() ?? []; track oferta.id) {
-        <option [value]="oferta.id">{{ oferta.nombreComercial }}</option>
+  <div class="grilla-campos grilla-campos--dos">
+    <div class="campo">
+      <label for="clase-oferta">Oferta grupal</label>
+      <select
+        id="clase-oferta"
+        formControlName="ofertaId"
+        [attr.aria-invalid]="invalido('ofertaId')"
+        [attr.aria-describedby]="invalido('ofertaId') ? 'clase-oferta-error' : null"
+      >
+        <option value="">Elegi una oferta</option>
+        @for (oferta of ofertas() ?? []; track oferta.id) {
+          <option [value]="oferta.id">{{ oferta.nombreComercial }}</option>
+        }
+      </select>
+      @if (invalido('ofertaId')) {
+        <p class="estado estado--error" id="clase-oferta-error">Elegi la oferta de la clase.</p>
       }
-    </select>
-    @if (invalido('ofertaId')) {
-      <p class="estado estado--error" id="clase-oferta-error">Elegi la oferta de la clase.</p>
-    }
+    </div>
+    <div class="campo">
+      <label for="clase-titulo">Título (opcional)</label>
+      <input id="clase-titulo" type="text" maxlength="120" formControlName="titulo" />
+    </div>
   </div>
 
-  @if (exigeProfesional()) {
-    <div class="campo">
-      <label for="clase-profesional">Profesional a cargo</label>
-      <select id="clase-profesional" formControlName="profesionalId">
-        <option value="">Elegi un profesional</option>
-        @for (profesional of profesionales(); track profesional.membershipId) {
-          <option [value]="profesional.membershipId">{{ profesional.nombre }}</option>
-        }
-      </select>
-      <p class="ayuda">
-        La oferta exige profesional. Tiene que estar habilitado y atender en ese horario.
-      </p>
-    </div>
-  }
+  <div class="grilla-campos grilla-campos--tres">
+    @if (exigeProfesional()) {
+      <div class="campo">
+        <label for="clase-profesional">Profesional a cargo</label>
+        <select id="clase-profesional" formControlName="profesionalId">
+          <option value="">Elegi un profesional</option>
+          @for (profesional of profesionales(); track profesional.membershipId) {
+            <option [value]="profesional.membershipId">{{ profesional.nombre }}</option>
+          }
+        </select>
+        <p class="ayuda">
+          La oferta exige profesional. Tiene que estar habilitado y atender en ese horario.
+        </p>
+      </div>
+    }
 
-  @if (ofertaElegida(); as oferta) {
-    <div class="campo">
-      <label for="clase-espacio">Box</label>
-      <select
-        id="clase-espacio"
-        formControlName="espacioId"
-        [attr.aria-invalid]="errorDelServidor('espacioId') !== '' ? true : null"
-        [attr.aria-describedby]="
-          errorDelServidor('espacioId') !== ''
-            ? 'clase-espacio-ayuda clase-espacio-error'
-            : 'clase-espacio-ayuda'
-        "
-      >
-        <option value="">
-          {{ oferta.requiereEspacio ? 'Que el sistema elija uno libre' : 'Sin box' }}
-        </option>
-        @for (espacio of espacios(); track espacio.espacioId) {
-          <option [value]="espacio.espacioId">{{ espacio.nombre }}</option>
+    @if (ofertaElegida(); as oferta) {
+      <div class="campo">
+        <label for="clase-espacio">Box</label>
+        <select
+          id="clase-espacio"
+          formControlName="espacioId"
+          [attr.aria-invalid]="errorDelServidor('espacioId') !== '' ? true : null"
+          [attr.aria-describedby]="
+            errorDelServidor('espacioId') !== ''
+              ? 'clase-espacio-ayuda clase-espacio-error'
+              : 'clase-espacio-ayuda'
+          "
+        >
+          <option value="">
+            {{ oferta.requiereEspacio ? 'Que el sistema elija uno libre' : 'Sin box' }}
+          </option>
+          @for (espacio of espacios(); track espacio.espacioId) {
+            <option [value]="espacio.espacioId">{{ espacio.nombre }}</option>
+          }
+        </select>
+        <p class="ayuda" id="clase-espacio-ayuda">
+          Un box elegido se valida tal cual: tiene que estar habilitado para la oferta y libre en
+          ese horario. Si no lo esta, la clase no se programa en otro.
+        </p>
+        @if (errorDelServidor('espacioId'); as mensaje) {
+          <p class="estado estado--error" id="clase-espacio-error">{{ mensaje }}</p>
         }
-      </select>
-      <p class="ayuda" id="clase-espacio-ayuda">
-        Un box elegido se valida tal cual: tiene que estar habilitado para la oferta y libre en ese
-        horario. Si no lo esta, la clase no se programa en otro.
-      </p>
-      @if (errorDelServidor('espacioId'); as mensaje) {
-        <p class="estado estado--error" id="clase-espacio-error">{{ mensaje }}</p>
-      }
-    </div>
-  }
-
-  <div class="filtros">
-    <div class="campo">
-      <label for="clase-fecha">Fecha</label>
-      <input
-        id="clase-fecha"
-        type="date"
-        formControlName="fecha"
-        [attr.aria-invalid]="invalido('fecha')"
-        [attr.aria-describedby]="invalido('fecha') ? 'clase-fecha-error' : null"
-      />
-      @if (invalido('fecha')) {
-        <p class="estado estado--error" id="clase-fecha-error">Elegi la fecha de la clase.</p>
-      }
-    </div>
-    <div class="campo">
-      <label for="clase-inicio">Hora de inicio</label>
-      <input
-        id="clase-inicio"
-        type="time"
-        formControlName="horaInicio"
-        [attr.aria-invalid]="invalido('horaInicio')"
-        [attr.aria-describedby]="invalido('horaInicio') ? 'clase-inicio-error' : null"
-      />
-      @if (invalido('horaInicio')) {
-        <p class="estado estado--error" id="clase-inicio-error">Indica a que hora empieza.</p>
-      }
-    </div>
-    <div class="campo">
-      <label for="clase-fin">Hora de fin</label>
-      <input
-        id="clase-fin"
-        type="time"
-        formControlName="horaFin"
-        [attr.aria-invalid]="invalido('horaFin')"
-        [attr.aria-describedby]="invalido('horaFin') ? 'clase-fin-error' : null"
-      />
-      @if (invalido('horaFin')) {
-        <p class="estado estado--error" id="clase-fin-error">Indica a que hora termina.</p>
-      }
-    </div>
+      </div>
+    }
     <div class="campo">
       <label for="clase-capacidad">Cupo</label>
       <input
@@ -147,12 +113,52 @@
       }
     </div>
   </div>
-  <p class="ayuda">Fecha y horas en la zona de la sede.</p>
 
-  <div class="campo">
-    <label for="clase-titulo">Titulo (opcional)</label>
-    <input id="clase-titulo" type="text" maxlength="120" formControlName="titulo" />
-  </div>
+  <fieldset class="cuando">
+    <legend>Cuándo</legend>
+    <div class="grilla-campos grilla-campos--tres">
+      <div class="campo">
+        <label for="clase-fecha">Fecha</label>
+        <input
+          id="clase-fecha"
+          type="date"
+          formControlName="fecha"
+          [attr.aria-invalid]="invalido('fecha')"
+          [attr.aria-describedby]="invalido('fecha') ? 'clase-fecha-error' : null"
+        />
+        @if (invalido('fecha')) {
+          <p class="estado estado--error" id="clase-fecha-error">Elegi la fecha de la clase.</p>
+        }
+      </div>
+      <div class="campo">
+        <label for="clase-inicio">Hora de inicio</label>
+        <input
+          id="clase-inicio"
+          type="time"
+          formControlName="horaInicio"
+          [attr.aria-invalid]="invalido('horaInicio')"
+          [attr.aria-describedby]="invalido('horaInicio') ? 'clase-inicio-error' : null"
+        />
+        @if (invalido('horaInicio')) {
+          <p class="estado estado--error" id="clase-inicio-error">Indica a que hora empieza.</p>
+        }
+      </div>
+      <div class="campo">
+        <label for="clase-fin">Hora de fin</label>
+        <input
+          id="clase-fin"
+          type="time"
+          formControlName="horaFin"
+          [attr.aria-invalid]="invalido('horaFin')"
+          [attr.aria-describedby]="invalido('horaFin') ? 'clase-fin-error' : null"
+        />
+        @if (invalido('horaFin')) {
+          <p class="estado estado--error" id="clase-fin-error">Indica a que hora termina.</p>
+        }
+      </div>
+    </div>
+    <p class="ayuda">Fecha y horas en la zona de la sede.</p>
+  </fieldset>
 
   <div aria-live="polite">
     @if (error(); as fallo) {
@@ -168,7 +174,8 @@
     }
   </div>
 
-  <div class="acciones">
+  <div class="acciones acciones--pie">
+    <a class="boton boton--secundario" [routerLink]="RUTA_CLASES">Cancelar</a>
     <button type="submit" class="boton" [disabled]="enviando()">
       {{ enviando() ? 'Programando…' : 'Programar clase' }}
     </button>

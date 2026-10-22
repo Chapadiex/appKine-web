@@ -34,6 +34,7 @@ import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-or
 import { Icono } from '../../../../shared/components/icono/icono';
 import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
 import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
+import { CabeceraDePersona } from '../../components/cabecera-de-persona/cabecera-de-persona';
 
 /** Operacion abierta sobre una fila. Solo una a la vez. */
 type TipoAccion = 'editar' | 'baja';
@@ -99,6 +100,7 @@ type EstadoDeCoberturas =
 @Component({
   selector: 'app-coberturas-del-paciente-page',
   imports: [
+    CabeceraDePersona,
     Ayuda,
     ColumnaOrdenable,
     Filtros,

@@ -1,5 +1,10 @@
+<nav class="migas" aria-label="Ruta">
+  <a routerLink="/servicios/ofertas">Ofertas de la sede</a>
+  <span aria-hidden="true">/</span>
+</nav>
+
 <div class="titulo-con-ayuda">
-  <h1>Practicas de la oferta</h1>
+  <h1>Prácticas de la oferta</h1>
   <app-ayuda titulo="Sobre esta pantalla">
     <p>Que practicas del catalogo puede prestar esta oferta, y cual es la principal.</p>
     <p class="ayuda-contextual__subtitulo">Para que sirve esta lista</p>
@@ -14,15 +19,7 @@
   </app-ayuda>
 </div>
 
-<nav class="acciones" aria-label="Servicios y ofertas">
-  <a class="boton boton--secundario" routerLink="/servicios/ofertas">Ofertas de la sede</a>
-  <a
-    class="boton boton--secundario"
-    [routerLink]="['/servicios/ofertas', ofertaId, 'habilitaciones']"
-  >
-    Habilitaciones
-  </a>
-</nav>
+<app-pestanas [pestanas]="pestanasDeOferta" [etiqueta]="etiquetaDePestanas" />
 
 @switch (estado().tipo) {
   @case ('cargando') {

@@ -26,7 +26,7 @@ test.describe('Catalogo clinico contra el backend real', () => {
     const nombre = `Especialidad propia ${sufijo}`;
 
     await navegar(page, '/catalogo/especialidades');
-    await expect(page.getByRole('heading', { name: 'Especialidades', level: 1 })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Catálogo clínico', level: 1 })).toBeVisible();
     await page.getByRole('button', { name: 'Dar de alta una especialidad de este centro' }).click();
     await page.getByLabel('Codigo', { exact: true }).fill(`E2E_PROPIA_${sufijo}`);
     await page.getByLabel('Nombre', { exact: true }).fill(nombre);
@@ -80,7 +80,7 @@ test.describe('Catalogo clinico contra el backend real', () => {
     try {
       await navegar(plataforma, '/plataforma/solicitudes');
       await expect(
-        plataforma.getByRole('heading', { name: 'Solicitudes de catalogo', level: 1 }),
+        plataforma.getByRole('heading', { name: 'Solicitudes de catálogo', level: 1 }),
       ).toBeVisible();
       // RNF-M01-005: el centro que pidio, por su nombre y no por su organizationId.
       const filaDelPedido = plataforma.getByRole('row').filter({ hasText: nombre });
@@ -110,7 +110,7 @@ test.describe('Catalogo clinico contra el backend real', () => {
     // Se sale y se vuelve para que la pantalla relea: dos `navegar` seguidos sin esperar dejan al
     // router cancelar el primero y tomar el segundo como "misma URL", que no recarga nada.
     await navegar(page, '/catalogo/especialidades');
-    await expect(page.getByRole('heading', { name: 'Especialidades', level: 1 })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Catálogo clínico', level: 1 })).toBeVisible();
     const relectura = page.waitForResponse(
       (r) =>
         r.request().method() === 'GET' &&

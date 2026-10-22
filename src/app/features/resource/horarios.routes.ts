@@ -78,6 +78,8 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./pages/calendario/calendario-sede-page').then((m) => m.CalendarioSedePage),
     title: 'AKINE - Horario general y feriados de la sede',
+    // Horario general y feriados van lado a lado: en el ancho de lectura se apilan.
+    data: { [DATA_ANCHO]: ANCHO_AMPLIO },
   },
   {
     path: '',

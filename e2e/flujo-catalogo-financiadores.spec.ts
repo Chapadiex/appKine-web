@@ -33,10 +33,10 @@ test.describe('Catalogo global de financiadores contra el backend real', () => {
     try {
       await navegar(plataforma, '/plataforma/catalogo-financiadores');
       await expect(
-        plataforma.getByRole('heading', { name: 'Catalogo de financiadores', level: 1 }),
+        plataforma.getByRole('heading', { name: 'Catálogo de financiadores', level: 1 }),
       ).toBeVisible();
-      await plataforma.getByRole('button', { name: 'Agregar un financiador al catalogo' }).click();
-      await plataforma.getByLabel('Codigo', { exact: true }).fill(codigo);
+      await plataforma.getByRole('button', { name: 'Nuevo financiador' }).click();
+      await plataforma.getByLabel('Código', { exact: true }).fill(codigo);
       await plataforma.getByLabel('Nombre', { exact: true }).fill(nombre);
       await plataforma.getByLabel('Tipo de financiador').selectOption({ value: 'OBRA_SOCIAL' });
       const alta = respuestaDe(plataforma, 'POST', /\/platform\/catalogo-financiadores$/);
@@ -49,7 +49,7 @@ test.describe('Catalogo global de financiadores contra el backend real', () => {
       await plataforma
         .getByRole('button', { name: `Agregar un plan a ${nombre}`, exact: true })
         .click();
-      await plataforma.getByLabel('Codigo del plan').fill('PLAN-A');
+      await plataforma.getByLabel('Código del plan').fill('PLAN-A');
       await plataforma.getByLabel('Nombre del plan').fill(`Plan A ${sufijo}`);
       await plataforma.getByLabel('Vigente desde').fill(fechaLocal(centro.timezone));
       const plan = respuestaDe(plataforma, 'POST', /\/catalogo-financiadores\/\d+\/planes$/);
@@ -65,11 +65,11 @@ test.describe('Catalogo global de financiadores contra el backend real', () => {
     // --- El centro lo agrega desde su pantalla -------------------------------------------------
     await ingresar(page, centro);
     await navegar(page, '/contratacion/financiadores');
-    await page.getByRole('link', { name: 'Agregar desde el catalogo' }).click();
+    await page.getByRole('link', { name: 'Agregar desde el catálogo' }).click();
     await expect(
-      page.getByRole('heading', { name: 'Catalogo de financiadores', level: 1 }),
+      page.getByRole('heading', { name: 'Catálogo de financiadores', level: 1 }),
     ).toBeVisible();
-    await page.getByLabel('Nombre, codigo o CUIT').fill(nombre);
+    await page.getByLabel('Nombre, código o CUIT').fill(nombre);
     await page.getByRole('button', { name: 'Buscar', exact: true }).click();
     const fila = page.getByRole('row').filter({ hasText: nombre });
     await expect(fila).toHaveCount(1);
@@ -110,7 +110,7 @@ test.describe('Catalogo global de financiadores contra el backend real', () => {
 
     // El catalogo ya la marca como agregada y enlaza a la copia.
     await navegar(page, '/contratacion/financiadores/catalogo');
-    await page.getByLabel('Nombre, codigo o CUIT').fill(nombre);
+    await page.getByLabel('Nombre, código o CUIT').fill(nombre);
     await page.getByRole('button', { name: 'Buscar', exact: true }).click();
     await expect(fila.getByText('Ya agregado')).toBeVisible();
     await expect(fila.getByRole('link', { name: 'Ver la copia del centro' })).toHaveAttribute(
@@ -123,7 +123,7 @@ test.describe('Catalogo global de financiadores contra el backend real', () => {
     await page.getByLabel('Buscar', { exact: true }).fill(nombre);
     await page.getByLabel('Buscar', { exact: true }).press('Enter');
     await expect(
-      page.getByRole('row', { name: new RegExp(nombre) }).getByText('Del catalogo'),
+      page.getByRole('row', { name: new RegExp(nombre) }).getByText('Del catálogo'),
     ).toBeVisible();
   });
 });

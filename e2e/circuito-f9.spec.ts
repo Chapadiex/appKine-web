@@ -252,7 +252,7 @@ test.describe('Circuito de F9 de punta a punta contra el backend real', () => {
     expect(pagada).toEqual(expect.objectContaining({ estado: 'PAGADA', saldo: 0 }));
     await navegar(page, '/caja');
     await expect(page.getByRole('heading', { name: 'Caja abierta' })).toBeVisible();
-    await expect(dato(page, 'Deberia haber en el cajon')).toContainText('16.000,00');
+    await expect(dato(page, 'Debería haber en el cajón')).toContainText('16.000,00');
     await expect(movimientoDeCaja(page, `Cobro ${cobro.id}`)).toContainText('+ $');
     expect((await cajaAbierta(api, centro))?.saldoTeorico).toBe(INICIAL + PRECIO_DEL_PASE);
   });
@@ -355,7 +355,7 @@ test.describe('Circuito de F9 de punta a punta contra el backend real', () => {
     );
     expect(pagado).toEqual(expect.objectContaining({ estado: 'PAGADA', saldo: 0 }));
     await navegar(page, '/caja');
-    await expect(dato(page, 'Deberia haber en el cajon')).toContainText('4.000,00');
+    await expect(dato(page, 'Debería haber en el cajón')).toContainText('4.000,00');
     await expect(movimientoDeCaja(page, `Cobro ${cobro.id}`)).toContainText('+ $');
   });
 });
@@ -447,10 +447,10 @@ async function atenderYCerrar(
 
     // Derivar por pantalla: el unico Caso activo queda elegido.
     await fila.getByRole('button', { name: /Derivar a un caso/ }).click();
-    const tarjeta = pagina.getByRole('region', { name: /^Derivar a .* a un caso clinico$/ });
+    const tarjeta = pagina.getByRole('region', { name: /^Derivar a .* a un caso clínico$/ });
     await expect(tarjeta.getByRole('radio', { name: /Caso clinico 1/ })).toBeChecked();
     await tarjeta
-      .getByRole('textbox', { name: /Motivo de la derivacion/ })
+      .getByRole('textbox', { name: /Motivo de la derivación/ })
       .fill(motivoDeDerivacion);
     const derivar = respuestaDe(pagina, 'POST', /\/inscripciones\/\d+\/derivaciones$/);
     await tarjeta.getByRole('button', { name: 'Derivar al caso' }).click();
@@ -468,7 +468,7 @@ async function atenderYCerrar(
     await expect(fila).toContainText('Derivada al caso clinico 1');
 
     const inicio = respuestaDe(pagina, 'POST', /\/inscripciones\/\d+\/atencion-clinica$/);
-    await fila.getByRole('button', { name: /Iniciar atencion/ }).click();
+    await fila.getByRole('button', { name: /Iniciar atención/ }).click();
     let respuesta = await inicio;
     if (respuesta.status() === 403) {
       // Sin relacion asistencial el backend pide el motivo del acceso (DP-03).
@@ -484,13 +484,13 @@ async function atenderYCerrar(
     expect(atencion.casoId).toBe(casoId);
 
     await expect(pagina).toHaveURL(new RegExp(`/atencion/sesiones/${atencion.sesionId}$`));
-    await expect(pagina.getByRole('heading', { name: 'Atencion en curso' })).toBeVisible();
+    await expect(pagina.getByRole('heading', { name: 'Atención en curso' })).toBeVisible();
     await pagina.getByRole('radio', { name: 'Vino a la sesion' }).check();
     await pagina.getByLabel('Nota de cierre').fill('Trabajo grupal bien tolerado, sin dolor.');
     const cierre = respuestaDe(pagina, 'POST', /\/sesiones\/\d+\/cierre$/);
-    await pagina.getByRole('button', { name: 'Cerrar la atencion' }).click();
+    await pagina.getByRole('button', { name: 'Cerrar la atención' }).click();
     expect((await cierre).status()).toBe(200);
-    await expect(pagina.getByRole('heading', { name: 'Atencion cerrada' })).toBeVisible();
+    await expect(pagina.getByRole('heading', { name: 'Atención cerrada' })).toBeVisible();
     return atencion.sesionId;
   } finally {
     await contexto.close();

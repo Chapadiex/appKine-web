@@ -323,6 +323,18 @@ export class SolicitudesCatalogoPage {
     }
   }
 
+  /** Modificador de `.marca-estado`: pendiente es aviso, aprobada vigente, rechazada terminal. */
+  protected claseDeEstado(estado: CatalogoSolicitudResponse['estado']): string {
+    switch (estado) {
+      case 'APROBADA':
+        return 'marca-estado--activa';
+      case 'RECHAZADA':
+        return 'marca-estado--revocada';
+      default:
+        return 'marca-estado--suspendida';
+    }
+  }
+
   protected etiquetaDeEstado(estado: CatalogoSolicitudResponse['estado']): string {
     switch (estado) {
       case 'APROBADA':

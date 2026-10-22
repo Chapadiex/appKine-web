@@ -4,37 +4,40 @@
     <p>
       Excepciones al horario cargado en <b>{{ nombreDeLaSede() }}</b
       >. Un <b>cierre</b> recorta la disponibilidad —una ausencia, una licencia, un bloqueo— y una
-      <b>apertura</b> la habilita donde no la habia: es asi como un centro declara que atiende un
-      feriado o que suma una banda un sabado puntual.
+      <b>apertura</b> la habilita donde no la había: es así como un centro declara que atiende un
+      feriado o que suma una banda un sábado puntual.
+    </p>
+    <!--
+      Las dos convenciones que, si no se dicen, se descubren cargando mal una excepción: el fin de
+      fechas es exclusivo, y "sin profesional" es una decisión y no un dato que falte.
+    -->
+    <p class="ayuda-contextual__subtitulo">Dos cosas antes de cargar</p>
+    <p>
+      <b>El fin es exclusivo.</b> Un cierre de un solo día va del día D al día siguiente: el último
+      día cubierto es el anterior al fin. Poner la misma fecha en los dos campos cierra cero días.
+    </p>
+    <p>
+      <b>Sin profesional significa toda la sede</b>, no un dato faltante. Una excepción de sede
+      alcanza a todos los profesionales que atienden acá y se ve en la agenda de todos.
     </p>
   </app-ayuda>
+  @if (estado().tipo === 'listo') {
+    <div class="encabezado__acciones">
+      <button
+        type="button"
+        class="boton"
+        *akinePermiso="permisoManage"
+        (click)="abrirAlta()"
+        [disabled]="altaAbierta()"
+      >
+        <app-icono nombre="agregar" />
+        Cargar un cierre o una apertura
+      </button>
+    </div>
+  }
 </div>
 
-<p class="acciones">
-  <a class="enlace" [routerLink]="rutas.semanal">Horario semanal del profesional</a>
-  <a class="enlace" [routerLink]="rutas.calendario">Horario general y feriados de la sede</a>
-  <a class="enlace" [routerLink]="rutas.efectivo">Horario efectivo del profesional</a>
-</p>
-
-<!--
-  Las dos convenciones que, si no se dicen, se descubren cargando mal una excepcion: el fin de
-  fechas es exclusivo, y "sin profesional" es una decision y no un dato que falte.
--->
-<section class="tarjeta nota-servicio" aria-labelledby="titulo-nota-excepciones">
-  <h2 id="titulo-nota-excepciones">Dos cosas antes de cargar</h2>
-  <p>
-    <b>El fin es exclusivo.</b> Un cierre de un solo dia va del dia D al dia siguiente: el ultimo
-    dia cubierto es el anterior al fin. Poner la misma fecha en los dos campos cierra cero dias.
-  </p>
-  <p>
-    <b>Sin profesional significa toda la sede</b>, no un dato faltante. Una excepcion de sede
-    alcanza a todos los profesionales que atienden aca y se ve en la agenda de todos.
-  </p>
-</section>
-
-<section class="tarjeta" aria-labelledby="titulo-ventana">
-  <h2 id="titulo-ventana">Que periodo mirar</h2>
-
+<section class="tarjeta" aria-label="Período a mirar">
   <form id="form-ventana" [formGroup]="formularioVentana" (ngSubmit)="consultar()" novalidate>
     <!--
       Regla de filtros (plan §3.4): la ventana de fechas define la consulta y queda a la vista; a
@@ -121,13 +124,11 @@
   }
 </div>
 
-<section class="tarjeta" aria-labelledby="titulo-excepciones">
-  <h2 id="titulo-excepciones">Excepciones vigentes</h2>
-
+<section class="tarjeta" aria-label="Excepciones vigentes">
   <div aria-live="polite">
     @switch (estado().tipo) {
       @case ('inicial') {
-        <p class="estado estado--vacio">Elegi un periodo y consulta.</p>
+        <p class="estado estado--vacio">Elegí un período y consultá.</p>
       }
 
       @case ('cargando') {
@@ -153,18 +154,6 @@
       }
 
       @case ('listo') {
-        <p class="acciones">
-          <button
-            type="button"
-            class="boton"
-            *akinePermiso="permisoManage"
-            (click)="abrirAlta()"
-            [disabled]="altaAbierta()"
-          >
-            Cargar un cierre o una apertura
-          </button>
-        </p>
-
         <!--
           Modo lectura: los cierres y las aperturas se siguen listando enteros, con su alcance y
           su motivo. Un profesional necesita ver que su martes esta cerrado; lo que no puede es
@@ -514,11 +503,15 @@
             cual.
           </p>
         } @else {
-          <p class="ayuda">
-            {{ vigentes().length }} excepciones vigentes entre
-            {{ etiquetaDeFecha(ventanaConsultada()?.desde) }} y
-            {{ etiquetaDeFecha(ventanaConsultada()?.hasta) }} (exclusivo). Las dadas de baja no se
-            muestran: la fila sobrevive con su motivo y su autor.
+          <p class="tabla-pie">
+            <span>
+              {{ vigentes().length }} excepciones vigentes entre
+              {{ etiquetaDeFecha(ventanaConsultada()?.desde) }} y
+              {{ etiquetaDeFecha(ventanaConsultada()?.hasta) }} (exclusivo).
+            </span>
+            <span
+              >Las dadas de baja no se muestran: la fila sobrevive con su motivo y su autor.</span
+            >
           </p>
 
           <ul class="lista-excepciones">

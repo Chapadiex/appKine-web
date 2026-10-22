@@ -116,7 +116,7 @@ describe('PasesDePersonaPage', () => {
     async () => {
       const fixture = await montar();
       const texto = textoDe(fixture);
-      expect(texto).toContain('Pases de Gomez, Ana');
+      expect(texto).toContain('Gomez, Ana');
       expect(texto).toContain('5 de 8');
       expect(texto).toContain('Del 01/10/2026 al 29/11/2026');
       expect(texto).toContain('Activo');
@@ -127,7 +127,7 @@ describe('PasesDePersonaPage', () => {
 
   it('sin pases lo dice; solo ofrece productos vigentes para vender', async () => {
     const fixture = await montar([]);
-    expect(textoDe(fixture)).toContain('no compro ningun pase en esta sede');
+    expect(textoDe(fixture)).toContain('no compró ningún pase en esta sede');
     const opciones = [
       ...(fixture.nativeElement as HTMLElement).querySelectorAll('#vender-producto option'),
     ].map((o) => o.textContent?.replace(/\s+/g, ' ').trim());
@@ -252,7 +252,7 @@ describe('PasesDePersonaPage', () => {
       .flush({ status: 404 }, { status: 404, statusText: 'Not Found' });
     httpMock.expectOne((r) => r.url === `${BASE}/productos`).flush([]);
     await asentar(fixture);
-    expect(textoDe(fixture)).toContain('Pases de Persona #512');
+    expect(textoDe(fixture)).toContain('Persona #512');
     expect(textoDe(fixture)).toContain('No se pudieron leer los pases');
     clickear(fixture, 'Reintentar');
     responderPases();

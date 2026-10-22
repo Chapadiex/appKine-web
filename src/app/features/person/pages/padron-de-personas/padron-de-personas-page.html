@@ -1,5 +1,5 @@
 <div class="titulo-con-ayuda">
-  <h1>Padron de personas</h1>
+  <h1>Padrón de personas</h1>
   <app-ayuda titulo="Sobre esta pantalla">
     <p>
       Todas las personas registradas en la organizacion. Una persona <b>no es</b> un paciente:
@@ -38,8 +38,8 @@
 
 <section class="tarjeta" aria-labelledby="titulo-busqueda">
   <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
-    <h2 id="titulo-busqueda">Buscar en el padron</h2>
-    <app-ayuda titulo="Buscar en el padron">
+    <h2 id="titulo-busqueda">Buscar en el padrón</h2>
+    <app-ayuda titulo="Buscar en el padrón">
       <p>
         Antes de dar de alta a alguien, buscalo: un mismo documento no puede repetirse, y dos fichas
         de la misma persona hacen que su historia quede partida en dos.
@@ -93,7 +93,7 @@
     </div>
 
     <div class="campo">
-      <label for="padron-filtro-perfil">Perfil clinico</label>
+      <label for="padron-filtro-perfil">Perfil clínico</label>
       <select
         id="padron-filtro-perfil"
         name="padron-filtro-perfil"
@@ -109,7 +109,7 @@
 </section>
 
 @if (altaAbierta()) {
-  <section class="tarjeta" aria-labelledby="titulo-alta-persona">
+  <section class="tarjeta tarjeta--formulario" aria-labelledby="titulo-alta-persona">
     <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
       <h2 id="titulo-alta-persona">Nueva persona</h2>
       <app-ayuda titulo="Nueva persona">
@@ -121,83 +121,85 @@
     </div>
 
     <form [formGroup]="formularioAlta" (ngSubmit)="enviarAlta()" novalidate>
-      <div class="campo">
-        <label for="alta-persona-apellido">Apellido</label>
-        <input
-          id="alta-persona-apellido"
-          type="text"
-          formControlName="apellido"
-          [attr.aria-invalid]="mostrarErrorAlta('apellido') ? 'true' : null"
-        />
-        @if (mostrarErrorAlta('apellido')) {
-          <p class="estado estado--error">El apellido es obligatorio.</p>
-        }
-      </div>
-
-      <div class="campo">
-        <label for="alta-persona-nombre">Nombre</label>
-        <input
-          id="alta-persona-nombre"
-          type="text"
-          formControlName="nombre"
-          [attr.aria-invalid]="mostrarErrorAlta('nombre') ? 'true' : null"
-        />
-        @if (mostrarErrorAlta('nombre')) {
-          <p class="estado estado--error">El nombre es obligatorio.</p>
-        }
-      </div>
-
-      <div class="campo">
-        <label for="alta-persona-tipo-documento">Tipo de documento</label>
-        <select
-          id="alta-persona-tipo-documento"
-          formControlName="tipoDocumento"
-          aria-describedby="alta-persona-documento-ayuda"
-        >
-          <option value="">Sin documento</option>
-          @for (tipo of tiposDeDocumento; track tipo) {
-            <option [value]="tipo">{{ etiquetaDeTipoDocumento(tipo) }}</option>
+      <div class="grilla-campos grilla-campos--dos">
+        <div class="campo">
+          <label for="alta-persona-apellido">Apellido</label>
+          <input
+            id="alta-persona-apellido"
+            type="text"
+            formControlName="apellido"
+            [attr.aria-invalid]="mostrarErrorAlta('apellido') ? 'true' : null"
+          />
+          @if (mostrarErrorAlta('apellido')) {
+            <p class="estado estado--error">El apellido es obligatorio.</p>
           }
-        </select>
-      </div>
+        </div>
 
-      <div class="campo">
-        <label for="alta-persona-numero-documento">Numero de documento</label>
-        <input
-          id="alta-persona-numero-documento"
-          type="text"
-          formControlName="numeroDocumento"
-          aria-describedby="alta-persona-documento-ayuda"
-        />
-        <p class="ayuda" id="alta-persona-documento-ayuda">
-          El documento es opcional: una persona sin DNI —un menor, alguien recien llegado— es un
-          caso normal. <b>No inventes un numero para completar el campo.</b> Si lo cargas, el tipo y
-          el numero van juntos.
-        </p>
-      </div>
+        <div class="campo">
+          <label for="alta-persona-nombre">Nombre</label>
+          <input
+            id="alta-persona-nombre"
+            type="text"
+            formControlName="nombre"
+            [attr.aria-invalid]="mostrarErrorAlta('nombre') ? 'true' : null"
+          />
+          @if (mostrarErrorAlta('nombre')) {
+            <p class="estado estado--error">El nombre es obligatorio.</p>
+          }
+        </div>
 
-      <div class="campo">
-        <label for="alta-persona-fecha-nacimiento">Fecha de nacimiento</label>
-        <input id="alta-persona-fecha-nacimiento" type="date" formControlName="fechaNacimiento" />
-      </div>
+        <div class="campo">
+          <label for="alta-persona-tipo-documento">Tipo de documento</label>
+          <select
+            id="alta-persona-tipo-documento"
+            formControlName="tipoDocumento"
+            aria-describedby="alta-persona-documento-ayuda"
+          >
+            <option value="">Sin documento</option>
+            @for (tipo of tiposDeDocumento; track tipo) {
+              <option [value]="tipo">{{ etiquetaDeTipoDocumento(tipo) }}</option>
+            }
+          </select>
+        </div>
 
-      <div class="campo">
-        <label for="alta-persona-email">Correo de contacto</label>
-        <input
-          id="alta-persona-email"
-          type="email"
-          formControlName="email"
-          aria-describedby="alta-persona-email-ayuda"
-        />
-        <p class="ayuda" id="alta-persona-email-ayuda">
-          Es un dato de contacto administrativo, no una clave de acceso: la cuenta del portal es
-          otra cosa y puede no existir.
-        </p>
-      </div>
+        <div class="campo">
+          <label for="alta-persona-numero-documento">Número de documento</label>
+          <input
+            id="alta-persona-numero-documento"
+            type="text"
+            formControlName="numeroDocumento"
+            aria-describedby="alta-persona-documento-ayuda"
+          />
+          <p class="ayuda" id="alta-persona-documento-ayuda">
+            El documento es opcional: una persona sin DNI —un menor, alguien recien llegado— es un
+            caso normal. <b>No inventes un numero para completar el campo.</b> Si lo cargas, el tipo
+            y el numero van juntos.
+          </p>
+        </div>
 
-      <div class="campo">
-        <label for="alta-persona-telefono">Telefono</label>
-        <input id="alta-persona-telefono" type="tel" formControlName="telefono" />
+        <div class="campo">
+          <label for="alta-persona-fecha-nacimiento">Fecha de nacimiento</label>
+          <input id="alta-persona-fecha-nacimiento" type="date" formControlName="fechaNacimiento" />
+        </div>
+
+        <div class="campo">
+          <label for="alta-persona-email">Correo de contacto</label>
+          <input
+            id="alta-persona-email"
+            type="email"
+            formControlName="email"
+            aria-describedby="alta-persona-email-ayuda"
+          />
+          <p class="ayuda" id="alta-persona-email-ayuda">
+            Es un dato de contacto administrativo, no una clave de acceso: la cuenta del portal es
+            otra cosa y puede no existir.
+          </p>
+        </div>
+
+        <div class="campo">
+          <label for="alta-persona-telefono">Teléfono</label>
+          <input id="alta-persona-telefono" type="tel" formControlName="telefono" />
+        </div>
       </div>
 
       <div class="campo">
@@ -210,7 +212,7 @@
         ></textarea>
         <p class="ayuda" id="alta-persona-notas-ayuda">
           Datos administrativos: como llega, quien la acompaña, preferencias de turno.
-          <b>Nada clinico</b>: eso va en la historia clinica, no aca.
+          <b>Nada clínico</b>: eso va en la historia clínica, no acá.
         </p>
       </div>
 

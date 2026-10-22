@@ -1,3 +1,8 @@
+import { Pestanas } from '../../../../shared/components/pestanas/pestanas';
+import {
+  ETIQUETA_PESTANAS_DE_SERVICIOS,
+  PESTANAS_DE_SERVICIOS,
+} from '../../models/pestanas-de-offering';
 import {
   Component,
   ElementRef,
@@ -83,6 +88,7 @@ const ESPERA_DE_BUSQUEDA = 250;
 @Component({
   selector: 'app-catalogo-de-servicios-page',
   imports: [
+    Pestanas,
     Ayuda,
     ColumnaOrdenable,
     Filtros,
@@ -96,6 +102,8 @@ const ESPERA_DE_BUSQUEDA = 250;
   styleUrl: '../../offering.css',
 })
 export class CatalogoDeServiciosPage {
+  protected readonly pestanasDeServicios = PESTANAS_DE_SERVICIOS;
+  protected readonly etiquetaDePestanas = ETIQUETA_PESTANAS_DE_SERVICIOS;
   private readonly api = inject(OfferingApi);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly formBuilder = inject(FormBuilder);

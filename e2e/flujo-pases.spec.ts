@@ -66,8 +66,10 @@ test.describe('Pases contra el backend real', () => {
 
     // ---- Venta: crea el pase y una deuda, sin cobrar.
     await navegar(page, `/pacientes/${persona.id}/pases`);
-    await expect(page.getByRole('heading', { level: 1 })).toContainText(persona.apellido);
-    await expect(page.getByText('no compro ningun pase en esta sede')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Pases', level: 1 })).toBeVisible();
+    // La persona va en la cabecera de la ficha, arriba de las pestañas.
+    await expect(page.getByText(new RegExp(`^${persona.apellido},`)).first()).toBeVisible();
+    await expect(page.getByText('no compró ningún pase en esta sede')).toBeVisible();
     // La opcion dice "nombre — creditos, precio": se elige por el valor de la que nombra al producto.
     const selector = page.getByLabel('Producto');
     const valor = await selector.locator('option', { hasText: producto }).getAttribute('value');

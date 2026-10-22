@@ -3,17 +3,24 @@
   <app-ayuda titulo="Sobre esta pantalla">
     <p>
       Lo que la sede le debe a otros: honorarios de profesionales, alquiler, servicios, insumos. Un
-      egreso <b>nace en borrador y no mueve plata</b>; se confirma con su comprobante y se salda con
-      uno o mas pagos. <b>Solo el pago en efectivo sale del cajon</b> y exige la caja abierta.
+      egreso nace en borrador y se confirma con su comprobante; se salda con uno o más pagos.
     </p>
   </app-ayuda>
+  <div class="encabezado__acciones">
+    <a class="boton boton--secundario" routerLink="/egresos/honorarios">
+      Liquidar honorarios por clase
+    </a>
+    <button type="button" class="boton" (click)="tituloAlta.focus()">
+      <app-icono nombre="agregar" />
+      Registrar egreso
+    </button>
+  </div>
 </div>
 
-<nav class="acciones" aria-label="Honorarios">
-  <a class="boton boton--secundario" routerLink="/egresos/honorarios">
-    Liquidar honorarios por clase
-  </a>
-</nav>
+<p class="ayuda">
+  Un borrador <b>no mueve plata</b>. <b>Solo el pago en efectivo sale del cajón</b> y exige la caja
+  abierta.
+</p>
 
 <!-- ================================ Filtros =================================== -->
 
@@ -34,7 +41,7 @@
         </div>
 
         <div class="campo">
-          <label for="filtro-categoria">Categoria</label>
+          <label for="filtro-categoria">Categoría</label>
           <select id="filtro-categoria" formControlName="categoria">
             <option value="">Todas</option>
             @for (opcion of categorias; track opcion) {
@@ -82,63 +89,68 @@
 }
 
 @if (vacio()) {
-  <p class="estado estado--vacio">No hay egresos con esos filtros. Podes cargar uno abajo.</p>
+  <p class="estado estado--vacio">No hay egresos con esos filtros. Podés cargar uno abajo.</p>
 }
 
 @if (egresos().length > 0) {
-  <div class="tabla-scroll" tabindex="0" role="region" aria-labelledby="titulo-tabla-egresos">
-    <h2 id="titulo-tabla-egresos" class="visualmente-oculto">Egresos de la sede</h2>
-    <table class="tabla">
-      <thead>
-        <tr>
-          <th scope="col">Registrado</th>
-          <th scope="col">Beneficiario</th>
-          <th scope="col">Categoria</th>
-          <th scope="col">Concepto</th>
-          <th scope="col">Estado</th>
-          <th scope="col">Total</th>
-          <th scope="col">Saldo pendiente</th>
-          <th scope="col">Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (egreso of egresos(); track egreso.id) {
+  <div class="tarjeta tarjeta--tabla">
+    <div class="tarjeta__cabecera">
+      <h2 id="titulo-tabla-egresos">Egresos de la sede</h2>
+    </div>
+    <div class="tabla-scroll" tabindex="0" role="region" aria-labelledby="titulo-tabla-egresos">
+      <table class="tabla">
+        <thead>
           <tr>
-            <td>{{ fecha(egreso.registradoEn) }}</td>
-            <td>{{ egreso.beneficiarioNombre }}</td>
-            <td>{{ categoriaEnPalabras(egreso.categoria) }}</td>
-            <td>{{ egreso.concepto }}</td>
-            <td>
-              <span [class]="claseDeEstado(egreso.estado)">{{
-                estadoEnPalabras(egreso.estado)
-              }}</span>
-            </td>
-            <td class="importe">{{ importe(egreso, egreso.importeTotal) }}</td>
-            <td class="importe">{{ importe(egreso, egreso.saldoPendiente) }}</td>
-            <td>
-              <a class="enlace" [routerLink]="['/egresos', egreso.id]">
-                Abrir el egreso<span class="visualmente-oculto"> {{ egreso.concepto }}</span>
-              </a>
-            </td>
+            <th scope="col">Registrado</th>
+            <th scope="col">Concepto</th>
+            <th scope="col">Categoría</th>
+            <th scope="col">Estado</th>
+            <th scope="col" class="importe">Total</th>
+            <th scope="col" class="importe">Saldo pendiente</th>
+            <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
           </tr>
-        }
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          @for (egreso of egresos(); track egreso.id) {
+            <tr>
+              <td class="celda-fecha">{{ fecha(egreso.registradoEn) }}</td>
+              <td>
+                <span class="celda-principal">{{ egreso.concepto }}</span>
+                <span class="celda-secundaria">{{ egreso.beneficiarioNombre }}</span>
+              </td>
+              <td>{{ categoriaEnPalabras(egreso.categoria) }}</td>
+              <td>
+                <span [class]="claseDeEstado(egreso.estado)">{{
+                  estadoEnPalabras(egreso.estado)
+                }}</span>
+              </td>
+              <td class="importe">{{ importe(egreso, egreso.importeTotal) }}</td>
+              <td class="importe">{{ importe(egreso, egreso.saldoPendiente) }}</td>
+              <td>
+                <a class="enlace" [routerLink]="['/egresos', egreso.id]">
+                  Abrir el egreso<span class="visualmente-oculto"> {{ egreso.concepto }}</span>
+                </a>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    @if (recortado()) {
+      <p class="ayuda">Se muestran los primeros 50. Acotá el período o filtrá por estado.</p>
+    }
   </div>
-  @if (recortado()) {
-    <p class="ayuda">Se muestran los primeros 50. Acota el periodo o filtra por estado.</p>
-  }
 }
 
 <!-- ================================ Alta =================================== -->
 
 <section class="tarjeta" aria-labelledby="titulo-alta">
   <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
-    <h2 id="titulo-alta">Cargar un egreso</h2>
+    <h2 id="titulo-alta" tabindex="-1" #tituloAlta>Cargar un egreso</h2>
     <app-ayuda titulo="Cargar un egreso">
       <p>
         Queda en borrador: se puede corregir hasta confirmarlo. El comprobante es opcional ahora y
-        obligatorio para confirmar. El importe lo declaras vos: AKINE no calcula liquidaciones.
+        obligatorio para confirmar. El importe lo declarás vos: AKINE no calcula liquidaciones.
       </p>
     </app-ayuda>
   </div>
@@ -164,23 +176,23 @@
             formControlName="beneficiarioMembershipId"
             [attr.aria-invalid]="campoInvalido('beneficiarioMembershipId') ? 'true' : null"
           >
-            <option value="">Elegi un colaborador</option>
+            <option value="">Elegí un colaborador</option>
             @for (vinculo of colaboradores(); track vinculo.id) {
               <option [value]="vinculo.id">{{ nombreDe(vinculo) }}</option>
             }
           </select>
           @if (sinColaboradores()) {
             <p class="ayuda">
-              No se pudo leer el padron de colaboradores. Podes cargarlo como externo.
+              No se pudo leer el padrón de colaboradores. Podés cargarlo como externo.
             </p>
           }
           @if (campoInvalido('beneficiarioMembershipId')) {
-            <p class="campo__error" role="alert">Elegi a quien se le paga.</p>
+            <p class="campo__error" role="alert">Elegí a quién se le paga.</p>
           }
         </div>
       } @else {
         <div class="campo">
-          <label for="alta-nombre">Nombre o razon social</label>
+          <label for="alta-nombre">Nombre o razón social</label>
           <input
             id="alta-nombre"
             type="text"
@@ -190,7 +202,7 @@
             [attr.aria-invalid]="campoInvalido('beneficiarioNombre') ? 'true' : null"
           />
           @if (campoInvalido('beneficiarioNombre')) {
-            <p class="campo__error" role="alert">Escribi a quien se le paga.</p>
+            <p class="campo__error" role="alert">Escribí a quién se le paga.</p>
           }
         </div>
         <div class="campo">
@@ -220,7 +232,7 @@
       </div>
 
       <div class="campo">
-        <label for="alta-categoria">Categoria</label>
+        <label for="alta-categoria">Categoría</label>
         <select id="alta-categoria" formControlName="categoria">
           @for (opcion of categorias; track opcion) {
             <option [value]="opcion">{{ categoriaEnPalabras(opcion) }}</option>
@@ -229,8 +241,8 @@
       </div>
     </div>
 
-    <div class="campos-en-linea">
-      <div class="campo">
+    <div class="grilla-compacta">
+      <div class="campo campo--ancho">
         <label for="alta-concepto">Concepto</label>
         <input
           id="alta-concepto"
@@ -260,7 +272,7 @@
         }
       </div>
 
-      <div class="campo">
+      <div class="campo campo--corto">
         <label for="alta-moneda">Moneda</label>
         <input
           id="alta-moneda"
@@ -270,18 +282,18 @@
           [attr.aria-invalid]="campoInvalido('moneda') ? 'true' : null"
         />
         @if (campoInvalido('moneda')) {
-          <p class="campo__error" role="alert">Codigo ISO de tres letras, por ejemplo ARS.</p>
+          <p class="campo__error" role="alert">Tres letras, por ejemplo ARS.</p>
         }
       </div>
     </div>
 
-    <div class="campos-en-linea">
+    <div class="grilla-compacta">
       <div class="campo">
-        <label for="alta-periodo-desde">Periodo liquidado desde (opcional)</label>
+        <label for="alta-periodo-desde">Período liquidado desde (opcional)</label>
         <input id="alta-periodo-desde" type="date" formControlName="periodoDesde" />
       </div>
       <div class="campo">
-        <label for="alta-periodo-hasta">Periodo liquidado hasta (opcional)</label>
+        <label for="alta-periodo-hasta">Período liquidado hasta (opcional)</label>
         <input
           id="alta-periodo-hasta"
           type="date"
@@ -290,7 +302,7 @@
         />
         @if (campoInvalido('periodoHasta')) {
           <p class="campo__error" role="alert">
-            El periodo va completo —desde y hasta— y no puede terminar antes de empezar.
+            El período va completo —desde y hasta— y no puede terminar antes de empezar.
           </p>
         }
       </div>
@@ -298,7 +310,7 @@
 
     <fieldset class="grupo">
       <legend>Comprobante (obligatorio para confirmar)</legend>
-      <div class="campos-en-linea">
+      <div class="grilla-compacta">
         <div class="campo">
           <label for="alta-comprobante-tipo">Tipo</label>
           <input
@@ -311,7 +323,7 @@
           />
         </div>
         <div class="campo">
-          <label for="alta-comprobante-numero">Numero</label>
+          <label for="alta-comprobante-numero">Número</label>
           <input
             id="alta-comprobante-numero"
             type="text"

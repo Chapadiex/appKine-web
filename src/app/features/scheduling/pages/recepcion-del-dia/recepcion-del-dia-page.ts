@@ -20,7 +20,12 @@ import { Recepcion, RecepcionEstadoEnum } from '../../../../api/generated/model/
 import { TurnoDelDia, TurnoDelDiaEstadoEnum } from '../../../../api/generated/model/turno-del-dia';
 import { SchedulingApi } from '../../services/scheduling-api';
 import { CausaAgenda, ErrorAgenda, traducirErrorRecepcion } from '../../models/agenda-errors';
-import { fechaEnPalabras, horaEnZona, hoyEnZona } from '../../models/etiquetas-de-agenda';
+import {
+  fechaEnPalabras,
+  horaEnZona,
+  hoyEnZona,
+  sumarDias,
+} from '../../models/etiquetas-de-agenda';
 import { textoDeEstado } from '../../models/etiquetas-de-turno';
 import {
   admiteParticular,
@@ -37,6 +42,7 @@ import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-or
 import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
 import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { Icono } from '../../../../shared/components/icono/icono';
 
 /** La ruta que monta esta pantalla. Se reescribe la fecha sobre ella sin navegar. */
 const RUTA = '/agenda/recepcion';
@@ -138,6 +144,7 @@ const CAUSAS_QUE_RELEEN: ReadonlySet<CausaAgenda> = new Set<CausaAgenda>([
     ConfirmacionConMotivo,
     ClasesDelDia,
     Pestanas,
+    Icono,
   ],
   templateUrl: './recepcion-del-dia-page.html',
   styleUrl: '../../agenda.css',
@@ -180,7 +187,22 @@ export class RecepcionDelDiaPage {
   protected readonly turnos = signal<readonly TurnoDelDia[]>([]);
 
   /** Orden y paginado de la lista completa (plan §3.4): el servidor no la pagina. */
-  protected readonly tabla = tablaLocal(this.turnos, {
+  /**
+   * Busqueda del canvas sobre la lista ya leida: paciente o documento. Filtra en pantalla, no
+   * vuelve a pedir nada; los contadores del dia siguen contando la lista entera.
+   */
+  protected readonly busqueda = signal('');
+  protected readonly filtrados = computed(() => {
+    const texto = this.busqueda().trim().toLocaleLowerCase('es');
+    if (texto === '') {
+      return this.turnos();
+    }
+    return this.turnos().filter((t) =>
+      `${t.personaNombre ?? ''} ${t.documento ?? ''}`.toLocaleLowerCase('es').includes(texto),
+    );
+  });
+
+  protected readonly tabla = tablaLocal(this.filtrados, {
     porPagina: 50,
     columnas: {
       hora: (turno) => (turno.inicio ? new Date(turno.inicio) : null),
@@ -247,6 +269,17 @@ export class RecepcionDelDiaPage {
     this.location.replaceState(RUTA, `fecha=${fecha}`);
     this.reiniciar();
     this.cargar();
+  }
+
+  /** ‹ y › del selector compacto del titulo: el dia anterior o el siguiente. */
+  protected moverDia(sentido: -1 | 1): void {
+    this.cambiarDia(sumarDias(this.dia(), sentido));
+  }
+
+  /** "Hoy" es el de la sede cuando ya se conoce su zona; si no, el provisorio del navegador. */
+  protected irAHoy(): void {
+    const zona = this.timezone();
+    this.cambiarDia(zona === '' ? this.diaDeLaSede.hoy() : hoyEnZona(zona));
   }
 
   /** Relee el dia. Es tambien la accion de `recargar-dia`. */

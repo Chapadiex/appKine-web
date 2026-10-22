@@ -413,7 +413,7 @@ describe('ReservaDeTurnoPage', () => {
   }
 
   function reservar(fixture: ComponentFixture<ReservaDeTurnoPage>): void {
-    clickear(fixture, 'Reservar el turno');
+    clickear(fixture, 'Reservar turno');
   }
 
   /** Dispara el rechazo del backend con el tipo pedido y deja la pantalla actualizada. */

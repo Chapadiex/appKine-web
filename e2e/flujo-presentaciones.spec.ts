@@ -229,7 +229,7 @@ test.describe('Presentaciones a financiadores contra el backend real', () => {
     ).toContainText('9.600,00');
 
     await page.getByRole('button', { name: 'Volver a revisar' }).click();
-    await expect(page.getByText('Ninguna prestacion tiene observaciones.')).toBeVisible();
+    await expect(page.getByText('Ninguna prestación tiene observaciones.')).toBeVisible();
 
     await page.getByRole('button', { name: 'Confirmar y presentar' }).click();
     await expect(page.getByText(/Lote presentado: tiene numero/)).toBeVisible();
@@ -246,7 +246,7 @@ test.describe('Presentaciones a financiadores contra el backend real', () => {
     // Gana el `detail` del servidor, que dice cuanto falta.
     await expect(page.getByText(/9600.00 sin explicar/)).toBeVisible();
 
-    await page.getByLabel('Numero de factura').fill(`0001-${sufijoDeFactura()}`);
+    await page.getByLabel('Número de factura').fill(`0001-${sufijoDeFactura()}`);
     await page.getByRole('button', { name: 'Registrar la factura' }).click();
     await expect(page.getByText('Factura registrada.')).toBeVisible();
     await expect(dato(page, 'Estado')).toHaveText('Facturada');
@@ -397,7 +397,7 @@ test.describe('Reparos documentales de un lote contra el backend real (DP-37)', 
     await expect(filaDe(sinOrden)).toContainText('Observada: El convenio exigia orden medica');
     await expect(filaDe(conAviso)).toContainText('Aviso: La credencial estaba vencida');
     await expect(filaDe(conAviso)).not.toContainText('Observada:');
-    await expect(page.getByText(/1 observacion\(es\) que impiden confirmar/)).toBeVisible();
+    await expect(page.getByText(/1 observación\(es\) que impiden confirmar/)).toBeVisible();
     await expect(page.getByText(/1 aviso\(s\): no impiden confirmar/)).toBeVisible();
     await expect(page.getByRole('button', { name: 'Confirmar y presentar' })).toBeDisabled();
 
@@ -422,7 +422,7 @@ test.describe('Reparos documentales de un lote contra el backend real (DP-37)', 
     // Quitada la observada, queda solo el aviso: se confirma.
     await filaDe(sinOrden).getByRole('button', { name: 'Quitar' }).click();
     await expect(filaDe(sinOrden)).toHaveCount(0);
-    await expect(page.getByText('Ninguna prestacion tiene observaciones.')).toBeVisible();
+    await expect(page.getByText('Ninguna prestación tiene observaciones.')).toBeVisible();
     await expect(page.getByText(/1 aviso\(s\)/)).toBeVisible();
     const confirmar = page.getByRole('button', { name: 'Confirmar y presentar' });
     await expect(confirmar).toBeEnabled();

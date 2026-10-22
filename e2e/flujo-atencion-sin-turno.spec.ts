@@ -27,7 +27,7 @@ test.describe('Atencion sin turno contra el backend real', () => {
     await navegar(page, '/atencion/sin-turno');
     await expect(page.getByRole('heading', { name: 'Atender sin turno', level: 1 })).toBeVisible();
 
-    await page.getByLabel('Documento, apellido, nombre o telefono').fill(persona.apellido);
+    await page.getByLabel('Documento, apellido, nombre o teléfono').fill(persona.apellido);
     await page.getByRole('button', { name: 'Buscar', exact: true }).click();
     await page
       .getByRole('button', { name: new RegExp(`^${persona.apellido}, ${persona.nombre}`) })
@@ -35,14 +35,14 @@ test.describe('Atencion sin turno contra el backend real', () => {
     await page.getByLabel('Oferta', { exact: true }).selectOption({ label: oferta.nombre });
 
     // Sin motivo no sale nada.
-    await page.getByRole('button', { name: 'Iniciar la atencion' }).click();
+    await page.getByRole('button', { name: 'Iniciar atención' }).click();
     await expect(
       page.getByText('Escribi por que se atiende sin turno: es obligatorio.'),
     ).toBeVisible();
 
     await page.getByLabel('Motivo (obligatorio)').fill('Consulta espontanea por dolor lumbar');
     const inicio = respuestaDe(page, 'POST', /\/consultorios\/\d+\/sesiones$/);
-    await page.getByRole('button', { name: 'Iniciar la atencion' }).click();
+    await page.getByRole('button', { name: 'Iniciar atención' }).click();
     const respuesta = await inicio;
     expect(respuesta.status(), await respuesta.text()).toBeLessThan(300);
     const sesion = (await respuesta.json()) as { id: number; turnoId?: number };
@@ -50,7 +50,7 @@ test.describe('Atencion sin turno contra el backend real', () => {
     expect(cuerpo['idempotencyKey']).toBeTruthy();
 
     await expect(page).toHaveURL(new RegExp(`/atencion/sesiones/${sesion.id}$`));
-    await expect(page.getByRole('heading', { name: 'Atencion en curso' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Atención en curso' })).toBeVisible();
 
     const profesional = await comoProfesional(centro);
     const guardada = await profesional.exigir<{

@@ -203,6 +203,13 @@ export class SuscripcionDeCentroPage {
       });
   }
 
+  /** Modificador de `.marca-estado`: activa es vigente, suspendida reversible, cancelada terminal. */
+  protected claseDeEstado(estado: string | undefined): string {
+    if (estado === 'ACTIVA') return 'marca-estado--activa';
+    if (estado === 'SUSPENDIDA') return 'marca-estado--suspendida';
+    return 'marca-estado--revocada';
+  }
+
   protected nombreDePlan(codigo: string | undefined): string {
     if (!codigo) return 'sin plan';
     return this.planes().find((p) => p.code === codigo)?.name ?? codigo;

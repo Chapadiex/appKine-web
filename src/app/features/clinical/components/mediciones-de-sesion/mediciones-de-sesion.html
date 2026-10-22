@@ -1,11 +1,11 @@
-<section class="tarjeta" aria-labelledby="titulo-examen">
-  <h2 id="titulo-examen">Examen fisico</h2>
+<section class="tarjeta" [class.paso]="editable()" aria-labelledby="titulo-examen">
+  <h2 id="titulo-examen" class="paso__titulo">Examen físico</h2>
 
   <p class="ayuda">
-    Mediciones del catalogo del centro. Ninguna es obligatoria: un seguimiento normal no exige
+    Mediciones del catálogo del centro. Ninguna es obligatoria: un seguimiento normal no exige
     examen completo.
     @if (cubiertas() !== null && disponibles() !== null) {
-      <b>{{ cubiertas() }} de {{ disponibles() }}</b> medidas del catalogo tomadas en esta sesion.
+      <b>{{ cubiertas() }} de {{ disponibles() }}</b> medidas del catálogo tomadas en esta sesión.
       No impide cerrar.
     }
   </p>
@@ -22,7 +22,7 @@
     <p class="ayuda">{{ baseline() }}</p>
 
     @if (medidas().length === 0) {
-      <p class="ayuda">Todavia no hay mediciones en esta sesion.</p>
+      <p class="ayuda">Todavía no hay mediciones en esta sesión.</p>
     } @else {
       <div class="tabla-scroll" role="region" aria-label="Mediciones de la sesion" tabindex="0">
         <table class="tabla">
@@ -95,52 +95,54 @@
 
   @if (editable()) {
     <fieldset class="grupo">
-      <legend>Registrar una medicion</legend>
+      <legend>Registrar una medición</legend>
 
       @if (catalogoSinPermiso()) {
         <p class="estado estado--error" role="status">
-          No tenes permiso para consultar el catalogo de medidas, asi que no podes registrar una
-          medicion nueva. Pediselo a quien administra el centro.
+          No tenés permiso para consultar el catálogo de medidas, así que no podés registrar una
+          medición nueva. Pedíselo a quien administra el centro.
         </p>
       } @else if (definiciones().length === 0) {
         <p class="ayuda">
-          El catalogo de medidas esta vacio: las definiciones las carga quien administra el centro.
+          El catálogo de medidas está vacío: las definiciones las carga quien administra el centro.
         </p>
       } @else {
-        <div class="campo">
-          <label for="medicion-definicion">Medida</label>
-          <select
-            id="medicion-definicion"
-            name="medicion-definicion"
-            (change)="elegirDefinicion($any($event.target).value)"
-          >
-            <option value="" [selected]="definicionId() === null">Elegi una medida</option>
-            @for (opcion of definiciones(); track opcion.id) {
-              <option [value]="opcion.id" [selected]="definicionId() === opcion.id">
-                {{ opcion.name }}{{ opcion.unidad ? ' (' + opcion.unidad + ')' : '' }}
-              </option>
-            }
-          </select>
-        </div>
+        <div class="grilla-campos grilla-campos--dos">
+          <div class="campo">
+            <label for="medicion-definicion">Medida</label>
+            <select
+              id="medicion-definicion"
+              name="medicion-definicion"
+              (change)="elegirDefinicion($any($event.target).value)"
+            >
+              <option value="" [selected]="definicionId() === null">Elegí una medida</option>
+              @for (opcion of definiciones(); track opcion.id) {
+                <option [value]="opcion.id" [selected]="definicionId() === opcion.id">
+                  {{ opcion.name }}{{ opcion.unidad ? ' (' + opcion.unidad + ')' : '' }}
+                </option>
+              }
+            </select>
+          </div>
 
-        <div class="campo">
-          <label for="medicion-lado">Lado</label>
-          <select
-            id="medicion-lado"
-            name="medicion-lado"
-            aria-describedby="ayuda-medicion-lado"
-            (change)="elegirLado($any($event.target).value)"
-          >
-            @for (opcion of lados; track opcion.valor) {
-              <option [value]="opcion.valor" [selected]="lado() === opcion.valor">
-                {{ opcion.etiqueta }}
-              </option>
-            }
-          </select>
-          <p id="ayuda-medicion-lado" class="ayuda">
-            Una medicion de los dos lados son dos mediciones, una por lado: sus valores son
-            distintos y eso es lo que se mide.
-          </p>
+          <div class="campo">
+            <label for="medicion-lado">Lado</label>
+            <select
+              id="medicion-lado"
+              name="medicion-lado"
+              aria-describedby="ayuda-medicion-lado"
+              (change)="elegirLado($any($event.target).value)"
+            >
+              @for (opcion of lados; track opcion.valor) {
+                <option [value]="opcion.valor" [selected]="lado() === opcion.valor">
+                  {{ opcion.etiqueta }}
+                </option>
+              }
+            </select>
+            <p id="ayuda-medicion-lado" class="ayuda">
+              Una medición de los dos lados son dos mediciones, una por lado: sus valores son
+              distintos y eso es lo que se mide.
+            </p>
+          </div>
         </div>
 
         @if (definicion(); as elegida) {
@@ -171,7 +173,7 @@
                   [checked]="valorSiNo() === true"
                   (change)="elegirSiNo(true)"
                 />
-                Si
+                Sí
               </label>
               <label class="opcion-radio">
                 <input
@@ -199,7 +201,7 @@
 
           <div class="campo">
             <label for="medicion-nota">
-              Como se tomo <span class="campo__opcional">(opcional)</span>
+              Cómo se tomó <span class="campo__opcional">(opcional)</span>
             </label>
             <input
               id="medicion-nota"
@@ -211,14 +213,14 @@
               (input)="nota.set($any($event.target).value)"
             />
             <p id="ayuda-medicion-nota" class="ayuda">
-              No reemplaza al valor y no entra en ninguna comparacion.
+              No reemplaza al valor y no entra en ninguna comparación.
             </p>
           </div>
         }
 
         <div class="acciones">
           <button type="button" class="boton" [disabled]="guardando()" (click)="registrar()">
-            Registrar la medicion
+            Registrar la medición
           </button>
         </div>
       }

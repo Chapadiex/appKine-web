@@ -34,6 +34,11 @@ import {
   textoDeRecorte,
 } from '../../models/horario-efectivo';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
+import { Pestanas } from '../../../../shared/components/pestanas/pestanas';
+import {
+  ETIQUETA_PESTANAS_DE_HORARIOS,
+  PESTANAS_DE_HORARIOS,
+} from '../../models/pestanas-de-horarios';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 
 /** Una semana: es la ventana que se mira para responder "por que el martes esta vacio". */
@@ -80,7 +85,7 @@ const DIAS_PROPUESTOS = 7;
  */
 @Component({
   selector: 'app-horario-efectivo-page',
-  imports: [Ayuda, ReactiveFormsModule, RouterLink],
+  imports: [Ayuda, Pestanas, ReactiveFormsModule, RouterLink],
   templateUrl: './horario-efectivo-page.html',
   styleUrl: '../../resource.css',
 })
@@ -94,6 +99,8 @@ export class HorarioEfectivoPage {
 
   protected readonly maximoDias = MAXIMO_DIAS_VENTANA;
   protected readonly rutas = RUTAS_HORARIOS;
+  protected readonly pestanas = PESTANAS_DE_HORARIOS;
+  protected readonly etiquetaDePestanas = ETIQUETA_PESTANAS_DE_HORARIOS;
   protected readonly textoListaIncompleta = TEXTO_LISTA_INCOMPLETA;
   protected readonly etiquetaDeFecha = etiquetaDeFecha;
   protected readonly etiquetaDeOrigen = etiquetaDeOrigen;

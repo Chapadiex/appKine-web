@@ -73,7 +73,7 @@ test.describe('Disponibilidad resuelta contra el backend real', () => {
     await ingresar(page, centro);
     await navegar(page, '/horarios/efectivo');
     await expect(
-      page.getByRole('heading', { name: 'Horario efectivo del profesional', level: 1 }),
+      page.getByRole('heading', { name: 'Horario del profesional', level: 1 }),
     ).toBeVisible();
     await page
       .getByLabel('Profesional')

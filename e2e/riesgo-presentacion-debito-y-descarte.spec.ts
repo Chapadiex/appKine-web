@@ -204,11 +204,11 @@ test.describe('Debito, quitar y descartar en presentaciones contra el backend re
     );
 
     // Debitar MAS de lo presentado lo rechaza el servidor, y el saldo del lote no se mueve.
-    await filaDelLote(page, debitada).getByRole('button', { name: 'Registrar debito' }).click();
+    await filaDelLote(page, debitada).getByRole('button', { name: 'Registrar débito' }).click();
     await page.getByLabel('Importe debitado').fill('9601');
     await page.getByLabel('Motivo informado por el financiador').fill('Afiliado sin credencial');
     let rechazo = respuestaDe(page, 'POST', /\/items\/\d+\/debito$/);
-    await page.getByRole('button', { name: 'Confirmar el debito' }).click();
+    await page.getByRole('button', { name: 'Confirmar el débito' }).click();
     const excedido = await rechazo;
     expect(excedido.status()).toBe(400);
     const problemaExcedido = (await excedido.json()) as { type: string; importePresentado: number };
@@ -219,7 +219,7 @@ test.describe('Debito, quitar y descartar en presentaciones contra el backend re
     // Debito total de una prestacion.
     await page.getByLabel('Importe debitado').fill(String(FINANCIADOR));
     rechazo = respuestaDe(page, 'POST', /\/items\/\d+\/debito$/);
-    await page.getByRole('button', { name: 'Confirmar el debito' }).click();
+    await page.getByRole('button', { name: 'Confirmar el débito' }).click();
     expect((await rechazo).status()).toBeLessThan(300);
     await expect(page.getByText(/Debito registrado\./)).toBeVisible();
     await expect(filaDelLote(page, debitada)).toContainText('Debitada');
@@ -245,7 +245,7 @@ test.describe('Debito, quitar y descartar en presentaciones contra el backend re
     );
 
     // Factura, pago por lo aceptado, conciliar.
-    await page.getByLabel('Numero de factura').fill(`0001-${randomUUID().slice(0, 8)}`);
+    await page.getByLabel('Número de factura').fill(`0001-${randomUUID().slice(0, 8)}`);
     await page.getByRole('button', { name: 'Registrar la factura' }).click();
     await expect(page.getByText('Factura registrada.')).toBeVisible();
     await page.locator('#pago-importe').fill(String(FINANCIADOR));
@@ -299,11 +299,11 @@ test.describe('Debito, quitar y descartar en presentaciones contra el backend re
     await expect(page.getByText(/Lote presentado: tiene numero/)).toBeVisible();
 
     // Debito por una parte de lo presentado.
-    await filaDelLote(page, parcial).getByRole('button', { name: 'Registrar debito' }).click();
+    await filaDelLote(page, parcial).getByRole('button', { name: 'Registrar débito' }).click();
     await page.getByLabel('Importe debitado').fill(String(DEBITO));
     await page.getByLabel('Motivo informado por el financiador').fill('Sesion sin firma');
     const debito = respuestaDe(page, 'POST', /\/items\/\d+\/debito$/);
-    await page.getByRole('button', { name: 'Confirmar el debito' }).click();
+    await page.getByRole('button', { name: 'Confirmar el débito' }).click();
     expect((await debito).status()).toBeLessThan(300);
     await expect(page.getByText(/Debito registrado\./)).toBeVisible();
     await expect(filaDelLote(page, parcial)).toContainText('Debitada en parte');
@@ -312,7 +312,7 @@ test.describe('Debito, quitar y descartar en presentaciones contra el backend re
     await expect(filaDelLote(page, parcial)).toContainText('4.000,00');
     // Ya tiene su debito: no se le registra otro.
     await expect(
-      filaDelLote(page, parcial).getByRole('button', { name: 'Registrar debito' }),
+      filaDelLote(page, parcial).getByRole('button', { name: 'Registrar débito' }),
     ).toHaveCount(0);
     await expect(dato(page, 'Saldo')).toContainText('5.600,00');
     // Sigue ocupando la deuda: no esta en la bandeja de elegibles mientras el lote no se cierre.
@@ -323,12 +323,12 @@ test.describe('Debito, quitar y descartar en presentaciones contra el backend re
     // El filtro de la tabla del lote por estado.
     await abrirFiltros(page);
     await page.getByLabel('Mostrar').selectOption({ label: 'Aceptada' });
-    await expect(page.getByText('Ninguna prestacion del lote esta en ese estado.')).toBeVisible();
+    await expect(page.getByText('Ninguna prestación del lote está en ese estado.')).toBeVisible();
     await page.getByLabel('Mostrar').selectOption({ label: 'Debitada en parte' });
     await expect(filaDelLote(page, parcial)).toHaveCount(1);
     await page.getByLabel('Mostrar').selectOption({ label: 'Todas las prestaciones' });
 
-    await page.getByLabel('Numero de factura').fill(`0001-${randomUUID().slice(0, 8)}`);
+    await page.getByLabel('Número de factura').fill(`0001-${randomUUID().slice(0, 8)}`);
     await page.getByRole('button', { name: 'Registrar la factura' }).click();
     await expect(page.getByText('Factura registrada.')).toBeVisible();
     await page.locator('#pago-importe').fill(String(COBRADO));

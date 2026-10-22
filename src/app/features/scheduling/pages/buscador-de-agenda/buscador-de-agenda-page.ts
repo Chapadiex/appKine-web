@@ -251,6 +251,36 @@ export class BuscadorDeAgendaPage {
     this.buscar();
   }
 
+  /**
+   * ‹ y › del navegador del canvas: corre la ventana entera, con su mismo largo, hacia atras o
+   * hacia adelante. Mueve los dos bordes a la vez y consulta una sola vez.
+   */
+  protected moverVentana(sentido: -1 | 1): void {
+    const largo = Math.max(1, diasEntre(this.desde(), this.hasta()));
+    this.fijarVentana(sumarDias(this.desde(), sentido * largo), largo);
+  }
+
+  /** "Hoy": la ventana arranca en el dia de la sede y conserva su largo. */
+  protected irAHoy(): void {
+    const largo = Math.max(1, diasEntre(this.desde(), this.hasta()));
+    const tz = this.timezone();
+    this.fijarVentana(tz === '' ? this.diaDeLaSede.hoy() : hoyEnZona(tz), largo);
+  }
+
+  private fijarVentana(desde: string, largo: number): void {
+    this.avisoDeRecorte.set(null);
+    this.desdePorDefecto = false;
+    this.hastaPorDefecto = false;
+    this.desde.set(desde);
+    this.hasta.set(sumarDias(desde, largo));
+    this.buscar();
+  }
+
+  /** `19 – 25 de octubre de 2026`: el rango de la ventana en palabras, con el ultimo dia incluido. */
+  protected readonly etiquetaDeVentana = computed(() =>
+    rangoEnPalabras(this.desde(), sumarDias(this.hasta(), -1)),
+  );
+
   // -------------------------------------------------------------------------------------
   // La consulta
   // -------------------------------------------------------------------------------------
@@ -360,4 +390,30 @@ export class BuscadorDeAgendaPage {
     this.error.set(traducido.mensaje);
     this.faltaContexto.set(traducido.causa === 'sin-contexto');
   }
+}
+
+/** Dias de calendario entre dos fechas locales `YYYY-MM-DD`. */
+function diasEntre(desde: string, hasta: string): number {
+  const ms = Date.parse(`${hasta}T00:00:00Z`) - Date.parse(`${desde}T00:00:00Z`);
+  return Number.isFinite(ms) ? Math.round(ms / 86_400_000) : 0;
+}
+
+/** `19 – 25 de octubre de 2026`, o con los dos meses si el rango los cruza. */
+function rangoEnPalabras(primero: string, ultimo: string): string {
+  const a = new Date(`${primero}T00:00:00Z`);
+  const b = new Date(`${ultimo}T00:00:00Z`);
+  if (Number.isNaN(a.getTime()) || Number.isNaN(b.getTime())) {
+    return '';
+  }
+  const formato = (opciones: Intl.DateTimeFormatOptions, dia: Date) =>
+    new Intl.DateTimeFormat('es-AR', { ...opciones, timeZone: 'UTC' }).format(dia);
+  const completo = formato({ day: 'numeric', month: 'long', year: 'numeric' }, b);
+  if (primero === ultimo) {
+    return completo;
+  }
+  const mismoMes = a.getUTCMonth() === b.getUTCMonth() && a.getUTCFullYear() === b.getUTCFullYear();
+  const inicio = mismoMes
+    ? formato({ day: 'numeric' }, a)
+    : formato({ day: 'numeric', month: 'long' }, a);
+  return `${inicio} – ${completo}`;
 }

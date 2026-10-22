@@ -1,24 +1,24 @@
 <div class="titulo-con-ayuda">
-  <h1>Horario efectivo del profesional</h1>
+  <h1>Horario del profesional</h1>
   <app-ayuda titulo="Sobre esta pantalla">
     <p>
-      Que dias y horas <b>concretas</b> atiende un profesional en <b>{{ nombreDeLaSede() }}</b
+      Qué días y horas <b>concretas</b> atiende un profesional en <b>{{ nombreDeLaSede() }}</b
       >, una vez aplicadas todas las reglas juntas: su horario semanal, los cierres y aperturas de
-      la sede y los suyos, la vigencia de su vinculo y la politica de feriados. Cada franja dice
-      <b>que regla la produjo</b>, y cada dia vacio dice <b>por que</b> quedo vacio.
+      la sede y los suyos, la vigencia de su vínculo y la política de feriados. Cada franja dice
+      <b>qué regla la produjo</b>, y cada día vacío dice <b>por qué</b> quedó vacío.
     </p>
+    <p>Las excepciones siempre tienen prioridad sobre el horario semanal.</p>
   </app-ayuda>
+  <div class="encabezado__acciones">
+    <a class="boton boton--secundario" [routerLink]="rutas.excepciones">
+      Cargar cierre o licencia
+    </a>
+  </div>
 </div>
 
-<p class="acciones">
-  <a class="enlace" [routerLink]="rutas.semanal">Horario semanal del profesional</a>
-  <a class="enlace" [routerLink]="rutas.excepciones">Cierres y aperturas</a>
-  <a class="enlace" [routerLink]="rutas.calendario">Horario general y feriados de la sede</a>
-</p>
+<app-pestanas [pestanas]="pestanas" [etiqueta]="etiquetaDePestanas" />
 
-<section class="tarjeta" aria-labelledby="titulo-consulta">
-  <h2 id="titulo-consulta">Que resolver</h2>
-
+<section class="tarjeta" aria-label="Qué resolver">
   <!--
     Los tres estados de la lista de profesionales, dichos por separado. Un desplegable con
     "Elegi un profesional" y nada mas se lee igual esten los tres casos: la sede sin nadie

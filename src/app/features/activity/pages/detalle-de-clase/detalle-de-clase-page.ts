@@ -118,6 +118,12 @@ export class DetalleDeClasePage {
 
   protected readonly clase = signal<Clase | null>(null);
   protected readonly cupos = signal<Cupos | null>(null);
+
+  /** Cuanto del cupo esta ocupado, para la barra. */
+  protected porcentajeDeCupo(c: Cupos): number {
+    const capacidad = c.capacidadEfectiva ?? c.capacidad ?? 0;
+    return capacidad > 0 ? Math.min(100, Math.round(((c.ocupados ?? 0) / capacidad) * 100)) : 0;
+  }
   protected readonly historial = signal<readonly EventoDeClase[]>([]);
   protected readonly participantes = signal<readonly Participante[] | null>(null);
   /** Boxes que ofrece la reprogramacion; se leen al abrirla, no al cargar la clase. */

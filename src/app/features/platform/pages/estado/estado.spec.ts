@@ -55,7 +55,7 @@ describe('Estado', () => {
     fixture.detectChanges();
 
     const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
-    expect(texto).toContain('Comprobando conexion');
+    expect(texto).toContain('Comprobando conexión');
 
     httpMock.expectOne('/api/v1/version').flush(RESPUESTA_VERSION);
   });

@@ -1,3 +1,8 @@
+import { Pestanas } from '../../../../shared/components/pestanas/pestanas';
+import {
+  ETIQUETA_PESTANAS_DE_SERVICIOS,
+  PESTANAS_DE_SERVICIOS,
+} from '../../models/pestanas-de-offering';
 import {
   Component,
   ElementRef,
@@ -116,6 +121,7 @@ type Heredable = '' | 'true' | 'false';
 @Component({
   selector: 'app-ofertas-de-la-sede-page',
   imports: [
+    Pestanas,
     Ayuda,
     ColumnaOrdenable,
     Filtros,
@@ -130,6 +136,8 @@ type Heredable = '' | 'true' | 'false';
   styleUrl: '../../offering.css',
 })
 export class OfertasDeLaSedePage {
+  protected readonly pestanasDeServicios = PESTANAS_DE_SERVICIOS;
+  protected readonly etiquetaDePestanas = ETIQUETA_PESTANAS_DE_SERVICIOS;
   private readonly api = inject(OfferingApi);
   private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly tenantContext = inject(TenantContextStore);

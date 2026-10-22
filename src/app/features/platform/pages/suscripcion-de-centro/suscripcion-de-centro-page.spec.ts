@@ -115,7 +115,7 @@ describe('SuscripcionDeCentroPage', () => {
     const fixture = await buscar();
     httpMock.expectOne(LECTURA).flush(suscripcion(2, 'BASICO', 'SUSPENDIDA'));
     await estabilizar(fixture);
-    expect(texto(fixture)).toContain('el plan solo se cambia con la suscripcion activa');
+    expect(texto(fixture)).toContain('el plan solo se cambia con la suscripción activa');
     expect(fixture.nativeElement.querySelector('#suscripcion-plan-nuevo')).toBeNull();
   });
 
@@ -156,7 +156,7 @@ describe('SuscripcionDeCentroPage', () => {
     expect(pagina2.request.params.get('page')).toBe('1');
     pagina2.flush(pagina([], 1, 2, 21));
     await estabilizar(fixture);
-    expect(texto(fixture)).toContain('Ningun centro coincide con la busqueda');
+    expect(texto(fixture)).toContain('Ningún centro coincide con la búsqueda');
   });
 
   it('si el listado falla lo dice y deja reintentar', async () => {

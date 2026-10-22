@@ -1,3 +1,4 @@
+import { Pestanas } from '../../../../shared/components/pestanas/pestanas';
 import {
   Component,
   ElementRef,
@@ -20,7 +21,10 @@ import { PERMISO_CATALOGO_MANAGE } from '../../../../core/models/permisos';
 import { PermisoDirective } from '../../../../shared/directives/permiso.directive';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { CausaCatalogo, traducirErrorCatalogo } from '../../models/catalogo-errors';
-import { TIPOS_DE_CATALOGO } from '../../models/tipos-de-catalogo';
+import {
+  ETIQUETA_PESTANAS_DE_CATALOGO,
+  PESTANAS_DE_CATALOGO,
+} from '../../models/tipos-de-catalogo';
 import { formatearInstante } from '../../../../shared/utils/instantes';
 import { textoRequerido } from '../../../../shared/validators/texto-requerido';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
@@ -64,6 +68,7 @@ type Estado =
 @Component({
   selector: 'app-solicitudes-page',
   imports: [
+    Pestanas,
     ColumnaOrdenable,
     Paginacion,
     Icono,
@@ -77,6 +82,8 @@ type Estado =
   styleUrl: '../../catalog.css',
 })
 export class SolicitudesPage {
+  protected readonly pestanasDeCatalogo = PESTANAS_DE_CATALOGO;
+  protected readonly etiquetaDePestanas = ETIQUETA_PESTANAS_DE_CATALOGO;
   private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly catalogo = inject(CatalogoClinicoService);
   private readonly tenantContext = inject(TenantContextStore);
@@ -85,7 +92,6 @@ export class SolicitudesPage {
   private readonly injector = inject(Injector);
 
   protected readonly permisoManage = PERMISO_CATALOGO_MANAGE;
-  protected readonly tipos = TIPOS_DE_CATALOGO;
   protected readonly formatearInstante = (instante: string | undefined | null): string | null =>
     formatearInstante(instante, this.diaDeLaSede.zona());
 

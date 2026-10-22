@@ -103,19 +103,19 @@ test.describe('Atencion clinica grupal contra el backend real', () => {
 
     const fila = page.getByRole('row').filter({ hasText: persona.apellido });
     await expect(fila).toContainText('Presente');
-    await expect(fila).toContainText('Sin atencion');
+    await expect(fila).toContainText('Sin atención');
 
     // --- Derivar por pantalla: elegibilidad, el Caso activo y la derivacion ------------------
     const elegibilidad = respuestaDe(page, 'GET', /\/inscripciones\/\d+\/elegibilidad-clinica$/);
     await fila.getByRole('button', { name: /Derivar a un caso/ }).click();
     expect((await elegibilidad).status()).toBe(200);
-    const tarjeta = page.getByRole('region', { name: /^Derivar a .* a un caso clinico$/ });
-    await expect(tarjeta).toContainText('Si, con perfil de paciente');
+    const tarjeta = page.getByRole('region', { name: /^Derivar a .* a un caso clínico$/ });
+    await expect(tarjeta).toContainText('Sí, con perfil de paciente');
     await expect(tarjeta).toContainText('Con 1 caso activo');
     const destino = tarjeta.getByRole('radio', { name: /Caso clinico 1/ });
     await expect(destino).toBeChecked();
     await tarjeta
-      .getByRole('textbox', { name: /Motivo de la derivacion/ })
+      .getByRole('textbox', { name: /Motivo de la derivación/ })
       .fill('Derivacion sintetica de los E2E');
     const pedidoDerivar = respuestaDe(page, 'POST', /\/inscripciones\/\d+\/derivaciones$/);
     await tarjeta.getByRole('button', { name: 'Derivar al caso' }).click();
@@ -134,9 +134,9 @@ test.describe('Atencion clinica grupal contra el backend real', () => {
     await expect(page.getByText(/quedo derivada al caso clinico 1/)).toBeVisible();
     await expect(fila).toContainText('Derivada al caso clinico 1');
 
-    // --- Iniciar la atencion: sin relacion asistencial el backend puede pedir motivo ---------
+    // --- Iniciar atención: sin relacion asistencial el backend puede pedir motivo ---------
     const inicio = respuestaDe(page, 'POST', /\/inscripciones\/\d+\/atencion-clinica$/);
-    await fila.getByRole('button', { name: /Iniciar atencion/ }).click();
+    await fila.getByRole('button', { name: /Iniciar atención/ }).click();
     let respuesta = await inicio;
     if (respuesta.status() === 403) {
       await page
@@ -157,18 +157,18 @@ test.describe('Atencion clinica grupal contra el backend real', () => {
 
     // --- La Sesion abre en la pantalla de atencion, como de la clase -----------------------
     await expect(page).toHaveURL(new RegExp(`/atencion/sesiones/${atencion.sesionId}$`));
-    await expect(page.getByRole('heading', { name: 'Atencion en curso' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Atención en curso' })).toBeVisible();
     // De que clase viene, por su titulo (Sesion.claseTitulo, 0.118.0), no por su id.
     await expect(
       page.locator('dd').filter({ hasText: 'Participante de la clase grupal' }),
     ).toContainText(titulo);
-    await expect(page.getByLabel('Caso clinico de esta atencion')).toHaveCount(0);
+    await expect(page.getByLabel('Caso clínico de esta atención')).toHaveCount(0);
 
     // --- De vuelta en el panel: la atencion en curso, y la derivacion ya no se revierte ------
-    await page.getByRole('link', { name: 'Volver a la atencion clinica de la clase' }).click();
+    await page.getByRole('link', { name: 'Volver a la atención clínica de la clase' }).click();
     const filaDespues = page.getByRole('row').filter({ hasText: persona.apellido });
     await expect(filaDespues).toContainText('Atencion en curso');
-    await expect(filaDespues.getByRole('button', { name: /Iniciar atencion/ })).toHaveCount(0);
+    await expect(filaDespues.getByRole('button', { name: /Iniciar atención/ })).toHaveCount(0);
 
     // Leer las derivaciones es lectura clinica: la pantalla nueva no recuerda el motivo declarado.
     const lectura = respuestaDe(page, 'GET', /\/inscripciones\/\d+\/derivaciones$/);
@@ -180,7 +180,7 @@ test.describe('Atencion clinica grupal contra el backend real', () => {
       await page.getByRole('button', { name: 'Declarar y seguir' }).click();
     }
     const derivaciones = page.getByRole('region', { name: /Derivaciones de/ });
-    await expect(derivaciones).toContainText('la derivacion no se puede revertir');
+    await expect(derivaciones).toContainText('la derivación no se puede revertir');
 
     // Y el backend lo confirma: revertir es 409 derivacion-con-sesion.
     const reversion = await profesional.pedir(

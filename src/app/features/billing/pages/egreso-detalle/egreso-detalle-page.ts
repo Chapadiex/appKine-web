@@ -99,7 +99,7 @@ type Operacion = 'editar' | 'confirmar' | 'pagar' | 'anular' | 'anular-pago';
   selector: 'app-egreso-detalle-page',
   imports: [Ayuda, ReactiveFormsModule, RouterLink, ConfirmacionConMotivo],
   templateUrl: './egreso-detalle-page.html',
-  styleUrl: '../../billing.css',
+  styleUrls: ['../../billing.css', '../../economia.css'],
 })
 export class EgresoDetallePage {
   private readonly diaDeLaSede = inject(DiaDeLaSede);

@@ -1,18 +1,18 @@
+<p class="miga"><a class="enlace" routerLink="/organizacion">Volver a la organización</a></p>
+
 <div class="titulo-con-ayuda">
-  <h1>Ventana para enmendar sesiones</h1>
+  <h1>Política de enmienda</h1>
   <app-ayuda titulo="Sobre esta pantalla">
     <p>
-      Cuantos dias desde el cierre se puede enmendar una sesion en esta organizacion. Pasada la
-      ventana, la atencion queda como se registro: el original y sus enmiendas se siguen leyendo,
+      Cuántos días desde el cierre se puede enmendar una sesión en esta organización. Pasada la
+      ventana, la atención queda como se registró: el original y sus enmiendas se siguen leyendo,
       pero no se agregan versiones nuevas.
     </p>
   </app-ayuda>
 </div>
 
-<p><a class="enlace" routerLink="/organizacion">Volver a la organizacion</a></p>
-
 @if (cargando()) {
-  <p class="estado estado--cargando">Leyendo la politica&hellip;</p>
+  <p class="estado estado--cargando">Leyendo la política&hellip;</p>
 }
 
 <div aria-live="polite">
@@ -25,45 +25,51 @@
 </div>
 
 @if (politica(); as actual) {
-  <section class="tarjeta" aria-labelledby="titulo-politica">
-    <h2 id="titulo-politica">Ventana vigente</h2>
-    <p>
-      <b>{{ actual.ventanaDias }} dias</b> desde el cierre de cada sesion.
-      @if (actual.porDefecto) {
-        Es el valor por defecto: la organizacion todavia no fijo uno propio.
-      } @else if (actual.actualizadaEn) {
-        Fijada el {{ instanteEnPalabras(actual.actualizadaEn) }}.
-      }
+  <section class="tarjeta tarjeta--angosta" aria-labelledby="titulo-politica">
+    <h2 id="titulo-politica">Ventana para enmendar sesiones</h2>
+    <p class="franja-info">
+      <span>
+        Vigente: <b>{{ actual.ventanaDias }} días</b> desde el cierre de cada sesión.
+        @if (actual.porDefecto) {
+          Es el valor por defecto: la organización todavía no fijó uno propio.
+        } @else if (actual.actualizadaEn) {
+          Fijada el {{ instanteEnPalabras(actual.actualizadaEn) }}.
+        }
+      </span>
     </p>
 
     <form (submit)="$event.preventDefault(); guardar()">
       <div class="campo">
-        <label for="politica-dias">Dias para enmendar</label>
-        <input
-          id="politica-dias"
-          type="number"
-          inputmode="numeric"
-          [min]="minima"
-          [max]="maxima"
-          [value]="dias()"
-          (input)="dias.set($any($event.target).value)"
-          aria-describedby="politica-dias-ayuda"
-          [attr.aria-invalid]="diasValidos() ? null : 'true'"
-        />
-        <p class="ayuda" id="politica-dias-ayuda">De {{ minima }} a {{ maxima }} dias.</p>
+        <label for="politica-dias">Días para enmendar</label>
+        <div class="busqueda-fila politica__dias">
+          <input
+            id="politica-dias"
+            type="number"
+            inputmode="numeric"
+            [min]="minima"
+            [max]="maxima"
+            [value]="dias()"
+            (input)="dias.set($any($event.target).value)"
+            aria-describedby="politica-dias-ayuda"
+            [attr.aria-invalid]="diasValidos() ? null : 'true'"
+          />
+          <span class="ayuda" aria-hidden="true">días desde el cierre</span>
+        </div>
+        <p class="ayuda" id="politica-dias-ayuda">De {{ minima }} a {{ maxima }} días.</p>
         @if (!diasValidos()) {
           <p class="campo__error" role="alert">
-            Indica un numero entero de {{ minima }} a {{ maxima }}.
+            Indicá un número entero de {{ minima }} a {{ maxima }}.
           </p>
         }
       </div>
       @if (achica()) {
-        <p class="ayuda">
+        <p class="aviso-irreversible">
           <b>Achicar la ventana alcanza a las sesiones ya cerradas</b>: las que queden fuera dejan
           de poder enmendarse desde hoy.
         </p>
       }
-      <div class="acciones">
+      <div class="pie-tarjeta">
+        <p class="pie-tarjeta__nota">El motivo es obligatorio en toda enmienda.</p>
         <button
           type="submit"
           class="boton"

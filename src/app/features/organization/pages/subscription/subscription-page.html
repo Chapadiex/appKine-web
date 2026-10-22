@@ -1,7 +1,7 @@
 <div class="titulo-con-ayuda">
-  <h1>Suscripcion</h1>
+  <h1>Suscripción</h1>
   <app-ayuda titulo="Sobre esta pantalla">
-    <p>Plan contratado, estado de la suscripcion y consumo de cada limite.</p>
+    <p>Plan contratado, estado de la suscripción y consumo de cada límite.</p>
   </app-ayuda>
 </div>
 
@@ -11,13 +11,13 @@
   <div aria-live="polite">
     @switch (estado().tipo) {
       @case ('cargando') {
-        <p class="estado estado--cargando">Cargando la suscripcion&hellip;</p>
+        <p class="estado estado--cargando">Cargando la suscripción&hellip;</p>
       }
 
       @case ('sin-contexto') {
-        <p class="estado estado--vacio">Todavia no elegiste un contexto de trabajo.</p>
+        <p class="estado estado--vacio">Todavía no elegiste un contexto de trabajo.</p>
         <p class="ayuda">
-          La suscripcion pertenece a un centro concreto: primero hay que elegirlo.
+          La suscripción pertenece a un centro concreto: primero hay que elegirlo.
         </p>
         <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto</a>
       }
@@ -26,29 +26,29 @@
         @switch (estadoSuscripcion()) {
           @case ('ACTIVA') {
             <div class="banner banner--activa">
-              <h3>Suscripcion activa</h3>
+              <h3>Suscripción activa</h3>
               <p>El centro opera con normalidad.</p>
             </div>
           }
 
           @case ('SUSPENDIDA') {
             <div class="banner banner--suspendida" role="alert">
-              <h3>Suscripcion suspendida</h3>
+              <h3>Suscripción suspendida</h3>
               @if (motivo()) {
                 <p>Motivo: {{ motivo() }}</p>
               } @else {
-                <p>No pudimos recuperar el motivo declarado. Consultalo con administracion.</p>
+                <p>No pudimos recuperar el motivo declarado. Consultalo con administración.</p>
               }
               <p>
-                El centro queda en <strong>solo lectura</strong>: podes consultar todo, pero las
-                altas y modificaciones se rechazan hasta que se reactive. Nada se borro.
+                El centro queda en <strong>solo lectura</strong>: podés consultar todo, pero las
+                altas y modificaciones se rechazan hasta que se reactive. Nada se borró.
               </p>
             </div>
           }
 
           @case ('CANCELADA') {
             <div class="banner banner--cancelada" role="alert">
-              <h3>Suscripcion cancelada</h3>
+              <h3>Suscripción cancelada</h3>
               <p>Es un estado final. Para volver a operar hay que contratar de nuevo.</p>
             </div>
           }
@@ -61,7 +61,7 @@
           <dt>Estado</dt>
           <dd>{{ suscripcion()?.status }}</dd>
 
-          <dt>Alta de la suscripcion</dt>
+          <dt>Alta de la suscripción</dt>
           <dd>{{ suscripcion()?.startedAt }}</dd>
         </dl>
       }
@@ -81,18 +81,18 @@
 
 @if (estado().tipo === 'listo') {
   <section class="tarjeta" aria-labelledby="titulo-limites">
-    <h2 id="titulo-limites">Limites del plan</h2>
+    <h2 id="titulo-limites">Límites del plan</h2>
 
     @if (limites().length === 0) {
-      <p class="estado estado--vacio">Este plan no declara limites.</p>
+      <p class="estado estado--vacio">Este plan no declara límites.</p>
     } @else {
       <table class="limites">
         <caption class="ayuda">
-          Consumo actual de cada limite frente al tope del plan.
+          Consumo actual de cada límite frente al tope del plan.
         </caption>
         <thead>
           <tr>
-            <th scope="col">Limite</th>
+            <th scope="col">Límite</th>
             <th scope="col">En uso</th>
             <th scope="col">Tope del plan</th>
           </tr>
@@ -101,7 +101,18 @@
           @for (limite of limites(); track limite.code) {
             <tr>
               <th scope="row">{{ nombreDelLimite(limite) }}</th>
-              <td [class.excedido]="limite.exceeded">{{ limite.currentUsage }}</td>
+              <td [class.excedido]="limite.exceeded">
+                {{ limite.currentUsage }}
+                @if (porcentajeDeUso(limite); as porcentaje) {
+                  <span class="medidor" aria-hidden="true">
+                    <span
+                      class="medidor__barra"
+                      [class.medidor__barra--alto]="porcentaje >= 80"
+                      [style.width.%]="porcentaje"
+                    ></span>
+                  </span>
+                }
+              </td>
               <td>{{ topeDelLimite(limite) }}</td>
             </tr>
           }
@@ -109,7 +120,7 @@
       </table>
 
       <p class="ayuda">
-        Un limite excedido no borra nada: lo que ya existe sigue operativo y solo se rechazan las
+        Un límite excedido no borra nada: lo que ya existe sigue operativo y solo se rechazan las
         altas nuevas.
       </p>
     }

@@ -49,7 +49,7 @@ describe('etiquetas de los enumerados', () => {
 describe('importes', () => {
   it('sin moneda no se muestra un numero pelado', () => {
     // Importe y moneda viajan juntos o no viajan: un importe sin moneda no es un importe, y este
-    // SaaS va a operar en mas de un pais.
+    // SaaS va a operar en más de un pais.
     expect(importeEnPalabras(1500, 'ARS')).toBe('ARS 1500.00');
     expect(importeEnPalabras(1500, undefined)).toBe('Sin declarar');
     expect(importeEnPalabras(1500, '')).toBe('Sin declarar');

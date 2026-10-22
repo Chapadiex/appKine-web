@@ -194,7 +194,7 @@ describe('SolicitudesCatalogoPage', () => {
     fixture.detectChanges();
     const detalle = anfitrion.querySelector('dl.detalle')?.textContent ?? '';
     expect(detalle).toContain('Centro Kinesio Sur');
-    expect(detalle).toContain('la pidio desde una de sus sedes');
+    expect(detalle).toContain('la pidió desde una de sus sedes');
     expect(detalle).not.toContain('sede 30');
   });
 

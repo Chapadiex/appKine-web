@@ -17,7 +17,7 @@ export function pestanasDeAgenda(puedeVerTurnosDelDia: boolean): readonly Pestan
   }
   return [
     buscador,
-    { etiqueta: 'Recepcion', ruta: '/agenda/recepcion' },
+    { etiqueta: 'Recepción', ruta: '/agenda/recepcion' },
     { etiqueta: 'Series', ruta: '/agenda/series' },
   ];
 }

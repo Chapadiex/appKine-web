@@ -10,11 +10,7 @@
   </app-ayuda>
 </div>
 
-<p class="acciones">
-  <a class="boton boton--secundario" routerLink="/organizacion/colaboradores/invitaciones">
-    Ver las invitaciones
-  </a>
-</p>
+<app-pestanas [pestanas]="pestanas" [etiqueta]="etiquetaDePestanas" />
 
 <section class="tarjeta" aria-labelledby="titulo-listado-notificaciones">
   <h2 id="titulo-listado-notificaciones">Listado</h2>

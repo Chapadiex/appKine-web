@@ -163,3 +163,95 @@
 .lista-cobertura p {
   margin: var(--esp-2) 0 0;
 }
+
+/*
+ * Ficha de la persona como centro (UX-01): la identidad a todo el ancho y debajo una grilla de
+ * tarjetas de resumen, cada una con su entrada a la pantalla hermana. `auto-fit` colapsa a una
+ * columna en pantallas angostas.
+ */
+.ficha-datos {
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  margin-bottom: 0;
+}
+
+.ficha-notas {
+  margin: var(--esp-6) 0 0;
+  color: var(--color-texto);
+}
+
+.ficha-grilla {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));
+  gap: var(--esp-7);
+  align-items: start;
+  margin-bottom: var(--esp-7);
+}
+
+.ficha-grilla > .tarjeta,
+.ficha-grilla__ancha .tarjeta {
+  margin: 0;
+}
+
+.ficha-grilla__ancha {
+  grid-column: 1 / -1;
+}
+
+.ficha-grilla h2 {
+  font-size: var(--tipo-md);
+}
+
+.ficha-enlace {
+  margin: var(--esp-5) 0 0;
+  font-weight: var(--peso-medio);
+}
+
+.ficha-enlace .enlace::after {
+  content: ' →' / '';
+}
+
+/*
+ * Banda de una pantalla hermana de la ficha: el titulo de la seccion (mas chico que el del
+ * padron, porque la persona ya va arriba) con su ayuda y la accion principal a la derecha.
+ */
+.titulo-de-seccion-persona > h1 {
+  font-size: var(--tipo-lg);
+}
+
+/* Formulario abierto en una pantalla de la persona: borde de acento, como en el diseño. */
+.tarjeta--formulario {
+  border-color: var(--color-acento);
+}
+
+/* Listado: filtros, tabla y paginacion en una sola tarjeta. */
+.tarjeta--listado .tabla-scroll {
+  margin-inline: calc(-1 * var(--esp-8));
+  border-top: var(--borde-fino) solid var(--color-borde);
+}
+
+.tarjeta--listado .tabla {
+  margin: 0;
+}
+
+/* "Principal" en la tabla de coberturas: pastilla de acento, como en el diseño. */
+.marca-principal {
+  display: inline-block;
+  padding: var(--esp-1) var(--esp-4);
+  border-radius: var(--radio-pastilla);
+  background: var(--color-acento-claro);
+  color: var(--color-texto-fuerte);
+  font-size: var(--tipo-xs);
+  font-weight: var(--peso-semi);
+  white-space: nowrap;
+}
+
+/* Las dos consultas de coberturas (hoy y por oferta), lado a lado cuando entran. */
+.coberturas-resumen {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(22rem, 1fr));
+  gap: var(--esp-7);
+  align-items: start;
+}
+
+.coberturas-resumen > .tarjeta {
+  margin: 0;
+}

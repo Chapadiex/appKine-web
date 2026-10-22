@@ -32,6 +32,7 @@ import { fechaEnPalabras, importeEnPalabras } from '../../models/etiquetas-de-ob
 import { EgresosApi } from '../../services/egresos-api';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { Filtros } from '../../../../shared/components/filtros/filtros';
+import { Icono } from '../../../../shared/components/icono/icono';
 
 type EstadoListado =
   | { readonly tipo: 'cargando' }
@@ -66,9 +67,9 @@ const PAGINA = 50;
  */
 @Component({
   selector: 'app-egresos-page',
-  imports: [Ayuda, Filtros, ReactiveFormsModule, RouterLink],
+  imports: [Ayuda, Filtros, Icono, ReactiveFormsModule, RouterLink],
   templateUrl: './egresos-page.html',
-  styleUrl: '../../billing.css',
+  styleUrls: ['../../billing.css', '../../economia.css'],
 })
 export class EgresosPage {
   private readonly api = inject(EgresosApi);

@@ -60,7 +60,7 @@ describe('SubscriptionPage', () => {
     const fixture = TestBed.createComponent(SubscriptionPage);
     fixture.detectChanges();
 
-    expect(texto(fixture)).toContain('Todavia no elegiste un contexto');
+    expect(texto(fixture)).toContain('Todavía no elegiste un contexto');
     httpMock.expectNone(() => true);
   });
 
@@ -69,7 +69,7 @@ describe('SubscriptionPage', () => {
     const fixture = TestBed.createComponent(SubscriptionPage);
     fixture.detectChanges();
 
-    expect(texto(fixture)).toContain('Cargando la suscripcion');
+    expect(texto(fixture)).toContain('Cargando la suscripción');
     httpMock.expectOne(URL_SUSCRIPCION).flush(SUSCRIPCION_ACTIVA);
   });
 
@@ -77,7 +77,7 @@ describe('SubscriptionPage', () => {
     seleccionar();
     const fixture = await cargarCon(SUSCRIPCION_ACTIVA);
 
-    expect(texto(fixture)).toContain('Suscripcion activa');
+    expect(texto(fixture)).toContain('Suscripción activa');
     expect(texto(fixture)).toContain('Basico');
     // Los codigos tecnicos no se muestran crudos.
     expect(texto(fixture)).toContain('Sedes habilitadas');
@@ -102,7 +102,7 @@ describe('SubscriptionPage', () => {
     seleccionar();
     const fixture = await cargarCon({ ...SUSCRIPCION_ACTIVA, limits: [] });
 
-    expect(texto(fixture)).toContain('Este plan no declara limites');
+    expect(texto(fixture)).toContain('Este plan no declara límites');
     expect(fixture.nativeElement.querySelector('table')).toBeNull();
   });
 
@@ -159,7 +159,7 @@ describe('SubscriptionPage', () => {
     seleccionar();
     const fixture = await cargarCon({ ...SUSCRIPCION_ACTIVA, status: 'CANCELADA' });
 
-    expect(texto(fixture)).toContain('Suscripcion cancelada');
+    expect(texto(fixture)).toContain('Suscripción cancelada');
     expect(texto(fixture)).toContain('estado final');
   });
 
@@ -183,7 +183,7 @@ describe('SubscriptionPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect(texto(fixture)).toContain('Suscripcion activa');
+    expect(texto(fixture)).toContain('Suscripción activa');
   });
 
   it('un 403 de administracion explica el permiso, no habla de sesion', async () => {

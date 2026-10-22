@@ -56,8 +56,8 @@ type TipoAccion = 'editar' | 'baja';
 /**
  * Grilla de vigencias y aranceles de un convenio (M16, AKINE-03.05).
  *
- * <p>Es donde vive el precio: cuanto cuesta cada practica bajo este convenio, cuanto pone el
- * financiador y cuanto el paciente, y desde cuando hasta cuando.
+ * <p>Es donde vive el precio: cuánto cuesta cada practica bajo este convenio, cuánto pone el
+ * financiador y cuánto el paciente, y desde cuando hasta cuando.
  *
  * <h2>1. El arancel son TRES importes y no hay porcentaje de cobertura</h2>
  *
@@ -332,7 +332,7 @@ export class ArancelesDelConvenioPage {
   protected nombreDeLaPractica(arancel: ArancelResponse): string {
     const practica = this.practicas().find((candidata) => candidata.id === arancel.practicaId);
     if (practica === undefined) {
-      return `Practica #${arancel.practicaId}`;
+      return `Práctica #${arancel.practicaId}`;
     }
     const codigo = practica.codigo ?? '';
     return codigo === '' ? (practica.name ?? '') : `${practica.name ?? ''} (${codigo})`;
@@ -437,7 +437,7 @@ export class ArancelesDelConvenioPage {
    * Da de alta un arancel.
    *
    * <p>Los tres importes se validan <b>como terna</b> antes de mandar: el backend lo hace igual y
-   * es la autoridad, pero su `400` no puede senalar cual de los tres esta mal escrito.
+   * es la autoridad, pero su `400` no puede senalar cual de los tres está mal escrito.
    */
   protected enviarAlta(): void {
     const consultorioId = this.tenantContext.consultorioId();
@@ -488,7 +488,7 @@ export class ArancelesDelConvenioPage {
       next: () => {
         this.cerrarPanel();
         this.exito.set(
-          'El arancel quedo cargado. La moneda es la del convenio: el arancel no la declara, la ' +
+          'El arancel quedó cargado. La moneda es la del convenio: el arancel no la declara, la ' +
             'hereda.',
         );
         this.cargar();
@@ -518,9 +518,9 @@ export class ArancelesDelConvenioPage {
       next: () => {
         this.cerrarPanel();
         this.exito.set(
-          'El arancel quedo guardado. Recorda que esto NO es la forma de subir un precio: para eso ' +
-            'se le cierra la vigencia a este y se carga otro, asi lo ya liquidado se sigue ' +
-            'explicando con el precio que regia entonces.',
+          'El arancel quedó guardado. Recorda que esto NO es la forma de subir un precio: para eso ' +
+            'se le cierra la vigencia a este y se carga otro, así lo ya liquidado se sigue ' +
+            'explicando con el precio que regía entonces.',
         );
         this.cargar();
       },
@@ -543,8 +543,8 @@ export class ArancelesDelConvenioPage {
         next: () => {
           this.cerrarPanel();
           this.exito.set(
-            'El arancel quedo dado de baja y su periodo quedo libre: se puede volver a cargar un ' +
-              'arancel de esa practica para las mismas fechas. Lo ya liquidado con este arancel ' +
+            'El arancel quedó dado de baja y su período quedó libre: se puede volver a cargar un ' +
+              'arancel de esa práctica para las mismas fechas. Lo ya liquidado con este arancel ' +
               'guarda su propio snapshot congelado y no se toca.',
           );
           this.cargar();
@@ -566,7 +566,7 @@ export class ArancelesDelConvenioPage {
     const version = original?.version;
     if (original === null || version === undefined) {
       this.errorAccion.set(
-        'No pudimos leer la version de este arancel. Cerra el panel, recarga la grilla y volve a ' +
+        'No pudimos leer la versión de este arancel. Cerrá el panel, recargá la grilla y volvé a ' +
           'intentar.',
       );
       return null;
@@ -796,7 +796,7 @@ export class ArancelesDelConvenioPage {
  */
 const MENSAJE_IMPORTE_VACIO =
   'Los tres importes tienen que tener un valor. Dejar uno en blanco no es "no lo cambies": los ' +
-  'tres viajan juntos, asi que un campo vacio guardaria el arancel en cero. Volve a escribir el ' +
+  'tres viajan juntos, así que un campo vacío guardaria el arancel en cero. Volvé a escribir el ' +
   'importe, o cerra el panel para dejarlo como estaba.';
 
 /** Un numero del backend como texto para un `input`, o `''` si no vino. */
@@ -820,7 +820,7 @@ function mensajeDeTerna(total: number, financiador: number, coseguro: number): s
     'paciente tiene que dar exactamente el total.' +
     detalle +
     ' No hay porcentaje de cobertura a proposito: un porcentaje obliga a redondear, y el redondeo ' +
-    'de un arancel es la diferencia de un centavo que aparece meses despues en una presentacion ' +
+    'de un arancel es la diferencia de un centavo que aparece meses después en una presentación ' +
     'rechazada.'
   );
 }

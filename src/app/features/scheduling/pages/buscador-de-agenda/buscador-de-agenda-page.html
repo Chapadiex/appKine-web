@@ -2,8 +2,18 @@
   <h1>Agenda de turnos</h1>
   <app-ayuda titulo="Sobre esta pantalla">
     <p>
-      Los turnos disponibles de una oferta, dia por dia. Un turno es una <b>reserva</b> de agenda:
-      no dice que la atencion haya ocurrido, eso lo registra la sesion clinica.
+      Los turnos disponibles de una oferta, día por día. Un turno es una <b>reserva</b> de agenda:
+      no dice que la atención haya ocurrido, eso lo registra la sesión clínica.
+    </p>
+    <p>
+      Elegí un horario libre para reservarlo. Los completos se muestran igual, marcados: a esa hora
+      se atiende, pero ya no queda lugar.
+    </p>
+    <p class="ayuda-contextual__subtitulo">Oferta y fechas</p>
+    <p>Solo las ofertas activas de esta sede se pueden agendar.</p>
+    <p>
+      «Hasta» no se incluye. La ventana se consulta de a 62 días como máximo; si pedís más, la
+      recortamos y te avisamos. ‹ y › corren la ventana entera, con su mismo largo.
     </p>
   </app-ayuda>
 </div>
@@ -14,73 +24,78 @@
 -->
 <app-pestanas [pestanas]="pestanas()" [etiqueta]="etiquetaDePestanas" />
 
-<section class="tarjeta" aria-labelledby="titulo-busqueda-agenda">
-  <h2 id="titulo-busqueda-agenda">Que buscar</h2>
+<section class="tarjeta tarjeta--plana" aria-labelledby="titulo-busqueda-agenda">
+  <div class="tarjeta__cuerpo tarjeta__cuerpo--filtros">
+    <h2 id="titulo-busqueda-agenda" class="visualmente-oculto">Qué buscar</h2>
 
-  <!--
-    Regla de filtros (plan §3.4): la oferta y la ventana de fechas definen la consulta, asi que
-    quedan a la vista; el profesional es un refinamiento opcional y va detras del embudo.
-  -->
-  <app-filtros [activos]="filtrosAvanzadosActivos()">
-    <div class="filtros" filtro-principal>
+    <!--
+      Regla de filtros (plan §3.4): la oferta y la ventana de fechas definen la consulta, asi que
+      quedan a la vista; el profesional es un refinamiento opcional y va detras del embudo.
+    -->
+    <app-filtros [activos]="filtrosAvanzadosActivos()">
+      <div class="filtros" filtro-principal>
+        <div class="campo">
+          <label for="agenda-oferta">Oferta</label>
+          <select
+            id="agenda-oferta"
+            name="agenda-oferta"
+            aria-describedby="agenda-oferta-ayuda"
+            (change)="elegirOferta($any($event.target).value)"
+          >
+            <option value="">Elegí una oferta</option>
+            @for (oferta of ofertas(); track oferta.id) {
+              <option [value]="oferta.id">{{ oferta.nombreComercial }}</option>
+            }
+          </select>
+          <p class="visualmente-oculto" id="agenda-oferta-ayuda">
+            Solo las ofertas activas de esta sede se pueden agendar.
+          </p>
+        </div>
+
+        <div class="campo">
+          <label for="agenda-desde">Desde</label>
+          <input
+            id="agenda-desde"
+            name="agenda-desde"
+            type="date"
+            [value]="desde()"
+            (change)="cambiarDesde($any($event.target).value)"
+          />
+        </div>
+
+        <div class="campo">
+          <label for="agenda-hasta">Hasta (sin incluir)</label>
+          <input
+            id="agenda-hasta"
+            name="agenda-hasta"
+            type="date"
+            [value]="hasta()"
+            (change)="cambiarHasta($any($event.target).value)"
+            aria-describedby="agenda-hasta-ayuda"
+          />
+          <p class="visualmente-oculto" id="agenda-hasta-ayuda">
+            El último día no se incluye. La ventana se consulta de a 62 días como máximo; si pedís
+            más, la recortamos y te avisamos.
+          </p>
+        </div>
+      </div>
+
       <div class="campo">
-        <label for="agenda-oferta">Oferta</label>
+        <label for="agenda-profesional">Profesional</label>
         <select
-          id="agenda-oferta"
-          name="agenda-oferta"
-          (change)="elegirOferta($any($event.target).value)"
+          id="agenda-profesional"
+          name="agenda-profesional"
+          [disabled]="profesionales().length === 0"
+          (change)="elegirProfesional($any($event.target).value)"
         >
-          <option value="">Elegi una oferta</option>
-          @for (oferta of ofertas(); track oferta.id) {
-            <option [value]="oferta.id">{{ oferta.nombreComercial }}</option>
+          <option value="">Todos los habilitados</option>
+          @for (profesional of profesionales(); track profesional.membershipId) {
+            <option [value]="profesional.membershipId">{{ profesional.nombre }}</option>
           }
         </select>
-        <p class="ayuda">Solo las ofertas activas de esta sede se pueden agendar.</p>
       </div>
-
-      <div class="campo">
-        <label for="agenda-desde">Desde</label>
-        <input
-          id="agenda-desde"
-          name="agenda-desde"
-          type="date"
-          [value]="desde()"
-          (change)="cambiarDesde($any($event.target).value)"
-        />
-      </div>
-
-      <div class="campo">
-        <label for="agenda-hasta">Hasta (sin incluir)</label>
-        <input
-          id="agenda-hasta"
-          name="agenda-hasta"
-          type="date"
-          [value]="hasta()"
-          (change)="cambiarHasta($any($event.target).value)"
-          aria-describedby="agenda-hasta-ayuda"
-        />
-        <p class="ayuda" id="agenda-hasta-ayuda">
-          El ultimo dia no se incluye. La ventana se consulta de a 62 dias como maximo; si pedis
-          mas, la recortamos y te avisamos.
-        </p>
-      </div>
-    </div>
-
-    <div class="campo">
-      <label for="agenda-profesional">Profesional</label>
-      <select
-        id="agenda-profesional"
-        name="agenda-profesional"
-        [disabled]="profesionales().length === 0"
-        (change)="elegirProfesional($any($event.target).value)"
-      >
-        <option value="">Todos los habilitados</option>
-        @for (profesional of profesionales(); track profesional.membershipId) {
-          <option [value]="profesional.membershipId">{{ profesional.nombre }}</option>
-        }
-      </select>
-    </div>
-  </app-filtros>
+    </app-filtros>
+  </div>
 </section>
 
 <div aria-live="polite">
@@ -101,23 +116,50 @@
 </div>
 
 @if (agenda(); as resultado) {
-  <section class="tarjeta" aria-labelledby="titulo-resultado-agenda">
-    <h2 id="titulo-resultado-agenda">{{ resultado.nombreComercial }}</h2>
+  <section class="tarjeta tarjeta--plana" aria-labelledby="titulo-resultado-agenda">
+    <!-- La barra del calendario del canvas: ‹ Hoy ›, el rango en palabras y la oferta. -->
+    <div class="tarjeta__barra">
+      <div class="navegador-fecha" role="group" aria-label="Mover la ventana de fechas">
+        <button
+          type="button"
+          class="navegador-fecha__boton navegador-fecha__boton--flecha"
+          aria-label="Semana anterior"
+          title="Semana anterior"
+          (click)="moverVentana(-1)"
+        >
+          ‹
+        </button>
+        <button type="button" class="navegador-fecha__boton" (click)="irAHoy()">Hoy</button>
+        <button
+          type="button"
+          class="navegador-fecha__boton navegador-fecha__boton--flecha"
+          aria-label="Semana siguiente"
+          title="Semana siguiente"
+          (click)="moverVentana(1)"
+        >
+          ›
+        </button>
+        <span class="navegador-fecha__etiqueta">{{ etiquetaDeVentana() }}</span>
+      </div>
 
-    <!--
-      La zona horaria se rotula y no se asume. Los instantes viajan en UTC y la sede puede estar
-      en otro huso que quien mira la pantalla: sin este rotulo, un error de huso se leeria como
-      horarios corridos y no como un error.
-    -->
-    <p class="ayuda">
-      Turnos de {{ duracion() }} minutos. Horarios en la zona de la sede:
-      <b>{{ timezone() }}</b>
-    </p>
+      <h2 id="titulo-resultado-agenda">{{ resultado.nombreComercial }}</h2>
+
+      <!--
+        La zona horaria se rotula y no se asume. Los instantes viajan en UTC y la sede puede estar
+        en otro huso que quien mira la pantalla: sin este rotulo, un error de huso se leeria como
+        horarios corridos y no como un error.
+      -->
+      <span class="tarjeta__barra-fin">
+        Turnos de {{ duracion() }} minutos · zona de la sede <b>{{ timezone() }}</b>
+      </span>
+    </div>
 
     @if (ventanaVacia()) {
-      <p class="estado estado--vacio">
-        Ningun dia de este rango tiene turnos disponibles. Abajo esta el motivo de cada dia.
-      </p>
+      <div class="tarjeta__cuerpo">
+        <p class="estado estado--vacio">
+          Ningun dia de este rango tiene turnos disponibles. Abajo esta el motivo de cada dia.
+        </p>
+      </div>
     }
 
     <ol class="dias">
@@ -173,5 +215,20 @@
         </li>
       }
     </ol>
+
+    <!-- Leyenda del canvas, con los tres estados que la grilla dibuja de verdad. -->
+    <ul class="leyenda" aria-label="Referencias de la grilla">
+      @if (puedeReservar()) {
+        <li>
+          <span class="leyenda__muestra leyenda__muestra--libre"></span>Libre: elegilo para reservar
+        </li>
+      } @else {
+        <li>
+          <span class="leyenda__muestra leyenda__muestra--lectura"></span>Libre (solo consulta)
+        </li>
+      }
+      <li><span class="leyenda__muestra leyenda__muestra--completo"></span>Completo: sin lugar</li>
+      <li><span class="leyenda__muestra"></span>Día sin turnos: se explica el motivo</li>
+    </ul>
   </section>
 }

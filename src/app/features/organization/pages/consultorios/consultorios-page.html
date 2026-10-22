@@ -2,14 +2,14 @@
   <h1>Sedes</h1>
   <app-ayuda titulo="Sobre esta pantalla">
     <p>
-      Los consultorios de esta organizacion. Cada sede tiene su propia zona horaria, que es la que
-      rige su dia operativo y su agenda: no la de la organizacion.
+      Los consultorios de esta organización. Cada sede tiene su propia zona horaria, que es la que
+      rige su día operativo y su agenda: no la de la organización.
     </p>
   </app-ayuda>
   <div class="encabezado__acciones" *akinePermiso="permisoManage">
     <a class="boton" routerLink="/organizacion/sedes/nueva">
       <app-icono nombre="agregar" />
-      Abrir una sede nueva
+      Abrir una sede
     </a>
   </div>
 </div>
@@ -21,7 +21,7 @@
 -->
 @if (sedesDelContexto.sedeDelContextoInactiva()) {
   <section class="banner banner--suspendida" role="alert">
-    <h3>La sede en la que estas trabajando ya no esta activa</h3>
+    <h3>La sede en la que estás trabajando ya no está activa</h3>
     <p>
       Una sede dada de baja no admite operaciones nuevas: no se pueden agendar turnos ni registrar
       sesiones en ella. Lo que ya quedo registrado se conserva.
@@ -72,7 +72,7 @@
       }
 
       @case ('sin-contexto') {
-        <p class="estado estado--vacio">Todavia no elegiste un contexto de trabajo.</p>
+        <p class="estado estado--vacio">Todavía no elegiste un contexto de trabajo.</p>
         <p class="ayuda">
           Las sedes son de una organizacion concreta, asi que hay que indicar cual.
         </p>
@@ -97,8 +97,6 @@
             <p class="estado estado--vacio">No hay sedes que mostrar con este filtro.</p>
           }
         } @else {
-          <p class="ayuda">{{ totalSedes() }} sedes con el filtro elegido.</p>
-
           <div
             class="tabla-scroll"
             tabindex="0"
@@ -125,7 +123,7 @@
                     <th scope="row">
                       {{ sede.name }}
                       @if (esLaDelContexto(sede.id)) {
-                        <span class="etiqueta">Estas trabajando aca</span>
+                        <span class="etiqueta">Estás trabajando acá</span>
                       }
                     </th>
                     <td>{{ sede.timezone ?? '-' }}</td>
@@ -427,12 +425,15 @@
             </table>
           </div>
 
-          <akine-paginacion
-            etiqueta="Paginas de sedes"
-            [paginaActual]="paginaActual()"
-            [totalPaginas]="totalPaginas()"
-            (cambioDePagina)="irAPagina($event)"
-          />
+          <div class="tabla-pie">
+            <span>{{ totalSedes() }} sedes con el filtro elegido</span>
+            <akine-paginacion
+              etiqueta="Paginas de sedes"
+              [paginaActual]="paginaActual()"
+              [totalPaginas]="totalPaginas()"
+              (cambioDePagina)="irAPagina($event)"
+            />
+          </div>
         }
       }
     }

@@ -84,7 +84,7 @@ export const routes: Routes = [
   {
     path: 'estado',
     loadComponent: () => import('./features/platform/pages/estado/estado').then((m) => m.Estado),
-    title: 'AKINE - Baseline tecnico',
+    title: 'AKINE - Estado del sistema',
   },
 
   // Consola de plataforma (AKINE-A-7): la bandeja de solicitudes al catalogo comun.

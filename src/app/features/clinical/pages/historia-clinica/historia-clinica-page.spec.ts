@@ -130,7 +130,7 @@ describe('HistoriaClinicaPage', () => {
         { status: 404, statusText: 'NF' },
       );
     await estabilizar(fixture);
-    expect(texto(fixture)).toContain('Todavia no tiene historia clinica');
+    expect(texto(fixture)).toContain('Todavía no tiene historia clínica');
 
     boton(fixture, 'Abrir la historia clinica').click();
     httpMock.expectOne((r) => r.url === HISTORIA_POR_PERSONA && r.method === 'PUT').flush(HISTORIA);

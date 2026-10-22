@@ -59,6 +59,7 @@ import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
 import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
 import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
+import { CabeceraDePersona } from '../../components/cabecera-de-persona/cabecera-de-persona';
 
 /** Panel abierto sobre una orden. Solo uno a la vez en toda la pantalla. */
 type PanelDeOrden = 'editar' | 'baja' | 'documento';
@@ -146,6 +147,7 @@ interface PanelAbierto {
 @Component({
   selector: 'app-ordenes-y-autorizaciones-page',
   imports: [
+    CabeceraDePersona,
     Ayuda,
     ColumnaOrdenable,
     Paginacion,

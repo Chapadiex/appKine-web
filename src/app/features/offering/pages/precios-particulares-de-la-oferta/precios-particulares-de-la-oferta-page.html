@@ -1,3 +1,8 @@
+<nav class="migas" aria-label="Ruta">
+  <a routerLink="/servicios/ofertas">Ofertas de la sede</a>
+  <span aria-hidden="true">/</span>
+</nav>
+
 <div class="titulo-con-ayuda">
   <h1>Precios particulares de la oferta</h1>
   <app-ayuda titulo="Sobre esta pantalla">
@@ -32,15 +37,7 @@
   </p>
 } @else {}
 
-<nav class="acciones" aria-label="Servicios y ofertas">
-  <a class="boton boton--secundario" routerLink="/servicios/ofertas">Ofertas de la sede</a>
-  <a
-    class="boton boton--secundario"
-    [routerLink]="['/servicios/ofertas', ofertaId, 'habilitaciones']"
-  >
-    Habilitaciones
-  </a>
-</nav>
+<app-pestanas [pestanas]="pestanasDeOferta" [etiqueta]="etiquetaDePestanas" />
 
 <div aria-live="polite">
   @if (exito(); as mensaje) {

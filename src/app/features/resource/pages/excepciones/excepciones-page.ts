@@ -73,6 +73,7 @@ import {
   sumarDias,
 } from '../../models/ventana-de-fechas';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
+import { Icono } from '../../../../shared/components/icono/icono';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 
 /** Cuantos dias de ventana se proponen al entrar. Un trimestre es lo que se planifica. */
@@ -153,6 +154,7 @@ const MOTIVOS: readonly {
   selector: 'app-excepciones-page',
   imports: [
     Ayuda,
+    Icono,
     Filtros,
     ReactiveFormsModule,
     RouterLink,

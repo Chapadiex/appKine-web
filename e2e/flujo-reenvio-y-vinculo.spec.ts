@@ -56,7 +56,7 @@ test.describe('Reenvio de activacion y vinculo directo contra el backend real', 
     await ingresar(page, { emailAdmin: email } as Centro);
     await navegar(page, '/organizacion/colaboradores/nuevo');
     await expect(
-      page.getByRole('heading', { name: 'Vincular a un colaborador', level: 1 }),
+      page.getByRole('heading', { name: 'Vincular colaborador', level: 1 }),
     ).toBeVisible();
     await page.getByLabel('Email de la cuenta').fill(centro.emailProfesional);
     await page.getByLabel('Rol', { exact: true }).selectOption({ value: 'PROFESIONAL' });

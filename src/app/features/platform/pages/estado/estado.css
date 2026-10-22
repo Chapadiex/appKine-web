@@ -17,3 +17,21 @@ code {
   border-radius: var(--radio-sm);
   font-size: 0.875em;
 }
+
+/* Tira de versiones: cuatro datos lado a lado que bajan a una columna en pantallas angostas. */
+.versiones {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: var(--esp-5);
+}
+
+.versiones__dato {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-1);
+}
+
+.detalle-tecnico {
+  font-family: var(--fuente-mono);
+  font-size: var(--tipo-xs);
+}

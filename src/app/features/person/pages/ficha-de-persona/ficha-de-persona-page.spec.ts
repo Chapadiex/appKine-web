@@ -123,7 +123,7 @@ const RESUMEN_COMPLETO = {
  *       como opcional y valida como obligatorio deja la accion inejecutable— mirado desde el otro
  *       lado, porque aca el motivo <b>si</b> es obligatorio y el default del componente es el
  *       correcto.</li>
- *   <li><b>La pantalla no muestra nada clinico</b> y lo dice.</li>
+ *   <li><b>La pantalla no muestra nada clínico</b> y lo dice.</li>
  * </ol>
  */
 describe('FichaDePersonaPage', () => {
@@ -168,14 +168,14 @@ describe('FichaDePersonaPage', () => {
     expect(contenido).toContain('cobro:register');
   });
 
-  it('una seccion vacia dice que se consulto y no hay nada, y NO habla de permisos', async () => {
+  it('una seccion vacia dice que se consultó y no hay nada, y NO habla de permisos', async () => {
     const fixture = await montar(RESUMEN_COMPLETO);
     const contenido = texto(fixture);
 
     expect(contenido).toContain('Sin movimientos registrados');
     // La frase que distingue los dos casos. Si esto cambiara a "no hay datos" a secas, la seccion
     // vacia y la prohibida volverian a leerse igual.
-    expect(contenido).toContain('se consulto y no hay nada');
+    expect(contenido).toContain('se consultó y no hay nada');
   });
 
   it('la seccion omitida no se confunde con la vacia: aparecen las dos, cada una con su titulo', async () => {
@@ -285,26 +285,26 @@ describe('FichaDePersonaPage', () => {
     expect(texto(fixture)).toContain('8.500,50');
   });
 
-  it('dice explicitamente que no muestra nada clinico', async () => {
+  it('dice explicitamente que no muestra nada clínico', async () => {
     const fixture = await montar(RESUMEN_COMPLETO);
 
     // Sin el cartel, quien atiende busca la historia clinica aca y concluye que el sistema no la
     // tiene.
-    expect(texto(fixture)).toContain('no muestra nada clinico');
+    expect(texto(fixture)).toContain('no muestra nada clínico');
   });
 
   it('con hc:read ofrece la historia clinica del paciente, sin mostrar nada de ella (D-e)', async () => {
     const fixture = await montar(RESUMEN_COMPLETO, [PERMISO_PACIENTE_MANAGE, PERMISO_HC_READ]);
 
-    const enlace = enlaceA(fixture, 'Abrir la historia clinica');
+    const enlace = enlaceA(fixture, 'Abrir la historia clínica');
     expect(enlace?.getAttribute('href')).toBe(`/historia-clinica/personas/${PERSONA}`);
   });
 
   it('sin hc:read no ofrece la historia: el backend la negaria igual (D-e)', async () => {
     const fixture = await montar(RESUMEN_COMPLETO);
 
-    expect(enlaceA(fixture, 'Abrir la historia clinica')).toBeNull();
-    expect(texto(fixture)).toContain('no muestra nada clinico');
+    expect(enlaceA(fixture, 'Abrir la historia clínica')).toBeNull();
+    expect(texto(fixture)).toContain('no muestra nada clínico');
   });
 
   // -------------------------------------------------------------------------------------

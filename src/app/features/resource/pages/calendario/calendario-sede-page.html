@@ -2,22 +2,16 @@
   <h1>Horario general y feriados de la sede</h1>
   <app-ayuda titulo="Sobre esta pantalla">
     <p>
-      Si <b>{{ nombreDeLaSede() }}</b> cierra los feriados de su calendario nacional, y cuales son
-      los feriados que caen en el periodo que estas mirando. Un centro de guardia atiende los
-      feriados: por eso esto se decide por sede y no una sola vez para toda la organizacion.
+      El horario general de <b>{{ nombreDeLaSede() }}</b
+      >, si la sede cierra los feriados de su calendario nacional y cuáles son los feriados que caen
+      en el período que estás mirando. Un centro de guardia atiende los feriados: por eso esto se
+      decide por sede y no una sola vez para toda la organización.
     </p>
+    <p>Ningún profesional puede tener franjas fuera del horario general de su sede.</p>
   </app-ayuda>
 </div>
 
-<p class="acciones">
-  <a class="enlace" [routerLink]="rutas.semanal">Horario semanal del profesional</a>
-  <a class="enlace" [routerLink]="rutas.excepciones">Cierres y aperturas</a>
-  <a class="enlace" [routerLink]="rutas.efectivo">Horario efectivo del profesional</a>
-</p>
-
-<section class="tarjeta" aria-labelledby="titulo-ventana">
-  <h2 id="titulo-ventana">Que periodo mirar</h2>
-
+<section class="tarjeta" aria-label="Período a mirar">
   <form id="form-ventana" [formGroup]="formularioVentana" (ngSubmit)="consultar()" novalidate>
     <div class="ventana">
       <div class="campo">
@@ -61,7 +55,7 @@
 <div aria-live="polite">
   @switch (estado().tipo) {
     @case ('inicial') {
-      <p class="estado estado--vacio">Elegi un periodo y consulta.</p>
+      <p class="estado estado--vacio">Elegí un período y consultá.</p>
     }
 
     @case ('cargando') {
@@ -92,7 +86,7 @@
 
     @case ('listo') {
       <section class="tarjeta" aria-labelledby="titulo-politica">
-        <h2 id="titulo-politica">Politica de la sede</h2>
+        <h2 id="titulo-politica">Política de la sede</h2>
 
         @if (politica(); as actual) {
           <p class="ayuda">
@@ -174,157 +168,159 @@
         </form>
       </section>
 
-      <section class="tarjeta" aria-labelledby="titulo-horario-general">
-        <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
-          <h2 id="titulo-horario-general">Horario general de la sede</h2>
-          <app-ayuda titulo="Horario general de la sede">
-            <p>
-              Los dias y horas en que la sede esta abierta. <b>Limita la agenda</b>: ningun turno se
-              ofrece ni se reserva fuera de este horario, aunque el profesional tenga
-              disponibilidad, y no abre nada que el profesional no tenga. Sin horario general no se
-              limita nada.
-            </p>
-          </app-ayuda>
-        </div>
+      <div class="calendario-columnas">
+        <section class="tarjeta" aria-labelledby="titulo-horario-general">
+          <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
+            <h2 id="titulo-horario-general">Horario general de la sede</h2>
+            <app-ayuda titulo="Horario general de la sede">
+              <p>
+                Los dias y horas en que la sede esta abierta. <b>Limita la agenda</b>: ningun turno
+                se ofrece ni se reserva fuera de este horario, aunque el profesional tenga
+                disponibilidad, y no abre nada que el profesional no tenga. Sin horario general no
+                se limita nada.
+              </p>
+            </app-ayuda>
+          </div>
 
-        @if (puedeGestionar()) {
-          <form
-            id="form-horario-general"
-            [formGroup]="formularioHorarioGrupo"
-            (ngSubmit)="guardarHorario()"
-            novalidate
-          >
-            <app-editor-de-franjas
-              idBase="calendario-horario"
-              [franjas]="formularioHorario"
-              [mostrarErrores]="intentosHorario() > 0"
-              [erroresDelServidor]="erroresFranja()"
-            />
+          @if (puedeGestionar()) {
+            <form
+              id="form-horario-general"
+              [formGroup]="formularioHorarioGrupo"
+              (ngSubmit)="guardarHorario()"
+              novalidate
+            >
+              <app-editor-de-franjas
+                idBase="calendario-horario"
+                [franjas]="formularioHorario"
+                [mostrarErrores]="intentosHorario() > 0"
+                [erroresDelServidor]="erroresFranja()"
+              />
 
-            @if (hayCambiosEnHorario()) {
-              <p class="ayuda">Hay cambios sin guardar en el horario.</p>
-            }
-
-            <div class="acciones">
-              <button type="submit" class="boton" [disabled]="guardandoHorario()">
-                Guardar el horario
-              </button>
-              @if (horarioGuardado().length > 0) {
-                <button
-                  type="button"
-                  class="boton boton--secundario"
-                  [disabled]="guardandoHorario()"
-                  (click)="borrarHorario()"
-                >
-                  Borrar el horario general
-                </button>
+              @if (hayCambiosEnHorario()) {
+                <p class="ayuda">Hay cambios sin guardar en el horario.</p>
               }
-            </div>
 
-            <p class="ayuda">
-              Guardar reemplaza el horario entero por el de arriba. Si quitas todas las franjas y
-              guardas, el horario se borra.
-            </p>
-          </form>
-        } @else {
-          @if (horarioGuardado().length === 0) {
+              <div class="acciones">
+                <button type="submit" class="boton" [disabled]="guardandoHorario()">
+                  Guardar el horario
+                </button>
+                @if (horarioGuardado().length > 0) {
+                  <button
+                    type="button"
+                    class="boton boton--secundario"
+                    [disabled]="guardandoHorario()"
+                    (click)="borrarHorario()"
+                  >
+                    Borrar el horario general
+                  </button>
+                }
+              </div>
+
+              <p class="ayuda">
+                Guardar reemplaza el horario entero por el de arriba. Si quitas todas las franjas y
+                guardas, el horario se borra.
+              </p>
+            </form>
+          } @else {
+            @if (horarioGuardado().length === 0) {
+              <p class="estado estado--vacio">
+                La sede no declaro horario general. Eso no significa que este cerrada.
+              </p>
+            } @else {
+              <ul>
+                @for (linea of horarioGuardado(); track $index) {
+                  <li>{{ linea }}</li>
+                }
+              </ul>
+            }
+            @if (modoLectura()) {
+              <p class="ayuda">{{ textoModoLectura }}</p>
+            }
+          }
+
+          <div aria-live="polite">
+            @if (exitoHorario(); as mensaje) {
+              <p class="estado estado--ok">{{ mensaje }}</p>
+            }
+            @if (avisoImpactoHorario(); as aviso) {
+              <div class="aviso-apertura" role="status">
+                <p>
+                  <b>{{ aviso }}</b>
+                  <a class="enlace" routerLink="/agenda">Ir a la agenda</a>
+                </p>
+                @if (turnosImpactoHorario().length > 0) {
+                  <ul class="lista-datos" aria-label="Turnos fuera del horario">
+                    @for (turno of turnosImpactoHorario(); track turno.turnoId) {
+                      <li>{{ formatearInstante(turno.inicio) ?? 'Sin fecha' }}</li>
+                    }
+                  </ul>
+                }
+                @if (notaImpactoHorario(); as nota) {
+                  <p class="ayuda">{{ nota }}</p>
+                }
+              </div>
+            }
+            @if (errorHorario(); as mensaje) {
+              <p class="estado estado--error" role="alert">{{ mensaje }}</p>
+            }
+          </div>
+        </section>
+
+        <section class="tarjeta" aria-labelledby="titulo-feriados">
+          <h2 id="titulo-feriados">Feriados del periodo</h2>
+
+          @if (feriados().length === 0) {
             <p class="estado estado--vacio">
-              La sede no declaro horario general. Eso no significa que este cerrada.
+              No hay feriados del calendario nacional entre
+              {{ etiquetaDeFecha(ventanaConsultada()?.desde) }} y
+              {{ etiquetaDeFecha(ventanaConsultada()?.hasta) }} (exclusivo).
             </p>
           } @else {
-            <ul>
-              @for (linea of horarioGuardado(); track $index) {
-                <li>{{ linea }}</li>
+            <p class="ayuda">
+              {{ feriados().length }} feriados entre
+              {{ etiquetaDeFecha(ventanaConsultada()?.desde) }} y
+              {{ etiquetaDeFecha(ventanaConsultada()?.hasta) }} (exclusivo).
+              @if (quedaAbiertoEnFeriados()) {
+                Con la politica actual <b>no</b> recortan la agenda: son informativos.
               }
-            </ul>
-          }
-          @if (modoLectura()) {
-            <p class="ayuda">{{ textoModoLectura }}</p>
-          }
-        }
+            </p>
 
-        <div aria-live="polite">
-          @if (exitoHorario(); as mensaje) {
-            <p class="estado estado--ok">{{ mensaje }}</p>
-          }
-          @if (avisoImpactoHorario(); as aviso) {
-            <div class="aviso-apertura" role="status">
-              <p>
-                <b>{{ aviso }}</b>
-                <a class="enlace" routerLink="/agenda">Ir a la agenda</a>
-              </p>
-              @if (turnosImpactoHorario().length > 0) {
-                <ul class="lista-datos" aria-label="Turnos fuera del horario">
-                  @for (turno of turnosImpactoHorario(); track turno.turnoId) {
-                    <li>{{ formatearInstante(turno.inicio) ?? 'Sin fecha' }}</li>
+            <div class="tabla-scroll">
+              <table class="tabla">
+                <caption class="visualmente-oculto">
+                  Feriados del calendario nacional que caen en el periodo consultado
+                </caption>
+                <thead>
+                  <tr>
+                    <th scope="col" appOrdenable [tabla]="tabla" columna="fecha">Fecha</th>
+                    <th scope="col" appOrdenable [tabla]="tabla" columna="feriado">Feriado</th>
+                    <th scope="col" appOrdenable [tabla]="tabla" columna="tipo">Tipo</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (feriado of tabla.visibles(); track feriado.id ?? $index) {
+                    <tr>
+                      <th scope="row">{{ etiquetaDeFecha(feriado.fecha) }}</th>
+                      <td>{{ feriado.nombre }}</td>
+                      <td>{{ etiquetaDeTipoDeFeriado(feriado.tipo) }}</td>
+                    </tr>
                   }
-                </ul>
-              }
-              @if (notaImpactoHorario(); as nota) {
-                <p class="ayuda">{{ nota }}</p>
-              }
+                </tbody>
+              </table>
+            </div>
+
+            <div class="tabla-pie">
+              <span>{{ tabla.total() }} feriados</span>
+              <app-paginacion
+                [paginaActual]="tabla.pagina()"
+                [totalPaginas]="tabla.totalPaginas()"
+                etiqueta="Paginas de feriados"
+                (cambioDePagina)="tabla.irA($event)"
+              />
             </div>
           }
-          @if (errorHorario(); as mensaje) {
-            <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-          }
-        </div>
-      </section>
-
-      <section class="tarjeta" aria-labelledby="titulo-feriados">
-        <h2 id="titulo-feriados">Feriados del periodo</h2>
-
-        @if (feriados().length === 0) {
-          <p class="estado estado--vacio">
-            No hay feriados del calendario nacional entre
-            {{ etiquetaDeFecha(ventanaConsultada()?.desde) }} y
-            {{ etiquetaDeFecha(ventanaConsultada()?.hasta) }} (exclusivo).
-          </p>
-        } @else {
-          <p class="ayuda">
-            {{ feriados().length }} feriados entre
-            {{ etiquetaDeFecha(ventanaConsultada()?.desde) }} y
-            {{ etiquetaDeFecha(ventanaConsultada()?.hasta) }} (exclusivo).
-            @if (quedaAbiertoEnFeriados()) {
-              Con la politica actual <b>no</b> recortan la agenda: son informativos.
-            }
-          </p>
-
-          <div class="tabla-scroll">
-            <table class="tabla">
-              <caption class="visualmente-oculto">
-                Feriados del calendario nacional que caen en el periodo consultado
-              </caption>
-              <thead>
-                <tr>
-                  <th scope="col" appOrdenable [tabla]="tabla" columna="fecha">Fecha</th>
-                  <th scope="col" appOrdenable [tabla]="tabla" columna="feriado">Feriado</th>
-                  <th scope="col" appOrdenable [tabla]="tabla" columna="tipo">Tipo</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (feriado of tabla.visibles(); track feriado.id ?? $index) {
-                  <tr>
-                    <th scope="row">{{ etiquetaDeFecha(feriado.fecha) }}</th>
-                    <td>{{ feriado.nombre }}</td>
-                    <td>{{ etiquetaDeTipoDeFeriado(feriado.tipo) }}</td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-          </div>
-
-          <div class="tabla-pie">
-            <span>{{ tabla.total() }} feriados</span>
-            <app-paginacion
-              [paginaActual]="tabla.pagina()"
-              [totalPaginas]="tabla.totalPaginas()"
-              etiqueta="Paginas de feriados"
-              (cambioDePagina)="tabla.irA($event)"
-            />
-          </div>
-        }
-      </section>
+        </section>
+      </div>
     }
   }
 </div>

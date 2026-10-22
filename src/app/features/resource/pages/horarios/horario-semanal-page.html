@@ -1,42 +1,47 @@
 <div class="titulo-con-ayuda">
-  <h1>Horario semanal del profesional</h1>
+  <h1>Horario del profesional</h1>
   <app-ayuda titulo="Sobre esta pantalla">
     <p>
-      En que dias y horas atiende cada profesional en <b>{{ nombreDeLaSede() }}</b
+      En qué días y horas atiende cada profesional en <b>{{ nombreDeLaSede() }}</b
       >. Es el horario <b>cargado</b>: la regla. Lo que el profesional termina atendiendo una fecha
-      concreta —ya aplicados feriados, cierres y la vigencia de su vinculo— es la disponibilidad
-      efectiva, y se consulta aparte.
+      concreta —ya aplicados feriados, cierres y la vigencia de su vínculo— es el horario efectivo,
+      y se consulta en la otra pestaña.
+    </p>
+    <!--
+      La aclaración que evita el "bug" más probable del módulo: quien carga la mañana y después la
+      tarde tiene que llegar al formulario sabiendo que 12:00 puede ser el fin de una y el inicio
+      de la otra.
+    -->
+    <p class="ayuda-contextual__subtitulo">La hora de fin es exclusiva</p>
+    <p>
+      Un bloque de <b>09:00 a 12:00</b> y otro de <b>12:00 a 15:00</b> son la mañana y la tarde:
+      <b>no se pisan</b>, porque el bloque termina justo antes de su hora de fin. Cargarlos así es
+      correcto y es lo que hace la mayoría de los centros.
+    </p>
+    <p>
+      Para un bloque que llega hasta el final del día, la hora de fin es
+      <b>{{ horaMedianoche }}</b> y no 00:00: las 00:00 serían el principio del día, no el final.
     </p>
   </app-ayuda>
+  @if (estado().tipo === 'listo') {
+    <div class="encabezado__acciones">
+      <button
+        type="button"
+        class="boton"
+        *akinePermiso="permisoManage"
+        (click)="abrirAlta()"
+        [disabled]="altaAbierta()"
+      >
+        <app-icono nombre="agregar" />
+        Agregar un bloque
+      </button>
+    </div>
+  }
 </div>
 
-<p class="acciones">
-  <a class="enlace" [routerLink]="rutas.excepciones">Cierres y aperturas</a>
-  <a class="enlace" [routerLink]="rutas.calendario">Horario general y feriados de la sede</a>
-  <a class="enlace" [routerLink]="rutas.efectivo">Horario efectivo del profesional</a>
-</p>
+<app-pestanas [pestanas]="pestanas" [etiqueta]="etiquetaDePestanas" />
 
-<!--
-  La aclaracion que evita el "bug" mas probable del modulo. Va arriba y con encabezado propio:
-  quien carga la manana y despues la tarde tiene que llegar al formulario ya sabiendo que 12:00
-  puede ser el fin de una y el inicio de la otra.
--->
-<section class="tarjeta nota-servicio" aria-labelledby="titulo-nota-horas">
-  <h2 id="titulo-nota-horas">La hora de fin es exclusiva</h2>
-  <p>
-    Un bloque de <b>09:00 a 12:00</b> y otro de <b>12:00 a 15:00</b> son la manana y la tarde:
-    <b>no se pisan</b>, porque el bloque termina justo antes de su hora de fin. Cargarlos asi es
-    correcto y es lo que hace la mayoria de los centros.
-  </p>
-  <p>
-    Para un bloque que llega hasta el final del dia, la hora de fin es
-    <b>{{ horaMedianoche }}</b> y no 00:00: las 00:00 serian el principio del dia, no el final.
-  </p>
-</section>
-
-<section class="tarjeta" aria-labelledby="titulo-profesional">
-  <h2 id="titulo-profesional">Profesional</h2>
-
+<section class="tarjeta" aria-label="Profesional">
   <div aria-live="polite">
     @if (cargandoProfesionales()) {
       <p class="estado estado--cargando">Cargando los profesionales de la sede&hellip;</p>
@@ -140,18 +145,6 @@
       }
 
       @case ('listo') {
-        <p class="acciones">
-          <button
-            type="button"
-            class="boton"
-            *akinePermiso="permisoManage"
-            (click)="abrirAlta()"
-            [disabled]="altaAbierta()"
-          >
-            Agregar un bloque
-          </button>
-        </p>
-
         <!--
           Modo lectura: el horario entero se sigue viendo -un profesional tiene que poder mirar
           su semana- y lo unico que falta son las acciones. El cartel existe porque una pantalla
@@ -278,9 +271,12 @@
           </form>
         }
 
-        <p class="ayuda">
-          {{ totalBloques() }} bloques cargados. Los bloques dados de baja no se muestran: la fila
-          sobrevive en la auditoria con su motivo y su autor.
+        <p class="tabla-pie">
+          <span>{{ totalBloques() }} bloques cargados</span>
+          <span
+            >Los bloques dados de baja no se muestran: la fila sobrevive en la auditoría con su
+            motivo y su autor.</span
+          >
         </p>
 
         <div class="semana">

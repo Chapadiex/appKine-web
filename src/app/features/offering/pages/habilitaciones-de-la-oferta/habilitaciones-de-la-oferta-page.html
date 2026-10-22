@@ -1,3 +1,8 @@
+<nav class="migas" aria-label="Ruta">
+  <a routerLink="/servicios/ofertas">Ofertas de la sede</a>
+  <span aria-hidden="true">/</span>
+</nav>
+
 <div class="titulo-con-ayuda">
   <h1>Habilitaciones de la oferta</h1>
   <app-ayuda titulo="Sobre esta pantalla">
@@ -17,10 +22,7 @@
   </p>
 } @else {}
 
-<nav class="acciones" aria-label="Servicios y ofertas">
-  <a class="boton boton--secundario" routerLink="/servicios/catalogo">Catalogo de servicios</a>
-  <a class="boton boton--secundario" routerLink="/servicios/ofertas">Ofertas de la sede</a>
-</nav>
+<app-pestanas [pestanas]="pestanasDeOferta" [etiqueta]="etiquetaDePestanas" />
 
 @switch (estado().tipo) {
   @case ('cargando') {

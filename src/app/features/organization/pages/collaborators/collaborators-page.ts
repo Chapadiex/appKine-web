@@ -22,6 +22,11 @@ import { TenantContextStore } from '../../../../core/services/tenant-context.sto
 import { traducirErrorColaborador, traducirErrorGrant } from '../../models/colaborador-errors';
 import { textoRequerido } from '../../../../shared/validators/texto-requerido';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
+import { Pestanas } from '../../../../shared/components/pestanas/pestanas';
+import {
+  ETIQUETA_PESTANAS_DE_COLABORADORES,
+  PESTANAS_DE_COLABORADORES,
+} from '../../models/pestanas-de-colaboradores';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { Icono } from '../../../../shared/components/icono/icono';
 
@@ -73,6 +78,7 @@ const POR_PAGINA = 20;
 @Component({
   selector: 'app-collaborators-page',
   imports: [
+    Pestanas,
     Ayuda,
     Icono,
     ReactiveFormsModule,
@@ -85,6 +91,9 @@ const POR_PAGINA = 20;
   styleUrl: '../../organization.css',
 })
 export class CollaboratorsPage {
+  protected readonly pestanas = PESTANAS_DE_COLABORADORES;
+  protected readonly etiquetaDePestanas = ETIQUETA_PESTANAS_DE_COLABORADORES;
+
   private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly colaboradores = inject(ColaboradoresService);
   private readonly tenantContext = inject(TenantContextStore);
@@ -227,6 +236,17 @@ export class CollaboratorsPage {
       colaborador.accountEmail ||
       `Cuenta ${colaborador.accountId}`
     );
+  }
+
+  /** Iniciales para el avatar: las de las dos primeras palabras del nombre (o la del correo). */
+  protected inicialesDe(colaborador: MembershipResponse): string {
+    const palabras = this.nombreDe(colaborador)
+      .split(/[\s@.]+/)
+      .filter(Boolean);
+    return palabras
+      .slice(0, 2)
+      .map((palabra) => palabra.charAt(0).toUpperCase())
+      .join('');
   }
 
   /** Nombre de la sede, o el texto de alcance organizacion cuando `consultorioId` es null. */

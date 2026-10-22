@@ -2,51 +2,77 @@
   <h1>Clases</h1>
   <app-ayuda titulo="Sobre esta pantalla">
     <p>
-      Las clases grupales de esta sede, semana por semana. Una clase es un evento unico con su cupo:
-      no es un turno por persona. Desde el detalle de cada una se inscribe, se ve la lista de espera
-      y se reprograma o cancela.
+      Las clases grupales de esta sede, semana por semana. Una clase es un evento único con su cupo:
+      no es un turno por persona. Cada fila es una clase concreta; desde “Ver clase” se inscribe, se
+      ve la lista de espera y se reprograma o cancela.
+    </p>
+    <p>
+      Las clases canceladas se muestran, marcadas: así quien atiende el teléfono puede decir qué
+      pasó con una clase que ya no existe.
     </p>
   </app-ayuda>
   <div class="encabezado__acciones" *akinePermiso="PERMISO_CLASE_MANAGE">
     <a class="boton" [routerLink]="RUTA_NUEVA_CLASE">
       <app-icono nombre="agregar" />
-      Programar una clase
+      Programar clase
     </a>
   </div>
 </div>
 
 <section class="tarjeta" aria-labelledby="titulo-semana">
-  <h2 id="titulo-semana">
-    Semana del {{ diaEnPalabras(lunes()) }} al {{ diaEnPalabras(domingo()) }}
-  </h2>
+  <h2 id="titulo-semana" class="visualmente-oculto">Clases de la semana</h2>
 
-  <div class="filtros">
-    <div class="campo">
-      <label for="clases-fecha">Ir a la semana de</label>
-      <input
-        id="clases-fecha"
-        name="clases-fecha"
-        type="date"
-        [value]="lunes()"
-        (change)="elegirFecha($any($event.target).value)"
-        aria-describedby="clases-fecha-ayuda"
-      />
-      <p class="ayuda" id="clases-fecha-ayuda">
-        Fecha local de la sede
-        @if (zona()) {
-          ({{ zona() }})
-        }
-        . Los horarios tambien se muestran en esa zona.
-      </p>
-    </div>
-    <div class="acciones">
-      <button type="button" class="boton boton--secundario" (click)="moverSemana(-1)">
-        Semana anterior
-      </button>
-      <button type="button" class="boton boton--secundario" (click)="irAHoy()">Esta semana</button>
-      <button type="button" class="boton boton--secundario" (click)="moverSemana(1)">
-        Semana siguiente
-      </button>
+  <div class="barra-semana">
+    <app-filtros class="barra-semana__filtros">
+      <div class="campo" filtro-principal>
+        <label class="visualmente-oculto" for="clases-busqueda">Buscar clases</label>
+        <div class="campo-busqueda">
+          <app-icono class="campo-busqueda__icono" nombre="buscar" />
+          <input
+            id="clases-busqueda"
+            type="search"
+            name="clases-busqueda"
+            placeholder="Buscar..."
+            [value]="busqueda()"
+            (input)="buscar($any($event.target).value)"
+          />
+        </div>
+      </div>
+      <div class="campo">
+        <label for="clases-fecha">Ir a la semana de</label>
+        <input
+          id="clases-fecha"
+          name="clases-fecha"
+          type="date"
+          [value]="lunes()"
+          (change)="elegirFecha($any($event.target).value)"
+          aria-describedby="clases-fecha-ayuda"
+        />
+        <p class="ayuda" id="clases-fecha-ayuda">
+          Fecha local de la sede
+          @if (zona()) {
+            ({{ zona() }})
+          }
+          . Los horarios también se muestran en esa zona.
+        </p>
+      </div>
+    </app-filtros>
+
+    <div class="barra-semana__semana">
+      <span class="barra-semana__rango">
+        Semana del {{ diaEnPalabras(lunes()) }} al {{ diaEnPalabras(domingo()) }}
+      </span>
+      <div class="acciones">
+        <button type="button" class="boton boton--secundario" (click)="moverSemana(-1)">
+          Semana anterior
+        </button>
+        <button type="button" class="boton boton--secundario" (click)="irAHoy()">
+          Esta semana
+        </button>
+        <button type="button" class="boton boton--secundario" (click)="moverSemana(1)">
+          Semana siguiente
+        </button>
+      </div>
     </div>
   </div>
 </section>
@@ -72,51 +98,71 @@
 </div>
 
 @if (clases() !== null) {
-  <section class="tarjeta" aria-labelledby="titulo-dias">
-    <h2 id="titulo-dias">{{ total() }} {{ total() === 1 ? 'clase' : 'clases' }} en la semana</h2>
-
-    <ul class="dias">
-      @for (dia of dias(); track dia.fecha) {
-        <li class="dia">
-          <h3 class="dia__fecha">{{ diaEnPalabras(dia.fecha) }}</h3>
-          @if (dia.clases.length === 0) {
-            <p class="ayuda">Sin clases.</p>
-          } @else {
-            <ul class="clases">
-              @for (clase of dia.clases; track clase.id) {
-                <li class="clase">
-                  <span class="clase__hora">{{ rango(clase) }}</span>
-                  <span>{{ nombre(clase) }}</span>
-                  @if (quienYDonde(clase); as detalle) {
-                    <span class="ayuda">{{ detalle }}</span>
-                  }
-                  <span
-                    class="marca-estado"
-                    [class.marca-estado--activa]="clase.estado === 'PROGRAMADA'"
-                    [class.marca-estado--revocada]="clase.estado === 'CANCELADA'"
-                  >
-                    {{ textoDeEstado(clase.estado) }}
-                  </span>
-                  <span>
-                    {{ ocupacion(clase) }}
-                    @if (clase.estado === 'PROGRAMADA' && lugaresLibres(clase) === 0) {
-                      — completa
-                    }
-                  </span>
-                  @if (clase.id) {
-                    <a class="enlace" [routerLink]="['/clases', clase.id]">
-                      Ver clase<span class="visualmente-oculto">
-                        {{ nombre(clase) }} del {{ diaEnPalabras(dia.fecha) }} a las
-                        {{ rango(clase) }}</span
-                      >
-                    </a>
-                  }
-                </li>
-              }
-            </ul>
+  @if (tabla.total() === 0) {
+    <p class="estado estado--vacio">
+      {{ total() === 0 ? 'No hay clases esta semana.' : 'Ninguna clase coincide con la búsqueda.' }}
+    </p>
+  } @else {
+    <div class="tabla-scroll" tabindex="0" role="region" aria-label="Clases de la semana">
+      <table class="tabla">
+        <thead>
+          <tr>
+            <th scope="col" appOrdenable [tabla]="tabla" columna="clase">Clase</th>
+            <th scope="col" appOrdenable [tabla]="tabla" columna="fecha">Fecha</th>
+            <th scope="col" appOrdenable [tabla]="tabla" columna="profesional">Profesional</th>
+            <th scope="col">Lugar</th>
+            <th scope="col" appOrdenable [tabla]="tabla" columna="cupo">Cupo</th>
+            <th scope="col" appOrdenable [tabla]="tabla" columna="estado">Estado</th>
+            <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (clase of tabla.visibles(); track clase.id) {
+            <tr [class.fila--revocada]="clase.estado === 'CANCELADA'">
+              <td>{{ nombre(clase) }}</td>
+              <td>
+                <strong>{{ diaCorto(clase) }}</strong> {{ rango(clase) }}
+              </td>
+              <td>{{ clase.profesionalNombre || '—' }}</td>
+              <td>{{ clase.espacioNombre || '—' }}</td>
+              <td>
+                {{ ocupacion(clase) }}
+                @if (clase.estado === 'PROGRAMADA' && lugaresLibres(clase) === 0) {
+                  <span class="ayuda"> — completa</span>
+                }
+              </td>
+              <td>
+                <span
+                  class="marca-estado"
+                  [class.marca-estado--activa]="clase.estado === 'PROGRAMADA'"
+                  [class.marca-estado--revocada]="clase.estado === 'CANCELADA'"
+                >
+                  {{ textoDeEstado(clase.estado) }}
+                </span>
+              </td>
+              <td>
+                @if (clase.id) {
+                  <a class="enlace" [routerLink]="['/clases', clase.id]">
+                    Ver clase<span class="visualmente-oculto">
+                      {{ nombre(clase) }} del {{ diaCorto(clase) }} a las {{ rango(clase) }}</span
+                    >
+                  </a>
+                }
+              </td>
+            </tr>
           }
-        </li>
-      }
-    </ul>
-  </section>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="tabla-pie">
+      <span>{{ tabla.total() }} {{ tabla.total() === 1 ? 'clase' : 'clases' }}</span>
+      <app-paginacion
+        [paginaActual]="tabla.pagina()"
+        [totalPaginas]="tabla.totalPaginas()"
+        etiqueta="Páginas de clases"
+        (cambioDePagina)="tabla.irA($event)"
+      />
+    </div>
+  }
 }

@@ -75,7 +75,7 @@ describe('PoliticaDeEnmiendaPage', () => {
   it('fuera de rango no deja guardar', async () => {
     const fixture = await montar({ ventanaDias: 30, porDefecto: true });
     escribir(fixture, '4000');
-    expect(texto(fixture)).toContain('Indica un numero entero');
+    expect(texto(fixture)).toContain('Indicá un número entero');
     enviar(fixture);
     httpMock.expectNone((p) => p.method === 'PUT');
   });

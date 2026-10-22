@@ -59,7 +59,7 @@ describe('AtencionSinTurnoPage', () => {
       escribir(fixture, '#sin-turno-motivo', 'Consulta por dolor agudo');
       await esperarSinViolaciones(fixture.nativeElement);
 
-      apretar(fixture, 'Iniciar la atencion');
+      apretar(fixture, 'Iniciar atención');
       const pedido = httpMock.expectOne((p) => p.method === 'POST' && p.url === SESIONES);
       const cuerpo = pedido.request.body as Record<string, unknown>;
       expect(cuerpo).toMatchObject({
@@ -81,7 +81,7 @@ describe('AtencionSinTurnoPage', () => {
     const fixture = await montar();
     await elegirPaciente(fixture, []);
     elegir(fixture, '#sin-turno-oferta', '4');
-    apretar(fixture, 'Iniciar la atencion');
+    apretar(fixture, 'Iniciar atención');
     expect(texto(fixture)).toContain('es obligatorio');
     httpMock.expectNone((p) => p.method === 'POST');
   });
@@ -94,12 +94,12 @@ describe('AtencionSinTurnoPage', () => {
     escribir(fixture, '#sin-turno-motivo', 'Control');
     expect(texto(fixture)).toContain('obligatorio para esta oferta');
 
-    apretar(fixture, 'Iniciar la atencion');
-    expect(texto(fixture)).toContain('exige un caso clinico');
+    apretar(fixture, 'Iniciar atención');
+    expect(texto(fixture)).toContain('exige un caso clínico');
     httpMock.expectNone((p) => p.method === 'POST');
 
     elegir(fixture, '#sin-turno-caso', '31');
-    apretar(fixture, 'Iniciar la atencion');
+    apretar(fixture, 'Iniciar atención');
     const pedido = httpMock.expectOne((p) => p.method === 'POST' && p.url === SESIONES);
     expect((pedido.request.body as Record<string, unknown>)['casoId']).toBe(31);
     pedido.flush({ id: 701 });
@@ -121,13 +121,13 @@ describe('AtencionSinTurnoPage', () => {
     elegir(fixture, '#sin-turno-oferta', '4');
     escribir(fixture, '#sin-turno-motivo', 'Urgencia');
 
-    apretar(fixture, 'Iniciar la atencion');
+    apretar(fixture, 'Iniciar atención');
     const primero = httpMock.expectOne((p) => p.method === 'POST');
     const clave = (primero.request.body as Record<string, unknown>)['idempotencyKey'];
     primero.error(new ProgressEvent('error'));
     await estabilizar(fixture);
 
-    apretar(fixture, 'Iniciar la atencion');
+    apretar(fixture, 'Iniciar atención');
     const segundo = httpMock.expectOne((p) => p.method === 'POST');
     expect((segundo.request.body as Record<string, unknown>)['idempotencyKey']).toBe(clave);
     segundo.flush(
@@ -141,7 +141,7 @@ describe('AtencionSinTurnoPage', () => {
     expect(texto(fixture)).toContain('no esta habilitado para prestar esta oferta');
 
     escribir(fixture, '#sin-turno-motivo', 'Urgencia, otra');
-    apretar(fixture, 'Iniciar la atencion');
+    apretar(fixture, 'Iniciar atención');
     const tercero = httpMock.expectOne((p) => p.method === 'POST');
     expect((tercero.request.body as Record<string, unknown>)['idempotencyKey']).not.toBe(clave);
     tercero.flush(
@@ -158,7 +158,7 @@ describe('AtencionSinTurnoPage', () => {
     enviarBusqueda(fixture);
     httpMock.expectOne((p) => p.url === PERSONAS).flush({ content: [] });
     await estabilizar(fixture);
-    expect(texto(fixture)).toContain('Nadie del padron coincide');
+    expect(texto(fixture)).toContain('Nadie del padrón coincide');
   });
 
   async function montar(): Promise<ComponentFixture<AtencionSinTurnoPage>> {

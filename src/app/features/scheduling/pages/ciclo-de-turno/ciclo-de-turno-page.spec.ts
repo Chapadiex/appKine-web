@@ -208,7 +208,7 @@ describe('CicloDeTurnoPage', () => {
 
     const texto = textoDe(fixture);
     expect(texto).toContain('se retiro sin ser atendida');
-    expect(texto).toContain('Historial de la recepcion');
+    expect(texto).toContain('Historial de la recepción');
     expect(texto).toContain('Se retiro sin ser atendido —');
     expect(texto).toContain('Se canso de esperar');
     expect(boton(fixture, 'Marcar que no vino')).toBeNull();

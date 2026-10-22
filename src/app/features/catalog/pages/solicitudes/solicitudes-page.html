@@ -1,5 +1,10 @@
+<nav class="migas" aria-label="Ruta">
+  <a routerLink="/catalogo/especialidades">Catálogo clínico</a>
+  <span aria-hidden="true">/</span>
+</nav>
+
 <div class="titulo-con-ayuda">
-  <h1>Pedidos al catalogo de la plataforma</h1>
+  <h1>Pedidos al catálogo de la plataforma</h1>
   <app-ayuda titulo="Sobre esta pantalla">
     <p>
       El catalogo comun -el que ven todos los centros- lo mantiene AKINE. Si falta algo que deberia
@@ -14,11 +19,7 @@
   </div>
 </div>
 
-<nav class="acciones" aria-label="Tipos del catalogo clinico">
-  @for (tipo of tipos; track tipo.slug) {
-    <a class="boton boton--secundario" [routerLink]="['/catalogo', tipo.slug]">{{ tipo.plural }}</a>
-  }
-</nav>
+<app-pestanas [pestanas]="pestanasDeCatalogo" [etiqueta]="etiquetaDePestanas" />
 
 <!--
   La aclaracion que evita el pedido innecesario. Va arriba, antes del formulario: quien necesita una

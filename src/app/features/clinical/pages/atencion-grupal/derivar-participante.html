@@ -1,10 +1,10 @@
 <section class="tarjeta" aria-labelledby="titulo-derivar-participante" akineFocoAlMontar>
   <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
-    <h2 id="titulo-derivar-participante">Derivar a {{ nombre() }} a un caso clinico</h2>
-    <app-ayuda titulo="Sobre esta seccion">
+    <h2 id="titulo-derivar-participante">Derivar a {{ nombre() }} a un caso clínico</h2>
+    <app-ayuda titulo="Sobre esta sección">
       <p>
-        Derivar vincula su asistencia a esta clase con un caso clinico activo de su historia. No es
-        atender: la atencion se inicia despues, desde la tabla, y se numera dentro de ese caso.
+        Derivar vincula su asistencia a esta clase con un caso clínico activo de su historia. No es
+        atender: la atención se inicia después, desde la tabla, y se numera dentro de ese caso.
       </p>
     </app-ayuda>
   </div>
@@ -27,23 +27,29 @@
     }
     @case ('listo') {
       @if (veredicto(); as v) {
-        <dl class="detalle">
-          <dt>Asistencia</dt>
-          <dd>{{ asistencia() }}</dd>
-          <dt>Paciente</dt>
-          <dd>{{ v.esPacienteVigente ? 'Si, con perfil de paciente' : 'Todavia no' }}</dd>
+        <dl class="datos-atencion">
+          <div>
+            <dt>Asistencia</dt>
+            <dd>{{ asistencia() }}</dd>
+          </div>
+          <div>
+            <dt>Paciente</dt>
+            <dd>{{ v.esPacienteVigente ? 'Sí, con perfil de paciente' : 'Todavía no' }}</dd>
+          </div>
           @if (casos(); as carga) {
             @if (carga.tipo === 'listo') {
-              <dt>Historia clinica</dt>
-              <dd>
-                {{
-                  carga.valor.tieneHistoriaClinica
-                    ? carga.valor.casos.length === 1
-                      ? 'Con 1 caso activo'
-                      : 'Con ' + carga.valor.casos.length + ' casos activos'
-                    : 'Todavia no tiene'
-                }}
-              </dd>
+              <div>
+                <dt>Historia clínica</dt>
+                <dd>
+                  {{
+                    carga.valor.tieneHistoriaClinica
+                      ? carga.valor.casos.length === 1
+                        ? 'Con 1 caso activo'
+                        : 'Con ' + carga.valor.casos.length + ' casos activos'
+                      : 'Todavía no tiene'
+                  }}
+                </dd>
+              </div>
             }
           }
         </dl>
@@ -59,12 +65,12 @@
           </ul>
         } @else if (faltaPerfil()) {
           <p class="estado estado--vacio">
-            Todavia no es paciente, asi que no tiene historia ni caso clinico donde derivarla. El
-            perfil de paciente se activa desde su ficha del padron; despues se le abre un caso en la
-            historia clinica.
+            Todavía no es paciente, así que no tiene historia ni caso clínico donde derivarla. El
+            perfil de paciente se activa desde su ficha del padrón; después se le abre un caso en la
+            historia clínica.
           </p>
           @if (rutaDeLaFicha(); as ruta) {
-            <p><a class="enlace" [routerLink]="ruta">Ir a su ficha del padron</a></p>
+            <p><a class="enlace" [routerLink]="ruta">Ir a su ficha del padrón</a></p>
           }
         } @else {
           @if (casos(); as carga) {
@@ -88,24 +94,24 @@
                     <p class="estado estado--vacio">
                       {{
                         carga.valor.tieneHistoriaClinica
-                          ? 'No tiene ningun caso clinico activo.'
-                          : 'Todavia no tiene historia clinica.'
+                          ? 'No tiene ningún caso clínico activo.'
+                          : 'Todavía no tiene historia clínica.'
                       }}
-                      Para derivarla hace falta un caso activo: se abre desde su historia clinica,
-                      con el diagnostico presuntivo, y despues se vuelve a esta clase.
+                      Para derivarla hace falta un caso activo: se abre desde su historia clínica,
+                      con el diagnóstico presuntivo, y después se vuelve a esta clase.
                     </p>
                     @if (rutaDeLaHistoria(); as ruta) {
                       <p>
-                        <a class="enlace" [routerLink]="ruta">Ir a su historia clinica</a>
+                        <a class="enlace" [routerLink]="ruta">Ir a su historia clínica</a>
                       </p>
                     }
                   } @else {
                     <form (submit)="$event.preventDefault(); derivar()" novalidate>
                       <fieldset
-                        class="grupo"
+                        class="opciones-tarjeta"
                         [attr.aria-describedby]="faltaCaso() ? 'derivar-caso-error' : null"
                       >
-                        <legend>Caso clinico destino</legend>
+                        <legend>Caso clínico destino</legend>
                         @for (caso of carga.valor.casos; track caso.id) {
                           <label class="opcion-radio">
                             <input
@@ -119,12 +125,12 @@
                         }
                         @if (faltaCaso()) {
                           <p id="derivar-caso-error" class="campo__error">
-                            Elegi a que caso se deriva.
+                            Elegí a qué caso se deriva.
                           </p>
                         }
                       </fieldset>
                       <div class="campo">
-                        <label for="derivar-motivo">Motivo de la derivacion (opcional)</label>
+                        <label for="derivar-motivo">Motivo de la derivación (opcional)</label>
                         <input
                           id="derivar-motivo"
                           type="text"
@@ -137,7 +143,7 @@
                       @if (error(); as fallo) {
                         <p class="estado estado--error" role="alert">{{ fallo.mensaje }}</p>
                       }
-                      <div class="acciones">
+                      <div class="pie-tarjeta">
                         <button type="submit" class="boton" [disabled]="enviando()">
                           @if (enviando()) {
                             Derivando…
@@ -158,6 +164,6 @@
   }
 
   <div class="acciones">
-    <button type="button" class="boton boton--secundario" (click)="cerrar.emit()">Cerrar</button>
+    <button type="button" class="boton-texto" (click)="cerrar.emit()">Cerrar</button>
   </div>
 </section>

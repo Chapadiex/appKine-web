@@ -24,6 +24,7 @@ import {
 import { importeEnPalabras } from '../../models/etiquetas-de-obligacion';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { Filtros } from '../../../../shared/components/filtros/filtros';
+import { Icono } from '../../../../shared/components/icono/icono';
 
 type EstadoListado =
   | { readonly tipo: 'cargando' }
@@ -42,9 +43,9 @@ type EstadoListado =
  */
 @Component({
   selector: 'app-presentaciones-page',
-  imports: [Ayuda, Filtros, ReactiveFormsModule, RouterLink],
+  imports: [Ayuda, Filtros, Icono, ReactiveFormsModule, RouterLink],
   templateUrl: './presentaciones-page.html',
-  styleUrl: '../../billing.css',
+  styleUrls: ['../../billing.css', '../../economia.css'],
 })
 export class PresentacionesPage {
   private readonly api = inject(PresentacionesApi);

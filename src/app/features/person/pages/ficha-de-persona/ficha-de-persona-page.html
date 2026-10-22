@@ -1,12 +1,13 @@
-<p class="acciones">
-  <a class="enlace" routerLink="/pacientes">Volver al padron</a>
-</p>
-
+<!--
+  La ficha es el centro de la persona (UX-01): la cabecera la identifica y sus pestanas llevan a
+  las pantallas hermanas. Nada clinico: la historia es un enlace al modulo clinico, que pide el
+  motivo y audita.
+-->
 @if (cargando()) {
-  <h1>Ficha de la persona</h1>
-  <p class="estado">Cargando la ficha...</p>
+  <app-cabecera-de-persona [personaId]="personaId()" [nombreComoTitulo]="true" />
+  <p class="estado estado--cargando">Cargando la ficha...</p>
 } @else if (errorDeCarga(); as mensaje) {
-  <h1>Ficha de la persona</h1>
+  <app-cabecera-de-persona [personaId]="personaId()" [nombreComoTitulo]="true" />
   <p class="estado estado--error" role="alert">{{ mensaje }}</p>
   @if (faltaContexto()) {
     <p class="acciones">
@@ -18,30 +19,29 @@
     </p>
   }
 } @else if (persona(); as ficha) {
-  <div class="titulo-con-ayuda">
-    <h1>{{ nombreCompleto(ficha) }}</h1>
-    <app-ayuda titulo="Esta ficha no muestra nada clinico">
+  <app-cabecera-de-persona [personaId]="personaId()" [persona]="ficha" [nombreComoTitulo]="true">
+    <app-ayuda cabeceraAyuda titulo="Esta ficha no muestra nada clínico">
       <p>
-        Es administrativa a proposito. El acceso a la historia clinica exige justificarlo y queda
-        auditado: mostrarla al abrir una ficha de mostrador convertiria ese control en un tramite
-        vacio. Lo clinico se consulta desde el modulo clinico, con su permiso.
+        Es administrativa a propósito. El acceso a la historia clínica exige justificarlo y queda
+        auditado: mostrarla al abrir una ficha de mostrador convertiría ese control en un trámite
+        vacío. Lo clínico se consulta desde el módulo clínico, con su permiso.
       </p>
     </app-ayuda>
-  </div>
-
-  <!--
-    El enlace no abre nada clinico: lleva a la pantalla de la historia, que es la que pide el
-    motivo si hace falta. Solo se ofrece a un paciente —una persona sin perfil no tiene historia—
-    y a quien tiene hc:read. El permiso es UX: el backend rechaza igual. Es una accion: va a la
-    vista, nunca dentro de la ayuda.
-  -->
-  @if (ficha.esPaciente) {
-    <p class="acciones" *akinePermiso="permisoHistoria">
-      <a class="boton boton--secundario" [routerLink]="rutaHistoriaClinica()">
-        Abrir la historia clinica
+    <!--
+      El enlace no abre nada clinico: lleva a la pantalla de la historia, que es la que pide el
+      motivo si hace falta. Solo se ofrece a un paciente —una persona sin perfil no tiene historia—
+      y a quien tiene hc:read. El permiso es UX: el backend rechaza igual.
+    -->
+    @if (ficha.esPaciente) {
+      <a
+        class="boton boton--secundario"
+        [routerLink]="rutaHistoriaClinica()"
+        *akinePermiso="permisoHistoria"
+      >
+        Abrir la historia clínica
       </a>
-    </p>
-  }
+    }
+  </app-cabecera-de-persona>
 
   <div aria-live="polite">
     @if (exito(); as mensaje) {
@@ -49,14 +49,32 @@
     }
   </div>
 
+  @if (personaInactiva(ficha)) {
+    <p class="estado" role="status">
+      Esta ficha está dada de baja
+      @if (ficha.deletedAt) {
+        desde el {{ fechaEnPalabras(ficha.deletedAt) }}
+      }
+      @if (ficha.deactivationReason) {
+        — motivo: {{ ficha.deactivationReason }}
+      }
+      . No admite operaciones nuevas, y todo lo que ya tenía registrado se sigue consultando.
+    </p>
+  }
+
   <!--
     Identidad. Es lo que el mostrador necesita para confirmar que abrio la ficha correcta antes de
-    hacer cualquier otra cosa, asi que va primero y sin plegar.
+    hacer cualquier otra cosa, asi que va primero, a todo el ancho y sin plegar.
   -->
-  <section class="tarjeta" aria-labelledby="titulo-identidad">
-    <h2 id="titulo-identidad">Datos administrativos</h2>
+  <section class="tarjeta ficha-identidad" aria-labelledby="titulo-identidad">
+    <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
+      <h2 id="titulo-identidad">Datos administrativos</h2>
+      <app-ayuda titulo="Persona y paciente">
+        <p>{{ perfilEnPalabras(ficha) }}</p>
+      </app-ayuda>
+    </div>
 
-    <dl class="datos">
+    <dl class="datos ficha-datos">
       <div>
         <dt>Documento</dt>
         <dd>{{ documentoEnUnaLinea(ficha) }}</dd>
@@ -66,7 +84,7 @@
         <dd>{{ fechaEnPalabras(ficha.fechaNacimiento) || 'Sin cargar' }}</dd>
       </div>
       <div>
-        <dt>Telefono</dt>
+        <dt>Teléfono</dt>
         <dd>{{ ficha.telefono || 'Sin cargar' }}</dd>
       </div>
       <div>
@@ -78,182 +96,168 @@
         <dd>{{ personaInactiva(ficha) ? 'Dada de baja' : 'Activa' }}</dd>
       </div>
       <div>
-        <dt>Perfil clinico</dt>
+        <dt>Perfil clínico</dt>
         <dd>{{ ficha.esPaciente ? 'Paciente' : 'Persona' }}</dd>
       </div>
     </dl>
 
-    <p class="ayuda">{{ perfilEnPalabras(ficha) }}</p>
-
     @if (ficha.notas) {
-      <p class="ayuda">
+      <p class="ficha-notas">
         <b>Observaciones administrativas:</b>
         {{ ficha.notas }}
       </p>
     }
-
-    @if (personaInactiva(ficha)) {
-      <p class="estado">
-        Esta ficha esta dada de baja
-        @if (ficha.deletedAt) {
-          desde el {{ fechaEnPalabras(ficha.deletedAt) }}
-        }
-        @if (ficha.deactivationReason) {
-          — motivo: {{ ficha.deactivationReason }}
-        }
-        . No admite operaciones nuevas, y todo lo que ya tenia registrado se sigue consultando.
-      </p>
-    }
   </section>
 
-  <!-- Metadatos administrativos de la HC (matriz §32, ADMINISTRATIVO: Limitado). Sin contenido. -->
-  @if (ficha.esPaciente && ficha.id !== undefined) {
-    <app-datos-administrativos-de-historia [personaId]="ficha.id" />
-  }
+  <!-- Resumen: tarjetas de un vistazo, cada una con su entrada a la pantalla hermana. -->
+  <div class="ficha-grilla">
+    <!-- Metadatos administrativos de la HC (matriz §32, ADMINISTRATIVO: Limitado). Sin contenido. -->
+    @if (ficha.esPaciente && ficha.id !== undefined) {
+      <div class="ficha-grilla__ancha">
+        <app-datos-administrativos-de-historia [personaId]="ficha.id" />
+      </div>
+    }
 
-  <!-- Secciones que aportaron los modulos que el usuario SI puede ver. -->
-  @for (seccion of secciones(); track seccion.seccion) {
-    <section class="tarjeta" aria-labelledby="titulo-seccion-{{ seccion.seccion }}">
-      <h2 id="titulo-seccion-{{ seccion.seccion }}">{{ nombreDeSeccion(seccion.seccion) }}</h2>
+    <!-- Secciones que aportaron los modulos que el usuario SI puede ver. -->
+    @for (seccion of secciones(); track seccion.seccion) {
+      <section class="tarjeta" aria-labelledby="titulo-seccion-{{ seccion.seccion }}">
+        <h2 id="titulo-seccion-{{ seccion.seccion }}">{{ nombreDeSeccion(seccion.seccion) }}</h2>
 
-      @if (seccion.indicadores?.length) {
+        @if (seccion.indicadores?.length) {
+          <dl class="datos">
+            @for (indicador of seccion.indicadores; track indicador.clave) {
+              <div>
+                <dt>{{ etiquetaDeIndicador(indicador) }}</dt>
+                <dd>{{ valorDeIndicador(indicador) }}</dd>
+              </div>
+            }
+          </dl>
+        }
+
+        @if (seccion.seccion === seccionCoberturas) {
+          <!--
+            Coberturas vigentes hoy (B-5). El historial y el numero de afiliado completo viven en la
+            pantalla de coberturas: aca va lo que el mostrador necesita de un vistazo.
+          -->
+          @if (hitosDe(seccion).length === 0) {
+            <p class="estado">
+              No tiene coberturas vigentes hoy: se atiende como particular. Es un dato, no un error:
+              la sección se consultó y no hay ninguna vigente.
+            </p>
+          } @else {
+            <ul class="lista-cobertura">
+              @for (hito of hitosDe(seccion); track $index) {
+                @let cobertura = coberturaDelResumen(hito);
+                <li>
+                  <b>{{ cobertura.descripcion }}</b>
+                  @if (cobertura.principal) {
+                    <span class="etiqueta">Principal</span>
+                  }
+                  @if (cobertura.afiliado) {
+                    <p class="ayuda">{{ cobertura.afiliado }}</p>
+                  }
+                  @if (cobertura.vigencia) {
+                    <p class="ayuda">{{ cobertura.vigencia }}</p>
+                  }
+                  @if (cobertura.credencialVencida) {
+                    <p>
+                      <b>Credencial vencida.</b> No invalida la cobertura: pedí la credencial
+                      renovada antes de presentar la prestación.
+                    </p>
+                  } @else if (cobertura.credencial) {
+                    <p class="ayuda">{{ cobertura.credencial }}</p>
+                  }
+                </li>
+              }
+            </ul>
+          }
+
+          <app-ayuda titulo="Coberturas en la ficha">
+            <p>
+              El número de afiliado se muestra enmascarado; el completo está en Coberturas. Tener
+              una cobertura vigente no dice que aplique a una oferta concreta: eso se consulta en
+              Coberturas, eligiendo la oferta.
+            </p>
+          </app-ayuda>
+          <p class="ficha-enlace">
+            <a class="enlace" [routerLink]="rutaCoberturas()">Ver coberturas del paciente</a>
+          </p>
+        } @else if (hitosDe(seccion).length === 0) {
+          <p class="estado estado--vacio">
+            Sin movimientos registrados en esta sección. Es un dato, no un error: la sección se
+            consultó y no hay nada.
+          </p>
+        } @else {
+          <ul class="lista-hitos">
+            @for (hito of hitosDe(seccion); track $index) {
+              <li>{{ hitoEnPalabras(hito) }}</li>
+            }
+          </ul>
+        }
+      </section>
+    }
+
+    <!--
+      Secciones OMITIDAS por permisos. Se muestran como secciones de primera clase, con el mismo
+      peso visual que las que si vinieron: la diferencia entre "no hay datos" y "no podes ver los
+      datos" es lo unico que el usuario no puede deducir solo.
+    -->
+    @for (omitida of omitidas(); track omitida.seccion) {
+      <section
+        class="tarjeta seccion-omitida"
+        aria-labelledby="titulo-omitida-{{ omitida.seccion }}"
+      >
+        <h2 id="titulo-omitida-{{ omitida.seccion }}">
+          {{ nombreDeSeccion(omitida.seccion) }} — sin permiso
+        </h2>
+        <p>{{ omisionEnPalabras(omitida) }}</p>
+      </section>
+    }
+
+    <!-- Documentacion. El detalle vive en su propia pantalla; aca va el recuento y la entrada. -->
+    <section class="tarjeta" aria-labelledby="titulo-documentacion">
+      <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
+        <h2 id="titulo-documentacion">Documentación administrativa</h2>
+        <app-ayuda titulo="Documentación administrativa">
+          <p>
+            Un documento adjunto <b>no reemplaza un dato cargado</b>: la foto de una credencial no
+            carga la cobertura, y el DNI escaneado no completa el documento de la ficha.
+          </p>
+        </app-ayuda>
+      </div>
+
+      @if (totalDeAdjuntos() === 0) {
+        <p class="estado estado--vacio">Esta persona no tiene documentos cargados.</p>
+      } @else {
+        <p>{{ totalDeAdjuntos() }} documento(s) cargado(s):</p>
         <dl class="datos">
-          @for (indicador of seccion.indicadores; track indicador.clave) {
+          @for (conteo of adjuntosPorCategoria(); track conteo.categoria) {
             <div>
-              <dt>{{ etiquetaDeIndicador(indicador) }}</dt>
-              <dd>{{ valorDeIndicador(indicador) }}</dd>
+              <dt>{{ nombreDeCategoria(conteo.categoria) }}</dt>
+              <dd>{{ conteo.cantidad }}</dd>
             </div>
           }
         </dl>
       }
 
-      @if (seccion.seccion === seccionCoberturas) {
-        <!--
-          Coberturas vigentes hoy (B-5). El historial y el numero de afiliado completo viven en la
-          pantalla de coberturas: aca va lo que el mostrador necesita de un vistazo.
-        -->
-        @if (hitosDe(seccion).length === 0) {
-          <p class="estado">
-            No tiene coberturas vigentes hoy: se atiende como particular. Es un dato, no un error:
-            la seccion se consulto y no hay ninguna vigente.
-          </p>
-        } @else {
-          <ul class="lista-cobertura">
-            @for (hito of hitosDe(seccion); track $index) {
-              @let cobertura = coberturaDelResumen(hito);
-              <li>
-                <b>{{ cobertura.descripcion }}</b>
-                @if (cobertura.principal) {
-                  <span class="etiqueta">Principal</span>
-                }
-                @if (cobertura.afiliado) {
-                  <p class="ayuda">{{ cobertura.afiliado }}</p>
-                }
-                @if (cobertura.vigencia) {
-                  <p class="ayuda">{{ cobertura.vigencia }}</p>
-                }
-                @if (cobertura.credencialVencida) {
-                  <p>
-                    <b>Credencial vencida.</b> No invalida la cobertura: pedi la credencial renovada
-                    antes de presentar la prestacion.
-                  </p>
-                } @else if (cobertura.credencial) {
-                  <p class="ayuda">{{ cobertura.credencial }}</p>
-                }
-              </li>
-            }
-          </ul>
-          <p class="ayuda">
-            El numero de afiliado se muestra enmascarado. El completo esta en Coberturas.
-          </p>
-        }
-
-        <p class="ayuda">
-          Tener una cobertura vigente no dice que aplique a una oferta concreta: eso se consulta en
-          Coberturas, eligiendo la oferta.
-        </p>
-        <p class="acciones">
-          <a class="boton" [routerLink]="rutaCoberturas()">Ver coberturas del paciente</a>
-        </p>
-      } @else if (hitosDe(seccion).length === 0) {
-        <p class="estado">
-          Sin movimientos registrados en esta seccion. Es un dato, no un error: la seccion se
-          consulto y no hay nada.
-        </p>
-      } @else {
-        <ul class="lista-hitos">
-          @for (hito of hitosDe(seccion); track $index) {
-            <li>{{ hitoEnPalabras(hito) }}</li>
-          }
-        </ul>
-      }
+      <p class="ficha-enlace">
+        <a class="enlace" [routerLink]="rutaDocumentos()">Ver y cargar documentos</a>
+      </p>
     </section>
-  }
-
-  <!--
-    Secciones OMITIDAS por permisos. Se muestran como secciones de primera clase, con el mismo
-    peso visual que las que si vinieron: la diferencia entre "no hay datos" y "no podes ver los
-    datos" es lo unico que el usuario no puede deducir solo.
-  -->
-  @for (omitida of omitidas(); track omitida.seccion) {
-    <section class="tarjeta seccion-omitida" aria-labelledby="titulo-omitida-{{ omitida.seccion }}">
-      <h2 id="titulo-omitida-{{ omitida.seccion }}">
-        {{ nombreDeSeccion(omitida.seccion) }} — sin permiso
-      </h2>
-      <p>{{ omisionEnPalabras(omitida) }}</p>
-    </section>
-  }
-
-  <!-- Documentacion. El detalle vive en su propia pantalla; aca va el recuento y la entrada. -->
-  <section class="tarjeta" aria-labelledby="titulo-documentacion">
-    <h2 id="titulo-documentacion">Documentacion administrativa</h2>
-
-    @if (totalDeAdjuntos() === 0) {
-      <p class="estado">Esta persona no tiene documentos cargados.</p>
-    } @else {
-      <p>{{ totalDeAdjuntos() }} documento(s) cargado(s):</p>
-      <dl class="datos">
-        @for (conteo of adjuntosPorCategoria(); track conteo.categoria) {
-          <div>
-            <dt>{{ nombreDeCategoria(conteo.categoria) }}</dt>
-            <dd>{{ conteo.cantidad }}</dd>
-          </div>
-        }
-      </dl>
-    }
-
-    <p class="ayuda">
-      Un documento adjunto <b>no reemplaza un dato cargado</b>: la foto de una credencial no carga
-      la cobertura, y el DNI escaneado no completa el documento de la ficha.
-    </p>
-
-    <p class="acciones">
-      <a class="boton" [routerLink]="rutaDocumentos()">Ver y cargar documentos</a>
-    </p>
-  </section>
-
-  <!-- Adonde se sigue. Son pantallas propias porque cada una es un trabajo distinto. -->
-  <section class="tarjeta" aria-labelledby="titulo-navegacion">
-    <h2 id="titulo-navegacion">Seguir en</h2>
-    <p class="acciones">
-      <a class="enlace" [routerLink]="rutaCoberturas()">Coberturas</a>
-      <a class="enlace" [routerLink]="rutaAutorizaciones()">Ordenes y autorizaciones</a>
-      <a class="enlace" [routerLink]="rutaCuentaCorriente()" *akinePermiso="permisoCobro">
-        Cuenta corriente
-      </a>
-      <a class="enlace" [routerLink]="rutaPases()" *akinePermiso="permisoPase">Pases</a>
-    </p>
-  </section>
+  </div>
 
   <!-- Bajas. Al final: son lo ultimo que alguien hace, y no lo que viene a hacer. -->
   @if (!personaInactiva(ficha)) {
-    <section class="tarjeta" aria-labelledby="titulo-bajas">
-      <h2 id="titulo-bajas">Dar de baja</h2>
-
-      <p class="ayuda">
-        Ninguna de las dos borra nada. Los turnos, las deudas, los documentos y —si la hubiera— la
-        historia clinica quedan intactos y se siguen consultando.
-      </p>
+    <section class="tarjeta ficha-bajas" aria-labelledby="titulo-bajas">
+      <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
+        <h2 id="titulo-bajas">Dar de baja</h2>
+        <app-ayuda titulo="Dar de baja">
+          <p>
+            Ninguna de las dos borra nada. Los turnos, las deudas, los documentos y —si la hubiera—
+            la historia clínica quedan intactos y se siguen consultando.
+          </p>
+        </app-ayuda>
+      </div>
 
       <p class="acciones">
         @if (ficha.esPaciente) {
@@ -281,7 +285,7 @@
           idCampo="baja-perfil"
           titulo="Dar de baja el perfil de paciente de {{ nombreCompleto(ficha) }}"
           etiqueta="Motivo"
-          ayuda="La persona sigue vigente en el padron y deja de ser paciente: puede seguir viniendo a actividades no clinicas. NO se borra la historia clinica; si el perfil se reactiva, la historia que habia sigue estando."
+          ayuda="La persona sigue vigente en el padrón y deja de ser paciente: puede seguir viniendo a actividades no clínicas. NO se borra la historia clínica; si el perfil se reactiva, la historia que había sigue estando."
           textoConfirmar="Confirmar la baja del perfil"
           [enviando]="enviando()"
           (confirmado)="confirmarBajaDePerfil($event)"
@@ -294,7 +298,7 @@
           idCampo="baja-persona"
           titulo="Dar de baja la ficha de {{ nombreCompleto(ficha) }}"
           etiqueta="Motivo"
-          ayuda="La ficha deja de admitir operaciones nuevas: no se edita, no se le activan perfiles y no se le suben documentos. Si es paciente, tambien se le da de baja el perfil en el mismo acto. Su documento queda libre para usarse en un alta nueva."
+          ayuda="La ficha deja de admitir operaciones nuevas: no se edita, no se le activan perfiles y no se le suben documentos. Si es paciente, también se le da de baja el perfil en el mismo acto. Su documento queda libre para usarse en un alta nueva."
           textoConfirmar="Confirmar la baja de la ficha"
           [enviando]="enviando()"
           (confirmado)="confirmarBajaDePersona($event)"

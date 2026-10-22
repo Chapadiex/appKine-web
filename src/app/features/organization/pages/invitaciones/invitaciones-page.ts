@@ -30,6 +30,11 @@ import { Filtros } from '../../../../shared/components/filtros/filtros';
 import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
 import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
 import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
+import { Pestanas } from '../../../../shared/components/pestanas/pestanas';
+import {
+  ETIQUETA_PESTANAS_DE_COLABORADORES,
+  PESTANAS_DE_COLABORADORES,
+} from '../../models/pestanas-de-colaboradores';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { Icono } from '../../../../shared/components/icono/icono';
 
@@ -86,6 +91,7 @@ const ROLES = [
 @Component({
   selector: 'app-invitaciones-page',
   imports: [
+    Pestanas,
     Paginacion,
     ColumnaOrdenable,
     Ayuda,
@@ -100,6 +106,9 @@ const ROLES = [
   styleUrl: '../../organization.css',
 })
 export class InvitacionesPage {
+  protected readonly pestanas = PESTANAS_DE_COLABORADORES;
+  protected readonly etiquetaDePestanas = ETIQUETA_PESTANAS_DE_COLABORADORES;
+
   private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly invitaciones = inject(InvitacionesService);
   private readonly tenantContext = inject(TenantContextStore);

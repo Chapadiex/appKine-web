@@ -1,33 +1,23 @@
 @if (datos(); as tipoActual) {
   <div class="titulo-con-ayuda">
-    <h1>{{ tipoActual.plural }}</h1>
+    <h1>Catálogo clínico</h1>
     <app-ayuda titulo="Sobre esta pantalla">
       <p>
         {{ tipoActual.descripcion }}
       </p>
     </app-ayuda>
-    <div class="encabezado__acciones" *akinePermiso="permisoManage">
-      <button type="button" class="boton" (click)="abrirAlta()">
-        <app-icono nombre="agregar" />
-        Dar de alta una {{ tipoActual.singular }} de este centro
-      </button>
+    <div class="encabezado__acciones">
+      <a class="boton boton--secundario" routerLink="/catalogo/solicitudes">Pedir un alta</a>
+      <ng-container *akinePermiso="permisoManage">
+        <button type="button" class="boton" (click)="abrirAlta()">
+          <app-icono nombre="agregar" />
+          Dar de alta una {{ tipoActual.singular }} de este centro
+        </button>
+      </ng-container>
     </div>
   </div>
 
-  <nav class="acciones" aria-label="Tipos del catalogo clinico">
-    @for (otro of tipos; track otro.slug) {
-      <a
-        class="boton boton--secundario"
-        [routerLink]="['/catalogo', otro.slug]"
-        [attr.aria-current]="otro.slug === tipoActual.slug ? 'page' : null"
-      >
-        {{ otro.plural }}
-      </a>
-    }
-    <a class="boton boton--secundario" routerLink="/catalogo/solicitudes">
-      Pedir un concepto a la plataforma
-    </a>
-  </nav>
+  <app-pestanas [pestanas]="pestanasDeCatalogo" [etiqueta]="etiquetaDePestanas" />
 
   <!--
     La distincion que esta pantalla no puede aplanar (ADR-0021). Va arriba y no en un tooltip:
@@ -542,7 +532,7 @@
   </section>
 } @else {
   <div class="titulo-con-ayuda">
-    <h1>Ese catalogo no existe</h1>
+    <h1>Ese catálogo no existe</h1>
     <app-ayuda titulo="Sobre esta pantalla">
       <p>
         La direccion que abriste no corresponde a ninguno de los tres catalogos clinicos. Puede que
@@ -551,9 +541,5 @@
     </app-ayuda>
   </div>
 
-  <nav class="acciones" aria-label="Tipos del catalogo clinico">
-    @for (otro of tipos; track otro.slug) {
-      <a class="boton" [routerLink]="['/catalogo', otro.slug]">{{ otro.plural }}</a>
-    }
-  </nav>
+  <app-pestanas [pestanas]="pestanasDeCatalogo" [etiqueta]="etiquetaDePestanas" />
 }

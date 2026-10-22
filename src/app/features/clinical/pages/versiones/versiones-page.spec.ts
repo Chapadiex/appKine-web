@@ -100,12 +100,12 @@ describe('VersionesPage', () => {
     const tratamiento = filas.find((f) => f[0].startsWith('Tratamiento: Electroterapia'));
     expect(tratamiento?.[1]).toContain('Intensidad: 20 mA');
     expect(tratamiento?.[2]).toContain('Intensidad: 25 mA');
-    expect(tratamiento?.[3]).toBe('Cambio');
+    expect(tratamiento?.[3]).toBe('Cambió');
 
     const medicion = filas.find((f) => f[0].startsWith('Medicion: Flexion'));
     expect(medicion?.[1]).toBe('90 grados');
     expect(medicion?.[2]).toBe('Sin cargar');
-    expect(medicion?.[3]).toBe('Cambio');
+    expect(medicion?.[3]).toBe('Cambió');
 
     expect(filas.find((f) => f[0] === 'Nota de cierre')?.[3]).toBe('Igual');
     expect(texto(fixture)).toContain('Cambiaron 2 campos');
@@ -121,8 +121,8 @@ describe('VersionesPage', () => {
     expect(resumenes[0]).toContain('por Lucia Fernandez');
     expect(resumenes[1]).not.toContain(' por ');
     expect(texto(fixture)).toContain('(enmendada por Lucia Fernandez)');
-    expect(texto(fixture)).toContain('Cuenta numero 41');
-    expect(texto(fixture)).not.toContain('Cuenta numero 52');
+    expect(texto(fixture)).toContain('Cuenta número 41');
+    expect(texto(fixture)).not.toContain('Cuenta número 52');
   });
 
   it('elegir la misma version de los dos lados dice que no cambio nada', async () => {
@@ -139,8 +139,8 @@ describe('VersionesPage', () => {
     const resumenes = Array.from(
       fixture.nativeElement.querySelectorAll('summary') as NodeListOf<HTMLElement>,
     ).map((s) => s.textContent ?? '');
-    expect(resumenes[0]).toContain('Version 2');
-    expect(resumenes[1]).toContain('Version 1');
+    expect(resumenes[0]).toContain('Versión 2');
+    expect(resumenes[1]).toContain('Versión 1');
     expect(resumenes[1]).toContain('original');
   });
 
@@ -152,7 +152,7 @@ describe('VersionesPage', () => {
 
   it('sin versiones lo dice como un estado, no como un error', async () => {
     const fixture = await montar([], { ...CERRADA, numeroSesion: undefined, cierre: undefined });
-    expect(texto(fixture)).toContain('todavia no tiene versiones');
+    expect(texto(fixture)).toContain('todavía no tiene versiones');
     expect(fixture.nativeElement.querySelector('[role="alert"]')).toBeNull();
   });
 

@@ -1,15 +1,15 @@
-<p>
+<nav class="migas" aria-label="Ubicación">
   <a class="enlace" routerLink="/presentaciones">Volver a las presentaciones</a>
-</p>
+</nav>
 
 @if (carga().tipo === 'cargando' && lote() === null) {
-  <h1>Lote de presentacion</h1>
+  <h1>Lote de presentación</h1>
   <p class="estado estado--cargando">Cargando el lote…</p>
 }
 
 @if (carga(); as estadoCarga) {
   @if (estadoCarga.tipo === 'error') {
-    <h1>Lote de presentacion</h1>
+    <h1>Lote de presentación</h1>
     <section class="tarjeta" role="alert" aria-labelledby="titulo-error-lote">
       <h2 id="titulo-error-lote">No se pudo cargar el lote</h2>
       <p class="estado estado--error">{{ estadoCarga.error.mensaje }}</p>
@@ -27,45 +27,69 @@
 }
 
 @if (lote(); as p) {
-  <h1>Lote {{ p.numero ? 'N.º ' + p.numero : 'en borrador' }} a {{ p.financiadorNombre }}</h1>
-
-  <dl class="detalle">
-    <dt>Estado</dt>
-    <dd>
-      <span [class]="claseDeEstado(p.estado)">{{ estadoEnPalabras(p.estado) }}</span>
-    </dd>
-    <dt>Periodo</dt>
-    <dd>{{ fecha(p.periodoDesde) }} al {{ fecha(p.periodoHasta) }}</dd>
-    <dt>Moneda</dt>
-    <dd>{{ p.moneda }}</dd>
-    @if (p.facturaNumero) {
-      <dt>Factura</dt>
-      <dd>{{ p.facturaNumero }} del {{ fecha(p.facturaFecha) }}</dd>
-    }
-    @if (p.motivoAnulacion) {
-      <dt>Motivo de la anulacion</dt>
-      <dd>{{ p.motivoAnulacion }}</dd>
-    }
-    <dt>Presentado</dt>
-    <dd class="importe">{{ importe(p.totalPresentado) }}</dd>
-    <dt>Debitado</dt>
-    <dd class="importe">{{ importe(p.totalDebitado) }}</dd>
-    <dt>Cobrado</dt>
-    <dd class="importe">{{ importe(p.totalCobrado) }}</dd>
-    <dt>Saldo</dt>
-    <dd class="importe">{{ importe(p.saldo) }}</dd>
-  </dl>
-
-  <div class="acciones">
-    <button
-      type="button"
-      class="boton boton--secundario"
-      [disabled]="exportando()"
-      (click)="exportarCsv()"
-    >
-      {{ exportando() ? 'Exportando...' : 'Exportar CSV' }}
-    </button>
+  <div class="titulo-con-ayuda">
+    <h1>Lote {{ p.numero ? 'N.º ' + p.numero : 'en borrador' }} a {{ p.financiadorNombre }}</h1>
+    <span [class]="claseDeEstado(p.estado)" aria-hidden="true">{{
+      estadoEnPalabras(p.estado)
+    }}</span>
+    <app-ayuda titulo="Sobre esta pantalla">
+      <p>
+        Las prestaciones que este lote le reclama al financiador. En borrador se revisan, se agregan
+        o se quitan; las observadas se corrigen en su origen o se quitan del lote, y vuelven a la
+        bandeja. Presentado, se registran la factura, los débitos y los pagos hasta que el saldo
+        llega a cero.
+      </p>
+    </app-ayuda>
+    <div class="encabezado__acciones">
+      <button
+        type="button"
+        class="boton boton--secundario"
+        [disabled]="exportando()"
+        (click)="exportarCsv()"
+      >
+        {{ exportando() ? 'Exportando...' : 'Exportar CSV' }}
+      </button>
+    </div>
   </div>
+
+  <p class="contexto-de-pantalla">
+    <span>Período: {{ fecha(p.periodoDesde) }} al {{ fecha(p.periodoHasta) }}</span>
+    <span>Moneda: {{ p.moneda }}</span>
+    @if (p.facturaNumero) {
+      <span>Factura {{ p.facturaNumero }} del {{ fecha(p.facturaFecha) }}</span>
+    }
+  </p>
+
+  <dl class="cifras">
+    <div>
+      <dt>Estado</dt>
+      <dd class="cifras__texto">
+        <span [class]="claseDeEstado(p.estado)">{{ estadoEnPalabras(p.estado) }}</span>
+      </dd>
+    </div>
+    @if (p.motivoAnulacion) {
+      <div>
+        <dt>Motivo de la anulación</dt>
+        <dd class="cifras__texto">{{ p.motivoAnulacion }}</dd>
+      </div>
+    }
+    <div>
+      <dt>Presentado</dt>
+      <dd class="importe">{{ importe(p.totalPresentado) }}</dd>
+    </div>
+    <div>
+      <dt>Debitado</dt>
+      <dd class="importe">{{ importe(p.totalDebitado) }}</dd>
+    </div>
+    <div>
+      <dt>Cobrado</dt>
+      <dd class="importe">{{ importe(p.totalCobrado) }}</dd>
+    </div>
+    <div>
+      <dt>Saldo</dt>
+      <dd class="importe">{{ importe(p.saldo) }}</dd>
+    </div>
+  </dl>
 
   <div aria-live="polite">
     @if (aviso(); as texto) {
@@ -73,7 +97,7 @@
     }
     @if (errorOperacion(); as fallo) {
       <section class="tarjeta" aria-labelledby="titulo-error-operacion">
-        <h2 id="titulo-error-operacion">No se pudo completar la operacion</h2>
+        <h2 id="titulo-error-operacion">No se pudo completar la operación</h2>
         <p class="estado estado--error">{{ fallo.mensaje }}</p>
         @if (fallo.recargar) {
           <div class="acciones">
@@ -88,12 +112,18 @@
 
   <!-- ============================ Prestaciones del lote ============================ -->
 
-  <section class="tarjeta" aria-labelledby="titulo-items">
-    <h2 id="titulo-items">Prestaciones del lote</h2>
+  <section class="tarjeta tarjeta--tabla" aria-labelledby="titulo-items">
+    <div class="tarjeta__cabecera">
+      <h2 id="titulo-items">Prestaciones del lote</h2>
+    </div>
 
     @if (items().length > 0) {
       <!-- Regla de filtros (plan §3.4): sin busqueda por texto, el "Mostrar" va detras del embudo. -->
-      <app-filtros [soloAvanzados]="true" [activos]="filtrosAvanzadosActivos()">
+      <app-filtros
+        class="tarjeta__cuerpo"
+        [soloAvanzados]="true"
+        [activos]="filtrosAvanzadosActivos()"
+      >
         <div class="campo">
           <label for="filtro-estado-item">Mostrar</label>
           <select
@@ -112,7 +142,7 @@
 
     @if (items().length === 0) {
       <p class="estado estado--vacio">
-        El lote no tiene prestaciones todavia.
+        El lote no tiene prestaciones todavía.
         @if (esBorrador()) {
           Agregalas desde la bandeja de abajo.
         }
@@ -127,10 +157,12 @@
         <table class="tabla">
           <thead>
             <tr>
-              <th scope="col" appOrdenable [tabla]="tablaItems" columna="prestacion">Prestacion</th>
+              <th scope="col" appOrdenable [tabla]="tablaItems" columna="prestacion">Prestación</th>
               <th scope="col" appOrdenable [tabla]="tablaItems" columna="fecha">Fecha</th>
               <th scope="col" appOrdenable [tabla]="tablaItems" columna="paciente">Paciente</th>
-              <th scope="col" appOrdenable [tabla]="tablaItems" columna="importe">Importe</th>
+              <th scope="col" class="importe" appOrdenable [tabla]="tablaItems" columna="importe">
+                Importe
+              </th>
               <th scope="col" appOrdenable [tabla]="tablaItems" columna="estado">Estado</th>
               <th scope="col">Acciones</th>
             </tr>
@@ -155,10 +187,10 @@
                     </ul>
                   }
                   @if (item.motivoDebito) {
-                    <p class="ayuda">Debito: {{ item.motivoDebito }}</p>
+                    <p class="ayuda">Débito: {{ item.motivoDebito }}</p>
                   }
                 </td>
-                <td>{{ fecha(item.fechaPrestacion) }}</td>
+                <td class="celda-fecha">{{ fecha(item.fechaPrestacion) }}</td>
                 <td>Persona #{{ item.personaId }}</td>
                 <td class="importe">
                   {{ importe(item.importePresentado) }}
@@ -193,7 +225,7 @@
                         [disabled]="operando() !== null"
                         (click)="abrirDebito(item)"
                       >
-                        Registrar debito
+                        Registrar débito
                       </button>
                     }
                   </div>
@@ -204,12 +236,12 @@
                 <tr class="fila-panel">
                   <td colspan="6">
                     <form [formGroup]="debito" (ngSubmit)="debitar(item)" novalidate>
-                      <h3>Debito o rechazo de la prestacion</h3>
+                      <h3>Débito o rechazo de la prestación</h3>
                       <p class="ayuda">
-                        Registra lo que el financiador no reconoce. La deuda de la prestacion sigue
+                        Registrá lo que el financiador no reconoce. La deuda de la prestación sigue
                         pendiente y se puede volver a presentar.
                       </p>
-                      <div class="campos-en-linea">
+                      <div class="grilla-compacta">
                         <div class="campo">
                           <label for="debito-importe">Importe debitado</label>
                           <input
@@ -230,7 +262,7 @@
                       </div>
                       <div class="acciones">
                         <button type="submit" class="boton" [disabled]="operando() !== null">
-                          Confirmar el debito
+                          Confirmar el débito
                         </button>
                         <button
                           type="button"
@@ -253,12 +285,12 @@
         <app-paginacion
           [paginaActual]="tablaItems.pagina()"
           [totalPaginas]="tablaItems.totalPaginas()"
-          etiqueta="Paginas de prestaciones"
+          etiqueta="Páginas de prestaciones"
           (cambioDePagina)="tablaItems.irA($event)"
         />
       </div>
       @if (itemsVisibles().length === 0) {
-        <p class="estado estado--vacio">Ninguna prestacion del lote esta en ese estado.</p>
+        <p class="estado estado--vacio">Ninguna prestación del lote está en ese estado.</p>
       }
     }
   </section>
@@ -266,25 +298,34 @@
   <!-- ============================ Borrador: revision y acciones ======================= -->
 
   @if (esBorrador()) {
-    <section class="tarjeta" aria-labelledby="titulo-revision">
-      <h2 id="titulo-revision">Revision antes de presentar</h2>
+    <section class="tarjeta tarjeta--destacada" aria-labelledby="titulo-revision">
+      <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
+        <h2 id="titulo-revision">Revisión antes de presentar</h2>
+        <app-ayuda titulo="Revisión antes de presentar">
+          <p>
+            La orden y la autorización que el convenio exigía el día de la prestación son
+            obligatorias para presentar; la credencial vencida o sin número de afiliado es solo un
+            aviso.
+          </p>
+        </app-ayuda>
+      </div>
       @if (validacion(); as resultado) {
         @if (hallazgos().length === 0) {
           <p class="estado estado--ok">
-            Ninguna prestacion tiene observaciones.
+            Ninguna prestación tiene observaciones.
             @if (!resultado.confirmable) {
-              Igual el lote todavia no se puede confirmar (por ejemplo, porque esta vacio).
+              Igual el lote todavía no se puede confirmar (por ejemplo, porque está vacío).
             }
           </p>
         } @else {
           <p class="estado estado--error">
-            {{ hallazgos().length }} observacion(es) que impiden confirmar: corregilas en la ficha
-            del paciente o quita esas prestaciones del lote.
+            {{ hallazgos().length }} observación(es) que impiden confirmar: corregilas en la ficha
+            del paciente o quitá esas prestaciones del lote.
           </p>
           <ul>
             @for (reparo of hallazgos(); track $index) {
               <li>
-                Prestacion de la deuda #{{ reparo.obligacionId }}:
+                Prestación de la deuda #{{ reparo.obligacionId }}:
                 {{ hallazgoEnPalabras(reparo.hallazgo) }}
               </li>
             }
@@ -299,16 +340,12 @@
         <ul>
           @for (aviso of avisos(); track $index) {
             <li>
-              Prestacion de la deuda #{{ aviso.obligacionId }}:
+              Prestación de la deuda #{{ aviso.obligacionId }}:
               {{ hallazgoEnPalabras(aviso.hallazgo) }}
             </li>
           }
         </ul>
       }
-      <p class="ayuda">
-        La orden y la autorizacion que el convenio exigia el dia de la prestacion son obligatorias
-        para presentar; la credencial vencida o sin numero de afiliado es solo un aviso.
-      </p>
       <div class="acciones">
         <button type="button" class="boton boton--secundario" (click)="revisar()">
           Volver a revisar
@@ -345,14 +382,16 @@
       }
     </section>
 
-    <section class="tarjeta" aria-labelledby="titulo-elegibles">
-      <h2 id="titulo-elegibles">Prestaciones elegibles</h2>
+    <section class="tarjeta tarjeta--tabla" aria-labelledby="titulo-elegibles">
+      <div class="tarjeta__cabecera">
+        <h2 id="titulo-elegibles">Prestaciones elegibles</h2>
+      </div>
       <p class="ayuda">
-        Deudas a cargo de {{ p.financiadorNombre }} devengadas en el periodo del lote y que no estan
+        Deudas a cargo de {{ p.financiadorNombre }} devengadas en el período del lote y que no están
         en otro lote vivo.
       </p>
       @if (elegibles().length === 0) {
-        <p class="estado estado--vacio">No hay prestaciones para agregar en este periodo.</p>
+        <p class="estado estado--vacio">No hay prestaciones para agregar en este período.</p>
       } @else {
         <div
           class="tabla-scroll"
@@ -364,7 +403,7 @@
             <thead>
               <tr>
                 <th scope="col" appOrdenable [tabla]="tablaElegibles" columna="prestacion">
-                  Prestacion
+                  Prestación
                 </th>
                 <th scope="col" appOrdenable [tabla]="tablaElegibles" columna="devengada">
                   Devengada
@@ -372,7 +411,15 @@
                 <th scope="col" appOrdenable [tabla]="tablaElegibles" columna="paciente">
                   Paciente
                 </th>
-                <th scope="col" appOrdenable [tabla]="tablaElegibles" columna="saldo">Saldo</th>
+                <th
+                  scope="col"
+                  class="importe"
+                  appOrdenable
+                  [tabla]="tablaElegibles"
+                  columna="saldo"
+                >
+                  Saldo
+                </th>
                 <th scope="col">Acciones</th>
               </tr>
             </thead>
@@ -389,11 +436,11 @@
                     }
                     @if (esSaldoDeDebitoParcial(obligacion)) {
                       <p class="ayuda">
-                        Ya se cobro en parte: vuelve por el saldo que dejo un debito parcial.
+                        Ya se cobró en parte: vuelve por el saldo que dejó un débito parcial.
                       </p>
                     }
                   </td>
-                  <td>{{ instante(obligacion.devengadaEn) }}</td>
+                  <td class="celda-fecha">{{ instante(obligacion.devengadaEn) }}</td>
                   <td>Persona #{{ obligacion.personaId }}</td>
                   <td class="importe">{{ importe(obligacion.saldo) }}</td>
                   <td>
@@ -416,7 +463,7 @@
           <app-paginacion
             [paginaActual]="tablaElegibles.pagina()"
             [totalPaginas]="tablaElegibles.totalPaginas()"
-            etiqueta="Paginas de prestaciones elegibles"
+            etiqueta="Páginas de prestaciones elegibles"
             (cambioDePagina)="tablaElegibles.irA($event)"
           />
         </div>
@@ -431,12 +478,12 @@
       <section class="tarjeta" aria-labelledby="titulo-factura">
         <h2 id="titulo-factura">Factura del lote</h2>
         <form [formGroup]="factura" (ngSubmit)="registrarFactura()" novalidate>
-          <div class="campos-en-linea">
+          <div class="grilla-compacta">
             <div class="campo">
-              <label for="factura-numero">Numero de factura</label>
+              <label for="factura-numero">Número de factura</label>
               <input id="factura-numero" type="text" formControlName="numero" />
               @if (factura.controls.numero.touched && factura.controls.numero.invalid) {
-                <p class="campo__error" role="alert">El numero es obligatorio.</p>
+                <p class="campo__error" role="alert">El número es obligatorio.</p>
               }
             </div>
             <div class="campo">
@@ -458,13 +505,13 @@
         <h2 id="titulo-pago">Pago del financiador</h2>
         <app-ayuda titulo="Pago del financiador">
           <p>
-            Un pago en efectivo entra a la caja del dia y necesita una jornada abierta.
+            Un pago en efectivo entra a la caja del día y necesita una jornada abierta.
             Transferencia o tarjeta no tocan el arqueo. Un pago mayor que el saldo se rechaza.
           </p>
         </app-ayuda>
       </div>
       <form [formGroup]="pago" (ngSubmit)="registrarPago()" novalidate>
-        <div class="campos-en-linea">
+        <div class="grilla-compacta">
           <div class="campo">
             <label for="pago-importe">Importe</label>
             <input
@@ -510,8 +557,8 @@
         <h2 id="titulo-cierre">Cerrar el lote</h2>
         <app-ayuda titulo="Cerrar el lote">
           <p>
-            Se cierra cuando el saldo llega a cero: todo lo presentado quedo explicado por debitos o
-            pagos. Si queda saldo, el servidor lo rechaza y dice cuanto falta.
+            Se cierra cuando el saldo llega a cero: todo lo presentado quedó explicado por débitos o
+            pagos. Si queda saldo, el servidor lo rechaza y dice cuánto falta.
           </p>
         </app-ayuda>
       </div>
@@ -526,14 +573,16 @@
   @if (pagos().length > 0) {
     <section class="tarjeta" aria-labelledby="titulo-pagos">
       <h2 id="titulo-pagos">Pagos registrados</h2>
-      <ul>
+      <ul class="lista-montos">
         @for (registrado of pagos(); track registrado.id) {
           <li>
-            {{ fecha(registrado.fechaPago) }} — {{ medioEnPalabras(registrado.medio) }} —
+            <span>
+              {{ fecha(registrado.fechaPago) }} — {{ medioEnPalabras(registrado.medio) }}
+              @if (registrado.referencia) {
+                <span class="celda-secundaria">(ref. {{ registrado.referencia }})</span>
+              }
+            </span>
             <span class="importe">{{ importe(registrado.importe) }}</span>
-            @if (registrado.referencia) {
-              <span class="ayuda">(ref. {{ registrado.referencia }})</span>
-            }
           </li>
         }
       </ul>

@@ -54,7 +54,7 @@ test.describe('Practicas de una oferta contra el backend real', () => {
     await ingresar(page, centro);
     await navegar(page, `/servicios/ofertas/${oferta.id}/practicas`);
     await expect(
-      page.getByRole('heading', { name: 'Practicas de la oferta', level: 1 }),
+      page.getByRole('heading', { name: 'Prácticas de la oferta', level: 1 }),
     ).toBeVisible();
     await expect(page.getByText(/Sin practicas, la oferta no le devenga nada/)).toBeVisible();
     await expect(page.getByRole('button', { name: 'Guardar las practicas' })).toBeDisabled();
@@ -124,7 +124,7 @@ test.describe('Importacion de aranceles de un convenio contra el backend real', 
       page.getByRole('heading', { name: `Importar aranceles a ${convenio.nombre}`, level: 1 }),
     ).toBeVisible();
 
-    const planilla = page.getByLabel('O pegala aca');
+    const planilla = page.getByLabel('O pegala acá');
     await planilla.fill([encabezado, ...validas, pisada].join('\n'));
     await expect(page.getByText('3 filas listas para la vista previa.')).toBeVisible();
 
@@ -142,7 +142,7 @@ test.describe('Importacion de aranceles de un convenio contra el backend real', 
 
     // Se corrige la planilla: el resultado anterior deja de describirla.
     await planilla.fill([encabezado, ...validas].join('\n'));
-    await expect(page.getByText(/Cambiaste la planilla despues de este resultado/)).toBeVisible();
+    await expect(page.getByText(/Cambiaste la planilla después de este resultado/)).toBeVisible();
     await page.getByRole('button', { name: 'Vista previa' }).click();
     await expect(page.getByText(/Las 2 filas entran como aranceles nuevos/)).toBeVisible();
 

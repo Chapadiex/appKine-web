@@ -1,3 +1,5 @@
+import { Pestanas } from '../../../../shared/components/pestanas/pestanas';
+import { ETIQUETA_PESTANAS_DE_OFERTA, pestanasDeOferta } from '../../models/pestanas-de-offering';
 import {
   Component,
   ElementRef,
@@ -58,6 +60,7 @@ interface SituacionDeLaTarifa {
 @Component({
   selector: 'app-honorarios-por-clase-de-la-oferta-page',
   imports: [
+    Pestanas,
     ColumnaOrdenable,
     Paginacion,
     Icono,
@@ -79,6 +82,8 @@ export class HonorariosPorClaseDeLaOfertaPage {
   private readonly injector = inject(Injector);
 
   protected readonly ofertaId = Number(this.ruta.snapshot.paramMap.get('ofertaId'));
+  protected readonly pestanasDeOferta = pestanasDeOferta(this.ofertaId);
+  protected readonly etiquetaDePestanas = ETIQUETA_PESTANAS_DE_OFERTA;
 
   protected readonly estado = signal<EstadoDeListado<readonly HonorarioPorClase[]>>({
     tipo: 'cargando',

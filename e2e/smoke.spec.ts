@@ -17,7 +17,7 @@ test.describe('Baseline AKINE-00.01', () => {
   test('el shell carga y se conecta al backend a traves del proxy', async ({ page }) => {
     await page.goto('/estado');
 
-    await expect(page.getByRole('heading', { name: 'Baseline tecnico', level: 1 })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Estado del sistema', level: 1 })).toBeVisible();
 
     // Prueba la cadena completa: Angular -> cliente generado -> proxy -> Spring Boot -> MySQL.
     await expect(page.getByText('Conectado')).toBeVisible();

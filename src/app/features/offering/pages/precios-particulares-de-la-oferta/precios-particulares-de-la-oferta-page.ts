@@ -1,3 +1,5 @@
+import { Pestanas } from '../../../../shared/components/pestanas/pestanas';
+import { ETIQUETA_PESTANAS_DE_OFERTA, pestanasDeOferta } from '../../models/pestanas-de-offering';
 import {
   Component,
   ElementRef,
@@ -62,6 +64,7 @@ interface SituacionDelPrecio {
 @Component({
   selector: 'app-precios-particulares-de-la-oferta-page',
   imports: [
+    Pestanas,
     ColumnaOrdenable,
     Paginacion,
     Icono,
@@ -88,6 +91,8 @@ export class PreciosParticularesDeLaOfertaPage {
   protected readonly precioEnPalabras = precioEnPalabras;
 
   protected readonly ofertaId = Number(this.ruta.snapshot.paramMap.get('ofertaId'));
+  protected readonly pestanasDeOferta = pestanasDeOferta(this.ofertaId);
+  protected readonly etiquetaDePestanas = ETIQUETA_PESTANAS_DE_OFERTA;
   /** Lee el signal de la zona: lo que dependa de esto se actualiza cuando la zona llega. */
   private get hoy(): string {
     return this.diaDeLaSede.hoy();

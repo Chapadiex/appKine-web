@@ -1,16 +1,17 @@
 <div class="titulo-con-ayuda">
-  <h1>Catalogo de financiadores</h1>
+  <h1>Catálogo de financiadores</h1>
   <app-ayuda titulo="Sobre esta pantalla">
     <p>
       Obras sociales, prepagas y ART que la plataforma ofrece a todos los centros. Un centro las
-      <b>agrega por copia</b>: lo que cambies aca no modifica las copias ya agregadas, que solo
-      reciben un aviso de que el catalogo cambio.
+      <b>agrega por copia</b>: lo que cambies acá no modifica las copias ya agregadas, que solo
+      reciben un aviso de que el catálogo cambió. Un financiador con centros no se borra: se da de
+      baja y deja de ofrecerse a centros nuevos.
     </p>
   </app-ayuda>
   <div class="encabezado__acciones">
     <button type="button" class="boton" (click)="abrirAltaFinanciador()">
       <app-icono nombre="agregar" />
-      Agregar un financiador al catalogo
+      Nuevo financiador
     </button>
   </div>
 </div>
@@ -18,13 +19,13 @@
 <app-pestanas [pestanas]="pestanasDePlataforma" [etiqueta]="etiquetaDePestanas" />
 
 <section class="tarjeta" aria-labelledby="titulo-filtros-catalogo">
-  <h2 id="titulo-filtros-catalogo">Buscar</h2>
+  <h2 id="titulo-filtros-catalogo" class="visualmente-oculto">Buscar</h2>
   <form (submit)="$event.preventDefault(); cargar()">
-    <!-- Regla de filtros (plan §3.4): la busqueda a la vista; estado y tipo, detras del embudo. -->
+    <!-- Regla de filtros (plan §3.4): la búsqueda a la vista; estado y tipo, detrás del embudo. -->
     <app-filtros [activos]="filtrosAvanzadosActivos()">
       <div class="campo" filtro-principal>
         <label class="visualmente-oculto" for="catalogo-plataforma-busqueda"
-          >Nombre, codigo o CUIT</label
+          >Nombre, código o CUIT</label
         >
         <div class="campo-busqueda">
           <app-icono class="campo-busqueda__icono" nombre="buscar" />
@@ -32,7 +33,7 @@
             id="catalogo-plataforma-busqueda"
             type="search"
             autocomplete="off"
-            placeholder="Buscar por nombre, codigo o CUIT"
+            placeholder="Buscar por nombre, código o CUIT"
             [value]="busqueda()"
             (input)="busqueda.set($any($event.target).value)"
           />
@@ -83,7 +84,7 @@
   <section class="tarjeta" aria-labelledby="titulo-panel-catalogo">
     @switch (abierto.tipo) {
       @case ('alta-financiador') {
-        <h2 id="titulo-panel-catalogo">Nuevo financiador del catalogo</h2>
+        <h2 id="titulo-panel-catalogo">Nuevo financiador del catálogo</h2>
       }
       @case ('editar-financiador') {
         <h2 id="titulo-panel-catalogo">Editar {{ abierto.entrada.nombre }}</h2>
@@ -106,71 +107,80 @@
         novalidate
         data-testid="formulario-catalogo"
       >
-        <div class="campo">
-          <label for="catalogo-financiador-codigo">Codigo</label>
-          <input
-            id="catalogo-financiador-codigo"
-            type="text"
-            formControlName="codigo"
-            autocomplete="off"
-            aria-describedby="catalogo-financiador-codigo-ayuda"
-            [attr.aria-invalid]="invalido('financiador', 'codigo') ? 'true' : null"
-          />
-          @if (invalido('financiador', 'codigo')) {
-            <p class="campo__error" role="alert">El codigo es obligatorio.</p>
-          }
-          <p class="ayuda" id="catalogo-financiador-codigo-ayuda">
-            No se puede cambiar despues: es el codigo que recibe la copia de cada centro.
-          </p>
-        </div>
-        <div class="campo">
-          <label for="catalogo-financiador-nombre">Nombre</label>
-          <input
-            id="catalogo-financiador-nombre"
-            type="text"
-            formControlName="nombre"
-            autocomplete="off"
-            [attr.aria-invalid]="invalido('financiador', 'nombre') ? 'true' : null"
-          />
-          @if (invalido('financiador', 'nombre')) {
-            <p class="campo__error" role="alert">El nombre es obligatorio.</p>
-          }
-        </div>
-        <div class="campo">
-          <label for="catalogo-financiador-tipo">Tipo de financiador</label>
-          <select
-            id="catalogo-financiador-tipo"
-            formControlName="tipo"
-            [attr.aria-invalid]="invalido('financiador', 'tipo') ? 'true' : null"
-          >
-            <option value="">Elegi un tipo</option>
-            @for (tipo of tipos; track tipo.valor) {
-              <option [value]="tipo.valor">{{ tipo.etiqueta }}</option>
+        <div class="grilla-campos grilla-campos--dos">
+          <div class="campo">
+            <label for="catalogo-financiador-codigo">Código</label>
+            <input
+              id="catalogo-financiador-codigo"
+              type="text"
+              formControlName="codigo"
+              autocomplete="off"
+              aria-describedby="catalogo-financiador-codigo-ayuda"
+              [attr.aria-invalid]="invalido('financiador', 'codigo') ? 'true' : null"
+            />
+            @if (invalido('financiador', 'codigo')) {
+              <p class="campo__error" role="alert">El código es obligatorio.</p>
             }
-          </select>
-          @if (invalido('financiador', 'tipo')) {
-            <p class="campo__error" role="alert">Elegi el tipo de financiador.</p>
-          }
+            <p class="ayuda" id="catalogo-financiador-codigo-ayuda">
+              No se puede cambiar después: es el código que recibe la copia de cada centro.
+            </p>
+          </div>
+          <div class="campo">
+            <label for="catalogo-financiador-nombre">Nombre</label>
+            <input
+              id="catalogo-financiador-nombre"
+              type="text"
+              formControlName="nombre"
+              autocomplete="off"
+              [attr.aria-invalid]="invalido('financiador', 'nombre') ? 'true' : null"
+            />
+            @if (invalido('financiador', 'nombre')) {
+              <p class="campo__error" role="alert">El nombre es obligatorio.</p>
+            }
+          </div>
+          <div class="campo">
+            <label for="catalogo-financiador-tipo">Tipo de financiador</label>
+            <select
+              id="catalogo-financiador-tipo"
+              formControlName="tipo"
+              [attr.aria-invalid]="invalido('financiador', 'tipo') ? 'true' : null"
+            >
+              <option value="">Elegí un tipo</option>
+              @for (tipo of tipos; track tipo.valor) {
+                <option [value]="tipo.valor">{{ tipo.etiqueta }}</option>
+              }
+            </select>
+            @if (invalido('financiador', 'tipo')) {
+              <p class="campo__error" role="alert">Elegí el tipo de financiador.</p>
+            }
+          </div>
+          <div class="campo">
+            <label for="catalogo-financiador-cuit">CUIT (opcional)</label>
+            <input id="catalogo-financiador-cuit" type="text" formControlName="cuit" />
+          </div>
         </div>
-        <div class="campo">
-          <label for="catalogo-financiador-cuit">CUIT (opcional)</label>
-          <input id="catalogo-financiador-cuit" type="text" formControlName="cuit" />
-        </div>
-        <div class="campo">
-          <label for="catalogo-financiador-email">Correo de contacto (opcional)</label>
-          <input id="catalogo-financiador-email" type="email" formControlName="emailContacto" />
-        </div>
-        <div class="campo">
-          <label for="catalogo-financiador-telefono">Telefono de contacto (opcional)</label>
-          <input id="catalogo-financiador-telefono" type="tel" formControlName="telefonoContacto" />
-        </div>
-        <div class="campo">
-          <label for="catalogo-financiador-observaciones">Observaciones (opcional)</label>
-          <textarea
-            id="catalogo-financiador-observaciones"
-            formControlName="observaciones"
-          ></textarea>
-        </div>
+        <details class="mas-opciones">
+          <summary>Más datos de contacto</summary>
+          <div class="campo">
+            <label for="catalogo-financiador-email">Correo de contacto (opcional)</label>
+            <input id="catalogo-financiador-email" type="email" formControlName="emailContacto" />
+          </div>
+          <div class="campo">
+            <label for="catalogo-financiador-telefono">Teléfono de contacto (opcional)</label>
+            <input
+              id="catalogo-financiador-telefono"
+              type="tel"
+              formControlName="telefonoContacto"
+            />
+          </div>
+          <div class="campo">
+            <label for="catalogo-financiador-observaciones">Observaciones (opcional)</label>
+            <textarea
+              id="catalogo-financiador-observaciones"
+              formControlName="observaciones"
+            ></textarea>
+          </div>
+        </details>
         <div class="acciones">
           <button type="submit" class="boton" [disabled]="enviando()">Guardar</button>
           <button type="button" class="boton boton--secundario" (click)="cerrar()">Cancelar</button>
@@ -183,56 +193,60 @@
         novalidate
         data-testid="formulario-catalogo"
       >
-        <div class="campo">
-          <label for="catalogo-plan-codigo">Codigo del plan</label>
-          <input
-            id="catalogo-plan-codigo"
-            type="text"
-            formControlName="codigo"
-            autocomplete="off"
-            [attr.aria-invalid]="invalido('plan', 'codigo') ? 'true' : null"
-          />
-          @if (invalido('plan', 'codigo')) {
-            <p class="campo__error" role="alert">El codigo es obligatorio.</p>
-          }
+        <div class="grilla-campos grilla-campos--dos">
+          <div class="campo">
+            <label for="catalogo-plan-codigo">Código del plan</label>
+            <input
+              id="catalogo-plan-codigo"
+              type="text"
+              formControlName="codigo"
+              autocomplete="off"
+              [attr.aria-invalid]="invalido('plan', 'codigo') ? 'true' : null"
+            />
+            @if (invalido('plan', 'codigo')) {
+              <p class="campo__error" role="alert">El código es obligatorio.</p>
+            }
+          </div>
+          <div class="campo">
+            <label for="catalogo-plan-nombre">Nombre del plan</label>
+            <input
+              id="catalogo-plan-nombre"
+              type="text"
+              formControlName="nombre"
+              autocomplete="off"
+              [attr.aria-invalid]="invalido('plan', 'nombre') ? 'true' : null"
+            />
+            @if (invalido('plan', 'nombre')) {
+              <p class="campo__error" role="alert">El nombre es obligatorio.</p>
+            }
+          </div>
         </div>
         <div class="campo">
-          <label for="catalogo-plan-nombre">Nombre del plan</label>
-          <input
-            id="catalogo-plan-nombre"
-            type="text"
-            formControlName="nombre"
-            autocomplete="off"
-            [attr.aria-invalid]="invalido('plan', 'nombre') ? 'true' : null"
-          />
-          @if (invalido('plan', 'nombre')) {
-            <p class="campo__error" role="alert">El nombre es obligatorio.</p>
-          }
-        </div>
-        <div class="campo">
-          <label for="catalogo-plan-descripcion">Descripcion (opcional)</label>
+          <label for="catalogo-plan-descripcion">Descripción (opcional)</label>
           <input id="catalogo-plan-descripcion" type="text" formControlName="descripcion" />
         </div>
-        <div class="campo">
-          <label for="catalogo-plan-desde">Vigente desde</label>
-          <input
-            id="catalogo-plan-desde"
-            type="date"
-            formControlName="vigenciaDesde"
-            [attr.aria-invalid]="invalido('plan', 'vigenciaDesde') ? 'true' : null"
-          />
-          @if (invalido('plan', 'vigenciaDesde')) {
-            <p class="campo__error" role="alert">Indica desde cuando rige el plan.</p>
-          }
-        </div>
-        <div class="campo">
-          <label for="catalogo-plan-hasta">Vigente hasta (opcional)</label>
-          <input id="catalogo-plan-hasta" type="date" formControlName="vigenciaHasta" />
+        <div class="grilla-campos grilla-campos--dos">
+          <div class="campo">
+            <label for="catalogo-plan-desde">Vigente desde</label>
+            <input
+              id="catalogo-plan-desde"
+              type="date"
+              formControlName="vigenciaDesde"
+              [attr.aria-invalid]="invalido('plan', 'vigenciaDesde') ? 'true' : null"
+            />
+            @if (invalido('plan', 'vigenciaDesde')) {
+              <p class="campo__error" role="alert">Indicá desde cuándo rige el plan.</p>
+            }
+          </div>
+          <div class="campo">
+            <label for="catalogo-plan-hasta">Vigente hasta (opcional)</label>
+            <input id="catalogo-plan-hasta" type="date" formControlName="vigenciaHasta" />
+          </div>
         </div>
         <div class="campo">
           <label class="opcion-radio">
             <input type="checkbox" formControlName="requiereAutorizacion" />
-            Requiere autorizacion
+            Requiere autorización
           </label>
           <label class="opcion-radio">
             <input type="checkbox" formControlName="requiereCredencial" />
@@ -247,10 +261,10 @@
     } @else if (abierto.tipo === 'baja-financiador') {
       <app-confirmacion-con-motivo
         idCampo="catalogo-baja-financiador-motivo"
-        [titulo]="'Dar de baja ' + (abierto.entrada.nombre ?? 'el financiador') + ' del catalogo'"
+        [titulo]="'Dar de baja ' + (abierto.entrada.nombre ?? 'el financiador') + ' del catálogo'"
         etiqueta="Motivo (obligatorio)"
         ayuda="Deja de ofrecerse a los centros. No cascadea: sus planes y las copias ya agregadas siguen."
-        textoError="Escribi el motivo de la baja: es obligatorio."
+        textoError="Escribí el motivo de la baja: es obligatorio."
         textoConfirmar="Dar de baja"
         [enviando]="enviando()"
         (confirmado)="confirmarBaja($event)"
@@ -259,10 +273,10 @@
     } @else if (abierto.tipo === 'baja-plan') {
       <app-confirmacion-con-motivo
         idCampo="catalogo-baja-plan-motivo"
-        [titulo]="'Dar de baja el plan ' + (abierto.plan.nombre ?? '') + ' del catalogo'"
+        [titulo]="'Dar de baja el plan ' + (abierto.plan.nombre ?? '') + ' del catálogo'"
         etiqueta="Motivo (obligatorio)"
         ayuda="Los centros que ya lo agregaron conservan su copia."
-        textoError="Escribi el motivo de la baja: es obligatorio."
+        textoError="Escribí el motivo de la baja: es obligatorio."
         textoConfirmar="Dar de baja el plan"
         [enviando]="enviando()"
         (confirmado)="confirmarBaja($event)"
@@ -274,7 +288,7 @@
 
 @switch (listado().tipo) {
   @case ('cargando') {
-    <p class="estado estado--cargando">Leyendo el catalogo&hellip;</p>
+    <p class="estado estado--cargando">Leyendo el catálogo&hellip;</p>
   }
   @case ('error') {
     <p class="estado estado--error" role="alert">{{ errorDeListado() }}</p>
@@ -282,7 +296,7 @@
   }
   @case ('listo') {
     @if (entradas().length === 0) {
-      <p class="estado estado--vacio">Ninguna entrada del catalogo coincide con la busqueda.</p>
+      <p class="estado estado--vacio">Ninguna entrada del catálogo coincide con la búsqueda.</p>
     }
     @for (entrada of entradas(); track entrada.id) {
       <section
@@ -292,7 +306,7 @@
       >
         <h2 [id]="'catalogo-entrada-' + entrada.id">{{ entrada.nombre }}</h2>
         <dl class="detalle">
-          <dt>Codigo</dt>
+          <dt>Código</dt>
           <dd>{{ entrada.codigo }}</dd>
           <dt>Tipo</dt>
           <dd>{{ etiquetaDeTipo(entrada.tipo) }}</dd>
@@ -300,7 +314,12 @@
           <dd>{{ entrada.cuit || 'Sin CUIT' }}</dd>
           <dt>Estado</dt>
           <dd>
-            {{ entrada.estado === 'INACTIVO' ? 'Dado de baja' : 'Activo' }}
+            <span
+              class="marca-estado"
+              [class.marca-estado--activa]="entrada.estado !== 'INACTIVO'"
+              [class.marca-estado--revocada]="entrada.estado === 'INACTIVO'"
+              >{{ entrada.estado === 'INACTIVO' ? 'Dado de baja' : 'Activo' }}</span
+            >
             @if (entrada.deactivationReason) {
               — {{ entrada.deactivationReason }}
             }
@@ -343,7 +362,7 @@
                   <th scope="col">Plan</th>
                   <th scope="col">Vigencia</th>
                   <th scope="col">Estado</th>
-                  <th scope="col">Acciones</th>
+                  <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
                 </tr>
               </thead>
               <tbody>
@@ -351,10 +370,17 @@
                   <tr [class.fila--revocada]="plan.estado === 'INACTIVO'">
                     <th scope="row">
                       {{ plan.nombre }}
-                      <p class="ayuda">Codigo {{ plan.codigo }}</p>
+                      <p class="ayuda">Código {{ plan.codigo }}</p>
                     </th>
                     <td>{{ plan.vigenciaDesde }} a {{ plan.vigenciaHasta || 'sin fin' }}</td>
-                    <td>{{ plan.estado === 'INACTIVO' ? 'Dado de baja' : 'Activo' }}</td>
+                    <td>
+                      <span
+                        class="marca-estado"
+                        [class.marca-estado--activa]="plan.estado !== 'INACTIVO'"
+                        [class.marca-estado--revocada]="plan.estado === 'INACTIVO'"
+                        >{{ plan.estado === 'INACTIVO' ? 'Dado de baja' : 'Activo' }}</span
+                      >
+                    </td>
                     <td class="acciones-fila">
                       @if (plan.estado !== 'INACTIVO' && entrada.estado !== 'INACTIVO') {
                         <button

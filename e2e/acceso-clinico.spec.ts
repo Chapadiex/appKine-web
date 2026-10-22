@@ -37,9 +37,9 @@ test.describe('Acceso clinico desde el Paciente 360 (D-e)', () => {
 
     // La ficha sigue sin mostrar nada clinico: ofrece el camino, no el contenido.
     await expect(
-      page.locator('app-ayuda').getByText('Esta ficha no muestra nada clinico'),
+      page.locator('app-ayuda').getByText('Esta ficha no muestra nada clínico'),
     ).toBeAttached();
-    await page.getByRole('link', { name: 'Abrir la historia clinica' }).click();
+    await page.getByRole('link', { name: 'Abrir la historia clínica' }).click();
 
     await expect(page).toHaveURL(new RegExp(`/historia-clinica/personas/${sembrada.personaId}$`));
     // El motivo no viaja en la URL ni antes ni despues de declararlo.
@@ -56,7 +56,7 @@ test.describe('Acceso clinico desde el Paciente 360 (D-e)', () => {
     );
     expect(Number(auditadas), 'la lectura quedo auditada con el motivo').toBeGreaterThan(0);
 
-    await page.getByRole('link', { name: 'Volver a la ficha de la persona' }).click();
+    await page.getByRole('link', { name: 'Ficha', exact: true }).click();
     await expect(page).toHaveURL(new RegExp(`/pacientes/${sembrada.personaId}$`));
   });
 
@@ -67,9 +67,9 @@ test.describe('Acceso clinico desde el Paciente 360 (D-e)', () => {
     await navegar(page, `/pacientes/${sembrada.personaId}`);
 
     await expect(
-      page.locator('app-ayuda').getByText('Esta ficha no muestra nada clinico'),
+      page.locator('app-ayuda').getByText('Esta ficha no muestra nada clínico'),
     ).toBeAttached();
-    await expect(page.getByRole('link', { name: 'Abrir la historia clinica' })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: 'Abrir la historia clínica' })).toHaveCount(0);
     // Lo que si ve el mostrador: que hay historia, sin contenido (matriz §32, api #109).
     await expect(
       page

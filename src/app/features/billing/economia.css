@@ -1,0 +1,289 @@
+/*
+ * Hoja de las pantallas de economia de la sede (caja, egresos, honorarios y presentaciones),
+ * con el aspecto del lienzo de diseno (UX-01).
+ *
+ * Va aparte de `billing.css` porque esa hoja la comparten tambien la cuenta corriente y los
+ * cobros: lo que aca se agrega es solo layout de estas pantallas. Cero colores literales: todo
+ * sale de los tokens de `:root`.
+ */
+
+/* Marca de estado al lado del titulo de la pantalla. */
+.titulo-con-ayuda .marca-estado {
+  align-self: center;
+}
+
+/* Linea de contexto debajo del titulo: fecha, sede, numero. */
+.contexto-de-pantalla {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp-2) var(--esp-6);
+  margin: calc(-1 * var(--esp-5)) 0 var(--esp-7);
+  font-size: var(--tipo-xs);
+  color: var(--color-texto-suave);
+}
+
+/*
+ * Franja de cifras: el resumen que se lee de un vistazo arriba de la pantalla. Es un `dl` para
+ * que cada cifra quede atada a su rotulo tambien para un lector de pantalla.
+ */
+.cifras {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10.5rem, 1fr));
+  margin: 0 0 var(--esp-7);
+  border: var(--borde-fino) solid var(--color-borde);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie);
+}
+
+.cifras > div {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-1);
+  padding: var(--esp-5) var(--esp-6);
+  border-right: var(--borde-fino) solid var(--color-borde-sutil);
+  min-width: 0;
+}
+
+.cifras > div:last-child {
+  border-right: none;
+}
+
+.cifras dt {
+  font-size: var(--tipo-2xs);
+  color: var(--color-texto-suave);
+}
+
+.cifras dd {
+  margin: 0;
+  font-size: var(--tipo-xl);
+  font-weight: var(--peso-fuerte);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.cifras__nota {
+  font-size: var(--tipo-2xs);
+  color: var(--color-texto-suave);
+}
+
+.cifras dd.cifras__texto {
+  font-size: var(--tipo-sm);
+  font-weight: var(--peso-medio);
+}
+
+/*
+ * Dos columnas: el trabajo principal (una tabla, un detalle) a la izquierda y los paneles
+ * laterales a la derecha. En pantalla angosta la columna lateral baja debajo.
+ */
+.dos-columnas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp-6);
+  align-items: flex-start;
+}
+
+.dos-columnas__principal {
+  flex: 3 1 36rem;
+  min-width: 0;
+}
+
+.dos-columnas__lateral {
+  flex: 2 1 18rem;
+  min-width: 0;
+}
+
+.dos-columnas .tarjeta {
+  margin-bottom: var(--esp-6);
+}
+
+/* Tarjeta que contiene una tabla de borde a borde: la tabla no lleva el padding de la tarjeta. */
+.tarjeta--tabla {
+  padding: 0;
+  overflow: hidden;
+}
+
+.tarjeta--tabla > .tarjeta__cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--esp-4);
+  padding: var(--esp-5) var(--esp-6);
+}
+
+.tarjeta--tabla > .tarjeta__cabecera h2,
+.tarjeta--tabla > .tarjeta__cabecera .titulo-con-ayuda {
+  margin: 0;
+}
+
+.tarjeta--tabla > .tarjeta__cuerpo {
+  padding: var(--esp-5) var(--esp-6);
+}
+
+.tarjeta--tabla > .tabla-scroll {
+  border-top: var(--borde-fino) solid var(--color-borde);
+  margin: 0;
+}
+
+.tarjeta--tabla > .ayuda,
+.tarjeta--tabla > .estado {
+  margin: 0;
+  padding: var(--esp-5) var(--esp-6);
+}
+
+/* La tarjeta de la accion que se esta por confirmar (el arqueo): borde de accion. */
+.tarjeta--destacada {
+  border-color: var(--color-accion-fondo);
+}
+
+/* Titulos de paneles laterales: chicos y en gris, como en el lienzo. */
+.tarjeta h2.titulo-lateral {
+  margin: 0 0 var(--esp-4);
+  font-size: var(--tipo-xs);
+  font-weight: var(--peso-medio);
+  color: var(--color-texto-suave);
+}
+
+/* Lista rotulo / importe de un panel lateral (totales por medio, resumen de una liquidacion). */
+.lista-montos {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--tipo-xs);
+}
+
+.lista-montos li,
+.lista-montos > div {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--esp-5);
+  padding: var(--esp-2) 0;
+}
+
+.lista-montos dt,
+.lista-montos dd {
+  margin: 0;
+}
+
+.lista-montos .importe {
+  font-weight: var(--peso-medio);
+}
+
+.lista-montos__total {
+  margin-top: var(--esp-3);
+  padding-top: var(--esp-4) !important;
+  border-top: var(--borde-fino) solid var(--color-borde-sutil);
+  font-size: var(--tipo-sm);
+}
+
+.lista-montos__total .importe {
+  font-weight: var(--peso-fuerte);
+}
+
+/*
+ * Campos compactos: importes, fechas y codigos no necesitan el ancho entero de la pantalla. Un
+ * importe a 1.000 px se lee como un campo de texto libre y obliga a recorrer la linea entera.
+ */
+.grilla-compacta {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+  gap: 0 var(--esp-5);
+  align-items: start;
+}
+
+.grilla-compacta > .campo--ancho {
+  grid-column: 1 / -1;
+}
+
+.campo--corto {
+  max-width: 14rem;
+}
+
+.campo--corto input,
+.campo--corto select {
+  width: 100%;
+}
+
+.campo input[inputmode='decimal'],
+.campo input[inputmode='numeric'] {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Lo que falta para habilitar un boton, dicho al lado del boton. */
+.acciones .motivo-deshabilitado {
+  margin: 0;
+  align-self: center;
+  font-size: var(--tipo-xs);
+  color: var(--color-texto-suave);
+}
+
+/* Columnas de numeros que no son plata (cantidades): a la derecha y tabulares. */
+.numero {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.tabla th.importe,
+.tabla th.numero {
+  text-align: right;
+}
+
+/* Fechas y horas en tabla: tabulares para que se alineen. */
+.celda-fecha {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* Segunda linea de una celda: proveedor, paciente, detalle. */
+.celda-secundaria {
+  display: block;
+  font-size: var(--tipo-2xs);
+  color: var(--color-texto-suave);
+}
+
+.celda-principal {
+  font-weight: var(--peso-medio);
+}
+
+/* Miga de pan arriba del titulo de un detalle: de donde se vino. */
+.migas {
+  margin-bottom: var(--esp-4);
+  font-size: var(--tipo-xs);
+}
+
+/*
+ * Datos de un registro en grilla de tres columnas, rotulo arriba y valor abajo, como en el lienzo.
+ * Cada par va en su propio `div` para que el `dd` quede inmediatamente despues de su `dt`.
+ */
+.detalle-en-grilla {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+  gap: var(--esp-5) var(--esp-6);
+  margin: 0;
+  font-size: var(--tipo-xs);
+}
+
+.detalle-en-grilla dt {
+  font-size: var(--tipo-2xs);
+  color: var(--color-texto-suave);
+}
+
+.detalle-en-grilla dd {
+  margin: var(--esp-1) 0 0;
+  overflow-wrap: anywhere;
+}
+
+/* Pie de una tarjeta de tabla: el resumen a la izquierda y la accion a la derecha. */
+.tarjeta--tabla > .pie-de-tarjeta {
+  margin: 0;
+  padding: var(--esp-5) var(--esp-6);
+  border-top: var(--borde-fino) solid var(--color-borde);
+}
+
+.pie-de-tarjeta__resumen {
+  margin-right: auto;
+  font-size: var(--tipo-xs);
+  color: var(--color-texto-suave);
+  font-variant-numeric: tabular-nums;
+}

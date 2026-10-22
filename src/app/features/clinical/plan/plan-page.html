@@ -1,10 +1,16 @@
-<h1>Plan de tratamiento</h1>
-
-<p>
-  <a class="enlace" [routerLink]="visita.rutaCaso(idDelCaso())">Volver al caso</a>
-  ·
-  <a class="enlace" [routerLink]="visita.rutaHistoria()">Volver a la historia clinica</a>
-</p>
+<div class="titulo-con-ayuda titulo-clinico">
+  <a class="migas" [routerLink]="visita.rutaHistoria()">Historia clínica</a>
+  <span class="migas__separador" aria-hidden="true">/</span>
+  <a class="migas" [routerLink]="visita.rutaCaso(idDelCaso())">
+    @if (caso(); as c) {
+      Caso {{ c.numeroCaso }}
+    } @else {
+      Caso clínico
+    }
+  </a>
+  <span class="migas__separador" aria-hidden="true">/</span>
+  <h1>Plan de tratamiento</h1>
+</div>
 
 @switch (estado().tipo) {
   @case ('cargando') {
@@ -38,7 +44,7 @@
       <p class="descripcion">
         Caso {{ c.numeroCaso }}: {{ c.diagnosticoPresuntivo }}.
         @if (!casoActivo()) {
-          <b>El caso esta cerrado:</b> para planificar hay que reabrirlo desde el caso.
+          <b>El caso está cerrado:</b> para planificar hay que reabrirlo desde el caso.
         }
       </p>
     }

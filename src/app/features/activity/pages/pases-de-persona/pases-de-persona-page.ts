@@ -40,6 +40,7 @@ import {
 import { ErrorPase, errorSinContextoDePase, traducirErrorPase } from '../../models/pase-errors';
 import { MOVIMIENTOS_POR_PAGINA, PasesApi } from '../../services/pases-api';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { CabeceraDePersona } from './cabecera-de-persona/cabecera-de-persona';
 
 /**
  * El ledger abierto, de a paginas (0.116.0). Mientras llega otra pagina se sigue mostrando la
@@ -96,6 +97,7 @@ const ENTERO_CON_SIGNO = /^[+-]?\d+$/;
 @Component({
   selector: 'app-pases-de-persona-page',
   imports: [
+    CabeceraDePersona,
     Ayuda,
     ColumnaOrdenable,
     RouterLink,
@@ -105,7 +107,7 @@ const ENTERO_CON_SIGNO = /^[+-]?\d+$/;
     FocoAlMontar,
   ],
   templateUrl: './pases-de-persona-page.html',
-  styleUrl: '../../activity.css',
+  styleUrls: ['../../activity.css', './pases-de-persona.css'],
 })
 export class PasesDePersonaPage {
   private readonly api = inject(PasesApi);

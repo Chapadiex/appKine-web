@@ -1,61 +1,61 @@
 <div class="titulo-con-ayuda">
-  <h1>Recepcion del dia</h1>
+  <h1>Recepción del día</h1>
   <app-ayuda titulo="Sobre esta pantalla">
     <p>
-      Quien viene hoy y en que punto del mostrador esta: llego, se valido como se atiende, espera en
-      la sala o ya lo llamaron. Ninguno de esos pasos registra la atencion: eso se hace en la
-      pantalla clinica, que es otra.
+      Quién viene hoy y en qué punto del mostrador está: llegó, se validó cómo se atiende, espera en
+      la sala o ya lo llamaron. Ninguno de esos pasos registra la atención: eso se hace en la
+      pantalla clínica, que es otra.
+    </p>
+    <p>
+      La fecha es la local de la sede; al abrir la pantalla se muestra el día de hoy. La lista
+      <b>incluye los cancelados</b>: alguien puede presentarse con un turno que se canceló, y verlo
+      con su motivo es lo que permite explicárselo.
     </p>
   </app-ayuda>
+
+  <!-- El selector compacto del canvas: ‹ dia ›, en la fila del titulo. -->
+  <div class="navegador-fecha" role="group" aria-label="Día de la recepción">
+    <button
+      type="button"
+      class="navegador-fecha__boton navegador-fecha__boton--flecha"
+      aria-label="Día anterior"
+      title="Día anterior"
+      (click)="moverDia(-1)"
+    >
+      ‹
+    </button>
+    <label class="visualmente-oculto" for="recepcion-fecha">Fecha</label>
+    <input
+      id="recepcion-fecha"
+      name="recepcion-fecha"
+      type="date"
+      [value]="dia()"
+      (change)="cambiarDia($any($event.target).value)"
+    />
+    <button
+      type="button"
+      class="navegador-fecha__boton navegador-fecha__boton--flecha"
+      aria-label="Día siguiente"
+      title="Día siguiente"
+      (click)="moverDia(1)"
+    >
+      ›
+    </button>
+    <button type="button" class="navegador-fecha__boton" (click)="irAHoy()">Hoy</button>
+  </div>
+
+  @if (puedeAtender()) {
+    <!-- DP-43 (U-24): la atencion sin turno es otra pantalla, la clinica; no pasa por la recepcion. -->
+    <div class="encabezado__acciones">
+      <a class="boton" routerLink="/atencion/sin-turno">
+        <app-icono nombre="agregar" />
+        Atender sin turno
+      </a>
+    </div>
+  }
 </div>
 
 <app-pestanas [pestanas]="pestanas" [etiqueta]="etiquetaDePestanas" />
-
-@if (puedeAtender()) {
-  <!-- DP-43 (U-24): la atencion sin turno es otra pantalla, la clinica; no pasa por la recepcion. -->
-  <p><a class="enlace" routerLink="/atencion/sin-turno">Atender sin turno</a></p>
-}
-
-<section class="tarjeta" aria-labelledby="titulo-dia">
-  <h2 id="titulo-dia">Dia</h2>
-
-  <div class="filtros">
-    <div class="campo">
-      <label for="recepcion-fecha">Fecha</label>
-      <input
-        id="recepcion-fecha"
-        name="recepcion-fecha"
-        type="date"
-        [value]="dia()"
-        (change)="cambiarDia($any($event.target).value)"
-        aria-describedby="recepcion-fecha-ayuda"
-      />
-      <p class="ayuda" id="recepcion-fecha-ayuda">
-        Es la fecha local de la sede. Al abrir la pantalla se muestra el dia de hoy.
-      </p>
-    </div>
-  </div>
-
-  <p class="ayuda">
-    {{ fechaEnPalabras(dia()) }} —
-    @if (zonaConocida()) {
-      horarios en la zona de la sede ({{ timezone() }}).
-    } @else {
-      <!--
-        No es un cartel defensivo: `GET /turnos?fecha=` no publica el `timezone` de la sede, a
-        diferencia de la agenda. Rotularlo es lo unico honesto; usar la zona del navegador correria
-        las horas del mostrador sin que nada falle.
-      -->
-      horarios en <b>UTC</b>: no se pudo averiguar la zona horaria de la sede.
-    }
-  </p>
-
-  <div class="acciones">
-    <button type="button" class="boton boton--secundario" (click)="cargar()">
-      Actualizar la lista
-    </button>
-  </div>
-</section>
 
 <div aria-live="polite">
   @if (exito(); as mensaje) {
@@ -98,283 +98,325 @@
   </p>
 }
 
-@if (!hayTurnos() && !cargando()) {
-  <p class="estado estado--vacio">
-    Este dia no tiene ningun turno agendado en esta sede. Proba con otra fecha.
-  </p>
-} @else if (hayTurnos()) {
-  <p class="ayuda">
-    {{ turnos().length }} turno(s) en el dia, {{ enEspera() }} en espera. La lista
-    <b>incluye los cancelados</b>: alguien puede presentarse con un turno que se cancelo, y verlo
-    con su motivo es lo que permite explicarselo.
-  </p>
+<section class="tarjeta tarjeta--plana" aria-labelledby="titulo-dia">
+  <h2 id="titulo-dia" class="visualmente-oculto">Turnos del día</h2>
 
-  <!--
+  <!-- La barra del canvas: buscar, actualizar, y lo que el mostrador mira sin leer la tabla. -->
+  <div class="tarjeta__barra">
+    <div class="campo-busqueda">
+      <app-icono class="campo-busqueda__icono" nombre="buscar" />
+      <label class="visualmente-oculto" for="recepcion-busqueda">Paciente o documento</label>
+      <input
+        id="recepcion-busqueda"
+        name="recepcion-busqueda"
+        type="search"
+        autocomplete="off"
+        placeholder="Buscar paciente o documento"
+        [value]="busqueda()"
+        (input)="busqueda.set($any($event.target).value)"
+      />
+    </div>
+    <button type="button" class="boton boton--secundario" (click)="cargar()">
+      Actualizar la lista
+    </button>
+    <span class="tarjeta__barra-fin">
+      <span class="dia__fecha">{{ fechaEnPalabras(dia()) }}</span> ·
+      @if (hayTurnos()) {
+        {{ turnos().length }} turno(s), <b>{{ enEspera() }} en espera</b> ·
+      }
+      @if (zonaConocida()) {
+        horarios en la zona de la sede ({{ timezone() }})
+      } @else {
+        <!--
+          No es un cartel defensivo: `GET /turnos?fecha=` no publica el `timezone` de la sede, a
+          diferencia de la agenda. Rotularlo es lo unico honesto; usar la zona del navegador
+          correria las horas del mostrador sin que nada falle.
+        -->
+        horarios en <b>UTC</b>: no se pudo averiguar la zona horaria de la sede
+      }
+    </span>
+  </div>
+
+  @if (!hayTurnos() && !cargando()) {
+    <div class="tarjeta__cuerpo">
+      <p class="estado estado--vacio">
+        Este día no tiene ningún turno agendado en esta sede. Probá con otra fecha.
+      </p>
+    </div>
+  } @else if (hayTurnos()) {
+    @if (tabla.total() === 0) {
+      <div class="tarjeta__cuerpo">
+        <p class="estado estado--vacio">Ningún turno del día coincide con esa búsqueda.</p>
+      </div>
+    }
+
+    <!--
     `tabindex`, `role` y nombre en el contenedor que scrollea: sin ellos, las columnas escondidas
     tras el desborde quedan fuera del alcance del teclado (WCAG 2.1.1). Ver `design-system.css`.
   -->
-  <div class="tabla-scroll" tabindex="0" role="region" aria-label="Turnos del dia">
-    <table class="tabla">
-      <caption class="visualmente-oculto">
-        Turnos de la sede en la fecha elegida, con el estado de la reserva, el de la recepcion y la
-        hora de llegada
-      </caption>
-      <thead>
-        <tr>
-          <th scope="col" appOrdenable [tabla]="tabla" columna="hora">Hora</th>
-          <th scope="col" appOrdenable [tabla]="tabla" columna="paciente">Paciente</th>
-          <th scope="col">Prestacion</th>
-          <th scope="col" appOrdenable [tabla]="tabla" columna="estado">Turno</th>
-          <th scope="col">Recepcion</th>
-          <th scope="col">Llegada</th>
-          <th scope="col">Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (turno of tabla.visibles(); track turno.id) {
-          <tr [class.fila--revocada]="cancelado(turno)">
-            <td>{{ rango(turno) }}</td>
+    <div class="tabla-scroll" tabindex="0" role="region" aria-label="Turnos del dia">
+      <table class="tabla">
+        <caption class="visualmente-oculto">
+          Turnos de la sede en la fecha elegida, con el estado de la reserva, el de la recepcion y
+          la hora de llegada
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col" appOrdenable [tabla]="tabla" columna="hora">Hora</th>
+            <th scope="col" appOrdenable [tabla]="tabla" columna="paciente">Paciente</th>
+            <th scope="col">Prestación</th>
+            <th scope="col" appOrdenable [tabla]="tabla" columna="estado">Turno</th>
+            <th scope="col">Recepción</th>
+            <th scope="col">Llegada</th>
+            <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (turno of tabla.visibles(); track turno.id) {
+            <tr [class.fila--revocada]="cancelado(turno)">
+              <td>{{ rango(turno) }}</td>
 
-            <td>
-              {{ turno.personaNombre }}
-              @if (turno.documento) {
-                <span class="etiqueta">{{ turno.documento }}</span>
-              }
-            </td>
+              <td>
+                {{ turno.personaNombre }}
+                @if (turno.documento) {
+                  <span class="celda-secundaria">{{ turno.documento }}</span>
+                }
+              </td>
 
-            <td>{{ turno.ofertaNombre }}</td>
+              <td>{{ turno.ofertaNombre }}</td>
 
-            <td>
-              <!--
+              <td>
+                <!--
                 El estado se dice con TEXTO y no solo con el color de la fila: el color solo no
                 comunica (WCAG 1.4.1). Esta columna es la RESERVA; la llegada es de la recepcion.
               -->
-              <span class="marca-estado" [class.marca-estado--revocada]="cancelado(turno)">
-                {{ turno.estado }}
-              </span>
-              <span class="ayuda">{{ textoDeEstado(turno.estado) }}</span>
-
-              @if (cancelado(turno) && turno.motivoCancelacion) {
-                <p class="ayuda">Motivo: {{ turno.motivoCancelacion }}</p>
-              }
-            </td>
-
-            <td>
-              @if (turno.recepcion; as recepcion) {
-                <span class="marca-estado" [class.marca-estado--activa]="esperando(turno)">
-                  {{ recepcion.estado }}
+                <span class="marca-estado" [class.marca-estado--revocada]="cancelado(turno)">
+                  {{ turno.estado }}
                 </span>
-                <span class="ayuda">{{ textoDeRecepcion(recepcion.estado) }}</span>
-                @if (textoDeModalidad(recepcion.modalidad); as modalidad) {
-                  <p class="ayuda">{{ modalidad }}</p>
+                <span class="celda-secundaria">{{ textoDeEstado(turno.estado) }}</span>
+
+                @if (cancelado(turno) && turno.motivoCancelacion) {
+                  <p class="ayuda">Motivo: {{ turno.motivoCancelacion }}</p>
                 }
-                @if (retirado(turno) && recepcion.motivoCierre) {
-                  <p class="ayuda">Motivo del retiro: {{ recepcion.motivoCierre }}</p>
+              </td>
+
+              <td>
+                @if (turno.recepcion; as recepcion) {
+                  <span class="marca-estado" [class.marca-estado--activa]="esperando(turno)">
+                    {{ recepcion.estado }}
+                  </span>
+                  <span class="celda-secundaria">{{ textoDeRecepcion(recepcion.estado) }}</span>
+                  @if (textoDeModalidad(recepcion.modalidad); as modalidad) {
+                    <p class="ayuda">{{ modalidad }}</p>
+                  }
+                  @if (retirado(turno) && recepcion.motivoCierre) {
+                    <p class="ayuda">Motivo del retiro: {{ recepcion.motivoCierre }}</p>
+                  }
+                  @if (recepcion.observacion) {
+                    <!-- La observacion advierte y no bloquea (RN-M13-003): queda a la vista. -->
+                    <p class="ayuda">Observacion: {{ recepcion.observacion }}</p>
+                  }
+                } @else {
+                  <span class="ayuda">Sin recepcion</span>
                 }
-                @if (recepcion.observacion) {
-                  <!-- La observacion advierte y no bloquea (RN-M13-003): queda a la vista. -->
-                  <p class="ayuda">Observacion: {{ recepcion.observacion }}</p>
-                }
-              } @else {
-                <span class="ayuda">Sin recepcion</span>
-              }
-              @if (textoDePrepago(turno); as prepago) {
-                <!--
+                @if (textoDePrepago(turno); as prepago) {
+                  <!--
                   E-6/E-8: el prepago AVISA y no bloquea (DP-06), y se ve tambien antes de la
                   llegada: sale del turno, no de la recepcion. Se dice con texto, no solo con el
                   color de la pastilla (WCAG 1.4.1).
                 -->
-                <p class="ayuda">
-                  <span
-                    class="marca-estado"
-                    [class.marca-estado--suspendida]="prepagoPendiente(turno)"
-                    [class.marca-estado--activa]="!prepagoPendiente(turno)"
-                  >
-                    {{ prepagoPendiente(turno) ? 'Prepago pendiente' : 'Prepago registrado' }}
-                  </span>
-                  {{ prepago }}
-                </p>
-              }
-            </td>
+                  <p class="ayuda">
+                    <span
+                      class="marca-estado"
+                      [class.marca-estado--suspendida]="prepagoPendiente(turno)"
+                      [class.marca-estado--activa]="!prepagoPendiente(turno)"
+                    >
+                      {{ prepagoPendiente(turno) ? 'Prepago pendiente' : 'Prepago registrado' }}
+                    </span>
+                    {{ prepago }}
+                  </p>
+                }
+              </td>
 
-            <td>
-              @if (horaDeLlegada(turno); as hora) {
-                {{ hora }}
-              } @else {
-                <span class="ayuda">Todavia no llego</span>
-              }
-            </td>
+              <td>
+                @if (horaDeLlegada(turno); as hora) {
+                  {{ hora }}
+                } @else {
+                  <span class="celda-secundaria">Todavia no llego</span>
+                }
+              </td>
 
-            <td>
-              <div class="acciones-fila">
-                @if (puedeOperar()) {
-                  @if (admiteLlegada(turno)) {
-                    <!--
+              <td class="celda-acciones">
+                <div class="acciones-fila">
+                  @if (puedeOperar()) {
+                    @if (admiteLlegada(turno)) {
+                      <!--
                       Registrar la llegada es IDEMPOTENTE: el doble click del mostrador no es un
                       error. El `disabled` evita mandar dos veces el mismo pedido, no castiga.
                     -->
-                    <button
-                      type="button"
-                      class="boton"
-                      [disabled]="enVuelo() === turno.id"
-                      (click)="marcarLlegada(turno)"
-                    >
-                      Registrar la llegada
-                    </button>
-                  }
-                  @if (admiteValidar(turno)) {
-                    <button
-                      type="button"
-                      class="boton"
-                      [disabled]="enVuelo() === turno.id"
-                      (click)="validar(turno)"
-                    >
-                      Validar cobertura
-                    </button>
-                  }
-                  @if (admiteParticular(turno)) {
-                    <button
-                      type="button"
-                      class="boton boton--secundario"
-                      [disabled]="enVuelo() === turno.id"
-                      (click)="abrirPanel(turno, 'particular')"
-                    >
-                      Atender como Particular
-                    </button>
-                  }
-                  @if (admiteEspera(turno)) {
-                    <button
-                      type="button"
-                      class="boton"
-                      [disabled]="enVuelo() === turno.id"
-                      (click)="pasarAEspera(turno)"
-                    >
-                      Pasar a espera
-                    </button>
-                  }
-                  @if (admiteLlamar(turno)) {
-                    <button
-                      type="button"
-                      class="boton"
-                      [disabled]="enVuelo() === turno.id"
-                      (click)="llamar(turno)"
-                    >
-                      Llamar
-                    </button>
-                  }
-                  @if (admiteRetiro(turno)) {
-                    <!-- U-21: la llegada vale y el turno no cambia; el motivo es obligatorio. -->
-                    <button
-                      type="button"
-                      class="boton boton--secundario"
-                      [disabled]="enVuelo() === turno.id"
-                      (click)="abrirPanel(turno, 'retiro')"
-                    >
-                      Se retiro sin ser atendido
-                    </button>
-                  }
-                  @if (abierta(turno)) {
-                    <!--
+                      <button
+                        type="button"
+                        class="boton"
+                        [disabled]="enVuelo() === turno.id"
+                        (click)="marcarLlegada(turno)"
+                      >
+                        Registrar la llegada
+                      </button>
+                    }
+                    @if (admiteValidar(turno)) {
+                      <button
+                        type="button"
+                        class="boton"
+                        [disabled]="enVuelo() === turno.id"
+                        (click)="validar(turno)"
+                      >
+                        Validar cobertura
+                      </button>
+                    }
+                    @if (admiteParticular(turno)) {
+                      <button
+                        type="button"
+                        class="boton boton--secundario"
+                        [disabled]="enVuelo() === turno.id"
+                        (click)="abrirPanel(turno, 'particular')"
+                      >
+                        Atender como Particular
+                      </button>
+                    }
+                    @if (admiteEspera(turno)) {
+                      <button
+                        type="button"
+                        class="boton"
+                        [disabled]="enVuelo() === turno.id"
+                        (click)="pasarAEspera(turno)"
+                      >
+                        Pasar a espera
+                      </button>
+                    }
+                    @if (admiteLlamar(turno)) {
+                      <button
+                        type="button"
+                        class="boton"
+                        [disabled]="enVuelo() === turno.id"
+                        (click)="llamar(turno)"
+                      >
+                        Llamar
+                      </button>
+                    }
+                    @if (admiteRetiro(turno)) {
+                      <!-- U-21: la llegada vale y el turno no cambia; el motivo es obligatorio. -->
+                      <button
+                        type="button"
+                        class="boton boton--secundario"
+                        [disabled]="enVuelo() === turno.id"
+                        (click)="abrirPanel(turno, 'retiro')"
+                      >
+                        Se retiro sin ser atendido
+                      </button>
+                    }
+                    @if (abierta(turno)) {
+                      <!--
                       Anular NO es idempotente: el segundo intento responde 409, que se explica
                       arriba y no como "error inesperado".
                     -->
-                    <button
-                      type="button"
-                      class="boton boton--secundario"
-                      [disabled]="enVuelo() === turno.id"
-                      (click)="abrirPanel(turno, 'anular')"
-                    >
-                      Anular la llegada
-                    </button>
+                      <button
+                        type="button"
+                        class="boton boton--secundario"
+                        [disabled]="enVuelo() === turno.id"
+                        (click)="abrirPanel(turno, 'anular')"
+                      >
+                        Anular la llegada
+                      </button>
+                    }
                   }
-                }
 
-                @if (puedeCobrar() && admitePrepago(turno)) {
-                  <!--
+                  @if (puedeCobrar() && admitePrepago(turno)) {
+                    <!--
                     El prepago se cobra en el registro de cobro (billing), como anticipo atado al
                     turno, tambien antes de la llegada. Al volver, esta pantalla relee el dia y la
                     fila pasa a REGISTRADO.
                   -->
-                  <a
-                    class="boton boton--secundario"
-                    [routerLink]="rutaDePrepago(turno)"
-                    [queryParams]="queryDePrepago(turno)"
-                  >
-                    Registrar prepago
-                  </a>
-                }
+                    <a
+                      class="boton boton--secundario"
+                      [routerLink]="rutaDePrepago(turno)"
+                      [queryParams]="queryDePrepago(turno)"
+                    >
+                      Registrar prepago
+                    </a>
+                  }
 
-                <!--
+                  <!--
                   Cancelar, reprogramar y el historial NO se duplican aca: viven en la pantalla del
                   ciclo del turno, que es la que sabe manejar la version y los conflictos. Este
                   enlace le pasa lo que esa pantalla necesita para poder operar.
                 -->
-                <a
-                  class="enlace"
-                  [routerLink]="['/agenda', 'turnos', turno.id]"
-                  [queryParams]="queryDelTurno(turno)"
-                >
-                  Ver el turno
-                </a>
-              </div>
-            </td>
-          </tr>
-        }
-      </tbody>
-    </table>
-  </div>
+                  <a
+                    class="enlace"
+                    [routerLink]="['/agenda', 'turnos', turno.id]"
+                    [queryParams]="queryDelTurno(turno)"
+                  >
+                    Ver el turno
+                  </a>
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
 
-  <div class="tabla-pie">
-    <span>{{ tabla.total() }} turnos</span>
-    <app-paginacion
-      [paginaActual]="tabla.pagina()"
-      [totalPaginas]="tabla.totalPaginas()"
-      etiqueta="Paginas de turnos"
-      (cambioDePagina)="tabla.irA($event)"
-    />
-  </div>
-
-  @if (panel(); as abierto) {
-    <section class="tarjeta" aria-label="Confirmar la transicion de la recepcion">
-      @if (abierto.tipo === 'particular') {
-        <app-confirmacion-con-motivo
-          idCampo="recepcion-motivo-particular"
-          [titulo]="'Atender como Particular a ' + (abierto.turno.personaNombre ?? 'el paciente')"
-          etiqueta="Motivo (obligatorio)"
-          ayuda="Queda escrito en la recepcion. No cambia la cobertura de la ficha del paciente."
-          textoError="Escribi por que se atiende como Particular: es obligatorio."
-          textoConfirmar="Atender como Particular"
-          [enviando]="enVuelo() === abierto.turno.id"
-          (confirmado)="confirmarPanel($event)"
-          (cancelado)="cerrarPanel()"
-        />
-      } @else if (abierto.tipo === 'retiro') {
-        <app-confirmacion-con-motivo
-          idCampo="recepcion-motivo-retiro"
-          [titulo]="(abierto.turno.personaNombre ?? 'El paciente') + ' se retiro sin ser atendido'"
-          etiqueta="Motivo (obligatorio)"
-          ayuda="La llegada consta y el turno no cambia: ya no se puede registrar otra llegada, marcarlo ausente ni moverlo. La atencion se puede abrir igual."
-          textoError="Escribi por que se retiro: es obligatorio."
-          textoConfirmar="Registrar el retiro"
-          [enviando]="enVuelo() === abierto.turno.id"
-          (confirmado)="confirmarPanel($event)"
-          (cancelado)="cerrarPanel()"
-        />
-      } @else {
-        <app-confirmacion-con-motivo
-          idCampo="recepcion-motivo-anulacion"
-          [titulo]="'Anular la llegada de ' + (abierto.turno.personaNombre ?? 'el paciente')"
-          etiqueta="Motivo (opcional)"
-          ayuda="Anular dice que el check-in fue un error y la llegada no vale. Queda en el historial."
-          textoConfirmar="Anular la llegada"
-          [motivoObligatorio]="false"
-          [enviando]="enVuelo() === abierto.turno.id"
-          (confirmado)="confirmarPanel($event)"
-          (cancelado)="cerrarPanel()"
-        />
-      }
-    </section>
+    <div class="tabla-pie">
+      <span>{{ tabla.total() }} turnos</span>
+      <app-paginacion
+        [paginaActual]="tabla.pagina()"
+        [totalPaginas]="tabla.totalPaginas()"
+        etiqueta="Páginas de turnos"
+        (cambioDePagina)="tabla.irA($event)"
+      />
+    </div>
   }
+</section>
+
+@if (panel(); as abierto) {
+  <section class="tarjeta" aria-label="Confirmar la transicion de la recepcion">
+    @if (abierto.tipo === 'particular') {
+      <app-confirmacion-con-motivo
+        idCampo="recepcion-motivo-particular"
+        [titulo]="'Atender como Particular a ' + (abierto.turno.personaNombre ?? 'el paciente')"
+        etiqueta="Motivo (obligatorio)"
+        ayuda="Queda escrito en la recepcion. No cambia la cobertura de la ficha del paciente."
+        textoError="Escribi por que se atiende como Particular: es obligatorio."
+        textoConfirmar="Atender como Particular"
+        [enviando]="enVuelo() === abierto.turno.id"
+        (confirmado)="confirmarPanel($event)"
+        (cancelado)="cerrarPanel()"
+      />
+    } @else if (abierto.tipo === 'retiro') {
+      <app-confirmacion-con-motivo
+        idCampo="recepcion-motivo-retiro"
+        [titulo]="(abierto.turno.personaNombre ?? 'El paciente') + ' se retiro sin ser atendido'"
+        etiqueta="Motivo (obligatorio)"
+        ayuda="La llegada consta y el turno no cambia: ya no se puede registrar otra llegada, marcarlo ausente ni moverlo. La atencion se puede abrir igual."
+        textoError="Escribi por que se retiro: es obligatorio."
+        textoConfirmar="Registrar el retiro"
+        [enviando]="enVuelo() === abierto.turno.id"
+        (confirmado)="confirmarPanel($event)"
+        (cancelado)="cerrarPanel()"
+      />
+    } @else {
+      <app-confirmacion-con-motivo
+        idCampo="recepcion-motivo-anulacion"
+        [titulo]="'Anular la llegada de ' + (abierto.turno.personaNombre ?? 'el paciente')"
+        etiqueta="Motivo (opcional)"
+        ayuda="Anular dice que el check-in fue un error y la llegada no vale. Queda en el historial."
+        textoConfirmar="Anular la llegada"
+        [motivoObligatorio]="false"
+        [enviando]="enVuelo() === abierto.turno.id"
+        (confirmado)="confirmarPanel($event)"
+        (cancelado)="cerrarPanel()"
+      />
+    }
+  </section>
 }
 
 <!--

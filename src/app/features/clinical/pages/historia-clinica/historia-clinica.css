@@ -259,3 +259,43 @@ button.timeline__boton:focus-visible {
   color: var(--color-peligro);
   font-weight: var(--peso-semi);
 }
+
+/* --- UX-01: la historia como pestaña de la ficha --------------------------------------- */
+
+/* El resumen y los antecedentes en dos columnas cuando entran. */
+.historia__resumen {
+  display: grid;
+  gap: var(--esp-6);
+}
+
+@media (min-width: 56rem) {
+  .historia__resumen {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+}
+
+.historia__resumen h3 {
+  margin: 0 0 var(--esp-3);
+  font-size: var(--tipo-sm);
+  font-weight: var(--peso-semi);
+  color: var(--color-texto-suave);
+}
+
+/* Migas del caso y del plan (Historia clínica / Caso / Plan), en la fila del titulo. */
+.titulo-clinico > h1 {
+  font-size: var(--tipo-lg);
+}
+
+.migas {
+  font-size: var(--tipo-sm);
+  color: var(--color-texto-suave);
+  text-decoration: none;
+}
+
+.migas:hover {
+  text-decoration: underline;
+}
+
+.migas__separador {
+  color: var(--color-texto-suave);
+}

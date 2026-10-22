@@ -1,4 +1,4 @@
-<p><a class="enlace" routerLink="/asistencia">Volver a las clases del dia</a></p>
+<p><a class="enlace" routerLink="/asistencia">Volver a las clases del día</a></p>
 @if (puedeAtender()) {
   <p>
     <a class="enlace" [routerLink]="['/atencion/clases', claseId()]"
@@ -174,7 +174,7 @@
               <thead>
                 <tr>
                   <th scope="col">Participante</th>
-                  <th scope="col">Inscripcion</th>
+                  <th scope="col">Inscripción</th>
                   <th scope="col">Registrado</th>
                   @if (admite() && puedeMarcar()) {
                     <th scope="col">Marcar</th>
@@ -302,7 +302,7 @@
           }
 
           @if (admite() && puedeMarcar()) {
-            <div class="acciones">
+            <div class="acciones acciones--pie">
               <button
                 type="button"
                 class="boton"

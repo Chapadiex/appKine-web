@@ -79,7 +79,7 @@ test.describe('Permisos de las pantallas de F9 por rol contra el backend real', 
     await expect(page.getByRole('heading', { name: /^Asistencia: /, level: 1 })).toBeVisible();
     await irA(page, `/atencion/clases/${clase.id}`);
     await expect(
-      page.getByRole('heading', { name: /^Atencion clinica: /, level: 1 }),
+      page.getByRole('heading', { name: /^Atención clínica: /, level: 1 }),
     ).toBeVisible();
   });
 

@@ -68,6 +68,7 @@ const ETIQUETAS_DE_ASISTENCIA: Readonly<Record<string, string>> = {
   selector: 'app-derivar-participante',
   imports: [Ayuda, RouterLink, FocoAlMontar],
   templateUrl: './derivar-participante.html',
+  styleUrl: '../../atencion.css',
 })
 export class DerivarParticipante {
   private readonly api = inject(AtencionGrupalApi);

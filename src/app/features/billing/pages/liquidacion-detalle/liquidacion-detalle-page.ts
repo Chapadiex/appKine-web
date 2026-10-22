@@ -31,7 +31,7 @@ import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
   selector: 'app-liquidacion-detalle-page',
   imports: [Ayuda, RouterLink],
   templateUrl: './liquidacion-detalle-page.html',
-  styleUrl: '../../billing.css',
+  styleUrls: ['../../billing.css', '../../economia.css'],
 })
 export class LiquidacionDetallePage {
   private readonly api = inject(EgresosApi);

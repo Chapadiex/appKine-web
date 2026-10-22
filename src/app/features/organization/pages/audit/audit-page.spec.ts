@@ -123,7 +123,7 @@ describe('AuditPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect(texto(fixture)).toContain('Todavia no elegiste un contexto de trabajo.');
+    expect(texto(fixture)).toContain('Todavía no elegiste un contexto de trabajo.');
     expect(fixture.nativeElement.querySelector('a[href="/seleccionar-contexto"]')).not.toBeNull();
   });
 
@@ -297,7 +297,7 @@ describe('AuditPage', () => {
     buscar(fixture);
 
     httpMock.expectNone(() => true);
-    expect(texto(fixture)).toContain('Todavia no elegiste un contexto de trabajo.');
+    expect(texto(fixture)).toContain('Todavía no elegiste un contexto de trabajo.');
   });
 
   it('cambiar de organizacion descarta los hechos de la anterior', async () => {

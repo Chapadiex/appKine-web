@@ -19,6 +19,11 @@ import {
 } from '../../models/notificaciones';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { Filtros } from '../../../../shared/components/filtros/filtros';
+import { Pestanas } from '../../../../shared/components/pestanas/pestanas';
+import {
+  ETIQUETA_PESTANAS_DE_COLABORADORES,
+  PESTANAS_DE_COLABORADORES,
+} from '../../models/pestanas-de-colaboradores';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 
 const POR_PAGINA = 20;
@@ -42,11 +47,14 @@ const POR_PAGINA = 20;
  */
 @Component({
   selector: 'app-notificaciones-page',
-  imports: [Ayuda, Filtros, RouterLink, Paginacion],
+  imports: [Pestanas, Ayuda, Filtros, RouterLink, Paginacion],
   templateUrl: './notificaciones-page.html',
   styleUrl: '../../organization.css',
 })
 export class NotificacionesPage {
+  protected readonly pestanas = PESTANAS_DE_COLABORADORES;
+  protected readonly etiquetaDePestanas = ETIQUETA_PESTANAS_DE_COLABORADORES;
+
   private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly notificaciones = inject(NotificacionesService);
   private readonly tenantContext = inject(TenantContextStore);

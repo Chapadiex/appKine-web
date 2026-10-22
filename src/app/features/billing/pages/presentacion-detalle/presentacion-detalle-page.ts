@@ -89,7 +89,7 @@ interface Lectura {
     ConfirmacionConMotivo,
   ],
   templateUrl: './presentacion-detalle-page.html',
-  styleUrl: '../../billing.css',
+  styleUrls: ['../../billing.css', '../../economia.css'],
 })
 export class PresentacionDetallePage {
   private readonly api = inject(PresentacionesApi);

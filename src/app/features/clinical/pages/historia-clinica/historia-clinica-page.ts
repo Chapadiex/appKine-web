@@ -1,5 +1,4 @@
 import { Component, DestroyRef, computed, effect, inject, signal, untracked } from '@angular/core';
-import { RouterLink } from '@angular/router';
 import { Subscription } from 'rxjs';
 
 import { AntecedenteResponse } from '../../../../api/generated/model/antecedente-response';
@@ -23,6 +22,7 @@ import { NuevoAdjunto } from './components/nuevo-adjunto';
 import { TimelineClinico, claveDe } from './components/timeline-clinico';
 import { VisorDeAdjunto } from './components/visor-de-adjunto';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { CabeceraDePersona } from './components/cabecera-de-persona/cabecera-de-persona';
 
 type Estado =
   | { readonly tipo: 'cargando' }
@@ -53,8 +53,8 @@ type Estado =
 @Component({
   selector: 'app-historia-clinica-page',
   imports: [
+    CabeceraDePersona,
     Ayuda,
-    RouterLink,
     TimelineClinico,
     DetalleDeEntrada,
     VisorDeAdjunto,
@@ -84,6 +84,9 @@ export class HistoriaClinicaPage {
 
   /** La ficha administrativa de la misma persona (D-e): el camino de ida y vuelta es uno solo. */
   protected readonly rutaFicha = this.visita.rutaFicha;
+
+  /** El id de la persona como texto, para las pestañas de la cabecera. */
+  protected readonly personaIdTexto = computed(() => String(this.visita.personaId() ?? ''));
 
   protected readonly historia = computed(() => {
     const estado = this.estado();

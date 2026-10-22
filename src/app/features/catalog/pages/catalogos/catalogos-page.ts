@@ -1,3 +1,4 @@
+import { Pestanas } from '../../../../shared/components/pestanas/pestanas';
 import {
   Component,
   ElementRef,
@@ -32,7 +33,8 @@ import { UpdateCatalogoConceptoRequest } from '../../../../api/generated/model/u
 import { CausaCatalogo, traducirErrorCatalogo } from '../../models/catalogo-errors';
 import {
   DatosDeTipo,
-  TIPOS_DE_CATALOGO,
+  ETIQUETA_PESTANAS_DE_CATALOGO,
+  PESTANAS_DE_CATALOGO,
   TipoDeCatalogo,
   datosDeTipo,
   esGlobal,
@@ -108,6 +110,7 @@ const TOPE_DE_ESPECIALIDADES = 100;
 @Component({
   selector: 'app-catalogos-page',
   imports: [
+    Pestanas,
     Ayuda,
     Filtros,
     Icono,
@@ -121,6 +124,8 @@ const TOPE_DE_ESPECIALIDADES = 100;
   styleUrl: '../../catalog.css',
 })
 export class CatalogosPage {
+  protected readonly pestanasDeCatalogo = PESTANAS_DE_CATALOGO;
+  protected readonly etiquetaDePestanas = ETIQUETA_PESTANAS_DE_CATALOGO;
   /**
    * Tipo del catalogo, tomado del segmento `:tipo` de la ruta por `withComponentInputBinding`.
    *
@@ -138,7 +143,6 @@ export class CatalogosPage {
   private readonly injector = inject(Injector);
 
   protected readonly permisoManage = PERMISO_CATALOGO_MANAGE;
-  protected readonly tipos = TIPOS_DE_CATALOGO;
   protected readonly etiquetaDeAlcance = etiquetaDeAlcance;
   protected readonly esGlobal = esGlobal;
   protected readonly formatearInstante = (instante: string | undefined | null): string | null =>

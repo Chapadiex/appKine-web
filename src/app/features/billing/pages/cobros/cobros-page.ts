@@ -37,6 +37,7 @@ import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
 import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
 import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
+import { CabeceraDePersona } from '../cuenta-corriente/cabecera-de-persona/cabecera-de-persona';
 
 /** En cual de los tres estados esta el listado. No es paginado: el backend devuelve un array. */
 type EstadoCobros =
@@ -84,6 +85,7 @@ interface OperacionAbierta {
 @Component({
   selector: 'app-cobros-page',
   imports: [
+    CabeceraDePersona,
     Ayuda,
     ColumnaOrdenable,
     Paginacion,
@@ -92,7 +94,7 @@ interface OperacionAbierta {
     PermisoDirective,
   ],
   templateUrl: './cobros-page.html',
-  styleUrl: '../../billing.css',
+  styleUrls: ['../../billing.css', '../cuenta-corriente/cuenta-corriente.css'],
 })
 export class CobrosPage {
   private readonly diaDeLaSede = inject(DiaDeLaSede);

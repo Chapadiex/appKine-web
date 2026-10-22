@@ -31,3 +31,42 @@
   margin: 0;
   padding-left: 1.25rem;
 }
+
+/*
+ * Restyle al canvas (UX-01): las tres marcas como un control segmentado, con la marca elegida
+ * teñida. Los radios nativos siguen ahi —teclado, lector de pantalla y E2E no cambian—.
+ */
+.marcas {
+  display: inline-flex;
+  flex-wrap: nowrap;
+  gap: 0;
+  border: var(--borde-fino, 1px) solid var(--color-borde-control);
+  border-radius: var(--radio-md);
+  overflow: hidden;
+}
+
+.marcas .opcion-radio {
+  padding: var(--esp-2) var(--esp-5);
+  border-left: var(--borde-fino, 1px) solid var(--color-borde);
+  background: var(--color-superficie);
+  font-size: var(--tipo-xs);
+  font-weight: var(--peso-medio);
+  cursor: pointer;
+}
+
+.marcas .opcion-radio:first-of-type {
+  border-left: 0;
+}
+
+.marcas .opcion-radio:has(input:checked) {
+  background: var(--color-acento-claro);
+  color: var(--color-acento);
+}
+
+.contadores li {
+  padding: var(--esp-1) var(--esp-4);
+  border-radius: var(--radio-pastilla);
+  background: var(--color-superficie-sutil);
+  font-size: var(--tipo-xs);
+  font-weight: var(--peso-medio);
+}

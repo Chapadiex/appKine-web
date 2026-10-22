@@ -308,7 +308,7 @@ test.describe('Contraste de color', () => {
     test('la atencion clinica de una clase con las derivaciones abiertas', async ({ page }) => {
       await instalarApiDeContraste(page);
       await page.goto(`/atencion/clases/${CLASE.id}`);
-      await expect(page.getByText('Atencion cerrada', { exact: false })).toBeVisible();
+      await expect(page.getByText('Atención cerrada', { exact: false })).toBeVisible();
       await page.getByRole('button', { name: /Derivaciones de Perez, Ana/ }).click();
       await expect(
         page.getByText('Motivo de la reversion: Derivada al caso equivocado'),
@@ -325,10 +325,10 @@ test.describe('Contraste de color', () => {
       await instalarApiDeContraste(page);
       await page.goto(`/atencion/clases/${CLASE.id}`);
       await page.getByRole('button', { name: /Derivar a un caso a Perez, Ana/ }).click();
-      const tarjeta = page.getByRole('region', { name: 'Derivar a Perez, Ana a un caso clinico' });
+      const tarjeta = page.getByRole('region', { name: 'Derivar a Perez, Ana a un caso clínico' });
       await expect(tarjeta.getByText('Con 2 casos activos')).toBeVisible();
       await tarjeta.getByRole('button', { name: 'Derivar al caso' }).click();
-      await expect(tarjeta.getByText('Elegi a que caso se deriva.')).toBeVisible();
+      await expect(tarjeta.getByText('Elegí a qué caso se deriva.')).toBeVisible();
 
       await auditarContraste(page, 'derivar a una participante sin elegir caso');
     });
@@ -439,7 +439,7 @@ test.describe('Contraste de color', () => {
       await page
         .getByLabel('Oferta', { exact: true })
         .selectOption({ label: 'Rehabilitacion neurologica' });
-      await page.getByRole('button', { name: 'Iniciar la atencion' }).click();
+      await page.getByRole('button', { name: 'Iniciar atención' }).click();
       await expect(page.getByText('Elegi a quien se atiende.')).toBeVisible();
 
       await auditarContraste(page, 'atender sin turno con un aviso');
