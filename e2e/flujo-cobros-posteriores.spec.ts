@@ -2,6 +2,7 @@ import { Locator, Page } from '@playwright/test';
 import { randomUUID } from 'node:crypto';
 
 import { expect, ingresar, navegar, respuestaDe, test } from './support/agenda-real';
+import { abrirAcciones } from './support/filtros';
 import {
   ApiAkine,
   Centro,
@@ -114,6 +115,7 @@ test.describe('Imputacion posterior, anulacion y reintegro de cobros contra el b
 
     // --- 2. Anular el cobro: la deuda recupera lo que se le habia imputado --------------------
     await navegar(page, `/pacientes/${persona.id}/cuenta-corriente/cobros`);
+    await abrirAcciones(filaDeCobro(page, cobroA));
     await filaDeCobro(page, cobroA).getByRole('button', { name: 'Anular' }).click();
     await page
       .getByLabel('Motivo de la anulacion')
@@ -131,6 +133,7 @@ test.describe('Imputacion posterior, anulacion y reintegro de cobros contra el b
     const filaAnulada = filaDeCobro(page, cobroA);
     await expect(filaAnulada).toBeVisible();
     await expect(filaAnulada).toContainText('Anulado');
+    await abrirAcciones(filaAnulada);
     await expect(filaAnulada.getByRole('button', { name: 'Anular' })).toBeDisabled();
     await expect(filaAnulada).toContainText('No se puede anular: ya esta anulado.');
     const anulado = await api.exigir<{ estado: string }>(
@@ -147,6 +150,7 @@ test.describe('Imputacion posterior, anulacion y reintegro de cobros contra el b
     await page.reload();
     const filaB = filaDeCobro(page, cobroB);
     await expect(filaB).toContainText('3.000,00');
+    await abrirAcciones(filaB);
     await filaB.getByRole('button', { name: 'Reintegrar saldo a favor' }).click();
     const importe = page.locator(`#reintegro-importe-${cobroB.id}`);
     // Mas de lo que hay a favor: lo frena la pantalla antes de salir a la red.
@@ -165,6 +169,7 @@ test.describe('Imputacion posterior, anulacion y reintegro de cobros contra el b
     ).toContainText(/Al cobro le quedan .*2\.000,00 a favor/);
     await expect(filaDeCobro(page, cobroB)).toContainText('2.000,00');
     // Con plata ya devuelta, anularlo sacaria esa plata dos veces: la pantalla dice por que no.
+    await abrirAcciones(filaDeCobro(page, cobroB));
     await expect(filaDeCobro(page, cobroB).getByRole('button', { name: 'Anular' })).toBeDisabled();
     await expect(filaDeCobro(page, cobroB)).toContainText('ya devolvio parte de su saldo a favor');
 

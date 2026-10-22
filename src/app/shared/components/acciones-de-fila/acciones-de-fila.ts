@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   ElementRef,
+  ViewEncapsulation,
   HostListener,
   inject,
   input,
@@ -43,6 +44,10 @@ let siguienteId = 0;
 @Component({
   selector: 'app-acciones-de-fila',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  // Sin encapsulacion: las acciones son contenido proyectado y el estilo tiene que alcanzarlas.
+  // Vive con el componente y no en design-system.css para no pesar en la carga inicial.
+  encapsulation: ViewEncapsulation.None,
+  styleUrl: './acciones-de-fila.css',
   imports: [Icono],
   template: `
     <ng-content select="[principal]" />
@@ -56,11 +61,7 @@ let siguienteId = 0;
       <app-icono nombre="mas" />
       <span class="visualmente-oculto">Más acciones de {{ de() }}</span>
     </button>
-    <div
-      class="acciones-de-fila__panel"
-      [id]="idPanel"
-      [hidden]="!abierta()"
-    >
+    <div class="acciones-de-fila__panel" [id]="idPanel" [hidden]="!abierta()">
       <ng-content />
     </div>
   `,
@@ -107,6 +108,12 @@ export class AccionesDeFila {
     const accion = destino.closest('button, a');
     if (panel !== null && accion !== null && panel.contains(accion)) {
       this.abierta.set(false);
+      // La accion elegida queda escondida: si el foco estaba en ella, pasa al boton "⋯" en vez
+      // de perderse en el documento. Una accion que abre un formulario lo enfoca despues del
+      // render, asi que este foco no le gana.
+      if (panel.contains(document.activeElement)) {
+        raiz.querySelector<HTMLButtonElement>('.acciones-de-fila__boton')?.focus();
+      }
     }
   }
 }

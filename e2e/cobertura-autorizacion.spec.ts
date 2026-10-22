@@ -1,6 +1,7 @@
 import { Page, expect, test } from '@playwright/test';
 
 import { emailUnico, nonce } from './support/akine';
+import { abrirAcciones } from './support/filtros';
 import { cuentaActiva, esperarProblema, ingresarCon } from './support/cuentas';
 import { PASSWORD } from './support/akine';
 import { ApiAkine } from './support/sembrado';
@@ -140,8 +141,10 @@ test.describe('Cobertura, orden y autorizacion de un paciente (B-6)', () => {
 
     // --- 3. Perfil de paciente, desde el padron --------------------------------------------
     await page.goto('/pacientes');
+    await abrirAcciones(filaPersona);
     await filaPersona.getByRole('button', { name: 'Activar perfil de paciente' }).click();
     await page.getByRole('button', { name: 'Activar perfil', exact: true }).click();
+    await abrirAcciones(filaPersona);
     await expect(
       filaPersona.getByRole('button', { name: 'Activar perfil de paciente' }),
     ).toHaveCount(0);
@@ -176,7 +179,7 @@ test.describe('Cobertura, orden y autorizacion de un paciente (B-6)', () => {
     await ordenes.getByRole('button', { name: 'Registrar orden' }).click();
 
     const tablaOrdenes = page.getByRole('table', { name: /orden\(es\) del paciente/ });
-    await expect(tablaOrdenes.getByRole('cell', { name: 'ORD-1' })).toBeVisible();
+    await expect(tablaOrdenes.getByRole('cell', { name: 'ORD-1', exact: true })).toBeVisible();
 
     // --- 6. Autorizacion aprobada, vigente, respaldada por la orden ------------------------
     await registrarAutorizacion(page, {
@@ -231,6 +234,7 @@ test.describe('Cobertura, orden y autorizacion de un paciente (B-6)', () => {
     await expect(vencida).not.toContainText(/Vence (hoy|manana|mañana|en)/);
 
     // --- 9. Vencimiento de la vigente: el fin pasa a ayer y deja de habilitar ---------------
+    await abrirAcciones(vigente);
     await vigente.getByRole('button', { name: 'Corregir' }).click();
     const correccion = page.getByRole('region', { name: 'Corregir la autorización AUT-VIGENTE' });
     await correccion.getByLabel('Vigente hasta').fill(dia(-1));

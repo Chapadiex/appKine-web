@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input, model } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ViewEncapsulation, input, model } from '@angular/core';
 
 /** Un filtro rapido: su valor, su rotulo y cuantas filas lo cumplen. */
 export interface FiltroRapido {
@@ -24,6 +24,9 @@ export interface FiltroRapido {
 @Component({
   selector: 'app-filtros-rapidos',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  // Sin encapsulacion, como el resto de las clases del sistema de diseno. Vive con el componente y no en design-system.css para no pesar en la carga inicial.
+  encapsulation: ViewEncapsulation.None,
+  styleUrl: './filtros-rapidos.css',
   template: `
     <div class="filtros-rapidos" role="group" [attr.aria-label]="etiqueta()">
       @for (opcion of opciones(); track opcion.valor) {

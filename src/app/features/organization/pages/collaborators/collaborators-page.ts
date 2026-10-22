@@ -30,6 +30,7 @@ import {
 } from '../../models/pestanas-de-colaboradores';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { Icono } from '../../../../shared/components/icono/icono';
+import { AccionesDeFila } from '../../../../shared/components/acciones-de-fila/acciones-de-fila';
 
 /** Operacion abierta sobre una fila. Solo una a la vez. */
 type TipoAccion = 'editar' | 'suspender' | 'reactivar' | 'revocar' | 'permisos';
@@ -83,6 +84,7 @@ const POR_PAGINA = 20;
     Pestanas,
     Ayuda,
     Icono,
+    AccionesDeFila,
     ReactiveFormsModule,
     RouterLink,
     PermisoDirective,

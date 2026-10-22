@@ -88,6 +88,25 @@ describe('CollaboratorsPage', () => {
     expect(fixture.nativeElement.querySelectorAll('tbody tr').length).toBe(2);
   });
 
+  it('deja "Cambiar rol o alcance" a la vista y el resto detrás del menú "⋯"', async () => {
+    const fixture = await montar();
+    const host: HTMLElement = fixture.nativeElement;
+
+    const menus = host.querySelectorAll('app-acciones-de-fila');
+    // Solo la fila ACTIVA tiene acciones; la REVOCADA no.
+    expect(menus.length).toBe(1);
+    const menu = menus[0];
+    expect(menu.querySelector('button[principal]')?.textContent).toContain('Cambiar rol o alcance');
+    expect(menu.querySelector('.acciones-de-fila__boton')?.textContent).toContain(
+      'Más acciones de',
+    );
+    const panel = menu.querySelector<HTMLElement>('.acciones-de-fila__panel')!;
+    expect(panel.hidden).toBe(true);
+    const enElMenu = [...panel.querySelectorAll('button')].map((b) => b.textContent?.trim());
+    expect(enElMenu).toEqual(['Suspender', 'Permisos adicionales', 'Revocar']);
+    expect(panel.querySelector('.accion--peligro')?.textContent).toContain('Revocar');
+  });
+
   it('cambiar solo el rol NO manda changeScope ni consultorioId', async () => {
     const fixture = await montar();
 

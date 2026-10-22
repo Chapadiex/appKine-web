@@ -1,5 +1,6 @@
 import { expect, ingresar, navegar, respuestaDe, test } from './support/agenda-real';
 import { nonce } from './support/akine';
+import { abrirAcciones } from './support/filtros';
 
 /**
  * E2E del padron de personas (M07, AKINE-03.01) contra el backend REAL: alta por pantalla,
@@ -39,12 +40,22 @@ test.describe('Padron de personas contra el backend real', () => {
     await expect(fila.getByText('Activa', { exact: true })).toBeVisible();
 
     // --- Perfil de paciente con el motivo VACIO: el boton tiene que enviar ---
+    // Editar y activar el perfil van en el menu "⋯" de la fila; "Ver ficha" queda a la vista.
+    // La busqueda recarga la lista y la fila se vuelve a dibujar con el menu cerrado: se reintenta
+    // hasta que el menu queda abierto sobre la fila definitiva.
+    await expect(async () => {
+      await abrirAcciones(fila);
+      await expect(fila.getByRole('button', { name: 'Activar perfil de paciente' })).toBeVisible({
+        timeout: 1_500,
+      });
+    }).toPass();
     await fila.getByRole('button', { name: 'Activar perfil de paciente' }).click();
     await expect(page.getByLabel('Motivo (opcional)')).toHaveValue('');
     const activacion = respuestaDe(page, 'POST', /\/personas\/\d+\/perfil-paciente$/);
     await page.getByRole('button', { name: 'Activar perfil', exact: true }).click();
     expect((await activacion).ok(), 'el boton envio la activacion con el motivo vacio').toBe(true);
     await expect(page.getByText(`${apellido}, Marta ya es paciente`)).toBeVisible();
+    await abrirAcciones(fila);
     await expect(fila.getByRole('button', { name: 'Activar perfil de paciente' })).toHaveCount(0);
 
     const conPerfil = await api.exigir<{ esPaciente: boolean }>(
@@ -54,6 +65,7 @@ test.describe('Padron de personas contra el backend real', () => {
     expect(conPerfil.esPaciente).toBe(true);
 
     // --- Edicion ---
+    await abrirAcciones(fila);
     await fila.getByRole('button', { name: 'Editar' }).click();
     await page.locator(`#edicion-telefono-${personaId}`).fill('3515550199');
     const edicion = respuestaDe(page, 'PATCH', new RegExp(`/personas/${personaId}$`));

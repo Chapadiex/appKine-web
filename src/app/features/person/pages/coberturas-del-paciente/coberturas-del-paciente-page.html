@@ -275,13 +275,17 @@
                 }
               </td>
               <td>
-                <div class="acciones-fila">
-                  @if (coberturaOperable(cobertura)) {
+                <!--
+                  Hasta cuatro acciones: menu "⋯" (decidido el 22/10/2026). Editar o finalizar es la
+                  frecuente y queda a la vista. Todas piden paciente:manage.
+                -->
+                @if (coberturaOperable(cobertura) && puedeGestionar()) {
+                  <app-acciones-de-fila [de]="coberturaEnUnaLinea(cobertura)">
                     <button
+                      principal
                       type="button"
                       class="boton boton--secundario"
                       (click)="abrirEdicion(cobertura)"
-                      *akinePermiso="permisoManage"
                     >
                       Editar o finalizar
                     </button>
@@ -289,35 +293,26 @@
                     @if (cobertura.principal) {
                       <button
                         type="button"
-                        class="boton boton--secundario"
                         [disabled]="enviando()"
                         (click)="cambiarPrincipal(cobertura, false)"
-                        *akinePermiso="permisoManage"
                       >
                         Quitar principal
                       </button>
                     } @else {
                       <button
                         type="button"
-                        class="boton boton--secundario"
                         [disabled]="enviando()"
                         (click)="cambiarPrincipal(cobertura, true)"
-                        *akinePermiso="permisoManage"
                       >
                         Marcar principal
                       </button>
                     }
 
-                    <button
-                      type="button"
-                      class="boton boton--secundario"
-                      (click)="abrirBaja(cobertura)"
-                      *akinePermiso="permisoManage"
-                    >
+                    <button type="button" class="accion--peligro" (click)="abrirBaja(cobertura)">
                       Dar de baja
                     </button>
-                  }
-                </div>
+                  </app-acciones-de-fila>
+                }
               </td>
             </tr>
 

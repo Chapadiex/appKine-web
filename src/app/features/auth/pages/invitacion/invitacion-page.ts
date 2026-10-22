@@ -10,6 +10,8 @@ import {
   CausaInvitacion,
   traducirErrorInvitacion,
 } from '../../../../core/models/invitacion-errors';
+import { MedidorDeContrasena } from '../../components/medidor-de-contrasena/medidor-de-contrasena';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { textoRequerido } from '../../../../shared/validators/texto-requerido';
 
 /** En cual de los cinco estados esta la pantalla. */
@@ -53,7 +55,7 @@ type Estado =
  */
 @Component({
   selector: 'app-invitacion-page',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [MedidorDeContrasena, ReactiveFormsModule, RouterLink],
   templateUrl: './invitacion-page.html',
   styleUrls: ['../../auth.css', '../../../../shared/styles/acceso.css'],
 })
@@ -102,6 +104,14 @@ export class InvitacionPage {
     apellido: [''],
     password: [''],
   });
+
+  /** Lo escrito en la contraseña, solo para el medidor (es una guia: no valida nada). */
+  protected readonly passwordEscrita = toSignal(
+    this.formularioAlta.controls.password.valueChanges,
+    {
+      initialValue: '',
+    },
+  );
 
   constructor() {
     const token = this.route.snapshot.queryParamMap.get('token');

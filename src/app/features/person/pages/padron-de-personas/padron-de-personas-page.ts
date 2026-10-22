@@ -5,6 +5,8 @@ import { catchError, forkJoin, of } from 'rxjs';
 import { ConfirmacionConMotivo } from '../../../../shared/components/confirmacion-con-motivo/confirmacion-con-motivo';
 import { CreatePersonaRequest } from '../../../../api/generated/model/create-persona-request';
 import { EstadoDeListado } from '../../../../shared/utils/estado-de-listado';
+import { AccionesDeFila } from '../../../../shared/components/acciones-de-fila/acciones-de-fila';
+import { PermissionsStore } from '../../../../core/services/permissions.store';
 import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
 import {
   PERMISO_COBRO_REGISTER,
@@ -97,6 +99,7 @@ const TAMANO_DE_PAGINA = 20;
 @Component({
   selector: 'app-padron-de-personas-page',
   imports: [
+    AccionesDeFila,
     Ayuda,
     Filtros,
     Icono,
@@ -125,6 +128,19 @@ export class PadronDePersonasPage {
   protected readonly permisoCobro = PERMISO_COBRO_REGISTER;
   /** Los pases de la persona (M29) viven en `activity`; aca es solo una URL. */
   protected readonly permisoPase = PERMISO_PASE_READ;
+  private readonly permisos = inject(PermissionsStore);
+
+  /** Cuantas acciones tiene la fila para quien mira: con tres o mas va el menu "⋯". */
+  protected cantidadDeAcciones(persona: PersonaResponse): number {
+    const puedeEditar = this.permisos.tiene(PERMISO_PACIENTE_MANAGE) && !personaInactiva(persona);
+    return (
+      1 + // Ver ficha
+      (puedeEditar ? 1 : 0) +
+      (puedeEditar && !persona.esPaciente ? 1 : 0) +
+      (this.permisos.tiene(PERMISO_COBRO_REGISTER) ? 1 : 0) +
+      (this.permisos.tiene(PERMISO_PASE_READ) ? 1 : 0)
+    );
+  }
   protected readonly tiposDeDocumento = TIPOS_DE_DOCUMENTO;
   protected readonly documentoEnUnaLinea = documentoEnUnaLinea;
   protected readonly etiquetaDePerfil = etiquetaDePerfil;

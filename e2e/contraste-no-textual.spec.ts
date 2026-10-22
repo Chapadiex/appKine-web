@@ -2,6 +2,7 @@ import { Page, expect, test } from '@playwright/test';
 
 import { NOMBRE_OFERTA, instalarApiDeTurnos } from './support/agenda-simulada';
 import { instalarApiDeContraste } from './support/contraste';
+import { abrirAcciones } from './support/filtros';
 import {
   FECHA,
   PERSONA_ID,
@@ -79,7 +80,9 @@ test.describe('Contraste no textual, foco y teclado', () => {
   test('recepcion del dia', async ({ page }) => {
     await instalarApiDelRecorrido(page);
     await page.goto(`/agenda/recepcion?fecha=${FECHA}`);
-    await expect(page.getByText('Ibarra, Dario')).toBeVisible({ timeout: LLEGADA });
+    await expect(page.getByRole('cell', { name: /^Ibarra, Dario/ })).toBeVisible({
+      timeout: LLEGADA,
+    });
 
     await auditarPantalla(page, 'recepcion del dia');
   });
@@ -115,7 +118,12 @@ test.describe('Contraste no textual, foco y teclado', () => {
       const fila = page.getByRole('row').filter({ hasText: 'Ibarra, Dario' });
       const abrir = fila.getByRole('button', { name: 'Atender como Particular', exact: true });
       const panel = page.getByRole('region', { name: 'Confirmar la transicion de la recepción' });
-      await expect(abrir).toBeVisible({ timeout: LLEGADA });
+      // "Atender como Particular" vive en el menu "⋯" de la fila (decidido el 22/10/2026): elegirlo
+      // cierra el menu, y el foco que vuelve al cerrar el panel es el del boton "⋯".
+      const menu = fila.getByRole('button', { name: /^Más acciones de / });
+      await expect(menu).toBeVisible({ timeout: LLEGADA });
+      await abrirAcciones(fila);
+      await expect(abrir).toBeVisible();
 
       await abrir.focus();
       await page.keyboard.press('Enter');
@@ -124,7 +132,7 @@ test.describe('Contraste no textual, foco y teclado', () => {
       await panel.getByRole('button', { name: 'Cancelar', exact: true }).focus();
       await page.keyboard.press('Enter');
       await expect(panel).toBeHidden();
-      await expect(abrir).toBeFocused();
+      await expect(menu).toBeFocused();
     });
 
     test('caja: Revertir y Cancelar', async ({ page }) => {

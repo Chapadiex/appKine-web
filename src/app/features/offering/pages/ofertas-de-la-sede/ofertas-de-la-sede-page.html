@@ -376,6 +376,13 @@
       }
 
       @case ('listo') {
+        @if (ofertasCargadas().length > 0) {
+          <app-filtros-rapidos
+            etiqueta="Filtrar por modalidad"
+            [opciones]="opcionesModalidad()"
+            [(valor)]="filtroModalidad"
+          />
+        }
         @if (ofertas().length === 0) {
           <p class="estado estado--vacio">
             Esta sede todavía no tiene ofertas que coincidan con el filtro.
@@ -454,61 +461,69 @@
                     <td class="acciones-fila">
                       @if (oferta.estado === 'ACTIVO') {
                         <!--
-                          Habilitaciones va como enlace y para CUALQUIERA que vea la fila: la
-                          pantalla se puede consultar por pertenencia y solo el guardado exige
-                          consultorio:manage. Esconderla detras del permiso dejaria a un
-                          profesional sin poder ver donde puede atender.
+                          Seis acciones: la mas frecuente a la vista y el resto en el menu "⋯"
+                          (decision del 22/10/2026). Habilitaciones va como enlace y para CUALQUIERA
+                          que vea la fila: la pantalla se puede consultar por pertenencia y solo el
+                          guardado exige consultorio:manage. Con permiso la principal es Editar.
                         -->
-                        <a
-                          class="boton boton--secundario"
-                          [routerLink]="['/servicios/ofertas', oferta.id, 'habilitaciones']"
+                        <app-acciones-de-fila
+                          [de]="oferta.nombreComercial ?? nombreDelServicio(oferta)"
                         >
-                          Habilitaciones
-                        </a>
-                        <a
-                          class="boton boton--secundario"
-                          [routerLink]="['/servicios/ofertas', oferta.id, 'precios']"
-                        >
-                          Precios
-                        </a>
-                        <a
-                          class="boton boton--secundario"
-                          [routerLink]="['/servicios/ofertas', oferta.id, 'practicas']"
-                        >
-                          Prácticas
-                        </a>
-                        <ng-container *akinePermiso="permisoManage">
-                          @if (oferta.modalidad === 'GRUPAL') {
-                            <a
+                          <ng-container ngProjectAs="[principal]" *akinePermiso="permisoManage">
+                            <button
+                              type="button"
                               class="boton boton--secundario"
-                              [routerLink]="['/servicios/ofertas', oferta.id, 'honorarios']"
+                              (click)="abrirPanel(oferta, 'editar')"
                             >
-                              Honorarios
-                            </a>
-                          }
-                          <button
-                            type="button"
+                              Editar
+                            </button>
+                          </ng-container>
+                          <a
                             class="boton boton--secundario"
-                            (click)="abrirPanel(oferta, 'editar')"
+                            [routerLink]="['/servicios/ofertas', oferta.id, 'habilitaciones']"
                           >
-                            Editar
-                          </button>
-                          <button
-                            type="button"
+                            Habilitaciones
+                          </a>
+                          <a
                             class="boton boton--secundario"
-                            (click)="abrirPanel(oferta, 'baja')"
+                            [routerLink]="['/servicios/ofertas', oferta.id, 'precios']"
                           >
-                            Dar de baja
-                          </button>
-                          <button
-                            type="button"
+                            Precios
+                          </a>
+                          <a
                             class="boton boton--secundario"
-                            [disabled]="prepagoEnVuelo() === oferta.id"
-                            (click)="alternarPrepago(oferta)"
+                            [routerLink]="['/servicios/ofertas', oferta.id, 'practicas']"
                           >
-                            {{ oferta.exigePrepago ? 'Dejar de exigir prepago' : 'Exigir prepago' }}
-                          </button>
-                        </ng-container>
+                            Prácticas
+                          </a>
+                          <ng-container *akinePermiso="permisoManage">
+                            @if (oferta.modalidad === 'GRUPAL') {
+                              <a
+                                class="boton boton--secundario"
+                                [routerLink]="['/servicios/ofertas', oferta.id, 'honorarios']"
+                              >
+                                Honorarios
+                              </a>
+                            }
+                            <button
+                              type="button"
+                              class="boton boton--secundario"
+                              [disabled]="prepagoEnVuelo() === oferta.id"
+                              (click)="alternarPrepago(oferta)"
+                            >
+                              {{
+                                oferta.exigePrepago ? 'Dejar de exigir prepago' : 'Exigir prepago'
+                              }}
+                            </button>
+                            <button
+                              type="button"
+                              class="boton boton--secundario accion--peligro"
+                              (click)="abrirPanel(oferta, 'baja')"
+                            >
+                              Dar de baja
+                            </button>
+                          </ng-container>
+                        </app-acciones-de-fila>
                       }
                     </td>
                   </tr>

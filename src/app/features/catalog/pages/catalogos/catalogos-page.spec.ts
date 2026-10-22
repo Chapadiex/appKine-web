@@ -530,6 +530,43 @@ describe('CatalogosPage', () => {
     TIMEOUT_AXE,
   );
 
+  it('un nomenclador propio tiene tres acciones: Editar queda a la vista y el resto va al menu', async () => {
+    tenantContext.select({
+      organizationId: 1,
+      organizationName: 'Centro Belgrano',
+      consultorioId: 3,
+      consultorioName: 'Sede Centro',
+    });
+    permisos.cargar().subscribe();
+    httpMock.expectOne(RUTA_PERMISOS_EFECTIVOS).flush({ permissions: [PERMISO_CATALOGO_MANAGE] });
+
+    const fixture = TestBed.createComponent(CatalogosPage);
+    fixture.componentRef.setInput('tipo', 'nomencladores');
+    fixture.detectChanges();
+    httpMock
+      .expectOne(
+        (peticion: HttpRequest<unknown>) =>
+          peticion.method === 'GET' && peticion.url === '/api/v1/catalogos/nomencladores',
+      )
+      .flush(PAGINA);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const filas = fixture.nativeElement.querySelectorAll('tbody tr') as NodeListOf<HTMLElement>;
+    // La fila global no llega a tres acciones: sin menu.
+    expect(filas[0].querySelector('.acciones-de-fila__boton')).toBeNull();
+    // La propia: menu, con Editar como principal (fuera del panel) y el resto adentro.
+    const propia = filas[1];
+    expect(propia.querySelector('.acciones-de-fila__boton')?.textContent).toContain(
+      'Más acciones de',
+    );
+    const panel = propia.querySelector('.acciones-de-fila__panel') as HTMLElement;
+    expect(panel.textContent).toContain('Ver vigencias');
+    expect(panel.textContent).toContain('Dar de baja');
+    expect(panel.textContent).not.toContain('Editar');
+    expect(propia.textContent).toContain('Editar');
+  });
+
   async function montar(): Promise<ComponentFixture<CatalogosPage>> {
     tenantContext.select({
       organizationId: 1,

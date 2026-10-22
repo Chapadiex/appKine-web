@@ -10,6 +10,14 @@
       semanal desde este horario».
     </p>
   </app-ayuda>
+
+  <!-- "Nuevo turno" solo navega: la reserva sigue naciendo de un horario libre de la agenda. -->
+  <div class="encabezado__acciones">
+    <a class="boton" routerLink="/agenda">
+      <app-icono nombre="agregar" />
+      Nuevo turno
+    </a>
+  </div>
 </div>
 
 <app-pestanas [pestanas]="pestanas" [etiqueta]="etiquetaDePestanas" />

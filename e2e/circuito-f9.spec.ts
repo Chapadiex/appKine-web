@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { Browser, Page, test } from '@playwright/test';
 
 import { nonce } from './support/akine';
+import { abrirAcciones } from './support/filtros';
 import { ingresar, navegar, problemaDe, respuestaDe } from './support/agenda-real';
 import {
   CentroPropio,
@@ -447,6 +448,7 @@ async function atenderYCerrar(
     await expect(fila).toContainText('Presente');
 
     // Derivar por pantalla: el unico Caso activo queda elegido.
+    await abrirAcciones(fila);
     await fila.getByRole('button', { name: /Derivar a un caso/ }).click();
     const tarjeta = pagina.getByRole('region', { name: /^Derivar a .* a un caso clínico$/ });
     await expect(tarjeta.getByRole('radio', { name: /Caso clínico 1/ })).toBeChecked();

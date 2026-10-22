@@ -1,0 +1,33 @@
+/* Filtros rapidos con conteo (`app-filtros-rapidos`): un conmutador de un valor. */
+.filtros-rapidos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp-3);
+}
+
+.filtros-rapidos__opcion {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--esp-3);
+  min-height: 2rem;
+  padding: var(--esp-2) var(--esp-5);
+  border: var(--borde-fino) solid var(--color-borde-control);
+  border-radius: var(--radio-pastilla);
+  background: var(--color-superficie);
+  color: var(--color-texto);
+  font: inherit;
+  font-size: var(--tipo-sm);
+  cursor: pointer;
+}
+
+.filtros-rapidos__opcion[aria-pressed='true'] {
+  border-color: var(--color-acento);
+  background: var(--color-acento-claro);
+  color: var(--color-texto-fuerte);
+  font-weight: var(--peso-semi);
+}
+
+.filtros-rapidos__cantidad {
+  color: var(--color-texto-suave);
+  font-variant-numeric: tabular-nums;
+}

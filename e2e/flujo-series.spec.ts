@@ -1,3 +1,4 @@
+import { abrirAcciones } from './support/filtros';
 import { expect, abrirReserva, ingresar, navegar, test } from './support/agenda-real';
 import {
   ApiAkine,
@@ -128,6 +129,8 @@ test.describe('Series de turnos contra el backend real', () => {
     await expect(turnos).toHaveCount(OCURRENCIAS);
     const serieId = Number(new URL(page.url()).pathname.split('/').at(-1));
 
+    // Cancelar va en el menu "⋯" de la fila (cuatro acciones por turno).
+    await abrirAcciones(turnos.nth(1));
     await turnos
       .nth(1)
       .getByRole('button', { name: /Cancelar este y los siguientes/ })

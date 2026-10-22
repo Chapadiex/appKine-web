@@ -138,12 +138,37 @@ describe('ImportarArancelesPage', () => {
     expect(texto).toContain('Las 2 filas entran');
     expect(texto).toContain('KIN-01 (#55)');
     expect(texto).toContain('ARS 12000.00');
+    expect(pasoActual(fixture)).toBe('Vista previa');
+    expect(boton(fixture, 'Continuar').disabled).toBe(false);
+
+    boton(fixture, 'Continuar').click();
+    fixture.detectChanges();
+    expect(pasoActual(fixture)).toBe('Confirmar');
     expect(boton(fixture, 'Confirmar 2 aranceles').disabled).toBe(false);
 
-    // Tocar la planilla despues del preview la deja sin describir: hay que volver a pedirlo.
+    // Tocar la planilla despues del preview la deja sin describir: para corregirla hay que volver
+    // al primer paso, y para confirmar hay que pedir la vista previa de nuevo (no se puede saltar).
+    boton(fixture, 'Volver').click();
+    boton(fixture, 'Volver').click();
+    fixture.detectChanges();
+    expect(pasoActual(fixture)).toBe('Cargar');
     pegar(fixture, PLANILLA + '\n');
-    expect(boton(fixture, 'Confirmar 2 aranceles').disabled).toBe(true);
-    expect((fixture.nativeElement as HTMLElement).textContent).toContain('ya no la describe');
+    expect(botonOpcional(fixture, 'Continuar')).toBeUndefined();
+    expect(botonOpcional(fixture, 'Confirmar 2 aranceles')).toBeUndefined();
+    expect(boton(fixture, 'Vista previa').disabled).toBe(false);
+  });
+
+  it('el asistente marca el paso actual con aria-current y empieza en Cargar', async () => {
+    const fixture = await montar();
+    const pasos = [...(fixture.nativeElement as HTMLElement).querySelectorAll('ol.pasos > li')];
+
+    expect(pasos.map((paso) => paso.querySelector('.paso__titulo')?.textContent?.trim())).toEqual([
+      'Cargar',
+      'Vista previa',
+      'Confirmar',
+    ]);
+    expect(pasoActual(fixture)).toBe('Cargar');
+    expect(pasos.filter((paso) => paso.getAttribute('aria-current') === 'step').length).toBe(1);
   });
 
   it('una fila rechazada en el preview se explica y bloquea la confirmación', async () => {
@@ -162,13 +187,15 @@ describe('ImportarArancelesPage', () => {
     expect(texto).toContain('1 de 2 filas no entrarian');
     expect(texto).toContain('Se pisa con el arancel #900');
     expect(texto).toContain('Se pisa con el vigente.');
-    expect(boton(fixture, 'Confirmar 2 aranceles').disabled).toBe(true);
+    expect(boton(fixture, 'Continuar').disabled).toBe(true);
+    expect(botonOpcional(fixture, 'Confirmar 2 aranceles')).toBeUndefined();
   });
 
   it('confirmar manda el mismo lote en modo CONFIRMAR y vuelve a la grilla', async () => {
     const fixture = await montar();
     const navegar = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
     await previsualizarTodasEntran(fixture);
+    continuarAConfirmar(fixture);
 
     boton(fixture, 'Confirmar 2 aranceles').click();
     const confirmacion = httpMock.expectOne(esImportacion());
@@ -186,6 +213,7 @@ describe('ImportarArancelesPage', () => {
     const fixture = await montar();
     const navegar = vi.spyOn(TestBed.inject(Router), 'navigate');
     await previsualizarTodasEntran(fixture);
+    continuarAConfirmar(fixture);
 
     boton(fixture, 'Confirmar 2 aranceles').click();
     httpMock.expectOne(esImportacion()).flush(
@@ -210,6 +238,7 @@ describe('ImportarArancelesPage', () => {
   it('otro error de la confirmación se traduce sin perder el preview', async () => {
     const fixture = await montar();
     await previsualizarTodasEntran(fixture);
+    continuarAConfirmar(fixture);
 
     boton(fixture, 'Confirmar 2 aranceles').click();
     httpMock
@@ -265,6 +294,18 @@ describe('ImportarArancelesPage', () => {
     },
     TIMEOUT_AXE,
   );
+
+  function continuarAConfirmar(fixture: ComponentFixture<ImportarArancelesPage>) {
+    boton(fixture, 'Continuar').click();
+    fixture.detectChanges();
+  }
+
+  /** Rotulo del paso marcado con aria-current="step". */
+  function pasoActual(fixture: ComponentFixture<ImportarArancelesPage>): string | undefined {
+    return (fixture.nativeElement as HTMLElement)
+      .querySelector('ol.pasos > li[aria-current="step"] .paso__titulo')
+      ?.textContent?.trim();
+  }
 
   async function previsualizarTodasEntran(fixture: ComponentFixture<ImportarArancelesPage>) {
     pegar(fixture, PLANILLA);

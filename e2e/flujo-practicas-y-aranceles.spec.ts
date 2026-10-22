@@ -138,14 +138,18 @@ test.describe('Importacion de aranceles de un convenio contra el backend real', 
       .filter({ has: page.getByRole('rowheader', { name: /^3\b/ }) });
     await expect(fila3).toContainText('No entra');
     await expect(fila3).toContainText('Se pisa con la fila 1 de esta misma planilla');
-    await expect(page.getByRole('button', { name: /^Confirmar / })).toBeDisabled();
+    // Con una fila que no entra no se puede pasar a confirmar.
+    await expect(page.getByRole('button', { name: 'Continuar' })).toBeDisabled();
 
-    // Se corrige la planilla: el resultado anterior deja de describirla.
+    // Se vuelve al primer paso y se corrige la planilla: confirmar exige otra vista previa.
+    await page.getByRole('button', { name: 'Volver' }).click();
+    await expect(page.locator('ol.pasos li[aria-current="step"]')).toContainText('Cargar');
     await planilla.fill([encabezado, ...validas].join('\n'));
-    await expect(page.getByText(/Cambiaste la planilla después de este resultado/)).toBeVisible();
     await page.getByRole('button', { name: 'Vista previa' }).click();
     await expect(page.getByText(/Las 2 filas entran como aranceles nuevos/)).toBeVisible();
 
+    await page.getByRole('button', { name: 'Continuar' }).click();
+    await expect(page.locator('ol.pasos li[aria-current="step"]')).toContainText('Confirmar');
     const confirmacion = respuestaDe(page, 'POST', /\/aranceles\/importacion$/);
     await page.getByRole('button', { name: 'Confirmar 2 aranceles' }).click();
     expect((await confirmacion).status()).toBeLessThan(300);

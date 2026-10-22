@@ -325,38 +325,14 @@
                 }
               </td>
               <td class="celda-acciones">
-                <div class="acciones-fila">
-                  @if (puedeOperar() && esPendiente(turno)) {
-                    <button
-                      type="button"
-                      class="boton boton--secundario"
-                      (click)="reprogramarDesde(turno)"
-                    >
-                      Reprogramar<span class="visualmente-oculto">
-                        desde el turno del {{ fechaHora(turno.inicio) }}</span
-                      >
-                    </button>
-                    <button
-                      type="button"
-                      class="boton boton--secundario"
-                      (click)="elegir(Alcance.ESTE, turno.id)"
-                    >
-                      Cancelar este<span class="visualmente-oculto">
-                        turno, del {{ fechaHora(turno.inicio) }}</span
-                      >
-                    </button>
-                    <button
-                      type="button"
-                      class="boton boton--secundario"
-                      (click)="elegir(Alcance.ESTE_Y_SIGUIENTES, turno.id)"
-                    >
-                      Cancelar este y los siguientes<span class="visualmente-oculto">
-                        desde el {{ fechaHora(turno.inicio) }}</span
-                      >
-                    </button>
-                  }
+                <!--
+                  Cuatro acciones: menu "⋯" (decidido el 22/10/2026). La frecuente, "Ver o mover",
+                  queda a la vista; reprogramar y cancelar van detras del menu.
+                -->
+                <app-acciones-de-fila [de]="'turno del ' + fechaHora(turno.inicio)">
                   @if (turno.id) {
                     <a
+                      principal
                       class="enlace"
                       [routerLink]="['/agenda', 'turnos', turno.id]"
                       [queryParams]="{
@@ -370,7 +346,32 @@
                       >
                     </a>
                   }
-                </div>
+                  @if (puedeOperar() && esPendiente(turno)) {
+                    <button type="button" (click)="reprogramarDesde(turno)">
+                      Reprogramar<span class="visualmente-oculto">
+                        desde el turno del {{ fechaHora(turno.inicio) }}</span
+                      >
+                    </button>
+                    <button
+                      type="button"
+                      class="accion--peligro"
+                      (click)="elegir(Alcance.ESTE, turno.id)"
+                    >
+                      Cancelar este<span class="visualmente-oculto">
+                        turno, del {{ fechaHora(turno.inicio) }}</span
+                      >
+                    </button>
+                    <button
+                      type="button"
+                      class="accion--peligro"
+                      (click)="elegir(Alcance.ESTE_Y_SIGUIENTES, turno.id)"
+                    >
+                      Cancelar este y los siguientes<span class="visualmente-oculto">
+                        desde el {{ fechaHora(turno.inicio) }}</span
+                      >
+                    </button>
+                  }
+                </app-acciones-de-fila>
               </td>
             </tr>
           }

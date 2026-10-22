@@ -41,11 +41,34 @@ import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
 import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
 import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
+import { AccionesDeFila } from '../../../../shared/components/acciones-de-fila/acciones-de-fila';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import {
+  FiltroRapido,
+  FiltrosRapidos,
+} from '../../../../shared/components/filtros-rapidos/filtros-rapidos';
 import { Icono } from '../../../../shared/components/icono/icono';
 
 /** La ruta que monta esta pantalla. Se reescribe la fecha sobre ella sin navegar. */
 const RUTA = '/agenda/recepcion';
+
+/** Los grupos del filtro rapido: el estado de la recepcion, agrupado como lo mira el mostrador. */
+const GRUPOS_DE_RECEPCION: readonly { readonly valor: string; readonly etiqueta: string }[] = [
+  { valor: 'sin-llegar', etiqueta: 'Sin llegar' },
+  { valor: 'en-mostrador', etiqueta: 'En mostrador' },
+  { valor: 'en-espera', etiqueta: 'En espera' },
+  { valor: 'llamados', etiqueta: 'Llamados' },
+  { valor: 'cerrados', etiqueta: 'Retirados o cerrados' },
+];
+
+/** Una accion de la fila que es un boton (las dos que son enlaces se dibujan aparte). */
+interface AccionDeFila {
+  readonly clave: string;
+  readonly texto: string;
+  readonly secundaria: boolean;
+  readonly peligro: boolean;
+  readonly ejecutar: () => void;
+}
 
 /** Las dos transiciones que piden un motivo antes de mandarse. */
 type TipoDePanel = 'particular' | 'anular' | 'retiro';
@@ -145,6 +168,8 @@ const CAUSAS_QUE_RELEEN: ReadonlySet<CausaAgenda> = new Set<CausaAgenda>([
     ClasesDelDia,
     Pestanas,
     Icono,
+    AccionesDeFila,
+    FiltrosRapidos,
   ],
   templateUrl: './recepcion-del-dia-page.html',
   styleUrl: '../../agenda.css',
@@ -192,13 +217,34 @@ export class RecepcionDelDiaPage {
    * vuelve a pedir nada; los contadores del dia siguen contando la lista entera.
    */
   protected readonly busqueda = signal('');
+
+  /**
+   * Filtro rapido por estado de la recepcion (decidido el 22/10/2026). La lista del dia llega
+   * entera, asi que los conteos se calculan aca; se combina con la busqueda por paciente.
+   */
+  protected readonly filtroDeRecepcion = signal<string>('todos');
+
+  protected readonly opcionesDeRecepcion = computed<readonly FiltroRapido[]>(() => {
+    const todos = this.turnos();
+    const cuenta = (grupo: string) => todos.filter((t) => grupoDeRecepcion(t) === grupo).length;
+    return [
+      { valor: 'todos', etiqueta: 'Todos', cantidad: todos.length },
+      ...GRUPOS_DE_RECEPCION.map((g) => ({
+        valor: g.valor,
+        etiqueta: g.etiqueta,
+        cantidad: cuenta(g.valor),
+      })),
+    ];
+  });
+
   protected readonly filtrados = computed(() => {
     const texto = this.busqueda().trim().toLocaleLowerCase('es');
-    if (texto === '') {
-      return this.turnos();
-    }
-    return this.turnos().filter((t) =>
-      `${t.personaNombre ?? ''} ${t.documento ?? ''}`.toLocaleLowerCase('es').includes(texto),
+    const grupo = this.filtroDeRecepcion();
+    return this.turnos().filter(
+      (t) =>
+        (grupo === 'todos' || grupoDeRecepcion(t) === grupo) &&
+        (texto === '' ||
+          `${t.personaNombre ?? ''} ${t.documento ?? ''}`.toLocaleLowerCase('es').includes(texto)),
     );
   });
 
@@ -491,6 +537,76 @@ export class RecepcionDelDiaPage {
     return enEstado(turno, RecepcionEstadoEnum.EN_ESPERA);
   }
 
+  /**
+   * Los botones de la fila, en orden de frecuencia: la transicion siguiente de la recepcion
+   * (llegada, validar, espera, llamar) va primero y es la que queda a la vista cuando la fila
+   * tiene menu; las secundarias (Particular, retiro, anular) van detras.
+   */
+  protected accionesDe(turno: TurnoDelDia): readonly AccionDeFila[] {
+    if (!this.puedeOperar()) {
+      return [];
+    }
+    const acciones: AccionDeFila[] = [];
+    const agregar = (
+      clave: string,
+      texto: string,
+      ejecutar: () => void,
+      secundaria = false,
+      peligro = false,
+    ): void => {
+      acciones.push({ clave, texto, secundaria, peligro, ejecutar });
+    };
+    if (this.admiteLlegada(turno)) {
+      agregar('llegada', 'Registrar la llegada', () => this.marcarLlegada(turno));
+    }
+    if (this.admiteValidar(turno)) {
+      agregar('validar', 'Validar cobertura', () => this.validar(turno));
+    }
+    if (this.admiteEspera(turno)) {
+      agregar('espera', 'Pasar a espera', () => this.pasarAEspera(turno));
+    }
+    if (this.admiteLlamar(turno)) {
+      agregar('llamar', 'Llamar', () => this.llamar(turno));
+    }
+    if (this.admiteParticular(turno)) {
+      agregar(
+        'particular',
+        'Atender como Particular',
+        () => this.abrirPanel(turno, 'particular'),
+        true,
+      );
+    }
+    if (this.admiteRetiro(turno)) {
+      // U-21: la llegada vale y el turno no cambia; el motivo es obligatorio.
+      agregar('retiro', 'Se retiro sin ser atendido', () => this.abrirPanel(turno, 'retiro'), true);
+    }
+    if (this.abierta(turno)) {
+      // Anular NO es idempotente: el segundo intento responde 409, que se explica arriba.
+      agregar('anular', 'Anular la llegada', () => this.abrirPanel(turno, 'anular'), true, true);
+    }
+    return acciones;
+  }
+
+  /**
+   * Elegir una accion del menu "⋯" lo cierra y esconde el item que tenia el foco: el panel de
+   * motivo, que al cerrarse devuelve el foco a quien lo abrio, no tendria a donde. Se lleva el foco
+   * al boton "⋯" de la fila, que sigue a la vista, antes de que el panel se monte.
+   */
+  protected enfocarMenu(evento: Event): void {
+    const destino = evento.target instanceof Element ? evento.target : null;
+    destino
+      ?.closest('app-acciones-de-fila')
+      ?.querySelector<HTMLElement>('.acciones-de-fila__boton')
+      ?.focus();
+  }
+
+  /** Cuantas acciones tiene la fila, enlaces incluidos: con tres o mas va el menu "⋯". */
+  protected cantidadDeAcciones(turno: TurnoDelDia): number {
+    return (
+      this.accionesDe(turno).length + (this.puedeCobrar() && this.admitePrepago(turno) ? 1 : 0) + 1 // "Ver el turno"
+    );
+  }
+
   /** Query del enlace al ciclo del turno: sin la version, esa pantalla no puede operar. */
   protected queryDelTurno(turno: TurnoDelDia): Record<string, string | number> {
     return { version: turno.version ?? 0, ofertaId: turno.ofertaId ?? 0, fecha: this.dia() };
@@ -639,6 +755,24 @@ export class RecepcionDelDiaPage {
     this.turnos.update((filas) =>
       filas.map((fila) => (fila.id === turnoId ? { ...fila, ...cambios } : fila)),
     );
+  }
+}
+
+/** En que grupo del filtro rapido cae la fila segun su recepcion vigente. */
+function grupoDeRecepcion(turno: TurnoDelDia): string {
+  switch (turno.recepcion?.estado) {
+    case undefined:
+    case RecepcionEstadoEnum.ANULADA:
+      return 'sin-llegar';
+    case RecepcionEstadoEnum.EN_ESPERA:
+      return 'en-espera';
+    case RecepcionEstadoEnum.LLAMADA:
+      return 'llamados';
+    case RecepcionEstadoEnum.RETIRADO:
+    case RecepcionEstadoEnum.CERRADA:
+      return 'cerrados';
+    default:
+      return 'en-mostrador';
   }
 }
 

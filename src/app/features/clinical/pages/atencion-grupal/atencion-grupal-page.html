@@ -250,9 +250,15 @@
                       }
                     </td>
                     <td>
-                      <div class="acciones-fila">
-                        @if (fila.estuvo && fila.atenciones.length === 0) {
+                      <!--
+                        Una fila que estuvo y todavia no tiene atencion puede tener tres acciones
+                        (con permiso de escritura clinica): menu "⋯" (decidido el 22/10/2026), con
+                        "Iniciar atencion" a la vista. Con menos, botones sueltos.
+                      -->
+                      @if (fila.estuvo && fila.atenciones.length === 0 && puedeEscribirHc()) {
+                        <app-acciones-de-fila [de]="fila.nombre">
                           <button
+                            principal
                             type="button"
                             class="boton"
                             [disabled]="enVuelo() !== null"
@@ -266,29 +272,68 @@
                               >
                             }
                           </button>
-                        }
-                        @if (fila.estuvo) {
                           <button
-                            *akinePermiso="PERMISO_HC_WRITE"
                             type="button"
-                            class="boton boton--secundario"
                             [disabled]="enVuelo() !== null"
-                            (click)="abrirDerivacion(fila)"
+                            (click)="abrirDerivacion(fila); enfocarMenu($event)"
                           >
                             Derivar a un caso<span class="visualmente-oculto">
                               a {{ fila.nombre }}</span
                             >
                           </button>
-                        }
-                        <button
-                          type="button"
-                          class="boton-texto"
-                          [disabled]="enVuelo() !== null"
-                          (click)="verDerivaciones(fila)"
-                        >
-                          Derivaciones<span class="visualmente-oculto"> de {{ fila.nombre }}</span>
-                        </button>
-                      </div>
+                          <button
+                            type="button"
+                            [disabled]="enVuelo() !== null"
+                            (click)="verDerivaciones(fila); enfocarMenu($event)"
+                          >
+                            Derivaciones<span class="visualmente-oculto">
+                              de {{ fila.nombre }}</span
+                            >
+                          </button>
+                        </app-acciones-de-fila>
+                      } @else {
+                        <div class="acciones-fila">
+                          @if (fila.estuvo && fila.atenciones.length === 0) {
+                            <button
+                              type="button"
+                              class="boton"
+                              [disabled]="enVuelo() !== null"
+                              (click)="iniciar(fila)"
+                            >
+                              @if (enVuelo() === fila.inscripcionId) {
+                                Abriendo…
+                              } @else {
+                                Iniciar atención<span class="visualmente-oculto">
+                                  de {{ fila.nombre }}</span
+                                >
+                              }
+                            </button>
+                          }
+                          @if (fila.estuvo) {
+                            <button
+                              *akinePermiso="PERMISO_HC_WRITE"
+                              type="button"
+                              class="boton boton--secundario"
+                              [disabled]="enVuelo() !== null"
+                              (click)="abrirDerivacion(fila)"
+                            >
+                              Derivar a un caso<span class="visualmente-oculto">
+                                a {{ fila.nombre }}</span
+                              >
+                            </button>
+                          }
+                          <button
+                            type="button"
+                            class="boton-texto"
+                            [disabled]="enVuelo() !== null"
+                            (click)="verDerivaciones(fila)"
+                          >
+                            Derivaciones<span class="visualmente-oculto">
+                              de {{ fila.nombre }}</span
+                            >
+                          </button>
+                        </div>
+                      }
                     </td>
                   </tr>
                 }

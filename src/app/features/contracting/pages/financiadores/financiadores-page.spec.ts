@@ -176,8 +176,9 @@ describe('FinanciadoresPage', () => {
 
   it('un financiador dado de baja no ofrece editar ni dar de baja, pero si ver sus planes', async () => {
     const fixture = await montar();
+    filtrarPorEstado(fixture, 'Dados de baja');
     const filas = (fixture.nativeElement as HTMLElement).querySelectorAll('tbody tr');
-    const inactivo = filas[1] as HTMLElement;
+    const inactivo = filas[0] as HTMLElement;
 
     expect(inactivo.className).toContain('fila--revocada');
     expect(inactivo.textContent).toContain('Dejamos de trabajar con ellos');
@@ -339,11 +340,11 @@ describe('FinanciadoresPage', () => {
   it('un error del listado se puede reintentar, y el listado vacío explica que falta', async () => {
     const fixture = await montar();
 
-    cambiarEstado(fixture, 'INACTIVO');
+    elegir(fixture, '#filtro-tipo-financiador', 'ART');
     httpMock
       .expectOne(
         (peticion: HttpRequest<unknown>) =>
-          peticion.url === RUTA_FINANCIADORES && peticion.params.get('estado') === 'INACTIVO',
+          peticion.url === RUTA_FINANCIADORES && peticion.params.get('tipo') === 'ART',
       )
       .flush(
         { type: 'https://akine.app/problems/internal-error' },
@@ -364,7 +365,7 @@ describe('FinanciadoresPage', () => {
     httpMock
       .expectOne(
         (peticion: HttpRequest<unknown>) =>
-          peticion.url === RUTA_FINANCIADORES && peticion.params.get('estado') === 'INACTIVO',
+          peticion.url === RUTA_FINANCIADORES && peticion.params.get('tipo') === 'ART',
       )
       .flush([]);
     await fixture.whenStable();
@@ -382,10 +383,12 @@ describe('FinanciadoresPage', () => {
       (peticion: HttpRequest<unknown>) =>
         peticion.url === RUTA_FINANCIADORES && peticion.params.get('tipo') === 'ART',
     );
-    expect(filtrada.request.params.get('estado')).toBe('ACTIVO');
+    // El listado se pide entero: el estado se filtra en pantalla, con conteo.
+    expect(filtrada.request.params.get('estado')).toBe('TODOS');
     filtrada.flush([DE_BAJA]);
     await fixture.whenStable();
     fixture.detectChanges();
+    filtrarPorEstado(fixture, 'Todos');
 
     // La busqueda va con el submit del formulario, no con cada tecla: sin `[formGroup]` el
     // `(ngSubmit)` no lo emite nadie y el boton no haria nada, sin error en ningun lado.
@@ -400,6 +403,43 @@ describe('FinanciadoresPage', () => {
     fixture.detectChanges();
 
     expect((fixture.nativeElement as HTMLElement).textContent).toContain('Aseguradora del Sur');
+  });
+
+  it('los filtros rapidos cuentan la lista entera y filtran por estado sin pedir de nuevo', async () => {
+    const fixture = await montar();
+    const anfitrion = fixture.nativeElement as HTMLElement;
+
+    const botones = () =>
+      [...anfitrion.querySelectorAll<HTMLButtonElement>('.filtros-rapidos__opcion')].map((boton) =>
+        (boton.textContent ?? '').replace(/\s+/g, ' ').trim(),
+      );
+    expect(botones()).toEqual(['Activos 1', 'Dados de baja 1', 'Todos 2']);
+
+    // Por defecto se ven los activos.
+    expect(anfitrion.textContent).toContain('OSDE');
+    expect(anfitrion.textContent).not.toContain('Aseguradora del Sur');
+
+    filtrarPorEstado(fixture, 'Dados de baja');
+    expect(anfitrion.textContent).toContain('Aseguradora del Sur');
+    expect(
+      anfitrion.querySelector('.filtros-rapidos__opcion[aria-pressed="true"]')?.textContent,
+    ).toContain('Dados de baja');
+
+    filtrarPorEstado(fixture, 'Todos');
+    expect(anfitrion.querySelectorAll('tbody tr').length).toBe(2);
+    // Ningun filtro rapido dispara otra peticion: httpMock.verify() lo comprueba al terminar.
+  });
+
+  it('con tres acciones, Planes queda a la vista y Editar y Dar de baja van en el menu', async () => {
+    const fixture = await montar();
+    const fila = (fixture.nativeElement as HTMLElement).querySelector('tbody tr') as HTMLElement;
+
+    const menu = fila.querySelector('app-acciones-de-fila') as HTMLElement;
+    expect(menu).not.toBeNull();
+    expect(menu.querySelector('.acciones-de-fila__panel')?.textContent).toContain('Editar');
+    expect(menu.querySelector('.acciones-de-fila__panel')?.textContent).toContain('Dar de baja');
+    expect(menu.querySelector('.acciones-de-fila__panel')?.textContent).not.toContain('Planes');
+    expect(menu.textContent).toContain('Más acciones de OSDE');
   });
 
   it(
@@ -496,18 +536,17 @@ function enviar(fixture: { nativeElement: HTMLElement; detectChanges(): void }, 
   fixture.detectChanges();
 }
 
-/** El `select` de estado del listado, que vive fuera de todo formulario reactivo. */
-function cambiarEstado(
+/** Elige un filtro rapido de estado por su rotulo ("Activos", "Dados de baja", "Todos"). */
+function filtrarPorEstado(
   fixture: { nativeElement: HTMLElement; detectChanges(): void },
-  valor: string,
+  etiqueta: string,
 ) {
-  const campo = fixture.nativeElement.querySelector<HTMLSelectElement>(
-    '#filtro-estado-financiador',
-  );
-  if (campo === null) {
-    throw new Error('No existe el filtro de estado');
+  const boton = [
+    ...fixture.nativeElement.querySelectorAll<HTMLButtonElement>('.filtros-rapidos__opcion'),
+  ].find((candidato) => (candidato.textContent ?? '').trim().startsWith(etiqueta));
+  if (boton === undefined) {
+    throw new Error(`No existe el filtro rapido ${etiqueta}`);
   }
-  campo.value = valor;
-  campo.dispatchEvent(new Event('change'));
+  boton.click();
   fixture.detectChanges();
 }

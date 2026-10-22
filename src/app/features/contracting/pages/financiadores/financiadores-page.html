@@ -210,24 +210,6 @@
     </form>
 
     <div class="campo">
-      <label for="filtro-estado-financiador">Mostrar</label>
-      <select
-        id="filtro-estado-financiador"
-        [value]="filtroEstado()"
-        (change)="cambiarFiltroEstado($any($event.target).value)"
-        aria-describedby="filtro-estado-financiador-ayuda"
-      >
-        <option value="ACTIVO">Solo los activos</option>
-        <option value="INACTIVO">Solo los dados de baja</option>
-        <option value="TODOS">Todos</option>
-      </select>
-      <p class="ayuda" id="filtro-estado-financiador-ayuda">
-        Los dados de baja se siguen pudiendo consultar: los convenios firmados con ellos siguen
-        resolviendo, y explicar una liquidación vieja exige poder verlos.
-      </p>
-    </div>
-
-    <div class="campo">
       <label for="filtro-tipo-financiador">Tipo</label>
       <select
         id="filtro-tipo-financiador"
@@ -264,6 +246,18 @@
       }
 
       @case ('listo') {
+        <!--
+          Estado administrativo con conteo: el listado se pide entero (estado TODOS) y se filtra
+          en pantalla, asi los numeros son los de la lista. Los dados de baja se siguen pudiendo
+          consultar: los convenios firmados con ellos siguen resolviendo, y explicar una
+          liquidacion vieja exige poder verlos.
+        -->
+        <app-filtros-rapidos
+          etiqueta="Filtrar por estado"
+          [opciones]="opcionesDeEstado()"
+          [valor]="filtroRapido()"
+          (valorChange)="elegirEstado($event)"
+        />
         @if (financiadores().length === 0) {
           <p class="estado estado--vacio">
             No hay financiadores que coincidan con lo que estás buscando.
@@ -330,30 +324,40 @@
                         Los planes se ven SIEMPRE, tambien los de un financiador dado de baja: sus
                         planes conservan sus filas y hay que poder consultarlos para explicar una
                         cobertura vieja. El enlace no lleva permiso, por lo mismo que el listado.
+
+                        Tres acciones (Planes, Editar, Dar de baja): la mas frecuente —Planes— a la
+                        vista y el resto en el menu "⋯" (decision del 22/10/2026). Sin permiso, o
+                        con el financiador dado de baja, queda una sola accion y va suelta.
                       -->
-                      <a
-                        class="accion-texto"
-                        [routerLink]="['/contratacion/financiadores', financiador.id, 'planes']"
-                      >
-                        Planes
-                      </a>
-                      @if (financiador.estado === 'ACTIVO') {
-                        <ng-container *akinePermiso="permisoManage">
-                          <button
-                            type="button"
+                      @if (financiador.estado === 'ACTIVO' && puedeGestionar()) {
+                        <app-acciones-de-fila [de]="financiador.nombre ?? ''">
+                          <a
+                            principal
                             class="accion-texto"
-                            (click)="abrirPanel(financiador, 'editar')"
+                            [routerLink]="['/contratacion/financiadores', financiador.id, 'planes']"
                           >
-                            Editar
-                          </button>
-                          <button
-                            type="button"
-                            class="accion-texto accion-texto--peligro"
-                            (click)="abrirPanel(financiador, 'baja')"
-                          >
-                            Dar de baja
-                          </button>
-                        </ng-container>
+                            Planes
+                          </a>
+                          <ng-container *akinePermiso="permisoManage">
+                            <button type="button" (click)="abrirPanel(financiador, 'editar')">
+                              Editar
+                            </button>
+                            <button
+                              type="button"
+                              class="accion--peligro"
+                              (click)="abrirPanel(financiador, 'baja')"
+                            >
+                              Dar de baja
+                            </button>
+                          </ng-container>
+                        </app-acciones-de-fila>
+                      } @else {
+                        <a
+                          class="accion-texto"
+                          [routerLink]="['/contratacion/financiadores', financiador.id, 'planes']"
+                        >
+                          Planes
+                        </a>
                       }
                     </td>
                   </tr>

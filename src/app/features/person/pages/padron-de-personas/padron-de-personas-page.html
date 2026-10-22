@@ -335,58 +335,91 @@
             <td>{{ persona.estado === 'ACTIVO' ? 'Activa' : 'Dada de baja' }}</td>
             <td>
               <!--
-              Entrada a la ficha 360 (AKINE-03.02). Va PRIMERA y sin permiso detras: la lectura de
-              una ficha se autoriza por pertenencia, igual que la del padron, y es desde ahi que se
-              llega a coberturas, documentos y ordenes. Sin este enlace las cuatro pantallas de F3
-              solo son alcanzables tipeando la URL.
+                Entrada a la ficha 360 (AKINE-03.02). Va PRIMERA y sin permiso detras: la lectura
+                de una ficha se autoriza por pertenencia, igual que la del padron, y es desde ahi
+                que se llega a coberturas, documentos y ordenes. Se ofrece tambien sobre una ficha
+                dada de baja, a diferencia de editar y de activar el perfil: el 360 de una ficha
+                cerrada es justamente donde se consulta su historico.
 
-              Se ofrece tambien sobre una ficha dada de baja, a diferencia de editar y de activar
-              el perfil: el 360 de una ficha cerrada es justamente donde se consulta su historico.
-            -->
-              <a class="enlace" [routerLink]="['/pacientes', persona.id]">Ver ficha</a>
+                Con tres o mas acciones (decidido el 22/10/2026) "Ver ficha" queda a la vista y el
+                resto va detras del menu "⋯"; con menos, enlaces y botones sueltos.
 
-              @if (!personaInactiva(persona)) {
-                <button
-                  type="button"
-                  class="boton boton--secundario"
-                  (click)="abrirEdicion(persona)"
-                  *akinePermiso="permisoManage"
-                >
-                  Editar
-                </button>
-                @if (!persona.esPaciente) {
+                Cuenta corriente es un enlace porque navega, y va detras de `cobro:register`, que es
+                lo que el backend exige para leerla. Pases es de `activity`, detras de `pase:read`.
+                Las rutas son solo URLs: no hay import entre features.
+              -->
+              @if (cantidadDeAcciones(persona) >= 3) {
+                <app-acciones-de-fila [de]="nombreCompleto(persona)">
+                  <a principal class="enlace" [routerLink]="['/pacientes', persona.id]"
+                    >Ver ficha</a
+                  >
+
+                  @if (!personaInactiva(persona)) {
+                    <button
+                      type="button"
+                      (click)="abrirEdicion(persona)"
+                      *akinePermiso="permisoManage"
+                    >
+                      Editar
+                    </button>
+                    @if (!persona.esPaciente) {
+                      <button
+                        type="button"
+                        (click)="abrirActivacion(persona)"
+                        *akinePermiso="permisoManage"
+                      >
+                        Activar perfil de paciente
+                      </button>
+                    }
+                  }
+                  <a
+                    [routerLink]="['/pacientes', persona.id, 'cuenta-corriente']"
+                    *akinePermiso="permisoCobro"
+                  >
+                    Cuenta corriente
+                  </a>
+                  <a [routerLink]="['/pacientes', persona.id, 'pases']" *akinePermiso="permisoPase">
+                    Pases
+                  </a>
+                </app-acciones-de-fila>
+              } @else {
+                <a class="enlace" [routerLink]="['/pacientes', persona.id]">Ver ficha</a>
+
+                @if (!personaInactiva(persona)) {
                   <button
                     type="button"
                     class="boton boton--secundario"
-                    (click)="abrirActivacion(persona)"
+                    (click)="abrirEdicion(persona)"
                     *akinePermiso="permisoManage"
                   >
-                    Activar perfil de paciente
+                    Editar
                   </button>
+                  @if (!persona.esPaciente) {
+                    <button
+                      type="button"
+                      class="boton boton--secundario"
+                      (click)="abrirActivacion(persona)"
+                      *akinePermiso="permisoManage"
+                    >
+                      Activar perfil de paciente
+                    </button>
+                  }
                 }
+                <a
+                  class="enlace"
+                  [routerLink]="['/pacientes', persona.id, 'cuenta-corriente']"
+                  *akinePermiso="permisoCobro"
+                >
+                  Cuenta corriente
+                </a>
+                <a
+                  class="enlace"
+                  [routerLink]="['/pacientes', persona.id, 'pases']"
+                  *akinePermiso="permisoPase"
+                >
+                  Pases
+                </a>
               }
-
-              <!--
-              Entrada a la cuenta corriente (AKINE-07.01). Es un enlace y no un boton porque
-              navega, y va detras de `cobro:register` porque es lo que el backend exige para
-              leerla: ofrecerlo a quien no lo tiene termina en un 403 que no explica nada.
-              La ruta vive en `billing`, pero esto es solo una URL —no hay import entre features—.
-            -->
-              <a
-                class="enlace"
-                [routerLink]="['/pacientes', persona.id, 'cuenta-corriente']"
-                *akinePermiso="permisoCobro"
-              >
-                Cuenta corriente
-              </a>
-              <!-- Pases de la persona (M29). Ruta de `activity`, detras de `pase:read`. -->
-              <a
-                class="enlace"
-                [routerLink]="['/pacientes', persona.id, 'pases']"
-                *akinePermiso="permisoPase"
-              >
-                Pases
-              </a>
             </td>
           </tr>
 

@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 
 import { nonce } from './support/akine';
+import { abrirAcciones } from './support/filtros';
 import { expect, navegar, respuestaDe, test } from './support/agenda-real';
 import {
   ApiAkine,
@@ -107,6 +108,8 @@ test.describe('Atencion clinica grupal contra el backend real', () => {
 
     // --- Derivar por pantalla: elegibilidad, el Caso activo y la derivacion ------------------
     const elegibilidad = respuestaDe(page, 'GET', /\/inscripciones\/\d+\/elegibilidad-clinica$/);
+    // Una participante que estuvo y no tiene atencion tiene tres acciones: van en el menu "⋯".
+    await abrirAcciones(fila);
     await fila.getByRole('button', { name: /Derivar a un caso/ }).click();
     expect((await elegibilidad).status()).toBe(200);
     const tarjeta = page.getByRole('region', { name: /^Derivar a .* a un caso clínico$/ });

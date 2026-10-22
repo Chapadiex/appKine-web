@@ -6,7 +6,7 @@ import {
   paginaDePlataforma,
   plataformaDisponible,
 } from './support/sembrado-configuracion';
-import { abrirFiltros } from './support/filtros';
+import { abrirAcciones, abrirFiltros } from './support/filtros';
 
 /**
  * E2E de servicios y ofertas (M08, AKINE-02.06, 02.07 y B-3) contra el backend REAL: la plataforma
@@ -79,6 +79,7 @@ test.describe('Servicios y ofertas contra el backend real', () => {
       await expect(fila).toBeVisible();
 
       // --- Habilitacion del profesional ---
+      await abrirAcciones(fila);
       await fila.getByRole('link', { name: 'Habilitaciones' }).click();
       await expect(
         page.getByRole('heading', { name: 'Habilitaciones de la oferta', level: 1 }),

@@ -160,6 +160,58 @@ describe('RecepcionDelDiaPage', () => {
     expect(texto).toContain('aguarda ser llamado');
   });
 
+  it('"Nuevo turno" solo navega a la busqueda de horarios de la agenda', async () => {
+    const fixture = await montar();
+
+    const enlace = Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll('a.boton'),
+    ).find((a) => (a.textContent ?? '').includes('Nuevo turno'));
+    expect(enlace?.getAttribute('href')).toBe('/agenda');
+  });
+
+  it('con tres o más acciones la fila deja a la vista la transición siguiente y el resto va al menú', async () => {
+    const fixture = await montar();
+
+    // En la sala de espera: Llamar (principal), Particular, retiro, anular, ver el turno.
+    const menu = fila(fixture, 'Sosa, Bruno').querySelector('.acciones-de-fila__panel');
+    expect(menu).not.toBeNull();
+    expect(fila(fixture, 'Sosa, Bruno').querySelector('button[principal]')?.textContent).toContain(
+      'Llamar',
+    );
+    expect((menu as HTMLElement).hidden).toBe(true);
+    // El cancelado solo tiene "Ver el turno": no lleva menu.
+    expect(fila(fixture, 'Vega, Carla').querySelector('.acciones-de-fila__panel')).toBeNull();
+  });
+
+  it('los filtros rápidos cuentan por estado de la recepción y se combinan con la búsqueda', async () => {
+    const fixture = await montar();
+    const raiz = fixture.nativeElement as HTMLElement;
+    const opcion = (nombre: string) =>
+      Array.from(raiz.querySelectorAll<HTMLButtonElement>('.filtros-rapidos__opcion')).find((b) =>
+        (b.textContent ?? '').includes(nombre),
+      ) as HTMLButtonElement;
+
+    expect(opcion('Todos').textContent).toContain('4');
+    expect(opcion('Sin llegar').textContent).toContain('2');
+    expect(opcion('En mostrador').textContent).toContain('1');
+    expect(opcion('En espera').textContent).toContain('1');
+
+    opcion('En espera').click();
+    fixture.detectChanges();
+    expect(opcion('En espera').getAttribute('aria-pressed')).toBe('true');
+    expect(textoDe(fixture)).toContain('Sosa, Bruno');
+    expect(textoDe(fixture)).not.toContain('Ramirez, Ana');
+
+    // Combinado con la busqueda: nadie en espera se llama Ramirez.
+    const buscador = raiz.querySelector<HTMLInputElement>(
+      '#recepcion-busqueda',
+    ) as HTMLInputElement;
+    buscador.value = 'Ramirez';
+    buscador.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    expect(textoDe(fixture)).toContain('Ningún turno del día coincide');
+  });
+
   it('muestra los cancelados con su motivo y SIN acciones', async () => {
     const fixture = await montar();
 
@@ -252,8 +304,8 @@ describe('RecepcionDelDiaPage', () => {
     expect(texto).not.toContain('No se pudo completar la operación');
     expect(botonesDeLaFila(fixture, 'Ibarra, Dario')).toEqual([
       'Validar cobertura',
-      'Atender como Particular',
       'Pasar a espera',
+      'Atender como Particular',
       'Anular la llegada',
     ]);
   });
@@ -318,8 +370,8 @@ describe('RecepcionDelDiaPage', () => {
     const fixture = await montar();
 
     expect(botonesDeLaFila(fixture, 'Sosa, Bruno')).toEqual([
-      'Atender como Particular',
       'Llamar',
+      'Atender como Particular',
       'Se retiro sin ser atendido',
       'Anular la llegada',
     ]);
@@ -412,8 +464,8 @@ describe('RecepcionDelDiaPage', () => {
 
     expect(textoDe(fixture)).toContain('paso a la sala de espera');
     expect(botonesDeLaFila(fixture, 'Ibarra, Dario')).toEqual([
-      'Atender como Particular',
       'Llamar',
+      'Atender como Particular',
       'Se retiro sin ser atendido',
       'Anular la llegada',
     ]);
@@ -760,9 +812,10 @@ describe('RecepcionDelDiaPage', () => {
     fixture: ComponentFixture<RecepcionDelDiaPage>,
     nombre: string,
   ): string[] {
-    return Array.from(fila(fixture, nombre).querySelectorAll('button')).map((b) =>
-      (b.textContent ?? '').trim(),
-    );
+    // El boton "⋯" del menu de la fila no es una accion: se lo deja afuera de la lista.
+    return Array.from(fila(fixture, nombre).querySelectorAll('button'))
+      .map((b) => (b.textContent ?? '').trim())
+      .filter((texto) => !texto.startsWith('Más acciones de'));
   }
 
   function botonDeLaFila(

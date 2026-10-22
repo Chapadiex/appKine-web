@@ -42,15 +42,19 @@
     <button type="button" class="navegador-fecha__boton" (click)="irAHoy()">Hoy</button>
   </div>
 
-  @if (puedeAtender()) {
-    <!-- DP-43 (U-24): la atencion sin turno es otra pantalla, la clinica; no pasa por la recepcion. -->
-    <div class="encabezado__acciones">
-      <a class="boton" routerLink="/atencion/sin-turno">
-        <app-icono nombre="agregar" />
-        Atender sin turno
-      </a>
-    </div>
-  }
+  <!--
+    "Nuevo turno" solo navega a la busqueda de horarios de la agenda: la reserva sigue naciendo de
+    un horario libre. DP-43 (U-24): la atencion sin turno es otra pantalla, la clinica.
+  -->
+  <div class="encabezado__acciones">
+    <a class="boton" routerLink="/agenda">
+      <app-icono nombre="agregar" />
+      Nuevo turno
+    </a>
+    @if (puedeAtender()) {
+      <a class="boton boton--secundario" routerLink="/atencion/sin-turno">Atender sin turno</a>
+    }
+  </div>
 </div>
 
 <app-pestanas [pestanas]="pestanas" [etiqueta]="etiquetaDePestanas" />
@@ -144,6 +148,12 @@
       </p>
     </div>
   } @else if (hayTurnos()) {
+    <app-filtros-rapidos
+      etiqueta="Filtrar por estado de la recepción"
+      [opciones]="opcionesDeRecepcion()"
+      [(valor)]="filtroDeRecepcion"
+    />
+
     @if (tabla.total() === 0) {
       <div class="tarjeta__cuerpo">
         <p class="estado estado--vacio">Ningún turno del día coincide con esa búsqueda.</p>
@@ -247,117 +257,88 @@
               </td>
 
               <td class="celda-acciones">
-                <div class="acciones-fila">
-                  @if (puedeOperar()) {
-                    @if (admiteLlegada(turno)) {
-                      <!--
-                      Registrar la llegada es IDEMPOTENTE: el doble click del mostrador no es un
-                      error. El `disabled` evita mandar dos veces el mismo pedido, no castiga.
-                    -->
-                      <button
-                        type="button"
-                        class="boton"
-                        [disabled]="enVuelo() === turno.id"
-                        (click)="marcarLlegada(turno)"
-                      >
-                        Registrar la llegada
-                      </button>
-                    }
-                    @if (admiteValidar(turno)) {
-                      <button
-                        type="button"
-                        class="boton"
-                        [disabled]="enVuelo() === turno.id"
-                        (click)="validar(turno)"
-                      >
-                        Validar cobertura
-                      </button>
-                    }
-                    @if (admiteParticular(turno)) {
-                      <button
-                        type="button"
-                        class="boton boton--secundario"
-                        [disabled]="enVuelo() === turno.id"
-                        (click)="abrirPanel(turno, 'particular')"
-                      >
-                        Atender como Particular
-                      </button>
-                    }
-                    @if (admiteEspera(turno)) {
-                      <button
-                        type="button"
-                        class="boton"
-                        [disabled]="enVuelo() === turno.id"
-                        (click)="pasarAEspera(turno)"
-                      >
-                        Pasar a espera
-                      </button>
-                    }
-                    @if (admiteLlamar(turno)) {
-                      <button
-                        type="button"
-                        class="boton"
-                        [disabled]="enVuelo() === turno.id"
-                        (click)="llamar(turno)"
-                      >
-                        Llamar
-                      </button>
-                    }
-                    @if (admiteRetiro(turno)) {
-                      <!-- U-21: la llegada vale y el turno no cambia; el motivo es obligatorio. -->
-                      <button
-                        type="button"
-                        class="boton boton--secundario"
-                        [disabled]="enVuelo() === turno.id"
-                        (click)="abrirPanel(turno, 'retiro')"
-                      >
-                        Se retiro sin ser atendido
-                      </button>
-                    }
-                    @if (abierta(turno)) {
-                      <!--
-                      Anular NO es idempotente: el segundo intento responde 409, que se explica
-                      arriba y no como "error inesperado".
-                    -->
-                      <button
-                        type="button"
-                        class="boton boton--secundario"
-                        [disabled]="enVuelo() === turno.id"
-                        (click)="abrirPanel(turno, 'anular')"
-                      >
-                        Anular la llegada
-                      </button>
-                    }
-                  }
-
-                  @if (puedeCobrar() && admitePrepago(turno)) {
-                    <!--
-                    El prepago se cobra en el registro de cobro (billing), como anticipo atado al
-                    turno, tambien antes de la llegada. Al volver, esta pantalla relee el dia y la
-                    fila pasa a REGISTRADO.
-                  -->
-                    <a
-                      class="boton boton--secundario"
-                      [routerLink]="rutaDePrepago(turno)"
-                      [queryParams]="queryDePrepago(turno)"
-                    >
-                      Registrar prepago
-                    </a>
-                  }
-
-                  <!--
-                  Cancelar, reprogramar y el historial NO se duplican aca: viven en la pantalla del
-                  ciclo del turno, que es la que sabe manejar la version y los conflictos. Este
-                  enlace le pasa lo que esa pantalla necesita para poder operar.
+                @let acciones = accionesDe(turno);
+                @let conPrepago = puedeCobrar() && admitePrepago(turno);
+                <!--
+                  Con tres o mas acciones (decidido el 22/10/2026) la transicion siguiente de la
+                  recepcion queda a la vista y el resto va detras del menu "⋯". Con menos, botones
+                  sueltos. Registrar la llegada es IDEMPOTENTE: el doble click del mostrador no es
+                  un error; el `disabled` evita mandar dos veces el mismo pedido, no castiga.
                 -->
-                  <a
-                    class="enlace"
-                    [routerLink]="['/agenda', 'turnos', turno.id]"
-                    [queryParams]="queryDelTurno(turno)"
-                  >
-                    Ver el turno
-                  </a>
-                </div>
+                @if (acciones.length > 0 && cantidadDeAcciones(turno) >= 3) {
+                  <app-acciones-de-fila [de]="turno.personaNombre ?? 'el turno'">
+                    <button
+                      principal
+                      type="button"
+                      class="boton"
+                      [disabled]="enVuelo() === turno.id"
+                      (click)="acciones[0].ejecutar(); enfocarMenu($event)"
+                    >
+                      {{ acciones[0].texto }}
+                    </button>
+                    @for (accion of acciones.slice(1); track accion.clave) {
+                      <button
+                        type="button"
+                        [class.accion--peligro]="accion.peligro"
+                        [disabled]="enVuelo() === turno.id"
+                        (click)="accion.ejecutar(); enfocarMenu($event)"
+                      >
+                        {{ accion.texto }}
+                      </button>
+                    }
+                    @if (conPrepago) {
+                      <a [routerLink]="rutaDePrepago(turno)" [queryParams]="queryDePrepago(turno)">
+                        Registrar prepago
+                      </a>
+                    }
+                    <a
+                      [routerLink]="['/agenda', 'turnos', turno.id]"
+                      [queryParams]="queryDelTurno(turno)"
+                    >
+                      Ver el turno
+                    </a>
+                  </app-acciones-de-fila>
+                } @else {
+                  <div class="acciones-fila">
+                    @for (accion of acciones; track accion.clave) {
+                      <button
+                        type="button"
+                        class="boton"
+                        [class.boton--secundario]="accion.secundaria"
+                        [disabled]="enVuelo() === turno.id"
+                        (click)="accion.ejecutar()"
+                      >
+                        {{ accion.texto }}
+                      </button>
+                    }
+                    @if (conPrepago) {
+                      <!--
+                        El prepago se cobra en el registro de cobro (billing), como anticipo atado
+                        al turno, tambien antes de la llegada. Al volver, esta pantalla relee el dia
+                        y la fila pasa a REGISTRADO.
+                      -->
+                      <a
+                        class="boton boton--secundario"
+                        [routerLink]="rutaDePrepago(turno)"
+                        [queryParams]="queryDePrepago(turno)"
+                      >
+                        Registrar prepago
+                      </a>
+                    }
+                    <!--
+                      Cancelar, reprogramar y el historial NO se duplican aca: viven en la pantalla
+                      del ciclo del turno, que es la que sabe manejar la version y los conflictos.
+                      Este enlace le pasa lo que esa pantalla necesita para poder operar.
+                    -->
+                    <a
+                      class="enlace"
+                      [routerLink]="['/agenda', 'turnos', turno.id]"
+                      [queryParams]="queryDelTurno(turno)"
+                    >
+                      Ver el turno
+                    </a>
+                  </div>
+                }
               </td>
             </tr>
           }

@@ -314,25 +314,6 @@
   -->
   <app-filtros [soloAvanzados]="true" [activos]="filtrosAvanzadosActivos()">
     <div class="campo">
-      <label for="filtro-estado-convenio">Mostrar</label>
-      <select
-        id="filtro-estado-convenio"
-        [value]="filtroEstado()"
-        (change)="cambiarFiltroEstado($any($event.target).value)"
-        aria-describedby="filtro-estado-convenio-ayuda"
-      >
-        <option value="ACTIVO">Solo los activos</option>
-        <option value="INACTIVO">Solo los dados de baja</option>
-        <option value="TODOS">Todos</option>
-      </select>
-      <p class="ayuda" id="filtro-estado-convenio-ayuda">
-        Este filtro es por <b>estado administrativo</b>, no por vigencia: "solo los activos" incluye
-        los que todavía no arrancaron y los que ya vencieron. La columna Situación dice cuál es
-        cuál.
-      </p>
-    </div>
-
-    <div class="campo">
       <label for="filtro-fecha-convenio">Vigencia al día</label>
       <input
         id="filtro-fecha-convenio"
@@ -375,6 +356,17 @@
       }
 
       @case ('listo') {
+        <!--
+          Estado ADMINISTRATIVO con conteo, no vigencia: "Activos" incluye los que todavia no
+          arrancaron y los que ya vencieron; la columna Situacion dice cual es cual. El listado se
+          pide entero (estado TODOS) y se filtra en pantalla, asi los numeros son los de la lista.
+        -->
+        <app-filtros-rapidos
+          etiqueta="Filtrar por estado"
+          [opciones]="opcionesDeEstado()"
+          [valor]="filtroRapido()"
+          (valorChange)="elegirEstado($event)"
+        />
         @if (convenios().length === 0) {
           <p class="estado estado--vacio">
             Esta sede no tiene convenios que coincidan con el filtro.
@@ -479,30 +471,40 @@
                         Los aranceles se ven SIEMPRE, tambien los de un convenio dado de baja:
                         conservan sus filas y hay que poder consultarlos para explicar una
                         liquidacion vieja. El enlace no lleva permiso, por lo mismo que el listado.
+
+                        Tres acciones (Aranceles, Editar, Dar de baja): la mas frecuente -Aranceles-
+                        a la vista y el resto en el menu "⋯" (decision del 22/10/2026). Sin permiso,
+                        o con el convenio dado de baja, queda una sola y va suelta.
                       -->
-                      <a
-                        class="accion-texto"
-                        [routerLink]="['/contratacion/convenios', convenio.id, 'aranceles']"
-                      >
-                        Aranceles
-                      </a>
-                      @if (convenio.estado === 'ACTIVO') {
-                        <ng-container *akinePermiso="permisoManage">
-                          <button
-                            type="button"
+                      @if (convenio.estado === 'ACTIVO' && puedeGestionar()) {
+                        <app-acciones-de-fila [de]="convenio.nombre ?? ''">
+                          <a
+                            principal
                             class="accion-texto"
-                            (click)="abrirPanel(convenio, 'editar')"
+                            [routerLink]="['/contratacion/convenios', convenio.id, 'aranceles']"
                           >
-                            Editar
-                          </button>
-                          <button
-                            type="button"
-                            class="accion-texto accion-texto--peligro"
-                            (click)="abrirPanel(convenio, 'baja')"
-                          >
-                            Dar de baja
-                          </button>
-                        </ng-container>
+                            Aranceles
+                          </a>
+                          <ng-container *akinePermiso="permisoManage">
+                            <button type="button" (click)="abrirPanel(convenio, 'editar')">
+                              Editar
+                            </button>
+                            <button
+                              type="button"
+                              class="accion--peligro"
+                              (click)="abrirPanel(convenio, 'baja')"
+                            >
+                              Dar de baja
+                            </button>
+                          </ng-container>
+                        </app-acciones-de-fila>
+                      } @else {
+                        <a
+                          class="accion-texto"
+                          [routerLink]="['/contratacion/convenios', convenio.id, 'aranceles']"
+                        >
+                          Aranceles
+                        </a>
                       }
                     </td>
                   </tr>

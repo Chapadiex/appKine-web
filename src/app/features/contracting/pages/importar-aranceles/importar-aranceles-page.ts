@@ -150,6 +150,16 @@ export class ImportarArancelesPage {
   });
 
   protected readonly enviando = signal<'preview' | 'confirmar' | null>(null);
+
+  /** Pasos del asistente. No agregan comportamiento: nombran los estados que la pantalla ya tenia. */
+  protected readonly pasos = [
+    { numero: 1, etiqueta: 'Cargar' },
+    { numero: 2, etiqueta: 'Vista previa' },
+    { numero: 3, etiqueta: 'Confirmar' },
+  ] as const;
+
+  /** Paso actual: 1 la planilla, 2 el resultado de la vista previa, 3 la confirmacion. */
+  protected readonly paso = signal<1 | 2 | 3>(1);
   protected readonly errorAccion = signal<string | null>(null);
 
   constructor() {
@@ -192,6 +202,19 @@ export class ImportarArancelesPage {
       this.cambiarTexto(contenido.replace(/^\uFEFF/, ''));
     } catch {
       this.errorDeArchivo.set('No pudimos leer el archivo. Proba exportarlo de nuevo como CSV.');
+    }
+  }
+
+  /** Un paso atras. Se puede corregir la planilla; para volver a avanzar hay que pedir el preview. */
+  protected volver(): void {
+    this.errorAccion.set(null);
+    this.paso.update((actual) => (actual === 3 ? 2 : 1));
+  }
+
+  /** De la vista previa a la confirmacion, solo si todas las filas entran y la planilla no cambio. */
+  protected continuar(): void {
+    if (this.paso() === 2 && this.puedeConfirmar()) {
+      this.paso.set(3);
     }
   }
 
@@ -274,12 +297,15 @@ export class ImportarArancelesPage {
             return;
           }
           this.desenlace.set({ tipo: 'preview', texto, filas: respuesta.filas ?? [] });
+          this.paso.set(2);
         },
         error: (error: unknown) => {
           this.enviando.set(null);
           const filas = filasDelRechazo(error);
           if (filas !== null) {
             this.desenlace.set({ tipo: 'rechazo', texto, filas });
+            // El rechazo se explica en la tabla de la vista previa: ahi se corrige.
+            this.paso.set(2);
             return;
           }
           this.errorAccion.set(traducirErrorContracting(error, 'convenio').mensaje);
@@ -304,6 +330,7 @@ export class ImportarArancelesPage {
     this.nombreDeArchivo.set(null);
     this.errorDeArchivo.set(null);
     this.desenlace.set(null);
+    this.paso.set(1);
     this.enviando.set(null);
     this.errorAccion.set(null);
   }

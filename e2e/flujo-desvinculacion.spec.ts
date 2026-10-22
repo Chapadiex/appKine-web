@@ -1,6 +1,7 @@
 import { Locator, Page } from '@playwright/test';
 
 import { expect, ingresar, navegar, respuestaDe, test } from './support/agenda-real';
+import { abrirAcciones } from './support/filtros';
 import { crearPersona, diaDeTrabajo, reservar, verTurno } from './support/sembrado';
 import {
   DIAS_CONFIGURACION,
@@ -80,6 +81,7 @@ test.describe('Desvinculacion de un profesional contra el backend real', () => {
 
     // --- El panel de revocacion consulta la sonda y muestra el turno pendiente ---
     const impacto = respuestaDe(page, 'GET', /\/memberships\/\d+\/desvinculacion-impacto$/);
+    await abrirAcciones(fila);
     await fila.getByRole('button', { name: 'Revocar' }).click();
     const respuesta = await impacto;
     expect(respuesta.status(), await respuesta.text()).toBe(200);

@@ -44,10 +44,14 @@ describe('AccionesDeFila', () => {
     expect(boton.getAttribute('aria-expanded')).toBe('true');
     expect(panel.hidden).toBe(false);
 
-    panel.querySelector('button')!.click();
+    const accion = panel.querySelector<HTMLButtonElement>('button')!;
+    accion.focus();
+    accion.click();
     await fixture.whenStable();
     expect(fixture.componentInstance.bajas).toBe(1);
     expect(panel.hidden).toBe(true);
+    // El foco no queda en la accion escondida: vuelve al boton.
+    expect(document.activeElement).toBe(boton);
   });
 
   it('Escape cierra y devuelve el foco al boton; un clic afuera cierra', async () => {

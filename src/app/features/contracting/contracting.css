@@ -279,3 +279,78 @@
 .accion-texto--peligro {
   color: var(--color-peligro-texto);
 }
+
+/*
+ * Panel lateral de edicion (decision del 22/10/2026): la tabla y, al costado, el formulario. En
+ * pantallas angostas (menos de 64rem) el panel queda debajo de la tabla, en linea.
+ */
+.con-panel-lateral {
+  display: block;
+}
+
+.con-panel-lateral > .panel-lateral {
+  margin-top: var(--esp-6);
+}
+
+@media (min-width: 64rem) {
+  .con-panel-lateral--abierto {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 24rem;
+    gap: var(--esp-6);
+    align-items: start;
+  }
+
+  .con-panel-lateral--abierto > .panel-lateral {
+    position: sticky;
+    top: var(--esp-6);
+    margin-top: 0;
+    max-height: calc(100vh - 2 * var(--esp-6));
+    overflow-y: auto;
+  }
+}
+
+/* Indicador de pasos del asistente de importacion (decision del 22/10/2026). */
+.pasos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp-3) var(--esp-6);
+  margin: 0 0 var(--esp-6);
+  padding: 0;
+  list-style: none;
+}
+
+.paso {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--esp-3);
+  color: var(--color-texto-suave);
+}
+
+.paso__numero {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border: var(--borde-fino) solid var(--color-borde-control);
+  border-radius: 50%;
+  background: var(--color-superficie);
+  font-size: var(--tipo-sm);
+  font-weight: 600;
+}
+
+.paso--actual {
+  color: var(--color-texto-fuerte);
+  font-weight: 600;
+}
+
+.paso--actual .paso__numero {
+  border-color: var(--color-accion-fondo);
+  background: var(--color-accion-fondo);
+  color: var(--color-accion-texto);
+}
+
+.paso--hecho .paso__numero {
+  border-color: var(--color-accion-fondo);
+  color: var(--color-texto-fuerte);
+}

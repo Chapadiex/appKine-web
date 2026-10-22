@@ -38,6 +38,8 @@ import {
 import { instanteEnPalabras } from '../../models/etiquetas-de-atencion';
 import { AtencionGrupalApi } from '../../services/atencion-grupal-api';
 import { DerivarParticipante, ReintentoConMotivo } from './derivar-participante';
+import { AccionesDeFila } from '../../../../shared/components/acciones-de-fila/acciones-de-fila';
+import { PermissionsStore } from '../../../../core/services/permissions.store';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 
 type EstadoCarga =
@@ -119,7 +121,7 @@ const ETIQUETAS_DE_ASISTENCIA: Readonly<Record<string, string>> = {
  */
 @Component({
   selector: 'app-atencion-grupal-page',
-  imports: [Ayuda, RouterLink, FocoAlMontar, PermisoDirective, DerivarParticipante],
+  imports: [Ayuda, RouterLink, FocoAlMontar, PermisoDirective, DerivarParticipante, AccionesDeFila],
   templateUrl: './atencion-grupal-page.html',
   styleUrl: '../../atencion.css',
 })
@@ -136,6 +138,10 @@ export class AtencionGrupalPage {
   protected readonly instante = instanteEnPalabras;
   /** Derivar escribe en la historia: sin `hc:write` no se ofrece (el backend rechazaria igual). */
   protected readonly PERMISO_HC_WRITE = PERMISO_HC_WRITE;
+  private readonly permisos = inject(PermissionsStore);
+
+  /** Derivar a un caso escribe en la historia clinica: sin el permiso la fila tiene menos acciones. */
+  protected readonly puedeEscribirHc = computed(() => this.permisos.tiene(PERMISO_HC_WRITE));
 
   protected readonly estado = signal<EstadoCarga>({ tipo: 'cargando' });
   /** Participante con una operacion en vuelo, `'lote'` para el lote, o `null`. */
@@ -524,6 +530,19 @@ export class AtencionGrupalPage {
     this.revirtiendo.set(null);
     this.faltaMotivoDeReversion.set(false);
     this.enfocarDespues(`#revertir-${derivacion.id}`);
+  }
+
+  /**
+   * Elegir una accion del menu "⋯" lo cierra y esconde el item que tenia el foco: el panel que abre
+   * la accion no tendria a donde devolverlo al cerrarse. Se lleva el foco al boton "⋯" de la fila,
+   * que sigue a la vista, antes de que el panel se monte.
+   */
+  protected enfocarMenu(evento: Event): void {
+    const destino = evento.target instanceof Element ? evento.target : null;
+    destino
+      ?.closest('app-acciones-de-fila')
+      ?.querySelector<HTMLElement>('.acciones-de-fila__boton')
+      ?.focus();
   }
 
   private enfocarDespues(selector: string): void {

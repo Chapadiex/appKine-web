@@ -24,6 +24,10 @@ import { RUTA_CLASES, RUTA_NUEVA_CLASE } from '../../models/rutas-de-clases';
 import { ActivityApi } from '../../services/activity-api';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { Filtros } from '../../../../shared/components/filtros/filtros';
+import {
+  FiltroRapido,
+  FiltrosRapidos,
+} from '../../../../shared/components/filtros-rapidos/filtros-rapidos';
 import { Icono } from '../../../../shared/components/icono/icono';
 import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
 import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
@@ -49,7 +53,16 @@ interface DiaDeClases {
  */
 @Component({
   selector: 'app-clases-de-la-semana-page',
-  imports: [Ayuda, ColumnaOrdenable, Filtros, Icono, Paginacion, RouterLink, PermisoDirective],
+  imports: [
+    Ayuda,
+    ColumnaOrdenable,
+    Filtros,
+    FiltrosRapidos,
+    Icono,
+    Paginacion,
+    RouterLink,
+    PermisoDirective,
+  ],
   templateUrl: './clases-de-la-semana-page.html',
   styleUrl: '../../activity.css',
 })
@@ -102,10 +115,30 @@ export class ClasesDeLaSemanaPage {
 
   protected readonly busqueda = signal('');
 
-  /** Las clases de la semana en una sola lista por hora de inicio, filtradas por la busqueda. */
+  /**
+   * Filtro rapido por estado (decidido el 22/10/2026). La semana llega entera del servidor, asi
+   * que los conteos se calculan aca; se combina con la busqueda.
+   */
+  protected readonly filtroDeEstado = signal<string>('todas');
+
+  protected readonly opcionesDeEstado = computed<readonly FiltroRapido[]>(() => {
+    const todas = this.clases() ?? [];
+    const cuenta = (estado: string) => todas.filter((c) => c.estado === estado).length;
+    return [
+      { valor: 'todas', etiqueta: 'Todas', cantidad: todas.length },
+      { valor: 'PROGRAMADA', etiqueta: 'Programadas', cantidad: cuenta('PROGRAMADA') },
+      { valor: 'EN_CURSO', etiqueta: 'En curso', cantidad: cuenta('EN_CURSO') },
+      { valor: 'REALIZADA', etiqueta: 'Realizadas', cantidad: cuenta('REALIZADA') },
+      { valor: 'CANCELADA', etiqueta: 'Canceladas', cantidad: cuenta('CANCELADA') },
+    ];
+  });
+
+  /** Las clases de la semana en una sola lista por hora de inicio, filtradas por estado y busqueda. */
   private readonly filas = computed<readonly Clase[]>(() => {
     const texto = this.busqueda().trim().toLowerCase();
+    const estado = this.filtroDeEstado();
     return (this.clases() ?? [])
+      .filter((c) => estado === 'todas' || c.estado === estado)
       .filter(
         (c) =>
           texto === '' ||

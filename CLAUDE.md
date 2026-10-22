@@ -3,7 +3,7 @@
 Workflow de trabajo y comportamiento esperado del agente en el frontend de AKINE.
 
 > **Reglas técnicas y de negocio: `AGENT.md`.** Leerlo completo antes de cualquier tarea.
-> Este archivo define *cómo* trabajar, no *qué* construir.
+> Este archivo define _cómo_ trabajar, no _qué_ construir.
 
 ---
 
@@ -20,41 +20,41 @@ Workflow de trabajo y comportamiento esperado del agente en el frontend de AKINE
 
 ### Plugin `superpowers` (v6.3.0)
 
-| Skill | Cuándo se usa |
-|---|---|
-| `superpowers:brainstorming` | **Obligatorio** antes de cualquier trabajo creativo: pantalla nueva, componente, cambio de comportamiento |
-| `superpowers:writing-plans` | Ya hay spec/requisitos y falta el plan, antes de tocar código |
-| `superpowers:executing-plans` | Ejecutar un plan escrito con checkpoints de revisión |
-| `superpowers:test-driven-development` | **Obligatorio** al implementar feature o bugfix — tests primero |
-| `superpowers:systematic-debugging` | **Obligatorio** ante cualquier bug o comportamiento inesperado, antes de proponer un fix |
-| `superpowers:subagent-driven-development` | Tareas independientes dentro de la misma sesión |
-| `superpowers:dispatching-parallel-agents` | 2+ tareas sin estado compartido |
-| `superpowers:using-git-worktrees` | Trabajo que necesita aislamiento del workspace principal |
-| `superpowers:requesting-code-review` | Al completar tareas o antes de mergear |
-| `superpowers:receiving-code-review` | Al recibir feedback de un PR |
-| `superpowers:finishing-a-development-branch` | Implementación completa, tests en verde |
-| `superpowers:verification-before-completion` | **Obligatorio** antes de decir "listo" o "funciona" — evidencia antes de afirmar |
+| Skill                                        | Cuándo se usa                                                                                             |
+| -------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `superpowers:brainstorming`                  | **Obligatorio** antes de cualquier trabajo creativo: pantalla nueva, componente, cambio de comportamiento |
+| `superpowers:writing-plans`                  | Ya hay spec/requisitos y falta el plan, antes de tocar código                                             |
+| `superpowers:executing-plans`                | Ejecutar un plan escrito con checkpoints de revisión                                                      |
+| `superpowers:test-driven-development`        | **Obligatorio** al implementar feature o bugfix — tests primero                                           |
+| `superpowers:systematic-debugging`           | **Obligatorio** ante cualquier bug o comportamiento inesperado, antes de proponer un fix                  |
+| `superpowers:subagent-driven-development`    | Tareas independientes dentro de la misma sesión                                                           |
+| `superpowers:dispatching-parallel-agents`    | 2+ tareas sin estado compartido                                                                           |
+| `superpowers:using-git-worktrees`            | Trabajo que necesita aislamiento del workspace principal                                                  |
+| `superpowers:requesting-code-review`         | Al completar tareas o antes de mergear                                                                    |
+| `superpowers:receiving-code-review`          | Al recibir feedback de un PR                                                                              |
+| `superpowers:finishing-a-development-branch` | Implementación completa, tests en verde                                                                   |
+| `superpowers:verification-before-completion` | **Obligatorio** antes de decir "listo" o "funciona" — evidencia antes de afirmar                          |
 
 ### Skills globales (`~/.claude/skills/`)
 
-| Skill | Trigger |
-|---|---|
-| `engram-sdd-flow` | Cambios no triviales — ciclo explore → propose → apply → verify → archive |
-| `debugging-code` | Debugger interactivo, inspección de estado en runtime |
-| `playwright-skill` | Tests E2E y de API con Playwright |
+| Skill              | Trigger                                                                   |
+| ------------------ | ------------------------------------------------------------------------- |
+| `engram-sdd-flow`  | Cambios no triviales — ciclo explore → propose → apply → verify → archive |
+| `debugging-code`   | Debugger interactivo, inspección de estado en runtime                     |
+| `playwright-skill` | Tests E2E y de API con Playwright                                         |
 
 ### Skills built-in relevantes al frontend
 
-| Skill / comando | Uso |
-|---|---|
-| `/caveman` | Modo ahorro de tokens (~75 %) |
-| `/simplify` | **Obligatorio** después de implementar: reuso, simplificación, eficiencia |
-| `/code-review` | Review de correctitud sobre el diff, un PR o una rama |
-| `/security-review` | Review de seguridad de los cambios pendientes |
-| `/run` | Levantar la app y verificar un cambio en la app real |
-| `dataviz` | **Antes de escribir cualquier gráfico o dashboard** (M23 Reportes) |
-| `artifact-design` | Antes de publicar cualquier artifact de diseño |
-| `design` | Mockups y wireframes multi-artboard antes de implementar una pantalla |
+| Skill / comando    | Uso                                                                       |
+| ------------------ | ------------------------------------------------------------------------- |
+| `/caveman`         | Modo ahorro de tokens (~75 %)                                             |
+| `/simplify`        | **Obligatorio** después de implementar: reuso, simplificación, eficiencia |
+| `/code-review`     | Review de correctitud sobre el diff, un PR o una rama                     |
+| `/security-review` | Review de seguridad de los cambios pendientes                             |
+| `/run`             | Levantar la app y verificar un cambio en la app real                      |
+| `dataviz`          | **Antes de escribir cualquier gráfico o dashboard** (M23 Reportes)        |
+| `artifact-design`  | Antes de publicar cualquier artifact de diseño                            |
+| `design`           | Mockups y wireframes multi-artboard antes de implementar una pantalla     |
 
 ### Plugin `playwright` (MCP)
 
@@ -80,20 +80,20 @@ brainstorming → explore → propose → spec → design → DESIGN CHALLENGE
               → verification-before-completion → archive
 ```
 
-| Fase | Qué produce | Herramienta |
-|---|---|---|
-| brainstorming | Intent y requisitos explorados antes de comprometerse | `superpowers:brainstorming` — **obligatorio** |
-| explore | Análisis del código, del RF/CA aplicable y del contrato disponible | `engram-sdd-flow` |
-| propose | Propuesta con intent, scope y enfoque | `engram-sdd-flow` |
-| spec | Requisitos y escenarios trazados a `RF-MXX-NNN` / `CA-MXX-NNN-YY` | `engram-sdd-flow` |
-| design | Estructura de componentes, estado, rutas, contrato consumido | `engram-sdd-flow` + `AGENT.md` |
-| **design challenge** | Revisión adversarial del diseño — ver abajo | **obligatorio**, paso manual |
-| tasks | Checklist implementable y ordenada | `superpowers:writing-plans` |
-| apply | Código real, tests primero | `superpowers:test-driven-development` |
-| simplify | Reuso, simplificación, eficiencia, deuda | `/simplify` — **obligatorio** |
-| verify | Tests + E2E + verificación en la app real | `/run`, Playwright, `/code-review` |
-| verification-before-completion | Evidencia de completitud antes de cerrar | `superpowers:verification-before-completion` — **obligatorio** |
-| archive | Cierre y persistencia del estado | `mem_save` + `mem_session_summary` |
+| Fase                           | Qué produce                                                        | Herramienta                                                    |
+| ------------------------------ | ------------------------------------------------------------------ | -------------------------------------------------------------- |
+| brainstorming                  | Intent y requisitos explorados antes de comprometerse              | `superpowers:brainstorming` — **obligatorio**                  |
+| explore                        | Análisis del código, del RF/CA aplicable y del contrato disponible | `engram-sdd-flow`                                              |
+| propose                        | Propuesta con intent, scope y enfoque                              | `engram-sdd-flow`                                              |
+| spec                           | Requisitos y escenarios trazados a `RF-MXX-NNN` / `CA-MXX-NNN-YY`  | `engram-sdd-flow`                                              |
+| design                         | Estructura de componentes, estado, rutas, contrato consumido       | `engram-sdd-flow` + `AGENT.md`                                 |
+| **design challenge**           | Revisión adversarial del diseño — ver abajo                        | **obligatorio**, paso manual                                   |
+| tasks                          | Checklist implementable y ordenada                                 | `superpowers:writing-plans`                                    |
+| apply                          | Código real, tests primero                                         | `superpowers:test-driven-development`                          |
+| simplify                       | Reuso, simplificación, eficiencia, deuda                           | `/simplify` — **obligatorio**                                  |
+| verify                         | Tests + E2E + verificación en la app real                          | `/run`, Playwright, `/code-review`                             |
+| verification-before-completion | Evidencia de completitud antes de cerrar                           | `superpowers:verification-before-completion` — **obligatorio** |
+| archive                        | Cierre y persistencia del estado                                   | `mem_save` + `mem_session_summary`                             |
 
 ### Design challenge — paso obligatorio al cerrar `design`
 
@@ -119,6 +119,7 @@ Si alguna respuesta es insatisfactoria, se vuelve a `design`. No se avanza a `ta
 ### Flujos por tipo de tarea
 
 **Pantalla o feature nueva**
+
 ```
 /caveman → brainstorming → (design skill para mockup si aplica)
 → engram-sdd-flow (explore/propose/spec/design) → DESIGN CHALLENGE
@@ -127,11 +128,13 @@ Si alguna respuesta es insatisfactoria, se vuelve a `design`. No se avanza a `ta
 ```
 
 **Fix o cambio pequeño**
+
 ```
 /caveman → systematic-debugging → test que reproduce → fix → /simplify → tests → mem_save
 ```
 
 **Refactor o cambio complejo**
+
 ```
 /caveman → brainstorming → using-git-worktrees → writing-plans → DESIGN CHALLENGE
 → executing-plans → /simplify → tests + E2E → /code-review
@@ -139,14 +142,17 @@ Si alguna respuesta es insatisfactoria, se vuelve a `design`. No se avanza a `ta
 ```
 
 **Regeneración del cliente API**
+
 ```
 backend publica akine-api.yaml vX.Y.Z → regenerar src/app/api/generated/
 → compilar (los breaking changes aparecen acá) → ajustar servicios de feature
 → tests + contract/E2E → actualizar la versión declarada del contrato
 ```
+
 Nunca editar el cliente generado a mano. Nunca asumir commit atómico con el backend.
 
 **Reportes y dashboards (M23)**
+
 ```
 /caveman → dataviz (ANTES de escribir la primera línea de gráfico) → brainstorming → ...
 ```
@@ -174,8 +180,8 @@ Inmediatamente después de: decisión de arquitectura o UX, convención establec
 Angular 21 / zoneless, patrón de naming o estructura, preferencia del usuario.
 
 Auto-check después de cada tarea:
-*"¿Tomé una decisión, fijé un bug, aprendí algo no obvio o establecí una convención?
-Si sí → `mem_save` ahora."*
+_"¿Tomé una decisión, fijé un bug, aprendí algo no obvio o establecí una convención?
+Si sí → `mem_save` ahora."_
 
 Tipos: `bugfix`, `decision`, `architecture`, `discovery`, `pattern`, `config`, `preference`.
 
@@ -213,6 +219,7 @@ Es personal de cada máquina y está **gitignored**.
 Template: `~/.claude/templates/qa-config-template.md`.
 
 Reglas innegociables del QA:
+
 - **Mismo branch que el backend.** Si no, se prueban dos versiones distintas.
 - Validación de persistencia **contra la DB directamente** después de cada write/update/delete.
   Un `200` en la Network tab no prueba que el dato quedó bien guardado.
@@ -223,6 +230,41 @@ Reglas innegociables del QA:
   al terminar, haya pasado o fallado el QA.
 
 ## 7. Estado actual
+
+### Estado al 22/10/2026, sobre `4fabeff`
+
+> Esta subsección **supersede** a la del 19/10 en tests, E2E, PR y pendiente. Medido el 22/10 sobre
+> `origin/main` y por la API de GitHub.
+
+**Refactor UX/UI.** Entró **#125** (merge `4fabeff`, 22/10, nueve checks en verde): el shell nuevo
+(barra lateral agrupada en acordeón, barra superior, cerrar sesión) y el diseño del canvas _AKINE ·
+Pantallas_ en las ~88 pantallas, sólo como presentación. Reglas que fijó el usuario y que toda
+pantalla nueva sigue (`docs/ux/00-plan-refactor-ux-ui.md` §3.2 y §3.4):
+
+- Las explicaciones van detrás de un "?" (`app-ayuda`); quedan visibles datos, estado, advertencias
+  irreversibles e instrucciones de un paso obligatorio. Un panel de ayuda nunca tiene acciones.
+- Un buscador único + un embudo de filtros avanzados (`app-filtros`); tablas ordenables y
+  paginadas con `tablaLocal` donde la lista llega entera; el alta en la fila del título.
+- Pestañas (`app-pestanas`) entre pantallas hermanas y migas (`app-migas`) en los detalles.
+
+|                | Valor                                                                                                                                                                                            |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `main`         | **482 commits**, último merge `4fabeff` (#125)                                                                                                                                                   |
+| Tests          | **195 archivos / 2.059 tests, 0 fallos** (local, rama de #126); cobertura st 90,26 % · rama 81,53 % · fn 83,30 % · ln 91,19 %                                                                    |
+| E2E            | **150 tests** en el job contra el backend real (CI de #125). `flujo-sedes`, `flujo-suscripcion` y un test de `cuenta-ciclo-real` sólo corren en el CI: necesitan el admin de plataforma sembrado |
+| Bundle inicial | **418,6 kB** contra un límite de 420 kB: fuentes `@fontsource/*/latin-*.css` y estilos de acceso en `shared/styles/acceso.css`, fuera del CSS global                                             |
+| Contraste      | claro, oscuro y móvil 375 px en verde. El arnés no exige contorno a un botón sin borde ni relleno en reposo (se mide su texto, WCAG 1.4.11)                                                      |
+
+**Trampas que costaron el 21–22/10:** el lock pierde `@emnapi/core` y `@emnapi/runtime` cuando se
+instala en Windows (copiarlos del lock de `main`); un script de tildes convirtió `class="boton"` en
+`class="botón"` y ni `tsc` ni `ngc` lo ven (buscar atributos de código con tilde después de toda
+pasada de texto); el fondo `#F5F6F8` bajó el borde de control a 2,84:1 (`--color-borde-control`
+pasó a `#808a99`); `--color-acento-claro` en oscuro era un azul brillante usado como tinte de fondo.
+
+**Abiertos:** **#126** (migas y cabecera de la persona en `shared` y `core`), la rama
+`akine-web-ux-canvas-decisiones` (menú "⋯", paneles de auditoría y aranceles, asistente de
+importación, filtros rápidos, medidor de contraseña, "Nuevo turno") y los pedidos al backend de
+**DP-45** (`appKine-api` #174). Detalle en `docs/ux/canvas-pendientes.md`.
 
 ### Estado al 19/10/2026, sobre `05d81c4`
 
@@ -238,30 +280,30 @@ mergeados salvo los Dependabot #88 y #115, cerrados sin merge) y el **#4** (hist
 #57** y **#84** (Angular 22 y Vitest 5, DP-41: después del RC), **#118** (imagen `node`) y **#119**
 (grupo `npm-menores`).
 
-| | Valor |
-|---|---|
+|                  | Valor                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Cliente generado | **0.143.0** desde #121 (`0209715`, mergeado el 19/10 a la tarde), igual que `appKine-api` `main` (api #172). En `05d81c4` era 0.134.0, **8 minors atrás** del contrato 0.142.0; #121 trajo las pantallas de 0.137.0 (catálogo global de financiadores, en plataforma y en el centro), 0.140.0 (`RETIRADO` en recepción y feriados en series) y 0.142.0 (caso por oferta, atención sin turno, reemplazo de profesional y ventana de enmienda), con E2E contra el backend real de las cuatro |
-| Tests | **184 archivos de spec / 1.977 tests, 0 fallos**, leídos del log de "Lint, build y tests" de `05d81c4` (el 14/10 eran 142 / 1.523). Cobertura del mismo log: st **90,43 %** · rama **81,86 %** · fn **85,79 %** · ln **91,44 %**, sobre el piso de 80 % en las cuatro |
-| E2E | **68 specs** en `e2e/` (`ls e2e/*.spec.ts`; el 14/10 eran 34). El job "E2E Playwright contra el backend real" pasó en `05d81c4`. No se corrieron localmente para este documento |
+| Tests            | **184 archivos de spec / 1.977 tests, 0 fallos**, leídos del log de "Lint, build y tests" de `05d81c4` (el 14/10 eran 142 / 1.523). Cobertura del mismo log: st **90,43 %** · rama **81,86 %** · fn **85,79 %** · ln **91,44 %**, sobre el piso de 80 % en las cuatro                                                                                                                                                                                                                      |
+| E2E              | **68 specs** en `e2e/` (`ls e2e/*.spec.ts`; el 14/10 eran 34). El job "E2E Playwright contra el backend real" pasó en `05d81c4`. No se corrieron localmente para este documento                                                                                                                                                                                                                                                                                                            |
 
 Lo que entró desde el 14/10, con su PR:
 
-| Qué | PR |
-|---|---|
-| Historia clínica en pantalla: timeline, casos y plan (D-a, D-b, D-c, D-e) | #4, #83 |
-| Atención clínica: mediciones, tratamientos, caso, enmiendas y versiones (D-d, D-g); ajustes por api #127 | #80, #90 |
-| F9 en pantalla: asistencia, clases e inscripciones, nombres y box, productos y pases, abonos y vencimiento, renovación y avisos | #79, #81, #91, #92, #98, #103 |
-| Atención clínica grupal (08.05) y derivación a un participante (08.04) | #104, #108 |
-| Reportes de clases y de pases y abonos (cliente 0.121.0); E2E del circuito de F9 | #107, #106 |
-| Hardening de las pantallas de F9: a11y, guards, CSP con nonce | #109 |
-| Oferta `POR_CLASE` con la deuda de la clase en la asistencia (U-39) y aviso de lotes saturados (503, U-49 c) | #112, #113 |
-| Reparos documentales, débito parcial y permisos de lectura (DP-36, DP-37) | #116 |
-| Honorarios por clase (DP-38), rentabilidad por servicio (DP-39) y renovación apagada (DP-40) | #117 |
-| Cliente regenerado en 0.101.0, 0.104.0, 0.107.0, 0.109.0, 0.111.0, 0.115.0, 0.118.0, 0.123.0 y 0.130.0 | #85, #89, #95, #96, #101, #102, #105, #110, #116 |
-| Fechas de billing y `datetime-local` en la zona de la sede; CSV de reportes con el nombre del servidor | #86 |
-| E2E contra el backend real: inventario no clínico, pantallas de más riesgo, huecos del inventario, carrera pago vs anulación de egreso | #82, #94, #97, #110, #111 |
-| Estabilidad del E2E (login de plataforma con 429) y chequeo de tipos y lint de `e2e/` | #93, #100 |
-| Seguridad y dependencias: CodeQL (U-06, #77), `overrides` de `basic-ftp@^6` (U-05, #114), Dependabot ignora las mayores de Vitest (#87) | #77, #114, #87 |
+| Qué                                                                                                                                     | PR                                               |
+| --------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
+| Historia clínica en pantalla: timeline, casos y plan (D-a, D-b, D-c, D-e)                                                               | #4, #83                                          |
+| Atención clínica: mediciones, tratamientos, caso, enmiendas y versiones (D-d, D-g); ajustes por api #127                                | #80, #90                                         |
+| F9 en pantalla: asistencia, clases e inscripciones, nombres y box, productos y pases, abonos y vencimiento, renovación y avisos         | #79, #81, #91, #92, #98, #103                    |
+| Atención clínica grupal (08.05) y derivación a un participante (08.04)                                                                  | #104, #108                                       |
+| Reportes de clases y de pases y abonos (cliente 0.121.0); E2E del circuito de F9                                                        | #107, #106                                       |
+| Hardening de las pantallas de F9: a11y, guards, CSP con nonce                                                                           | #109                                             |
+| Oferta `POR_CLASE` con la deuda de la clase en la asistencia (U-39) y aviso de lotes saturados (503, U-49 c)                            | #112, #113                                       |
+| Reparos documentales, débito parcial y permisos de lectura (DP-36, DP-37)                                                               | #116                                             |
+| Honorarios por clase (DP-38), rentabilidad por servicio (DP-39) y renovación apagada (DP-40)                                            | #117                                             |
+| Cliente regenerado en 0.101.0, 0.104.0, 0.107.0, 0.109.0, 0.111.0, 0.115.0, 0.118.0, 0.123.0 y 0.130.0                                  | #85, #89, #95, #96, #101, #102, #105, #110, #116 |
+| Fechas de billing y `datetime-local` en la zona de la sede; CSV de reportes con el nombre del servidor                                  | #86                                              |
+| E2E contra el backend real: inventario no clínico, pantallas de más riesgo, huecos del inventario, carrera pago vs anulación de egreso  | #82, #94, #97, #110, #111                        |
+| Estabilidad del E2E (login de plataforma con 429) y chequeo de tipos y lint de `e2e/`                                                   | #93, #100                                        |
+| Seguridad y dependencias: CodeQL (U-06, #77), `overrides` de `basic-ftp@^6` (U-05, #114), Dependabot ignora las mayores de Vitest (#87) | #77, #114, #87                                   |
 
 #### Pendiente
 
@@ -286,25 +328,25 @@ Lo que entró desde el 14/10, con su PR:
 obligatorios más Sonar) están en verde. Siguen abiertos **#4** (historia clínica en pantalla) y Dependabot **#53, #55, #56, #57**
 (Angular 22) y **#70** (`@vitest/coverage-v8` 5).
 
-| | Valor |
-|---|---|
-| Cliente generado | **0.99.0** (`contractVersion` en los dos `environment`), igual que `appKine-api` `main`. Regenerado contra 0.85.0 (#61), 0.89.0 (#71), 0.98.0 (#73) y 0.99.0 (#76, `TurnoDelDia.coberturaId`) |
-| Tests | **142 archivos de spec / 1.523 tests, 0 fallos**, medidos con `npm ci && npm run test:ci` sobre `dcfe064` el 14/10. Cobertura st **91,11 %** · rama **82,76 %** · fn **87,12 %** · ln **92,10 %**, sobre el piso de 80 % en las cuatro; el chequeo de cableado del contraste pasa |
-| E2E | **34 specs** en `e2e/` (`ls e2e/*.spec.ts`). El job "E2E Playwright contra el backend real" pasó en `dcfe064`. No se corrieron localmente para este documento |
+|                  | Valor                                                                                                                                                                                                                                                                             |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Cliente generado | **0.99.0** (`contractVersion` en los dos `environment`), igual que `appKine-api` `main`. Regenerado contra 0.85.0 (#61), 0.89.0 (#71), 0.98.0 (#73) y 0.99.0 (#76, `TurnoDelDia.coberturaId`)                                                                                     |
+| Tests            | **142 archivos de spec / 1.523 tests, 0 fallos**, medidos con `npm ci && npm run test:ci` sobre `dcfe064` el 14/10. Cobertura st **91,11 %** · rama **82,76 %** · fn **87,12 %** · ln **92,10 %**, sobre el piso de 80 % en las cuatro; el chequeo de cableado del contraste pasa |
+| E2E              | **34 specs** en `e2e/` (`ls e2e/*.spec.ts`). El job "E2E Playwright contra el backend real" pasó en `dcfe064`. No se corrieron localmente para este documento                                                                                                                     |
 
 Lo que entró desde el 11/10, con su PR:
 
-| Qué | PR |
-|---|---|
-| Fechas por defecto con "hoy" en la zona de la sede | #60 |
-| 503 `service-unavailable` y 16 `problemType` sin pantalla | #62 |
-| F-5: egresos y pagos de la sede (M22) | #63 |
-| ESLint prohíbe imports entre features (ADR-0004); servicios usa el rol de plataforma | #65 |
-| Tablas sin sombra bajo el texto y pantallas a 375 px sin desborde | #66 |
-| LCP móvil con margen: Brotli estático, precarga y resumen del 360 en paralelo | #69 |
-| Cliente 0.98.0: egresos con `version` y 409 `concurrent-modification`, 409 `idempotency-key-conflict` del alta, cobros anulados en el listado | #73 |
-| **Pantallas del contrato 0.98.0**: botón *Exportar CSV* del lote de presentación, cobertura elegida al reservar, marca "N consumos a revisar" por autorización y datos administrativos de la HC en el Paciente 360 (sin contenido clínico) | #74 |
-| **E2E contra el backend real** de esas cuatro pantallas: `flujo-presentacion-csv`, `flujo-cobertura-al-reservar`, `flujo-consumos-a-revisar`, `flujo-historia-administrativa` | #75 |
+| Qué                                                                                                                                                                                                                                        | PR  |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --- |
+| Fechas por defecto con "hoy" en la zona de la sede                                                                                                                                                                                         | #60 |
+| 503 `service-unavailable` y 16 `problemType` sin pantalla                                                                                                                                                                                  | #62 |
+| F-5: egresos y pagos de la sede (M22)                                                                                                                                                                                                      | #63 |
+| ESLint prohíbe imports entre features (ADR-0004); servicios usa el rol de plataforma                                                                                                                                                       | #65 |
+| Tablas sin sombra bajo el texto y pantallas a 375 px sin desborde                                                                                                                                                                          | #66 |
+| LCP móvil con margen: Brotli estático, precarga y resumen del 360 en paralelo                                                                                                                                                              | #69 |
+| Cliente 0.98.0: egresos con `version` y 409 `concurrent-modification`, 409 `idempotency-key-conflict` del alta, cobros anulados en el listado                                                                                              | #73 |
+| **Pantallas del contrato 0.98.0**: botón _Exportar CSV_ del lote de presentación, cobertura elegida al reservar, marca "N consumos a revisar" por autorización y datos administrativos de la HC en el Paciente 360 (sin contenido clínico) | #74 |
+| **E2E contra el backend real** de esas cuatro pantallas: `flujo-presentacion-csv`, `flujo-cobertura-al-reservar`, `flujo-consumos-a-revisar`, `flujo-historia-administrativa`                                                              | #75 |
 
 Y los E2E de #64 (pantallas del 08 al 11/10), #67 (feriado de hoy en el sembrado), #68
 (configuración y padrón) y #72 (sedes y desvinculación con turnos, cierre de F2). El E2E de #75
@@ -330,29 +372,29 @@ pantalla: D-a, D-b, D-c), sin tocar desde el 06/10. `main` está **protegida** e
 cinco checks obligatorios —lint/build/tests, cliente alineado, contraste, imagen Docker y E2E
 contra el backend real— y es la rama por defecto (consultado por la API el 11/10).
 
-| | Valor |
-|---|---|
-| Cliente generado | **0.84.0** (`contractVersion` en los dos `environment`), igual que `openapi/akine-api.yaml` de `appKine-api` `main`. Se regeneró cinco veces: 0.71.0 (#27), 0.72.0 (#31), 0.80.0 (#38), 0.82.0 (#45) y 0.84.0 dentro de #48. `npm run api:check`: alineado, **131 `problemType` usados**, todos declarados en un catálogo de 195 |
-| Tests | **133 archivos de spec / 1.423 tests, 0 fallos**, medidos con `npm ci && npm run test:ci` sobre `680b508` el 11/10. Cobertura st **91,03 %** · rama **82,49 %** · fn **87,44 %** · ln **92,06 %**, sobre el piso de 80 % en las cuatro; el chequeo de cableado del contraste pasa. `npm run lint` y `npm run format:check` limpios, medidos el mismo día |
-| E2E | **16 specs** en `e2e/`. **14 corren contra el backend real** en el job `e2e` del CI desde G-9 (#30): proyecto `agenda` (`agenda-buscador`, `agenda-reserva`, `agenda-ciclo`, `agenda-recepcion` y `flujo-caja`, `flujo-presentaciones`, `flujo-series`, `flujo-prepago`, con el sembrado por API de `agenda-setup`) y proyecto `chromium` (`auth-flujo`, `contexto-sin-fuga`, `errores-sin-internals`, `smoke`, `cuenta-ciclo-real`, `cobertura-autorizacion`). Los **2 de contraste** corren sin backend en su job. Desde #43 el navegador corre en una zona cuyo día es **distinto** del de la sede, a propósito. No se corrieron localmente para este documento: el número sale del CI de los PR |
-| Dependencias | G-6 (#41): Dependabot semanal, `npm audit --omit=dev --audit-level=high` en el job `build` (0 vulnerabilidades de producción) y job `sonar` que se saltea sin `SONAR_TOKEN`/`SONAR_HOST_URL`. Angular 21.2.25. Abierta: la cadena `openapi-generator-cli → … → basic-ftp ≤ 6.2.0` (5 altas, sólo en `api:generate`, nunca en el bundle). Ver `docs/calidad.md` |
+|                  | Valor                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Cliente generado | **0.84.0** (`contractVersion` en los dos `environment`), igual que `openapi/akine-api.yaml` de `appKine-api` `main`. Se regeneró cinco veces: 0.71.0 (#27), 0.72.0 (#31), 0.80.0 (#38), 0.82.0 (#45) y 0.84.0 dentro de #48. `npm run api:check`: alineado, **131 `problemType` usados**, todos declarados en un catálogo de 195                                                                                                                                                                                                                                                                                                                                                                    |
+| Tests            | **133 archivos de spec / 1.423 tests, 0 fallos**, medidos con `npm ci && npm run test:ci` sobre `680b508` el 11/10. Cobertura st **91,03 %** · rama **82,49 %** · fn **87,44 %** · ln **92,06 %**, sobre el piso de 80 % en las cuatro; el chequeo de cableado del contraste pasa. `npm run lint` y `npm run format:check` limpios, medidos el mismo día                                                                                                                                                                                                                                                                                                                                            |
+| E2E              | **16 specs** en `e2e/`. **14 corren contra el backend real** en el job `e2e` del CI desde G-9 (#30): proyecto `agenda` (`agenda-buscador`, `agenda-reserva`, `agenda-ciclo`, `agenda-recepcion` y `flujo-caja`, `flujo-presentaciones`, `flujo-series`, `flujo-prepago`, con el sembrado por API de `agenda-setup`) y proyecto `chromium` (`auth-flujo`, `contexto-sin-fuga`, `errores-sin-internals`, `smoke`, `cuenta-ciclo-real`, `cobertura-autorizacion`). Los **2 de contraste** corren sin backend en su job. Desde #43 el navegador corre en una zona cuyo día es **distinto** del de la sede, a propósito. No se corrieron localmente para este documento: el número sale del CI de los PR |
+| Dependencias     | G-6 (#41): Dependabot semanal, `npm audit --omit=dev --audit-level=high` en el job `build` (0 vulnerabilidades de producción) y job `sonar` que se saltea sin `SONAR_TOKEN`/`SONAR_HOST_URL`. Angular 21.2.25. Abierta: la cadena `openapi-generator-cli → … → basic-ftp ≤ 6.2.0` (5 altas, sólo en `api:generate`, nunca en el bundle). Ver `docs/calidad.md`                                                                                                                                                                                                                                                                                                                                      |
 
 Lo que entró en pantalla del 08/10 al 11/10, con su PR:
 
-| Paquete | Qué | PR |
-|---|---|---|
-| G-7 | Anillo de foco global, contorno de controles 3:1 (WCAG 1.4.11), foco que vuelve al cerrar paneles y gate `contraste-no-textual` (34/34 en `a11y:contraste`) | #24 |
-| B-7 | Importación masiva de aranceles de un convenio desde CSV o planilla pegada, con vista previa y confirmación todo o nada | #28 |
-| A-11 | Impacto previo (cuenta exacta) al editar o dar de baja disponibilidad y excepciones; coberturas del 360 por campos | #29 |
-| A-9 · A-3 | Prácticas de una oferta `/servicios/ofertas/:ofertaId/practicas`, y reintento de notificaciones (reemplazado por #46) | #32 |
-| F-3 | Anulación, reintegro de saldo a favor e imputación posterior de cobros | #33 |
-| E-3 | Reprogramar una serie con alcance y previsualización; `components/selector-de-horario` compartido | #34 |
-| B-4 · A-8b | Historial de cada autorización y situación de la orden; aviso de turnos que quedan fuera del horario de la sede | #39 |
-| DP-21 · DP-17 · DP-22 | Versión vieja = `concurrent-modification` en todos los features; `oferta-sin-precio` al cerrar con enlace a los precios; sección Pacientes y rutas de `person` detrás de `paciente:read` | #40 |
-| F-4 | Concepto, convenio y alerta DP-11 de cada deuda en la cuenta corriente | #42 |
-| — | La agenda, la recepción y el ciclo del turno toman "hoy" en la zona de la sede (`hoyEnZona`) | #43 |
-| G-5 | Permisos adicionales: el selector ofrece sólo lo que `permisos-otorgables` admite para el rol, marca los grants "No vigente con el rol actual" y traduce `permiso-no-otorgable-al-rol` | #44, #48 |
-| A-3 | Listado de notificaciones fallidas `/organizacion/colaboradores/notificaciones` con reintento por fila | #46 |
+| Paquete               | Qué                                                                                                                                                                                      | PR       |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
+| G-7                   | Anillo de foco global, contorno de controles 3:1 (WCAG 1.4.11), foco que vuelve al cerrar paneles y gate `contraste-no-textual` (34/34 en `a11y:contraste`)                              | #24      |
+| B-7                   | Importación masiva de aranceles de un convenio desde CSV o planilla pegada, con vista previa y confirmación todo o nada                                                                  | #28      |
+| A-11                  | Impacto previo (cuenta exacta) al editar o dar de baja disponibilidad y excepciones; coberturas del 360 por campos                                                                       | #29      |
+| A-9 · A-3             | Prácticas de una oferta `/servicios/ofertas/:ofertaId/practicas`, y reintento de notificaciones (reemplazado por #46)                                                                    | #32      |
+| F-3                   | Anulación, reintegro de saldo a favor e imputación posterior de cobros                                                                                                                   | #33      |
+| E-3                   | Reprogramar una serie con alcance y previsualización; `components/selector-de-horario` compartido                                                                                        | #34      |
+| B-4 · A-8b            | Historial de cada autorización y situación de la orden; aviso de turnos que quedan fuera del horario de la sede                                                                          | #39      |
+| DP-21 · DP-17 · DP-22 | Versión vieja = `concurrent-modification` en todos los features; `oferta-sin-precio` al cerrar con enlace a los precios; sección Pacientes y rutas de `person` detrás de `paciente:read` | #40      |
+| F-4                   | Concepto, convenio y alerta DP-11 de cada deuda en la cuenta corriente                                                                                                                   | #42      |
+| —                     | La agenda, la recepción y el ciclo del turno toman "hoy" en la zona de la sede (`hoyEnZona`)                                                                                             | #43      |
+| G-5                   | Permisos adicionales: el selector ofrece sólo lo que `permisos-otorgables` admite para el rol, marca los grants "No vigente con el rol actual" y traduce `permiso-no-otorgable-al-rol`   | #44, #48 |
+| A-3                   | Listado de notificaciones fallidas `/organizacion/colaboradores/notificaciones` con reintento por fila                                                                                   | #46      |
 
 Y los E2E contra el backend real: E-2 (#26, agenda, ciclo y recepción), A-6 y B-6 (#36, cuenta
 y cobertura → autorización → vencimiento), las verticales de caja, cobro, presentaciones, series
@@ -361,13 +403,13 @@ auditoría legible desde otro contexto, cuando `appKine-api` #70 lo corrigió.
 
 #### Los defectos reales del frontend desde el 07/10
 
-| # | Qué pasaba | PR |
-|---|---|---|
-| 1 | La recepción del día quedaba **en blanco** al entrar desde la agenda: sin `?fecha=`, `withComponentInputBinding` pone el input en `undefined` y el cliente generado lanzaba antes de salir a la red | #26 |
-| 2 | El buscador de agenda mostraba la **ventana vieja**: con dos consultas en vuelo ganaba la que llegaba última | #26 |
-| 3 | El ciclo del turno tenía un **409 sin salida**: la respuesta de la última transición le ganaba a cualquier relectura | #26 |
-| 4 | El **skip link navegaba a la raíz** desde cualquier pantalla que no fuera `/` (`<base href="/">` resuelve `#contenido` a `/#contenido`) | #30 |
-| 5 | La agenda, la recepción y la reprogramación arrancaban con el "hoy" del **navegador**: entre las 21 y las 24 de Córdoba, un navegador en UTC ya está en el día siguiente | #43 |
+| #   | Qué pasaba                                                                                                                                                                                          | PR  |
+| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --- |
+| 1   | La recepción del día quedaba **en blanco** al entrar desde la agenda: sin `?fecha=`, `withComponentInputBinding` pone el input en `undefined` y el cliente generado lanzaba antes de salir a la red | #26 |
+| 2   | El buscador de agenda mostraba la **ventana vieja**: con dos consultas en vuelo ganaba la que llegaba última                                                                                        | #26 |
+| 3   | El ciclo del turno tenía un **409 sin salida**: la respuesta de la última transición le ganaba a cualquier relectura                                                                                | #26 |
+| 4   | El **skip link navegaba a la raíz** desde cualquier pantalla que no fuera `/` (`<base href="/">` resuelve `#contenido` a `/#contenido`)                                                             | #30 |
+| 5   | La agenda, la recepción y la reprogramación arrancaban con el "hoy" del **navegador**: entre las 21 y las 24 de Córdoba, un navegador en UTC ya está en el día siguiente                            | #43 |
 
 Dos E2E intermitentes quedaron deterministas: el foco de la recepción en `contraste-no-textual`
 (#34, 4 fallas en 50 → 80/80) y `contexto-sin-fuga` › "sin contexto elegido" (#42, `count()` sin
@@ -411,32 +453,32 @@ Pendientes que arrastra el frontend:
 `Chapadiex/appKine-web`. El 07/10 entraron **18 PR, del #6 al #23**. Después de esa medición entró el **#24** (G-7, accesibilidad no textual), que no se volvió a medir acá. Queda abierto el **#4**
 (historia clínica en pantalla: D-a, D-b, D-c), sin mergear.
 
-| | Valor medido |
-|---|---|
-| Cliente generado | **0.69.0** (`contractVersion` en los dos `environment`), igual que el contrato de `appKine-api` `main`. Se regeneró tres veces en el día: 0.63.0 (#6), 0.66.0 (#11) y 0.69.0 (#19) |
-| Tests | **128 archivos de spec / 1.348 tests, 0 fallos**, medidos con `npm ci && npm run test:ci` sobre `e22d75d` el 08/10. Cobertura st 91,07 % · rama 82,81 % · fn 87,29 % · ln 92,19 %, sobre el piso de 80 % en las cuatro; el chequeo de cableado del contraste pasa |
-| E2E | Ocho specs en `e2e/`: `auth-flujo`, `contexto-sin-fuga`, `errores-sin-internals`, `smoke`, los dos de agenda (con `route.fulfill`), `contraste` y `contraste-no-textual` (G-7, #24). **Ninguna pantalla del 07/10 tiene E2E** |
-| Imagen Docker | **G-3 cerrado** (#18): `Dockerfile` multi-stage → `nginx-unprivileged` (UID 101, puerto 8080, `HEALTHCHECK` en `/healthz`), proxy de `/api/` a `AKINE_API_URL` resuelto en runtime —el mismo bundle para todos los entornos—, SBOM CycloneDX embebido y job `imagen` en el CI. Detalle en `docs/imagen-docker.md` |
+|                  | Valor medido                                                                                                                                                                                                                                                                                                      |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Cliente generado | **0.69.0** (`contractVersion` en los dos `environment`), igual que el contrato de `appKine-api` `main`. Se regeneró tres veces en el día: 0.63.0 (#6), 0.66.0 (#11) y 0.69.0 (#19)                                                                                                                                |
+| Tests            | **128 archivos de spec / 1.348 tests, 0 fallos**, medidos con `npm ci && npm run test:ci` sobre `e22d75d` el 08/10. Cobertura st 91,07 % · rama 82,81 % · fn 87,29 % · ln 92,19 %, sobre el piso de 80 % en las cuatro; el chequeo de cableado del contraste pasa                                                 |
+| E2E              | Ocho specs en `e2e/`: `auth-flujo`, `contexto-sin-fuga`, `errores-sin-internals`, `smoke`, los dos de agenda (con `route.fulfill`), `contraste` y `contraste-no-textual` (G-7, #24). **Ninguna pantalla del 07/10 tiene E2E**                                                                                     |
+| Imagen Docker    | **G-3 cerrado** (#18): `Dockerfile` multi-stage → `nginx-unprivileged` (UID 101, puerto 8080, `HEALTHCHECK` en `/healthz`), proxy de `/api/` a `AKINE_API_URL` resuelto en runtime —el mismo bundle para todos los entornos—, SBOM CycloneDX embebido y job `imagen` en el CI. Detalle en `docs/imagen-docker.md` |
 
 Features: `auth`, `organization`, `platform`, `resource`, `catalog`, `offering`, `person`,
 `contracting`, `scheduling`, `clinical`, `billing` y, desde el 07/10, **`reporting`**.
 
 Lo que el 07/10 puso en pantalla, con su PR:
 
-| Paquete | Qué | PR |
-|---|---|---|
-| F-6 | Caja diaria de la sede, `/caja` (`caja:operate`): apertura, movimientos manuales, reversión, arqueo y cierre | #7 |
-| E-4 | Recepción del día sobre la máquina de estados propia (DP-16): llegada, validación, Particular con motivo, espera, llamado y anulación | #8 |
-| F-7 | Presentaciones a financiadores, `/presentaciones` y `/presentaciones/:id` (`cobro:register`): bandeja, armado, revisión, factura, débito, pagos y conciliación | #9 |
-| E-3 | Series de turnos: alta con previsualización, detalle `/agenda/series/:serieId` y cancelación con alcance | #10 |
-| G-8 | Tablero de reportes, `features/reporting`, `/reportes` (`reporte:read`): fuente y criterio de fecha por indicador, secciones omitidas y CSV | #12 |
-| A-7 | Consola de plataforma en `features/platform`, `/plataforma/solicitudes`, con `PlatformRoleStore` y `platformAdminGuard` | #13 |
-| E-6 | Prepago como anticipo: política en la oferta, aviso en la recepción y modo prepago del registro de cobro | #14 |
-| B-3 | Cobertura aplicable por oferta (componente `app-cobertura-aplicable` en Coberturas del paciente), arancel por oferta y precios particulares `/servicios/ofertas/:ofertaId/precios`; filtro por oferta en el arancel efectivo (#23) | #15, #23 |
-| B-5 | Sección de coberturas en el Paciente 360 | #16 |
-| A-10 | Impacto de desvinculación al revocar y turnos afectados al editar disponibilidad | #17 |
-| E-8 | Bandeja de series `/agenda/series` (#20) y prepago visible antes del check-in (#21) | #20, #21 |
-| A-8 | Alta de sede con primer box y horario general en un acto; horario general en el calendario de la sede | #22 |
+| Paquete | Qué                                                                                                                                                                                                                                | PR       |
+| ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
+| F-6     | Caja diaria de la sede, `/caja` (`caja:operate`): apertura, movimientos manuales, reversión, arqueo y cierre                                                                                                                       | #7       |
+| E-4     | Recepción del día sobre la máquina de estados propia (DP-16): llegada, validación, Particular con motivo, espera, llamado y anulación                                                                                              | #8       |
+| F-7     | Presentaciones a financiadores, `/presentaciones` y `/presentaciones/:id` (`cobro:register`): bandeja, armado, revisión, factura, débito, pagos y conciliación                                                                     | #9       |
+| E-3     | Series de turnos: alta con previsualización, detalle `/agenda/series/:serieId` y cancelación con alcance                                                                                                                           | #10      |
+| G-8     | Tablero de reportes, `features/reporting`, `/reportes` (`reporte:read`): fuente y criterio de fecha por indicador, secciones omitidas y CSV                                                                                        | #12      |
+| A-7     | Consola de plataforma en `features/platform`, `/plataforma/solicitudes`, con `PlatformRoleStore` y `platformAdminGuard`                                                                                                            | #13      |
+| E-6     | Prepago como anticipo: política en la oferta, aviso en la recepción y modo prepago del registro de cobro                                                                                                                           | #14      |
+| B-3     | Cobertura aplicable por oferta (componente `app-cobertura-aplicable` en Coberturas del paciente), arancel por oferta y precios particulares `/servicios/ofertas/:ofertaId/precios`; filtro por oferta en el arancel efectivo (#23) | #15, #23 |
+| B-5     | Sección de coberturas en el Paciente 360                                                                                                                                                                                           | #16      |
+| A-10    | Impacto de desvinculación al revocar y turnos afectados al editar disponibilidad                                                                                                                                                   | #17      |
+| E-8     | Bandeja de series `/agenda/series` (#20) y prepago visible antes del check-in (#21)                                                                                                                                                | #20, #21 |
+| A-8     | Alta de sede con primer box y horario general en un acto; horario general en el calendario de la sede                                                                                                                              | #22      |
 
 > **Nada de esto se verificó contra el backend real.** Cada uno de esos PR lo declara: los tests
 > son unitarios con `HttpTestingController`, que no negocia contenido ni prueba que el servidor
@@ -473,7 +515,7 @@ Features: `auth`, `organization`, `platform`, `resource`, `catalog`, `offering`,
 > validador se aplica en un `effect`: el valor de un signal input no está disponible en el
 > inicializador del `FormControl`.
 >
-> **La lección es de dónde salió el hueco.** El spec del padrón verificaba el *texto* del panel y
+> **La lección es de dónde salió el hueco.** El spec del padrón verificaba el _texto_ del panel y
 > nunca enviaba el formulario; y ninguna de las cuatro pantallas de baja afirmaba que el motivo
 > vacío **bloquea** el envío. Un test que mira lo que la pantalla dice no prueba lo que la pantalla
 > hace.
@@ -537,6 +579,7 @@ Features: `auth`, `organization`, `platform`, `resource`, `catalog`, `offering`,
 >    un rediseño: la técnica de sombra por degradé y la medición automática de contraste son
 >    incompatibles sobre el mismo elemento, y poner fondo opaco a las filas —lo único acotado—
 >    **tapa la sombra**, que es lo que ya le pasa hoy a las filas dadas de baja.
+>
 > 2. **axe no mide los controles deshabilitados, y nadie lo sabía.** WCAG 1.4.3 exime a los
 >    componentes de interfaz inactivos, así que `color-contrast` los descarta antes de medirlos.
 >    Se descubrió rompiendo `--color-deshabilitado` a propósito para comprobar que el gate lo
@@ -591,17 +634,20 @@ appKine-web/
 ```bash
 npm start
 ```
+
 Dev server en `http://localhost:4200` **con el proxy ya aplicado**. Usar siempre este
 script, nunca `ng serve` pelado: sin el proxy, `/api` no resuelve.
 
 ```bash
 npm run test:ci
 ```
+
 Unitarios + **gate de cobertura** (falla bajo 80 %).
 
 ```bash
 npm run lint
 ```
+
 Incluye las reglas propias de AKINE y las de accesibilidad de plantilla.
 
 ```bash
@@ -611,26 +657,29 @@ npm run build
 ```bash
 npm run api:generate
 ```
+
 Regenera el cliente desde `../appKine-api/openapi/akine-api.yaml`.
 
 ```bash
 npm run api:check
 ```
+
 Verifica que `contractVersion` de `environment.ts` coincida con el contrato del backend.
 
 ```bash
 npm run e2e
 ```
+
 Requiere backend levantado. Playwright arranca el frontend solo.
 
 ### Decisiones de AKINE-00.01
 
-| Decisión | Elección | Por qué |
-|---|---|---|
-| Local API Switch | **Proxy de dev** (`proxy.conf.json`) | Imposible commitear una URL de localhost. Nada que revertir tras el QA |
-| JWT | **Access en memoria + refresh en cookie httpOnly** | AKINE maneja historia clínica: un XSS no puede leer memoria ni una cookie httpOnly |
-| Generador | openapi-generator `typescript-angular` | El más maduro, output nativo de Angular |
-| Change detection | Zoneless + signals, declarado explícito | Default de Angular 21 |
+| Decisión         | Elección                                           | Por qué                                                                            |
+| ---------------- | -------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| Local API Switch | **Proxy de dev** (`proxy.conf.json`)               | Imposible commitear una URL de localhost. Nada que revertir tras el QA             |
+| JWT              | **Access en memoria + refresh en cookie httpOnly** | AKINE maneja historia clínica: un XSS no puede leer memoria ni una cookie httpOnly |
+| Generador        | openapi-generator `typescript-angular`             | El más maduro, output nativo de Angular                                            |
+| Change detection | Zoneless + signals, declarado explícito            | Default de Angular 21                                                              |
 
 > **Cuidado con el cliente generado y Prettier.** `src/app/api/generated/` está en
 > `.prettierignore` a propósito: si Prettier lo reformatea, el gate de drift de CI falla
@@ -650,11 +699,11 @@ Requiere backend levantado. Playwright arranca el frontend solo.
 
 Reglas de lint propias:
 
-| Regla | Qué previene |
-|---|---|
+| Regla                                                         | Qué previene                                                          |
+| ------------------------------------------------------------- | --------------------------------------------------------------------- |
 | `no-restricted-globals` sobre `localStorage`/`sessionStorage` | Que el token de historia clínica quede legible para un XSS (ADR-0001) |
-| `no-console` (salvo `warn`/`error`) | Un dato clínico en la consola del navegador |
-| `templateAccessibility` | Incumplir WCAG 2.1 AA |
+| `no-console` (salvo `warn`/`error`)                           | Un dato clínico en la consola del navegador                           |
+| `templateAccessibility`                                       | Incumplir WCAG 2.1 AA                                                 |
 
 > El cliente generado está excluido de ESLint **y** de Prettier. Lintearlo o formatearlo
 > rompe el gate de drift del pipeline en cada corrida.
@@ -695,13 +744,13 @@ siendo 7 `test()` en `e2e/smoke.spec.ts`: **ningún flujo de auth está cubierto
 
 Reglas que esta etapa dejó fijadas y que las siguientes heredan:
 
-| Regla | Por qué |
-|---|---|
-| Las rutas de `auth` van **sin guards** | Un `authGuard` ahí deja la aplicación sin ninguna ruta alcanzable sin sesión |
-| El token de la URL (`?token=...`) **no se persiste** en ninguna de las dos pantallas de correo | Es lo único que un correo puede abrir; guardarlo lo deja sobreviviendo a la navegación |
-| Un solo canje de refresh en vuelo: **cola single-flight** en `SessionService` | La rotación del backend invalida el refresh presentado; dos canjes en paralelo se pisan y cierran la sesión |
-| Los guards son **UX, no seguridad** | La autoridad de permisos es el backend, que rechaza igual si se llega por URL directa |
-| Falta de contexto se resuelve mandando a `/seleccionar-contexto`, no mostrando un 403 | Sin eso la pantalla se abre vacía y el usuario no tiene cómo salir |
+| Regla                                                                                          | Por qué                                                                                                     |
+| ---------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| Las rutas de `auth` van **sin guards**                                                         | Un `authGuard` ahí deja la aplicación sin ninguna ruta alcanzable sin sesión                                |
+| El token de la URL (`?token=...`) **no se persiste** en ninguna de las dos pantallas de correo | Es lo único que un correo puede abrir; guardarlo lo deja sobreviviendo a la navegación                      |
+| Un solo canje de refresh en vuelo: **cola single-flight** en `SessionService`                  | La rotación del backend invalida el refresh presentado; dos canjes en paralelo se pisan y cierran la sesión |
+| Los guards son **UX, no seguridad**                                                            | La autoridad de permisos es el backend, que rechaza igual si se llega por URL directa                       |
+| Falta de contexto se resuelve mandando a `/seleccionar-contexto`, no mostrando un 403          | Sin eso la pantalla se abre vacía y el usuario no tiene cómo salir                                          |
 
 ### Próximo paso
 

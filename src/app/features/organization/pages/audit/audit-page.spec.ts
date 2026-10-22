@@ -81,6 +81,62 @@ describe('AuditPage', () => {
     expect(texto(fixture)).toContain('no puede superar los 90 días');
   });
 
+  it('elegir un hecho abre su detalle en un panel, mueve el foco y Escape lo cierra', async () => {
+    const fixture = montar();
+    escribir(fixture, '#auditoria-entityType', 'MEMBERSHIP');
+    escribir(fixture, '#auditoria-entityId', '10');
+    buscar(fixture);
+    httpMock.expectOne(esConsulta()).flush({
+      content: [
+        {
+          id: 77,
+          occurredAt: '2026-10-01T12:00:00Z',
+          eventType: 'MEMBERSHIP_ROLE_CHANGED',
+          entityType: 'MEMBERSHIP',
+          entityId: 10,
+          actorAccountId: 5,
+          previousState: 'ADMINISTRATIVO',
+          newState: 'PROFESIONAL',
+          reason: 'Pasa a atender',
+          correlationId: 'corr-1',
+          details: { origen: 'pantalla' },
+        },
+      ],
+      page: 0,
+      size: 20,
+      totalElements: 1,
+      totalPages: 1,
+    });
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const host: HTMLElement = fixture.nativeElement;
+    const disparador = host.querySelector<HTMLButtonElement>('#auditoria-evento-77')!;
+    const panel = host.querySelector<HTMLElement>('#auditoria-detalle')!;
+    expect(disparador.getAttribute('aria-expanded')).toBe('false');
+    expect(disparador.getAttribute('aria-controls')).toBe('auditoria-detalle');
+    expect(panel.hidden).toBe(true);
+
+    disparador.click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(disparador.getAttribute('aria-expanded')).toBe('true');
+    expect(panel.hidden).toBe(false);
+    expect(panel.textContent).toContain('MEMBERSHIP_ROLE_CHANGED');
+    expect(panel.textContent).toContain('Pasa a atender');
+    expect(panel.textContent).toContain('corr-1');
+    expect(panel.textContent).toContain('origen');
+    expect(document.activeElement).toBe(panel);
+
+    panel.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    fixture.detectChanges();
+
+    expect(panel.hidden).toBe(true);
+    expect(disparador.getAttribute('aria-expanded')).toBe('false');
+    expect(document.activeElement).toBe(disparador);
+  });
+
   it('un 403 por falta de permiso muestra el rechazo y NO ofrece elegir contexto', async () => {
     // Un 403 de permiso y uno de contexto se resuelven de formas opuestas: el primero se pide,
     // el segundo se elige. Ofrecer el selector de contexto aca manda al usuario a dar vueltas

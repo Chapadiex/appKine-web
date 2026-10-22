@@ -85,76 +85,97 @@
                 }
               </td>
               <td>
-                <div class="acciones-fila">
-                  @if (esElAbierto(cobro)) {
-                    <button
-                      type="button"
-                      class="boton boton--secundario"
-                      [id]="'comprobante-' + cobro.id"
-                      (click)="cerrar()"
-                    >
-                      Cerrar el comprobante
-                    </button>
-                  } @else {
-                    <button
-                      type="button"
-                      class="boton boton--secundario"
-                      [id]="'comprobante-' + cobro.id"
-                      [disabled]="abriendo() === cobro.id"
-                      (click)="abrir(cobro)"
-                    >
-                      Ver el comprobante
-                    </button>
-                  }
-
-                  <!--
-                  Anular y reintegrar mueven la caja y piden DOS permisos: cobro:register y
-                  caja:operate. La directiva acepta cualquiera de los que recibe, asi que se
-                  anidan. Ocultar no es autorizar: el backend rechaza igual.
+                <!--
+                  Tres acciones: menu "⋯" (decidido el 22/10/2026). Ver el comprobante queda a la
+                  vista; anular y reintegrar mueven la caja y piden DOS permisos: cobro:register y
+                  caja:operate (la directiva acepta cualquiera de los que recibe, asi que se
+                  anidan). Ocultar no es autorizar: el backend rechaza igual. Sin esos permisos solo
+                  queda ver el comprobante, a la vista.
 
                   Cuando la accion no corresponde a ESTE cobro, el boton se deshabilita con la
                   explicacion al lado en vez de esconderse: un boton que desaparece en una fila y
                   no en otra no le dice a nadie por que.
                 -->
-                  <ng-container *akinePermiso="PERMISO_COBRO_REGISTER">
-                    <ng-container *akinePermiso="PERMISO_CAJA_OPERATE">
+                @if (puedeAnularYReintegrar()) {
+                  <app-acciones-de-fila [de]="'comprobante N.º ' + cobro.comprobanteNumero">
+                    @if (esElAbierto(cobro)) {
+                      <button
+                        principal
+                        type="button"
+                        class="boton boton--secundario"
+                        [id]="'comprobante-' + cobro.id"
+                        (click)="cerrar()"
+                      >
+                        Cerrar el comprobante
+                      </button>
+                    } @else {
+                      <button
+                        principal
+                        type="button"
+                        class="boton boton--secundario"
+                        [id]="'comprobante-' + cobro.id"
+                        [disabled]="abriendo() === cobro.id"
+                        (click)="abrir(cobro)"
+                      >
+                        Ver el comprobante
+                      </button>
+                    }
+                    <button
+                      type="button"
+                      class="accion--peligro"
+                      [disabled]="motivoParaNoAnular(cobro) !== null"
+                      [attr.aria-describedby]="
+                        motivoParaNoAnular(cobro) !== null ? 'no-anular-' + cobro.id : null
+                      "
+                      (click)="abrirOperacion('anular', cobro)"
+                    >
+                      Anular
+                    </button>
+                    <button
+                      type="button"
+                      [disabled]="motivoParaNoReintegrar(cobro) !== null"
+                      [attr.aria-describedby]="
+                        motivoParaNoReintegrar(cobro) !== null ? 'no-reintegrar-' + cobro.id : null
+                      "
+                      (click)="abrirOperacion('reintegrar', cobro)"
+                    >
+                      Reintegrar saldo a favor
+                    </button>
+                    @if (motivoParaNoAnular(cobro); as porQue) {
+                      <span class="ayuda" [id]="'no-anular-' + cobro.id">
+                        No se puede anular: {{ porQue }}
+                      </span>
+                    }
+                    @if (motivoParaNoReintegrar(cobro); as porQue) {
+                      <span class="ayuda" [id]="'no-reintegrar-' + cobro.id">
+                        Nada para reintegrar: {{ porQue }}
+                      </span>
+                    }
+                  </app-acciones-de-fila>
+                } @else {
+                  <div class="acciones-fila">
+                    @if (esElAbierto(cobro)) {
                       <button
                         type="button"
                         class="boton boton--secundario"
-                        [disabled]="motivoParaNoAnular(cobro) !== null"
-                        [attr.aria-describedby]="
-                          motivoParaNoAnular(cobro) !== null ? 'no-anular-' + cobro.id : null
-                        "
-                        (click)="abrirOperacion('anular', cobro)"
+                        [id]="'comprobante-' + cobro.id"
+                        (click)="cerrar()"
                       >
-                        Anular
+                        Cerrar el comprobante
                       </button>
+                    } @else {
                       <button
                         type="button"
                         class="boton boton--secundario"
-                        [disabled]="motivoParaNoReintegrar(cobro) !== null"
-                        [attr.aria-describedby]="
-                          motivoParaNoReintegrar(cobro) !== null
-                            ? 'no-reintegrar-' + cobro.id
-                            : null
-                        "
-                        (click)="abrirOperacion('reintegrar', cobro)"
+                        [id]="'comprobante-' + cobro.id"
+                        [disabled]="abriendo() === cobro.id"
+                        (click)="abrir(cobro)"
                       >
-                        Reintegrar saldo a favor
+                        Ver el comprobante
                       </button>
-                      @if (motivoParaNoAnular(cobro); as porQue) {
-                        <span class="ayuda" [id]="'no-anular-' + cobro.id">
-                          No se puede anular: {{ porQue }}
-                        </span>
-                      }
-                      @if (motivoParaNoReintegrar(cobro); as porQue) {
-                        <span class="ayuda" [id]="'no-reintegrar-' + cobro.id">
-                          Nada para reintegrar: {{ porQue }}
-                        </span>
-                      }
-                    </ng-container>
-                  </ng-container>
-                </div>
+                    }
+                  </div>
+                }
               </td>
             </tr>
 

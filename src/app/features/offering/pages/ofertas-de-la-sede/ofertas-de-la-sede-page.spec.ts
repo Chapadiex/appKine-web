@@ -527,6 +527,29 @@ describe('OfertasDeLaSedePage', () => {
     ).not.toBeNull();
   });
 
+  it('las acciones de la fila viven en el menu "⋯" y el filtro rapido por modalidad cuenta y acota', async () => {
+    const fixture = await montar({ ofertas: [VIGENTE, AUN_NO] });
+    const anfitrion = fixture.nativeElement as HTMLElement;
+
+    expect(anfitrion.querySelectorAll('.acciones-de-fila__boton').length).toBe(2);
+    expect(anfitrion.querySelector('.acciones-de-fila__boton')?.textContent).toContain(
+      'Más acciones de Rehabilitacion respiratoria adultos',
+    );
+
+    const rapidos = [...anfitrion.querySelectorAll<HTMLButtonElement>('.filtros-rapidos__opcion')];
+    expect(rapidos.map((b) => (b.textContent ?? '').replace(/\s+/g, ' ').trim())).toEqual([
+      'Todas 2',
+      'Individuales 1',
+      'Grupales 1',
+    ]);
+
+    rapidos[2].click();
+    fixture.detectChanges();
+    expect(anfitrion.querySelectorAll('tbody > tr:not(.fila-panel)').length).toBe(1);
+    expect(anfitrion.textContent).toContain('Pilates terapeutico grupal');
+    expect(anfitrion.textContent).not.toContain('Rehabilitacion respiratoria adultos');
+  });
+
   // -----------------------------------------------------------------------------------------
   // Validaciones que BLOQUEAN el envio. Lo que importa no es el texto que aparece: es que la
   // peticion no salga. Un formulario que muestra el error y manda igual es peor que uno mudo.

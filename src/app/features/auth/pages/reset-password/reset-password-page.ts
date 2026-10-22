@@ -8,6 +8,8 @@ import {
 } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 
+import { MedidorDeContrasena } from '../../components/medidor-de-contrasena/medidor-de-contrasena';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { EstadoFormulario, traducirYEsperar } from '../../models/auth-errors';
 import { RecuperacionService } from '../../../../api/generated/api/recuperacion.service';
 import { crearEsperaPorLimite } from '../../../../shared/utils/espera-por-limite';
@@ -31,7 +33,7 @@ function contrasenasIguales(grupo: AbstractControl): ValidationErrors | null {
  */
 @Component({
   selector: 'app-reset-password-page',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [MedidorDeContrasena, ReactiveFormsModule, RouterLink],
   templateUrl: './reset-password-page.html',
   styleUrls: ['../../auth.css', '../../../../shared/styles/acceso.css'],
 })
@@ -52,6 +54,11 @@ export class ResetPasswordPage {
     },
     { validators: contrasenasIguales },
   );
+
+  /** Lo escrito en la contraseña, solo para el medidor (es una guia: no valida nada). */
+  protected readonly passwordEscrita = toSignal(this.formulario.controls.password.valueChanges, {
+    initialValue: '',
+  });
 
   protected readonly estado = signal<EstadoFormulario>({ tipo: 'editando' });
   protected readonly intentos = signal(0);

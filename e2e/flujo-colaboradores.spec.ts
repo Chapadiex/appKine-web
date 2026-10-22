@@ -3,6 +3,7 @@ import { Locator, Page } from '@playwright/test';
 import { emailUnico, nonce, registrarPorApi } from './support/akine';
 import { expect, ingresar, navegar, respuestaDe, test } from './support/agenda-real';
 import { ApiAkine, Centro, uriDeProblema } from './support/sembrado';
+import { abrirAcciones } from './support/filtros';
 
 /**
  * E2E de los permisos adicionales de un colaborador (G-5, web #44/#48) contra el backend REAL.
@@ -83,6 +84,7 @@ test.describe('Permisos adicionales de un colaborador contra el backend real', (
     await expect(filaDe(page, email)).toContainText('Administrador de sede');
 
     // --- El selector ofrece exactamente lo que el backend admite para el rol ----------------
+    await abrirAcciones(filaDe(page, email));
     await filaDe(page, email).getByRole('button', { name: 'Permisos adicionales' }).click();
     await expect(page.getByText('Este colaborador no tiene permisos adicionales.')).toBeVisible();
     const selector = page.getByLabel('Permiso a otorgar');
@@ -109,6 +111,7 @@ test.describe('Permisos adicionales de un colaborador contra el backend real', (
     await page.getByRole('button', { name: 'Aplicar el cambio' }).click();
     await expect(filaDe(page, email)).toContainText('Profesional');
 
+    await abrirAcciones(filaDe(page, email));
     await filaDe(page, email).getByRole('button', { name: 'Permisos adicionales' }).click();
     const noVigente = page.locator('.lista-grants li').filter({ hasText: PERMISO });
     await expect(noVigente.getByText('No vigente con el rol actual')).toBeVisible();

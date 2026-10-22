@@ -1,3 +1,4 @@
+import { abrirAcciones } from './support/filtros';
 import { expect, ingresar, navegar, respuestaDe, test } from './support/agenda-real';
 import { crearOferta, crearPersona, hora, rango, sumarDias } from './support/sembrado';
 import { diaIso } from './support/sembrado-configuracion';
@@ -58,6 +59,7 @@ test.describe('Reprogramar una serie contra el backend real', () => {
     await expect(turnos).toHaveCount(OCURRENCIAS);
 
     // Desde el segundo turno: el alcance por defecto es "solo este", se cambia a "y los siguientes".
+    await abrirAcciones(turnos.nth(1));
     await turnos
       .nth(1)
       .getByRole('button', { name: /^Reprogramar/ })
