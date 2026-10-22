@@ -1,6 +1,10 @@
 <div class="titulo-con-ayuda">
   <h1>Precios particulares de la oferta</h1>
-  <app-ayuda titulo="El precio particular manda sobre el de lista, y no se edita">
+  <app-ayuda titulo="Sobre esta pantalla">
+    <p>Cuanto paga quien se atiende como particular en esta oferta, por periodo.</p>
+    <p class="ayuda-contextual__subtitulo">
+      El precio particular manda sobre el de lista, y no se edita
+    </p>
     <p>
       El dia que un precio de esta grilla cubre, <b>manda sobre el precio de lista</b>; el dia que
       ninguno cubre, rige el de lista. No es el arancel de una obra social: ese se carga en el
@@ -12,6 +16,12 @@
       devengado guardo su importe y no cambia.
     </p>
   </app-ayuda>
+  <div class="encabezado__acciones" *akinePermiso="PERMISO_CONSULTORIO_MANAGE">
+    <button type="button" class="boton" (click)="abrirAlta()">
+      <app-icono nombre="agregar" />
+      Cargar un precio
+    </button>
+  </div>
 </div>
 
 @if (oferta(); as detalle) {
@@ -20,11 +30,7 @@
     >, por periodo. Precio de lista de la oferta: <b>{{ precioEnPalabras(detalle) }}</b
     >.
   </p>
-} @else {
-  <p class="descripcion">
-    Cuanto paga quien se atiende como particular en esta oferta, por periodo.
-  </p>
-}
+} @else {}
 
 <nav class="acciones" aria-label="Servicios y ofertas">
   <a class="boton boton--secundario" routerLink="/servicios/ofertas">Ofertas de la sede</a>
@@ -41,17 +47,6 @@
     <p class="estado estado--ok">{{ mensaje }}</p>
   }
 </div>
-
-<p class="acciones">
-  <button
-    type="button"
-    class="boton"
-    (click)="abrirAlta()"
-    *akinePermiso="PERMISO_CONSULTORIO_MANAGE"
-  >
-    Cargar un precio
-  </button>
-</p>
 
 @if (altaAbierta()) {
   <section class="tarjeta" aria-labelledby="titulo-alta-precio">
@@ -183,14 +178,14 @@
               </caption>
               <thead>
                 <tr>
-                  <th scope="col">Importe</th>
-                  <th scope="col">Vigencia</th>
+                  <th scope="col" appOrdenable [tabla]="tabla" columna="importe">Importe</th>
+                  <th scope="col" appOrdenable [tabla]="tabla" columna="vigencia">Vigencia</th>
                   <th scope="col">Situacion</th>
                   <th scope="col">Acciones</th>
                 </tr>
               </thead>
               <tbody>
-                @for (precio of precios(); track precio.id) {
+                @for (precio of tabla.visibles(); track precio.id) {
                   @let situacionDeLaFila = situacion(precio);
                   <tr
                     [class.fila--revocada]="precio.estado === 'INACTIVO'"
@@ -299,6 +294,16 @@
                 }
               </tbody>
             </table>
+          </div>
+
+          <div class="tabla-pie">
+            <span>{{ tabla.total() }} precios</span>
+            <app-paginacion
+              [paginaActual]="tabla.pagina()"
+              [totalPaginas]="tabla.totalPaginas()"
+              etiqueta="Paginas de precios"
+              (cambioDePagina)="tabla.irA($event)"
+            />
           </div>
         }
       }

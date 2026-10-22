@@ -1,6 +1,13 @@
 <div class="titulo-con-ayuda">
   <h1>Convenios de la sede</h1>
-  <app-ayuda titulo="Renovar es cerrar la vigencia, no dar de baja">
+  <app-ayuda titulo="Sobre esta pantalla">
+    <p>
+      Lo que <b>esta sede</b> acordo con un plan de un financiador: desde cuando, hasta cuando, como
+      se liquida y que requisitos administrativos exige. De cada convenio cuelgan los
+      <b>aranceles</b>, que son los precios por practica. Dos sedes de la misma organizacion pueden
+      tener convenios y precios distintos para el mismo plan, y eso es lo normal.
+    </p>
+    <p class="ayuda-contextual__subtitulo">Renovar es cerrar la vigencia, no dar de baja</p>
     <p>
       Dos convenios de esta sede con el <b>mismo financiador y el mismo plan</b> no pueden pisarse
       en el tiempo. Si al cargar uno nuevo te rechaza por periodo solapado, la salida no es
@@ -17,14 +24,13 @@
       <b>todavia</b> resuelve.
     </p>
   </app-ayuda>
+  <div class="encabezado__acciones" *akinePermiso="permisoManage">
+    <button type="button" class="boton" (click)="abrirAlta()">
+      <app-icono nombre="agregar" />
+      Firmar un convenio
+    </button>
+  </div>
 </div>
-
-<p class="descripcion">
-  Lo que <b>esta sede</b> acordo con un plan de un financiador: desde cuando, hasta cuando, como se
-  liquida y que requisitos administrativos exige. De cada convenio cuelgan los <b>aranceles</b>, que
-  son los precios por practica. Dos sedes de la misma organizacion pueden tener convenios y precios
-  distintos para el mismo plan, y eso es lo normal.
-</p>
 
 <nav class="acciones" aria-label="Contratacion">
   <a class="boton boton--secundario" routerLink="/contratacion/convenios" aria-current="page">
@@ -41,12 +47,6 @@
     <p class="estado estado--ok">{{ mensaje }}</p>
   }
 </div>
-
-<p class="acciones">
-  <button type="button" class="boton" (click)="abrirAlta()" *akinePermiso="permisoManage">
-    Firmar un convenio
-  </button>
-</p>
 
 @if (altaAbierta()) {
   <section class="tarjeta" aria-labelledby="titulo-alta-convenio">
@@ -311,7 +311,11 @@
 <section class="tarjeta" aria-labelledby="titulo-listado-convenios">
   <h2 id="titulo-listado-convenios">Convenios firmados en esta sede</h2>
 
-  <div class="par-de-campos">
+  <!--
+    Regla de filtros (plan §3.4): sin busqueda por texto en el backend, solo el embudo. La fecha
+    de vigencia va adentro y cuenta como activa si no es hoy: cambia la columna Situacion.
+  -->
+  <app-filtros [soloAvanzados]="true" [activos]="filtrosAvanzadosActivos()">
     <div class="campo">
       <label for="filtro-estado-convenio">Mostrar</label>
       <select
@@ -346,7 +350,7 @@
         cobro lo que se cobro.
       </p>
     </div>
-  </div>
+  </app-filtros>
 
   <div aria-live="polite">
     @switch (estado().tipo) {
@@ -385,8 +389,6 @@
             <a routerLink="/contratacion/financiadores">catalogo</a>.
           </p>
         } @else {
-          <p class="ayuda">{{ convenios().length }} en total.</p>
-
           <div class="tabla-scroll" tabindex="0" role="region" aria-label="Convenios de la sede">
             <table class="tabla">
               <caption class="visualmente-oculto">
@@ -395,17 +397,19 @@
               </caption>
               <thead>
                 <tr>
-                  <th scope="col">Convenio</th>
-                  <th scope="col">Financiador</th>
-                  <th scope="col">Modalidad</th>
-                  <th scope="col">Vigencia</th>
+                  <th scope="col" appOrdenable [tabla]="tabla" columna="nombre">Convenio</th>
+                  <th scope="col" appOrdenable [tabla]="tabla" columna="financiador">
+                    Financiador
+                  </th>
+                  <th scope="col" appOrdenable [tabla]="tabla" columna="modalidad">Modalidad</th>
+                  <th scope="col" appOrdenable [tabla]="tabla" columna="vigencia">Vigencia</th>
                   <th scope="col">Requisitos</th>
                   <th scope="col">Situacion</th>
                   <th scope="col">Acciones</th>
                 </tr>
               </thead>
               <tbody>
-                @for (convenio of convenios(); track convenio.id) {
+                @for (convenio of tabla.visibles(); track convenio.id) {
                   <!--
                     Una sola evaluacion por fila: `situacion()` construye un objeto, y llamarla
                     tres veces desde la plantilla lo construiria tres veces en cada ciclo de
@@ -686,6 +690,16 @@
                 }
               </tbody>
             </table>
+          </div>
+
+          <div class="tabla-pie">
+            <span>{{ tabla.total() }} convenios</span>
+            <app-paginacion
+              [paginaActual]="tabla.pagina()"
+              [totalPaginas]="tabla.totalPaginas()"
+              etiqueta="Paginas de convenios"
+              (cambioDePagina)="tabla.irA($event)"
+            />
           </div>
         }
       }

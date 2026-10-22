@@ -1,9 +1,12 @@
-<h1>Asistencia a clases</h1>
-
-<p class="descripcion">
-  Elegi la clase para tomar lista. Marcar a alguien presente registra que estuvo en la clase:
-  <b>no abre una atencion clinica</b> ni genera deuda.
-</p>
+<div class="titulo-con-ayuda">
+  <h1>Asistencia a clases</h1>
+  <app-ayuda titulo="Sobre esta pantalla">
+    <p>
+      Elegi la clase para tomar lista. Marcar a alguien presente registra que estuvo en la clase:
+      <b>no abre una atencion clinica</b> ni genera deuda.
+    </p>
+  </app-ayuda>
+</div>
 
 <section class="tarjeta" aria-labelledby="titulo-dia-clases">
   <h2 id="titulo-dia-clases">Dia</h2>
@@ -48,15 +51,15 @@
           </caption>
           <thead>
             <tr>
-              <th scope="col">Horario</th>
-              <th scope="col">Clase</th>
-              <th scope="col">Estado</th>
+              <th scope="col" appOrdenable [tabla]="tabla" columna="horario">Horario</th>
+              <th scope="col" appOrdenable [tabla]="tabla" columna="clase">Clase</th>
+              <th scope="col" appOrdenable [tabla]="tabla" columna="estado">Estado</th>
               <th scope="col">Lugares</th>
               <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
             </tr>
           </thead>
           <tbody>
-            @for (clase of clases(); track clase.eventoId) {
+            @for (clase of tabla.visibles(); track clase.eventoId) {
               <tr>
                 <td>{{ hora(clase.inicio, zona()) }} a {{ hora(clase.fin, zona()) }}</td>
                 <td>{{ clase.titulo || clase.ofertaNombre || 'Clase ' + clase.eventoId }}</td>
@@ -75,6 +78,16 @@
             }
           </tbody>
         </table>
+      </div>
+
+      <div class="tabla-pie">
+        <span>{{ tabla.total() }} clases</span>
+        <app-paginacion
+          [paginaActual]="tabla.pagina()"
+          [totalPaginas]="tabla.totalPaginas()"
+          etiqueta="Paginas de clases"
+          (cambioDePagina)="tabla.irA($event)"
+        />
       </div>
     }
   }

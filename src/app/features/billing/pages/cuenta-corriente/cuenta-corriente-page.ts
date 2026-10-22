@@ -38,6 +38,11 @@ import {
   sePuedeAnular,
 } from '../../models/etiquetas-de-obligacion';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
+import { Icono } from '../../../../shared/components/icono/icono';
+import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 
 /** En cual de los tres estados esta el listado. No es paginado: el backend devuelve un array. */
 type EstadoCuenta =
@@ -92,7 +97,15 @@ type EstadoCuenta =
  */
 @Component({
   selector: 'app-cuenta-corriente-page',
-  imports: [RouterLink, ConfirmacionConMotivo, PermisoDirective],
+  imports: [
+    Ayuda,
+    ColumnaOrdenable,
+    Icono,
+    Paginacion,
+    RouterLink,
+    ConfirmacionConMotivo,
+    PermisoDirective,
+  ],
   templateUrl: './cuenta-corriente-page.html',
   styleUrl: '../../billing.css',
 })
@@ -159,6 +172,22 @@ export class CuentaCorrientePage {
   protected readonly obligaciones = computed<readonly Obligacion[]>(() => {
     const actual = this.estado();
     return actual.tipo === 'listo' ? actual.obligaciones : [];
+  });
+
+  /**
+   * Orden y paginado de la lista completa (plan §3.4). Cada fila trae su propio saldo —no es un
+   * saldo corrido—, asi que reordenar no cambia lo que dice ninguna fila; sin orden elegido queda
+   * el del servidor.
+   */
+  protected readonly tabla = tablaLocal(this.obligaciones, {
+    columnas: {
+      devengada: (obligacion) => obligacion.devengadaEn ?? null,
+      prestacion: (obligacion) => obligacion.snapshotNombre ?? null,
+      concepto: (obligacion) => conceptoEnPalabras(obligacion.concepto),
+      importe: (obligacion) => obligacion.importeOriginal ?? null,
+      saldo: (obligacion) => obligacion.saldo ?? null,
+      estado: (obligacion) => estadoEnPalabras(obligacion.estado),
+    },
   });
 
   protected readonly cargando = computed(() => this.estado().tipo === 'cargando');

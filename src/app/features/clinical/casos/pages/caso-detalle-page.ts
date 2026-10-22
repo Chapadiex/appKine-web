@@ -28,6 +28,7 @@ import { SedeClinicaApi } from '../../services/sede-clinica-api';
 import { VisitaClinica } from '../../services/visita-clinica';
 import { CasosApi } from '../casos-api';
 import { ErrorCaso, errorDeCausaCaso, traducirErrorCaso } from '../casos-errors';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 
 interface Integrante {
   readonly membershipId: number;
@@ -57,7 +58,7 @@ type Operacion = 'editar' | 'equipo' | 'cerrar' | 'reabrir';
  */
 @Component({
   selector: 'app-caso-detalle-page',
-  imports: [RouterLink, PedidoDeMotivo],
+  imports: [Ayuda, RouterLink, PedidoDeMotivo],
   templateUrl: './caso-detalle-page.html',
   styleUrl: '../../pages/historia-clinica/historia-clinica.css',
 })

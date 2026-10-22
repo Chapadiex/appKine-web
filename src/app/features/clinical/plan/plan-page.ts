@@ -30,6 +30,7 @@ import { VisitaClinica } from '../services/visita-clinica';
 import { advertenciasDelPlan, vigenciaDeAutorizacion } from './advertencias-del-plan';
 import { PlanApi } from './plan-api';
 import { ErrorPlan, errorDeCausaPlan, traducirErrorPlan } from './plan-errors';
+import { Ayuda } from '../../../shared/components/ayuda/ayuda';
 
 /** Una fila del editor. Texto mientras se escribe; se valida y convierte al guardar. */
 interface FilaDeItem {
@@ -59,7 +60,7 @@ type Editor = { readonly modo: 'crear' } | { readonly modo: 'modificar'; readonl
  */
 @Component({
   selector: 'app-plan-page',
-  imports: [RouterLink, PedidoDeMotivo],
+  imports: [Ayuda, RouterLink, PedidoDeMotivo],
   templateUrl: './plan-page.html',
   styleUrl: '../pages/historia-clinica/historia-clinica.css',
 })

@@ -92,19 +92,22 @@
     <h2 id="titulo-items">Prestaciones del lote</h2>
 
     @if (items().length > 0) {
-      <div class="campo">
-        <label for="filtro-estado-item">Mostrar</label>
-        <select
-          id="filtro-estado-item"
-          [value]="filtroDeItem()"
-          (change)="filtrarItems($any($event.target).value)"
-        >
-          <option value="">Todas las prestaciones</option>
-          @for (estado of estadosDeItem; track estado) {
-            <option [value]="estado">{{ estadoDeItem(estado) }}</option>
-          }
-        </select>
-      </div>
+      <!-- Regla de filtros (plan §3.4): sin busqueda por texto, el "Mostrar" va detras del embudo. -->
+      <app-filtros [soloAvanzados]="true" [activos]="filtrosAvanzadosActivos()">
+        <div class="campo">
+          <label for="filtro-estado-item">Mostrar</label>
+          <select
+            id="filtro-estado-item"
+            [value]="filtroDeItem()"
+            (change)="filtrarItems($any($event.target).value)"
+          >
+            <option value="">Todas las prestaciones</option>
+            @for (estado of estadosDeItem; track estado) {
+              <option [value]="estado">{{ estadoDeItem(estado) }}</option>
+            }
+          </select>
+        </div>
+      </app-filtros>
     }
 
     @if (items().length === 0) {
@@ -124,16 +127,16 @@
         <table class="tabla">
           <thead>
             <tr>
-              <th scope="col">Prestacion</th>
-              <th scope="col">Fecha</th>
-              <th scope="col">Paciente</th>
-              <th scope="col">Importe</th>
-              <th scope="col">Estado</th>
+              <th scope="col" appOrdenable [tabla]="tablaItems" columna="prestacion">Prestacion</th>
+              <th scope="col" appOrdenable [tabla]="tablaItems" columna="fecha">Fecha</th>
+              <th scope="col" appOrdenable [tabla]="tablaItems" columna="paciente">Paciente</th>
+              <th scope="col" appOrdenable [tabla]="tablaItems" columna="importe">Importe</th>
+              <th scope="col" appOrdenable [tabla]="tablaItems" columna="estado">Estado</th>
               <th scope="col">Acciones</th>
             </tr>
           </thead>
           <tbody>
-            @for (item of itemsVisibles(); track item.id) {
+            @for (item of tablaItems.visibles(); track item.id) {
               <tr>
                 <td>
                   {{ item.concepto }}
@@ -245,6 +248,15 @@
           </tbody>
         </table>
       </div>
+      <div class="tabla-pie">
+        <span>{{ tablaItems.total() }} prestaciones</span>
+        <app-paginacion
+          [paginaActual]="tablaItems.pagina()"
+          [totalPaginas]="tablaItems.totalPaginas()"
+          etiqueta="Paginas de prestaciones"
+          (cambioDePagina)="tablaItems.irA($event)"
+        />
+      </div>
       @if (itemsVisibles().length === 0) {
         <p class="estado estado--vacio">Ninguna prestacion del lote esta en ese estado.</p>
       }
@@ -351,15 +363,21 @@
           <table class="tabla">
             <thead>
               <tr>
-                <th scope="col">Prestacion</th>
-                <th scope="col">Devengada</th>
-                <th scope="col">Paciente</th>
-                <th scope="col">Saldo</th>
+                <th scope="col" appOrdenable [tabla]="tablaElegibles" columna="prestacion">
+                  Prestacion
+                </th>
+                <th scope="col" appOrdenable [tabla]="tablaElegibles" columna="devengada">
+                  Devengada
+                </th>
+                <th scope="col" appOrdenable [tabla]="tablaElegibles" columna="paciente">
+                  Paciente
+                </th>
+                <th scope="col" appOrdenable [tabla]="tablaElegibles" columna="saldo">Saldo</th>
                 <th scope="col">Acciones</th>
               </tr>
             </thead>
             <tbody>
-              @for (obligacion of elegibles(); track obligacion.id) {
+              @for (obligacion of tablaElegibles.visibles(); track obligacion.id) {
                 <tr>
                   <td>
                     {{ obligacion.snapshotNombre }}
@@ -392,6 +410,15 @@
               }
             </tbody>
           </table>
+        </div>
+        <div class="tabla-pie">
+          <span>{{ tablaElegibles.total() }} prestaciones elegibles</span>
+          <app-paginacion
+            [paginaActual]="tablaElegibles.pagina()"
+            [totalPaginas]="tablaElegibles.totalPaginas()"
+            etiqueta="Paginas de prestaciones elegibles"
+            (cambioDePagina)="tablaElegibles.irA($event)"
+          />
         </div>
       }
     </section>
@@ -427,11 +454,15 @@
     }
 
     <section class="tarjeta" aria-labelledby="titulo-pago">
-      <h2 id="titulo-pago">Pago del financiador</h2>
-      <p class="ayuda">
-        Un pago en efectivo entra a la caja del dia y necesita una jornada abierta. Transferencia o
-        tarjeta no tocan el arqueo. Un pago mayor que el saldo se rechaza.
-      </p>
+      <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
+        <h2 id="titulo-pago">Pago del financiador</h2>
+        <app-ayuda titulo="Pago del financiador">
+          <p>
+            Un pago en efectivo entra a la caja del dia y necesita una jornada abierta.
+            Transferencia o tarjeta no tocan el arqueo. Un pago mayor que el saldo se rechaza.
+          </p>
+        </app-ayuda>
+      </div>
       <form [formGroup]="pago" (ngSubmit)="registrarPago()" novalidate>
         <div class="campos-en-linea">
           <div class="campo">
@@ -475,11 +506,15 @@
     </section>
 
     <section class="tarjeta" aria-labelledby="titulo-cierre">
-      <h2 id="titulo-cierre">Cerrar el lote</h2>
-      <p class="ayuda">
-        Se cierra cuando el saldo llega a cero: todo lo presentado quedo explicado por debitos o
-        pagos. Si queda saldo, el servidor lo rechaza y dice cuanto falta.
-      </p>
+      <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
+        <h2 id="titulo-cierre">Cerrar el lote</h2>
+        <app-ayuda titulo="Cerrar el lote">
+          <p>
+            Se cierra cuando el saldo llega a cero: todo lo presentado quedo explicado por debitos o
+            pagos. Si queda saldo, el servidor lo rechaza y dice cuanto falta.
+          </p>
+        </app-ayuda>
+      </div>
       <div class="acciones">
         <button type="button" class="boton" [disabled]="operando() !== null" (click)="conciliar()">
           Cerrar (conciliar) el lote

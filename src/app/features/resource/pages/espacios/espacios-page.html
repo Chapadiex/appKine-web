@@ -1,15 +1,21 @@
-<h1>Espacios y boxes</h1>
-
-<p class="descripcion">
-  Los recursos fisicos de <b>{{ nombreDeLaSede() }}</b> donde se atiende: boxes, gimnasios,
-  gabinetes, salas grupales y piletas. Un espacio pertenece a una sola sede y no se puede mudar: el
-  que se muda es uno que se da de baja y otro que se crea.
-</p>
+<div class="titulo-con-ayuda">
+  <h1>Espacios y boxes</h1>
+  <app-ayuda titulo="Sobre esta pantalla">
+    <p>
+      Los recursos fisicos de <b>{{ nombreDeLaSede() }}</b> donde se atiende: boxes, gimnasios,
+      gabinetes, salas grupales y piletas. Un espacio pertenece a una sola sede y no se puede mudar:
+      el que se muda es uno que se da de baja y otro que se crea.
+    </p>
+  </app-ayuda>
+  <div class="encabezado__acciones" *akinePermiso="permisoManage">
+    <a class="boton" routerLink="/espacios/nuevo">
+      <app-icono nombre="agregar" />
+      Dar de alta un espacio
+    </a>
+  </div>
+</div>
 
 <p class="acciones">
-  <a class="boton" routerLink="/espacios/nuevo" *akinePermiso="permisoManage">
-    Dar de alta un espacio
-  </a>
   <a class="boton boton--secundario" routerLink="/espacios/disponibilidad">
     Ver que espacios estan en servicio
   </a>
@@ -44,24 +50,30 @@
 <section class="tarjeta" aria-labelledby="titulo-espacios">
   <h2 id="titulo-espacios">Espacios de la sede</h2>
 
-  <div class="campo">
-    <label for="filtro-estado-espacio">Mostrar</label>
-    <select
-      id="filtro-estado-espacio"
-      [value]="filtro()"
-      (change)="cambiarFiltro($any($event.target).value)"
-      aria-describedby="filtro-estado-espacio-ayuda"
-    >
-      <option value="ACTIVO">Solo los espacios activos</option>
-      <option value="INACTIVO">Solo los dados de baja</option>
-      <option value="TODOS">Todos</option>
-    </select>
-    <p class="ayuda" id="filtro-estado-espacio-ayuda">
-      Los espacios dados de baja no se borran: siguen aca con su motivo y su fecha, porque las
-      sesiones y los turnos historicos los siguen referenciando. Su nombre, en cambio, queda libre
-      para un espacio nuevo.
-    </p>
-  </div>
+  <!--
+    Regla de filtros (plan §3.4): el listado no tiene busqueda por texto en el backend, asi que
+    va solo el embudo; "Mostrar" es un filtro avanzado.
+  -->
+  <app-filtros [soloAvanzados]="true" [activos]="filtrosAvanzadosActivos()">
+    <div class="campo">
+      <label for="filtro-estado-espacio">Mostrar</label>
+      <select
+        id="filtro-estado-espacio"
+        [value]="filtro()"
+        (change)="cambiarFiltro($any($event.target).value)"
+        aria-describedby="filtro-estado-espacio-ayuda"
+      >
+        <option value="ACTIVO">Solo los espacios activos</option>
+        <option value="INACTIVO">Solo los dados de baja</option>
+        <option value="TODOS">Todos</option>
+      </select>
+      <p class="ayuda" id="filtro-estado-espacio-ayuda">
+        Los espacios dados de baja no se borran: siguen aca con su motivo y su fecha, porque las
+        sesiones y los turnos historicos los siguen referenciando. Su nombre, en cambio, queda libre
+        para un espacio nuevo.
+      </p>
+    </div>
+  </app-filtros>
 
   <div aria-live="polite">
     @switch (estado().tipo) {

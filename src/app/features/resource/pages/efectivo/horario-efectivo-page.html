@@ -1,11 +1,14 @@
-<h1>Horario efectivo del profesional</h1>
-
-<p class="descripcion">
-  Que dias y horas <b>concretas</b> atiende un profesional en <b>{{ nombreDeLaSede() }}</b
-  >, una vez aplicadas todas las reglas juntas: su horario semanal, los cierres y aperturas de la
-  sede y los suyos, la vigencia de su vinculo y la politica de feriados. Cada franja dice
-  <b>que regla la produjo</b>, y cada dia vacio dice <b>por que</b> quedo vacio.
-</p>
+<div class="titulo-con-ayuda">
+  <h1>Horario efectivo del profesional</h1>
+  <app-ayuda titulo="Sobre esta pantalla">
+    <p>
+      Que dias y horas <b>concretas</b> atiende un profesional en <b>{{ nombreDeLaSede() }}</b
+      >, una vez aplicadas todas las reglas juntas: su horario semanal, los cierres y aperturas de
+      la sede y los suyos, la vigencia de su vinculo y la politica de feriados. Cada franja dice
+      <b>que regla la produjo</b>, y cada dia vacio dice <b>por que</b> quedo vacio.
+    </p>
+  </app-ayuda>
+</div>
 
 <p class="acciones">
   <a class="enlace" [routerLink]="rutas.semanal">Horario semanal del profesional</a>

@@ -90,7 +90,7 @@ test.describe('Permisos sobre la plata con una profesional contra el backend rea
       }, ruta);
       await expect(page, `${ruta} no se le abre`).toHaveURL(/\/sin-permiso$/);
       await expect(
-        page.getByRole('heading', { name: 'No tenes permiso para esta pantalla', level: 1 }),
+        page.getByRole('heading', { name: 'No tenés permiso para esta pantalla', level: 1 }),
       ).toBeVisible();
       await expect(page.getByText(centro.nombreCentro, { exact: true })).toBeVisible();
     }

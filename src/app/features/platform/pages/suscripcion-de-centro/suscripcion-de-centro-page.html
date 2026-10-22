@@ -1,42 +1,54 @@
-<h1>Suscripcion de un centro</h1>
+<div class="titulo-con-ayuda">
+  <h1>Suscripcion de un centro</h1>
+  <app-ayuda titulo="Sobre esta pantalla">
+    <p>
+      Plan, estado y version de la suscripcion de un centro, y el cambio de plan. No hace falta un
+      acceso de soporte: el consumo de limites del centro no se muestra aca.
+    </p>
+  </app-ayuda>
+</div>
 
-<p class="descripcion">
-  Plan, estado y version de la suscripcion de un centro, y el cambio de plan. No hace falta un
-  acceso de soporte: el consumo de limites del centro no se muestra aca.
-  <a class="enlace" [routerLink]="rutaSolicitudes">Ir a las solicitudes de catalogo</a>
-  · <a class="enlace" [routerLink]="rutaCatalogoFinanciadores">Catalogo de financiadores</a>
-</p>
+<app-pestanas [pestanas]="pestanasDePlataforma" [etiqueta]="etiquetaDePestanas" />
 
 <section class="tarjeta" aria-labelledby="titulo-buscar-centro">
   <h2 id="titulo-buscar-centro">Centro</h2>
   <form (submit)="$event.preventDefault(); buscar()">
-    <div class="campo">
-      <label for="suscripcion-busqueda">Nombre o identificador del centro</label>
-      <input
-        id="suscripcion-busqueda"
-        type="search"
-        autocomplete="off"
-        aria-describedby="suscripcion-busqueda-ayuda"
-        [value]="busqueda()"
-        (input)="busqueda.set($any($event.target).value)"
-      />
-      <p id="suscripcion-busqueda-ayuda" class="ayuda">
-        Busca en el nombre y en el slug del centro. Vacio, lista todos.
-      </p>
-    </div>
-    <div class="campo">
-      <label for="suscripcion-filtro-estado">Estado de la suscripcion</label>
-      <select
-        id="suscripcion-filtro-estado"
-        [value]="filtroDeEstado()"
-        (change)="filtroDeEstado.set($any($event.target).value)"
-      >
-        <option value="">Todos</option>
-        <option value="ACTIVA">Activa</option>
-        <option value="SUSPENDIDA">Suspendida</option>
-        <option value="CANCELADA">Cancelada</option>
-      </select>
-    </div>
+    <!-- Regla de filtros (plan §3.4): la busqueda a la vista; el estado, detras del embudo. -->
+    <app-filtros [activos]="filtrosAvanzadosActivos()">
+      <div class="campo" filtro-principal>
+        <label class="visualmente-oculto" for="suscripcion-busqueda"
+          >Nombre o identificador del centro</label
+        >
+        <div class="campo-busqueda">
+          <app-icono class="campo-busqueda__icono" nombre="buscar" />
+          <input
+            id="suscripcion-busqueda"
+            type="search"
+            autocomplete="off"
+            placeholder="Buscar por nombre o identificador del centro"
+            aria-describedby="suscripcion-busqueda-ayuda"
+            [value]="busqueda()"
+            (input)="busqueda.set($any($event.target).value)"
+          />
+        </div>
+        <p id="suscripcion-busqueda-ayuda" class="visualmente-oculto">
+          Busca en el nombre y en el slug del centro. Vacio, lista todos.
+        </p>
+      </div>
+      <div class="campo">
+        <label for="suscripcion-filtro-estado">Estado de la suscripcion</label>
+        <select
+          id="suscripcion-filtro-estado"
+          [value]="filtroDeEstado()"
+          (change)="filtroDeEstado.set($any($event.target).value)"
+        >
+          <option value="">Todos</option>
+          <option value="ACTIVA">Activa</option>
+          <option value="SUSPENDIDA">Suspendida</option>
+          <option value="CANCELADA">Cancelada</option>
+        </select>
+      </div>
+    </app-filtros>
     <div class="acciones">
       <button type="submit" class="boton">Buscar centros</button>
     </div>

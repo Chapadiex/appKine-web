@@ -29,6 +29,11 @@ import {
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { esSinPermiso } from '../../../../core/interceptors/error.interceptor';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { Filtros } from '../../../../shared/components/filtros/filtros';
+import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
+import { Icono } from '../../../../shared/components/icono/icono';
+import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 
 /** Operacion abierta sobre una fila. Solo una a la vez. */
 type TipoAccion = 'editar' | 'baja';
@@ -95,6 +100,10 @@ type EstadoDeCoberturas =
   selector: 'app-coberturas-del-paciente-page',
   imports: [
     Ayuda,
+    ColumnaOrdenable,
+    Filtros,
+    Icono,
+    Paginacion,
     ReactiveFormsModule,
     RouterLink,
     ConfirmacionConMotivo,
@@ -129,6 +138,8 @@ export class CoberturasDelPacientePage {
   protected readonly persona = signal<PersonaResponse | null>(null);
 
   protected readonly filtro = signal<FiltroDeCoberturas>('TODAS');
+  /** Filtros avanzados fuera de su valor por defecto: el contador del embudo. */
+  protected readonly filtrosAvanzadosActivos = computed(() => Number(this.filtro() !== 'TODAS'));
 
   protected readonly panel = signal<{ readonly id: number; readonly tipo: TipoAccion } | null>(
     null,
@@ -160,6 +171,17 @@ export class CoberturasDelPacientePage {
   protected readonly coberturas = computed<readonly CoberturaResponse[]>(() => {
     const actual = this.estado();
     return actual.tipo === 'listo' ? actual.coberturas : [];
+  });
+
+  /** Orden y paginado de la lista completa (plan §3.4): el backend devuelve un array. */
+  protected readonly tabla = tablaLocal(this.coberturas, {
+    columnas: {
+      cobertura: (cobertura) => coberturaEnUnaLinea(cobertura),
+      afiliado: (cobertura) => cobertura.numeroAfiliado ?? null,
+      vigencia: (cobertura) => cobertura.vigenciaDesde ?? null,
+      situacion: (cobertura) => situacionEnPalabras(cobertura),
+      principal: (cobertura) => cobertura.principal ?? null,
+    },
   });
 
   protected readonly cargando = computed(() => this.estado().tipo === 'cargando');

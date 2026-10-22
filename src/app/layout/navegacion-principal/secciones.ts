@@ -1,15 +1,18 @@
 import { RUTA_HORARIOS } from '../../features/resource/models/rutas-de-horarios';
 import {
+  PERMISO_AUDITORIA_READ,
   PERMISO_CAJA_OPERATE,
   PERMISO_CATALOGO_READ,
   PERMISO_CLASE_READ,
   PERMISO_COBRO_REGISTER,
   PERMISO_COLABORADOR_READ,
+  PERMISO_CONSULTORIO_MANAGE,
   PERMISO_CONVENIO_READ,
   PERMISO_INSCRIPCION_READ,
   PERMISO_PACIENTE_READ,
   PERMISO_PRODUCTO_READ,
   PERMISO_REPORTE_READ,
+  PERMISO_SESION_REGISTER,
   PERMISO_TURNO_READ,
 } from '../../core/models/permisos';
 import { RUTA_CLASES } from '../../features/activity/models/rutas-de-clases';
@@ -40,7 +43,8 @@ export interface GrupoDeSecciones {
 }
 
 /**
- * Las secciones de AKINE agrupadas por tarea, en el orden en que se muestran (UX-01).
+ * Las secciones de AKINE agrupadas por tarea, en el orden en que se muestran (UX-01, grupos y
+ * nombres del canvas "AKINE · Pantallas" del 22/10/2026).
  *
  * <p>El orden sigue el dia de un centro: lo que el mostrador usa cien veces por dia va arriba
  * (Operacion), lo que el administrador configura una vez por mes va abajo (Configuracion). La
@@ -89,17 +93,23 @@ export interface GrupoDeSecciones {
  */
 export const GRUPOS: readonly GrupoDeSecciones[] = [
   {
-    etiqueta: 'Operacion',
+    etiqueta: 'Atención',
     icono: 'operacion',
     secciones: [
       { etiqueta: 'Agenda', ruta: '/agenda' },
-      { etiqueta: 'Recepcion del dia', ruta: '/agenda/recepcion', permisos: [PERMISO_TURNO_READ] },
+      { etiqueta: 'Recepción del día', ruta: '/agenda/recepcion', permisos: [PERMISO_TURNO_READ] },
+      { etiqueta: 'Series de turnos', ruta: '/agenda/series', permisos: [PERMISO_TURNO_READ] },
+      {
+        etiqueta: 'Atender sin turno',
+        ruta: '/atencion/sin-turno',
+        permisos: [PERMISO_SESION_REGISTER],
+      },
     ],
   },
   {
     etiqueta: 'Pacientes',
     icono: 'pacientes',
-    secciones: [{ etiqueta: 'Pacientes', ruta: '/pacientes', permisos: [PERMISO_PACIENTE_READ] }],
+    secciones: [{ etiqueta: 'Padrón', ruta: '/pacientes', permisos: [PERMISO_PACIENTE_READ] }],
   },
   {
     etiqueta: 'Actividades',
@@ -111,25 +121,96 @@ export const GRUPOS: readonly GrupoDeSecciones[] = [
     ],
   },
   {
-    etiqueta: 'Economia',
+    etiqueta: 'Economía',
     icono: 'economia',
     secciones: [
-      { etiqueta: 'Caja', ruta: '/caja', permisos: [PERMISO_CAJA_OPERATE] },
+      { etiqueta: 'Caja diaria', ruta: '/caja', permisos: [PERMISO_CAJA_OPERATE] },
       { etiqueta: 'Egresos', ruta: '/egresos', permisos: [PERMISO_CAJA_OPERATE] },
+      { etiqueta: 'Honorarios', ruta: '/egresos/honorarios', permisos: [PERMISO_CAJA_OPERATE] },
       { etiqueta: 'Presentaciones', ruta: '/presentaciones', permisos: [PERMISO_COBRO_REGISTER] },
       { etiqueta: 'Reportes', ruta: '/reportes', permisos: [PERMISO_REPORTE_READ] },
     ],
   },
   {
-    etiqueta: 'Configuracion',
+    etiqueta: 'Servicios y catálogo',
+    icono: 'servicios',
+    secciones: [
+      { etiqueta: 'Catálogo de servicios', ruta: '/servicios/catalogo' },
+      { etiqueta: 'Ofertas de la sede', ruta: '/servicios/ofertas' },
+      { etiqueta: 'Catálogo clínico', ruta: '/catalogo', permisos: [PERMISO_CATALOGO_READ] },
+      {
+        etiqueta: 'Pedidos al catálogo',
+        ruta: '/catalogo/solicitudes',
+        permisos: [PERMISO_CATALOGO_READ],
+      },
+    ],
+  },
+  {
+    etiqueta: 'Contratación',
+    icono: 'contratacion',
+    secciones: [
+      {
+        etiqueta: 'Convenios de la sede',
+        ruta: '/contratacion/convenios',
+        permisos: [PERMISO_CONVENIO_READ],
+      },
+      {
+        etiqueta: 'Financiadores',
+        ruta: '/contratacion/financiadores',
+        permisos: [PERMISO_CONVENIO_READ],
+      },
+      {
+        etiqueta: 'Arancel efectivo',
+        ruta: '/contratacion/arancel-efectivo',
+        permisos: [PERMISO_CONVENIO_READ],
+      },
+    ],
+  },
+  {
+    etiqueta: 'Espacios y horarios',
+    icono: 'horarios',
+    secciones: [
+      { etiqueta: 'Espacios y boxes', ruta: '/espacios' },
+      { etiqueta: 'Espacios en servicio', ruta: '/espacios/disponibilidad' },
+      {
+        etiqueta: 'Horarios de profesionales',
+        ruta: RUTA_HORARIOS,
+        permisos: [PERMISO_COLABORADOR_READ],
+      },
+      {
+        etiqueta: 'Calendario de la sede',
+        ruta: `${RUTA_HORARIOS}/calendario`,
+        permisos: [PERMISO_COLABORADOR_READ],
+      },
+      {
+        etiqueta: 'Cierres y aperturas',
+        ruta: `${RUTA_HORARIOS}/excepciones`,
+        permisos: [PERMISO_COLABORADOR_READ],
+      },
+    ],
+  },
+  {
+    etiqueta: 'Configuración',
     icono: 'configuracion',
     secciones: [
-      { etiqueta: 'Organizacion', ruta: '/organizacion' },
-      { etiqueta: 'Espacios', ruta: '/espacios' },
-      { etiqueta: 'Horarios', ruta: RUTA_HORARIOS, permisos: [PERMISO_COLABORADOR_READ] },
-      { etiqueta: 'Servicios', ruta: '/servicios' },
-      { etiqueta: 'Catalogo', ruta: '/catalogo', permisos: [PERMISO_CATALOGO_READ] },
-      { etiqueta: 'Contratacion', ruta: '/contratacion', permisos: [PERMISO_CONVENIO_READ] },
+      { etiqueta: 'Organización', ruta: '/organizacion' },
+      { etiqueta: 'Sedes', ruta: '/organizacion/sedes' },
+      {
+        etiqueta: 'Colaboradores',
+        ruta: '/organizacion/colaboradores',
+        permisos: [PERMISO_COLABORADOR_READ],
+      },
+      { etiqueta: 'Suscripción', ruta: '/organizacion/suscripcion' },
+      {
+        etiqueta: 'Auditoría',
+        ruta: '/organizacion/auditoria',
+        permisos: [PERMISO_AUDITORIA_READ],
+      },
+      {
+        etiqueta: 'Política de enmienda',
+        ruta: '/atencion/politica-de-enmienda',
+        permisos: [PERMISO_CONSULTORIO_MANAGE],
+      },
     ],
   },
 ];

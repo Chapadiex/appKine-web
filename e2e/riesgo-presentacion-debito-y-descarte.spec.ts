@@ -2,6 +2,7 @@ import { Locator, Page, test } from '@playwright/test';
 import { randomUUID } from 'node:crypto';
 
 import { ingresar, navegar, respuestaDe } from './support/agenda-real';
+import { abrirFiltros } from './support/filtros';
 import {
   CentroPropio,
   cerrarCentroPropio,
@@ -320,6 +321,7 @@ test.describe('Debito, quitar y descartar en presentaciones contra el backend re
     );
 
     // El filtro de la tabla del lote por estado.
+    await abrirFiltros(page);
     await page.getByLabel('Mostrar').selectOption({ label: 'Aceptada' });
     await expect(page.getByText('Ninguna prestacion del lote esta en ese estado.')).toBeVisible();
     await page.getByLabel('Mostrar').selectOption({ label: 'Debitada en parte' });

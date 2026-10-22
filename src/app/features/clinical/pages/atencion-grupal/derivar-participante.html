@@ -1,9 +1,13 @@
 <section class="tarjeta" aria-labelledby="titulo-derivar-participante" akineFocoAlMontar>
-  <h2 id="titulo-derivar-participante">Derivar a {{ nombre() }} a un caso clinico</h2>
-  <p class="ayuda">
-    Derivar vincula su asistencia a esta clase con un caso clinico activo de su historia. No es
-    atender: la atencion se inicia despues, desde la tabla, y se numera dentro de ese caso.
-  </p>
+  <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
+    <h2 id="titulo-derivar-participante">Derivar a {{ nombre() }} a un caso clinico</h2>
+    <app-ayuda titulo="Sobre esta seccion">
+      <p>
+        Derivar vincula su asistencia a esta clase con un caso clinico activo de su historia. No es
+        atender: la atencion se inicia despues, desde la tabla, y se numera dentro de ese caso.
+      </p>
+    </app-ayuda>
+  </div>
 
   @switch (elegibilidad().tipo) {
     @case ('cargando') {

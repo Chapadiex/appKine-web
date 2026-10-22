@@ -1,11 +1,14 @@
-<h1>Cierres y aperturas</h1>
-
-<p class="descripcion">
-  Excepciones al horario cargado en <b>{{ nombreDeLaSede() }}</b
-  >. Un <b>cierre</b> recorta la disponibilidad —una ausencia, una licencia, un bloqueo— y una
-  <b>apertura</b> la habilita donde no la habia: es asi como un centro declara que atiende un
-  feriado o que suma una banda un sabado puntual.
-</p>
+<div class="titulo-con-ayuda">
+  <h1>Cierres y aperturas</h1>
+  <app-ayuda titulo="Sobre esta pantalla">
+    <p>
+      Excepciones al horario cargado en <b>{{ nombreDeLaSede() }}</b
+      >. Un <b>cierre</b> recorta la disponibilidad —una ausencia, una licencia, un bloqueo— y una
+      <b>apertura</b> la habilita donde no la habia: es asi como un centro declara que atiende un
+      feriado o que suma una banda un sabado puntual.
+    </p>
+  </app-ayuda>
+</div>
 
 <p class="acciones">
   <a class="enlace" [routerLink]="rutas.semanal">Horario semanal del profesional</a>
@@ -33,55 +36,61 @@
   <h2 id="titulo-ventana">Que periodo mirar</h2>
 
   <form id="form-ventana" [formGroup]="formularioVentana" (ngSubmit)="consultar()" novalidate>
-    <div class="ventana">
-      <div class="campo">
-        <label for="ventana-desde">Desde</label>
-        <input id="ventana-desde" type="date" formControlName="desde" />
+    <!--
+      Regla de filtros (plan §3.4): la ventana de fechas define la consulta y queda a la vista; a
+      quien alcanza ("Ver") es un refinamiento opcional y va detras del embudo.
+    -->
+    <app-filtros [activos]="filtrosAvanzadosActivos()">
+      <div class="ventana" filtro-principal>
+        <div class="campo">
+          <label for="ventana-desde">Desde</label>
+          <input id="ventana-desde" type="date" formControlName="desde" />
+        </div>
+
+        <div class="campo">
+          <label for="ventana-hasta">Hasta (exclusivo)</label>
+          <input
+            id="ventana-hasta"
+            type="date"
+            formControlName="hasta"
+            aria-describedby="ventana-hasta-ayuda"
+          />
+          <p class="ayuda" id="ventana-hasta-ayuda">
+            No se incluye este dia. El maximo es de {{ maximoDias }} dias.
+          </p>
+        </div>
       </div>
 
       <div class="campo">
-        <label for="ventana-hasta">Hasta (exclusivo)</label>
-        <input
-          id="ventana-hasta"
-          type="date"
-          formControlName="hasta"
-          aria-describedby="ventana-hasta-ayuda"
-        />
-        <p class="ayuda" id="ventana-hasta-ayuda">
-          No se incluye este dia. El maximo es de {{ maximoDias }} dias.
+        <label for="filtro-alcance">Ver</label>
+        <select
+          id="filtro-alcance"
+          [value]="filtroMembership() ?? ''"
+          (change)="cambiarFiltro($any($event.target).value)"
+          aria-describedby="filtro-alcance-ayuda"
+        >
+          <option value="">Solo las de toda la sede</option>
+          <!--
+            `[selected]` ademas del `[value]` del select: cuando el filtro viene en la URL, el
+            valor esta puesto ANTES de que lleguen los profesionales, y asignarle a un `<select>`
+            un valor que todavia no existe como opcion no hace nada. El binding de la opcion se
+            evalua cuando la opcion se crea, que es el momento en que si puede quedar elegida.
+          -->
+          @for (profesional of profesionales(); track profesional.id ?? $index) {
+            <option [value]="profesional.id" [selected]="profesional.id === filtroMembership()">
+              {{ profesional.accountName || profesional.accountEmail }}
+            </option>
+          }
+        </select>
+        <p class="ayuda" id="filtro-alcance-ayuda">
+          Elegir un profesional muestra <b>las suyas y ademas las de toda la sede</b>, porque un
+          cierre del centro tambien le aplica a el. Sin elegir a nadie se ven solo las de la sede.
         </p>
-      </div>
-    </div>
-
-    <div class="campo">
-      <label for="filtro-alcance">Ver</label>
-      <select
-        id="filtro-alcance"
-        [value]="filtroMembership() ?? ''"
-        (change)="cambiarFiltro($any($event.target).value)"
-        aria-describedby="filtro-alcance-ayuda"
-      >
-        <option value="">Solo las de toda la sede</option>
-        <!--
-          `[selected]` ademas del `[value]` del select: cuando el filtro viene en la URL, el
-          valor esta puesto ANTES de que lleguen los profesionales, y asignarle a un `<select>`
-          un valor que todavia no existe como opcion no hace nada. El binding de la opcion se
-          evalua cuando la opcion se crea, que es el momento en que si puede quedar elegida.
-        -->
-        @for (profesional of profesionales(); track profesional.id ?? $index) {
-          <option [value]="profesional.id" [selected]="profesional.id === filtroMembership()">
-            {{ profesional.accountName || profesional.accountEmail }}
-          </option>
+        @if (profesionalesConocidos() && !listaCompleta()) {
+          <p class="ayuda">{{ textoListaIncompleta }}</p>
         }
-      </select>
-      <p class="ayuda" id="filtro-alcance-ayuda">
-        Elegir un profesional muestra <b>las suyas y ademas las de toda la sede</b>, porque un
-        cierre del centro tambien le aplica a el. Sin elegir a nadie se ven solo las de la sede.
-      </p>
-      @if (profesionalesConocidos() && !listaCompleta()) {
-        <p class="ayuda">{{ textoListaIncompleta }}</p>
-      }
-    </div>
+      </div>
+    </app-filtros>
 
     <div class="acciones">
       <button type="submit" class="boton">Consultar</button>

@@ -22,6 +22,8 @@ import { TenantContextStore } from '../../../../core/services/tenant-context.sto
 import { traducirErrorColaborador, traducirErrorGrant } from '../../models/colaborador-errors';
 import { textoRequerido } from '../../../../shared/validators/texto-requerido';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { Icono } from '../../../../shared/components/icono/icono';
 
 /** Operacion abierta sobre una fila. Solo una a la vez. */
 type TipoAccion = 'editar' | 'suspender' | 'reactivar' | 'revocar' | 'permisos';
@@ -70,7 +72,15 @@ const POR_PAGINA = 20;
  */
 @Component({
   selector: 'app-collaborators-page',
-  imports: [ReactiveFormsModule, RouterLink, PermisoDirective, Paginacion, ConfirmacionConMotivo],
+  imports: [
+    Ayuda,
+    Icono,
+    ReactiveFormsModule,
+    RouterLink,
+    PermisoDirective,
+    Paginacion,
+    ConfirmacionConMotivo,
+  ],
   templateUrl: './collaborators-page.html',
   styleUrl: '../../organization.css',
 })

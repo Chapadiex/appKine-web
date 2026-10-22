@@ -1,15 +1,13 @@
 @if (financiador(); as ficha) {
   <div class="titulo-con-ayuda">
     <h1>Planes de {{ ficha.nombre }}</h1>
-    <app-ayuda titulo="Cerrar la vigencia no es dar de baja">
+    <app-ayuda titulo="Sobre esta pantalla">
       <ng-container [ngTemplateOutlet]="ayudaDePantalla" />
     </app-ayuda>
+    <ng-container [ngTemplateOutlet]="accionDelTitulo" />
   </div>
-  <p class="descripcion">
-    {{ etiquetaDeTipo(ficha.tipo) }} · codigo {{ ficha.codigo }}. Un plan es <b>lo que se elige</b>:
-    la cobertura de un paciente apunta a un plan, y el convenio de cada sede se firma contra un plan
-    y no contra el financiador entero.
-  </p>
+  <!-- Datos del financiador: se ven siempre. La explicacion va en el "?". -->
+  <p class="descripcion">{{ etiquetaDeTipo(ficha.tipo) }} · codigo {{ ficha.codigo }}.</p>
 } @else {
   <!--
     Degradacion honesta: si la lectura del financiador fallo, la pantalla igual sirve. Se dice que
@@ -17,14 +15,13 @@
   -->
   <div class="titulo-con-ayuda">
     <h1>Planes del financiador #{{ financiadorId }}</h1>
-    <app-ayuda titulo="Cerrar la vigencia no es dar de baja">
+    <app-ayuda titulo="Sobre esta pantalla">
       <ng-container [ngTemplateOutlet]="ayudaDePantalla" />
     </app-ayuda>
+    <ng-container [ngTemplateOutlet]="accionDelTitulo" />
   </div>
   <p class="descripcion">
-    No pudimos leer los datos del financiador, pero sus planes se listan igual. Un plan es lo que se
-    elige: la cobertura de un paciente apunta a un plan, y el convenio de cada sede se firma contra
-    un plan.
+    No pudimos leer los datos del financiador, pero sus planes se listan igual.
   </p>
 }
 
@@ -35,8 +32,25 @@
   <a class="boton boton--secundario" routerLink="/contratacion/convenios">Convenios de la sede</a>
 </nav>
 
+<!-- La accion principal del titulo: una sola copia para las dos ramas del titulo. -->
+<ng-template #accionDelTitulo>
+  @if (!financiadorInactivo()) {
+    <div class="encabezado__acciones" *akinePermiso="permisoManage">
+      <button type="button" class="boton" (click)="abrirAlta()">
+        <app-icono nombre="agregar" />
+        Dar de alta un plan
+      </button>
+    </div>
+  }
+</ng-template>
+
 <!-- La ayuda de la pantalla: una sola copia para las dos ramas del titulo. -->
 <ng-template #ayudaDePantalla>
+  <p>
+    Un plan es <b>lo que se elige</b>: la cobertura de un paciente apunta a un plan, y el convenio
+    de cada sede se firma contra un plan y no contra el financiador entero.
+  </p>
+  <p class="ayuda-contextual__subtitulo">Cerrar la vigencia no es dar de baja</p>
   <p>
     <b>Cerrar la vigencia</b> es ponerle fecha de fin desde <i>Editar</i>. El plan queda
     <b>activo y consultable</b>, y lo unico que cambia es que deja de ofrecerse despues de esa
@@ -64,12 +78,6 @@
     Este financiador esta dado de baja, asi que <b>no admite planes nuevos</b>. Sus planes actuales
     se siguen pudiendo editar y consultar: dejar de trabajar con una obra social no puede tener como
     efecto que sus planes queden congelados con un error de tipeo.
-  </p>
-} @else {
-  <p class="acciones">
-    <button type="button" class="boton" (click)="abrirAlta()" *akinePermiso="permisoManage">
-      Dar de alta un plan
-    </button>
   </p>
 }
 
@@ -225,7 +233,11 @@
 <section class="tarjeta" aria-labelledby="titulo-listado-planes">
   <h2 id="titulo-listado-planes">Planes cargados</h2>
 
-  <div class="par-de-campos">
+  <!--
+    Regla de filtros (plan §3.4): sin busqueda por texto en el backend, solo el embudo. La fecha
+    de vigencia va adentro y cuenta como activa si no es hoy: cambia la columna Situacion.
+  -->
+  <app-filtros [soloAvanzados]="true" [activos]="filtrosAvanzadosActivos()">
     <div class="campo">
       <label for="filtro-estado-plan">Mostrar</label>
       <select
@@ -260,7 +272,7 @@
         explicar una cobertura vieja.
       </p>
     </div>
-  </div>
+  </app-filtros>
 
   <div aria-live="polite">
     @switch (estado().tipo) {
@@ -294,8 +306,6 @@
             arancel tenga como mucho una candidata para cada fecha.
           </p>
         } @else {
-          <p class="ayuda">{{ planes().length }} en total.</p>
-
           <div class="tabla-scroll" tabindex="0" role="region" aria-label="Planes de cobertura">
             <table class="tabla">
               <caption class="visualmente-oculto">
@@ -304,16 +314,16 @@
               </caption>
               <thead>
                 <tr>
-                  <th scope="col">Plan</th>
-                  <th scope="col">Vigencia</th>
-                  <th scope="col">Copago</th>
+                  <th scope="col" appOrdenable [tabla]="tabla" columna="nombre">Plan</th>
+                  <th scope="col" appOrdenable [tabla]="tabla" columna="vigencia">Vigencia</th>
+                  <th scope="col" appOrdenable [tabla]="tabla" columna="copago">Copago</th>
                   <th scope="col">Requisitos</th>
                   <th scope="col">Situacion</th>
                   <th scope="col">Acciones</th>
                 </tr>
               </thead>
               <tbody>
-                @for (plan of planes(); track plan.id) {
+                @for (plan of tabla.visibles(); track plan.id) {
                   <!--
                     Una sola evaluacion por fila: `situacion()` construye un objeto, y llamarla
                     tres veces desde la plantilla lo construiria tres veces en cada ciclo de
@@ -552,6 +562,16 @@
                 }
               </tbody>
             </table>
+          </div>
+
+          <div class="tabla-pie">
+            <span>{{ tabla.total() }} planes</span>
+            <app-paginacion
+              [paginaActual]="tabla.pagina()"
+              [totalPaginas]="tabla.totalPaginas()"
+              etiqueta="Paginas de planes"
+              (cambioDePagina)="tabla.irA($event)"
+            />
           </div>
         }
       }

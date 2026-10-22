@@ -25,6 +25,7 @@ import {
 } from '../../models/series';
 import { SchedulingApi } from '../../services/scheduling-api';
 import { AlcanceSerie, SeriesApi } from '../../services/series-api';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 
 /** Estados en los que un turno todavia se puede cancelar. El resto lo omite el backend. */
 const PENDIENTES: ReadonlySet<string> = new Set<string>([
@@ -86,7 +87,7 @@ interface Resultado {
  */
 @Component({
   selector: 'app-serie-de-turnos-page',
-  imports: [RouterLink, ConfirmacionConMotivo, SelectorDeHorario],
+  imports: [Ayuda, RouterLink, ConfirmacionConMotivo, SelectorDeHorario],
   templateUrl: './serie-de-turnos-page.html',
   styleUrl: '../../agenda.css',
 })

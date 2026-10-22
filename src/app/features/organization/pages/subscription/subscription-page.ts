@@ -10,6 +10,7 @@ import { SubscriptionResponseStatusEnum } from '../../../../api/generated/model/
 import { SubscriptionTransitionResponse } from '../../../../api/generated/model/subscription-transition-response';
 import { SuscripcionesService } from '../../../../api/generated/api/suscripciones.service';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 
 /**
  * Suscripcion lista para pintar: la respuesta del backend mas el motivo de la suspension.
@@ -58,7 +59,7 @@ const HECHOS_A_REVISAR = 20;
  */
 @Component({
   selector: 'app-subscription-page',
-  imports: [RouterLink],
+  imports: [Ayuda, RouterLink],
   templateUrl: './subscription-page.html',
   styleUrl: '../../organization.css',
 })

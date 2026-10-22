@@ -56,6 +56,9 @@ import {
 import { textoRequerido } from '../../../../shared/validators/texto-requerido';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
+import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 
 /** Panel abierto sobre una orden. Solo uno a la vez en toda la pantalla. */
 type PanelDeOrden = 'editar' | 'baja' | 'documento';
@@ -144,6 +147,8 @@ interface PanelAbierto {
   selector: 'app-ordenes-y-autorizaciones-page',
   imports: [
     Ayuda,
+    ColumnaOrdenable,
+    Paginacion,
     ReactiveFormsModule,
     RouterLink,
     ConfirmacionConMotivo,
@@ -198,6 +203,26 @@ export class OrdenesYAutorizacionesPage {
   protected readonly persona = signal<PersonaResponse | null>(null);
   protected readonly ordenes = signal<readonly OrdenResponse[]>([]);
   protected readonly autorizaciones = signal<readonly AutorizacionResponse[]>([]);
+
+  /** Orden y paginado de las listas completas (plan §3.4): el backend devuelve arrays. */
+  protected readonly tablaOrdenes = tablaLocal(this.ordenes, {
+    columnas: {
+      emisor: (orden) => emisorEnPalabras(orden),
+      numero: (orden) => orden.numero ?? null,
+      emitida: (orden) => orden.fechaEmision ?? null,
+      vigencia: (orden) => orden.vigenciaDesde ?? null,
+      situacion: (orden) => situacionDeOrden(orden),
+    },
+  });
+
+  protected readonly tablaAutorizaciones = tablaLocal(this.autorizaciones, {
+    columnas: {
+      numero: (autorizacion) => autorizacion.numero ?? null,
+      estado: (autorizacion) => estadoDeAutorizacion(autorizacion),
+      vigencia: (autorizacion) => autorizacion.vigenciaDesde ?? null,
+      saldo: (autorizacion) => autorizacion.saldo ?? null,
+    },
+  });
   protected readonly coberturas = signal<readonly CoberturaResponse[]>([]);
   protected readonly practicas = signal<readonly CatalogoConceptoResponse[]>([]);
 

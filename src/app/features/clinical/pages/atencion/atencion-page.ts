@@ -55,6 +55,7 @@ import {
   resumenDePrevia,
   rotuloDeCaso,
 } from '../../models/etiquetas-de-atencion';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 
 /** Milisegundos de quietud antes de que el autosave dispare. */
 const ESPERA_AUTOSAVE = 1_500;
@@ -159,7 +160,7 @@ const ESPERA_AUTOSAVE = 1_500;
  */
 @Component({
   selector: 'app-atencion-page',
-  imports: [RouterLink, MedicionesDeSesion, TratamientosDeSesion, ConfirmacionConMotivo],
+  imports: [Ayuda, RouterLink, MedicionesDeSesion, TratamientosDeSesion, ConfirmacionConMotivo],
   templateUrl: './atencion-page.html',
   styleUrl: '../../atencion.css',
 })

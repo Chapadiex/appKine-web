@@ -10,6 +10,7 @@ import { TenantContextStore } from '../../../../core/services/tenant-context.sto
 import { CausaColaborador, traducirErrorColaborador } from '../../models/colaborador-errors';
 import { crearEsperaPorLimite } from '../../../../shared/utils/espera-por-limite';
 import { textoRequerido } from '../../../../shared/validators/texto-requerido';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 
 /** Campos obligatorios, en el orden en que se enfoca el primero invalido tras un submit. */
 const CAMPOS = ['email', 'roleCode', 'reason'] as const;
@@ -50,7 +51,7 @@ type EstadoAlta =
  */
 @Component({
   selector: 'app-new-collaborator-page',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [Ayuda, ReactiveFormsModule, RouterLink],
   templateUrl: './new-collaborator-page.html',
   styleUrl: '../../organization.css',
 })

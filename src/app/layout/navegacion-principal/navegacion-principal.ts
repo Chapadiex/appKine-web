@@ -1,4 +1,13 @@
-import { Component, computed, effect, inject, input, linkedSignal, output } from '@angular/core';
+import {
+  Component,
+  computed,
+  effect,
+  inject,
+  input,
+  linkedSignal,
+  output,
+  signal,
+} from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink } from '@angular/router';
 import { filter, map, startWith } from 'rxjs';
@@ -6,6 +15,7 @@ import { filter, map, startWith } from 'rxjs';
 import { Icono } from '../../shared/components/icono/icono';
 import { PermissionsStore } from '../../core/services/permissions.store';
 import { PlatformRoleStore } from '../../core/services/platform-role.store';
+import { RUTA_LOGIN, RUTA_SELECTOR_CONTEXTO } from '../../core/models/rutas';
 import { RUTA_SOLICITUDES_DE_PLATAFORMA } from '../../features/platform/models/rutas-de-plataforma';
 import {
   GRUPOS,
@@ -60,6 +70,9 @@ export class NavegacionPrincipal {
   readonly cerrar = output<void>();
 
   protected readonly rutaInicio = RUTA_INICIO;
+  protected readonly rutaSelector = RUTA_SELECTOR_CONTEXTO;
+  protected readonly contexto = this.tenant.context;
+  protected readonly saliendo = signal(false);
   protected readonly rutaPlataforma = RUTA_SOLICITUDES_DE_PLATAFORMA;
   protected readonly seccionPlataforma = SECCION_PLATAFORMA;
   protected readonly esAdminDePlataforma = this.rolDePlataforma.esAdminDePlataforma;
@@ -148,6 +161,28 @@ export class NavegacionPrincipal {
     } else if (this.grupoAbierto() === grupo.etiqueta) {
       this.grupoAbierto.set(null);
     }
+  }
+
+  /** Dos letras para el avatar del centro: "Consultorio Centro" → "CC". */
+  protected iniciales(nombre: string): string {
+    return nombre
+      .split(/s+/)
+      .filter((palabra) => palabra.length > 0)
+      .slice(0, 2)
+      .map((palabra) => palabra[0]!.toUpperCase())
+      .join('');
+  }
+
+  /** Cierra la sesion y vuelve al login. Un logout que falla en el servidor igual limpia el local. */
+  protected cerrarSesion(): void {
+    this.saliendo.set(true);
+    this.session.logout().subscribe({
+      complete: () => {
+        this.saliendo.set(false);
+        this.cerrar.emit();
+        void this.router.navigateByUrl(RUTA_LOGIN);
+      },
+    });
   }
 
   protected navegar(): void {

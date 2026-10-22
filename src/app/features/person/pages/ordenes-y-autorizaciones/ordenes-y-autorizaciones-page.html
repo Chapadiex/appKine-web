@@ -10,7 +10,13 @@
       — {{ nombreCompleto(ficha) }}
     }
   </h1>
-  <app-ayuda titulo="Vencido, rechazado y dado de baja no son lo mismo">
+  <app-ayuda titulo="Sobre esta pantalla">
+    <p>
+      Los papeles administrativos del paciente: la orden que firmo un medico y la autorizacion que
+      dio su financiador. Se muestran todos, incluidos los vencidos y los dados de baja, porque es
+      lo que permite explicar despues con que papel se lo atendio.
+    </p>
+    <p class="ayuda-contextual__subtitulo">Vencido, rechazado y dado de baja no son lo mismo</p>
     <p>
       <b>Vencido</b> se calcula solo, por la fecha. Un documento vencido no desaparece: se sigue
       viendo y se sigue pudiendo corregir.
@@ -25,12 +31,6 @@
     </p>
   </app-ayuda>
 </div>
-
-<p class="descripcion">
-  Los papeles administrativos del paciente: la orden que firmo un medico y la autorizacion que dio
-  su financiador. Se muestran todos, incluidos los vencidos y los dados de baja, porque es lo que
-  permite explicar despues con que papel se lo atendio.
-</p>
 
 <div aria-live="polite">
   @if (exito(); as mensaje) {
@@ -66,13 +66,16 @@
        Elegibilidad. Va primero porque es la pregunta con la que se llega a esta pantalla.
        ================================================================================= -->
   <section class="tarjeta" aria-labelledby="titulo-elegibilidad">
-    <h2 id="titulo-elegibilidad">Que le falta para atenderse</h2>
-
-    <p class="ayuda">
-      Confronta lo que <b>el convenio de esta sede</b> exige hoy con lo que el paciente tiene. No
-      consume ninguna sesion ni guarda nada, y se puede consultar todas las veces que haga falta.
-      <b>No dice que la prestacion sea facturable</b>: dice si la documentacion esta.
-    </p>
+    <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
+      <h2 id="titulo-elegibilidad">Que le falta para atenderse</h2>
+      <app-ayuda titulo="Que le falta para atenderse">
+        <p>
+          Confronta lo que <b>el convenio de esta sede</b> exige hoy con lo que el paciente tiene.
+          No consume ninguna sesion ni guarda nada, y se puede consultar todas las veces que haga
+          falta. <b>No dice que la prestacion sea facturable</b>: dice si la documentacion esta.
+        </p>
+      </app-ayuda>
+    </div>
 
     <form [formGroup]="formularioElegibilidad" (ngSubmit)="consultarElegibilidad()" novalidate>
       <div class="filtros">
@@ -187,13 +190,16 @@
        Ordenes medicas
        ================================================================================= -->
   <section class="tarjeta" aria-labelledby="titulo-ordenes">
-    <h2 id="titulo-ordenes">Ordenes medicas</h2>
-
-    <p class="ayuda">
-      Es la <b>transcripcion administrativa</b> de lo que dice el papel que trajo el paciente. No es
-      registro clinico y no reemplaza nada de la historia clinica. Quien firma es un medico externo
-      al centro, asi que se escribe su nombre: no esta en ningun catalogo.
-    </p>
+    <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
+      <h2 id="titulo-ordenes">Ordenes medicas</h2>
+      <app-ayuda titulo="Ordenes medicas">
+        <p>
+          Es la <b>transcripcion administrativa</b> de lo que dice el papel que trajo el paciente.
+          No es registro clinico y no reemplaza nada de la historia clinica. Quien firma es un
+          medico externo al centro, asi que se escribe su nombre: no esta en ningun catalogo.
+        </p>
+      </app-ayuda>
+    </div>
 
     <p class="acciones">
       <button
@@ -348,18 +354,18 @@
         </caption>
         <thead>
           <tr>
-            <th scope="col">Emisor</th>
-            <th scope="col">Numero</th>
-            <th scope="col">Emitida</th>
-            <th scope="col">Vigencia</th>
+            <th scope="col" appOrdenable [tabla]="tablaOrdenes" columna="emisor">Emisor</th>
+            <th scope="col" appOrdenable [tabla]="tablaOrdenes" columna="numero">Numero</th>
+            <th scope="col" appOrdenable [tabla]="tablaOrdenes" columna="emitida">Emitida</th>
+            <th scope="col" appOrdenable [tabla]="tablaOrdenes" columna="vigencia">Vigencia</th>
             <th scope="col">Sesiones</th>
-            <th scope="col">Situacion</th>
+            <th scope="col" appOrdenable [tabla]="tablaOrdenes" columna="situacion">Situacion</th>
             <th scope="col">Escaneo</th>
             <th scope="col">Acciones</th>
           </tr>
         </thead>
         <tbody>
-          @for (orden of ordenes(); track orden.id) {
+          @for (orden of tablaOrdenes.visibles(); track orden.id) {
             <tr>
               <td>{{ emisorEnPalabras(orden) }}</td>
               <td>{{ orden.numero || '—' }}</td>
@@ -613,19 +619,31 @@
         </tbody>
       </table>
     </div>
+    <div class="tabla-pie">
+      <span>{{ tablaOrdenes.total() }} ordenes</span>
+      <app-paginacion
+        [paginaActual]="tablaOrdenes.pagina()"
+        [totalPaginas]="tablaOrdenes.totalPaginas()"
+        etiqueta="Paginas de ordenes"
+        (cambioDePagina)="tablaOrdenes.irA($event)"
+      />
+    </div>
   }
 
   <!-- =================================================================================
        Autorizaciones
        ================================================================================= -->
   <section class="tarjeta" aria-labelledby="titulo-autorizaciones">
-    <h2 id="titulo-autorizaciones">Autorizaciones</h2>
-
-    <p class="ayuda">
-      Lo que el financiador contesto: cuantas sesiones autorizo y hasta cuando.
-      <b>Aprobada y rechazada son terminales</b>: una decision tomada no se deshace, se da de baja y
-      se carga otra.
-    </p>
+    <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
+      <h2 id="titulo-autorizaciones">Autorizaciones</h2>
+      <app-ayuda titulo="Autorizaciones">
+        <p>
+          Lo que el financiador contesto: cuantas sesiones autorizo y hasta cuando.
+          <b>Aprobada y rechazada son terminales</b>: una decision tomada no se deshace, se da de
+          baja y se carga otra.
+        </p>
+      </app-ayuda>
+    </div>
 
     <p class="acciones">
       <button
@@ -797,17 +815,19 @@
         </caption>
         <thead>
           <tr>
-            <th scope="col">Numero</th>
-            <th scope="col">Estado</th>
-            <th scope="col">Vigencia</th>
-            <th scope="col">Saldo</th>
+            <th scope="col" appOrdenable [tabla]="tablaAutorizaciones" columna="numero">Numero</th>
+            <th scope="col" appOrdenable [tabla]="tablaAutorizaciones" columna="estado">Estado</th>
+            <th scope="col" appOrdenable [tabla]="tablaAutorizaciones" columna="vigencia">
+              Vigencia
+            </th>
+            <th scope="col" appOrdenable [tabla]="tablaAutorizaciones" columna="saldo">Saldo</th>
             <th scope="col">Veredicto</th>
             <th scope="col">Comprobante</th>
             <th scope="col">Acciones</th>
           </tr>
         </thead>
         <tbody>
-          @for (autorizacion of autorizaciones(); track autorizacion.id) {
+          @for (autorizacion of tablaAutorizaciones.visibles(); track autorizacion.id) {
             <tr [class.fila-senalada]="estaSenalada(autorizacion)">
               <td>
                 {{ autorizacion.numero }}
@@ -1319,6 +1339,15 @@
           }
         </tbody>
       </table>
+    </div>
+    <div class="tabla-pie">
+      <span>{{ tablaAutorizaciones.total() }} autorizaciones</span>
+      <app-paginacion
+        [paginaActual]="tablaAutorizaciones.pagina()"
+        [totalPaginas]="tablaAutorizaciones.totalPaginas()"
+        etiqueta="Paginas de autorizaciones"
+        (cambioDePagina)="tablaAutorizaciones.irA($event)"
+      />
     </div>
   }
 

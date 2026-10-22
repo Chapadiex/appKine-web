@@ -13,6 +13,7 @@ import {
   vencimientoDeCandidata,
   veredictoDeCandidata,
 } from '../../models/etiquetas-de-consumo';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 
 type Estado =
   | { readonly tipo: 'inicial' }
@@ -42,7 +43,7 @@ type Estado =
  */
 @Component({
   selector: 'app-selector-de-autorizacion',
-  imports: [ReactiveFormsModule],
+  imports: [Ayuda, ReactiveFormsModule],
   templateUrl: './selector-de-autorizacion.html',
   styleUrl: '../../person.css',
 })

@@ -37,6 +37,7 @@ import { ExcepcionesDeDisponibilidadService } from '../../../../api/generated/ap
 import { FeriadoResponse } from '../../../../api/generated/model/feriado-response';
 import { MembershipResponse } from '../../../../api/generated/model/membership-response';
 import { PERMISO_CONSULTORIO_MANAGE } from '../../../../core/models/permisos';
+import { Filtros } from '../../../../shared/components/filtros/filtros';
 import { PermisoDirective } from '../../../../shared/directives/permiso.directive';
 import { PermissionsStore } from '../../../../core/services/permissions.store';
 import { RUTAS_HORARIOS } from '../../models/rutas-de-horarios';
@@ -72,6 +73,7 @@ import {
   sumarDias,
 } from '../../models/ventana-de-fechas';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 
 /** Cuantos dias de ventana se proponen al entrar. Un trimestre es lo que se planifica. */
 const DIAS_PROPUESTOS = 90;
@@ -150,6 +152,8 @@ const MOTIVOS: readonly {
 @Component({
   selector: 'app-excepciones-page',
   imports: [
+    Ayuda,
+    Filtros,
     ReactiveFormsModule,
     RouterLink,
     PermisoDirective,
@@ -258,6 +262,10 @@ export class ExcepcionesPage {
 
   /** Filtro del listado. `''` = alcance sede; un id = ese profesional MAS las de la sede. */
   protected readonly filtroMembership = signal<number | null>(null);
+  /** Filtros avanzados fuera de su valor por defecto (regla de filtros, plan §3.4). */
+  protected readonly filtrosAvanzadosActivos = computed(() =>
+    Number(this.filtroMembership() !== null),
+  );
 
   // --- Listado --------------------------------------------------------------------------
 

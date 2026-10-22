@@ -132,8 +132,9 @@ describe('DatosAdministrativosDeHistoria', () => {
     httpMock.expectOne(DATOS).flush(null, { status: 500, statusText: 'Error' });
     await estabilizar(fixture);
 
+    // `button.boton`: el boton de la ayuda contextual tambien es un `button`.
     const boton = (fixture.nativeElement as HTMLElement).querySelector(
-      'button',
+      'button.boton',
     ) as HTMLButtonElement;
     boton.click();
     httpMock.expectOne(DATOS).flush({ personaId: PERSONA, tieneHistoriaClinica: false });

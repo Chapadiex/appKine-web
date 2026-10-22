@@ -1,4 +1,5 @@
 import { expect, ingresar, navegar, problemaDe, respuestaDe, test } from './support/agenda-real';
+import { abrirFiltros } from './support/filtros';
 import { nonce } from './support/akine';
 import {
   crearOferta,
@@ -86,6 +87,7 @@ test.describe('Espacios y boxes contra el backend real', () => {
     expect((await baja).status()).toBe(200);
     await expect(fila).toHaveCount(0);
 
+    await abrirFiltros(page);
     await page.getByLabel('Mostrar').selectOption({ label: 'Solo los dados de baja' });
     const historico = page.getByRole('row').filter({ hasText: nombre });
     await expect(historico).toBeVisible();

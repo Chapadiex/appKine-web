@@ -33,12 +33,12 @@ test.describe('Registro, activacion y login (M02)', () => {
 
     await campo(page, 'Nombre', { exact: true }).fill('Ana');
     await campo(page, 'Apellido').fill('Prueba');
-    await campo(page, 'Email').fill(email);
-    await campo(page, 'Contrasena').fill(PASSWORD);
+    await campo(page, 'Correo electrónico').fill(email);
+    await campo(page, 'Contraseña').fill(PASSWORD);
     await campo(page, 'Nombre del centro').fill(centro);
 
     await esperarCupoDeRegistro();
-    await page.getByRole('button', { name: 'Crear la cuenta' }).click();
+    await page.getByRole('button', { name: 'Crear cuenta' }).click();
 
     await expect(page.getByText('Listo, ya lo estamos procesando.')).toBeVisible();
 
@@ -57,11 +57,11 @@ test.describe('Registro, activacion y login (M02)', () => {
     await page.goto('/auth/registro');
     await campo(page, 'Nombre', { exact: true }).fill('Ana');
     await campo(page, 'Apellido').fill('Prueba');
-    await campo(page, 'Email').fill(email);
-    await campo(page, 'Contrasena').fill(PASSWORD);
+    await campo(page, 'Correo electrónico').fill(email);
+    await campo(page, 'Contraseña').fill(PASSWORD);
     await campo(page, 'Nombre del centro').fill(`Centro Sin Activar ${nonce()}`);
     await esperarCupoDeRegistro();
-    await page.getByRole('button', { name: 'Crear la cuenta' }).click();
+    await page.getByRole('button', { name: 'Crear cuenta' }).click();
     await expect(page.getByText('Listo, ya lo estamos procesando.')).toBeVisible();
 
     await ingresarPorPantalla(page, email);
@@ -73,9 +73,9 @@ test.describe('Registro, activacion y login (M02)', () => {
     // Mismo mensaje que una contrasena incorrecta: si difirieran, el login seria un
     // verificador de emails registrados (ADR-0018).
     await page.goto('/auth/ingresar');
-    await campo(page, 'Email').fill(emailUnico('qa.inexistente'));
-    await campo(page, 'Contrasena').fill(PASSWORD);
-    await page.getByRole('button', { name: 'Iniciar sesion' }).click();
+    await campo(page, 'Correo electrónico').fill(emailUnico('qa.inexistente'));
+    await campo(page, 'Contraseña').fill(PASSWORD);
+    await page.getByRole('button', { name: 'Ingresar' }).click();
 
     const errorInexistente = page.getByRole('alert');
     await expect(errorInexistente).toBeVisible();
@@ -93,11 +93,11 @@ test.describe('Registro, activacion y login (M02)', () => {
     await page.goto('/auth/registro');
     await campo(page, 'Nombre', { exact: true }).fill('Ana');
     await campo(page, 'Apellido').fill('Prueba');
-    await campo(page, 'Email').fill(email);
-    await campo(page, 'Contrasena').fill(PASSWORD);
+    await campo(page, 'Correo electrónico').fill(email);
+    await campo(page, 'Contraseña').fill(PASSWORD);
     await campo(page, 'Nombre del centro').fill(centro);
     await esperarCupoDeRegistro();
-    await page.getByRole('button', { name: 'Crear la cuenta' }).click();
+    await page.getByRole('button', { name: 'Crear cuenta' }).click();
     await expect(page.getByText('Listo, ya lo estamos procesando.')).toBeVisible();
 
     await expect(() => {
@@ -129,26 +129,29 @@ test.describe('Registro, activacion y login (M02)', () => {
     await page.goto('/auth/registro');
     await campo(page, 'Nombre', { exact: true }).fill('Ana');
     await campo(page, 'Apellido').fill('Prueba');
-    await campo(page, 'Email').fill(email);
-    await campo(page, 'Contrasena').fill(PASSWORD);
+    await campo(page, 'Correo electrónico').fill(email);
+    await campo(page, 'Contraseña').fill(PASSWORD);
     await campo(page, 'Nombre del centro').fill(`Centro Reset ${nonce()}`);
     await esperarCupoDeRegistro();
-    await page.getByRole('button', { name: 'Crear la cuenta' }).click();
+    await page.getByRole('button', { name: 'Crear cuenta' }).click();
     await expect(page.getByText('Listo, ya lo estamos procesando.')).toBeVisible();
     activarCuentaPorSql(email);
 
     await page.goto('/auth/olvide-mi-contrasena');
-    await campo(page, 'Email').fill(email);
+    await campo(page, 'Correo electrónico').fill(email);
     await page.getByRole('button', { name: 'Enviar el enlace' }).click();
-    await expect(page.getByText('Solicitud recibida.')).toBeVisible();
-    const mensajeExistente = (await page.locator('.ayuda').last().textContent())?.trim() ?? '';
+    await expect(page.getByRole('heading', { name: 'Revisá tu correo' })).toBeVisible();
+    const mensajeExistente =
+      (await page.locator('.acceso-texto').last().textContent())?.trim() ?? '';
 
     // Cuenta que no existe: mismo desenlace, o el formulario seria un oraculo de emails.
     await page.goto('/auth/olvide-mi-contrasena');
-    await campo(page, 'Email').fill(emailUnico('qa.reset.fantasma'));
+    await campo(page, 'Correo electrónico').fill(emailUnico('qa.reset.fantasma'));
     await page.getByRole('button', { name: 'Enviar el enlace' }).click();
-    await expect(page.getByText('Solicitud recibida.')).toBeVisible();
-    expect((await page.locator('.ayuda').last().textContent())?.trim()).toBe(mensajeExistente);
+    await expect(page.getByRole('heading', { name: 'Revisá tu correo' })).toBeVisible();
+    expect((await page.locator('.acceso-texto').last().textContent())?.trim()).toBe(
+      mensajeExistente,
+    );
   });
 
   test('un enlace de activacion invalido falla con un mensaje humano y sin internals', async ({
@@ -171,7 +174,7 @@ test.describe('Registro, activacion y login (M02)', () => {
 
     await campo(page, 'Contrasena nueva').fill(PASSWORD);
     await campo(page, 'Repetir la contrasena').fill(PASSWORD);
-    await page.getByRole('button', { name: 'Guardar la contrasena' }).click();
+    await page.getByRole('button', { name: 'Guardar contraseña' }).click();
 
     await expect(page.getByRole('alert')).toBeVisible();
     esperarSinInternals(

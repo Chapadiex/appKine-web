@@ -18,6 +18,7 @@ import {
   ok,
 } from './support/agenda-simulada';
 import { instalarApiDp43 } from './support/pantallas-dp43';
+import { abrirFiltros } from './support/filtros';
 
 /**
  * Auditoria de CONTRASTE DE COLOR contra un navegador real (WCAG 1.4.3, nivel AA).
@@ -102,7 +103,7 @@ test.describe('Contraste de color', () => {
     test('el login con los dos campos en error', async ({ page }) => {
       await instalarApiDeContraste(page);
       await page.goto('/auth/ingresar');
-      await page.getByRole('button', { name: 'Iniciar sesion' }).click();
+      await page.getByRole('button', { name: 'Ingresar' }).click();
 
       await expect(page.getByText('Escribi un email valido.')).toBeVisible();
       await expect(page.getByText('Escribi tu contrasena.')).toBeVisible();
@@ -142,11 +143,11 @@ test.describe('Contraste de color', () => {
       });
 
       await page.goto('/auth/ingresar');
-      await page.locator('form').getByLabel('Email').fill('ana.prueba@ejemplo.test');
-      await page.locator('form').getByLabel('Contrasena').fill('una-contrasena-larga-y-unica-2026');
-      await page.getByRole('button', { name: 'Iniciar sesion' }).click();
+      await page.locator('form').getByLabel('Correo electrónico').fill('ana.prueba@ejemplo.test');
+      await page.locator('form').getByLabel('Contraseña').fill('una-contrasena-larga-y-unica-2026');
+      await page.getByRole('button', { name: 'Ingresar' }).click();
 
-      const boton = page.getByRole('button', { name: 'Iniciar sesion' });
+      const boton = page.getByRole('button', { name: 'Ingresar' });
       await expect(boton).toBeDisabled();
       await auditarContraste(page, 'login con el boton deshabilitado mientras envia', {
         queAxeNoMide: [
@@ -186,6 +187,7 @@ test.describe('Contraste de color', () => {
       await instalarApiDeContraste(page);
       await page.goto('/espacios');
 
+      await abrirFiltros(page);
       await page.getByLabel('Mostrar').selectOption('TODOS');
       await expect(page.getByText('Sala grupal chica')).toBeVisible();
 
@@ -216,6 +218,7 @@ test.describe('Contraste de color', () => {
       await page.setViewportSize({ width: 480, height: 900 });
       await instalarApiDeContraste(page);
       await page.goto('/espacios');
+      await abrirFiltros(page);
       await page.getByLabel('Mostrar').selectOption('TODOS');
       await expect(page.getByText('Sala grupal chica')).toBeVisible();
 

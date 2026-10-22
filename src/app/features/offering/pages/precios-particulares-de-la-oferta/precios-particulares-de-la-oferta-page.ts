@@ -28,6 +28,10 @@ import { precioEnPalabras } from '../../models/etiquetas-de-offering';
 import { enPalabras } from '../../models/situacion-de-vigencia';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
+import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
+import { Icono } from '../../../../shared/components/icono/icono';
 
 /** Operacion abierta sobre una fila. Solo una a la vez. */
 type TipoAccion = 'fin' | 'baja';
@@ -57,7 +61,16 @@ interface SituacionDelPrecio {
  */
 @Component({
   selector: 'app-precios-particulares-de-la-oferta-page',
-  imports: [Ayuda, ReactiveFormsModule, RouterLink, PermisoDirective, ConfirmacionConMotivo],
+  imports: [
+    ColumnaOrdenable,
+    Paginacion,
+    Icono,
+    Ayuda,
+    ReactiveFormsModule,
+    RouterLink,
+    PermisoDirective,
+    ConfirmacionConMotivo,
+  ],
   templateUrl: './precios-particulares-de-la-oferta-page.html',
   styleUrl: '../../offering.css',
 })
@@ -94,6 +107,14 @@ export class PreciosParticularesDeLaOfertaPage {
     return [...actual.pagina].sort((uno, otro) =>
       (otro.vigenciaDesde ?? '').localeCompare(uno.vigenciaDesde ?? ''),
     );
+  });
+
+  /** Orden y paginado de la lista completa (plan Â§3.4): el servidor no pagina precios. */
+  protected readonly tabla = tablaLocal(this.precios, {
+    columnas: {
+      importe: (precio) => precio.importe,
+      vigencia: (precio) => precio.vigenciaDesde,
+    },
   });
 
   protected readonly mensajeDeCarga = computed(() => {

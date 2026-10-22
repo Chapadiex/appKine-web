@@ -1,14 +1,19 @@
-<h1>Clases</h1>
-
-<p class="descripcion">
-  Las clases grupales de esta sede, semana por semana. Una clase es un evento unico con su cupo: no
-  es un turno por persona. Desde el detalle de cada una se inscribe, se ve la lista de espera y se
-  reprograma o cancela.
-</p>
-
-<p *akinePermiso="PERMISO_CLASE_MANAGE">
-  <a class="boton" [routerLink]="RUTA_NUEVA_CLASE">Programar una clase</a>
-</p>
+<div class="titulo-con-ayuda">
+  <h1>Clases</h1>
+  <app-ayuda titulo="Sobre esta pantalla">
+    <p>
+      Las clases grupales de esta sede, semana por semana. Una clase es un evento unico con su cupo:
+      no es un turno por persona. Desde el detalle de cada una se inscribe, se ve la lista de espera
+      y se reprograma o cancela.
+    </p>
+  </app-ayuda>
+  <div class="encabezado__acciones" *akinePermiso="PERMISO_CLASE_MANAGE">
+    <a class="boton" [routerLink]="RUTA_NUEVA_CLASE">
+      <app-icono nombre="agregar" />
+      Programar una clase
+    </a>
+  </div>
+</div>
 
 <section class="tarjeta" aria-labelledby="titulo-semana">
   <h2 id="titulo-semana">

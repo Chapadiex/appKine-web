@@ -181,7 +181,11 @@ describe('VigenciasPage', () => {
     expect(anfitrion.textContent).toContain('250101');
     // Pero no hay ni alta ni baja: el backend responde 403 y ofrecerlo seria ofrecer un error.
     expect(anfitrion.textContent).toContain('lo mantiene AKINE');
-    expect(anfitrion.querySelectorAll('button').length).toBe(0);
+    // El embudo de los filtros y el orden de las columnas no son acciones sobre el nomenclador:
+    // no cuentan.
+    expect(
+      anfitrion.querySelectorAll('button:not(.filtros-barra__boton):not(.tabla__orden)').length,
+    ).toBe(0);
     expect(anfitrion.querySelector('a[href="/catalogo/solicitudes"]')).not.toBeNull();
   });
 

@@ -28,6 +28,11 @@ import {
 import { CausaOffering, hayQueRecargar, traducirErrorOffering } from '../../models/offering-errors';
 import { textoRequerido } from '../../../../shared/validators/texto-requerido';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { Filtros } from '../../../../shared/components/filtros/filtros';
+import { Icono } from '../../../../shared/components/icono/icono';
+import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
+import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 
 /** Operacion abierta sobre una fila. Solo una a la vez. */
 type TipoAccion = 'editar' | 'baja';
@@ -77,7 +82,16 @@ const ESPERA_DE_BUSQUEDA = 250;
  */
 @Component({
   selector: 'app-catalogo-de-servicios-page',
-  imports: [Ayuda, ReactiveFormsModule, RouterLink, ConfirmacionConMotivo],
+  imports: [
+    Ayuda,
+    ColumnaOrdenable,
+    Filtros,
+    Icono,
+    Paginacion,
+    ReactiveFormsModule,
+    RouterLink,
+    ConfirmacionConMotivo,
+  ],
   templateUrl: './catalogo-de-servicios-page.html',
   styleUrl: '../../offering.css',
 })
@@ -120,6 +134,17 @@ export class CatalogoDeServiciosPage {
     return actual.tipo === 'listo' ? actual.pagina : [];
   });
 
+  /** Orden y paginado de la lista completa (plan §3.4): el servidor no pagina servicios. */
+  protected readonly tabla = tablaLocal(this.servicios, {
+    columnas: {
+      nombre: (servicio) => servicio.nombre,
+      codigo: (servicio) => servicio.codigo,
+      naturaleza: (servicio) => this.etiquetaDeNaturaleza(servicio.naturaleza),
+      modalidad: (servicio) => this.etiquetaDeModalidad(servicio.modalidadDefault),
+      estado: (servicio) => servicio.estado,
+    },
+  });
+
   protected readonly mensajeError = computed(() => {
     const actual = this.estado();
     return actual.tipo === 'error' ? actual.mensaje : null;
@@ -127,6 +152,11 @@ export class CatalogoDeServiciosPage {
 
   protected readonly busqueda = signal('');
   protected readonly filtroEstado = signal<FiltroEstado>('ACTIVO');
+
+  /** Cuantos filtros del embudo estan fuera de su valor por defecto: el boton los cuenta. */
+  protected readonly filtrosAvanzadosActivos = computed(() =>
+    Number(this.filtroEstado() !== 'ACTIVO'),
+  );
 
   /** Fila y operacion abiertas, o `null`. Solo una a la vez. */
   protected readonly panel = signal<{ readonly id: number; readonly tipo: TipoAccion } | null>(

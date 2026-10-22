@@ -1,10 +1,13 @@
-<h1>Horario general y feriados de la sede</h1>
-
-<p class="descripcion">
-  Si <b>{{ nombreDeLaSede() }}</b> cierra los feriados de su calendario nacional, y cuales son los
-  feriados que caen en el periodo que estas mirando. Un centro de guardia atiende los feriados: por
-  eso esto se decide por sede y no una sola vez para toda la organizacion.
-</p>
+<div class="titulo-con-ayuda">
+  <h1>Horario general y feriados de la sede</h1>
+  <app-ayuda titulo="Sobre esta pantalla">
+    <p>
+      Si <b>{{ nombreDeLaSede() }}</b> cierra los feriados de su calendario nacional, y cuales son
+      los feriados que caen en el periodo que estas mirando. Un centro de guardia atiende los
+      feriados: por eso esto se decide por sede y no una sola vez para toda la organizacion.
+    </p>
+  </app-ayuda>
+</div>
 
 <p class="acciones">
   <a class="enlace" [routerLink]="rutas.semanal">Horario semanal del profesional</a>
@@ -172,13 +175,17 @@
       </section>
 
       <section class="tarjeta" aria-labelledby="titulo-horario-general">
-        <h2 id="titulo-horario-general">Horario general de la sede</h2>
-
-        <p class="ayuda">
-          Los dias y horas en que la sede esta abierta. <b>Limita la agenda</b>: ningun turno se
-          ofrece ni se reserva fuera de este horario, aunque el profesional tenga disponibilidad, y
-          no abre nada que el profesional no tenga. Sin horario general no se limita nada.
-        </p>
+        <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
+          <h2 id="titulo-horario-general">Horario general de la sede</h2>
+          <app-ayuda titulo="Horario general de la sede">
+            <p>
+              Los dias y horas en que la sede esta abierta. <b>Limita la agenda</b>: ningun turno se
+              ofrece ni se reserva fuera de este horario, aunque el profesional tenga
+              disponibilidad, y no abre nada que el profesional no tenga. Sin horario general no se
+              limita nada.
+            </p>
+          </app-ayuda>
+        </div>
 
         @if (puedeGestionar()) {
           <form
@@ -290,13 +297,13 @@
               </caption>
               <thead>
                 <tr>
-                  <th scope="col">Fecha</th>
-                  <th scope="col">Feriado</th>
-                  <th scope="col">Tipo</th>
+                  <th scope="col" appOrdenable [tabla]="tabla" columna="fecha">Fecha</th>
+                  <th scope="col" appOrdenable [tabla]="tabla" columna="feriado">Feriado</th>
+                  <th scope="col" appOrdenable [tabla]="tabla" columna="tipo">Tipo</th>
                 </tr>
               </thead>
               <tbody>
-                @for (feriado of feriados(); track feriado.id ?? $index) {
+                @for (feriado of tabla.visibles(); track feriado.id ?? $index) {
                   <tr>
                     <th scope="row">{{ etiquetaDeFecha(feriado.fecha) }}</th>
                     <td>{{ feriado.nombre }}</td>
@@ -305,6 +312,16 @@
                 }
               </tbody>
             </table>
+          </div>
+
+          <div class="tabla-pie">
+            <span>{{ tabla.total() }} feriados</span>
+            <app-paginacion
+              [paginaActual]="tabla.pagina()"
+              [totalPaginas]="tabla.totalPaginas()"
+              etiqueta="Paginas de feriados"
+              (cambioDePagina)="tabla.irA($event)"
+            />
           </div>
         }
       </section>

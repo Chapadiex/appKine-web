@@ -39,6 +39,11 @@ import {
 import { fechaEnPalabras, importeEnPalabras } from '../../models/etiquetas-de-obligacion';
 import { medioEnPalabras } from '../../models/etiquetas-de-cobro';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { Filtros } from '../../../../shared/components/filtros/filtros';
+import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
+import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 
 type EstadoCarga =
   | { readonly tipo: 'cargando' }
@@ -74,7 +79,15 @@ interface Lectura {
  */
 @Component({
   selector: 'app-presentacion-detalle-page',
-  imports: [ReactiveFormsModule, RouterLink, ConfirmacionConMotivo],
+  imports: [
+    Ayuda,
+    ColumnaOrdenable,
+    Filtros,
+    Paginacion,
+    ReactiveFormsModule,
+    RouterLink,
+    ConfirmacionConMotivo,
+  ],
   templateUrl: './presentacion-detalle-page.html',
   styleUrl: '../../billing.css',
 })
@@ -146,10 +159,33 @@ export class PresentacionDetallePage {
 
   /** Filtro de la tabla del lote por estado de la prestacion. Vacio = todas. */
   protected readonly filtroDeItem = signal<string>('');
+  /** Filtros avanzados fuera de su valor por defecto: el contador del embudo. */
+  protected readonly filtrosAvanzadosActivos = computed(() => Number(this.filtroDeItem() !== ''));
 
   protected readonly itemsVisibles = computed<readonly PresentacionItem[]>(() => {
     const filtro = this.filtroDeItem();
     return filtro === '' ? this.items() : this.items().filter((item) => item.estado === filtro);
+  });
+
+  /** Orden y paginado de las prestaciones del lote (plan §3.4): el lote las trae todas. */
+  protected readonly tablaItems = tablaLocal(this.itemsVisibles, {
+    columnas: {
+      prestacion: (item) => item.concepto ?? null,
+      fecha: (item) => item.fechaPrestacion ?? null,
+      paciente: (item) => item.personaId ?? null,
+      importe: (item) => item.importePresentado ?? null,
+      estado: (item) => estadoDeItemEnPalabras(item.estado),
+    },
+  });
+
+  /** Orden y paginado de la bandeja de elegibles: el backend devuelve un array. */
+  protected readonly tablaElegibles = tablaLocal(this.elegibles, {
+    columnas: {
+      prestacion: (obligacion) => obligacion.snapshotNombre ?? null,
+      devengada: (obligacion) => obligacion.devengadaEn ?? null,
+      paciente: (obligacion) => obligacion.personaId ?? null,
+      saldo: (obligacion) => obligacion.saldo ?? null,
+    },
   });
 
   /** Lo que impide confirmar (RF-M21-003): incluye `SIN_ORDEN` y `SIN_AUTORIZACION` (DP-37). */

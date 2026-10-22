@@ -1,4 +1,6 @@
 import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { map } from 'rxjs';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 
@@ -20,6 +22,8 @@ import {
   fechaIsoEnPalabras,
 } from '../../models/etiquetas-de-presentacion';
 import { importeEnPalabras } from '../../models/etiquetas-de-obligacion';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { Filtros } from '../../../../shared/components/filtros/filtros';
 
 type EstadoListado =
   | { readonly tipo: 'cargando' }
@@ -38,7 +42,7 @@ type EstadoListado =
  */
 @Component({
   selector: 'app-presentaciones-page',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [Ayuda, Filtros, ReactiveFormsModule, RouterLink],
   templateUrl: './presentaciones-page.html',
   styleUrl: '../../billing.css',
 })
@@ -59,6 +63,15 @@ export class PresentacionesPage {
     desde: [''],
     hasta: [''],
   });
+
+  private readonly valorDelFiltro = toSignal(
+    this.filtro.valueChanges.pipe(map(() => this.filtro.getRawValue())),
+    { initialValue: this.filtro.getRawValue() },
+  );
+  /** Filtros avanzados fuera de su valor por defecto (vacio): el contador del embudo. */
+  protected readonly filtrosAvanzadosActivos = computed(
+    () => Object.values(this.valorDelFiltro()).filter((valor) => valor !== '').length,
+  );
 
   protected readonly alta = this.fb.group({
     financiadorId: ['', Validators.required],

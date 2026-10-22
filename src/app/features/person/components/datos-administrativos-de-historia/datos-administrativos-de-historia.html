@@ -1,10 +1,14 @@
 @if (estado().tipo !== 'oculto') {
   <section class="tarjeta" aria-labelledby="titulo-historia-administrativa">
-    <h2 id="titulo-historia-administrativa">Historia clinica: datos administrativos</h2>
-    <p class="ayuda">
-      Si tiene historia, desde cuando, sus casos y quien la atiende. Nada clinico: el contenido se
-      consulta desde el modulo clinico, con su permiso y su justificacion.
-    </p>
+    <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
+      <h2 id="titulo-historia-administrativa">Historia clinica: datos administrativos</h2>
+      <app-ayuda titulo="Historia clinica: datos administrativos">
+        <p>
+          Si tiene historia, desde cuando, sus casos y quien la atiende. Nada clinico: el contenido
+          se consulta desde el modulo clinico, con su permiso y su justificacion.
+        </p>
+      </app-ayuda>
+    </div>
 
     @if (estado().tipo === 'cargando') {
       <p class="estado estado--cargando">Cargando los datos de la historia…</p>

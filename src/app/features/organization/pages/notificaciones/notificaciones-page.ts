@@ -18,6 +18,8 @@ import {
   textoTipo,
 } from '../../models/notificaciones';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
+import { Filtros } from '../../../../shared/components/filtros/filtros';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 
 const POR_PAGINA = 20;
 
@@ -40,7 +42,7 @@ const POR_PAGINA = 20;
  */
 @Component({
   selector: 'app-notificaciones-page',
-  imports: [RouterLink, Paginacion],
+  imports: [Ayuda, Filtros, RouterLink, Paginacion],
   templateUrl: './notificaciones-page.html',
   styleUrl: '../../organization.css',
 })
@@ -70,6 +72,14 @@ export class NotificacionesPage {
     new Set(ESTADOS_POR_DEFECTO),
   );
   protected readonly sinEstados = computed(() => this.elegidos().size === 0);
+  /** 1 si los estados elegidos no son los de por defecto (regla de filtros, plan §3.4). */
+  protected readonly filtrosAvanzadosActivos = computed(() => {
+    const elegidos = this.elegidos();
+    const iguales =
+      elegidos.size === ESTADOS_POR_DEFECTO.length &&
+      ESTADOS_POR_DEFECTO.every((estado) => elegidos.has(estado));
+    return Number(!iguales);
+  });
 
   /** Id de la fila que se esta reintentando; deshabilita todos los botones mientras tanto. */
   protected readonly reintentando = signal<number | null>(null);

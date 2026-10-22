@@ -1,12 +1,15 @@
-<h1>Solicitudes de catalogo</h1>
+<div class="titulo-con-ayuda">
+  <h1>Solicitudes de catalogo</h1>
+  <app-ayuda titulo="Sobre esta pantalla">
+    <p>
+      Pedidos de los centros para sumar un concepto al catalogo comun. Aprobar publica el concepto
+      global en el mismo acto, con el codigo y el nombre que dejes en el formulario; rechazar le
+      deja tu nota al centro que lo pidio.
+    </p>
+  </app-ayuda>
+</div>
 
-<p class="descripcion">
-  Pedidos de los centros para sumar un concepto al catalogo comun. Aprobar publica el concepto
-  global en el mismo acto, con el codigo y el nombre que dejes en el formulario; rechazar le deja tu
-  nota al centro que lo pidio.
-  <a class="enlace" [routerLink]="rutaSuscripciones">Ver o cambiar la suscripcion de un centro</a>
-  · <a class="enlace" [routerLink]="rutaCatalogoFinanciadores">Catalogo de financiadores</a>
-</p>
+<app-pestanas [pestanas]="pestanasDePlataforma" [etiqueta]="etiquetaDePestanas" />
 
 <div aria-live="polite">
   @if (aviso(); as mensaje) {
@@ -224,19 +227,22 @@
 <section class="tarjeta" aria-labelledby="titulo-bandeja">
   <h2 id="titulo-bandeja">Bandeja</h2>
 
-  <div class="campo">
-    <label for="filtro-estado-bandeja">Mostrar</label>
-    <select
-      id="filtro-estado-bandeja"
-      [value]="filtroEstado()"
-      (change)="cambiarFiltro($any($event.target).value)"
-    >
-      <option value="PENDIENTE">Solo las pendientes</option>
-      <option value="APROBADA">Solo las aprobadas</option>
-      <option value="RECHAZADA">Solo las rechazadas</option>
-      <option value="TODAS">Todas</option>
-    </select>
-  </div>
+  <!-- Regla de filtros (plan §3.4): la bandeja no tiene busqueda por texto; solo el embudo. -->
+  <app-filtros [soloAvanzados]="true" [activos]="filtrosAvanzadosActivos()">
+    <div class="campo">
+      <label for="filtro-estado-bandeja">Mostrar</label>
+      <select
+        id="filtro-estado-bandeja"
+        [value]="filtroEstado()"
+        (change)="cambiarFiltro($any($event.target).value)"
+      >
+        <option value="PENDIENTE">Solo las pendientes</option>
+        <option value="APROBADA">Solo las aprobadas</option>
+        <option value="RECHAZADA">Solo las rechazadas</option>
+        <option value="TODAS">Todas</option>
+      </select>
+    </div>
+  </app-filtros>
 
   <div aria-live="polite">
     @switch (estado().tipo) {
@@ -259,16 +265,16 @@
               </caption>
               <thead>
                 <tr>
-                  <th scope="col">Concepto pedido</th>
-                  <th scope="col">Tipo</th>
-                  <th scope="col">Centro</th>
-                  <th scope="col">Pedida el</th>
-                  <th scope="col">Estado</th>
+                  <th scope="col" appOrdenable [tabla]="tabla" columna="nombre">Concepto pedido</th>
+                  <th scope="col" appOrdenable [tabla]="tabla" columna="tipo">Tipo</th>
+                  <th scope="col" appOrdenable [tabla]="tabla" columna="centro">Centro</th>
+                  <th scope="col" appOrdenable [tabla]="tabla" columna="fecha">Pedida el</th>
+                  <th scope="col" appOrdenable [tabla]="tabla" columna="estado">Estado</th>
                   <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
                 </tr>
               </thead>
               <tbody>
-                @for (solicitud of solicitudes(); track solicitud.id) {
+                @for (solicitud of tabla.visibles(); track solicitud.id) {
                   <tr [class.fila--revocada]="solicitud.estado === 'RECHAZADA'">
                     <th scope="row">
                       {{ solicitud.nombrePropuesto }}
@@ -296,6 +302,16 @@
                 }
               </tbody>
             </table>
+          </div>
+
+          <div class="tabla-pie">
+            <span>{{ tabla.total() }} solicitudes</span>
+            <app-paginacion
+              [paginaActual]="tabla.pagina()"
+              [totalPaginas]="tabla.totalPaginas()"
+              etiqueta="Paginas de solicitudes"
+              (cambioDePagina)="tabla.irA($event)"
+            />
           </div>
         }
       }

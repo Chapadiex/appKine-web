@@ -2,13 +2,16 @@
   <a class="enlace" [routerLink]="'/asistencia/' + claseId()">Volver a la asistencia de la clase</a>
 </p>
 
-<h1>Atencion clinica: {{ titulo() }}</h1>
-
-<p class="descripcion">
-  Cada participante que estuvo y fue derivado a un caso clinico tiene <b>su propia atencion</b>, que
-  se registra y se cierra por separado. Esta pantalla las abre; lo clinico se carga en la atencion
-  de cada uno.
-</p>
+<div class="titulo-con-ayuda">
+  <h1>Atencion clinica: {{ titulo() }}</h1>
+  <app-ayuda titulo="Sobre esta pantalla">
+    <p>
+      Cada participante que estuvo y fue derivado a un caso clinico tiene <b>su propia atencion</b>,
+      que se registra y se cierra por separado. Esta pantalla las abre; lo clinico se carga en la
+      atencion de cada uno.
+    </p>
+  </app-ayuda>
+</div>
 
 @switch (estado().tipo) {
   @case ('cargando') {

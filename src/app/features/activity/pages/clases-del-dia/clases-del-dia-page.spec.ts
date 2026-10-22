@@ -125,7 +125,7 @@ describe('ClasesDelDiaPage', () => {
     fixture.detectChanges();
     const el = fixture.nativeElement as HTMLElement;
     expect(el.textContent).toContain('No tenes permiso');
-    (el.querySelector('button') as HTMLButtonElement).click();
+    (el.querySelector('button:not(.ayuda-contextual__boton)') as HTMLButtonElement).click();
     await responder(fixture, DIA);
     expect(el.textContent).toContain('Pilates grupal');
   });

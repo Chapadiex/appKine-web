@@ -46,6 +46,9 @@ import {
 } from '../../../../shared/utils/instantes';
 import { textoRequerido } from '../../../../shared/validators/texto-requerido';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { Filtros } from '../../../../shared/components/filtros/filtros';
+import { Icono } from '../../../../shared/components/icono/icono';
 
 /** Filtro de estado del listado. Los tres valores son los del contrato. */
 type FiltroEstado = 'ACTIVO' | 'INACTIVO' | 'TODOS';
@@ -104,7 +107,16 @@ const TOPE_DE_ESPECIALIDADES = 100;
  */
 @Component({
   selector: 'app-catalogos-page',
-  imports: [ReactiveFormsModule, RouterLink, PermisoDirective, Paginacion, ConfirmacionConMotivo],
+  imports: [
+    Ayuda,
+    Filtros,
+    Icono,
+    ReactiveFormsModule,
+    RouterLink,
+    PermisoDirective,
+    Paginacion,
+    ConfirmacionConMotivo,
+  ],
   templateUrl: './catalogos-page.html',
   styleUrl: '../../catalog.css',
 })
@@ -145,6 +157,14 @@ export class CatalogosPage {
   protected readonly filtroEstado = signal<FiltroEstado>('ACTIVO');
   protected readonly filtroAlcance = signal<FiltroAlcance>('TODOS');
   protected readonly filtroEspecialidad = signal<number | null>(null);
+
+  /** Cuantos filtros del embudo estan fuera de su valor por defecto: el boton los cuenta. */
+  protected readonly filtrosAvanzadosActivos = computed(
+    () =>
+      Number(this.filtroEstado() !== 'ACTIVO') +
+      Number(this.filtroAlcance() !== 'TODOS') +
+      Number(this.filtroEspecialidad() !== null),
+  );
   protected readonly paginaActual = signal(0);
 
   /**

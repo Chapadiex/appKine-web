@@ -43,7 +43,12 @@ import {
 import { textoRequerido } from '../../../../shared/validators/texto-requerido';
 import { numeroDeclarado } from '../../../../shared/utils/numero-declarado';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
+import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
+import { Icono } from '../../../../shared/components/icono/icono';
+import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { Filtros } from '../../../../shared/components/filtros/filtros';
 
 /** Operacion abierta sobre una fila. Solo una a la vez. */
 type TipoAccion = 'editar' | 'baja';
@@ -93,7 +98,17 @@ type TipoAccion = 'editar' | 'baja';
  */
 @Component({
   selector: 'app-convenios-de-la-sede-page',
-  imports: [Ayuda, ReactiveFormsModule, RouterLink, PermisoDirective, ConfirmacionConMotivo],
+  imports: [
+    Ayuda,
+    ColumnaOrdenable,
+    Icono,
+    Paginacion,
+    Filtros,
+    ReactiveFormsModule,
+    RouterLink,
+    PermisoDirective,
+    ConfirmacionConMotivo,
+  ],
   templateUrl: './convenios-de-la-sede-page.html',
   styleUrl: '../../contracting.css',
 })
@@ -124,6 +139,16 @@ export class ConveniosDeLaSedePage {
     return actual.tipo === 'listo' ? actual.pagina : [];
   });
 
+  /** Orden y paginado de la lista completa (plan §3.4): el servidor no pagina convenios. */
+  protected readonly tabla = tablaLocal(this.convenios, {
+    columnas: {
+      nombre: (convenio) => convenio.nombre,
+      financiador: (convenio) => this.nombreDelFinanciador(convenio),
+      modalidad: (convenio) => convenio.modalidad,
+      vigencia: (convenio) => convenio.vigenciaDesde,
+    },
+  });
+
   protected readonly mensajeError = computed(() => {
     const actual = this.estado();
     return actual.tipo === 'error' ? actual.mensaje : null;
@@ -149,6 +174,15 @@ export class ConveniosDeLaSedePage {
   protected readonly planes = signal<readonly PlanCoberturaResponse[]>([]);
 
   protected readonly filtroEstado = signal<FiltroEstado>('ACTIVO');
+
+  /**
+   * Filtros avanzados (detras del embudo) fuera de su valor por defecto. La fecha de vigencia
+   * cuenta si no es hoy: cambia la Situacion de cada fila, y eso no puede quedar escondido.
+   */
+  protected readonly filtrosAvanzadosActivos = computed(
+    () =>
+      Number(this.filtroEstado() !== 'ACTIVO') + Number(this.fecha() !== this.diaDeLaSede.hoy()),
+  );
 
   protected readonly panel = signal<{ readonly id: number; readonly tipo: TipoAccion } | null>(
     null,

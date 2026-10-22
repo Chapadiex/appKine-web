@@ -1,10 +1,13 @@
-<h1>Pases de {{ nombre() }}</h1>
-
-<p class="descripcion">
-  Los packs de creditos y los abonos que esta persona compro en esta sede. Cada asistencia a una
-  clase de la oferta del pase consume un credito; si la asistencia se corrige a ausente o la clase
-  se cancela, el credito vuelve. El saldo se explica con los movimientos de cada pase.
-</p>
+<div class="titulo-con-ayuda">
+  <h1>Pases de {{ nombre() }}</h1>
+  <app-ayuda titulo="Sobre esta pantalla">
+    <p>
+      Los packs de creditos y los abonos que esta persona compro en esta sede. Cada asistencia a una
+      clase de la oferta del pase consume un credito; si la asistencia se corrige a ausente o la
+      clase se cancela, el credito vuelve. El saldo se explica con los movimientos de cada pase.
+    </p>
+  </app-ayuda>
+</div>
 
 <p class="acciones">
   <a class="enlace" routerLink="/pacientes">Volver al padron</a>
@@ -15,11 +18,15 @@
 
 @if (puedeVender()) {
   <section class="tarjeta" aria-labelledby="titulo-vender">
-    <h2 id="titulo-vender">Vender un pase</h2>
-    <p class="ayuda">
-      Vender crea el pase con sus creditos y una deuda a nombre de la persona. No cobra: el pago se
-      registra despues, desde la cuenta corriente.
-    </p>
+    <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
+      <h2 id="titulo-vender">Vender un pase</h2>
+      <app-ayuda titulo="Vender un pase">
+        <p>
+          Vender crea el pase con sus creditos y una deuda a nombre de la persona. No cobra: el pago
+          se registra despues, desde la cuenta corriente.
+        </p>
+      </app-ayuda>
+    </div>
 
     @if (errorProductos(); as fallo) {
       <p class="estado estado--error">{{ fallo.mensaje }}</p>
@@ -299,16 +306,16 @@
       <table class="tabla">
         <thead>
           <tr>
-            <th scope="col">Pase</th>
+            <th scope="col" appOrdenable [tabla]="tabla" columna="pase">Pase</th>
             <th scope="col">Saldo</th>
-            <th scope="col">Vigencia</th>
-            <th scope="col">Precio</th>
-            <th scope="col">Estado</th>
+            <th scope="col" appOrdenable [tabla]="tabla" columna="vigencia">Vigencia</th>
+            <th scope="col" appOrdenable [tabla]="tabla" columna="precio">Precio</th>
+            <th scope="col" appOrdenable [tabla]="tabla" columna="estado">Estado</th>
             <th scope="col">Acciones</th>
           </tr>
         </thead>
         <tbody>
-          @for (pase of lista; track pase.id) {
+          @for (pase of tabla.visibles(); track pase.id) {
             <tr
               [id]="'pase-' + pase.id"
               tabindex="-1"
@@ -464,6 +471,16 @@
           }
         </tbody>
       </table>
+    </div>
+
+    <div class="tabla-pie">
+      <span>{{ tabla.total() }} pases</span>
+      <app-paginacion
+        [paginaActual]="tabla.pagina()"
+        [totalPaginas]="tabla.totalPaginas()"
+        etiqueta="Paginas de pases"
+        (cambioDePagina)="tabla.irA($event)"
+      />
     </div>
   }
 }

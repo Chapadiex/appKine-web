@@ -51,7 +51,8 @@ test.describe('Financiadores y planes contra el backend real', () => {
 
     // El listado acumula los financiadores de todas las corridas: se busca por nombre.
     await page.getByLabel('Buscar', { exact: true }).fill(nombre);
-    await page.getByRole('button', { name: 'Buscar', exact: true }).click();
+    // Sin boton a la vista (regla de filtros, UX-01): Enter envia el formulario de busqueda.
+    await page.getByLabel('Buscar', { exact: true }).press('Enter');
     const fila = page.getByRole('region', { name: 'Financiadores' }).getByRole('row', {
       name: new RegExp(nombre),
     });

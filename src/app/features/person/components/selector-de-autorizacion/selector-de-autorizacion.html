@@ -1,12 +1,16 @@
 <section class="tarjeta" aria-labelledby="titulo-selector-autorizacion">
-  <h2 id="titulo-selector-autorizacion">De que autorizacion se descontaria</h2>
-
-  <p class="ayuda">
-    Todas las autorizaciones activas del paciente con su veredicto para ese dia, en el orden en que
-    el cierre de una sesion las gasta: primero las que sirven y, entre ellas, la que vence antes.
-    <b>No consume nada.</b> Lo que de verdad se desconto queda en "Saldo y consumos" de cada
-    autorizacion.
-  </p>
+  <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
+    <h2 id="titulo-selector-autorizacion">De que autorizacion se descontaria</h2>
+    <app-ayuda titulo="De que autorizacion se descontaria">
+      <p>
+        Todas las autorizaciones activas del paciente con su veredicto para ese dia, en el orden en
+        que el cierre de una sesion las gasta: primero las que sirven y, entre ellas, la que vence
+        antes.
+        <b>No consume nada.</b> Lo que de verdad se desconto queda en "Saldo y consumos" de cada
+        autorizacion.
+      </p>
+    </app-ayuda>
+  </div>
 
   <form [formGroup]="formulario" (ngSubmit)="consultar()" novalidate>
     <div class="filtros">

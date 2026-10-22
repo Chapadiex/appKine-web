@@ -1,6 +1,13 @@
 <div class="titulo-con-ayuda">
   <h1>Honorarios por clase de la oferta</h1>
-  <app-ayuda titulo="Por participante presente, repartido entre los instructores">
+  <app-ayuda titulo="Sobre esta pantalla">
+    <p>
+      Cuanto cobran los instructores de esta oferta por cada participante presente en una clase, por
+      periodo.
+    </p>
+    <p class="ayuda-contextual__subtitulo">
+      Por participante presente, repartido entre los instructores
+    </p>
     <p>
       Una clase vale la tarifa por la cantidad de participantes <b>presentes</b> (incluida la
       llegada tarde). Si la clase tuvo instructores adicionales, ese total se reparte
@@ -14,6 +21,12 @@
       liquidado guardo su importe y no cambia.
     </p>
   </app-ayuda>
+  <div class="encabezado__acciones">
+    <button type="button" class="boton" (click)="abrirAlta()">
+      <app-icono nombre="agregar" />
+      Cargar una tarifa
+    </button>
+  </div>
 </div>
 
 @if (oferta(); as detalle) {
@@ -21,12 +34,7 @@
     Cuanto cobran los instructores de <b>{{ detalle.nombreComercial }}</b> por cada participante
     presente en una clase, por periodo.
   </p>
-} @else {
-  <p class="descripcion">
-    Cuanto cobran los instructores de esta oferta por cada participante presente en una clase, por
-    periodo.
-  </p>
-}
+} @else {}
 
 <nav class="acciones" aria-label="Servicios y ofertas">
   <a class="boton boton--secundario" routerLink="/servicios/ofertas">Ofertas de la sede</a>
@@ -38,10 +46,6 @@
     <p class="estado estado--ok">{{ mensaje }}</p>
   }
 </div>
-
-<p class="acciones">
-  <button type="button" class="boton" (click)="abrirAlta()">Cargar una tarifa</button>
-</p>
 
 @if (altaAbierta()) {
   <section class="tarjeta" aria-labelledby="titulo-alta-honorario">
@@ -174,14 +178,16 @@
               </caption>
               <thead>
                 <tr>
-                  <th scope="col">Por participante</th>
-                  <th scope="col">Vigencia</th>
+                  <th scope="col" appOrdenable [tabla]="tabla" columna="importe">
+                    Por participante
+                  </th>
+                  <th scope="col" appOrdenable [tabla]="tabla" columna="vigencia">Vigencia</th>
                   <th scope="col">Situacion</th>
                   <th scope="col">Acciones</th>
                 </tr>
               </thead>
               <tbody>
-                @for (tarifa of tarifas(); track tarifa.id) {
+                @for (tarifa of tabla.visibles(); track tarifa.id) {
                   @let situacionDeLaFila = situacion(tarifa);
                   <tr
                     [class.fila--revocada]="tarifa.estado === 'INACTIVO'"
@@ -288,6 +294,16 @@
                 }
               </tbody>
             </table>
+          </div>
+
+          <div class="tabla-pie">
+            <span>{{ tabla.total() }} tarifas</span>
+            <app-paginacion
+              [paginaActual]="tabla.pagina()"
+              [totalPaginas]="tabla.totalPaginas()"
+              etiqueta="Paginas de tarifas"
+              (cambioDePagina)="tabla.irA($event)"
+            />
           </div>
         }
       }

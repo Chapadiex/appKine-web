@@ -33,6 +33,10 @@ import {
   textoDeRecepcion,
 } from '../../models/etiquetas-de-recepcion';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
+import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
+import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 
 /** La ruta que monta esta pantalla. Se reescribe la fecha sobre ella sin navegar. */
 const RUTA = '/agenda/recepcion';
@@ -126,7 +130,15 @@ const CAUSAS_QUE_RELEEN: ReadonlySet<CausaAgenda> = new Set<CausaAgenda>([
  */
 @Component({
   selector: 'app-recepcion-del-dia-page',
-  imports: [RouterLink, ConfirmacionConMotivo, ClasesDelDia, Pestanas],
+  imports: [
+    Paginacion,
+    ColumnaOrdenable,
+    Ayuda,
+    RouterLink,
+    ConfirmacionConMotivo,
+    ClasesDelDia,
+    Pestanas,
+  ],
   templateUrl: './recepcion-del-dia-page.html',
   styleUrl: '../../agenda.css',
 })
@@ -166,6 +178,16 @@ export class RecepcionDelDiaPage {
   private diaPorDefecto = false;
 
   protected readonly turnos = signal<readonly TurnoDelDia[]>([]);
+
+  /** Orden y paginado de la lista completa (plan §3.4): el servidor no la pagina. */
+  protected readonly tabla = tablaLocal(this.turnos, {
+    porPagina: 50,
+    columnas: {
+      hora: (turno) => (turno.inicio ? new Date(turno.inicio) : null),
+      paciente: (turno) => turno.personaNombre ?? null,
+      estado: (turno) => turno.estado ?? null,
+    },
+  });
   protected readonly cargando = signal(false);
   protected readonly error = signal<ErrorAgenda | null>(null);
   protected readonly exito = signal<string | null>(null);

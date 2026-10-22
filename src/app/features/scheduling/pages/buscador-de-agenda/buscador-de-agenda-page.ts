@@ -25,6 +25,8 @@ import {
   textoSinSlots,
 } from '../../models/etiquetas-de-agenda';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
+import { Filtros } from '../../../../shared/components/filtros/filtros';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 
 /** Ventana por defecto: una semana. `hasta` es exclusivo. */
 const DIAS_POR_DEFECTO = 7;
@@ -71,7 +73,7 @@ const DIAS_POR_DEFECTO = 7;
  */
 @Component({
   selector: 'app-buscador-de-agenda-page',
-  imports: [RouterLink, Pestanas],
+  imports: [Ayuda, Filtros, RouterLink, Pestanas],
   templateUrl: './buscador-de-agenda-page.html',
   styleUrl: '../../agenda.css',
 })
@@ -106,6 +108,10 @@ export class BuscadorDeAgendaPage {
 
   protected readonly ofertaId = signal<number | null>(null);
   protected readonly profesionalId = signal<number | null>(null);
+  /** Filtros avanzados fuera de su valor por defecto (regla de filtros, plan §3.4). */
+  protected readonly filtrosAvanzadosActivos = computed(() =>
+    Number(this.profesionalId() !== null),
+  );
   protected readonly desde = signal(this.diaDeLaSede.hoy());
   protected readonly hasta = signal(sumarDias(this.diaDeLaSede.hoy(), DIAS_POR_DEFECTO));
 

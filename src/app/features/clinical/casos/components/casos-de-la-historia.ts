@@ -25,6 +25,7 @@ import { SedeClinicaApi, ofertaElegible } from '../../services/sede-clinica-api'
 import { VisitaClinica } from '../../services/visita-clinica';
 import { CasosApi } from '../casos-api';
 import { ErrorCaso, traducirErrorCaso } from '../casos-errors';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 
 /**
  * Los casos de una Historia Clinica y el alta compacta (D-b, RF-M10-001/002).
@@ -39,7 +40,7 @@ import { ErrorCaso, traducirErrorCaso } from '../casos-errors';
  */
 @Component({
   selector: 'app-casos-de-la-historia',
-  imports: [RouterLink],
+  imports: [Ayuda, RouterLink],
   templateUrl: './casos-de-la-historia.html',
   styleUrl: '../../pages/historia-clinica/historia-clinica.css',
 })

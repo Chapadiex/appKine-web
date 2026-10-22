@@ -9,6 +9,7 @@ import { RegistroYActivacionService } from '../../../../api/generated/api/regist
 import { crearEsperaPorLimite } from '../../../../shared/utils/espera-por-limite';
 import { nuevaClaveDeIntento } from '../../../../shared/utils/clave-de-intento';
 import { textoRequerido } from '../../../../shared/validators/texto-requerido';
+import { Icono } from '../../../../shared/components/icono/icono';
 
 /** Campos obligatorios, en el orden en que se enfoca el primero invalido. */
 const CAMPOS = [
@@ -45,11 +46,14 @@ const MENSAJE_CLAVE_REUSADA =
  */
 @Component({
   selector: 'app-register-page',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [Icono, ReactiveFormsModule, RouterLink],
   templateUrl: './register-page.html',
   styleUrl: '../../auth.css',
 })
 export class RegisterPage {
+  /** Mostrar u ocultar la contraseña mientras se escribe (diseño del canvas). Solo cambia el input. */
+  protected readonly verPassword = signal(false);
+
   private readonly registro = inject(RegistroYActivacionService);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
 

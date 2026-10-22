@@ -133,10 +133,14 @@
 
   @if (esBorrador()) {
     <section class="tarjeta" aria-labelledby="titulo-edicion">
-      <h2 id="titulo-edicion">Corregir el borrador</h2>
-      <p class="ayuda">
-        El beneficiario no se cambia: seria otro egreso. Una vez confirmado ya no se corrige.
-      </p>
+      <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
+        <h2 id="titulo-edicion">Corregir el borrador</h2>
+        <app-ayuda titulo="Corregir el borrador">
+          <p>
+            El beneficiario no se cambia: seria otro egreso. Una vez confirmado ya no se corrige.
+          </p>
+        </app-ayuda>
+      </div>
       @if (deLiquidacion()) {
         <p class="ayuda" id="ayuda-de-liquidacion">
           Nacio de una liquidacion de honorarios por clase: el importe, la categoria, el periodo y
@@ -287,11 +291,15 @@
 
   @if (admitePago()) {
     <section class="tarjeta" aria-labelledby="titulo-pago">
-      <h2 id="titulo-pago">Registrar un pago</h2>
-      <p class="ayuda">
-        Puede ser parcial: varios pagos van llevando el saldo a cero. Un medio por pago; mitad
-        efectivo y mitad transferencia son dos pagos.
-      </p>
+      <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
+        <h2 id="titulo-pago">Registrar un pago</h2>
+        <app-ayuda titulo="Registrar un pago">
+          <p>
+            Puede ser parcial: varios pagos van llevando el saldo a cero. Un medio por pago; mitad
+            efectivo y mitad transferencia son dos pagos.
+          </p>
+        </app-ayuda>
+      </div>
       <form [formGroup]="pago" (ngSubmit)="pagar()" novalidate>
         <div class="campos-en-linea">
           <div class="campo">

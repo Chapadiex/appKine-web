@@ -1,51 +1,57 @@
-<h1>Presentaciones a financiadores</h1>
-
-<p class="descripcion">
-  Un lote es lo que la sede le reclama a una obra social o prepaga por las prestaciones de un
-  periodo. <b>Presentar no es cobrar</b>: la deuda de cada prestacion se salda recien cuando el lote
-  se cierra, y la plata entra cuando se registra el pago del financiador.
-</p>
+<div class="titulo-con-ayuda">
+  <h1>Presentaciones a financiadores</h1>
+  <app-ayuda titulo="Sobre esta pantalla">
+    <p>
+      Un lote es lo que la sede le reclama a una obra social o prepaga por las prestaciones de un
+      periodo. <b>Presentar no es cobrar</b>: la deuda de cada prestacion se salda recien cuando el
+      lote se cierra, y la plata entra cuando se registra el pago del financiador.
+    </p>
+  </app-ayuda>
+</div>
 
 <!-- ================================ Filtros =================================== -->
 
 <section class="tarjeta" aria-labelledby="titulo-filtros">
   <h2 id="titulo-filtros">Buscar lotes</h2>
   <form [formGroup]="filtro" (ngSubmit)="buscar()" novalidate>
-    <div class="campos-en-linea">
-      <div class="campo">
-        <label for="filtro-estado">Estado</label>
-        <select id="filtro-estado" formControlName="estado">
-          <option value="">Todos</option>
-          @for (opcion of estados; track opcion) {
-            <option [value]="opcion">{{ estadoEnPalabras(opcion) }}</option>
-          }
-        </select>
+    <!-- Regla de filtros (plan §3.4): sin busqueda por texto en el backend, el embudo va solo. -->
+    <app-filtros [soloAvanzados]="true" [activos]="filtrosAvanzadosActivos()">
+      <div class="campos-en-linea">
+        <div class="campo">
+          <label for="filtro-estado">Estado</label>
+          <select id="filtro-estado" formControlName="estado">
+            <option value="">Todos</option>
+            @for (opcion of estados; track opcion) {
+              <option [value]="opcion">{{ estadoEnPalabras(opcion) }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="campo">
+          <label for="filtro-financiador">Financiador</label>
+          <select id="filtro-financiador" formControlName="financiadorId">
+            <option value="">Todos</option>
+            @for (ficha of financiadores(); track ficha.id) {
+              <option [value]="ficha.id">{{ ficha.nombre }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="campo">
+          <label for="filtro-desde">Periodo desde</label>
+          <input id="filtro-desde" type="date" formControlName="desde" />
+        </div>
+
+        <div class="campo">
+          <label for="filtro-hasta">Periodo hasta</label>
+          <input id="filtro-hasta" type="date" formControlName="hasta" />
+        </div>
       </div>
 
-      <div class="campo">
-        <label for="filtro-financiador">Financiador</label>
-        <select id="filtro-financiador" formControlName="financiadorId">
-          <option value="">Todos</option>
-          @for (ficha of financiadores(); track ficha.id) {
-            <option [value]="ficha.id">{{ ficha.nombre }}</option>
-          }
-        </select>
+      <div class="acciones">
+        <button type="submit" class="boton">Buscar</button>
       </div>
-
-      <div class="campo">
-        <label for="filtro-desde">Periodo desde</label>
-        <input id="filtro-desde" type="date" formControlName="desde" />
-      </div>
-
-      <div class="campo">
-        <label for="filtro-hasta">Periodo hasta</label>
-        <input id="filtro-hasta" type="date" formControlName="hasta" />
-      </div>
-    </div>
-
-    <div class="acciones">
-      <button type="submit" class="boton">Buscar</button>
-    </div>
+    </app-filtros>
   </form>
 </section>
 
@@ -132,11 +138,15 @@
 <!-- ================================ Alta =================================== -->
 
 <section class="tarjeta" aria-labelledby="titulo-alta">
-  <h2 id="titulo-alta">Abrir un borrador</h2>
-  <p class="ayuda">
-    El periodo es un filtro de la bandeja de prestaciones, no una restriccion: dos lotes del mismo
-    periodo son validos (por ejemplo, un reenvio de debitadas).
-  </p>
+  <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
+    <h2 id="titulo-alta">Abrir un borrador</h2>
+    <app-ayuda titulo="Abrir un borrador">
+      <p>
+        El periodo es un filtro de la bandeja de prestaciones, no una restriccion: dos lotes del
+        mismo periodo son validos (por ejemplo, un reenvio de debitadas).
+      </p>
+    </app-ayuda>
+  </div>
   <form [formGroup]="alta" (ngSubmit)="crear()" novalidate>
     <div class="campos-en-linea">
       <div class="campo">

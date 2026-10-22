@@ -1,56 +1,71 @@
-<h1>Catalogo de financiadores</h1>
+<div class="titulo-con-ayuda">
+  <h1>Catalogo de financiadores</h1>
+  <app-ayuda titulo="Sobre esta pantalla">
+    <p>
+      Obras sociales, prepagas y ART que la plataforma ofrece a todos los centros. Un centro las
+      <b>agrega por copia</b>: lo que cambies aca no modifica las copias ya agregadas, que solo
+      reciben un aviso de que el catalogo cambio.
+    </p>
+  </app-ayuda>
+  <div class="encabezado__acciones">
+    <button type="button" class="boton" (click)="abrirAltaFinanciador()">
+      <app-icono nombre="agregar" />
+      Agregar un financiador al catalogo
+    </button>
+  </div>
+</div>
 
-<p class="descripcion">
-  Obras sociales, prepagas y ART que la plataforma ofrece a todos los centros. Un centro las
-  <b>agrega por copia</b>: lo que cambies aca no modifica las copias ya agregadas, que solo reciben
-  un aviso de que el catalogo cambio.
-  <a class="enlace" [routerLink]="rutaSolicitudes">Solicitudes de catalogo</a> ·
-  <a class="enlace" [routerLink]="rutaSuscripciones">Suscripciones</a>
-</p>
+<app-pestanas [pestanas]="pestanasDePlataforma" [etiqueta]="etiquetaDePestanas" />
 
 <section class="tarjeta" aria-labelledby="titulo-filtros-catalogo">
   <h2 id="titulo-filtros-catalogo">Buscar</h2>
   <form (submit)="$event.preventDefault(); cargar()">
-    <div class="campo">
-      <label for="catalogo-plataforma-busqueda">Nombre, codigo o CUIT</label>
-      <input
-        id="catalogo-plataforma-busqueda"
-        type="search"
-        autocomplete="off"
-        [value]="busqueda()"
-        (input)="busqueda.set($any($event.target).value)"
-      />
-    </div>
-    <div class="campo">
-      <label for="catalogo-plataforma-estado">Estado</label>
-      <select
-        id="catalogo-plataforma-estado"
-        [value]="filtroEstado()"
-        (change)="filtroEstado.set($any($event.target).value)"
-      >
-        <option value="ACTIVO">Activos</option>
-        <option value="INACTIVO">Dados de baja</option>
-        <option value="TODOS">Todos</option>
-      </select>
-    </div>
-    <div class="campo">
-      <label for="catalogo-plataforma-tipo">Tipo</label>
-      <select
-        id="catalogo-plataforma-tipo"
-        [value]="filtroTipo()"
-        (change)="filtroTipo.set($any($event.target).value)"
-      >
-        <option value="">Todos</option>
-        @for (tipo of tipos; track tipo.valor) {
-          <option [value]="tipo.valor">{{ tipo.etiqueta }}</option>
-        }
-      </select>
-    </div>
+    <!-- Regla de filtros (plan §3.4): la busqueda a la vista; estado y tipo, detras del embudo. -->
+    <app-filtros [activos]="filtrosAvanzadosActivos()">
+      <div class="campo" filtro-principal>
+        <label class="visualmente-oculto" for="catalogo-plataforma-busqueda"
+          >Nombre, codigo o CUIT</label
+        >
+        <div class="campo-busqueda">
+          <app-icono class="campo-busqueda__icono" nombre="buscar" />
+          <input
+            id="catalogo-plataforma-busqueda"
+            type="search"
+            autocomplete="off"
+            placeholder="Buscar por nombre, codigo o CUIT"
+            [value]="busqueda()"
+            (input)="busqueda.set($any($event.target).value)"
+          />
+        </div>
+      </div>
+      <div class="campo">
+        <label for="catalogo-plataforma-estado">Estado</label>
+        <select
+          id="catalogo-plataforma-estado"
+          [value]="filtroEstado()"
+          (change)="filtroEstado.set($any($event.target).value)"
+        >
+          <option value="ACTIVO">Activos</option>
+          <option value="INACTIVO">Dados de baja</option>
+          <option value="TODOS">Todos</option>
+        </select>
+      </div>
+      <div class="campo">
+        <label for="catalogo-plataforma-tipo">Tipo</label>
+        <select
+          id="catalogo-plataforma-tipo"
+          [value]="filtroTipo()"
+          (change)="filtroTipo.set($any($event.target).value)"
+        >
+          <option value="">Todos</option>
+          @for (tipo of tipos; track tipo.valor) {
+            <option [value]="tipo.valor">{{ tipo.etiqueta }}</option>
+          }
+        </select>
+      </div>
+    </app-filtros>
     <div class="acciones">
       <button type="submit" class="boton">Buscar</button>
-      <button type="button" class="boton boton--secundario" (click)="abrirAltaFinanciador()">
-        Agregar un financiador al catalogo
-      </button>
     </div>
   </form>
 </section>

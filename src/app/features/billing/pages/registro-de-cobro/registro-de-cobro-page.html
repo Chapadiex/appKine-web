@@ -1,23 +1,24 @@
 @if (modoPrepago()) {
-  <h1>Registrar un prepago</h1>
-
-  <!--
-    E-6 (DP-06 / ADR-0013): el prepago es un ANTICIPO atado a un turno. No hay deuda todavia —la
-    deuda nace al cerrar la sesion— asi que no se imputa nada: todo queda a favor del paciente y el
-    backend lo imputa solo cuando se cierra la sesion de ese turno. Lo que sobre sigue a favor.
-  -->
-  <p class="descripcion">
-    Esto registra un <b>anticipo</b> por el turno de hoy. No hay deuda todavia: se genera al cerrar
-    la atencion, y en ese momento el anticipo se imputa solo. Si sobra, queda a favor del paciente;
-    si el paciente no viene, el anticipo queda disponible para reintegrarlo.
-  </p>
+  <div class="titulo-con-ayuda">
+    <h1>Registrar un prepago</h1>
+    <app-ayuda titulo="Sobre esta pantalla">
+      <p>
+        Esto registra un <b>anticipo</b> por el turno de hoy. No hay deuda todavia: se genera al
+        cerrar la atencion, y en ese momento el anticipo se imputa solo. Si sobra, queda a favor del
+        paciente; si el paciente no viene, el anticipo queda disponible para reintegrarlo.
+      </p>
+    </app-ayuda>
+  </div>
 } @else {
-  <h1>Registrar un cobro</h1>
-
-  <p class="descripcion">
-    Esto registra <b>dinero recibido</b> y lo imputa a deuda. <b>No es la caja</b>: el arqueo y el
-    turno de caja son otro circuito (M20) y viven en la seccion Caja.
-  </p>
+  <div class="titulo-con-ayuda">
+    <h1>Registrar un cobro</h1>
+    <app-ayuda titulo="Sobre esta pantalla">
+      <p>
+        Esto registra <b>dinero recibido</b> y lo imputa a deuda. <b>No es la caja</b>: el arqueo y
+        el turno de caja son otro circuito (M20) y viven en la seccion Caja.
+      </p>
+    </app-ayuda>
+  </div>
 }
 
 @if (nombreDeLaPersona(); as quien) {

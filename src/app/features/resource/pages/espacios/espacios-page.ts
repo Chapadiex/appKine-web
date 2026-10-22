@@ -19,6 +19,7 @@ import { EspacioResponse } from '../../../../api/generated/model/espacio-respons
 import { EspaciosService } from '../../../../api/generated/api/espacios.service';
 import { EstadoDeListado, vistaDeListado } from '../../../../shared/utils/estado-de-listado';
 import { PERMISO_CONSULTORIO_MANAGE } from '../../../../core/models/permisos';
+import { Filtros } from '../../../../shared/components/filtros/filtros';
 import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
 import { PermisoDirective } from '../../../../shared/directives/permiso.directive';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
@@ -35,6 +36,8 @@ import {
 import { textoRequerido } from '../../../../shared/validators/texto-requerido';
 import { numeroDeclarado } from '../../../../shared/utils/numero-declarado';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { Icono } from '../../../../shared/components/icono/icono';
 
 /** Filtro de estado del listado. Los tres valores son los del contrato. */
 type FiltroEstado = 'ACTIVO' | 'INACTIVO' | 'TODOS';
@@ -86,7 +89,16 @@ const POR_PAGINA = 20;
  */
 @Component({
   selector: 'app-espacios-page',
-  imports: [ReactiveFormsModule, RouterLink, PermisoDirective, Paginacion, ConfirmacionConMotivo],
+  imports: [
+    Ayuda,
+    Icono,
+    Filtros,
+    ReactiveFormsModule,
+    RouterLink,
+    PermisoDirective,
+    Paginacion,
+    ConfirmacionConMotivo,
+  ],
   templateUrl: './espacios-page.html',
   styleUrl: '../../resource.css',
 })
@@ -112,6 +124,8 @@ export class EspaciosPage {
 
   private readonly vista = vistaDeListado<EspacioResponse>(this.estado);
   protected readonly filtro = signal<FiltroEstado>('ACTIVO');
+  /** Filtros avanzados fuera de su valor por defecto (regla de filtros, plan §3.4). */
+  protected readonly filtrosAvanzadosActivos = computed(() => Number(this.filtro() !== 'ACTIVO'));
   protected readonly paginaActual = signal(0);
 
   /** Fila y operacion abiertas, o `null`. Solo una a la vez. */

@@ -2,6 +2,7 @@ import { request as fabricaDeRequest } from '@playwright/test';
 
 import { emailUnico, nonce, sql } from './support/akine';
 import { expect, ingresar, navegar, respuestaDe, test } from './support/agenda-real';
+import { abrirFiltros } from './support/filtros';
 import {
   ApiAkine,
   Centro,
@@ -109,6 +110,7 @@ test.describe('Notificaciones fallidas con reintento contra el backend real', ()
     await navegar(page, '/organizacion/colaboradores/notificaciones');
     await expect(page.getByRole('heading', { name: 'Notificaciones', level: 1 })).toBeVisible();
     // Por defecto la pantalla muestra FALLIDA y AGOTADA, que son las que se pueden reintentar.
+    await abrirFiltros(page);
     await expect(page.getByLabel('Fallida')).toBeChecked();
     await expect(page.getByLabel('Agotada (sin mas intentos)')).toBeChecked();
     await expect(page.getByLabel('Enviada')).not.toBeChecked();

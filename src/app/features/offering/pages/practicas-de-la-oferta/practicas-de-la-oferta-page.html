@@ -1,6 +1,8 @@
 <div class="titulo-con-ayuda">
   <h1>Practicas de la oferta</h1>
-  <app-ayuda titulo="Para que sirve esta lista">
+  <app-ayuda titulo="Sobre esta pantalla">
+    <p>Que practicas del catalogo puede prestar esta oferta, y cual es la principal.</p>
+    <p class="ayuda-contextual__subtitulo">Para que sirve esta lista</p>
     <p>
       La oferta es lo que el centro vende; la practica es lo que el financiador reconoce y paga. La
       <b>cobertura aplicable</b> de un paciente se calcula sobre estas practicas, y cuando una
@@ -11,10 +13,6 @@
     <p>Esta lista dice lo que la oferta <b>puede</b> prestar, no lo que se presto en una sesion.</p>
   </app-ayuda>
 </div>
-
-<p class="descripcion">
-  Que practicas del catalogo puede prestar esta oferta, y cual es la principal.
-</p>
 
 <nav class="acciones" aria-label="Servicios y ofertas">
   <a class="boton boton--secundario" routerLink="/servicios/ofertas">Ofertas de la sede</a>
@@ -177,11 +175,15 @@
 
     @if (dadasDeBaja().length > 0) {
       <section class="tarjeta" aria-labelledby="baja-titulo">
-        <h2 id="baja-titulo">Dadas de baja</h2>
-        <p class="ayuda">
-          Practicas que la oferta tuvo y se quitaron. Quedan como historia; para volver a sumar una,
-          buscala y agregala.
-        </p>
+        <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
+          <h2 id="baja-titulo">Dadas de baja</h2>
+          <app-ayuda titulo="Dadas de baja">
+            <p>
+              Practicas que la oferta tuvo y se quitaron. Quedan como historia; para volver a sumar
+              una, buscala y agregala.
+            </p>
+          </app-ayuda>
+        </div>
         <ul class="grupo">
           @for (fila of dadasDeBaja(); track fila.id) {
             <li>

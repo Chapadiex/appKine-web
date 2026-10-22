@@ -178,11 +178,15 @@
           </section>
 
           <section class="tarjeta" aria-labelledby="titulo-versiones">
-            <h2 id="titulo-versiones">Versiones</h2>
-            <p class="ayuda">
-              Modificar un plan activo deja una version nueva: la anterior sigue consultable y su
-              avance tambien.
-            </p>
+            <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
+              <h2 id="titulo-versiones">Versiones</h2>
+              <app-ayuda titulo="Versiones">
+                <p>
+                  Modificar un plan activo deja una version nueva: la anterior sigue consultable y
+                  su avance tambien.
+                </p>
+              </app-ayuda>
+            </div>
             <ol class="casos" aria-label="Versiones del plan">
               @for (v of versiones(); track v.id) {
                 <li class="casos__item">

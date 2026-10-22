@@ -1,10 +1,13 @@
-<h1>Egresos</h1>
-
-<p class="descripcion">
-  Lo que la sede le debe a otros: honorarios de profesionales, alquiler, servicios, insumos. Un
-  egreso <b>nace en borrador y no mueve plata</b>; se confirma con su comprobante y se salda con uno
-  o mas pagos. <b>Solo el pago en efectivo sale del cajon</b> y exige la caja abierta.
-</p>
+<div class="titulo-con-ayuda">
+  <h1>Egresos</h1>
+  <app-ayuda titulo="Sobre esta pantalla">
+    <p>
+      Lo que la sede le debe a otros: honorarios de profesionales, alquiler, servicios, insumos. Un
+      egreso <b>nace en borrador y no mueve plata</b>; se confirma con su comprobante y se salda con
+      uno o mas pagos. <b>Solo el pago en efectivo sale del cajon</b> y exige la caja abierta.
+    </p>
+  </app-ayuda>
+</div>
 
 <nav class="acciones" aria-label="Honorarios">
   <a class="boton boton--secundario" routerLink="/egresos/honorarios">
@@ -17,41 +20,44 @@
 <section class="tarjeta" aria-labelledby="titulo-filtros">
   <h2 id="titulo-filtros">Buscar egresos</h2>
   <form [formGroup]="filtro" (ngSubmit)="buscar()" novalidate>
-    <div class="campos-en-linea">
-      <div class="campo">
-        <label for="filtro-estado">Estado</label>
-        <select id="filtro-estado" formControlName="estado">
-          <option value="">Todos</option>
-          @for (opcion of estados; track opcion) {
-            <option [value]="opcion">{{ estadoEnPalabras(opcion) }}</option>
-          }
-        </select>
+    <!-- Regla de filtros (plan §3.4): sin busqueda por texto en el backend, el embudo va solo. -->
+    <app-filtros [soloAvanzados]="true" [activos]="filtrosAvanzadosActivos()">
+      <div class="campos-en-linea">
+        <div class="campo">
+          <label for="filtro-estado">Estado</label>
+          <select id="filtro-estado" formControlName="estado">
+            <option value="">Todos</option>
+            @for (opcion of estados; track opcion) {
+              <option [value]="opcion">{{ estadoEnPalabras(opcion) }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="campo">
+          <label for="filtro-categoria">Categoria</label>
+          <select id="filtro-categoria" formControlName="categoria">
+            <option value="">Todas</option>
+            @for (opcion of categorias; track opcion) {
+              <option [value]="opcion">{{ categoriaEnPalabras(opcion) }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="campo">
+          <label for="filtro-desde">Registrados desde</label>
+          <input id="filtro-desde" type="date" formControlName="desde" />
+        </div>
+
+        <div class="campo">
+          <label for="filtro-hasta">Registrados hasta</label>
+          <input id="filtro-hasta" type="date" formControlName="hasta" />
+        </div>
       </div>
 
-      <div class="campo">
-        <label for="filtro-categoria">Categoria</label>
-        <select id="filtro-categoria" formControlName="categoria">
-          <option value="">Todas</option>
-          @for (opcion of categorias; track opcion) {
-            <option [value]="opcion">{{ categoriaEnPalabras(opcion) }}</option>
-          }
-        </select>
+      <div class="acciones">
+        <button type="submit" class="boton">Buscar</button>
       </div>
-
-      <div class="campo">
-        <label for="filtro-desde">Registrados desde</label>
-        <input id="filtro-desde" type="date" formControlName="desde" />
-      </div>
-
-      <div class="campo">
-        <label for="filtro-hasta">Registrados hasta</label>
-        <input id="filtro-hasta" type="date" formControlName="hasta" />
-      </div>
-    </div>
-
-    <div class="acciones">
-      <button type="submit" class="boton">Buscar</button>
-    </div>
+    </app-filtros>
   </form>
 </section>
 
@@ -127,11 +133,15 @@
 <!-- ================================ Alta =================================== -->
 
 <section class="tarjeta" aria-labelledby="titulo-alta">
-  <h2 id="titulo-alta">Cargar un egreso</h2>
-  <p class="ayuda">
-    Queda en borrador: se puede corregir hasta confirmarlo. El comprobante es opcional ahora y
-    obligatorio para confirmar. El importe lo declaras vos: AKINE no calcula liquidaciones.
-  </p>
+  <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
+    <h2 id="titulo-alta">Cargar un egreso</h2>
+    <app-ayuda titulo="Cargar un egreso">
+      <p>
+        Queda en borrador: se puede corregir hasta confirmarlo. El comprobante es opcional ahora y
+        obligatorio para confirmar. El importe lo declaras vos: AKINE no calcula liquidaciones.
+      </p>
+    </app-ayuda>
+  </div>
   <form [formGroup]="alta" (ngSubmit)="crear()" novalidate>
     <fieldset class="grupo">
       <legend>Beneficiario</legend>

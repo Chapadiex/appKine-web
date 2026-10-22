@@ -1,10 +1,13 @@
-<h1>Cobros registrados</h1>
-
-<p class="descripcion">
-  Dinero recibido de esta persona en <b>todo el centro</b>. Es la otra mitad de la cuenta corriente:
-  aca esta lo que se cobro, no lo que se debe. <b>No es la caja</b>: el arqueo del dia es otro
-  circuito y vive en la seccion Caja.
-</p>
+<div class="titulo-con-ayuda">
+  <h1>Cobros registrados</h1>
+  <app-ayuda titulo="Sobre esta pantalla">
+    <p>
+      Dinero recibido de esta persona en <b>todo el centro</b>. Es la otra mitad de la cuenta
+      corriente: aca esta lo que se cobro, no lo que se debe. <b>No es la caja</b>: el arqueo del
+      dia es otro circuito y vive en la seccion Caja.
+    </p>
+  </app-ayuda>
+</div>
 
 <p>
   <a class="enlace" [routerLink]="rutaCuenta()">Ver la cuenta corriente</a>
@@ -47,18 +50,18 @@
     <table class="tabla">
       <thead>
         <tr>
-          <th scope="col">Comprobante</th>
-          <th scope="col">Fecha y hora</th>
-          <th scope="col">Total</th>
+          <th scope="col" appOrdenable [tabla]="tabla" columna="comprobante">Comprobante</th>
+          <th scope="col" appOrdenable [tabla]="tabla" columna="fecha">Fecha y hora</th>
+          <th scope="col" appOrdenable [tabla]="tabla" columna="total">Total</th>
           <th scope="col">Medios</th>
           <th scope="col">Deudas imputadas</th>
-          <th scope="col">Saldo a favor</th>
-          <th scope="col">Estado</th>
+          <th scope="col" appOrdenable [tabla]="tabla" columna="saldoAFavor">Saldo a favor</th>
+          <th scope="col" appOrdenable [tabla]="tabla" columna="estado">Estado</th>
           <th scope="col">Acciones</th>
         </tr>
       </thead>
       <tbody>
-        @for (cobro of cobros(); track cobro.id) {
+        @for (cobro of tabla.visibles(); track cobro.id) {
           <tr>
             <td>N.º {{ cobro.comprobanteNumero }}</td>
             <td>{{ instanteEnPalabras(cobro.cobradoEn) }}</td>
@@ -368,6 +371,15 @@
         }
       </tbody>
     </table>
+  </div>
+  <div class="tabla-pie">
+    <span>{{ tabla.total() }} cobros</span>
+    <app-paginacion
+      [paginaActual]="tabla.pagina()"
+      [totalPaginas]="tabla.totalPaginas()"
+      etiqueta="Paginas de cobros"
+      (cambioDePagina)="tabla.irA($event)"
+    />
   </div>
 
   <p class="ayuda">

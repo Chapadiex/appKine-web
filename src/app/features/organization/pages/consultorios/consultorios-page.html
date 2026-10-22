@@ -1,9 +1,18 @@
-<h1>Sedes</h1>
-
-<p class="descripcion">
-  Los consultorios de esta organizacion. Cada sede tiene su propia zona horaria, que es la que rige
-  su dia operativo y su agenda: no la de la organizacion.
-</p>
+<div class="titulo-con-ayuda">
+  <h1>Sedes</h1>
+  <app-ayuda titulo="Sobre esta pantalla">
+    <p>
+      Los consultorios de esta organizacion. Cada sede tiene su propia zona horaria, que es la que
+      rige su dia operativo y su agenda: no la de la organizacion.
+    </p>
+  </app-ayuda>
+  <div class="encabezado__acciones" *akinePermiso="permisoManage">
+    <a class="boton" routerLink="/organizacion/sedes/nueva">
+      <app-icono nombre="agregar" />
+      Abrir una sede nueva
+    </a>
+  </div>
+</div>
 
 <!--
   La sede del contexto activo dejo de estar vigente. Va arriba de todo y fuera del @switch
@@ -23,10 +32,6 @@
   </section>
 }
 
-<p class="acciones" *akinePermiso="permisoManage">
-  <a class="boton" routerLink="/organizacion/sedes/nueva">Abrir una sede nueva</a>
-</p>
-
 <div aria-live="polite">
   @if (exito(); as mensaje) {
     <p class="estado estado--ok">{{ mensaje }}</p>
@@ -36,23 +41,29 @@
 <section class="tarjeta" aria-labelledby="titulo-sedes">
   <h2 id="titulo-sedes">Sedes de la organizacion</h2>
 
-  <div class="campo">
-    <label for="filtro-estado">Mostrar</label>
-    <select
-      id="filtro-estado"
-      [value]="filtro()"
-      (change)="cambiarFiltro($any($event.target).value)"
-      aria-describedby="filtro-estado-ayuda"
-    >
-      <option value="ACTIVO">Solo las sedes activas</option>
-      <option value="INACTIVO">Solo las dadas de baja</option>
-      <option value="TODOS">Todas</option>
-    </select>
-    <p class="ayuda" id="filtro-estado-ayuda">
-      Las sedes dadas de baja no se borran: siguen disponibles con su motivo y su fecha, porque los
-      turnos, sesiones y cobros historicos las siguen referenciando.
-    </p>
-  </div>
+  <!--
+    Regla de filtros (plan §3.4): el listado no tiene busqueda por texto en el backend, asi que
+    va solo el embudo; "Mostrar" es un filtro avanzado.
+  -->
+  <app-filtros [soloAvanzados]="true" [activos]="filtrosAvanzadosActivos()">
+    <div class="campo">
+      <label for="filtro-estado">Mostrar</label>
+      <select
+        id="filtro-estado"
+        [value]="filtro()"
+        (change)="cambiarFiltro($any($event.target).value)"
+        aria-describedby="filtro-estado-ayuda"
+      >
+        <option value="ACTIVO">Solo las sedes activas</option>
+        <option value="INACTIVO">Solo las dadas de baja</option>
+        <option value="TODOS">Todas</option>
+      </select>
+      <p class="ayuda" id="filtro-estado-ayuda">
+        Las sedes dadas de baja no se borran: siguen disponibles con su motivo y su fecha, porque
+        los turnos, sesiones y cobros historicos las siguen referenciando.
+      </p>
+    </div>
+  </app-filtros>
 
   <div aria-live="polite">
     @switch (estado().tipo) {

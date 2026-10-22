@@ -1,14 +1,27 @@
-<h1>Productos de pack y abonos</h1>
+<div class="titulo-con-ayuda">
+  <h1>Productos de pack y abonos</h1>
+  <app-ayuda titulo="Sobre esta pantalla">
+    <p>
+      Los packs de creditos y los abonos que vende esta sede. Un <b>pack</b> son clases que valen
+      una cantidad de dias desde la compra, sobre ofertas que cobran <b>POR_PACK</b>. Un
+      <b>abono</b> cubre un periodo que se elige al venderlo, con un tope de asistencias, sobre
+      ofertas que cobran <b>POR_ABONO</b>. Crear un producto no le da saldo a nadie; el saldo nace
+      al vender un pase a una persona, desde
+      <a class="enlace" routerLink="/pacientes">Pacientes</a>, en la fila de la persona.
+    </p>
+  </app-ayuda>
+  @if (puedeGestionar() && panel().tipo === 'ninguno') {
+    <div class="encabezado__acciones">
+      <button id="boton-nuevo-producto" type="button" class="boton" (click)="abrirAlta()">
+        <app-icono nombre="agregar" />
+        Nuevo producto
+      </button>
+    </div>
+  }
+</div>
 
-<p class="descripcion">
-  Los packs de creditos y los abonos que vende esta sede. Un <b>pack</b> son clases que valen una
-  cantidad de dias desde la compra, sobre ofertas que cobran <b>POR_PACK</b>. Un <b>abono</b> cubre
-  un periodo que se elige al venderlo, con un tope de asistencias, sobre ofertas que cobran
-  <b>POR_ABONO</b>. Crear un producto no le da saldo a nadie; el saldo nace al vender un pase a una
-  persona, desde <a class="enlace" routerLink="/pacientes">Pacientes</a>, en la fila de la persona.
-</p>
-
-<div class="filtros">
+<!-- Regla de filtros (plan §3.4): sin busqueda por texto en el backend, el embudo va solo. -->
+<app-filtros [soloAvanzados]="true" [activos]="filtrosAvanzadosActivos()">
   <div class="campo">
     <label class="opcion-casilla" for="productos-incluir-bajas">
       <input
@@ -20,14 +33,7 @@
       Mostrar tambien los dados de baja
     </label>
   </div>
-  @if (puedeGestionar() && panel().tipo === 'ninguno') {
-    <div class="acciones">
-      <button id="boton-nuevo-producto" type="button" class="boton" (click)="abrirAlta()">
-        Nuevo producto
-      </button>
-    </div>
-  }
-</div>
+</app-filtros>
 
 <div aria-live="polite">
   @if (aviso(); as texto) {
@@ -296,21 +302,21 @@
       <table class="tabla">
         <thead>
           <tr>
-            <th scope="col">Producto</th>
-            <th scope="col">Tipo</th>
-            <th scope="col">Oferta</th>
+            <th scope="col" appOrdenable [tabla]="tabla" columna="producto">Producto</th>
+            <th scope="col" appOrdenable [tabla]="tabla" columna="tipo">Tipo</th>
+            <th scope="col" appOrdenable [tabla]="tabla" columna="oferta">Oferta</th>
             <th scope="col">Creditos</th>
-            <th scope="col">Precio</th>
+            <th scope="col" appOrdenable [tabla]="tabla" columna="precio">Precio</th>
             <th scope="col">Vale</th>
             <th scope="col">Se vende</th>
-            <th scope="col">Estado</th>
+            <th scope="col" appOrdenable [tabla]="tabla" columna="estado">Estado</th>
             @if (puedeGestionar()) {
               <th scope="col">Acciones</th>
             }
           </tr>
         </thead>
         <tbody>
-          @for (producto of lista; track producto.id) {
+          @for (producto of tabla.visibles(); track producto.id) {
             <tr [class.fila--revocada]="producto.active === false">
               <td>
                 {{ producto.nombre }}
@@ -364,6 +370,16 @@
           }
         </tbody>
       </table>
+    </div>
+
+    <div class="tabla-pie">
+      <span>{{ tabla.total() }} productos</span>
+      <app-paginacion
+        [paginaActual]="tabla.pagina()"
+        [totalPaginas]="tabla.totalPaginas()"
+        etiqueta="Paginas de productos"
+        (cambioDePagina)="tabla.irA($event)"
+      />
     </div>
   }
 }

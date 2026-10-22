@@ -49,6 +49,7 @@ import { fechaIsoEnPalabras } from '../../models/etiquetas-de-presentacion';
 import { CajaApi } from '../../services/caja-api';
 import { EgresosApi } from '../../services/egresos-api';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 
 type EstadoCarga =
   | { readonly tipo: 'cargando' }
@@ -96,7 +97,7 @@ type Operacion = 'editar' | 'confirmar' | 'pagar' | 'anular' | 'anular-pago';
  */
 @Component({
   selector: 'app-egreso-detalle-page',
-  imports: [ReactiveFormsModule, RouterLink, ConfirmacionConMotivo],
+  imports: [Ayuda, ReactiveFormsModule, RouterLink, ConfirmacionConMotivo],
   templateUrl: './egreso-detalle-page.html',
   styleUrl: '../../billing.css',
 })

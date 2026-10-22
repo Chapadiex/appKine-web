@@ -102,15 +102,38 @@ cita; cuando una pantalla necesite apartarse, lo dice en su análisis.
 └ (Formularios largos) barra de acciones fija al pie: [Cancelar]        [ACCIÓN PRINCIPAL]
 ```
 
-### 3.2 Texto explicativo
+### 3.2 Texto explicativo — regla del "?" (decidida por el usuario el 21/10/2026)
 
-- La **descripción** bajo el título pasa a **una línea** o desaparece. Dice qué se hace acá, no
-  cómo funciona el modelo.
-- Las **notas didácticas** (`nota-clave`) y la ayuda larga no se borran: pasan a **revelado
-  progresivo** (un `InfoNote` plegado: "¿Activa y vigente no son lo mismo?") o al tooltip de un
-  campo. La regla que explica un rechazo se muestra **en el momento del rechazo**, junto al error.
-- La **ayuda de campo** queda solo cuando cambia lo que el usuario escribe (formato, rango,
-  qué incluye). "Es la fecha local de la sede" no cambia lo que escribe: se va.
+> **Regla.** Una pantalla de uso diario no se lee todos los días. Todo texto que **explica**
+> —qué es la pantalla, cómo funciona el modelo, por qué existe una sección— va detrás de un botón
+> **"?"** (`app-ayuda`) al lado del título al que pertenece. A la vista queda solo lo que el
+> usuario necesita para operar.
+
+| Texto | Dónde va |
+|---|---|
+| Descripción bajo el `h1` ("Todas las personas registradas…") | `?` del título de la pantalla, con titulo "Sobre esta pantalla" |
+| Nota didáctica ("Persona y paciente no son lo mismo") | el mismo `?`, como subtítulo después de la descripción |
+| Párrafo al inicio de una sección ("Antes de dar de alta a alguien, buscalo…") | `?` al lado del `h2` de esa sección |
+| Ayuda de un campo que cambia lo que se escribe (formato, rango, qué incluye) | queda bajo el campo |
+| Ayuda de un campo que no cambia lo que se escribe ("Es la fecha local de la sede") | se borra, o va al `?` de la sección |
+
+**Excepciones: lo que nunca va detrás de un "?"**
+
+1. **Datos.** Si la descripción muestra un dato (código, moneda, vigencia, precio de lista,
+   diagnóstico), el dato queda a la vista en una línea; solo la explicación se pliega.
+2. **Estado de la pantalla.** "No pudimos leer el convenio…", "Esta atención sigue abierta",
+   "Lo que guardó la otra pestaña": describen lo que está pasando ahora, no el modelo.
+3. **Advertencias de acciones irreversibles o con consecuencias.** "Cerrar la atención la deja
+   sin poder editarse", "Confirmar deja el egreso firme", "Ninguna de las dos borra nada" en una
+   baja. Prevenir el error exige que se lea antes de actuar.
+4. **Instrucciones de un paso obligatorio.** "Elegí a cuál caso pertenece esta atención",
+   "Declará el motivo del acceso".
+5. **Acciones.** Una ayuda explica; **nunca contiene botones ni enlaces que hagan algo**. Un enlace
+   de referencia dentro de la prosa ("ver Colaboradores") se admite si el destino también está en
+   la navegación.
+
+La regla que explica un rechazo del servidor se muestra **en el momento del rechazo**, junto al
+error, además de estar en el `?`.
 
 ### 3.3 Formularios
 
@@ -125,6 +148,39 @@ cita; cuando una pantalla necesite apartarse, lo dice en su análisis.
   general del proceso, arriba del formulario en la región de avisos.
 
 ### 3.4 Listas y tablas
+
+
+> **Regla de filtros (decidida por el usuario el 21/10/2026).** Arriba del listado va **un solo
+> campo**: la búsqueda por texto, que tiene que buscar **por todo** lo que identifica al registro
+> (documento, nombre, código, teléfono…). Al lado, un botón con un **embudo** (`app-filtros`)
+> despliega hacia abajo los **filtros avanzados** (estado, tipo, perfil, fechas, "Mostrar…").
+> El botón muestra cuántos filtros avanzados están aplicados y el panel llega abierto si hay
+> alguno: un filtro activo nunca queda escondido sin aviso.
+>
+> - **Listado con búsqueda en el backend:** búsqueda a la vista + embudo.
+> - **Listado sin búsqueda en el backend:** solo el embudo, con texto "Filtros". Buscar "por todo"
+>   ahí es un **pedido al backend** (cambio funcional, §18 de la skill) y se registra en la etapa
+>   de la pantalla; no se simula filtrando en el cliente una página parcial.
+> - **Un filtro obligatorio para que la pantalla tenga sentido** (la oferta en la agenda, el día
+>   en la recepción) no es avanzado: queda a la vista.
+> - El `label` de la búsqueda puede ser `visualmente-oculto` con un `placeholder` que diga por qué
+>   se busca; el nombre accesible no cambia.
+
+> **Regla de tablas (decidida por el usuario el 21/10/2026).** Toda tabla de listado tiene
+> **paginado y ordenamiento**, con `tablaLocal` + `th[appOrdenable]` (`shared/components/tabla`) y
+> el pie `.tabla-pie` con el total y `app-paginacion`.
+>
+> - **Lista que llega completa del servidor** (la mayoría): orden y paginado en el cliente, 20 filas
+>   por página. Se ordenan las columnas de identidad, estado, fecha e importe; las de acciones no.
+> - **Lista paginada por el servidor** (16 operaciones con `page`/`size`): el paginado es el del
+>   servidor; **no se ordena la página visible**, porque ordenar 20 filas de 2.000 hace creer que
+>   se ordenó todo. El contrato no declara `sort` en ninguna operación: es un pedido al backend.
+> - Las grillas de carga (mediciones, tratamientos de una sesión) no son listados: no llevan esto.
+
+> **Regla de acción principal (decidida por el usuario el 21/10/2026).** El botón de alta de la
+> pantalla ("Dar de alta una persona", "Firmar un convenio") va en la **fila del título, del lado
+> derecho** (`.encabezado__acciones` dentro de `.titulo-con-ayuda`), con el ícono `agregar` y
+> el mismo permiso que tenía.
 
 - Columnas por importancia: identidad → estado → dato clave → vigencia. El resto, en la fila
   expandible o en el detalle.

@@ -34,6 +34,11 @@ import {
 } from '../../models/etiquetas-de-contracting';
 import { textoRequerido } from '../../../../shared/validators/texto-requerido';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
+import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
+import { Filtros } from '../../../../shared/components/filtros/filtros';
+import { Icono } from '../../../../shared/components/icono/icono';
 
 /** Operacion abierta sobre una fila. Solo una a la vez. */
 type TipoAccion = 'editar' | 'baja';
@@ -83,7 +88,17 @@ type TipoAccion = 'editar' | 'baja';
  */
 @Component({
   selector: 'app-financiadores-page',
-  imports: [Ayuda, ReactiveFormsModule, RouterLink, PermisoDirective, ConfirmacionConMotivo],
+  imports: [
+    ColumnaOrdenable,
+    Paginacion,
+    Ayuda,
+    Filtros,
+    Icono,
+    ReactiveFormsModule,
+    RouterLink,
+    PermisoDirective,
+    ConfirmacionConMotivo,
+  ],
   templateUrl: './financiadores-page.html',
   styleUrl: '../../contracting.css',
 })
@@ -112,6 +127,15 @@ export class FinanciadoresPage {
     return actual.tipo === 'listo' ? actual.pagina : [];
   });
 
+  /** Orden y paginado de la lista completa (plan Â§3.4): el servidor no pagina financiadores. */
+  protected readonly tabla = tablaLocal(this.financiadores, {
+    columnas: {
+      nombre: (financiador) => financiador.nombre,
+      tipo: (financiador) => this.etiquetaDeTipo(financiador.tipo),
+      estado: (financiador) => financiador.estado,
+    },
+  });
+
   protected readonly mensajeError = computed(() => {
     const actual = this.estado();
     return actual.tipo === 'error' ? actual.mensaje : null;
@@ -125,6 +149,11 @@ export class FinanciadoresPage {
   protected readonly filtroEstado = signal<FiltroEstado>('ACTIVO');
   protected readonly filtroTipo = signal<FiltroTipo | null>(null);
   protected readonly busqueda = signal('');
+
+  /** Filtros avanzados (detras del embudo) fuera de su valor por defecto. */
+  protected readonly filtrosAvanzadosActivos = computed(
+    () => Number(this.filtroEstado() !== 'ACTIVO') + Number(this.filtroTipo() !== null),
+  );
 
   /** Fila y operacion abiertas, o `null`. Solo una a la vez. */
   protected readonly panel = signal<{ readonly id: number; readonly tipo: TipoAccion } | null>(

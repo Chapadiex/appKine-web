@@ -86,7 +86,7 @@ test.describe('Estructura de rutas (AKINE-00.02)', () => {
   test('una ruta inexistente muestra la pagina 404 con salida', async ({ page }) => {
     await page.goto('/no-existe-esta-ruta');
 
-    await expect(page.getByRole('heading', { name: 'Pagina no encontrada' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Página no encontrada' })).toBeVisible();
     // El error se anuncia por lector de pantalla, no solo visualmente (ADR-0005).
     await expect(page.getByRole('alert')).toBeVisible();
 
@@ -95,7 +95,7 @@ test.describe('Estructura de rutas (AKINE-00.02)', () => {
     // en el login. Lo que este test pinea es que la salida EXISTE y lleva a algun lado, no a
     // cual: el destino de la raiz lo pinea `app.routes.spec.ts`.
     await page.getByRole('link', { name: 'Volver al inicio' }).click();
-    await expect(page.getByRole('heading', { level: 1 })).not.toHaveText('Pagina no encontrada');
+    await expect(page.getByRole('heading', { level: 1 })).not.toHaveText('Página no encontrada');
   });
 
   test('el layout persiste al cambiar de ruta', async ({ page }) => {

@@ -12,7 +12,7 @@
   >Saltar al contenido principal</a
 >
 
-<div class="shell" [class.shell--sin-barra]="!conBarraLateral()">
+<div class="shell" [class.shell--sin-barra]="!conBarraLateral()" [class.shell--acceso]="esAcceso()">
   <!--
     La navegacion va DESPUES del skip link: el skip link tiene que seguir siendo el primer
     elemento enfocable del documento (ADR-0005), y el salto al contenido existe justamente para
@@ -31,7 +31,11 @@
   }
 
   <div class="pagina">
-    <header class="cabecera">
+    <!--
+      Pantallas de acceso (login, registro, contexto…): sin barra superior. El logo va arriba de la
+      tarjeta y el pie lleva los enlaces de ayuda (diseño del canvas, 22/10/2026).
+    -->
+    <header class="cabecera" [hidden]="esAcceso()">
       <app-barra-superior [menuAbierto]="menuAbierto()" (alternarMenu)="alternarMenu()" />
     </header>
 
@@ -58,7 +62,18 @@
       tabindex="-1"
       [class.contenido--amplio]="ancho() === 'amplio'"
     >
+      @if (esAcceso()) {
+        <a class="acceso__marca" routerLink="/">
+          <span class="acceso__logo" aria-hidden="true">A</span>
+          <span>AKINE</span>
+        </a>
+      }
       <router-outlet />
+      @if (esAcceso()) {
+        <footer class="acceso__pie">
+          <a routerLink="/estado">Estado del sistema</a>
+        </footer>
+      }
     </main>
   </div>
 </div>

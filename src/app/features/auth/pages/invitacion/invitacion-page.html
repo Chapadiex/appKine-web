@@ -1,176 +1,170 @@
-<h1>Te invitaron a AKINE</h1>
-
-<div aria-live="polite">
+<!-- Invitacion a colaborar (diseño del canvas "AKINE · Pantallas", 22/10/2026). -->
+<section class="acceso-tarjeta" aria-labelledby="titulo-invitacion" aria-live="polite">
   @switch (estado().tipo) {
     @case ('cargando') {
-      <p class="estado estado--cargando">Buscando la invitacion&hellip;</p>
+      <h1 id="titulo-invitacion">Te invitaron a AKINE</h1>
+      <p class="acceso-texto">Buscando la invitación&hellip;</p>
     }
 
     @case ('sin-token') {
-      <p class="estado estado--error" role="alert">
-        Este enlace esta incompleto: le falta el codigo de la invitacion.
+      <span class="acceso-icono acceso-icono--aviso" aria-hidden="true">!</span>
+      <h1 id="titulo-invitacion">El enlace está incompleto</h1>
+      <p class="acceso-texto" role="alert">
+        Le falta el código de la invitación. Suele pasar cuando el correo se copia a mano y se
+        corta. Abrilo desde el correo, o pedile a quien te invitó que te lo reenvíe.
       </p>
-      <p class="ayuda">
-        Suele pasar cuando el correo se copia y pega a mano y se corta a la mitad. Abri el enlace
-        directamente desde el correo, o pedile a quien te invito que te lo reenvie.
-      </p>
-      <a class="boton boton--secundario" routerLink="/auth/ingresar">Ir a iniciar sesion</a>
+      <a class="boton boton--secundario boton--bloque" routerLink="/auth/ingresar"
+        >Ir a iniciar sesión</a
+      >
     }
 
     @case ('error') {
-      <p class="estado estado--error" role="alert">{{ mensajeError() }}</p>
-
+      <span class="acceso-icono acceso-icono--aviso" aria-hidden="true">!</span>
+      <h1 id="titulo-invitacion">La invitación ya no está disponible</h1>
+      <p class="acceso-texto" role="alert">{{ mensajeError() }}</p>
       @if (vencida()) {
         <!--
-          El unico error del modulo con una salida propia, y por eso se distingue del resto: el
-          backend responde 409 y no 404 justamente para que se pueda decir esto.
+          El unico error del modulo con una salida propia: el backend responde 409 y no 404
+          justamente para que se pueda decir esto.
         -->
-        <p class="ayuda">
-          La invitacion sigue en pie: lo unico que caduco es el enlace. Quien te invito la ve en su
-          listado y puede mandarte uno nuevo sin volver a empezar.
+        <p class="acceso-texto">
+          La invitación sigue en pie: lo único que caducó es el enlace. Quien te invitó puede
+          mandarte uno nuevo sin volver a empezar.
         </p>
-        <button type="button" class="boton boton--secundario" (click)="consultar()">
+        <button type="button" class="boton boton--secundario boton--bloque" (click)="consultar()">
           Volver a intentar
         </button>
       } @else {
-        <a class="boton boton--secundario" routerLink="/auth/ingresar">Ir a iniciar sesion</a>
+        <a class="boton boton--secundario boton--bloque" routerLink="/auth/ingresar"
+          >Ir a iniciar sesión</a
+        >
       }
     }
 
     @case ('listo') {
       @if (invitacion(); as datos) {
-        <section class="tarjeta" aria-labelledby="titulo-invitacion">
-          <h2 id="titulo-invitacion">{{ datos.organizacionNombre }} te quiere en su equipo</h2>
+        <h1 id="titulo-invitacion" class="visualmente-oculto">Te invitaron a AKINE</h1>
+        <div class="invitacion__quien">
+          <span class="nav-avatar-invitacion" aria-hidden="true">{{
+            (datos.organizacionNombre ?? '').slice(0, 2).toUpperCase()
+          }}</span>
+          <span>
+            <b>{{ datos.organizacionNombre }}</b> te invitó a colaborar
+          </span>
+        </div>
 
-          <p>
-            Te invitaron a trabajar
-            @if (datos.consultorioNombre) {
-              en <b>{{ datos.consultorioNombre }}</b>
-            } @else {
-              en toda la organizacion
-            }
-            como <b>{{ datos.roleCode }}</b
-            >.
-          </p>
-
-          <p class="ayuda">
-            La invitacion se envio a <b>{{ datos.email }}</b
-            >. Si esa no es tu direccion, no aceptes: avisale a quien te invito.
-          </p>
-        </section>
+        <dl class="invitacion__datos">
+          <dt>Rol</dt>
+          <dd>{{ datos.roleCode }}</dd>
+          <dt>Sede</dt>
+          <dd>{{ datos.consultorioNombre || 'Toda la organización' }}</dd>
+          <dt>Correo</dt>
+          <dd>{{ datos.email }}</dd>
+        </dl>
+        <p class="ayuda">Si ese no es tu correo, no aceptes: avisale a quien te invitó.</p>
 
         <form [formGroup]="formularioAlta" (ngSubmit)="aceptar()" novalidate>
           @if (requiereRegistro()) {
             <!--
-              Solo cuando hace falta. A quien ya tiene cuenta pedirle una contrasena nueva seria
-              pedirle que la cambie sin querer: el backend ignora estos campos en ese caso, y
-              mostrarlos igual seria mentirle sobre lo que esta haciendo.
+              Solo cuando hace falta: a quien ya tiene cuenta pedirle una contrasena nueva seria
+              pedirle que la cambie sin querer.
             -->
-            <section class="tarjeta" aria-labelledby="titulo-alta-invitado">
+            <section class="invitacion__alta" aria-labelledby="titulo-alta-invitado">
               <h2 id="titulo-alta-invitado">Crea tu cuenta para aceptar</h2>
               <p class="ayuda">
-                Todavia no tenes cuenta en AKINE. La creamos ahora, en este mismo paso: no vas a
-                recibir ningun correo de activacion, porque abrir este enlace ya confirmo tu
-                direccion.
+                Todavía no tenés cuenta en AKINE. La creamos en este mismo paso: no vas a recibir
+                correo de activación, porque abrir este enlace ya confirmó tu dirección.
               </p>
 
-              <div class="campo">
-                <label for="invitacion-nombre">Nombre</label>
-                <input
-                  id="invitacion-nombre"
-                  type="text"
-                  formControlName="nombre"
-                  autocomplete="given-name"
-                  [attr.aria-invalid]="mostrarErrorDe('nombre') ? 'true' : null"
-                />
-                @if (mostrarErrorDe('nombre')) {
-                  <p class="campo__error">El nombre es obligatorio.</p>
-                }
+              <div class="grilla-campos grilla-campos--dos">
+                <div class="campo">
+                  <label for="invitacion-nombre">Nombre</label>
+                  <input
+                    id="invitacion-nombre"
+                    type="text"
+                    formControlName="nombre"
+                    autocomplete="given-name"
+                    [attr.aria-invalid]="mostrarErrorDe('nombre') ? 'true' : null"
+                  />
+                  @if (mostrarErrorDe('nombre')) {
+                    <p class="campo__error">El nombre es obligatorio.</p>
+                  }
+                </div>
+
+                <div class="campo">
+                  <label for="invitacion-apellido">Apellido (opcional)</label>
+                  <input
+                    id="invitacion-apellido"
+                    type="text"
+                    formControlName="apellido"
+                    autocomplete="family-name"
+                  />
+                </div>
               </div>
 
               <div class="campo">
-                <label for="invitacion-apellido">Apellido (opcional)</label>
-                <input
-                  id="invitacion-apellido"
-                  type="text"
-                  formControlName="apellido"
-                  autocomplete="family-name"
-                />
-              </div>
-
-              <div class="campo">
-                <label for="invitacion-password">Contrasena</label>
+                <label for="invitacion-password">Contraseña</label>
                 <input
                   id="invitacion-password"
                   type="password"
                   formControlName="password"
                   autocomplete="new-password"
+                  placeholder="Mínimo 10 caracteres"
                   [attr.aria-invalid]="mostrarErrorDe('password') ? 'true' : null"
                   aria-describedby="invitacion-password-ayuda"
                 />
                 @if (mostrarErrorDe('password')) {
-                  <p class="campo__error">La contrasena tiene que tener al menos 10 caracteres.</p>
+                  <p class="campo__error">La contraseña tiene que tener al menos 10 caracteres.</p>
                 }
                 <p class="ayuda" id="invitacion-password-ayuda">
-                  Al menos 10 caracteres. Es con la que vas a entrar a AKINE de ahora en mas.
+                  Es con la que vas a entrar a AKINE de ahora en más.
                 </p>
               </div>
             </section>
           } @else {
-            <p class="ayuda">
-              Ya tenes una cuenta en AKINE con esa direccion, asi que no hace falta que crees nada:
-              al aceptar vas a poder entrar con la contrasena de siempre.
+            <p class="acceso-texto">
+              Ya tenés una cuenta con este correo: al aceptar vas a poder entrar con la contraseña
+              de siempre.
             </p>
           }
 
           @if (errorAccion(); as mensaje) {
-            <p class="estado estado--error" role="alert">{{ mensaje }}</p>
+            <p class="acceso-aviso acceso-aviso--error" role="alert">{{ mensaje }}</p>
           }
 
-          <p class="acciones">
-            <button type="submit" class="boton" [disabled]="enviando()">
-              {{ enviando() ? 'Guardando...' : 'Aceptar la invitacion' }}
-            </button>
-            <button
-              type="button"
-              class="boton boton--secundario"
-              (click)="rechazar()"
-              [disabled]="enviando()"
-            >
-              No, gracias
-            </button>
-          </p>
-          <p class="ayuda">
-            Rechazarla no te crea ninguna cuenta ni te compromete a nada, y no hace falta que
-            expliques por que.
-          </p>
+          <button type="submit" class="boton boton--bloque" [disabled]="enviando()">
+            {{ enviando() ? 'Guardando...' : 'Aceptar la invitación' }}
+          </button>
+          <!-- Rechazar no crea cuenta ni compromete a nada; no hace falta explicar por que. -->
+          <button type="button" class="boton-texto" (click)="rechazar()" [disabled]="enviando()">
+            Rechazar la invitación
+          </button>
         </form>
       }
     }
 
     @case ('aceptada') {
-      <p class="estado estado--ok">Listo: ya sos parte del equipo.</p>
-
+      <span class="acceso-icono acceso-icono--exito" aria-hidden="true">✓</span>
+      <h1 id="titulo-invitacion">Ya sos parte del equipo</h1>
       @if (cuentaReciencreada()) {
-        <p>
-          Tu cuenta quedo creada y activa. Entra con tu email y la contrasena que acabas de elegir.
+        <p class="acceso-texto">
+          Tu cuenta quedó creada y activa. Entrá con tu correo y la contraseña que acabás de elegir.
         </p>
       } @else {
-        <p>
-          Quedaste vinculado con tu cuenta de siempre. Entra con tu email y tu contrasena habitual,
-          y vas a ver la organizacion nueva al elegir el contexto de trabajo.
+        <p class="acceso-texto">
+          Quedaste vinculado con tu cuenta de siempre. Al elegir dónde trabajar vas a ver la
+          organización nueva.
         </p>
       }
-
-      <a class="boton" routerLink="/auth/ingresar">Iniciar sesion</a>
+      <a class="boton boton--bloque" routerLink="/auth/ingresar">Iniciar sesión</a>
     }
 
     @case ('rechazada') {
-      <p class="estado estado--ok">Rechazaste la invitacion.</p>
-      <p class="ayuda">
-        No creamos ninguna cuenta y no queda nada tuyo en AKINE mas alla del registro de que
-        respondiste. Si cambias de opinion, pedile a quien te invito que te invite de nuevo.
+      <h1 id="titulo-invitacion">Rechazaste la invitación</h1>
+      <p class="acceso-texto">
+        No creamos ninguna cuenta. Si cambiás de opinión, pedile a quien te invitó que te invite de
+        nuevo.
       </p>
     }
   }
-</div>
+</section>

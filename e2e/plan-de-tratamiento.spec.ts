@@ -141,8 +141,8 @@ test.describe('Plan de tratamiento (D-c)', () => {
     // Salir de la visita (a la ficha) la termina: volver por URL vuelve a pedir el motivo.
     await page.getByRole('link', { name: 'Volver a la ficha de la persona' }).click();
     await expect(
-      page.getByRole('button', { name: 'Que significa: Esta ficha no muestra nada clinico' }),
-    ).toBeVisible();
+      page.locator('app-ayuda').getByText('Esta ficha no muestra nada clinico'),
+    ).toBeAttached();
     await navegar(page, `/historia-clinica/personas/${sembrada.personaId}/casos/${casoId}/plan`);
     await expect(page.getByRole('heading', { name: 'Declara el motivo del acceso' })).toBeVisible();
     await page.getByRole('textbox', { name: 'Motivo del acceso' }).fill(MOTIVO_DE_ACCESO);

@@ -39,6 +39,11 @@ import { numeroDeclarado } from '../../../../shared/utils/numero-declarado';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { NgTemplateOutlet } from '@angular/common';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
+import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
+import { Icono } from '../../../../shared/components/icono/icono';
+import { Filtros } from '../../../../shared/components/filtros/filtros';
 
 /** Operacion abierta sobre una fila. Solo una a la vez. */
 type TipoAccion = 'editar' | 'baja';
@@ -95,7 +100,11 @@ type TipoAccion = 'editar' | 'baja';
 @Component({
   selector: 'app-planes-del-financiador-page',
   imports: [
+    ColumnaOrdenable,
+    Paginacion,
+    Icono,
     Ayuda,
+    Filtros,
     NgTemplateOutlet,
     ReactiveFormsModule,
     RouterLink,
@@ -139,6 +148,15 @@ export class PlanesDelFinanciadorPage {
     return actual.tipo === 'listo' ? actual.pagina : [];
   });
 
+  /** Orden y paginado de la lista completa (plan Â§3.4): el servidor no pagina planes. */
+  protected readonly tabla = tablaLocal(this.planes, {
+    columnas: {
+      nombre: (plan) => plan.nombre,
+      vigencia: (plan) => plan.vigenciaDesde,
+      copago: (plan) => plan.copago,
+    },
+  });
+
   protected readonly mensajeError = computed(() => {
     const actual = this.estado();
     return actual.tipo === 'error' ? actual.mensaje : null;
@@ -165,6 +183,15 @@ export class PlanesDelFinanciadorPage {
   );
 
   protected readonly filtroEstado = signal<FiltroEstado>('ACTIVO');
+
+  /**
+   * Filtros avanzados (detras del embudo) fuera de su valor por defecto. La fecha de vigencia
+   * cuenta si no es hoy: cambia la Situacion de cada fila, y eso no puede quedar escondido.
+   */
+  protected readonly filtrosAvanzadosActivos = computed(
+    () =>
+      Number(this.filtroEstado() !== 'ACTIVO') + Number(this.fecha() !== this.diaDeLaSede.hoy()),
+  );
 
   protected readonly panel = signal<{ readonly id: number; readonly tipo: TipoAccion } | null>(
     null,

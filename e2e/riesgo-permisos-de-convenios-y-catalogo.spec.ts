@@ -73,10 +73,10 @@ test.describe('Permisos de convenios y catalogo por rol contra el backend real (
       await esperarSinPermiso(page, ruta, centro.nombreCentro);
     }
     await expect(
-      page.getByRole('link', { name: 'Contratacion', includeHidden: true, exact: true }),
+      page.getByRole('link', { name: 'Convenios de la sede', includeHidden: true, exact: true }),
     ).toHaveCount(0);
     await expect(
-      page.getByRole('link', { name: 'Catalogo', includeHidden: true, exact: true }),
+      page.getByRole('link', { name: 'Catálogo clínico', includeHidden: true, exact: true }),
     ).toHaveCount(0);
   });
 
@@ -90,10 +90,10 @@ test.describe('Permisos de convenios y catalogo por rol contra el backend real (
 
     await deAUnLogin(() => ingresarAlCentro(page, centro.emailProfesional, centro));
     await expect(
-      page.getByRole('link', { name: 'Contratacion', includeHidden: true, exact: true }),
+      page.getByRole('link', { name: 'Convenios de la sede', includeHidden: true, exact: true }),
     ).toHaveCount(1);
     await expect(
-      page.getByRole('link', { name: 'Catalogo', includeHidden: true, exact: true }),
+      page.getByRole('link', { name: 'Catálogo clínico', includeHidden: true, exact: true }),
     ).toHaveCount(1);
 
     await irA(page, '/contratacion/convenios');
@@ -118,7 +118,7 @@ async function esperarSinPermiso(page: Page, ruta: string, nombreCentro: string)
   await irA(page, ruta);
   await expect(page, `${ruta} no se le abre`).toHaveURL(/\/sin-permiso$/);
   await expect(
-    page.getByRole('heading', { name: 'No tenes permiso para esta pantalla', level: 1 }),
+    page.getByRole('heading', { name: 'No tenés permiso para esta pantalla', level: 1 }),
   ).toBeVisible();
   // En `main`: la barra superior (UX-01) tambien dice el centro activo.
   await expect(page.getByRole('main').getByText(nombreCentro, { exact: true })).toBeVisible();

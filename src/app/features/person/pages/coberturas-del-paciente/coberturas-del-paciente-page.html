@@ -10,7 +10,13 @@
       — {{ nombreCompleto(ficha) }}
     }
   </h1>
-  <app-ayuda titulo="Cobertura del paciente no es convenio del centro">
+  <app-ayuda titulo="Sobre esta pantalla">
+    <p>
+      Con que cobertura se atiende hoy el paciente, y con cuales se atendio antes. Se muestran
+      todas, incluidas las vencidas y las dadas de baja: es lo que permite explicar despues como se
+      facturo cada atencion.
+    </p>
+    <p class="ayuda-contextual__subtitulo">Cobertura del paciente no es convenio del centro</p>
     <p>
       Esto es <b>lo que el paciente tiene</b>: su obra social, su prepaga, o particular. Que la
       tenga <b>no significa</b> que este centro tenga convenio con ese financiador, ni que la
@@ -21,13 +27,13 @@
       puede elegir pagar particular una atencion.
     </p>
   </app-ayuda>
+  <div class="encabezado__acciones" *akinePermiso="permisoManage">
+    <button type="button" class="boton" (click)="abrirAlta()">
+      <app-icono nombre="agregar" />
+      Agregar una cobertura
+    </button>
+  </div>
 </div>
-
-<p class="descripcion">
-  Con que cobertura se atiende hoy el paciente, y con cuales se atendio antes. Se muestran todas,
-  incluidas las vencidas y las dadas de baja: es lo que permite explicar despues como se facturo
-  cada atencion.
-</p>
 
 <div aria-live="polite">
   @if (exito(); as mensaje) {
@@ -72,12 +78,16 @@
 
 <!-- RF-M08-006: tener una cobertura no dice que aplique a una oferta concreta. -->
 <section class="tarjeta" aria-labelledby="titulo-aplicable">
-  <h2 id="titulo-aplicable">Que cobertura aplica a una oferta</h2>
-  <p class="ayuda">
-    Una cobertura vigente puede no aplicar: depende de que la oferta admita obra social y de que el
-    centro tenga convenio y arancel para su practica ese dia. Esto <b>solo consulta</b>: con que se
-    atiende se elige en la recepcion.
-  </p>
+  <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
+    <h2 id="titulo-aplicable">Que cobertura aplica a una oferta</h2>
+    <app-ayuda titulo="Que cobertura aplica a una oferta">
+      <p>
+        Una cobertura vigente puede no aplicar: depende de que la oferta admita obra social y de que
+        el centro tenga convenio y arancel para su practica ese dia. Esto <b>solo consulta</b>: con
+        que se atiende se elige en la recepcion.
+      </p>
+    </app-ayuda>
+  </div>
 
   @if (!consultaAbierta()) {
     <button type="button" class="boton boton--secundario" (click)="abrirConsulta()">
@@ -120,30 +130,27 @@
 <section class="tarjeta" aria-labelledby="titulo-historial">
   <h2 id="titulo-historial">Historial de coberturas</h2>
 
-  <div class="campo">
-    <label for="coberturas-filtro">Mostrar</label>
-    <select
-      id="coberturas-filtro"
-      name="coberturas-filtro"
-      [value]="filtro()"
-      (change)="cambiarFiltro($any($event.target).value)"
-      aria-describedby="coberturas-filtro-ayuda"
-    >
-      <option value="TODAS">Todas</option>
-      <option value="ACTIVA">Solo las que no estan dadas de baja</option>
-      <option value="INACTIVA">Solo las dadas de baja</option>
-    </select>
-    <p class="ayuda" id="coberturas-filtro-ayuda">
-      El filtro es por <b>ciclo de vida</b>, no por vigencia: una cobertura activa con la vigencia
-      terminada es el caso normal de quien cambio de obra social, y se sigue mostrando.
-    </p>
-  </div>
-
-  <p class="acciones">
-    <button type="button" class="boton" (click)="abrirAlta()" *akinePermiso="permisoManage">
-      Agregar una cobertura
-    </button>
-  </p>
+  <!-- Regla de filtros (plan §3.4): sin busqueda por texto en el backend, el embudo va solo. -->
+  <app-filtros [soloAvanzados]="true" [activos]="filtrosAvanzadosActivos()">
+    <div class="campo">
+      <label for="coberturas-filtro">Mostrar</label>
+      <select
+        id="coberturas-filtro"
+        name="coberturas-filtro"
+        [value]="filtro()"
+        (change)="cambiarFiltro($any($event.target).value)"
+        aria-describedby="coberturas-filtro-ayuda"
+      >
+        <option value="TODAS">Todas</option>
+        <option value="ACTIVA">Solo las que no estan dadas de baja</option>
+        <option value="INACTIVA">Solo las dadas de baja</option>
+      </select>
+      <p class="ayuda" id="coberturas-filtro-ayuda">
+        El filtro es por <b>ciclo de vida</b>, no por vigencia: una cobertura activa con la vigencia
+        terminada es el caso normal de quien cambio de obra social, y se sigue mostrando.
+      </p>
+    </div>
+  </app-filtros>
 </section>
 
 @if (altaAbierta()) {
@@ -326,17 +333,17 @@
       </caption>
       <thead>
         <tr>
-          <th scope="col">Cobertura</th>
-          <th scope="col">Afiliado</th>
-          <th scope="col">Vigencia</th>
+          <th scope="col" appOrdenable [tabla]="tabla" columna="cobertura">Cobertura</th>
+          <th scope="col" appOrdenable [tabla]="tabla" columna="afiliado">Afiliado</th>
+          <th scope="col" appOrdenable [tabla]="tabla" columna="vigencia">Vigencia</th>
           <th scope="col">Credencial</th>
-          <th scope="col">Situacion</th>
-          <th scope="col">Principal</th>
+          <th scope="col" appOrdenable [tabla]="tabla" columna="situacion">Situacion</th>
+          <th scope="col" appOrdenable [tabla]="tabla" columna="principal">Principal</th>
           <th scope="col">Acciones</th>
         </tr>
       </thead>
       <tbody>
-        @for (cobertura of coberturas(); track cobertura.id) {
+        @for (cobertura of tabla.visibles(); track cobertura.id) {
           <tr [class.fila-senalada]="estaSenalada(cobertura)">
             <td>
               {{ coberturaEnUnaLinea(cobertura) }}
@@ -521,6 +528,15 @@
         }
       </tbody>
     </table>
+  </div>
+  <div class="tabla-pie">
+    <span>{{ tabla.total() }} coberturas</span>
+    <app-paginacion
+      [paginaActual]="tabla.pagina()"
+      [totalPaginas]="tabla.totalPaginas()"
+      etiqueta="Paginas de coberturas"
+      (cambioDePagina)="tabla.irA($event)"
+    />
   </div>
 
   <!--

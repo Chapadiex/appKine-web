@@ -1,9 +1,12 @@
-<h1>Atencion clinica</h1>
-
-<p class="descripcion">
-  Una sesion es la <b>atencion realizada</b>. El turno era la reserva de agenda: son dos cosas
-  distintas y esta pantalla registra la segunda.
-</p>
+<div class="titulo-con-ayuda">
+  <h1>Atencion clinica</h1>
+  <app-ayuda titulo="Sobre esta pantalla">
+    <p>
+      Una sesion es la <b>atencion realizada</b>. El turno era la reserva de agenda: son dos cosas
+      distintas y esta pantalla registra la segunda.
+    </p>
+  </app-ayuda>
+</div>
 
 @if (rutaDeLaClase(); as rutaClase) {
   <p><a class="enlace" [routerLink]="rutaClase">Volver a la atencion clinica de la clase</a></p>
@@ -447,12 +450,15 @@
 
 @if (!cerrada() && sesion()) {
   <section class="tarjeta" aria-labelledby="titulo-evaluacion">
-    <h2 id="titulo-evaluacion">Evaluacion</h2>
-
-    <p class="ayuda">
-      Ningun campo de esta pantalla es obligatorio. Un seguimiento normal se carga con el dolor y la
-      evolucion, y con eso alcanza.
-    </p>
+    <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
+      <h2 id="titulo-evaluacion">Evaluacion</h2>
+      <app-ayuda titulo="Evaluacion">
+        <p>
+          Ningun campo de esta pantalla es obligatorio. Un seguimiento normal se carga con el dolor
+          y la evolucion, y con eso alcanza.
+        </p>
+      </app-ayuda>
+    </div>
 
     <fieldset class="grupo">
       <legend>Dolor (escala 0 a 10)</legend>

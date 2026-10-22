@@ -11,6 +11,10 @@ import {
 } from '../../models/asistencia-errors';
 import { etiquetaDeEstadoDeClase, horaEnZona } from '../../models/etiquetas-de-asistencia';
 import { AsistenciaApi } from '../../services/asistencia-api';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
+import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 
 type Estado =
   | { readonly tipo: 'cargando' }
@@ -26,7 +30,7 @@ type Estado =
  */
 @Component({
   selector: 'app-clases-del-dia-page',
-  imports: [RouterLink],
+  imports: [Ayuda, ColumnaOrdenable, Paginacion, RouterLink],
   templateUrl: './clases-del-dia-page.html',
   styleUrl: '../../asistencia.css',
 })
@@ -44,6 +48,14 @@ export class ClasesDelDiaPage {
   protected readonly clases = computed(() => {
     const actual = this.estado();
     return actual.tipo === 'listo' ? actual.clases : [];
+  });
+  /** Orden y paginado de la lista completa (plan §3.4): la agenda del dia no se pagina. */
+  protected readonly tabla = tablaLocal(this.clases, {
+    columnas: {
+      horario: (clase) => clase.inicio,
+      clase: (clase) => clase.titulo || clase.ofertaNombre,
+      estado: (clase) => this.etiquetaDeEstado(clase.estado),
+    },
   });
   protected readonly zona = computed(() => {
     const actual = this.estado();

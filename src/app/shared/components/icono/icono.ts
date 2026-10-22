@@ -2,15 +2,26 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 
 /** Los iconos que existen. Agregar uno es agregar un `@case` en la plantilla. */
 export type NombreDeIcono =
+  | 'correo'
   | 'menu'
   | 'cerrar'
   | 'ayuda'
+  | 'filtro'
+  | 'buscar'
+  | 'agregar'
+  | 'orden'
+  | 'orden-asc'
+  | 'orden-desc'
   | 'flecha-abajo'
   | 'operacion'
   | 'pacientes'
   | 'actividades'
   | 'economia'
   | 'configuracion'
+  | 'servicios'
+  | 'contratacion'
+  | 'horarios'
+  | 'salir'
   | 'plataforma';
 
 /**
@@ -42,12 +53,30 @@ export type NombreDeIcono =
           <path d="M9.5 9.2a2.6 2.6 0 0 1 5 1c0 1.8-2.5 2.3-2.5 3.8" />
           <path d="M12 17.2h.01" />
         }
+        @case ('filtro') {
+          <path d="M3.5 5h17l-6.5 8v5.5l-4 2V13z" />
+        }
+        @case ('agregar') {
+          <path d="M12 5v14M5 12h14" />
+        }
+        @case ('orden') {
+          <path d="M8 9l4-4 4 4M8 15l4 4 4-4" />
+        }
+        @case ('orden-asc') {
+          <path d="M8 14l4-4 4 4" />
+        }
+        @case ('orden-desc') {
+          <path d="M8 10l4 4 4-4" />
+        }
+        @case ('buscar') {
+          <circle cx="11" cy="11" r="6.5" />
+          <path d="M16 16l4.5 4.5" />
+        }
         @case ('flecha-abajo') {
           <path d="M6 9l6 6 6-6" />
         }
         @case ('operacion') {
-          <rect x="3.5" y="5" width="17" height="15.5" rx="2" />
-          <path d="M3.5 10h17M8 3v4M16 3v4" />
+          <path d="M7 3v3M17 3v3M4 8h16M5 5h14a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z" />
         }
         @case ('pacientes') {
           <circle cx="9" cy="8" r="3.5" />
@@ -55,17 +84,29 @@ export type NombreDeIcono =
           <path d="M16 4.8a3.5 3.5 0 0 1 0 6.4M18 14.8c2 .7 3.2 2.5 3.5 5.2" />
         }
         @case ('actividades') {
-          <path d="M3 12h3.5l2.5-6 4 12 2.5-6H21" />
+          <path d="M6 8v8M18 8v8M3 10v4M21 10v4M6 12h12" />
         }
         @case ('economia') {
-          <rect x="3" y="6" width="18" height="13" rx="2" />
-          <path d="M3 10h18M7 15h3" />
+          <path d="M6 3h12v18l-3-2-3 2-3-2-3 2zM9 8h6M9 12h6M9 16h3" />
         }
         @case ('configuracion') {
-          <circle cx="12" cy="12" r="3" />
-          <path
-            d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7"
-          />
+          <path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M16 4v4M10 10v4M18 16v4" />
+        }
+        @case ('servicios') {
+          <path d="M4 5h16v4H4zM4 11h16v8H4zM8 15h8" />
+        }
+        @case ('contratacion') {
+          <path d="M7 3h7l5 5v13H7zM14 3v5h5M10 13h6M10 17h6" />
+        }
+        @case ('horarios') {
+          <circle cx="12" cy="12" r="9" />
+          <path d="M12 7v5l3 2" />
+        }
+        @case ('correo') {
+          <path d="M4 6h16v12H4zM4 7l8 6 8-6" />
+        }
+        @case ('salir') {
+          <path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10" />
         }
         @case ('plataforma') {
           <path d="M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6l8-3z" />

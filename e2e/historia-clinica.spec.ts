@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 
 import { sql } from './support/akine';
 import { navegar } from './support/agenda-real';
+import { abrirFiltros } from './support/filtros';
 import {
   HistoriaSembrada,
   MOTIVO_DE_ACCESO,
@@ -138,6 +139,7 @@ test.describe('Historia clinica - timeline (D-a)', () => {
     await expect(timeline.getByRole('button', { name: /Entrada clinica/ }).first()).toBeVisible();
 
     // Solo adjuntos: el servidor recibe el origen y no devuelve entradas.
+    await abrirFiltros(page);
     const filtrada = page.waitForResponse(
       (r) => r.url().includes('/timeline') && r.url().includes('origen=ADJUNTO_CLINICO'),
     );

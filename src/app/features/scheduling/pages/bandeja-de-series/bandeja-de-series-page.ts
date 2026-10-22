@@ -10,6 +10,8 @@ import {
   SerieDeTurnosResumenEstadoEnum,
 } from '../../../../api/generated/model/serie-de-turnos-resumen';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
+import { Filtros } from '../../../../shared/components/filtros/filtros';
+import { Icono } from '../../../../shared/components/icono/icono';
 import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
 import { Pestanas } from '../../../../shared/components/pestanas/pestanas';
 import { ETIQUETA_PESTANAS_DE_AGENDA, pestanasDeAgenda } from '../../models/pestanas-de-agenda';
@@ -19,6 +21,7 @@ import { ErrorSerie, traducirErrorSerie } from '../../models/series-errors';
 import { textoDeDias, textoDeEstadoDeSerie } from '../../models/series';
 import { SchedulingApi } from '../../services/scheduling-api';
 import { SeriesApi } from '../../services/series-api';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 
 /** La ruta que monta esta pantalla. Los filtros se reescriben sobre ella sin navegar. */
 const RUTA = '/agenda/series';
@@ -70,7 +73,7 @@ interface PersonaFiltrada {
  */
 @Component({
   selector: 'app-bandeja-de-series-page',
-  imports: [RouterLink, Paginacion, Pestanas],
+  imports: [Ayuda, Filtros, Icono, RouterLink, Paginacion, Pestanas],
   templateUrl: './bandeja-de-series-page.html',
   styleUrl: '../../agenda.css',
 })
@@ -96,6 +99,10 @@ export class BandejaDeSeriesPage {
   protected readonly textoDeEstadoDeSerie = textoDeEstadoDeSerie;
 
   protected readonly filtroEstado = signal<FiltroDeEstado>(SerieDeTurnosResumenEstadoEnum.VIGENTE);
+  /** Filtros avanzados fuera de su valor por defecto (regla de filtros, plan §3.4). */
+  protected readonly filtrosAvanzadosActivos = computed(() =>
+    Number(this.filtroEstado() !== SerieDeTurnosResumenEstadoEnum.VIGENTE),
+  );
   protected readonly persona = signal<PersonaFiltrada | null>(null);
   protected readonly pagina = signal(0);
 

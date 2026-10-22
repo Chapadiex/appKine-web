@@ -22,6 +22,7 @@ import {
   textoDeCupo,
 } from '../../models/etiquetas-de-agenda';
 import { coberturaParaReservar } from '../../models/etiquetas-de-turno';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 
 /** Cuanto se espera despues de la ultima tecla antes de consultar el padron. */
 const ESPERA_DE_BUSQUEDA_MS = 300;
@@ -65,7 +66,7 @@ const ESPERA_DE_BUSQUEDA_MS = 300;
  */
 @Component({
   selector: 'app-reserva-de-turno-page',
-  imports: [RouterLink, PermisoDirective],
+  imports: [Ayuda, RouterLink, PermisoDirective],
   templateUrl: './reserva-de-turno-page.html',
   styleUrl: '../../agenda.css',
 })

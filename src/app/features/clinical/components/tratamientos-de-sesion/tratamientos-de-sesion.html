@@ -1,10 +1,13 @@
 <section class="tarjeta" aria-labelledby="titulo-tratamientos">
-  <h2 id="titulo-tratamientos">Tratamiento aplicado</h2>
-
-  <p class="ayuda">
-    Lo que se hizo realmente en esta visita, en el orden en que se hizo.
-    <b>Registrarlo no mueve el plan de tratamiento</b>: planificado no es realizado.
-  </p>
+  <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
+    <h2 id="titulo-tratamientos">Tratamiento aplicado</h2>
+    <app-ayuda titulo="Tratamiento aplicado">
+      <p>
+        Lo que se hizo realmente en esta visita, en el orden en que se hizo.
+        <b>Registrarlo no mueve el plan de tratamiento</b>: planificado no es realizado.
+      </p>
+    </app-ayuda>
+  </div>
 
   @if (cargando()) {
     <p class="estado estado--cargando">Leyendo los tratamientos…</p>

@@ -126,11 +126,15 @@
       aria-labelledby="titulo-reprogramar"
       novalidate
     >
-      <h2 id="titulo-reprogramar">Reprogramar la clase</h2>
-      <p class="ayuda">
-        Es la misma clase: conserva a sus inscriptos y su historial. Si cambia el horario, cada
-        inscripto recibe un aviso. Fecha y horas en la zona de la sede.
-      </p>
+      <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
+        <h2 id="titulo-reprogramar">Reprogramar la clase</h2>
+        <app-ayuda titulo="Reprogramar la clase">
+          <p>
+            Es la misma clase: conserva a sus inscriptos y su historial. Si cambia el horario, cada
+            inscripto recibe un aviso. Fecha y horas en la zona de la sede.
+          </p>
+        </app-ayuda>
+      </div>
       <div class="filtros">
         <div class="campo">
           <label for="reprogramar-fecha">Fecha</label>
@@ -192,8 +196,12 @@
 
   @if (puedeInscribir()) {
     <section class="tarjeta" aria-labelledby="titulo-inscribir">
-      <h2 id="titulo-inscribir">Inscribir a una persona</h2>
-      <p class="ayuda">Inscribir reserva un lugar; no registra que la persona haya venido.</p>
+      <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
+        <h2 id="titulo-inscribir">Inscribir a una persona</h2>
+        <app-ayuda titulo="Inscribir a una persona">
+          <p>Inscribir reserva un lugar; no registra que la persona haya venido.</p>
+        </app-ayuda>
+      </div>
 
       @if (persona(); as elegida) {
         <p>

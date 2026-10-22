@@ -29,58 +29,101 @@
 
 /* --- Selector de contexto --------------------------------------------------------- */
 
-.lista {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
+/* --- Elegir contexto (diseño del canvas, 22/10/2026) ------------------------------- */
+
+.contextos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-6);
+}
+
+/* Un centro: su inicial y su nombre arriba, las sedes debajo. */
+.contexto-centro {
+  display: flex;
+  flex-direction: column;
   gap: var(--esp-4);
 }
 
+.contexto-centro__cabecera {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-4);
+}
+
+.contexto-centro__logo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: var(--radio-sm);
+  background: var(--color-accion-fondo);
+  color: var(--color-accion-texto);
+  font-size: var(--tipo-2xs);
+  font-weight: var(--peso-fuerte);
+}
+
+.contexto-centro__nombre {
+  font-weight: var(--peso-medio);
+}
+
+.contexto-centro__sedes {
+  display: grid;
+  gap: var(--esp-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/*
+ * Una sede: un boton de una fila, 48 px. Borde de CONTROL y no el decorativo: la opcion es un
+ * boton cuyo relleno es el de la tarjeta, y el borde es lo unico que lo delimita (WCAG 1.4.11).
+ */
 .opcion {
   display: flex;
-  flex-direction: column;
-  gap: var(--esp-1);
+  align-items: center;
+  gap: var(--esp-5);
   width: 100%;
-  padding: var(--esp-5) var(--esp-6);
-  /* Borde de CONTROL y no `--color-borde`: la opcion es un boton cuyo relleno es el de la pagina,
-     asi que el borde es lo unico que lo delimita, y con el decorativo daba 1,36:1 (WCAG 1.4.11). */
+  min-height: 3rem;
+  padding: var(--esp-3) var(--esp-6);
   border: var(--borde-fino) solid var(--color-borde-control);
   border-radius: var(--radio-md);
   background: var(--color-superficie);
+  color: var(--color-texto);
   font: inherit;
   text-align: left;
   cursor: pointer;
 }
 
 .opcion:hover {
-  border-color: var(--color-enlace);
-  background: var(--color-superficie-sutil);
+  border-color: var(--color-acento);
+  background: var(--color-marca-superficie-activa);
 }
 
-/* Foco visible: nunca se quita el outline sin reemplazo (ADR-0005). */
-.opcion:focus-visible {
-  outline: var(--foco-grosor) solid var(--color-foco);
-  outline-offset: var(--foco-offset);
-}
-
-.opcion__organizacion {
-  font-weight: var(--peso-semi);
+.opcion__textos {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
 }
 
 .opcion__consultorio {
-  font-size: var(--tipo-sm);
-  color: var(--color-texto-suave);
+  font-weight: var(--peso-medio);
 }
 
-/* El ultimo contexto elegido: borde de acento y la leyenda en texto (el color solo no alcanza). */
+/* El ultimo elegido: fondo celeste y la leyenda en texto (el color solo no alcanza). */
 .opcion--ultima {
-  border-left: var(--borde-acento) solid var(--color-acento);
+  border-color: var(--color-acento);
+  background: var(--color-marca-superficie-activa);
 }
 
 .opcion__ultima {
-  font-size: var(--tipo-sm);
-  font-weight: var(--peso-semi);
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-2xs);
+}
+
+.opcion__flecha {
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-lg);
 }
 
 /* --- Suscripcion ------------------------------------------------------------------ */

@@ -1,6 +1,5 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { RouterLink } from '@angular/router';
 import { Observable, Subscription } from 'rxjs';
 
 import { CatalogoGlobalDeFinanciadoresService } from '../../../../api/generated/api/catalogo-global-de-financiadores.service';
@@ -14,10 +13,14 @@ import { UpdateFinanciadorRequestTipoEnum } from '../../../../api/generated/mode
 import { PlanCatalogoResponse } from '../../../../api/generated/model/plan-catalogo-response';
 import { ConfirmacionConMotivo } from '../../../../shared/components/confirmacion-con-motivo/confirmacion-con-motivo';
 import { textoRequerido } from '../../../../shared/validators/texto-requerido';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { Filtros } from '../../../../shared/components/filtros/filtros';
+import { Icono } from '../../../../shared/components/icono/icono';
+import { Pestanas } from '../../../../shared/components/pestanas/pestanas';
 import {
-  RUTA_SOLICITUDES_DE_PLATAFORMA,
-  RUTA_SUSCRIPCIONES_DE_PLATAFORMA,
-} from '../../models/rutas-de-plataforma';
+  ETIQUETA_PESTANAS_DE_PLATAFORMA,
+  PESTANAS_DE_PLATAFORMA,
+} from '../../models/pestanas-de-plataforma';
 import { releeElCatalogo, traducirErrorCatalogo } from '../../models/catalogo-financiadores-errors';
 
 type FiltroEstado = NonNullable<ListCatalogoFinanciadoresDePlataformaRequestParams['estado']>;
@@ -68,20 +71,24 @@ type Panel =
  */
 @Component({
   selector: 'app-catalogo-financiadores-page',
-  imports: [ReactiveFormsModule, RouterLink, ConfirmacionConMotivo],
+  imports: [Ayuda, Filtros, Icono, Pestanas, ReactiveFormsModule, ConfirmacionConMotivo],
   templateUrl: './catalogo-financiadores-page.html',
 })
 export class CatalogoFinanciadoresPage {
   private readonly api = inject(CatalogoGlobalDeFinanciadoresService);
   private readonly formBuilder = inject(FormBuilder);
 
-  protected readonly rutaSolicitudes = RUTA_SOLICITUDES_DE_PLATAFORMA;
-  protected readonly rutaSuscripciones = RUTA_SUSCRIPCIONES_DE_PLATAFORMA;
+  protected readonly pestanasDePlataforma = PESTANAS_DE_PLATAFORMA;
+  protected readonly etiquetaDePestanas = ETIQUETA_PESTANAS_DE_PLATAFORMA;
   protected readonly tipos = TIPOS;
 
   protected readonly busqueda = signal('');
   protected readonly filtroEstado = signal<FiltroEstado>('ACTIVO');
   protected readonly filtroTipo = signal<Tipo | ''>('');
+  /** Filtros avanzados (detras del embudo) fuera de su valor por defecto. */
+  protected readonly filtrosAvanzadosActivos = computed(
+    () => Number(this.filtroEstado() !== 'ACTIVO') + Number(this.filtroTipo() !== ''),
+  );
   protected readonly listado = signal<Listado>({ tipo: 'cargando' });
   protected readonly panel = signal<Panel | null>(null);
   protected readonly enviando = signal(false);

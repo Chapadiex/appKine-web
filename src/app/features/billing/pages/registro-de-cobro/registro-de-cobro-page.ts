@@ -20,6 +20,7 @@ import {
   textoDeCentavos,
 } from '../../models/dinero';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 
 /** Un medio de pago que se esta cargando. `id` es solo para el `track` del `@for`. */
 interface LineaDeMedio {
@@ -92,7 +93,7 @@ type EstadoDeuda =
  */
 @Component({
   selector: 'app-registro-de-cobro-page',
-  imports: [RouterLink],
+  imports: [Ayuda, RouterLink],
   templateUrl: './registro-de-cobro-page.html',
   styleUrl: '../../billing.css',
 })

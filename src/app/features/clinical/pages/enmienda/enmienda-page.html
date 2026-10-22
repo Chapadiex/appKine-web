@@ -1,9 +1,12 @@
-<h1>Enmendar una atencion</h1>
-
-<p class="descripcion">
-  Una atencion cerrada no se edita: se enmienda. La correccion queda como una version nueva, con su
-  motivo, su autor y su fecha, y la anterior se sigue pudiendo leer.
-</p>
+<div class="titulo-con-ayuda">
+  <h1>Enmendar una atencion</h1>
+  <app-ayuda titulo="Sobre esta pantalla">
+    <p>
+      Una atencion cerrada no se edita: se enmienda. La correccion queda como una version nueva, con
+      su motivo, su autor y su fecha, y la anterior se sigue pudiendo leer.
+    </p>
+  </app-ayuda>
+</div>
 
 @if (sesion(); as atencion) {
   <p>
@@ -266,11 +269,15 @@
 
   @if (tratamientos().length > 0) {
     <section class="tarjeta" aria-labelledby="titulo-enmienda-tratamientos">
-      <h2 id="titulo-enmienda-tratamientos">Tratamientos</h2>
-      <p class="ayuda">
-        Se corrige como se hizo cada uno, no cual se hizo: las practicas realizadas no cambian. Si
-        no tocas nada de esta seccion, los tratamientos quedan como estaban.
-      </p>
+      <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
+        <h2 id="titulo-enmienda-tratamientos">Tratamientos</h2>
+        <app-ayuda titulo="Tratamientos">
+          <p>
+            Se corrige como se hizo cada uno, no cual se hizo: las practicas realizadas no cambian.
+            Si no tocas nada de esta seccion, los tratamientos quedan como estaban.
+          </p>
+        </app-ayuda>
+      </div>
 
       <ol class="lista-tratamientos">
         @for (t of tratamientos(); track t.tratamientoId ?? $index; let i = $index) {
@@ -402,11 +409,15 @@
 
   @if (mediciones().length > 0) {
     <section class="tarjeta" aria-labelledby="titulo-enmienda-mediciones">
-      <h2 id="titulo-enmienda-mediciones">Examen fisico</h2>
-      <p class="ayuda">
-        Si no tocas nada de esta seccion, las mediciones quedan como estaban. Una medida que se
-        quita sigue en la version anterior.
-      </p>
+      <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
+        <h2 id="titulo-enmienda-mediciones">Examen fisico</h2>
+        <app-ayuda titulo="Examen fisico">
+          <p>
+            Si no tocas nada de esta seccion, las mediciones quedan como estaban. Una medida que se
+            quita sigue en la version anterior.
+          </p>
+        </app-ayuda>
+      </div>
 
       @for (m of mediciones(); track m.definicionId + '-' + m.lateralidad; let i = $index) {
         <fieldset class="grupo">
@@ -460,11 +471,15 @@
   }
 
   <section class="tarjeta" aria-labelledby="titulo-enviar-enmienda">
-    <h2 id="titulo-enviar-enmienda">Registrar la enmienda</h2>
-    <p class="ayuda">
-      Enmendar no vuelve a cobrar nada ni consume autorizaciones: ninguno de estos campos los
-      afecta.
-    </p>
+    <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
+      <h2 id="titulo-enviar-enmienda">Registrar la enmienda</h2>
+      <app-ayuda titulo="Registrar la enmienda">
+        <p>
+          Enmendar no vuelve a cobrar nada ni consume autorizaciones: ninguno de estos campos los
+          afecta.
+        </p>
+      </app-ayuda>
+    </div>
     <p role="status" [class]="aviso() ? 'estado estado--error' : 'ayuda'">{{ aviso() }}</p>
     <div class="acciones">
       <button

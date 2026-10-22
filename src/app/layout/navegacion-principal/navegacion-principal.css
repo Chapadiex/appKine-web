@@ -1,57 +1,91 @@
 /*
-  Barra lateral (UX-01).
+  Barra lateral (UX-01, diseño del canvas "AKINE · Pantallas" del 22/10/2026).
 
-  Es la superficie de marca: todos los colores salen de los tokens `--color-marca-*` de
-  `src/design-system.css`. Ni un literal: la barra NO se aclara en modo oscuro -una franja
-  celeste sobre una pagina oscura es un faro- y un `#rrggbb` suelto se quedaria en el modo en
-  el que se escribio.
+  Blanca, con borde a la derecha: la marca dejo de ser una barra oscura. Los colores salen de los
+  tokens `--color-marca-*` de `src/design-system.css`, que ahora describen esa superficie clara.
 */
 
-/* Sin esto el host es `inline` y la grilla del shell no le da la columna. */
 :host {
   display: block;
 }
 
 /*
-  Pegada arriba y con su propio scroll: si las secciones no entran a 768 px de alto, se
-  desplaza la barra y no la pagina. `100dvh` y no `100vh`: en tablet la barra del navegador
-  cambia de alto y `vh` deja un resto escondido abajo.
+  Pegada arriba y con su propio scroll: si las secciones no entran, se desplaza la barra y no la
+  pagina. `100dvh` y no `100vh`: en tablet la barra del navegador cambia de alto.
 */
 .barra-lateral {
   position: sticky;
   top: 0;
   display: flex;
   flex-direction: column;
+  gap: var(--esp-2);
   box-sizing: border-box;
   height: 100dvh;
-  padding: var(--esp-5) var(--esp-4);
+  padding: var(--esp-6) var(--esp-5);
   overflow-y: auto;
+  border-right: var(--borde-fino) solid var(--color-borde);
   background: var(--color-marca-fondo);
   color: var(--color-marca-texto);
 }
 
+/* Logo: cuadrado azul con la inicial, el nombre y la sede activa debajo. */
 .marca {
-  display: block;
-  padding: var(--esp-4) var(--esp-5) var(--esp-7);
+  display: flex;
+  align-items: center;
+  gap: var(--esp-4);
+  min-height: 2.25rem;
+  margin-bottom: var(--esp-6);
+  padding: 0 var(--esp-4);
   color: var(--color-marca-texto);
-  font-size: var(--tipo-xl);
-  font-weight: var(--peso-fuerte);
-  letter-spacing: 0.08em;
   text-decoration: none;
 }
 
+.marca__logo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: var(--radio-md);
+  background: var(--color-accion-fondo);
+  color: var(--color-accion-texto);
+  font-size: 0.9375rem;
+  font-weight: var(--peso-fuerte);
+}
+
+.marca__textos {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.marca__nombre {
+  font-size: 0.9375rem;
+  font-weight: var(--peso-fuerte);
+  letter-spacing: 0.04em;
+}
+
+.marca__sede {
+  overflow: hidden;
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-2xs);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /*
-  Cabecera de grupo: icono, nombre y flecha. Es un `summary`: el navegador lo hace operable con
-  teclado y anuncia si esta desplegado. Se le saca el triangulo nativo, que la flecha reemplaza.
+  Cabecera de grupo: icono, nombre, punto si contiene la pantalla actual y flecha. Es un
+  `summary`: el navegador lo hace operable con teclado y anuncia si esta desplegado.
 */
 .nav__cabecera {
   display: flex;
   align-items: center;
-  gap: var(--esp-5);
-  min-height: 2.5rem;
-  padding: var(--esp-2) var(--esp-5);
-  border-radius: var(--radio-sm);
-  color: var(--color-marca-texto-suave);
+  gap: var(--esp-4);
+  min-height: 2.25rem;
+  padding: 0 var(--esp-4);
+  border-radius: var(--radio-md);
+  color: var(--color-marca-texto);
   font-size: var(--tipo-sm);
   font-weight: var(--peso-medio);
   list-style: none;
@@ -64,14 +98,7 @@
 }
 
 .nav__cabecera:hover {
-  background: var(--color-marca-superficie-activa);
-  color: var(--color-marca-texto);
-}
-
-/* El grupo de la pantalla actual se dice aunque este plegado: texto pleno y peso. */
-.nav__cabecera--actual {
-  color: var(--color-marca-texto);
-  font-weight: var(--peso-semi);
+  background: var(--color-superficie-sutil);
 }
 
 .nav__rotulo {
@@ -79,10 +106,13 @@
 }
 
 .nav__icono {
-  font-size: var(--tipo-lg);
+  color: var(--color-texto-suave);
+  font-size: 1.125rem;
 }
 
 .nav__flecha {
+  color: var(--color-texto-suave);
+  font-size: 1rem;
   transition: transform 0.15s ease;
 }
 
@@ -90,60 +120,132 @@
   transform: rotate(180deg);
 }
 
-/* Las secciones del grupo, con sangria a la altura del nombre (icono + espacio). */
+/* El grupo plegado que contiene la pantalla actual lo dice con un punto, no solo con color. */
+.nav__punto {
+  width: 0.375rem;
+  height: 0.375rem;
+  border-radius: 50%;
+  background: var(--color-acento);
+}
+
 .nav__lista {
-  margin: 0 0 var(--esp-3);
-  padding: 0 0 0 calc(var(--esp-5) + 1.125rem);
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-1);
+  margin: var(--esp-1) 0 var(--esp-3);
+  padding: 0 0 0 1.625rem;
   list-style: none;
 }
 
-/* La consola de plataforma va al pie, separada: no es una seccion del centro. */
-.nav__plataforma {
-  margin-top: auto;
-  border-top: var(--borde-fino) solid var(--color-marca-superficie-activa);
-  border-radius: 0;
-}
-
+/* Entrada de un grupo: 34 px, texto gris oscuro; la actual, fondo celeste y texto azul. */
 .nav__enlace {
   display: flex;
   align-items: center;
-  min-height: 2rem;
-  padding: var(--esp-2) var(--esp-5);
-  border-left: var(--foco-grosor) solid transparent;
-  border-radius: var(--radio-sm);
+  min-height: 2.125rem;
+  padding: 0 var(--esp-5);
+  border-radius: var(--radio-md);
   color: var(--color-marca-texto-suave);
   font-size: var(--tipo-sm);
-  font-weight: var(--peso-medio);
   text-decoration: none;
 }
 
 .nav__enlace:hover {
-  background: var(--color-marca-superficie-activa);
+  background: var(--color-superficie-sutil);
   color: var(--color-marca-texto);
 }
 
-/*
-  La seccion actual se marca de DOS formas ademas del color: barra a la izquierda y peso de
-  fuente. Solo con color, un usuario con vision de color reducida no distingue donde esta
-  (WCAG 1.4.1). El `aria-current` de la plantilla cubre al lector de pantalla.
-*/
-.nav__enlace--actual {
+/* La actual: fondo, color Y peso (WCAG 1.4.1); `aria-current` la dice al lector de pantalla. */
+.nav__enlace--actual,
+.nav__enlace--actual:hover {
   background: var(--color-marca-superficie-activa);
-  border-left-color: var(--color-marca-borde);
-  color: var(--color-marca-texto);
-  font-weight: var(--peso-semi);
+  color: var(--color-acento);
+  font-weight: var(--peso-medio);
 }
 
 /* Enlace de primer nivel (grupo de una sola seccion, plataforma): misma fila que una cabecera. */
 .nav__enlace--grupo {
-  gap: var(--esp-5);
-  min-height: 2.5rem;
+  gap: var(--esp-4);
+  min-height: 2.25rem;
+  padding: 0 var(--esp-4);
+  color: var(--color-marca-texto);
+  font-weight: var(--peso-medio);
+}
+
+.nav__plataforma {
+  margin-top: var(--esp-6);
+}
+
+/* La sesion, al pie: avatar del centro, nombre, "Cambiar de sede" y el boton de salir. */
+.nav__sesion {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-4);
+  margin-top: auto;
+  padding: var(--esp-5) var(--esp-4) 0;
+  border-top: var(--borde-fino) solid var(--color-borde);
+}
+
+.nav__avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: var(--color-marca-superficie-activa);
+  color: var(--color-acento);
+  font-size: var(--tipo-2xs);
+  font-weight: var(--peso-medio);
+}
+
+.nav__sesion-textos {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.nav__sesion-centro {
+  overflow: hidden;
+  font-size: var(--tipo-xs);
+  font-weight: var(--peso-medio);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nav__sesion-cambiar {
+  align-self: flex-start;
+  padding-block: var(--esp-1);
+  color: var(--color-enlace);
+  font-size: var(--tipo-2xs);
+}
+
+/* Boton de salir: icono con contorno de control (3:1) y 36 px de lado. */
+.nav__salir {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0;
+  border: var(--borde-fino) solid var(--color-borde-control);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie);
+  color: var(--color-texto-suave);
+  font-size: 1.125rem;
+  cursor: pointer;
+}
+
+.nav__salir:hover:not(:disabled) {
+  background: var(--color-peligro-fondo);
+  color: var(--color-peligro-texto);
 }
 
 /*
-  Tablet y menor: la barra sale de pantalla y vuelve como panel sobre el contenido. Cerrada
-  queda ADEMAS `visibility: hidden`: un `translateX` solo la saca de la vista, y el Tab seguiria
-  recorriendo diecisiete enlaces invisibles antes de llegar al contenido.
+  Tablet y menor: la barra sale de pantalla y vuelve como panel. Cerrada queda ADEMAS
+  `visibility: hidden`: un `translateX` solo la saca de la vista y el Tab seguiria recorriendola.
 */
 @media (max-width: 63.99rem) {
   .barra-lateral {
@@ -156,7 +258,6 @@
     transition:
       transform 0.2s ease,
       visibility 0.2s;
-    box-shadow: 0 0 0 100vmax rgb(0 0 0 / 0);
   }
 
   .barra-lateral--abierta {

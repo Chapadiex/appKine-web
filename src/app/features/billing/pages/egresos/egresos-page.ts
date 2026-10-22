@@ -1,5 +1,6 @@
 import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { map } from 'rxjs';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 
@@ -29,6 +30,8 @@ import {
 } from '../../models/etiquetas-de-egreso';
 import { fechaEnPalabras, importeEnPalabras } from '../../models/etiquetas-de-obligacion';
 import { EgresosApi } from '../../services/egresos-api';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { Filtros } from '../../../../shared/components/filtros/filtros';
 
 type EstadoListado =
   | { readonly tipo: 'cargando' }
@@ -63,7 +66,7 @@ const PAGINA = 50;
  */
 @Component({
   selector: 'app-egresos-page',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [Ayuda, Filtros, ReactiveFormsModule, RouterLink],
   templateUrl: './egresos-page.html',
   styleUrl: '../../billing.css',
 })
@@ -84,11 +87,27 @@ export class EgresosPage {
   protected readonly COLABORADOR = RegistrarEgresoTipoBeneficiarioEnum.COLABORADOR;
   protected readonly EXTERNO = RegistrarEgresoTipoBeneficiarioEnum.EXTERNO;
 
+  private readonly desdePorDefecto = primeroDelMes(this.diaDeLaSede.hoy());
   protected readonly filtro = this.fb.group({
     estado: [''],
     categoria: [''],
-    desde: [primeroDelMes(this.diaDeLaSede.hoy())],
+    desde: [this.desdePorDefecto],
     hasta: [''],
+  });
+
+  private readonly valorDelFiltro = toSignal(
+    this.filtro.valueChanges.pipe(map(() => this.filtro.getRawValue())),
+    { initialValue: this.filtro.getRawValue() },
+  );
+  /** Filtros avanzados fuera de su valor por defecto: el contador del embudo. */
+  protected readonly filtrosAvanzadosActivos = computed(() => {
+    const { estado, categoria, desde, hasta } = this.valorDelFiltro();
+    return (
+      Number(estado !== '') +
+      Number(categoria !== '') +
+      Number(desde !== this.desdePorDefecto) +
+      Number(hasta !== '')
+    );
   });
 
   protected readonly alta = this.fb.group({

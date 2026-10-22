@@ -25,6 +25,10 @@ import { CausaOffering, hayQueRecargar, traducirErrorOffering } from '../../mode
 import { enPalabras } from '../../models/situacion-de-vigencia';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
+import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
+import { Icono } from '../../../../shared/components/icono/icono';
 
 /** La moneda que se propone cuando la oferta no tiene precio de lista: la del producto. */
 const MONEDA_POR_DEFECTO = 'ARS';
@@ -53,7 +57,15 @@ interface SituacionDeLaTarifa {
  */
 @Component({
   selector: 'app-honorarios-por-clase-de-la-oferta-page',
-  imports: [Ayuda, ReactiveFormsModule, RouterLink, ConfirmacionConMotivo],
+  imports: [
+    ColumnaOrdenable,
+    Paginacion,
+    Icono,
+    Ayuda,
+    ReactiveFormsModule,
+    RouterLink,
+    ConfirmacionConMotivo,
+  ],
   templateUrl: './honorarios-por-clase-de-la-oferta-page.html',
   styleUrl: '../../offering.css',
 })
@@ -82,6 +94,14 @@ export class HonorariosPorClaseDeLaOfertaPage {
     return [...actual.pagina].sort((una, otra) =>
       (otra.vigenciaDesde ?? '').localeCompare(una.vigenciaDesde ?? ''),
     );
+  });
+
+  /** Orden y paginado de la lista completa (plan Â§3.4): el servidor no pagina tarifas. */
+  protected readonly tabla = tablaLocal(this.tarifas, {
+    columnas: {
+      importe: (tarifa) => tarifa.importePorParticipante,
+      vigencia: (tarifa) => tarifa.vigenciaDesde,
+    },
   });
 
   protected readonly mensajeDeCarga = computed(() => {

@@ -1,14 +1,19 @@
-<h1>Colaboradores</h1>
-
-<p class="descripcion">
-  Quienes tienen acceso a esta organizacion, con que rol y sobre que alcance. Los vinculos
-  suspendidos y revocados siguen en la lista: la baja es logica y su historia sigue siendo
-  relevante.
-</p>
-
-<p class="acciones" *akinePermiso="permisoManage">
-  <a class="boton" routerLink="/organizacion/colaboradores/nuevo">Vincular a alguien</a>
-</p>
+<div class="titulo-con-ayuda">
+  <h1>Colaboradores</h1>
+  <app-ayuda titulo="Sobre esta pantalla">
+    <p>
+      Quienes tienen acceso a esta organizacion, con que rol y sobre que alcance. Los vinculos
+      suspendidos y revocados siguen en la lista: la baja es logica y su historia sigue siendo
+      relevante.
+    </p>
+  </app-ayuda>
+  <div class="encabezado__acciones" *akinePermiso="permisoManage">
+    <a class="boton" routerLink="/organizacion/colaboradores/nuevo">
+      <app-icono nombre="agregar" />
+      Vincular a alguien
+    </a>
+  </div>
+</div>
 
 <div aria-live="polite">
   @if (exito(); as mensaje) {

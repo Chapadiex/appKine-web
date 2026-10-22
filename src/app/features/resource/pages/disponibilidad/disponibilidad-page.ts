@@ -11,6 +11,10 @@ import { etiquetaDeTipo } from '../../models/tipos-de-espacio';
 import { traducirErrorEspacio } from '../../models/espacio-errors';
 import { aCampoLocal, aInstanteUtc, formatearInstante } from '../../../../shared/utils/instantes';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
+import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
+import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 
 /** Lo que devuelve la consulta, envuelto para reusar {@link vistaDeListado}. */
 interface ResultadoDeVentana {
@@ -53,7 +57,7 @@ const MILISEGUNDOS_POR_DIA = 24 * 60 * 60 * 1000;
  */
 @Component({
   selector: 'app-disponibilidad-page',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [Paginacion, ColumnaOrdenable, Ayuda, ReactiveFormsModule, RouterLink],
   templateUrl: './disponibilidad-page.html',
   styleUrl: '../../resource.css',
 })
@@ -76,6 +80,15 @@ export class DisponibilidadPage {
 
   private readonly vista = vistaDeListado<EspacioAvailabilityResponse>(this.estado);
   protected readonly enServicio = this.vista.filas;
+
+  /** Orden y paginado de la lista completa (plan §3.4): el servidor no la pagina. */
+  protected readonly tabla = tablaLocal(this.enServicio, {
+    columnas: {
+      espacio: (espacio) => espacio.name ?? null,
+      tipo: (espacio) => this.etiquetaDeTipo(espacio.tipo),
+      capacidad: (espacio) => espacio.capacidad ?? null,
+    },
+  });
   protected readonly mensajeError = this.vista.mensajeError;
   protected readonly faltaContexto = this.vista.faltaContexto;
 

@@ -34,6 +34,7 @@ import {
   textoDeRecorte,
 } from '../../models/horario-efectivo';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 
 /** Una semana: es la ventana que se mira para responder "por que el martes esta vacio". */
 const DIAS_PROPUESTOS = 7;
@@ -79,7 +80,7 @@ const DIAS_PROPUESTOS = 7;
  */
 @Component({
   selector: 'app-horario-efectivo-page',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [Ayuda, ReactiveFormsModule, RouterLink],
   templateUrl: './horario-efectivo-page.html',
   styleUrl: '../../resource.css',
 })

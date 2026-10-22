@@ -1,26 +1,35 @@
-<h1>Catalogo de financiadores</h1>
-
-<p class="descripcion">
-  Obras sociales, prepagas y ART que la plataforma ya tiene cargadas. Agregar una al centro crea una
-  <b>copia propia</b> con sus planes activos: desde ahi es del centro, se edita como cualquier otro
-  financiador y los cambios posteriores del catalogo <b>no</b> la modifican.
-</p>
+<div class="titulo-con-ayuda">
+  <h1>Catalogo de financiadores</h1>
+  <app-ayuda titulo="Sobre esta pantalla">
+    <p>
+      Obras sociales, prepagas y ART que la plataforma ya tiene cargadas. Agregar una al centro crea
+      una
+      <b>copia propia</b> con sus planes activos: desde ahi es del centro, se edita como cualquier
+      otro financiador y los cambios posteriores del catalogo <b>no</b> la modifican.
+    </p>
+  </app-ayuda>
+</div>
 
 <p><a class="enlace" routerLink="/contratacion/financiadores">Volver a los financiadores</a></p>
 
 <section class="tarjeta" aria-labelledby="titulo-buscar-catalogo">
   <h2 id="titulo-buscar-catalogo">Buscar en el catalogo</h2>
   <form (submit)="$event.preventDefault(); cargar()">
-    <div class="par-de-campos">
-      <div class="campo">
-        <label for="catalogo-busqueda">Nombre, codigo o CUIT</label>
-        <input
-          id="catalogo-busqueda"
-          type="search"
-          autocomplete="off"
-          [value]="busqueda()"
-          (input)="busqueda.set($any($event.target).value)"
-        />
+    <!-- Regla de filtros (plan §3.4): la busqueda a la vista; el tipo, detras del embudo. -->
+    <app-filtros [activos]="filtrosAvanzadosActivos()">
+      <div class="campo" filtro-principal>
+        <label class="visualmente-oculto" for="catalogo-busqueda">Nombre, codigo o CUIT</label>
+        <div class="campo-busqueda">
+          <app-icono class="campo-busqueda__icono" nombre="buscar" />
+          <input
+            id="catalogo-busqueda"
+            type="search"
+            autocomplete="off"
+            placeholder="Buscar por nombre, codigo o CUIT"
+            [value]="busqueda()"
+            (input)="busqueda.set($any($event.target).value)"
+          />
+        </div>
       </div>
       <div class="campo">
         <label for="catalogo-tipo">Tipo</label>
@@ -35,7 +44,7 @@
           }
         </select>
       </div>
-    </div>
+    </app-filtros>
     <div class="acciones">
       <button type="submit" class="boton">Buscar</button>
     </div>
@@ -74,15 +83,15 @@
           </caption>
           <thead>
             <tr>
-              <th scope="col">Financiador</th>
-              <th scope="col">Tipo</th>
+              <th scope="col" appOrdenable [tabla]="tabla" columna="nombre">Financiador</th>
+              <th scope="col" appOrdenable [tabla]="tabla" columna="tipo">Tipo</th>
               <th scope="col">CUIT</th>
-              <th scope="col">Planes</th>
-              <th scope="col">En el centro</th>
+              <th scope="col" appOrdenable [tabla]="tabla" columna="planes">Planes</th>
+              <th scope="col" appOrdenable [tabla]="tabla" columna="enElCentro">En el centro</th>
             </tr>
           </thead>
           <tbody>
-            @for (entrada of entradas(); track entrada.id) {
+            @for (entrada of tabla.visibles(); track entrada.id) {
               <tr>
                 <th scope="row">
                   {{ entrada.nombre }}
@@ -124,6 +133,16 @@
             }
           </tbody>
         </table>
+      </div>
+
+      <div class="tabla-pie">
+        <span>{{ tabla.total() }} financiadores</span>
+        <app-paginacion
+          [paginaActual]="tabla.pagina()"
+          [totalPaginas]="tabla.totalPaginas()"
+          etiqueta="Paginas de financiadores"
+          (cambioDePagina)="tabla.irA($event)"
+        />
       </div>
     }
   }

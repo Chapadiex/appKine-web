@@ -1,6 +1,7 @@
 import { expect, ingresar, navegar, respuestaDe, test } from './support/agenda-real';
 import { nonce } from './support/akine';
 import { paginaDePlataforma, plataformaDisponible } from './support/sembrado-configuracion';
+import { abrirFiltros } from './support/filtros';
 
 /**
  * E2E del catalogo clinico (M06, AKINE-02.05 y A-7) contra el backend REAL: alta de un concepto
@@ -38,6 +39,7 @@ test.describe('Catalogo clinico contra el backend real', () => {
       page.getByText('La especialidad quedo dada de alta para este centro.'),
     ).toBeVisible();
 
+    await abrirFiltros(page);
     await page.getByLabel('De quien').selectOption('ORGANIZACION');
     await page.getByLabel('Buscar').fill(nombre);
     await expect(page.getByRole('row').filter({ hasText: nombre })).toBeVisible();
@@ -121,6 +123,7 @@ test.describe('Catalogo clinico contra el backend real', () => {
     await expect(aprobada.getByText('Publicada para toda la red.')).toBeVisible();
 
     await navegar(page, '/catalogo/especialidades');
+    await abrirFiltros(page);
     await page.getByLabel('De quien').selectOption('GLOBAL');
     await page.getByLabel('Buscar').fill(nombre);
     await expect(page.getByRole('row').filter({ hasText: nombre })).toBeVisible();

@@ -1,10 +1,13 @@
-<h1>Caja diaria</h1>
-
-<p class="descripcion">
-  El cajon de <b>esta sede</b>: abrirlo, registrar lo que entra y sale a mano y arquearlo al cerrar.
-  <b>No es la deuda ni los cobros</b>: un cobro en efectivo aparece aca como movimiento, pero se
-  registra y se anula desde la cuenta corriente del paciente.
-</p>
+<div class="titulo-con-ayuda">
+  <h1>Caja diaria</h1>
+  <app-ayuda titulo="Sobre esta pantalla">
+    <p>
+      El cajon de <b>esta sede</b>: abrirlo, registrar lo que entra y sale a mano y arquearlo al
+      cerrar. <b>No es la deuda ni los cobros</b>: un cobro en efectivo aparece aca como movimiento,
+      pero se registra y se anula desde la cuenta corriente del paciente.
+    </p>
+  </app-ayuda>
+</div>
 
 @if (cargando()) {
   <p class="estado estado--cargando">Cargando la caja…</p>
@@ -85,11 +88,15 @@
   }
 
   <section class="tarjeta" aria-labelledby="titulo-apertura">
-    <h2 id="titulo-apertura">La caja esta cerrada</h2>
-    <p class="ayuda">
-      Abrila con lo que hay en el cajon ahora. Cero es valido: una caja puede arrancar vacia. La
-      fecha de negocio la pone el servidor con la zona horaria de la sede.
-    </p>
+    <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
+      <h2 id="titulo-apertura">La caja esta cerrada</h2>
+      <app-ayuda titulo="La caja esta cerrada">
+        <p>
+          Abrila con lo que hay en el cajon ahora. Cero es valido: una caja puede arrancar vacia. La
+          fecha de negocio la pone el servidor con la zona horaria de la sede.
+        </p>
+      </app-ayuda>
+    </div>
 
     <div class="campo">
       <label for="apertura-saldo">Saldo inicial contado</label>
@@ -177,11 +184,15 @@
   <!-- --------------------------- Movimiento manual --------------------------- -->
 
   <section class="tarjeta" aria-labelledby="titulo-movimiento">
-    <h2 id="titulo-movimiento">Registrar un movimiento manual</h2>
-    <p class="ayuda">
-      Plata que entra o sale del cajon sin ser un cobro: cambio, un gasto menor, un retiro. El
-      concepto es obligatorio. Un egreso no puede dejar el cajon en negativo.
-    </p>
+    <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
+      <h2 id="titulo-movimiento">Registrar un movimiento manual</h2>
+      <app-ayuda titulo="Registrar un movimiento manual">
+        <p>
+          Plata que entra o sale del cajon sin ser un cobro: cambio, un gasto menor, un retiro. El
+          concepto es obligatorio. Un egreso no puede dejar el cajon en negativo.
+        </p>
+      </app-ayuda>
+    </div>
 
     <div class="linea-medio">
       <div class="campo">
@@ -349,11 +360,15 @@
   <!-- ------------------------------ Arqueo ------------------------------ -->
 
   <section class="tarjeta" aria-labelledby="titulo-cierre">
-    <h2 id="titulo-cierre">Arquear y cerrar</h2>
-    <p class="ayuda">
-      Conta el efectivo del cajon y anota lo que contaste. Si entra un movimiento mientras contas,
-      el cierre se rechaza para que no registres una diferencia que no existe.
-    </p>
+    <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
+      <h2 id="titulo-cierre">Arquear y cerrar</h2>
+      <app-ayuda titulo="Arquear y cerrar">
+        <p>
+          Conta el efectivo del cajon y anota lo que contaste. Si entra un movimiento mientras
+          contas, el cierre se rechaza para que no registres una diferencia que no existe.
+        </p>
+      </app-ayuda>
+    </div>
 
     <div class="campo">
       <label for="cierre-declarado">Efectivo contado</label>

@@ -1,11 +1,14 @@
-<h1>Horario semanal del profesional</h1>
-
-<p class="descripcion">
-  En que dias y horas atiende cada profesional en <b>{{ nombreDeLaSede() }}</b
-  >. Es el horario <b>cargado</b>: la regla. Lo que el profesional termina atendiendo una fecha
-  concreta —ya aplicados feriados, cierres y la vigencia de su vinculo— es la disponibilidad
-  efectiva, y se consulta aparte.
-</p>
+<div class="titulo-con-ayuda">
+  <h1>Horario semanal del profesional</h1>
+  <app-ayuda titulo="Sobre esta pantalla">
+    <p>
+      En que dias y horas atiende cada profesional en <b>{{ nombreDeLaSede() }}</b
+      >. Es el horario <b>cargado</b>: la regla. Lo que el profesional termina atendiendo una fecha
+      concreta —ya aplicados feriados, cierres y la vigencia de su vinculo— es la disponibilidad
+      efectiva, y se consulta aparte.
+    </p>
+  </app-ayuda>
+</div>
 
 <p class="acciones">
   <a class="enlace" [routerLink]="rutas.excepciones">Cierres y aperturas</a>

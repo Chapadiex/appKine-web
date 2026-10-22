@@ -1,6 +1,8 @@
 <div class="titulo-con-ayuda">
   <h1>Habilitaciones de la oferta</h1>
-  <app-ayuda titulo="Habilitar no es dar permiso">
+  <app-ayuda titulo="Sobre esta pantalla">
+    <p>Quien puede prestar esta oferta y en que espacios de esta sede.</p>
+    <p class="ayuda-contextual__subtitulo">Habilitar no es dar permiso</p>
     <p>
       Habilitar dice <b>quien puede prestar</b> esta oferta y <b>donde</b>. No le da a nadie acceso
       al sistema ni le cambia lo que puede administrar: eso lo decide su rol. Un administrador sin
@@ -13,9 +15,7 @@
   <p class="descripcion">
     Quien puede prestar <b>{{ detalle.nombreComercial }}</b> y en que espacios de esta sede.
   </p>
-} @else {
-  <p class="descripcion">Quien puede prestar esta oferta y en que espacios de esta sede.</p>
-}
+} @else {}
 
 <nav class="acciones" aria-label="Servicios y ofertas">
   <a class="boton boton--secundario" routerLink="/servicios/catalogo">Catalogo de servicios</a>

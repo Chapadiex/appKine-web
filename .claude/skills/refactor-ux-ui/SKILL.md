@@ -215,3 +215,34 @@ AKINE debe pasar de una interfaz funcional construida alrededor de campos y vali
 sentirse como una aplicación profesional. La interfaz guía al usuario en lugar de obligarlo a
 interpretar la pantalla. **Menos elementos visibles, mejor organizados, en el momento correcto y
 con una interacción clara.**
+
+## Reglas de AKINE fijadas por el usuario (21/10/2026)
+
+Obligatorias en toda pantalla nueva o refactorizada. El detalle y las excepciones están en
+`docs/ux/00-plan-refactor-ux-ui.md` §3.2 y §3.4.
+
+1. **Texto explicativo detrás de un "?".** La descripción bajo el título, las notas didácticas y
+   el párrafo que abre una sección van en `app-ayuda` (`shared/components/ayuda`) al lado de su
+   título. Nunca se esconden: datos, estado de la pantalla, advertencias de acciones irreversibles,
+   instrucciones de un paso obligatorio. **Una ayuda nunca contiene acciones.**
+2. **Un buscador y un embudo.** Los listados muestran un solo campo de búsqueda que busca por todo,
+   y un botón con embudo (`app-filtros`, `shared/components/filtros`) que despliega los filtros
+   avanzados hacia abajo, con el contador de los aplicados. Si el backend no busca por texto, el
+   embudo va solo y la búsqueda es un pedido al backend.
+3. **Barra lateral en acordeón con íconos**, un grupo abierto a la vez; las pantallas hermanas de
+   una sección van en `app-pestanas`, no en enlaces sueltos.
+
+En los E2E, un filtro avanzado se usa después de `abrirFiltros(page)` (`e2e/support/filtros.ts`).
+4. **Tablas con paginado y orden** (`tablaLocal` + `th[appOrdenable]`, `shared/components/tabla`) en
+   listas completas; en listas paginadas por el servidor, solo el paginado del servidor.
+5. **Botón de alta en la fila del título, a la derecha** (`.encabezado__acciones`).
+6. **Tipografía Inter** (`@fontsource-variable/inter`, en el bundle), títulos con peso 700 y
+   encabezados de tabla en mayúsculas chicas.
+
+## Auditoría heurística
+
+Cada análisis de pantalla (§22) se hace con la skill **`ui-ux-design-guide`** del catálogo de la
+organización (Skill Hub, servidor MCP conectado: `search_skills` / `get_skill`). Para una auditoría
+la guía manda leer: las diez heurísticas de Nielsen
+(`product-design/jakobs-ten-usability-heuristics.md`), carga cognitiva y fricción de uso con sus
+recomendaciones, y accesibilidad. Cada hallazgo del análisis cita la heurística que incumple.

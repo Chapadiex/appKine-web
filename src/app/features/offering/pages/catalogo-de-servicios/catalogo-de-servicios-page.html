@@ -1,6 +1,12 @@
 <div class="titulo-con-ayuda">
   <h1>Catalogo de servicios</h1>
-  <app-ayuda titulo="Este catalogo lo administra AKINE, no tu centro">
+  <app-ayuda titulo="Sobre esta pantalla">
+    <p>
+      Que existe como concepto: kinesiologia respiratoria, pilates terapeutico, evaluacion postural.
+      Es el catalogo comun de AKINE y lo ven todos los centros. Como lo presta tu sede —con que
+      nombre, duracion, precio y desde cuando— se define en las ofertas.
+    </p>
+    <p class="ayuda-contextual__subtitulo">Este catalogo lo administra AKINE, no tu centro</p>
     <p>
       Cualquiera puede <b>consultarlo</b>: es la lista de la que se elige al crear una oferta. Dar
       de alta, editar o dar de baja un servicio, en cambio, exige <b>rol de plataforma</b>.
@@ -16,13 +22,15 @@
       la duracion, el precio y la vigencia con la que cada servicio se presta aca.
     </p>
   </app-ayuda>
+  @if (puedeAdministrar()) {
+    <div class="encabezado__acciones">
+      <button type="button" class="boton" (click)="abrirAlta()">
+        <app-icono nombre="agregar" />
+        Dar de alta un servicio
+      </button>
+    </div>
+  }
 </div>
-
-<p class="descripcion">
-  Que existe como concepto: kinesiologia respiratoria, pilates terapeutico, evaluacion postural. Es
-  el catalogo comun de AKINE y lo ven todos los centros. Como lo presta tu sede —con que nombre,
-  duracion, precio y desde cuando— se define en las ofertas.
-</p>
 
 <nav class="acciones" aria-label="Servicios y ofertas">
   <a class="boton boton--secundario" routerLink="/servicios/catalogo" aria-current="page">
@@ -36,12 +44,6 @@
     <p class="estado estado--ok">{{ mensaje }}</p>
   }
 </div>
-
-@if (puedeAdministrar()) {
-  <p class="acciones">
-    <button type="button" class="boton" (click)="abrirAlta()">Dar de alta un servicio</button>
-  </p>
-}
 
 @if (altaAbierta()) {
   <section class="tarjeta" aria-labelledby="titulo-alta-servicio">
@@ -199,38 +201,48 @@
 <section class="tarjeta" aria-labelledby="titulo-listado-servicios">
   <h2 id="titulo-listado-servicios">Servicios del catalogo</h2>
 
-  <div class="campo">
-    <label for="busqueda-servicio">Buscar</label>
-    <input
-      id="busqueda-servicio"
-      type="search"
-      [value]="busqueda()"
-      (input)="teclear($any($event.target).value)"
-      autocomplete="off"
-      aria-describedby="busqueda-servicio-ayuda"
-    />
-    <p class="ayuda" id="busqueda-servicio-ayuda">
-      Busca por nombre y por codigo mientras escribis. No distingue mayusculas ni acentos.
-    </p>
-  </div>
+  <!--
+    Regla de filtros (plan §3.4): la busqueda, que se usa siempre, a la vista; el estado, que casi
+    nunca se toca, detras del embudo.
+  -->
+  <app-filtros [activos]="filtrosAvanzadosActivos()">
+    <div class="campo" filtro-principal>
+      <label class="visualmente-oculto" for="busqueda-servicio">Buscar</label>
+      <div class="campo-busqueda">
+        <app-icono class="campo-busqueda__icono" nombre="buscar" />
+        <input
+          id="busqueda-servicio"
+          type="search"
+          placeholder="Buscar por nombre o codigo"
+          [value]="busqueda()"
+          (input)="teclear($any($event.target).value)"
+          autocomplete="off"
+          aria-describedby="busqueda-servicio-ayuda"
+        />
+      </div>
+      <p class="visualmente-oculto" id="busqueda-servicio-ayuda">
+        Busca por nombre y por codigo mientras escribis. No distingue mayusculas ni acentos.
+      </p>
+    </div>
 
-  <div class="campo">
-    <label for="filtro-estado-servicio">Mostrar</label>
-    <select
-      id="filtro-estado-servicio"
-      [value]="filtroEstado()"
-      (change)="cambiarFiltroEstado($any($event.target).value)"
-      aria-describedby="filtro-estado-servicio-ayuda"
-    >
-      <option value="ACTIVO">Solo los activos</option>
-      <option value="INACTIVO">Solo los dados de baja</option>
-      <option value="TODOS">Todos</option>
-    </select>
-    <p class="ayuda" id="filtro-estado-servicio-ayuda">
-      Un servicio dado de baja no se borra: las ofertas que ya lo usan siguen funcionando. Lo que no
-      se puede es crear ofertas nuevas sobre el.
-    </p>
-  </div>
+    <div class="campo">
+      <label for="filtro-estado-servicio">Mostrar</label>
+      <select
+        id="filtro-estado-servicio"
+        [value]="filtroEstado()"
+        (change)="cambiarFiltroEstado($any($event.target).value)"
+        aria-describedby="filtro-estado-servicio-ayuda"
+      >
+        <option value="ACTIVO">Solo los activos</option>
+        <option value="INACTIVO">Solo los dados de baja</option>
+        <option value="TODOS">Todos</option>
+      </select>
+      <p class="ayuda" id="filtro-estado-servicio-ayuda">
+        Un servicio dado de baja no se borra: las ofertas que ya lo usan siguen funcionando. Lo que
+        no se puede es crear ofertas nuevas sobre el.
+      </p>
+    </div>
+  </app-filtros>
 
   <div aria-live="polite">
     @switch (estado().tipo) {
@@ -247,8 +259,6 @@
         @if (servicios().length === 0) {
           <p class="estado estado--vacio">No hay servicios que coincidan con lo que buscaste.</p>
         } @else {
-          <p class="ayuda">{{ servicios().length }} en total.</p>
-
           <div class="tabla-scroll" tabindex="0" role="region" aria-label="Catalogo de servicios">
             <table class="tabla">
               <caption class="visualmente-oculto">
@@ -257,19 +267,21 @@
               </caption>
               <thead>
                 <tr>
-                  <th scope="col">Nombre</th>
-                  <th scope="col">Codigo</th>
-                  <th scope="col">Naturaleza</th>
-                  <th scope="col">Modalidad por defecto</th>
+                  <th scope="col" appOrdenable [tabla]="tabla" columna="nombre">Nombre</th>
+                  <th scope="col" appOrdenable [tabla]="tabla" columna="codigo">Codigo</th>
+                  <th scope="col" appOrdenable [tabla]="tabla" columna="naturaleza">Naturaleza</th>
+                  <th scope="col" appOrdenable [tabla]="tabla" columna="modalidad">
+                    Modalidad por defecto
+                  </th>
                   <th scope="col">Valores clinicos por defecto</th>
-                  <th scope="col">Estado</th>
+                  <th scope="col" appOrdenable [tabla]="tabla" columna="estado">Estado</th>
                   @if (puedeAdministrar()) {
                     <th scope="col">Acciones</th>
                   }
                 </tr>
               </thead>
               <tbody>
-                @for (servicio of servicios(); track servicio.id) {
+                @for (servicio of tabla.visibles(); track servicio.id) {
                   <tr [class.fila--revocada]="servicio.estado === 'INACTIVO'">
                     <th scope="row">
                       {{ servicio.nombre }}
@@ -475,6 +487,16 @@
                 }
               </tbody>
             </table>
+          </div>
+
+          <div class="tabla-pie">
+            <span>{{ tabla.total() }} servicios</span>
+            <app-paginacion
+              [paginaActual]="tabla.pagina()"
+              [totalPaginas]="tabla.totalPaginas()"
+              etiqueta="Paginas de servicios"
+              (cambioDePagina)="tabla.irA($event)"
+            />
           </div>
         }
       }

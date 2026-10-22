@@ -13,6 +13,7 @@ import {
   ActivatedRouteSnapshot,
   NavigationEnd,
   Router,
+  RouterLink,
   RouterOutlet,
 } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -46,7 +47,7 @@ import { TenantContextStore } from './core/services/tenant-context.store';
  */
 @Component({
   selector: 'app-root',
-  imports: [BarraSuperior, NavegacionPrincipal, RouterOutlet],
+  imports: [BarraSuperior, NavegacionPrincipal, RouterLink, RouterOutlet],
   templateUrl: './app.html',
   styleUrl: './app.css',
 })
@@ -74,6 +75,19 @@ export class App {
   protected cerrarAvisoDeServicio(): void {
     this.servicio.descartar();
   }
+
+  private readonly url = toSignal(
+    this.router.events.pipe(
+      filter((evento) => evento instanceof NavigationEnd),
+      map(() => this.router.url),
+    ),
+    { initialValue: this.router.url },
+  );
+
+  /** Pantallas de acceso: tarjeta centrada, sin barra superior ni lateral. */
+  protected readonly esAcceso = computed(() =>
+    /^\/(auth|seleccionar-contexto)(\/|\?|$)/.test(this.url()),
+  );
 
   protected readonly ancho = toSignal(
     this.router.events.pipe(

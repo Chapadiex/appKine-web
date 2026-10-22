@@ -1,7 +1,18 @@
 @if (datos(); as tipoActual) {
-  <h1>{{ tipoActual.plural }}</h1>
-
-  <p class="descripcion">{{ tipoActual.descripcion }}</p>
+  <div class="titulo-con-ayuda">
+    <h1>{{ tipoActual.plural }}</h1>
+    <app-ayuda titulo="Sobre esta pantalla">
+      <p>
+        {{ tipoActual.descripcion }}
+      </p>
+    </app-ayuda>
+    <div class="encabezado__acciones" *akinePermiso="permisoManage">
+      <button type="button" class="boton" (click)="abrirAlta()">
+        <app-icono nombre="agregar" />
+        Dar de alta una {{ tipoActual.singular }} de este centro
+      </button>
+    </div>
+  </div>
 
   <nav class="acciones" aria-label="Tipos del catalogo clinico">
     @for (otro of tipos; track otro.slug) {
@@ -43,12 +54,6 @@
       <p class="estado estado--ok">{{ mensaje }}</p>
     }
   </div>
-
-  <p class="acciones">
-    <button type="button" class="boton" (click)="abrirAlta()" *akinePermiso="permisoManage">
-      Dar de alta una {{ tipoActual.singular }} de este centro
-    </button>
-  </p>
 
   @if (altaAbierta()) {
     <section class="tarjeta" aria-labelledby="titulo-alta-catalogo">
@@ -192,67 +197,77 @@
   <section class="tarjeta" aria-labelledby="titulo-listado-catalogo">
     <h2 id="titulo-listado-catalogo">{{ tipoActual.plural }} que este centro puede usar</h2>
 
-    <div class="campo">
-      <label for="busqueda-catalogo">Buscar</label>
-      <input
-        id="busqueda-catalogo"
-        type="search"
-        [value]="busqueda()"
-        (input)="teclear($any($event.target).value)"
-        autocomplete="off"
-        aria-describedby="busqueda-catalogo-ayuda"
-      />
-      <p class="ayuda" id="busqueda-catalogo-ayuda">
-        Busca por nombre y por codigo mientras escribis. No distingue mayusculas ni acentos.
-      </p>
-    </div>
+    <!--
+      Regla de filtros (plan §3.4): la busqueda, que se usa siempre, a la vista; estado, alcance y
+      especialidad, que casi nunca se tocan, detras del embudo.
+    -->
+    <app-filtros [activos]="filtrosAvanzadosActivos()">
+      <div class="campo" filtro-principal>
+        <label class="visualmente-oculto" for="busqueda-catalogo">Buscar</label>
+        <div class="campo-busqueda">
+          <app-icono class="campo-busqueda__icono" nombre="buscar" />
+          <input
+            id="busqueda-catalogo"
+            type="search"
+            placeholder="Buscar por nombre o codigo"
+            [value]="busqueda()"
+            (input)="teclear($any($event.target).value)"
+            autocomplete="off"
+            aria-describedby="busqueda-catalogo-ayuda"
+          />
+        </div>
+        <p class="visualmente-oculto" id="busqueda-catalogo-ayuda">
+          Busca por nombre y por codigo mientras escribis. No distingue mayusculas ni acentos.
+        </p>
+      </div>
 
-    <div class="campo">
-      <label for="filtro-estado-catalogo">Mostrar</label>
-      <select
-        id="filtro-estado-catalogo"
-        [value]="filtroEstado()"
-        (change)="cambiarFiltroEstado($any($event.target).value)"
-        aria-describedby="filtro-estado-catalogo-ayuda"
-      >
-        <option value="ACTIVO">Solo los activos</option>
-        <option value="INACTIVO">Solo los dados de baja</option>
-        <option value="TODOS">Todos</option>
-      </select>
-      <p class="ayuda" id="filtro-estado-catalogo-ayuda">
-        Los conceptos dados de baja no se borran: lo que ya se registro con ellos los sigue
-        referenciando y conserva su significado. Su codigo y su nombre, en cambio, quedan libres.
-      </p>
-    </div>
-
-    <div class="campo">
-      <label for="filtro-alcance-catalogo">De quien</label>
-      <select
-        id="filtro-alcance-catalogo"
-        [value]="filtroAlcance()"
-        (change)="cambiarFiltroAlcance($any($event.target).value)"
-      >
-        <option value="TODOS">De la plataforma y de este centro</option>
-        <option value="GLOBAL">Solo los de la plataforma</option>
-        <option value="ORGANIZACION">Solo los de este centro</option>
-      </select>
-    </div>
-
-    @if (tipoActual.exigeEspecialidad) {
       <div class="campo">
-        <label for="filtro-especialidad-catalogo">Especialidad</label>
+        <label for="filtro-estado-catalogo">Mostrar</label>
         <select
-          id="filtro-especialidad-catalogo"
-          [value]="filtroEspecialidad() ?? ''"
-          (change)="cambiarFiltroEspecialidad($any($event.target).value)"
+          id="filtro-estado-catalogo"
+          [value]="filtroEstado()"
+          (change)="cambiarFiltroEstado($any($event.target).value)"
+          aria-describedby="filtro-estado-catalogo-ayuda"
         >
-          <option value="">Todas</option>
-          @for (especialidad of especialidades(); track especialidad.id) {
-            <option [value]="especialidad.id">{{ especialidad.name }}</option>
-          }
+          <option value="ACTIVO">Solo los activos</option>
+          <option value="INACTIVO">Solo los dados de baja</option>
+          <option value="TODOS">Todos</option>
+        </select>
+        <p class="ayuda" id="filtro-estado-catalogo-ayuda">
+          Los conceptos dados de baja no se borran: lo que ya se registro con ellos los sigue
+          referenciando y conserva su significado. Su codigo y su nombre, en cambio, quedan libres.
+        </p>
+      </div>
+
+      <div class="campo">
+        <label for="filtro-alcance-catalogo">De quien</label>
+        <select
+          id="filtro-alcance-catalogo"
+          [value]="filtroAlcance()"
+          (change)="cambiarFiltroAlcance($any($event.target).value)"
+        >
+          <option value="TODOS">De la plataforma y de este centro</option>
+          <option value="GLOBAL">Solo los de la plataforma</option>
+          <option value="ORGANIZACION">Solo los de este centro</option>
         </select>
       </div>
-    }
+
+      @if (tipoActual.exigeEspecialidad) {
+        <div class="campo">
+          <label for="filtro-especialidad-catalogo">Especialidad</label>
+          <select
+            id="filtro-especialidad-catalogo"
+            [value]="filtroEspecialidad() ?? ''"
+            (change)="cambiarFiltroEspecialidad($any($event.target).value)"
+          >
+            <option value="">Todas</option>
+            @for (especialidad of especialidades(); track especialidad.id) {
+              <option [value]="especialidad.id">{{ especialidad.name }}</option>
+            }
+          </select>
+        </div>
+      }
+    </app-filtros>
 
     <div aria-live="polite">
       @switch (estado().tipo) {
@@ -526,12 +541,15 @@
     </div>
   </section>
 } @else {
-  <h1>Ese catalogo no existe</h1>
-
-  <p class="descripcion">
-    La direccion que abriste no corresponde a ninguno de los tres catalogos clinicos. Puede que el
-    enlace este mal escrito, o que venga de una version anterior de la aplicacion.
-  </p>
+  <div class="titulo-con-ayuda">
+    <h1>Ese catalogo no existe</h1>
+    <app-ayuda titulo="Sobre esta pantalla">
+      <p>
+        La direccion que abriste no corresponde a ninguno de los tres catalogos clinicos. Puede que
+        el enlace este mal escrito, o que venga de una version anterior de la aplicacion.
+      </p>
+    </app-ayuda>
+  </div>
 
   <nav class="acciones" aria-label="Tipos del catalogo clinico">
     @for (otro of tipos; track otro.slug) {

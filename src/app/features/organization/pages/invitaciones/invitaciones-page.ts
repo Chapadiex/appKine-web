@@ -26,6 +26,12 @@ import {
 } from '../../../../core/models/invitacion-errors';
 import { formatearInstante } from '../../../../shared/utils/instantes';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
+import { Filtros } from '../../../../shared/components/filtros/filtros';
+import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
+import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { Icono } from '../../../../shared/components/icono/icono';
 
 /** Filtro del listado. Los cuatro estados del contrato, mas "todas". */
 type FiltroEstado = 'TODAS' | 'PENDIENTE' | 'ACEPTADA' | 'RECHAZADA' | 'CANCELADA';
@@ -79,7 +85,17 @@ const ROLES = [
  */
 @Component({
   selector: 'app-invitaciones-page',
-  imports: [ReactiveFormsModule, RouterLink, PermisoDirective, ConfirmacionConMotivo],
+  imports: [
+    Paginacion,
+    ColumnaOrdenable,
+    Ayuda,
+    Icono,
+    Filtros,
+    ReactiveFormsModule,
+    RouterLink,
+    PermisoDirective,
+    ConfirmacionConMotivo,
+  ],
   templateUrl: './invitaciones-page.html',
   styleUrl: '../../organization.css',
 })
@@ -98,6 +114,10 @@ export class InvitacionesPage {
 
   protected readonly estado = signal<Estado>({ tipo: 'cargando' });
   protected readonly filtro = signal<FiltroEstado>('PENDIENTE');
+  /** Filtros avanzados fuera de su valor por defecto (regla de filtros, plan §3.4). */
+  protected readonly filtrosAvanzadosActivos = computed(() =>
+    Number(this.filtro() !== 'PENDIENTE'),
+  );
 
   protected readonly altaAbierta = signal(false);
 
@@ -113,6 +133,16 @@ export class InvitacionesPage {
   protected readonly filas = computed(() => {
     const actual = this.estado();
     return actual.tipo === 'listo' ? actual.invitaciones : [];
+  });
+
+  /** Orden y paginado de la lista completa (plan §3.4): el servidor no la pagina. */
+  protected readonly tabla = tablaLocal(this.filas, {
+    columnas: {
+      persona: (invitacion) => invitacion.email,
+      rol: (invitacion) => this.etiquetaDeRol(invitacion.roleCode),
+      enviada: (invitacion) => invitacion.createdAt ?? null,
+      estado: (invitacion) => this.rotuloDeEstado(invitacion),
+    },
   });
 
   protected readonly mensajeError = computed(() => {

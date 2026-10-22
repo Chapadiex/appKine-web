@@ -22,6 +22,7 @@ import { NuevaEntrada } from './components/nueva-entrada';
 import { NuevoAdjunto } from './components/nuevo-adjunto';
 import { TimelineClinico, claveDe } from './components/timeline-clinico';
 import { VisorDeAdjunto } from './components/visor-de-adjunto';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 
 type Estado =
   | { readonly tipo: 'cargando' }
@@ -52,6 +53,7 @@ type Estado =
 @Component({
   selector: 'app-historia-clinica-page',
   imports: [
+    Ayuda,
     RouterLink,
     TimelineClinico,
     DetalleDeEntrada,

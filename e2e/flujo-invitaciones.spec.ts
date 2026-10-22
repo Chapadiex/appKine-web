@@ -1,5 +1,6 @@
 import { emailUnico } from './support/akine';
 import { expect, ingresar, navegar, respuestaDe, test } from './support/agenda-real';
+import { abrirFiltros } from './support/filtros';
 import { enlaceDelCorreo } from './support/cuentas';
 
 /**
@@ -56,6 +57,7 @@ test.describe('Invitaciones contra el backend real', () => {
       const cancelacion = respuestaDe(page, 'POST', /\/colaborador-invitaciones\/\d+\/cancel$/);
       await page.getByRole('button', { name: 'Cancelar la invitacion' }).click();
       expect((await cancelacion).status()).toBeLessThan(300);
+      await abrirFiltros(page);
       await page.getByLabel('Mostrar').selectOption({ label: 'Las canceladas' });
       await expect(fila).toContainText(motivo);
 

@@ -59,6 +59,7 @@ import {
   minutosDeHora,
   rangoHorario,
 } from '../../../../shared/utils/horas-de-pared';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 
 /** Operacion abierta sobre un bloque. Solo una a la vez, y nunca junto con el alta. */
 type TipoAccion = 'editar' | 'baja';
@@ -106,6 +107,7 @@ interface DiaConBloques {
 @Component({
   selector: 'app-horario-semanal-page',
   imports: [
+    Ayuda,
     ReactiveFormsModule,
     RouterLink,
     PermisoDirective,

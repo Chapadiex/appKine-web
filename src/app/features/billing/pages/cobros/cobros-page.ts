@@ -33,6 +33,10 @@ import { ErrorCobro, OperacionDeCobro, traducirErrorCobro } from '../../models/c
 import { instanteEnPalabras, medioEnPalabras } from '../../models/etiquetas-de-cobro';
 import { importeEnPalabras } from '../../models/etiquetas-de-obligacion';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
+import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 
 /** En cual de los tres estados esta el listado. No es paginado: el backend devuelve un array. */
 type EstadoCobros =
@@ -79,7 +83,14 @@ interface OperacionAbierta {
  */
 @Component({
   selector: 'app-cobros-page',
-  imports: [RouterLink, ConfirmacionConMotivo, PermisoDirective],
+  imports: [
+    Ayuda,
+    ColumnaOrdenable,
+    Paginacion,
+    RouterLink,
+    ConfirmacionConMotivo,
+    PermisoDirective,
+  ],
   templateUrl: './cobros-page.html',
   styleUrl: '../../billing.css',
 })
@@ -167,6 +178,17 @@ export class CobrosPage {
   protected readonly cobros = computed<readonly Cobro[]>(() => {
     const actual = this.estado();
     return actual.tipo === 'listo' ? actual.cobros : [];
+  });
+
+  /** Orden y paginado de la lista completa (plan §3.4): el backend devuelve un array. */
+  protected readonly tabla = tablaLocal(this.cobros, {
+    columnas: {
+      comprobante: (cobro) => cobro.comprobanteNumero ?? null,
+      fecha: (cobro) => cobro.cobradoEn ?? null,
+      total: (cobro) => cobro.total ?? null,
+      saldoAFavor: (cobro) => cobro.saldoAFavor ?? 0,
+      estado: (cobro) => cobro.estado ?? null,
+    },
   });
 
   protected readonly mensajeError = computed(() => {

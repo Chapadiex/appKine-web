@@ -11,6 +11,7 @@ import {
 import { esperarProblema } from './support/cuentas';
 import { instanteEnZona } from './support/sembrado-asistencia';
 import { fechaLocal, practicaGlobal, sumarDias } from './support/sembrado';
+import { abrirFiltros } from './support/filtros';
 
 /**
  * E2E de `/catalogo/nomencladores/:id/vigencias` (M06, RN-M06-002) contra el backend REAL.
@@ -176,6 +177,7 @@ test.describe('Vigencias de un nomenclador contra el backend real', () => {
     await expect(filaDe(page, `Sesion vieja ${sufijo}`)).toHaveCount(0);
     await expect(filaDe(page, `Sesion nueva ${sufijo}`)).toContainText('Rige hoy');
 
+    await abrirFiltros(page);
     await page.getByLabel('Mostrar').selectOption({ label: 'Solo las dadas de baja' });
     await expect(filaDe(page, `Sesion vieja ${sufijo}`)).toContainText('Dada de baja');
     await expect(filaDe(page, `Sesion vieja ${sufijo}`)).toContainText(motivo);

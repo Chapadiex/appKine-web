@@ -1,15 +1,21 @@
-<h1>Invitaciones</h1>
-
-<p class="descripcion">
-  A quien le escribiste para que se sume al equipo. No es la lista de quien trabaja en el centro:
-  esa es <a routerLink="/organizacion/colaboradores">Colaboradores</a>, y una persona pasa de acá a
-  esa cuando acepta.
-</p>
+<div class="titulo-con-ayuda">
+  <h1>Invitaciones</h1>
+  <app-ayuda titulo="Sobre esta pantalla">
+    <p>
+      A quien le escribiste para que se sume al equipo. No es la lista de quien trabaja en el
+      centro: esa es <a routerLink="/organizacion/colaboradores">Colaboradores</a>, y una persona
+      pasa de acá a esa cuando acepta.
+    </p>
+  </app-ayuda>
+  <div class="encabezado__acciones" *akinePermiso="permisoManage">
+    <button type="button" class="boton" (click)="abrirAlta()">
+      <app-icono nombre="agregar" />
+      Invitar a alguien
+    </button>
+  </div>
+</div>
 
 <p class="acciones">
-  <button type="button" class="boton" (click)="abrirAlta()" *akinePermiso="permisoManage">
-    Invitar a alguien
-  </button>
   <a class="boton boton--secundario" routerLink="/organizacion/colaboradores">
     Ver los colaboradores
   </a>
@@ -119,25 +125,31 @@
 <section class="tarjeta" aria-labelledby="titulo-listado-invitaciones">
   <h2 id="titulo-listado-invitaciones">Invitaciones enviadas</h2>
 
-  <div class="campo">
-    <label for="filtro-estado-invitacion">Mostrar</label>
-    <select
-      id="filtro-estado-invitacion"
-      [value]="filtro()"
-      (change)="cambiarFiltro($any($event.target).value)"
-      aria-describedby="filtro-estado-invitacion-ayuda"
-    >
-      <option value="PENDIENTE">Las que esperan respuesta</option>
-      <option value="ACEPTADA">Las aceptadas</option>
-      <option value="RECHAZADA">Las rechazadas</option>
-      <option value="CANCELADA">Las canceladas</option>
-      <option value="TODAS">Todas</option>
-    </select>
-    <p class="ayuda" id="filtro-estado-invitacion-ayuda">
-      Una invitacion cuyo enlace vencio <b>sigue figurando pendiente</b>: vencer no es una decision
-      de nadie, es el reloj. La fila lo aclara, y la salida es reenviarla.
-    </p>
-  </div>
+  <!--
+    Regla de filtros (plan §3.4): el listado no tiene busqueda por texto en el backend, asi que
+    va solo el embudo; "Mostrar" es un filtro avanzado.
+  -->
+  <app-filtros [soloAvanzados]="true" [activos]="filtrosAvanzadosActivos()">
+    <div class="campo">
+      <label for="filtro-estado-invitacion">Mostrar</label>
+      <select
+        id="filtro-estado-invitacion"
+        [value]="filtro()"
+        (change)="cambiarFiltro($any($event.target).value)"
+        aria-describedby="filtro-estado-invitacion-ayuda"
+      >
+        <option value="PENDIENTE">Las que esperan respuesta</option>
+        <option value="ACEPTADA">Las aceptadas</option>
+        <option value="RECHAZADA">Las rechazadas</option>
+        <option value="CANCELADA">Las canceladas</option>
+        <option value="TODAS">Todas</option>
+      </select>
+      <p class="ayuda" id="filtro-estado-invitacion-ayuda">
+        Una invitacion cuyo enlace vencio <b>sigue figurando pendiente</b>: vencer no es una
+        decision de nadie, es el reloj. La fila lo aclara, y la salida es reenviarla.
+      </p>
+    </div>
+  </app-filtros>
 
   <div aria-live="polite">
     @switch (estado().tipo) {
@@ -181,15 +193,17 @@
               </caption>
               <thead>
                 <tr>
-                  <th scope="col">Persona invitada</th>
-                  <th scope="col">Rol propuesto</th>
-                  <th scope="col">Enviada</th>
-                  <th scope="col">Estado</th>
+                  <th scope="col" appOrdenable [tabla]="tabla" columna="persona">
+                    Persona invitada
+                  </th>
+                  <th scope="col" appOrdenable [tabla]="tabla" columna="rol">Rol propuesto</th>
+                  <th scope="col" appOrdenable [tabla]="tabla" columna="enviada">Enviada</th>
+                  <th scope="col" appOrdenable [tabla]="tabla" columna="estado">Estado</th>
                   <th scope="col">Acciones</th>
                 </tr>
               </thead>
               <tbody>
-                @for (invitacion of filas(); track invitacion.id) {
+                @for (invitacion of tabla.visibles(); track invitacion.id) {
                   <tr [class.fila--revocada]="invitacion.estado === 'CANCELADA'">
                     <th scope="row">
                       {{ invitacion.email }}
@@ -267,6 +281,16 @@
                 }
               </tbody>
             </table>
+          </div>
+
+          <div class="tabla-pie">
+            <span>{{ tabla.total() }} invitaciones</span>
+            <app-paginacion
+              [paginaActual]="tabla.pagina()"
+              [totalPaginas]="tabla.totalPaginas()"
+              etiqueta="Paginas de invitaciones"
+              (cambioDePagina)="tabla.irA($event)"
+            />
           </div>
 
           @if (errorAccion() && cancelacionAbierta() === null && !altaAbierta()) {

@@ -44,6 +44,11 @@ import {
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { NgTemplateOutlet } from '@angular/common';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
+import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
+import { Icono } from '../../../../shared/components/icono/icono';
+import { Filtros } from '../../../../shared/components/filtros/filtros';
 
 /** Operacion abierta sobre una fila. Solo una a la vez. */
 type TipoAccion = 'editar' | 'baja';
@@ -98,7 +103,11 @@ type TipoAccion = 'editar' | 'baja';
 @Component({
   selector: 'app-aranceles-del-convenio-page',
   imports: [
+    ColumnaOrdenable,
+    Paginacion,
+    Icono,
     Ayuda,
+    Filtros,
     NgTemplateOutlet,
     ReactiveFormsModule,
     RouterLink,
@@ -137,6 +146,17 @@ export class ArancelesDelConvenioPage {
     return actual.tipo === 'listo' ? actual.pagina : [];
   });
 
+  /** Orden y paginado de la lista completa (plan Â§3.4): el servidor no pagina aranceles. */
+  protected readonly tabla = tablaLocal(this.aranceles, {
+    columnas: {
+      practica: (arancel) => this.nombreDeLaPractica(arancel),
+      total: (arancel) => arancel.importeTotal,
+      financiador: (arancel) => arancel.importeFinanciador,
+      coseguro: (arancel) => arancel.coseguro,
+      vigencia: (arancel) => arancel.vigenciaDesde,
+    },
+  });
+
   protected readonly mensajeError = computed(() => {
     const actual = this.estado();
     return actual.tipo === 'error' ? actual.mensaje : null;
@@ -172,6 +192,15 @@ export class ArancelesDelConvenioPage {
   protected readonly practicas = signal<readonly CatalogoConceptoResponse[]>([]);
 
   protected readonly filtroEstado = signal<FiltroEstado>('ACTIVO');
+
+  /**
+   * Filtros avanzados (detras del embudo) fuera de su valor por defecto. La fecha de vigencia
+   * cuenta si no es hoy: cambia la Situacion de cada fila, y eso no puede quedar escondido.
+   */
+  protected readonly filtrosAvanzadosActivos = computed(
+    () =>
+      Number(this.filtroEstado() !== 'ACTIVO') + Number(this.fecha() !== this.diaDeLaSede.hoy()),
+  );
 
   /**
    * Ofertas de la sede, para el arancel por oferta (RF-M16-008) y para nombrar el alcance de cada

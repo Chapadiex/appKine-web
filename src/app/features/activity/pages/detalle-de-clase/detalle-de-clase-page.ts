@@ -50,6 +50,7 @@ import {
 } from '../../models/clases';
 import { RUTA_CLASES } from '../../models/rutas-de-clases';
 import { ActivityApi } from '../../services/activity-api';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 
 const ESPERA_DE_BUSQUEDA_MS = 300;
 
@@ -87,6 +88,7 @@ type Panel =
 @Component({
   selector: 'app-detalle-de-clase-page',
   imports: [
+    Ayuda,
     ReactiveFormsModule,
     RouterLink,
     ConfirmacionConMotivo,

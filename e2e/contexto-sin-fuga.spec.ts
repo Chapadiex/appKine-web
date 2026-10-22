@@ -150,7 +150,7 @@ test.describe('Escenario 10 - cambio de contexto sin fuga de datos', () => {
     // de organizacion no llego a pintarse y los nombres estan solo como opciones del selector.
     await expect(page).toHaveURL(/\/seleccionar-contexto/);
     const titulo = page.getByRole('heading', { level: 1 });
-    await expect(titulo).toHaveText('Elegi donde vas a trabajar');
+    await expect(titulo).toHaveText('¿Dónde vas a trabajar hoy?');
 
     // Antes se comparaba la cuenta de textos en `main` contra `button.count()`, y `count()` NO
     // reintenta: se evaluaba una sola vez, a veces mientras el selector todavia decia "Buscando tus

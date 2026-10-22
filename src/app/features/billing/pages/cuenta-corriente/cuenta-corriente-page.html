@@ -1,9 +1,22 @@
-<h1>Cuenta corriente</h1>
-
-<p class="descripcion">
-  Lo que esta persona debe en <b>todo el centro</b>, no solo en esta sede: una deuda es una sola
-  aunque se haya generado atendiendose en dos consultorios de la misma organizacion.
-</p>
+<div class="titulo-con-ayuda">
+  <h1>Cuenta corriente</h1>
+  <app-ayuda titulo="Sobre esta pantalla">
+    <p>
+      Lo que esta persona debe en <b>todo el centro</b>, no solo en esta sede: una deuda es una sola
+      aunque se haya generado atendiendose en dos consultorios de la misma organizacion.
+    </p>
+  </app-ayuda>
+  <!--
+    Cobrar es una MUTACION de dinero y el enlace va detras del permiso: ofrecerlo a quien no lo
+    tiene seria mandarlo a llenar un formulario entero para recibir un 403 al confirmar.
+  -->
+  <div class="encabezado__acciones" *akinePermiso="PERMISO_COBRO_REGISTER">
+    <a class="boton" [routerLink]="rutaCobrar()">
+      <app-icono nombre="agregar" />
+      Registrar un cobro
+    </a>
+  </div>
+</div>
 
 @if (nombreDeLaPersona(); as quien) {
   <p class="ayuda">
@@ -18,17 +31,13 @@
 </p>
 
 <!--
-  Cobrar es una MUTACION de dinero y el enlace va detras del permiso: ofrecerlo a quien no lo tiene
-  seria mandarlo a llenar un formulario entero para recibir un 403 al confirmar. La lista de cobros
-  es lectura y se ofrece siempre, igual que esta pantalla.
+  La lista de cobros es lectura y se ofrece siempre, igual que esta pantalla. Registrar un cobro
+  vive en el encabezado, detras de su permiso (plan §3.4, regla de accion principal).
 
   Deuda, cobro y caja son tres cosas (regla maestra 5) y por eso son tres pantallas y no pestañas
   de una sola: fusionarlas es como se termina leyendo un cobro como si fuera una deuda negativa.
 -->
 <div class="acciones">
-  <a *akinePermiso="PERMISO_COBRO_REGISTER" class="boton" [routerLink]="rutaCobrar()">
-    Registrar un cobro
-  </a>
   <a class="boton boton--secundario" [routerLink]="rutaCobros()">Ver los cobros registrados</a>
 </div>
 
@@ -69,18 +78,18 @@
     <table class="tabla">
       <thead>
         <tr>
-          <th scope="col">Devengada</th>
-          <th scope="col">Prestacion</th>
-          <th scope="col">Concepto</th>
+          <th scope="col" appOrdenable [tabla]="tabla" columna="devengada">Devengada</th>
+          <th scope="col" appOrdenable [tabla]="tabla" columna="prestacion">Prestacion</th>
+          <th scope="col" appOrdenable [tabla]="tabla" columna="concepto">Concepto</th>
           <th scope="col">Precio al devengar</th>
-          <th scope="col">Importe</th>
-          <th scope="col">Saldo</th>
-          <th scope="col">Estado</th>
+          <th scope="col" appOrdenable [tabla]="tabla" columna="importe">Importe</th>
+          <th scope="col" appOrdenable [tabla]="tabla" columna="saldo">Saldo</th>
+          <th scope="col" appOrdenable [tabla]="tabla" columna="estado">Estado</th>
           <th scope="col">Acciones</th>
         </tr>
       </thead>
       <tbody>
-        @for (obligacion of obligaciones(); track obligacion.id) {
+        @for (obligacion of tabla.visibles(); track obligacion.id) {
           <tr [class.fila--revocada]="!sePuedeAnular(obligacion)">
             <td>{{ fechaEnPalabras(obligacion.devengadaEn) }}</td>
             <td>
@@ -211,6 +220,15 @@
         }
       </tbody>
     </table>
+  </div>
+  <div class="tabla-pie">
+    <span>{{ tabla.total() }} deudas</span>
+    <app-paginacion
+      [paginaActual]="tabla.pagina()"
+      [totalPaginas]="tabla.totalPaginas()"
+      etiqueta="Paginas de deudas"
+      (cambioDePagina)="tabla.irA($event)"
+    />
   </div>
 
   <!--

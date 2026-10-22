@@ -31,6 +31,8 @@ import {
 } from '../../models/etiquetas-de-person';
 import { textoRequerido } from '../../../../shared/validators/texto-requerido';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { Filtros } from '../../../../shared/components/filtros/filtros';
+import { Icono } from '../../../../shared/components/icono/icono';
 
 /** Operacion abierta sobre una fila. Solo una a la vez. */
 type TipoAccion = 'editar' | 'activar-perfil';
@@ -96,6 +98,8 @@ const TAMANO_DE_PAGINA = 20;
   selector: 'app-padron-de-personas-page',
   imports: [
     Ayuda,
+    Filtros,
+    Icono,
     ReactiveFormsModule,
     PermisoDirective,
     ConfirmacionConMotivo,
@@ -161,6 +165,11 @@ export class PadronDePersonasPage {
   protected readonly texto = signal('');
   protected readonly filtroEstado = signal<FiltroEstadoPersona>('ACTIVO');
   protected readonly filtroPerfil = signal<FiltroPerfil>('TODOS');
+
+  /** Cuantos filtros del embudo estan fuera de su valor por defecto: el boton los cuenta. */
+  protected readonly filtrosAvanzadosActivos = computed(
+    () => Number(this.filtroEstado() !== 'ACTIVO') + Number(this.filtroPerfil() !== 'TODOS'),
+  );
   protected readonly pagina = signal(0);
 
   /** Fila y operacion abiertas, o `null`. Solo una a la vez. */

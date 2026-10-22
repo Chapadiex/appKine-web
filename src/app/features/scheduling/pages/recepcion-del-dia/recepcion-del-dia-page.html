@@ -1,14 +1,13 @@
-<h1>Recepcion del dia</h1>
-
-<!--
-  El parrafo no es decorativo: es lo que impide que "en espera" o "llamada" se lean como "lo estan
-  atendiendo". DP-05 separa Turno, Recepcion y Sesion, y esta pantalla es solo la del medio.
--->
-<p class="descripcion">
-  Quien viene hoy y en que punto del mostrador esta: llego, se valido como se atiende, espera en la
-  sala o ya lo llamaron. Ninguno de esos pasos registra la atencion: eso se hace en la pantalla
-  clinica, que es otra.
-</p>
+<div class="titulo-con-ayuda">
+  <h1>Recepcion del dia</h1>
+  <app-ayuda titulo="Sobre esta pantalla">
+    <p>
+      Quien viene hoy y en que punto del mostrador esta: llego, se valido como se atiende, espera en
+      la sala o ya lo llamaron. Ninguno de esos pasos registra la atencion: eso se hace en la
+      pantalla clinica, que es otra.
+    </p>
+  </app-ayuda>
+</div>
 
 <app-pestanas [pestanas]="pestanas" [etiqueta]="etiquetaDePestanas" />
 
@@ -122,17 +121,17 @@
       </caption>
       <thead>
         <tr>
-          <th scope="col">Hora</th>
-          <th scope="col">Paciente</th>
+          <th scope="col" appOrdenable [tabla]="tabla" columna="hora">Hora</th>
+          <th scope="col" appOrdenable [tabla]="tabla" columna="paciente">Paciente</th>
           <th scope="col">Prestacion</th>
-          <th scope="col">Turno</th>
+          <th scope="col" appOrdenable [tabla]="tabla" columna="estado">Turno</th>
           <th scope="col">Recepcion</th>
           <th scope="col">Llegada</th>
           <th scope="col">Acciones</th>
         </tr>
       </thead>
       <tbody>
-        @for (turno of turnos(); track turno.id) {
+        @for (turno of tabla.visibles(); track turno.id) {
           <tr [class.fila--revocada]="cancelado(turno)">
             <td>{{ rango(turno) }}</td>
 
@@ -323,6 +322,16 @@
         }
       </tbody>
     </table>
+  </div>
+
+  <div class="tabla-pie">
+    <span>{{ tabla.total() }} turnos</span>
+    <app-paginacion
+      [paginaActual]="tabla.pagina()"
+      [totalPaginas]="tabla.totalPaginas()"
+      etiqueta="Paginas de turnos"
+      (cambioDePagina)="tabla.irA($event)"
+    />
   </div>
 
   @if (panel(); as abierto) {

@@ -1,10 +1,13 @@
-<h1>Espacios en servicio</h1>
-
-<p class="descripcion">
-  Que espacios de <b>{{ nombreDeLaSede() }}</b> se pueden ofrecer durante un periodo: los que estan
-  activos y con su vigencia cubriendo la ventana entera. Los dados de baja y los que quedan fuera de
-  su ventana operativa no aparecen.
-</p>
+<div class="titulo-con-ayuda">
+  <h1>Espacios en servicio</h1>
+  <app-ayuda titulo="Sobre esta pantalla">
+    <p>
+      Que espacios de <b>{{ nombreDeLaSede() }}</b> se pueden ofrecer durante un periodo: los que
+      estan activos y con su vigencia cubriendo la ventana entera. Los dados de baja y los que
+      quedan fuera de su ventana operativa no aparecen.
+    </p>
+  </app-ayuda>
+</div>
 
 <p class="acciones">
   <a class="enlace" routerLink="/espacios">Volver al listado de espacios</a>
@@ -159,13 +162,13 @@
                 </caption>
                 <thead>
                   <tr>
-                    <th scope="col">Espacio</th>
-                    <th scope="col">Tipo</th>
-                    <th scope="col">Capacidad</th>
+                    <th scope="col" appOrdenable [tabla]="tabla" columna="espacio">Espacio</th>
+                    <th scope="col" appOrdenable [tabla]="tabla" columna="tipo">Tipo</th>
+                    <th scope="col" appOrdenable [tabla]="tabla" columna="capacidad">Capacidad</th>
                   </tr>
                 </thead>
                 <tbody>
-                  @for (espacio of enServicio(); track espacio.espacioId) {
+                  @for (espacio of tabla.visibles(); track espacio.espacioId) {
                     <tr>
                       <th scope="row">{{ espacio.name }}</th>
                       <td>{{ etiquetaDeTipo(espacio.tipo) }}</td>
@@ -185,6 +188,16 @@
                   }
                 </tbody>
               </table>
+            </div>
+
+            <div class="tabla-pie">
+              <span>{{ tabla.total() }} espacios</span>
+              <app-paginacion
+                [paginaActual]="tabla.pagina()"
+                [totalPaginas]="tabla.totalPaginas()"
+                etiqueta="Paginas de espacios"
+                (cambioDePagina)="tabla.irA($event)"
+              />
             </div>
           }
         }

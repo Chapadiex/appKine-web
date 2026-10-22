@@ -114,20 +114,20 @@ export async function registrarPorPantalla(
   await page.goto('/auth/registro');
   await campo(page, 'Nombre', { exact: true }).fill('Ana');
   await campo(page, 'Apellido').fill('Prueba');
-  await campo(page, 'Email').fill(datos.email);
-  await campo(page, 'Contrasena').fill(datos.password ?? PASSWORD);
+  await campo(page, 'Correo electrónico').fill(datos.email);
+  await campo(page, 'Contraseña').fill(datos.password ?? PASSWORD);
   await campo(page, 'Nombre del centro').fill(datos.centro);
   await esperarCupoDeRegistro();
-  await page.getByRole('button', { name: 'Crear la cuenta' }).click();
+  await page.getByRole('button', { name: 'Crear cuenta' }).click();
   await expect(page.getByText('Listo, ya lo estamos procesando.')).toBeVisible();
 }
 
 /** Login por pantalla con una contrasena cualquiera (el de `support/akine.ts` usa la fija). */
 export async function ingresarCon(page: Page, email: string, password: string): Promise<void> {
   await page.goto('/auth/ingresar');
-  await campo(page, 'Email').fill(email);
-  await campo(page, 'Contrasena').fill(password);
-  await page.getByRole('button', { name: 'Iniciar sesion' }).click();
+  await campo(page, 'Correo electrónico').fill(email);
+  await campo(page, 'Contraseña').fill(password);
+  await page.getByRole('button', { name: 'Ingresar' }).click();
 }
 
 /**

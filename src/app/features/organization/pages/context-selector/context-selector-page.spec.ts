@@ -336,7 +336,9 @@ describe('ContextSelectorPage', () => {
     expect(texto(fixture)).toContain('Ese contexto ya no esta disponible');
     // Lo que prueba que no hay bucle: nadie volvio a pedir la lista solo.
     httpMock.expectNone(URL_CONTEXTOS);
-    expect(fixture.nativeElement.querySelector('button')).toBeTruthy();
+    expect(
+      fixture.nativeElement.querySelector('button:not(.ayuda-contextual__boton)'),
+    ).toBeTruthy();
   });
 
   it('un fallo de red al canjear se muestra como fallo de red, no como contexto invalido', async () => {
@@ -384,7 +386,7 @@ describe('ContextSelectorPage', () => {
     expect(texto(fixture)).toContain('No se pudo contactar al servidor');
     expect(fixture.nativeElement.querySelector('[role="alert"]')).toBeTruthy();
 
-    fixture.nativeElement.querySelector('button')?.click();
+    fixture.nativeElement.querySelector('button:not(.ayuda-contextual__boton)')?.click();
     fixture.detectChanges();
 
     httpMock.expectOne(URL_CONTEXTOS).flush([]);
@@ -420,7 +422,9 @@ describe('ContextSelectorPage', () => {
     await estabilizar(fixture);
 
     expect(texto(fixture)).toContain('Fallo al resolver contextos');
-    expect(fixture.nativeElement.querySelector('button')).toBeTruthy();
+    expect(
+      fixture.nativeElement.querySelector('button:not(.ayuda-contextual__boton)'),
+    ).toBeTruthy();
   });
 
   // --- Accesibilidad ---------------------------------------------------------------

@@ -81,11 +81,15 @@
       <div class="historia__columnas">
         <div class="historia__principal">
           <section class="tarjeta" aria-labelledby="titulo-equipo">
-            <h2 id="titulo-equipo">Equipo tratante</h2>
-            <p class="ayuda">
-              El rol no da ni quita permisos: dice quien responde por el caso. Quien sale del equipo
-              sigue figurando en el historial, porque trato el caso.
-            </p>
+            <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
+              <h2 id="titulo-equipo">Equipo tratante</h2>
+              <app-ayuda titulo="Equipo tratante">
+                <p>
+                  El rol no da ni quita permisos: dice quien responde por el caso. Quien sale del
+                  equipo sigue figurando en el historial, porque trato el caso.
+                </p>
+              </app-ayuda>
+            </div>
             @if (equipo().length === 0) {
               <p class="estado estado--vacio">El caso no tiene equipo asignado.</p>
             } @else {

@@ -1,26 +1,21 @@
 @if (convenio(); as ficha) {
   <div class="titulo-con-ayuda">
     <h1>Importar aranceles a {{ ficha.nombre }}</h1>
-    <app-ayuda titulo="Todo o nada">
+    <app-ayuda titulo="Sobre esta pantalla">
       <ng-container [ngTemplateOutlet]="ayudaDePantalla" />
     </app-ayuda>
   </div>
+  <!-- Datos del convenio: se ven siempre. La explicacion va en el "?". -->
   <p class="descripcion">
     Codigo {{ ficha.codigo }} · moneda <b>{{ ficha.moneda }}</b> · {{ ventanaEnPalabras(ficha) }}.
-    Carga muchos aranceles de una vez desde una planilla: primero se ve una <b>vista previa</b>
-    fila por fila, y recien despues se confirma.
   </p>
 } @else {
   <div class="titulo-con-ayuda">
     <h1>Importar aranceles al convenio #{{ convenioId }}</h1>
-    <app-ayuda titulo="Todo o nada">
+    <app-ayuda titulo="Sobre esta pantalla">
       <ng-container [ngTemplateOutlet]="ayudaDePantalla" />
     </app-ayuda>
   </div>
-  <p class="descripcion">
-    Carga muchos aranceles de una vez desde una planilla: primero se ve una <b>vista previa</b>
-    fila por fila, y recien despues se confirma.
-  </p>
 }
 
 <nav class="acciones" aria-label="Contratacion">
@@ -29,6 +24,11 @@
 
 <!-- La ayuda de la pantalla: una sola copia para las dos ramas del titulo. -->
 <ng-template #ayudaDePantalla>
+  <p>
+    Carga muchos aranceles de una vez desde una planilla: primero se ve una <b>vista previa</b>
+    fila por fila, y recien despues se confirma.
+  </p>
+  <p class="ayuda-contextual__subtitulo">Todo o nada</p>
   <p>
     La confirmacion carga <b>todas las filas o ninguna</b>: si una sola no entra, no se escribe nada
     y se te muestra cual fallo y por que. La vista previa no reserva nada —si alguien carga un

@@ -121,7 +121,7 @@ test.describe('Catalogo global de financiadores contra el backend real', () => {
     // Y el listado del centro la marca "Del catalogo".
     await navegar(page, '/contratacion/financiadores');
     await page.getByLabel('Buscar', { exact: true }).fill(nombre);
-    await page.getByRole('button', { name: 'Buscar', exact: true }).click();
+    await page.getByLabel('Buscar', { exact: true }).press('Enter');
     await expect(
       page.getByRole('row', { name: new RegExp(nombre) }).getByText('Del catalogo'),
     ).toBeVisible();

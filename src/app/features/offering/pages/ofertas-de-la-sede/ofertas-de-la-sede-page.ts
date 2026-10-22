@@ -45,6 +45,11 @@ import {
 import { textoRequerido } from '../../../../shared/validators/texto-requerido';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { Filtros } from '../../../../shared/components/filtros/filtros';
+import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
+import { Icono } from '../../../../shared/components/icono/icono';
+import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 
 /** Operacion abierta sobre una fila. Solo una a la vez. */
 type TipoAccion = 'editar' | 'baja';
@@ -110,7 +115,17 @@ type Heredable = '' | 'true' | 'false';
  */
 @Component({
   selector: 'app-ofertas-de-la-sede-page',
-  imports: [Ayuda, ReactiveFormsModule, RouterLink, PermisoDirective, ConfirmacionConMotivo],
+  imports: [
+    Ayuda,
+    ColumnaOrdenable,
+    Filtros,
+    Icono,
+    Paginacion,
+    ReactiveFormsModule,
+    RouterLink,
+    PermisoDirective,
+    ConfirmacionConMotivo,
+  ],
   templateUrl: './ofertas-de-la-sede-page.html',
   styleUrl: '../../offering.css',
 })
@@ -156,6 +171,19 @@ export class OfertasDeLaSedePage {
     return actual.tipo === 'listo' ? actual.pagina : [];
   });
 
+  /** Orden y paginado de la lista completa (plan §3.4): el servidor no pagina ofertas. */
+  protected readonly tabla = tablaLocal(this.ofertas, {
+    columnas: {
+      nombre: (oferta) => oferta.nombreComercial,
+      servicio: (oferta) => this.nombreDelServicio(oferta),
+      modalidad: (oferta) => this.etiquetaDeModalidad(oferta.modalidad),
+      duracion: (oferta) => oferta.duracionMinutos,
+      precio: (oferta) => oferta.precioBase,
+      vigencia: (oferta) => oferta.vigenciaDesde,
+      estado: (oferta) => oferta.estado,
+    },
+  });
+
   protected readonly mensajeError = computed(() => {
     const actual = this.estado();
     return actual.tipo === 'error' ? actual.mensaje : null;
@@ -168,6 +196,11 @@ export class OfertasDeLaSedePage {
 
   protected readonly filtroEstado = signal<FiltroEstado>('ACTIVO');
   protected readonly filtroServicio = signal<number | null>(null);
+
+  /** Cuantos filtros del embudo estan fuera de su valor por defecto: el boton los cuenta. */
+  protected readonly filtrosAvanzadosActivos = computed(
+    () => Number(this.filtroEstado() !== 'ACTIVO') + Number(this.filtroServicio() !== null),
+  );
 
   /**
    * Servicios activos del catalogo global, para el selector del alta y el filtro.

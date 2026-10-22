@@ -6,6 +6,7 @@ import {
   paginaDePlataforma,
   plataformaDisponible,
 } from './support/sembrado-configuracion';
+import { abrirFiltros } from './support/filtros';
 
 /**
  * E2E de servicios y ofertas (M08, AKINE-02.06, 02.07 y B-3) contra el backend REAL: la plataforma
@@ -72,6 +73,7 @@ test.describe('Servicios y ofertas contra el backend real', () => {
       ofertaId = ((await oferta.json()) as { id: number }).id;
       await expect(page.getByText('La oferta quedo dada de alta en esta sede.')).toBeVisible();
 
+      await abrirFiltros(page);
       await page.getByLabel('Servicio', { exact: true }).selectOption(String(servicioId));
       const fila = page.getByRole('row').filter({ hasText: nombreDeLaOferta });
       await expect(fila).toBeVisible();
@@ -111,6 +113,7 @@ test.describe('Servicios y ofertas contra el backend real', () => {
       const baja = respuestaDe(plataforma, 'DELETE', new RegExp(`/servicios/${servicioId}$`));
       await panelDeBaja.getByRole('button', { name: 'Dar de baja' }).click();
       expect((await baja).ok()).toBe(true);
+      await abrirFiltros(plataforma);
       await plataforma.getByLabel('Mostrar').selectOption('INACTIVO');
       await expect(
         plataforma
@@ -142,6 +145,7 @@ test.describe('Servicios y ofertas contra el backend real', () => {
     expect(slots[0].profesionalId).toBe(centro.profesional.membershipId);
 
     await navegar(page, '/servicios/ofertas');
+    await abrirFiltros(page);
     await page.getByLabel('Mostrar').selectOption('ACTIVO');
     await expect(page.getByRole('row').filter({ hasText: nombreDeLaOferta })).toBeVisible();
   });

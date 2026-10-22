@@ -22,6 +22,7 @@ import {
   erroresDeFranjasDelServidor,
   franjasDelFormulario,
 } from '../../../../shared/utils/franjas-semanales';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 
 /** Estado del alta. Los cuatro casos exigen pantalla distinta (ADR-0005). */
 type EstadoAlta =
@@ -77,7 +78,7 @@ const CAMPOS_PASO_1 = ['name', 'slotMinutes', 'boxCapacidad'] as const;
  */
 @Component({
   selector: 'app-new-consultorio-page',
-  imports: [ReactiveFormsModule, RouterLink, EditorDeFranjas],
+  imports: [Ayuda, ReactiveFormsModule, RouterLink, EditorDeFranjas],
   templateUrl: './new-consultorio-page.html',
   styleUrl: '../../organization.css',
 })

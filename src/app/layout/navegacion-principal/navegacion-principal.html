@@ -10,7 +10,15 @@
     [class.barra-lateral--abierta]="abierto()"
     aria-label="Secciones de AKINE"
   >
-    <a class="marca" [routerLink]="rutaInicio" (click)="navegar()">AKINE</a>
+    <a class="marca" [routerLink]="rutaInicio" (click)="navegar()">
+      <span class="marca__logo" aria-hidden="true">A</span>
+      <span class="marca__textos">
+        <span class="marca__nombre">AKINE</span>
+        @if (contexto(); as activo) {
+          <span class="marca__sede">{{ activo.consultorioName || activo.organizationName }}</span>
+        }
+      </span>
+    </a>
 
     @for (grupo of grupos(); track grupo.etiqueta) {
       @if (grupo.secciones.length === 1) {
@@ -44,6 +52,9 @@
           <summary class="nav__cabecera" [class.nav__cabecera--actual]="contieneActual(grupo)">
             <app-icono class="nav__icono" [nombre]="grupo.icono" />
             <span class="nav__rotulo">{{ grupo.etiqueta }}</span>
+            @if (contieneActual(grupo) && grupoAbierto() !== grupo.etiqueta) {
+              <span class="nav__punto" aria-label="Contiene la pantalla actual"></span>
+            }
             <app-icono class="nav__flecha" nombre="flecha-abajo" />
           </summary>
           <ul class="nav__lista">
@@ -84,5 +95,27 @@
         Plataforma
       </a>
     }
+
+    <!--
+      La sesion, al pie: donde se trabaja, como cambiarlo y como salir. Sin "Cerrar sesion" una
+      computadora compartida del mostrador quedaba con la sesion de otra persona abierta
+      (auditoria heuristica del 21/10, C1). El nombre de quien entro no se muestra porque el
+      contrato no lo expone: es un pedido al backend.
+    -->
+    <div class="nav__sesion">
+      @if (contexto(); as activo) {
+        <span class="nav__avatar" aria-hidden="true">{{ iniciales(activo.organizationName) }}</span>
+        <span class="nav__sesion-textos">
+          <span class="nav__sesion-centro">{{ activo.organizationName }}</span>
+          <a class="nav__sesion-cambiar" [routerLink]="rutaSelector" (click)="navegar()"
+            >Cambiar de sede</a
+          >
+        </span>
+      }
+      <button type="button" class="nav__salir" (click)="cerrarSesion()" [disabled]="saliendo()">
+        <app-icono nombre="salir" />
+        <span class="visualmente-oculto">Cerrar sesión</span>
+      </button>
+    </div>
   </nav>
 }

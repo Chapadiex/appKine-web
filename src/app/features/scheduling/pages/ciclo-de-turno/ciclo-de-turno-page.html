@@ -1,9 +1,12 @@
-<h1>Turno #{{ turnoId() }}</h1>
-
-<p class="descripcion">
-  Un turno es una <b>reserva</b> de agenda. Su estado no dice que la atencion haya ocurrido: eso lo
-  registra la sesion clinica, que es otra pantalla.
-</p>
+<div class="titulo-con-ayuda">
+  <h1>Turno #{{ turnoId() }}</h1>
+  <app-ayuda titulo="Sobre esta pantalla">
+    <p>
+      Un turno es una <b>reserva</b> de agenda. Su estado no dice que la atencion haya ocurrido: eso
+      lo registra la sesion clinica, que es otra pantalla.
+    </p>
+  </app-ayuda>
+</div>
 
 <p><a class="enlace" routerLink="/agenda">Volver al buscador de agenda</a></p>
 
@@ -259,10 +262,14 @@
 
 @if (eventosDeRecepcion().length > 0) {
   <section class="tarjeta" aria-labelledby="titulo-historial-recepcion">
-    <h2 id="titulo-historial-recepcion">Historial de la recepcion</h2>
-    <p class="ayuda">
-      La llegada al mostrador es otra maquina que la reserva: estos pasos no cambian el turno.
-    </p>
+    <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
+      <h2 id="titulo-historial-recepcion">Historial de la recepcion</h2>
+      <app-ayuda titulo="Historial de la recepcion">
+        <p>
+          La llegada al mostrador es otra maquina que la reserva: estos pasos no cambian el turno.
+        </p>
+      </app-ayuda>
+    </div>
     <ol class="dias">
       @for (evento of eventosDeRecepcion(); track evento.id) {
         <li class="dia">
@@ -289,11 +296,15 @@
 }
 
 <section class="tarjeta" aria-labelledby="titulo-historial">
-  <h2 id="titulo-historial">Historial</h2>
-  <p class="ayuda">
-    Todas las transiciones, de la mas vieja a la mas nueva. Nada se borra: cancelar y marcar
-    ausencia dejan su rastro.
-  </p>
+  <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
+    <h2 id="titulo-historial">Historial</h2>
+    <app-ayuda titulo="Historial">
+      <p>
+        Todas las transiciones, de la mas vieja a la mas nueva. Nada se borra: cancelar y marcar
+        ausencia dejan su rastro.
+      </p>
+    </app-ayuda>
+  </div>
 
   @if (eventos().length === 0) {
     <p class="estado estado--vacio">Todavia no hay eventos para mostrar.</p>

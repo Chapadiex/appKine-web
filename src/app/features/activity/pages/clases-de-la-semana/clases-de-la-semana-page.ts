@@ -22,6 +22,8 @@ import {
 } from '../../models/clases';
 import { RUTA_CLASES, RUTA_NUEVA_CLASE } from '../../models/rutas-de-clases';
 import { ActivityApi } from '../../services/activity-api';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { Icono } from '../../../../shared/components/icono/icono';
 
 const FECHA = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -43,7 +45,7 @@ interface DiaDeClases {
  */
 @Component({
   selector: 'app-clases-de-la-semana-page',
-  imports: [RouterLink, PermisoDirective],
+  imports: [Ayuda, Icono, RouterLink, PermisoDirective],
   templateUrl: './clases-de-la-semana-page.html',
   styleUrl: '../../activity.css',
 })

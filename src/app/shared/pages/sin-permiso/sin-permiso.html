@@ -1,23 +1,19 @@
-<h1>No tenes permiso para esta pantalla</h1>
-
-<p class="descripcion" role="alert">
-  Tu sesion es valida, pero el rol que tenes en este contexto de trabajo no incluye esta seccion.
-</p>
-
-@if (contexto(); as organizacion) {
-  <p class="ayuda">
-    Estas trabajando en <strong>{{ organizacion }}</strong
-    >. Los permisos son de cada contexto: es posible que en otra organizacion o en otra sede si
-    tengas acceso.
+<!-- Sin permiso, dentro de la app (diseño del canvas "AKINE · Pantallas", 22/10/2026). -->
+<section class="pantalla-error" aria-labelledby="titulo-sin-permiso">
+  <span class="pantalla-error__codigo">Error 403</span>
+  <h1 id="titulo-sin-permiso">No tenés permiso para esta pantalla</h1>
+  <p>
+    Tu sesión es válida, pero tu rol en
+    @if (contexto(); as organizacion) {
+      <strong>{{ organizacion }}</strong>
+    } @else {
+      este contexto
+    }
+    no incluye esta sección. Los permisos son de cada centro y sede: en otro podrías tener acceso.
   </p>
-}
-
-<p class="ayuda">
-  Si necesitas entrar, pediselo a quien administra la organizacion: es quien puede cambiarte el rol
-  o darte el permiso puntual.
-</p>
-
-<ul class="salidas">
-  <li><a routerLink="/seleccionar-contexto" class="enlace">Cambiar de contexto de trabajo</a></li>
-  <li><a routerLink="/" class="enlace">Volver al inicio</a></li>
-</ul>
+  <p>Si necesitás entrar, pedíselo a quien administra la organización.</p>
+  <div class="pantalla-error__acciones">
+    <a class="boton" routerLink="/">Ir al inicio</a>
+    <a class="boton boton--secundario" routerLink="/seleccionar-contexto">Cambiar de sede</a>
+  </div>
+</section>

@@ -121,7 +121,7 @@ async function esperarSinPermiso(page: Page, ruta: string, nombreCentro: string)
   await irA(page, ruta);
   await expect(page, `${ruta} no se le abre`).toHaveURL(/\/sin-permiso$/);
   await expect(
-    page.getByRole('heading', { name: 'No tenes permiso para esta pantalla', level: 1 }),
+    page.getByRole('heading', { name: 'No tenés permiso para esta pantalla', level: 1 }),
   ).toBeVisible();
   // En `main`: la barra superior (UX-01) tambien dice el centro activo.
   await expect(page.getByRole('main').getByText(nombreCentro, { exact: true })).toBeVisible();

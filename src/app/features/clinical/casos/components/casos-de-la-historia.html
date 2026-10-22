@@ -1,9 +1,13 @@
 <section class="tarjeta" aria-labelledby="titulo-casos">
-  <h2 id="titulo-casos">Casos clinicos</h2>
-  <p class="ayuda">
-    Cada caso es un problema terapeutico dentro de la historia: una rodilla y un hombro son dos
-    casos. Un caso cerrado no se borra: se sigue leyendo entero y se puede reabrir con motivo.
-  </p>
+  <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
+    <h2 id="titulo-casos">Casos clinicos</h2>
+    <app-ayuda titulo="Casos clinicos">
+      <p>
+        Cada caso es un problema terapeutico dentro de la historia: una rodilla y un hombro son dos
+        casos. Un caso cerrado no se borra: se sigue leyendo entero y se puede reabrir con motivo.
+      </p>
+    </app-ayuda>
+  </div>
 
   @if (cargando()) {
     <p class="estado estado--cargando" role="status">Cargando los casos…</p>

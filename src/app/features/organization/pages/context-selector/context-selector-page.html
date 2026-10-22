@@ -1,30 +1,27 @@
-<h1>Elegi donde vas a trabajar</h1>
-
-<p class="descripcion">
-  Tu cuenta puede tener acceso a mas de un centro o sede. Lo que elijas define que datos ves y sobre
-  cuales podes operar.
-</p>
-
-<section class="tarjeta" aria-labelledby="titulo-contextos">
-  <h2 id="titulo-contextos">Contextos habilitados</h2>
+<!-- Elegir donde trabajar (diseño del canvas "AKINE · Pantallas", 22/10/2026). -->
+<section class="acceso-tarjeta acceso-tarjeta--ancha" aria-labelledby="titulo-contextos">
+  <h1 id="titulo-contextos">¿Dónde vas a trabajar hoy?</h1>
+  <p class="acceso-subtitulo">
+    Elegí el centro y la sede: define qué datos ves y sobre cuáles operás.
+  </p>
 
   <!--
     Vive fuera del @switch porque tiene que sobrevivir al cambio de estado: se escribe cuando
     el canje falla con 404 y sigue en pantalla mientras la lista se recarga.
   -->
   @if (aviso(); as texto) {
-    <p class="estado estado--error" role="alert">{{ texto }}</p>
+    <p class="acceso-aviso acceso-aviso--error" role="alert">{{ texto }}</p>
   }
 
   <!-- aria-live: el cambio de estado se anuncia sin que el usuario tenga que buscarlo. -->
-  <div aria-live="polite">
+  <div aria-live="polite" class="contextos">
     @switch (estado().tipo) {
       @case ('cargando') {
-        <p class="estado estado--cargando">Buscando tus contextos&hellip;</p>
+        <p class="acceso-texto">Buscando tus centros&hellip;</p>
       }
 
       @case ('entrando') {
-        <p class="estado estado--ok">
+        <p class="acceso-aviso acceso-aviso--ok">
           Entrando a {{ contextoEnCurso()?.organizationName }}&hellip;
         </p>
         <!--
@@ -32,48 +29,66 @@
           seria afirmarle en falso que su cuenta tiene un unico contexto.
         -->
         @if (entradaAutomatica()) {
-          <p class="ayuda">Tenes un solo contexto habilitado, asi que no hace falta elegir.</p>
-        } @else {
-          <p class="ayuda">Estamos preparando tu sesion para ese centro.</p>
+          <p class="ayuda">
+            Tenés un solo lugar de trabajo habilitado, así que no hace falta elegir.
+          </p>
         }
       }
 
       @case ('eligiendo') {
-        <ul class="lista">
-          @for (contexto of contextos(); track $index) {
-            <li>
-              <!-- El ultimo elegido va primero, con el foco y dicho en texto, no solo marcado. -->
-              <button
-                type="button"
-                class="opcion"
-                [class.opcion--ultima]="contexto === preseleccionado()"
-                (click)="seleccionar(contexto)"
-              >
-                <span class="opcion__organizacion">{{ contexto.organizationName }}</span>
-                @if (contexto.consultorioName) {
-                  <span class="opcion__consultorio">{{ contexto.consultorioName }}</span>
-                }
-                @if (contexto === preseleccionado()) {
-                  <span class="opcion__ultima">El ultimo que elegiste</span>
-                }
-              </button>
-            </li>
-          }
-        </ul>
+        @for (centro of centros(); track centro.id) {
+          <div class="contexto-centro">
+            <div class="contexto-centro__cabecera">
+              <span class="contexto-centro__logo" aria-hidden="true">{{
+                iniciales(centro.nombre)
+              }}</span>
+              <span class="contexto-centro__nombre">{{ centro.nombre }}</span>
+            </div>
+            <ul class="contexto-centro__sedes">
+              @for (contexto of centro.sedes; track $index) {
+                <li>
+                  <!-- Un clic entra: el ultimo elegido va primero, con el foco y dicho en texto. -->
+                  <button
+                    type="button"
+                    class="opcion"
+                    [class.opcion--ultima]="contexto === preseleccionado()"
+                    (click)="seleccionar(contexto)"
+                  >
+                    <span class="opcion__textos">
+                      <span class="opcion__consultorio">{{
+                        contexto.consultorioName || 'Toda la organización'
+                      }}</span>
+                      <span class="visualmente-oculto">{{ contexto.organizationName }}</span>
+                    </span>
+                    @if (contexto === preseleccionado()) {
+                      <span class="opcion__ultima">El último que elegiste</span>
+                    }
+                    <span class="opcion__flecha" aria-hidden="true">›</span>
+                  </button>
+                </li>
+              }
+            </ul>
+          </div>
+        }
       }
 
       @case ('vacio') {
-        <p class="estado estado--vacio">No tenes organizaciones asignadas.</p>
-        <p class="ayuda">
-          Contacta a tu administrador para que te de acceso a un centro. No es un error: tu cuenta
-          existe, todavia no tiene donde trabajar.
+        <p class="acceso-aviso acceso-aviso--aviso">Tu cuenta todavía no tiene dónde trabajar.</p>
+        <p class="acceso-texto">
+          No es un error: la cuenta existe. Pedile a quien administra un centro que te dé acceso.
         </p>
       }
 
       @case ('error') {
-        <p class="estado estado--error" role="alert">{{ mensajeError() }}</p>
-        <button type="button" class="boton" (click)="cargar()">Reintentar</button>
+        <p class="acceso-aviso acceso-aviso--error" role="alert">{{ mensajeError() }}</p>
+        <button type="button" class="boton boton--bloque" (click)="cargar()">Reintentar</button>
       }
     }
+  </div>
+
+  <div class="acceso-alternativas">
+    <button type="button" class="boton-texto" (click)="cerrarSesion()" [disabled]="saliendo()">
+      Cerrar sesión
+    </button>
   </div>
 </section>

@@ -1,16 +1,40 @@
-<h1>Series de turnos</h1>
-
-<p class="descripcion">
-  Las series semanales reservadas en esta sede, de la mas nueva a la mas vieja. Una serie esta
-  vigente mientras le quede algun turno pendiente; cada turno sigue siendo una reserva propia.
-</p>
+<div class="titulo-con-ayuda">
+  <h1>Series de turnos</h1>
+  <app-ayuda titulo="Sobre esta pantalla">
+    <p>
+      Las series semanales reservadas en esta sede, de la mas nueva a la mas vieja. Una serie esta
+      vigente mientras le quede algun turno pendiente; cada turno sigue siendo una reserva propia.
+    </p>
+  </app-ayuda>
+</div>
 
 <app-pestanas [pestanas]="pestanas" [etiqueta]="etiquetaDePestanas" />
 
 <section class="tarjeta" aria-labelledby="titulo-filtros-series">
   <h2 id="titulo-filtros-series">Que mostrar</h2>
 
-  <div class="filtros">
+  <!--
+    Regla de filtros (plan §3.4): la busqueda del paciente, que es por todo lo que lo identifica, a
+    la vista; el estado de la serie detras del embudo.
+  -->
+  <app-filtros [activos]="filtrosAvanzadosActivos()">
+    <div class="campo" filtro-principal>
+      <label class="visualmente-oculto" for="series-persona"
+        >Paciente: documento, apellido, nombre o telefono</label
+      >
+      <div class="campo-busqueda">
+        <app-icono class="campo-busqueda__icono" nombre="buscar" />
+        <input
+          id="series-persona"
+          name="series-persona"
+          type="search"
+          autocomplete="off"
+          placeholder="Buscar paciente por documento, apellido, nombre o telefono"
+          (input)="buscarPersona($any($event.target).value)"
+        />
+      </div>
+    </div>
+
     <div class="campo">
       <label for="series-estado">Estado</label>
       <select
@@ -25,18 +49,7 @@
         <option [value]="TODAS">Todas</option>
       </select>
     </div>
-
-    <div class="campo">
-      <label for="series-persona">Paciente: documento, apellido, nombre o telefono</label>
-      <input
-        id="series-persona"
-        name="series-persona"
-        type="search"
-        autocomplete="off"
-        (input)="buscarPersona($any($event.target).value)"
-      />
-    </div>
-  </div>
+  </app-filtros>
 
   @if (persona(); as filtrada) {
     <p>

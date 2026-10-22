@@ -10,7 +10,12 @@
       — {{ nombreCompleto(ficha) }}
     }
   </h1>
-  <app-ayuda titulo="Aca no va nada clinico">
+  <app-ayuda titulo="Sobre esta pantalla">
+    <p>
+      Los documentos que el paciente presenta en el mostrador: su documento de identidad, la
+      credencial de la cobertura, consentimientos y comprobantes.
+    </p>
+    <p class="ayuda-contextual__subtitulo">Aca no va nada clinico</p>
     <p>
       Las categorias son todas administrativas, a proposito. Un estudio, una radiografia o un
       informe
@@ -22,12 +27,15 @@
       hay que cargarlo ademas.
     </p>
   </app-ayuda>
+  @if (!fichaCerrada()) {
+    <div class="encabezado__acciones" *akinePermiso="permisoManage">
+      <button type="button" class="boton" (click)="abrirSubida()">
+        <app-icono nombre="agregar" />
+        Subir un documento
+      </button>
+    </div>
+  }
 </div>
-
-<p class="descripcion">
-  Los documentos que el paciente presenta en el mostrador: su documento de identidad, la credencial
-  de la cobertura, consentimientos y comprobantes.
-</p>
 
 <div aria-live="polite">
   @if (exito(); as mensaje) {
@@ -38,7 +46,11 @@
 <section class="tarjeta" aria-labelledby="titulo-filtros-documentos">
   <h2 id="titulo-filtros-documentos">Documentos cargados</h2>
 
-  <div class="filtros">
+  <!--
+    Regla de filtros (plan §3.4): el listado no tiene busqueda por texto en el backend, asi que
+    categoria y estado van solos detras del embudo.
+  -->
+  <app-filtros [soloAvanzados]="true" [activos]="filtrosAvanzadosActivos()">
     <div class="campo">
       <label for="documentos-filtro-categoria">Categoria</label>
       <select
@@ -70,18 +82,12 @@
         Un documento dado de baja no se borra: se sigue descargando y aparece con este filtro.
       </p>
     </div>
-  </div>
+  </app-filtros>
 
   @if (fichaCerrada()) {
     <p class="estado">
       Esta ficha esta dada de baja, asi que no admite documentos nuevos. Los que ya tiene se siguen
       consultando y descargando.
-    </p>
-  } @else {
-    <p class="acciones">
-      <button type="button" class="boton" (click)="abrirSubida()" *akinePermiso="permisoManage">
-        Subir un documento
-      </button>
     </p>
   }
 </section>

@@ -37,8 +37,8 @@ test.describe('Acceso clinico desde el Paciente 360 (D-e)', () => {
 
     // La ficha sigue sin mostrar nada clinico: ofrece el camino, no el contenido.
     await expect(
-      page.getByRole('button', { name: 'Que significa: Esta ficha no muestra nada clinico' }),
-    ).toBeVisible();
+      page.locator('app-ayuda').getByText('Esta ficha no muestra nada clinico'),
+    ).toBeAttached();
     await page.getByRole('link', { name: 'Abrir la historia clinica' }).click();
 
     await expect(page).toHaveURL(new RegExp(`/historia-clinica/personas/${sembrada.personaId}$`));
@@ -67,8 +67,8 @@ test.describe('Acceso clinico desde el Paciente 360 (D-e)', () => {
     await navegar(page, `/pacientes/${sembrada.personaId}`);
 
     await expect(
-      page.getByRole('button', { name: 'Que significa: Esta ficha no muestra nada clinico' }),
-    ).toBeVisible();
+      page.locator('app-ayuda').getByText('Esta ficha no muestra nada clinico'),
+    ).toBeAttached();
     await expect(page.getByRole('link', { name: 'Abrir la historia clinica' })).toHaveCount(0);
     // Lo que si ve el mostrador: que hay historia, sin contenido (matriz §32, api #109).
     await expect(

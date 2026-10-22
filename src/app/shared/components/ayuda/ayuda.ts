@@ -46,7 +46,7 @@ let siguienteId = 0;
       (click)="alternar()"
     >
       <app-icono nombre="ayuda" />
-      <span class="visualmente-oculto">Que significa: {{ titulo() }}</span>
+      <span class="visualmente-oculto">Ayuda: {{ titulo() }}</span>
     </button>
     <div
       class="ayuda-contextual__panel"

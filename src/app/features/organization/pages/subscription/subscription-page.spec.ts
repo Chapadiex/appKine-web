@@ -177,7 +177,7 @@ describe('SubscriptionPage', () => {
     expect(texto(fixture)).toContain('No se pudo contactar al servidor');
     expect(fixture.nativeElement.querySelector('[role="alert"]')).toBeTruthy();
 
-    fixture.nativeElement.querySelector('button')?.click();
+    fixture.nativeElement.querySelector('button:not(.ayuda-contextual__boton)')?.click();
     fixture.detectChanges();
     httpMock.expectOne(URL_SUSCRIPCION).flush(SUSCRIPCION_ACTIVA);
     await fixture.whenStable();
@@ -217,7 +217,7 @@ describe('SubscriptionPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.querySelector('button')).toBeNull();
+    expect(fixture.nativeElement.querySelector('button:not(.ayuda-contextual__boton)')).toBeNull();
     expect(fixture.nativeElement.querySelector('a[href="/seleccionar-contexto"]')).toBeTruthy();
   });
 

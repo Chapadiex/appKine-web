@@ -36,7 +36,7 @@ describe('Ayuda', () => {
   it('arranca cerrada, con el contenido en el DOM y el boton nombrado por el titulo', () => {
     expect(boton().getAttribute('aria-expanded')).toBe('false');
     expect(boton().getAttribute('aria-controls')).toBe(panel().id);
-    expect(boton().textContent).toContain('Que significa: Persona y paciente no son lo mismo');
+    expect(boton().textContent).toContain('Ayuda: Persona y paciente no son lo mismo');
     expect(panel().hidden).toBe(true);
     expect(panel().textContent).toContain('no crea historia clinica');
   });

@@ -7,6 +7,7 @@ import { OrganizacionesService } from '../../../../api/generated/api/organizacio
 import { OrganizationResponse } from '../../../../api/generated/model/organization-response';
 import { RUTA_HORARIOS } from '../../../../core/models/rutas';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 
 /** Estado de la pantalla de organizacion (ADR-0005). */
 type EstadoOrganizacion =
@@ -39,7 +40,7 @@ type EstadoOrganizacion =
  */
 @Component({
   selector: 'app-organization-page',
-  imports: [RouterLink],
+  imports: [Ayuda, RouterLink],
   templateUrl: './organization-page.html',
   styleUrl: '../../organization.css',
 })

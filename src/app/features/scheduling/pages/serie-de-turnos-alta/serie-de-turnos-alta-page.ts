@@ -30,6 +30,7 @@ import {
   textoDeDias,
   ventanasDeAgenda,
 } from '../../models/series';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 
 /** Cuanto se espera despues de la ultima tecla antes de consultar el padron. */
 const ESPERA_DE_BUSQUEDA_MS = 300;
@@ -65,7 +66,7 @@ type ModoDeFin = 'cantidad' | 'fecha';
  */
 @Component({
   selector: 'app-serie-de-turnos-alta-page',
-  imports: [RouterLink, PermisoDirective],
+  imports: [Ayuda, RouterLink, PermisoDirective],
   templateUrl: './serie-de-turnos-alta-page.html',
   styleUrl: '../../agenda.css',
 })

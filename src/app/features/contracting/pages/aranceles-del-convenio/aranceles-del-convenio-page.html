@@ -1,23 +1,24 @@
 @if (convenio(); as ficha) {
   <div class="titulo-con-ayuda">
     <h1>Aranceles de {{ ficha.nombre }}</h1>
-    <app-ayuda titulo="Subir un precio no es editar el arancel">
+    <app-ayuda titulo="Sobre esta pantalla">
       <ng-container [ngTemplateOutlet]="ayudaDePantalla" />
     </app-ayuda>
+    <ng-container [ngTemplateOutlet]="accionDelTitulo" />
   </div>
+  <!-- Datos del convenio: se ven siempre. La explicacion va en el "?". -->
   <p class="descripcion">
     Codigo {{ ficha.codigo }} · moneda <b>{{ ficha.moneda }}</b> · {{ ventanaEnPalabras(ficha) }}.
-    Cada arancel dice cuanto cuesta una practica bajo este convenio, cuanto pone el financiador y
-    cuanto el paciente. La vigencia de un arancel tiene que estar <b>contenida</b> en la del
-    convenio: fuera de ella nunca podria resolver.
   </p>
 } @else {
   <div class="titulo-con-ayuda">
     <h1>Aranceles del convenio #{{ convenioId }}</h1>
-    <app-ayuda titulo="Subir un precio no es editar el arancel">
+    <app-ayuda titulo="Sobre esta pantalla">
       <ng-container [ngTemplateOutlet]="ayudaDePantalla" />
     </app-ayuda>
+    <ng-container [ngTemplateOutlet]="accionDelTitulo" />
   </div>
+  <!-- Es un estado de la pantalla, no una explicacion: queda a la vista. -->
   <p class="descripcion">
     No pudimos leer el convenio, asi que <b>los importes se muestran sin moneda</b>: el arancel no
     la declara, la hereda del convenio. Recarga la pagina para recuperarla.
@@ -31,8 +32,26 @@
   </a>
 </nav>
 
+<!-- La accion principal del titulo: una sola copia para las dos ramas del titulo. -->
+<ng-template #accionDelTitulo>
+  @if (!convenioInactivo()) {
+    <div class="encabezado__acciones" *akinePermiso="permisoManage">
+      <button type="button" class="boton" (click)="abrirAlta()">
+        <app-icono nombre="agregar" />
+        Cargar un arancel
+      </button>
+    </div>
+  }
+</ng-template>
+
 <!-- La ayuda de la pantalla: una sola copia para las dos ramas del titulo. -->
 <ng-template #ayudaDePantalla>
+  <p>
+    Cada arancel dice cuanto cuesta una practica bajo este convenio, cuanto pone el financiador y
+    cuanto el paciente. La vigencia de un arancel tiene que estar <b>contenida</b> en la del
+    convenio: fuera de ella nunca podria resolver.
+  </p>
+  <p class="ayuda-contextual__subtitulo">Subir un precio no es editar el arancel</p>
   <p>
     Para <b>actualizar</b> un precio, cerrale la vigencia al arancel actual y carga otro desde el
     dia siguiente. Asi lo que se liquido en marzo se sigue explicando con el precio de marzo. Si en
@@ -65,9 +84,6 @@
   </p>
 } @else {
   <p class="acciones">
-    <button type="button" class="boton" (click)="abrirAlta()" *akinePermiso="permisoManage">
-      Cargar un arancel
-    </button>
     <a
       class="boton boton--secundario"
       [routerLink]="['/contratacion/convenios', convenioId, 'aranceles', 'importar']"
@@ -254,7 +270,11 @@
 <section class="tarjeta" aria-labelledby="titulo-listado-aranceles">
   <h2 id="titulo-listado-aranceles">Grilla de vigencias</h2>
 
-  <div class="par-de-campos">
+  <!--
+    Regla de filtros (plan §3.4): sin busqueda por texto en el backend, solo el embudo. La fecha
+    de vigencia va adentro y cuenta como activa si no es hoy: cambia la columna Situacion.
+  -->
+  <app-filtros [soloAvanzados]="true" [activos]="filtrosAvanzadosActivos()">
     <div class="campo">
       <label for="filtro-estado-arancel">Mostrar</label>
       <select
@@ -288,7 +308,7 @@
         una prestacion responde que arancel regia ese dia.
       </p>
     </div>
-  </div>
+  </app-filtros>
 
   <div aria-live="polite">
     @switch (estado().tipo) {
@@ -326,8 +346,6 @@
             menos una practica para que empiece a servir.
           </p>
         } @else {
-          <p class="ayuda">{{ aranceles().length }} en total, del mas nuevo al mas viejo.</p>
-
           <div class="tabla-scroll" tabindex="0" role="region" aria-label="Aranceles del convenio">
             <table class="tabla">
               <caption class="visualmente-oculto">
@@ -336,17 +354,19 @@
               </caption>
               <thead>
                 <tr>
-                  <th scope="col">Practica</th>
-                  <th scope="col">Total</th>
-                  <th scope="col">Financiador</th>
-                  <th scope="col">Coseguro</th>
-                  <th scope="col">Vigencia</th>
+                  <th scope="col" appOrdenable [tabla]="tabla" columna="practica">Practica</th>
+                  <th scope="col" appOrdenable [tabla]="tabla" columna="total">Total</th>
+                  <th scope="col" appOrdenable [tabla]="tabla" columna="financiador">
+                    Financiador
+                  </th>
+                  <th scope="col" appOrdenable [tabla]="tabla" columna="coseguro">Coseguro</th>
+                  <th scope="col" appOrdenable [tabla]="tabla" columna="vigencia">Vigencia</th>
                   <th scope="col">Situacion</th>
                   <th scope="col">Acciones</th>
                 </tr>
               </thead>
               <tbody>
-                @for (arancel of aranceles(); track arancel.id) {
+                @for (arancel of tabla.visibles(); track arancel.id) {
                   @let situacionDeLaFila = situacion(arancel);
 
                   <tr
@@ -531,6 +551,16 @@
                 }
               </tbody>
             </table>
+          </div>
+
+          <div class="tabla-pie">
+            <span>{{ tabla.total() }} aranceles</span>
+            <app-paginacion
+              [paginaActual]="tabla.pagina()"
+              [totalPaginas]="tabla.totalPaginas()"
+              etiqueta="Paginas de aranceles"
+              (cambioDePagina)="tabla.irA($event)"
+            />
           </div>
         }
       }

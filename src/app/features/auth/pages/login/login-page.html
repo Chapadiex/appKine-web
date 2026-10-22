@@ -1,13 +1,25 @@
-<h1>Iniciar sesion</h1>
+<!-- Iniciar sesion (diseño del canvas "AKINE · Pantallas", 22/10/2026). -->
+<section class="acceso-tarjeta" aria-labelledby="titulo-login">
+  <h1 id="titulo-login">Iniciar sesión</h1>
 
-<p class="descripcion">Entra con tu cuenta de AKINE. Despues elegis donde vas a trabajar.</p>
-
-<section class="tarjeta" aria-labelledby="titulo-login">
-  <h2 id="titulo-login">Tus datos</h2>
+  <!-- aria-live: el resultado del envio se anuncia sin que el usuario tenga que buscarlo. -->
+  <div aria-live="polite">
+    @switch (estado().tipo) {
+      @case ('enviando') {
+        <p class="acceso-aviso acceso-aviso--ok">Verificando tus datos&hellip;</p>
+      }
+      @case ('ok') {
+        <p class="acceso-aviso acceso-aviso--ok">Sesión iniciada. Te estamos llevando adentro.</p>
+      }
+      @case ('error') {
+        <p class="acceso-aviso acceso-aviso--error" role="alert">{{ mensajeError() }}</p>
+      }
+    }
+  </div>
 
   <form [formGroup]="formulario" (ngSubmit)="enviar()" novalidate>
     <div class="campo">
-      <label for="login-email">Email</label>
+      <label for="login-email">Correo electrónico</label>
       <input
         id="login-email"
         type="email"
@@ -17,58 +29,50 @@
         [attr.aria-describedby]="mostrarError('email') ? 'login-email-error' : null"
       />
       @if (mostrarError('email')) {
-        <p class="campo__error" id="login-email-error">Escribi un email valido.</p>
+        <p class="campo__error" id="login-email-error">Escribí un correo válido.</p>
       }
     </div>
 
     <div class="campo">
-      <label for="login-password">Contrasena</label>
-      <input
-        id="login-password"
-        type="password"
-        formControlName="password"
-        autocomplete="current-password"
-        [attr.aria-invalid]="mostrarError('password')"
-        [attr.aria-describedby]="mostrarError('password') ? 'login-password-error' : null"
-      />
+      <div class="acceso-fila-etiqueta">
+        <label for="login-password">Contraseña</label>
+        <a routerLink="/auth/olvide-mi-contrasena">¿Olvidaste tu contraseña?</a>
+      </div>
+      <div class="campo-con-accion">
+        <input
+          id="login-password"
+          [type]="verPassword() ? 'text' : 'password'"
+          formControlName="password"
+          autocomplete="current-password"
+          [attr.aria-invalid]="mostrarError('password')"
+          [attr.aria-describedby]="mostrarError('password') ? 'login-password-error' : null"
+        />
+        <button
+          type="button"
+          class="campo-con-accion__boton"
+          [attr.aria-pressed]="verPassword()"
+          (click)="verPassword.set(!verPassword())"
+        >
+          {{ verPassword() ? 'Ocultar' : 'Mostrar' }}
+          <span class="visualmente-oculto">la contraseña</span>
+        </button>
+      </div>
       @if (mostrarError('password')) {
-        <p class="campo__error" id="login-password-error">Escribi tu contrasena.</p>
+        <p class="campo__error" id="login-password-error">Escribí tu contraseña.</p>
       }
     </div>
 
-    <div class="acciones">
-      <button type="submit" class="boton" [disabled]="bloqueado()">Iniciar sesion</button>
+    <button type="submit" class="boton boton--bloque" [disabled]="bloqueado()">Ingresar</button>
 
-      @if (espera.activa()) {
-        <span class="ayuda">Volve a intentar en {{ espera.segundos() }} segundos.</span>
-      }
-    </div>
+    @if (espera.activa()) {
+      <p class="ayuda">Volvé a intentar en {{ espera.segundos() }} segundos.</p>
+    }
   </form>
 
-  <!-- aria-live: el resultado del envio se anuncia sin que el usuario tenga que buscarlo. -->
-  <div aria-live="polite">
-    @switch (estado().tipo) {
-      @case ('enviando') {
-        <p class="estado estado--cargando">Verificando tus datos&hellip;</p>
-      }
-
-      @case ('ok') {
-        <p class="estado estado--ok">Sesion iniciada. Te estamos llevando adentro.</p>
-      }
-
-      @case ('error') {
-        <p class="estado estado--error" role="alert">{{ mensajeError() }}</p>
-      }
-    }
+  <div class="acceso-alternativas">
+    <p>¿No tenés cuenta? <a routerLink="/auth/registro">Crear una cuenta</a></p>
+    <p>
+      <a routerLink="/auth/reenviar-activacion">No me llegó el correo de activación</a>
+    </p>
   </div>
-
-  <ul class="enlaces">
-    <li><a class="enlace" routerLink="/auth/olvide-mi-contrasena">Olvide mi contrasena</a></li>
-    <li>
-      <a class="enlace" routerLink="/auth/reenviar-activacion"
-        >No me llego el correo de activacion</a
-      >
-    </li>
-    <li><a class="enlace" routerLink="/auth/registro">Crear una cuenta nueva</a></li>
-  </ul>
 </section>

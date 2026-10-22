@@ -1,9 +1,12 @@
-<h1>Dar de alta un espacio</h1>
-
-<p class="descripcion">
-  Un recurso fisico de <b>{{ nombreDeLaSede() }}</b> donde se atiende: un box, un gimnasio, un
-  gabinete, una sala grupal o una pileta. Queda en esta sede y no se puede mudar a otra.
-</p>
+<div class="titulo-con-ayuda">
+  <h1>Dar de alta un espacio</h1>
+  <app-ayuda titulo="Sobre esta pantalla">
+    <p>
+      Un recurso fisico de <b>{{ nombreDeLaSede() }}</b> donde se atiende: un box, un gimnasio, un
+      gabinete, una sala grupal o una pileta. Queda en esta sede y no se puede mudar a otra.
+    </p>
+  </app-ayuda>
+</div>
 
 <p class="acciones">
   <a class="enlace" routerLink="/espacios">Volver al listado de espacios</a>
@@ -37,12 +40,15 @@
   </section>
 } @else {
   <section class="tarjeta" aria-labelledby="titulo-alta-espacio">
-    <h2 id="titulo-alta-espacio">Datos del espacio</h2>
-
-    <p class="ayuda">
-      Lo unico obligatorio es el nombre. El resto ya viene con lo mas frecuente: un box para una
-      persona, en servicio desde ahora y sin fin previsto.
-    </p>
+    <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
+      <h2 id="titulo-alta-espacio">Datos del espacio</h2>
+      <app-ayuda titulo="Datos del espacio">
+        <p>
+          Lo unico obligatorio es el nombre. El resto ya viene con lo mas frecuente: un box para una
+          persona, en servicio desde ahora y sin fin previsto.
+        </p>
+      </app-ayuda>
+    </div>
 
     <form [formGroup]="formulario" (ngSubmit)="enviar()" novalidate>
       <div class="campo">

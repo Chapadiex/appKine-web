@@ -78,23 +78,23 @@ test.describe('Cuenta de punta a punta contra el backend real (A-6)', () => {
       // --- Restablecimiento: se pide sin sesion, como quien se olvido la contrasena -----------
       await page.context().clearCookies();
       await page.goto('/auth/olvide-mi-contrasena');
-      await campo(page, 'Email').fill(email);
+      await campo(page, 'Correo electrónico').fill(email);
       await page.getByRole('button', { name: 'Enviar el enlace' }).click();
-      await expect(page.getByText('Solicitud recibida.')).toBeVisible();
+      await expect(page.getByRole('heading', { name: 'Revisá tu correo' })).toBeVisible();
 
       const restablecimiento = await enlaceDelCorreo(email, ASUNTO.restablecimiento);
       expect(restablecimiento.ruta).toMatch(/^\/auth\/restablecer\?token=/);
       await page.goto(restablecimiento.ruta);
       await campo(page, 'Contrasena nueva').fill(PASSWORD_NUEVA);
       await campo(page, 'Repetir la contrasena').fill(PASSWORD_NUEVA);
-      await page.getByRole('button', { name: 'Guardar la contrasena' }).click();
+      await page.getByRole('button', { name: 'Guardar contraseña' }).click();
       await expect(page.getByText('Listo.', { exact: true })).toBeVisible();
 
       // El mismo enlace ya no sirve: ni por pantalla ni por la API.
       await page.goto(restablecimiento.ruta);
       await campo(page, 'Contrasena nueva').fill(PASSWORD_NUEVA);
       await campo(page, 'Repetir la contrasena').fill(PASSWORD_NUEVA);
-      await page.getByRole('button', { name: 'Guardar la contrasena' }).click();
+      await page.getByRole('button', { name: 'Guardar contraseña' }).click();
       await expect(page.getByRole('alert')).toBeVisible();
       await esperarProblema(
         await http.post('/api/v1/auth/password-reset/confirm', {
@@ -204,7 +204,7 @@ test.describe('Cuenta de punta a punta contra el backend real (A-6)', () => {
         await page.goto('/organizacion/auditoria');
         await expect(page).toHaveURL(/\/sin-permiso/);
         await expect(
-          page.getByRole('heading', { name: 'No tenes permiso para esta pantalla' }),
+          page.getByRole('heading', { name: 'No tenés permiso para esta pantalla' }),
         ).toBeVisible();
         await expect(page.getByText(centro, { exact: true })).toBeVisible();
 

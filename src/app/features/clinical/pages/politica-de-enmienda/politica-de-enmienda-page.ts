@@ -6,6 +6,7 @@ import { TenantContextStore } from '../../../../core/services/tenant-context.sto
 import { instanteEnPalabras } from '../../models/etiquetas-de-atencion';
 import { ErrorAtencion, traducirErrorAtencion } from '../../models/atencion-errors';
 import { ClinicalApi } from '../../services/clinical-api';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 
 /** Rango del contrato: de 1 a 3650 dias. */
 export const VENTANA_MINIMA = 1;
@@ -24,7 +25,7 @@ export const VENTANA_MAXIMA = 3650;
  */
 @Component({
   selector: 'app-politica-de-enmienda-page',
-  imports: [RouterLink],
+  imports: [Ayuda, RouterLink],
   templateUrl: './politica-de-enmienda-page.html',
   styleUrl: '../../atencion.css',
 })

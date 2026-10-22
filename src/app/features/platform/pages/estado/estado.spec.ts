@@ -90,8 +90,10 @@ describe('Estado', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    const boton = (fixture.nativeElement as HTMLElement).querySelector('button');
-    boton?.click();
+    const boton = (fixture.nativeElement as HTMLElement).querySelector(
+      'button:not(.ayuda-contextual__boton)',
+    );
+    (boton as HTMLButtonElement | null)?.click();
     fixture.detectChanges();
 
     httpMock.expectOne('/api/v1/version').flush(RESPUESTA_VERSION);

@@ -38,6 +38,7 @@ import {
 import { instanteEnPalabras } from '../../models/etiquetas-de-atencion';
 import { AtencionGrupalApi } from '../../services/atencion-grupal-api';
 import { DerivarParticipante, ReintentoConMotivo } from './derivar-participante';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 
 type EstadoCarga =
   | { readonly tipo: 'cargando' }
@@ -118,7 +119,7 @@ const ETIQUETAS_DE_ASISTENCIA: Readonly<Record<string, string>> = {
  */
 @Component({
   selector: 'app-atencion-grupal-page',
-  imports: [RouterLink, FocoAlMontar, PermisoDirective, DerivarParticipante],
+  imports: [Ayuda, RouterLink, FocoAlMontar, PermisoDirective, DerivarParticipante],
   templateUrl: './atencion-grupal-page.html',
 })
 export class AtencionGrupalPage {

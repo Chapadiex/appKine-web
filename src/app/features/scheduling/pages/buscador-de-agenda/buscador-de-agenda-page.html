@@ -1,9 +1,12 @@
-<h1>Agenda de turnos</h1>
-
-<p class="descripcion">
-  Los turnos disponibles de una oferta, dia por dia. Un turno es una <b>reserva</b> de agenda: no
-  dice que la atencion haya ocurrido, eso lo registra la sesion clinica.
-</p>
+<div class="titulo-con-ayuda">
+  <h1>Agenda de turnos</h1>
+  <app-ayuda titulo="Sobre esta pantalla">
+    <p>
+      Los turnos disponibles de una oferta, dia por dia. Un turno es una <b>reserva</b> de agenda:
+      no dice que la atencion haya ocurrido, eso lo registra la sesion clinica.
+    </p>
+  </app-ayuda>
+</div>
 
 <!--
   Las pantallas hermanas de la seccion (UX-01): recepcion del dia y series. Pestanas y no
@@ -14,20 +17,53 @@
 <section class="tarjeta" aria-labelledby="titulo-busqueda-agenda">
   <h2 id="titulo-busqueda-agenda">Que buscar</h2>
 
-  <div class="filtros">
-    <div class="campo">
-      <label for="agenda-oferta">Oferta</label>
-      <select
-        id="agenda-oferta"
-        name="agenda-oferta"
-        (change)="elegirOferta($any($event.target).value)"
-      >
-        <option value="">Elegi una oferta</option>
-        @for (oferta of ofertas(); track oferta.id) {
-          <option [value]="oferta.id">{{ oferta.nombreComercial }}</option>
-        }
-      </select>
-      <p class="ayuda">Solo las ofertas activas de esta sede se pueden agendar.</p>
+  <!--
+    Regla de filtros (plan §3.4): la oferta y la ventana de fechas definen la consulta, asi que
+    quedan a la vista; el profesional es un refinamiento opcional y va detras del embudo.
+  -->
+  <app-filtros [activos]="filtrosAvanzadosActivos()">
+    <div class="filtros" filtro-principal>
+      <div class="campo">
+        <label for="agenda-oferta">Oferta</label>
+        <select
+          id="agenda-oferta"
+          name="agenda-oferta"
+          (change)="elegirOferta($any($event.target).value)"
+        >
+          <option value="">Elegi una oferta</option>
+          @for (oferta of ofertas(); track oferta.id) {
+            <option [value]="oferta.id">{{ oferta.nombreComercial }}</option>
+          }
+        </select>
+        <p class="ayuda">Solo las ofertas activas de esta sede se pueden agendar.</p>
+      </div>
+
+      <div class="campo">
+        <label for="agenda-desde">Desde</label>
+        <input
+          id="agenda-desde"
+          name="agenda-desde"
+          type="date"
+          [value]="desde()"
+          (change)="cambiarDesde($any($event.target).value)"
+        />
+      </div>
+
+      <div class="campo">
+        <label for="agenda-hasta">Hasta (sin incluir)</label>
+        <input
+          id="agenda-hasta"
+          name="agenda-hasta"
+          type="date"
+          [value]="hasta()"
+          (change)="cambiarHasta($any($event.target).value)"
+          aria-describedby="agenda-hasta-ayuda"
+        />
+        <p class="ayuda" id="agenda-hasta-ayuda">
+          El ultimo dia no se incluye. La ventana se consulta de a 62 dias como maximo; si pedis
+          mas, la recortamos y te avisamos.
+        </p>
+      </div>
     </div>
 
     <div class="campo">
@@ -44,34 +80,7 @@
         }
       </select>
     </div>
-
-    <div class="campo">
-      <label for="agenda-desde">Desde</label>
-      <input
-        id="agenda-desde"
-        name="agenda-desde"
-        type="date"
-        [value]="desde()"
-        (change)="cambiarDesde($any($event.target).value)"
-      />
-    </div>
-
-    <div class="campo">
-      <label for="agenda-hasta">Hasta (sin incluir)</label>
-      <input
-        id="agenda-hasta"
-        name="agenda-hasta"
-        type="date"
-        [value]="hasta()"
-        (change)="cambiarHasta($any($event.target).value)"
-        aria-describedby="agenda-hasta-ayuda"
-      />
-      <p class="ayuda" id="agenda-hasta-ayuda">
-        El ultimo dia no se incluye. La ventana se consulta de a 62 dias como maximo; si pedis mas,
-        la recortamos y te avisamos.
-      </p>
-    </div>
-  </div>
+  </app-filtros>
 </section>
 
 <div aria-live="polite">

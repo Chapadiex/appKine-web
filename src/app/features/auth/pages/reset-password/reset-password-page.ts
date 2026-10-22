@@ -36,6 +36,9 @@ function contrasenasIguales(grupo: AbstractControl): ValidationErrors | null {
   styleUrl: '../../auth.css',
 })
 export class ResetPasswordPage {
+  /** Mostrar u ocultar la contraseña mientras se escribe (diseño del canvas). Solo cambia el input. */
+  protected readonly verPassword = signal(false);
+
   private readonly recuperacion = inject(RecuperacionService);
   private readonly ruta = inject(ActivatedRoute);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);

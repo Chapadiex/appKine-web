@@ -229,34 +229,46 @@
       <section class="tarjeta" aria-labelledby="titulo-listado-vigencias">
         <h2 id="titulo-listado-vigencias">Vigencias cargadas</h2>
 
-        <div class="campo">
-          <label for="filtro-codigo-vigencia">Filtrar por codigo</label>
-          <input
-            id="filtro-codigo-vigencia"
-            type="search"
-            [value]="filtroCodigo()"
-            (change)="filtrarPorCodigo($any($event.target).value)"
-            autocomplete="off"
-            aria-describedby="filtro-codigo-vigencia-ayuda"
-          />
-          <p class="ayuda" id="filtro-codigo-vigencia-ayuda">
-            Un codigo suele tener varias vigencias a lo largo del tiempo: filtrarlo es la forma de
-            ver su historia completa.
-          </p>
-        </div>
+        <!--
+          Regla de filtros (plan §3.4): el codigo, que es lo que identifica a una vigencia, a la
+          vista; el estado, que casi nunca se toca, detras del embudo.
+        -->
+        <app-filtros [activos]="filtrosAvanzadosActivos()">
+          <div class="campo" filtro-principal>
+            <label class="visualmente-oculto" for="filtro-codigo-vigencia"
+              >Filtrar por codigo</label
+            >
+            <div class="campo-busqueda">
+              <app-icono class="campo-busqueda__icono" nombre="buscar" />
+              <input
+                id="filtro-codigo-vigencia"
+                type="search"
+                placeholder="Filtrar por codigo"
+                [value]="filtroCodigo()"
+                (change)="filtrarPorCodigo($any($event.target).value)"
+                autocomplete="off"
+                aria-describedby="filtro-codigo-vigencia-ayuda"
+              />
+            </div>
+            <p class="visualmente-oculto" id="filtro-codigo-vigencia-ayuda">
+              Un codigo suele tener varias vigencias a lo largo del tiempo: filtrarlo es la forma de
+              ver su historia completa.
+            </p>
+          </div>
 
-        <div class="campo">
-          <label for="filtro-estado-vigencia">Mostrar</label>
-          <select
-            id="filtro-estado-vigencia"
-            [value]="filtroEstado()"
-            (change)="cambiarFiltroEstado($any($event.target).value)"
-          >
-            <option value="ACTIVO">Solo las activas</option>
-            <option value="INACTIVO">Solo las dadas de baja</option>
-            <option value="TODOS">Todas</option>
-          </select>
-        </div>
+          <div class="campo">
+            <label for="filtro-estado-vigencia">Mostrar</label>
+            <select
+              id="filtro-estado-vigencia"
+              [value]="filtroEstado()"
+              (change)="cambiarFiltroEstado($any($event.target).value)"
+            >
+              <option value="ACTIVO">Solo las activas</option>
+              <option value="INACTIVO">Solo las dadas de baja</option>
+              <option value="TODOS">Todas</option>
+            </select>
+          </div>
+        </app-filtros>
 
         @if (vigencias().length === 0) {
           <p class="estado estado--vacio">
@@ -276,17 +288,19 @@
               </caption>
               <thead>
                 <tr>
-                  <th scope="col">Codigo</th>
-                  <th scope="col">Nombre</th>
-                  <th scope="col">Practica</th>
-                  <th scope="col">Valor de referencia</th>
-                  <th scope="col">Ventana</th>
-                  <th scope="col">Estado</th>
+                  <th scope="col" appOrdenable [tabla]="tabla" columna="codigo">Codigo</th>
+                  <th scope="col" appOrdenable [tabla]="tabla" columna="nombre">Nombre</th>
+                  <th scope="col" appOrdenable [tabla]="tabla" columna="practica">Practica</th>
+                  <th scope="col" appOrdenable [tabla]="tabla" columna="valor">
+                    Valor de referencia
+                  </th>
+                  <th scope="col" appOrdenable [tabla]="tabla" columna="ventana">Ventana</th>
+                  <th scope="col" appOrdenable [tabla]="tabla" columna="estado">Estado</th>
                   <th scope="col">Acciones</th>
                 </tr>
               </thead>
               <tbody>
-                @for (vigencia of vigencias(); track vigencia.id) {
+                @for (vigencia of tabla.visibles(); track vigencia.id) {
                   <tr [class.fila--revocada]="vigencia.estado === 'INACTIVO'">
                     <th scope="row">
                       {{ vigencia.codigo }}
@@ -373,6 +387,16 @@
                 }
               </tbody>
             </table>
+          </div>
+
+          <div class="tabla-pie">
+            <span>{{ tabla.total() }} vigencias</span>
+            <app-paginacion
+              [paginaActual]="tabla.pagina()"
+              [totalPaginas]="tabla.totalPaginas()"
+              etiqueta="Paginas de vigencias"
+              (cambioDePagina)="tabla.irA($event)"
+            />
           </div>
         }
       </section>

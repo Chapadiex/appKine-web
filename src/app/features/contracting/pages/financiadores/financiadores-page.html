@@ -1,6 +1,12 @@
 <div class="titulo-con-ayuda">
   <h1>Financiadores</h1>
-  <app-ayuda titulo="Dos cosas que conviene saber antes de tocar nada">
+  <app-ayuda titulo="Sobre esta pantalla">
+    <p>
+      Con quien trabaja tu organizacion: obras sociales, prepagas, ART, mutuales y organismos. Es el
+      primer cimiento del circuito economico — un financiador tiene <b>planes</b>, y contra un plan
+      se firma el <b>convenio</b> de cada sede, que es el que define los aranceles.
+    </p>
+    <p class="ayuda-contextual__subtitulo">Dos cosas que conviene saber antes de tocar nada</p>
     <p>
       <b>Dar de baja no cascadea y no borra.</b> Los planes del financiador conservan sus filas, y
       las coberturas y convenios ya firmados <b>siguen resolviendo</b>. Lo unico que la baja impide
@@ -9,13 +15,13 @@
     </p>
     <p>{{ notaParticular }}</p>
   </app-ayuda>
+  <div class="encabezado__acciones" *akinePermiso="permisoManage">
+    <button type="button" class="boton" (click)="abrirAlta()">
+      <app-icono nombre="agregar" />
+      Dar de alta un financiador
+    </button>
+  </div>
 </div>
-
-<p class="descripcion">
-  Con quien trabaja tu organizacion: obras sociales, prepagas, ART, mutuales y organismos. Es el
-  primer cimiento del circuito economico — un financiador tiene <b>planes</b>, y contra un plan se
-  firma el <b>convenio</b> de cada sede, que es el que define los aranceles.
-</p>
 
 <nav class="acciones" aria-label="Contratacion">
   <a class="boton boton--secundario" routerLink="/contratacion/convenios">Convenios de la sede</a>
@@ -34,9 +40,6 @@
 </div>
 
 <p class="acciones">
-  <button type="button" class="boton" (click)="abrirAlta()" *akinePermiso="permisoManage">
-    Dar de alta un financiador
-  </button>
   <!-- DP-43 (U-12): una copia propia de una entrada del catalogo de la plataforma. -->
   <a
     class="boton boton--secundario"
@@ -184,25 +187,38 @@
   <!--
     La busqueda se dispara con el submit y no con cada tecla. El detalle esta en el javadoc de
     `buscar()`: una busqueda en vivo necesita debounce, y el debounce es de donde salio el defecto
-    del buscador de pacientes de la agenda.
-  -->
-  <form class="campo" [formGroup]="formularioBusqueda" (ngSubmit)="buscar()" novalidate>
-    <label for="buscar-financiador">Buscar</label>
-    <input
-      id="buscar-financiador"
-      type="search"
-      formControlName="q"
-      autocomplete="off"
-      aria-describedby="buscar-financiador-ayuda"
-    />
-    <p class="ayuda" id="buscar-financiador-ayuda">
-      Busca por nombre, codigo o CUIT. Un <code>%</code> tecleado busca un <code>%</code> literal:
-      los comodines se escapan.
-    </p>
-    <button type="submit" class="boton boton--secundario">Buscar</button>
-  </form>
+    del buscador de pacientes de la agenda. Con un solo campo en el formulario, Enter lo envia
+    (envio implicito de HTML): no hace falta un boton a la vista.
 
-  <div class="par-de-campos">
+    Regla de filtros (plan §3.4): la busqueda, que se usa siempre, a la vista; estado y tipo,
+    detras del embudo.
+  -->
+  <app-filtros [activos]="filtrosAvanzadosActivos()">
+    <form
+      class="campo"
+      filtro-principal
+      [formGroup]="formularioBusqueda"
+      (ngSubmit)="buscar()"
+      novalidate
+    >
+      <label class="visualmente-oculto" for="buscar-financiador">Buscar</label>
+      <div class="campo-busqueda">
+        <app-icono class="campo-busqueda__icono" nombre="buscar" />
+        <input
+          id="buscar-financiador"
+          type="search"
+          formControlName="q"
+          autocomplete="off"
+          placeholder="Buscar por nombre, codigo o CUIT"
+          aria-describedby="buscar-financiador-ayuda"
+        />
+      </div>
+      <p class="visualmente-oculto" id="buscar-financiador-ayuda">
+        Busca por nombre, codigo o CUIT al presionar Enter. Un <code>%</code> tecleado busca un
+        <code>%</code> literal: los comodines se escapan.
+      </p>
+    </form>
+
     <div class="campo">
       <label for="filtro-estado-financiador">Mostrar</label>
       <select
@@ -234,7 +250,7 @@
         }
       </select>
     </div>
-  </div>
+  </app-filtros>
 
   <div aria-live="polite">
     @switch (estado().tipo) {
@@ -267,8 +283,6 @@
             plan contra el cual firmar un convenio, y sin convenio no hay arancel que resolver.
           </p>
         } @else {
-          <p class="ayuda">{{ financiadores().length }} en total.</p>
-
           <div class="tabla-scroll" tabindex="0" role="region" aria-label="Financiadores">
             <table class="tabla">
               <caption class="visualmente-oculto">
@@ -277,16 +291,16 @@
               </caption>
               <thead>
                 <tr>
-                  <th scope="col">Financiador</th>
-                  <th scope="col">Tipo</th>
+                  <th scope="col" appOrdenable [tabla]="tabla" columna="nombre">Financiador</th>
+                  <th scope="col" appOrdenable [tabla]="tabla" columna="tipo">Tipo</th>
                   <th scope="col">CUIT</th>
                   <th scope="col">Contacto</th>
-                  <th scope="col">Estado</th>
+                  <th scope="col" appOrdenable [tabla]="tabla" columna="estado">Estado</th>
                   <th scope="col">Acciones</th>
                 </tr>
               </thead>
               <tbody>
-                @for (financiador of financiadores(); track financiador.id) {
+                @for (financiador of tabla.visibles(); track financiador.id) {
                   <tr [class.fila--revocada]="financiador.estado === 'INACTIVO'">
                     <th scope="row">
                       {{ financiador.nombre }}
@@ -499,6 +513,16 @@
                 }
               </tbody>
             </table>
+          </div>
+
+          <div class="tabla-pie">
+            <span>{{ tabla.total() }} financiadores</span>
+            <app-paginacion
+              [paginaActual]="tabla.pagina()"
+              [totalPaginas]="tabla.totalPaginas()"
+              etiqueta="Paginas de financiadores"
+              (cambioDePagina)="tabla.irA($event)"
+            />
           </div>
         }
       }

@@ -1,6 +1,12 @@
 <div class="titulo-con-ayuda">
   <h1>Padron de personas</h1>
-  <app-ayuda titulo="Persona y paciente no son lo mismo">
+  <app-ayuda titulo="Sobre esta pantalla">
+    <p>
+      Todas las personas registradas en la organizacion. Una persona <b>no es</b> un paciente:
+      alguien puede reservar una clase o una actividad sin ningun perfil clinico. Convertirla en
+      paciente es una accion aparte, y se hace cuando empieza una atencion.
+    </p>
+    <p class="ayuda-contextual__subtitulo">Persona y paciente no son lo mismo</p>
     <p>
       <b>Persona</b> es la ficha administrativa: quien es, como contactarla. Con eso alcanza para
       inscribirla a una clase, venderle un pase o registrarla en una actividad no clinica.
@@ -15,13 +21,14 @@
       maneja en el modulo clinico.
     </p>
   </app-ayuda>
+  <!-- La accion principal de la pantalla, en la fila del titulo y a la derecha (plan §3.1). -->
+  <div class="encabezado__acciones" *akinePermiso="permisoManage">
+    <button type="button" class="boton" (click)="abrirAlta()">
+      <app-icono nombre="agregar" />
+      Dar de alta una persona
+    </button>
+  </div>
 </div>
-
-<p class="descripcion">
-  Todas las personas registradas en la organizacion. Una persona <b>no es</b> un paciente: alguien
-  puede reservar una clase o una actividad sin ningun perfil clinico. Convertirla en paciente es una
-  accion aparte, y se hace cuando empieza una atencion.
-</p>
 
 <div aria-live="polite">
   @if (exito(); as mensaje) {
@@ -30,30 +37,47 @@
 </div>
 
 <section class="tarjeta" aria-labelledby="titulo-busqueda">
-  <h2 id="titulo-busqueda">Buscar en el padron</h2>
-
-  <p class="ayuda">
-    Antes de dar de alta a alguien, buscalo: un mismo documento no puede repetirse, y dos fichas de
-    la misma persona hacen que su historia quede partida en dos. Podes buscar por documento,
-    apellido, nombre, telefono o numero de afiliado; no hace falta escribir puntos ni guiones.
-  </p>
-
-  <div class="campo">
-    <label for="padron-busqueda">Documento, apellido, nombre, telefono o numero de afiliado</label>
-    <input
-      id="padron-busqueda"
-      type="search"
-      name="padron-busqueda"
-      [value]="texto()"
-      (change)="buscar($any($event.target).value)"
-      aria-describedby="padron-busqueda-ayuda"
-    />
-    <p class="ayuda" id="padron-busqueda-ayuda">
-      Sin texto, se lista el padron completo ordenado por apellido.
-    </p>
+  <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
+    <h2 id="titulo-busqueda">Buscar en el padron</h2>
+    <app-ayuda titulo="Buscar en el padron">
+      <p>
+        Antes de dar de alta a alguien, buscalo: un mismo documento no puede repetirse, y dos fichas
+        de la misma persona hacen que su historia quede partida en dos.
+      </p>
+      <p>
+        Se busca por documento, apellido, nombre, telefono o numero de afiliado, sin puntos ni
+        guiones. Sin texto, se lista el padron completo ordenado por apellido.
+      </p>
+    </app-ayuda>
   </div>
 
-  <div class="filtros">
+  <!--
+    Regla de filtros (plan §3.4): la busqueda, que se usa siempre, a la vista; estado y perfil, que
+    casi nunca se tocan, detras del embudo.
+  -->
+  <app-filtros [activos]="filtrosAvanzadosActivos()">
+    <div class="campo" filtro-principal>
+      <label class="visualmente-oculto" for="padron-busqueda"
+        >Documento, apellido, nombre, telefono o numero de afiliado</label
+      >
+      <div class="campo-busqueda">
+        <app-icono class="campo-busqueda__icono" nombre="buscar" />
+        <input
+          id="padron-busqueda"
+          type="search"
+          name="padron-busqueda"
+          placeholder="Buscar por documento, apellido, nombre, telefono o afiliado"
+          [value]="texto()"
+          (change)="buscar($any($event.target).value)"
+          aria-describedby="padron-busqueda-ayuda"
+        />
+      </div>
+      <p class="visualmente-oculto" id="padron-busqueda-ayuda">
+        Se busca por documento, apellido, nombre, telefono o numero de afiliado; no hace falta
+        escribir puntos ni guiones. Sin texto, se lista el padron completo ordenado por apellido.
+      </p>
+    </div>
+
     <div class="campo">
       <label for="padron-filtro-estado">Estado de la ficha</label>
       <select
@@ -81,23 +105,20 @@
         <option value="SIN_PERFIL">Solo personas sin perfil</option>
       </select>
     </div>
-  </div>
-
-  <p class="acciones">
-    <button type="button" class="boton" (click)="abrirAlta()" *akinePermiso="permisoManage">
-      Dar de alta una persona
-    </button>
-  </p>
+  </app-filtros>
 </section>
 
 @if (altaAbierta()) {
   <section class="tarjeta" aria-labelledby="titulo-alta-persona">
-    <h2 id="titulo-alta-persona">Nueva persona</h2>
-
-    <p class="ayuda">
-      Esto registra una <b>persona</b>. No le crea perfil clinico ni historia clinica: si empieza
-      una atencion, se le activa el perfil despues, desde su fila.
-    </p>
+    <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
+      <h2 id="titulo-alta-persona">Nueva persona</h2>
+      <app-ayuda titulo="Nueva persona">
+        <p>
+          Esto registra una <b>persona</b>. No le crea perfil clinico ni historia clinica: si
+          empieza una atencion, se le activa el perfil despues, desde su fila.
+        </p>
+      </app-ayuda>
+    </div>
 
     <form [formGroup]="formularioAlta" (ngSubmit)="enviarAlta()" novalidate>
       <div class="campo">

@@ -29,6 +29,7 @@ import {
   RegistrarTratamientoLateralidadEnum,
 } from '../../../../api/generated/model/registrar-tratamiento';
 import { Tratamiento } from '../../../../api/generated/model/tratamiento';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 
 /** Causas que no son de este bloque sino de la atencion entera: las resuelve la pantalla. */
 const CAUSAS_DE_LA_ATENCION = new Set(['version-vieja', 'sesion-cerrada', 'sesion-ajena']);
@@ -140,6 +141,7 @@ export function parametrosParaEnviar(
  * sesion, igual que el alta.
  */
 @Component({
+  imports: [Ayuda],
   selector: 'app-tratamientos-de-sesion',
   templateUrl: './tratamientos-de-sesion.html',
   styleUrl: '../../atencion.css',

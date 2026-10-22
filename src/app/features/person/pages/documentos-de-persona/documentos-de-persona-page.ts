@@ -32,6 +32,8 @@ import {
 } from '../../models/etiquetas-de-ficha';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { Filtros } from '../../../../shared/components/filtros/filtros';
+import { Icono } from '../../../../shared/components/icono/icono';
 
 const TAMANO_DE_PAGINA = 20;
 
@@ -93,6 +95,8 @@ type TipoAccion = 'reclasificar' | 'baja';
   selector: 'app-documentos-de-persona-page',
   imports: [
     Ayuda,
+    Filtros,
+    Icono,
     ReactiveFormsModule,
     RouterLink,
     ConfirmacionConMotivo,
@@ -129,6 +133,10 @@ export class DocumentosDePersonaPage {
 
   protected readonly filtroCategoria = signal<CategoriaDeAdjunto | ''>('');
   protected readonly filtro = signal<FiltroDeAdjuntos>('VIGENTES');
+  /** Filtros avanzados fuera de su valor por defecto: el contador del embudo. */
+  protected readonly filtrosAvanzadosActivos = computed(
+    () => Number(this.filtroCategoria() !== '') + Number(this.filtro() !== 'VIGENTES'),
+  );
   protected readonly pagina = signal(0);
 
   protected readonly panel = signal<{ readonly id: number; readonly tipo: TipoAccion } | null>(

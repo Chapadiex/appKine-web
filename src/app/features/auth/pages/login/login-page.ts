@@ -47,6 +47,9 @@ export class LoginPage {
   /** Se incrementa en cada envio. Es lo que hace reactiva la pintura de errores (zoneless). */
   protected readonly intentos = signal(0);
 
+  /** Mostrar u ocultar la contraseña mientras se escribe (diseño del canvas). Solo cambia el input. */
+  protected readonly verPassword = signal(false);
+
   protected readonly espera = crearEsperaPorLimite();
 
   protected readonly enviando = computed(() => this.estado().tipo === 'enviando');
