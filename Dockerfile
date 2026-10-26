@@ -51,7 +51,7 @@ RUN npm run build
 # ============================================================================================
 # nginx-unprivileged: corre como el usuario `nginx` (UID 101) y escucha en 8080, sin
 # capacidades para puertos privilegiados. El proceso nunca corre como root.
-FROM nginxinc/nginx-unprivileged:1.31.6-alpine AS runtime
+FROM nginxinc/nginx-unprivileged:1.31.7-alpine AS runtime
 
 LABEL org.opencontainers.image.title="akine-web" \
 	org.opencontainers.image.description="AKINE frontend - SPA Angular servida por nginx" \
