@@ -181,11 +181,11 @@
         </caption>
         <thead>
           <tr>
-            <th scope="col">Documento</th>
-            <th scope="col">Categoría</th>
+            <th scope="col" appOrdenable [tabla]="orden" columna="titulo">Documento</th>
+            <th scope="col" appOrdenable [tabla]="orden" columna="categoria">Categoría</th>
             <th scope="col">Archivo</th>
-            <th scope="col">Tamaño</th>
-            <th scope="col">Cargado</th>
+            <th scope="col" appOrdenable [tabla]="orden" columna="tamano">Tamaño</th>
+            <th scope="col" appOrdenable [tabla]="orden" columna="subidoEn">Cargado</th>
             <th scope="col">Estado</th>
             <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
           </tr>

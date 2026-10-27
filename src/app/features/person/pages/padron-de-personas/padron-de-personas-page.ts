@@ -35,6 +35,12 @@ import { textoRequerido } from '../../../../shared/validators/texto-requerido';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { Filtros } from '../../../../shared/components/filtros/filtros';
 import { Icono } from '../../../../shared/components/icono/icono';
+import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
+import {
+  CamposDeSort,
+  ordenDeServidor,
+} from '../../../../shared/components/tabla/orden-de-servidor';
+import { BuscarPersonasRequestParams } from '../../../../api/generated/api/personas.serviceInterface';
 
 /** Operacion abierta sobre una fila. Solo una a la vez. */
 type TipoAccion = 'editar' | 'activar-perfil';
@@ -101,6 +107,7 @@ const TAMANO_DE_PAGINA = 20;
   imports: [
     AccionesDeFila,
     Ayuda,
+    ColumnaOrdenable,
     Filtros,
     Icono,
     ReactiveFormsModule,
@@ -187,6 +194,14 @@ export class PadronDePersonasPage {
     () => Number(this.filtroEstado() !== 'ACTIVO') + Number(this.filtroPerfil() !== 'TODOS'),
   );
   protected readonly pagina = signal(0);
+
+  /** Orden de la tabla, pedido al servidor: cambiarlo vuelve a la primera pagina (DP-45). */
+  protected readonly orden = ordenDeServidor<CamposDeSort<BuscarPersonasRequestParams['sort']>>(
+    () => {
+      this.pagina.set(0);
+      this.cargar();
+    },
+  );
 
   /** Fila y operacion abiertas, o `null`. Solo una a la vez. */
   protected readonly panel = signal<{ readonly id: number; readonly tipo: TipoAccion } | null>(
@@ -288,6 +303,7 @@ export class PadronDePersonasPage {
         perfil: this.filtroPerfil(),
         pagina: this.pagina(),
         tamano: TAMANO_DE_PAGINA,
+        sort: this.orden.sort(),
       })
       .subscribe({
         next: (pagina) => this.estado.set({ tipo: 'listo', pagina }),
@@ -554,6 +570,7 @@ export class PadronDePersonasPage {
     this.filtroEstado.set('ACTIVO');
     this.filtroPerfil.set('TODOS');
     this.pagina.set(0);
+    this.orden.reiniciar();
   }
 
   /**

@@ -42,10 +42,26 @@
 
 <section class="tarjeta" aria-label="Espacios de la sede">
   <!--
-    Regla de filtros (plan §3.4): el listado no tiene busqueda por texto en el backend, asi que
-    va solo el embudo; "Mostrar" es un filtro avanzado.
+    Regla de filtros (plan §3.4): la busqueda por nombre, en el servidor (DP-45), a la vista;
+    "Mostrar" es un filtro avanzado.
   -->
-  <app-filtros [soloAvanzados]="true" [activos]="filtrosAvanzadosActivos()">
+  <app-filtros [activos]="filtrosAvanzadosActivos()">
+    <div class="campo" filtro-principal>
+      <label class="visualmente-oculto" for="espacios-busqueda">Nombre del espacio</label>
+      <div class="campo-busqueda">
+        <app-icono class="campo-busqueda__icono" nombre="buscar" />
+        <input
+          id="espacios-busqueda"
+          name="espacios-busqueda"
+          type="search"
+          autocomplete="off"
+          placeholder="Buscar por nombre del espacio"
+          [value]="busqueda()"
+          (change)="buscar($any($event.target).value)"
+        />
+      </div>
+    </div>
+
     <div class="campo">
       <label for="filtro-estado-espacio">Mostrar</label>
       <select
@@ -93,7 +109,9 @@
 
       @case ('listo') {
         @if (espaciosDeLaPagina().length === 0) {
-          @if (filtro() === 'INACTIVO') {
+          @if (busqueda().trim() !== '') {
+            <p class="estado estado--vacio">Ningún espacio coincide con la búsqueda.</p>
+          } @else if (filtro() === 'INACTIVO') {
             <p class="estado estado--vacio">No hay espacios dados de baja en esta sede.</p>
           } @else {
             <p class="estado estado--vacio">No hay espacios que mostrar con este filtro.</p>
@@ -106,8 +124,8 @@
               </caption>
               <thead>
                 <tr>
-                  <th scope="col">Espacio</th>
-                  <th scope="col">Capacidad</th>
+                  <th scope="col" appOrdenable [tabla]="orden" columna="nombre">Espacio</th>
+                  <th scope="col" appOrdenable [tabla]="orden" columna="capacidad">Capacidad</th>
                   <th scope="col">Vigencia</th>
                   <th scope="col">Estado</th>
                   <th scope="col"><span class="visualmente-oculto">Acciones</span></th>

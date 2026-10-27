@@ -529,9 +529,15 @@
         <table class="tabla">
           <thead>
             <tr>
-              <th scope="col">Fecha</th>
-              <th scope="col">Movimiento</th>
-              <th scope="col">Creditos</th>
+              <th scope="col" appOrdenable [tabla]="ordenDeMovimientos" columna="ocurridoEn">
+                Fecha
+              </th>
+              <th scope="col" appOrdenable [tabla]="ordenDeMovimientos" columna="tipo">
+                Movimiento
+              </th>
+              <th scope="col" appOrdenable [tabla]="ordenDeMovimientos" columna="cantidad">
+                Creditos
+              </th>
               <th scope="col">Saldo</th>
               <th scope="col">Detalle</th>
             </tr>

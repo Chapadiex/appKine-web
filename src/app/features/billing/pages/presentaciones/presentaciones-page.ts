@@ -25,6 +25,7 @@ import { importeEnPalabras } from '../../models/etiquetas-de-obligacion';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { Filtros } from '../../../../shared/components/filtros/filtros';
 import { Icono } from '../../../../shared/components/icono/icono';
+import { textoDeBusqueda } from '../../../../shared/utils/texto-de-busqueda';
 
 type EstadoListado =
   | { readonly tipo: 'cargando' }
@@ -59,6 +60,8 @@ export class PresentacionesPage {
   protected readonly fecha = fechaIsoEnPalabras;
 
   protected readonly filtro = this.fb.group({
+    /** Numero de lote o de factura, buscado en el servidor (DP-45, `q`). No es filtro avanzado. */
+    q: [''],
     estado: [''],
     financiadorId: [''],
     desde: [''],
@@ -70,9 +73,11 @@ export class PresentacionesPage {
     { initialValue: this.filtro.getRawValue() },
   );
   /** Filtros avanzados fuera de su valor por defecto (vacio): el contador del embudo. */
-  protected readonly filtrosAvanzadosActivos = computed(
-    () => Object.values(this.valorDelFiltro()).filter((valor) => valor !== '').length,
-  );
+  protected readonly filtrosAvanzadosActivos = computed(() => {
+    const valor = this.valorDelFiltro();
+    return [valor.estado, valor.financiadorId, valor.desde, valor.hasta].filter((v) => v !== '')
+      .length;
+  });
 
   protected readonly alta = this.fb.group({
     financiadorId: ['', Validators.required],
@@ -129,6 +134,7 @@ export class PresentacionesPage {
     this.estado.set({ tipo: 'cargando' });
     this.api
       .buscar(consultorioId, {
+        q: textoDeBusqueda(valor.q),
         estado: valor.estado || undefined,
         financiadorId: financiadorId ?? undefined,
         desde: valor.desde || undefined,

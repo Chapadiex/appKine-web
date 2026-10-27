@@ -23,6 +23,11 @@ import { AccionesDeFila } from '../../../../shared/components/acciones-de-fila/a
 import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
 import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
 import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
+import {
+  CamposDeSort,
+  ordenDeServidor,
+} from '../../../../shared/components/tabla/orden-de-servidor';
+import { ListarMovimientosDePaseRequestParams } from '../../../../api/generated/api/pases.serviceInterface';
 import { PermisoDirective } from '../../../../shared/directives/permiso.directive';
 import { FocoAlMontar } from '../../../../shared/directives/foco-al-montar.directive';
 import { nuevaClaveDeIntento } from '../../../../shared/utils/clave-de-intento';
@@ -162,6 +167,19 @@ export class PasesDePersonaPage {
   );
   protected readonly error = signal<ErrorPase | null>(null);
   protected readonly detalle = signal<Detalle | null>(null);
+
+  /**
+   * Orden del ledger abierto, pedido al servidor (DP-45). Sin el, del mas viejo al mas nuevo, que
+   * es como se lee el saldo: por eso abrir otro pase o escribir en el vuelve a ese orden.
+   */
+  protected readonly ordenDeMovimientos = ordenDeServidor<
+    CamposDeSort<ListarMovimientosDePaseRequestParams['sort']>
+  >(() => {
+    const actual = this.detalle();
+    if (actual !== null) {
+      this.cargarMovimientos(actual.pase, 0);
+    }
+  });
 
   protected readonly productos = signal<readonly Producto[]>([]);
   protected readonly errorProductos = signal<ErrorPase | null>(null);
@@ -357,6 +375,7 @@ export class PasesDePersonaPage {
   // ------------------------------------------------------------------ ledger
 
   protected verMovimientos(pase: Pase): void {
+    this.ordenDeMovimientos.reiniciar();
     this.cargarMovimientos(pase, 0);
   }
 
@@ -371,11 +390,18 @@ export class PasesDePersonaPage {
   protected rangoDeMovimientos(pagina: PaginaDeMovimientosDePase): string {
     const total = pagina.totalElements ?? 0;
     const cantidad = (pagina.content ?? []).length;
+    const sort = this.ordenDeMovimientos.sort();
+    const orden =
+      sort === undefined || sort === 'ocurridoEn,asc'
+        ? ', del mas viejo al mas nuevo.'
+        : sort === 'ocurridoEn,desc'
+          ? ', del mas nuevo al mas viejo.'
+          : '.';
     if (total <= cantidad) {
-      return `${total === 1 ? '1 movimiento' : `${total} movimientos`}, del mas viejo al mas nuevo.`;
+      return `${total === 1 ? '1 movimiento' : `${total} movimientos`}${orden}`;
     }
     const desde = (pagina.page ?? 0) * (pagina.size ?? MOVIMIENTOS_POR_PAGINA) + 1;
-    return `Movimientos ${desde} a ${desde + cantidad - 1} de ${total}, del mas viejo al mas nuevo.`;
+    return `Movimientos ${desde} a ${desde + cantidad - 1} de ${total}${orden}`;
   }
 
   /**
@@ -399,7 +425,8 @@ export class PasesDePersonaPage {
       cargando: true,
       error: null,
     });
-    this.api.movimientos(ids.consultorioId, paseId, numero).subscribe({
+    const sort = this.ordenDeMovimientos.sort();
+    this.api.movimientos(ids.consultorioId, paseId, numero, sort).subscribe({
       next: (pagina) => {
         if (pedido !== this.pedidoMovimientos) {
           return;
@@ -435,6 +462,8 @@ export class PasesDePersonaPage {
     }
     const total = (actual.pagina?.totalElements ?? 0) + 1;
     const tamano = actual.pagina?.size ?? MOVIMIENTOS_POR_PAGINA;
+    // El movimiento nuevo queda al final del orden cronologico: se vuelve a ese orden para verlo.
+    this.ordenDeMovimientos.reiniciar();
     this.cargarMovimientos(pase, Math.floor((total - 1) / tamano), true);
   }
 

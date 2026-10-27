@@ -25,8 +25,25 @@
 <section class="tarjeta" aria-labelledby="titulo-filtros">
   <h2 id="titulo-filtros">Buscar lotes</h2>
   <form [formGroup]="filtro" (ngSubmit)="buscar()" novalidate>
-    <!-- Regla de filtros (plan §3.4): sin busqueda por texto en el backend, el embudo va solo. -->
-    <app-filtros [soloAvanzados]="true" [activos]="filtrosAvanzadosActivos()">
+    <!--
+      Regla de filtros (plan §3.4): la busqueda por numero, en el servidor (DP-45), a la vista; el
+      resto detras del embudo. El nombre del financiador no se busca: para eso esta su filtro.
+    -->
+    <app-filtros [activos]="filtrosAvanzadosActivos()">
+      <div class="campo" filtro-principal>
+        <label class="visualmente-oculto" for="filtro-q">Número de lote o de factura</label>
+        <div class="campo-busqueda">
+          <app-icono class="campo-busqueda__icono" nombre="buscar" />
+          <input
+            id="filtro-q"
+            type="search"
+            autocomplete="off"
+            placeholder="Buscar por número de lote o de factura"
+            formControlName="q"
+          />
+        </div>
+      </div>
+
       <div class="campos-en-linea">
         <div class="campo">
           <label for="filtro-estado">Estado</label>
@@ -58,11 +75,11 @@
           <input id="filtro-hasta" type="date" formControlName="hasta" />
         </div>
       </div>
-
-      <div class="acciones">
-        <button type="submit" class="boton">Buscar</button>
-      </div>
     </app-filtros>
+
+    <div class="acciones">
+      <button type="submit" class="boton">Buscar</button>
+    </div>
   </form>
 </section>
 

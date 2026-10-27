@@ -110,6 +110,31 @@ describe('NotificacionesPage', () => {
     expect(texto(fixture)).toContain('Elegí al menos un estado');
   });
 
+  it('la búsqueda y el orden viajan al servidor junto con los estados elegidos', async () => {
+    const fixture = montar();
+    esperarListado().flush(PAGINA);
+    await estabilizar(fixture);
+    const raiz = fixture.nativeElement as HTMLElement;
+
+    const busqueda = raiz.querySelector<HTMLInputElement>('#notificaciones-busqueda')!;
+    busqueda.value = 'invitacion';
+    busqueda.dispatchEvent(new Event('change'));
+    const buscado = esperarListado();
+    expect(buscado.request.params.get('q')).toBe('invitacion');
+    expect(buscado.request.params.getAll('estado')).toEqual(['FALLIDA', 'AGOTADA']);
+    buscado.flush(PAGINA);
+    await estabilizar(fixture);
+
+    const intentos = [...raiz.querySelectorAll<HTMLElement>('th[appOrdenable]')].find((th) =>
+      th.textContent?.includes('Intentos'),
+    )!;
+    intentos.querySelector('button')!.click();
+    const ordenado = esperarListado();
+    expect(decodeURIComponent(ordenado.request.params.get('sort')!)).toBe('intentos,asc');
+    expect(ordenado.request.params.get('q')).toBe('invitacion');
+    ordenado.flush(PAGINA);
+  });
+
   it('reintentar confirma y relee el listado', async () => {
     const fixture = montar();
     esperarListado().flush(PAGINA);
