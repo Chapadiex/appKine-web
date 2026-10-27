@@ -25,6 +25,14 @@ import {
   PESTANAS_DE_COLABORADORES,
 } from '../../models/pestanas-de-colaboradores';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { Icono } from '../../../../shared/components/icono/icono';
+import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
+import {
+  CamposDeSort,
+  ordenDeServidor,
+} from '../../../../shared/components/tabla/orden-de-servidor';
+import { textoDeBusqueda } from '../../../../shared/utils/texto-de-busqueda';
+import { ListNotificationsRequestParams } from '../../../../api/generated/api/notificaciones.serviceInterface';
 
 const POR_PAGINA = 20;
 
@@ -47,7 +55,7 @@ const POR_PAGINA = 20;
  */
 @Component({
   selector: 'app-notificaciones-page',
-  imports: [Pestanas, Ayuda, Filtros, RouterLink, Paginacion],
+  imports: [Pestanas, Ayuda, Icono, Filtros, ColumnaOrdenable, RouterLink, Paginacion],
   templateUrl: './notificaciones-page.html',
   styleUrl: '../../organization.css',
 })
@@ -76,6 +84,15 @@ export class NotificacionesPage {
   protected readonly faltaContexto = this.vista.faltaContexto;
 
   protected readonly paginaActual = signal(0);
+
+  /** El tipo de notificacion, o el destinatario exacto (DP-45, `q` del servidor). */
+  protected readonly busqueda = signal('');
+
+  /** Orden de la tabla, pedido al servidor: cambiarlo vuelve a la primera pagina (DP-45). */
+  protected readonly orden = ordenDeServidor<CamposDeSort<ListNotificationsRequestParams['sort']>>(
+    () => this.consultarDesdeElPrincipio(),
+  );
+
   protected readonly elegidos = signal<ReadonlySet<EstadoNotificacion>>(
     new Set(ESTADOS_POR_DEFECTO),
   );
@@ -99,6 +116,8 @@ export class NotificacionesPage {
       this.tenantContext.contextEpoch();
       untracked(() => {
         this.paginaActual.set(0);
+        this.busqueda.set('');
+        this.orden.reiniciar();
         this.exito.set(null);
         this.errorReintento.set(null);
         this.consultar();
@@ -119,6 +138,15 @@ export class NotificacionesPage {
       siguiente.delete(estado);
     }
     this.elegidos.set(siguiente);
+    this.consultarDesdeElPrincipio();
+  }
+
+  protected buscar(texto: string): void {
+    this.busqueda.set(texto);
+    this.consultarDesdeElPrincipio();
+  }
+
+  private consultarDesdeElPrincipio(): void {
     this.paginaActual.set(0);
     this.consultar();
   }
@@ -176,6 +204,8 @@ export class NotificacionesPage {
         estado: ESTADOS_FILTRABLES.filter((estado) => this.elegidos().has(estado)),
         page: this.paginaActual(),
         size: POR_PAGINA,
+        q: textoDeBusqueda(this.busqueda()),
+        sort: this.orden.sort(),
       })
       .subscribe({
         next: (pagina) => this.estado.set({ tipo: 'listo', pagina }),

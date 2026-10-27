@@ -173,8 +173,8 @@
               </caption>
               <thead>
                 <tr>
-                  <th scope="col">Participante</th>
-                  <th scope="col">Inscripción</th>
+                  <th scope="col" appOrdenable [tabla]="orden" columna="apellido">Participante</th>
+                  <th scope="col" appOrdenable [tabla]="orden" columna="estado">Inscripción</th>
                   <th scope="col">Registrado</th>
                   @if (admite() && puedeMarcar()) {
                     <th scope="col">Marcar</th>

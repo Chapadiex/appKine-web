@@ -173,7 +173,10 @@ error, además de estar en el `?`.
 >   por página. Se ordenan las columnas de identidad, estado, fecha e importe; las de acciones no.
 > - **Lista paginada por el servidor** (16 operaciones con `page`/`size`): el paginado es el del
 >   servidor; **no se ordena la página visible**, porque ordenar 20 filas de 2.000 hace creer que
->   se ordenó todo. El contrato no declara `sort` en ninguna operación: es un pedido al backend.
+>   se ordenó todo. Desde DP-45 (contrato 0.148.0) esas operaciones declaran `sort`
+>   (`campo,asc|desc`) y la mayoría `q`: el encabezado usa `th[appOrdenable]` con
+>   `ordenDeServidor` (`shared/components/tabla/orden-de-servidor.ts`), que manda `sort` y vuelve a
+>   la página 0, y el buscador manda `q`.
 > - Las grillas de carga (mediciones, tratamientos de una sesión) no son listados: no llevan esto.
 
 > **Regla de acción principal (decidida por el usuario el 21/10/2026).** El botón de alta de la

@@ -212,6 +212,32 @@ describe('EspaciosPage', () => {
     expect(texto(fixture)).toContain('No hay espacios dados de baja');
   });
 
+  it('busca por nombre y ordena por capacidad en el servidor, desde la primera página', async () => {
+    const fixture = await montar();
+    const host: HTMLElement = fixture.nativeElement;
+
+    escribir(fixture, '#espacios-busqueda', 'box');
+    host.querySelector('#espacios-busqueda')!.dispatchEvent(new Event('change'));
+    const buscado = httpMock.expectOne(esListado());
+    expect(buscado.request.params.get('q')).toBe('box');
+    buscado.flush({ content: [], page: 0, size: 20, totalElements: 0, totalPages: 0 });
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(texto(fixture)).toContain('Ningún espacio coincide con la búsqueda.');
+
+    escribir(fixture, '#espacios-busqueda', '');
+    host.querySelector('#espacios-busqueda')!.dispatchEvent(new Event('change'));
+    httpMock.expectOne(esListado()).flush(PAGINA);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    host.querySelector<HTMLButtonElement>('th[appOrdenable]:nth-child(2) button')!.click();
+    const ordenado = httpMock.expectOne(esListado());
+    expect(decodeURIComponent(ordenado.request.params.get('sort')!)).toBe('capacidad,asc');
+    expect(ordenado.request.params.get('page')).toBe('0');
+    ordenado.flush(PAGINA);
+  });
+
   it('el PATCH manda solo lo que cambio: la nota vaciada, el fin quitado y nada mas', async () => {
     const fixture = await montar();
 

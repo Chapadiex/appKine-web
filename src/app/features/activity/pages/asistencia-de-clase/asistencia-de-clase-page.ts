@@ -55,6 +55,12 @@ import {
 import { avisoDeDevengo } from '../../models/etiquetas-de-devengo';
 import { avisoDeConsumo } from '../../models/etiquetas-de-pases';
 import { AsistenciaApi } from '../../services/asistencia-api';
+import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
+import {
+  CamposDeSort,
+  ordenDeServidor,
+} from '../../../../shared/components/tabla/orden-de-servidor';
+import { DetalleOperativoRequestParams } from '../../../../api/generated/api/asistencia-de-clases.serviceInterface';
 
 type EstadoCarga =
   | { readonly tipo: 'cargando' }
@@ -112,7 +118,7 @@ interface Historial {
  */
 @Component({
   selector: 'app-asistencia-de-clase-page',
-  imports: [RouterLink, Paginacion, FocoAlMontar],
+  imports: [RouterLink, Paginacion, FocoAlMontar, ColumnaOrdenable],
   templateUrl: './asistencia-de-clase-page.html',
   styleUrl: '../../asistencia.css',
 })
@@ -142,6 +148,18 @@ export class AsistenciaDeClasePage {
 
   protected readonly estado = signal<EstadoCarga>({ tipo: 'cargando' });
   protected readonly pagina = signal(0);
+
+  /**
+   * Orden de los participantes, pedido al servidor (DP-45): vuelve a la primera pagina. Las marcas
+   * sin enviar se conservan, porque van por inscripcion y no por fila, igual que al paginar.
+   */
+  protected readonly orden = ordenDeServidor<CamposDeSort<DetalleOperativoRequestParams['sort']>>(
+    () => {
+      this.pagina.set(0);
+      this.cargar();
+    },
+  );
+
   protected readonly marcas = signal<ReadonlyMap<number, Marca>>(new Map());
   protected readonly enviando = signal(false);
   protected readonly errorAccion = signal<ErrorAsistencia | null>(null);
@@ -208,6 +226,7 @@ export class AsistenciaDeClasePage {
         this.errorAccion.set(null);
         this.historial.set(null);
         this.pagina.set(0);
+        this.orden.reiniciar();
         this.cargar();
       });
     });
@@ -229,7 +248,7 @@ export class AsistenciaDeClasePage {
     if (this.estado().tipo !== 'listo') {
       this.estado.set({ tipo: 'cargando' });
     }
-    this.api.detalle(ids.consultorioId, ids.claseId, this.pagina()).subscribe({
+    this.api.detalle(ids.consultorioId, ids.claseId, this.pagina(), this.orden.sort()).subscribe({
       next: (detalle) => {
         if (pedido === this.pedido) {
           this.estado.set({ tipo: 'listo', detalle });

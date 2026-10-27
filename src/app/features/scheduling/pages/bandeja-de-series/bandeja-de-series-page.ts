@@ -3,7 +3,7 @@ import { Component, computed, effect, inject, input, signal, untracked } from '@
 import { RouterLink } from '@angular/router';
 import { catchError, forkJoin, of } from 'rxjs';
 
-import { PersonaResponse } from '../../../../api/generated/model/persona-response';
+import { ListarSeriesDeTurnosRequestParams } from '../../../../api/generated/api/series-de-turnos.serviceInterface';
 import { SerieDeTurnosPage } from '../../../../api/generated/model/serie-de-turnos-page';
 import {
   SerieDeTurnosResumen,
@@ -14,6 +14,12 @@ import { Filtros } from '../../../../shared/components/filtros/filtros';
 import { Icono } from '../../../../shared/components/icono/icono';
 import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
 import { Pestanas } from '../../../../shared/components/pestanas/pestanas';
+import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
+import {
+  CamposDeSort,
+  ordenDeServidor,
+} from '../../../../shared/components/tabla/orden-de-servidor';
+import { textoDeBusqueda } from '../../../../shared/utils/texto-de-busqueda';
 import { ETIQUETA_PESTANAS_DE_AGENDA, pestanasDeAgenda } from '../../models/pestanas-de-agenda';
 import { fechaEnPalabras } from '../../models/etiquetas-de-agenda';
 import { fechaHoraEnZona } from '../../models/etiquetas-de-turno';
@@ -28,8 +34,6 @@ const RUTA = '/agenda/series';
 
 /** Filas por pagina. El backend acota a 100; veinte entran en una pantalla sin scroll largo. */
 export const FILAS_POR_PAGINA = 20;
-
-const ESPERA_DE_BUSQUEDA_MS = 300;
 
 /** Valor del filtro que no filtra por estado. No viaja al backend. */
 const TODAS = 'TODAS';
@@ -62,6 +66,12 @@ interface PersonaFiltrada {
  * de la pagina —a lo sumo una lectura por oferta, nunca por fila— y se recuerda mientras dure el
  * contexto. Si no se puede resolver, la celda lo dice en vez de inventar un nombre.
  *
+ * <h2>Busqueda y orden en el servidor (DP-45)</h2>
+ *
+ * <p>El buscador manda `q`, que el backend busca en el paciente (apellido, nombre, documento), la
+ * oferta y el profesional. Reemplaza al selector de persona de antes: ya no hace falta elegir a
+ * alguien del padron para filtrar. El orden de columna va como `sort`; sin el, mas nuevas primero.
+ *
  * <h2>Los filtros viajan en la query</h2>
  *
  * <p>`?estado=` y `?personaId=` para que un refresh o un enlace copiado abran la misma bandeja. Se
@@ -73,7 +83,7 @@ interface PersonaFiltrada {
  */
 @Component({
   selector: 'app-bandeja-de-series-page',
-  imports: [Ayuda, Filtros, Icono, RouterLink, Paginacion, Pestanas],
+  imports: [Ayuda, ColumnaOrdenable, Filtros, Icono, RouterLink, Paginacion, Pestanas],
   templateUrl: './bandeja-de-series-page.html',
   styleUrl: '../../agenda.css',
 })
@@ -106,13 +116,20 @@ export class BandejaDeSeriesPage {
   protected readonly persona = signal<PersonaFiltrada | null>(null);
   protected readonly pagina = signal(0);
 
+  /** Paciente, oferta o profesional (DP-45, `q` del servidor). */
+  protected readonly busqueda = signal('');
+
+  /** Orden de la tabla, pedido al servidor: cambiarlo vuelve a la primera pagina (DP-45). */
+  protected readonly orden = ordenDeServidor<
+    CamposDeSort<ListarSeriesDeTurnosRequestParams['sort']>
+  >(() => {
+    this.pagina.set(0);
+    this.cargar();
+  });
+
   protected readonly resultado = signal<SerieDeTurnosPage | null>(null);
   protected readonly cargando = signal(false);
   protected readonly error = signal<ErrorSerie | null>(null);
-
-  protected readonly candidatas = signal<readonly PersonaResponse[]>([]);
-  protected readonly buscoPersonas = signal(false);
-  private busquedaPendiente: ReturnType<typeof setTimeout> | undefined;
 
   /** Nombres de profesional por oferta: `ofertaId -> (membershipId -> nombre)`. */
   private readonly profesionales = signal<ReadonlyMap<number, ReadonlyMap<number, string>>>(
@@ -143,6 +160,8 @@ export class BandejaDeSeriesPage {
           // Otra sede u otra organizacion: la persona filtrada no es de ahi.
           this.epochDeApertura = epoch;
           this.persona.set(null);
+          this.busqueda.set('');
+          this.orden.reiniciar();
           this.escribirUrl();
         }
         this.profesionales.set(new Map());
@@ -169,6 +188,8 @@ export class BandejaDeSeriesPage {
       .listar(consultorioId, {
         estado: estado === TODAS ? undefined : estado,
         personaId: this.persona()?.id,
+        q: textoDeBusqueda(this.busqueda()),
+        sort: this.orden.sort(),
         page: this.pagina(),
         size: FILAS_POR_PAGINA,
       })
@@ -198,38 +219,16 @@ export class BandejaDeSeriesPage {
   }
 
   // -------------------------------------------------------------------------------------
-  // Filtro por persona
+  // Busqueda y filtro por persona
   // -------------------------------------------------------------------------------------
 
-  /** Mismo criterio que la reserva: `input` con debounce, no `change`. */
-  protected buscarPersona(texto: string): void {
-    clearTimeout(this.busquedaPendiente);
-    if (texto.trim() === '') {
-      this.candidatas.set([]);
-      this.buscoPersonas.set(false);
-      return;
-    }
-    this.busquedaPendiente = setTimeout(() => {
-      this.agenda.buscarPersonas(texto).subscribe({
-        next: (pagina) => {
-          this.candidatas.set(pagina.content ?? []);
-          this.buscoPersonas.set(true);
-        },
-        error: (error: unknown) => this.error.set(traducirErrorSerie(error)),
-      });
-    }, ESPERA_DE_BUSQUEDA_MS);
+  protected buscar(texto: string): void {
+    this.busqueda.set(texto);
+    this.pagina.set(0);
+    this.cargar();
   }
 
-  protected elegirPersona(candidata: PersonaResponse): void {
-    if (candidata.id === undefined) {
-      return;
-    }
-    this.persona.set({ id: candidata.id, nombre: `${candidata.apellido}, ${candidata.nombre}` });
-    this.candidatas.set([]);
-    this.buscoPersonas.set(false);
-    this.recargarDesdeElPrincipio();
-  }
-
+  /** El filtro por persona llega solo por URL (`?personaId=`, desde otra pantalla). */
   protected quitarPersona(): void {
     this.persona.set(null);
     this.recargarDesdeElPrincipio();

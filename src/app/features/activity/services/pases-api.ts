@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { PasesService } from '../../../api/generated/api/pases.service';
+import { ListarMovimientosDePaseRequestParams } from '../../../api/generated/api/pases.serviceInterface';
 import { PersonasService } from '../../../api/generated/api/personas.service';
 import { ServiciosYOfertasService } from '../../../api/generated/api/servicios-y-ofertas.service';
 import { CrearProducto } from '../../../api/generated/model/crear-producto';
@@ -104,15 +105,16 @@ export class PasesApi {
 
   /**
    * El ledger de a paginas, del movimiento mas viejo al mas nuevo (RF-M29-009, 0.116.0): el orden en
-   * que se lee `saldoResultante`. `page` en base cero.
+   * que se lee `saldoResultante`. `page` en base cero. `sort` (DP-45) pide otro orden.
    */
   movimientos(
     consultorioId: number,
     paseId: number,
     page: number,
+    sort?: ListarMovimientosDePaseRequestParams['sort'],
     size = MOVIMIENTOS_POR_PAGINA,
   ): Observable<PaginaDeMovimientosDePase> {
-    return this.pases.listarMovimientosDePase({ consultorioId, paseId, page, size });
+    return this.pases.listarMovimientosDePase({ consultorioId, paseId, page, size, sort });
   }
 
   /**

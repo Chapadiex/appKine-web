@@ -51,9 +51,9 @@ function comparar(a: ValorOrdenable, b: ValorOrdenable): number {
  * tablas del plan §3.4).
  *
  * <p><b>Solo para listas completas.</b> Ordenar una pagina de un listado paginado por el servidor
- * ordena 20 filas de 2.000 y deja creer que se ordeno todo: en esos listados el orden es un
- * pedido al backend (el contrato no declara `sort` en ninguna operacion) y la pagina la maneja
- * `app-paginacion` con el `page` del servidor.
+ * ordena 20 filas de 2.000 y deja creer que se ordeno todo: en esos listados el orden lo pide
+ * `ordenDeServidor` como `sort` (DP-45) y la pagina la maneja `app-paginacion` con el `page` del
+ * servidor.
  *
  * <p><b>Volver a la primera pagina</b> cuando cambian las filas (otro filtro, una recarga) o el
  * orden: quedarse en la pagina 4 de una lista que ahora tiene 2 es una pantalla vacia sin motivo.

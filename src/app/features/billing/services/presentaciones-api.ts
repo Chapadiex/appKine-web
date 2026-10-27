@@ -16,6 +16,8 @@ import { ValidacionDePresentacion } from '../../../api/generated/model/validacio
 
 /** Filtros de la bandeja. Todos opcionales: sin ninguno, el backend trae todo lo de la sede. */
 export interface FiltroDePresentaciones {
+  /** Numero de factura ("contiene") o numero de lote (DP-45). */
+  readonly q?: string;
   readonly estado?: string;
   readonly financiadorId?: number;
   readonly desde?: string;

@@ -21,6 +21,12 @@ import { Paginacion } from '../../../../shared/components/paginacion/paginacion'
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { traducirErrorColaborador } from '../../models/colaborador-errors';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
+import {
+  CamposDeSort,
+  ordenDeServidor,
+} from '../../../../shared/components/tabla/orden-de-servidor';
+import { textoDeBusqueda } from '../../../../shared/utils/texto-de-busqueda';
 
 /**
  * Cual de los tres filtros excluyentes esta elegido.
@@ -67,7 +73,7 @@ const POR_PAGINA = 20;
  */
 @Component({
   selector: 'app-audit-page',
-  imports: [Ayuda, ReactiveFormsModule, RouterLink, Paginacion],
+  imports: [Ayuda, ColumnaOrdenable, ReactiveFormsModule, RouterLink, Paginacion],
   templateUrl: './audit-page.html',
   styleUrl: '../../organization.css',
 })
@@ -89,6 +95,17 @@ export class AuditPage {
   private readonly vista = vistaDeListado<AuditEventResponse>(this.estado);
   protected readonly paginaActual = signal(0);
 
+  /**
+   * Orden de los resultados, pedido al servidor (DP-45). Sin el, del hecho mas nuevo al mas viejo.
+   * Cambiarlo vuelve a la primera pagina con el filtro del formulario, igual que el paginado.
+   */
+  protected readonly orden = ordenDeServidor<CamposDeSort<ListAuditEventsRequestParams['sort']>>(
+    () => {
+      this.paginaActual.set(0);
+      this.consultar();
+    },
+  );
+
   /** Hecho cuyo detalle esta abierto en el panel lateral, o `null`. Solo uno a la vez. */
   protected readonly detalle = signal<AuditEventResponse | null>(null);
   protected readonly intentos = signal(0);
@@ -103,6 +120,8 @@ export class AuditPage {
     actorAccountId: [''],
     desde: [''],
     hasta: [''],
+    /** Refina cualquiera de los tres filtros (DP-45, `q`): tipo de evento, de entidad o un id. */
+    q: [''],
   });
 
   protected readonly eventos = this.vista.filas;
@@ -116,6 +135,7 @@ export class AuditPage {
       this.tenantContext.contextEpoch();
       untracked(() => {
         this.paginaActual.set(0);
+        this.orden.reiniciar();
         this.detalle.set(null);
         this.errorVentana.set(null);
         this.intentos.set(0);
@@ -226,7 +246,13 @@ export class AuditPage {
    */
   private armarParametros(orgId: number): ListAuditEventsRequestParams | null {
     const valores = this.formulario.getRawValue();
-    const base = { orgId, page: this.paginaActual(), size: POR_PAGINA };
+    const base: ListAuditEventsRequestParams = {
+      orgId,
+      page: this.paginaActual(),
+      size: POR_PAGINA,
+      q: textoDeBusqueda(valores.q),
+      sort: this.orden.sort(),
+    };
 
     if (valores.filtro === 'entidad') {
       const entityType = comoTexto(valores.entityType);
@@ -252,7 +278,7 @@ export class AuditPage {
 
   /** Valida la ventana temporal antes de salir: fechas presentes, orden y tope de 90 dias. */
   private armarVentana(
-    base: { orgId: number; page: number; size: number },
+    base: ListAuditEventsRequestParams,
     desde: string,
     hasta: string,
   ): ListAuditEventsRequestParams | null {

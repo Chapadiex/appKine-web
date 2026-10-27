@@ -5,6 +5,7 @@ import { CreatePersonaRequest } from '../../../api/generated/model/create-person
 import { PersonaPageResponse } from '../../../api/generated/model/persona-page-response';
 import { PersonaResponse } from '../../../api/generated/model/persona-response';
 import { PersonasService } from '../../../api/generated/api/personas.service';
+import { BuscarPersonasRequestParams } from '../../../api/generated/api/personas.serviceInterface';
 import { ResumenDePersonaResponse } from '../../../api/generated/model/resumen-de-persona-response';
 import { UpdatePersonaRequest } from '../../../api/generated/model/update-persona-request';
 
@@ -59,6 +60,8 @@ export class PersonApi {
     readonly perfil: FiltroPerfil;
     readonly pagina: number;
     readonly tamano: number;
+    /** Orden pedido al servidor (DP-45). Sin el, por apellido y nombre. */
+    readonly sort?: BuscarPersonasRequestParams['sort'];
   }): Observable<PersonaPageResponse> {
     const texto = filtros.texto?.trim();
     return this.api.buscarPersonas({
@@ -67,6 +70,7 @@ export class PersonApi {
       perfil: filtros.perfil,
       page: filtros.pagina,
       size: filtros.tamano,
+      sort: filtros.sort,
     });
   }
 

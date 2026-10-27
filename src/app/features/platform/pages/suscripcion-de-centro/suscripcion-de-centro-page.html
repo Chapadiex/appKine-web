@@ -80,11 +80,11 @@
             </caption>
             <thead>
               <tr>
-                <th scope="col">Centro</th>
-                <th scope="col">Slug</th>
+                <th scope="col" appOrdenable [tabla]="orden" columna="nombre">Centro</th>
+                <th scope="col" appOrdenable [tabla]="orden" columna="slug">Slug</th>
                 <th scope="col">Plan</th>
                 <th scope="col">Suscripción</th>
-                <th scope="col">Alta</th>
+                <th scope="col" appOrdenable [tabla]="orden" columna="creadaEn">Alta</th>
                 <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
               </tr>
             </thead>

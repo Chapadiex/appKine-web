@@ -5,6 +5,7 @@ import { Observable } from 'rxjs';
 import { AdjuntoPageResponse } from '../../../api/generated/model/adjunto-page-response';
 import { AdjuntoResponse } from '../../../api/generated/model/adjunto-response';
 import { AdjuntosService } from '../../../api/generated/api/adjuntos.service';
+import { ListarAdjuntosDePersonaRequestParams } from '../../../api/generated/api/adjuntos.serviceInterface';
 import { ClasificarAdjuntoRequest } from '../../../api/generated/model/clasificar-adjunto-request';
 
 /**
@@ -71,6 +72,8 @@ export class AdjuntosApi {
     readonly filtro: FiltroDeAdjuntos;
     readonly pagina: number;
     readonly tamano: number;
+    /** Orden pedido al servidor (DP-45). Sin el, el de siempre de la operacion. */
+    readonly sort?: ListarAdjuntosDePersonaRequestParams['sort'];
   }): Observable<AdjuntoPageResponse> {
     return this.api.listarAdjuntosDePersona({
       personaId: filtros.personaId,
@@ -78,6 +81,7 @@ export class AdjuntosApi {
       incluirDadosDeBaja: filtros.filtro === 'TODOS' ? true : undefined,
       page: filtros.pagina,
       size: filtros.tamano,
+      sort: filtros.sort,
     });
   }
 

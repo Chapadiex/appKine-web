@@ -15,6 +15,11 @@ import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { Filtros } from '../../../../shared/components/filtros/filtros';
 import { Icono } from '../../../../shared/components/icono/icono';
 import { Pestanas } from '../../../../shared/components/pestanas/pestanas';
+import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
+import {
+  CamposDeSort,
+  ordenDeServidor,
+} from '../../../../shared/components/tabla/orden-de-servidor';
 import {
   ETIQUETA_PESTANAS_DE_PLATAFORMA,
   PESTANAS_DE_PLATAFORMA,
@@ -70,7 +75,7 @@ const TAMANO_DE_PAGINA = 20;
  */
 @Component({
   selector: 'app-suscripcion-de-centro-page',
-  imports: [Ayuda, Filtros, Icono, Pestanas, Paginacion],
+  imports: [Ayuda, ColumnaOrdenable, Filtros, Icono, Pestanas, Paginacion],
   templateUrl: './suscripcion-de-centro-page.html',
 })
 export class SuscripcionDeCentroPage {
@@ -86,6 +91,14 @@ export class SuscripcionDeCentroPage {
   /** Filtros avanzados (detras del embudo) fuera de su valor por defecto. */
   protected readonly filtrosAvanzadosActivos = computed(() => Number(this.filtroDeEstado() !== ''));
   protected readonly listado = signal<Listado>({ tipo: 'cargando' });
+
+  /**
+   * Orden del listado de centros, pedido al servidor (DP-45): vuelve a la primera pagina con el
+   * filtro ya aplicado, igual que paginar.
+   */
+  protected readonly orden = ordenDeServidor<
+    CamposDeSort<ListPlatformOrganizationsRequestParams['sort']>
+  >(() => this.listar(0));
   /** El centro elegido del listado: su nombre encabeza la suscripcion. */
   protected readonly centro = signal<PlatformOrganizationResponse | null>(null);
   protected readonly estado = signal<Estado>({ tipo: 'inicial' });
@@ -225,7 +238,12 @@ export class SuscripcionDeCentroPage {
     this.listado.set({ tipo: 'cargando' });
     this.pedidoDeListado?.unsubscribe();
     this.pedidoDeListado = this.plataforma
-      .listPlatformOrganizations({ ...this.filtroAplicado, page: pagina, size: TAMANO_DE_PAGINA })
+      .listPlatformOrganizations({
+        ...this.filtroAplicado,
+        sort: this.orden.sort(),
+        page: pagina,
+        size: TAMANO_DE_PAGINA,
+      })
       .subscribe({
         next: (respuesta) => {
           const centros = respuesta.content ?? [];
