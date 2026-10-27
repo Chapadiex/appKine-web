@@ -1,0 +1,98 @@
+@if (sinValores()) {
+  <p class="estado estado--vacio">{{ textoSinValores() }}</p>
+} @else {
+  <div class="grafico">
+    <div class="grafico__eje-y" aria-hidden="true">
+      @for (marca of marcas(); track marca.valor) {
+        <span class="grafico__marca" [style.bottom.%]="marca.alto">{{ marca.texto }}</span>
+      }
+    </div>
+
+    <div class="grafico__marco">
+      <div
+        class="grafico__lienzo"
+        role="group"
+        tabindex="0"
+        [attr.aria-label]="descripcion()"
+        [attr.aria-describedby]="id + '-lectura'"
+        [style.min-width.px]="columnas().length * 4"
+        (focus)="enfocar()"
+        (blur)="soltar()"
+        (keydown)="teclear($event)"
+        (pointerleave)="soltar()"
+      >
+        <div class="grafico__plano">
+          @for (marca of marcas(); track marca.valor) {
+            <div
+              class="grafico__guia"
+              [class.grafico__guia--base]="marca.valor === 0"
+              [style.bottom.%]="marca.alto"
+            ></div>
+          }
+          <div
+            class="grafico__columnas"
+            [style.grid-template-columns]="'repeat(' + columnas().length + ', 1fr)'"
+          >
+            @for (columna of columnas(); track $index) {
+              <div
+                class="grafico__columna"
+                [class.grafico__columna--activa]="activa() === $index"
+                (pointerenter)="activar($index)"
+              >
+                <div
+                  class="grafico__barra"
+                  [class.grafico__barra--minima]="columna.valor > 0"
+                  [style.height.%]="columna.alto"
+                ></div>
+              </div>
+            }
+          </div>
+          @if (globo(); as g) {
+            <div
+              class="grafico__globo"
+              aria-hidden="true"
+              [style.left.%]="g.izquierda"
+              [style.transform]="'translateX(' + g.corrimiento + ')'"
+            >
+              <strong>{{ g.barra.texto }}</strong>
+              <span>{{ g.barra.detalle }}</span>
+            </div>
+          }
+        </div>
+        <div class="grafico__eje-x" aria-hidden="true">
+          @for (rotulo of rotulos(); track rotulo.izquierda) {
+            <span
+              class="grafico__rotulo"
+              [class.grafico__rotulo--inicio]="rotulo.alineacion === 'inicio'"
+              [class.grafico__rotulo--fin]="rotulo.alineacion === 'fin'"
+              [style.left.%]="rotulo.izquierda"
+              >{{ rotulo.texto }}</span
+            >
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <p class="visualmente-oculto" aria-live="polite" [id]="id + '-lectura'">{{ lectura() }}</p>
+
+  <details class="grafico__datos">
+    <summary>Ver los datos del gráfico</summary>
+    <table class="tabla">
+      <thead>
+        <tr>
+          <th scope="col">{{ encabezadoPeriodo() }}</th>
+          <th scope="col" class="grafico__valor">{{ encabezadoValor() }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (barra of barras(); track $index) {
+          <tr>
+            <td>{{ barra.detalle }}</td>
+            <td class="grafico__valor">{{ barra.texto }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </details>
+}

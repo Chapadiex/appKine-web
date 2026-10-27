@@ -139,8 +139,14 @@
       </div>
       <div>
         <dt>Clases</dt>
-        <dd>{{ b.clases?.length ?? 0 }}</dd>
+        <dd>{{ b.resumen?.cantidadClases ?? b.clases?.length ?? 0 }}</dd>
       </div>
+      @if (b.resumen?.totalPresentes !== undefined) {
+        <div>
+          <dt>Presentes</dt>
+          <dd>{{ b.resumen?.totalPresentes }}</dd>
+        </div>
+      }
       <div>
         <dt>Servicios</dt>
         <dd>{{ grupos().length }}</dd>

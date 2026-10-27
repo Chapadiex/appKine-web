@@ -72,6 +72,13 @@
   font-weight: var(--peso-medio);
 }
 
+/* El periodo al lado del titulo de una tira de cifras: dato, no titulo. */
+.titulo-periodo {
+  font-size: var(--tipo-sm);
+  font-weight: var(--peso-normal);
+  color: var(--color-texto-suave);
+}
+
 /*
  * Dos columnas: el trabajo principal (una tabla, un detalle) a la izquierda y los paneles
  * laterales a la derecha. En pantalla angosta la columna lateral baja debajo.

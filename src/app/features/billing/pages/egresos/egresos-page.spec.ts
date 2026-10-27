@@ -28,6 +28,26 @@ const EGRESO = {
   registradoEn: '2026-10-05T14:00:00Z',
 };
 
+/** El mes en curso segun el servidor (DP-45): la pantalla lo muestra tal cual, sin sumar. */
+const RESUMEN = {
+  consultorioId: CONSULTORIO,
+  desde: '2026-10-01',
+  hasta: '2026-10-31',
+  porMoneda: [
+    {
+      moneda: 'ARS',
+      cantidad: 3,
+      registrado: 420000,
+      pagado: 310000,
+      pendiente: 110000,
+      cantidadBorrador: 2,
+      importeBorrador: 75000,
+      cantidadAnulados: 1,
+    },
+  ],
+  porCategoria: [],
+};
+
 /**
  * Listado y alta de egresos (M22). Cubre lo que decide comportamiento: el periodo por defecto sale
  * del dia de la SEDE, los filtros viajan al servidor, el alta manda el cuerpo del contrato con su
@@ -68,6 +88,50 @@ describe('EgresosPage', () => {
     expect(texto).toContain('150.000,00');
     expect(texto).toContain('50.000,00');
     expect(campo<HTMLInputElement>(fixture, '#filtro-desde').value).toBe('2026-10-01');
+  });
+
+  it('la tira del mes muestra lo registrado, pagado, pendiente y en borrador del servidor', async () => {
+    const fixture = await montar([EGRESO]);
+
+    const texto = contenido(fixture).replace(/\s+/g, ' ');
+    expect(texto).toContain('Este mes (01/10/2026 al 31/10/2026)');
+    expect(texto).toContain('420.000,00');
+    expect(texto).toContain('310.000,00');
+    expect(texto).toContain('110.000,00');
+    expect(texto).toContain('75.000,00');
+    expect(texto).toContain('2 sin confirmar · 1 anulados');
+  });
+
+  it('sin totales del mes el listado sigue y lo dice', async () => {
+    const fixture = await montar([EGRESO], null);
+
+    expect(contenido(fixture)).toContain('No se pudieron leer los totales del mes.');
+    expect(contenido(fixture)).toContain('Lic. Sintetica');
+  });
+
+  it('buscar por texto manda q al servidor y vuelve a la primera página', async () => {
+    const lleno = Array.from({ length: 51 }, (_, i) => ({ ...EGRESO, id: 100 + i }));
+    const fixture = await montar(lleno);
+
+    // 51 filas: se muestran 50 y hay pagina siguiente.
+    expect((fixture.nativeElement as HTMLElement).querySelectorAll('tbody tr')).toHaveLength(50);
+    boton(fixture, 'Siguiente').click();
+    const segunda = httpMock.expectOne((p) => p.url === `${BASE}/egresos`);
+    expect(segunda.request.params.get('desplazamiento')).toBe('50');
+    expect(segunda.request.params.get('limite')).toBe('51');
+    segunda.flush([EGRESO]);
+    await estabilizar(fixture);
+    expect(contenido(fixture)).toContain('Egresos 51 a 51');
+    expect(boton(fixture, 'Siguiente').disabled).toBe(true);
+
+    escribir(fixture, '#filtro-q', '  sintetica ');
+    enviar(fixture, 0);
+    const busqueda = httpMock.expectOne((p) => p.url === `${BASE}/egresos`);
+    expect(busqueda.request.params.get('q')).toBe('sintetica');
+    expect(busqueda.request.params.get('desplazamiento')).toBe('0');
+    busqueda.flush([EGRESO]);
+    await estabilizar(fixture);
+    expect(boton(fixture, 'Siguiente')).toBeUndefined();
   });
 
   it('la fecha de registro es la del día de la sede, no la del navegador', async () => {
@@ -205,7 +269,10 @@ describe('EgresosPage', () => {
 
   // ------------------------------------------------------------------------------------
 
-  async function montar(egresos: object[]): Promise<ComponentFixture<EgresosPage>> {
+  async function montar(
+    egresos: object[],
+    resumen: object | null = RESUMEN,
+  ): Promise<ComponentFixture<EgresosPage>> {
     tenantContext.select({
       organizationId: 1,
       organizationName: 'Centro Belgrano',
@@ -228,6 +295,15 @@ describe('EgresosPage', () => {
         { id: 31, nombreComercial: 'Pilates grupal', estado: 'ACTIVO' },
         { id: 32, nombreComercial: 'Oferta de baja', estado: 'INACTIVO' },
       ]);
+    const pedidoDeResumen = httpMock.expectOne(`${BASE}/egresos/resumen`);
+    if (resumen === null) {
+      pedidoDeResumen.flush(
+        { type: 'https://akine.app/problems/forbidden', status: 403 },
+        { status: 403, statusText: 'Forbidden' },
+      );
+    } else {
+      pedidoDeResumen.flush(resumen);
+    }
     const busqueda = httpMock.expectOne((p: HttpRequest<unknown>) => p.url === `${BASE}/egresos`);
     expect(busqueda.request.params.get('desde')).toBe('2026-10-01');
     busqueda.flush(egresos);
@@ -260,6 +336,12 @@ describe('EgresosPage', () => {
     input.value = valor;
     input.dispatchEvent(new Event('input'));
     fixture.detectChanges();
+  }
+
+  function boton(fixture: ComponentFixture<EgresosPage>, texto: string) {
+    return Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>('button'),
+    ).find((b) => b.textContent?.trim() === texto)!;
   }
 
   function enviar(fixture: ComponentFixture<EgresosPage>, indice: number) {
