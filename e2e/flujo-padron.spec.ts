@@ -18,6 +18,9 @@ test.describe('Padron de personas contra el backend real', () => {
 
   test('alta, perfil de paciente sin motivo, edicion y baja de la ficha', async ({ page, api }) => {
     const apellido = `Padron${nonce()}`;
+    // Unico por corrida: el detector de duplicados (RN-M07-001) compara el telefono, y uno fijo
+    // hacia chocar el reintento —y dos corridas en paralelo— con la ficha del intento anterior.
+    const telefono = `351${String(Math.floor(Math.random() * 10_000_000)).padStart(7, '0')}`;
     const fila = page.getByRole('row').filter({ hasText: apellido });
 
     await navegar(page, '/pacientes');
@@ -27,7 +30,7 @@ test.describe('Padron de personas contra el backend real', () => {
     await page.getByRole('button', { name: 'Dar de alta una persona' }).click();
     await page.getByLabel('Apellido', { exact: true }).fill(apellido);
     await page.getByLabel('Nombre', { exact: true }).fill('Marta');
-    await page.getByLabel('Teléfono', { exact: true }).fill('3515550101');
+    await page.getByLabel('Teléfono', { exact: true }).fill(telefono);
     const alta = respuestaDe(page, 'POST', /\/personas$/);
     await page.getByRole('button', { name: 'Dar de alta', exact: true }).click();
     const creada = await alta;
