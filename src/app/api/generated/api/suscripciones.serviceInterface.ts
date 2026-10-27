@@ -40,6 +40,7 @@ export interface ListSubscriptionTransitionsRequestParams {
     orgId: number;
     page?: number;
     size?: number;
+    sort?: 'ocurridoEn,asc' | 'ocurridoEn,desc' | 'estadoNuevo,asc' | 'estadoNuevo,desc';
 }
 
 
@@ -73,7 +74,7 @@ export interface SuscripcionesServiceInterface {
 
     /**
      * Historico de la suscripcion
-     * Listado paginado de los cambios de estado y de plan, del hecho mas reciente al mas viejo. Es append-only: responde \&#39;que le paso a este centro y cuando\&#39; meses despues, y por eso ninguna fila se edita ni se borra. La primera fila de toda suscripcion tiene fromStatus ausente y significa el alta. Requiere administrar esa organizacion. El tamano de pagina se acota a 100: pedir mas devuelve ese maximo, no un error.
+     * Listado paginado de los cambios de estado y de plan, del hecho mas reciente al mas viejo. Es append-only: responde \&#39;que le paso a este centro y cuando\&#39; meses despues, y por eso ninguna fila se edita ni se borra. La primera fila de toda suscripcion tiene fromStatus ausente y significa el alta. Requiere administrar esa organizacion. El tamano de pagina se acota a 100: pedir mas devuelve ese maximo, no un error. DP-45: sort ordena por ocurridoEn o estadoNuevo. Sin q: el historico de una sola suscripcion son pocas filas y no hay texto en el que buscar.
      * @endpoint get /api/v1/organizations/{orgId}/subscription/transitions
 * @param requestParameters
      */

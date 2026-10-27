@@ -20,6 +20,7 @@ import { ReprogramarTurno } from '../model/models';
 import { ReservarTurno } from '../model/models';
 import { Turno } from '../model/models';
 import { TurnoDelDia } from '../model/models';
+import { TurnosDeSede } from '../model/models';
 
 
 import { Configuration }                                     from '../configuration';
@@ -49,6 +50,15 @@ export interface DeshacerLlegadaRequestParams {
 export interface HistorialTurnoRequestParams {
     consultorioId: number;
     turnoId: number;
+}
+
+export interface ListarTurnosDeSedeRequestParams {
+    consultorioId: number;
+    desde: string;
+    hasta: string;
+    profesionalId?: number;
+    ofertaId?: number;
+    incluirCancelados?: boolean;
 }
 
 export interface RegistrarAusenciaRequestParams {
@@ -125,6 +135,14 @@ export interface TurnosServiceInterface {
 * @param requestParameters
      */
     historialTurno(requestParameters: HistorialTurnoRequestParams, extraHttpRequestParams?: any): Observable<Array<EventoDeTurno>>;
+
+    /**
+     * Turnos de la sede en un rango de fechas
+     * Los turnos reservados de la sede que empiezan en &#x60;[desde, hasta)&#x60;, del mas temprano al mas tarde (desempate por id). Es la fuente del calendario semanal con panel de detalle.  Las fechas son dias locales de la **zona de la sede**, que viaja en la respuesta. &#x60;hasta&#x60; es **exclusivo**, como en la busqueda de horarios. **El rango tiene un maximo de 42 dias**: mas que eso responde 400 &#x60;validation-error&#x60;. No hay paginacion, el tope la hace innecesaria.  **Los cancelados no vienen** salvo &#x60;incluirCancelados&#x3D;true&#x60;. Cada turno trae lo mismo que la agenda del dia (paciente, oferta, espacio, recepcion, serie, cobertura elegida) mas el nombre del profesional. **Nada clinico.**  Exige &#x60;turno:read&#x60;, igual que la agenda del dia.
+     * @endpoint get /api/v1/consultorios/{consultorioId}/turnos/calendario
+* @param requestParameters
+     */
+    listarTurnosDeSede(requestParameters: ListarTurnosDeSedeRequestParams, extraHttpRequestParams?: any): Observable<TurnosDeSede>;
 
     /**
      * Registrar que el paciente no vino

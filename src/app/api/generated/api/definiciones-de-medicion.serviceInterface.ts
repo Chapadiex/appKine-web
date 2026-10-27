@@ -37,6 +37,7 @@ export interface SearchMedicionDefinicionesRequestParams {
     alcance?: 'GLOBAL' | 'ORGANIZACION' | 'TODOS';
     page?: number;
     size?: number;
+    sort?: 'codigo,asc' | 'codigo,desc' | 'nombre,asc' | 'nombre,desc' | 'tipo,asc' | 'tipo,desc';
 }
 
 export interface UpdateMedicionDefinicionRequestParams {
@@ -67,7 +68,7 @@ export interface DefinicionesDeMedicionServiceInterface {
 
     /**
      * Listado del catalogo de medidas
-     * Devuelve las definiciones que el tenant del contexto puede ver: las de PLATAFORMA mas las PROPIAS, en la misma lista. Es la consulta del selector de tests del examen fisico.  El texto q se compara contra el nombre Y el codigo, sin distinguir mayusculas ni acentos —lo resuelve la collation de la base—. Los comodines del cliente se escapan, asi que tipear un % no devuelve el catalogo entero.  estado vale ACTIVO por defecto, y eso es lo que hace que un formulario de examen NUNCA ofrezca un test dado de baja sin que el frontend tenga que acordarse. Los inactivos hay que pedirlos explicitamente, y la pantalla de administracion los necesita para explicar por que un codigo esta tomado.  alcance vale TODOS por defecto: al elegir una medida no importa si la sembro la plataforma o el centro. GLOBAL y ORGANIZACION existen para la pantalla de administracion, que si tiene que separarlas porque lo global no lo puede editar el tenant.  El tamano de pagina se acota a 100: pedir mas devuelve ese maximo, no un error.
+     * Devuelve las definiciones que el tenant del contexto puede ver: las de PLATAFORMA mas las PROPIAS, en la misma lista. Es la consulta del selector de tests del examen fisico.  El texto q se compara contra el nombre Y el codigo, sin distinguir mayusculas ni acentos —lo resuelve la collation de la base—. Los comodines del cliente se escapan, asi que tipear un % no devuelve el catalogo entero.  estado vale ACTIVO por defecto, y eso es lo que hace que un formulario de examen NUNCA ofrezca un test dado de baja sin que el frontend tenga que acordarse. Los inactivos hay que pedirlos explicitamente, y la pantalla de administracion los necesita para explicar por que un codigo esta tomado.  alcance vale TODOS por defecto: al elegir una medida no importa si la sembro la plataforma o el centro. GLOBAL y ORGANIZACION existen para la pantalla de administracion, que si tiene que separarlas porque lo global no lo puede editar el tenant.  El tamano de pagina se acota a 100: pedir mas devuelve ese maximo, no un error.  DP-45: sort ordena por codigo, nombre o tipo; sin el, por nombre.
      * @endpoint get /api/v1/mediciones/definiciones
 * @param requestParameters
      */

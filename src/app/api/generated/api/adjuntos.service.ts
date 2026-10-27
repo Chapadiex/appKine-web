@@ -279,7 +279,7 @@ export class AdjuntosService extends BaseService implements AdjuntosServiceInter
 
     /**
      * Listar los adjuntos de una persona
-     * RF-M25-005. Devuelve la METADATA, nunca el contenido: para descargar hay un endpoint propio que autoriza cada llamada.  Por defecto trae solo los VIGENTES. Los dados de baja se piden con incluirDadosDeBaja y siguen resolviendo, que es RN-M07-004 aplicada al documento en vez de a la persona.  Una persona INACTIVA lista igual: sus documentos siguen siendo consultables.
+     * RF-M25-005. Devuelve la METADATA, nunca el contenido: para descargar hay un endpoint propio que autoriza cada llamada.  Por defecto trae solo los VIGENTES. Los dados de baja se piden con incluirDadosDeBaja y siguen resolviendo, que es RN-M07-004 aplicada al documento en vez de a la persona.  Una persona INACTIVA lista igual: sus documentos siguen siendo consultables.  DP-45: sort ordena por subidoEn, titulo, categoria o tamano. Sin q: los adjuntos de UNA persona son pocos y ya se filtran por categoria.
      * @endpoint get /api/v1/personas/{personaId}/adjuntos
      * @param requestParameters
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
@@ -298,6 +298,7 @@ export class AdjuntosService extends BaseService implements AdjuntosServiceInter
         const incluirDadosDeBaja = requestParameters?.incluirDadosDeBaja;
         const page = requestParameters?.page;
         const size = requestParameters?.size;
+        const sort = requestParameters?.sort;
 
         let localVarQueryParameters = new OpenApiHttpParams(this.encoder);
 
@@ -332,6 +333,15 @@ export class AdjuntosService extends BaseService implements AdjuntosServiceInter
             localVarQueryParameters,
             'size',
             <any>size,
+            QueryParamStyle.Form,
+            true,
+        );
+
+
+        localVarQueryParameters = this.addToHttpParams(
+            localVarQueryParameters,
+            'sort',
+            <any>sort,
             QueryParamStyle.Form,
             true,
         );

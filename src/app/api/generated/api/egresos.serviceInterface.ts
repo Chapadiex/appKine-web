@@ -21,6 +21,7 @@ import { PagoDeEgreso } from '../model/models';
 import { ProblemDetail } from '../model/models';
 import { RegistrarEgreso } from '../model/models';
 import { RegistrarPagoDeEgreso } from '../model/models';
+import { ResumenDeEgresos } from '../model/models';
 
 
 import { Configuration }                                     from '../configuration';
@@ -48,6 +49,7 @@ export interface BuscarEgresoRequestParams {
     hasta?: string;
     limite?: number;
     desplazamiento?: number;
+    q?: string;
 }
 
 export interface CalcularBorradorDeHonorariosRequestParams {
@@ -85,6 +87,12 @@ export interface RegistrarEgresoRequestParams {
     registrarEgreso: RegistrarEgreso;
 }
 
+export interface ResumirEgresosRequestParams {
+    consultorioId: number;
+    desde?: string;
+    hasta?: string;
+}
+
 export interface VerEgresoRequestParams {
     consultorioId: number;
     egresoId: number;
@@ -118,7 +126,7 @@ export interface EgresosServiceInterface {
 
     /**
      * Consultar egresos
-     * Lista y filtra por fecha, categoria, beneficiario y estado (RF-M22-004).  &#x60;desde&#x60; y &#x60;hasta&#x60; son **dias de la sede**, inclusivos: se comparan contra el instante de registro en la zona horaria de la sede, asi que un egreso cargado a las 22:30 de Cordoba es de ese dia y no del siguiente.  **Sin los pagos de cada fila**: traerlos seria el N+1 del primer listado que lo use. El detalle los tiene.  **Los periodos superpuestos no se impiden, se muestran.** Dos liquidaciones del mismo profesional para el mismo mes son legitimas —una correccion, un segundo concepto—, y un unique sobre el periodo convertiria un caso normal en un error. Filtrar por beneficiario las pone una al lado de la otra, que es la unica respuesta honesta.
+     * Lista y filtra por fecha, categoria, beneficiario y estado (RF-M22-004).  &#x60;desde&#x60; y &#x60;hasta&#x60; son **dias de la sede**, inclusivos: se comparan contra el instante de registro en la zona horaria de la sede, asi que un egreso cargado a las 22:30 de Cordoba es de ese dia y no del siguiente.  **Sin los pagos de cada fila**: traerlos seria el N+1 del primer listado que lo use. El detalle los tiene.  **Los periodos superpuestos no se impiden, se muestran.** Dos liquidaciones del mismo profesional para el mismo mes son legitimas —una correccion, un segundo concepto—, y un unique sobre el periodo convertiria un caso normal en un error. Filtrar por beneficiario las pone una al lado de la otra, que es la unica respuesta honesta.  DP-45: &#x60;q&#x60; busca \&quot;contiene\&quot;, sin distinguir mayusculas ni acentos, en el nombre y el documento del beneficiario, en el concepto y en el numero de comprobante. Ya pagina con &#x60;limite&#x60; y &#x60;desplazamiento&#x60; (el corte de 50 es el limite por defecto): no se agregan &#x60;page&#x60; y &#x60;size&#x60;, que serian dos formas de pedir lo mismo.
      * @endpoint get /api/v1/consultorios/{consultorioId}/egresos
 * @param requestParameters
      */
@@ -171,6 +179,14 @@ export interface EgresosServiceInterface {
 * @param requestParameters
      */
     registrarEgreso(requestParameters: RegistrarEgresoRequestParams, extraHttpRequestParams?: any): Observable<Egreso>;
+
+    /**
+     * Totales de egresos del periodo
+     * Lo registrado, pagado y pendiente de los egresos del periodo, por moneda y por categoria, para la tira de la pantalla de egresos (DP-45).  **Sin &#x60;desde&#x60; ni &#x60;hasta&#x60;, el mes en curso en la zona de la sede.** Con solo &#x60;desde&#x60;, hasta el fin de ese mes. Las fechas se interpretan igual que en la bandeja: el instante de registro en el dia de la sede.  **Es egreso, no caja.** &#x60;registrado&#x60; son los egresos &#x60;CONFIRMADO&#x60; y &#x60;PAGADO&#x60; —lo comprometido—; &#x60;pagado&#x60; es lo saldado **hoy** (un pago anulado devuelve su importe) y &#x60;pendiente&#x60; lo que falta. Los borradores y los anulados se cuentan aparte. Ventana maxima: 366 dias.
+     * @endpoint get /api/v1/consultorios/{consultorioId}/egresos/resumen
+* @param requestParameters
+     */
+    resumirEgresos(requestParameters: ResumirEgresosRequestParams, extraHttpRequestParams?: any): Observable<ResumenDeEgresos>;
 
     /**
      * Ver un egreso

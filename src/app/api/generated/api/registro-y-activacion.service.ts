@@ -26,6 +26,8 @@ import { ProblemDetail } from '../model/problem-detail';
 import { RegisterAccountRequest } from '../model/register-account-request';
 // @ts-ignore
 import { ResendActivationRequest } from '../model/resend-activation-request';
+// @ts-ignore
+import { TermsResponse } from '../model/terms-response';
 
 // @ts-ignore
 import { BASE_PATH, COLLECTION_FORMATS }                     from '../variables';
@@ -118,8 +120,61 @@ export class RegistroYActivacionService extends BaseService implements RegistroY
     }
 
     /**
+     * Version vigente de los terminos y condiciones
+     * Publico. Devuelve la version de los terminos que el alta self-service y la aceptacion de invitacion con cuenta nueva exigen aceptar, y el enlace donde se publica el texto. El texto legal no lo sirve el backend.  Con aceptacionObligatoria&#x3D;false (ninguna version configurada) el alta no exige nada y versionVigente viene null.
+     * @endpoint get /api/v1/terms
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public getCurrentTerms(observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<TermsResponse>;
+    public getCurrentTerms(observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<TermsResponse>>;
+    public getCurrentTerms(observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<TermsResponse>>;
+    public getCurrentTerms(observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+
+        let localVarHeaders = this.defaultHeaders;
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/terms`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<TermsResponse>('get', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
      * Alta self-service de cuenta, organizacion y primer consultorio
-     * Crea en una sola transaccion la cuenta del fundador, la organizacion, su primer consultorio, la suscripcion y la membership de administrador, y encola el correo con el enlace de activacion.  RESPUESTA UNIFORME (ADR-0018): 202 Accepted con el mismo cuerpo tanto si el email estaba libre como si ya tenia cuenta. En el segundo caso no se crea ni se modifica nada y se encola un correo de \&quot;ya tenes cuenta\&quot;. No hay 409 email-already-registered y no va a haberlo: seria el oraculo de existencia que el 401 uniforme del login existe para cerrar.  La cuenta nace PENDIENTE_ACTIVACION. Hasta confirmar el enlace, el login responde 401 igual que con una contrasena incorrecta.  El header Idempotency-Key es obligatorio. Reintentar el alta con la misma clave devuelve el mismo desenlace sin crear una segunda cuenta ni mandar un segundo correo; el cliente debe generarlo una vez al abrir el formulario y reusarlo en cada reintento. Reusar la clave con OTRO contenido no es un reintento: responde 409 idempotency-key-conflict. La contrasena no entra en esa comparacion.  Los rechazos posibles no dicen nada sobre el email: 400 por contrasena que no cumple la politica o por campos ausentes, 404 por un planCode que no existe o ya no se contrata, y 409 por un organizationSlug ya tomado. Los tres se evaluan ANTES de mirar si el email tiene cuenta, justamente para que la respuesta sea la misma en los dos casos: validarlos despues convertiria el endpoint en un verificador de direcciones de correo.
+     * Crea en una sola transaccion la cuenta del fundador, la organizacion, su primer consultorio, la suscripcion y la membership de administrador, y encola el correo con el enlace de activacion.  RESPUESTA UNIFORME (ADR-0018): 202 Accepted con el mismo cuerpo tanto si el email estaba libre como si ya tenia cuenta. En el segundo caso no se crea ni se modifica nada y se encola un correo de \&quot;ya tenes cuenta\&quot;. No hay 409 email-already-registered y no va a haberlo: seria el oraculo de existencia que el 401 uniforme del login existe para cerrar.  La cuenta nace PENDIENTE_ACTIVACION. Hasta confirmar el enlace, el login responde 401 igual que con una contrasena incorrecta.  El header Idempotency-Key es obligatorio. Reintentar el alta con la misma clave devuelve el mismo desenlace sin crear una segunda cuenta ni mandar un segundo correo; el cliente debe generarlo una vez al abrir el formulario y reusarlo en cada reintento. Reusar la clave con OTRO contenido no es un reintento: responde 409 idempotency-key-conflict. La contrasena no entra en esa comparacion.  Los rechazos posibles no dicen nada sobre el email: 400 por contrasena que no cumple la politica o por campos ausentes, 404 por un planCode que no existe o ya no se contrata, y 409 por un organizationSlug ya tomado. Los tres se evaluan ANTES de mirar si el email tiene cuenta, justamente para que la respuesta sea la misma en los dos casos: validarlos despues convertiria el endpoint en un verificador de direcciones de correo.  TERMINOS (DP-45): si el despliegue tiene una version vigente de los terminos (GET /api/v1/terms, aceptacionObligatoria&#x3D;true), el alta exige aceptaTerminos&#x3D;true y versionTerminos igual a esa version; si no, 400 validation-error con el campo en errors. Tambien se evalua antes de mirar el email. La aceptacion queda registrada con la cuenta, con su version y su fecha. Sin version vigente, los dos campos se ignoran.
      * @endpoint post /api/v1/auth/register
      * @param requestParameters
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.

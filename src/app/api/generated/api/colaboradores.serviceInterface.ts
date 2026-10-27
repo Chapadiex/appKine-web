@@ -62,6 +62,8 @@ export interface ListMembershipsRequestParams {
     orgId: number;
     page?: number;
     size?: number;
+    q?: string;
+    sort?: 'nombre,asc' | 'nombre,desc' | 'email,asc' | 'email,desc' | 'rol,asc' | 'rol,desc' | 'estado,asc' | 'estado,desc' | 'vigenteDesde,asc' | 'vigenteDesde,desc';
 }
 
 export interface ListPermisosOtorgablesDelRolRequestParams {
@@ -149,7 +151,7 @@ export interface ColaboradoresServiceInterface {
 
     /**
      * Colaboradores de la organizacion
-     * Requiere colaborador:read. Devuelve TAMBIEN los vinculos suspendidos y revocados: quien administra tiene que poder ver quien estuvo, quien lo desvinculo y por que. Para eso existe la baja logica. El cliente distingue por el campo estado, no por ausencia.  size se acota a 100 por request. Pedir 500 devuelve 100, no un error.
+     * Requiere colaborador:read. Devuelve TAMBIEN los vinculos suspendidos y revocados: quien administra tiene que poder ver quien estuvo, quien lo desvinculo y por que. Para eso existe la baja logica. El cliente distingue por el campo estado, no por ausencia.  size se acota a 100 por request. Pedir 500 devuelve 100, no un error.  DP-45: q busca \&quot;contiene\&quot; en el nombre y en el correo de la cuenta, sin distinguir mayusculas ni acentos. sort ordena por nombre, email, rol, estado o vigenteDesde; sin el, por id.
      * @endpoint get /api/v1/organizations/{orgId}/memberships
 * @param requestParameters
      */

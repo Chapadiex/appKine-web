@@ -21,5 +21,9 @@ export interface LoginRequest {
      * Contrasena en claro. Viaja solo por TLS y no se registra en ningun log
      */
     password: string;
+    /**
+     * Mantener la sesion iniciada (DP-45). Con true la sesion dura la vigencia larga configurada (30 dias por defecto) en vez de la jornada (12 horas). Ausente o false: la sesion de siempre. En los dos casos la vigencia es absoluta desde el login y renovar no la extiende
+     */
+    recordarme?: boolean;
 }
 

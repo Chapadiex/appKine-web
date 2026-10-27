@@ -22,6 +22,8 @@ import { CatalogoDeReportesResponse } from '../model/catalogo-de-reportes-respon
 import { ProblemDetail } from '../model/problem-detail';
 // @ts-ignore
 import { ReporteResponse } from '../model/reporte-response';
+// @ts-ignore
+import { SerieDeReporte } from '../model/serie-de-reporte';
 
 // @ts-ignore
 import { BASE_PATH, COLLECTION_FORMATS }                     from '../variables';
@@ -31,7 +33,8 @@ import {
     ReportesServiceInterface,
     CatalogoDeReportesRequestParams,
     ExportarReporteRequestParams,
-    GenerarReporteRequestParams
+    GenerarReporteRequestParams,
+    GenerarSerieDeReporteRequestParams
 } from './reportes.serviceInterface';
 
 
@@ -284,6 +287,111 @@ export class ReportesService extends BaseService implements ReportesServiceInter
         let localVarPath = `/api/v1/consultorios/${this.configuration.encodeParam({name: "consultorioId", value: consultorioId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/reportes/${this.configuration.encodeParam({name: "reporte", value: reporte, in: "path", style: "simple", explode: false, dataType: "'OPERATIVO' | 'TURNOS' | 'CLINICO' | 'ECONOMICO' | 'FINANCIADORES' | 'CLASES' | 'PASES' | 'CONTINUIDAD' | 'SERVICIOS'", dataFormat: undefined})}`;
         const { basePath, withCredentials } = this.configuration;
         return this.httpClient.request<ReporteResponse>('get', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                params: localVarQueryParameters.toHttpParams(),
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * Serie temporal de un reporte
+     * Los indicadores sumables del reporte abiertos por dia o por semana, para el grafico de barras (DP-45).  **Cada serie usa la fuente y el criterio de fecha de su indicador**, y la suma de sus puntos es el valor que el reporte muestra para ese indicador en el mismo periodo. Los dias son **de la sede**. &#x60;SEMANA&#x60; es la semana ISO (lunes a domingo), recortada al periodo en los extremos.  **Mismo permiso y mismas omisiones que el reporte**: exige &#x60;reporte:read&#x60;, una seccion cuyo permiso falta no tiene serie y se declara en &#x60;omitidas&#x60;, y el &#x60;PROFESIONAL&#x60; ve solo su propia actividad.  No tienen serie los saldos actuales (deuda vigente, egresos por pagar), que no se reconstruyen a una fecha, ni los porcentajes, que no se suman.  Hasta **100 puntos**: con &#x60;DIA&#x60; el periodo puede tener hasta 100 dias; para la ventana maxima de 366 dias, &#x60;SEMANA&#x60;.
+     * @endpoint get /api/v1/consultorios/{consultorioId}/reportes/{reporte}/serie
+     * @param requestParameters
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public generarSerieDeReporte(requestParameters: GenerarSerieDeReporteRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<SerieDeReporte>;
+    public generarSerieDeReporte(requestParameters: GenerarSerieDeReporteRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<SerieDeReporte>>;
+    public generarSerieDeReporte(requestParameters: GenerarSerieDeReporteRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<SerieDeReporte>>;
+    public generarSerieDeReporte(requestParameters: GenerarSerieDeReporteRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        const consultorioId = requestParameters?.consultorioId;
+        if (consultorioId === null || consultorioId === undefined) {
+            throw new Error('Required parameter consultorioId was null or undefined when calling generarSerieDeReporte.');
+        }
+        const reporte = requestParameters?.reporte;
+        if (reporte === null || reporte === undefined) {
+            throw new Error('Required parameter reporte was null or undefined when calling generarSerieDeReporte.');
+        }
+        const desde = requestParameters?.desde;
+        if (desde === null || desde === undefined) {
+            throw new Error('Required parameter desde was null or undefined when calling generarSerieDeReporte.');
+        }
+        const hasta = requestParameters?.hasta;
+        if (hasta === null || hasta === undefined) {
+            throw new Error('Required parameter hasta was null or undefined when calling generarSerieDeReporte.');
+        }
+        const agrupacion = requestParameters?.agrupacion;
+
+        let localVarQueryParameters = new OpenApiHttpParams(this.encoder);
+
+        localVarQueryParameters = this.addToHttpParams(
+            localVarQueryParameters,
+            'desde',
+            <any>desde,
+            QueryParamStyle.Form,
+            true,
+        );
+
+
+        localVarQueryParameters = this.addToHttpParams(
+            localVarQueryParameters,
+            'hasta',
+            <any>hasta,
+            QueryParamStyle.Form,
+            true,
+        );
+
+
+        localVarQueryParameters = this.addToHttpParams(
+            localVarQueryParameters,
+            'agrupacion',
+            <any>agrupacion,
+            QueryParamStyle.Form,
+            true,
+        );
+
+
+        let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/consultorios/${this.configuration.encodeParam({name: "consultorioId", value: consultorioId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/reportes/${this.configuration.encodeParam({name: "reporte", value: reporte, in: "path", style: "simple", explode: false, dataType: "'OPERATIVO' | 'TURNOS' | 'CLINICO' | 'ECONOMICO' | 'FINANCIADORES' | 'CLASES' | 'PASES' | 'CONTINUIDAD' | 'SERVICIOS'", dataFormat: undefined})}/serie`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<SerieDeReporte>('get', `${basePath}${localVarPath}`,
             {
                 context: localVarHttpContext,
                 params: localVarQueryParameters.toHttpParams(),

@@ -14,6 +14,10 @@
  */
 export interface AcceptInvitacionRequest { 
     /**
+     * Acepto los terminos y condiciones (DP-45). Se exige en true solo si el invitado no tiene cuenta y GET /api/v1/terms informa aceptacionObligatoria
+     */
+    aceptaTerminos?: boolean;
+    /**
      * Apellido. Opcional
      */
     apellido?: string;
@@ -29,5 +33,9 @@ export interface AcceptInvitacionRequest {
      * Token recibido por correo
      */
     token: string;
+    /**
+     * Version de los terminos aceptados: la versionVigente de GET /api/v1/terms. Mismas condiciones que aceptaTerminos
+     */
+    versionTerminos?: string;
 }
 

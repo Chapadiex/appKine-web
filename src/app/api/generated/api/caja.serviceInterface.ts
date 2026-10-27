@@ -123,7 +123,7 @@ export interface CajaServiceInterface {
 
     /**
      * Ver una jornada
-     * Devuelve el saldo teorico (RF-M20-005) y el desglose por medio de pago. **El desglose no es adorno**: sin el, un arqueo de 60.000 sobre un dia en que se facturaron 120.000 parece un faltante gigante, cuando la mitad entro por tarjeta y nunca estuvo en el cajon.
+     * Devuelve el saldo teorico (RF-M20-005) y el desglose por medio de pago. **El desglose no es adorno**: sin el, un arqueo de 60.000 sobre un dia en que se facturaron 120.000 parece un faltante gigante, cuando la mitad entro por tarjeta y nunca estuvo en el cajon. Desde DP-45 trae tambien &#x60;resumen&#x60;: ingresos y egresos de la jornada, en efectivo y por los demas medios, netos de reversiones. Es caja: no es lo cobrado ni la deuda.
      * @endpoint get /api/v1/consultorios/{consultorioId}/caja/jornadas/{jornadaId}
 * @param requestParameters
      */

@@ -42,6 +42,7 @@ export interface ListarAdjuntosClinicosRequestParams {
     page?: number;
     size?: number;
     xJustificacionAcceso?: string;
+    sort?: 'subidoEn,asc' | 'subidoEn,desc' | 'titulo,asc' | 'titulo,desc' | 'categoria,asc' | 'categoria,desc' | 'tamano,asc' | 'tamano,desc';
 }
 
 export interface ReclasificarAdjuntoClinicoRequestParams {
@@ -83,7 +84,7 @@ export interface AdjuntosClinicosServiceInterface {
 
     /**
      * Listar los documentos clinicos de una Historia Clinica
-     * RF-M25-005. Devuelve la METADATA, nunca el contenido: para descargar hay un endpoint propio que autoriza y audita cada llamada.  Por defecto trae solo los VIGENTES. Los dados de baja se piden con incluirDadosDeBaja y siguen resolviendo (regla maestra 10).  NO TRAE NINGUNA RUTA NI LA CLAVE DE ALMACENAMIENTO (RN-M25-002).  Es lectura clinica: exige hc:read mas relacion asistencial o motivo declarado, y queda auditada. Lo que revela —cuantos estudios tiene este paciente y de que clase— ya es informacion sensible aunque no sea contenido.
+     * RF-M25-005. Devuelve la METADATA, nunca el contenido: para descargar hay un endpoint propio que autoriza y audita cada llamada.  Por defecto trae solo los VIGENTES. Los dados de baja se piden con incluirDadosDeBaja y siguen resolviendo (regla maestra 10).  NO TRAE NINGUNA RUTA NI LA CLAVE DE ALMACENAMIENTO (RN-M25-002).  Es lectura clinica: exige hc:read mas relacion asistencial o motivo declarado, y queda auditada. Lo que revela —cuantos estudios tiene este paciente y de que clase— ya es informacion sensible aunque no sea contenido.  DP-45: sort ordena por subidoEn, titulo, categoria o tamano; el orden no cambia la autorizacion ni la auditoria de la lectura. Sin q: los adjuntos de una historia ya se filtran por categoria y por entrada, y buscar en sus titulos seria una lectura clinica mas sin necesidad.
      * @endpoint get /api/v1/historias-clinicas/{historiaClinicaId}/adjuntos
 * @param requestParameters
      */
