@@ -97,16 +97,21 @@
     }
 
     <!--
-      La sesion, al pie: donde se trabaja, como cambiarlo y como salir. Sin "Cerrar sesion" una
-      computadora compartida del mostrador quedaba con la sesion de otra persona abierta
-      (auditoria heuristica del 21/10, C1). El nombre de quien entro no se muestra porque el
-      contrato no lo expone: es un pedido al backend.
+      La sesion, al pie: quien entro y con que rol (DP-45, `/me`), donde se trabaja, como cambiarlo
+      y como salir. Sin "Cerrar sesion" una computadora compartida del mostrador quedaba con la
+      sesion de otra persona abierta (auditoria heuristica del 21/10, C1). Mientras `/me` no
+      responde, o si falla, queda el centro solo, como antes. Quien ingreso va en `@defer`: la carga
+      inicial esta al borde de su presupuesto.
     -->
     <div class="nav__sesion">
       @if (contexto(); as activo) {
         <span class="nav__avatar" aria-hidden="true">{{ iniciales(activo.organizationName) }}</span>
         <span class="nav__sesion-textos">
-          <span class="nav__sesion-centro">{{ activo.organizationName }}</span>
+          @defer (on idle) {
+            <app-quien-ingreso [centro]="activo.organizationName" />
+          } @placeholder {
+            <span class="nav__sesion-centro">{{ activo.organizationName }}</span>
+          }
           <a class="nav__sesion-cambiar" [routerLink]="rutaSelector" (click)="navegar()"
             >Cambiar de sede</a
           >

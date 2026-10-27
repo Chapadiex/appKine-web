@@ -52,6 +52,18 @@ describe('SessionService', () => {
     expect(tokenStore.token()).toBe('jwt-pre');
   });
 
+  it('con "mantener la sesión iniciada" pide la vigencia larga (DP-45)', () => {
+    session.login('kine@akine.test', 'clave-sintetica', true).subscribe();
+
+    const peticion = httpMock.expectOne('/api/v1/auth/login');
+    expect(peticion.request.body).toEqual({
+      email: 'kine@akine.test',
+      password: 'clave-sintetica',
+      recordarme: true,
+    });
+    peticion.flush({ accessToken: 'jwt-pre', scope: 'pre_context', expiresIn: 600 });
+  });
+
   it('propaga el rechazo del login sin inventar detalle', async () => {
     const fallo = primerError(session.login('kine@akine.test', 'mala'));
 

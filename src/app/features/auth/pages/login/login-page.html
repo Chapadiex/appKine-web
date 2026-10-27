@@ -62,6 +62,23 @@
       }
     </div>
 
+    <!--
+      DP-45: la vigencia del refresh se elige al ingresar. La advertencia queda a la vista y no
+      detras de un "?": es una consecuencia de marcarla (plan UX §3.2, excepcion 3).
+    -->
+    <div class="campo">
+      <label class="acceso-casilla" for="login-recordarme">
+        <input
+          id="login-recordarme"
+          type="checkbox"
+          formControlName="recordarme"
+          aria-describedby="login-recordarme-ayuda"
+        />
+        Mantener la sesión iniciada
+      </label>
+      <p class="ayuda" id="login-recordarme-ayuda">No la marques en una computadora compartida.</p>
+    </div>
+
     <button type="submit" class="boton boton--bloque" [disabled]="bloqueado()">Ingresar</button>
 
     @if (espera.activa()) {

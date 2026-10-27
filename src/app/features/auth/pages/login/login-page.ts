@@ -40,6 +40,8 @@ export class LoginPage {
   protected readonly formulario = inject(FormBuilder).nonNullable.group({
     email: ['', [Validators.required, Validators.email]],
     password: ['', [Validators.required]],
+    /** "Mantener la sesión iniciada" (DP-45). Desmarcada por defecto: la jornada de siempre. */
+    recordarme: [false],
   });
 
   protected readonly estado = signal<EstadoFormulario>({ tipo: 'editando' });
@@ -79,10 +81,10 @@ export class LoginPage {
       return;
     }
 
-    const { email, password } = this.formulario.getRawValue();
+    const { email, password, recordarme } = this.formulario.getRawValue();
     this.estado.set({ tipo: 'enviando' });
 
-    this.session.login(email, password).subscribe({
+    this.session.login(email, password, recordarme).subscribe({
       next: () => this.continuar(),
       error: (error: unknown) => this.fallar(error),
     });

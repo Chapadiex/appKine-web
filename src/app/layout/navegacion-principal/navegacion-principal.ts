@@ -15,6 +15,7 @@ import { filter, map, startWith } from 'rxjs';
 import { Icono } from '../../shared/components/icono/icono';
 import { PermissionsStore } from '../../core/services/permissions.store';
 import { PlatformRoleStore } from '../../core/services/platform-role.store';
+import { QuienIngreso } from '../quien-ingreso/quien-ingreso';
 import { RUTA_LOGIN, RUTA_SELECTOR_CONTEXTO } from '../../core/models/rutas';
 import { RUTA_SOLICITUDES_DE_PLATAFORMA } from '../../features/platform/models/rutas-de-plataforma';
 import {
@@ -52,7 +53,8 @@ import { TenantContextStore } from '../../core/services/tenant-context.store';
  */
 @Component({
   selector: 'app-navegacion-principal',
-  imports: [RouterLink, Icono],
+  // `QuienIngreso` solo se usa dentro de un `@defer`: sale en un chunk aparte (DP-45).
+  imports: [RouterLink, Icono, QuienIngreso],
   templateUrl: './navegacion-principal.html',
   styleUrl: './navegacion-principal.css',
 })
@@ -166,7 +168,7 @@ export class NavegacionPrincipal {
   /** Dos letras para el avatar del centro: "Consultorio Centro" → "CC". */
   protected iniciales(nombre: string): string {
     return nombre
-      .split(/s+/)
+      .split(/\s+/)
       .filter((palabra) => palabra.length > 0)
       .slice(0, 2)
       .map((palabra) => palabra[0]!.toUpperCase())

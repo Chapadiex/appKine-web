@@ -9,6 +9,12 @@ import { RegistroYActivacionService } from '../../../../api/generated/api/regist
 import { crearEsperaPorLimite } from '../../../../shared/utils/espera-por-limite';
 import { nuevaClaveDeIntento } from '../../../../shared/utils/clave-de-intento';
 import { MedidorDeContrasena } from '../../components/medidor-de-contrasena/medidor-de-contrasena';
+import { TerminosDelAlta } from '../../components/terminos-del-alta/terminos-del-alta';
+import {
+  MENSAJE_TERMINOS_CAMBIARON,
+  esRechazoDeTerminos,
+  leerTerminosVigentes,
+} from '../../models/terminos-vigentes';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { textoRequerido } from '../../../../shared/validators/texto-requerido';
 import { Icono } from '../../../../shared/components/icono/icono';
@@ -45,10 +51,14 @@ const MENSAJE_CLAVE_REUSADA =
  * dos cuentas y dos correos. Si el usuario corrige un campo antes de reintentar, se genera
  * una clave nueva, porque la misma clave con otro payload devuelve
  * `409 idempotency-key-conflict`.
+ *
+ * <p><b>Terminos (DP-45).</b> Si el despliegue los exige, el alta lleva la casilla y manda la
+ * version aceptada; si `/terms` no responde, no se envia (ver {@link TerminosVigentes}). Si la
+ * version cambio entre leerla y enviar, el 400 lo dice y se releen.
  */
 @Component({
   selector: 'app-register-page',
-  imports: [Icono, MedidorDeContrasena, ReactiveFormsModule, RouterLink],
+  imports: [Icono, MedidorDeContrasena, ReactiveFormsModule, RouterLink, TerminosDelAlta],
   templateUrl: './register-page.html',
   styleUrls: ['../../auth.css', '../../../../shared/styles/acceso.css'],
 })
@@ -78,6 +88,12 @@ export class RegisterPage {
   protected readonly estado = signal<EstadoFormulario>({ tipo: 'editando' });
   protected readonly intentos = signal(0);
   protected readonly espera = crearEsperaPorLimite();
+  protected readonly terminos = leerTerminosVigentes();
+
+  /** "Tenés que aceptar los términos": despues del primer envio, como los demas errores. */
+  protected readonly faltanTerminos = computed(
+    () => this.terminos.faltaAceptar() && this.intentos() > 0,
+  );
 
   /** Clave de idempotencia del intento en curso, y el payload con el que se emitio. */
   private clave: string | null = null;
@@ -97,7 +113,7 @@ export class RegisterPage {
   });
 
   protected readonly bloqueado = computed(
-    () => this.enviando() || this.hecho() || this.espera.activa(),
+    () => this.enviando() || this.hecho() || this.espera.activa() || this.terminos.impidenElAlta(),
   );
 
   /** Solo para tests y diagnostico: la clave con la que salio el ultimo envio. */
@@ -113,7 +129,7 @@ export class RegisterPage {
   protected enviar(): void {
     this.intentos.update((valor) => valor + 1);
 
-    if (this.formulario.invalid) {
+    if (this.formulario.invalid || this.terminos.faltaAceptar()) {
       this.formulario.markAllAsTouched();
       this.enfocarPrimerInvalido();
       return;
@@ -163,6 +179,7 @@ export class RegisterPage {
       ...(opcionales.organizationSlug ? { organizationSlug: opcionales.organizationSlug } : {}),
       ...(opcionales.consultorioName ? { consultorioName: opcionales.consultorioName } : {}),
       ...(opcionales.planCode ? { planCode: opcionales.planCode } : {}),
+      ...this.terminos.campos(),
     };
   }
 
@@ -190,12 +207,21 @@ export class RegisterPage {
       this.estado.set({ tipo: 'error', mensaje: MENSAJE_CLAVE_REUSADA, causa: 'otro' });
       return;
     }
+    if (esRechazoDeTerminos(error)) {
+      // La version cambio desde que se leyo, o el despliegue empezo a exigirlos: se releen y la
+      // casilla vuelve a quedar sin marcar. El proximo envio cambia el cuerpo, y con el la clave.
+      this.terminos.cargar();
+      this.estado.set({ tipo: 'error', mensaje: MENSAJE_TERMINOS_CAMBIARON, causa: 'validacion' });
+      return;
+    }
     const traducido = traducirYEsperar(error, this.espera);
     this.estado.set({ tipo: 'error', mensaje: traducido.mensaje, causa: traducido.causa });
   }
 
   private enfocarPrimerInvalido(): void {
-    const nombre = CAMPOS.find((campo) => this.formulario.controls[campo].invalid);
+    const nombre =
+      CAMPOS.find((campo) => this.formulario.controls[campo].invalid) ??
+      (this.terminos.faltaAceptar() ? 'terminos' : undefined);
     if (nombre === undefined) {
       return;
     }

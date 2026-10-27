@@ -108,6 +108,26 @@
   background: var(--color-superficie-sutil);
 }
 
+/*
+ * Casilla con su texto ("Mantener la sesión iniciada", "Acepto los términos"): el `label` entero
+ * es el objetivo de toque, con 24 px de alto como minimo (WCAG 2.5.8). Gana sobre el tamaño
+ * chico que `.acceso-tarjeta .campo label` les da a los rotulos de los campos de texto.
+ */
+.acceso-tarjeta .campo .acceso-casilla {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-4);
+  min-height: 1.5rem;
+  font-size: var(--tipo-xs);
+}
+
+.acceso-casilla input {
+  width: auto;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+}
+
 /* Alternativas al pie de la tarjeta, separadas por una linea. */
 .acceso-alternativas {
   margin: 0;
