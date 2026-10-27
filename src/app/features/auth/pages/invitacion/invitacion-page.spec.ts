@@ -11,6 +11,15 @@ import { provideApi } from '../../../../api/generated/provide-api';
 const PREVIEW = '/api/v1/auth/invitations/preview';
 const ACCEPT = '/api/v1/auth/invitations/accept';
 const DECLINE = '/api/v1/auth/invitations/decline';
+const TERMS = '/api/v1/terms';
+
+/** Despliegue sin terminos configurados: el alta no exige nada (DP-45). */
+const SIN_TERMINOS = { aceptacionObligatoria: false };
+const CON_TERMINOS = {
+  aceptacionObligatoria: true,
+  versionVigente: '2026-10',
+  url: 'https://akine.example/terminos',
+};
 
 const TOKEN = 'token-del-correo';
 
@@ -71,6 +80,7 @@ describe('InvitacionPage', () => {
 
   async function montarLista(
     preview: Record<string, unknown> = SIN_CUENTA,
+    terminos: Record<string, unknown> = SIN_TERMINOS,
   ): Promise<ComponentFixture<InvitacionPage>> {
     const fixture = montarCon(TOKEN);
 
@@ -79,6 +89,10 @@ describe('InvitacionPage', () => {
     // en el historial del navegador y en el Referer de cualquier recurso externo.
     expect(consulta.request.body).toEqual({ token: TOKEN });
     consulta.flush(preview);
+    // Los terminos se leen solo si la invitacion crea cuenta.
+    if (preview['requiereRegistro'] === true) {
+      httpMock.expectOne(TERMS).flush(terminos);
+    }
 
     await fixture.whenStable();
     fixture.detectChanges();
@@ -119,9 +133,9 @@ describe('InvitacionPage', () => {
     expect(anfitrion.textContent).toContain('con tu cuenta de siempre');
   });
 
-  it('el alta exige nombre y contraseña antes de mandar nada', async () => {
+  it('el alta exige nombre, contraseña y los términos vigentes antes de mandar nada', async () => {
     TestBed.resetTestingModule();
-    const fixture = await montarLista();
+    const fixture = await montarLista(SIN_CUENTA, CON_TERMINOS);
     const anfitrion = fixture.nativeElement as HTMLElement;
 
     aceptar(fixture);
@@ -138,12 +152,21 @@ describe('InvitacionPage', () => {
     escribir(anfitrion, '#invitacion-password', 'kinesiologia-2026');
     fixture.detectChanges();
     aceptar(fixture);
+    httpMock.expectNone(ACCEPT);
+    expect(anfitrion.textContent).toContain('tenés que aceptar los términos');
+    expect(document.activeElement?.id).toBe('invitacion-terminos');
+
+    anfitrion.querySelector<HTMLInputElement>('#invitacion-terminos')?.click();
+    fixture.detectChanges();
+    aceptar(fixture);
 
     const peticion = httpMock.expectOne(ACCEPT);
     expect(peticion.request.body).toEqual({
       token: TOKEN,
       nombre: 'Ana',
       password: 'kinesiologia-2026',
+      aceptaTerminos: true,
+      versionTerminos: '2026-10',
     });
     peticion.flush({ cuentaId: 1, membershipId: 2, organizationId: 3, cuentaCreada: true });
     await fixture.whenStable();
@@ -209,7 +232,7 @@ describe('InvitacionPage', () => {
     'la pantalla no tiene violaciones de accesibilidad',
     async () => {
       TestBed.resetTestingModule();
-      const fixture = await montarLista();
+      const fixture = await montarLista(SIN_CUENTA, CON_TERMINOS);
       await esperarSinViolaciones(fixture.nativeElement);
     },
     TIMEOUT_AXE,
