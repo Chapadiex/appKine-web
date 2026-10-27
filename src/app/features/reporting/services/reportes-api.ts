@@ -5,6 +5,7 @@ import { Observable } from 'rxjs';
 
 import { CatalogoDeReportesResponse } from '../../../api/generated/model/catalogo-de-reportes-response';
 import { ReportesService } from '../../../api/generated/api/reportes.service';
+import { SerieDeReporte } from '../../../api/generated/model/serie-de-reporte';
 import { CodigoDeReporte } from '../models/reportes';
 
 /**
@@ -25,6 +26,20 @@ export class ReportesApi {
     hasta: string,
   ): Observable<ReporteResponse> {
     return this.api.generarReporte({ consultorioId, reporte, desde, hasta });
+  }
+
+  /**
+   * Los indicadores sumables abiertos por dia o por semana, para el grafico (DP-45). Mismo permiso
+   * y mismas omisiones que el reporte; la suma de los puntos de cada serie es su indicador.
+   */
+  serie(
+    consultorioId: number,
+    reporte: CodigoDeReporte,
+    desde: string,
+    hasta: string,
+    agrupacion: 'DIA' | 'SEMANA',
+  ): Observable<SerieDeReporte> {
+    return this.api.generarSerieDeReporte({ consultorioId, reporte, desde, hasta, agrupacion });
   }
 
   /**

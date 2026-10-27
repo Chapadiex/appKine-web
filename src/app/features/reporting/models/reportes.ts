@@ -1,5 +1,6 @@
 import { GenerarReporteRequestParams } from '../../../api/generated/api/reportes.serviceInterface';
 import { IndicadorDeReporteResponse } from '../../../api/generated/model/indicador-de-reporte-response';
+import { SerieDeIndicadorDeReporte } from '../../../api/generated/model/serie-de-indicador-de-reporte';
 
 /** Codigo de reporte tal como lo tipa el cliente generado. */
 export type CodigoDeReporte = GenerarReporteRequestParams['reporte'];
@@ -108,28 +109,62 @@ export function fechaEnPalabras(fecha: string | undefined): string {
  * <p>No suma ni convierte nada: el numero es el del servidor.
  */
 export function valorDeIndicador(indicador: IndicadorDeReporteResponse): string {
-  const valor = indicador.valor;
+  return valorSegunTipo(indicador.valor, indicador.tipo, indicador.moneda);
+}
+
+/** Un valor de una serie temporal (DP-45), con el tipo y la moneda de su serie. */
+export function valorDeSerie(valor: number | undefined, serie: SerieDeIndicadorDeReporte): string {
+  return valorSegunTipo(valor, serie.tipo, serie.moneda);
+}
+
+function valorSegunTipo(
+  valor: number | undefined | null,
+  tipo: string | undefined,
+  moneda: string | undefined,
+): string {
   if (valor === undefined || valor === null || !Number.isFinite(valor)) {
     return '—';
   }
-  const tipo = indicador.tipo;
-  if (tipo === 'DINERO' && indicador.moneda) {
+  if (tipo === 'DINERO' && moneda) {
     try {
       return new Intl.NumberFormat('es-AR', {
         style: 'currency',
-        currency: indicador.moneda,
+        currency: moneda,
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
       }).format(valor);
     } catch {
       // Moneda que Intl no conoce: el numero solo, con la moneda al lado.
     }
-    return `${formatoDecimal(valor, 2)} ${indicador.moneda}`;
+    return `${formatoDecimal(valor, 2)} ${moneda}`;
   }
   if (tipo === 'PORCENTAJE') {
     return `${formatoDecimal(valor, 1)} %`;
   }
   return formatoDecimal(valor, 0);
+}
+
+/**
+ * Hasta cuantos dias la serie se pide por dia; mas ancho, por semana ISO. El backend admite 100
+ * puntos por dia, pero mas de dos meses de barras diarias ya no se leen en una tarjeta.
+ */
+export const MAXIMO_DIAS_POR_DIA = 62;
+
+/** La agrupacion de la serie para un periodo ya validado (`problemaDelRango` en `null`). */
+export function agrupacionDeSerie(desde: string, hasta: string): 'DIA' | 'SEMANA' {
+  const inicio = diaEnUtc(desde);
+  const fin = diaEnUtc(hasta);
+  if (inicio === null || fin === null) {
+    return 'SEMANA';
+  }
+  const dias = Math.round((fin - inicio) / 86_400_000) + 1;
+  return dias <= MAXIMO_DIAS_POR_DIA ? 'DIA' : 'SEMANA';
+}
+
+/** `2026-09-05` → `05/09`, para el eje horizontal. */
+export function diaCorto(fecha: string | undefined): string {
+  const partes = fecha ? /^(\d{4})-(\d{2})-(\d{2})/.exec(fecha) : null;
+  return partes ? `${partes[3]}/${partes[2]}` : (fecha ?? '');
 }
 
 function formatoDecimal(valor: number, decimales: number): string {

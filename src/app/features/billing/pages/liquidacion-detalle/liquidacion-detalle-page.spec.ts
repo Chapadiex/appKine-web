@@ -24,6 +24,15 @@ const LIQUIDACION = {
   importeTotal: 499.99,
   moneda: 'ARS',
   confirmadaEn: '2026-10-18T15:00:00Z',
+  // DP-45: los totales del servidor; lo pagado y lo pendiente son del egreso, hoy.
+  resumen: {
+    cantidadClases: 1,
+    totalPresentes: 2,
+    importeTotal: 499.99,
+    importePagado: 200,
+    saldoPendiente: 299.99,
+    regla: 'POR_PARTICIPANTE_PRESENTE',
+  },
   clases: [
     {
       claseId: 101,
@@ -68,6 +77,10 @@ describe('LiquidacionDetallePage', () => {
       expect(texto).toContain('499,99');
       expect(texto).toContain('Parte 2 de 2');
       expect(texto).toContain('(Borrador)');
+      const tira = texto.replace(/\s+/g, '');
+      expect(tira).toContain('Pagado$200,00');
+      expect(tira).toContain('Faltapagar$299,99');
+      expect(tira).toContain('Presentes2');
       expect(
         (fixture.nativeElement as HTMLElement).querySelector('a[href="/egresos/900"]'),
       ).not.toBeNull();
