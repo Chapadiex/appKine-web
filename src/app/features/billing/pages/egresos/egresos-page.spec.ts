@@ -124,6 +124,8 @@ describe('EgresosPage', () => {
     expect(contenido(fixture)).toContain('Egresos 51 a 51');
     expect(boton(fixture, 'Siguiente').disabled).toBe(true);
 
+    // El envio queda a la vista: no hay que abrir los filtros avanzados para buscar por texto.
+    expect(boton(fixture, 'Buscar').closest('app-filtros')).toBeNull();
     escribir(fixture, '#filtro-q', '  sintetica ');
     enviar(fixture, 0);
     const busqueda = httpMock.expectOne((p) => p.url === `${BASE}/egresos`);
