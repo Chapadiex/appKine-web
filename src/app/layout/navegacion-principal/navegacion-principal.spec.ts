@@ -7,6 +7,8 @@ import { provideHttpClient } from '@angular/common/http';
 import { EstadoSesion, SessionService } from '../../core/services/session.service';
 import { NavegacionPrincipal } from './navegacion-principal';
 import { PERMISO_COLABORADOR_READ, PERMISO_TURNO_READ } from '../../core/models/permisos';
+import { MyProfileResponse } from '../../api/generated/model/my-profile-response';
+import { PerfilPropioStore } from '../../core/services/perfil-propio.store';
 import { PermissionsStore } from '../../core/services/permissions.store';
 import { PlatformRoleStore } from '../../core/services/platform-role.store';
 import { RUTA_PERMISOS_EFECTIVOS } from '../../core/testing/rutas-api';
@@ -35,13 +37,16 @@ describe('NavegacionPrincipal', () => {
   let router: Router;
   let adminDePlataforma: WritableSignal<boolean>;
   let restaurando: WritableSignal<boolean>;
+  let perfil: WritableSignal<MyProfileResponse | null>;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     estado = signal<EstadoSesion>('activa');
     adminDePlataforma = signal(false);
     restaurando = signal(false);
+    perfil = signal<MyProfileResponse | null>(null);
 
-    TestBed.configureTestingModule({
+    await TestBed.configureTestingModule({
+      imports: [NavegacionPrincipal],
       providers: [
         provideHttpClient(),
         provideHttpClientTesting(),
@@ -60,8 +65,12 @@ describe('NavegacionPrincipal', () => {
           provide: PlatformRoleStore,
           useValue: { esAdminDePlataforma: adminDePlataforma, asegurarCargado: () => undefined },
         },
+        {
+          provide: PerfilPropioStore,
+          useValue: { perfil, asegurarCargado: () => undefined },
+        },
       ],
-    });
+    }).compileComponents();
 
     httpMock = TestBed.inject(HttpTestingController);
     tenant = TestBed.inject(TenantContextStore);
@@ -216,6 +225,42 @@ describe('NavegacionPrincipal', () => {
     await router.navigateByUrl('/plataforma/solicitudes');
     fixture.detectChanges();
     expect(marcados(fixture)).toEqual(['Plataforma']);
+  });
+
+  /**
+   * DP-45: el pie dice quien ingreso y con que rol. Se monta aparte, despues de la primera
+   * pintura; hasta entonces, y mientras `/me` no responde, queda el centro solo, como antes.
+   */
+  it('muestra al pie el nombre y el rol de quien ingresó, sin perder el centro ni la salida', async () => {
+    conContexto();
+    const fixture = montar();
+    responderPermisos([]);
+    fixture.detectChanges();
+    const pie = (fixture.nativeElement as HTMLElement).querySelector('.nav__sesion')!;
+
+    expect(pie.textContent).toContain('Centro Kine');
+    expect(pie.querySelector('.nav__avatar')?.textContent?.trim()).toBe('CK');
+
+    // El componente llega por un `import()` dinamico: se espera a que quede montado.
+    for (let intento = 0; intento < 50 && !pie.querySelector('app-quien-ingreso'); intento++) {
+      await new Promise((listo) => setTimeout(listo));
+      fixture.detectChanges();
+    }
+    expect(pie.querySelector('app-quien-ingreso')).not.toBeNull();
+    expect(pie.textContent).toContain('Centro Kine');
+    expect(pie.textContent).not.toContain('Administración');
+
+    perfil.set({
+      firstName: 'Ana',
+      lastName: 'Prueba',
+      context: { roleCode: 'ORG_ADMIN', roleLabel: 'Administración' },
+    });
+    fixture.detectChanges();
+
+    expect(pie.textContent).toContain('Ana Prueba');
+    expect(pie.textContent).toContain('Administración · Centro Kine');
+    expect(pie.textContent).toContain('Cambiar de sede');
+    expect(pie.textContent).toContain('Cerrar sesión');
   });
 
   /** Navegar desde el panel de tablet lo cierra: el shell escucha `cerrar`. */

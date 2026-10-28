@@ -476,6 +476,50 @@ describe('CollaboratorsPage', () => {
   // Errores del backend en las mutaciones
   // -------------------------------------------------------------------------------------
 
+  it('la búsqueda y el orden de columna van al servidor y vuelven a la primera página', async () => {
+    const fixture = await montarCon((pedido) =>
+      pedido.flush({ ...PAGINA, totalElements: 45, totalPages: 3 }),
+    );
+    const host: HTMLElement = fixture.nativeElement;
+    host
+      .querySelector<HTMLButtonElement>(
+        'nav[aria-label="Paginas de colaboradores"] button:last-child',
+      )!
+      .click();
+    httpMock.expectOne(esListado(1)).flush({ ...PAGINA, page: 1, totalPages: 3 });
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const busqueda = host.querySelector<HTMLInputElement>('#colaboradores-busqueda')!;
+    busqueda.value = '  perez ';
+    busqueda.dispatchEvent(new Event('change'));
+    const buscado = httpMock.expectOne(esListado(1));
+    expect(buscado.request.params.get('q')).toBe('perez');
+    expect(buscado.request.params.get('page')).toBe('0');
+    buscado.flush({ ...PAGINA, content: [], totalElements: 0, totalPages: 0 });
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(texto(fixture)).toContain('Ningún colaborador coincide con la búsqueda.');
+
+    busqueda.value = '';
+    busqueda.dispatchEvent(new Event('change'));
+    httpMock.expectOne(esListado(1)).flush(PAGINA);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const rol = [...host.querySelectorAll<HTMLElement>('th[appOrdenable]')].find((th) =>
+      th.textContent?.includes('Rol'),
+    )!;
+    rol.querySelector('button')!.click();
+    const ordenado = httpMock.expectOne(esListado(1));
+    expect(decodeURIComponent(ordenado.request.params.get('sort')!)).toBe('rol,asc');
+    expect(ordenado.request.params.has('q')).toBe(false);
+    ordenado.flush(PAGINA);
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(rol.getAttribute('aria-sort')).toBe('ascending');
+  });
+
   it('un 429 al suspender dice cuantos segundos esperar y deja el panel abierto', async () => {
     const fixture = await montar();
     abrirPanel(fixture, 'Suspender');

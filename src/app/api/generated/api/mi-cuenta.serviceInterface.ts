@@ -14,6 +14,7 @@ import { Observable }                                        from 'rxjs';
 import { AuthorizedContextResponse } from '../model/models';
 import { EffectivePermissionsResponse } from '../model/models';
 import { MyPlatformRoleResponse } from '../model/models';
+import { MyProfileResponse } from '../model/models';
 import { ProblemDetail } from '../model/models';
 
 
@@ -24,6 +25,13 @@ import { Configuration }                                     from '../configurat
 export interface MiCuentaServiceInterface {
     defaultHeaders: HttpHeaders;
     configuration: Configuration;
+
+    /**
+     * Perfil de la cuenta autenticada
+     * Devuelve nombre, apellido y correo de la cuenta que hace el request y, si el token esta acotado a un contexto de trabajo, la organizacion, la sede y el rol de la membership en ese contexto. Sin contexto activo (token pre_context, o administrador de plataforma sin contexto) el campo context es null y la respuesta sigue siendo 200.  No requiere contexto ni permiso: la cuenta se lee a si misma y el identificador sale del principal, no hay parametro que lo cambie. No expone credenciales ni estado interno.
+     * @endpoint get /api/v1/me
+*/
+    getMe(extraHttpRequestParams?: any): Observable<MyProfileResponse>;
 
     /**
      * Permisos efectivos en el contexto activo

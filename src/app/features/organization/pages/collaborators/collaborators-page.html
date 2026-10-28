@@ -26,6 +26,25 @@
 <section class="tarjeta" aria-labelledby="titulo-colaboradores">
   <h2 id="titulo-colaboradores">Vínculos de la organización</h2>
 
+  <!-- Regla de filtros (plan §3.4): la busqueda, en el servidor (DP-45); no hay filtros avanzados. -->
+  @if (estado().tipo !== 'sin-contexto') {
+    <div class="campo">
+      <label class="visualmente-oculto" for="colaboradores-busqueda">Nombre o correo</label>
+      <div class="campo-busqueda">
+        <app-icono class="campo-busqueda__icono" nombre="buscar" />
+        <input
+          id="colaboradores-busqueda"
+          name="colaboradores-busqueda"
+          type="search"
+          autocomplete="off"
+          placeholder="Buscar por nombre o correo"
+          [value]="busqueda()"
+          (change)="buscar($any($event.target).value)"
+        />
+      </div>
+    </div>
+  }
+
   <div aria-live="polite">
     @switch (estado().tipo) {
       @case ('cargando') {
@@ -51,7 +70,9 @@
       }
 
       @case ('listo') {
-        @if (colaboradoresDeLaPagina().length === 0) {
+        @if (colaboradoresDeLaPagina().length === 0 && busqueda().trim() !== '') {
+          <p class="estado estado--vacio">Ningún colaborador coincide con la búsqueda.</p>
+        } @else if (colaboradoresDeLaPagina().length === 0) {
           <p class="estado estado--vacio">Esta organización todavía no tiene colaboradores.</p>
           <p class="ayuda">
             Podés vincular a alguien que ya tenga cuenta en AKINE desde el botón de arriba.
@@ -69,11 +90,11 @@
               </caption>
               <thead>
                 <tr>
-                  <th scope="col">Cuenta</th>
-                  <th scope="col">Rol</th>
+                  <th scope="col" appOrdenable [tabla]="orden" columna="nombre">Cuenta</th>
+                  <th scope="col" appOrdenable [tabla]="orden" columna="rol">Rol</th>
                   <th scope="col">Alcance</th>
-                  <th scope="col">Estado</th>
-                  <th scope="col">Vigencia</th>
+                  <th scope="col" appOrdenable [tabla]="orden" columna="estado">Estado</th>
+                  <th scope="col" appOrdenable [tabla]="orden" columna="vigenteDesde">Vigencia</th>
                   <th scope="col">Acciones</th>
                 </tr>
               </thead>

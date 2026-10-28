@@ -9,6 +9,15 @@ import { errorInterceptor } from '../../../../core/interceptors/error.intercepto
 import { provideApi } from '../../../../api/generated/provide-api';
 
 const URL_REGISTRO = '/api/v1/auth/register';
+const URL_TERMINOS = '/api/v1/terms';
+
+/** Despliegue sin terminos configurados: el alta no exige nada y no manda los campos (DP-45). */
+const SIN_TERMINOS = { aceptacionObligatoria: false };
+const CON_TERMINOS = {
+  aceptacionObligatoria: true,
+  versionVigente: '2026-10',
+  url: 'https://akine.example/terminos',
+};
 
 describe('RegisterPage', () => {
   let httpMock: HttpTestingController;
@@ -231,6 +240,66 @@ describe('RegisterPage', () => {
     expect(texto(fixture)).toContain('Escribí un correo válido');
   });
 
+  // --- Terminos (DP-45) --------------------------------------------------------------
+
+  it('con términos vigentes exige aceptarlos, manda la versión y relee si cambió', async () => {
+    const fixture = crear(CON_TERMINOS);
+    completarMinimo(fixture);
+    enviar(fixture);
+    fixture.detectChanges();
+
+    httpMock.expectNone(URL_REGISTRO);
+    expect(texto(fixture)).toContain('tenés que aceptar los términos');
+    expect(document.activeElement?.id).toBe('registro-terminos');
+    const enlace = fixture.nativeElement.querySelector('a[target="_blank"]') as HTMLAnchorElement;
+    expect(enlace.href).toBe('https://akine.example/terminos');
+
+    marcarTerminos(fixture);
+    enviar(fixture);
+    const pedido = httpMock.expectOne(URL_REGISTRO);
+    expect(pedido.request.body).toEqual(
+      expect.objectContaining({ aceptaTerminos: true, versionTerminos: '2026-10' }),
+    );
+
+    // La version cambio entre leerla y enviar: el 400 nombra el campo, y se releen.
+    pedido.flush(
+      {
+        type: 'https://akine.app/problems/validation-error',
+        detail: 'La solicitud contiene campos invalidos',
+        errors: { versionTerminos: 'no es la vigente' },
+      },
+      { status: 400, statusText: 'Bad Request' },
+    );
+    await fixture.whenStable();
+    httpMock.expectOne(URL_TERMINOS).flush({ ...CON_TERMINOS, versionVigente: '2026-11' });
+    fixture.detectChanges();
+
+    expect(texto(fixture)).toContain('cambiaron');
+    expect(texto(fixture)).toContain('Versión 2026-11');
+    expect(
+      (fixture.nativeElement.querySelector('#registro-terminos') as HTMLInputElement).checked,
+    ).toBe(false);
+  });
+
+  it('si no se pudieron leer los términos no deja enviar y ofrece reintentar', () => {
+    const fixture = TestBed.createComponent(RegisterPage);
+    fixture.detectChanges();
+    httpMock.expectOne(URL_TERMINOS).flush(null, { status: 500, statusText: 'Server Error' });
+    fixture.detectChanges();
+
+    expect(boton(fixture).disabled).toBe(true);
+    expect(texto(fixture)).toContain('No pudimos leer los términos');
+
+    const reintentar = [...fixture.nativeElement.querySelectorAll('button')].find(
+      (candidato: HTMLButtonElement) => candidato.textContent?.trim() === 'Reintentar',
+    ) as HTMLButtonElement;
+    reintentar.click();
+    httpMock.expectOne(URL_TERMINOS).flush(SIN_TERMINOS);
+    fixture.detectChanges();
+
+    expect(boton(fixture).disabled).toBe(false);
+  });
+
   async function mensajeDeExito(cuerpo: { message: string }): Promise<string> {
     const fixture = crear();
     completarMinimo(fixture);
@@ -256,7 +325,8 @@ describe('RegisterPage', () => {
     async () => {
       // El formulario mas largo de identidad, con `fieldset`/`legend` y campos opcionales
       // marcados dentro del propio `label`: es donde una etiqueta mal asociada pasa inadvertida.
-      const fixture = crear();
+      // Con terminos exigidos, para auditar tambien la casilla en error.
+      const fixture = crear(CON_TERMINOS);
       enviar(fixture);
       fixture.detectChanges();
 
@@ -265,8 +335,11 @@ describe('RegisterPage', () => {
     TIMEOUT_AXE,
   );
 
-  function crear() {
+  /** Monta la pantalla y responde `GET /terms`: por defecto, un despliegue que no los exige. */
+  function crear(terminos: Record<string, unknown> = SIN_TERMINOS) {
     const fixture = TestBed.createComponent(RegisterPage);
+    fixture.detectChanges();
+    httpMock.expectOne(URL_TERMINOS).flush(terminos);
     fixture.detectChanges();
     return fixture;
   }
@@ -295,6 +368,11 @@ function enviar(fixture: { nativeElement: HTMLElement }): void {
   (fixture.nativeElement.querySelector('form') as HTMLFormElement).dispatchEvent(
     new Event('submit'),
   );
+}
+
+function marcarTerminos(fixture: { nativeElement: HTMLElement; detectChanges(): void }): void {
+  (fixture.nativeElement.querySelector('#registro-terminos') as HTMLInputElement).click();
+  fixture.detectChanges();
 }
 
 function boton(fixture: { nativeElement: HTMLElement }): HTMLButtonElement {

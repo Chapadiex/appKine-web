@@ -299,7 +299,7 @@ export class AutorizacionesService extends BaseService implements Autorizaciones
 
     /**
      * Historial de estados de una autorizacion
-     * DP-23. Los hechos de la autorizacion, del mas viejo al mas nuevo: ALTA, APROBACION, OBSERVACION, RECHAZO, MODIFICACION, DOCUMENTO, CONSUMO, REVERSION_DE_CONSUMO y ANULACION, cada uno con estado anterior y nuevo, actor, momento y motivo. Vive en una tabla propia append-only, escrita en la misma transaccion que cada mutacion: no se arma leyendo la auditoria.  EL VENCIMIENTO NO ES UN EVENTO. Vencer es funcion del reloj y nada lo escribe: viaja CALCULADO contra fecha en vencida y vencidaDesde.  Las autorizaciones cargadas antes del historial (V85) traen un solo ALTA reconstruido con el estado que tenian ese dia, declarado en detalle.  Mismo permiso que leer la autorizacion: pertenencia al tenant.
+     * DP-23. Los hechos de la autorizacion, del mas viejo al mas nuevo: ALTA, APROBACION, OBSERVACION, RECHAZO, MODIFICACION, DOCUMENTO, CONSUMO, REVERSION_DE_CONSUMO y ANULACION, cada uno con estado anterior y nuevo, actor, momento y motivo. Vive en una tabla propia append-only, escrita en la misma transaccion que cada mutacion: no se arma leyendo la auditoria.  EL VENCIMIENTO NO ES UN EVENTO. Vencer es funcion del reloj y nada lo escribe: viaja CALCULADO contra fecha en vencida y vencidaDesde.  Las autorizaciones cargadas antes del historial (V85) traen un solo ALTA reconstruido con el estado que tenian ese dia, declarado en detalle.  Mismo permiso que leer la autorizacion: pertenencia al tenant.  DP-45: sort ordena por ocurridoEn o tipo. Sin q: el historial de UNA autorizacion son pocos hechos y se lee en orden.
      * @endpoint get /api/v1/personas/{personaId}/autorizaciones/{autorizacionId}/historial
      * @param requestParameters
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
@@ -321,6 +321,7 @@ export class AutorizacionesService extends BaseService implements Autorizaciones
         const page = requestParameters?.page;
         const size = requestParameters?.size;
         const fecha = requestParameters?.fecha;
+        const sort = requestParameters?.sort;
 
         let localVarQueryParameters = new OpenApiHttpParams(this.encoder);
 
@@ -346,6 +347,15 @@ export class AutorizacionesService extends BaseService implements Autorizaciones
             localVarQueryParameters,
             'fecha',
             <any>fecha,
+            QueryParamStyle.Form,
+            true,
+        );
+
+
+        localVarQueryParameters = this.addToHttpParams(
+            localVarQueryParameters,
+            'sort',
+            <any>sort,
             QueryParamStyle.Form,
             true,
         );

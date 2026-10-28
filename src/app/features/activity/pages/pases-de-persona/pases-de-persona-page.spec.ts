@@ -608,6 +608,27 @@ describe('PasesDePersonaPage', () => {
     TIMEOUT_AXE,
   );
 
+  it('el ledger se puede pedir del mas nuevo al mas viejo, desde la primera página', async () => {
+    const fixture = await montar();
+    clickear(fixture, 'Ver movimientos');
+    pedirMovimientos(0).flush(pagina(movimientosDe(1, 20), 0, 45));
+    await asentar(fixture);
+    clickear(fixture, 'Siguiente');
+    pedirMovimientos(1).flush(pagina(movimientosDe(21, 20), 1, 45));
+    await asentar(fixture);
+
+    for (const sort of ['ocurridoEn,asc', 'ocurridoEn,desc']) {
+      (fixture.nativeElement as HTMLElement)
+        .querySelector<HTMLButtonElement>('[aria-label="Movimientos del pase"] th button')!
+        .click();
+      const pedido = pedirMovimientos(0);
+      expect(decodeURIComponent(pedido.request.params.get('sort')!)).toBe(sort);
+      pedido.flush(pagina(movimientosDe(1, 20), 0, 45));
+      await asentar(fixture);
+    }
+    expect(textoDe(fixture)).toContain('Movimientos 1 a 20 de 45, del mas nuevo al mas viejo.');
+  });
+
   it('después de un ajuste el ledger termina en la página del movimiento nuevo', async () => {
     const fixture = await montar([PASE], PRODUCTOS, ADMIN);
     clickear(fixture, 'Ver movimientos');

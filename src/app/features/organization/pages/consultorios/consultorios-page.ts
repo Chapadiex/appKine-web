@@ -24,6 +24,13 @@ import { numeroDeclarado } from '../../../../shared/utils/numero-declarado';
 import { textoRequerido } from '../../../../shared/validators/texto-requerido';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { Icono } from '../../../../shared/components/icono/icono';
+import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
+import {
+  CamposDeSort,
+  ordenDeServidor,
+} from '../../../../shared/components/tabla/orden-de-servidor';
+import { textoDeBusqueda } from '../../../../shared/utils/texto-de-busqueda';
+import { ListOrganizationConsultoriosRequestParams } from '../../../../api/generated/api/organizaciones.serviceInterface';
 
 /** Filtro de estado del listado. Los tres valores son los del contrato. */
 type FiltroEstado = 'ACTIVO' | 'INACTIVO' | 'TODOS';
@@ -85,6 +92,7 @@ const POR_PAGINA = 20;
     Ayuda,
     Icono,
     Filtros,
+    ColumnaOrdenable,
     ReactiveFormsModule,
     RouterLink,
     PermisoDirective,
@@ -118,6 +126,14 @@ export class ConsultoriosPage {
   /** Filtros avanzados fuera de su valor por defecto (regla de filtros, plan §3.4). */
   protected readonly filtrosAvanzadosActivos = computed(() => Number(this.filtro() !== 'ACTIVO'));
   protected readonly paginaActual = signal(0);
+
+  /** Lo que se busca en el nombre de la sede (DP-45, `q` del servidor). */
+  protected readonly busqueda = signal('');
+
+  /** Orden de la tabla, pedido al servidor: cambiarlo vuelve a la primera pagina (DP-45). */
+  protected readonly orden = ordenDeServidor<
+    CamposDeSort<ListOrganizationConsultoriosRequestParams['sort']>
+  >(() => this.recargarDesdeElPrincipio());
 
   /** Fila y operacion abiertas, o `null`. Solo una a la vez. */
   protected readonly panel = signal<{ readonly id: number; readonly tipo: TipoAccion } | null>(
@@ -167,6 +183,8 @@ export class ConsultoriosPage {
         this.exito.set(null);
         this.paginaActual.set(0);
         this.filtro.set('ACTIVO');
+        this.busqueda.set('');
+        this.orden.reiniciar();
         this.sedesDelContexto.asegurarCargadas();
         this.cargar();
       });
@@ -188,6 +206,8 @@ export class ConsultoriosPage {
         estado: this.filtro(),
         page: this.paginaActual(),
         size: POR_PAGINA,
+        q: textoDeBusqueda(this.busqueda()),
+        sort: this.orden.sort(),
       })
       .pipe(catchError((error: unknown) => of(error instanceof Error ? error : new Error(''))))
       .subscribe((respuesta) => {
@@ -207,10 +227,21 @@ export class ConsultoriosPage {
   protected cambiarFiltro(valor: string): void {
     const elegido: FiltroEstado =
       valor === 'INACTIVO' || valor === 'TODOS' ? valor : ('ACTIVO' as const);
-    this.cerrarPanel();
     this.filtro.set(elegido);
-    // Volver a la primera pagina: la pagina 3 del filtro anterior puede no existir en el
-    // nuevo, y el backend devolveria una pagina vacia que se lee como "no hay sedes".
+    this.recargarDesdeElPrincipio();
+  }
+
+  protected buscar(texto: string): void {
+    this.busqueda.set(texto);
+    this.recargarDesdeElPrincipio();
+  }
+
+  /**
+   * Volver a la primera pagina: la pagina 3 del filtro, la busqueda o el orden anterior puede no
+   * existir en el nuevo, y el backend devolveria una pagina vacia que se lee como "no hay sedes".
+   */
+  private recargarDesdeElPrincipio(): void {
+    this.cerrarPanel();
     this.paginaActual.set(0);
     this.cargar();
   }

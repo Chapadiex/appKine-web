@@ -36,6 +36,8 @@ import { ProblemDetail } from '../model/problem-detail';
 import { RegistrarEgreso } from '../model/registrar-egreso';
 // @ts-ignore
 import { RegistrarPagoDeEgreso } from '../model/registrar-pago-de-egreso';
+// @ts-ignore
+import { ResumenDeEgresos } from '../model/resumen-de-egresos';
 
 // @ts-ignore
 import { BASE_PATH, COLLECTION_FORMATS }                     from '../variables';
@@ -52,6 +54,7 @@ import {
     EditarRequestParams,
     PagarRequestParams,
     RegistrarEgresoRequestParams,
+    ResumirEgresosRequestParams,
     VerEgresoRequestParams,
     VerLiquidacionDeHonorariosRequestParams
 } from './egresos.serviceInterface';
@@ -233,7 +236,7 @@ export class EgresosService extends BaseService implements EgresosServiceInterfa
 
     /**
      * Consultar egresos
-     * Lista y filtra por fecha, categoria, beneficiario y estado (RF-M22-004).  &#x60;desde&#x60; y &#x60;hasta&#x60; son **dias de la sede**, inclusivos: se comparan contra el instante de registro en la zona horaria de la sede, asi que un egreso cargado a las 22:30 de Cordoba es de ese dia y no del siguiente.  **Sin los pagos de cada fila**: traerlos seria el N+1 del primer listado que lo use. El detalle los tiene.  **Los periodos superpuestos no se impiden, se muestran.** Dos liquidaciones del mismo profesional para el mismo mes son legitimas —una correccion, un segundo concepto—, y un unique sobre el periodo convertiria un caso normal en un error. Filtrar por beneficiario las pone una al lado de la otra, que es la unica respuesta honesta.
+     * Lista y filtra por fecha, categoria, beneficiario y estado (RF-M22-004).  &#x60;desde&#x60; y &#x60;hasta&#x60; son **dias de la sede**, inclusivos: se comparan contra el instante de registro en la zona horaria de la sede, asi que un egreso cargado a las 22:30 de Cordoba es de ese dia y no del siguiente.  **Sin los pagos de cada fila**: traerlos seria el N+1 del primer listado que lo use. El detalle los tiene.  **Los periodos superpuestos no se impiden, se muestran.** Dos liquidaciones del mismo profesional para el mismo mes son legitimas —una correccion, un segundo concepto—, y un unique sobre el periodo convertiria un caso normal en un error. Filtrar por beneficiario las pone una al lado de la otra, que es la unica respuesta honesta.  DP-45: &#x60;q&#x60; busca \&quot;contiene\&quot;, sin distinguir mayusculas ni acentos, en el nombre y el documento del beneficiario, en el concepto y en el numero de comprobante. Ya pagina con &#x60;limite&#x60; y &#x60;desplazamiento&#x60; (el corte de 50 es el limite por defecto): no se agregan &#x60;page&#x60; y &#x60;size&#x60;, que serian dos formas de pedir lo mismo.
      * @endpoint get /api/v1/consultorios/{consultorioId}/egresos
      * @param requestParameters
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
@@ -255,6 +258,7 @@ export class EgresosService extends BaseService implements EgresosServiceInterfa
         const hasta = requestParameters?.hasta;
         const limite = requestParameters?.limite;
         const desplazamiento = requestParameters?.desplazamiento;
+        const q = requestParameters?.q;
 
         let localVarQueryParameters = new OpenApiHttpParams(this.encoder);
 
@@ -316,6 +320,15 @@ export class EgresosService extends BaseService implements EgresosServiceInterfa
             localVarQueryParameters,
             'desplazamiento',
             <any>desplazamiento,
+            QueryParamStyle.Form,
+            true,
+        );
+
+
+        localVarQueryParameters = this.addToHttpParams(
+            localVarQueryParameters,
+            'q',
+            <any>q,
             QueryParamStyle.Form,
             true,
         );
@@ -848,6 +861,91 @@ export class EgresosService extends BaseService implements EgresosServiceInterfa
             {
                 context: localVarHttpContext,
                 body: registrarEgreso,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * Totales de egresos del periodo
+     * Lo registrado, pagado y pendiente de los egresos del periodo, por moneda y por categoria, para la tira de la pantalla de egresos (DP-45).  **Sin &#x60;desde&#x60; ni &#x60;hasta&#x60;, el mes en curso en la zona de la sede.** Con solo &#x60;desde&#x60;, hasta el fin de ese mes. Las fechas se interpretan igual que en la bandeja: el instante de registro en el dia de la sede.  **Es egreso, no caja.** &#x60;registrado&#x60; son los egresos &#x60;CONFIRMADO&#x60; y &#x60;PAGADO&#x60; —lo comprometido—; &#x60;pagado&#x60; es lo saldado **hoy** (un pago anulado devuelve su importe) y &#x60;pendiente&#x60; lo que falta. Los borradores y los anulados se cuentan aparte. Ventana maxima: 366 dias.
+     * @endpoint get /api/v1/consultorios/{consultorioId}/egresos/resumen
+     * @param requestParameters
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public resumirEgresos(requestParameters: ResumirEgresosRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<ResumenDeEgresos>;
+    public resumirEgresos(requestParameters: ResumirEgresosRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<ResumenDeEgresos>>;
+    public resumirEgresos(requestParameters: ResumirEgresosRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<ResumenDeEgresos>>;
+    public resumirEgresos(requestParameters: ResumirEgresosRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        const consultorioId = requestParameters?.consultorioId;
+        if (consultorioId === null || consultorioId === undefined) {
+            throw new Error('Required parameter consultorioId was null or undefined when calling resumirEgresos.');
+        }
+        const desde = requestParameters?.desde;
+        const hasta = requestParameters?.hasta;
+
+        let localVarQueryParameters = new OpenApiHttpParams(this.encoder);
+
+        localVarQueryParameters = this.addToHttpParams(
+            localVarQueryParameters,
+            'desde',
+            <any>desde,
+            QueryParamStyle.Form,
+            true,
+        );
+
+
+        localVarQueryParameters = this.addToHttpParams(
+            localVarQueryParameters,
+            'hasta',
+            <any>hasta,
+            QueryParamStyle.Form,
+            true,
+        );
+
+
+        let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/consultorios/${this.configuration.encodeParam({name: "consultorioId", value: consultorioId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/egresos/resumen`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<ResumenDeEgresos>('get', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                params: localVarQueryParameters.toHttpParams(),
                 responseType: <any>responseType_,
                 ...(withCredentials ? { withCredentials } : {}),
                 headers: localVarHeaders,

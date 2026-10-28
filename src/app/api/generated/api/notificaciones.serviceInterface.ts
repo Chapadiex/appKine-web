@@ -23,6 +23,8 @@ export interface ListNotificationsRequestParams {
     estado?: Array<'PENDIENTE' | 'PROCESANDO' | 'ENVIADA' | 'FALLIDA' | 'REINTENTABLE' | 'AGOTADA'>;
     page?: number;
     size?: number;
+    q?: string;
+    sort?: 'creadaEn,asc' | 'creadaEn,desc' | 'estado,asc' | 'estado,desc' | 'tipo,asc' | 'tipo,desc' | 'intentos,asc' | 'intentos,desc';
 }
 
 export interface RetryNotificationRequestParams {
@@ -37,7 +39,7 @@ export interface NotificacionesServiceInterface {
 
     /**
      * Listar las notificaciones de la organizacion
-     * Lo que alimenta a retryNotification: sin esto no habia forma de saber que reintentar. Sin &#x60;estado&#x60; lista las **FALLIDA** y **AGOTADA**, que son las que admiten reintento; se puede pedir cualquier combinacion de estados (&#x60;estado&#x3D;FALLIDA,AGOTADA&#x60; o &#x60;estado&#x3D;FALLIDA&amp;estado&#x3D;AGOTADA&#x60;).  Requiere &#x60;colaborador:manage&#x60;, el mismo permiso que el reintento. Solo alcanza notificaciones de la organizacion del contexto. Las que nacen sin tenant (recuperacion de contraseña, activaciones fuera del alta de la organizacion) no aparecen; la activacion del fundador en el alta si, porque es de la organizacion.  **Sin datos clinicos ni contenido:** el destinatario va enmascarado, el cuerpo no sale nunca y el ultimo error es un resumen ya sanitizado. De la mas nueva a la mas vieja. &#x60;size&#x60; se acota a 100 por request.
+     * Lo que alimenta a retryNotification: sin esto no habia forma de saber que reintentar. Sin &#x60;estado&#x60; lista las **FALLIDA** y **AGOTADA**, que son las que admiten reintento; se puede pedir cualquier combinacion de estados (&#x60;estado&#x3D;FALLIDA,AGOTADA&#x60; o &#x60;estado&#x3D;FALLIDA&amp;estado&#x3D;AGOTADA&#x60;).  Requiere &#x60;colaborador:manage&#x60;, el mismo permiso que el reintento. Solo alcanza notificaciones de la organizacion del contexto. Las que nacen sin tenant (recuperacion de contraseña, activaciones fuera del alta de la organizacion) no aparecen; la activacion del fundador en el alta si, porque es de la organizacion.  **Sin datos clinicos ni contenido:** el destinatario va enmascarado, el cuerpo no sale nunca y el ultimo error es un resumen ya sanitizado. De la mas nueva a la mas vieja. &#x60;size&#x60; se acota a 100 por request.  DP-45: &#x60;q&#x60; coincide con el tipo de notificacion que contiene el texto (sin distinguir mayusculas ni acentos) o con el destinatario EXACTO: como el listado lo enmascara, un \&quot;contiene\&quot; sobre la casilla real dejaria reconstruirla preguntando letra por letra. &#x60;sort&#x60; ordena por creadaEn, estado, tipo o intentos.
      * @endpoint get /api/v1/organizations/{orgId}/notifications
 * @param requestParameters
      */

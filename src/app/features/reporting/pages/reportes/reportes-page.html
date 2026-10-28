@@ -172,6 +172,80 @@
     }
   </section>
 
+  <!-- ============================ Evolucion (DP-45) ============================ -->
+
+  @if (estadoSerie().tipo === 'cargando') {
+    <p class="estado estado--cargando">Armando el gráfico de evolución…</p>
+  }
+  @if (errorDeSerie(); as fallo) {
+    <p class="estado estado--error" role="status">
+      No se pudo armar el gráfico de evolución: {{ fallo.mensaje }}
+    </p>
+  }
+  @if (serieMostrada(); as serie) {
+    <section class="tarjeta" aria-labelledby="titulo-evolucion">
+      <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
+        <h2 id="titulo-evolucion">Evolución por {{ porSemana() ? 'semana' : 'día' }}</h2>
+        <app-ayuda titulo="Evolución en el período">
+          <p>
+            Cada barra es un día de la sede o, en un período de más de dos meses, una semana de
+            lunes a domingo. Las barras de un indicador suman su número en el reporte.
+          </p>
+          <p>
+            Los saldos de hoy (deuda vigente, egresos por pagar) y los porcentajes no tienen
+            gráfico: no se reparten por fecha.
+          </p>
+        </app-ayuda>
+      </div>
+
+      @if (cantidadDeSeries() > 1) {
+        <div class="campo campo--serie">
+          <label for="serie-indicador">Indicador</label>
+          <select id="serie-indicador" (change)="elegirSerie($any($event.target).value)">
+            @for (grupo of gruposDeSeries(); track grupo.titulo) {
+              <optgroup [label]="grupo.titulo">
+                @for (opcion of grupo.series; track claveDeSerie(opcion)) {
+                  <option
+                    [value]="claveDeSerie(opcion)"
+                    [selected]="claveDeSerie(opcion) === claveDeSerie(serie)"
+                  >
+                    {{ opcion.etiqueta || opcion.clave }}
+                  </option>
+                }
+              </optgroup>
+            }
+          </select>
+        </div>
+      }
+
+      <p class="serie-resumen">
+        <span class="serie-resumen__etiqueta">{{ serie.etiqueta || serie.clave }}</span>
+        <span class="serie-resumen__total">{{ valorDeSerie(serie.total, serie) }}</span>
+        <span class="ayuda">en el período</span>
+      </p>
+      @if (serie.fuente || serie.criterioDeFecha) {
+        <dl class="indicador__origen">
+          @if (serie.fuente) {
+            <dt>Fuente</dt>
+            <dd>{{ serie.fuente }}</dd>
+          }
+          @if (serie.criterioDeFecha) {
+            <dt>Fecha de corte</dt>
+            <dd>{{ serie.criterioDeFecha }}</dd>
+          }
+        </dl>
+      }
+
+      <app-grafico-de-barras
+        [barras]="barras()"
+        [descripcion]="descripcionDelGrafico()"
+        [encabezadoPeriodo]="porSemana() ? 'Semana' : 'Día'"
+        [encabezadoValor]="serie.etiqueta || serie.clave || 'Valor'"
+        textoSinValores="Sin movimiento en el período."
+      />
+    </section>
+  }
+
   @if (!r.secciones || r.secciones.length === 0) {
     <p class="estado estado--vacio">Este reporte no tiene ninguna sección que puedas ver.</p>
   }

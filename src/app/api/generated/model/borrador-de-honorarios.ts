@@ -9,6 +9,7 @@
  */
 import { LineaDeHonorario } from './linea-de-honorario';
 import { ClaseExcluidaDeHonorarios } from './clase-excluida-de-honorarios';
+import { ResumenDeHonorarios } from './resumen-de-honorarios';
 
 
 /**
@@ -29,5 +30,9 @@ export interface BorradorDeHonorarios {
      * Null si no entra ninguna clase
      */
     moneda?: string;
+    /**
+     * Los numeros de la tira del borrador (DP-45)
+     */
+    resumen?: ResumenDeHonorarios;
 }
 

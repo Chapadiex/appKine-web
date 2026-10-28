@@ -22,13 +22,85 @@
   abierta.
 </p>
 
+<!-- ============================= Tira del mes (DP-45) ============================= -->
+
+@if (resumen(); as r) {
+  <section aria-labelledby="titulo-resumen-egresos">
+    <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
+      <h2 id="titulo-resumen-egresos">
+        Este mes <span class="titulo-periodo">({{ dia(r.desde) }} al {{ dia(r.hasta) }})</span>
+      </h2>
+      <app-ayuda titulo="Totales del mes">
+        <p>
+          Registrado es lo comprometido: los egresos confirmados y los pagados del mes. Pagado es lo
+          que ya se saldó hoy, por cualquier medio, y falta pagar es el resto. Los borradores no son
+          compromiso todavía y se cuentan aparte. No son movimientos de caja: un pago por
+          transferencia nunca pasó por el cajón.
+        </p>
+      </app-ayuda>
+    </div>
+    @for (t of r.porMoneda ?? []; track t.moneda) {
+      @if ((r.porMoneda?.length ?? 0) > 1) {
+        <p class="ayuda">En {{ t.moneda }}</p>
+      }
+      <dl class="cifras">
+        <div>
+          <dt>Registrado</dt>
+          <dd class="importe">
+            {{ importeEn(t.registrado, t.moneda) }}
+            <span class="cifras__nota">{{ t.cantidad ?? 0 }} confirmados o pagados</span>
+          </dd>
+        </div>
+        <div>
+          <dt>Pagado</dt>
+          <dd class="importe">{{ importeEn(t.pagado, t.moneda) }}</dd>
+        </div>
+        <div>
+          <dt>Falta pagar</dt>
+          <dd class="importe">{{ importeEn(t.pendiente, t.moneda) }}</dd>
+        </div>
+        <div>
+          <dt>En borrador</dt>
+          <dd class="importe">
+            {{ importeEn(t.importeBorrador, t.moneda) }}
+            <span class="cifras__nota"
+              >{{ t.cantidadBorrador ?? 0 }} sin confirmar ·
+              {{ t.cantidadAnulados ?? 0 }} anulados</span
+            >
+          </dd>
+        </div>
+      </dl>
+    } @empty {
+      <p class="estado estado--vacio">Este mes todavía no hay egresos.</p>
+    }
+  </section>
+} @else if (estadoResumen().tipo === 'error') {
+  <p class="ayuda" role="status">No se pudieron leer los totales del mes.</p>
+}
+
 <!-- ================================ Filtros =================================== -->
 
 <section class="tarjeta" aria-labelledby="titulo-filtros">
   <h2 id="titulo-filtros">Buscar egresos</h2>
   <form [formGroup]="filtro" (ngSubmit)="buscar()" novalidate>
-    <!-- Regla de filtros (plan §3.4): sin busqueda por texto en el backend, el embudo va solo. -->
-    <app-filtros [soloAvanzados]="true" [activos]="filtrosAvanzadosActivos()">
+    <!-- Regla de filtros (plan §3.4): la busqueda del servidor a la vista, el resto en el embudo. -->
+    <app-filtros [activos]="filtrosAvanzadosActivos()">
+      <div class="campo" filtro-principal>
+        <label class="visualmente-oculto" for="filtro-q"
+          >Beneficiario, documento, concepto o número de comprobante</label
+        >
+        <div class="campo-busqueda">
+          <app-icono class="campo-busqueda__icono" nombre="buscar" />
+          <input
+            id="filtro-q"
+            type="search"
+            autocomplete="off"
+            maxlength="100"
+            placeholder="Buscar por beneficiario, documento, concepto o comprobante"
+            formControlName="q"
+          />
+        </div>
+      </div>
       <div class="campos-en-linea">
         <div class="campo">
           <label for="filtro-estado">Estado</label>
@@ -60,11 +132,12 @@
           <input id="filtro-hasta" type="date" formControlName="hasta" />
         </div>
       </div>
-
-      <div class="acciones">
-        <button type="submit" class="boton">Buscar</button>
-      </div>
     </app-filtros>
+
+    <!-- Fuera del embudo: la busqueda por texto se envia sin abrir los filtros avanzados. -->
+    <div class="acciones">
+      <button type="submit" class="boton">Buscar</button>
+    </div>
   </form>
 </section>
 
@@ -136,9 +209,36 @@
         </tbody>
       </table>
     </div>
-    @if (recortado()) {
-      <p class="ayuda">Se muestran los primeros 50. Acotá el período o filtrá por estado.</p>
+    @if (pagina() > 0 || hayMas()) {
+      <nav class="pie-de-tarjeta paginacion" aria-label="Páginas de egresos">
+        <span class="pie-de-tarjeta__resumen"
+          >Egresos {{ filasMostradas().primera }} a {{ filasMostradas().ultima }}</span
+        >
+        <button
+          type="button"
+          class="boton boton--secundario"
+          [disabled]="pagina() === 0"
+          (click)="irAPagina(pagina() - 1)"
+        >
+          Anterior
+        </button>
+        <span class="ayuda">Página {{ pagina() + 1 }}</span>
+        <button
+          type="button"
+          class="boton boton--secundario"
+          [disabled]="!hayMas()"
+          (click)="irAPagina(pagina() + 1)"
+        >
+          Siguiente
+        </button>
+      </nav>
     }
+  </div>
+} @else if (vacio() && pagina() > 0) {
+  <div class="acciones">
+    <button type="button" class="boton boton--secundario" (click)="irAPagina(pagina() - 1)">
+      Volver a la página anterior
+    </button>
   </div>
 }
 

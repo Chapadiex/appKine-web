@@ -131,7 +131,7 @@ export class AsistenciaDeClasesService extends BaseService implements Asistencia
 
     /**
      * Detalle operativo de la clase
-     * Cabecera y listado compacto paginado (RF-M28-009, CA-M28-009-06). Los nombres se resuelven en **un solo batch**: de a uno, la pantalla haria tantas consultas como participantes.  **Lo que no lleva es la mitad del punto** (RNF-M28-002): ni un dato clinico, ni cobertura, ni deuda, ni pase, ni abono. Lo clinico porque quien toma lista no puede ver a que se atiende nadie; lo economico porque todavia no existe.  Exige &#x60;inscripcion:read&#x60;, **que no es &#x60;clase:read&#x60;**: quien mira la grilla del dia no necesita saber quien esta anotado.
+     * Cabecera y listado compacto paginado (RF-M28-009, CA-M28-009-06). Los nombres se resuelven en **un solo batch**: de a uno, la pantalla haria tantas consultas como participantes.  **Lo que no lleva es la mitad del punto** (RNF-M28-002): ni un dato clinico, ni cobertura, ni deuda, ni pase, ni abono. Lo clinico porque quien toma lista no puede ver a que se atiende nadie; lo economico porque todavia no existe.  Exige &#x60;inscripcion:read&#x60;, **que no es &#x60;clase:read&#x60;**: quien mira la grilla del dia no necesita saber quien esta anotado.  DP-45: &#x60;sort&#x60; ordena por apellido, inscriptoEn, estado o posicionEspera. Sin &#x60;q&#x60;: una clase tiene a lo sumo su capacidad mas la espera, y la pantalla la recorre entera.
      * @endpoint get /api/v1/consultorios/{consultorioId}/clases/{claseId}/detalle-operativo
      * @param requestParameters
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
@@ -152,6 +152,7 @@ export class AsistenciaDeClasesService extends BaseService implements Asistencia
         }
         const page = requestParameters?.page;
         const size = requestParameters?.size;
+        const sort = requestParameters?.sort;
 
         let localVarQueryParameters = new OpenApiHttpParams(this.encoder);
 
@@ -168,6 +169,15 @@ export class AsistenciaDeClasesService extends BaseService implements Asistencia
             localVarQueryParameters,
             'size',
             <any>size,
+            QueryParamStyle.Form,
+            true,
+        );
+
+
+        localVarQueryParameters = this.addToHttpParams(
+            localVarQueryParameters,
+            'sort',
+            <any>sort,
             QueryParamStyle.Form,
             true,
         );

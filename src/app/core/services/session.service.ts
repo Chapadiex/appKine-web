@@ -35,9 +35,10 @@ export type EstadoSesion = 'anonimo' | 'sin-contexto' | 'activa';
  * `akine_rt`, `httpOnly` `Secure` `SameSite=Strict`, que este codigo no puede leer ni
  * necesita leer: alcanza con `withCredentials`, que ya pone el interceptor de auth.
  *
- * <p><b>La sesion cae a las 12 h del login, se refresque o no.</b> El vencimiento del
- * backend es absoluto y la rotacion no lo mueve: no hay nada que este servicio pueda hacer
- * para extenderla, solo reaccionar al 401 final.
+ * <p><b>La sesion cae a las 12 h del login, se refresque o no</b> (o a la vigencia larga, si se
+ * ingreso con "mantener la sesion iniciada"). El vencimiento del backend es absoluto y la
+ * rotacion no lo mueve: no hay nada que este servicio pueda hacer para extenderla, solo
+ * reaccionar al 401 final.
  */
 @Injectable({ providedIn: 'root' })
 export class SessionService {
@@ -108,13 +109,18 @@ export class SessionService {
    * `401 invalid-credentials`, con el mismo cuerpo (ADR-0018 del backend). Es
    * anti-enumeracion deliberada: el error se propaga tal cual y la pantalla muestra un
    * unico mensaje. No hay forma de distinguir cual de los tres fue, y no hay que intentarlo.
+   *
+   * <p>`recordarme` (DP-45) le pide al backend la vigencia larga del refresh (30 dias por
+   * defecto, en vez de la jornada de 12 h). Solo cambia el `Max-Age` de la cookie: el access
+   * token sigue en memoria y la rotacion es la misma. Sin marcar no se manda, como antes.
    */
-  login(email: string, password: string): Observable<void> {
+  login(email: string, password: string, recordarme = false): Observable<void> {
     // Con la restauracion del arranque todavia en vuelo, el login la espera: si no, su
     // respuesta podria llegar despues y pisar el token recien emitido con el de la cookie
     // vieja. Sin restauracion en vuelo no agrega nada (emite en el acto).
+    const loginRequest = recordarme ? { email, password, recordarme } : { email, password };
     return this.esperarRestauracion().pipe(
-      switchMap(() => this.api.login({ loginRequest: { email, password } })),
+      switchMap(() => this.api.login({ loginRequest })),
       tap((respuesta) => {
         // Login siempre arranca de cero: si habia una sesion anterior a medio limpiar, su
         // contexto no puede sobrevivir al cambio de identidad.

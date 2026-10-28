@@ -16,10 +16,29 @@
   <h2 id="titulo-listado-notificaciones">Listado</h2>
 
   <!--
-    Regla de filtros (plan §3.4): el listado no tiene busqueda por texto en el backend, asi que
-    va solo el embudo, con el estado adentro. Arranca en Fallida + Agotada.
+    Regla de filtros (plan §3.4): la busqueda, en el servidor (DP-45), a la vista; el estado
+    detras del embudo. Arranca en Fallida + Agotada. El destinatario se busca EXACTO: el listado
+    lo enmascara, y un "contiene" dejaria reconstruirlo letra por letra.
   -->
-  <app-filtros [soloAvanzados]="true" [activos]="filtrosAvanzadosActivos()">
+  <app-filtros [activos]="filtrosAvanzadosActivos()">
+    <div class="campo" filtro-principal>
+      <label class="visualmente-oculto" for="notificaciones-busqueda"
+        >Tipo de notificación o destinatario exacto</label
+      >
+      <div class="campo-busqueda">
+        <app-icono class="campo-busqueda__icono" nombre="buscar" />
+        <input
+          id="notificaciones-busqueda"
+          name="notificaciones-busqueda"
+          type="search"
+          autocomplete="off"
+          placeholder="Buscar por tipo o por el correo completo del destinatario"
+          [value]="busqueda()"
+          (change)="buscar($any($event.target).value)"
+        />
+      </div>
+    </div>
+
     <fieldset class="grupo">
       <legend>Estado</legend>
       @for (opcion of estadosFiltrables; track opcion) {
@@ -67,7 +86,13 @@
 
       @case ('listo') {
         @if (filas().length === 0) {
-          <p class="estado estado--vacio">No hay notificaciones con esos estados.</p>
+          @if (busqueda().trim() !== '') {
+            <p class="estado estado--vacio">
+              Ninguna notificación con esos estados coincide con la búsqueda.
+            </p>
+          } @else {
+            <p class="estado estado--vacio">No hay notificaciones con esos estados.</p>
+          }
         } @else {
           <div
             class="tabla-scroll"
@@ -82,11 +107,13 @@
               <thead>
                 <tr>
                   <th scope="col">Número</th>
-                  <th scope="col">Destinatario y tipo</th>
-                  <th scope="col">Estado</th>
-                  <th scope="col">Intentos</th>
+                  <th scope="col" appOrdenable [tabla]="orden" columna="tipo">
+                    Destinatario y tipo
+                  </th>
+                  <th scope="col" appOrdenable [tabla]="orden" columna="estado">Estado</th>
+                  <th scope="col" appOrdenable [tabla]="orden" columna="intentos">Intentos</th>
                   <th scope="col">Último error</th>
-                  <th scope="col">Creada</th>
+                  <th scope="col" appOrdenable [tabla]="orden" columna="creadaEn">Creada</th>
                   <th scope="col">Último cambio</th>
                   <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
                 </tr>

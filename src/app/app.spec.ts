@@ -7,6 +7,7 @@ import { Component } from '@angular/core';
 import { ANCHO_AMPLIO, DATA_ANCHO } from './core/models/ancho-de-contenido';
 import { SessionService } from './core/services/session.service';
 import { PlatformRoleStore } from './core/services/platform-role.store';
+import { PerfilPropioStore } from './core/services/perfil-propio.store';
 import { TenantContextStore } from './core/services/tenant-context.store';
 import { ServicioNoDisponibleStore } from './core/services/servicio-no-disponible.store';
 import { App } from './app';
@@ -138,6 +139,10 @@ describe('App (layout)', () => {
         {
           provide: PlatformRoleStore,
           useValue: { esAdminDePlataforma: () => false, asegurarCargado: () => undefined },
+        },
+        {
+          provide: PerfilPropioStore,
+          useValue: { perfil: () => null, asegurarCargado: () => undefined },
         },
       ],
     }).compileComponents();

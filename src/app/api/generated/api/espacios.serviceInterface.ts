@@ -55,6 +55,8 @@ export interface ListEspaciosRequestParams {
     estado?: 'ACTIVO' | 'INACTIVO' | 'TODOS';
     page?: number;
     size?: number;
+    q?: string;
+    sort?: 'nombre,asc' | 'nombre,desc' | 'tipo,asc' | 'tipo,desc' | 'capacidad,asc' | 'capacidad,desc';
 }
 
 export interface UpdateEspacioRequestParams {
@@ -103,7 +105,7 @@ export interface EspaciosServiceInterface {
 
     /**
      * Espacios de la sede
-     * Listado paginado de los espacios de la sede. Exige espacio:read sobre esa sede, y NO consultorio:manage: es la lectura que necesita un profesional para saber en que box atiende, asi que restringirla al administrador dejaria a la mitad del equipo sin poder consultarla. Lo tienen todos los roles de la sede salvo PACIENTE, que recibe 403.  El parametro estado por defecto vale ACTIVO, y eso es lo que hace que un selector de reserva NUNCA ofrezca un espacio dado de baja (RN-M04-002). Los inactivos hay que pedirlos explicitamente, y la pantalla de administracion los necesita para explicar por que un nombre esta tomado o libre.  El tamano de pagina se acota a 100: pedir mas devuelve ese maximo, no un error.
+     * Listado paginado de los espacios de la sede. Exige espacio:read sobre esa sede, y NO consultorio:manage: es la lectura que necesita un profesional para saber en que box atiende, asi que restringirla al administrador dejaria a la mitad del equipo sin poder consultarla. Lo tienen todos los roles de la sede salvo PACIENTE, que recibe 403.  El parametro estado por defecto vale ACTIVO, y eso es lo que hace que un selector de reserva NUNCA ofrezca un espacio dado de baja (RN-M04-002). Los inactivos hay que pedirlos explicitamente, y la pantalla de administracion los necesita para explicar por que un nombre esta tomado o libre.  El tamano de pagina se acota a 100: pedir mas devuelve ese maximo, no un error.  DP-45: q busca \&quot;contiene\&quot; en el nombre del espacio, sin distinguir mayusculas ni acentos. sort ordena por nombre, tipo o capacidad; sin el, por nombre.
      * @endpoint get /api/v1/organizations/{orgId}/consultorios/{consultorioId}/espacios
 * @param requestParameters
      */

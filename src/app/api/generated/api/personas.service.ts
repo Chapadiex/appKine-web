@@ -140,7 +140,7 @@ export class PersonasService extends BaseService implements PersonasServiceInter
 
     /**
      * Buscar personas en el padron
-     * Busca por documento, apellido, nombre o telefono, todo con el mismo parametro q. La comparacion ignora mayusculas y acentos, y los separadores del documento y del telefono: buscar 12345678, 12.345.678 o Perez encuentra a la misma persona.  Sin q devuelve el padron completo, paginado y ordenado por apellido.  estado filtra por ciclo de vida y por defecto trae solo las ACTIVAS. perfil filtra por perfil clinico y por defecto no filtra: la busqueda del mostrador no sabe de antemano si quien busca es paciente.  OJO: esPaciente es DERIVADO y de solo lectura. Una persona sin perfil clinico es una persona valida y completa —RN-M07-006—, no una ficha a medio cargar.
+     * Busca por documento, apellido, nombre o telefono, todo con el mismo parametro q. La comparacion ignora mayusculas y acentos, y los separadores del documento y del telefono: buscar 12345678, 12.345.678 o Perez encuentra a la misma persona.  Sin q devuelve el padron completo, paginado y ordenado por apellido.  estado filtra por ciclo de vida y por defecto trae solo las ACTIVAS. perfil filtra por perfil clinico y por defecto no filtra: la busqueda del mostrador no sabe de antemano si quien busca es paciente.  OJO: esPaciente es DERIVADO y de solo lectura. Una persona sin perfil clinico es una persona valida y completa —RN-M07-006—, no una ficha a medio cargar.  DP-45: sort ordena por apellido, nombre, documento, nacimiento o alta; detras va siempre apellido, nombre e id.
      * @endpoint get /api/v1/personas
      * @param requestParameters
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
@@ -156,6 +156,7 @@ export class PersonasService extends BaseService implements PersonasServiceInter
         const perfil = requestParameters?.perfil;
         const page = requestParameters?.page;
         const size = requestParameters?.size;
+        const sort = requestParameters?.sort;
 
         let localVarQueryParameters = new OpenApiHttpParams(this.encoder);
 
@@ -199,6 +200,15 @@ export class PersonasService extends BaseService implements PersonasServiceInter
             localVarQueryParameters,
             'size',
             <any>size,
+            QueryParamStyle.Form,
+            true,
+        );
+
+
+        localVarQueryParameters = this.addToHttpParams(
+            localVarQueryParameters,
+            'sort',
+            <any>sort,
             QueryParamStyle.Form,
             true,
         );

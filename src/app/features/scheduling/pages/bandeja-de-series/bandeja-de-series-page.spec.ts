@@ -13,7 +13,6 @@ const CONSULTORIO = 3;
 const OFERTA = 42;
 const URL_SERIES = `/api/v1/consultorios/${CONSULTORIO}/series-de-turnos`;
 const URL_HABILITACIONES = `/api/v1/consultorios/${CONSULTORIO}/ofertas/${OFERTA}/habilitaciones`;
-const PERSONAS = '/api/v1/personas';
 
 const FILA = {
   id: 7,
@@ -95,7 +94,7 @@ describe('BandejaDeSeriesPage', () => {
     TIMEOUT_AXE,
   );
 
-  it('filtra por estado y por persona, y vuelve a la primera página', async () => {
+  it('filtra por estado, busca y ordena en el servidor, y vuelve a la primera página', async () => {
     const fixture = await montar();
     esperarListado().flush(pagina([{ ...FILA, profesionalId: undefined }], 3));
     await asentar(fixture);
@@ -119,25 +118,23 @@ describe('BandejaDeSeriesPage', () => {
     expect(textoDe(fixture)).toContain('No hay series que cumplan ese filtro');
 
     const campo = (fixture.nativeElement as HTMLElement).querySelector(
-      '#series-persona',
+      '#series-busqueda',
     ) as HTMLInputElement;
-    campo.value = 'Perez';
-    campo.dispatchEvent(new Event('input'));
-    await new Promise((resolve) => setTimeout(resolve, 400));
-    httpMock
-      .expectOne((p) => p.url === PERSONAS && p.params.get('q') === 'Perez')
-      .flush({ content: [{ id: 128, apellido: 'Perez', nombre: 'Ana' }] });
+    campo.value = ' Perez ';
+    campo.dispatchEvent(new Event('change'));
+    const buscadas = esperarListado();
+    expect(buscadas.request.params.get('q')).toBe('Perez');
+    expect(buscadas.request.params.get('page')).toBe('0');
+    buscadas.flush(pagina([{ ...FILA, profesionalId: undefined }], 3));
     await asentar(fixture);
 
-    clickear(fixture, 'Perez, Ana');
-    const dePersona = esperarListado();
-    expect(dePersona.request.params.get('personaId')).toBe('128');
-    dePersona.flush(pagina([]));
+    clickear(fixture, 'Patrón y vigencia');
+    const ordenadas = esperarListado();
+    expect(decodeURIComponent(ordenadas.request.params.get('sort')!)).toBe('fechaDesde,asc');
+    expect(ordenadas.request.params.get('q')).toBe('Perez');
+    ordenadas.flush(pagina([]));
     await asentar(fixture);
-    expect(textoDe(fixture)).toContain('Solo las series de Perez, Ana');
-
-    clickear(fixture, 'Ver las de todos los pacientes');
-    expect(esperarListado().request.params.has('personaId')).toBe(false);
+    expect(textoDe(fixture)).toContain('Ninguna serie coincide con la búsqueda');
   });
 
   it('la persona que llega por URL se filtra y toma el nombre de la primera fila', async () => {
@@ -149,6 +146,9 @@ describe('BandejaDeSeriesPage', () => {
     await asentar(fixture);
     expect(textoDe(fixture)).toContain('Solo las series de Perez, Ana');
     expect(textoDe(fixture)).toContain('Finalizada');
+
+    clickear(fixture, 'Ver las de todos los pacientes');
+    expect(esperarListado().request.params.has('personaId')).toBe(false);
   });
 
   it('si falla la lectura lo dice y permite reintentar', async () => {

@@ -31,6 +31,13 @@ import {
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { Icono } from '../../../../shared/components/icono/icono';
 import { AccionesDeFila } from '../../../../shared/components/acciones-de-fila/acciones-de-fila';
+import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
+import {
+  CamposDeSort,
+  ordenDeServidor,
+} from '../../../../shared/components/tabla/orden-de-servidor';
+import { textoDeBusqueda } from '../../../../shared/utils/texto-de-busqueda';
+import { ListMembershipsRequestParams } from '../../../../api/generated/api/colaboradores.serviceInterface';
 
 /** Operacion abierta sobre una fila. Solo una a la vez. */
 type TipoAccion = 'editar' | 'suspender' | 'reactivar' | 'revocar' | 'permisos';
@@ -85,6 +92,7 @@ const POR_PAGINA = 20;
     Ayuda,
     Icono,
     AccionesDeFila,
+    ColumnaOrdenable,
     ReactiveFormsModule,
     RouterLink,
     PermisoDirective,
@@ -122,6 +130,14 @@ export class CollaboratorsPage {
    */
   private readonly vista = vistaDeListado<MembershipResponse>(this.estado);
   protected readonly paginaActual = signal(0);
+
+  /** Lo que se busca en el nombre y el correo de la cuenta (DP-45, `q` del servidor). */
+  protected readonly busqueda = signal('');
+
+  /** Orden de la tabla, pedido al servidor: cambiarlo vuelve a la primera pagina (DP-45). */
+  protected readonly orden = ordenDeServidor<CamposDeSort<ListMembershipsRequestParams['sort']>>(
+    () => this.recargarDesdeElPrincipio(),
+  );
 
   /** Fila y operacion abiertas, o `null` si no hay ninguna. Solo una a la vez. */
   protected readonly panel = signal<{
@@ -215,6 +231,8 @@ export class CollaboratorsPage {
         this.cerrarPanel();
         this.exito.set(null);
         this.paginaActual.set(0);
+        this.busqueda.set('');
+        this.orden.reiniciar();
         this.sedes.asegurarCargadas();
         this.cargar();
       });
@@ -272,7 +290,13 @@ export class CollaboratorsPage {
     this.estado.set({ tipo: 'cargando' });
 
     this.colaboradores
-      .listMemberships({ orgId, page: this.paginaActual(), size: POR_PAGINA })
+      .listMemberships({
+        orgId,
+        page: this.paginaActual(),
+        size: POR_PAGINA,
+        q: textoDeBusqueda(this.busqueda()),
+        sort: this.orden.sort(),
+      })
       .pipe(catchError((error: unknown) => of(error instanceof Error ? error : new Error(''))))
       .subscribe((respuesta) => {
         if (respuesta instanceof Error) {
@@ -294,6 +318,18 @@ export class CollaboratorsPage {
     }
     this.cerrarPanel();
     this.paginaActual.set(numero);
+    this.cargar();
+  }
+
+  /** Busca en el servidor y vuelve a la primera pagina: la 3 de otra busqueda no existe. */
+  protected buscar(texto: string): void {
+    this.busqueda.set(texto);
+    this.recargarDesdeElPrincipio();
+  }
+
+  private recargarDesdeElPrincipio(): void {
+    this.cerrarPanel();
+    this.paginaActual.set(0);
     this.cargar();
   }
 

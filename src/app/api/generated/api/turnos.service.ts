@@ -34,6 +34,8 @@ import { ReservarTurno } from '../model/reservar-turno';
 import { Turno } from '../model/turno';
 // @ts-ignore
 import { TurnoDelDia } from '../model/turno-del-dia';
+// @ts-ignore
+import { TurnosDeSede } from '../model/turnos-de-sede';
 
 // @ts-ignore
 import { BASE_PATH, COLLECTION_FORMATS }                     from '../variables';
@@ -46,6 +48,7 @@ import {
     DelDiaTurnoRequestParams,
     DeshacerLlegadaRequestParams,
     HistorialTurnoRequestParams,
+    ListarTurnosDeSedeRequestParams,
     RegistrarAusenciaRequestParams,
     RegistrarLlegadaRequestParams,
     ReprogramarTurnoRequestParams,
@@ -411,6 +414,127 @@ export class TurnosService extends BaseService implements TurnosServiceInterface
         return this.httpClient.request<Array<EventoDeTurno>>('get', `${basePath}${localVarPath}`,
             {
                 context: localVarHttpContext,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * Turnos de la sede en un rango de fechas
+     * Los turnos reservados de la sede que empiezan en &#x60;[desde, hasta)&#x60;, del mas temprano al mas tarde (desempate por id). Es la fuente del calendario semanal con panel de detalle.  Las fechas son dias locales de la **zona de la sede**, que viaja en la respuesta. &#x60;hasta&#x60; es **exclusivo**, como en la busqueda de horarios. **El rango tiene un maximo de 42 dias**: mas que eso responde 400 &#x60;validation-error&#x60;. No hay paginacion, el tope la hace innecesaria.  **Los cancelados no vienen** salvo &#x60;incluirCancelados&#x3D;true&#x60;. Cada turno trae lo mismo que la agenda del dia (paciente, oferta, espacio, recepcion, serie, cobertura elegida) mas el nombre del profesional. **Nada clinico.**  Exige &#x60;turno:read&#x60;, igual que la agenda del dia.
+     * @endpoint get /api/v1/consultorios/{consultorioId}/turnos/calendario
+     * @param requestParameters
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public listarTurnosDeSede(requestParameters: ListarTurnosDeSedeRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<TurnosDeSede>;
+    public listarTurnosDeSede(requestParameters: ListarTurnosDeSedeRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<TurnosDeSede>>;
+    public listarTurnosDeSede(requestParameters: ListarTurnosDeSedeRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<TurnosDeSede>>;
+    public listarTurnosDeSede(requestParameters: ListarTurnosDeSedeRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        const consultorioId = requestParameters?.consultorioId;
+        if (consultorioId === null || consultorioId === undefined) {
+            throw new Error('Required parameter consultorioId was null or undefined when calling listarTurnosDeSede.');
+        }
+        const desde = requestParameters?.desde;
+        if (desde === null || desde === undefined) {
+            throw new Error('Required parameter desde was null or undefined when calling listarTurnosDeSede.');
+        }
+        const hasta = requestParameters?.hasta;
+        if (hasta === null || hasta === undefined) {
+            throw new Error('Required parameter hasta was null or undefined when calling listarTurnosDeSede.');
+        }
+        const profesionalId = requestParameters?.profesionalId;
+        const ofertaId = requestParameters?.ofertaId;
+        const incluirCancelados = requestParameters?.incluirCancelados;
+
+        let localVarQueryParameters = new OpenApiHttpParams(this.encoder);
+
+        localVarQueryParameters = this.addToHttpParams(
+            localVarQueryParameters,
+            'desde',
+            <any>desde,
+            QueryParamStyle.Form,
+            true,
+        );
+
+
+        localVarQueryParameters = this.addToHttpParams(
+            localVarQueryParameters,
+            'hasta',
+            <any>hasta,
+            QueryParamStyle.Form,
+            true,
+        );
+
+
+        localVarQueryParameters = this.addToHttpParams(
+            localVarQueryParameters,
+            'profesionalId',
+            <any>profesionalId,
+            QueryParamStyle.Form,
+            true,
+        );
+
+
+        localVarQueryParameters = this.addToHttpParams(
+            localVarQueryParameters,
+            'ofertaId',
+            <any>ofertaId,
+            QueryParamStyle.Form,
+            true,
+        );
+
+
+        localVarQueryParameters = this.addToHttpParams(
+            localVarQueryParameters,
+            'incluirCancelados',
+            <any>incluirCancelados,
+            QueryParamStyle.Form,
+            true,
+        );
+
+
+        let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/consultorios/${this.configuration.encodeParam({name: "consultorioId", value: consultorioId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/turnos/calendario`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<TurnosDeSede>('get', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                params: localVarQueryParameters.toHttpParams(),
                 responseType: <any>responseType_,
                 ...(withCredentials ? { withCredentials } : {}),
                 headers: localVarHeaders,
