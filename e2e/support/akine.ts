@@ -4,7 +4,7 @@ import * as nodeOs from 'node:os';
 import * as nodePath from 'node:path';
 import { randomUUID } from 'node:crypto';
 
-import { APIRequestContext, Page, expect } from '@playwright/test';
+import { APIRequestContext, Locator, Page, expect } from '@playwright/test';
 
 /**
  * Utilidades compartidas por los E2E de AKINE-01.02.
@@ -194,9 +194,24 @@ export function campo(page: Page, etiqueta: string | RegExp, opciones?: { exact?
   return page.locator('form').getByLabel(etiqueta, opciones);
 }
 
+/**
+ * Espera a que el formulario reactivo del campo quede enlazado antes de escribir en el.
+ *
+ * <p>Con zoneless, la pantalla que monta el router entra al DOM antes de su primera deteccion de
+ * cambios, y esa pasada escribe el valor inicial del control (`''`) encima de lo que se haya
+ * tipeado: el `fill` "funciona" y el campo vuelve a quedar vacio. Paso en
+ * `sesion-expirada.spec.ts` (28/10/2026, traza del CI de web #130): el correo quedaba vacio y el
+ * click en "Ingresar" no mandaba nada. Las clases `ng-pristine`/`ng-dirty` las pone esa misma
+ * pasada, asi que su presencia dice que ya no queda ninguna escritura pendiente.
+ */
+export async function esperarFormularioEnlazado(campoDelFormulario: Locator): Promise<void> {
+  await expect(campoDelFormulario).toHaveClass(/\bng-(pristine|dirty)\b/);
+}
+
 /** Login por PANTALLA: el camino real, contra el backend real. */
 export async function ingresarPorPantalla(page: Page, email: string): Promise<void> {
   await page.goto('/auth/ingresar');
+  await esperarFormularioEnlazado(campo(page, 'Correo electrónico'));
   await campo(page, 'Correo electrónico').fill(email);
   await campo(page, 'Contraseña').fill(PASSWORD);
   await page.getByRole('button', { name: 'Ingresar' }).click();
