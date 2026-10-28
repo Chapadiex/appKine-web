@@ -95,7 +95,7 @@
               </p>
               <p>{{ veredictoDeCandidata(candidata) }}</p>
               @if (porQueNoEsLaElegida(candidata); as motivo) {
-                <p class="ayuda">{{ motivo }}</p>
+                <p class="ayuda ayuda--fija">{{ motivo }}</p>
               }
               <p>
                 Saldo: {{ saldoDeCandidata(candidata) }} · {{ vencimientoDeCandidata(candidata) }}
@@ -109,7 +109,7 @@
       }
 
       @if (deOtrasPracticas() > 0) {
-        <p class="ayuda">
+        <p class="ayuda ayuda--fija">
           {{ deOtrasPracticas() }} autorizacion(es) de otras prácticas no se muestran: no sirven
           para esta.
         </p>

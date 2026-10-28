@@ -164,7 +164,7 @@
               [value]="zona()"
               (input)="zona.set($any($event.target).value)"
             />
-            <p id="ayuda-tratamiento-zona" class="ayuda">
+            <p id="ayuda-tratamiento-zona" class="ayuda" [class.ayuda--fija]="faltaZona()">
               @if (faltaZona()) {
                 <b>Elegiste un lado sin decir de qué zona, y el servidor va a rechazarlo.</b>
               }
@@ -228,119 +228,131 @@
           }
         </div>
 
-        <fieldset class="grupo">
-          <legend>Parámetros <span class="campo__opcional">(opcional)</span></legend>
-          <p class="ayuda">
-            Intensidad, series, tiempo: cada parámetro con su tipo. La unidad va solo en los
-            números.
-          </p>
-          <datalist id="tratamiento-claves">
-            @for (clave of claves; track clave) {
-              <option [value]="clave"></option>
-            }
-          </datalist>
+        <!--
+          Lo opcional del tratamiento, plegado (refactor UX/UI del 28/10/2026): la practica, la zona y
+          el lado alcanzan para un registro normal. Llega abierto si ya hay algo cargado.
+        -->
+        <details class="seccion-plegable" [open]="parametros().length > 0 || observacion() !== ''">
+          <summary>
+            Parámetros y observación
+            <span class="seccion-plegable__resumen"
+              >Intensidad, series, tiempo y una nota (opcionales)</span
+            >
+          </summary>
+          <fieldset class="grupo">
+            <legend>Parámetros</legend>
+            <p class="ayuda">Cada parámetro con su tipo. La unidad va solo en los números.</p>
+            <datalist id="tratamiento-claves">
+              @for (clave of claves; track clave) {
+                <option [value]="clave"></option>
+              }
+            </datalist>
 
-          @for (parametro of parametros(); track $index; let i = $index) {
-            <div class="parametro grilla-campos grilla-campos--dos">
-              <div class="campo">
-                <label [for]="'parametro-clave-' + i">Nombre del parámetro {{ i + 1 }}</label>
-                <input
-                  [id]="'parametro-clave-' + i"
-                  type="text"
-                  list="tratamiento-claves"
-                  maxlength="80"
-                  [value]="parametro.clave"
-                  (input)="cambiarParametro(i, { clave: $any($event.target).value })"
-                />
-              </div>
-              <div class="campo">
-                <label [for]="'parametro-tipo-' + i">Tipo del parámetro {{ i + 1 }}</label>
-                <select
-                  [id]="'parametro-tipo-' + i"
-                  (change)="elegirTipoDeParametro(i, $any($event.target).value)"
-                >
-                  @for (opcion of tipos; track opcion.valor) {
-                    <option [value]="opcion.valor" [selected]="parametro.tipoDato === opcion.valor">
-                      {{ opcion.etiqueta }}
-                    </option>
-                  }
-                </select>
-              </div>
-              @if (parametro.tipoDato === Tipo.BOOLEANO) {
+            @for (parametro of parametros(); track $index; let i = $index) {
+              <div class="parametro grilla-campos grilla-campos--dos">
                 <div class="campo">
-                  <label [for]="'parametro-valor-' + i">Valor del parámetro {{ i + 1 }}</label>
+                  <label [for]="'parametro-clave-' + i">Nombre del parámetro {{ i + 1 }}</label>
+                  <input
+                    [id]="'parametro-clave-' + i"
+                    type="text"
+                    list="tratamiento-claves"
+                    maxlength="80"
+                    [value]="parametro.clave"
+                    (input)="cambiarParametro(i, { clave: $any($event.target).value })"
+                  />
+                </div>
+                <div class="campo">
+                  <label [for]="'parametro-tipo-' + i">Tipo del parámetro {{ i + 1 }}</label>
                   <select
-                    [id]="'parametro-valor-' + i"
-                    (change)="
-                      cambiarParametro(i, {
-                        valorSiNo:
-                          $any($event.target).value === ''
-                            ? null
-                            : $any($event.target).value === 'si',
-                      })
-                    "
+                    [id]="'parametro-tipo-' + i"
+                    (change)="elegirTipoDeParametro(i, $any($event.target).value)"
                   >
-                    <option value="" [selected]="parametro.valorSiNo === null">Sin elegir</option>
-                    <option value="si" [selected]="parametro.valorSiNo === true">Sí</option>
-                    <option value="no" [selected]="parametro.valorSiNo === false">No</option>
+                    @for (opcion of tipos; track opcion.valor) {
+                      <option
+                        [value]="opcion.valor"
+                        [selected]="parametro.tipoDato === opcion.valor"
+                      >
+                        {{ opcion.etiqueta }}
+                      </option>
+                    }
                   </select>
                 </div>
-              } @else {
-                <div class="campo">
-                  <label [for]="'parametro-valor-' + i">Valor del parámetro {{ i + 1 }}</label>
-                  <input
-                    [id]="'parametro-valor-' + i"
-                    type="text"
-                    maxlength="200"
-                    [attr.inputmode]="parametro.tipoDato === Tipo.NUMERICO ? 'decimal' : null"
-                    [value]="parametro.valor"
-                    (input)="cambiarParametro(i, { valor: $any($event.target).value })"
-                  />
+                @if (parametro.tipoDato === Tipo.BOOLEANO) {
+                  <div class="campo">
+                    <label [for]="'parametro-valor-' + i">Valor del parámetro {{ i + 1 }}</label>
+                    <select
+                      [id]="'parametro-valor-' + i"
+                      (change)="
+                        cambiarParametro(i, {
+                          valorSiNo:
+                            $any($event.target).value === ''
+                              ? null
+                              : $any($event.target).value === 'si',
+                        })
+                      "
+                    >
+                      <option value="" [selected]="parametro.valorSiNo === null">Sin elegir</option>
+                      <option value="si" [selected]="parametro.valorSiNo === true">Sí</option>
+                      <option value="no" [selected]="parametro.valorSiNo === false">No</option>
+                    </select>
+                  </div>
+                } @else {
+                  <div class="campo">
+                    <label [for]="'parametro-valor-' + i">Valor del parámetro {{ i + 1 }}</label>
+                    <input
+                      [id]="'parametro-valor-' + i"
+                      type="text"
+                      maxlength="200"
+                      [attr.inputmode]="parametro.tipoDato === Tipo.NUMERICO ? 'decimal' : null"
+                      [value]="parametro.valor"
+                      (input)="cambiarParametro(i, { valor: $any($event.target).value })"
+                    />
+                  </div>
+                }
+                @if (parametro.tipoDato === Tipo.NUMERICO) {
+                  <div class="campo">
+                    <label [for]="'parametro-unidad-' + i">
+                      Unidad del parámetro {{ i + 1 }}
+                      <span class="campo__opcional">(opcional)</span>
+                    </label>
+                    <input
+                      [id]="'parametro-unidad-' + i"
+                      type="text"
+                      maxlength="20"
+                      [value]="parametro.unidad"
+                      (input)="cambiarParametro(i, { unidad: $any($event.target).value })"
+                    />
+                  </div>
+                }
+                <div class="acciones">
+                  <button type="button" class="boton-texto" (click)="quitarParametro(i)">
+                    Quitar el parámetro {{ i + 1 }}
+                  </button>
                 </div>
-              }
-              @if (parametro.tipoDato === Tipo.NUMERICO) {
-                <div class="campo">
-                  <label [for]="'parametro-unidad-' + i">
-                    Unidad del parámetro {{ i + 1 }}
-                    <span class="campo__opcional">(opcional)</span>
-                  </label>
-                  <input
-                    [id]="'parametro-unidad-' + i"
-                    type="text"
-                    maxlength="20"
-                    [value]="parametro.unidad"
-                    (input)="cambiarParametro(i, { unidad: $any($event.target).value })"
-                  />
-                </div>
-              }
-              <div class="acciones">
-                <button type="button" class="boton-texto" (click)="quitarParametro(i)">
-                  Quitar el parámetro {{ i + 1 }}
-                </button>
               </div>
+            }
+
+            <div class="acciones">
+              <button type="button" class="boton boton--secundario" (click)="agregarParametro()">
+                Agregar un parámetro
+              </button>
             </div>
-          }
+          </fieldset>
 
-          <div class="acciones">
-            <button type="button" class="boton boton--secundario" (click)="agregarParametro()">
-              Agregar un parámetro
-            </button>
+          <div class="campo">
+            <label for="tratamiento-observacion">
+              Observación <span class="campo__opcional">(opcional)</span>
+            </label>
+            <input
+              id="tratamiento-observacion"
+              name="tratamiento-observacion"
+              type="text"
+              maxlength="500"
+              [value]="observacion()"
+              (input)="observacion.set($any($event.target).value)"
+            />
           </div>
-        </fieldset>
-
-        <div class="campo">
-          <label for="tratamiento-observacion">
-            Observación <span class="campo__opcional">(opcional)</span>
-          </label>
-          <input
-            id="tratamiento-observacion"
-            name="tratamiento-observacion"
-            type="text"
-            maxlength="500"
-            [value]="observacion()"
-            (input)="observacion.set($any($event.target).value)"
-          />
-        </div>
+        </details>
 
         <div class="acciones">
           <button type="button" class="boton" [disabled]="bloqueado()" (click)="registrar()">
@@ -351,5 +363,5 @@
     </fieldset>
   }
 
-  <p class="ayuda" role="status">{{ aviso() }}</p>
+  <p class="ayuda ayuda--fija" role="status">{{ aviso() }}</p>
 </section>

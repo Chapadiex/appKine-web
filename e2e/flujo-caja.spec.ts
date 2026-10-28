@@ -263,6 +263,8 @@ test.describe('Egreso pagado en efectivo contra el backend real', () => {
     // Alta de un borrador a nombre de un colaborador, con su comprobante.
     await navegar(page, '/egresos');
     await expect(page.getByRole('heading', { name: 'Egresos', level: 1 })).toBeVisible();
+    // El alta vive en un panel lateral que se abre desde el encabezado (refactor UX/UI).
+    await page.getByRole('button', { name: 'Registrar egreso' }).click();
     const colaborador = page.getByLabel('Colaborador', { exact: true });
     await colaborador.locator('option').nth(1).waitFor({ state: 'attached' });
     await colaborador.selectOption({ index: 1 });

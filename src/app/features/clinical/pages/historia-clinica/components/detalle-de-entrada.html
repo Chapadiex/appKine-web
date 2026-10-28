@@ -48,7 +48,7 @@
         </div>
       } @else {
         <form class="historia__formulario" (submit)="$event.preventDefault(); enmendar()">
-          <p class="ayuda">
+          <p class="ayuda ayuda--fija">
             La enmienda no borra lo escrito: crea la versión {{ (e.numeroVersion ?? 0) + 1 }} y la
             anterior queda en el historial con su autor y su fecha.
           </p>
@@ -140,7 +140,7 @@
                 }
               </p>
               @if (version.motivoEnmienda) {
-                <p class="ayuda">Motivo: {{ version.motivoEnmienda }}</p>
+                <p class="ayuda ayuda--fija">Motivo: {{ version.motivoEnmienda }}</p>
               }
               <p class="historia__cuerpo">{{ version.cuerpo }}</p>
             </li>

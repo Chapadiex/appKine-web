@@ -167,33 +167,34 @@
           }
         </dl>
 
-        <ul class="calendario__enlaces">
-          <li>
-            <a
-              class="enlace"
-              [routerLink]="['/agenda', 'turnos', elegido.turno?.id]"
-              [queryParams]="queryDelTurno(elegido)"
-            >
-              Ver el turno
-            </a>
-          </li>
-          <li>
-            <a
-              class="enlace"
-              routerLink="/agenda/recepcion"
-              [queryParams]="{ fecha: diaDelTurno(elegido) }"
-            >
-              Recepción de ese día
-            </a>
-          </li>
+        <!--
+          Lo que se hace con el turno elegido, como botones: el ciclo del turno es la principal
+          (cancelar, mover, historial); la recepcion del dia y la serie, secundarias.
+        -->
+        <div class="calendario__enlaces">
+          <a
+            class="boton"
+            [routerLink]="['/agenda', 'turnos', elegido.turno?.id]"
+            [queryParams]="queryDelTurno(elegido)"
+          >
+            Ver el turno
+          </a>
+          <a
+            class="boton boton--secundario"
+            routerLink="/agenda/recepcion"
+            [queryParams]="{ fecha: diaDelTurno(elegido) }"
+          >
+            Recepción de ese día
+          </a>
           @if (elegido.turno?.serieId) {
-            <li>
-              <a class="enlace" [routerLink]="['/agenda', 'series', elegido.turno?.serieId]">
-                Ver la serie
-              </a>
-            </li>
+            <a
+              class="boton boton--secundario"
+              [routerLink]="['/agenda', 'series', elegido.turno?.serieId]"
+            >
+              Ver la serie
+            </a>
           }
-        </ul>
+        </div>
       </aside>
     }
   </div>

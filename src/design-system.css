@@ -1064,6 +1064,8 @@ a.enlace,
 .filtros-barra__principal {
   flex: 1;
   min-width: 0;
+  /* A todo el ancho de una tabla de 96rem la busqueda pierde su forma de campo. */
+  max-width: 36rem;
 }
 
 .filtros-barra__principal .campo {
@@ -1311,4 +1313,166 @@ a.enlace,
     max-width: 100%;
     white-space: normal;
   }
+}
+
+/* ======================================================================================
+ * REFACTOR UX/UI (28/10/2026): espacio, formularios y jerarquia
+ *
+ * Reglas globales porque el problema era global: 80 plantillas con campos apilados en una
+ * columna a todo el ancho, una ayuda permanente debajo de cada campo y el boton de guardar al
+ * final de un scroll. Arreglar la primitiva arregla todas las pantallas a la vez.
+ * ====================================================================================== */
+
+/* La prosa mantiene un renglon de lectura aunque el contenido use todo el ancho. */
+.contenido p:not(.acciones) {
+  max-width: 90ch;
+}
+
+/*
+ * Formularios en grilla: los campos se reparten en columnas de 18rem como minimo (tres en una
+ * pantalla de 1440, una en un telefono o en un panel angosto) en vez de apilarse a todo el ancho.
+ * Todo lo que no es un campo -grupos, secciones, avisos, la barra de acciones- ocupa la fila
+ * entera, y tambien los campos de texto largo. Un formulario que necesita otra disposicion la
+ * declara en su hoja (gana por especificidad) o usa `.formulario--libre`.
+ *
+ * <p><b>Sin `max-width` a proposito.</b> Con un tope definido, `auto-fill` calcula sus columnas
+ * contra el tope tambien al medir el ancho minimo, y un formulario dentro de una columna `1fr`
+ * empujaba la pagina a 1.000 px en un telefono (`e2e/movil.spec.ts`, politica de enmienda).
+ */
+form:not(.formulario--libre) {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 18rem), 1fr));
+  column-gap: var(--esp-6);
+  align-items: start;
+}
+
+form:not(.formulario--libre) > :not(.campo),
+form:not(.formulario--libre) > .campo:has(textarea),
+form:not(.formulario--libre) > .campo--ancho {
+  grid-column: 1 / -1;
+}
+
+/*
+ * Ayuda de campo a demanda: la explicacion debajo de un campo aparece mientras se completa ese
+ * campo, flotando sobre lo que sigue, en vez de ocupar la pantalla todo el tiempo. Sigue en el
+ * DOM y enlazada por `aria-describedby`: un lector de pantalla la lee igual al entrar al campo.
+ * Lo que el usuario tiene que ver siempre (un dato, una consecuencia que no se puede deshacer) va
+ * con `.ayuda--fija`.
+ */
+.campo {
+  position: relative;
+}
+
+.campo > .ayuda:not(.ayuda--fija) {
+  display: none;
+}
+
+.campo:focus-within > .ayuda:not(.ayuda--fija) {
+  display: block;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 5;
+  margin: var(--esp-1) 0 0;
+  padding: var(--esp-3) var(--esp-4);
+  border: var(--borde-fino) solid var(--color-borde);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie);
+  box-shadow: 0 4px 12px rgb(16 38 63 / 0.12);
+}
+
+.campo > .ayuda--fija {
+  margin: 0;
+}
+
+/*
+ * Acciones de un formulario: a la derecha, con la principal en el borde ("Cancelar  Guardar").
+ * Se invierte el orden visual y no el del DOM, asi la accion principal sigue siendo la primera
+ * del Tab despues del ultimo campo, como en todas las pantallas que ya la escribian primero.
+ */
+form > .acciones {
+  flex-direction: row-reverse;
+  justify-content: flex-start;
+}
+
+/*
+ * Barra de acciones del formulario de una tarjeta: pegada al pie de la ventana mientras el
+ * formulario se desplaza, para no tener que bajar hasta el final solo para guardar.
+ */
+.tarjeta form > .acciones:last-child {
+  position: sticky;
+  bottom: 0;
+  z-index: 4;
+  margin-top: var(--esp-5);
+  padding-block: var(--esp-5);
+  border-top: var(--borde-fino) solid var(--color-borde-sutil);
+  background: var(--color-superficie);
+}
+
+/* Boton compacto para la accion principal de una fila de tabla (48 px de alto). */
+.boton--chico {
+  min-height: 2rem;
+  padding: 0 var(--esp-5);
+  font-size: var(--tipo-sm);
+}
+
+/* Accion destructiva fuera de un menu ("Descartar el lote"): contorno, texto de peligro. */
+.boton--peligro {
+  border-color: var(--color-peligro);
+  background: var(--color-superficie);
+  color: var(--color-peligro-texto);
+}
+
+/* Titulo de una seccion dentro de un formulario en grilla: ocupa la fila entera. */
+.formulario__seccion {
+  grid-column: 1 / -1;
+  margin: var(--esp-6) 0 var(--esp-4);
+  font-size: var(--tipo-sm);
+  font-weight: var(--peso-semi);
+}
+
+.grilla-campos > .campo--ancho {
+  grid-column: 1 / -1;
+}
+
+/* La fila de la tabla cuyo panel lateral esta abierto: se sigue viendo que se edita. */
+.fila--seleccionada > * {
+  background: var(--color-acento-claro);
+}
+
+/* Columna de acciones: acotada y contra el borde derecho. */
+.tabla__acciones {
+  width: 1%;
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* Una tarjeta dentro de otra no lleva un segundo borde: la separa el espacio y su titulo. */
+.tarjeta .tarjeta {
+  padding: 0;
+  border: 0;
+  box-shadow: none;
+  background: transparent;
+}
+
+/* Seccion opcional plegada ("Datos institucionales", "Configuracion inicial"). */
+.seccion-plegable {
+  border-top: var(--borde-fino) solid var(--color-borde);
+}
+
+.seccion-plegable > summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--esp-2) var(--esp-4);
+  padding-block: var(--esp-6);
+  font-weight: var(--peso-medio);
+  cursor: pointer;
+}
+
+.seccion-plegable__resumen {
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-sm);
+  font-weight: var(--peso-normal);
 }

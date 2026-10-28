@@ -111,7 +111,8 @@ describe('CatalogosPage', () => {
     const acciones = [...filaPropia.querySelectorAll('button')].map((boton) =>
       (boton.textContent ?? '').trim(),
     );
-    expect(acciones).toEqual(['Editar', 'Dar de baja']);
+    // Editar a la vista y la baja, destructiva, en el menu "⋯" (refactor UX/UI del 28/10/2026).
+    expect(acciones).toEqual(['Editar', expect.stringContaining('Más acciones de'), 'Dar de baja']);
 
     // Y la distincion se nombra en la fila, no solo en la nota de arriba.
     expect(filaGlobal.textContent).toContain('De la plataforma');
@@ -530,7 +531,7 @@ describe('CatalogosPage', () => {
     TIMEOUT_AXE,
   );
 
-  it('un nomenclador propio tiene tres acciones: Editar queda a la vista y el resto va al menu', async () => {
+  it('un nomenclador propio: Editar queda a la vista y Ver vigencias y la baja van al menu', async () => {
     tenantContext.select({
       organizationId: 1,
       organizationName: 'Centro Belgrano',
@@ -553,7 +554,7 @@ describe('CatalogosPage', () => {
     fixture.detectChanges();
 
     const filas = fixture.nativeElement.querySelectorAll('tbody tr') as NodeListOf<HTMLElement>;
-    // La fila global no llega a tres acciones: sin menu.
+    // La fila global no se administra desde acá: sin menu.
     expect(filas[0].querySelector('.acciones-de-fila__boton')).toBeNull();
     // La propia: menu, con Editar como principal (fuera del panel) y el resto adentro.
     const propia = filas[1];

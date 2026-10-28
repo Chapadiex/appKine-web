@@ -44,11 +44,11 @@
       </ul>
     }
     @if (creada.id) {
-      <p>
-        <a class="enlace" [routerLink]="['/agenda', 'series', creada.id]">
+      <div class="acciones">
+        <a class="boton boton--secundario" [routerLink]="['/agenda', 'series', creada.id]">
           Ver la serie, o cancelar algunos de sus turnos
         </a>
-      </p>
+      </div>
     }
   </section>
 } @else {
@@ -273,7 +273,7 @@
               </p>
             }
             @if (feriados() > 0) {
-              <p class="ayuda">
+              <p class="ayuda ayuda--fija">
                 {{ feriados() }} fecha(s) caen en feriado: se omitirán y el resto se reserva igual.
                 @if (reservables() === 0) {
                   Como todas caen en feriado, no queda ninguna para reservar.

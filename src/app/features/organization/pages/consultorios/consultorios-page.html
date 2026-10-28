@@ -125,55 +125,34 @@
                   <th scope="col" appOrdenable [tabla]="orden" columna="nombre">Sede</th>
                   <th scope="col">Zona horaria</th>
                   <th scope="col">Agenda</th>
-                  <th scope="col">Datos institucionales</th>
                   <th scope="col">Estado</th>
-                  <th scope="col">Acciones</th>
+                  <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
                 </tr>
               </thead>
               <tbody>
                 @for (sede of sedesDeLaPagina(); track sede.id) {
-                  <tr [class.fila--revocada]="sede.estado === 'INACTIVO'">
+                  <tr
+                    [class.fila--revocada]="sede.estado === 'INACTIVO'"
+                    [class.fila--seleccionada]="sedeEnPanel()?.id === sede.id"
+                  >
                     <th scope="row">
-                      {{ sede.name }}
-                      @if (esLaDelContexto(sede.id)) {
-                        <span class="etiqueta">Estás trabajando acá</span>
+                      <span class="sede__nombre">
+                        {{ sede.name }}
+                        @if (esLaDelContexto(sede.id)) {
+                          <span class="etiqueta">Estás trabajando acá</span>
+                        }
+                      </span>
+                      <!-- Un dato institucional como referencia; todos estan en el panel. -->
+                      @if (sede.addressLine || sede.legalName) {
+                        <span class="sede__detalle">{{ sede.addressLine || sede.legalName }}</span>
                       }
                     </th>
-                    <td>{{ sede.timezone ?? '-' }}</td>
+                    <td>{{ sede.timezone ? etiquetaDeZona(sede.timezone) : '-' }}</td>
                     <td>
                       @if (sede.slotMinutes) {
-                        Turnos de {{ sede.slotMinutes }} minutos
+                        Turnos de {{ sede.slotMinutes }} min
                       } @else {
                         -
-                      }
-                    </td>
-                    <td>
-                      @if (
-                        sede.legalName ||
-                        sede.taxId ||
-                        sede.addressLine ||
-                        sede.phone ||
-                        sede.contactEmail
-                      ) {
-                        <ul class="lista-datos">
-                          @if (sede.legalName) {
-                            <li>{{ sede.legalName }}</li>
-                          }
-                          @if (sede.taxId) {
-                            <li>{{ sede.taxId }}</li>
-                          }
-                          @if (sede.addressLine) {
-                            <li>{{ sede.addressLine }}</li>
-                          }
-                          @if (sede.phone) {
-                            <li>{{ sede.phone }}</li>
-                          }
-                          @if (sede.contactEmail) {
-                            <li>{{ sede.contactEmail }}</li>
-                          }
-                        </ul>
-                      } @else {
-                        <span class="ayuda">Sin cargar</span>
                       }
                     </td>
                     <td>
@@ -191,7 +170,7 @@
                         explicara igual de mal.
                       -->
                       @if (sede.estado === 'INACTIVO') {
-                        <p class="ayuda">
+                        <p class="ayuda ayuda--fija sede__baja">
                           @if (sede.deletedAt) {
                             Baja del {{ sede.deletedAt }}.
                           }
@@ -201,238 +180,24 @@
                         </p>
                       }
                     </td>
-                    <td>
-                      <div class="acciones-fila" *akinePermiso="permisoManage">
-                        @if (sede.estado !== 'INACTIVO') {
+                    <td class="tabla__acciones">
+                      @if (sede.estado !== 'INACTIVO') {
+                        <app-acciones-de-fila *akinePermiso="permisoManage" [de]="sede.name ?? ''">
                           <button
+                            principal
                             type="button"
-                            class="boton boton--secundario"
+                            class="boton boton--secundario boton--chico"
                             (click)="abrirPanel(sede, 'editar')"
                           >
                             Editar
                           </button>
-                          <button
-                            type="button"
-                            class="boton boton--secundario"
-                            (click)="abrirPanel(sede, 'baja')"
-                          >
+                          <button type="button" (click)="abrirPanel(sede, 'baja')">
                             Dar de baja
                           </button>
-                        } @else {
-                          <span class="ayuda">Una sede dada de baja no se edita.</span>
-                        }
-                      </div>
+                        </app-acciones-de-fila>
+                      }
                     </td>
                   </tr>
-
-                  <!--
-                    El panel vive en una fila propia y no en un dialogo: la edicion necesita
-                    seguir viendo a que sede se aplica, y un modal sobre una tabla obliga a
-                    recordar de memoria cual era la fila.
-                  -->
-                  @if (panelAbierto(sede.id, 'editar')) {
-                    <tr class="fila-panel">
-                      <td colspan="6">
-                        <form
-                          [formGroup]="formularioEdicion"
-                          (ngSubmit)="enviarEdicion()"
-                          novalidate
-                        >
-                          <h3 class="panel__titulo">Editar {{ sede.name }}</h3>
-
-                          <p class="ayuda" id="editar-ayuda-patch">
-                            Se envia solo lo que cambies.
-                            <b>Vaciar un dato institucional lo borra</b>; los campos que dejes como
-                            estan no se tocan, así que un cambio de teléfono no pisa la dirección
-                            que cargo otra persona.
-                          </p>
-
-                          <div class="campo">
-                            <label for="editar-name">Nombre de la sede</label>
-                            <input
-                              id="editar-name"
-                              type="text"
-                              formControlName="name"
-                              autocomplete="off"
-                              [attr.aria-invalid]="mostrarErrorEdicion('name')"
-                              [attr.aria-describedby]="
-                                mostrarErrorEdicion('name') ? 'editar-name-error' : null
-                              "
-                            />
-                            @if (mostrarErrorEdicion('name')) {
-                              <p class="campo__error" id="editar-name-error">
-                                La sede necesita un nombre, y tiene que ser distinto del de las
-                                otras sedes vigentes.
-                              </p>
-                            }
-                          </div>
-
-                          <div class="campo">
-                            <label for="editar-timezone">Zona horaria</label>
-                            <select
-                              id="editar-timezone"
-                              formControlName="timezone"
-                              aria-describedby="editar-timezone-ayuda"
-                            >
-                              <option value="">Dejar la que tiene</option>
-                              <optgroup label="Argentina">
-                                @for (zona of zonas.argentinas; track zona) {
-                                  <option [value]="zona">{{ etiquetaDeZona(zona) }}</option>
-                                }
-                              </optgroup>
-                              @if (zonas.resto.length > 0) {
-                                <optgroup label="Resto del mundo">
-                                  @for (zona of zonas.resto; track zona) {
-                                    <option [value]="zona">{{ zona }}</option>
-                                  }
-                                </optgroup>
-                              }
-                            </select>
-                            <p class="ayuda" id="editar-timezone-ayuda">
-                              Cambiar la zona horaria mueve el día operativo de esta sede y como se
-                              leen los horarios de su agenda.
-                            </p>
-                          </div>
-
-                          <div class="campo">
-                            <label for="editar-slotMinutes">Duración del turno, en minutos</label>
-                            <input
-                              id="editar-slotMinutes"
-                              type="number"
-                              min="1"
-                              formControlName="slotMinutes"
-                              aria-describedby="editar-slotMinutes-ayuda"
-                            />
-                            <p class="ayuda" id="editar-slotMinutes-ayuda">
-                              Es el intervalo por defecto de la agenda de esta sede.
-                            </p>
-                          </div>
-
-                          <div class="campo">
-                            <label for="editar-legalName">
-                              Razón social <span class="campo__opcional">(opcional)</span>
-                            </label>
-                            <input
-                              id="editar-legalName"
-                              type="text"
-                              formControlName="legalName"
-                              aria-describedby="editar-ayuda-patch"
-                            />
-                          </div>
-
-                          <div class="campo">
-                            <label for="editar-taxId">
-                              CUIT o identificacion fiscal
-                              <span class="campo__opcional">(opcional)</span>
-                            </label>
-                            <input
-                              id="editar-taxId"
-                              type="text"
-                              formControlName="taxId"
-                              aria-describedby="editar-ayuda-patch"
-                            />
-                          </div>
-
-                          <div class="campo">
-                            <label for="editar-addressLine">
-                              Dirección <span class="campo__opcional">(opcional)</span>
-                            </label>
-                            <input
-                              id="editar-addressLine"
-                              type="text"
-                              formControlName="addressLine"
-                              aria-describedby="editar-ayuda-patch"
-                            />
-                          </div>
-
-                          <div class="campo">
-                            <label for="editar-phone">
-                              Teléfono <span class="campo__opcional">(opcional)</span>
-                            </label>
-                            <input
-                              id="editar-phone"
-                              type="tel"
-                              formControlName="phone"
-                              aria-describedby="editar-ayuda-patch"
-                            />
-                          </div>
-
-                          <div class="campo">
-                            <label for="editar-email">
-                              Email de contacto <span class="campo__opcional">(opcional)</span>
-                            </label>
-                            <input
-                              id="editar-email"
-                              type="email"
-                              formControlName="contactEmail"
-                              aria-describedby="editar-ayuda-patch"
-                              [attr.aria-invalid]="mostrarErrorEdicion('contactEmail')"
-                            />
-                            @if (mostrarErrorEdicion('contactEmail')) {
-                              <p class="campo__error" id="editar-email-error">
-                                Ese email no tiene una forma valida. Vacialo si queres borrarlo.
-                              </p>
-                            }
-                          </div>
-
-                          <div class="acciones">
-                            <button type="submit" class="boton" [disabled]="enviando()">
-                              Guardar los cambios
-                            </button>
-                            <button
-                              type="button"
-                              class="boton boton--secundario"
-                              (click)="cerrarPanel()"
-                            >
-                              Cancelar
-                            </button>
-                          </div>
-                        </form>
-
-                        <div aria-live="polite">
-                          @if (errorAccion(); as mensaje) {
-                            <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-                          }
-                        </div>
-                      </td>
-                    </tr>
-                  }
-
-                  @if (panelAbierto(sede.id, 'baja')) {
-                    <tr class="fila-panel">
-                      <td colspan="6">
-                        <akine-confirmacion-con-motivo
-                          idCampo="baja-reason"
-                          etiqueta="Motivo de la baja"
-                          textoConfirmar="Confirmar la baja"
-                          ayuda="Queda en la auditoria y en la propia fila: es lo que explica esta decision dentro de seis meses."
-                          [titulo]="'Dar de baja ' + (sede.name ?? '')"
-                          [enviando]="enviando()"
-                          (confirmado)="enviarBaja($event)"
-                          (cancelado)="cerrarPanel()"
-                        >
-                          <p class="ayuda">
-                            La sede deja de admitir operaciones nuevas, pero no se borra: sigue en
-                            este listado con el motivo y la fecha, porque los turnos, sesiones y
-                            cobros historicos la siguen referenciando.
-                          </p>
-
-                          @if (esLaDelContexto(sede.id)) {
-                            <p class="ayuda">
-                              <b>Es la sede en la que estas trabajando ahora.</b> Al darla de baja
-                              vas a tener que elegir otra para seguir.
-                            </p>
-                          }
-                        </akine-confirmacion-con-motivo>
-
-                        <div aria-live="polite">
-                          @if (errorAccion(); as mensaje) {
-                            <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-                          }
-                        </div>
-                      </td>
-                    </tr>
-                  }
                 }
               </tbody>
             </table>
@@ -452,6 +217,245 @@
     }
   </div>
 </section>
+
+<!--
+  Edicion y baja en un panel lateral (refactor UX/UI del 28/10/2026). Antes vivian en una fila de
+  la tabla: el formulario partia el listado en dos y lo empujaba 1.000 px para abajo. El panel deja
+  la tabla quieta, con la fila marcada, y le da al formulario su barra de acciones a la vista.
+-->
+@if (sedeEnPanel(); as sede) {
+  @if (panel()?.tipo === 'editar') {
+    <app-panel-lateral
+      [titulo]="'Editar ' + (sede.name ?? 'la sede')"
+      [subtitulo]="esLaDelContexto(sede.id) ? 'Es la sede en la que estás trabajando' : null"
+      (cerrar)="cerrarPanel()"
+    >
+      <!--
+        Pestañas: lo que hace funcionar la sede (nombre, zona, agenda) separado de los datos
+        administrativos, que son opcionales y se cargan una vez.
+      -->
+      <div class="panel-lateral__pestanas" role="tablist" aria-label="Datos de la sede">
+        <button
+          type="button"
+          role="tab"
+          id="editar-pestana-general"
+          class="panel-lateral__pestana"
+          aria-controls="editar-general"
+          [attr.aria-selected]="pestanaEdicion() === 'general'"
+          [attr.tabindex]="pestanaEdicion() === 'general' ? 0 : -1"
+          (click)="pestanaEdicion.set('general')"
+          (keydown.arrowRight)="cambiarPestana('institucional')"
+          (keydown.arrowLeft)="cambiarPestana('institucional')"
+        >
+          General
+        </button>
+        <button
+          type="button"
+          role="tab"
+          id="editar-pestana-institucional"
+          class="panel-lateral__pestana"
+          aria-controls="editar-institucional"
+          [attr.aria-selected]="pestanaEdicion() === 'institucional'"
+          [attr.tabindex]="pestanaEdicion() === 'institucional' ? 0 : -1"
+          (click)="pestanaEdicion.set('institucional')"
+          (keydown.arrowRight)="cambiarPestana('general')"
+          (keydown.arrowLeft)="cambiarPestana('general')"
+        >
+          Datos institucionales
+        </button>
+      </div>
+
+      <form [formGroup]="formularioEdicion" (ngSubmit)="enviarEdicion()" novalidate>
+        <div
+          id="editar-general"
+          class="panel-lateral__seccion"
+          role="tabpanel"
+          aria-labelledby="editar-pestana-general"
+          [hidden]="pestanaEdicion() !== 'general'"
+        >
+          <div class="campo campo--ancho">
+            <label for="editar-name">Nombre de la sede</label>
+            <input
+              id="editar-name"
+              type="text"
+              formControlName="name"
+              autocomplete="off"
+              [attr.aria-invalid]="mostrarErrorEdicion('name')"
+              [attr.aria-describedby]="mostrarErrorEdicion('name') ? 'editar-name-error' : null"
+            />
+            @if (mostrarErrorEdicion('name')) {
+              <p class="campo__error" id="editar-name-error">
+                La sede necesita un nombre, y tiene que ser distinto del de las otras sedes
+                vigentes.
+              </p>
+            }
+          </div>
+
+          <div class="campo">
+            <label for="editar-timezone">Zona horaria</label>
+            <select
+              id="editar-timezone"
+              formControlName="timezone"
+              aria-describedby="editar-timezone-ayuda"
+            >
+              <option value="">Dejar la que tiene</option>
+              <optgroup label="Argentina">
+                @for (zona of zonas.argentinas; track zona) {
+                  <option [value]="zona">{{ etiquetaDeZona(zona) }}</option>
+                }
+              </optgroup>
+              @if (zonas.resto.length > 0) {
+                <optgroup label="Resto del mundo">
+                  @for (zona of zonas.resto; track zona) {
+                    <option [value]="zona">{{ zona }}</option>
+                  }
+                </optgroup>
+              }
+            </select>
+            <p class="ayuda" id="editar-timezone-ayuda">
+              Cambiarla mueve el día operativo de la sede y cómo se leen los horarios de su agenda.
+            </p>
+          </div>
+
+          <div class="campo">
+            <label for="editar-slotMinutes">Duración del turno (min)</label>
+            <input
+              id="editar-slotMinutes"
+              type="number"
+              min="1"
+              formControlName="slotMinutes"
+              aria-describedby="editar-slotMinutes-ayuda"
+            />
+            <p class="ayuda" id="editar-slotMinutes-ayuda">
+              Es el intervalo por defecto de la agenda de esta sede.
+            </p>
+          </div>
+        </div>
+
+        <div
+          id="editar-institucional"
+          class="panel-lateral__seccion"
+          role="tabpanel"
+          aria-labelledby="editar-pestana-institucional"
+          [hidden]="pestanaEdicion() !== 'institucional'"
+        >
+          <!-- Advertencia con consecuencias: va a la vista, no detras de un "?". -->
+          <p class="ayuda ayuda--fija panel-lateral__nota" id="editar-ayuda-patch">
+            Todos son opcionales. <b>Vaciar un dato lo borra</b>; los que no toques quedan como
+            están.
+          </p>
+
+          <div class="campo campo--ancho">
+            <label for="editar-legalName">Razón social</label>
+            <input
+              id="editar-legalName"
+              type="text"
+              formControlName="legalName"
+              aria-describedby="editar-ayuda-patch"
+            />
+          </div>
+
+          <div class="campo">
+            <label for="editar-taxId">CUIT o identificación fiscal</label>
+            <input
+              id="editar-taxId"
+              type="text"
+              formControlName="taxId"
+              aria-describedby="editar-ayuda-patch"
+            />
+          </div>
+
+          <div class="campo">
+            <label for="editar-phone">Teléfono</label>
+            <input
+              id="editar-phone"
+              type="tel"
+              formControlName="phone"
+              aria-describedby="editar-ayuda-patch"
+            />
+          </div>
+
+          <div class="campo campo--ancho">
+            <label for="editar-addressLine">Dirección</label>
+            <input
+              id="editar-addressLine"
+              type="text"
+              formControlName="addressLine"
+              aria-describedby="editar-ayuda-patch"
+            />
+          </div>
+
+          <div class="campo campo--ancho">
+            <label for="editar-email">Email de contacto</label>
+            <input
+              id="editar-email"
+              type="email"
+              formControlName="contactEmail"
+              [attr.aria-describedby]="
+                mostrarErrorEdicion('contactEmail') ? 'editar-email-error' : 'editar-ayuda-patch'
+              "
+              [attr.aria-invalid]="mostrarErrorEdicion('contactEmail')"
+            />
+            @if (mostrarErrorEdicion('contactEmail')) {
+              <p class="campo__error" id="editar-email-error">
+                Ese email no tiene una forma valida. Vacialo si queres borrarlo.
+              </p>
+            }
+          </div>
+        </div>
+
+        <div aria-live="polite" class="panel-lateral__error">
+          @if (errorAccion(); as mensaje) {
+            <p class="estado estado--error" role="alert">{{ mensaje }}</p>
+          }
+        </div>
+
+        <div class="acciones">
+          <button type="submit" class="boton" [disabled]="enviando()">Guardar los cambios</button>
+          <button type="button" class="boton boton--secundario" (click)="cerrarPanel()">
+            Cancelar
+          </button>
+        </div>
+      </form>
+    </app-panel-lateral>
+  } @else if (panel()?.tipo === 'baja') {
+    <app-panel-lateral
+      [titulo]="'Dar de baja ' + (sede.name ?? 'la sede')"
+      (cerrar)="cerrarPanel()"
+    >
+      <akine-confirmacion-con-motivo
+        idCampo="baja-reason"
+        etiqueta="Motivo de la baja"
+        textoConfirmar="Confirmar la baja"
+        ayuda="Queda en la auditoria y en la propia fila: es lo que explica esta decision dentro de seis meses."
+        [titulo]="'Dar de baja ' + (sede.name ?? '')"
+        [mostrarTitulo]="false"
+        [enviando]="enviando()"
+        (confirmado)="enviarBaja($event)"
+        (cancelado)="cerrarPanel()"
+      >
+        <p class="ayuda ayuda--fija">
+          La sede deja de admitir operaciones nuevas, pero no se borra: sigue en este listado con el
+          motivo y la fecha, porque los turnos, sesiones y cobros historicos la siguen
+          referenciando.
+        </p>
+
+        @if (esLaDelContexto(sede.id)) {
+          <p class="ayuda ayuda--fija">
+            <b>Es la sede en la que estas trabajando ahora.</b> Al darla de baja vas a tener que
+            elegir otra para seguir.
+          </p>
+        }
+      </akine-confirmacion-con-motivo>
+
+      <div aria-live="polite">
+        @if (errorAccion(); as mensaje) {
+          <p class="estado estado--error" role="alert">{{ mensaje }}</p>
+        }
+      </div>
+    </app-panel-lateral>
+  }
+}
 
 <!--
   Error de una accion que ya no tiene panel donde mostrarse. Pasa con la baja de la sede del

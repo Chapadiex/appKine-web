@@ -50,6 +50,7 @@ import { fechaIsoEnPalabras } from '../../models/etiquetas-de-presentacion';
 import { CajaApi } from '../../services/caja-api';
 import { EgresosApi } from '../../services/egresos-api';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
+import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 
 type EstadoCarga =
@@ -98,7 +99,7 @@ type Operacion = 'editar' | 'confirmar' | 'pagar' | 'anular' | 'anular-pago';
  */
 @Component({
   selector: 'app-egreso-detalle-page',
-  imports: [Migas, Ayuda, ReactiveFormsModule, RouterLink, ConfirmacionConMotivo],
+  imports: [PanelLateral, Migas, Ayuda, ReactiveFormsModule, RouterLink, ConfirmacionConMotivo],
   templateUrl: './egreso-detalle-page.html',
   styleUrls: ['../../billing.css', '../../economia.css'],
 })
@@ -136,6 +137,12 @@ export class EgresoDetallePage {
   protected readonly aviso = signal<string | null>(null);
   protected readonly anulando = signal(false);
   protected readonly pagoAnulando = signal<number | null>(null);
+
+  /** El pago del panel de anulacion, buscado en los pagos del egreso (el panel vive fuera de la tabla). */
+  protected readonly pagoEnPanel = computed(() => {
+    const id = this.pagoAnulando();
+    return id === null ? null : (this.pagos().find((pago) => pago.id === id) ?? null);
+  });
   protected readonly medioElegido = signal<string>(RegistrarPagoDeEgresoMedioEnum.EFECTIVO);
   protected readonly edicionIntentada = signal(false);
   protected readonly pagoIntentado = signal(false);

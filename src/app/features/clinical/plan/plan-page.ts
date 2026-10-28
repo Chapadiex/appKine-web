@@ -1,3 +1,4 @@
+import { NgTemplateOutlet } from '@angular/common';
 import {
   Component,
   DestroyRef,
@@ -8,7 +9,6 @@ import {
   signal,
   untracked,
 } from '@angular/core';
-import { RouterLink } from '@angular/router';
 import { Migas } from '../../../shared/components/migas/migas';
 import { Observable, Subscription, forkJoin } from 'rxjs';
 
@@ -32,6 +32,7 @@ import { advertenciasDelPlan, vigenciaDeAutorizacion } from './advertencias-del-
 import { PlanApi } from './plan-api';
 import { ErrorPlan, errorDeCausaPlan, traducirErrorPlan } from './plan-errors';
 import { Ayuda } from '../../../shared/components/ayuda/ayuda';
+import { PanelLateral } from '../../../shared/components/panel-lateral/panel-lateral';
 
 /** Una fila del editor. Texto mientras se escribe; se valida y convierte al guardar. */
 interface FilaDeItem {
@@ -61,7 +62,7 @@ type Editor = { readonly modo: 'crear' } | { readonly modo: 'modificar'; readonl
  */
 @Component({
   selector: 'app-plan-page',
-  imports: [Migas, Ayuda, RouterLink, PedidoDeMotivo],
+  imports: [Migas, Ayuda, NgTemplateOutlet, PedidoDeMotivo, PanelLateral],
   templateUrl: './plan-page.html',
   styleUrl: '../pages/historia-clinica/historia-clinica.css',
 })

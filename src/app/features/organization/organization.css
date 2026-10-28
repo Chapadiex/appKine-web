@@ -14,14 +14,6 @@
 
 /* --- Ajustes sobre la base global ------------------------------------------------------ */
 
-/* Un campo dentro de un panel desplegado ocupa el ancho de la fila de una tabla de seis
-   columnas si no se lo acota: un input de motivo de 1000 px no se lee mejor, se lee peor.
-   La regla encapsulada le gana a la global sin necesidad de `!important`. */
-.campo,
-.grupo {
-  max-width: 28rem;
-}
-
 /* El detalle de la organizacion resalta el valor sobre la etiqueta. */
 .detalle dd {
   font-weight: var(--peso-medio);
@@ -342,12 +334,6 @@
 
 /* --- Restyle al canvas (21/10/2026) -------------------------------------------------- */
 
-/* Dentro de una grilla de campos el ancho lo manda la columna, no el tope de lectura. */
-.grilla-campos > .campo,
-.asistente .campo {
-  max-width: none;
-}
-
 /* Barra de uso de un limite del plan: decorativa, el numero ya esta en la celda. */
 .medidor {
   display: block;
@@ -395,10 +381,12 @@
   min-width: 0;
 }
 
-/* Asistente de alta de sede: pasos a la izquierda, formulario a la derecha. */
+/*
+  Asistente de alta de sede (refactor UX/UI del 28/10/2026): los pasos en una franja horizontal
+  arriba, a todo el ancho, y el contenido debajo. La columna lateral ocupaba 200 px permanentes
+  para dos rotulos.
+*/
 .asistente {
-  display: flex;
-  flex-wrap: wrap;
   margin-bottom: var(--esp-8);
   border: var(--borde-fino) solid var(--color-borde);
   border-radius: var(--radio-md);
@@ -406,27 +394,61 @@
 }
 
 .asistente__pasos {
-  flex: 1 1 14rem;
-  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
   margin: 0;
-  padding: var(--esp-6);
-  border-inline-end: var(--borde-fino) solid var(--color-borde);
+  padding: 0;
+  border-bottom: var(--borde-fino) solid var(--color-borde);
   list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: var(--esp-3);
+  counter-reset: paso;
 }
 
 .asistente__paso {
+  position: relative;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: var(--esp-5);
-  padding: var(--esp-4);
-  border-radius: var(--radio-md);
+  min-width: 0;
+  padding: var(--esp-6) var(--esp-8);
+  border-bottom: var(--borde-medio) solid transparent;
+}
+
+/* Linea que une un paso con el siguiente. */
+.asistente__paso + .asistente__paso::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: var(--esp-6);
+  height: var(--borde-fino);
+  background: var(--color-borde);
 }
 
 .asistente__paso[aria-current='step'] {
-  background: var(--color-marca-superficie-activa);
+  border-bottom-color: var(--color-acento);
+}
+
+.asistente__volver {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-5);
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.asistente__volver:hover .asistente__titulo {
+  color: var(--color-enlace);
+  text-decoration: underline;
+}
+
+.asistente__textos {
+  min-width: 0;
 }
 
 .asistente__marca {
@@ -434,12 +456,12 @@
   flex: none;
   align-items: center;
   justify-content: center;
-  width: 1.5rem;
-  height: 1.5rem;
+  width: 1.75rem;
+  height: 1.75rem;
   border: var(--borde-fino) solid var(--color-borde-control);
   border-radius: 50%;
   color: var(--color-texto-suave);
-  font-size: var(--tipo-2xs);
+  font-size: var(--tipo-xs);
   font-weight: var(--peso-medio);
 }
 
@@ -460,6 +482,10 @@
   font-weight: var(--peso-medio);
 }
 
+.asistente__paso:not([aria-current='step']):not(.asistente__paso--hecho) .asistente__titulo {
+  color: var(--color-texto-suave);
+}
+
 .asistente__sub {
   display: block;
   color: var(--color-texto-suave);
@@ -467,15 +493,128 @@
 }
 
 .asistente__contenido {
-  flex: 999 1 28rem;
-  min-width: 0;
-  padding: var(--esp-7) var(--esp-8);
+  padding: var(--esp-7) var(--esp-8) var(--esp-8);
 }
 
-.asistente__contenido > h2 {
-  margin: 0 0 var(--esp-6);
-  font-size: var(--tipo-base);
+.asistente__encabezado {
+  margin: 0 0 var(--esp-7);
+  font-size: var(--tipo-lg);
   font-weight: var(--peso-fuerte);
+}
+
+.asistente__numero {
+  display: block;
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-2xs);
+  font-weight: var(--peso-medio);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.asistente__nota {
+  margin: calc(-1 * var(--esp-5)) 0 var(--esp-7);
+  color: var(--color-texto-suave);
+}
+
+/* Grillas del contenido: tres columnas para los datos, dos para los bloques. */
+.asistente__grilla {
+  display: grid;
+  gap: 0 var(--esp-7);
+  align-items: start;
+}
+
+.asistente__grilla--tres {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr));
+  max-width: 62rem;
+}
+
+.asistente__grilla--dos {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
+  gap: var(--esp-7);
+}
+
+.asistente__grilla .campo--ancho {
+  grid-column: 1 / -1;
+}
+
+/* Bloque de configuracion opcional: superficie sutil, sin borde de tarjeta. */
+.bloque {
+  min-width: 0;
+  margin: 0;
+  padding: var(--esp-6) var(--esp-7);
+  border: 0;
+  border-radius: var(--radio-md);
+  background: var(--color-superficie-sutil);
+}
+
+.bloque__titulo {
+  float: left;
+  width: 100%;
+  margin: 0 0 var(--esp-2);
+  padding: 0;
+  font-size: var(--tipo-md);
+  font-weight: var(--peso-fuerte);
+}
+
+.bloque__ayuda {
+  clear: both;
+  margin: 0 0 var(--esp-6);
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-xs);
+}
+
+.bloque__campos {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 0 var(--esp-6);
+}
+
+@media (max-width: 30rem) {
+  .bloque__campos {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.asistente .seccion-plegable {
+  margin-top: var(--esp-7);
+}
+
+/* Resumen de la confirmacion: dos columnas agrupadas como se cargo. */
+.resumen {
+  padding: var(--esp-6) var(--esp-7);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie-sutil);
+}
+
+.resumen__titulo {
+  margin: 0 0 var(--esp-5);
+  font-size: var(--tipo-md);
+  font-weight: var(--peso-fuerte);
+}
+
+.resumen__lista {
+  margin: 0;
+  padding-left: var(--esp-7);
+}
+
+.asistente__acciones {
+  margin-top: var(--esp-8);
+  padding-top: var(--esp-6);
+  border-top: var(--borde-fino) solid var(--color-borde-sutil);
+}
+
+@media (max-width: 40rem) {
+  .asistente__paso {
+    padding: var(--esp-5) var(--esp-6);
+  }
+
+  .asistente__sub {
+    display: none;
+  }
+
+  .asistente__contenido {
+    padding: var(--esp-6);
+  }
 }
 
 /* Pie de formulario: nota de obligatorios a la izquierda, acciones a la derecha. */
@@ -586,4 +725,56 @@
 
 .fila--seleccionada {
   background: var(--color-superficie-sutil);
+}
+
+/* Sedes (refactor UX/UI del 28/10/2026): nombre con un dato institucional de referencia. */
+.sede__nombre {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--esp-2) var(--esp-4);
+}
+
+.sede__detalle {
+  display: block;
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-xs);
+  font-weight: var(--peso-normal);
+}
+
+.sede__baja {
+  margin: var(--esp-2) 0 0;
+}
+
+/*
+  Secciones dentro de un panel lateral (refactor UX/UI del 28/10/2026): separadas por titulo y
+  espacio, sin bordes.
+*/
+.titulo-con-ayuda--seccion > h3 {
+  margin: 0;
+}
+
+.panel-seccion {
+  margin: var(--esp-8) 0 var(--esp-5);
+}
+
+/* Avisos de una grilla de campos (la ventana de la auditoria): a lo ancho, no en una celda. */
+.grilla-campos__fila {
+  grid-column: 1 / -1;
+}
+
+/* Ficha de lectura en dos columnas (organizacion, suscripcion): lado a lado cuando hay ancho. */
+.ficha-en-columnas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 26rem), 1fr));
+  gap: var(--esp-8);
+  align-items: start;
+}
+
+.ficha-en-columnas > .tarjeta {
+  margin-bottom: 0;
+}
+
+.ficha-en-columnas {
+  margin-bottom: var(--esp-8);
 }

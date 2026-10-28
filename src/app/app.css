@@ -74,23 +74,22 @@
 }
 
 /*
-  Contenido alineado a la izquierda, con el ancho maximo que pide la ruta. Centrarlo dentro de
-  la columna dejaba un margen vacio a la izquierda que no separaba nada; el espacio sobrante va
-  a la derecha, que es donde no molesta.
+  Contenido alineado a la izquierda y a todo el ancho de la columna, con un tope para monitores
+  grandes (refactor UX/UI del 28/10/2026). Antes las pantallas "de lectura" se quedaban en 46rem
+  y en una pantalla de 1440 px usaban menos de la mitad del ancho. El ancho de lectura ahora lo
+  cuidan las primitivas: un formulario tiene su propio tope (design-system.css) y la prosa
+  tambien; las tablas usan todo.
 */
 .contenido {
   width: 100%;
-  max-width: 46rem;
+  max-width: 96rem;
   margin: 0;
   padding: var(--esp-8) var(--esp-8) var(--esp-9);
 }
 
-.contenido--amplio {
-  max-width: 76rem;
-}
-
 /* Sin barra lateral (login, selector de contexto) la pagina si se centra: es una tarjeta sola. */
 .shell--sin-barra .contenido {
+  max-width: 46rem;
   margin: 0 auto;
 }
 

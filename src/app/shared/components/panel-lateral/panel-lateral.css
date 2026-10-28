@@ -1,0 +1,200 @@
+/*
+  Panel lateral (drawer). Sin encapsulacion: el contenido es proyectado y su formulario tiene que
+  recibir el pie de acciones fijo. Vive con el componente y no en design-system.css para no pesar
+  en la carga inicial.
+*/
+
+.panel-lateral {
+  position: fixed;
+  inset: 0 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  width: min(34rem, 100vw);
+  max-width: 100vw;
+  height: 100dvh;
+  max-height: 100dvh;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-left: var(--borde-fino) solid var(--color-borde);
+  background: var(--color-superficie);
+  color: var(--color-texto);
+  box-shadow: -8px 0 24px rgb(16 38 63 / 0.14);
+}
+
+.panel-lateral:not([open]) {
+  display: none;
+}
+
+.panel-lateral--amplio {
+  width: min(46rem, 100vw);
+}
+
+.panel-lateral::backdrop {
+  background: rgb(15 23 42 / 0.32);
+}
+
+.panel-lateral__cabecera {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--esp-6);
+  padding: var(--esp-6) var(--esp-8);
+  border-bottom: var(--borde-fino) solid var(--color-borde);
+}
+
+.panel-lateral__titulos {
+  min-width: 0;
+}
+
+.panel-lateral__titulo {
+  margin: 0;
+  font-size: var(--tipo-lg);
+  font-weight: var(--peso-fuerte);
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.panel-lateral__subtitulo {
+  margin: var(--esp-2) 0 0;
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-sm);
+}
+
+.panel-lateral__cerrar {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radio-md);
+  background: transparent;
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-lg);
+  cursor: pointer;
+}
+
+.panel-lateral__cerrar:hover {
+  background: var(--color-superficie-sutil);
+  color: var(--color-texto);
+}
+
+.panel-lateral__cuerpo {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--esp-7) var(--esp-8) 0;
+}
+
+/* El ultimo bloque no queda pegado al borde inferior cuando no hay pie de acciones. */
+.panel-lateral__cuerpo::after {
+  content: '';
+  display: block;
+  height: var(--esp-7);
+}
+
+/*
+  Pie de acciones: la barra `.acciones` final de un formulario proyectado queda pegada abajo y a
+  la vista mientras el cuerpo se desplaza. Cancelar a la izquierda de la accion principal, que
+  queda en el borde derecho.
+*/
+.panel-lateral__cuerpo form > .acciones:last-child,
+.panel-lateral__cuerpo .acciones--pie {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  margin: var(--esp-7) calc(-1 * var(--esp-8)) calc(-1 * var(--esp-7));
+  padding: var(--esp-5) var(--esp-8);
+  border-top: var(--borde-fino) solid var(--color-borde);
+  background: var(--color-superficie);
+}
+
+/* Fuera de un formulario el pie no se invierte: se alinea a la derecha. */
+.panel-lateral__cuerpo .acciones--pie {
+  justify-content: flex-end;
+}
+
+/* Pestañas internas del panel (General · Datos institucionales). */
+.panel-lateral__pestanas {
+  display: flex;
+  gap: var(--esp-2);
+  margin: calc(-1 * var(--esp-5)) 0 var(--esp-7);
+  border-bottom: var(--borde-fino) solid var(--color-borde);
+}
+
+.panel-lateral__pestana {
+  min-height: 2.5rem;
+  padding: 0 var(--esp-5);
+  border: 0;
+  border-bottom: var(--borde-medio) solid transparent;
+  background: transparent;
+  color: var(--color-texto-suave);
+  font: inherit;
+  font-weight: var(--peso-medio);
+  cursor: pointer;
+}
+
+.panel-lateral__pestana[aria-selected='true'] {
+  border-bottom-color: var(--color-acento);
+  color: var(--color-acento);
+}
+
+.panel-lateral__pestana:hover {
+  color: var(--color-texto);
+}
+
+@media (max-width: 40rem) {
+  .panel-lateral,
+  .panel-lateral--amplio {
+    width: 100vw;
+    border-left: 0;
+  }
+
+  .panel-lateral__cabecera {
+    padding-inline: var(--esp-6);
+  }
+
+  .panel-lateral__cuerpo {
+    padding-inline: var(--esp-6);
+  }
+
+  .panel-lateral__cuerpo form > .acciones:last-child,
+  .panel-lateral__cuerpo .acciones--pie {
+    margin-inline: calc(-1 * var(--esp-6));
+    padding-inline: var(--esp-6);
+  }
+}
+
+/* En el ancho del panel, dos columnas de campos en vez de una. */
+.panel-lateral__cuerpo form:not(.formulario--libre) {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 13rem), 1fr));
+}
+
+/*
+  Seccion de un formulario partido en pestañas: la misma grilla que un formulario, porque sus
+  campos ya no son hijos directos del `form`.
+*/
+.panel-lateral__seccion {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 13rem), 1fr));
+  column-gap: var(--esp-6);
+  align-items: start;
+}
+
+.panel-lateral__seccion[hidden] {
+  display: none;
+}
+
+.panel-lateral__seccion > :not(.campo),
+.panel-lateral__seccion > .campo--ancho {
+  grid-column: 1 / -1;
+}
+
+.panel-lateral__nota {
+  margin: 0 0 var(--esp-6);
+}

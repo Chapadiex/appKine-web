@@ -1,4 +1,14 @@
-import { Component, ElementRef, computed, effect, inject, signal, untracked } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  Injector,
+  afterNextRender,
+  computed,
+  effect,
+  inject,
+  signal,
+  untracked,
+} from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { catchError, of } from 'rxjs';
@@ -22,7 +32,9 @@ import { MOTIVO_SEDE_INACTIVA, PARAM_MOTIVO } from '../../models/motivo-de-selec
 import { etiquetaDeZona, zonasHorarias } from '../../models/zonas-horarias';
 import { numeroDeclarado } from '../../../../shared/utils/numero-declarado';
 import { textoRequerido } from '../../../../shared/validators/texto-requerido';
+import { AccionesDeFila } from '../../../../shared/components/acciones-de-fila/acciones-de-fila';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
 import { Icono } from '../../../../shared/components/icono/icono';
 import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
 import {
@@ -98,6 +110,8 @@ const POR_PAGINA = 20;
     PermisoDirective,
     Paginacion,
     ConfirmacionConMotivo,
+    AccionesDeFila,
+    PanelLateral,
   ],
   templateUrl: './consultorios-page.html',
   styleUrl: '../../organization.css',
@@ -109,6 +123,7 @@ export class ConsultoriosPage {
   private readonly router = inject(Router);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly formBuilder = inject(FormBuilder);
+  private readonly injector = inject(Injector);
 
   protected readonly sedesDelContexto = inject(SedesDelContexto);
 
@@ -139,6 +154,20 @@ export class ConsultoriosPage {
   protected readonly panel = signal<{ readonly id: number; readonly tipo: TipoAccion } | null>(
     null,
   );
+
+  /**
+   * La sede del panel abierto. El panel lateral vive fuera de la tabla (refactor UX/UI del
+   * 28/10/2026), asi que la busca en la pagina en vez de recibirla del `@for` de la fila.
+   */
+  protected readonly sedeEnPanel = computed(() => {
+    const panel = this.panel();
+    return panel === null
+      ? null
+      : (this.sedesDeLaPagina().find((sede) => sede.id === panel.id) ?? null);
+  });
+
+  /** Pestaña del panel de edicion: lo que hace funcionar la sede, o sus datos institucionales. */
+  protected readonly pestanaEdicion = signal<'general' | 'institucional'>('general');
 
   /**
    * Sede tal como la devolvio el backend la ultima vez, para el panel abierto.
@@ -260,11 +289,6 @@ export class ConsultoriosPage {
     return id !== undefined && id === this.tenantContext.consultorioId();
   }
 
-  protected panelAbierto(id: number | undefined, tipo: TipoAccion): boolean {
-    const panel = this.panel();
-    return panel !== null && panel.id === id && panel.tipo === tipo;
-  }
-
   protected abrirPanel(sede: ConsultorioResponse, tipo: TipoAccion): void {
     const id = sede.id;
     if (id === undefined) {
@@ -273,6 +297,7 @@ export class ConsultoriosPage {
 
     this.cerrarPanel();
     this.exito.set(null);
+    this.pestanaEdicion.set('general');
     this.panel.set({ id, tipo });
 
     if (tipo === 'editar') {
@@ -288,6 +313,12 @@ export class ConsultoriosPage {
     this.errorAccion.set(null);
     this.causaAccion.set(null);
     this.intentos.set(0);
+  }
+
+  /** Flechas entre las dos pestañas del panel: cambia y lleva el foco a la elegida. */
+  protected cambiarPestana(pestana: 'general' | 'institucional'): void {
+    this.pestanaEdicion.set(pestana);
+    this.enfocar(`#editar-pestana-${pestana}`);
   }
 
   protected mostrarErrorEdicion(campo: 'name' | 'contactEmail'): boolean {
@@ -312,7 +343,12 @@ export class ConsultoriosPage {
     this.intentos.update((valor) => valor + 1);
     if (this.formularioEdicion.invalid) {
       this.formularioEdicion.markAllAsTouched();
-      this.enfocar(this.formularioEdicion.controls.name.invalid ? '#editar-name' : '#editar-email');
+      // El campo invalido puede estar en la otra pestaña: se muestra antes de enfocarlo.
+      const enGeneral = this.formularioEdicion.controls.name.invalid;
+      this.pestanaEdicion.set(enGeneral ? 'general' : 'institucional');
+      afterNextRender(() => this.enfocar(enGeneral ? '#editar-name' : '#editar-email'), {
+        injector: this.injector,
+      });
       return;
     }
 

@@ -80,6 +80,8 @@ test.describe('Padron de personas contra el backend real', () => {
     // --- Baja de la ficha desde el 360 ---
     await fila.getByRole('link', { name: 'Ver ficha' }).click();
     await expect(page).toHaveURL(new RegExp(`/pacientes/${personaId}$`));
+    // Las bajas van en el menu "⋯" de la cabecera de la ficha y se confirman en un panel lateral.
+    await page.getByRole('button', { name: /^Más acciones de / }).click();
     await page.getByRole('button', { name: 'Dar de baja la ficha' }).click();
 
     // Aca el motivo SI es obligatorio (RF-M07-005): vacio no sale nada a la red.

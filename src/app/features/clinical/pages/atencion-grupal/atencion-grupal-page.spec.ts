@@ -616,7 +616,9 @@ describe('AtencionGrupalPage', () => {
         .expectOne(derivacionesDe(MARIA))
         .flush({ derivaciones: [{ id: 30, casoClinicoId: 7, estado: 'VIGENTE' }] });
       await estabilizar(fixture);
-      expect(document.activeElement?.getAttribute('aria-labelledby')).toBe('titulo-derivaciones');
+      // Las derivaciones se abren en un panel lateral, fuera de la tabla: el foco entra al panel.
+      expect(document.activeElement?.closest('dialog.panel-lateral')).not.toBeNull();
+      expect(document.activeElement?.closest('table')).toBeNull();
 
       boton(fixture, /^Revertir la derivación/).click();
       await estabilizar(fixture);

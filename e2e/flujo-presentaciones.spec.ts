@@ -192,6 +192,8 @@ test.describe('Presentaciones a financiadores contra el backend real', () => {
     ).toBeVisible();
 
     // El periodo es un filtro de la bandeja: un dia de cada lado cubre la fecha UTC del devengado.
+    // El alta vive en un panel lateral que se abre desde "Nuevo lote" (refactor UX/UI).
+    await page.getByRole('button', { name: 'Nuevo lote' }).click();
     await page.locator('#alta-financiador').selectOption({ label: sembrado.financiador.nombre });
     await page.locator('#alta-desde').fill(sumarDias(hoy, -1));
     await page.locator('#alta-hasta').fill(sumarDias(hoy, 1));
@@ -371,6 +373,8 @@ test.describe('Reparos documentales de un lote contra el backend real (DP-37)', 
 
     await ingresar(page, centro);
     await navegar(page, '/presentaciones');
+    // El alta vive en un panel lateral que se abre desde "Nuevo lote" (refactor UX/UI).
+    await page.getByRole('button', { name: 'Nuevo lote' }).click();
     await page.locator('#alta-financiador').selectOption({ label: nombre });
     await page.locator('#alta-desde').fill(sumarDias(hoy, -1));
     await page.locator('#alta-hasta').fill(sumarDias(hoy, 1));

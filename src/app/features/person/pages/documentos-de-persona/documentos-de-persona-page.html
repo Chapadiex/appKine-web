@@ -35,75 +35,6 @@
   }
 </div>
 
-@if (subidaAbierta()) {
-  <section class="tarjeta tarjeta--formulario" aria-labelledby="titulo-subida">
-    <h2 id="titulo-subida">Subir un documento</h2>
-
-    <form [formGroup]="formularioSubida" (ngSubmit)="subir()" novalidate>
-      <div class="campo">
-        <label for="subida-archivo">Archivo</label>
-        <input
-          id="subida-archivo"
-          type="file"
-          accept="application/pdf,image/png,image/jpeg"
-          (change)="elegirArchivo($event.target)"
-          aria-describedby="subida-archivo-ayuda"
-        />
-        <p class="ayuda" id="subida-archivo-ayuda">
-          Se aceptan PDF, PNG y JPEG. El tipo se verifica <b>por el contenido</b> y no por la
-          extensión: renombrar un archivo no lo convierte en otra cosa.
-        </p>
-        @if (archivo(); as elegido) {
-          <p class="ayuda">Elegido: {{ elegido.name }} ({{ tamanoEnPalabras(elegido.size) }})</p>
-        }
-      </div>
-
-      <div class="campo">
-        <label for="subida-categoria">Categoría</label>
-        <select
-          id="subida-categoria"
-          formControlName="categoria"
-          [attr.aria-invalid]="mostrarErrorSubida('categoria') ? 'true' : null"
-        >
-          <option value="">Elegí una categoría</option>
-          @for (categoria of categorias; track categoria) {
-            <option [value]="categoria">{{ nombreDeCategoria(categoria) }}</option>
-          }
-        </select>
-        @if (mostrarErrorSubida('categoria')) {
-          <p class="estado estado--error">Elegí la categoría del documento.</p>
-        }
-      </div>
-
-      <div class="campo">
-        <label for="subida-titulo">Título</label>
-        <input
-          id="subida-titulo"
-          type="text"
-          formControlName="titulo"
-          aria-describedby="subida-titulo-ayuda"
-        />
-        <p class="ayuda" id="subida-titulo-ayuda">
-          Opcional. Sin título, el documento se muestra con el nombre del archivo.
-        </p>
-      </div>
-
-      <p class="acciones">
-        <button type="submit" class="boton" [disabled]="enviando() || archivo() === null">
-          {{ enviando() ? 'Subiendo...' : 'Subir' }}
-        </button>
-        <button type="button" class="boton boton--secundario" (click)="cerrarPaneles()">
-          Cancelar
-        </button>
-      </p>
-    </form>
-
-    @if (errorAccion(); as mensaje) {
-      <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-    }
-  </section>
-}
-
 <section class="tarjeta tarjeta--listado" aria-labelledby="titulo-filtros-documentos">
   <h2 id="titulo-filtros-documentos" class="visualmente-oculto">Documentos cargados</h2>
 
@@ -192,7 +123,7 @@
         </thead>
         <tbody>
           @for (adjunto of adjuntos(); track adjunto.id) {
-            <tr>
+            <tr [class.fila--seleccionada]="adjuntoEnPanel()?.id === adjunto.id">
               <td>{{ nombreDeAdjunto(adjunto) }}</td>
               <td>{{ nombreDeCategoria(adjunto.categoria) }}</td>
               <td>{{ adjunto.nombreArchivo }}</td>
@@ -214,7 +145,7 @@
                   <span class="marca-estado marca-estado--activa">Vigente</span>
                 }
               </td>
-              <td>
+              <td class="tabla__acciones">
                 <!--
                   Tres acciones: menu "⋯" (decidido el 22/10/2026). Descargar es la frecuente y queda
                   a la vista; reclasificar y dar de baja piden paciente:manage. Sin ese permiso, o
@@ -225,7 +156,7 @@
                     <button
                       principal
                       type="button"
-                      class="boton boton--secundario"
+                      class="boton boton--secundario boton--chico"
                       (click)="descargar(adjunto)"
                       [disabled]="adjuntoNoDisponible(adjunto)"
                     >
@@ -239,108 +170,17 @@
                     </button>
                   </app-acciones-de-fila>
                 } @else {
-                  <div class="acciones-fila">
-                    <button
-                      type="button"
-                      class="boton boton--secundario"
-                      (click)="descargar(adjunto)"
-                      [disabled]="adjuntoNoDisponible(adjunto)"
-                    >
-                      Descargar
-                    </button>
-                  </div>
+                  <button
+                    type="button"
+                    class="boton boton--secundario boton--chico"
+                    (click)="descargar(adjunto)"
+                    [disabled]="adjuntoNoDisponible(adjunto)"
+                  >
+                    Descargar
+                  </button>
                 }
               </td>
             </tr>
-
-            @if (esPanel(adjunto, 'reclasificar')) {
-              <tr>
-                <td colspan="7">
-                  <section aria-labelledby="titulo-reclasificar-{{ adjunto.id }}">
-                    <h2 id="titulo-reclasificar-{{ adjunto.id }}" class="panel__titulo">
-                      Reclasificar {{ nombreDeAdjunto(adjunto) }}
-                    </h2>
-                    <p class="ayuda">
-                      Lo unico que se puede cambiar es <b>como esta descripto</b>. El archivo, su
-                      nombre y su tipo son inmutables: para reemplazar un documento se da de baja
-                      este y se sube el nuevo, y así quedan las dos versiones consultables.
-                    </p>
-
-                    <form
-                      [formGroup]="formularioClasificacion"
-                      (ngSubmit)="reclasificar()"
-                      novalidate
-                    >
-                      <div class="campo">
-                        <label for="reclasificar-categoria-{{ adjunto.id }}">Categoría</label>
-                        <select
-                          id="reclasificar-categoria-{{ adjunto.id }}"
-                          formControlName="categoria"
-                        >
-                          @for (categoria of categorias; track categoria) {
-                            <option [value]="categoria">{{ nombreDeCategoria(categoria) }}</option>
-                          }
-                        </select>
-                      </div>
-
-                      <div class="campo">
-                        <label for="reclasificar-titulo-{{ adjunto.id }}">Título</label>
-                        <input
-                          id="reclasificar-titulo-{{ adjunto.id }}"
-                          type="text"
-                          formControlName="titulo"
-                        />
-                      </div>
-
-                      <p class="acciones">
-                        <button type="submit" class="boton" [disabled]="enviando()">
-                          {{ enviando() ? 'Guardando...' : 'Guardar' }}
-                        </button>
-                        <button
-                          type="button"
-                          class="boton boton--secundario"
-                          (click)="cerrarPaneles()"
-                        >
-                          Cancelar
-                        </button>
-                      </p>
-                    </form>
-
-                    @if (errorAccion(); as mensaje) {
-                      <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-                      @if (hayQueRecargar()) {
-                        <p class="acciones">
-                          <button type="button" class="boton" (click)="cargar()">
-                            Recargar los documentos
-                          </button>
-                        </p>
-                      }
-                    }
-                  </section>
-                </td>
-              </tr>
-            }
-
-            @if (esPanel(adjunto, 'baja')) {
-              <tr>
-                <td colspan="7">
-                  <akine-confirmacion-con-motivo
-                    idCampo="baja-adjunto-{{ adjunto.id }}"
-                    titulo="Dar de baja {{ nombreDeAdjunto(adjunto) }}"
-                    etiqueta="Motivo"
-                    ayuda="El archivo NO se borra: se sigue pudiendo descargar y aparece filtrando por 'También los dados de baja'. Lo que deja de admitir es que se lo reclasifique. Si el documento cambió, dalo de baja y subí el nuevo."
-                    textoConfirmar="Dar de baja el documento"
-                    [enviando]="enviando()"
-                    (confirmado)="confirmarBaja($event)"
-                    (cancelado)="cerrarPaneles()"
-                  />
-
-                  @if (errorAccion(); as mensaje) {
-                    <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-                  }
-                </td>
-              </tr>
-            }
           }
         </tbody>
       </table>
@@ -366,8 +206,156 @@
     <p class="estado estado--error" role="alert">{{ mensaje }}</p>
     @if (hayQueRecargar()) {
       <p class="acciones">
-        <button type="button" class="boton" (click)="cargar()">Recargar los documentos</button>
+        <button type="button" class="boton boton--secundario" (click)="cargar()">
+          Recargar los documentos
+        </button>
       </p>
     }
+  }
+}
+
+<!--
+  Subida, reclasificacion y baja en un panel lateral (refactor UX/UI del 28/10/2026). Antes la
+  subida empujaba el listado hacia abajo y las otras dos abrian una fila dentro de la tabla.
+-->
+@if (subidaAbierta()) {
+  <app-panel-lateral titulo="Subir un documento" (cerrar)="cerrarPaneles()">
+    <form [formGroup]="formularioSubida" (ngSubmit)="subir()" novalidate>
+      <div class="campo campo--ancho">
+        <label for="subida-archivo">Archivo</label>
+        <input
+          id="subida-archivo"
+          type="file"
+          accept="application/pdf,image/png,image/jpeg"
+          (change)="elegirArchivo($event.target)"
+          aria-describedby="subida-archivo-ayuda"
+        />
+        <p class="ayuda ayuda--fija" id="subida-archivo-ayuda">
+          @if (archivo(); as elegido) {
+            Elegido: {{ elegido.name }} ({{ tamanoEnPalabras(elegido.size) }})
+          } @else {
+            PDF, PNG o JPEG. El tipo se verifica <b>por el contenido</b>, no por la extensión.
+          }
+        </p>
+      </div>
+
+      <div class="campo">
+        <label for="subida-categoria">Categoría</label>
+        <select
+          id="subida-categoria"
+          formControlName="categoria"
+          [attr.aria-invalid]="mostrarErrorSubida('categoria') ? 'true' : null"
+        >
+          <option value="">Elegí una categoría</option>
+          @for (categoria of categorias; track categoria) {
+            <option [value]="categoria">{{ nombreDeCategoria(categoria) }}</option>
+          }
+        </select>
+        @if (mostrarErrorSubida('categoria')) {
+          <p class="estado estado--error">Elegí la categoría del documento.</p>
+        }
+      </div>
+
+      <div class="campo">
+        <label for="subida-titulo">Título <span class="campo__opcional">(opcional)</span></label>
+        <input
+          id="subida-titulo"
+          type="text"
+          formControlName="titulo"
+          aria-describedby="subida-titulo-ayuda"
+        />
+        <p class="ayuda" id="subida-titulo-ayuda">Sin título, se muestra el nombre del archivo.</p>
+      </div>
+
+      <div aria-live="polite">
+        @if (errorAccion(); as mensaje) {
+          <p class="estado estado--error" role="alert">{{ mensaje }}</p>
+        }
+      </div>
+
+      <div class="acciones">
+        <button type="submit" class="boton" [disabled]="enviando() || archivo() === null">
+          {{ enviando() ? 'Subiendo...' : 'Subir' }}
+        </button>
+        <button type="button" class="boton boton--secundario" (click)="cerrarPaneles()">
+          Cancelar
+        </button>
+      </div>
+    </form>
+  </app-panel-lateral>
+}
+
+@if (adjuntoEnPanel(); as adjunto) {
+  @if (panel()?.tipo === 'reclasificar') {
+    <app-panel-lateral
+      [titulo]="'Reclasificar ' + nombreDeAdjunto(adjunto)"
+      (cerrar)="cerrarPaneles()"
+    >
+      <p class="ayuda ayuda--fija panel-persona__aviso">
+        Solo cambia <b>cómo está descripto</b>. El archivo, su nombre y su tipo son inmutables: para
+        reemplazarlo, dalo de baja y subí el nuevo.
+      </p>
+
+      <form [formGroup]="formularioClasificacion" (ngSubmit)="reclasificar()" novalidate>
+        <div class="campo">
+          <label for="reclasificar-categoria-{{ adjunto.id }}">Categoría</label>
+          <select id="reclasificar-categoria-{{ adjunto.id }}" formControlName="categoria">
+            @for (categoria of categorias; track categoria) {
+              <option [value]="categoria">{{ nombreDeCategoria(categoria) }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="campo">
+          <label for="reclasificar-titulo-{{ adjunto.id }}">Título</label>
+          <input id="reclasificar-titulo-{{ adjunto.id }}" type="text" formControlName="titulo" />
+        </div>
+
+        <div aria-live="polite">
+          @if (errorAccion(); as mensaje) {
+            <p class="estado estado--error" role="alert">{{ mensaje }}</p>
+            @if (hayQueRecargar()) {
+              <p class="acciones">
+                <button type="button" class="boton boton--secundario" (click)="cargar()">
+                  Recargar los documentos
+                </button>
+              </p>
+            }
+          }
+        </div>
+
+        <div class="acciones">
+          <button type="submit" class="boton" [disabled]="enviando()">
+            {{ enviando() ? 'Guardando...' : 'Guardar' }}
+          </button>
+          <button type="button" class="boton boton--secundario" (click)="cerrarPaneles()">
+            Cancelar
+          </button>
+        </div>
+      </form>
+    </app-panel-lateral>
+  } @else if (panel()?.tipo === 'baja') {
+    <app-panel-lateral
+      [titulo]="'Dar de baja ' + nombreDeAdjunto(adjunto)"
+      (cerrar)="cerrarPaneles()"
+    >
+      <akine-confirmacion-con-motivo
+        idCampo="baja-adjunto-{{ adjunto.id }}"
+        titulo="Dar de baja {{ nombreDeAdjunto(adjunto) }}"
+        [mostrarTitulo]="false"
+        etiqueta="Motivo"
+        ayuda="El archivo NO se borra: se sigue pudiendo descargar y aparece filtrando por 'También los dados de baja'. Lo que deja de admitir es que se lo reclasifique. Si el documento cambió, dalo de baja y subí el nuevo."
+        textoConfirmar="Dar de baja el documento"
+        [enviando]="enviando()"
+        (confirmado)="confirmarBaja($event)"
+        (cancelado)="cerrarPaneles()"
+      />
+
+      <div aria-live="polite">
+        @if (errorAccion(); as mensaje) {
+          <p class="estado estado--error" role="alert">{{ mensaje }}</p>
+        }
+      </div>
+    </app-panel-lateral>
   }
 }

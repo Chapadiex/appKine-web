@@ -12,6 +12,7 @@ import { EstadoDeListado } from '../../../../shared/utils/estado-de-listado';
 import { guardarComoArchivo, nombreDelEncabezado } from '../../../../shared/utils/descarga';
 import { PERMISO_PACIENTE_MANAGE } from '../../../../core/models/permisos';
 import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
 import { PermisoDirective } from '../../../../shared/directives/permiso.directive';
 import { PersonApi } from '../../services/person-api';
 import { PersonaResponse } from '../../../../api/generated/model/persona-response';
@@ -111,6 +112,7 @@ type TipoAccion = 'reclasificar' | 'baja';
     ReactiveFormsModule,
     ConfirmacionConMotivo,
     Paginacion,
+    PanelLateral,
     PermisoDirective,
     AccionesDeFila,
   ],
@@ -186,6 +188,17 @@ export class DocumentosDePersonaPage {
   protected readonly adjuntos = computed<readonly AdjuntoResponse[]>(() => {
     const actual = this.estado();
     return actual.tipo === 'listo' ? (actual.pagina.content ?? []) : [];
+  });
+
+  /**
+   * El documento del panel abierto. El panel lateral vive fuera de la tabla (refactor UX/UI del
+   * 28/10/2026), asi que lo busca en la pagina en vez de recibirlo del `@for` de la fila.
+   */
+  protected readonly adjuntoEnPanel = computed(() => {
+    const panel = this.panel();
+    return panel === null
+      ? null
+      : (this.adjuntos().find((adjunto) => adjunto.id === panel.id) ?? null);
   });
 
   protected readonly totalPaginas = computed(() => {
@@ -490,16 +503,6 @@ export class DocumentosDePersonaPage {
     this.panel.set(null);
     this.subidaAbierta.set(false);
     this.limpiarAvisos();
-  }
-
-  protected esPanel(adjunto: AdjuntoResponse, tipo: TipoAccion): boolean {
-    const abierto = this.panel();
-    return (
-      abierto !== null &&
-      adjunto.id !== undefined &&
-      abierto.id === adjunto.id &&
-      abierto.tipo === tipo
-    );
   }
 
   protected mostrarErrorSubida(campo: string): boolean {

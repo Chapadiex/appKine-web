@@ -19,6 +19,7 @@ import {
 } from '../../../../api/generated/model/resolve-catalogo-solicitud-request';
 import { formatearInstante } from '../../../../shared/utils/instantes';
 import { textoRequerido } from '../../../../shared/validators/texto-requerido';
+import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
 import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
@@ -69,7 +70,15 @@ type Especialidades =
  */
 @Component({
   selector: 'app-solicitudes-catalogo-page',
-  imports: [ColumnaOrdenable, Paginacion, Ayuda, Filtros, Pestanas, ReactiveFormsModule],
+  imports: [
+    ColumnaOrdenable,
+    Paginacion,
+    Ayuda,
+    Filtros,
+    PanelLateral,
+    Pestanas,
+    ReactiveFormsModule,
+  ],
   templateUrl: './solicitudes-catalogo-page.html',
 })
 export class SolicitudesCatalogoPage {
@@ -168,8 +177,8 @@ export class SolicitudesCatalogoPage {
   protected revisar(solicitud: CatalogoSolicitudResponse): void {
     this.aviso.set(null);
     this.seleccionada.set(solicitud);
+    // El foco lo lleva el panel lateral al abrirse.
     this.elegirDesenlace(null);
-    afterNextRender(() => this.enfocar('#titulo-detalle-solicitud'), { injector: this.injector });
   }
 
   protected cerrar(): void {

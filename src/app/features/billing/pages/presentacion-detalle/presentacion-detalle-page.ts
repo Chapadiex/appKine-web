@@ -40,6 +40,7 @@ import {
 import { fechaEnPalabras, importeEnPalabras } from '../../models/etiquetas-de-obligacion';
 import { medioEnPalabras } from '../../models/etiquetas-de-cobro';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
+import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { Filtros } from '../../../../shared/components/filtros/filtros';
 import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
@@ -81,6 +82,7 @@ interface Lectura {
 @Component({
   selector: 'app-presentacion-detalle-page',
   imports: [
+    PanelLateral,
     Migas,
     Ayuda,
     ColumnaOrdenable,
@@ -130,6 +132,12 @@ export class PresentacionDetallePage {
   protected readonly anulando = signal(false);
   protected readonly exportando = signal(false);
   protected readonly itemDebitando = signal<number | null>(null);
+
+  /** La prestacion del panel de debito, buscada en los items del lote (el panel vive fuera de la tabla). */
+  protected readonly itemEnDebito = computed(() => {
+    const id = this.itemDebitando();
+    return id === null ? null : (this.items().find((item) => item.id === id) ?? null);
+  });
 
   protected readonly factura = this.fb.group({
     numero: ['', Validators.required],

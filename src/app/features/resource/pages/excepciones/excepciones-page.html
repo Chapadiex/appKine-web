@@ -58,7 +58,7 @@
             formControlName="hasta"
             aria-describedby="ventana-hasta-ayuda"
           />
-          <p class="ayuda" id="ventana-hasta-ayuda">
+          <p class="ayuda ayuda--fija" id="ventana-hasta-ayuda">
             No se incluye este día. El máximo es de {{ maximoDias }} días.
           </p>
         </div>
@@ -90,7 +90,7 @@
           cierre del centro también le aplica a el. Sin elegir a nadie se ven solo las de la sede.
         </p>
         @if (profesionalesConocidos() && !listaCompleta()) {
-          <p class="ayuda">{{ textoListaIncompleta }}</p>
+          <p class="ayuda ayuda--fija">{{ textoListaIncompleta }}</p>
         }
       </div>
     </app-filtros>
@@ -164,7 +164,7 @@
             cargar ni dar de baja ninguno.
           -->
           @if (modoLectura()) {
-            <p class="ayuda">{{ textoModoLectura }}</p>
+            <p class="ayuda ayuda--fija">{{ textoModoLectura }}</p>
           }
 
           @if (vigentes().length === 0) {
@@ -193,6 +193,7 @@
                     <tr
                       class="excepcion"
                       [class.excepcion--apertura]="excepcion.tipo === 'APERTURA'"
+                      [class.fila--seleccionada]="excepcionEnBaja()?.id === excepcion.id"
                     >
                       <!--
                         El numero de la fila se muestra porque hay una pantalla que lo NOMBRA: el
@@ -226,7 +227,7 @@
                           Del {{ etiquetaDeFecha(excepcion.fechaDesde) }} al
                           {{ ultimoDiaCubierto(excepcion) }} inclusive
                         </p>
-                        <p class="ayuda">
+                        <p class="ayuda ayuda--fija">
                           (el fin cargado, {{ etiquetaDeFecha(excepcion.fechaHasta) }}, es
                           exclusivo)
                         </p>
@@ -243,65 +244,29 @@
                       <td>
                         {{ etiquetaDeMotivo(excepcion.motivo) }}
                         @if (excepcion.notes) {
-                          <p class="ayuda">{{ excepcion.notes }}</p>
+                          <p class="ayuda ayuda--fija">{{ excepcion.notes }}</p>
                         }
                       </td>
 
-                      <td>
-                        <div class="acciones-fila" *akinePermiso="permisoManage">
+                      <td class="tabla__acciones">
+                        <!-- La unica accion es destructiva: va en el menu "⋯", nunca suelta. -->
+                        <app-acciones-de-fila
+                          *akinePermiso="permisoManage"
+                          [de]="
+                            (excepcion.tipo === 'APERTURA' ? 'la apertura ' : 'el cierre ') +
+                            excepcion.id
+                          "
+                        >
                           <button
                             type="button"
-                            class="boton boton--secundario"
+                            class="accion--peligro"
                             (click)="abrirBaja(excepcion)"
                           >
                             Dar de baja
                           </button>
-                        </div>
+                        </app-acciones-de-fila>
                       </td>
                     </tr>
-
-                    @if (bajaAbierta() === excepcion.id) {
-                      <tr class="fila-panel">
-                        <td colspan="6">
-                          <akine-confirmacion-con-motivo
-                            idCampo="baja-excepcion-reason"
-                            etiqueta="Motivo de la baja"
-                            textoConfirmar="Confirmar la baja"
-                            ayuda="Queda en la auditoria con tu nombre y la fecha: cancelar una licencia es un hecho que hay que poder reconstruir."
-                            [titulo]="
-                              'Dar de baja ' +
-                              (excepcion.tipo === 'APERTURA' ? 'la apertura' : 'el cierre') +
-                              ' de ' +
-                              alcanceDe(excepcion)
-                            "
-                            [enviando]="enviando() || impacto()?.tipo === 'consultando'"
-                            (confirmado)="enviarBaja($event)"
-                            (cancelado)="cerrarBaja()"
-                          >
-                            <p class="ayuda">
-                              La fila no se borra: queda inactiva con sus fechas intactas, su motivo
-                              y su autor. Si la excepción vuelve a hacer falta, se carga como una
-                              nueva.
-                            </p>
-                            <app-impacto-previo
-                              [estado]="impacto()"
-                              [nombreDe]="excepcion.membershipId ? null : nombreDeProfesional"
-                            />
-                          </akine-confirmacion-con-motivo>
-
-                          <div aria-live="polite">
-                            @if (errorAccion(); as mensaje) {
-                              <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-                            }
-                            @if (hayQueRecargar()) {
-                              <button type="button" class="boton" (click)="consultar()">
-                                Recargar el periodo
-                              </button>
-                            }
-                          </div>
-                        </td>
-                      </tr>
-                    }
                   }
                 </tbody>
               </table>
@@ -388,7 +353,7 @@
                 esto, no encontrar a alguien se lee como "no esta vinculado a esta sede".
               -->
               @if (!listaCompleta()) {
-                <p class="ayuda">{{ textoListaIncompleta }}</p>
+                <p class="ayuda ayuda--fija">{{ textoListaIncompleta }}</p>
               }
             } @else {
               <p class="estado estado--error" role="alert">
@@ -632,3 +597,64 @@
     </aside>
   }
 </div>
+
+<!--
+  Baja en un panel lateral (refactor UX/UI del 28/10/2026). Antes era una fila de la tabla con el
+  impacto previo adentro, que partia el listado. El alta sigue en su columna al costado: es un
+  formulario largo con avisos que hay que leer mirando las excepciones que ya existen.
+-->
+@if (excepcionEnBaja(); as excepcion) {
+  <app-panel-lateral
+    [titulo]="
+      'Dar de baja ' +
+      (excepcion.tipo === 'APERTURA' ? 'la apertura' : 'el cierre') +
+      ' de ' +
+      alcanceDe(excepcion)
+    "
+    [subtitulo]="
+      'Del ' +
+      etiquetaDeFecha(excepcion.fechaDesde) +
+      ' al ' +
+      ultimoDiaCubierto(excepcion) +
+      ' inclusive'
+    "
+    (cerrar)="cerrarBaja()"
+  >
+    <akine-confirmacion-con-motivo
+      idCampo="baja-excepcion-reason"
+      etiqueta="Motivo de la baja"
+      textoConfirmar="Confirmar la baja"
+      ayuda="Queda en la auditoria con tu nombre y la fecha."
+      [titulo]="
+        'Dar de baja ' +
+        (excepcion.tipo === 'APERTURA' ? 'la apertura' : 'el cierre') +
+        ' de ' +
+        alcanceDe(excepcion)
+      "
+      [mostrarTitulo]="false"
+      [enviando]="enviando() || impacto()?.tipo === 'consultando'"
+      (confirmado)="enviarBaja($event)"
+      (cancelado)="cerrarBaja()"
+    >
+      <p class="ayuda ayuda--fija">
+        La fila no se borra: queda inactiva con sus fechas, su motivo y su autor. Si vuelve a hacer
+        falta, se carga como una nueva.
+      </p>
+      <app-impacto-previo
+        [estado]="impacto()"
+        [nombreDe]="excepcion.membershipId ? null : nombreDeProfesional"
+      />
+    </akine-confirmacion-con-motivo>
+
+    <div aria-live="polite">
+      @if (errorAccion(); as mensaje) {
+        <p class="estado estado--error" role="alert">{{ mensaje }}</p>
+      }
+      @if (hayQueRecargar()) {
+        <button type="button" class="boton boton--secundario" (click)="consultar()">
+          Recargar el periodo
+        </button>
+      }
+    </div>
+  </app-panel-lateral>
+}

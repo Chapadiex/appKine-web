@@ -52,6 +52,7 @@ import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { Filtros } from '../../../../shared/components/filtros/filtros';
 import { AccionesDeFila } from '../../../../shared/components/acciones-de-fila/acciones-de-fila';
+import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
 import {
   FiltrosRapidos,
   FiltroRapido,
@@ -138,6 +139,7 @@ type Heredable = '' | 'true' | 'false';
     RouterLink,
     PermisoDirective,
     ConfirmacionConMotivo,
+    PanelLateral,
   ],
   templateUrl: './ofertas-de-la-sede-page.html',
   styleUrl: '../../offering.css',
@@ -274,6 +276,17 @@ export class OfertasDeLaSedePage {
     null,
   );
 
+  /**
+   * La oferta del panel abierto. El panel lateral vive fuera de la tabla (refactor UX/UI del
+   * 28/10/2026), asi que la busca en el listado filtrado en vez de recibirla del `@for` de la fila.
+   */
+  protected readonly ofertaEnPanel = computed(() => {
+    const panel = this.panel();
+    return panel === null
+      ? null
+      : (this.ofertas().find((oferta) => oferta.id === panel.id) ?? null);
+  });
+
   /** `true` mientras el panel de alta esta abierto. El alta y la edicion se excluyen. */
   protected readonly altaAbierta = signal(false);
 
@@ -406,11 +419,6 @@ export class OfertasDeLaSedePage {
     this.cerrarPanel();
     this.filtroServicio.set(valor === '' || !Number.isFinite(id) ? null : id);
     this.cargar();
-  }
-
-  protected panelAbierto(id: number | undefined, tipo: TipoAccion): boolean {
-    const panel = this.panel();
-    return panel !== null && panel.id === id && panel.tipo === tipo;
   }
 
   protected abrirAlta(): void {

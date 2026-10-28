@@ -121,8 +121,9 @@ describe('VigenciasPage', () => {
     const acciones = [...anfitrion.querySelectorAll('tbody button')].map((boton) =>
       (boton.textContent ?? '').trim(),
     );
-    // Solo la vigencia ACTIVA ofrece baja. Ninguna ofrece edicion, y no es que este escondida.
-    expect(acciones).toEqual(['Dar de baja']);
+    // Solo la vigencia ACTIVA ofrece baja, en el menu "⋯" porque es destructiva. Ninguna ofrece
+    // edicion, y no es que este escondida.
+    expect(acciones).toEqual([expect.stringContaining('Más acciones de'), 'Dar de baja']);
     expect(anfitrion.textContent).not.toContain('Editar');
     expect(anfitrion.textContent).toContain('se cierra y se abre otra');
 
@@ -181,10 +182,12 @@ describe('VigenciasPage', () => {
     expect(anfitrion.textContent).toContain('250101');
     // Pero no hay ni alta ni baja: el backend responde 403 y ofrecerlo seria ofrecer un error.
     expect(anfitrion.textContent).toContain('lo mantiene AKINE');
-    // El embudo de los filtros y el orden de las columnas no son acciones sobre el nomenclador:
-    // no cuentan.
+    // El embudo de los filtros, el orden de las columnas y el "?" del titulo no son acciones
+    // sobre el nomenclador: no cuentan.
     expect(
-      anfitrion.querySelectorAll('button:not(.filtros-barra__boton):not(.tabla__orden)').length,
+      anfitrion.querySelectorAll(
+        'button:not(.filtros-barra__boton):not(.tabla__orden):not(.ayuda-contextual__boton)',
+      ).length,
     ).toBe(0);
     expect(anfitrion.querySelector('a[href="/catalogo/solicitudes"]')).not.toBeNull();
   });

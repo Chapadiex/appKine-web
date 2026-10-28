@@ -40,6 +40,7 @@ import {
   sePuedeAnular,
 } from '../../models/etiquetas-de-obligacion';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
+import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
 import { Icono } from '../../../../shared/components/icono/icono';
@@ -100,6 +101,7 @@ type EstadoCuenta =
 @Component({
   selector: 'app-cuenta-corriente-page',
   imports: [
+    PanelLateral,
     CabeceraDeFicha,
     Ayuda,
     ColumnaOrdenable,
@@ -173,6 +175,17 @@ export class CuentaCorrientePage {
 
   /** Deuda que se esta anulando, o `null`. Solo una a la vez. */
   protected readonly objetivo = signal<Obligacion | null>(null);
+
+  /**
+   * La deuda del panel de anulacion. El panel lateral vive fuera de la tabla (refactor UX/UI del
+   * 28/10/2026), asi que la busca en la pagina en vez de recibirla del `@for` de la fila.
+   */
+  protected readonly obligacionEnPanel = computed(() => {
+    const objetivo = this.objetivo();
+    return objetivo === null
+      ? null
+      : (this.tabla.visibles().find((obligacion) => obligacion.id === objetivo.id) ?? null);
+  });
 
   protected readonly enviando = signal(false);
   protected readonly errorAccion = signal<ErrorObligacion | null>(null);
@@ -258,6 +271,14 @@ export class CuentaCorrientePage {
 
   /** El cobro cuyo saldo se esta imputando, o `null`. */
   protected readonly imputando = signal<Cobro | null>(null);
+
+  /** El cobro del panel de imputacion, buscado en la lista de saldos a favor. */
+  protected readonly cobroImputando = computed(() => {
+    const imputando = this.imputando();
+    return imputando === null
+      ? null
+      : (this.conSaldoAFavor().find((cobro) => cobro.id === imputando.id) ?? null);
+  });
   /** Importe tipeado por deuda, por id de obligacion. Vacio = esa deuda no se toca. */
   protected readonly importesDeImputacion = signal<Readonly<Record<number, string>>>({});
   protected readonly imputacionIntentada = signal(false);

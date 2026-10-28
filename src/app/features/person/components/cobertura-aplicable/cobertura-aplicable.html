@@ -67,10 +67,12 @@
                     {{ importe(arancel.importeFinanciador) }} · coseguro
                     {{ importe(arancel.coseguro) }}.
                   </p>
-                  <p class="ayuda">{{ origenDelArancel(arancel) }}. {{ requisitos(arancel) }}</p>
+                  <p class="ayuda ayuda--fija">
+                    {{ origenDelArancel(arancel) }}. {{ requisitos(arancel) }}
+                  </p>
                 }
                 @if (aplicable.credencialVencida) {
-                  <p class="ayuda">
+                  <p class="ayuda ayuda--fija">
                     <b>La credencial esta vencida</b>
                     @if (aplicable.credencialVigenciaHasta) {
                       (vencio el {{ fechaEnPalabras(aplicable.credencialVigenciaHasta) }})

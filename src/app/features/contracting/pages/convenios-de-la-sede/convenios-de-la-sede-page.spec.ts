@@ -176,7 +176,7 @@ describe('ConveniosDeLaSedePage', () => {
     elegir(fixture, '#alta-convenio-modalidad', 'POR_PRESTACION');
     escribir(fixture, '#alta-convenio-moneda', 'ars');
     escribir(fixture, '#alta-convenio-desde', '2026-01-01');
-    enviar(fixture, 'form[novalidate]');
+    enviar(fixture, '.panel-lateral form');
 
     const alta = httpMock.expectOne(
       (peticion: HttpRequest<unknown>) => peticion.method === 'POST' && peticion.url === CONVENIOS,
@@ -214,7 +214,7 @@ describe('ConveniosDeLaSedePage', () => {
     elegir(fixture, '#alta-convenio-modalidad', 'POR_PRESTACION');
     escribir(fixture, '#alta-convenio-moneda', 'ARS');
     escribir(fixture, '#alta-convenio-desde', '2026-01-01');
-    enviar(fixture, 'form[novalidate]');
+    enviar(fixture, '.panel-lateral form');
 
     httpMock
       .expectOne(
@@ -244,7 +244,7 @@ describe('ConveniosDeLaSedePage', () => {
 
     abrir(fixture, 'Editar');
     escribir(fixture, '#editar-convenio-hasta', '2026-12-31');
-    enviar(fixture, 'tr.fila-panel form');
+    enviar(fixture, '.panel-lateral form');
 
     const edicion = httpMock.expectOne(
       (peticion: HttpRequest<unknown>) =>
@@ -284,7 +284,7 @@ describe('ConveniosDeLaSedePage', () => {
     escribir(fixture, '#alta-convenio-observaciones', 'Renovacion anual');
     marcar(fixture, '#alta-convenio-orden');
     marcar(fixture, '#alta-convenio-credencial');
-    enviar(fixture, 'form[novalidate]');
+    enviar(fixture, '.panel-lateral form');
 
     const alta = httpMock.expectOne(
       (peticion: HttpRequest<unknown>) => peticion.method === 'POST' && peticion.url === CONVENIOS,
@@ -316,7 +316,7 @@ describe('ConveniosDeLaSedePage', () => {
     const fixture = await montar();
 
     abrir(fixture, 'Firmar un convenio');
-    enviar(fixture, 'form[novalidate]');
+    enviar(fixture, '.panel-lateral form');
 
     httpMock.expectNone((peticion: HttpRequest<unknown>) => peticion.method === 'POST');
     const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
@@ -337,7 +337,7 @@ describe('ConveniosDeLaSedePage', () => {
     escribir(fixture, '#editar-convenio-documentacion', 'Credencial vigente');
     escribir(fixture, '#editar-convenio-observaciones', 'Revisado en febrero');
     marcar(fixture, '#editar-convenio-autorizacion');
-    enviar(fixture, 'tr.fila-panel form');
+    enviar(fixture, '.panel-lateral form');
 
     const edicion = httpMock.expectOne(
       (peticion: HttpRequest<unknown>) =>
@@ -364,13 +364,13 @@ describe('ConveniosDeLaSedePage', () => {
     const fixture = await montar();
 
     abrir(fixture, 'Dar de baja');
-    const panel = (fixture.nativeElement as HTMLElement).querySelector('tr.fila-panel');
+    const panel = (fixture.nativeElement as HTMLElement).querySelector('.panel-lateral');
     expect(panel?.textContent).toContain('la operación NO es esta');
     expect(panel?.textContent).toContain('No cascadea a los aranceles');
 
     escribir(fixture, '#baja-convenio-motivo', 'Se rescindio el contrato');
     const confirmar = [
-      ...(fixture.nativeElement as HTMLElement).querySelectorAll('tr.fila-panel button'),
+      ...(fixture.nativeElement as HTMLElement).querySelectorAll('.panel-lateral button'),
     ].find((boton) => (boton.textContent ?? '').trim() === 'Dar de baja');
     (confirmar as HTMLButtonElement).click();
     fixture.detectChanges();
@@ -396,7 +396,7 @@ describe('ConveniosDeLaSedePage', () => {
 
     abrir(fixture, 'Editar');
     escribir(fixture, '#editar-convenio-nombre', 'OSDE 210 rehabilitacion');
-    enviar(fixture, 'tr.fila-panel form');
+    enviar(fixture, '.panel-lateral form');
 
     httpMock
       .expectOne(

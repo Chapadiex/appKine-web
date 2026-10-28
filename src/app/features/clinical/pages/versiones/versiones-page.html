@@ -15,6 +15,10 @@
       Cada enmienda deja una versión nueva y la anterior queda intacta. La versión 1 es lo que se
       asentó al cerrar. Las versiones son de solo lectura; la vigente es la última.
     </p>
+    <p>
+      Lo que no se enmienda vale igual en todas las versiones: la asistencia, los números de sesión
+      y las fechas de la atención.
+    </p>
   </app-ayuda>
   @if (sesion(); as atencion) {
     @if (atencion.numeroSesion !== undefined) {
@@ -72,10 +76,6 @@
               <dd>{{ versiones().length }}</dd>
             </div>
           </dl>
-          <p class="ayuda">
-            Lo que no se enmienda vale igual en todas las versiones: la asistencia, los números de
-            sesión y las fechas de la atención.
-          </p>
         </section>
 
         @if (versiones().length === 0 && !cargando()) {
@@ -131,7 +131,7 @@
               }
             }
 
-            <p class="ayuda" role="status">
+            <p class="ayuda ayuda--fija" role="status">
               @if (cantidadDeCambios() === 0) {
                 Las dos versiones dicen lo mismo.
               } @else if (cantidadDeCambios() === 1) {

@@ -154,7 +154,13 @@ test.describe('Circuito de F9 de punta a punta contra el backend real', () => {
       page.getByText(`${carla.apellido}, ${carla.nombre} quedo en la lista de espera, posicion 1.`),
     ).toBeVisible();
 
-    await page
+    // La baja va en el menu "⋯" de la fila (refactor UX/UI del 28/10/2026).
+    const filaDeBruno = page
+      .getByRole('region', { name: 'Inscriptos con lugar' })
+      .getByRole('row')
+      .filter({ hasText: `${bruno.apellido}, ${bruno.nombre}` });
+    await abrirAcciones(filaDeBruno);
+    await filaDeBruno
       .getByRole('button', { name: `Dar de baja a ${bruno.apellido}, ${bruno.nombre}` })
       .click();
     await page.getByLabel('Motivo de la baja').fill('Cambio de horario laboral');

@@ -41,26 +41,9 @@
     }
 
     <p class="estado estado--ok" role="status">{{ aviso() }}</p>
-    @if (errorDeOperacion(); as problema) {
-      <div class="tarjeta" role="alert">
-        <p class="estado estado--error">{{ problema.mensaje }}</p>
-        <div class="acciones">
-          @if (problema.planQueOcupaId; as otro) {
-            <button type="button" class="boton boton--secundario" (click)="irAlPlan(otro)">
-              Ir al plan que ocupa el lugar
-            </button>
-          }
-          @if (
-            problema.causa === 'version-vieja' ||
-            problema.causa === 'transicion-invalida' ||
-            problema.causa === 'conflicto'
-          ) {
-            <button type="button" class="boton boton--secundario" (click)="releer()">
-              Releer el plan
-            </button>
-          }
-        </div>
-      </div>
+    <!-- Con el editor abierto, el rechazo se muestra dentro del panel, que es lo que esta a la vista. -->
+    @if (editor() === null) {
+      <ng-container *ngTemplateOutlet="rechazo" />
     }
 
     @if (planes().length === 0) {
@@ -180,7 +163,7 @@
               </app-ayuda>
             </div>
             @if (avance(); as a) {
-              <p class="ayuda">De la versión {{ a.numeroVersion }}.</p>
+              <p class="ayuda ayuda--fija">De la versión {{ a.numeroVersion }}.</p>
               @if ((a.items ?? []).length === 0) {
                 <p class="estado estado--vacio">El plan no tiene items planificados.</p>
               } @else {
@@ -196,7 +179,7 @@
                         [value]="item.realizadas ?? 0"
                         [max]="item.planificadas || 1"
                       ></progress>
-                      <p class="ayuda">{{ resumenDeAvance(item) }}</p>
+                      <p class="ayuda ayuda--fija">{{ resumenDeAvance(item) }}</p>
                     </li>
                   }
                 </ul>
@@ -329,11 +312,17 @@
       </div>
     }
 
+    <!--
+      El editor del plan en un panel lateral amplio (refactor UX/UI del 28/10/2026). Antes se abria
+      al pie de la pagina, debajo de las versiones: se editaba sin ver el plan vigente.
+    -->
     @if (editor(); as e) {
-      <section class="tarjeta" aria-labelledby="titulo-editor">
-        <h2 id="titulo-editor">
-          {{ e.modo === 'crear' ? 'Crear un plan' : 'Modificar el plan' }}
-        </h2>
+      <app-panel-lateral
+        ancho="amplio"
+        [titulo]="e.modo === 'crear' ? 'Crear un plan' : 'Modificar el plan'"
+        (cerrar)="cerrarEditor()"
+      >
+        <ng-container *ngTemplateOutlet="rechazo" />
         <form (submit)="$event.preventDefault(); guardar()">
           <div class="campo">
             <label for="plan-objetivos">Objetivos</label>
@@ -469,7 +458,31 @@
             </button>
           </div>
         </form>
-      </section>
+      </app-panel-lateral>
     }
   }
 }
+
+<ng-template #rechazo>
+  @if (errorDeOperacion(); as problema) {
+    <div class="tarjeta" role="alert">
+      <p class="estado estado--error">{{ problema.mensaje }}</p>
+      <div class="acciones">
+        @if (problema.planQueOcupaId; as otro) {
+          <button type="button" class="boton boton--secundario" (click)="irAlPlan(otro)">
+            Ir al plan que ocupa el lugar
+          </button>
+        }
+        @if (
+          problema.causa === 'version-vieja' ||
+          problema.causa === 'transicion-invalida' ||
+          problema.causa === 'conflicto'
+        ) {
+          <button type="button" class="boton boton--secundario" (click)="releer()">
+            Releer el plan
+          </button>
+        }
+      </div>
+    </div>
+  }
+</ng-template>

@@ -117,7 +117,7 @@ test.describe('Contraste no textual, foco y teclado', () => {
       // reintentar. Era una carrera contra el change detection: fallaba solo en un runner lento.
       const fila = page.getByRole('row').filter({ hasText: 'Ibarra, Dario' });
       const abrir = fila.getByRole('button', { name: 'Atender como Particular', exact: true });
-      const panel = page.getByRole('region', { name: 'Confirmar la transicion de la recepción' });
+      const panel = page.getByRole('dialog');
       // "Atender como Particular" vive en el menu "⋯" de la fila (decidido el 22/10/2026): elegirlo
       // cierra el menu, y el foco que vuelve al cerrar el panel es el del boton "⋯".
       const menu = fila.getByRole('button', { name: /^Más acciones de / });

@@ -66,6 +66,8 @@ import {
   PESTANAS_DE_HORARIOS,
 } from '../../models/pestanas-de-horarios';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { AccionesDeFila } from '../../../../shared/components/acciones-de-fila/acciones-de-fila';
+import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
 
 /** Operacion abierta sobre un bloque. Solo una a la vez, y nunca junto con el alta. */
 type TipoAccion = 'editar' | 'baja';
@@ -113,6 +115,8 @@ interface DiaConBloques {
 @Component({
   selector: 'app-horario-semanal-page',
   imports: [
+    PanelLateral,
+    AccionesDeFila,
     Ayuda,
     Icono,
     Pestanas,
@@ -238,6 +242,24 @@ export class HorarioSemanalPage {
   protected readonly panel = signal<{ readonly id: number; readonly tipo: TipoAccion } | null>(
     null,
   );
+
+  /**
+   * El bloque del panel abierto, con su dia. El panel lateral vive fuera de la semana (refactor
+   * UX/UI del 28/10/2026), asi que lo busca en los dias en vez de recibirlo del `@for`.
+   */
+  protected readonly bloqueEnPanel = computed(() => {
+    const panel = this.panel();
+    if (panel === null) {
+      return null;
+    }
+    for (const dia of this.semana()) {
+      const bloque = dia.bloques.find((candidato) => candidato.id === panel.id);
+      if (bloque !== undefined) {
+        return { bloque, dia };
+      }
+    }
+    return null;
+  });
 
   /** Bloque tal como lo devolvio el backend: es de donde sale la `version` del `PUT`. */
   private readonly original = signal<BloqueResponse | null>(null);

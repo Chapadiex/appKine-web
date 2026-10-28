@@ -1,4 +1,5 @@
 import { Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
 import { RouterLink } from '@angular/router';
 
 import { Agenda } from '../../../../api/generated/model/agenda';
@@ -31,6 +32,7 @@ import {
 import { SchedulingApi } from '../../services/scheduling-api';
 import { AlcanceSerie, SeriesApi } from '../../services/series-api';
 import { AccionesDeFila } from '../../../../shared/components/acciones-de-fila/acciones-de-fila';
+import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 
 /** Estados en los que un turno todavia se puede cancelar. El resto lo omite el backend. */
@@ -93,7 +95,15 @@ interface Resultado {
  */
 @Component({
   selector: 'app-serie-de-turnos-page',
-  imports: [Ayuda, RouterLink, ConfirmacionConMotivo, SelectorDeHorario, AccionesDeFila],
+  imports: [
+    Ayuda,
+    RouterLink,
+    NgTemplateOutlet,
+    ConfirmacionConMotivo,
+    SelectorDeHorario,
+    AccionesDeFila,
+    PanelLateral,
+  ],
   templateUrl: './serie-de-turnos-page.html',
   styleUrl: '../../agenda.css',
 })

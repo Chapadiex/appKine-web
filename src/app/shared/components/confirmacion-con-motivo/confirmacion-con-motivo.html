@@ -1,9 +1,11 @@
 <form [formGroup]="formulario" (ngSubmit)="confirmar()" novalidate>
-  <h3 class="panel__titulo">{{ titulo() }}</h3>
+  @if (mostrarTitulo()) {
+    <h3 class="panel__titulo">{{ titulo() }}</h3>
+  }
 
   <ng-content />
 
-  <div class="campo">
+  <div class="campo campo--ancho">
     <label [attr.for]="idCampo()">{{ etiqueta() }}</label>
     <input
       #campoMotivo
@@ -15,7 +17,7 @@
       [attr.aria-describedby]="descrito"
     />
     @if (ayuda() !== '') {
-      <p class="ayuda" [id]="idAyuda">{{ ayuda() }}</p>
+      <p class="ayuda ayuda--fija" [id]="idAyuda">{{ ayuda() }}</p>
     }
     @if (mostrarError()) {
       <p class="campo__error" [id]="idError">{{ textoError() }}</p>

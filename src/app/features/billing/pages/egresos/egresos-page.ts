@@ -32,6 +32,7 @@ import {
 import { fechaEnPalabras, importeEnPalabras } from '../../models/etiquetas-de-obligacion';
 import { fechaIsoEnPalabras } from '../../models/etiquetas-de-presentacion';
 import { EgresosApi } from '../../services/egresos-api';
+import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { Filtros } from '../../../../shared/components/filtros/filtros';
 import { Icono } from '../../../../shared/components/icono/icono';
@@ -84,7 +85,7 @@ const PAGINA = 50;
  */
 @Component({
   selector: 'app-egresos-page',
-  imports: [Ayuda, Filtros, Icono, ReactiveFormsModule, RouterLink],
+  imports: [PanelLateral, Ayuda, Filtros, Icono, ReactiveFormsModule, RouterLink],
   templateUrl: './egresos-page.html',
   styleUrls: ['../../billing.css', '../../economia.css'],
 })
@@ -266,6 +267,20 @@ export class EgresosPage {
         error: (error: unknown) =>
           this.estado.set({ tipo: 'error', error: traducirErrorEgreso(error) }),
       });
+  }
+
+  /** El panel de alta (refactor UX/UI del 28/10/2026): se abre desde "Registrar egreso". */
+  protected readonly altaAbierta = signal(false);
+
+  protected abrirAlta(): void {
+    this.errorAlta.set(null);
+    this.altaAbierta.set(true);
+  }
+
+  protected cerrarAlta(): void {
+    if (!this.creando()) {
+      this.altaAbierta.set(false);
+    }
   }
 
   protected crear(): void {

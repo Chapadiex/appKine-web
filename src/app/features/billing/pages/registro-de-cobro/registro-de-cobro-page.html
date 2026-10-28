@@ -171,7 +171,7 @@
                     [attr.aria-describedby]="'ayuda-imputacion-' + deuda.id"
                     (input)="cambiarImporte(deuda, $any($event.target).value)"
                   />
-                  <p class="ayuda" [id]="'ayuda-imputacion-' + deuda.id">
+                  <p class="ayuda ayuda--fija" [id]="'ayuda-imputacion-' + deuda.id">
                     Hasta {{ saldoEnPalabras(deuda) }}. Un saldo no puede quedar negativo: el
                     servidor descuenta solo si alcanza.
                   </p>
@@ -185,7 +185,7 @@
       <fieldset class="grupo">
         <legend>Cómo entró la plata</legend>
 
-        <p class="ayuda">
+        <p class="ayuda ayuda--fija">
           @if (modoPrepago()) {
             Se propone el precio particular de la prestación; es editable, el importe lo decide
             quien cobra. El efectivo necesita la caja abierta.
@@ -317,7 +317,7 @@
       <p class="estado estado--error">{{ fallo.mensaje }}</p>
 
       @if (fallo.motivo) {
-        <p class="ayuda">Lo que dijo el servidor: {{ fallo.motivo }}</p>
+        <p class="ayuda ayuda--fija">Lo que dijo el servidor: {{ fallo.motivo }}</p>
       }
 
       @if (fallo.causa === 'prepago-no-admitido' || fallo.causa === 'prepago-ya-registrado') {
@@ -335,7 +335,7 @@
       }
 
       @if (fallo.causa === 'no-cuadra' && fallo.esperado !== null && fallo.recibido !== null) {
-        <p class="ayuda">
+        <p class="ayuda ayuda--fija">
           El total declarado era {{ importeDelRechazo(fallo.esperado) }} y el servidor sumo
           {{ importeDelRechazo(fallo.recibido) }}.
         </p>

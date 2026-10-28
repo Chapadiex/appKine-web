@@ -59,6 +59,9 @@ export class ConfirmacionConMotivo {
   /** Encabezado del panel. Ej: "Dar de baja Sede Centro". */
   readonly titulo = input.required<string>();
 
+  /** `false` dentro de un panel lateral, que ya lleva el titulo en su cabecera. */
+  readonly mostrarTitulo = input(true);
+
   readonly etiqueta = input('Motivo');
 
   /** Texto de ayuda permanente bajo el campo. Vacio = no se renderiza. */

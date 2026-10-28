@@ -485,3 +485,34 @@ textarea:disabled {
   margin: var(--esp-1) 0 0;
   font-weight: var(--peso-normal);
 }
+
+/*
+ * Refactor UX/UI (28/10/2026): titulo de seccion dentro de un formulario en grilla ("Vigencia").
+ * Separa por espacio y titulo, no por borde, y ocupa la fila entera de la grilla.
+ */
+.formulario__seccion {
+  grid-column: 1 / -1;
+  margin: var(--esp-6) 0 var(--esp-4);
+  font-size: var(--tipo-sm);
+  font-weight: var(--peso-semi);
+}
+
+/* Un campo ancho dentro de una grilla de campos (plegables): la fila entera, como en `form`. */
+.grilla-campos > .campo--ancho {
+  grid-column: 1 / -1;
+}
+
+/* El bloque cuyo panel lateral esta abierto: se sigue viendo cual se edita. */
+.bloque--seleccionado {
+  background: var(--color-acento-claro);
+}
+
+/* Una fecha de la barra de consulta: ancho de fecha, no de la fila entera. */
+.barra-consulta__fecha {
+  flex: 0 1 16rem;
+}
+
+/* La barra de consulta arriba del resultado, en la misma tarjeta. */
+.barra-consulta + [aria-live] {
+  margin-bottom: var(--esp-6);
+}

@@ -107,7 +107,7 @@ test.describe('Cobertura, orden y autorizacion de un paciente (B-6)', () => {
     // --- 1. Persona: alta en el padron ----------------------------------------------------
     await page.goto('/pacientes');
     await page.getByRole('button', { name: 'Dar de alta una persona' }).click();
-    const alta = page.getByRole('region', { name: 'Nueva persona' });
+    const alta = page.getByRole('dialog', { name: 'Nueva persona' });
     await alta.getByLabel('Apellido').fill(apellido);
     await alta.getByLabel('Nombre', { exact: true }).fill('Luis');
     await alta.getByRole('button', { name: 'Dar de alta', exact: true }).click();
@@ -123,7 +123,7 @@ test.describe('Cobertura, orden y autorizacion de un paciente (B-6)', () => {
     // --- 2. Sin perfil de paciente no hay cobertura: el backend lo dice con su tipo --------
     await page.goto(`/pacientes/${personaId}/coberturas`);
     await page.getByRole('button', { name: 'Agregar una cobertura' }).click();
-    const sinPerfil = page.getByRole('region', { name: 'Nueva cobertura' });
+    const sinPerfil = page.getByRole('dialog', { name: 'Nueva cobertura' });
     await sinPerfil.getByLabel('Vigente desde').fill(dia(-30));
     const rechazo = page.waitForResponse(
       (r) => r.request().method() === 'POST' && /\/personas\/\d+\/coberturas$/.test(r.url()),
@@ -152,7 +152,7 @@ test.describe('Cobertura, orden y autorizacion de un paciente (B-6)', () => {
     // --- 4. Cobertura financiada y principal -----------------------------------------------
     await page.goto(`/pacientes/${personaId}/coberturas`);
     await page.getByRole('button', { name: 'Agregar una cobertura' }).click();
-    const nueva = page.getByRole('region', { name: 'Nueva cobertura' });
+    const nueva = page.getByRole('dialog', { name: 'Nueva cobertura' });
     await nueva.getByLabel('Tipo').selectOption('FINANCIADA');
     await nueva.getByLabel('Vigente desde').fill(dia(-30));
     await nueva.getByLabel('Financiador').selectOption({ label: financiador });
@@ -169,14 +169,16 @@ test.describe('Cobertura, orden y autorizacion de un paciente (B-6)', () => {
     await page.goto(`/pacientes/${personaId}/autorizaciones`);
     const ordenes = page.getByRole('region', { name: 'Órdenes médicas' });
     await ordenes.getByRole('button', { name: 'Registrar una orden' }).click();
-    await ordenes.getByLabel('Profesional que la firmo').fill('Dra. Sintetica Prueba');
-    await ordenes.getByLabel('Matricula').fill('12345');
-    await ordenes.getByLabel('Número', { exact: true }).fill('ORD-1');
-    await ordenes.getByLabel('Fecha de emision').fill(dia(-12));
-    await ordenes.getByLabel('Vigente desde').fill(dia(-12));
-    await ordenes.getByLabel('Vigente hasta').fill(dia(60));
-    await ordenes.getByLabel('Sesiones prescriptas').fill('10');
-    await ordenes.getByRole('button', { name: 'Registrar orden' }).click();
+    // El alta se abre en un panel lateral (refactor UX/UI del 28/10/2026).
+    const altaDeOrden = page.getByRole('dialog', { name: 'Registrar una orden' });
+    await altaDeOrden.getByLabel('Profesional que la firmo').fill('Dra. Sintetica Prueba');
+    await altaDeOrden.getByLabel('Matricula').fill('12345');
+    await altaDeOrden.getByLabel('Número', { exact: true }).fill('ORD-1');
+    await altaDeOrden.getByLabel('Fecha de emision').fill(dia(-12));
+    await altaDeOrden.getByLabel('Vigente desde').fill(dia(-12));
+    await altaDeOrden.getByLabel('Vigente hasta').fill(dia(60));
+    await altaDeOrden.getByLabel('Sesiones prescriptas').fill('10');
+    await altaDeOrden.getByRole('button', { name: 'Registrar orden' }).click();
 
     const tablaOrdenes = page.getByRole('table', { name: /orden\(es\) del paciente/ });
     await expect(tablaOrdenes.getByRole('cell', { name: 'ORD-1', exact: true })).toBeVisible();
@@ -215,7 +217,7 @@ test.describe('Cobertura, orden y autorizacion de un paciente (B-6)', () => {
     await expect(page.getByRole('alert')).toBeVisible();
     await expect(vigente).toContainText('Es la que se pisa');
     await page
-      .getByRole('region', { name: 'Autorizaciones' })
+      .getByRole('dialog', { name: 'Registrar una autorización' })
       .getByRole('button', { name: 'Cancelar' })
       .click();
 
@@ -236,7 +238,7 @@ test.describe('Cobertura, orden y autorizacion de un paciente (B-6)', () => {
     // --- 9. Vencimiento de la vigente: el fin pasa a ayer y deja de habilitar ---------------
     await abrirAcciones(vigente);
     await vigente.getByRole('button', { name: 'Corregir' }).click();
-    const correccion = page.getByRole('region', { name: 'Corregir la autorización AUT-VIGENTE' });
+    const correccion = page.getByRole('dialog', { name: 'Corregir la autorización AUT-VIGENTE' });
     await correccion.getByLabel('Vigente hasta').fill(dia(-1));
     await correccion.getByRole('button', { name: 'Guardar la autorización' }).click();
 
@@ -301,8 +303,12 @@ async function registrarAutorizacion(
     hasta: string;
   },
 ): Promise<void> {
-  const formulario = page.getByRole('region', { name: 'Autorizaciones' });
-  await formulario.getByRole('button', { name: 'Registrar una autorización' }).click();
+  await page
+    .getByRole('region', { name: 'Autorizaciones' })
+    .getByRole('button', { name: 'Registrar una autorización' })
+    .click();
+  // El alta se abre en un panel lateral (refactor UX/UI del 28/10/2026).
+  const formulario = page.getByRole('dialog', { name: 'Registrar una autorización' });
   await formulario.getByLabel('Número').fill(datos.numero);
   // La unica cobertura activa del paciente.
   await formulario.getByLabel('Cobertura').selectOption({ index: 1 });

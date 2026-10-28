@@ -54,8 +54,9 @@ describe('NewConsultorioPage', () => {
 
     escribir(fixture, '#sede-name', 'Sede Norte');
     enviar(fixture);
+    enviar(fixture);
 
-    // Paso 2: se envia y el request se pierde en el camino (status 0 = nunca llego).
+    // Paso 3: se envia y el request se pierde en el camino (status 0 = nunca llego).
     enviar(fixture);
     const primero = httpMock.expectOne(RUTA_ALTA);
     const clave = primero.request.headers.get('Idempotency-Key');
@@ -77,7 +78,9 @@ describe('NewConsultorioPage', () => {
 
     // Ahora el usuario corrige el nombre: es otra alta, no un reintento. Reusar la clave
     // daria 409 idempotency-key-conflict y dejaria el formulario trabado para siempre.
+    volverAlPaso(fixture, 'Configuración inicial');
     escribir(fixture, '#sede-contactEmail', 'sede.norte@ejemplo.test');
+    enviar(fixture);
     enviar(fixture);
     const tercero = httpMock.expectOne(RUTA_ALTA);
     expect(tercero.request.headers.get('Idempotency-Key')).not.toBe(clave);
@@ -110,6 +113,7 @@ describe('NewConsultorioPage', () => {
     escribir(fixture, '#sede-slotMinutes', '');
     enviar(fixture);
     enviar(fixture);
+    enviar(fixture);
 
     const alta = httpMock.expectOne(RUTA_ALTA);
     expect(alta.request.body).toEqual({ name: 'Sede Norte' });
@@ -126,6 +130,7 @@ describe('NewConsultorioPage', () => {
     const fixture = montar();
 
     escribir(fixture, '#sede-name', 'Sede Norte');
+    enviar(fixture);
     enviar(fixture);
     enviar(fixture);
 
@@ -156,6 +161,7 @@ describe('NewConsultorioPage', () => {
       const fixture = montar();
 
       escribir(fixture, '#sede-name', 'Sede Norte');
+      enviar(fixture);
       escribir(fixture, '#sede-boxNombre', 'Box 1');
       escribir(fixture, '#sede-boxCapacidad', '2');
       agregarFranja(fixture);
@@ -166,7 +172,7 @@ describe('NewConsultorioPage', () => {
       escribir(fixture, '#sede-horario-hasta-1', '24:00');
       enviar(fixture);
 
-      // El resumen del paso 2 dice lo que se va a crear, medianoche incluida.
+      // La confirmacion dice lo que se va a crear, medianoche incluida.
       expect(texto(fixture)).toContain('Box 1 (capacidad 2)');
       expect(texto(fixture)).toContain('Lunes: 14:00 a medianoche (24:00)');
 
@@ -192,6 +198,7 @@ describe('NewConsultorioPage', () => {
       const fixture = montar();
 
       escribir(fixture, '#sede-name', 'Sede Norte');
+      enviar(fixture);
       agregarFranja(fixture);
       escribir(fixture, '#sede-horario-desde-0', '09:00');
       escribir(fixture, '#sede-horario-hasta-0', '13:00');
@@ -200,14 +207,15 @@ describe('NewConsultorioPage', () => {
       escribir(fixture, '#sede-horario-hasta-1', '18:00');
       enviar(fixture);
 
-      expect(texto(fixture)).toContain('Paso 1 de 2');
+      expect(texto(fixture)).toContain('Paso 2 de 3');
       expect(texto(fixture)).toContain('Se pisa con otra franja del mismo día');
     });
 
-    it('un 400 sobre una franja vuelve al paso 1 y marca esa franja, no un cartel generico', async () => {
+    it('un 400 sobre una franja vuelve al paso 2 y marca esa franja, no un cartel generico', async () => {
       const fixture = montar();
 
       escribir(fixture, '#sede-name', 'Sede Norte');
+      enviar(fixture);
       agregarFranja(fixture);
       escribir(fixture, '#sede-horario-desde-0', '09:00');
       escribir(fixture, '#sede-horario-hasta-0', '13:00');
@@ -228,7 +236,7 @@ describe('NewConsultorioPage', () => {
       await fixture.whenStable();
       fixture.detectChanges();
 
-      expect(texto(fixture)).toContain('Paso 1 de 2');
+      expect(texto(fixture)).toContain('Paso 2 de 3');
       const error = fixture.nativeElement.querySelector('#sede-horario-error-1');
       expect(error?.textContent).toContain('La hora de cierre tiene que ser HH:mm');
       expect(fixture.nativeElement.querySelector('#sede-horario-error-0')).toBeNull();
@@ -275,5 +283,20 @@ function agregarFranja(fixture: { nativeElement: HTMLElement; detectChanges(): v
 function enviar(fixture: { nativeElement: HTMLElement; detectChanges(): void }) {
   const formulario = fixture.nativeElement.querySelector<HTMLFormElement>('form');
   formulario?.dispatchEvent(new Event('submit'));
+  fixture.detectChanges();
+}
+
+/** Vuelve a un paso ya hecho desde el indicador de pasos, como lo haria el usuario. */
+function volverAlPaso(
+  fixture: { nativeElement: HTMLElement; detectChanges(): void },
+  titulo: string,
+) {
+  const boton = Array.from(
+    fixture.nativeElement.querySelectorAll<HTMLButtonElement>('.asistente__volver'),
+  ).find((candidato) => candidato.textContent?.includes(titulo));
+  if (boton === undefined) {
+    throw new Error(`No hay un paso hecho llamado ${titulo}`);
+  }
+  boton.click();
   fixture.detectChanges();
 }

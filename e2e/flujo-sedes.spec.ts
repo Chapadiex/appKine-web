@@ -69,6 +69,8 @@ test.describe('Sedes contra el backend real', () => {
     const nombre = `Sede Norte ${sufijo}`;
     await navegar(page, '/organizacion/sedes/nueva');
     await page.getByLabel('Nombre de la sede').fill(nombre);
+    // Paso 1 -> 2: el box y el horario son la configuracion inicial opcional.
+    await page.getByRole('button', { name: 'Continuar' }).click();
     await page.getByLabel('Nombre del box').fill('Box 1');
     await page.getByRole('button', { name: 'Agregar una franja' }).click();
     await page.locator('#sede-horario-dia-0').selectOption({ label: 'Lunes' });
@@ -89,7 +91,9 @@ test.describe('Sedes contra el backend real', () => {
     const region = page.getByRole('region', { name: 'Sedes de la organización' });
     const fila = region.getByRole('row').filter({ hasText: nombre });
     await expect(fila).toBeVisible();
-    await fila.getByRole('button', { name: 'Dar de baja' }).click();
+    // La baja vive en el menu "⋯" de la fila y se confirma en el panel lateral.
+    await fila.getByRole('button', { name: /Más acciones de/ }).click();
+    await page.getByRole('button', { name: 'Dar de baja' }).click();
     await page.locator('#baja-reason').fill('Se cierra la sede norte');
     const baja = respuestaDe(page, 'POST', /\/consultorios\/\d+\/deactivate$/);
     await page.getByRole('button', { name: 'Confirmar la baja' }).click();

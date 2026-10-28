@@ -45,6 +45,8 @@ import {
 } from '../../../../shared/components/tabla/orden-de-servidor';
 import { textoDeBusqueda } from '../../../../shared/utils/texto-de-busqueda';
 import { ListEspaciosRequestParams } from '../../../../api/generated/api/espacios.serviceInterface';
+import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
+import { AccionesDeFila } from '../../../../shared/components/acciones-de-fila/acciones-de-fila';
 
 /** Filtro de estado del listado. Los tres valores son los del contrato. */
 type FiltroEstado = 'ACTIVO' | 'INACTIVO' | 'TODOS';
@@ -106,6 +108,8 @@ const POR_PAGINA = 20;
     PermisoDirective,
     Paginacion,
     ConfirmacionConMotivo,
+    PanelLateral,
+    AccionesDeFila,
   ],
   templateUrl: './espacios-page.html',
   styleUrl: '../../resource.css',
@@ -148,6 +152,17 @@ export class EspaciosPage {
   protected readonly panel = signal<{ readonly id: number; readonly tipo: TipoAccion } | null>(
     null,
   );
+
+  /**
+   * Lo del panel abierto. El panel lateral vive fuera de la tabla (refactor UX/UI del 28/10/2026),
+   * asi que lo busca en el listado en vez de recibirlo del `@for` de la fila.
+   */
+  protected readonly espacioEnPanel = computed(() => {
+    const panel = this.panel();
+    return panel === null
+      ? null
+      : (this.espaciosDeLaPagina().find((espacio) => espacio.id === panel.id) ?? null);
+  });
 
   /**
    * Espacio tal como lo devolvio el backend la ultima vez, para el panel abierto.
@@ -309,11 +324,6 @@ export class EspaciosPage {
     this.cerrarPanel();
     this.paginaActual.set(numero);
     this.cargar();
-  }
-
-  protected panelAbierto(id: number | undefined, tipo: TipoAccion): boolean {
-    const panel = this.panel();
-    return panel !== null && panel.id === id && panel.tipo === tipo;
   }
 
   protected abrirPanel(espacio: EspacioResponse, tipo: TipoAccion): void {

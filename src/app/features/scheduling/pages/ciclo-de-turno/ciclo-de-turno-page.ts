@@ -1,4 +1,4 @@
-import { Location } from '@angular/common';
+import { Location, NgTemplateOutlet } from '@angular/common';
 import { Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Observable } from 'rxjs';
@@ -36,6 +36,7 @@ import {
 } from '../../models/etiquetas-de-recepcion';
 import { PrepagoDeRecepcionEstadoEnum } from '../../../../api/generated/model/prepago-de-recepcion';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
+import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 
 /** Panel abierto. Uno solo a la vez: son tres confirmaciones sobre el mismo turno. */
@@ -96,7 +97,14 @@ type Panel = 'ninguno' | 'cancelar' | 'ausencia' | 'reprogramar';
  */
 @Component({
   selector: 'app-ciclo-de-turno-page',
-  imports: [Ayuda, RouterLink, ConfirmacionConMotivo, SelectorDeHorario],
+  imports: [
+    Ayuda,
+    RouterLink,
+    NgTemplateOutlet,
+    ConfirmacionConMotivo,
+    SelectorDeHorario,
+    PanelLateral,
+  ],
   templateUrl: './ciclo-de-turno-page.html',
   styleUrl: '../../agenda.css',
 })

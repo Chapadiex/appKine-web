@@ -158,11 +158,18 @@
   font-weight: var(--peso-medio);
 }
 
-/* Pie de un formulario: acciones a la derecha, separadas del cuerpo por una linea. */
-.acciones--pie {
-  justify-content: flex-end;
+/*
+ * Pie de un formulario: acciones a la derecha, separadas del cuerpo por una linea. Dentro de un
+ * panel lateral el pie lo pone el panel. En un `form` la alineacion la da la regla global (que
+ * invierte el orden visual para dejar la principal en el borde): aca no se pisa.
+ */
+:not(.panel-lateral__cuerpo) > .acciones--pie {
   padding-top: var(--esp-6);
   border-top: var(--borde-fino) solid var(--color-borde-sutil);
+}
+
+:not(form, .panel-lateral__cuerpo) > .acciones--pie {
+  justify-content: flex-end;
 }
 
 /* Columnas de dos paneles (lista + formulario / detalle + lateral). */
@@ -219,4 +226,14 @@
 
 .barra-semana__rango::first-letter {
   text-transform: uppercase;
+}
+
+/* Paneles laterales del detalle de una clase (refactor UX/UI del 28/10/2026). */
+.clase__nota {
+  margin: 0 0 var(--esp-6);
+}
+
+.clase__error {
+  margin-top: var(--esp-5);
+  padding-left: var(--esp-5);
 }

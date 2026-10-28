@@ -123,6 +123,8 @@ test.describe('Atencion clinica contra el backend real', () => {
     await tratamiento.getByLabel('Zona tratada').fill('rodilla');
     await tratamiento.getByLabel('Lado').selectOption({ label: 'Derecha' });
     await tratamiento.getByLabel('Duración en minutos').fill('15');
+    // Los parametros van en la seccion plegada "Parámetros y observación" (refactor UX/UI).
+    await tratamiento.getByText('Parámetros y observación').click();
     await tratamiento.getByRole('button', { name: 'Agregar un parámetro' }).click();
     await tratamiento.getByLabel('Nombre del parámetro 1').fill('Intensidad');
     await tratamiento.getByLabel('Valor del parámetro 1').fill('20');

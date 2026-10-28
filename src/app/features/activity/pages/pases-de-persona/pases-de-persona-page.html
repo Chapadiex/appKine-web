@@ -51,12 +51,12 @@
           </select>
           @if (productoDeLaVenta(); as producto) {
             @if (abono(producto)) {
-              <p class="ayuda">
+              <p class="ayuda ayuda--fija">
                 Abono: cubre {{ creditos(producto.creditos) }} en un periodo de hasta
                 {{ producto.vigenciaDias }} días, que se elige ahora.
               </p>
             } @else {
-              <p class="ayuda">
+              <p class="ayuda ayuda--fija">
                 Vale {{ producto.vigenciaDias }} días desde hoy, contando el día de hoy.
               </p>
             }
@@ -82,7 +82,7 @@
                 aria-describedby="vender-periodo-hasta-ayuda"
                 (input)="cambiarPeriodo('hasta', $any($event.target).value)"
               />
-              <p class="ayuda" id="vender-periodo-hasta-ayuda">
+              <p class="ayuda ayuda--fija" id="vender-periodo-hasta-ayuda">
                 Vacío: dura los {{ producto.vigenciaDias }} días del producto.
               </p>
             </div>
@@ -183,116 +183,6 @@
   }
 </div>
 
-@if (enAjuste(); as pase) {
-  <section class="tarjeta" aria-labelledby="titulo-ajuste" akineFocoAlMontar="campo">
-    <h2 id="titulo-ajuste">Ajustar el saldo de {{ pase.nombre }}</h2>
-    <p class="ayuda">
-      Tiene {{ creditos(pase.creditosDisponibles) }} de {{ pase.creditosIniciales }}. El ajuste suma
-      o resta creditos sin tocar la deuda ni la caja, y queda en los movimientos con el motivo y
-      quien lo hizo. El saldo tiene que quedar entre 0 y los {{ pase.creditosIniciales }}
-      comprados.
-    </p>
-    <div class="filtros">
-      <div class="campo">
-        <label for="ajuste-cantidad">Creditos a sumar o restar</label>
-        <input
-          id="ajuste-cantidad"
-          type="text"
-          inputmode="numeric"
-          autocomplete="off"
-          [value]="ajusteCantidad()"
-          [attr.aria-invalid]="
-            ajusteIntentado() && (cantidadDelAjuste() === null || ajusteFueraDeRango())
-          "
-          [attr.aria-describedby]="
-            ajusteFueraDeRango() || (ajusteIntentado() && cantidadDelAjuste() === null)
-              ? 'ajuste-cantidad-ayuda ajuste-cantidad-error'
-              : 'ajuste-cantidad-ayuda'
-          "
-          (input)="ajusteCantidad.set($any($event.target).value)"
-        />
-        <p class="ayuda" id="ajuste-cantidad-ayuda">
-          @if (saldoResultante() !== null) {
-            El saldo quedaria en {{ saldoResultante() }} de {{ pase.creditosIniciales }}.
-          } @else {
-            Con signo: 2 suma dos creditos, -1 resta uno.
-          }
-        </p>
-        @if (ajusteFueraDeRango()) {
-          <p class="estado estado--error" id="ajuste-cantidad-error">
-            El saldo tiene que quedar entre 0 y {{ pase.creditosIniciales }}.
-          </p>
-        } @else if (ajusteIntentado() && cantidadDelAjuste() === null) {
-          <p class="estado estado--error" id="ajuste-cantidad-error">
-            Un número entero distinto de cero.
-          </p>
-        }
-      </div>
-      <div class="campo">
-        <label for="ajuste-motivo">Motivo</label>
-        <input
-          id="ajuste-motivo"
-          type="text"
-          maxlength="500"
-          autocomplete="off"
-          [value]="ajusteMotivo()"
-          [attr.aria-invalid]="ajusteIntentado() && ajusteMotivo().trim() === ''"
-          [attr.aria-describedby]="
-            ajusteIntentado() && ajusteMotivo().trim() === '' ? 'ajuste-motivo-error' : null
-          "
-          (input)="ajusteMotivo.set($any($event.target).value)"
-        />
-        @if (ajusteIntentado() && ajusteMotivo().trim() === '') {
-          <p class="estado estado--error" id="ajuste-motivo-error">
-            El motivo es obligatorio: queda en el ledger.
-          </p>
-        }
-      </div>
-    </div>
-    <div aria-live="polite">
-      @if (errorAccion(); as fallo) {
-        <p class="estado estado--error" role="alert">{{ fallo.mensaje }}</p>
-      }
-    </div>
-    <div class="acciones">
-      <button type="button" class="boton" [disabled]="enviando()" (click)="ajustar()">
-        {{ enviando() ? 'Ajustando…' : 'Ajustar saldo' }}
-      </button>
-      <button type="button" class="boton boton--secundario" (click)="cerrarAccion()">
-        Cancelar
-      </button>
-    </div>
-  </section>
-}
-
-@if (enAnulacion(); as pase) {
-  <section class="tarjeta">
-    <akine-confirmacion-con-motivo
-      idCampo="anulacion-motivo"
-      [titulo]="'Anular ' + pase.nombre"
-      etiqueta="Motivo de la anulacion"
-      ayuda="El pase pasa a Anulado y su saldo se descarta. La deuda de la venta queda anulada, no
-        borrada: sigue en la cuenta corriente como anulada, con este motivo. Solo se anula un pase
-        sin creditos usados y cuya deuda no tenga cobros."
-      textoError="El motivo es obligatorio para anular un pase."
-      textoConfirmar="Anular pase"
-      [enviando]="enviando()"
-      (confirmado)="confirmarAnulacion($event)"
-      (cancelado)="cerrarAccion()"
-    />
-    <div aria-live="polite">
-      @if (errorAccion(); as fallo) {
-        <p class="estado estado--error" role="alert">{{ fallo.mensaje }}</p>
-        @if (fallo.causa === 'pase-con-cobros') {
-          <p *akinePermiso="permisoCobro">
-            <a class="enlace" [routerLink]="rutaCuentaCorriente()">Ir a la cuenta corriente</a>
-          </p>
-        }
-      }
-    </div>
-  </section>
-}
-
 @if (pases() === null && !error()) {
   <p class="estado estado--cargando" aria-live="polite">Leyendo los pases…</p>
 } @else if (pases()?.length === 0 && !error()) {
@@ -319,6 +209,7 @@
                 [id]="'pase-' + pase.id"
                 tabindex="-1"
                 [class.fila--revocada]="pase.estado === 'ANULADO'"
+                [class.fila--seleccionada]="paseEnPanel()?.id === pase.id"
               >
                 <td>
                   {{ pase.nombre }}
@@ -410,7 +301,7 @@
                     </div>
                   }
                 </td>
-                <td>
+                <td class="tabla__acciones">
                   <!--
                     Hasta cuatro acciones: menu "⋯" (decidido el 22/10/2026). "Ver movimientos" es la
                     frecuente y queda a la vista. Sin permiso para vender ni ajustar solo hay esa.
@@ -420,7 +311,7 @@
                       <button
                         principal
                         type="button"
-                        class="boton boton--secundario"
+                        class="boton boton--secundario boton--chico"
                         [attr.aria-label]="'Ver movimientos de ' + pase.nombre"
                         [attr.aria-expanded]="detalle()?.paseId === pase.id"
                         (click)="verMovimientos(pase)"
@@ -470,17 +361,15 @@
                       }
                     </app-acciones-de-fila>
                   } @else {
-                    <div class="acciones-fila">
-                      <button
-                        type="button"
-                        class="boton boton--secundario"
-                        [attr.aria-label]="'Ver movimientos de ' + pase.nombre"
-                        [attr.aria-expanded]="detalle()?.paseId === pase.id"
-                        (click)="verMovimientos(pase)"
-                      >
-                        Ver movimientos
-                      </button>
-                    </div>
+                    <button
+                      type="button"
+                      class="boton boton--secundario boton--chico"
+                      [attr.aria-label]="'Ver movimientos de ' + pase.nombre"
+                      [attr.aria-expanded]="detalle()?.paseId === pase.id"
+                      (click)="verMovimientos(pase)"
+                    >
+                      Ver movimientos
+                    </button>
                   }
                 </td>
               </tr>
@@ -502,75 +391,198 @@
   }
 }
 
-@if (detalle(); as actual) {
-  <section class="tarjeta" role="region" aria-labelledby="titulo-movimientos" akineFocoAlMontar>
-    <h2 id="titulo-movimientos">Movimientos de {{ actual.pase.nombre }}</h2>
-    <p>
-      Saldo actual: <b>{{ creditos(actual.pase.creditosDisponibles) }}</b> de
-      {{ actual.pase.creditosIniciales }}.
+<!--
+  Ajuste, anulacion y movimientos en un panel lateral (refactor UX/UI del 28/10/2026). Antes el
+  ajuste y la anulacion se abrian encima del listado y los movimientos debajo, lejos de la fila.
+-->
+@if (enAjuste(); as pase) {
+  <app-panel-lateral [titulo]="'Ajustar el saldo de ' + pase.nombre" (cerrar)="cerrarAccion()">
+    <p class="ayuda ayuda--fija pases__nota">
+      Tiene {{ creditos(pase.creditosDisponibles) }} de {{ pase.creditosIniciales }}. El ajuste suma
+      o resta creditos sin tocar la deuda ni la caja, y queda en los movimientos con el motivo y
+      quien lo hizo. El saldo tiene que quedar entre 0 y los {{ pase.creditosIniciales }}
+      comprados.
     </p>
-    @if (actual.error; as fallo) {
-      <p class="estado estado--error">{{ fallo.mensaje }}</p>
-    } @else if (actual.pagina === null) {
-      <p class="estado estado--cargando" aria-live="polite">Leyendo los movimientos…</p>
-    } @else if ((actual.pagina.content ?? []).length === 0) {
-      <p class="estado estado--vacio">El pase no tiene movimientos.</p>
-    } @else {
-      <p class="ayuda" aria-live="polite">
-        {{ actual.cargando ? 'Leyendo los movimientos…' : rangoDeMovimientos(actual.pagina) }}
-      </p>
-      <div
-        class="tabla-scroll"
-        tabindex="0"
-        role="region"
-        aria-label="Movimientos del pase"
-        [attr.aria-busy]="actual.cargando"
-      >
-        <table class="tabla">
-          <thead>
-            <tr>
-              <th scope="col" appOrdenable [tabla]="ordenDeMovimientos" columna="ocurridoEn">
-                Fecha
-              </th>
-              <th scope="col" appOrdenable [tabla]="ordenDeMovimientos" columna="tipo">
-                Movimiento
-              </th>
-              <th scope="col" appOrdenable [tabla]="ordenDeMovimientos" columna="cantidad">
-                Creditos
-              </th>
-              <th scope="col">Saldo</th>
-              <th scope="col">Detalle</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (mov of actual.pagina.content ?? []; track mov.id) {
-              <tr>
-                <td>{{ instante(mov.ocurridoEn) }}</td>
-                <td>{{ movimiento(mov) }}</td>
-                <td class="importe">{{ conSigno(mov.cantidad) }}</td>
-                <td class="importe">{{ mov.saldoResultante }}</td>
-                <td>
-                  {{ origen(mov) }}
-                  @if (mov.motivo) {
-                    <div class="ayuda">Motivo: {{ mov.motivo }}</div>
-                  }
-                </td>
-              </tr>
-            }
-          </tbody>
-        </table>
+    <div class="grilla-campos grilla-campos--dos">
+      <div class="campo">
+        <label for="ajuste-cantidad">Creditos a sumar o restar</label>
+        <input
+          id="ajuste-cantidad"
+          type="text"
+          inputmode="numeric"
+          autocomplete="off"
+          [value]="ajusteCantidad()"
+          [attr.aria-invalid]="
+            ajusteIntentado() && (cantidadDelAjuste() === null || ajusteFueraDeRango())
+          "
+          [attr.aria-describedby]="
+            ajusteFueraDeRango() || (ajusteIntentado() && cantidadDelAjuste() === null)
+              ? 'ajuste-cantidad-ayuda ajuste-cantidad-error'
+              : 'ajuste-cantidad-ayuda'
+          "
+          (input)="ajusteCantidad.set($any($event.target).value)"
+        />
+        <p class="ayuda ayuda--fija" id="ajuste-cantidad-ayuda">
+          @if (saldoResultante() !== null) {
+            El saldo quedaria en {{ saldoResultante() }} de {{ pase.creditosIniciales }}.
+          } @else {
+            Con signo: 2 suma dos creditos, -1 resta uno.
+          }
+        </p>
+        @if (ajusteFueraDeRango()) {
+          <p class="estado estado--error" id="ajuste-cantidad-error">
+            El saldo tiene que quedar entre 0 y {{ pase.creditosIniciales }}.
+          </p>
+        } @else if (ajusteIntentado() && cantidadDelAjuste() === null) {
+          <p class="estado estado--error" id="ajuste-cantidad-error">
+            Un número entero distinto de cero.
+          </p>
+        }
       </div>
-      <akine-paginacion
-        [paginaActual]="actual.numero"
-        [totalPaginas]="actual.pagina.totalPages ?? 0"
-        etiqueta="Páginas de movimientos del pase"
-        (cambioDePagina)="irAPaginaDeMovimientos($event)"
-      />
-    }
-    <div class="acciones">
-      <button type="button" class="boton boton--secundario" (click)="cerrarMovimientos()">
-        Cerrar movimientos
+      <div class="campo">
+        <label for="ajuste-motivo">Motivo</label>
+        <input
+          id="ajuste-motivo"
+          type="text"
+          maxlength="500"
+          autocomplete="off"
+          [value]="ajusteMotivo()"
+          [attr.aria-invalid]="ajusteIntentado() && ajusteMotivo().trim() === ''"
+          [attr.aria-describedby]="
+            ajusteIntentado() && ajusteMotivo().trim() === '' ? 'ajuste-motivo-error' : null
+          "
+          (input)="ajusteMotivo.set($any($event.target).value)"
+        />
+        @if (ajusteIntentado() && ajusteMotivo().trim() === '') {
+          <p class="estado estado--error" id="ajuste-motivo-error">
+            El motivo es obligatorio: queda en el ledger.
+          </p>
+        }
+      </div>
+    </div>
+    <div aria-live="polite">
+      @if (errorAccion(); as fallo) {
+        <p class="estado estado--error" role="alert">{{ fallo.mensaje }}</p>
+      }
+    </div>
+    <div class="acciones acciones--pie">
+      <button type="button" class="boton boton--secundario" (click)="cerrarAccion()">
+        Cancelar
+      </button>
+      <button type="button" class="boton" [disabled]="enviando()" (click)="ajustar()">
+        {{ enviando() ? 'Ajustando…' : 'Ajustar saldo' }}
       </button>
     </div>
-  </section>
+  </app-panel-lateral>
+}
+
+@if (enAnulacion(); as pase) {
+  <app-panel-lateral [titulo]="'Anular ' + pase.nombre" (cerrar)="cerrarAccion()">
+    <akine-confirmacion-con-motivo
+      idCampo="anulacion-motivo"
+      [titulo]="'Anular ' + pase.nombre"
+      [mostrarTitulo]="false"
+      etiqueta="Motivo de la anulacion"
+      ayuda="El pase pasa a Anulado y su saldo se descarta. La deuda de la venta queda anulada, no
+        borrada: sigue en la cuenta corriente como anulada, con este motivo. Solo se anula un pase
+        sin creditos usados y cuya deuda no tenga cobros."
+      textoError="El motivo es obligatorio para anular un pase."
+      textoConfirmar="Anular pase"
+      [enviando]="enviando()"
+      (confirmado)="confirmarAnulacion($event)"
+      (cancelado)="cerrarAccion()"
+    />
+    <div aria-live="polite">
+      @if (errorAccion(); as fallo) {
+        <p class="estado estado--error" role="alert">{{ fallo.mensaje }}</p>
+        @if (fallo.causa === 'pase-con-cobros') {
+          <p *akinePermiso="permisoCobro">
+            <a class="enlace" [routerLink]="rutaCuentaCorriente()">Ir a la cuenta corriente</a>
+          </p>
+        }
+      }
+    </div>
+  </app-panel-lateral>
+}
+
+<!--
+  Con un ajuste o una anulacion abiertos, los movimientos esperan detras: vuelven a verse (releidos)
+  al cerrar la accion. Un solo panel modal a la vez.
+-->
+@if (detalle(); as actual) {
+  @if (accion() === null) {
+    <app-panel-lateral
+      [titulo]="'Movimientos de ' + actual.pase.nombre"
+      ancho="amplio"
+      (cerrar)="cerrarMovimientos()"
+    >
+      <p>
+        Saldo actual: <b>{{ creditos(actual.pase.creditosDisponibles) }}</b> de
+        {{ actual.pase.creditosIniciales }}.
+      </p>
+      @if (actual.error; as fallo) {
+        <p class="estado estado--error">{{ fallo.mensaje }}</p>
+      } @else if (actual.pagina === null) {
+        <p class="estado estado--cargando" aria-live="polite">Leyendo los movimientos…</p>
+      } @else if ((actual.pagina.content ?? []).length === 0) {
+        <p class="estado estado--vacio">El pase no tiene movimientos.</p>
+      } @else {
+        <p class="ayuda ayuda--fija" aria-live="polite">
+          {{ actual.cargando ? 'Leyendo los movimientos…' : rangoDeMovimientos(actual.pagina) }}
+        </p>
+        <div
+          class="tabla-scroll"
+          tabindex="0"
+          role="region"
+          aria-label="Movimientos del pase"
+          [attr.aria-busy]="actual.cargando"
+        >
+          <table class="tabla">
+            <thead>
+              <tr>
+                <th scope="col" appOrdenable [tabla]="ordenDeMovimientos" columna="ocurridoEn">
+                  Fecha
+                </th>
+                <th scope="col" appOrdenable [tabla]="ordenDeMovimientos" columna="tipo">
+                  Movimiento
+                </th>
+                <th scope="col" appOrdenable [tabla]="ordenDeMovimientos" columna="cantidad">
+                  Creditos
+                </th>
+                <th scope="col">Saldo</th>
+                <th scope="col">Detalle</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (mov of actual.pagina.content ?? []; track mov.id) {
+                <tr>
+                  <td>{{ instante(mov.ocurridoEn) }}</td>
+                  <td>{{ movimiento(mov) }}</td>
+                  <td class="importe">{{ conSigno(mov.cantidad) }}</td>
+                  <td class="importe">{{ mov.saldoResultante }}</td>
+                  <td>
+                    {{ origen(mov) }}
+                    @if (mov.motivo) {
+                      <div class="ayuda">Motivo: {{ mov.motivo }}</div>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <akine-paginacion
+          [paginaActual]="actual.numero"
+          [totalPaginas]="actual.pagina.totalPages ?? 0"
+          etiqueta="Páginas de movimientos del pase"
+          (cambioDePagina)="irAPaginaDeMovimientos($event)"
+        />
+      }
+      <div class="acciones acciones--pie">
+        <button type="button" class="boton boton--secundario" (click)="cerrarMovimientos()">
+          Cerrar movimientos
+        </button>
+      </div>
+    </app-panel-lateral>
+  }
 }

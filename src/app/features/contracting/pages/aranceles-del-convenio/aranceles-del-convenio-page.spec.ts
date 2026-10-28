@@ -168,7 +168,7 @@ describe('ArancelesDelConvenioPage', () => {
     escribir(fixture, '#alta-arancel-financiador', '9000');
     escribir(fixture, '#alta-arancel-coseguro', '2500');
     escribir(fixture, '#alta-arancel-desde', '2026-07-01');
-    enviar(fixture, 'form[novalidate]');
+    enviar(fixture, '.panel-lateral form');
 
     // Ni una peticion: el backend lo rechazaria igual —hay un CHECK en la base— pero su 400 no
     // puede decir cual de los tres numeros esta mal.
@@ -178,7 +178,7 @@ describe('ArancelesDelConvenioPage', () => {
     expect(texto).toContain('difiere del total en 500');
 
     escribir(fixture, '#alta-arancel-coseguro', '3000');
-    enviar(fixture, 'form[novalidate]');
+    enviar(fixture, '.panel-lateral form');
 
     const alta = httpMock.expectOne(
       (peticion: HttpRequest<unknown>) => peticion.method === 'POST' && peticion.url === ARANCELES,
@@ -206,7 +206,7 @@ describe('ArancelesDelConvenioPage', () => {
     escribir(fixture, '#alta-arancel-financiador', '9000');
     escribir(fixture, '#alta-arancel-coseguro', '0');
     escribir(fixture, '#alta-arancel-desde', '2026-07-01');
-    enviar(fixture, 'form[novalidate]');
+    enviar(fixture, '.panel-lateral form');
 
     const alta = httpMock.expectOne(
       (peticion: HttpRequest<unknown>) => peticion.method === 'POST' && peticion.url === ARANCELES,
@@ -226,7 +226,7 @@ describe('ArancelesDelConvenioPage', () => {
     // Se corrige el reparto sin mover el total: la terna sigue cuadrando.
     escribir(fixture, '#editar-arancel-financiador', '8000');
     escribir(fixture, '#editar-arancel-coseguro', '4000');
-    enviar(fixture, 'aside.panel-lateral form');
+    enviar(fixture, '.panel-lateral form');
 
     const edicion = httpMock.expectOne(
       (peticion: HttpRequest<unknown>) =>
@@ -265,7 +265,7 @@ describe('ArancelesDelConvenioPage', () => {
 
     abrir(fixture, 'Editar');
     escribir(fixture, '#editar-arancel-total', '');
-    enviar(fixture, 'aside.panel-lateral form');
+    enviar(fixture, '.panel-lateral form');
 
     httpMock.expectNone((peticion: HttpRequest<unknown>) => peticion.method === 'PUT');
     expect((fixture.nativeElement as HTMLElement).textContent).toContain(
@@ -278,7 +278,7 @@ describe('ArancelesDelConvenioPage', () => {
 
     abrir(fixture, 'Editar');
     escribir(fixture, '#editar-arancel-coseguro', '');
-    enviar(fixture, 'aside.panel-lateral form');
+    enviar(fixture, '.panel-lateral form');
 
     httpMock.expectNone((peticion: HttpRequest<unknown>) => peticion.method === 'PUT');
     expect((fixture.nativeElement as HTMLElement).textContent).toContain(
@@ -290,7 +290,7 @@ describe('ArancelesDelConvenioPage', () => {
     const fixture = await montar();
 
     abrir(fixture, 'Cargar un arancel');
-    enviar(fixture, 'form[novalidate]');
+    enviar(fixture, '.panel-lateral form');
 
     httpMock.expectNone((peticion: HttpRequest<unknown>) => peticion.method === 'POST');
     const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
@@ -308,7 +308,7 @@ describe('ArancelesDelConvenioPage', () => {
     escribir(fixture, '#alta-arancel-coseguro', '5000');
     escribir(fixture, '#alta-arancel-desde', '2026-07-01');
     escribir(fixture, '#alta-arancel-hasta', '2026-12-31');
-    enviar(fixture, 'form[novalidate]');
+    enviar(fixture, '.panel-lateral form');
 
     const alta = httpMock.expectOne(
       (peticion: HttpRequest<unknown>) => peticion.method === 'POST' && peticion.url === ARANCELES,
@@ -337,7 +337,7 @@ describe('ArancelesDelConvenioPage', () => {
     // Se sube el total sin repartir la diferencia: el descuido con el que se rompe la invariante
     // economica sin que nadie lo note.
     escribir(fixture, '#editar-arancel-total', '15000');
-    enviar(fixture, 'aside.panel-lateral form');
+    enviar(fixture, '.panel-lateral form');
 
     httpMock.expectNone((peticion: HttpRequest<unknown>) => peticion.method === 'PUT');
     expect((fixture.nativeElement as HTMLElement).textContent).toContain('difiere del total en');
@@ -348,7 +348,7 @@ describe('ArancelesDelConvenioPage', () => {
 
     abrir(fixture, 'Editar');
     escribir(fixture, '#editar-arancel-hasta', '2026-08-31');
-    enviar(fixture, 'aside.panel-lateral form');
+    enviar(fixture, '.panel-lateral form');
 
     const edicion = httpMock.expectOne(
       (peticion: HttpRequest<unknown>) =>
@@ -368,12 +368,12 @@ describe('ArancelesDelConvenioPage', () => {
     const fixture = await montar();
 
     abrir(fixture, 'Dar de baja');
-    const panel = (fixture.nativeElement as HTMLElement).querySelector('tr.fila-panel');
+    const panel = (fixture.nativeElement as HTMLElement).querySelector('.panel-lateral');
     expect(panel?.textContent).toContain('Libera el PERÍODO');
 
     escribir(fixture, '#baja-arancel-motivo', 'Se cargo con el precio equivocado');
     const confirmar = [
-      ...(fixture.nativeElement as HTMLElement).querySelectorAll('tr.fila-panel button'),
+      ...(fixture.nativeElement as HTMLElement).querySelectorAll('.panel-lateral button'),
     ].find((boton) => (boton.textContent ?? '').trim() === 'Dar de baja');
     (confirmar as HTMLButtonElement).click();
     fixture.detectChanges();
@@ -397,7 +397,7 @@ describe('ArancelesDelConvenioPage', () => {
 
     abrir(fixture, 'Editar');
     escribir(fixture, '#editar-arancel-hasta', '2026-12-31');
-    enviar(fixture, 'aside.panel-lateral form');
+    enviar(fixture, '.panel-lateral form');
 
     httpMock
       .expectOne(
@@ -490,7 +490,7 @@ describe('ArancelesDelConvenioPage', () => {
     escribir(fixture, '#alta-arancel-financiador', '9000');
     escribir(fixture, '#alta-arancel-coseguro', '3000');
     escribir(fixture, '#alta-arancel-desde', '2026-07-01');
-    enviar(fixture, 'form[novalidate]');
+    enviar(fixture, '.panel-lateral form');
 
     const alta = httpMock.expectOne(
       (peticion: HttpRequest<unknown>) => peticion.method === 'POST' && peticion.url === ARANCELES,
@@ -520,7 +520,7 @@ describe('ArancelesDelConvenioPage', () => {
     escribir(fixture, '#alta-arancel-financiador', '9000');
     escribir(fixture, '#alta-arancel-coseguro', '3000');
     escribir(fixture, '#alta-arancel-desde', '2026-07-01');
-    enviar(fixture, 'form[novalidate]');
+    enviar(fixture, '.panel-lateral form');
 
     httpMock
       .expectOne(

@@ -75,216 +75,13 @@
   @if (exito(); as mensaje) {
     <p class="estado estado--ok">{{ mensaje }}</p>
   }
-  @if (errorAccion(); as mensaje) {
-    <p class="estado estado--error" role="alert">{{ mensaje }}</p>
+  <!-- Con el panel abierto, el error se muestra adentro del panel. -->
+  @if (panel() === null) {
+    @if (errorAccion(); as mensaje) {
+      <p class="estado estado--error" role="alert">{{ mensaje }}</p>
+    }
   }
 </div>
-
-@if (panel(); as abierto) {
-  <section class="tarjeta" aria-labelledby="titulo-panel-catalogo">
-    @switch (abierto.tipo) {
-      @case ('alta-financiador') {
-        <h2 id="titulo-panel-catalogo">Nuevo financiador del catálogo</h2>
-      }
-      @case ('editar-financiador') {
-        <h2 id="titulo-panel-catalogo">Editar {{ abierto.entrada.nombre }}</h2>
-      }
-      @case ('alta-plan') {
-        <h2 id="titulo-panel-catalogo">Nuevo plan de {{ abierto.entrada.nombre }}</h2>
-      }
-      @case ('editar-plan') {
-        <h2 id="titulo-panel-catalogo">Editar el plan {{ abierto.plan.nombre }}</h2>
-      }
-      @default {
-        <h2 id="titulo-panel-catalogo">Dar de baja</h2>
-      }
-    }
-
-    @if (abierto.tipo === 'alta-financiador' || abierto.tipo === 'editar-financiador') {
-      <form
-        [formGroup]="formularioFinanciador"
-        (ngSubmit)="guardarFinanciador()"
-        novalidate
-        data-testid="formulario-catalogo"
-      >
-        <div class="grilla-campos grilla-campos--dos">
-          <div class="campo">
-            <label for="catalogo-financiador-codigo">Código</label>
-            <input
-              id="catalogo-financiador-codigo"
-              type="text"
-              formControlName="codigo"
-              autocomplete="off"
-              aria-describedby="catalogo-financiador-codigo-ayuda"
-              [attr.aria-invalid]="invalido('financiador', 'codigo') ? 'true' : null"
-            />
-            @if (invalido('financiador', 'codigo')) {
-              <p class="campo__error" role="alert">El código es obligatorio.</p>
-            }
-            <p class="ayuda" id="catalogo-financiador-codigo-ayuda">
-              No se puede cambiar después: es el código que recibe la copia de cada centro.
-            </p>
-          </div>
-          <div class="campo">
-            <label for="catalogo-financiador-nombre">Nombre</label>
-            <input
-              id="catalogo-financiador-nombre"
-              type="text"
-              formControlName="nombre"
-              autocomplete="off"
-              [attr.aria-invalid]="invalido('financiador', 'nombre') ? 'true' : null"
-            />
-            @if (invalido('financiador', 'nombre')) {
-              <p class="campo__error" role="alert">El nombre es obligatorio.</p>
-            }
-          </div>
-          <div class="campo">
-            <label for="catalogo-financiador-tipo">Tipo de financiador</label>
-            <select
-              id="catalogo-financiador-tipo"
-              formControlName="tipo"
-              [attr.aria-invalid]="invalido('financiador', 'tipo') ? 'true' : null"
-            >
-              <option value="">Elegí un tipo</option>
-              @for (tipo of tipos; track tipo.valor) {
-                <option [value]="tipo.valor">{{ tipo.etiqueta }}</option>
-              }
-            </select>
-            @if (invalido('financiador', 'tipo')) {
-              <p class="campo__error" role="alert">Elegí el tipo de financiador.</p>
-            }
-          </div>
-          <div class="campo">
-            <label for="catalogo-financiador-cuit">CUIT (opcional)</label>
-            <input id="catalogo-financiador-cuit" type="text" formControlName="cuit" />
-          </div>
-        </div>
-        <details class="mas-opciones">
-          <summary>Más datos de contacto</summary>
-          <div class="campo">
-            <label for="catalogo-financiador-email">Correo de contacto (opcional)</label>
-            <input id="catalogo-financiador-email" type="email" formControlName="emailContacto" />
-          </div>
-          <div class="campo">
-            <label for="catalogo-financiador-telefono">Teléfono de contacto (opcional)</label>
-            <input
-              id="catalogo-financiador-telefono"
-              type="tel"
-              formControlName="telefonoContacto"
-            />
-          </div>
-          <div class="campo">
-            <label for="catalogo-financiador-observaciones">Observaciones (opcional)</label>
-            <textarea
-              id="catalogo-financiador-observaciones"
-              formControlName="observaciones"
-            ></textarea>
-          </div>
-        </details>
-        <div class="acciones">
-          <button type="submit" class="boton" [disabled]="enviando()">Guardar</button>
-          <button type="button" class="boton boton--secundario" (click)="cerrar()">Cancelar</button>
-        </div>
-      </form>
-    } @else if (abierto.tipo === 'alta-plan' || abierto.tipo === 'editar-plan') {
-      <form
-        [formGroup]="formularioPlan"
-        (ngSubmit)="guardarPlan()"
-        novalidate
-        data-testid="formulario-catalogo"
-      >
-        <div class="grilla-campos grilla-campos--dos">
-          <div class="campo">
-            <label for="catalogo-plan-codigo">Código del plan</label>
-            <input
-              id="catalogo-plan-codigo"
-              type="text"
-              formControlName="codigo"
-              autocomplete="off"
-              [attr.aria-invalid]="invalido('plan', 'codigo') ? 'true' : null"
-            />
-            @if (invalido('plan', 'codigo')) {
-              <p class="campo__error" role="alert">El código es obligatorio.</p>
-            }
-          </div>
-          <div class="campo">
-            <label for="catalogo-plan-nombre">Nombre del plan</label>
-            <input
-              id="catalogo-plan-nombre"
-              type="text"
-              formControlName="nombre"
-              autocomplete="off"
-              [attr.aria-invalid]="invalido('plan', 'nombre') ? 'true' : null"
-            />
-            @if (invalido('plan', 'nombre')) {
-              <p class="campo__error" role="alert">El nombre es obligatorio.</p>
-            }
-          </div>
-        </div>
-        <div class="campo">
-          <label for="catalogo-plan-descripcion">Descripción (opcional)</label>
-          <input id="catalogo-plan-descripcion" type="text" formControlName="descripcion" />
-        </div>
-        <div class="grilla-campos grilla-campos--dos">
-          <div class="campo">
-            <label for="catalogo-plan-desde">Vigente desde</label>
-            <input
-              id="catalogo-plan-desde"
-              type="date"
-              formControlName="vigenciaDesde"
-              [attr.aria-invalid]="invalido('plan', 'vigenciaDesde') ? 'true' : null"
-            />
-            @if (invalido('plan', 'vigenciaDesde')) {
-              <p class="campo__error" role="alert">Indicá desde cuándo rige el plan.</p>
-            }
-          </div>
-          <div class="campo">
-            <label for="catalogo-plan-hasta">Vigente hasta (opcional)</label>
-            <input id="catalogo-plan-hasta" type="date" formControlName="vigenciaHasta" />
-          </div>
-        </div>
-        <div class="campo">
-          <label class="opcion-radio">
-            <input type="checkbox" formControlName="requiereAutorizacion" />
-            Requiere autorización
-          </label>
-          <label class="opcion-radio">
-            <input type="checkbox" formControlName="requiereCredencial" />
-            Requiere credencial
-          </label>
-        </div>
-        <div class="acciones">
-          <button type="submit" class="boton" [disabled]="enviando()">Guardar el plan</button>
-          <button type="button" class="boton boton--secundario" (click)="cerrar()">Cancelar</button>
-        </div>
-      </form>
-    } @else if (abierto.tipo === 'baja-financiador') {
-      <app-confirmacion-con-motivo
-        idCampo="catalogo-baja-financiador-motivo"
-        [titulo]="'Dar de baja ' + (abierto.entrada.nombre ?? 'el financiador') + ' del catálogo'"
-        etiqueta="Motivo (obligatorio)"
-        ayuda="Deja de ofrecerse a los centros. No cascadea: sus planes y las copias ya agregadas siguen."
-        textoError="Escribí el motivo de la baja: es obligatorio."
-        textoConfirmar="Dar de baja"
-        [enviando]="enviando()"
-        (confirmado)="confirmarBaja($event)"
-        (cancelado)="cerrar()"
-      />
-    } @else if (abierto.tipo === 'baja-plan') {
-      <app-confirmacion-con-motivo
-        idCampo="catalogo-baja-plan-motivo"
-        [titulo]="'Dar de baja el plan ' + (abierto.plan.nombre ?? '') + ' del catálogo'"
-        etiqueta="Motivo (obligatorio)"
-        ayuda="Los centros que ya lo agregaron conservan su copia."
-        textoError="Escribí el motivo de la baja: es obligatorio."
-        textoConfirmar="Dar de baja el plan"
-        [enviando]="enviando()"
-        (confirmado)="confirmarBaja($event)"
-        (cancelado)="cerrar()"
-      />
-    }
-  </section>
-}
 
 @switch (listado().tipo) {
   @case ('cargando') {
@@ -304,48 +101,59 @@
         [attr.aria-labelledby]="'catalogo-entrada-' + entrada.id"
         data-testid="catalogo-entrada"
       >
-        <h2 [id]="'catalogo-entrada-' + entrada.id">{{ entrada.nombre }}</h2>
-        <dl class="detalle">
-          <dt>Código</dt>
-          <dd>{{ entrada.codigo }}</dd>
-          <dt>Tipo</dt>
-          <dd>{{ etiquetaDeTipo(entrada.tipo) }}</dd>
-          <dt>CUIT</dt>
-          <dd>{{ entrada.cuit || 'Sin CUIT' }}</dd>
-          <dt>Estado</dt>
-          <dd>
-            <span
-              class="marca-estado"
-              [class.marca-estado--activa]="entrada.estado !== 'INACTIVO'"
-              [class.marca-estado--revocada]="entrada.estado === 'INACTIVO'"
-              >{{ entrada.estado === 'INACTIVO' ? 'Dado de baja' : 'Activo' }}</span
-            >
-            @if (entrada.deactivationReason) {
-              — {{ entrada.deactivationReason }}
-            }
-          </dd>
-        </dl>
-        @if (entrada.estado !== 'INACTIVO') {
-          <div class="acciones">
-            <button
-              type="button"
-              class="boton boton--secundario"
-              (click)="abrirEdicionFinanciador(entrada)"
-            >
-              Editar <span class="visualmente-oculto">{{ entrada.nombre }}</span>
-            </button>
-            <button type="button" class="boton boton--secundario" (click)="abrirAltaPlan(entrada)">
-              Agregar un plan <span class="visualmente-oculto">a {{ entrada.nombre }}</span>
-            </button>
-            <button
-              type="button"
-              class="boton boton--secundario"
-              (click)="abrirBajaFinanciador(entrada)"
-            >
-              Dar de baja <span class="visualmente-oculto">{{ entrada.nombre }}</span>
-            </button>
+        <!--
+          Cabecera de la entrada: nombre, datos en una linea y una sola accion a la vista (refactor
+          UX/UI del 28/10/2026). Editar y la baja, en el menu "⋯".
+        -->
+        <div class="catalogo-entrada__cabecera">
+          <h2 [id]="'catalogo-entrada-' + entrada.id">{{ entrada.nombre }}</h2>
+          @if (entrada.estado !== 'INACTIVO') {
+            <app-acciones-de-fila [de]="entrada.nombre ?? ''">
+              <button
+                principal
+                type="button"
+                class="boton boton--secundario boton--chico"
+                (click)="abrirAltaPlan(entrada)"
+              >
+                Agregar un plan <span class="visualmente-oculto">a {{ entrada.nombre }}</span>
+              </button>
+              <button type="button" (click)="abrirEdicionFinanciador(entrada)">
+                Editar <span class="visualmente-oculto">{{ entrada.nombre }}</span>
+              </button>
+              <button type="button" class="accion--peligro" (click)="abrirBajaFinanciador(entrada)">
+                Dar de baja <span class="visualmente-oculto">{{ entrada.nombre }}</span>
+              </button>
+            </app-acciones-de-fila>
+          }
+        </div>
+        <dl class="detalle detalle--en-linea">
+          <div>
+            <dt>Código</dt>
+            <dd>{{ entrada.codigo }}</dd>
           </div>
-        }
+          <div>
+            <dt>Tipo</dt>
+            <dd>{{ etiquetaDeTipo(entrada.tipo) }}</dd>
+          </div>
+          <div>
+            <dt>CUIT</dt>
+            <dd>{{ entrada.cuit || 'Sin CUIT' }}</dd>
+          </div>
+          <div>
+            <dt>Estado</dt>
+            <dd>
+              <span
+                class="marca-estado"
+                [class.marca-estado--activa]="entrada.estado !== 'INACTIVO'"
+                [class.marca-estado--revocada]="entrada.estado === 'INACTIVO'"
+                >{{ entrada.estado === 'INACTIVO' ? 'Dado de baja' : 'Activo' }}</span
+              >
+              @if (entrada.deactivationReason) {
+                — {{ entrada.deactivationReason }}
+              }
+            </dd>
+          </div>
+        </dl>
 
         @if ((entrada.planes?.length ?? 0) === 0) {
           <p class="ayuda">Sin planes cargados.</p>
@@ -367,10 +175,13 @@
               </thead>
               <tbody>
                 @for (plan of entrada.planes ?? []; track plan.id) {
-                  <tr [class.fila--revocada]="plan.estado === 'INACTIVO'">
+                  <tr
+                    [class.fila--revocada]="plan.estado === 'INACTIVO'"
+                    [class.fila--seleccionada]="planEnPanel() === plan.id"
+                  >
                     <th scope="row">
                       {{ plan.nombre }}
-                      <p class="ayuda">Código {{ plan.codigo }}</p>
+                      <p class="ayuda ayuda--fija">Código {{ plan.codigo }}</p>
                     </th>
                     <td>{{ plan.vigenciaDesde }} a {{ plan.vigenciaHasta || 'sin fin' }}</td>
                     <td>
@@ -381,23 +192,26 @@
                         >{{ plan.estado === 'INACTIVO' ? 'Dado de baja' : 'Activo' }}</span
                       >
                     </td>
-                    <td class="acciones-fila">
+                    <td class="tabla__acciones">
                       @if (plan.estado !== 'INACTIVO' && entrada.estado !== 'INACTIVO') {
-                        <button
-                          type="button"
-                          class="boton boton--secundario"
-                          (click)="abrirEdicionPlan(entrada, plan)"
-                        >
-                          Editar <span class="visualmente-oculto">el plan {{ plan.nombre }}</span>
-                        </button>
-                        <button
-                          type="button"
-                          class="boton boton--secundario"
-                          (click)="abrirBajaPlan(entrada, plan)"
-                        >
-                          Dar de baja
-                          <span class="visualmente-oculto">el plan {{ plan.nombre }}</span>
-                        </button>
+                        <app-acciones-de-fila [de]="'el plan ' + (plan.nombre ?? '')">
+                          <button
+                            principal
+                            type="button"
+                            class="boton boton--secundario boton--chico"
+                            (click)="abrirEdicionPlan(entrada, plan)"
+                          >
+                            Editar <span class="visualmente-oculto">el plan {{ plan.nombre }}</span>
+                          </button>
+                          <button
+                            type="button"
+                            class="accion--peligro"
+                            (click)="abrirBajaPlan(entrada, plan)"
+                          >
+                            Dar de baja
+                            <span class="visualmente-oculto">el plan {{ plan.nombre }}</span>
+                          </button>
+                        </app-acciones-de-fila>
                       }
                     </td>
                   </tr>
@@ -409,4 +223,207 @@
       </section>
     }
   }
+}
+
+<!--
+  Altas, ediciones y bajas en un panel lateral (refactor UX/UI del 28/10/2026). Antes se abrian en
+  una tarjeta entre la busqueda y el listado: el formulario empujaba el catalogo para abajo y
+  quedaba lejos de la entrada que se estaba tocando.
+-->
+@if (panel(); as abierto) {
+  <app-panel-lateral [titulo]="tituloDelPanel(abierto)" (cerrar)="cerrar()">
+    @if (abierto.tipo === 'alta-financiador' || abierto.tipo === 'editar-financiador') {
+      <form
+        [formGroup]="formularioFinanciador"
+        (ngSubmit)="guardarFinanciador()"
+        novalidate
+        data-testid="formulario-catalogo"
+      >
+        <div class="campo">
+          <label for="catalogo-financiador-codigo">Código</label>
+          <input
+            id="catalogo-financiador-codigo"
+            type="text"
+            formControlName="codigo"
+            autocomplete="off"
+            aria-describedby="catalogo-financiador-codigo-ayuda"
+            [attr.aria-invalid]="invalido('financiador', 'codigo') ? 'true' : null"
+          />
+          @if (invalido('financiador', 'codigo')) {
+            <p class="campo__error" role="alert">El código es obligatorio.</p>
+          }
+          <!-- Consecuencia irreversible: a la vista, no al foco. -->
+          <p class="ayuda ayuda--fija" id="catalogo-financiador-codigo-ayuda">
+            No se puede cambiar después.
+          </p>
+        </div>
+        <div class="campo">
+          <label for="catalogo-financiador-tipo">Tipo de financiador</label>
+          <select
+            id="catalogo-financiador-tipo"
+            formControlName="tipo"
+            [attr.aria-invalid]="invalido('financiador', 'tipo') ? 'true' : null"
+          >
+            <option value="">Elegí un tipo</option>
+            @for (tipo of tipos; track tipo.valor) {
+              <option [value]="tipo.valor">{{ tipo.etiqueta }}</option>
+            }
+          </select>
+          @if (invalido('financiador', 'tipo')) {
+            <p class="campo__error" role="alert">Elegí el tipo de financiador.</p>
+          }
+        </div>
+        <div class="campo campo--ancho">
+          <label for="catalogo-financiador-nombre">Nombre</label>
+          <input
+            id="catalogo-financiador-nombre"
+            type="text"
+            formControlName="nombre"
+            autocomplete="off"
+            [attr.aria-invalid]="invalido('financiador', 'nombre') ? 'true' : null"
+          />
+          @if (invalido('financiador', 'nombre')) {
+            <p class="campo__error" role="alert">El nombre es obligatorio.</p>
+          }
+        </div>
+        <div class="campo">
+          <label for="catalogo-financiador-cuit">CUIT (opcional)</label>
+          <input id="catalogo-financiador-cuit" type="text" formControlName="cuit" />
+        </div>
+        <details class="seccion-plegable">
+          <summary>
+            Datos de contacto
+            <span class="seccion-plegable__resumen"
+              >Correo, teléfono y observaciones; opcionales</span
+            >
+          </summary>
+          <div class="grilla-campos grilla-campos--dos">
+            <div class="campo">
+              <label for="catalogo-financiador-email">Correo de contacto (opcional)</label>
+              <input id="catalogo-financiador-email" type="email" formControlName="emailContacto" />
+            </div>
+            <div class="campo">
+              <label for="catalogo-financiador-telefono">Teléfono de contacto (opcional)</label>
+              <input
+                id="catalogo-financiador-telefono"
+                type="tel"
+                formControlName="telefonoContacto"
+              />
+            </div>
+          </div>
+          <div class="campo">
+            <label for="catalogo-financiador-observaciones">Observaciones (opcional)</label>
+            <textarea
+              id="catalogo-financiador-observaciones"
+              formControlName="observaciones"
+            ></textarea>
+          </div>
+        </details>
+        <div class="acciones">
+          <button type="submit" class="boton" [disabled]="enviando()">Guardar</button>
+          <button type="button" class="boton boton--secundario" (click)="cerrar()">Cancelar</button>
+        </div>
+      </form>
+    } @else if (abierto.tipo === 'alta-plan' || abierto.tipo === 'editar-plan') {
+      <form
+        [formGroup]="formularioPlan"
+        (ngSubmit)="guardarPlan()"
+        novalidate
+        data-testid="formulario-catalogo"
+      >
+        <div class="campo">
+          <label for="catalogo-plan-codigo">Código del plan</label>
+          <input
+            id="catalogo-plan-codigo"
+            type="text"
+            formControlName="codigo"
+            autocomplete="off"
+            [attr.aria-invalid]="invalido('plan', 'codigo') ? 'true' : null"
+          />
+          @if (invalido('plan', 'codigo')) {
+            <p class="campo__error" role="alert">El código es obligatorio.</p>
+          }
+        </div>
+        <div class="campo">
+          <label for="catalogo-plan-nombre">Nombre del plan</label>
+          <input
+            id="catalogo-plan-nombre"
+            type="text"
+            formControlName="nombre"
+            autocomplete="off"
+            [attr.aria-invalid]="invalido('plan', 'nombre') ? 'true' : null"
+          />
+          @if (invalido('plan', 'nombre')) {
+            <p class="campo__error" role="alert">El nombre es obligatorio.</p>
+          }
+        </div>
+        <div class="campo">
+          <label for="catalogo-plan-desde">Vigente desde</label>
+          <input
+            id="catalogo-plan-desde"
+            type="date"
+            formControlName="vigenciaDesde"
+            [attr.aria-invalid]="invalido('plan', 'vigenciaDesde') ? 'true' : null"
+          />
+          @if (invalido('plan', 'vigenciaDesde')) {
+            <p class="campo__error" role="alert">Indicá desde cuándo rige el plan.</p>
+          }
+        </div>
+        <div class="campo">
+          <label for="catalogo-plan-hasta">Vigente hasta (opcional)</label>
+          <input id="catalogo-plan-hasta" type="date" formControlName="vigenciaHasta" />
+        </div>
+        <div class="campo campo--ancho">
+          <label class="opcion-radio">
+            <input type="checkbox" formControlName="requiereAutorizacion" />
+            Requiere autorización
+          </label>
+          <label class="opcion-radio">
+            <input type="checkbox" formControlName="requiereCredencial" />
+            Requiere credencial
+          </label>
+        </div>
+        <div class="campo campo--ancho">
+          <label for="catalogo-plan-descripcion">Descripción (opcional)</label>
+          <input id="catalogo-plan-descripcion" type="text" formControlName="descripcion" />
+        </div>
+        <div class="acciones">
+          <button type="submit" class="boton" [disabled]="enviando()">Guardar el plan</button>
+          <button type="button" class="boton boton--secundario" (click)="cerrar()">Cancelar</button>
+        </div>
+      </form>
+    } @else if (abierto.tipo === 'baja-financiador') {
+      <app-confirmacion-con-motivo
+        idCampo="catalogo-baja-financiador-motivo"
+        [titulo]="'Dar de baja ' + (abierto.entrada.nombre ?? 'el financiador') + ' del catálogo'"
+        [mostrarTitulo]="false"
+        etiqueta="Motivo (obligatorio)"
+        ayuda="Deja de ofrecerse a los centros. No cascadea: sus planes y las copias ya agregadas siguen."
+        textoError="Escribí el motivo de la baja: es obligatorio."
+        textoConfirmar="Dar de baja"
+        [enviando]="enviando()"
+        (confirmado)="confirmarBaja($event)"
+        (cancelado)="cerrar()"
+      />
+    } @else if (abierto.tipo === 'baja-plan') {
+      <app-confirmacion-con-motivo
+        idCampo="catalogo-baja-plan-motivo"
+        [titulo]="'Dar de baja el plan ' + (abierto.plan.nombre ?? '') + ' del catálogo'"
+        [mostrarTitulo]="false"
+        etiqueta="Motivo (obligatorio)"
+        ayuda="Los centros que ya lo agregaron conservan su copia."
+        textoError="Escribí el motivo de la baja: es obligatorio."
+        textoConfirmar="Dar de baja el plan"
+        [enviando]="enviando()"
+        (confirmado)="confirmarBaja($event)"
+        (cancelado)="cerrar()"
+      />
+    }
+
+    <div aria-live="polite">
+      @if (errorAccion(); as mensaje) {
+        <p class="estado estado--error" role="alert">{{ mensaje }}</p>
+      }
+    </div>
+  </app-panel-lateral>
 }

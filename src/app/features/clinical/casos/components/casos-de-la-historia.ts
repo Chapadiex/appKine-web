@@ -26,6 +26,8 @@ import { VisitaClinica } from '../../services/visita-clinica';
 import { CasosApi } from '../casos-api';
 import { ErrorCaso, traducirErrorCaso } from '../casos-errors';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { Icono } from '../../../../shared/components/icono/icono';
+import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
 
 /**
  * Los casos de una Historia Clinica y el alta compacta (D-b, RF-M10-001/002).
@@ -40,7 +42,7 @@ import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
  */
 @Component({
   selector: 'app-casos-de-la-historia',
-  imports: [Ayuda, RouterLink],
+  imports: [Ayuda, Icono, PanelLateral, RouterLink],
   templateUrl: './casos-de-la-historia.html',
   styleUrl: '../../pages/historia-clinica/historia-clinica.css',
 })
@@ -68,6 +70,8 @@ export class CasosDeLaHistoria {
   protected readonly elegibles = computed(() => this.ofertas().filter(ofertaElegible));
 
   // --- Alta ---------------------------------------------------------------------------
+  /** El panel lateral del alta esta abierto. */
+  protected readonly dandoDeAlta = signal(false);
   protected readonly ofertaId = signal<number | null>(null);
   protected readonly diagnostico = signal('');
   protected readonly objetivo = signal('');
@@ -142,6 +146,12 @@ export class CasosDeLaHistoria {
 
   protected elegirResponsable(valor: string): void {
     this.responsableId.set(valor === '' ? null : Number(valor));
+  }
+
+  /** Cierra el panel del alta. Lo escrito queda: volver a abrirlo no obliga a cargarlo de nuevo. */
+  protected cerrarAlta(): void {
+    this.dandoDeAlta.set(false);
+    this.errorDeAlta.set(null);
   }
 
   protected abrir(confirmaPosibleDuplicado: boolean): void {

@@ -575,7 +575,7 @@ describe('EspaciosPage', () => {
     const contenido = texto(fixture);
     expect(contenido).toContain('Dado de baja');
     expect(contenido).toContain('Motivo: Se desarmo para ampliar el gimnasio');
-    expect(contenido).toContain('Un espacio dado de baja no se edita.');
+    // Sin acciones en la fila dada de baja (refactor UX/UI del 28/10/2026: sin texto de relleno).
 
     // Una sola fila es editable: la del gimnasio activo.
     const editar = [...fixture.nativeElement.querySelectorAll('button')].filter(

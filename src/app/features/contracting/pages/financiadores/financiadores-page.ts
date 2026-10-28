@@ -48,6 +48,7 @@ import {
   FiltrosRapidos,
 } from '../../../../shared/components/filtros-rapidos/filtros-rapidos';
 import { AccionesDeFila } from '../../../../shared/components/acciones-de-fila/acciones-de-fila';
+import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
 import { PermissionsStore } from '../../../../core/services/permissions.store';
 import { Icono } from '../../../../shared/components/icono/icono';
 
@@ -112,6 +113,7 @@ type TipoAccion = 'editar' | 'baja';
     RouterLink,
     PermisoDirective,
     ConfirmacionConMotivo,
+    PanelLateral,
   ],
   templateUrl: './financiadores-page.html',
   styleUrl: '../../contracting.css',
@@ -214,6 +216,17 @@ export class FinanciadoresPage {
   protected readonly panel = signal<{ readonly id: number; readonly tipo: TipoAccion } | null>(
     null,
   );
+
+  /**
+   * El financiador del panel abierto. El panel lateral vive fuera de la tabla (refactor UX/UI del
+   * 28/10/2026), asi que lo busca en la pagina en vez de recibirlo del `@for` de la fila.
+   */
+  protected readonly financiadorEnPanel = computed(() => {
+    const panel = this.panel();
+    return panel === null
+      ? null
+      : (this.tabla.visibles().find((financiador) => financiador.id === panel.id) ?? null);
+  });
 
   /** `true` mientras el panel de alta esta abierto. El alta y la edicion se excluyen. */
   protected readonly altaAbierta = signal(false);
@@ -328,11 +341,6 @@ export class FinanciadoresPage {
     this.cerrarPanel();
     this.filtroTipo.set(conocido ? (valor as FiltroTipo) : null);
     this.cargar();
-  }
-
-  protected panelAbierto(id: number | undefined, tipo: TipoAccion): boolean {
-    const panel = this.panel();
-    return panel !== null && panel.id === id && panel.tipo === tipo;
   }
 
   protected abrirAlta(): void {

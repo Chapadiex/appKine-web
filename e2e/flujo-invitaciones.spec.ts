@@ -1,6 +1,6 @@
 import { emailUnico } from './support/akine';
 import { expect, ingresar, navegar, respuestaDe, test } from './support/agenda-real';
-import { abrirFiltros } from './support/filtros';
+import { abrirAcciones, abrirFiltros } from './support/filtros';
 import { enlaceDelCorreo } from './support/cuentas';
 
 /**
@@ -52,6 +52,8 @@ test.describe('Invitaciones contra el backend real', () => {
       ).toBeVisible();
 
       // --- Cancelar con motivo --------------------------------------------------------------
+      // La cancelacion vive en el menu "⋯" de la fila y se confirma en el panel lateral.
+      await abrirAcciones(fila);
       await fila.getByRole('button', { name: 'Cancelar' }).click();
       await page.getByLabel('Motivo de la cancelación').fill(motivo);
       const cancelacion = respuestaDe(page, 'POST', /\/colaborador-invitaciones\/\d+\/cancel$/);

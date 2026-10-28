@@ -11,6 +11,11 @@
       Deuda, cobro y caja son tres cosas: por eso los cobros registrados son una pantalla aparte y
       no una deuda negativa.
     </p>
+    <p>
+      <b>No se muestra un total.</b> El backend no lo devuelve y sumarlo en la pantalla produciria
+      centavos que no cuadran contra lo que hay guardado, que es peor que no tenerlo: el total es un
+      número que después alguien le dice a un paciente.
+    </p>
   </app-ayuda>
   <div class="encabezado__acciones">
     <!--
@@ -76,7 +81,10 @@
         </thead>
         <tbody>
           @for (obligacion of tabla.visibles(); track obligacion.id) {
-            <tr [class.fila--revocada]="!sePuedeAnular(obligacion)">
+            <tr
+              [class.fila--revocada]="!sePuedeAnular(obligacion)"
+              [class.fila--seleccionada]="obligacionEnPanel()?.id === obligacion.id"
+            >
               <td>{{ fechaEnPalabras(obligacion.devengadaEn) }}</td>
               <td>
                 {{ obligacion.snapshotNombre }}
@@ -115,96 +123,30 @@
                   {{ estadoEnPalabras(obligacion.estado) }}
                 </span>
               </td>
-              <td>
+              <td class="tabla__acciones">
                 @if (sePuedeAnular(obligacion) && esDeVenta(obligacion)) {
                   <!--
                   La deuda de una venta no se anula sola: el backend responde 409
                   obligacion-de-venta porque dejaria el pase activo con sus creditos. Se anula el
                   pase, que anula pase y deuda juntos (contrato 0.114.0).
                 -->
-                  <div class="acciones-fila">
-                    <a class="enlace" [routerLink]="rutaPases()">Anular desde los pases</a>
-                  </div>
+                  <a class="boton boton--secundario boton--chico" [routerLink]="rutaPases()">
+                    Anular desde los pases
+                  </a>
                   <span class="ayuda">Se anula el pase y esta deuda juntos.</span>
                 } @else if (sePuedeAnular(obligacion)) {
-                  <div class="acciones-fila">
-                    <button
-                      type="button"
-                      class="boton boton--secundario"
-                      (click)="abrirAnulacion(obligacion)"
-                    >
-                      Anular
-                    </button>
-                  </div>
+                  <button
+                    type="button"
+                    class="boton boton--secundario boton--chico"
+                    (click)="abrirAnulacion(obligacion)"
+                  >
+                    Anular
+                  </button>
                 } @else if (obligacion.motivoAnulacion) {
                   <span class="ayuda">Motivo: {{ obligacion.motivoAnulacion }}</span>
                 }
               </td>
             </tr>
-
-            @if (esObjetivo(obligacion)) {
-              <tr class="fila-panel">
-                <td colspan="8">
-                  <!--
-                  `motivoObligatorio` se deja en su default (`true`). Aca el motivo no se puede
-                  omitir: una deuda que se borra sin explicacion es exactamente lo que una
-                  auditoria busca, y la baja logica sin motivo no seria auditable.
-                -->
-                  <akine-confirmacion-con-motivo
-                    [idCampo]="'anular-' + obligacion.id"
-                    [titulo]="
-                      'Anular la deuda de ' + importe(obligacion, obligacion.importeOriginal)
-                    "
-                    etiqueta="Motivo de la anulacion"
-                    ayuda="Queda registrado junto con la deuda. No se borra nada: la obligacion sigue
-                    existiendo, anulada y con este motivo."
-                    textoError="El motivo es obligatorio para anular una deuda."
-                    textoConfirmar="Anular la deuda"
-                    [enviando]="enviando()"
-                    (confirmado)="confirmarAnulacion($event)"
-                    (cancelado)="cerrarPanel()"
-                  >
-                    <p class="ayuda">
-                      Corresponde a <b>{{ obligacion.snapshotNombre }}</b> del
-                      {{ fechaEnPalabras(obligacion.devengadaEn) }}.
-                    </p>
-                  </akine-confirmacion-con-motivo>
-
-                  @if (errorAccion(); as problema) {
-                    <p class="estado estado--error" role="alert">{{ mensajeDelRechazo() }}</p>
-
-                    @if (problema.causa === 'con-cobros') {
-                      <!--
-                      Explicitamente NO se dice "no se puede". Hay algo que hacer y es otra cosa:
-                      una devolucion, que es su propio circuito (M19) y todavia no tiene pantalla.
-                      Un "no se puede" pelado manda a pedir un permiso que no existe.
-                    -->
-                      <p class="ayuda">
-                        Lo que corresponde en este caso es registrar una <b>devolucion</b>, que
-                        tiene su propio circuito y su propio registro. Todavía no se hace desde el
-                        sistema: hay que resolverlo por caja.
-                      </p>
-                    }
-
-                    @if (problema.causa === 'de-venta') {
-                      <div class="acciones">
-                        <a class="boton boton--secundario" [routerLink]="rutaPases()">
-                          Ir a los pases de la persona
-                        </a>
-                      </div>
-                    }
-
-                    @if (recargable()) {
-                      <div class="acciones">
-                        <button type="button" class="boton boton--secundario" (click)="cargar()">
-                          Recargar la cuenta corriente
-                        </button>
-                      </div>
-                    }
-                  }
-                </td>
-              </tr>
-            }
           }
         </tbody>
       </table>
@@ -235,12 +177,6 @@
       >
     </p>
   }
-
-  <p class="ayuda">
-    <b>No se muestra un total.</b> El backend no lo devuelve y sumarlo en la pantalla produciria
-    centavos que no cuadran contra lo que hay guardado, que es peor que no tenerlo: el total es un
-    número que después alguien le dice a un paciente.
-  </p>
 }
 
 <!--
@@ -250,7 +186,16 @@
 -->
 @if (estado().tipo === 'listo') {
   <section class="tarjeta" aria-labelledby="titulo-saldo-a-favor">
-    <h2 id="titulo-saldo-a-favor">Saldo a favor</h2>
+    <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
+      <h2 id="titulo-saldo-a-favor">Saldo a favor</h2>
+      <app-ayuda titulo="Saldo a favor">
+        <p>
+          Plata que entro y todavía no se aplico a ninguna deuda (anticipos y sobrantes). Se imputa
+          a deudas <b>de la misma sede y la misma moneda</b> que el cobro; devolverla en dinero se
+          hace desde los cobros registrados.
+        </p>
+      </app-ayuda>
+    </div>
 
     @if (cobrosNoCargaron()) {
       <p class="estado estado--error">
@@ -265,12 +210,6 @@
         Esta persona no tiene saldo a favor: no hay anticipos ni sobrantes sin imputar.
       </p>
     } @else {
-      <p class="ayuda">
-        Plata que entro y todavía no se aplico a ninguna deuda (anticipos y sobrantes). Se imputa a
-        deudas <b>de la misma sede y la misma moneda</b> que el cobro; devolverla en dinero se hace
-        desde los cobros registrados.
-      </p>
-
       <div class="tabla-scroll" tabindex="0" role="region" aria-label="Cobros con saldo a favor">
         <table class="tabla">
           <thead>
@@ -284,118 +223,168 @@
           </thead>
           <tbody>
             @for (cobro of conSaldoAFavor(); track cobro.id) {
-              <tr>
+              <tr [class.fila--seleccionada]="cobroImputando()?.id === cobro.id">
                 <td>N.º {{ cobro.comprobanteNumero }}</td>
                 <td>{{ instanteEnPalabras(cobro.cobradoEn) }}</td>
                 <td class="importe">{{ importeEnPalabras(cobro.total, cobro.moneda) }}</td>
                 <td class="importe">{{ importeEnPalabras(cobro.saldoAFavor, cobro.moneda) }}</td>
-                <td>
-                  <div class="acciones-fila">
-                    <button
-                      *akinePermiso="PERMISO_COBRO_REGISTER"
-                      type="button"
-                      class="boton boton--secundario"
-                      (click)="abrirImputacion(cobro)"
-                    >
-                      Imputar a deudas
-                    </button>
-                  </div>
+                <td class="tabla__acciones">
+                  <button
+                    *akinePermiso="PERMISO_COBRO_REGISTER"
+                    type="button"
+                    class="boton boton--secundario boton--chico"
+                    (click)="abrirImputacion(cobro)"
+                  >
+                    Imputar a deudas
+                  </button>
                 </td>
               </tr>
-
-              @if (esElImputando(cobro)) {
-                <tr class="fila-panel">
-                  <td colspan="5">
-                    <form class="tarjeta" (submit)="$event.preventDefault(); confirmarImputacion()">
-                      <h3>
-                        Imputar el saldo a favor del comprobante N.º {{ cobro.comprobanteNumero }}
-                      </h3>
-                      <p class="ayuda">
-                        Disponible:
-                        <b class="importe">{{
-                          importeEnPalabras(cobro.saldoAFavor, cobro.moneda)
-                        }}</b
-                        >. Escribi cuanto aplicar a cada deuda; las que quedan vacias no se tocan.
-                        No mueve la caja.
-                      </p>
-
-                      @if (deudasDelImputando().length === 0) {
-                        <p class="estado estado--vacio">
-                          No hay deudas pendientes de esta persona en la sede y la moneda de este
-                          cobro. El saldo a favor solo se imputa a deudas de la misma sede.
-                        </p>
-                      } @else {
-                        <fieldset class="grupo">
-                          <legend>Deudas pendientes de la misma sede</legend>
-                          @for (deuda of deudasDelImputando(); track deuda.id) {
-                            <div class="campo">
-                              <label [for]="'imputar-' + cobro.id + '-' + deuda.id">
-                                {{ deuda.snapshotNombre }} —
-                                {{ fechaEnPalabras(deuda.devengadaEn) }} — saldo
-                                {{ importe(deuda, deuda.saldo) }}
-                              </label>
-                              <input
-                                [id]="'imputar-' + cobro.id + '-' + deuda.id"
-                                type="text"
-                                inputmode="decimal"
-                                autocomplete="off"
-                                [value]="importeTipeado(deuda)"
-                                (input)="
-                                  cambiarImporteDeImputacion(deuda, $any($event.target).value)
-                                "
-                              />
-                            </div>
-                          }
-                        </fieldset>
-
-                        @if (imputacionIntentada() && problemaDeImputacion(); as problema) {
-                          <p class="estado estado--error" role="alert">{{ problema }}</p>
-                        }
-                      }
-
-                      @if (errorImputacion(); as fallo) {
-                        <div role="alert">
-                          <p class="estado estado--error">{{ fallo.mensaje }}</p>
-                          @if (imputadasAntesDelRechazo() > 0) {
-                            <p class="ayuda">
-                              Antes del rechazo entraron {{ imputadasAntesDelRechazo() }}
-                              imputaciones. Recarga para ver como quedaron los saldos.
-                            </p>
-                          }
-                        </div>
-                      }
-
-                      <div class="acciones">
-                        @if (deudasDelImputando().length > 0) {
-                          <button type="submit" class="boton" [disabled]="enviandoImputacion()">
-                            Imputar
-                          </button>
-                        }
-                        <button
-                          type="button"
-                          class="boton boton--secundario"
-                          (click)="cerrarImputacion()"
-                        >
-                          Cancelar
-                        </button>
-                        @if (errorImputacion()) {
-                          <button
-                            type="button"
-                            class="boton boton--secundario"
-                            (click)="recargarTrasImputacion()"
-                          >
-                            Recargar la cuenta corriente
-                          </button>
-                        }
-                      </div>
-                    </form>
-                  </td>
-                </tr>
-              }
             }
           </tbody>
         </table>
       </div>
     }
   </section>
+}
+
+<!--
+  Anulacion de una deuda e imputacion de un saldo a favor en un panel lateral (refactor UX/UI del
+  28/10/2026). Antes se abrian en una fila de la tabla, que partia el listado; ahora la tabla queda
+  quieta con la fila marcada.
+-->
+@if (obligacionEnPanel(); as obligacion) {
+  <app-panel-lateral
+    [titulo]="'Anular la deuda de ' + importe(obligacion, obligacion.importeOriginal)"
+    (cerrar)="cerrarPanel()"
+  >
+    <!--
+      `motivoObligatorio` se deja en su default (`true`). Aca el motivo no se puede omitir: una
+      deuda que se borra sin explicacion es exactamente lo que una auditoria busca, y la baja
+      logica sin motivo no seria auditable.
+    -->
+    <akine-confirmacion-con-motivo
+      [idCampo]="'anular-' + obligacion.id"
+      [mostrarTitulo]="false"
+      [titulo]="'Anular la deuda de ' + importe(obligacion, obligacion.importeOriginal)"
+      etiqueta="Motivo de la anulacion"
+      ayuda="Queda registrado junto con la deuda. No se borra nada: la obligacion sigue
+                    existiendo, anulada y con este motivo."
+      textoError="El motivo es obligatorio para anular una deuda."
+      textoConfirmar="Anular la deuda"
+      [enviando]="enviando()"
+      (confirmado)="confirmarAnulacion($event)"
+      (cancelado)="cerrarPanel()"
+    >
+      <p class="ayuda ayuda--fija">
+        Corresponde a <b>{{ obligacion.snapshotNombre }}</b> del
+        {{ fechaEnPalabras(obligacion.devengadaEn) }}.
+      </p>
+    </akine-confirmacion-con-motivo>
+
+    @if (errorAccion(); as problema) {
+      <p class="estado estado--error" role="alert">{{ mensajeDelRechazo() }}</p>
+
+      @if (problema.causa === 'con-cobros') {
+        <!--
+                      Explicitamente NO se dice "no se puede". Hay algo que hacer y es otra cosa:
+                      una devolucion, que es su propio circuito (M19) y todavia no tiene pantalla.
+                      Un "no se puede" pelado manda a pedir un permiso que no existe.
+                    -->
+        <p class="ayuda">
+          Lo que corresponde en este caso es registrar una <b>devolucion</b>, que tiene su propio
+          circuito y su propio registro. Todavía no se hace desde el sistema: hay que resolverlo por
+          caja.
+        </p>
+      }
+
+      @if (problema.causa === 'de-venta') {
+        <div class="acciones">
+          <a class="boton boton--secundario" [routerLink]="rutaPases()">
+            Ir a los pases de la persona
+          </a>
+        </div>
+      }
+
+      @if (recargable()) {
+        <div class="acciones">
+          <button type="button" class="boton boton--secundario" (click)="cargar()">
+            Recargar la cuenta corriente
+          </button>
+        </div>
+      }
+    }
+  </app-panel-lateral>
+}
+
+@if (cobroImputando(); as cobro) {
+  <app-panel-lateral
+    [titulo]="'Imputar el saldo a favor del comprobante N.º ' + cobro.comprobanteNumero"
+    ancho="amplio"
+    (cerrar)="cerrarImputacion()"
+  >
+    <form (submit)="$event.preventDefault(); confirmarImputacion()">
+      <p class="ayuda ayuda--fija">
+        Disponible:
+        <b class="importe">{{ importeEnPalabras(cobro.saldoAFavor, cobro.moneda) }}</b
+        >. Escribi cuanto aplicar a cada deuda; las que quedan vacias no se tocan. No mueve la caja.
+      </p>
+
+      @if (deudasDelImputando().length === 0) {
+        <p class="estado estado--vacio">
+          No hay deudas pendientes de esta persona en la sede y la moneda de este cobro. El saldo a
+          favor solo se imputa a deudas de la misma sede.
+        </p>
+      } @else {
+        <fieldset class="grupo">
+          <legend>Deudas pendientes de la misma sede</legend>
+          @for (deuda of deudasDelImputando(); track deuda.id) {
+            <div class="campo">
+              <label [for]="'imputar-' + cobro.id + '-' + deuda.id">
+                {{ deuda.snapshotNombre }} — {{ fechaEnPalabras(deuda.devengadaEn) }} — saldo
+                {{ importe(deuda, deuda.saldo) }}
+              </label>
+              <input
+                [id]="'imputar-' + cobro.id + '-' + deuda.id"
+                type="text"
+                inputmode="decimal"
+                autocomplete="off"
+                [value]="importeTipeado(deuda)"
+                (input)="cambiarImporteDeImputacion(deuda, $any($event.target).value)"
+              />
+            </div>
+          }
+        </fieldset>
+
+        @if (imputacionIntentada() && problemaDeImputacion(); as problema) {
+          <p class="estado estado--error" role="alert">{{ problema }}</p>
+        }
+      }
+
+      @if (errorImputacion(); as fallo) {
+        <div role="alert">
+          <p class="estado estado--error">{{ fallo.mensaje }}</p>
+          @if (imputadasAntesDelRechazo() > 0) {
+            <p class="ayuda ayuda--fija">
+              Antes del rechazo entraron {{ imputadasAntesDelRechazo() }}
+              imputaciones. Recarga para ver como quedaron los saldos.
+            </p>
+          }
+        </div>
+      }
+
+      <div class="acciones">
+        @if (deudasDelImputando().length > 0) {
+          <button type="submit" class="boton" [disabled]="enviandoImputacion()">Imputar</button>
+        }
+        <button type="button" class="boton boton--secundario" (click)="cerrarImputacion()">
+          Cancelar
+        </button>
+        @if (errorImputacion()) {
+          <button type="button" class="boton boton--secundario" (click)="recargarTrasImputacion()">
+            Recargar la cuenta corriente
+          </button>
+        }
+      </div>
+    </form>
+  </app-panel-lateral>
 }

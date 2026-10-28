@@ -20,9 +20,9 @@
 
 @if (oferta(); as detalle) {
   <p class="descripcion">
-    Quien puede prestar <b>{{ detalle.nombreComercial }}</b> y en que espacios de esta sede.
+    <b>{{ detalle.nombreComercial }}</b> · quién la presta y en qué espacios de esta sede
   </p>
-} @else {}
+}
 
 <app-pestanas [pestanas]="pestanasDeOferta" [etiqueta]="etiquetaDePestanas" />
 
@@ -92,194 +92,203 @@
         }
       }
 
-      <!-- Profesionales -->
-      <section class="tarjeta" aria-labelledby="profesionales-titulo">
-        <div class="seccion-cabecera">
-          <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
-            <h2 id="profesionales-titulo">Profesionales</h2>
-            <app-ayuda titulo="Sobre los profesionales">
-              <p>
-                Solo los marcados van a poder prestar esta oferta. Si desmarcás a todos, la oferta
-                vuelve a quedar disponible para cualquiera.
-              </p>
-            </app-ayuda>
+      <!--
+        Refactor UX/UI (28/10/2026): profesionales y espacios lado a lado en escritorio. Son dos
+        listas cortas e independientes, cada una con su guardar.
+      -->
+      <div class="columnas-de-trabajo">
+        <!-- Profesionales -->
+        <section class="tarjeta" aria-labelledby="profesionales-titulo">
+          <div class="seccion-cabecera">
+            <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
+              <h2 id="profesionales-titulo">Profesionales</h2>
+              <app-ayuda titulo="Sobre los profesionales">
+                <p>
+                  Solo los marcados van a poder prestar esta oferta. Si desmarcás a todos, la oferta
+                  vuelve a quedar disponible para cualquiera.
+                </p>
+              </app-ayuda>
+            </div>
+            <span class="seccion-cabecera__resumen"
+              >{{ profesionalesMarcados().size }} habilitados</span
+            >
           </div>
-          <span class="seccion-cabecera__resumen"
-            >{{ profesionalesMarcados().size }} habilitados</span
-          >
-        </div>
 
-        @if (quedaraSinRestringirProfesional()) {
-          <p class="aviso-habilitacion" role="status">
-            <span class="aviso-habilitacion__marca" aria-hidden="true">!</span>
-            <span>
-              <b>Sin ninguno marcado, la oferta queda sin restringir:</b> cualquier profesional con
-              vinculo vigente en esta sede va a poder prestarla. No marcar a nadie NO significa que
-              no pueda ninguno.
-            </span>
-          </p>
-        }
+          @if (quedaraSinRestringirProfesional()) {
+            <p class="aviso-habilitacion" role="status">
+              <span class="aviso-habilitacion__marca" aria-hidden="true">!</span>
+              <span>
+                <b>Sin ninguno marcado, la oferta queda sin restringir:</b> cualquier profesional
+                con vinculo vigente en esta sede va a poder prestarla. No marcar a nadie NO
+                significa que no pueda ninguno.
+              </span>
+            </p>
+          }
 
-        @if (candidatosProfesional().length === 0) {
-          <p class="estado estado--vacio">
-            Todavía no hay ningún profesional configurado para esta oferta, así que hoy la puede
-            prestar cualquiera. Los profesionales de la sede se administran en
-            <a routerLink="/organizacion/colaboradores">Colaboradores</a>.
-          </p>
-        } @else {
-          <div
-            class="tabla-scroll"
-            tabindex="0"
-            role="region"
-            aria-label="Profesionales habilitables"
-          >
-            <table class="tabla">
-              <caption class="visualmente-oculto">
-                Profesionales de la sede y si pueden prestar esta oferta
-              </caption>
-              <thead>
-                <tr>
-                  <th scope="col">Profesional</th>
-                  <th scope="col">Estado</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (candidato of candidatosProfesional(); track candidato.id) {
-                  <tr [class.fila--atenuada]="!estaMarcadoProfesional(candidato.id)">
-                    <td>
-                      <label class="opcion-casilla">
-                        <input
-                          type="checkbox"
-                          [checked]="estaMarcadoProfesional(candidato.id)"
-                          [disabled]="guardando()"
-                          (change)="alternarProfesional(candidato.id)"
-                        />
-                        <span class="habilitable__nombre">{{ candidato.etiqueta }}</span>
-                        @if (candidato.detalle) {
-                          <span class="habilitable__detalle">{{ candidato.detalle }}</span>
+          @if (candidatosProfesional().length === 0) {
+            <p class="estado estado--vacio">
+              Todavía no hay ningún profesional configurado para esta oferta, así que hoy la puede
+              prestar cualquiera. Los profesionales de la sede se administran en
+              <a routerLink="/organizacion/colaboradores">Colaboradores</a>.
+            </p>
+          } @else {
+            <div
+              class="tabla-scroll"
+              tabindex="0"
+              role="region"
+              aria-label="Profesionales habilitables"
+            >
+              <table class="tabla">
+                <caption class="visualmente-oculto">
+                  Profesionales de la sede y si pueden prestar esta oferta
+                </caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Profesional</th>
+                    <th scope="col">Estado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (candidato of candidatosProfesional(); track candidato.id) {
+                    <tr [class.fila--atenuada]="!estaMarcadoProfesional(candidato.id)">
+                      <td>
+                        <label class="opcion-casilla">
+                          <input
+                            type="checkbox"
+                            [checked]="estaMarcadoProfesional(candidato.id)"
+                            [disabled]="guardando()"
+                            (change)="alternarProfesional(candidato.id)"
+                          />
+                          <span class="habilitable__nombre">{{ candidato.etiqueta }}</span>
+                          @if (candidato.detalle) {
+                            <span class="habilitable__detalle">{{ candidato.detalle }}</span>
+                          }
+                        </label>
+                        @if (candidato.advertencia) {
+                          <p class="ayuda habilitable__advertencia">{{ candidato.advertencia }}</p>
                         }
-                      </label>
-                      @if (candidato.advertencia) {
-                        <p class="ayuda habilitable__advertencia">{{ candidato.advertencia }}</p>
-                      }
-                    </td>
-                    <td>
-                      <span
-                        class="marca-estado"
-                        [class.marca-estado--activa]="estaMarcadoProfesional(candidato.id)"
-                      >
-                        {{ estaMarcadoProfesional(candidato.id) ? 'Habilitado' : 'No habilitado' }}
-                      </span>
-                    </td>
+                      </td>
+                      <td>
+                        <span
+                          class="marca-estado"
+                          [class.marca-estado--activa]="estaMarcadoProfesional(candidato.id)"
+                        >
+                          {{
+                            estaMarcadoProfesional(candidato.id) ? 'Habilitado' : 'No habilitado'
+                          }}
+                        </span>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+
+          <div class="pie-de-tarjeta" *akinePermiso="PERMISO_CONSULTORIO_MANAGE">
+            <button
+              type="button"
+              class="boton"
+              [disabled]="guardando() || ofertaIlegible()"
+              (click)="guardarProfesionales()"
+            >
+              {{ guardando() ? 'Guardando…' : 'Guardar los profesionales' }}
+            </button>
+          </div>
+        </section>
+
+        <!-- Espacios -->
+        <section class="tarjeta" aria-labelledby="espacios-titulo">
+          <div class="seccion-cabecera">
+            <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
+              <h2 id="espacios-titulo">Espacios</h2>
+              <app-ayuda titulo="Sobre los espacios">
+                <p>
+                  Solo los marcados se van a poder usar para esta oferta. Que un espacio sirva no se
+                  deduce de su tipo: elegir "Pileta" al darlo de alta no habilita hidroterapia ahi,
+                  lo habilita esta lista.
+                </p>
+              </app-ayuda>
+            </div>
+            <span class="seccion-cabecera__resumen">{{ espaciosMarcados().size }} habilitados</span>
+          </div>
+
+          @if (quedaraSinRestringirEspacio()) {
+            <p class="aviso-habilitacion" role="status">
+              <span class="aviso-habilitacion__marca" aria-hidden="true">!</span>
+              <span>
+                <b
+                  >Sin ninguno marcado, la oferta se puede prestar en cualquier espacio de la
+                  sede.</b
+                >
+                No marcar ninguno NO significa que no se pueda en ninguno.
+              </span>
+            </p>
+          }
+
+          @if (candidatosEspacio().length === 0) {
+            <p class="estado estado--vacio">
+              Todavía no hay ningún espacio configurado, así que la oferta se puede prestar en
+              cualquiera. Los espacios de la sede se administran en
+              <a routerLink="/espacios">Espacios y boxes</a>.
+            </p>
+          } @else {
+            <div class="tabla-scroll" tabindex="0" role="region" aria-label="Espacios habilitables">
+              <table class="tabla">
+                <caption class="visualmente-oculto">
+                  Espacios de la sede y si se pueden usar para esta oferta
+                </caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Espacio</th>
+                    <th scope="col">Estado</th>
                   </tr>
-                }
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  @for (candidato of candidatosEspacio(); track candidato.id) {
+                    <tr [class.fila--atenuada]="!estaMarcadoEspacio(candidato.id)">
+                      <td>
+                        <label class="opcion-casilla">
+                          <input
+                            type="checkbox"
+                            [checked]="estaMarcadoEspacio(candidato.id)"
+                            [disabled]="guardando()"
+                            (change)="alternarEspacio(candidato.id)"
+                          />
+                          <span class="habilitable__nombre">{{ candidato.etiqueta }}</span>
+                          <span class="habilitable__detalle">{{ candidato.detalle }}</span>
+                        </label>
+                        @if (candidato.advertencia) {
+                          <p class="ayuda habilitable__advertencia">{{ candidato.advertencia }}</p>
+                        }
+                      </td>
+                      <td>
+                        <span
+                          class="marca-estado"
+                          [class.marca-estado--activa]="estaMarcadoEspacio(candidato.id)"
+                        >
+                          {{ estaMarcadoEspacio(candidato.id) ? 'Habilitado' : 'No habilitado' }}
+                        </span>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+
+          <div class="pie-de-tarjeta" *akinePermiso="PERMISO_CONSULTORIO_MANAGE">
+            <button
+              type="button"
+              class="boton"
+              [disabled]="guardando() || ofertaIlegible()"
+              (click)="guardarEspacios()"
+            >
+              {{ guardando() ? 'Guardando…' : 'Guardar los espacios' }}
+            </button>
           </div>
-        }
-
-        <div class="pie-de-tarjeta" *akinePermiso="PERMISO_CONSULTORIO_MANAGE">
-          <button
-            type="button"
-            class="boton"
-            [disabled]="guardando() || ofertaIlegible()"
-            (click)="guardarProfesionales()"
-          >
-            {{ guardando() ? 'Guardando…' : 'Guardar los profesionales' }}
-          </button>
-        </div>
-      </section>
-
-      <!-- Espacios -->
-      <section class="tarjeta" aria-labelledby="espacios-titulo">
-        <div class="seccion-cabecera">
-          <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
-            <h2 id="espacios-titulo">Espacios</h2>
-            <app-ayuda titulo="Sobre los espacios">
-              <p>
-                Solo los marcados se van a poder usar para esta oferta. Que un espacio sirva no se
-                deduce de su tipo: elegir "Pileta" al darlo de alta no habilita hidroterapia ahi, lo
-                habilita esta lista.
-              </p>
-            </app-ayuda>
-          </div>
-          <span class="seccion-cabecera__resumen">{{ espaciosMarcados().size }} habilitados</span>
-        </div>
-
-        @if (quedaraSinRestringirEspacio()) {
-          <p class="aviso-habilitacion" role="status">
-            <span class="aviso-habilitacion__marca" aria-hidden="true">!</span>
-            <span>
-              <b
-                >Sin ninguno marcado, la oferta se puede prestar en cualquier espacio de la sede.</b
-              >
-              No marcar ninguno NO significa que no se pueda en ninguno.
-            </span>
-          </p>
-        }
-
-        @if (candidatosEspacio().length === 0) {
-          <p class="estado estado--vacio">
-            Todavía no hay ningún espacio configurado, así que la oferta se puede prestar en
-            cualquiera. Los espacios de la sede se administran en
-            <a routerLink="/espacios">Espacios y boxes</a>.
-          </p>
-        } @else {
-          <div class="tabla-scroll" tabindex="0" role="region" aria-label="Espacios habilitables">
-            <table class="tabla">
-              <caption class="visualmente-oculto">
-                Espacios de la sede y si se pueden usar para esta oferta
-              </caption>
-              <thead>
-                <tr>
-                  <th scope="col">Espacio</th>
-                  <th scope="col">Estado</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (candidato of candidatosEspacio(); track candidato.id) {
-                  <tr [class.fila--atenuada]="!estaMarcadoEspacio(candidato.id)">
-                    <td>
-                      <label class="opcion-casilla">
-                        <input
-                          type="checkbox"
-                          [checked]="estaMarcadoEspacio(candidato.id)"
-                          [disabled]="guardando()"
-                          (change)="alternarEspacio(candidato.id)"
-                        />
-                        <span class="habilitable__nombre">{{ candidato.etiqueta }}</span>
-                        <span class="habilitable__detalle">{{ candidato.detalle }}</span>
-                      </label>
-                      @if (candidato.advertencia) {
-                        <p class="ayuda habilitable__advertencia">{{ candidato.advertencia }}</p>
-                      }
-                    </td>
-                    <td>
-                      <span
-                        class="marca-estado"
-                        [class.marca-estado--activa]="estaMarcadoEspacio(candidato.id)"
-                      >
-                        {{ estaMarcadoEspacio(candidato.id) ? 'Habilitado' : 'No habilitado' }}
-                      </span>
-                    </td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-          </div>
-        }
-
-        <div class="pie-de-tarjeta" *akinePermiso="PERMISO_CONSULTORIO_MANAGE">
-          <button
-            type="button"
-            class="boton"
-            [disabled]="guardando() || ofertaIlegible()"
-            (click)="guardarEspacios()"
-          >
-            {{ guardando() ? 'Guardando…' : 'Guardar los espacios' }}
-          </button>
-        </div>
-      </section>
+        </section>
+      </div>
     }
   }
 }

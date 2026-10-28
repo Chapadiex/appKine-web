@@ -106,7 +106,9 @@
   @if (error(); as mensaje) {
     <p class="estado estado--error">{{ mensaje }}</p>
     @if (faltaContexto()) {
-      <p><a class="enlace" routerLink="/seleccionar-contexto">Elegir contexto de trabajo</a></p>
+      <div class="acciones">
+        <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto de trabajo</a>
+      </div>
     }
   }
 

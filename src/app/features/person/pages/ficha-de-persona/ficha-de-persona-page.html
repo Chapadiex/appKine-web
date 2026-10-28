@@ -41,6 +41,23 @@
         Abrir la historia clínica
       </a>
     }
+    <!--
+      Bajas (refactor UX/UI del 28/10/2026): antes eran una seccion al pie de la ficha, con aspecto
+      de pantalla de configuracion. Son lo ultimo que alguien viene a hacer, asi que van detras del
+      menu "⋯" de la cabecera y se confirman en un panel lateral.
+    -->
+    @if (!personaInactiva(ficha)) {
+      <ng-container *akinePermiso="permisoManage">
+        <app-acciones-de-fila [de]="nombreCompleto(ficha)">
+          @if (ficha.esPaciente) {
+            <button type="button" (click)="abrirBaja('perfil')">
+              Dar de baja el perfil de paciente
+            </button>
+          }
+          <button type="button" (click)="abrirBaja('persona')">Dar de baja la ficha</button>
+        </app-acciones-de-fila>
+      </ng-container>
+    }
   </app-cabecera-de-ficha>
 
   <div aria-live="polite">
@@ -165,10 +182,10 @@
                     <span class="etiqueta">Principal</span>
                   }
                   @if (cobertura.afiliado) {
-                    <p class="ayuda">{{ cobertura.afiliado }}</p>
+                    <p class="ayuda ayuda--fija">{{ cobertura.afiliado }}</p>
                   }
                   @if (cobertura.vigencia) {
-                    <p class="ayuda">{{ cobertura.vigencia }}</p>
+                    <p class="ayuda ayuda--fija">{{ cobertura.vigencia }}</p>
                   }
                   @if (cobertura.credencialVencida) {
                     <p>
@@ -176,7 +193,7 @@
                       renovada antes de presentar la prestación.
                     </p>
                   } @else if (cobertura.credencial) {
-                    <p class="ayuda">{{ cobertura.credencial }}</p>
+                    <p class="ayuda ayuda--fija">{{ cobertura.credencial }}</p>
                   }
                 </li>
               }
@@ -250,74 +267,62 @@
     </section>
   </div>
 
-  <!-- Bajas. Al final: son lo ultimo que alguien hace, y no lo que viene a hacer. -->
-  @if (!personaInactiva(ficha)) {
-    <section class="tarjeta ficha-bajas" aria-labelledby="titulo-bajas">
-      <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
-        <h2 id="titulo-bajas">Dar de baja</h2>
-        <app-ayuda titulo="Dar de baja">
-          <p>
-            Ninguna de las dos borra nada. Los turnos, las deudas, los documentos y —si la hubiera—
-            la historia clínica quedan intactos y se siguen consultando.
-          </p>
-        </app-ayuda>
-      </div>
-
-      <p class="acciones">
-        @if (ficha.esPaciente) {
-          <button
-            type="button"
-            class="boton boton--secundario"
-            (click)="abrirBaja('perfil')"
-            *akinePermiso="permisoManage"
-          >
-            Dar de baja el perfil de paciente
-          </button>
-        }
-        <button
-          type="button"
-          class="boton boton--secundario"
-          (click)="abrirBaja('persona')"
-          *akinePermiso="permisoManage"
-        >
-          Dar de baja la ficha
-        </button>
-      </p>
-
-      @if (baja() === 'perfil') {
+  @if (baja(); as tipo) {
+    <app-panel-lateral
+      [titulo]="
+        tipo === 'perfil'
+          ? 'Dar de baja el perfil de paciente de ' + nombreCompleto(ficha)
+          : 'Dar de baja la ficha de ' + nombreCompleto(ficha)
+      "
+      (cerrar)="cerrarPaneles()"
+    >
+      @if (tipo === 'perfil') {
         <akine-confirmacion-con-motivo
           idCampo="baja-perfil"
           titulo="Dar de baja el perfil de paciente de {{ nombreCompleto(ficha) }}"
+          [mostrarTitulo]="false"
           etiqueta="Motivo"
           ayuda="La persona sigue vigente en el padrón y deja de ser paciente: puede seguir viniendo a actividades no clínicas. NO se borra la historia clínica; si el perfil se reactiva, la historia que había sigue estando."
           textoConfirmar="Confirmar la baja del perfil"
           [enviando]="enviando()"
           (confirmado)="confirmarBajaDePerfil($event)"
           (cancelado)="cerrarPaneles()"
-        />
-      }
-
-      @if (baja() === 'persona') {
+        >
+          <p class="ayuda ayuda--fija">
+            No se borra nada: los turnos, las deudas y los documentos quedan intactos.
+          </p>
+        </akine-confirmacion-con-motivo>
+      } @else {
         <akine-confirmacion-con-motivo
           idCampo="baja-persona"
           titulo="Dar de baja la ficha de {{ nombreCompleto(ficha) }}"
+          [mostrarTitulo]="false"
           etiqueta="Motivo"
           ayuda="La ficha deja de admitir operaciones nuevas: no se edita, no se le activan perfiles y no se le suben documentos. Si es paciente, también se le da de baja el perfil en el mismo acto. Su documento queda libre para usarse en un alta nueva."
           textoConfirmar="Confirmar la baja de la ficha"
           [enviando]="enviando()"
           (confirmado)="confirmarBajaDePersona($event)"
           (cancelado)="cerrarPaneles()"
-        />
+        >
+          <p class="ayuda ayuda--fija">
+            No se borra nada: los turnos, las deudas, los documentos y —si la hubiera— la historia
+            clínica quedan intactos y se siguen consultando.
+          </p>
+        </akine-confirmacion-con-motivo>
       }
 
-      @if (errorAccion(); as mensaje) {
-        <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-        @if (hayQueRecargar()) {
-          <p class="acciones">
-            <button type="button" class="boton" (click)="cargar()">Recargar la ficha</button>
-          </p>
+      <div aria-live="polite">
+        @if (errorAccion(); as mensaje) {
+          <p class="estado estado--error" role="alert">{{ mensaje }}</p>
+          @if (hayQueRecargar()) {
+            <p class="acciones">
+              <button type="button" class="boton boton--secundario" (click)="cargar()">
+                Recargar la ficha
+              </button>
+            </p>
+          }
         }
-      }
-    </section>
+      </div>
+    </app-panel-lateral>
   }
 }

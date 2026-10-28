@@ -5,55 +5,64 @@
       Una sede es un consultorio de esta organización: tiene su propia zona horaria, su propia
       agenda y sus propios turnos. Lo unico obligatorio es el nombre.
     </p>
+    <p>
+      La configuración inicial (primer box, horario general y datos institucionales) es opcional:
+      podés saltearla y completarla después desde Espacios, el calendario de la sede o la edición de
+      la sede.
+    </p>
   </app-ayuda>
 </div>
 
+<!--
+  Proceso guiado en tres pasos, con el indicador ARRIBA y a todo el ancho (refactor UX/UI del
+  28/10/2026). La columna lateral de pasos ocupaba 200 px permanentes para mostrar dos rotulos y
+  empujaba el formulario a una franja angosta en el centro.
+-->
 <section class="asistente" aria-labelledby="titulo-alta-sede">
   <ol class="asistente__pasos" aria-label="Pasos para abrir la sede">
-    <li
-      class="asistente__paso"
-      [class.asistente__paso--hecho]="paso() === 2 || hecho()"
-      [attr.aria-current]="paso() === 1 && !hecho() ? 'step' : null"
-    >
-      <span class="asistente__marca" aria-hidden="true">{{
-        paso() === 2 || hecho() ? '✓' : '1'
-      }}</span>
-      <span>
-        <span class="asistente__titulo">Datos de la sede</span>
-        <span class="asistente__sub">Zona horaria, box y horario</span>
-      </span>
-    </li>
-    <li
-      class="asistente__paso"
-      [class.asistente__paso--hecho]="hecho()"
-      [attr.aria-current]="paso() === 2 && !hecho() ? 'step' : null"
-    >
-      <span class="asistente__marca" aria-hidden="true">{{ hecho() ? '✓' : '2' }}</span>
-      <span>
-        <span class="asistente__titulo">Confirmación</span>
-        <span class="asistente__sub">Datos institucionales y revisión</span>
-      </span>
-    </li>
+    @for (item of pasos; track item.numero) {
+      <li
+        class="asistente__paso"
+        [class.asistente__paso--hecho]="item.numero < paso() || hecho()"
+        [attr.aria-current]="item.numero === paso() && !hecho() ? 'step' : null"
+      >
+        @if (item.numero < paso() && !hecho()) {
+          <!-- Un paso hecho se puede revisar: es un boton, no un rotulo. -->
+          <button type="button" class="asistente__volver" (click)="irAPaso(item.numero)">
+            <span class="asistente__marca" aria-hidden="true">✓</span>
+            <span class="asistente__textos">
+              <span class="asistente__titulo">{{ item.titulo }}</span>
+              <span class="asistente__sub">{{ item.sub }}</span>
+            </span>
+            <span class="visualmente-oculto">(hecho, volver a este paso)</span>
+          </button>
+        } @else {
+          <span class="asistente__marca" aria-hidden="true">{{
+            item.numero < paso() || hecho() ? '✓' : item.numero
+          }}</span>
+          <span class="asistente__textos">
+            <span class="asistente__titulo">{{ item.titulo }}</span>
+            <span class="asistente__sub">{{ item.sub }}</span>
+          </span>
+        }
+      </li>
+    }
   </ol>
 
   <div class="asistente__contenido">
-    <h2 id="titulo-alta-sede">
+    <h2 id="titulo-alta-sede" class="asistente__encabezado" tabindex="-1">
       @if (hecho()) {
         Sede creada
       } @else {
-        Paso {{ paso() }} de 2 &mdash;
-        @if (paso() === 1) {
-          Datos de la sede
-        } @else {
-          Datos institucionales y confirmación
-        }
+        <span class="asistente__numero">Paso {{ paso() }} de 3</span>
+        {{ pasos[paso() - 1].titulo }}
       }
     </h2>
 
     <div aria-live="polite">
       @if (hecho()) {
         <p class="estado estado--ok">La sede "{{ sedeCreada() }}" quedo creada.</p>
-        <p class="ayuda">
+        <p class="ayuda ayuda--fija">
           @if (conBoxCreado()) {
             Se creo junto con su primer box.
           } @else {
@@ -72,237 +81,290 @@
     </div>
 
     @if (!hecho()) {
-      <form [formGroup]="formulario" (ngSubmit)="paso() === 1 ? avanzar() : enviar()" novalidate>
-        @if (paso() === 1) {
-          <div class="campo">
-            <label for="sede-name">Nombre de la sede</label>
-            <input
-              id="sede-name"
-              type="text"
-              formControlName="name"
-              autocomplete="off"
-              aria-describedby="sede-name-ayuda"
-              [attr.aria-invalid]="mostrarError('name')"
-            />
-            <p class="ayuda" id="sede-name-ayuda">
-              Como la llaman en el centro: "Sede Norte", "Consultorio Centro". Tiene que ser
-              distinto del de las otras sedes vigentes.
-            </p>
-            @if (mostrarError('name')) {
-              <p class="campo__error" id="sede-name-error">La sede necesita un nombre.</p>
-            }
-          </div>
-
-          <div class="campo">
-            <label for="sede-timezone">Zona horaria</label>
-            <select
-              id="sede-timezone"
-              formControlName="timezone"
-              aria-describedby="sede-timezone-ayuda"
-            >
-              <option value="">La misma que la organización</option>
-              <optgroup label="Argentina">
-                @for (zona of zonas.argentinas; track zona) {
-                  <option [value]="zona">{{ etiquetaDeZona(zona) }}</option>
-                }
-              </optgroup>
-              @if (zonas.resto.length > 0) {
-                <optgroup label="Resto del mundo">
-                  @for (zona of zonas.resto; track zona) {
-                    <option [value]="zona">{{ zona }}</option>
-                  }
-                </optgroup>
-              }
-            </select>
-            <!--
-            Es un selector y no un campo de texto a proposito: el backend solo acepta
-            identificadores IANA. Un offset como -03:00 lo rechaza, y con razon: no conoce el
-            horario de verano, asi que la agenda se correria una hora al cambiar la regla.
-          -->
-            <p class="ayuda" id="sede-timezone-ayuda">
-              Es la que rige el día operativo y la agenda de esta sede. Si la sede esta en otra
-              provincia con horario distinto, elegila acá.
-            </p>
-          </div>
-
-          <div class="campo">
-            <label for="sede-slotMinutes">
-              Duración del turno, en minutos <span class="campo__opcional">(opcional)</span>
-            </label>
-            <input
-              id="sede-slotMinutes"
-              type="number"
-              min="1"
-              formControlName="slotMinutes"
-              aria-describedby="sede-slotMinutes-ayuda"
-              [attr.aria-invalid]="mostrarError('slotMinutes')"
-            />
-            <p class="ayuda" id="sede-slotMinutes-ayuda">
-              Es el intervalo por defecto de la agenda. Si lo dejas vacío, 30 minutos.
-            </p>
-            @if (mostrarError('slotMinutes')) {
-              <p class="campo__error" id="sede-slotMinutes-error">
-                Tiene que ser un número de minutos mayor que cero.
-              </p>
-            }
-          </div>
-
-          <fieldset class="grupo" aria-describedby="sede-box-ayuda">
-            <legend>Primer box <span class="campo__opcional">(opcional)</span></legend>
-            <p class="ayuda" id="sede-box-ayuda">
-              Si lo cargas ahora, la sede y el box se crean juntos. Si lo dejas vacío, la sede se
-              crea sin boxes y los agregas después desde Espacios.
-            </p>
-
-            <div class="campo">
-              <label for="sede-boxNombre">Nombre del box</label>
-              <input
-                id="sede-boxNombre"
-                type="text"
-                formControlName="boxNombre"
-                autocomplete="off"
-                placeholder="Box 1"
-                [attr.aria-invalid]="errorPrimerBox() !== null"
-                [attr.aria-describedby]="errorPrimerBox() !== null ? 'sede-box-error' : null"
-              />
-            </div>
-
-            <div class="campo">
-              <label for="sede-boxCapacidad">
-                Capacidad <span class="campo__opcional">(opcional)</span>
-              </label>
-              <input
-                id="sede-boxCapacidad"
-                type="number"
-                min="1"
-                formControlName="boxCapacidad"
-                aria-describedby="sede-boxCapacidad-ayuda"
-                [attr.aria-invalid]="mostrarError('boxCapacidad')"
-              />
-              <p class="ayuda" id="sede-boxCapacidad-ayuda">
-                Cuantas personas atiende a la vez. Si lo dejas vacío, 1. Sin nombre no se crea el
-                box.
-              </p>
-              @if (mostrarError('boxCapacidad')) {
-                <p class="campo__error" id="sede-boxCapacidad-error">
-                  Tiene que ser un número mayor que cero.
+      <form
+        class="formulario--libre"
+        [formGroup]="formulario"
+        (ngSubmit)="paso() === 3 ? enviar() : avanzar()"
+        novalidate
+      >
+        @switch (paso()) {
+          @case (1) {
+            <!-- Lo minimo para que la sede exista y funcione. -->
+            <div class="asistente__grilla asistente__grilla--tres">
+              <div class="campo">
+                <label for="sede-name">Nombre de la sede</label>
+                <input
+                  id="sede-name"
+                  type="text"
+                  formControlName="name"
+                  autocomplete="off"
+                  placeholder="Sede Norte"
+                  aria-describedby="sede-name-ayuda"
+                  [attr.aria-invalid]="mostrarError('name')"
+                />
+                <p class="ayuda" id="sede-name-ayuda">
+                  Como la llaman en el centro. Tiene que ser distinto del de las otras sedes
+                  vigentes.
                 </p>
-              }
+                @if (mostrarError('name')) {
+                  <p class="campo__error" id="sede-name-error">La sede necesita un nombre.</p>
+                }
+              </div>
+
+              <div class="campo">
+                <label for="sede-timezone">Zona horaria</label>
+                <!--
+                  Es un selector y no un campo de texto a proposito: el backend solo acepta
+                  identificadores IANA. Un offset como -03:00 lo rechaza, y con razon: no conoce
+                  el horario de verano, asi que la agenda se correria una hora al cambiar la regla.
+                -->
+                <select
+                  id="sede-timezone"
+                  formControlName="timezone"
+                  aria-describedby="sede-timezone-ayuda"
+                >
+                  <option value="">La misma que la organización</option>
+                  <optgroup label="Argentina">
+                    @for (zona of zonas.argentinas; track zona) {
+                      <option [value]="zona">{{ etiquetaDeZona(zona) }}</option>
+                    }
+                  </optgroup>
+                  @if (zonas.resto.length > 0) {
+                    <optgroup label="Resto del mundo">
+                      @for (zona of zonas.resto; track zona) {
+                        <option [value]="zona">{{ zona }}</option>
+                      }
+                    </optgroup>
+                  }
+                </select>
+                <p class="ayuda" id="sede-timezone-ayuda">
+                  Rige el día operativo y la agenda de esta sede. Cambiala solo si la sede está en
+                  otra provincia con horario distinto.
+                </p>
+              </div>
+
+              <div class="campo">
+                <label for="sede-slotMinutes">
+                  Duración del turno (min) <span class="campo__opcional">(opcional)</span>
+                </label>
+                <input
+                  id="sede-slotMinutes"
+                  type="number"
+                  min="1"
+                  placeholder="30"
+                  formControlName="slotMinutes"
+                  aria-describedby="sede-slotMinutes-ayuda"
+                  [attr.aria-invalid]="mostrarError('slotMinutes')"
+                />
+                <p class="ayuda" id="sede-slotMinutes-ayuda">
+                  El intervalo por defecto de la agenda. Si lo dejás vacío, 30 minutos.
+                </p>
+                @if (mostrarError('slotMinutes')) {
+                  <p class="campo__error" id="sede-slotMinutes-error">
+                    Tiene que ser un número de minutos mayor que cero.
+                  </p>
+                }
+              </div>
             </div>
 
-            @if (errorPrimerBox(); as mensaje) {
-              <p class="campo__error" id="sede-box-error">{{ mensaje }}</p>
-            }
-          </fieldset>
+            <div class="acciones asistente__acciones">
+              <button type="submit" class="boton">Continuar &rarr;</button>
+              <a class="boton boton--secundario" routerLink="/organizacion/sedes">Cancelar</a>
+            </div>
+          }
 
-          <section class="grupo" aria-labelledby="titulo-horario-general">
-            <h3 id="titulo-horario-general" tabindex="-1">
-              Horario general <span class="campo__opcional">(opcional)</span>
-            </h3>
-            <p class="ayuda">
-              Los días y horas en que la sede esta abierta. <b>Limita la agenda</b>: ningún turno se
-              ofrece fuera de este horario, aunque el profesional tenga disponibilidad. Sin horario
-              no se limita nada. Se puede cargar o cambiar después desde el calendario de la sede.
+          @case (2) {
+            <!-- Instruccion de un paso: va a la vista. -->
+            <p class="asistente__nota">
+              Todo es opcional: podés seguir sin cargar nada y completarlo después.
             </p>
-            <app-editor-de-franjas
-              idBase="sede-horario"
-              [franjas]="horario"
-              [mostrarErrores]="intentos() > 0"
-              [erroresDelServidor]="erroresHorario()"
-            />
-          </section>
 
-          <div class="acciones">
-            <button type="submit" class="boton">Continuar</button>
-            <a class="boton boton--secundario" routerLink="/organizacion/sedes">Cancelar</a>
-          </div>
-        } @else {
-          <p class="ayuda">
-            Estos datos son administrativos y podés dejarlos para después: se cargan y se corrigen
-            desde la edicion de la sede en cualquier momento.
-          </p>
+            <div class="asistente__grilla asistente__grilla--dos">
+              <fieldset class="bloque" aria-describedby="sede-box-ayuda">
+                <legend class="bloque__titulo">Primer box</legend>
+                <p class="bloque__ayuda" id="sede-box-ayuda">
+                  Si lo cargás, la sede y el box se crean juntos. Si no, los agregás desde Espacios.
+                </p>
 
-          <div class="campo">
-            <label for="sede-legalName">
-              Razón social <span class="campo__opcional">(opcional)</span>
-            </label>
-            <input id="sede-legalName" type="text" formControlName="legalName" />
-          </div>
+                <div class="bloque__campos">
+                  <div class="campo">
+                    <label for="sede-boxNombre">Nombre del box</label>
+                    <input
+                      id="sede-boxNombre"
+                      type="text"
+                      formControlName="boxNombre"
+                      autocomplete="off"
+                      placeholder="Box 1"
+                      [attr.aria-invalid]="errorPrimerBox() !== null"
+                      [attr.aria-describedby]="errorPrimerBox() !== null ? 'sede-box-error' : null"
+                    />
+                  </div>
 
-          <div class="campo">
-            <label for="sede-taxId">
-              CUIT o identificacion fiscal <span class="campo__opcional">(opcional)</span>
-            </label>
-            <input id="sede-taxId" type="text" formControlName="taxId" />
-          </div>
+                  <div class="campo">
+                    <label for="sede-boxCapacidad">Capacidad</label>
+                    <input
+                      id="sede-boxCapacidad"
+                      type="number"
+                      min="1"
+                      placeholder="1"
+                      formControlName="boxCapacidad"
+                      aria-describedby="sede-boxCapacidad-ayuda"
+                      [attr.aria-invalid]="mostrarError('boxCapacidad')"
+                    />
+                    <p class="ayuda" id="sede-boxCapacidad-ayuda">
+                      Cuántas personas atiende a la vez. Sin nombre no se crea el box.
+                    </p>
+                    @if (mostrarError('boxCapacidad')) {
+                      <p class="campo__error" id="sede-boxCapacidad-error">
+                        Tiene que ser un número mayor que cero.
+                      </p>
+                    }
+                  </div>
+                </div>
 
-          <div class="campo">
-            <label for="sede-addressLine">
-              Dirección <span class="campo__opcional">(opcional)</span>
-            </label>
-            <input id="sede-addressLine" type="text" formControlName="addressLine" />
-          </div>
+                @if (errorPrimerBox(); as mensaje) {
+                  <p class="campo__error" id="sede-box-error">{{ mensaje }}</p>
+                }
+              </fieldset>
 
-          <div class="campo">
-            <label for="sede-phone">Teléfono <span class="campo__opcional">(opcional)</span></label>
-            <input id="sede-phone" type="tel" formControlName="phone" />
-          </div>
+              <section class="bloque" aria-labelledby="titulo-horario-general">
+                <h3 class="bloque__titulo" id="titulo-horario-general" tabindex="-1">
+                  Horario general
+                </h3>
+                <!-- Consecuencia que cambia lo que se carga: queda a la vista. -->
+                <p class="bloque__ayuda">
+                  Los días y horas en que la sede abre. <b>Limita la agenda</b>: ningún turno se
+                  ofrece fuera de este horario.
+                </p>
+                <app-editor-de-franjas
+                  idBase="sede-horario"
+                  [franjas]="horario"
+                  [mostrarErrores]="intentos() > 0"
+                  [erroresDelServidor]="erroresHorario()"
+                />
+              </section>
+            </div>
 
-          <div class="campo">
-            <label for="sede-contactEmail">
-              Email de contacto <span class="campo__opcional">(opcional)</span>
-            </label>
-            <input
-              id="sede-contactEmail"
-              type="email"
-              formControlName="contactEmail"
-              [attr.aria-invalid]="mostrarError('contactEmail')"
-              [attr.aria-describedby]="
-                mostrarError('contactEmail') ? 'sede-contactEmail-error' : null
-              "
-            />
-            @if (mostrarError('contactEmail')) {
-              <p class="campo__error" id="sede-contactEmail-error">
-                Ese email no tiene una forma valida.
-              </p>
-            }
-          </div>
+            <details
+              class="seccion-plegable"
+              [open]="institucionalAbierto()"
+              (toggle)="institucionalAbierto.set($any($event.target).open)"
+            >
+              <summary>
+                Datos institucionales
+                <span class="seccion-plegable__resumen">{{ resumenInstitucional() }}</span>
+              </summary>
 
-          <dl class="detalle">
-            <dt>Nombre</dt>
-            <dd>{{ resumen().nombre }}</dd>
-            <dt>Zona horaria</dt>
-            <dd>{{ resumen().zona }}</dd>
-            <dt>Duración del turno</dt>
-            <dd>{{ resumen().turno }}</dd>
-            <dt>Primer box</dt>
-            <dd>{{ resumen().box }}</dd>
-            <dt>Horario general</dt>
-            <dd>
-              @if (resumen().horario.length === 0) {
-                Sin horario general por ahora
-              } @else {
-                <ul>
-                  @for (linea of resumen().horario; track $index) {
-                    <li>{{ linea }}</li>
+              <div class="asistente__grilla asistente__grilla--dos">
+                <div class="campo">
+                  <label for="sede-legalName">Razón social</label>
+                  <input id="sede-legalName" type="text" formControlName="legalName" />
+                </div>
+
+                <div class="campo">
+                  <label for="sede-taxId">CUIT o identificación fiscal</label>
+                  <input id="sede-taxId" type="text" formControlName="taxId" />
+                </div>
+
+                <div class="campo">
+                  <label for="sede-addressLine">Dirección</label>
+                  <input id="sede-addressLine" type="text" formControlName="addressLine" />
+                </div>
+
+                <div class="campo">
+                  <label for="sede-phone">Teléfono</label>
+                  <input id="sede-phone" type="tel" formControlName="phone" />
+                </div>
+
+                <div class="campo campo--ancho">
+                  <label for="sede-contactEmail">Email de contacto</label>
+                  <input
+                    id="sede-contactEmail"
+                    type="email"
+                    formControlName="contactEmail"
+                    [attr.aria-invalid]="mostrarError('contactEmail')"
+                    [attr.aria-describedby]="
+                      mostrarError('contactEmail') ? 'sede-contactEmail-error' : null
+                    "
+                  />
+                  @if (mostrarError('contactEmail')) {
+                    <p class="campo__error" id="sede-contactEmail-error">
+                      Ese email no tiene una forma valida.
+                    </p>
                   }
-                </ul>
-              }
-            </dd>
-          </dl>
+                </div>
+              </div>
+            </details>
 
-          <div class="acciones">
-            <button type="submit" class="boton" [disabled]="bloqueado()">
-              @if (espera.activa()) {
-                Espera {{ espera.segundos() }} s
-              } @else {
-                Crear la sede
-              }
-            </button>
-            <button type="button" class="boton boton--secundario" (click)="volver()">
-              Volver a los datos de la sede
-            </button>
-          </div>
+            <div class="acciones asistente__acciones">
+              <button type="submit" class="boton">Continuar &rarr;</button>
+              <button type="button" class="boton boton--secundario" (click)="volver()">
+                &larr; Anterior
+              </button>
+            </div>
+          }
+
+          @case (3) {
+            <!-- Todo lo que se va a crear, de un vistazo y agrupado como se cargo. -->
+            <div class="asistente__grilla asistente__grilla--dos">
+              <section class="resumen" aria-labelledby="resumen-principal">
+                <h3 class="resumen__titulo" id="resumen-principal">Datos de la sede</h3>
+                <dl class="detalle">
+                  <dt>Nombre</dt>
+                  <dd>{{ resumen().nombre }}</dd>
+                  <dt>Zona horaria</dt>
+                  <dd>{{ resumen().zona }}</dd>
+                  <dt>Duración del turno</dt>
+                  <dd>{{ resumen().turno }}</dd>
+                </dl>
+              </section>
+
+              <section class="resumen" aria-labelledby="resumen-configuracion">
+                <h3 class="resumen__titulo" id="resumen-configuracion">Configuración inicial</h3>
+                <dl class="detalle">
+                  <dt>Primer box</dt>
+                  <dd>{{ resumen().box }}</dd>
+                  <dt>Horario general</dt>
+                  <dd>
+                    @if (resumen().horario.length === 0) {
+                      Sin horario general por ahora
+                    } @else {
+                      <ul class="resumen__lista">
+                        @for (linea of resumen().horario; track $index) {
+                          <li>{{ linea }}</li>
+                        }
+                      </ul>
+                    }
+                  </dd>
+                  <dt>Datos institucionales</dt>
+                  <dd>
+                    @if (resumen().institucional.length === 0) {
+                      Sin cargar por ahora
+                    } @else {
+                      <ul class="resumen__lista">
+                        @for (dato of resumen().institucional; track $index) {
+                          <li>{{ dato }}</li>
+                        }
+                      </ul>
+                    }
+                  </dd>
+                </dl>
+              </section>
+            </div>
+
+            <div class="acciones asistente__acciones">
+              <button type="submit" class="boton" [disabled]="bloqueado()">
+                @if (espera.activa()) {
+                  Espera {{ espera.segundos() }} s
+                } @else {
+                  Crear la sede
+                }
+              </button>
+              <button type="button" class="boton boton--secundario" (click)="volver()">
+                &larr; Anterior
+              </button>
+            </div>
+          }
         }
       </form>
     }

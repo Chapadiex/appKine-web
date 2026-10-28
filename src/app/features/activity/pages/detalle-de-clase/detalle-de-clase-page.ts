@@ -30,7 +30,6 @@ import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { PermissionsStore } from '../../../../core/services/permissions.store';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { ConfirmacionConMotivo } from '../../../../shared/components/confirmacion-con-motivo/confirmacion-con-motivo';
-import { FocoAlMontar } from '../../../../shared/directives/foco-al-montar.directive';
 import { nuevaClaveDeIntento } from '../../../../shared/utils/clave-de-intento';
 import { InstructoresDeClaseComponent } from '../../components/instructores-de-clase/instructores-de-clase';
 import { ErrorActividad, traducirErrorActividad } from '../../models/actividad-errors';
@@ -50,6 +49,8 @@ import {
 } from '../../models/clases';
 import { RUTA_CLASES } from '../../models/rutas-de-clases';
 import { ActivityApi } from '../../services/activity-api';
+import { AccionesDeFila } from '../../../../shared/components/acciones-de-fila/acciones-de-fila';
+import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 
 const ESPERA_DE_BUSQUEDA_MS = 300;
@@ -92,8 +93,9 @@ type Panel =
     ReactiveFormsModule,
     RouterLink,
     ConfirmacionConMotivo,
-    FocoAlMontar,
     InstructoresDeClaseComponent,
+    AccionesDeFila,
+    PanelLateral,
   ],
   templateUrl: './detalle-de-clase-page.html',
   styleUrl: '../../activity.css',
@@ -333,10 +335,10 @@ export class DetalleDeClasePage {
   }
 
   /**
-   * Cierra el panel abierto. "Reprogramar" y "Cancelar la clase" se ocultan mientras hay un panel y
-   * vuelven a dibujarse —elementos nuevos— al cerrarlo: el foco se lleva al que lo abrio a mano
-   * (WCAG 2.4.3). La baja de un participante no lo necesita: su boton sigue en la fila y la
-   * confirmacion le devuelve el foco sola.
+   * Cierra el panel lateral abierto y lleva el foco al control que lo abrio (WCAG 2.4.3).
+   * "Reprogramar" sigue a la vista; "Cancelar la clase" vive en el menu "⋯" de la cabecera
+   * (refactor UX/UI del 28/10/2026), que queda cerrado: el foco vuelve a ese boton "⋯". La baja de
+   * un participante no lo necesita: el panel le devuelve el foco solo.
    */
   protected cerrarPanel(): void {
     const abierto = this.panel().tipo;
@@ -344,7 +346,7 @@ export class DetalleDeClasePage {
     if (abierto === 'reprogramar') {
       this.enfocarDespues('#boton-reprogramar');
     } else if (abierto === 'cancelar') {
-      this.enfocarDespues('#boton-cancelar-clase');
+      this.enfocarDespues('.encabezado__acciones .acciones-de-fila__boton');
     }
   }
 

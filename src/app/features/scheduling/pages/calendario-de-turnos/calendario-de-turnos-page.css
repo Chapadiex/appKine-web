@@ -138,12 +138,11 @@
   text-transform: uppercase;
 }
 
+/* Las acciones del turno elegido, una debajo de la otra a todo el ancho del detalle. */
 .calendario__enlaces {
   display: grid;
   gap: var(--esp-3);
   margin: var(--esp-6) 0 0;
   padding: var(--esp-5) 0 0;
   border-top: var(--borde-fino) solid var(--color-borde-sutil);
-  list-style: none;
-  font-size: var(--tipo-sm);
 }

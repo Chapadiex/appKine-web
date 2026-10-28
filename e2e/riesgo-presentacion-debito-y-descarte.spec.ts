@@ -393,6 +393,8 @@ async function abrirBorrador(
   await expect(
     page.getByRole('heading', { name: 'Presentaciones a financiadores', level: 1 }),
   ).toBeVisible();
+  // El alta vive en un panel lateral que se abre desde "Nuevo lote" (refactor UX/UI).
+  await page.getByRole('button', { name: 'Nuevo lote' }).click();
   await page.locator('#alta-financiador').selectOption({ label: financiador.nombre });
   await page.locator('#alta-desde').fill(sumarDias(hoy, -1));
   await page.locator('#alta-hasta').fill(sumarDias(hoy, 1));

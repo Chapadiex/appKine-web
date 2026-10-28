@@ -69,49 +69,9 @@
     <p class="estado estado--ok">{{ mensaje }}</p>
   }
 
-  @if (error(); as fallo) {
-    <section class="tarjeta conflicto" aria-labelledby="titulo-conflicto">
-      <h2 id="titulo-conflicto">No se pudo operar sobre el turno</h2>
-      <p class="estado estado--error">{{ fallo.mensaje }}</p>
-
-      @switch (accion()) {
-        @case ('recargar-turno') {
-          @if (fallo.motivo) {
-            <p class="ayuda">Lo que dijo el servidor: {{ fallo.motivo }}</p>
-          }
-          <div class="acciones">
-            <button type="button" class="boton" (click)="recargar()">Releer el turno</button>
-          </div>
-        }
-        @case ('recargar-agenda') {
-          <div class="acciones">
-            <button type="button" class="boton" (click)="recargar()">Releer el turno</button>
-          </div>
-        }
-        @case ('resolver-atencion') {
-          <!--
-            La unica salida real. Reintentar la cancelacion devuelve el mismo 409 para siempre:
-            lo que hay que resolver es la Sesion, y vive en otra pantalla (DP-05).
-          -->
-          <div class="acciones">
-            <a class="boton" [routerLink]="['/atencion', 'turnos', turnoId()]">
-              Ver la atención clínica de este turno
-            </a>
-          </div>
-        }
-        @case ('elegir-otro') {
-          <p class="ayuda">
-            El recurso ocupado es el <b>{{ fallo.recurso }}</b
-            >. Elegí otro horario del listado.
-          </p>
-        }
-        @case ('elegir-contexto') {
-          <div class="acciones">
-            <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto de trabajo</a>
-          </div>
-        }
-      }
-    </section>
+  <!-- Con un panel abierto, el rechazo se muestra dentro del panel, que es lo que esta a la vista. -->
+  @if (panel() === 'ninguno') {
+    <ng-container *ngTemplateOutlet="rechazo" />
   }
 </div>
 
@@ -143,87 +103,6 @@
       marcar como ausente ni mover a otro horario. La atención se puede abrir igual desde la
       pantalla clínica.
     </p>
-  }
-
-  @if (panel() === 'cancelar') {
-    <section class="tarjeta">
-      <!--
-        Motivo OBLIGATORIO: es el default del componente y lo pide DP-04. Cancelar libera el lugar
-        y deja la fila con su motivo, su actor y su historial.
-      -->
-      <akine-confirmacion-con-motivo
-        idCampo="turno-cancelar-motivo"
-        titulo="Cancelar el turno"
-        etiqueta="Motivo de la cancelacion"
-        ayuda="Queda registrado en el historial junto a quien lo cancelo."
-        textoConfirmar="Cancelar el turno"
-        [enviando]="enviando()"
-        (confirmado)="cancelar($event)"
-        (cancelado)="cerrar()"
-      >
-        <p class="ayuda">
-          Cancelar <b>libera el lugar</b>, que vuelve a estar disponible en la agenda. No borra
-          nada: el turno queda con su motivo y su historial.
-        </p>
-      </akine-confirmacion-con-motivo>
-    </section>
-  }
-
-  @if (panel() === 'ausencia') {
-    <section class="tarjeta">
-      <!--
-        `motivoObligatorio` en false, y NO es cosmetico: el default del componente compartido es
-        `true` y con el campo vacio el boton no emitiria nada -sin peticion, sin error y sin
-        sintoma-. El contrato declara el motivo opcional en esta operacion.
-      -->
-      <akine-confirmacion-con-motivo
-        idCampo="turno-ausencia-motivo"
-        titulo="Registrar que el paciente no vino"
-        etiqueta="Motivo (opcional)"
-        ayuda="Podes dejarlo vacio."
-        textoConfirmar="Registrar la ausencia"
-        [motivoObligatorio]="false"
-        [enviando]="enviando()"
-        (confirmado)="marcarAusente($event)"
-        (cancelado)="cerrar()"
-      >
-        <p class="ayuda">
-          La ausencia <b>no libera el lugar</b>: la hora se consumió igual y el profesional estuvo
-          ahí. Es la diferencia con cancelar. Solo se registra después de la hora del turno.
-        </p>
-      </akine-confirmacion-con-motivo>
-    </section>
-  }
-
-  @if (panel() === 'reprogramar') {
-    <section class="tarjeta">
-      <akine-confirmacion-con-motivo
-        idCampo="turno-reprogramar-motivo"
-        titulo="Mover el turno a otro horario"
-        etiqueta="Motivo del cambio"
-        ayuda="Queda en el historial, junto al horario del que vino."
-        textoConfirmar="Mover el turno"
-        [enviando]="enviando()"
-        (confirmado)="reprogramar($event)"
-        (cancelado)="cerrar()"
-      >
-        <p class="ayuda">
-          Es el <b>mismo turno</b>: conserva su número, su paciente y su historial. Si estaba
-          confirmado vuelve a quedar reservado, porque lo que el paciente confirmó era otro horario.
-        </p>
-
-        <app-selector-de-horario
-          idDia="turno-reprogramar-dia"
-          [fecha]="fechaDestino()"
-          [slots]="slotsDestino()"
-          [timezone]="timezone()"
-          [elegido]="instanteDestino()"
-          [faltaHorario]="faltaHorario()"
-          (diaCambiado)="cambiarDiaDestino($event)"
-          (slotElegido)="elegirDestino($event)"
-        />
-      </akine-confirmacion-con-motivo>
-    </section>
   }
 }
 
@@ -393,3 +272,143 @@
     </div>
   </section>
 </div>
+
+<!--
+  Cancelar, ausencia y mover en un panel lateral (refactor UX/UI del 28/10/2026). Antes eran una
+  tarjeta entre el encabezado y el detalle, que empujaba el turno y su historial fuera de la vista.
+  El panel deja a la vista de que turno se trata.
+-->
+@if (!cicloCerrado() && puedeOperar()) {
+  @switch (panel()) {
+    @case ('cancelar') {
+      <app-panel-lateral titulo="Cancelar el turno" (cerrar)="cerrar()">
+        <div aria-live="polite"><ng-container *ngTemplateOutlet="rechazo" /></div>
+        <!--
+          Motivo OBLIGATORIO: es el default del componente y lo pide DP-04. Cancelar libera el
+          lugar y deja la fila con su motivo, su actor y su historial.
+        -->
+        <akine-confirmacion-con-motivo
+          idCampo="turno-cancelar-motivo"
+          titulo="Cancelar el turno"
+          [mostrarTitulo]="false"
+          etiqueta="Motivo de la cancelacion"
+          ayuda="Queda registrado en el historial junto a quien lo cancelo."
+          textoConfirmar="Cancelar el turno"
+          [enviando]="enviando()"
+          (confirmado)="cancelar($event)"
+          (cancelado)="cerrar()"
+        >
+          <p class="ayuda">
+            Cancelar <b>libera el lugar</b>, que vuelve a estar disponible en la agenda. No borra
+            nada: el turno queda con su motivo y su historial.
+          </p>
+        </akine-confirmacion-con-motivo>
+      </app-panel-lateral>
+    }
+    @case ('ausencia') {
+      <app-panel-lateral titulo="Registrar que el paciente no vino" (cerrar)="cerrar()">
+        <div aria-live="polite"><ng-container *ngTemplateOutlet="rechazo" /></div>
+        <!--
+          `motivoObligatorio` en false, y NO es cosmetico: el default del componente compartido es
+          `true` y con el campo vacio el boton no emitiria nada -sin peticion, sin error y sin
+          sintoma-. El contrato declara el motivo opcional en esta operacion.
+        -->
+        <akine-confirmacion-con-motivo
+          idCampo="turno-ausencia-motivo"
+          titulo="Registrar que el paciente no vino"
+          [mostrarTitulo]="false"
+          etiqueta="Motivo (opcional)"
+          textoConfirmar="Registrar la ausencia"
+          [motivoObligatorio]="false"
+          [enviando]="enviando()"
+          (confirmado)="marcarAusente($event)"
+          (cancelado)="cerrar()"
+        >
+          <p class="ayuda">
+            La ausencia <b>no libera el lugar</b>: la hora se consumió igual. Es la diferencia con
+            cancelar. Solo se registra después de la hora del turno.
+          </p>
+        </akine-confirmacion-con-motivo>
+      </app-panel-lateral>
+    }
+    @case ('reprogramar') {
+      <app-panel-lateral ancho="amplio" titulo="Mover el turno a otro horario" (cerrar)="cerrar()">
+        <div aria-live="polite"><ng-container *ngTemplateOutlet="rechazo" /></div>
+        <akine-confirmacion-con-motivo
+          idCampo="turno-reprogramar-motivo"
+          titulo="Mover el turno a otro horario"
+          [mostrarTitulo]="false"
+          etiqueta="Motivo del cambio"
+          ayuda="Queda en el historial, junto al horario del que vino."
+          textoConfirmar="Mover el turno"
+          [enviando]="enviando()"
+          (confirmado)="reprogramar($event)"
+          (cancelado)="cerrar()"
+        >
+          <p class="ayuda">
+            Es el <b>mismo turno</b>: conserva su número, su paciente y su historial. Si estaba
+            confirmado vuelve a quedar reservado.
+          </p>
+
+          <app-selector-de-horario
+            idDia="turno-reprogramar-dia"
+            [fecha]="fechaDestino()"
+            [slots]="slotsDestino()"
+            [timezone]="timezone()"
+            [elegido]="instanteDestino()"
+            [faltaHorario]="faltaHorario()"
+            (diaCambiado)="cambiarDiaDestino($event)"
+            (slotElegido)="elegirDestino($event)"
+          />
+        </akine-confirmacion-con-motivo>
+      </app-panel-lateral>
+    }
+  }
+}
+
+<ng-template #rechazo>
+  @if (error(); as fallo) {
+    <section class="tarjeta conflicto" aria-labelledby="titulo-conflicto">
+      <h2 id="titulo-conflicto">No se pudo operar sobre el turno</h2>
+      <p class="estado estado--error">{{ fallo.mensaje }}</p>
+
+      @switch (accion()) {
+        @case ('recargar-turno') {
+          @if (fallo.motivo) {
+            <p class="ayuda ayuda--fija">Lo que dijo el servidor: {{ fallo.motivo }}</p>
+          }
+          <div class="acciones">
+            <button type="button" class="boton" (click)="recargar()">Releer el turno</button>
+          </div>
+        }
+        @case ('recargar-agenda') {
+          <div class="acciones">
+            <button type="button" class="boton" (click)="recargar()">Releer el turno</button>
+          </div>
+        }
+        @case ('resolver-atencion') {
+          <!--
+            La unica salida real. Reintentar la cancelacion devuelve el mismo 409 para siempre:
+            lo que hay que resolver es la Sesion, y vive en otra pantalla (DP-05).
+          -->
+          <div class="acciones">
+            <a class="boton" [routerLink]="['/atencion', 'turnos', turnoId()]">
+              Ver la atención clínica de este turno
+            </a>
+          </div>
+        }
+        @case ('elegir-otro') {
+          <p class="ayuda ayuda--fija">
+            El recurso ocupado es el <b>{{ fallo.recurso }}</b
+            >. Elegí otro horario del listado.
+          </p>
+        }
+        @case ('elegir-contexto') {
+          <div class="acciones">
+            <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto de trabajo</a>
+          </div>
+        }
+      }
+    </section>
+  }
+</ng-template>

@@ -255,3 +255,34 @@
 .coberturas-resumen > .tarjeta {
   margin: 0;
 }
+
+/*
+ * Paneles laterales de la persona (refactor UX/UI del 28/10/2026): alta y edicion de la ficha.
+ * Las secciones se separan por titulo y espacio, no por bordes.
+ */
+.panel-persona__seccion {
+  margin: var(--esp-6) 0 var(--esp-4);
+  font-size: var(--tipo-sm);
+  font-weight: var(--peso-semi);
+  color: var(--color-texto-suave);
+}
+
+.panel-persona__seccion:first-child {
+  margin-top: 0;
+}
+
+.panel-persona__nota {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-3);
+  margin: 0 0 var(--esp-6);
+}
+
+.panel-persona__nota > p {
+  margin: 0;
+  color: var(--color-texto-suave);
+}
+
+.panel-persona__aviso {
+  margin: 0 0 var(--esp-6);
+}

@@ -17,9 +17,23 @@
   </app-ayuda>
 </div>
 
-<section class="tarjeta" aria-labelledby="titulo-buscar-catalogo">
-  <h2 id="titulo-buscar-catalogo">Buscar en el catálogo</h2>
-  <form (submit)="$event.preventDefault(); cargar()">
+<div aria-live="polite">
+  @if (errorAccion(); as mensaje) {
+    <p class="estado estado--error" role="alert">{{ mensaje }}</p>
+  }
+</div>
+
+<section class="tarjeta tarjeta--tabla" aria-labelledby="titulo-entradas-catalogo">
+  <div class="tarjeta__cabecera">
+    <h2 id="titulo-entradas-catalogo">Financiadores del catálogo</h2>
+  </div>
+
+  <!-- Busqueda dentro de la tarjeta del listado (refactor UX/UI del 28/10/2026): una tarjeta, no dos. -->
+  <form
+    class="formulario--libre catalogo__busqueda"
+    aria-label="Buscar en el catálogo"
+    (submit)="$event.preventDefault(); cargar()"
+  >
     <!-- Regla de filtros (plan §3.4): la busqueda a la vista; el tipo, detras del embudo. -->
     <app-filtros [activos]="filtrosAvanzadosActivos()">
       <div class="campo" filtro-principal>
@@ -50,22 +64,8 @@
         </select>
       </div>
     </app-filtros>
-    <div class="acciones">
-      <button type="submit" class="boton">Buscar</button>
-    </div>
+    <button type="submit" class="boton boton--secundario">Buscar</button>
   </form>
-</section>
-
-<div aria-live="polite">
-  @if (errorAccion(); as mensaje) {
-    <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-  }
-</div>
-
-<section class="tarjeta tarjeta--tabla" aria-labelledby="titulo-entradas-catalogo">
-  <div class="tarjeta__cabecera">
-    <h2 id="titulo-entradas-catalogo">Financiadores del catálogo</h2>
-  </div>
 
   <div aria-live="polite">
     @if (!puedeAdoptar()) {
@@ -138,7 +138,7 @@
                       } @else if (puedeAdoptar()) {
                         <button
                           type="button"
-                          class="accion-texto"
+                          class="boton boton--secundario boton--chico"
                           [disabled]="adoptando() !== null"
                           (click)="adoptar(entrada)"
                         >

@@ -5,6 +5,10 @@
       Hechos registrados sobre esta organización: quién hizo qué, sobre qué entidad, cuándo y con
       qué motivo. Si tu permiso está acotado a una sede, solo vas a ver los hechos de esa sede.
     </p>
+    <p>
+      No se consulta nada al entrar: sin un filtro la consulta no es valida, así que no habria nada
+      util que mostrar.
+    </p>
   </app-ayuda>
 </div>
 
@@ -138,11 +142,11 @@
             />
           </div>
 
-          <p class="ayuda" id="auditoria-ventana-ayuda">
+          <p class="ayuda ayuda--fija grilla-campos__fila" id="auditoria-ventana-ayuda">
             La ventana no puede superar los 90 días. El día final se incluye entero.
           </p>
 
-          <div aria-live="polite">
+          <div aria-live="polite" class="grilla-campos__fila">
             @if (errorVentana(); as mensaje) {
               <p class="campo__error" role="alert">{{ mensaje }}</p>
             }
@@ -181,10 +185,6 @@
     @switch (estado().tipo) {
       @case ('inicial') {
         <p class="estado estado--vacio">Elegí un filtro y presiona Buscar.</p>
-        <p class="ayuda">
-          No se consulta nada al entrar: sin un filtro la consulta no es valida, así que no habria
-          nada util que mostrar.
-        </p>
       }
 
       @case ('cargando') {
@@ -251,10 +251,10 @@
                           }
                         </td>
                         <td>{{ evento.reason ?? '-' }}</td>
-                        <td>
+                        <td class="tabla__acciones">
                           <button
                             type="button"
-                            class="boton boton--secundario"
+                            class="boton boton--secundario boton--chico"
                             [id]="'auditoria-evento-' + evento.id"
                             [attr.aria-expanded]="detalle()?.id === evento.id"
                             aria-controls="auditoria-detalle"
@@ -299,7 +299,11 @@
               @if (detalle(); as evento) {
                 <div class="auditoria-detalle__cabecera">
                   <h3 id="auditoria-detalle-titulo">{{ evento.eventType }}</h3>
-                  <button type="button" class="boton boton--secundario" (click)="cerrarDetalle()">
+                  <button
+                    type="button"
+                    class="boton boton--secundario boton--chico"
+                    (click)="cerrarDetalle()"
+                  >
                     Cerrar detalle
                   </button>
                 </div>

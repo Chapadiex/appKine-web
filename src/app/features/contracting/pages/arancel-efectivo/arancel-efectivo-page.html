@@ -23,228 +23,227 @@
 
 <app-pestanas [pestanas]="pestanas" [etiqueta]="etiquetaDePestanas" />
 
-<section class="tarjeta" aria-labelledby="titulo-consulta">
-  <h2 id="titulo-consulta">Datos de la consulta</h2>
+<!--
+  Consulta y respuesta lado a lado en escritorio (refactor UX/UI del 28/10/2026): la pregunta a la
+  izquierda y el precio a la derecha, sin bajar hasta el pie para ver el resultado.
+-->
+<div class="consulta">
+  <section class="tarjeta consulta__pregunta" aria-labelledby="titulo-consulta">
+    <h2 id="titulo-consulta">Datos de la consulta</h2>
 
-  <form [formGroup]="formulario" (ngSubmit)="consultar()" novalidate>
-    <div class="campo">
-      <label for="consulta-financiador">Financiador</label>
-      <select
-        id="consulta-financiador"
-        formControlName="financiadorId"
-        (change)="elegirFinanciador($any($event.target).value)"
-        [attr.aria-invalid]="mostrarError('financiadorId') ? 'true' : null"
-        aria-describedby="consulta-financiador-ayuda"
-      >
-        <option value="">Elegí un financiador</option>
-        @for (ficha of financiadores(); track ficha.id) {
-          <option [value]="ficha.id">{{ enUnaLinea(ficha) }}</option>
+    <form [formGroup]="formulario" (ngSubmit)="consultar()" novalidate>
+      <div class="campo">
+        <label for="consulta-financiador">Financiador</label>
+        <select
+          id="consulta-financiador"
+          formControlName="financiadorId"
+          (change)="elegirFinanciador($any($event.target).value)"
+          [attr.aria-invalid]="mostrarError('financiadorId') ? 'true' : null"
+          aria-describedby="consulta-financiador-ayuda"
+        >
+          <option value="">Elegí un financiador</option>
+          @for (ficha of financiadores(); track ficha.id) {
+            <option [value]="ficha.id">{{ enUnaLinea(ficha) }}</option>
+          }
+        </select>
+        @if (mostrarError('financiadorId')) {
+          <p class="campo__error" role="alert">Elegí el financiador del paciente.</p>
         }
-      </select>
-      @if (mostrarError('financiadorId')) {
-        <p class="campo__error" role="alert">Elegí el financiador del paciente.</p>
-      }
-      <p class="ayuda" id="consulta-financiador-ayuda">{{ notaParticular }}</p>
-    </div>
+        <p class="ayuda ayuda--fija" id="consulta-financiador-ayuda">{{ notaParticular }}</p>
+      </div>
 
-    <div class="campo">
-      <label for="consulta-plan">Plan</label>
-      <select
-        id="consulta-plan"
-        formControlName="planId"
-        [attr.aria-invalid]="mostrarError('planId') ? 'true' : null"
-        aria-describedby="consulta-plan-ayuda"
-      >
-        <option value="">Elegí un plan</option>
-        @for (plan of planes(); track plan.id) {
-          <option [value]="plan.id">{{ enUnaLinea(plan) }}</option>
+      <div class="campo">
+        <label for="consulta-plan">Plan</label>
+        <select
+          id="consulta-plan"
+          formControlName="planId"
+          [attr.aria-invalid]="mostrarError('planId') ? 'true' : null"
+          aria-describedby="consulta-plan-ayuda"
+        >
+          <option value="">Elegí un plan</option>
+          @for (plan of planes(); track plan.id) {
+            <option [value]="plan.id">{{ enUnaLinea(plan) }}</option>
+          }
+        </select>
+        @if (mostrarError('planId')) {
+          <p class="campo__error" role="alert">
+            El plan es obligatorio: el convenio se firma contra un plan, no contra el financiador
+            entero.
+          </p>
         }
-      </select>
-      @if (mostrarError('planId')) {
-        <p class="campo__error" role="alert">
-          El plan es obligatorio: el convenio se firma contra un plan, no contra el financiador
-          entero.
+        <p class="ayuda" id="consulta-plan-ayuda">
+          Se puebla al elegir el financiador, y solo con <b>sus</b> planes activos.
         </p>
-      }
-      <p class="ayuda" id="consulta-plan-ayuda">
-        Se puebla al elegir el financiador, y solo con <b>sus</b> planes activos.
-      </p>
-    </div>
+      </div>
 
-    <div class="campo">
-      <label for="consulta-practica">Práctica</label>
-      <select
-        id="consulta-practica"
-        formControlName="practicaId"
-        [attr.aria-invalid]="mostrarError('practicaId') ? 'true' : null"
-      >
-        <option value="">Elegí una práctica</option>
-        @for (practica of practicas(); track practica.id) {
-          <option [value]="practica.id">{{ practica.name }} ({{ practica.codigo }})</option>
+      <div class="campo">
+        <label for="consulta-practica">Práctica</label>
+        <select
+          id="consulta-practica"
+          formControlName="practicaId"
+          [attr.aria-invalid]="mostrarError('practicaId') ? 'true' : null"
+        >
+          <option value="">Elegí una práctica</option>
+          @for (practica of practicas(); track practica.id) {
+            <option [value]="practica.id">{{ practica.name }} ({{ practica.codigo }})</option>
+          }
+        </select>
+        @if (mostrarError('practicaId')) {
+          <p class="campo__error" role="alert">Elegí que práctica se presto.</p>
         }
-      </select>
-      @if (mostrarError('practicaId')) {
-        <p class="campo__error" role="alert">Elegí que práctica se presto.</p>
-      }
-    </div>
+      </div>
 
-    <div class="campo">
-      <label for="consulta-oferta">Oferta (opcional)</label>
-      <select
-        id="consulta-oferta"
-        formControlName="ofertaId"
-        aria-describedby="consulta-oferta-ayuda"
-      >
-        <option value="">Sin oferta: arancel general del convenio</option>
-        @for (oferta of ofertas(); track oferta.id) {
-          <option [value]="oferta.id">{{ oferta.nombreComercial }}</option>
-        }
-      </select>
-      <p class="ayuda" id="consulta-oferta-ayuda">
-        Si la práctica se presta dentro de una oferta, elegila: manda el arancel propio de esa
-        oferta y, si no tiene, el general del convenio. Solo aparecen las ofertas activas que
-        admiten obra social.
+      <div class="campo">
+        <label for="consulta-oferta">Oferta (opcional)</label>
+        <select
+          id="consulta-oferta"
+          formControlName="ofertaId"
+          aria-describedby="consulta-oferta-ayuda"
+        >
+          <option value="">Sin oferta: arancel general del convenio</option>
+          @for (oferta of ofertas(); track oferta.id) {
+            <option [value]="oferta.id">{{ oferta.nombreComercial }}</option>
+          }
+        </select>
+        <p class="ayuda" id="consulta-oferta-ayuda">
+          Manda el arancel propio de la oferta y, si no tiene, el general del convenio.
+        </p>
+      </div>
+
+      <div class="campo">
+        <label for="consulta-fecha">Fecha de la prestación</label>
+        <input
+          id="consulta-fecha"
+          type="date"
+          formControlName="fecha"
+          aria-describedby="consulta-fecha-ayuda"
+        />
+        <p class="ayuda" id="consulta-fecha-ayuda">
+          La de <b>la prestación</b>, no la de hoy: una fecha pasada devuelve el arancel que regía
+          entonces.
+        </p>
+      </div>
+
+      <p class="acciones">
+        <button type="submit" class="boton" [disabled]="consultando()">
+          {{ consultando() ? 'Consultando...' : 'Consultar' }}
+        </button>
       </p>
-    </div>
+    </form>
+  </section>
 
-    <div class="campo">
-      <label for="consulta-fecha">Fecha de la prestación</label>
-      <input
-        id="consulta-fecha"
-        type="date"
-        formControlName="fecha"
-        aria-describedby="consulta-fecha-ayuda"
-      />
-      <p class="ayuda" id="consulta-fecha-ayuda">
-        Es la fecha de <b>la prestación</b>, no la de hoy. Poner una fecha pasada devuelve el
-        arancel que regía entonces, que es lo que hace que una atención retroactiva se cobre bien y
-        que una liquidación vieja se pueda explicar.
-      </p>
-    </div>
-
-    <p class="acciones">
-      <button type="submit" class="boton" [disabled]="consultando()">
-        {{ consultando() ? 'Consultando...' : 'Consultar' }}
-      </button>
-    </p>
-  </form>
-</section>
-
-<div aria-live="polite">
-  @if (error(); as mensaje) {
-    <!--
+  <div class="consulta__respuesta" aria-live="polite">
+    @if (error(); as mensaje) {
+      <!--
       Un error DE VERDAD: sin sede, sin permiso, servidor caido. "No hay arancel" no llega nunca
       hasta aca, y ese es todo el punto de la pantalla.
     -->
-    <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-    @if (faltaContexto()) {
-      <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
+      <p class="estado estado--error" role="alert">{{ mensaje }}</p>
+      @if (faltaContexto()) {
+        <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
+      }
     }
-  }
 
-  @if (resultado(); as respuesta) {
-    @if (resuelto()) {
-      <section class="tarjeta resultado" aria-labelledby="titulo-resultado">
-        <h2 id="titulo-resultado">
-          {{ practicaElegida() }}, el {{ enPalabras(respuesta.fecha ?? '') }}
-        </h2>
+    @if (resultado(); as respuesta) {
+      @if (resuelto()) {
+        <section class="tarjeta resultado" aria-labelledby="titulo-resultado">
+          <h2 id="titulo-resultado">
+            {{ practicaElegida() }}, el {{ enPalabras(respuesta.fecha ?? '') }}
+          </h2>
 
-        <p class="resultado__importe">
-          {{ importeEnPalabras(respuesta.importeTotal, respuesta.moneda, '-') }}
-        </p>
+          <p class="resultado__importe">
+            {{ importeEnPalabras(respuesta.importeTotal, respuesta.moneda, '-') }}
+          </p>
 
-        <!--
+          <!--
           Las dos partes se muestran SIEMPRE. El total no es lo que el mostrador necesita: lo que
           necesita es el coseguro, que es lo que le cobra al paciente.
         -->
-        <ul class="resultado__partes">
-          <li>
-            <span>Pone el financiador:</span>
-            <b class="importe">{{
-              importeEnPalabras(respuesta.importeFinanciador, respuesta.moneda, '-')
-            }}</b>
-          </li>
-          <li>
-            <span>Paga el paciente:</span>
-            <b class="importe">{{
-              importeEnPalabras(respuesta.coseguro, respuesta.moneda, '-')
-            }}</b>
-          </li>
-        </ul>
+          <ul class="resultado__partes">
+            <li>
+              <span>Pone el financiador:</span>
+              <b class="importe">{{
+                importeEnPalabras(respuesta.importeFinanciador, respuesta.moneda, '-')
+              }}</b>
+            </li>
+            <li>
+              <span>Paga el paciente:</span>
+              <b class="importe">{{
+                importeEnPalabras(respuesta.coseguro, respuesta.moneda, '-')
+              }}</b>
+            </li>
+          </ul>
 
-        @if (
-          respuesta.requiereOrden ||
-          respuesta.requiereAutorizacion ||
-          respuesta.requiereCredencial ||
-          respuesta.limiteSesionesMensual
-        ) {
-          <p class="ayuda">
-            <b>Requisitos declarados en el convenio:</b>
-            @if (respuesta.requiereOrden) {
-              orden médica.
-            }
-            @if (respuesta.requiereAutorizacion) {
-              autorización previa.
-            }
-            @if (respuesta.requiereCredencial) {
-              credencial.
-            }
-            @if (respuesta.limiteSesionesMensual) {
-              Hasta {{ respuesta.limiteSesionesMensual }} sesiones por mes.
-            }
-            El sistema <b>no los hace cumplir todavía</b>: son para que los verifique quien atiende
-            el mostrador.
-          </p>
-        }
+          @if (
+            respuesta.requiereOrden ||
+            respuesta.requiereAutorizacion ||
+            respuesta.requiereCredencial ||
+            respuesta.limiteSesionesMensual
+          ) {
+            <p class="ayuda ayuda--fija">
+              <b>Requisitos declarados en el convenio:</b>
+              @if (respuesta.requiereOrden) {
+                orden médica.
+              }
+              @if (respuesta.requiereAutorizacion) {
+                autorización previa.
+              }
+              @if (respuesta.requiereCredencial) {
+                credencial.
+              }
+              @if (respuesta.limiteSesionesMensual) {
+                Hasta {{ respuesta.limiteSesionesMensual }} sesiones por mes.
+              }
+              El sistema <b>no los hace cumplir todavía</b>: son para que los verifique quien
+              atiende el mostrador.
+            </p>
+          }
 
-        <!--
+          <!--
           La derivacion va debajo y no arriba: quien consulta quiere el numero primero. Pero va en
           la misma tarjeta y no detras de un enlace, porque el dia que el numero sorprenda la
           explicacion tiene que estar a la vista.
         -->
-        <div class="resultado__derivacion">
-          <h3>De donde sale este precio</h3>
-          <p class="ayuda">
-            <b>{{ origen() }}</b>
-          </p>
-          <p class="ayuda">
-            Convenio <b>{{ respuesta.convenioNombre }}</b> ({{ respuesta.convenioCodigo }}), vigente
-            del {{ enPalabras(respuesta.convenioVigenciaDesde ?? '') }}
-            @if (respuesta.convenioVigenciaHasta) {
-              al {{ enPalabras(respuesta.convenioVigenciaHasta) }} inclusive.
-            } @else {
-              en adelante, sin fin previsto.
-            }
-          </p>
-          <p class="ayuda">
-            Arancel vigente desde el {{ enPalabras(respuesta.arancelVigenciaDesde ?? '') }}
-            @if (respuesta.arancelVigenciaHasta) {
-              hasta el {{ enPalabras(respuesta.arancelVigenciaHasta) }} inclusive.
-            } @else {
-              en adelante, sin fin previsto.
-            }
-          </p>
-          <p class="ayuda">
-            El resultado es único porque no puede haber dos candidatos: dos convenios del mismo
-            alcance no se pueden solapar, y dos aranceles de la misma práctica en el mismo convenio
-            tampoco.
-          </p>
-        </div>
-      </section>
-    } @else if (sinArancel(); as explicacion) {
-      <!--
+          <div class="resultado__derivacion">
+            <h3>De donde sale este precio</h3>
+            <p class="ayuda ayuda--fija">
+              <b>{{ origen() }}</b>
+            </p>
+            <p class="ayuda ayuda--fija">
+              Convenio <b>{{ respuesta.convenioNombre }}</b> ({{ respuesta.convenioCodigo }}),
+              vigente del {{ enPalabras(respuesta.convenioVigenciaDesde ?? '') }}
+              @if (respuesta.convenioVigenciaHasta) {
+                al {{ enPalabras(respuesta.convenioVigenciaHasta) }} inclusive.
+              } @else {
+                en adelante, sin fin previsto.
+              }
+            </p>
+            <p class="ayuda ayuda--fija">
+              Arancel vigente desde el {{ enPalabras(respuesta.arancelVigenciaDesde ?? '') }}
+              @if (respuesta.arancelVigenciaHasta) {
+                hasta el {{ enPalabras(respuesta.arancelVigenciaHasta) }} inclusive.
+              } @else {
+                en adelante, sin fin previsto.
+              }
+            </p>
+          </div>
+        </section>
+      } @else if (sinArancel(); as explicacion) {
+        <!--
         NO es un cartel de error, y no usa `estado--error` a proposito. El servidor respondio 200:
         esto es una respuesta con su motivo, y el caso más frecuente de todos.
       -->
-      <section class="tarjeta resultado" aria-labelledby="titulo-sin-arancel">
-        <h2 id="titulo-sin-arancel">{{ explicacion.titulo }}</h2>
-        <p>{{ explicacion.detalle }}</p>
-        <p><b>Que hacer:</b> {{ explicacion.queHacer }}</p>
-        <p class="ayuda">
-          Consultado para el {{ enPalabras(respuesta.fecha ?? '') }}. Si la prestación fue otro día,
-          cambia la fecha y volvé a consultar: el convenio pudo haber estado vigente entonces.
-        </p>
-      </section>
+        <section class="tarjeta resultado" aria-labelledby="titulo-sin-arancel">
+          <h2 id="titulo-sin-arancel">{{ explicacion.titulo }}</h2>
+          <p>{{ explicacion.detalle }}</p>
+          <p><b>Que hacer:</b> {{ explicacion.queHacer }}</p>
+          <p class="ayuda ayuda--fija">
+            Consultado para el {{ enPalabras(respuesta.fecha ?? '') }}. Si la prestación fue otro
+            día, cambia la fecha y volvé a consultar: el convenio pudo haber estado vigente
+            entonces.
+          </p>
+        </section>
+      }
     }
-  }
+  </div>
 </div>

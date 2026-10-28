@@ -35,140 +35,6 @@
   }
 </div>
 
-@if (altaAbierta()) {
-  <section class="tarjeta" aria-labelledby="titulo-alta-financiador">
-    <h2 id="titulo-alta-financiador">Nuevo financiador</h2>
-
-    <form [formGroup]="formularioAlta" (ngSubmit)="enviarAlta()" novalidate>
-      <div class="grilla-campos grilla-campos--dos">
-        <div class="campo">
-          <label for="alta-financiador-codigo">Código</label>
-          <input
-            id="alta-financiador-codigo"
-            type="text"
-            formControlName="codigo"
-            autocomplete="off"
-            [attr.aria-invalid]="mostrarErrorAlta('codigo') ? 'true' : null"
-            aria-describedby="alta-financiador-codigo-ayuda"
-          />
-          @if (mostrarErrorAlta('codigo')) {
-            <p class="campo__error" role="alert">El código es obligatorio.</p>
-          }
-          <p class="ayuda" id="alta-financiador-codigo-ayuda">
-            <b>No se puede cambiar después.</b> Es lo que las coberturas y los convenios guardan
-            para referirse a este financiador, así que cambiarlo reescribiría lo que ya pasó. Tiene
-            que ser único entre los vigentes; el de uno dado de baja si se puede reusar.
-          </p>
-        </div>
-
-        <div class="campo">
-          <label for="alta-financiador-nombre">Nombre</label>
-          <input
-            id="alta-financiador-nombre"
-            type="text"
-            formControlName="nombre"
-            autocomplete="off"
-            [attr.aria-invalid]="mostrarErrorAlta('nombre') ? 'true' : null"
-          />
-          @if (mostrarErrorAlta('nombre')) {
-            <p class="campo__error" role="alert">El nombre es obligatorio.</p>
-          }
-        </div>
-      </div>
-
-      <div class="campo">
-        <label for="alta-financiador-tipo">Tipo</label>
-        <select
-          id="alta-financiador-tipo"
-          formControlName="tipo"
-          [attr.aria-invalid]="mostrarErrorAlta('tipo') ? 'true' : null"
-          aria-describedby="alta-financiador-tipo-ayuda"
-        >
-          <option value="">Elegí un tipo</option>
-          @for (opcion of tipos; track opcion.valor) {
-            <option [value]="opcion.valor">{{ opcion.etiqueta }} — {{ opcion.ayuda }}</option>
-          }
-        </select>
-        @if (mostrarErrorAlta('tipo')) {
-          <p class="campo__error" role="alert">Elegí que tipo de financiador es.</p>
-        }
-        <p class="ayuda" id="alta-financiador-tipo-ayuda">
-          Sirve para <b>clasificar y filtrar</b>: hoy ninguna regla del sistema depende del tipo.
-        </p>
-      </div>
-
-      <details class="mas-opciones">
-        <summary>Más datos del financiador</summary>
-        <div class="campo">
-          <label for="alta-financiador-cuit">CUIT (opcional)</label>
-          <input
-            id="alta-financiador-cuit"
-            type="text"
-            formControlName="cuit"
-            autocomplete="off"
-            aria-describedby="alta-financiador-cuit-ayuda"
-          />
-          <p class="ayuda" id="alta-financiador-cuit-ayuda">
-            Se guarda <b>normalizado a 11 dígitos</b>: los guiones y los puntos se descartan antes
-            de comparar, así que 30-12345678-9 y 30123456789 son el mismo CUIT y no pueden convivir.
-            Si no lo tenés a mano, dejalo vacío — varios financiadores sin CUIT conviven sin chocar.
-          </p>
-        </div>
-
-        <div class="grilla-campos grilla-campos--dos">
-          <div class="campo">
-            <label for="alta-financiador-email">Email de contacto (opcional)</label>
-            <input
-              id="alta-financiador-email"
-              type="email"
-              formControlName="emailContacto"
-              autocomplete="off"
-            />
-          </div>
-
-          <div class="campo">
-            <label for="alta-financiador-telefono">Teléfono de contacto (opcional)</label>
-            <input
-              id="alta-financiador-telefono"
-              type="text"
-              formControlName="telefonoContacto"
-              autocomplete="off"
-            />
-          </div>
-        </div>
-
-        <div class="campo">
-          <label for="alta-financiador-observaciones">Observaciones (opcional)</label>
-          <input
-            id="alta-financiador-observaciones"
-            type="text"
-            formControlName="observaciones"
-            autocomplete="off"
-          />
-        </div>
-      </details>
-
-      @if (errorAccion(); as mensaje) {
-        <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-      }
-
-      <p class="acciones">
-        <button type="submit" class="boton" [disabled]="enviando()">
-          {{ enviando() ? 'Guardando...' : 'Dar de alta' }}
-        </button>
-        <button
-          type="button"
-          class="boton boton--secundario"
-          (click)="cerrarPanel()"
-          [disabled]="enviando()"
-        >
-          Cancelar
-        </button>
-      </p>
-    </form>
-  </section>
-}
-
 <section class="tarjeta tarjeta--tabla" aria-labelledby="titulo-listado-financiadores">
   <div class="tarjeta__cabecera">
     <h2 id="titulo-listado-financiadores">Financiadores de la organización</h2>
@@ -285,7 +151,10 @@
               </thead>
               <tbody>
                 @for (financiador of tabla.visibles(); track financiador.id) {
-                  <tr [class.fila--revocada]="financiador.estado === 'INACTIVO'">
+                  <tr
+                    [class.fila--revocada]="financiador.estado === 'INACTIVO'"
+                    [class.fila--seleccionada]="financiadorEnPanel()?.id === financiador.id"
+                  >
                     <th scope="row" class="celda-ancha">
                       <span class="celda-principal">
                         {{ financiador.nombre }}
@@ -319,21 +188,18 @@
                         <span class="celda-secundaria">{{ financiador.deactivationReason }}</span>
                       }
                     </td>
-                    <td class="celda-acciones">
+                    <td class="tabla__acciones">
                       <!--
                         Los planes se ven SIEMPRE, tambien los de un financiador dado de baja: sus
                         planes conservan sus filas y hay que poder consultarlos para explicar una
                         cobertura vieja. El enlace no lleva permiso, por lo mismo que el listado.
-
-                        Tres acciones (Planes, Editar, Dar de baja): la mas frecuente —Planes— a la
-                        vista y el resto en el menu "⋯" (decision del 22/10/2026). Sin permiso, o
-                        con el financiador dado de baja, queda una sola accion y va suelta.
+                        Planes a la vista; editar y dar de baja, en el menu "⋯".
                       -->
                       @if (financiador.estado === 'ACTIVO' && puedeGestionar()) {
                         <app-acciones-de-fila [de]="financiador.nombre ?? ''">
                           <a
                             principal
-                            class="accion-texto"
+                            class="boton boton--secundario boton--chico"
                             [routerLink]="['/contratacion/financiadores', financiador.id, 'planes']"
                           >
                             Planes
@@ -353,7 +219,7 @@
                         </app-acciones-de-fila>
                       } @else {
                         <a
-                          class="accion-texto"
+                          class="boton boton--secundario boton--chico"
                           [routerLink]="['/contratacion/financiadores', financiador.id, 'planes']"
                         >
                           Planes
@@ -361,162 +227,6 @@
                       }
                     </td>
                   </tr>
-
-                  @if (panelAbierto(financiador.id, 'editar')) {
-                    <tr class="fila-panel">
-                      <td colspan="6">
-                        <form
-                          [formGroup]="formularioEdicion"
-                          (ngSubmit)="enviarEdicion()"
-                          novalidate
-                        >
-                          <h3>Editar {{ financiador.nombre }}</h3>
-
-                          <p class="ayuda">
-                            Se manda <b>solo lo que cambies</b>. Ojo con una cosa: vaciar un campo
-                            opcional lo deja vacío de verdad, no lo "restaura" — y el
-                            <b>código no se puede cambiar</b>, porque es lo que los históricos
-                            guardan. Si está mal tipeado, la salida es dar de baja esta ficha y
-                            cargar otra con el código correcto: el viejo queda libre.
-                          </p>
-
-                          <div class="campo">
-                            <label for="editar-financiador-codigo">Código</label>
-                            <input
-                              id="editar-financiador-codigo"
-                              type="text"
-                              [value]="financiador.codigo ?? ''"
-                              disabled
-                              aria-describedby="editar-financiador-codigo-ayuda"
-                            />
-                            <p class="ayuda" id="editar-financiador-codigo-ayuda">
-                              Se muestra deshabilitado y no se manda. Esta a la vista para que se
-                              pueda leer al editar, no para editarlo.
-                            </p>
-                          </div>
-
-                          <div class="campo">
-                            <label for="editar-financiador-nombre">Nombre</label>
-                            <input
-                              id="editar-financiador-nombre"
-                              type="text"
-                              formControlName="nombre"
-                              autocomplete="off"
-                              [attr.aria-invalid]="mostrarErrorEdicion('nombre') ? 'true' : null"
-                            />
-                            @if (mostrarErrorEdicion('nombre')) {
-                              <p class="campo__error" role="alert">El nombre es obligatorio.</p>
-                            }
-                          </div>
-
-                          <div class="campo">
-                            <label for="editar-financiador-tipo">Tipo</label>
-                            <select id="editar-financiador-tipo" formControlName="tipo">
-                              @for (opcion of tipos; track opcion.valor) {
-                                <option [value]="opcion.valor">{{ opcion.etiqueta }}</option>
-                              }
-                            </select>
-                          </div>
-
-                          <details class="mas-opciones">
-                            <summary>Más datos del financiador</summary>
-                            <div class="campo">
-                              <label for="editar-financiador-cuit">CUIT</label>
-                              <input
-                                id="editar-financiador-cuit"
-                                type="text"
-                                formControlName="cuit"
-                                autocomplete="off"
-                              />
-                            </div>
-
-                            <div class="grilla-campos grilla-campos--dos">
-                              <div class="campo">
-                                <label for="editar-financiador-email">Email de contacto</label>
-                                <input
-                                  id="editar-financiador-email"
-                                  type="email"
-                                  formControlName="emailContacto"
-                                  autocomplete="off"
-                                />
-                              </div>
-
-                              <div class="campo">
-                                <label for="editar-financiador-telefono"
-                                  >Teléfono de contacto</label
-                                >
-                                <input
-                                  id="editar-financiador-telefono"
-                                  type="text"
-                                  formControlName="telefonoContacto"
-                                  autocomplete="off"
-                                />
-                              </div>
-                            </div>
-
-                            <div class="campo">
-                              <label for="editar-financiador-observaciones">Observaciones</label>
-                              <input
-                                id="editar-financiador-observaciones"
-                                type="text"
-                                formControlName="observaciones"
-                                autocomplete="off"
-                              />
-                            </div>
-                          </details>
-
-                          @if (errorAccion(); as mensaje) {
-                            <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-                          }
-
-                          <p class="acciones">
-                            <button type="submit" class="boton" [disabled]="enviando()">
-                              {{ enviando() ? 'Guardando...' : 'Guardar cambios' }}
-                            </button>
-                            <button
-                              type="button"
-                              class="boton boton--secundario"
-                              (click)="cerrarPanel()"
-                              [disabled]="enviando()"
-                            >
-                              Cancelar
-                            </button>
-                            @if (hayQueRecargar()) {
-                              <button type="button" class="boton" (click)="cargar()">
-                                Recargar el listado
-                              </button>
-                            }
-                          </p>
-                        </form>
-                      </td>
-                    </tr>
-                  }
-
-                  @if (panelAbierto(financiador.id, 'baja')) {
-                    <tr class="fila-panel">
-                      <td colspan="6">
-                        <app-confirmacion-con-motivo
-                          idCampo="baja-financiador-motivo"
-                          [titulo]="'Dar de baja ' + financiador.nombre"
-                          etiqueta="Motivo de la baja"
-                          ayuda="Queda registrado junto al financiador y se muestra en el listado. La baja NO cascadea: sus planes conservan sus filas y las coberturas y convenios ya firmados siguen resolviendo. Lo único que se impide es crear planes nuevos bajo él y ofrecerlo en selecciones nuevas. No hay reactivación, y su código queda libre para un alta nueva."
-                          textoConfirmar="Dar de baja"
-                          [enviando]="enviando()"
-                          (confirmado)="enviarBaja($event)"
-                          (cancelado)="cerrarPanel()"
-                        />
-
-                        @if (errorAccion(); as mensaje) {
-                          <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-                        }
-                        @if (hayQueRecargar()) {
-                          <button type="button" class="boton" (click)="cargar()">
-                            Recargar el listado
-                          </button>
-                        }
-                      </td>
-                    </tr>
-                  }
                 }
               </tbody>
             </table>
@@ -536,3 +246,286 @@
     }
   </div>
 </section>
+
+<!--
+  Alta, edicion y baja en un panel lateral (refactor UX/UI del 28/10/2026). Antes el alta iba en
+  una tarjeta arriba del listado y la edicion en una fila de la tabla, que partia el listado.
+-->
+@if (altaAbierta()) {
+  <app-panel-lateral titulo="Nuevo financiador" (cerrar)="cerrarPanel()">
+    <form [formGroup]="formularioAlta" (ngSubmit)="enviarAlta()" novalidate>
+      <div class="campo">
+        <label for="alta-financiador-codigo">Código</label>
+        <input
+          id="alta-financiador-codigo"
+          type="text"
+          formControlName="codigo"
+          autocomplete="off"
+          [attr.aria-invalid]="mostrarErrorAlta('codigo') ? 'true' : null"
+          aria-describedby="alta-financiador-codigo-ayuda"
+        />
+        @if (mostrarErrorAlta('codigo')) {
+          <p class="campo__error" role="alert">El código es obligatorio.</p>
+        }
+        <p class="ayuda ayuda--fija" id="alta-financiador-codigo-ayuda">
+          <b>No se puede cambiar después.</b> Único entre los vigentes.
+        </p>
+      </div>
+
+      <div class="campo">
+        <label for="alta-financiador-nombre">Nombre</label>
+        <input
+          id="alta-financiador-nombre"
+          type="text"
+          formControlName="nombre"
+          autocomplete="off"
+          [attr.aria-invalid]="mostrarErrorAlta('nombre') ? 'true' : null"
+        />
+        @if (mostrarErrorAlta('nombre')) {
+          <p class="campo__error" role="alert">El nombre es obligatorio.</p>
+        }
+      </div>
+
+      <div class="campo campo--ancho">
+        <label for="alta-financiador-tipo">Tipo</label>
+        <select
+          id="alta-financiador-tipo"
+          formControlName="tipo"
+          [attr.aria-invalid]="mostrarErrorAlta('tipo') ? 'true' : null"
+          aria-describedby="alta-financiador-tipo-ayuda"
+        >
+          <option value="">Elegí un tipo</option>
+          @for (opcion of tipos; track opcion.valor) {
+            <option [value]="opcion.valor">{{ opcion.etiqueta }} — {{ opcion.ayuda }}</option>
+          }
+        </select>
+        @if (mostrarErrorAlta('tipo')) {
+          <p class="campo__error" role="alert">Elegí que tipo de financiador es.</p>
+        }
+        <p class="ayuda" id="alta-financiador-tipo-ayuda">
+          Sirve para <b>clasificar y filtrar</b>: hoy ninguna regla del sistema depende del tipo.
+        </p>
+      </div>
+
+      <details class="seccion-plegable">
+        <summary>
+          Más datos del financiador
+          <span class="seccion-plegable__resumen">CUIT, contacto y observaciones (opcionales)</span>
+        </summary>
+        <div class="grilla-campos grilla-campos--dos">
+          <div class="campo">
+            <label for="alta-financiador-cuit">CUIT (opcional)</label>
+            <input
+              id="alta-financiador-cuit"
+              type="text"
+              formControlName="cuit"
+              autocomplete="off"
+              aria-describedby="alta-financiador-cuit-ayuda"
+            />
+            <p class="ayuda" id="alta-financiador-cuit-ayuda">
+              Los guiones y los puntos no cuentan: 30-12345678-9 y 30123456789 son el mismo CUIT.
+            </p>
+          </div>
+
+          <div class="campo">
+            <label for="alta-financiador-email">Email de contacto (opcional)</label>
+            <input
+              id="alta-financiador-email"
+              type="email"
+              formControlName="emailContacto"
+              autocomplete="off"
+            />
+          </div>
+
+          <div class="campo">
+            <label for="alta-financiador-telefono">Teléfono de contacto (opcional)</label>
+            <input
+              id="alta-financiador-telefono"
+              type="text"
+              formControlName="telefonoContacto"
+              autocomplete="off"
+            />
+          </div>
+
+          <div class="campo">
+            <label for="alta-financiador-observaciones">Observaciones (opcional)</label>
+            <input
+              id="alta-financiador-observaciones"
+              type="text"
+              formControlName="observaciones"
+              autocomplete="off"
+            />
+          </div>
+        </div>
+      </details>
+
+      @if (errorAccion(); as mensaje) {
+        <p class="estado estado--error" role="alert">{{ mensaje }}</p>
+      }
+
+      <p class="acciones">
+        <button type="submit" class="boton" [disabled]="enviando()">
+          {{ enviando() ? 'Guardando...' : 'Dar de alta' }}
+        </button>
+        <button
+          type="button"
+          class="boton boton--secundario"
+          (click)="cerrarPanel()"
+          [disabled]="enviando()"
+        >
+          Cancelar
+        </button>
+      </p>
+    </form>
+  </app-panel-lateral>
+}
+
+@if (financiadorEnPanel(); as financiador) {
+  @if (panel()?.tipo === 'editar') {
+    <app-panel-lateral [titulo]="'Editar ' + financiador.nombre" (cerrar)="cerrarPanel()">
+      <form [formGroup]="formularioEdicion" (ngSubmit)="enviarEdicion()" novalidate>
+        <p class="ayuda">
+          Se guarda <b>solo lo que cambies</b>; vaciar un campo opcional lo deja vacío.
+        </p>
+
+        <div class="campo">
+          <label for="editar-financiador-codigo">Código</label>
+          <input
+            id="editar-financiador-codigo"
+            type="text"
+            [value]="financiador.codigo ?? ''"
+            disabled
+            aria-describedby="editar-financiador-codigo-ayuda"
+          />
+          <p class="ayuda" id="editar-financiador-codigo-ayuda">
+            No se puede cambiar: es lo que guardan los históricos. Si está mal, dá de baja esta
+            ficha y cargá otra con el código correcto.
+          </p>
+        </div>
+
+        <div class="campo">
+          <label for="editar-financiador-nombre">Nombre</label>
+          <input
+            id="editar-financiador-nombre"
+            type="text"
+            formControlName="nombre"
+            autocomplete="off"
+            [attr.aria-invalid]="mostrarErrorEdicion('nombre') ? 'true' : null"
+          />
+          @if (mostrarErrorEdicion('nombre')) {
+            <p class="campo__error" role="alert">El nombre es obligatorio.</p>
+          }
+        </div>
+
+        <div class="campo">
+          <label for="editar-financiador-tipo">Tipo</label>
+          <select id="editar-financiador-tipo" formControlName="tipo">
+            @for (opcion of tipos; track opcion.valor) {
+              <option [value]="opcion.valor">{{ opcion.etiqueta }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="campo">
+          <label for="editar-financiador-cuit">CUIT</label>
+          <input
+            id="editar-financiador-cuit"
+            type="text"
+            formControlName="cuit"
+            autocomplete="off"
+          />
+        </div>
+
+        <details class="seccion-plegable">
+          <summary>
+            Contacto
+            <span class="seccion-plegable__resumen">Email, teléfono y observaciones</span>
+          </summary>
+          <div class="grilla-campos grilla-campos--dos">
+            <div class="campo">
+              <label for="editar-financiador-email">Email de contacto</label>
+              <input
+                id="editar-financiador-email"
+                type="email"
+                formControlName="emailContacto"
+                autocomplete="off"
+              />
+            </div>
+
+            <div class="campo">
+              <label for="editar-financiador-telefono">Teléfono de contacto</label>
+              <input
+                id="editar-financiador-telefono"
+                type="text"
+                formControlName="telefonoContacto"
+                autocomplete="off"
+              />
+            </div>
+
+            <div class="campo campo--ancho">
+              <label for="editar-financiador-observaciones">Observaciones</label>
+              <input
+                id="editar-financiador-observaciones"
+                type="text"
+                formControlName="observaciones"
+                autocomplete="off"
+              />
+            </div>
+          </div>
+        </details>
+
+        @if (errorAccion(); as mensaje) {
+          <p class="estado estado--error" role="alert">{{ mensaje }}</p>
+        }
+
+        <p class="acciones">
+          <button type="submit" class="boton" [disabled]="enviando()">
+            {{ enviando() ? 'Guardando...' : 'Guardar cambios' }}
+          </button>
+          <button
+            type="button"
+            class="boton boton--secundario"
+            (click)="cerrarPanel()"
+            [disabled]="enviando()"
+          >
+            Cancelar
+          </button>
+          @if (hayQueRecargar()) {
+            <button type="button" class="boton boton--secundario" (click)="cargar()">
+              Recargar el listado
+            </button>
+          }
+        </p>
+      </form>
+    </app-panel-lateral>
+  }
+
+  @if (panel()?.tipo === 'baja') {
+    <app-panel-lateral [titulo]="'Dar de baja ' + financiador.nombre" (cerrar)="cerrarPanel()">
+      <app-confirmacion-con-motivo
+        idCampo="baja-financiador-motivo"
+        [titulo]="'Dar de baja ' + financiador.nombre"
+        [mostrarTitulo]="false"
+        etiqueta="Motivo de la baja"
+        ayuda="Queda registrado junto al financiador y se muestra en el listado."
+        textoConfirmar="Dar de baja"
+        [enviando]="enviando()"
+        (confirmado)="enviarBaja($event)"
+        (cancelado)="cerrarPanel()"
+      >
+        <p class="ayuda">
+          La baja <b>NO cascadea</b>: sus planes conservan sus filas y las coberturas y convenios ya
+          firmados siguen resolviendo. Solo impide crear planes nuevos bajo él y ofrecerlo en
+          selecciones nuevas. No hay reactivación, y su código queda libre para un alta nueva.
+        </p>
+      </app-confirmacion-con-motivo>
+
+      @if (errorAccion(); as mensaje) {
+        <p class="estado estado--error" role="alert">{{ mensaje }}</p>
+      }
+      @if (hayQueRecargar()) {
+        <button type="button" class="boton" (click)="cargar()">Recargar el listado</button>
+      }
+    </app-panel-lateral>
+  }
+}

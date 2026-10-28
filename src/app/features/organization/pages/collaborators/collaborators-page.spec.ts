@@ -138,6 +138,25 @@ describe('CollaboratorsPage', () => {
     expect('consultorioId' in cuerpo).toBe(false);
   });
 
+  it('abre la operación en un panel lateral fuera de la tabla y marca la fila', async () => {
+    const fixture = await montar();
+    const host = fixture.nativeElement as HTMLElement;
+    abrirPanel(fixture, 'Suspender');
+
+    const panel = host.querySelector('.panel-lateral');
+    expect(panel).not.toBeNull();
+    expect(panel?.closest('table')).toBeNull();
+    expect(host.querySelector('.panel-lateral__titulo')?.textContent).toContain(
+      'Suspender a la cuenta 100',
+    );
+    expect(host.querySelectorAll('tbody tr.fila--seleccionada').length).toBe(1);
+    expect(host.querySelector('.fila-panel')).toBeNull();
+
+    apretar(fixture, 'Cancelar');
+    expect(host.querySelector('.panel-lateral')).toBeNull();
+    expect(host.querySelectorAll('tbody tr.fila--seleccionada').length).toBe(0);
+  });
+
   it('cambiar de contexto cierra el panel abierto y relee contra la organización nueva', async () => {
     const fixture = await montar();
     abrirPanel(fixture, 'Suspender');
@@ -299,7 +318,7 @@ describe('CollaboratorsPage', () => {
       // axe sobre jsdom -mas de 20 s, el margen de TIMEOUT_AXE- sin agregar nada, porque lo
       // que hay que verificar es la relacion label/campo/error del formulario, que es donde
       // un `aria-describedby` colgado no se ve en pantalla.
-      const panel = (fixture.nativeElement as HTMLElement).querySelector('.fila-panel');
+      const panel = (fixture.nativeElement as HTMLElement).querySelector('.panel-lateral');
       if (panel === null) {
         throw new Error('No se abrio el panel de suspension');
       }

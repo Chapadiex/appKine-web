@@ -40,6 +40,8 @@ import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { Filtros } from '../../../../shared/components/filtros/filtros';
 import { Icono } from '../../../../shared/components/icono/icono';
 import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
+import { AccionesDeFila } from '../../../../shared/components/acciones-de-fila/acciones-de-fila';
 import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
 import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 
@@ -86,6 +88,8 @@ const VIGENCIA_DIAS_MAXIMA = 3660;
     RouterLink,
     ConfirmacionConMotivo,
     FocoAlMontar,
+    AccionesDeFila,
+    PanelLateral,
   ],
   templateUrl: './productos-de-pack-page.html',
   styleUrl: '../../activity.css',
@@ -146,6 +150,11 @@ export class ProductosDePackPage {
   protected readonly enEdicion = computed(() => {
     const panel = this.panel();
     return panel.tipo === 'edicion' ? panel.producto : null;
+  });
+  /** El producto de la baja abierta, para el panel lateral que vive fuera de la tabla. */
+  protected readonly productoEnPanel = computed(() => {
+    const panel = this.panel();
+    return panel.tipo === 'baja' ? panel.producto : null;
   });
   protected readonly formularioAbierto = computed(() => {
     const tipo = this.panel().tipo;

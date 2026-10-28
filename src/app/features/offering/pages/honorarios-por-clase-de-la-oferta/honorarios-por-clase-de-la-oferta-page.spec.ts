@@ -175,7 +175,7 @@ describe('HonorariosPorClaseDeLaOfertaPage', () => {
     fixture.detectChanges();
 
     escribir(fixture, '#fin-honorario-hasta', '2026-10-31');
-    enviar(fixture, 'tr.fila-panel form');
+    enviar(fixture, 'app-panel-lateral form');
     const cierre = httpMock.expectOne(
       (peticion: HttpRequest<unknown>) =>
         peticion.method === 'PUT' && peticion.url === `${HONORARIOS}/700`,
@@ -189,7 +189,7 @@ describe('HonorariosPorClaseDeLaOfertaPage', () => {
     botones(fixture, 'Cambiar fin')[1].click();
     fixture.detectChanges();
     escribir(fixture, '#fin-honorario-hasta', '');
-    enviar(fixture, 'tr.fila-panel form');
+    enviar(fixture, 'app-panel-lateral form');
     const reapertura = httpMock.expectOne(
       (peticion: HttpRequest<unknown>) => peticion.method === 'PUT',
     );
@@ -205,7 +205,7 @@ describe('HonorariosPorClaseDeLaOfertaPage', () => {
     botones(fixture, 'Cambiar fin')[1].click();
     fixture.detectChanges();
     escribir(fixture, '#fin-honorario-hasta', '2026-10-31');
-    enviar(fixture, 'tr.fila-panel form');
+    enviar(fixture, 'app-panel-lateral form');
     httpMock
       .expectOne((peticion: HttpRequest<unknown>) => peticion.method === 'PUT')
       .flush(
@@ -221,7 +221,7 @@ describe('HonorariosPorClaseDeLaOfertaPage', () => {
     await estabilizar(fixture);
     expect(texto(fixture)).toContain('Alguien mas modifico esto');
 
-    enviar(fixture, 'tr.fila-panel form');
+    enviar(fixture, 'app-panel-lateral form');
     const reintento = httpMock.expectOne(
       (peticion: HttpRequest<unknown>) => peticion.method === 'PUT',
     );
@@ -237,7 +237,7 @@ describe('HonorariosPorClaseDeLaOfertaPage', () => {
     fixture.detectChanges();
 
     escribir(fixture, '#baja-honorario-motivo', 'Mal cargada');
-    enviar(fixture, 'tr.fila-panel form');
+    enviar(fixture, 'app-panel-lateral form');
     const baja = httpMock.expectOne(
       (peticion: HttpRequest<unknown>) =>
         peticion.method === 'DELETE' && peticion.url === `${HONORARIOS}/700`,
@@ -256,7 +256,7 @@ describe('HonorariosPorClaseDeLaOfertaPage', () => {
     botones(fixture, 'Dar de baja')[1].click();
     fixture.detectChanges();
     escribir(fixture, '#baja-honorario-motivo', 'Mal cargada');
-    enviar(fixture, 'tr.fila-panel form');
+    enviar(fixture, 'app-panel-lateral form');
     httpMock
       .expectOne((peticion: HttpRequest<unknown>) => peticion.method === 'DELETE')
       .flush(null, { status: 204, statusText: 'No Content' });

@@ -93,6 +93,7 @@ describe('PresentacionesPage', () => {
     const router = TestBed.inject(Router);
     const navegar = vi.spyOn(router, 'navigate').mockResolvedValue(true);
 
+    abrirAlta(fixture);
     elegir(fixture, '#alta-financiador', '10');
     escribir(fixture, '#alta-desde', '2026-09-01');
     escribir(fixture, '#alta-hasta', '2026-09-30');
@@ -116,6 +117,7 @@ describe('PresentacionesPage', () => {
   it('no pide nada con el alta incompleta o con el periodo al reves', async () => {
     const fixture = await montar([]);
 
+    abrirAlta(fixture);
     enviar(fixture, 1);
     expect(contenido(fixture)).toContain('Elegí a qué financiador se presenta.');
 
@@ -219,6 +221,14 @@ describe('PresentacionesPage', () => {
     const campo = (fixture.nativeElement as HTMLElement).querySelector<HTMLInputElement>(selector)!;
     campo.value = valor;
     campo.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+  }
+
+  /** El alta vive en un panel lateral que se abre desde "Nuevo lote" (refactor UX/UI). */
+  function abrirAlta(fixture: ComponentFixture<PresentacionesPage>) {
+    Array.from((fixture.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>('button'))
+      .find((b) => b.textContent?.trim() === 'Nuevo lote')!
+      .click();
     fixture.detectChanges();
   }
 

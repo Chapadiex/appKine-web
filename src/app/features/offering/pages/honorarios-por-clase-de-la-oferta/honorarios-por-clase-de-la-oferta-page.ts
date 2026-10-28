@@ -32,6 +32,8 @@ import { Paginacion } from '../../../../shared/components/paginacion/paginacion'
 import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 import { Icono } from '../../../../shared/components/icono/icono';
 import { Migas } from '../../../../shared/components/migas/migas';
+import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
+import { AccionesDeFila } from '../../../../shared/components/acciones-de-fila/acciones-de-fila';
 
 /** La moneda que se propone cuando la oferta no tiene precio de lista: la del producto. */
 const MONEDA_POR_DEFECTO = 'ARS';
@@ -70,6 +72,8 @@ interface SituacionDeLaTarifa {
     ReactiveFormsModule,
     RouterLink,
     ConfirmacionConMotivo,
+    PanelLateral,
+    AccionesDeFila,
   ],
   templateUrl: './honorarios-por-clase-de-la-oferta-page.html',
   styleUrl: '../../offering.css',
@@ -125,6 +129,17 @@ export class HonorariosPorClaseDeLaOfertaPage {
   protected readonly panel = signal<{ readonly id: number; readonly tipo: TipoAccion } | null>(
     null,
   );
+
+  /**
+   * Lo del panel abierto. El panel lateral vive fuera de la tabla (refactor UX/UI del 28/10/2026),
+   * asi que lo busca en el listado en vez de recibirlo del `@for` de la fila.
+   */
+  protected readonly tarifaEnPanel = computed(() => {
+    const panel = this.panel();
+    return panel === null
+      ? null
+      : (this.tarifas().find((tarifa) => tarifa.id === panel.id) ?? null);
+  });
   private readonly original = signal<HonorarioPorClase | null>(null);
 
   protected readonly enviando = signal(false);
@@ -215,11 +230,6 @@ export class HonorariosPorClaseDeLaOfertaPage {
     return hasta === ''
       ? `Desde el ${desde}, sin fin previsto`
       : `Del ${desde} al ${enPalabras(hasta)}, inclusive`;
-  }
-
-  protected panelAbierto(id: number | undefined, tipo: TipoAccion): boolean {
-    const panel = this.panel();
-    return panel !== null && panel.id === id && panel.tipo === tipo;
   }
 
   protected abrirAlta(): void {

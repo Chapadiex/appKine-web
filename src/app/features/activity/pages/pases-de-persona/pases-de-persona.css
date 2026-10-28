@@ -12,3 +12,8 @@
 .tarjeta--listado .tabla {
   margin: 0;
 }
+
+/* Nota del panel de ajuste: el saldo y la regla, a la vista antes de los campos. */
+.pases__nota {
+  margin: 0 0 var(--esp-6);
+}

@@ -167,6 +167,7 @@ describe('EgresosPage', () => {
     const fixture = await montar([]);
     const navegar = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
 
+    abrirAlta(fixture);
     elegir(fixture, '#alta-colaborador', '7');
     escribir(fixture, '#alta-concepto', 'Honorarios septiembre');
     escribir(fixture, '#alta-importe', '150000,50');
@@ -200,6 +201,7 @@ describe('EgresosPage', () => {
   it('un externo sin nombre no se envia, y el rechazo del servidor se muestra traducido', async () => {
     const fixture = await montar([]);
 
+    abrirAlta(fixture);
     (fixture.nativeElement as HTMLElement)
       .querySelectorAll<HTMLInputElement>('input[type=radio]')[1]
       .click();
@@ -237,6 +239,7 @@ describe('EgresosPage', () => {
   it('el servicio elegido viaja como ofertaId y solo se ofrecen las ofertas activas', async () => {
     const fixture = await montar([]);
     vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+    abrirAlta(fixture);
     expect(contenido(fixture)).toContain('Pilates grupal');
     expect(contenido(fixture)).not.toContain('Oferta de baja');
 
@@ -344,6 +347,12 @@ describe('EgresosPage', () => {
     return Array.from(
       (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>('button'),
     ).find((b) => b.textContent?.trim() === texto)!;
+  }
+
+  /** El alta vive en un panel lateral que se abre desde el encabezado (refactor UX/UI). */
+  function abrirAlta(fixture: ComponentFixture<EgresosPage>) {
+    boton(fixture, 'Registrar egreso').click();
+    fixture.detectChanges();
   }
 
   function enviar(fixture: ComponentFixture<EgresosPage>, indice: number) {

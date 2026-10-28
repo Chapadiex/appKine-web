@@ -1010,7 +1010,11 @@ describe('AtencionPage', () => {
     fixture.detectChanges();
     escribirEn(fixture, '#atencion-motivo-reemplazo', 'Licencia de la profesional');
     fixture.detectChanges();
-    apretar(fixture, 'Reemplazar');
+    // El reemplazo se completa en un panel lateral: el boton que lo abre sigue a la vista.
+    const panel = (fixture.nativeElement as HTMLElement).querySelector('dialog.panel-lateral');
+    expect(panel).not.toBeNull();
+    (panel?.querySelector('button[type="submit"]') as HTMLButtonElement).click();
+    fixture.detectChanges();
 
     const pedido = httpMock.expectOne((p) => p.method === 'PUT' && p.url === `${VER}/profesional`);
     expect(pedido.request.body).toEqual({
@@ -1021,6 +1025,7 @@ describe('AtencionPage', () => {
     pedido.flush({ ...ABIERTA, ofertaId: 4, profesionalId: 8, version: 4 });
     await estabilizar(fixture);
     expect(texto(fixture)).toContain('ahora la continua Diaz, Bruno');
+    expect((fixture.nativeElement as HTMLElement).querySelector('dialog.panel-lateral')).toBeNull();
   });
 
   it('sin sesión:reassign no se ofrece reemplazar', async () => {

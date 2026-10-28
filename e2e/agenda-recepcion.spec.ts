@@ -105,7 +105,7 @@ test.describe('Recepcion del dia contra el backend real', () => {
 
     await abrirAcciones(fila);
     await fila.getByRole('button', { name: 'Atender como Particular' }).click();
-    const panel = page.getByRole('region', { name: 'Confirmar la transicion de la recepción' });
+    const panel = page.getByRole('dialog');
     await panel.getByLabel('Motivo (obligatorio)').fill('No trajo la credencial de la obra social');
     await panel.getByRole('button', { name: 'Atender como Particular' }).click();
 
@@ -186,7 +186,7 @@ test.describe('Recepcion del dia contra el backend real', () => {
     await expect(fila.getByRole('button', { name: 'Atender como Particular' })).toBeVisible();
 
     await fila.getByRole('button', { name: 'Se retiro sin ser atendido' }).click();
-    const panel = page.getByRole('region', { name: 'Confirmar la transicion de la recepción' });
+    const panel = page.getByRole('dialog');
     await panel.getByRole('button', { name: 'Registrar el retiro' }).click();
     await expect(panel.getByText('Escribi por que se retiro: es obligatorio.')).toBeVisible();
 

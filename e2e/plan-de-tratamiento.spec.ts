@@ -65,7 +65,7 @@ test.describe('Plan de tratamiento (D-c)', () => {
 
     // --- Crear --------------------------------------------------------------------------------
     await page.getByRole('button', { name: 'Crear un plan' }).click();
-    const editor = page.getByRole('region', { name: 'Crear un plan' });
+    const editor = page.getByRole('dialog', { name: 'Crear un plan' });
     await editor.getByRole('button', { name: 'Crear el plan' }).click();
     await expect(editor.getByText('Los objetivos son obligatorios.')).toBeVisible();
     await expect(editor.getByText(/Cada item necesita una oferta/)).toBeVisible();
@@ -95,7 +95,7 @@ test.describe('Plan de tratamiento (D-c)', () => {
 
     // --- Modificar: version 2, la 1 sigue consultable -----------------------------------------
     await page.getByRole('button', { name: 'Modificar el plan' }).click();
-    const modificar = page.getByRole('region', { name: 'Modificar el plan' });
+    const modificar = page.getByRole('dialog', { name: 'Modificar el plan' });
     await modificar.getByRole('spinbutton', { name: 'Sesiones planificadas' }).fill('12');
     await modificar
       .getByRole('textbox', { name: 'Motivo de la modificacion (opcional)' })

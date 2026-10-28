@@ -1,5 +1,6 @@
 <section [attr.aria-labelledby]="'titulo-consumo-' + autorizacionId()">
-  <h2 [id]="'titulo-consumo-' + autorizacionId()" class="panel__titulo">
+  <!-- El titulo visible es el del panel lateral que lo contiene; este nombra la region. -->
+  <h2 [id]="'titulo-consumo-' + autorizacionId()" class="visualmente-oculto">
     Saldo y consumos de la autorización {{ numero() }}
   </h2>
   <p class="ayuda">

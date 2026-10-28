@@ -13,6 +13,8 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { catchError, of } from 'rxjs';
 
+import { AccionesDeFila } from '../../../../shared/components/acciones-de-fila/acciones-de-fila';
+import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
 import { ConfirmacionConMotivo } from '../../../../shared/components/confirmacion-con-motivo/confirmacion-con-motivo';
 import { CreatePlanCoberturaRequest } from '../../../../api/generated/model/create-plan-cobertura-request';
 import { EstadoDeListado } from '../../../../shared/utils/estado-de-listado';
@@ -112,6 +114,8 @@ type TipoAccion = 'editar' | 'baja';
     RouterLink,
     PermisoDirective,
     ConfirmacionConMotivo,
+    AccionesDeFila,
+    PanelLateral,
   ],
   templateUrl: './planes-del-financiador-page.html',
   styleUrl: '../../contracting.css',
@@ -198,6 +202,17 @@ export class PlanesDelFinanciadorPage {
   protected readonly panel = signal<{ readonly id: number; readonly tipo: TipoAccion } | null>(
     null,
   );
+  /**
+   * El plan del panel abierto. El panel lateral vive fuera de la tabla (refactor UX/UI del
+   * 28/10/2026), asi que lo busca en la pagina en vez de recibirlo del `@for` de la fila.
+   */
+  protected readonly planEnPanel = computed(() => {
+    const panel = this.panel();
+    return panel === null
+      ? null
+      : (this.tabla.visibles().find((plan) => plan.id === panel.id) ?? null);
+  });
+
   protected readonly altaAbierta = signal(false);
   private readonly original = signal<PlanCoberturaResponse | null>(null);
 
@@ -290,11 +305,6 @@ export class PlanesDelFinanciadorPage {
     this.cerrarPanel();
     this.filtroEstado.set(elegido);
     this.cargar();
-  }
-
-  protected panelAbierto(id: number | undefined, tipo: TipoAccion): boolean {
-    const panel = this.panel();
-    return panel !== null && panel.id === id && panel.tipo === tipo;
   }
 
   protected abrirAlta(): void {

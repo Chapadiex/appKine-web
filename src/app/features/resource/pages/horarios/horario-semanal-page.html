@@ -169,134 +169,7 @@
           sin un solo boton, sin explicacion, se lee como una pantalla que no termino de cargar.
         -->
         @if (modoLectura()) {
-          <p class="ayuda">{{ textoModoLectura }}</p>
-        }
-
-        @if (altaAbierta()) {
-          <form
-            class="panel-formulario"
-            [formGroup]="formularioAlta"
-            (ngSubmit)="enviarAlta()"
-            novalidate
-          >
-            <div class="panel-formulario__cuerpo">
-              <h3 class="panel__titulo">Agregar un bloque al horario</h3>
-
-              <div class="campo">
-                <label for="alta-bloque-dia">Día de la semana</label>
-                <select id="alta-bloque-dia" formControlName="diaSemana">
-                  @for (dia of dias; track dia.numero) {
-                    <option [value]="dia.numero">{{ dia.etiqueta }}</option>
-                  }
-                </select>
-              </div>
-
-              <div class="grilla-campos grilla-campos--dos">
-                <div class="campo">
-                  <label for="alta-bloque-desde">Desde (HH:MM)</label>
-                  <input
-                    id="alta-bloque-desde"
-                    type="text"
-                    inputmode="numeric"
-                    autocomplete="off"
-                    placeholder="09:00"
-                    [attr.pattern]="patronHora"
-                    formControlName="horaDesde"
-                    [attr.aria-invalid]="mostrarError(true, 'horaDesde')"
-                    [attr.aria-describedby]="
-                      mostrarError(true, 'horaDesde') ? 'alta-bloque-desde-error' : null
-                    "
-                  />
-                  @if (mostrarError(true, 'horaDesde')) {
-                    <p class="campo__error" id="alta-bloque-desde-error">
-                      Escribi la hora de inicio como HH:MM, por ejemplo 09:00.
-                    </p>
-                  }
-                </div>
-
-                <div class="campo">
-                  <label for="alta-bloque-hasta">Hasta (HH:MM, exclusiva)</label>
-                  <input
-                    id="alta-bloque-hasta"
-                    type="text"
-                    inputmode="numeric"
-                    autocomplete="off"
-                    placeholder="13:00"
-                    [attr.pattern]="patronHora"
-                    formControlName="horaHasta"
-                    [attr.aria-invalid]="mostrarError(true, 'horaHasta')"
-                    [attr.aria-describedby]="
-                      mostrarError(true, 'horaHasta') ? 'alta-bloque-hasta-error' : null
-                    "
-                  />
-                  @if (mostrarError(true, 'horaHasta')) {
-                    <p class="campo__error" id="alta-bloque-hasta-error">
-                      Escribi la hora de fin como HH:MM. Para el final del día usa
-                      {{ horaMedianoche }}.
-                    </p>
-                  }
-                </div>
-              </div>
-
-              @if (rangoInvertido(true)) {
-                <p class="campo__error" role="alert">
-                  La hora de fin tiene que ser posterior a la de inicio. Un bloque nunca cruza al
-                  día siguiente: si el profesional atiende de noche y sigue después de las
-                  {{ horaMedianoche }}, son dos bloques, uno en cada día.
-                </p>
-              }
-
-              <details class="mas-opciones">
-                <summary>Más opciones: vigencia del bloque</summary>
-                <div class="grilla-campos grilla-campos--dos">
-                  <div class="campo">
-                    <label for="alta-bloque-vigencia-desde">
-                      Rige desde <span class="campo__opcional">(opcional)</span>
-                    </label>
-                    <input
-                      id="alta-bloque-vigencia-desde"
-                      type="date"
-                      formControlName="vigenciaDesde"
-                    />
-                  </div>
-
-                  <div class="campo">
-                    <label for="alta-bloque-vigencia-hasta">
-                      Rige hasta <span class="campo__opcional">(opcional)</span>
-                    </label>
-                    <input
-                      id="alta-bloque-vigencia-hasta"
-                      type="date"
-                      formControlName="vigenciaHasta"
-                    />
-                  </div>
-                </div>
-                <p class="ayuda">
-                  Si dejás "Rige desde" vacío, rige desde hoy. "Rige hasta" es el primer día en que
-                  ya <b>no</b> rige; vacío es sin fin previsto, que es lo normal.
-                </p>
-              </details>
-
-              <div aria-live="polite">
-                @if (!panel() && errorAccion(); as mensaje) {
-                  <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-                }
-              </div>
-            </div>
-
-            <div class="panel-formulario__pie">
-              <app-ayuda titulo="Sobre el horario de fin">
-                <p>
-                  El bloque termina justo antes de la hora de fin. Para llegar al final del día,
-                  {{ horaMedianoche }}.
-                </p>
-              </app-ayuda>
-              <button type="button" class="boton boton--secundario" (click)="cerrarAlta()">
-                Cancelar
-              </button>
-              <button type="submit" class="boton" [disabled]="enviando()">Cargar el bloque</button>
-            </div>
-          </form>
+          <p class="ayuda ayuda--fija">{{ textoModoLectura }}</p>
         }
 
         <div class="semana">
@@ -310,7 +183,11 @@
                 } @else {
                   <ul class="lista-datos">
                     @for (bloque of dia.bloques; track bloque.id ?? $index) {
-                      <li class="bloque" [class.bloque--conflicto]="esBloqueEnConflicto(bloque)">
+                      <li
+                        class="bloque"
+                        [class.bloque--conflicto]="esBloqueEnConflicto(bloque)"
+                        [class.bloque--seleccionado]="bloqueEnPanel()?.bloque?.id === bloque.id"
+                      >
                         <div class="bloque__resumen">
                           <div class="bloque__datos">
                             <!--
@@ -326,33 +203,36 @@
                             </p>
 
                             @if (bloque.vigenciaHasta) {
-                              <p class="ayuda">
+                              <p class="ayuda ayuda--fija">
                                 Rige desde {{ bloque.vigenciaDesde }} hasta
                                 {{ bloque.vigenciaHasta }} (exclusivo)
                               </p>
                             } @else {
-                              <p class="ayuda">
+                              <p class="ayuda ayuda--fija">
                                 Rige desde {{ bloque.vigenciaDesde }}, sin fin previsto
                               </p>
                             }
                           </div>
-
-                          <div class="acciones-fila" *akinePermiso="permisoManage">
+                          <app-acciones-de-fila
+                            *akinePermiso="permisoManage"
+                            [de]="'el bloque número ' + bloque.id"
+                          >
                             <button
+                              principal
                               type="button"
-                              class="boton boton--secundario"
+                              class="boton boton--secundario boton--chico"
                               (click)="abrirPanel(bloque, 'editar')"
                             >
                               Editar
                             </button>
                             <button
                               type="button"
-                              class="boton boton--secundario"
+                              class="accion--peligro"
                               (click)="abrirPanel(bloque, 'baja')"
                             >
                               Dar de baja
                             </button>
-                          </div>
+                          </app-acciones-de-fila>
                         </div>
 
                         <!--
@@ -366,202 +246,6 @@
                             Este es el bloque con el que se pisa lo que pediste.
                           </p>
                         }
-
-                        @if (panelAbierto(bloque.id, 'editar')) {
-                          <form
-                            class="panel-formulario"
-                            [formGroup]="formularioEdicion"
-                            (ngSubmit)="enviarEdicion()"
-                            novalidate
-                          >
-                            <div class="panel-formulario__cuerpo">
-                              <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
-                                <h4 class="panel__titulo">
-                                  Editar el bloque de {{ dia.etiqueta.toLowerCase() }}
-                                </h4>
-                                <app-ayuda titulo="Sobre la edición">
-                                  <p>
-                                    Se envia solo lo que cambies. El profesional no se puede
-                                    cambiar: mover un bloque a otra persona es un bloque nuevo, para
-                                    que la autoria historica no quede apuntando a quien nunca
-                                    atendio.
-                                  </p>
-                                  <p>
-                                    Si el cambio quita horario, los turnos pendientes que caian ahi
-                                    quedan en conflicto: no se cancelan ni se mueven. Antes de
-                                    guardar se calcula cuantos son; si hay alguno, te los mostramos
-                                    y te pedimos que confirmes.
-                                  </p>
-                                </app-ayuda>
-                              </div>
-
-                              <div class="campo">
-                                <label for="editar-bloque-dia">Día de la semana</label>
-                                <select id="editar-bloque-dia" formControlName="diaSemana">
-                                  @for (opcion of dias; track opcion.numero) {
-                                    <option [value]="opcion.numero">{{ opcion.etiqueta }}</option>
-                                  }
-                                </select>
-                              </div>
-
-                              <div class="grilla-campos grilla-campos--dos">
-                                <div class="campo">
-                                  <label for="editar-bloque-desde">Desde (HH:MM)</label>
-                                  <input
-                                    id="editar-bloque-desde"
-                                    type="text"
-                                    inputmode="numeric"
-                                    autocomplete="off"
-                                    [attr.pattern]="patronHora"
-                                    formControlName="horaDesde"
-                                    [attr.aria-invalid]="mostrarError(false, 'horaDesde')"
-                                    [attr.aria-describedby]="
-                                      mostrarError(false, 'horaDesde')
-                                        ? 'editar-bloque-desde-error'
-                                        : null
-                                    "
-                                  />
-                                  @if (mostrarError(false, 'horaDesde')) {
-                                    <p class="campo__error" id="editar-bloque-desde-error">
-                                      Escribi la hora de inicio como HH:MM.
-                                    </p>
-                                  }
-                                </div>
-
-                                <div class="campo">
-                                  <label for="editar-bloque-hasta">
-                                    Hasta (HH:MM, exclusiva)
-                                  </label>
-                                  <input
-                                    id="editar-bloque-hasta"
-                                    type="text"
-                                    inputmode="numeric"
-                                    autocomplete="off"
-                                    [attr.pattern]="patronHora"
-                                    formControlName="horaHasta"
-                                    [attr.aria-invalid]="mostrarError(false, 'horaHasta')"
-                                    [attr.aria-describedby]="
-                                      mostrarError(false, 'horaHasta')
-                                        ? 'editar-bloque-hasta-error'
-                                        : null
-                                    "
-                                  />
-                                  @if (mostrarError(false, 'horaHasta')) {
-                                    <p class="campo__error" id="editar-bloque-hasta-error">
-                                      Escribi la hora de fin como HH:MM.
-                                    </p>
-                                  }
-                                </div>
-                              </div>
-
-                              @if (rangoInvertido(false)) {
-                                <p class="campo__error" role="alert">
-                                  La hora de fin tiene que ser posterior a la de inicio.
-                                </p>
-                              }
-
-                              <div class="grilla-campos grilla-campos--dos">
-                                <div class="campo">
-                                  <label for="editar-bloque-vigencia-desde">Rige desde</label>
-                                  <input
-                                    id="editar-bloque-vigencia-desde"
-                                    type="date"
-                                    formControlName="vigenciaDesde"
-                                  />
-                                </div>
-
-                                <div class="campo">
-                                  <label for="editar-bloque-vigencia-hasta">Rige hasta</label>
-                                  <input
-                                    id="editar-bloque-vigencia-hasta"
-                                    type="date"
-                                    formControlName="vigenciaHasta"
-                                    aria-describedby="editar-bloque-vigencia-hasta-ayuda"
-                                  />
-                                  <p class="ayuda" id="editar-bloque-vigencia-hasta-ayuda">
-                                    Primer día en que ya no rige.
-                                  </p>
-                                </div>
-                              </div>
-
-                              <label class="opcion-casilla">
-                                <input
-                                  id="editar-bloque-limpiar"
-                                  type="checkbox"
-                                  formControlName="limpiarVigenciaHasta"
-                                />
-                                Quitar el fin de vigencia y dejarlo sin fin previsto
-                              </label>
-
-                              <app-impacto-previo [estado]="impacto()" />
-
-                              <div aria-live="polite">
-                                @if (errorAccion(); as mensaje) {
-                                  <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-                                }
-                                @if (hayQueRecargar()) {
-                                  <button type="button" class="boton" (click)="cargar()">
-                                    Recargar el horario
-                                  </button>
-                                }
-                              </div>
-                            </div>
-
-                            <div class="panel-formulario__pie">
-                              <button
-                                type="button"
-                                class="boton boton--secundario"
-                                (click)="cerrarPanel()"
-                              >
-                                Cancelar
-                              </button>
-                              <button type="submit" class="boton" [disabled]="enviando()">
-                                {{ edicionConImpacto() ? 'Guardar igual' : 'Guardar los cambios' }}
-                              </button>
-                            </div>
-                          </form>
-                        }
-
-                        @if (panelAbierto(bloque.id, 'baja')) {
-                          <akine-confirmacion-con-motivo
-                            idCampo="baja-bloque-reason"
-                            etiqueta="Motivo de la baja"
-                            textoConfirmar="Confirmar la baja"
-                            ayuda="Queda en la auditoria con tu nombre y la fecha: es lo que explica esta decision dentro de seis meses."
-                            [titulo]="
-                              'Dar de baja el bloque de ' +
-                              dia.etiqueta.toLowerCase() +
-                              ' de ' +
-                              rangoHorario(bloque.horaDesde, bloque.horaHasta)
-                            "
-                            [enviando]="enviando() || impacto()?.tipo === 'consultando'"
-                            (confirmado)="enviarBaja($event)"
-                            (cancelado)="cerrarPanel()"
-                          >
-                            <p class="estado estado--error">
-                              <b>Esto no se puede deshacer desde la aplicacion.</b> No hay
-                              reactivacion: un bloque que vuelve se carga como una regla nueva.
-                            </p>
-                            <p class="ayuda">
-                              Si lo que queres es que el profesional deje de atender en esa franja a
-                              partir de una fecha, <b>no lo des de baja</b>: edita el fin de
-                              vigencia del bloque. Así el horario historico sigue explicando los
-                              turnos que ya se dieron.
-                            </p>
-                            <app-impacto-previo [estado]="impacto()" />
-                          </akine-confirmacion-con-motivo>
-
-                          <div aria-live="polite">
-                            @if (errorAccion(); as mensaje) {
-                              <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-                            }
-                            @if (hayQueRecargar()) {
-                              <button type="button" class="boton" (click)="cargar()">
-                                Recargar el horario
-                              </button>
-                            }
-                          </div>
-                        }
                       </li>
                     }
                   </ul>
@@ -574,3 +258,315 @@
     }
   </div>
 </section>
+
+<!--
+  Alta, edicion y baja de un bloque en un panel lateral (refactor UX/UI del 28/10/2026). Antes el
+  alta empujaba la semana para abajo y la edicion se abria adentro de la columna angosta del día:
+  el formulario quedaba de 150 px de ancho y la semana se deformaba.
+-->
+@if (estado().tipo === 'listo' && altaAbierta()) {
+  <app-panel-lateral
+    titulo="Agregar un bloque al horario"
+    [subtitulo]="nombreDelProfesional()"
+    (cerrar)="cerrarAlta()"
+  >
+    <form [formGroup]="formularioAlta" (ngSubmit)="enviarAlta()" novalidate>
+      <div class="campo">
+        <label for="alta-bloque-dia">Día de la semana</label>
+        <select id="alta-bloque-dia" formControlName="diaSemana">
+          @for (dia of dias; track dia.numero) {
+            <option [value]="dia.numero">{{ dia.etiqueta }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="grilla-campos grilla-campos--dos">
+        <div class="campo">
+          <label for="alta-bloque-desde">Desde (HH:MM)</label>
+          <input
+            id="alta-bloque-desde"
+            type="text"
+            inputmode="numeric"
+            autocomplete="off"
+            placeholder="09:00"
+            [attr.pattern]="patronHora"
+            formControlName="horaDesde"
+            [attr.aria-invalid]="mostrarError(true, 'horaDesde')"
+            [attr.aria-describedby]="
+              mostrarError(true, 'horaDesde') ? 'alta-bloque-desde-error' : null
+            "
+          />
+          @if (mostrarError(true, 'horaDesde')) {
+            <p class="campo__error" id="alta-bloque-desde-error">
+              Escribi la hora de inicio como HH:MM, por ejemplo 09:00.
+            </p>
+          }
+        </div>
+
+        <div class="campo">
+          <label for="alta-bloque-hasta">Hasta (HH:MM, exclusiva)</label>
+          <input
+            id="alta-bloque-hasta"
+            type="text"
+            inputmode="numeric"
+            autocomplete="off"
+            placeholder="13:00"
+            [attr.pattern]="patronHora"
+            formControlName="horaHasta"
+            [attr.aria-invalid]="mostrarError(true, 'horaHasta')"
+            [attr.aria-describedby]="
+              mostrarError(true, 'horaHasta') ? 'alta-bloque-hasta-error' : null
+            "
+          />
+          @if (mostrarError(true, 'horaHasta')) {
+            <p class="campo__error" id="alta-bloque-hasta-error">
+              Escribi la hora de fin como HH:MM. Para el final del día usa
+              {{ horaMedianoche }}.
+            </p>
+          }
+        </div>
+      </div>
+
+      @if (rangoInvertido(true)) {
+        <p class="campo__error" role="alert">
+          La hora de fin tiene que ser posterior a la de inicio. Un bloque nunca cruza al día
+          siguiente: si el profesional atiende de noche y sigue después de las
+          {{ horaMedianoche }}, son dos bloques, uno en cada día.
+        </p>
+      }
+
+      <p class="ayuda ayuda--fija">
+        El bloque termina justo antes de la hora de fin. Para llegar al final del día,
+        {{ horaMedianoche }}.
+      </p>
+
+      <details class="seccion-plegable">
+        <summary>
+          Vigencia del bloque
+          <span class="seccion-plegable__resumen">Desde hoy, sin fin previsto</span>
+        </summary>
+        <div class="grilla-campos grilla-campos--dos">
+          <div class="campo">
+            <label for="alta-bloque-vigencia-desde">
+              Rige desde <span class="campo__opcional">(opcional)</span>
+            </label>
+            <input id="alta-bloque-vigencia-desde" type="date" formControlName="vigenciaDesde" />
+          </div>
+
+          <div class="campo">
+            <label for="alta-bloque-vigencia-hasta">
+              Rige hasta <span class="campo__opcional">(opcional)</span>
+            </label>
+            <input id="alta-bloque-vigencia-hasta" type="date" formControlName="vigenciaHasta" />
+          </div>
+        </div>
+        <p class="ayuda">
+          Si dejás "Rige desde" vacío, rige desde hoy. "Rige hasta" es el primer día en que ya
+          <b>no</b> rige; vacío es sin fin previsto, que es lo normal.
+        </p>
+      </details>
+
+      <div aria-live="polite">
+        @if (!panel() && errorAccion(); as mensaje) {
+          <p class="estado estado--error" role="alert">{{ mensaje }}</p>
+        }
+      </div>
+
+      <div class="acciones">
+        <button type="submit" class="boton" [disabled]="enviando()">Cargar el bloque</button>
+        <button type="button" class="boton boton--secundario" (click)="cerrarAlta()">
+          Cancelar
+        </button>
+      </div>
+    </form>
+  </app-panel-lateral>
+}
+
+@if (bloqueEnPanel(); as enPanel) {
+  @let bloque = enPanel.bloque;
+  @let dia = enPanel.dia;
+  @if (panel()?.tipo === 'editar') {
+    <app-panel-lateral
+      [titulo]="'Editar el bloque de ' + dia.etiqueta.toLowerCase()"
+      [subtitulo]="
+        rangoHorario(bloque.horaDesde, bloque.horaHasta) + ' · bloque número ' + bloque.id
+      "
+      (cerrar)="cerrarPanel()"
+    >
+      <form [formGroup]="formularioEdicion" (ngSubmit)="enviarEdicion()" novalidate>
+        <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
+          <p class="ayuda ayuda--fija">Se envia solo lo que cambies.</p>
+          <app-ayuda titulo="Sobre la edición">
+            <p>
+              El profesional no se puede cambiar: mover un bloque a otra persona es un bloque nuevo,
+              para que la autoria historica no quede apuntando a quien nunca atendio.
+            </p>
+            <p>
+              Si el cambio quita horario, los turnos pendientes que caian ahi quedan en conflicto:
+              no se cancelan ni se mueven. Antes de guardar se calcula cuantos son; si hay alguno,
+              te los mostramos y te pedimos que confirmes.
+            </p>
+          </app-ayuda>
+        </div>
+
+        <div class="campo">
+          <label for="editar-bloque-dia">Día de la semana</label>
+          <select id="editar-bloque-dia" formControlName="diaSemana">
+            @for (opcion of dias; track opcion.numero) {
+              <option [value]="opcion.numero">{{ opcion.etiqueta }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="grilla-campos grilla-campos--dos">
+          <div class="campo">
+            <label for="editar-bloque-desde">Desde (HH:MM)</label>
+            <input
+              id="editar-bloque-desde"
+              type="text"
+              inputmode="numeric"
+              autocomplete="off"
+              [attr.pattern]="patronHora"
+              formControlName="horaDesde"
+              [attr.aria-invalid]="mostrarError(false, 'horaDesde')"
+              [attr.aria-describedby]="
+                mostrarError(false, 'horaDesde') ? 'editar-bloque-desde-error' : null
+              "
+            />
+            @if (mostrarError(false, 'horaDesde')) {
+              <p class="campo__error" id="editar-bloque-desde-error">
+                Escribi la hora de inicio como HH:MM.
+              </p>
+            }
+          </div>
+
+          <div class="campo">
+            <label for="editar-bloque-hasta"> Hasta (HH:MM, exclusiva) </label>
+            <input
+              id="editar-bloque-hasta"
+              type="text"
+              inputmode="numeric"
+              autocomplete="off"
+              [attr.pattern]="patronHora"
+              formControlName="horaHasta"
+              [attr.aria-invalid]="mostrarError(false, 'horaHasta')"
+              [attr.aria-describedby]="
+                mostrarError(false, 'horaHasta') ? 'editar-bloque-hasta-error' : null
+              "
+            />
+            @if (mostrarError(false, 'horaHasta')) {
+              <p class="campo__error" id="editar-bloque-hasta-error">
+                Escribi la hora de fin como HH:MM.
+              </p>
+            }
+          </div>
+        </div>
+
+        @if (rangoInvertido(false)) {
+          <p class="campo__error" role="alert">
+            La hora de fin tiene que ser posterior a la de inicio.
+          </p>
+        }
+
+        <div class="grilla-campos grilla-campos--dos">
+          <div class="campo">
+            <label for="editar-bloque-vigencia-desde">Rige desde</label>
+            <input id="editar-bloque-vigencia-desde" type="date" formControlName="vigenciaDesde" />
+          </div>
+
+          <div class="campo">
+            <label for="editar-bloque-vigencia-hasta">Rige hasta</label>
+            <input
+              id="editar-bloque-vigencia-hasta"
+              type="date"
+              formControlName="vigenciaHasta"
+              aria-describedby="editar-bloque-vigencia-hasta-ayuda"
+            />
+            <p class="ayuda" id="editar-bloque-vigencia-hasta-ayuda">
+              Primer día en que ya no rige.
+            </p>
+          </div>
+        </div>
+
+        <label class="opcion-casilla">
+          <input
+            id="editar-bloque-limpiar"
+            type="checkbox"
+            formControlName="limpiarVigenciaHasta"
+          />
+          Quitar el fin de vigencia y dejarlo sin fin previsto
+        </label>
+
+        <app-impacto-previo [estado]="impacto()" />
+
+        <div aria-live="polite">
+          @if (errorAccion(); as mensaje) {
+            <p class="estado estado--error" role="alert">{{ mensaje }}</p>
+          }
+          @if (hayQueRecargar()) {
+            <button type="button" class="boton boton--secundario" (click)="cargar()">
+              Recargar el horario
+            </button>
+          }
+        </div>
+
+        <div class="acciones">
+          <button type="submit" class="boton" [disabled]="enviando()">
+            {{ edicionConImpacto() ? 'Guardar igual' : 'Guardar los cambios' }}
+          </button>
+          <button type="button" class="boton boton--secundario" (click)="cerrarPanel()">
+            Cancelar
+          </button>
+        </div>
+      </form>
+    </app-panel-lateral>
+  }
+
+  @if (panel()?.tipo === 'baja') {
+    <app-panel-lateral
+      [titulo]="'Dar de baja el bloque de ' + dia.etiqueta.toLowerCase()"
+      [subtitulo]="
+        rangoHorario(bloque.horaDesde, bloque.horaHasta) + ' · bloque número ' + bloque.id
+      "
+      (cerrar)="cerrarPanel()"
+    >
+      <akine-confirmacion-con-motivo
+        idCampo="baja-bloque-reason"
+        etiqueta="Motivo de la baja"
+        textoConfirmar="Confirmar la baja"
+        ayuda="Queda en la auditoria con tu nombre y la fecha."
+        [titulo]="
+          'Dar de baja el bloque de ' +
+          dia.etiqueta.toLowerCase() +
+          ' de ' +
+          rangoHorario(bloque.horaDesde, bloque.horaHasta)
+        "
+        [mostrarTitulo]="false"
+        [enviando]="enviando() || impacto()?.tipo === 'consultando'"
+        (confirmado)="enviarBaja($event)"
+        (cancelado)="cerrarPanel()"
+      >
+        <p class="estado estado--error">
+          <b>Esto no se puede deshacer desde la aplicacion.</b> No hay reactivacion: un bloque que
+          vuelve se carga como una regla nueva.
+        </p>
+        <p class="ayuda ayuda--fija">
+          Para que deje de atender en esa franja desde una fecha, <b>no lo des de baja</b>: edita el
+          fin de vigencia. Así el horario historico sigue explicando los turnos que ya se dieron.
+        </p>
+        <app-impacto-previo [estado]="impacto()" />
+      </akine-confirmacion-con-motivo>
+
+      <div aria-live="polite">
+        @if (errorAccion(); as mensaje) {
+          <p class="estado estado--error" role="alert">{{ mensaje }}</p>
+        }
+        @if (hayQueRecargar()) {
+          <button type="button" class="boton boton--secundario" (click)="cargar()">
+            Recargar el horario
+          </button>
+        }
+      </div>
+    </app-panel-lateral>
+  }
+}

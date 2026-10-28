@@ -194,6 +194,9 @@ test.describe('Pases contra el backend real', () => {
     await expect(movimientos.getByRole('row').filter({ hasText: 'Ajuste' })).toContainText(
       'Motivo: Clase de cortesia descontada',
     );
+    // Los movimientos se ven en un panel lateral modal (refactor UX/UI del 28/10/2026): se cierra
+    // antes de volver a la fila.
+    await page.getByRole('button', { name: 'Cerrar movimientos' }).click();
 
     // ---- Anulacion: sin creditos usados y sin cobros, anula el pase y su deuda.
     await abrirAcciones(filaDe(page, producto));

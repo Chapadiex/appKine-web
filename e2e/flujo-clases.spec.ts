@@ -1,4 +1,5 @@
 import { expect, ingresar, navegar, problemaDe, respuestaDe, test } from './support/agenda-real';
+import { abrirAcciones } from './support/filtros';
 import {
   DIAS,
   Oferta,
@@ -181,7 +182,13 @@ test.describe('Clases grupales contra el backend real', () => {
 
     // 4. La baja de la primera libera el lugar y la tercera entra sola.
     const primera = personas[0];
-    await page
+    // La baja va en el menu "⋯" de la fila (refactor UX/UI del 28/10/2026).
+    const filaDeLaPrimera = page
+      .getByRole('region', { name: 'Inscriptos con lugar' })
+      .getByRole('row')
+      .filter({ hasText: `${primera.apellido}, ${primera.nombre}` });
+    await abrirAcciones(filaDeLaPrimera);
+    await filaDeLaPrimera
       .getByRole('button', { name: `Dar de baja a ${primera.apellido}, ${primera.nombre}` })
       .click();
     await page.getByLabel('Motivo de la baja').fill('No puede venir esa semana');
@@ -225,6 +232,8 @@ test.describe('Clases grupales contra el backend real', () => {
     // 6. Cancelar la clase con motivo: libera al profesional y cancela las inscripciones.
     await delDia.getByRole('link', { name: new RegExp(`Ver clase ${oferta.nombre}`) }).click();
     await expect(page.getByRole('heading', { name: oferta.nombre, level: 1 })).toBeVisible();
+    // Cancelar la clase es destructiva: va en el menu "⋯" de la cabecera y se confirma en un panel.
+    await page.getByRole('button', { name: 'Más acciones de la clase' }).click();
     await page.getByRole('button', { name: 'Cancelar la clase' }).click();
     await page.getByLabel('Motivo de la cancelacion').fill('Se suspende por mantenimiento');
     const cancelada = respuestaDe(page, 'POST', /\/clases\/\d+\/cancelacion$/);

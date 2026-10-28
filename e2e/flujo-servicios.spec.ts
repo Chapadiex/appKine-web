@@ -106,6 +106,7 @@ test.describe('Servicios y ofertas contra el backend real', () => {
       // --- La plataforma da de baja el servicio ---
       await plataforma.getByLabel('Buscar').fill(nombreDelServicio);
       const filaDelServicio = plataforma.getByRole('row').filter({ hasText: nombreDelServicio });
+      await abrirAcciones(filaDelServicio);
       await filaDelServicio.getByRole('button', { name: 'Dar de baja' }).click();
       const panelDeBaja = plataforma
         .locator('form')

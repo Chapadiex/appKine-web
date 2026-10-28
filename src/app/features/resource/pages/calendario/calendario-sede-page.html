@@ -12,33 +12,37 @@
 </div>
 
 <section class="tarjeta" aria-label="Período a mirar">
-  <form id="form-ventana" [formGroup]="formularioVentana" (ngSubmit)="consultar()" novalidate>
-    <div class="ventana">
-      <div class="campo">
-        <label for="calendario-desde">Desde</label>
-        <input id="calendario-desde" type="date" formControlName="desde" />
-      </div>
-
-      <div class="campo">
-        <label for="calendario-hasta">Hasta (exclusivo)</label>
-        <input
-          id="calendario-hasta"
-          type="date"
-          formControlName="hasta"
-          aria-describedby="calendario-hasta-ayuda"
-        />
-        <p class="ayuda" id="calendario-hasta-ayuda">
-          Un feriado que cae justo este día <b>no</b> aparece. El máximo es de
-          {{ maximoDias }} días.
-        </p>
-      </div>
+  <!-- Refactor UX/UI (28/10/2026): el periodo es una barra, con el boton al lado de las fechas. -->
+  <form
+    id="form-ventana"
+    class="formulario--libre barra-consulta"
+    [formGroup]="formularioVentana"
+    (ngSubmit)="consultar()"
+    novalidate
+  >
+    <div class="campo barra-consulta__fecha">
+      <label for="calendario-desde">Desde</label>
+      <input id="calendario-desde" type="date" formControlName="desde" />
     </div>
 
-    <div class="acciones">
-      <button type="submit" class="boton">Consultar</button>
+    <div class="campo barra-consulta__fecha">
+      <label for="calendario-hasta">Hasta (exclusivo)</label>
+      <input
+        id="calendario-hasta"
+        type="date"
+        formControlName="hasta"
+        aria-describedby="calendario-hasta-ayuda"
+      />
     </div>
 
-    <div aria-live="polite">
+    <button type="submit" class="boton">Consultar</button>
+
+    <p class="ayuda ayuda--fija barra-consulta__ancho" id="calendario-hasta-ayuda">
+      Un feriado que cae justo el día de Hasta <b>no</b> aparece. El máximo es de
+      {{ maximoDias }} días.
+    </p>
+
+    <div class="barra-consulta__ancho" aria-live="polite">
       @if (errorVentana(); as mensaje) {
         <p class="campo__error" role="alert">{{ mensaje }}</p>
       }
@@ -89,7 +93,7 @@
         <h2 id="titulo-politica">Política de la sede</h2>
 
         @if (politica(); as actual) {
-          <p class="ayuda">
+          <p class="ayuda ayuda--fija">
             Calendario nacional en uso: <b>{{ actual.pais }}</b
             >. El país no se cambia desde acá.
           </p>
@@ -157,7 +161,7 @@
             casilla gris sin boton al lado se lee como una pantalla rota.
           -->
           @if (modoLectura()) {
-            <p class="ayuda">{{ textoModoLectura }}</p>
+            <p class="ayuda ayuda--fija">{{ textoModoLectura }}</p>
           }
 
           <div aria-live="polite">
@@ -234,7 +238,7 @@
               </ul>
             }
             @if (modoLectura()) {
-              <p class="ayuda">{{ textoModoLectura }}</p>
+              <p class="ayuda ayuda--fija">{{ textoModoLectura }}</p>
             }
           }
 
@@ -256,7 +260,7 @@
                   </ul>
                 }
                 @if (notaImpactoHorario(); as nota) {
-                  <p class="ayuda">{{ nota }}</p>
+                  <p class="ayuda ayuda--fija">{{ nota }}</p>
                 }
               </div>
             }
@@ -276,7 +280,7 @@
               {{ etiquetaDeFecha(ventanaConsultada()?.hasta) }} (exclusivo).
             </p>
           } @else {
-            <p class="ayuda">
+            <p class="ayuda ayuda--fija">
               {{ feriados().length }} feriados entre
               {{ etiquetaDeFecha(ventanaConsultada()?.desde) }} y
               {{ etiquetaDeFecha(ventanaConsultada()?.hasta) }} (exclusivo).

@@ -75,6 +75,8 @@ import {
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { Icono } from '../../../../shared/components/icono/icono';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { AccionesDeFila } from '../../../../shared/components/acciones-de-fila/acciones-de-fila';
+import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
 
 /** Cuantos dias de ventana se proponen al entrar. Un trimestre es lo que se planifica. */
 const DIAS_PROPUESTOS = 90;
@@ -153,6 +155,8 @@ const MOTIVOS: readonly {
 @Component({
   selector: 'app-excepciones-page',
   imports: [
+    PanelLateral,
+    AccionesDeFila,
     Ayuda,
     Icono,
     Filtros,
@@ -292,6 +296,15 @@ export class ExcepcionesPage {
 
   protected readonly altaAbierta = signal(false);
   protected readonly bajaAbierta = signal<number | null>(null);
+
+  /**
+   * La excepcion del panel de baja. El panel lateral vive fuera de la tabla (refactor UX/UI del
+   * 28/10/2026), asi que la busca en el periodo consultado en vez de recibirla de la fila.
+   */
+  protected readonly excepcionEnBaja = computed(() => {
+    const id = this.bajaAbierta();
+    return id === null ? null : (this.vigentes().find((excepcion) => excepcion.id === id) ?? null);
+  });
   protected readonly enviando = signal(false);
   protected readonly errorAccion = signal<string | null>(null);
   protected readonly causaAccion = signal<CausaExcepcion | null>(null);

@@ -1,4 +1,14 @@
-import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  Injector,
+  afterNextRender,
+  computed,
+  effect,
+  inject,
+  signal,
+  untracked,
+} from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { catchError, of } from 'rxjs';
 
@@ -97,6 +107,9 @@ export class ImportarArancelesPage {
     { etiqueta: 'Importar aranceles' },
   ]);
 
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly injector = inject(Injector);
+
   protected readonly convenio = signal<ConvenioResponse | null>(null);
   protected readonly moneda = computed(() => this.convenio()?.moneda);
   protected readonly convenioInactivo = computed(() => this.convenio()?.estado === 'INACTIVO');
@@ -153,9 +166,9 @@ export class ImportarArancelesPage {
 
   /** Pasos del asistente. No agregan comportamiento: nombran los estados que la pantalla ya tenia. */
   protected readonly pasos = [
-    { numero: 1, etiqueta: 'Cargar' },
-    { numero: 2, etiqueta: 'Vista previa' },
-    { numero: 3, etiqueta: 'Confirmar' },
+    { numero: 1, etiqueta: 'Cargar', sub: 'Subí o pegá la planilla' },
+    { numero: 2, etiqueta: 'Vista previa', sub: 'Qué entra y qué no, fila por fila' },
+    { numero: 3, etiqueta: 'Confirmar', sub: 'Todo o nada' },
   ] as const;
 
   /** Paso actual: 1 la planilla, 2 el resultado de la vista previa, 3 la confirmacion. */
@@ -208,14 +221,34 @@ export class ImportarArancelesPage {
   /** Un paso atras. Se puede corregir la planilla; para volver a avanzar hay que pedir el preview. */
   protected volver(): void {
     this.errorAccion.set(null);
-    this.paso.update((actual) => (actual === 3 ? 2 : 1));
+    this.irA(this.paso() === 3 ? 2 : 1);
+  }
+
+  /**
+   * Un paso hecho del indicador es un boton que vuelve a el (asistente horizontal, refactor UX/UI
+   * del 28/10/2026). Solo hacia atras: para avanzar hay que pasar por la vista previa.
+   */
+  protected volverAPaso(numero: 1 | 2 | 3): void {
+    if (numero < this.paso()) {
+      this.errorAccion.set(null);
+      this.irA(numero);
+    }
   }
 
   /** De la vista previa a la confirmacion, solo si todas las filas entran y la planilla no cambio. */
   protected continuar(): void {
     if (this.paso() === 2 && this.puedeConfirmar()) {
-      this.paso.set(3);
+      this.irA(3);
     }
+  }
+
+  /** Cambia de paso y lleva el foco al titulo del paso nuevo, como el alta de sede. */
+  private irA(numero: 1 | 2 | 3): void {
+    this.paso.set(numero);
+    afterNextRender(
+      () => this.host.nativeElement.querySelector<HTMLElement>('.asistente__encabezado')?.focus(),
+      { injector: this.injector },
+    );
   }
 
   protected previsualizar(): void {
@@ -297,7 +330,7 @@ export class ImportarArancelesPage {
             return;
           }
           this.desenlace.set({ tipo: 'preview', texto, filas: respuesta.filas ?? [] });
-          this.paso.set(2);
+          this.irA(2);
         },
         error: (error: unknown) => {
           this.enviando.set(null);
@@ -305,7 +338,7 @@ export class ImportarArancelesPage {
           if (filas !== null) {
             this.desenlace.set({ tipo: 'rechazo', texto, filas });
             // El rechazo se explica en la tabla de la vista previa: ahi se corrige.
-            this.paso.set(2);
+            this.irA(2);
             return;
           }
           this.errorAccion.set(traducirErrorContracting(error, 'convenio').mensaje);
