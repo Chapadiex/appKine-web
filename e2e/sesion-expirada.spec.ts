@@ -38,10 +38,18 @@ function esDeLaApi(url: URL): boolean {
   return url.pathname.startsWith('/api/v1/') && !url.pathname.startsWith('/api/v1/auth/');
 }
 
-/** El mismo token con la firma alterada: un JWT que el backend no puede verificar. */
+/**
+ * El mismo token con la firma alterada: un JWT que el backend no puede verificar.
+ *
+ * <p>Se cambia el PRIMER caracter de la firma, no el ultimo. La firma HS256 son 32 bytes, 43
+ * caracteres base64url, y los dos bits bajos del ultimo son relleno que el decodificador descarta:
+ * cambiar el ultimo de `A` a `B` dejaba la firma intacta (una de cada dieciseis corridas), el backend
+ * respondia 200 y el test esperaba dos minutos un 401 que no iba a llegar.
+ */
 function conFirmaRota(autorizacion: string): string {
-  const ultimo = autorizacion.at(-1);
-  return `${autorizacion.slice(0, -1)}${ultimo === 'A' ? 'B' : 'A'}`;
+  const inicio = autorizacion.lastIndexOf('.') + 1;
+  const primero = autorizacion[inicio];
+  return `${autorizacion.slice(0, inicio)}${primero === 'A' ? 'B' : 'A'}${autorizacion.slice(inicio + 1)}`;
 }
 
 /** Hace que la PROXIMA peticion a la API viaje con la firma rota, y devuelve esa peticion. */
