@@ -14,6 +14,10 @@
  */
 export interface RegisterAccountRequest { 
     /**
+     * La persona acepto los terminos y condiciones (DP-45). Obligatorio en true cuando GET /api/v1/terms informa aceptacionObligatoria
+     */
+    aceptaTerminos?: boolean;
+    /**
      * Nombre de la primera sede. Si se omite se usa el de la organizacion
      */
     consultorioName?: string;
@@ -45,5 +49,9 @@ export interface RegisterAccountRequest {
      * Plan a contratar, del catalogo de GET /api/v1/plans. Si se omite se usa el plan por defecto
      */
     planCode?: string;
+    /**
+     * Version de los terminos aceptados: la versionVigente de GET /api/v1/terms. Tiene que coincidir exacta cuando la aceptacion es obligatoria
+     */
+    versionTerminos?: string;
 }
 

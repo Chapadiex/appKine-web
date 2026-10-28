@@ -115,6 +115,19 @@ export const routes: Routes = [
       import('./pages/serie-de-turnos/serie-de-turnos-page').then((m) => m.SerieDeTurnosPage),
     title: 'AKINE - Serie de turnos',
   },
+  // Calendario semanal de turnos reservados (DP-45, contrato 0.148.0). `turno:read`, igual que la
+  // recepcion: pide la semana al abrirse. La semana viaja en la query (`?semana=`, el lunes).
+  {
+    path: 'calendario',
+    canActivate: [contextGuard, permissionGuard(PERMISO_TURNO_READ)],
+    loadComponent: () =>
+      import('./pages/calendario-de-turnos/calendario-de-turnos-page').then(
+        (m) => m.CalendarioDeTurnosPage,
+      ),
+    title: 'AKINE - Calendario de turnos',
+    // Ancho amplio: siete columnas de dias mas el panel de detalle.
+    data: { [DATA_ANCHO]: ANCHO_AMPLIO },
+  },
   {
     path: 'recepcion',
     canActivate: [contextGuard, permissionGuard(PERMISO_TURNO_READ)],

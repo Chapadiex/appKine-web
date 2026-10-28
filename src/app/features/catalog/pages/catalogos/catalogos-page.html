@@ -303,9 +303,9 @@
                 </caption>
                 <thead>
                   <tr>
-                    <th scope="col">Nombre</th>
-                    <th scope="col">Código</th>
-                    <th scope="col">De quien es</th>
+                    <th scope="col" appOrdenable [tabla]="orden" columna="nombre">Nombre</th>
+                    <th scope="col" appOrdenable [tabla]="orden" columna="codigo">Código</th>
+                    <th scope="col" appOrdenable [tabla]="orden" columna="alcance">De quien es</th>
                     <th scope="col">Estado</th>
                     <th scope="col">Acciones</th>
                   </tr>

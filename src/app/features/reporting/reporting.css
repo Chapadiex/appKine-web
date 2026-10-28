@@ -146,6 +146,33 @@
   border-right: 0;
 }
 
+/* Grafico de evolucion (DP-45): selector del indicador y su total, en tinta de texto. */
+.campo--serie {
+  max-width: 28rem;
+}
+
+.serie-resumen {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--esp-2) var(--esp-4);
+  margin: 0;
+}
+
+.serie-resumen__etiqueta {
+  font-size: var(--tipo-xs);
+  color: var(--color-texto-suave);
+}
+
+.serie-resumen__total {
+  font-size: var(--tipo-xl);
+  font-weight: var(--peso-fuerte);
+}
+
+.serie-resumen .ayuda {
+  margin: 0;
+}
+
 /* Tabla de detalle: encabezado atenuado y filas compactas, como el canvas. */
 .tarjeta--seccion .tabla thead th {
   background: var(--color-superficie-atenuada);

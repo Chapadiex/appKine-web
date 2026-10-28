@@ -502,7 +502,7 @@ export class ColaboradoresService extends BaseService implements ColaboradoresSe
 
     /**
      * Colaboradores de la organizacion
-     * Requiere colaborador:read. Devuelve TAMBIEN los vinculos suspendidos y revocados: quien administra tiene que poder ver quien estuvo, quien lo desvinculo y por que. Para eso existe la baja logica. El cliente distingue por el campo estado, no por ausencia.  size se acota a 100 por request. Pedir 500 devuelve 100, no un error.
+     * Requiere colaborador:read. Devuelve TAMBIEN los vinculos suspendidos y revocados: quien administra tiene que poder ver quien estuvo, quien lo desvinculo y por que. Para eso existe la baja logica. El cliente distingue por el campo estado, no por ausencia.  size se acota a 100 por request. Pedir 500 devuelve 100, no un error.  DP-45: q busca \&quot;contiene\&quot; en el nombre y en el correo de la cuenta, sin distinguir mayusculas ni acentos. sort ordena por nombre, email, rol, estado o vigenteDesde; sin el, por id.
      * @endpoint get /api/v1/organizations/{orgId}/memberships
      * @param requestParameters
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
@@ -519,6 +519,8 @@ export class ColaboradoresService extends BaseService implements ColaboradoresSe
         }
         const page = requestParameters?.page;
         const size = requestParameters?.size;
+        const q = requestParameters?.q;
+        const sort = requestParameters?.sort;
 
         let localVarQueryParameters = new OpenApiHttpParams(this.encoder);
 
@@ -535,6 +537,24 @@ export class ColaboradoresService extends BaseService implements ColaboradoresSe
             localVarQueryParameters,
             'size',
             <any>size,
+            QueryParamStyle.Form,
+            true,
+        );
+
+
+        localVarQueryParameters = this.addToHttpParams(
+            localVarQueryParameters,
+            'q',
+            <any>q,
+            QueryParamStyle.Form,
+            true,
+        );
+
+
+        localVarQueryParameters = this.addToHttpParams(
+            localVarQueryParameters,
+            'sort',
+            <any>sort,
             QueryParamStyle.Form,
             true,
         );

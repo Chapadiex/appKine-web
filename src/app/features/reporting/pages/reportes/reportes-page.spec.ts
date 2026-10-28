@@ -58,6 +58,44 @@ const REPORTE = {
   ],
 };
 
+/** Serie temporal (DP-45): dos indicadores de dos secciones, por dia. */
+const SERIE = {
+  reporte: 'OPERATIVO',
+  consultorioId: CONSULTORIO,
+  desde: '2026-09-01',
+  hasta: '2026-09-03',
+  agrupacion: 'DIA',
+  series: [
+    {
+      seccion: 'economia',
+      clave: 'cobrado',
+      etiqueta: 'Cobrado',
+      tipo: 'DINERO',
+      moneda: 'ARS',
+      fuente: 'M19 cobro',
+      criterioDeFecha: 'cobrado_en',
+      total: 1500,
+      puntos: [
+        { desde: '2026-09-01', hasta: '2026-09-01', valor: 1000 },
+        { desde: '2026-09-02', hasta: '2026-09-02', valor: 0 },
+        { desde: '2026-09-03', hasta: '2026-09-03', valor: 500 },
+      ],
+    },
+    {
+      seccion: 'turnos',
+      clave: 'turnos-totales',
+      etiqueta: 'Turnos',
+      tipo: 'CONTEO',
+      total: 4,
+      puntos: [
+        { desde: '2026-09-01', hasta: '2026-09-01', valor: 1 },
+        { desde: '2026-09-02', hasta: '2026-09-02', valor: 3 },
+        { desde: '2026-09-03', hasta: '2026-09-03', valor: 0 },
+      ],
+    },
+  ],
+};
+
 /**
  * Tablero de reportes (M23). Cubre lo que decide comportamiento: que el periodo se valide antes de
  * pedir, que cada indicador diga de donde sale, que lo omitido y el recorte a actividad propia se
@@ -98,6 +136,58 @@ describe('ReportesPage', () => {
     expect(texto).toContain('Los ausentes cuentan aparte');
     expect(texto).not.toContain('Solo lo tuyo');
     expect(texto).toContain('Del 01/09/2026 al 30/09/2026');
+  });
+
+  it('el gráfico de evolución dibuja un indicador por vez con el total del servidor', async () => {
+    const fixture = await generado(SERIE);
+    const html = fixture.nativeElement as HTMLElement;
+
+    expect(contenido(fixture)).toContain('Evolución por día');
+    expect(html.querySelector('.serie-resumen')?.textContent?.replace(/\s+/g, '')).toBe(
+      'Cobrado$1.500,00enelperíodo',
+    );
+    expect(contenido(fixture)).toContain('M19 cobro');
+    const lienzo = html.querySelector<HTMLElement>('[role="group"]')!;
+    expect(lienzo.getAttribute('aria-label')?.replace(/\s+/g, ' ')).toBe(
+      'Barras de Cobrado por día, del 01/09/2026 al 03/09/2026; total $ 1.500,00; ' +
+        'la más alta, 01/09/2026: $ 1.000,00.',
+    );
+    // La misma informacion en tabla, para quien no ve el dibujo.
+    const filas = [...html.querySelectorAll('.grafico__datos tbody tr')].map((f) =>
+      [...f.querySelectorAll('td')].map((c) => (c.textContent ?? '').replace(/\s+/g, ' ').trim()),
+    );
+    expect(filas).toEqual([
+      ['01/09/2026', '$ 1.000,00'],
+      ['02/09/2026', '$ 0,00'],
+      ['03/09/2026', '$ 500,00'],
+    ]);
+
+    // Otro indicador: otra serie, no la suma de las dos.
+    const selector = html.querySelector<HTMLSelectElement>('#serie-indicador')!;
+    selector.value = 'turnos/turnos-totales';
+    selector.dispatchEvent(new Event('change'));
+    await estabilizar(fixture);
+    expect(html.querySelector('.serie-resumen')?.textContent?.replace(/\s+/g, '')).toBe(
+      'Turnos4enelperíodo',
+    );
+    expect(html.querySelectorAll('.grafico__datos tbody tr')).toHaveLength(3);
+  });
+
+  it('un período de más de dos meses se pide por semana', async () => {
+    const fixture = await montar();
+    escribir(fixture, '#reporte-desde', '2026-07-01');
+    escribir(fixture, '#reporte-hasta', '2026-09-30');
+    enviar(fixture);
+    httpMock.expectOne(`${BASE}/OPERATIVO?desde=2026-07-01&hasta=2026-09-30`).flush(REPORTE);
+    await estabilizar(fixture);
+
+    const pedido = httpMock.expectOne((p) => p.url === `${BASE}/OPERATIVO/serie`);
+    expect(pedido.request.params.get('agrupacion')).toBe('SEMANA');
+    pedido.flush({ message: 'boom' }, { status: 500, statusText: 'Server Error' });
+    await estabilizar(fixture);
+    // El reporte queda; el gráfico dice que no pudo.
+    expect(contenido(fixture)).toContain('Turnos atendidos');
+    expect(contenido(fixture)).toContain('No se pudo armar el gráfico de evolución');
   });
 
   it(
@@ -147,6 +237,10 @@ describe('ReportesPage', () => {
         ],
       });
       await estabilizar(fixture);
+      // Un reporte sin series (los de F9) no dibuja grafico.
+      responderSerie({ ...SERIE, series: [] });
+      await estabilizar(fixture);
+      expect(contenido(fixture)).not.toContain('Evolución por');
       const html = fixture.nativeElement as HTMLElement;
       const texto = contenido(fixture);
 
@@ -269,9 +363,9 @@ describe('ReportesPage', () => {
   });
 
   it(
-    'no tiene violaciones de accesibilidad con un reporte generado',
+    'no tiene violaciones de accesibilidad con un reporte generado y su gráfico',
     async () => {
-      const fixture = await generado();
+      const fixture = await generado(SERIE);
       await esperarSinViolaciones(fixture.nativeElement as HTMLElement);
     },
     TIMEOUT_AXE,
@@ -293,14 +387,23 @@ describe('ReportesPage', () => {
     return fixture;
   }
 
-  async function generado(): Promise<ComponentFixture<ReportesPage>> {
+  async function generado(serie: object = { ...SERIE, series: [] }) {
     const fixture = await montar();
     escribir(fixture, '#reporte-desde', '2026-09-01');
     escribir(fixture, '#reporte-hasta', '2026-09-30');
     enviar(fixture);
     httpMock.expectOne(`${BASE}/OPERATIVO?desde=2026-09-01&hasta=2026-09-30`).flush(REPORTE);
     await estabilizar(fixture);
+    responderSerie(serie);
+    await estabilizar(fixture);
     return fixture;
+  }
+
+  /** La serie del grafico se pide despues del reporte, con su periodo; 30 dias van por dia. */
+  function responderSerie(serie: object) {
+    httpMock
+      .expectOne(`${BASE}/OPERATIVO/serie?desde=2026-09-01&hasta=2026-09-30&agrupacion=DIA`)
+      .flush(serie);
   }
 
   async function estabilizar(fixture: ComponentFixture<ReportesPage>): Promise<void> {

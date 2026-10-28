@@ -151,6 +151,20 @@
       }
     </div>
 
+    <div class="campo">
+      <label for="auditoria-q">Refinar (opcional)</label>
+      <input
+        id="auditoria-q"
+        type="search"
+        autocomplete="off"
+        formControlName="q"
+        aria-describedby="auditoria-q-ayuda"
+      />
+      <p class="ayuda" id="auditoria-q-ayuda">
+        Parte del tipo de hecho o del tipo de entidad, o un número de entidad o de cuenta.
+      </p>
+    </div>
+
     <div class="acciones">
       <button type="submit" class="boton">Buscar</button>
       <a class="boton boton--secundario" routerLink="/organizacion/colaboradores">
@@ -211,9 +225,11 @@
                   </caption>
                   <thead>
                     <tr>
-                      <th scope="col">Cuando</th>
-                      <th scope="col">Hecho</th>
-                      <th scope="col">Entidad</th>
+                      <th scope="col" appOrdenable [tabla]="orden" columna="ocurridoEn">Cuando</th>
+                      <th scope="col" appOrdenable [tabla]="orden" columna="tipoEvento">Hecho</th>
+                      <th scope="col" appOrdenable [tabla]="orden" columna="tipoEntidad">
+                        Entidad
+                      </th>
                       <th scope="col">Actor</th>
                       <th scope="col">Cambio</th>
                       <th scope="col">Motivo</th>

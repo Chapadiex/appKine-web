@@ -17,13 +17,19 @@ import {
 import { PagoDeEgreso } from '../../../api/generated/model/pago-de-egreso';
 import { RegistrarEgreso } from '../../../api/generated/model/registrar-egreso';
 import { RegistrarPagoDeEgreso } from '../../../api/generated/model/registrar-pago-de-egreso';
+import { ResumenDeEgresos } from '../../../api/generated/model/resumen-de-egresos';
 
 /** Filtros del listado. Todos opcionales: sin ninguno, el backend trae lo de la sede. */
 export interface FiltroDeEgresos {
+  /** Busqueda "contiene" en beneficiario, documento, concepto y comprobante (DP-45). */
+  readonly q?: string;
   readonly estado?: string;
   readonly categoria?: string;
   readonly desde?: string;
   readonly hasta?: string;
+  /** El contrato pagina con `limite` y `desplazamiento`, sin total ni `page`/`size`. */
+  readonly limite?: number;
+  readonly desplazamiento?: number;
 }
 
 /**
@@ -43,6 +49,14 @@ export class EgresosApi {
 
   buscar(consultorioId: number, filtro: FiltroDeEgresos): Observable<readonly Egreso[]> {
     return this.api.buscarEgreso({ consultorioId, ...filtro });
+  }
+
+  /**
+   * Registrado, pagado y pendiente por moneda (DP-45). Sin fechas el backend toma el mes en curso
+   * en la zona de la sede: es la tira de la pantalla y no depende de los filtros del listado.
+   */
+  resumen(consultorioId: number): Observable<ResumenDeEgresos> {
+    return this.api.resumirEgresos({ consultorioId });
   }
 
   ver(consultorioId: number, egresoId: number): Observable<Egreso> {

@@ -11,6 +11,13 @@ import {
   traducirErrorInvitacion,
 } from '../../../../core/models/invitacion-errors';
 import { MedidorDeContrasena } from '../../components/medidor-de-contrasena/medidor-de-contrasena';
+import { RegistroYActivacionService } from '../../../../api/generated/api/registro-y-activacion.service';
+import { TerminosDelAlta } from '../../components/terminos-del-alta/terminos-del-alta';
+import {
+  MENSAJE_TERMINOS_CAMBIARON,
+  TerminosVigentes,
+  esRechazoDeTerminos,
+} from '../../models/terminos-vigentes';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { textoRequerido } from '../../../../shared/validators/texto-requerido';
 
@@ -52,10 +59,14 @@ type Estado =
  * <p><b>3. Aceptar no abre sesion.</b> El contrato no la devuelve, y el javadoc de
  * `AcceptedInvitacionResponse` explica por que. Lo que hace la pantalla es mandar al login
  * diciendo cual de los dos casos es: la contrasena que acaba de elegir, o la de siempre.
+ *
+ * <p><b>Terminos (DP-45).</b> Crear la cuenta en este paso es un alta como el registro: si el
+ * despliegue exige terminos, se leen recien cuando el preview dice `requiereRegistro` (a quien ya
+ * tiene cuenta no se le piden) y la aceptacion viaja con la version.
  */
 @Component({
   selector: 'app-invitacion-page',
-  imports: [MedidorDeContrasena, ReactiveFormsModule, RouterLink],
+  imports: [MedidorDeContrasena, ReactiveFormsModule, RouterLink, TerminosDelAlta],
   templateUrl: './invitacion-page.html',
   styleUrls: ['../../auth.css', '../../../../shared/styles/acceso.css'],
 })
@@ -69,6 +80,18 @@ export class InvitacionPage {
   protected readonly enviando = signal(false);
   protected readonly errorAccion = signal<string | null>(null);
   protected readonly intentos = signal(0);
+
+  /** Los terminos del alta. Se leen solo si la invitacion crea cuenta. */
+  protected readonly terminos = new TerminosVigentes(inject(RegistroYActivacionService));
+
+  /** Con cuenta nueva, el alta espera a los terminos (o a poder leerlos). */
+  protected readonly bloqueado = computed(
+    () => this.enviando() || (this.requiereRegistro() && this.terminos.impidenElAlta()),
+  );
+
+  protected readonly faltanTerminos = computed(
+    () => this.terminos.faltaAceptar() && this.intentos() > 0,
+  );
 
   /**
    * El token del enlace.
@@ -152,6 +175,9 @@ export class InvitacionPage {
           return;
         }
         this.estado.set({ tipo: 'listo', invitacion: respuesta });
+        if (respuesta.requiereRegistro === true) {
+          this.terminos.cargar();
+        }
       });
   }
 
@@ -162,7 +188,7 @@ export class InvitacionPage {
 
   protected aceptar(): void {
     const token = this.token();
-    if (token === null || this.enviando()) {
+    if (token === null || this.bloqueado()) {
       return;
     }
 
@@ -182,17 +208,20 @@ export class InvitacionPage {
       this.formularioAlta.controls.nombre.updateValueAndValidity();
       this.formularioAlta.controls.password.updateValueAndValidity();
 
-      if (this.formularioAlta.invalid) {
+      if (this.formularioAlta.invalid || this.terminos.faltaAceptar()) {
         this.formularioAlta.markAllAsTouched();
         this.enfocar(
           this.formularioAlta.controls.nombre.invalid
             ? '#invitacion-nombre'
-            : '#invitacion-password',
+            : this.formularioAlta.controls.password.invalid
+              ? '#invitacion-password'
+              : '#invitacion-terminos',
         );
         return;
       }
 
       const valores = this.formularioAlta.getRawValue();
+      Object.assign(cuerpo, this.terminos.campos());
       cuerpo.nombre = valores.nombre.trim();
       cuerpo.password = valores.password;
       const apellido = valores.apellido.trim();
@@ -210,9 +239,13 @@ export class InvitacionPage {
         this.estado.set({ tipo: 'aceptada', cuentaCreada: respuesta.cuentaCreada === true });
       },
       error: (error: unknown) => {
-        const traducido = traducirErrorInvitacion(error);
         this.enviando.set(false);
-        this.errorAccion.set(traducido.mensaje);
+        if (esRechazoDeTerminos(error)) {
+          this.terminos.cargar();
+          this.errorAccion.set(MENSAJE_TERMINOS_CAMBIARON);
+          return;
+        }
+        this.errorAccion.set(traducirErrorInvitacion(error).mensaje);
       },
     });
   }

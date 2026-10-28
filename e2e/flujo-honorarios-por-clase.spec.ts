@@ -226,10 +226,10 @@ test.describe('Servicio en el egreso contra el backend real (DP-39)', () => {
     await colaborador.locator('option').nth(1).waitFor({ state: 'attached' });
     await colaborador.selectOption({ index: 1 });
     await page.getByLabel('Servicio u oferta (opcional)').selectOption({ label: oferta.nombre });
-    await page.getByLabel('Concepto').fill(concepto);
+    await page.getByLabel('Concepto', { exact: true }).fill(concepto);
     await page.getByLabel('Importe total').fill('2000');
     await page.getByLabel('Tipo').fill('Factura C');
-    await page.getByLabel('Número').fill(`E2E-${sufijo}`);
+    await page.getByLabel('Número', { exact: true }).fill(`E2E-${sufijo}`);
     const alta = respuestaDe(page, 'POST', /\/egresos$/);
     await page.getByRole('button', { name: 'Cargar el borrador' }).click();
     const creado = await alta;
@@ -240,7 +240,7 @@ test.describe('Servicio en el egreso contra el backend real (DP-39)', () => {
     await expect(dato(page, 'Servicio u oferta')).toContainText(oferta.nombre);
 
     // La correccion reemplaza: tiene que volver a mandar la oferta, o el egreso queda sin imputar.
-    await page.getByLabel('Concepto').fill(`${concepto} corregido`);
+    await page.getByLabel('Concepto', { exact: true }).fill(`${concepto} corregido`);
     const edicion = respuestaDe(page, 'PUT', /\/egresos\/\d+$/);
     await page.getByRole('button', { name: 'Guardar los cambios' }).click();
     const corregido = await edicion;

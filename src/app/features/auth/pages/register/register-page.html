@@ -145,6 +145,13 @@
         </div>
       </details>
 
+      <!-- DP-45: si el despliegue exige términos, la casilla y la versión que se acepta. -->
+      <app-terminos-del-alta
+        [terminos]="terminos"
+        prefijo="registro"
+        [mostrarError]="faltanTerminos()"
+      />
+
       <button type="submit" class="boton boton--bloque" [disabled]="bloqueado()">
         Crear cuenta
       </button>

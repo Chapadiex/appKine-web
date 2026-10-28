@@ -201,6 +201,35 @@
         </dd>
       </div>
     </dl>
+    @if (abierta.resumen; as r) {
+      <!-- DP-45: lo que entro y salio en la jornada, neto de reversiones, como lo calcula el servidor. -->
+      <dl class="cifras">
+        <div>
+          <dt>Ingresos de la jornada</dt>
+          <dd class="importe">
+            {{ importe(r.ingresos) }}
+            <span class="cifras__nota"
+              >efectivo {{ importe(r.efectivoIngresos) }} · otros medios
+              {{ importe(r.otrosMediosIngresos) }}</span
+            >
+          </dd>
+        </div>
+        <div>
+          <dt>Egresos de la jornada</dt>
+          <dd class="importe">
+            {{ importe(r.egresos) }}
+            <span class="cifras__nota"
+              >efectivo {{ importe(r.efectivoEgresos) }} · otros medios
+              {{ importe(r.otrosMediosEgresos) }}</span
+            >
+          </dd>
+        </div>
+        <div>
+          <dt>Movimientos</dt>
+          <dd>{{ r.cantidadMovimientos ?? 0 }}</dd>
+        </div>
+      </dl>
+    }
   </section>
 
   <div class="dos-columnas">
@@ -326,6 +355,12 @@
                   {{ medioEnPalabras(total.medio) }}
                   @if (total.afectaArqueo) {
                     <span class="celda-secundaria">(entra en el arqueo)</span>
+                  }
+                  @if (total.ingresos !== undefined && total.egresos !== undefined) {
+                    <span class="celda-secundaria"
+                      >entró {{ importe(total.ingresos) }} · salió
+                      {{ importe(total.egresos) }}</span
+                    >
                   }
                 </span>
                 <span class="importe">{{ importe(total.total) }}</span>

@@ -43,7 +43,7 @@ export class AuditoriaService extends BaseService implements AuditoriaServiceInt
 
     /**
      * Hechos registrados en la auditoria de la organizacion
-     * Requiere auditoria:read. Hay que elegir EXACTAMENTE UNO de los tres filtros; combinarlos o no mandar ninguno responde 400.  1. entityType + entityId: historial de una entidad (RF-M24-002). 2. actorAccountId: actividad de una persona dentro del tenant (RF-M24-003). 3. from + to: ventana temporal (RF-M24-004). El rango no puede exceder los 90 dias, y to tiene que ser posterior a from.  size se recorta a 100 por request: un cliente que pide diez mil filas esta mal configurado, no atacando, y devolverle cien le sirve mas que un error.  Quien tiene el permiso con alcance de sede ve solo su sede. Ese recorte lo decide el evaluador de permisos, no un parametro.
+     * Requiere auditoria:read. Hay que elegir EXACTAMENTE UNO de los tres filtros; combinarlos o no mandar ninguno responde 400.  1. entityType + entityId: historial de una entidad (RF-M24-002). 2. actorAccountId: actividad de una persona dentro del tenant (RF-M24-003). 3. from + to: ventana temporal (RF-M24-004). El rango no puede exceder los 90 dias, y to tiene que ser posterior a from.  size se recorta a 100 por request: un cliente que pide diez mil filas esta mal configurado, no atacando, y devolverle cien le sirve mas que un error.  Quien tiene el permiso con alcance de sede ve solo su sede. Ese recorte lo decide el evaluador de permisos, no un parametro.  DP-45: q refina cualquiera de los tres filtros. Busca \&quot;contiene\&quot; en el tipo de evento y en el tipo de entidad, sin distinguir mayusculas ni acentos, y si es un numero tambien coincide con el id de la entidad o con el de la cuenta actora. No busca en el nombre del actor (vive en la identidad, no en la auditoria) ni en el motivo o los detalles: sin auditoria:read-clinica esos campos se redactan, y buscar en ellos dejaria adivinar lo redactado. sort ordena por ocurridoEn, tipoEvento o tipoEntidad; sin el, del hecho mas nuevo al mas viejo.
      * @endpoint get /api/v1/organizations/{orgId}/audit-events
      * @param requestParameters
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
@@ -65,6 +65,8 @@ export class AuditoriaService extends BaseService implements AuditoriaServiceInt
         const to = requestParameters?.to;
         const page = requestParameters?.page;
         const size = requestParameters?.size;
+        const q = requestParameters?.q;
+        const sort = requestParameters?.sort;
 
         let localVarQueryParameters = new OpenApiHttpParams(this.encoder);
 
@@ -126,6 +128,24 @@ export class AuditoriaService extends BaseService implements AuditoriaServiceInt
             localVarQueryParameters,
             'size',
             <any>size,
+            QueryParamStyle.Form,
+            true,
+        );
+
+
+        localVarQueryParameters = this.addToHttpParams(
+            localVarQueryParameters,
+            'q',
+            <any>q,
+            QueryParamStyle.Form,
+            true,
+        );
+
+
+        localVarQueryParameters = this.addToHttpParams(
+            localVarQueryParameters,
+            'sort',
+            <any>sort,
             QueryParamStyle.Form,
             true,
         );

@@ -52,18 +52,40 @@
     </p>
   }
 
+  <!-- DP-45: totales que calcula el servidor; lo pagado y lo pendiente son del egreso, hoy. -->
   <dl class="cifras" aria-labelledby="titulo-resumen-liquidacion">
+    <div>
+      <dt>Total liquidado</dt>
+      <dd class="importe">{{ importe(l.resumen?.importeTotal ?? l.importeTotal) }}</dd>
+    </div>
+    @if (l.resumen?.importePagado !== undefined) {
+      <div>
+        <dt>Pagado</dt>
+        <dd class="importe">{{ importe(l.resumen?.importePagado) }}</dd>
+      </div>
+    }
+    @if (l.resumen?.saldoPendiente !== undefined) {
+      <div>
+        <dt>Falta pagar</dt>
+        <dd class="importe">{{ importe(l.resumen?.saldoPendiente) }}</dd>
+      </div>
+    }
+    <div>
+      <dt>Clases liquidadas</dt>
+      <dd>{{ l.resumen?.cantidadClases ?? l.clases?.length ?? 0 }}</dd>
+    </div>
+    @if (l.resumen?.totalPresentes !== undefined) {
+      <div>
+        <dt>Presentes</dt>
+        <dd>{{ l.resumen?.totalPresentes }}</dd>
+      </div>
+    }
+  </dl>
+
+  <dl class="cifras">
     <div>
       <dt>Estado</dt>
       <dd class="cifras__texto">{{ liberada() ? 'Liberada' : 'Vigente' }}</dd>
-    </div>
-    <div>
-      <dt>Clases liquidadas</dt>
-      <dd>{{ l.clases?.length ?? 0 }}</dd>
-    </div>
-    <div>
-      <dt>Total</dt>
-      <dd class="importe">{{ importe(l.importeTotal) }}</dd>
     </div>
     <div>
       <dt>Egreso</dt>

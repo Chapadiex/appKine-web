@@ -207,7 +207,7 @@ export class AdjuntosClinicosService extends BaseService implements AdjuntosClin
 
     /**
      * Listar los documentos clinicos de una Historia Clinica
-     * RF-M25-005. Devuelve la METADATA, nunca el contenido: para descargar hay un endpoint propio que autoriza y audita cada llamada.  Por defecto trae solo los VIGENTES. Los dados de baja se piden con incluirDadosDeBaja y siguen resolviendo (regla maestra 10).  NO TRAE NINGUNA RUTA NI LA CLAVE DE ALMACENAMIENTO (RN-M25-002).  Es lectura clinica: exige hc:read mas relacion asistencial o motivo declarado, y queda auditada. Lo que revela —cuantos estudios tiene este paciente y de que clase— ya es informacion sensible aunque no sea contenido.
+     * RF-M25-005. Devuelve la METADATA, nunca el contenido: para descargar hay un endpoint propio que autoriza y audita cada llamada.  Por defecto trae solo los VIGENTES. Los dados de baja se piden con incluirDadosDeBaja y siguen resolviendo (regla maestra 10).  NO TRAE NINGUNA RUTA NI LA CLAVE DE ALMACENAMIENTO (RN-M25-002).  Es lectura clinica: exige hc:read mas relacion asistencial o motivo declarado, y queda auditada. Lo que revela —cuantos estudios tiene este paciente y de que clase— ya es informacion sensible aunque no sea contenido.  DP-45: sort ordena por subidoEn, titulo, categoria o tamano; el orden no cambia la autorizacion ni la auditoria de la lectura. Sin q: los adjuntos de una historia ya se filtran por categoria y por entrada, y buscar en sus titulos seria una lectura clinica mas sin necesidad.
      * @endpoint get /api/v1/historias-clinicas/{historiaClinicaId}/adjuntos
      * @param requestParameters
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
@@ -228,6 +228,7 @@ export class AdjuntosClinicosService extends BaseService implements AdjuntosClin
         const page = requestParameters?.page;
         const size = requestParameters?.size;
         const xJustificacionAcceso = requestParameters?.xJustificacionAcceso;
+        const sort = requestParameters?.sort;
 
         let localVarQueryParameters = new OpenApiHttpParams(this.encoder);
 
@@ -271,6 +272,15 @@ export class AdjuntosClinicosService extends BaseService implements AdjuntosClin
             localVarQueryParameters,
             'size',
             <any>size,
+            QueryParamStyle.Form,
+            true,
+        );
+
+
+        localVarQueryParameters = this.addToHttpParams(
+            localVarQueryParameters,
+            'sort',
+            <any>sort,
             QueryParamStyle.Form,
             true,
         );

@@ -121,6 +121,12 @@
                   Es con la que vas a entrar a AKINE de ahora en más.
                 </p>
               </div>
+
+              <app-terminos-del-alta
+                [terminos]="terminos"
+                prefijo="invitacion"
+                [mostrarError]="faltanTerminos()"
+              />
             </section>
           } @else {
             <p class="acceso-texto">
@@ -133,7 +139,7 @@
             <p class="acceso-aviso acceso-aviso--error" role="alert">{{ mensaje }}</p>
           }
 
-          <button type="submit" class="boton boton--bloque" [disabled]="enviando()">
+          <button type="submit" class="boton boton--bloque" [disabled]="bloqueado()">
             {{ enviando() ? 'Guardando...' : 'Aceptar la invitación' }}
           </button>
           <!-- Rechazar no crea cuenta ni compromete a nada; no hace falta explicar por que. -->

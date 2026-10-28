@@ -1,5 +1,9 @@
 import {
   Component,
+  ComponentRef,
+  Type,
+  ViewContainerRef,
+  afterNextRender,
   computed,
   effect,
   inject,
@@ -7,6 +11,8 @@ import {
   linkedSignal,
   output,
   signal,
+  untracked,
+  viewChild,
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink } from '@angular/router';
@@ -15,6 +21,7 @@ import { filter, map, startWith } from 'rxjs';
 import { Icono } from '../../shared/components/icono/icono';
 import { PermissionsStore } from '../../core/services/permissions.store';
 import { PlatformRoleStore } from '../../core/services/platform-role.store';
+import type { QuienIngreso } from '../quien-ingreso/quien-ingreso';
 import { RUTA_LOGIN, RUTA_SELECTOR_CONTEXTO } from '../../core/models/rutas';
 import { RUTA_SOLICITUDES_DE_PLATAFORMA } from '../../features/platform/models/rutas-de-plataforma';
 import {
@@ -127,6 +134,16 @@ export class NavegacionPrincipal {
    */
   protected readonly grupoAbierto = linkedSignal<string | null>(() => this.grupoActual());
 
+  /**
+   * Quien ingreso (DP-45, `/me`) se carga en un chunk aparte despues de la primera pintura: la
+   * carga inicial esta al borde de su presupuesto. No va en `@defer`, que suma su runtime (~7 kB)
+   * a la carga inicial. Hasta que se monta, el pie muestra el centro solo, como antes.
+   */
+  private readonly anclaQuienIngreso = viewChild('quienIngreso', { read: ViewContainerRef });
+  private readonly componenteQuienIngreso = signal<Type<QuienIngreso> | null>(null);
+  private quienIngreso: ComponentRef<QuienIngreso> | null = null;
+  protected readonly quienIngresoMontado = signal(false);
+
   constructor() {
     effect(() => {
       if (this.hayContexto() && !this.permisos.cargados()) {
@@ -138,6 +155,32 @@ export class NavegacionPrincipal {
       if (this.session.estado() !== 'anonimo') {
         this.rolDePlataforma.asegurarCargado();
       }
+    });
+
+    afterNextRender(() => {
+      import('../quien-ingreso/quien-ingreso').then(
+        (m) => this.componenteQuienIngreso.set(m.QuienIngreso),
+        // Sin el chunk (red caida, despliegue nuevo) el pie se queda con el centro solo.
+        () => undefined,
+      );
+    });
+
+    // El ancla vive dentro del `@if` del contexto: si se redibuja, se monta de nuevo ahi.
+    effect(() => {
+      const ancla = this.anclaQuienIngreso();
+      const componente = this.componenteQuienIngreso();
+      const centro = this.contexto()?.organizationName;
+      if (ancla === undefined || componente === null || centro === undefined) {
+        return;
+      }
+      untracked(() => {
+        if (this.quienIngreso === null || ancla.indexOf(this.quienIngreso.hostView) === -1) {
+          this.quienIngreso?.destroy();
+          this.quienIngreso = ancla.createComponent(componente);
+        }
+        this.quienIngreso.setInput('centro', centro);
+        this.quienIngresoMontado.set(true);
+      });
     });
   }
 
@@ -166,7 +209,7 @@ export class NavegacionPrincipal {
   /** Dos letras para el avatar del centro: "Consultorio Centro" → "CC". */
   protected iniciales(nombre: string): string {
     return nombre
-      .split(/s+/)
+      .split(/\s+/)
       .filter((palabra) => palabra.length > 0)
       .slice(0, 2)
       .map((palabra) => palabra[0]!.toUpperCase())

@@ -8,6 +8,7 @@
  * Do not edit the class manually.
  */
 import { TotalPorMedioDeCaja } from './total-por-medio-de-caja';
+import { ResumenDeJornadaCaja } from './resumen-de-jornada-caja';
 
 
 /**
@@ -31,6 +32,10 @@ export interface JornadaCaja {
     id?: number;
     moneda?: string;
     motivoDiferencia?: string;
+    /**
+     * Los totales de la jornada para la tira de la pantalla (DP-45). **Solo en el detalle; `null` en los listados.** Es caja: no es lo cobrado ni la deuda.
+     */
+    resumen?: ResumenDeJornadaCaja;
     /**
      * Lo que se conto fisicamente.
      */

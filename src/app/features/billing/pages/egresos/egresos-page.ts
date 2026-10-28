@@ -7,6 +7,7 @@ import { Router, RouterLink } from '@angular/router';
 import { Egreso } from '../../../../api/generated/model/egreso';
 import { MembershipResponse } from '../../../../api/generated/model/membership-response';
 import { OfertaResponse } from '../../../../api/generated/model/oferta-response';
+import { ResumenDeEgresos } from '../../../../api/generated/model/resumen-de-egresos';
 import {
   RegistrarEgresoCategoriaEnum,
   RegistrarEgresoTipoBeneficiarioEnum,
@@ -29,6 +30,7 @@ import {
   primeroDelMes,
 } from '../../models/etiquetas-de-egreso';
 import { fechaEnPalabras, importeEnPalabras } from '../../models/etiquetas-de-obligacion';
+import { fechaIsoEnPalabras } from '../../models/etiquetas-de-presentacion';
 import { EgresosApi } from '../../services/egresos-api';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { Filtros } from '../../../../shared/components/filtros/filtros';
@@ -36,8 +38,14 @@ import { Icono } from '../../../../shared/components/icono/icono';
 
 type EstadoListado =
   | { readonly tipo: 'cargando' }
-  | { readonly tipo: 'listo'; readonly egresos: readonly Egreso[] }
+  | { readonly tipo: 'listo'; readonly egresos: readonly Egreso[]; readonly hayMas: boolean }
   | { readonly tipo: 'error'; readonly error: ErrorEgreso };
+
+/** La tira del mes: el resumen, o por que no esta. Un fallo no tapa el listado. */
+type EstadoResumen =
+  | { readonly tipo: 'cargando' }
+  | { readonly tipo: 'listo'; readonly resumen: ResumenDeEgresos }
+  | { readonly tipo: 'error' };
 
 type CampoDeAlta =
   | 'beneficiarioMembershipId'
@@ -47,7 +55,10 @@ type CampoDeAlta =
   | 'moneda'
   | 'periodoHasta';
 
-/** Tope del listado: el tamano de pagina por defecto del contrato. */
+/**
+ * Filas por pagina: el `limite` por defecto del contrato. Se pide una de mas para saber si hay
+ * pagina siguiente, porque la respuesta es un arreglo sin total.
+ */
 const PAGINA = 50;
 
 /**
@@ -60,7 +71,13 @@ const PAGINA = 50;
  * y la anulacion.
  *
  * <p>Los filtros son los del contrato y los aplica el servidor. El periodo filtra por la fecha de
- * registro; por defecto arranca el primer dia del mes <b>de la sede</b>, no del navegador.
+ * registro; por defecto arranca el primer dia del mes <b>de la sede</b>, no del navegador. La
+ * busqueda por texto (`q`, DP-45) tambien es del servidor, y buscar vuelve a la primera pagina.
+ * El contrato no ordena este listado (siempre del mas nuevo al mas viejo): los encabezados no
+ * ofrecen orden, porque ordenar la pagina visible haria creer que se ordeno todo (plan §3.4).
+ *
+ * <p>La tira de arriba es el resumen del <b>mes en curso</b> que calcula el servidor (DP-45):
+ * no depende de los filtros ni se suma nada aca.
  *
  * <p>El comprobante es una <b>referencia</b> —tipo, numero y fecha—: el archivo adjunto
  * (RF-M22-003) no existe en el backend, porque el storage duplicado todavia no se extrajo.
@@ -85,11 +102,15 @@ export class EgresosPage {
   protected readonly categoriaEnPalabras = categoriaEnPalabras;
   protected readonly fecha = (valor: string | undefined): string =>
     fechaEnPalabras(valor, this.diaDeLaSede.zona());
+  /** Un dia de la sede (`YYYY-MM-DD`), sin zona que aplicar. */
+  protected readonly dia = fechaIsoEnPalabras;
+  protected readonly importeEn = importeEnPalabras;
   protected readonly COLABORADOR = RegistrarEgresoTipoBeneficiarioEnum.COLABORADOR;
   protected readonly EXTERNO = RegistrarEgresoTipoBeneficiarioEnum.EXTERNO;
 
   private readonly desdePorDefecto = primeroDelMes(this.diaDeLaSede.hoy());
   protected readonly filtro = this.fb.group({
+    q: [''],
     estado: [''],
     categoria: [''],
     desde: [this.desdePorDefecto],
@@ -130,6 +151,9 @@ export class EgresosPage {
   });
 
   protected readonly estado = signal<EstadoListado>({ tipo: 'cargando' });
+  /** Pagina mostrada, en base 0. */
+  protected readonly pagina = signal(0);
+  protected readonly estadoResumen = signal<EstadoResumen>({ tipo: 'cargando' });
   protected readonly colaboradores = signal<readonly MembershipResponse[]>([]);
   /** Ofertas activas de la sede, para imputar el costo (DP-39). Sin ellas, el egreso va sin imputar. */
   protected readonly ofertas = signal<readonly OfertaResponse[]>([]);
@@ -159,7 +183,19 @@ export class EgresosPage {
   protected readonly vacio = computed(
     () => this.estado().tipo === 'listo' && this.egresos().length === 0,
   );
-  protected readonly recortado = computed(() => this.egresos().length >= PAGINA);
+  protected readonly hayMas = computed(() => {
+    const actual = this.estado();
+    return actual.tipo === 'listo' && actual.hayMas;
+  });
+  /** Primera y ultima fila de la pagina, en base 1, para el pie del listado. */
+  protected readonly filasMostradas = computed(() => {
+    const primera = this.pagina() * PAGINA + 1;
+    return { primera, ultima: primera + this.egresos().length - 1 };
+  });
+  protected readonly resumen = computed(() => {
+    const actual = this.estadoResumen();
+    return actual.tipo === 'listo' ? actual.resumen : null;
+  });
 
   constructor() {
     const desde = this.filtro.controls.desde;
@@ -190,28 +226,43 @@ export class EgresosPage {
         this.errorAlta.set(null);
         this.cargarColaboradores();
         this.cargarOfertas();
+        this.cargarResumen();
         this.buscar();
       });
     });
   }
 
+  /** Buscar con los filtros del formulario: siempre desde la primera pagina. */
   protected buscar(): void {
+    this.irAPagina(0);
+  }
+
+  protected irAPagina(pagina: number): void {
     const consultorioId = this.tenantContext.consultorioId();
     if (consultorioId === null) {
       this.estado.set({ tipo: 'error', error: errorSinContextoDeEgreso() });
       return;
     }
     const valor = this.filtro.getRawValue();
+    this.pagina.set(pagina);
     this.estado.set({ tipo: 'cargando' });
     this.api
       .buscar(consultorioId, {
+        q: valor.q.trim() || undefined,
         estado: valor.estado || undefined,
         categoria: valor.categoria || undefined,
         desde: valor.desde || undefined,
         hasta: valor.hasta || undefined,
+        limite: PAGINA + 1,
+        desplazamiento: pagina * PAGINA,
       })
       .subscribe({
-        next: (egresos) => this.estado.set({ tipo: 'listo', egresos }),
+        next: (egresos) =>
+          this.estado.set({
+            tipo: 'listo',
+            egresos: egresos.slice(0, PAGINA),
+            hayMas: egresos.length > PAGINA,
+          }),
         error: (error: unknown) =>
           this.estado.set({ tipo: 'error', error: traducirErrorEgreso(error) }),
       });
@@ -316,6 +367,19 @@ export class EgresosPage {
       return false;
     }
     return periodoDesde === '' || periodoHasta === '' || periodoHasta < periodoDesde;
+  }
+
+  private cargarResumen(): void {
+    // Sin sede no hay tira: el listado ya dice que falta el contexto.
+    this.estadoResumen.set({ tipo: 'cargando' });
+    const consultorioId = this.tenantContext.consultorioId();
+    if (consultorioId === null) {
+      return;
+    }
+    this.api.resumen(consultorioId).subscribe({
+      next: (resumen) => this.estadoResumen.set({ tipo: 'listo', resumen }),
+      error: () => this.estadoResumen.set({ tipo: 'error' }),
+    });
   }
 
   private cargarOfertas(): void {

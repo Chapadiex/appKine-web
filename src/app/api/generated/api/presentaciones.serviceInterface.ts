@@ -49,6 +49,7 @@ export interface BuscarPresentacionRequestParams {
     hasta?: string;
     limite?: number;
     desplazamiento?: number;
+    q?: string;
 }
 
 export interface ConciliarRequestParams {
@@ -148,7 +149,7 @@ export interface PresentacionesServiceInterface {
 
     /**
      * Bandejas por estado
-     * Lista los lotes de la sede, filtrados y paginados.  Es la pantalla principal de M21: una bandeja por estado deja ver de un vistazo que falta presentar, que espera respuesta y que quedo sin conciliar.
+     * Lista los lotes de la sede, filtrados y paginados.  Es la pantalla principal de M21: una bandeja por estado deja ver de un vistazo que falta presentar, que espera respuesta y que quedo sin conciliar.  DP-45: &#x60;q&#x60; busca \&quot;contiene\&quot; en el numero de factura y, si es un numero, tambien el lote con ese numero. No busca en el nombre del financiador, que es de otro modulo: para eso esta &#x60;financiadorId&#x60;. Ya pagina con &#x60;limite&#x60; y &#x60;desplazamiento&#x60;.
      * @endpoint get /api/v1/consultorios/{consultorioId}/presentaciones
 * @param requestParameters
      */

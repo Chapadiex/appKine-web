@@ -285,6 +285,17 @@ describe('PadronDePersonasPage', () => {
     fixture.detectChanges();
 
     expect((fixture.nativeElement as HTMLElement).textContent).toContain('Gomez, Luis');
+
+    // El orden de columna se pide al servidor (DP-45) y conserva los filtros.
+    (fixture.nativeElement as HTMLElement)
+      .querySelector<HTMLButtonElement>('th[appOrdenable] button')!
+      .click();
+    const ordenada = httpMock.expectOne(
+      (peticion: HttpRequest<unknown>) => peticion.url === PERSONAS,
+    );
+    expect(decodeURIComponent(ordenada.request.params.get('sort')!)).toBe('apellido,asc');
+    expect(ordenada.request.params.get('perfil')).toBe('CON_PERFIL');
+    ordenada.flush({ ...PAGINA, content: [PACIENTE], totalElements: 1 });
   });
 
   it('la búsqueda manda el texto tal como se tipeo: normalizar es del backend', async () => {

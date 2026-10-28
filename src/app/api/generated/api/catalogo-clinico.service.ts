@@ -761,7 +761,7 @@ export class CatalogoClinicoService extends BaseService implements CatalogoClini
 
     /**
      * Busqueda incremental en el catalogo
-     * Devuelve los conceptos que el tenant del contexto puede ver: los del catalogo de PLATAFORMA mas los PROPIOS, en la misma lista (RF-M06-004). Es la consulta de todo selector clinico y economico.  El texto q se compara contra el nombre Y el codigo, sin distinguir mayusculas ni acentos —lo resuelve la collation de la base, no una columna normalizada—. Los comodines del cliente se escapan, asi que tipear un % no devuelve el catalogo entero.  estado vale ACTIVO por defecto, y eso es lo que hace que un selector NUNCA ofrezca un concepto dado de baja. Los inactivos hay que pedirlos explicitamente, y la pantalla de administracion los necesita para explicar por que un codigo esta tomado o libre.  alcance vale TODOS por defecto, que es lo que un formulario necesita: al elegir una practica no importa si es de plataforma o del centro. GLOBAL y ORGANIZACION existen para la pantalla de administracion, que si tiene que separarlas porque lo global no lo puede editar el tenant.  especialidadId solo aplica a practicas y se ignora en los otros tipos.  El tamano de pagina se acota a 100: pedir mas devuelve ese maximo, no un error.
+     * Devuelve los conceptos que el tenant del contexto puede ver: los del catalogo de PLATAFORMA mas los PROPIOS, en la misma lista (RF-M06-004). Es la consulta de todo selector clinico y economico.  El texto q se compara contra el nombre Y el codigo, sin distinguir mayusculas ni acentos —lo resuelve la collation de la base, no una columna normalizada—. Los comodines del cliente se escapan, asi que tipear un % no devuelve el catalogo entero.  estado vale ACTIVO por defecto, y eso es lo que hace que un selector NUNCA ofrezca un concepto dado de baja. Los inactivos hay que pedirlos explicitamente, y la pantalla de administracion los necesita para explicar por que un codigo esta tomado o libre.  alcance vale TODOS por defecto, que es lo que un formulario necesita: al elegir una practica no importa si es de plataforma o del centro. GLOBAL y ORGANIZACION existen para la pantalla de administracion, que si tiene que separarlas porque lo global no lo puede editar el tenant.  especialidadId solo aplica a practicas y se ignora en los otros tipos.  El tamano de pagina se acota a 100: pedir mas devuelve ese maximo, no un error.  DP-45: sort ordena por codigo, nombre o alcance; sin el, el orden de siempre.
      * @endpoint get /api/v1/catalogos/{tipo}
      * @param requestParameters
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
@@ -782,6 +782,7 @@ export class CatalogoClinicoService extends BaseService implements CatalogoClini
         const especialidadId = requestParameters?.especialidadId;
         const page = requestParameters?.page;
         const size = requestParameters?.size;
+        const sort = requestParameters?.sort;
 
         let localVarQueryParameters = new OpenApiHttpParams(this.encoder);
 
@@ -834,6 +835,15 @@ export class CatalogoClinicoService extends BaseService implements CatalogoClini
             localVarQueryParameters,
             'size',
             <any>size,
+            QueryParamStyle.Form,
+            true,
+        );
+
+
+        localVarQueryParameters = this.addToHttpParams(
+            localVarQueryParameters,
+            'sort',
+            <any>sort,
             QueryParamStyle.Form,
             true,
         );

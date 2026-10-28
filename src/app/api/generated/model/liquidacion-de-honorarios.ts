@@ -8,6 +8,7 @@
  * Do not edit the class manually.
  */
 import { LineaDeHonorario } from './linea-de-honorario';
+import { ResumenDeHonorarios } from './resumen-de-honorarios';
 
 
 /**
@@ -45,6 +46,10 @@ export interface LiquidacionDeHonorarios {
      * La oferta a la que se imputo el egreso (DP-39)
      */
     ofertaId?: number;
+    /**
+     * Los numeros de la tira de la liquidacion (DP-45)
+     */
+    resumen?: ResumenDeHonorarios;
 }
 export enum LiquidacionDeHonorariosEstadoEnum {
     VIGENTE = 'VIGENTE',

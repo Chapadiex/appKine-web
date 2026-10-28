@@ -14,6 +14,7 @@ import { Observable }                                        from 'rxjs';
 import { CatalogoDeReportesResponse } from '../model/models';
 import { ProblemDetail } from '../model/models';
 import { ReporteResponse } from '../model/models';
+import { SerieDeReporte } from '../model/models';
 
 
 import { Configuration }                                     from '../configuration';
@@ -35,6 +36,14 @@ export interface GenerarReporteRequestParams {
     reporte: 'OPERATIVO' | 'TURNOS' | 'CLINICO' | 'ECONOMICO' | 'FINANCIADORES' | 'CLASES' | 'PASES' | 'CONTINUIDAD' | 'SERVICIOS';
     desde: string;
     hasta: string;
+}
+
+export interface GenerarSerieDeReporteRequestParams {
+    consultorioId: number;
+    reporte: 'OPERATIVO' | 'TURNOS' | 'CLINICO' | 'ECONOMICO' | 'FINANCIADORES' | 'CLASES' | 'PASES' | 'CONTINUIDAD' | 'SERVICIOS';
+    desde: string;
+    hasta: string;
+    agrupacion?: 'DIA' | 'SEMANA';
 }
 
 
@@ -65,5 +74,13 @@ export interface ReportesServiceInterface {
 * @param requestParameters
      */
     generarReporte(requestParameters: GenerarReporteRequestParams, extraHttpRequestParams?: any): Observable<ReporteResponse>;
+
+    /**
+     * Serie temporal de un reporte
+     * Los indicadores sumables del reporte abiertos por dia o por semana, para el grafico de barras (DP-45).  **Cada serie usa la fuente y el criterio de fecha de su indicador**, y la suma de sus puntos es el valor que el reporte muestra para ese indicador en el mismo periodo. Los dias son **de la sede**. &#x60;SEMANA&#x60; es la semana ISO (lunes a domingo), recortada al periodo en los extremos.  **Mismo permiso y mismas omisiones que el reporte**: exige &#x60;reporte:read&#x60;, una seccion cuyo permiso falta no tiene serie y se declara en &#x60;omitidas&#x60;, y el &#x60;PROFESIONAL&#x60; ve solo su propia actividad.  No tienen serie los saldos actuales (deuda vigente, egresos por pagar), que no se reconstruyen a una fecha, ni los porcentajes, que no se suman.  Hasta **100 puntos**: con &#x60;DIA&#x60; el periodo puede tener hasta 100 dias; para la ventana maxima de 366 dias, &#x60;SEMANA&#x60;.
+     * @endpoint get /api/v1/consultorios/{consultorioId}/reportes/{reporte}/serie
+* @param requestParameters
+     */
+    generarSerieDeReporte(requestParameters: GenerarSerieDeReporteRequestParams, extraHttpRequestParams?: any): Observable<SerieDeReporte>;
 
 }

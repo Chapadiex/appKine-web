@@ -14,7 +14,22 @@ export interface TotalPorMedioDeCaja {
      * Si suma al saldo que se cuenta al arquear. Solo el efectivo.
      */
     afectaArqueo?: boolean;
+    /**
+     * Movimientos del medio, reversiones incluidas (DP-45)
+     */
+    cantidad?: number;
+    /**
+     * Egresos del medio, netos de sus reversiones (DP-45)
+     */
+    egresos?: number;
+    /**
+     * Ingresos del medio, netos de sus reversiones (DP-45)
+     */
+    ingresos?: number;
     medio?: TotalPorMedioDeCajaMedioEnum;
+    /**
+     * `ingresos - egresos` del medio
+     */
     total?: number;
 }
 export enum TotalPorMedioDeCajaMedioEnum {
