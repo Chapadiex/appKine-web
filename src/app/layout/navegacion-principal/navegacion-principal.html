@@ -100,18 +100,17 @@
       La sesion, al pie: quien entro y con que rol (DP-45, `/me`), donde se trabaja, como cambiarlo
       y como salir. Sin "Cerrar sesion" una computadora compartida del mostrador quedaba con la
       sesion de otra persona abierta (auditoria heuristica del 21/10, C1). Mientras `/me` no
-      responde, o si falla, queda el centro solo, como antes. Quien ingreso va en `@defer`: la carga
-      inicial esta al borde de su presupuesto.
+      responde, o si falla, queda el centro solo, como antes. Quien ingreso se monta aparte (ver
+      `anclaQuienIngreso`): la carga inicial esta al borde de su presupuesto.
     -->
     <div class="nav__sesion">
       @if (contexto(); as activo) {
         <span class="nav__avatar" aria-hidden="true">{{ iniciales(activo.organizationName) }}</span>
         <span class="nav__sesion-textos">
-          @defer (on idle) {
-            <app-quien-ingreso [centro]="activo.organizationName" />
-          } @placeholder {
+          @if (!quienIngresoMontado()) {
             <span class="nav__sesion-centro">{{ activo.organizationName }}</span>
           }
+          <ng-container #quienIngreso />
           <a class="nav__sesion-cambiar" [routerLink]="rutaSelector" (click)="navegar()"
             >Cambiar de sede</a
           >

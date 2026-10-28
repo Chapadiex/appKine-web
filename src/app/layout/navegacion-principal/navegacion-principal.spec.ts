@@ -1,10 +1,5 @@
 import { Component, WritableSignal, signal } from '@angular/core';
-import {
-  ComponentFixture,
-  DeferBlockBehavior,
-  DeferBlockState,
-  TestBed,
-} from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { Router, provideRouter } from '@angular/router';
 import { provideHttpClient } from '@angular/common/http';
@@ -50,10 +45,7 @@ describe('NavegacionPrincipal', () => {
     restaurando = signal(false);
     perfil = signal<MyProfileResponse | null>(null);
 
-    // `compileComponents`: el `@defer` del pie deja la plantilla con metadata asincrona.
     await TestBed.configureTestingModule({
-      // El pie con quien ingreso va en `@defer (on idle)`: se renderiza a mano donde importa.
-      deferBlockBehavior: DeferBlockBehavior.Manual,
       imports: [NavegacionPrincipal],
       providers: [
         provideHttpClient(),
@@ -236,8 +228,8 @@ describe('NavegacionPrincipal', () => {
   });
 
   /**
-   * DP-45: el pie dice quien ingreso y con que rol. Va en `@defer`; hasta que carga, y mientras
-   * `/me` no responde, queda el centro solo, como antes.
+   * DP-45: el pie dice quien ingreso y con que rol. Se monta aparte, despues de la primera
+   * pintura; hasta entonces, y mientras `/me` no responde, queda el centro solo, como antes.
    */
   it('muestra al pie el nombre y el rol de quien ingresó, sin perder el centro ni la salida', async () => {
     conContexto();
@@ -249,8 +241,12 @@ describe('NavegacionPrincipal', () => {
     expect(pie.textContent).toContain('Centro Kine');
     expect(pie.querySelector('.nav__avatar')?.textContent?.trim()).toBe('CK');
 
-    const [diferido] = await fixture.getDeferBlocks();
-    await diferido!.render(DeferBlockState.Complete);
+    // El componente llega por un `import()` dinamico: se espera a que quede montado.
+    for (let intento = 0; intento < 50 && !pie.querySelector('app-quien-ingreso'); intento++) {
+      await new Promise((listo) => setTimeout(listo));
+      fixture.detectChanges();
+    }
+    expect(pie.querySelector('app-quien-ingreso')).not.toBeNull();
     expect(pie.textContent).toContain('Centro Kine');
     expect(pie.textContent).not.toContain('Administración');
 
