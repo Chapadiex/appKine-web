@@ -2,6 +2,10 @@
  * Acciones de una fila (`app-acciones-de-fila`): la principal a la vista y el resto en un panel
  * que cuelga del boton "⋯", alineado a la derecha porque la columna de acciones es la ultima.
  * Las acciones del panel van en columna y a todo el ancho, como items de una lista.
+ *
+ * El panel es un popover: abierto vive en la capa superior, fuera del recorte de `.tabla-scroll`,
+ * y `top`/`left` los pone el componente contra el boton. `inset` y `margin` anulan el centrado que
+ * la hoja del navegador le da a todo `[popover]`.
  */
 .acciones-de-fila {
   position: relative;
@@ -34,9 +38,9 @@
 }
 
 .acciones-de-fila__panel {
-  position: absolute;
-  top: calc(100% + var(--esp-2));
-  right: 0;
+  position: fixed;
+  inset: auto;
+  margin: 0;
   z-index: 15;
   display: flex;
   flex-direction: column;
