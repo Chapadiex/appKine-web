@@ -10,7 +10,12 @@
   min-width: 0;
 }
 
-/* Disparador: control de 36 px de alto, contorno de control solo al pasar o con el panel abierto. */
+/*
+  Disparador: control de 36 px de alto, contorno de control solo al pasar o con el panel abierto.
+  En reposo es un boton sin caja (se identifica por su texto, WCAG 1.4.11): sin borde, ni siquiera
+  transparente, que el arnes de contraste mediria contra el fondo. El contorno es una sombra
+  interior para no mover el contenido al aparecer.
+*/
 .disparador {
   display: inline-flex;
   align-items: center;
@@ -18,7 +23,7 @@
   min-width: 0;
   min-height: 2.25rem;
   padding: 0 var(--esp-5);
-  border: var(--borde-fino) solid transparent;
+  border: 0;
   border-radius: var(--radio-md);
   background: transparent;
   color: var(--color-texto-fuerte);
@@ -29,8 +34,8 @@
 
 .disparador:hover,
 .disparador[aria-expanded='true'] {
-  border-color: var(--color-borde-control);
   background: var(--color-superficie-sutil);
+  box-shadow: inset 0 0 0 var(--borde-fino) var(--color-borde-control);
 }
 
 .disparador__flecha {

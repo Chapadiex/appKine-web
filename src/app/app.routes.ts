@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 
 import { RUTA_INICIO } from './layout/navegacion-principal/secciones';
+import { SEGMENTO_DE_TRANSITO, transitoGuard } from './layout/selector-de-sede/cambio-de-sede';
 import { SEGMENTO_HORARIOS } from './features/resource/models/rutas-de-horarios';
 import { authGuard } from './core/guards/auth.guard';
 import { contextGuard } from './core/guards/context.guard';
@@ -385,6 +386,14 @@ export const routes: Routes = [
     path: SEGMENTO_PRODUCTOS,
     canActivate: [authGuard],
     children: rutasProductos,
+  },
+
+  // Paso intermedio del cambio de sede: sin componente ni titulo, para que la seccion de destino
+  // se active de nuevo con todos sus guards (ver `layout/selector-de-sede/cambio-de-sede.ts`).
+  {
+    path: SEGMENTO_DE_TRANSITO,
+    canActivate: [transitoGuard],
+    children: [],
   },
 
   {

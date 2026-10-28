@@ -37,37 +37,34 @@
   overflow-y: auto;
 }
 
+/* El campo es el control (borde y anillo de foco del sistema); la lupa va encima, a la izquierda. */
 .sede__busqueda {
+  position: relative;
   display: flex;
-  align-items: center;
-  gap: var(--esp-4);
   margin: 0 var(--esp-5) var(--esp-4);
-  padding: 0 var(--esp-5);
-  border: var(--borde-fino) solid var(--color-borde-control);
-  border-radius: var(--radio-md);
-  color: var(--color-texto-suave);
 }
 
-.sede__busqueda:focus-within {
-  outline: var(--foco-grosor) solid var(--color-foco);
-  outline-offset: var(--foco-offset);
+.sede__busqueda app-icono {
+  position: absolute;
+  top: 50%;
+  left: var(--esp-5);
+  color: var(--color-texto-suave);
+  transform: translateY(-50%);
+  pointer-events: none;
 }
 
 .sede__busqueda input {
   flex: 1;
+  box-sizing: border-box;
   min-width: 0;
   min-height: 2.25rem;
-  padding: 0;
-  border: 0;
-  background: transparent;
+  padding: 0 var(--esp-5) 0 calc(var(--esp-5) * 2 + 1rem);
+  border: var(--borde-fino) solid var(--color-borde-control);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie);
   color: var(--color-texto);
   font: inherit;
   font-size: var(--tipo-sm);
-}
-
-/* El anillo lo pinta el contenedor: dos anillos anidados se leen como un error. */
-.sede__busqueda input:focus-visible {
-  outline: none;
 }
 
 .sede__tilde {
