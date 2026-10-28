@@ -1,6 +1,12 @@
 import { Page, Request, expect, test } from '@playwright/test';
 
-import { PASSWORD, emailUnico, ingresarPorPantalla, nonce } from './support/akine';
+import {
+  PASSWORD,
+  emailUnico,
+  esperarFormularioEnlazado,
+  ingresarPorPantalla,
+  nonce,
+} from './support/akine';
 import { navegar } from './support/agenda-real';
 import { cuentaActiva } from './support/cuentas';
 import { ApiAkine, deAUnLogin } from './support/sembrado';
@@ -120,6 +126,8 @@ test.describe('Sesion expirada contra el backend real', () => {
         url.pathname === '/auth/ingresar' && url.searchParams.get('volverA') === '/pacientes',
     );
     await deAUnLogin(async () => {
+      // La pantalla de ingreso la acaba de montar el router: ver `esperarFormularioEnlazado`.
+      await esperarFormularioEnlazado(page.getByLabel('Correo electrónico'));
       await page.getByLabel('Correo electrónico').fill(email);
       await page.getByLabel('Contraseña').fill(PASSWORD);
       await page.getByRole('button', { name: 'Ingresar' }).click();
