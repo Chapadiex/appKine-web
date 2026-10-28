@@ -21,7 +21,9 @@ import { filter, map, startWith } from 'rxjs';
 
 import { AnchoDeContenido, DATA_ANCHO } from './core/models/ancho-de-contenido';
 import { BarraSuperior } from './layout/barra-superior/barra-superior';
+import { CambioDeSede } from './layout/selector-de-sede/cambio-de-sede';
 import { NavegacionPrincipal } from './layout/navegacion-principal/navegacion-principal';
+import { PreferenciasStore } from './core/services/preferencias.store';
 import { ServicioNoDisponibleStore } from './core/services/servicio-no-disponible.store';
 import { SessionService } from './core/services/session.service';
 import { TenantContextStore } from './core/services/tenant-context.store';
@@ -60,7 +62,14 @@ export class App {
   private readonly tenant = inject(TenantContextStore);
   private readonly injector = inject(Injector);
 
+  constructor() {
+    // El tema elegido en Preferencias se aplica al arrancar, antes de la primera pantalla.
+    inject(PreferenciasStore);
+  }
+
   protected readonly avisoDeServicio = this.servicio.aviso;
+
+  protected readonly cambiandoDeSede = inject(CambioDeSede).cambiandoA;
 
   protected readonly menuAbierto = signal(false);
 

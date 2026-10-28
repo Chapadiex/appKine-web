@@ -2,6 +2,7 @@ import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { Router, provideRouter } from '@angular/router';
+import { of } from 'rxjs';
 import { Component } from '@angular/core';
 
 import { ANCHO_AMPLIO, DATA_ANCHO } from './core/models/ancho-de-contenido';
@@ -135,7 +136,17 @@ describe('App (layout)', () => {
       providers: [
         ...PROVIDERS,
         provideRouter([]),
-        { provide: SessionService, useValue: { estado: () => 'activa', restaurando: () => false } },
+        {
+          provide: SessionService,
+          // El selector de sede y el perfil se montan despues de la primera pintura y leen esto.
+          useValue: {
+            estado: () => 'activa',
+            restaurando: () => false,
+            contextos: () => [],
+            epocaDeIdentidad: () => 0,
+            cargarContextos: () => of([]),
+          },
+        },
         {
           provide: PlatformRoleStore,
           useValue: { esAdminDePlataforma: () => false, asegurarCargado: () => undefined },

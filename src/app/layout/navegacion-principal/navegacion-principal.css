@@ -28,7 +28,7 @@
   color: var(--color-marca-texto);
 }
 
-/* Logo: cuadrado azul con la inicial, el nombre y la sede activa debajo. */
+/* Logo: cuadrado azul con la inicial y el nombre. */
 .marca {
   display: flex;
   align-items: center;
@@ -54,24 +54,10 @@
   font-weight: var(--peso-fuerte);
 }
 
-.marca__textos {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
 .marca__nombre {
   font-size: 0.9375rem;
   font-weight: var(--peso-fuerte);
   letter-spacing: 0.04em;
-}
-
-.marca__sede {
-  overflow: hidden;
-  color: var(--color-texto-suave);
-  font-size: var(--tipo-2xs);
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 /*
@@ -173,74 +159,6 @@
 
 .nav__plataforma {
   margin-top: var(--esp-6);
-}
-
-/* La sesion, al pie: avatar del centro, nombre, "Cambiar de sede" y el boton de salir. */
-.nav__sesion {
-  display: flex;
-  align-items: center;
-  gap: var(--esp-4);
-  margin-top: auto;
-  padding: var(--esp-5) var(--esp-4) 0;
-  border-top: var(--borde-fino) solid var(--color-borde);
-}
-
-.nav__avatar {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  width: 2rem;
-  height: 2rem;
-  border-radius: 50%;
-  background: var(--color-marca-superficie-activa);
-  color: var(--color-acento);
-  font-size: var(--tipo-2xs);
-  font-weight: var(--peso-medio);
-}
-
-.nav__sesion-textos {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.nav__sesion-centro {
-  overflow: hidden;
-  font-size: var(--tipo-xs);
-  font-weight: var(--peso-medio);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.nav__sesion-cambiar {
-  align-self: flex-start;
-  padding-block: var(--esp-1);
-  color: var(--color-enlace);
-  font-size: var(--tipo-2xs);
-}
-
-/* Boton de salir: icono con contorno de control (3:1) y 36 px de lado. */
-.nav__salir {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  width: 2.25rem;
-  height: 2.25rem;
-  padding: 0;
-  border: var(--borde-fino) solid var(--color-borde-control);
-  border-radius: var(--radio-md);
-  background: var(--color-superficie);
-  color: var(--color-texto-suave);
-  font-size: 1.125rem;
-  cursor: pointer;
-}
-
-.nav__salir:hover:not(:disabled) {
-  background: var(--color-peligro-fondo);
-  color: var(--color-peligro-texto);
 }
 
 /*

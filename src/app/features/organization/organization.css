@@ -348,16 +348,6 @@
   max-width: none;
 }
 
-/* Lista de accesos de la pantalla de organizacion: enlaces en columna, sin vinietas. */
-.accesos {
-  display: grid;
-  gap: var(--esp-5);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  font-size: var(--tipo-sm);
-}
-
 /* Barra de uso de un limite del plan: decorativa, el numero ya esta en la celda. */
 .medidor {
   display: block;

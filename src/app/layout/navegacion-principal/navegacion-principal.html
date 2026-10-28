@@ -10,14 +10,10 @@
     [class.barra-lateral--abierta]="abierto()"
     aria-label="Secciones de AKINE"
   >
+    <!-- Solo la marca: la sede activa se dice una vez, en el selector de la barra superior. -->
     <a class="marca" [routerLink]="rutaInicio" (click)="navegar()">
       <span class="marca__logo" aria-hidden="true">A</span>
-      <span class="marca__textos">
-        <span class="marca__nombre">AKINE</span>
-        @if (contexto(); as activo) {
-          <span class="marca__sede">{{ activo.consultorioName || activo.organizationName }}</span>
-        }
-      </span>
+      <span class="marca__nombre">AKINE</span>
     </a>
 
     @for (grupo of grupos(); track grupo.etiqueta) {
@@ -95,31 +91,5 @@
         Plataforma
       </a>
     }
-
-    <!--
-      La sesion, al pie: quien entro y con que rol (DP-45, `/me`), donde se trabaja, como cambiarlo
-      y como salir. Sin "Cerrar sesion" una computadora compartida del mostrador quedaba con la
-      sesion de otra persona abierta (auditoria heuristica del 21/10, C1). Mientras `/me` no
-      responde, o si falla, queda el centro solo, como antes. Quien ingreso se monta aparte (ver
-      `anclaQuienIngreso`): la carga inicial esta al borde de su presupuesto.
-    -->
-    <div class="nav__sesion">
-      @if (contexto(); as activo) {
-        <span class="nav__avatar" aria-hidden="true">{{ iniciales(activo.organizationName) }}</span>
-        <span class="nav__sesion-textos">
-          @if (!quienIngresoMontado()) {
-            <span class="nav__sesion-centro">{{ activo.organizationName }}</span>
-          }
-          <ng-container #quienIngreso />
-          <a class="nav__sesion-cambiar" [routerLink]="rutaSelector" (click)="navegar()"
-            >Cambiar de sede</a
-          >
-        </span>
-      }
-      <button type="button" class="nav__salir" (click)="cerrarSesion()" [disabled]="saliendo()">
-        <app-icono nombre="salir" />
-        <span class="visualmente-oculto">Cerrar sesión</span>
-      </button>
-    </div>
   </nav>
 }

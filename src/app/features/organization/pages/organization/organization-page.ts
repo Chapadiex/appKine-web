@@ -8,6 +8,15 @@ import { OrganizationResponse } from '../../../../api/generated/model/organizati
 import { RUTA_HORARIOS } from '../../../../core/models/rutas';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { Icono } from '../../../../shared/components/icono/icono';
+
+/** Una fila de la seccion Configuracion. */
+interface AccesoDeConfiguracion {
+  readonly titulo: string;
+  readonly descripcion: string;
+  readonly accion: string;
+  readonly ruta: string;
+}
 
 /** Estado de la pantalla de organizacion (ADR-0005). */
 type EstadoOrganizacion =
@@ -40,23 +49,55 @@ type EstadoOrganizacion =
  */
 @Component({
   selector: 'app-organization-page',
-  imports: [Ayuda, RouterLink],
+  imports: [Ayuda, Icono, RouterLink],
   templateUrl: './organization-page.html',
-  styleUrl: '../../organization.css',
+  styleUrls: ['../../organization.css', './organization-page.css'],
 })
 export class OrganizationPage {
   private readonly organizaciones = inject(OrganizacionesService);
   private readonly tenantContext = inject(TenantContextStore);
 
   /**
-   * La URL del editor de horarios, tomada de su constante y no escrita a mano.
+   * Las configuraciones del centro, cada una con su accion.
    *
-   * <p>Sale de `core/models/rutas.ts` y no de `features/resource`: una feature no importa de
-   * otra (ADR-0004, verificado por `akine/sin-imports-entre-features`). Un literal `/horarios`
-   * escrito aca es exactamente la forma que dejo los enlaces de correo apuntando al comodin `**`
-   * durante tres etapas.
+   * <p>Espacios y horarios cuelgan de la SEDE del contexto activo, no de la organizacion, y por
+   * eso sus rutas no viven bajo `/organizacion`; estan aca igual porque son configuracion del
+   * centro. La URL de horarios sale de `core/models/rutas.ts` y no de `features/resource`: una
+   * feature no importa de otra (ADR-0004, verificado por `akine/sin-imports-entre-features`).
    */
-  protected readonly rutaHorarios = RUTA_HORARIOS;
+  protected readonly accesos: readonly AccesoDeConfiguracion[] = [
+    {
+      titulo: 'Plan y suscripción',
+      descripcion: 'Consultá el plan contratado y sus características.',
+      accion: 'Ver plan',
+      ruta: '/organizacion/suscripcion',
+    },
+    {
+      titulo: 'Sedes',
+      descripcion: 'Administrá las sedes que pertenecen a la organización.',
+      accion: 'Gestionar',
+      ruta: '/organizacion/sedes',
+    },
+    // DP-43 (U-25): la ventana para enmendar sesiones es de la organizacion.
+    {
+      titulo: 'Política de enmienda',
+      descripcion: 'Configurá las reglas para modificar sesiones ya realizadas.',
+      accion: 'Configurar',
+      ruta: '/atencion/politica-de-enmienda',
+    },
+    {
+      titulo: 'Espacios y boxes',
+      descripcion: 'Administrá los espacios disponibles de la sede activa.',
+      accion: 'Gestionar',
+      ruta: '/espacios',
+    },
+    {
+      titulo: 'Horarios profesionales',
+      descripcion: 'Consultá y configurá los horarios de los profesionales de la sede activa.',
+      accion: 'Gestionar',
+      ruta: RUTA_HORARIOS,
+    },
+  ];
 
   protected readonly estado = signal<EstadoOrganizacion>({ tipo: 'cargando' });
 

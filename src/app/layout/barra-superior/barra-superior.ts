@@ -1,5 +1,20 @@
-import { Component, computed, inject, input, output } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import {
+  Component,
+  Type,
+  ViewContainerRef,
+  afterNextRender,
+  computed,
+  effect,
+  inject,
+  input,
+  output,
+  signal,
+  untracked,
+  viewChild,
+} from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { ActivatedRouteSnapshot, NavigationEnd, Router, RouterLink } from '@angular/router';
+import { filter, map, startWith } from 'rxjs';
 
 import { Icono } from '../../shared/components/icono/icono';
 import { PlatformRoleStore } from '../../core/services/platform-role.store';
@@ -10,19 +25,28 @@ import { SessionService } from '../../core/services/session.service';
 import { TenantContextStore } from '../../core/services/tenant-context.store';
 
 /**
- * Barra superior del shell (UX-01): para quien se trabaja y como cambiarlo.
+ * Barra superior del shell: la misma para todos los roles (UX-01, rehecha en el refactor de la
+ * cabecera global del 28/10/2026).
  *
- * <p>Es el `header` de la pagina (landmark `banner`). Lleva el contexto activo con su enlace
- * "Cambiar", el boton que abre la barra lateral en tablet y, cuando no hay barra lateral, la
- * marca. Lo que no lleva: las secciones (estan en la barra lateral) y el eslogan (no cambia
- * nada de lo que el usuario hace y costaba 330 px en cada pantalla).
+ * <p>Es el `header` de la pagina (landmark `banner`) y responde tres preguntas, siempre en el
+ * mismo lugar: <b>donde estoy</b> (el titulo de la pantalla, a la izquierda), <b>donde estoy
+ * trabajando</b> (la sede, a la derecha) y <b>quien soy</b> (el perfil, en el extremo). Lo que
+ * cambia segun el rol no es la barra sino lo que hay adentro: las sedes habilitadas y el rol que
+ * muestra el perfil. Lleva ademas el boton que abre la barra lateral en tablet.
+ *
+ * <p><b>El titulo sale del `title` de la ruta</b> ("AKINE - Caja diaria" → "Caja diaria"), que
+ * toda pantalla declara para la pestana del navegador. Asi no hace falta que cada pantalla lo
+ * publique, y la barra y la pestana no pueden decir cosas distintas.
  *
  * <p><b>Sin contexto, es la unica salida.</b> Con un token `pre_context` ninguna seccion
- * responde, asi que el unico enlace util es el que resuelve eso. Y un administrador de
- * plataforma no es miembro de ningun centro: este es su unico camino a la consola (AKINE-A-7).
+ * responde, asi que el unico enlace util es el que resuelve eso; un administrador de plataforma
+ * no es miembro de ningun centro y este es su camino a la consola (AKINE-A-7). El perfil, con
+ * "Cerrar sesion", esta tambien ahi.
  *
- * <p><b>El contexto se dice una vez.</b> Cuando la sede se llama igual que el centro, repetir el
- * nombre ("Centro Norte · Centro Norte") no agrega informacion.
+ * <p><b>Sede y perfil llegan despues de la primera pintura.</b> La carga inicial esta al borde de
+ * su presupuesto (425 kB) y los dos desplegables suman casi 20 kB: se bajan en un chunk aparte
+ * con un `import()` y se montan en sus anclas. No van en `@defer`, que suma su runtime (~7 kB) a
+ * la carga inicial. Mientras tanto la barra muestra el nombre de la sede y el lugar del avatar.
  */
 @Component({
   selector: 'app-barra-superior',
@@ -34,6 +58,7 @@ export class BarraSuperior {
   private readonly session = inject(SessionService);
   private readonly tenant = inject(TenantContextStore);
   private readonly rolDePlataforma = inject(PlatformRoleStore);
+  private readonly router = inject(Router);
 
   /** Si la barra lateral esta desplegada (tablet). Gobierna `aria-expanded` del boton. */
   readonly menuAbierto = input(false);
@@ -54,16 +79,77 @@ export class BarraSuperior {
     this.session.estado() === 'activa' ? this.tenant.context() : null,
   );
 
-  /** La sede, solo cuando agrega algo al nombre del centro. */
-  protected readonly sede = computed(() => {
+  protected readonly nombreSede = computed(() => {
     const activo = this.contexto();
-    if (activo === null || !activo.consultorioName) {
-      return null;
-    }
-    return activo.consultorioName === activo.organizationName ? null : activo.consultorioName;
+    return activo?.consultorioName || activo?.organizationName || '';
   });
+
+  private readonly anclaSede = viewChild('anclaSede', { read: ViewContainerRef });
+  private readonly anclaPerfil = viewChild('anclaPerfil', { read: ViewContainerRef });
+  private readonly desplegables = signal<{
+    readonly sede: Type<unknown>;
+    readonly perfil: Type<unknown>;
+  } | null>(null);
+
+  /** Ya estan los componentes de verdad: las reservas de lugar se van. */
+  protected readonly derechaMontada = computed(() => this.desplegables() !== null);
+
+  protected readonly titulo = toSignal(
+    this.router.events.pipe(
+      filter((evento) => evento instanceof NavigationEnd),
+      startWith(null),
+      map(() => tituloDe(this.router.routerState.snapshot.root)),
+    ),
+    { initialValue: '' },
+  );
+
+  constructor() {
+    afterNextRender(() => {
+      Promise.all([
+        import('../selector-de-sede/selector-de-sede'),
+        import('../menu-de-perfil/menu-de-perfil'),
+      ]).then(
+        ([sede, perfil]) =>
+          this.desplegables.set({ sede: sede.SelectorDeSede, perfil: perfil.MenuDePerfil }),
+        // Sin el chunk (red caida, despliegue nuevo) queda la reserva con el nombre de la sede.
+        () => undefined,
+      );
+    });
+
+    // Las anclas viven dentro de los `@if` de la sesion: si la rama se redibuja, el ancla nueva
+    // llega vacia y se vuelve a montar.
+    effect(() => {
+      const desplegables = this.desplegables();
+      const sede = this.anclaSede();
+      const perfil = this.anclaPerfil();
+      if (desplegables === null) {
+        return;
+      }
+      untracked(() => {
+        if (sede !== undefined && sede.length === 0) {
+          sede.createComponent(desplegables.sede);
+        }
+        if (perfil !== undefined && perfil.length === 0) {
+          perfil.createComponent(desplegables.perfil);
+        }
+      });
+    });
+  }
 
   protected alternar(): void {
     this.alternarMenu.emit();
   }
+}
+
+/** El `title` de la ruta mas profunda que lo declara, sin el prefijo de la marca. */
+export function tituloDe(raiz: ActivatedRouteSnapshot): string {
+  let titulo: string | undefined;
+  for (
+    let actual: ActivatedRouteSnapshot | null = raiz;
+    actual !== null;
+    actual = actual.firstChild
+  ) {
+    titulo = actual.title ?? titulo;
+  }
+  return (titulo ?? '').replace(/^AKINE\s*-\s*/, '');
 }

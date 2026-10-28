@@ -1,0 +1,138 @@
+<div class="titulo-con-ayuda">
+  <h1>Mi perfil</h1>
+  <app-ayuda titulo="Sobre esta pantalla">
+    <p>
+      Tus datos de cuenta. El nombre, el correo y la foto todavía no se editan desde AKINE: tu
+      avatar son tus iniciales.
+    </p>
+  </app-ayuda>
+</div>
+
+<div aria-live="polite">
+  @switch (estado().tipo) {
+    @case ('cargando') {
+      <p class="estado estado--cargando">Cargando tus datos&hellip;</p>
+    }
+    @case ('error') {
+      <p class="estado estado--error" role="alert">No pudimos cargar tus datos.</p>
+      <button type="button" class="boton" (click)="cargar()">Reintentar</button>
+    }
+  }
+</div>
+
+@if (perfil(); as perfil) {
+  <section class="tarjeta" aria-labelledby="titulo-datos-personales">
+    <h2 id="titulo-datos-personales">Datos personales</h2>
+
+    <div class="perfil">
+      <span class="perfil__avatar" aria-hidden="true">{{ iniciales() }}</span>
+      <dl class="detalle">
+        <dt>Nombre</dt>
+        <dd>{{ perfil.firstName }}</dd>
+
+        <dt>Apellido</dt>
+        <dd>{{ perfil.lastName }}</dd>
+
+        <dt>Correo electrónico</dt>
+        <dd>{{ perfil.email }}</dd>
+      </dl>
+    </div>
+  </section>
+
+  @if (perfil.context; as contexto) {
+    <section class="tarjeta" aria-labelledby="titulo-donde-trabajas">
+      <h2 id="titulo-donde-trabajas">Dónde estás trabajando</h2>
+      <dl class="detalle">
+        <dt>Organización</dt>
+        <dd>{{ contexto.organizationName }}</dd>
+
+        <dt>Sede</dt>
+        <dd>{{ contexto.consultorioName }}</dd>
+
+        <dt>Rol</dt>
+        <dd>{{ contexto.roleLabel }}</dd>
+      </dl>
+    </section>
+  }
+
+  <section class="tarjeta" aria-labelledby="titulo-contrasena">
+    <h2 id="titulo-contrasena">Contraseña</h2>
+    <p class="ayuda">
+      Te mandamos a {{ perfil.email }} un enlace para elegir una contraseña nueva.
+    </p>
+
+    <div aria-live="polite">
+      @switch (envio()) {
+        @case ('enviado') {
+          <p class="estado estado--ok">
+            Listo: revisá tu correo. El enlace vence en un rato; si no llega, mirá en correo no
+            deseado.
+          </p>
+        }
+        @case ('limite') {
+          <p class="estado estado--error" role="alert">
+            Pediste varios cambios seguidos. Esperá unos minutos y volvé a intentar.
+          </p>
+        }
+        @case ('error') {
+          <p class="estado estado--error" role="alert">
+            No pudimos mandar el correo. Probá de nuevo.
+          </p>
+        }
+      }
+    </div>
+
+    <div class="acciones">
+      <button
+        type="button"
+        class="boton boton--secundario"
+        [disabled]="envio() === 'enviando'"
+        (click)="pedirCambioDeContrasena()"
+      >
+        {{ envio() === 'enviando' ? 'Enviando…' : 'Cambiar contraseña' }}
+      </button>
+    </div>
+  </section>
+
+  <section class="tarjeta" aria-labelledby="titulo-sesiones">
+    <h2 id="titulo-sesiones">Sesiones abiertas</h2>
+
+    @if (confirmandoCierre()) {
+      <!-- Advertencia de una accion que no se deshace: queda a la vista, no detras de un "?". -->
+      <p class="advertencia">
+        Vas a salir de AKINE en todos tus dispositivos, también en este, y vas a tener que volver a
+        ingresar. En los demás puede tardar hasta diez minutos.
+      </p>
+      @if (errorCierre()) {
+        <p class="estado estado--error" role="alert">
+          No pudimos cerrar las sesiones. Probá de nuevo.
+        </p>
+      }
+      <div class="acciones">
+        <button
+          type="button"
+          class="boton"
+          [disabled]="cerrandoSesiones()"
+          (click)="cerrarTodasLasSesiones()"
+        >
+          {{ cerrandoSesiones() ? 'Cerrando…' : 'Cerrar todas las sesiones' }}
+        </button>
+        <button
+          type="button"
+          class="boton boton--secundario"
+          [disabled]="cerrandoSesiones()"
+          (click)="confirmandoCierre.set(false)"
+        >
+          Cancelar
+        </button>
+      </div>
+    } @else {
+      <p class="ayuda">Si dejaste AKINE abierto en otra computadora, podés cerrarlo desde acá.</p>
+      <div class="acciones">
+        <button type="button" class="boton boton--secundario" (click)="confirmandoCierre.set(true)">
+          Cerrar sesión en todos los dispositivos
+        </button>
+      </div>
+    }
+  </section>
+}

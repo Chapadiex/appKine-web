@@ -59,41 +59,27 @@
 </section>
 
 @if (estado().tipo === 'listo') {
+  <!--
+    Cada fila es una configuracion con su accion a la derecha, no un enlace subrayado: se escanea
+    por el titulo y la accion se reconoce como tal (refactor de la cabecera global, 28/10/2026).
+    El nombre accesible del boton suma el titulo: "Gestionar" solo no dice que se gestiona.
+  -->
   <section class="tarjeta" aria-labelledby="titulo-accesos-organizacion">
-    <h2 id="titulo-accesos-organizacion">Configuración del centro</h2>
+    <h2 id="titulo-accesos-organizacion">Configuración</h2>
 
-    <ul class="accesos">
-      <li>
-        <a class="enlace" routerLink="/organizacion/suscripcion">Ver plan y suscripción</a>
-      </li>
-      <li>
-        <a class="enlace" routerLink="/organizacion/sedes">Ver las sedes de la organización</a>
-      </li>
-      <!-- DP-43 (U-25): la ventana para enmendar sesiones es de la organizacion. -->
-      <li>
-        <a class="enlace" routerLink="/atencion/politica-de-enmienda">
-          Configurar la ventana para enmendar sesiones
-        </a>
-      </li>
-      <!--
-        Los espacios cuelgan de la SEDE del contexto activo, no de la organizacion, y por eso
-        su ruta no vive bajo `/organizacion`. El enlace esta igual: sin el, la pantalla no
-        tiene ninguna entrada desde la aplicacion y solo se llega escribiendo la URL.
-      -->
-      <li>
-        <a class="enlace" routerLink="/espacios">Ver los espacios y boxes de la sede activa</a>
-      </li>
-      <!--
-        Mismo caso que los espacios, y por el mismo motivo: el horario cuelga del vinculo de
-        cada profesional con la SEDE del contexto activo, asi que su ruta tampoco vive bajo
-        `/organizacion`. Sin este enlace la feature entera de horarios no tiene ninguna
-        entrada desde la aplicacion y solo se llega escribiendo la URL a mano.
-      -->
-      <li>
-        <a class="enlace" [routerLink]="rutaHorarios">
-          Ver los horarios de los profesionales de la sede activa
-        </a>
-      </li>
+    <ul class="configuracion">
+      @for (acceso of accesos; track acceso.ruta) {
+        <li class="configuracion__fila">
+          <div class="configuracion__textos">
+            <h3 class="configuracion__titulo">{{ acceso.titulo }}</h3>
+            <p class="configuracion__descripcion">{{ acceso.descripcion }}</p>
+          </div>
+          <a class="boton boton--secundario configuracion__accion" [routerLink]="acceso.ruta">
+            {{ acceso.accion }}<span class="visualmente-oculto">: {{ acceso.titulo }}</span>
+            <app-icono nombre="flecha-derecha" />
+          </a>
+        </li>
+      }
     </ul>
   </section>
 }
