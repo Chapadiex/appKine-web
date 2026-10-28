@@ -567,7 +567,7 @@ export class PasesService extends BaseService implements PasesServiceInterface {
 
     /**
      * Ledger de un pase, paginado
-     * Los movimientos del pase del mas viejo al mas nuevo, de a paginas (RF-M29-009, desde 0.116.0): el orden en que se lee &#x60;saldoResultante&#x60;. &#x60;size&#x60; se acota a 100 por request. Para un pase con historia larga reemplaza al ledger entero que trae &#x60;verPase&#x60;, que no cambia.
+     * Los movimientos del pase del mas viejo al mas nuevo, de a paginas (RF-M29-009, desde 0.116.0): el orden en que se lee &#x60;saldoResultante&#x60;. &#x60;size&#x60; se acota a 100 por request. Para un pase con historia larga reemplaza al ledger entero que trae &#x60;verPase&#x60;, que no cambia.  DP-45: &#x60;sort&#x60; ordena por ocurridoEn, tipo o cantidad. Sin &#x60;q&#x60;: el ledger de un pase no tiene texto en el que buscar, se lee por tipo y fecha.
      * @endpoint get /api/v1/consultorios/{consultorioId}/pases/{paseId}/movimientos
      * @param requestParameters
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
@@ -588,6 +588,7 @@ export class PasesService extends BaseService implements PasesServiceInterface {
         }
         const page = requestParameters?.page;
         const size = requestParameters?.size;
+        const sort = requestParameters?.sort;
 
         let localVarQueryParameters = new OpenApiHttpParams(this.encoder);
 
@@ -604,6 +605,15 @@ export class PasesService extends BaseService implements PasesServiceInterface {
             localVarQueryParameters,
             'size',
             <any>size,
+            QueryParamStyle.Form,
+            true,
+        );
+
+
+        localVarQueryParameters = this.addToHttpParams(
+            localVarQueryParameters,
+            'sort',
+            <any>sort,
             QueryParamStyle.Form,
             true,
         );

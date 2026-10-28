@@ -53,6 +53,12 @@ import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { Filtros } from '../../../../shared/components/filtros/filtros';
 import { Icono } from '../../../../shared/components/icono/icono';
+import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
+import {
+  CamposDeSort,
+  ordenDeServidor,
+} from '../../../../shared/components/tabla/orden-de-servidor';
+import { SearchCatalogoRequestParams } from '../../../../api/generated/api/catalogo-clinico.serviceInterface';
 
 /** Filtro de estado del listado. Los tres valores son los del contrato. */
 type FiltroEstado = 'ACTIVO' | 'INACTIVO' | 'TODOS';
@@ -115,6 +121,7 @@ const TOPE_DE_ESPECIALIDADES = 100;
     AccionesDeFila,
     Pestanas,
     Ayuda,
+    ColumnaOrdenable,
     Filtros,
     Icono,
     ReactiveFormsModule,
@@ -188,6 +195,15 @@ export class CatalogosPage {
       Number(this.filtroEspecialidad() !== null),
   );
   protected readonly paginaActual = signal(0);
+
+  /** Orden de la tabla, pedido al servidor: cambiarlo vuelve a la primera pagina (DP-45). */
+  protected readonly orden = ordenDeServidor<CamposDeSort<SearchCatalogoRequestParams['sort']>>(
+    () => {
+      this.cerrarPanel();
+      this.paginaActual.set(0);
+      this.cargar();
+    },
+  );
 
   /**
    * Especialidades disponibles, para el filtro y el selector del alta de practicas.
@@ -338,6 +354,7 @@ export class CatalogosPage {
         especialidadId: especialidadId ?? undefined,
         page: this.paginaActual(),
         size: POR_PAGINA,
+        sort: this.orden.sort(),
       })
       .pipe(catchError((error: unknown) => of(error instanceof Error ? error : new Error(''))))
       .subscribe((respuesta) => {
@@ -758,6 +775,7 @@ export class CatalogosPage {
     this.filtroAlcance.set('TODOS');
     this.filtroEspecialidad.set(null);
     this.paginaActual.set(0);
+    this.orden.reiniciar();
   }
 
   private enfocar(selector: string): void {

@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
 import { Icono } from '../icono/icono';
-import { TablaLocal } from './tabla-local';
+import { Ordenable } from './orden-de-servidor';
 
 /**
  * Encabezado de una columna ordenable: `<th appOrdenable [tabla]="tabla" columna="nombre">Nombre</th>`.
@@ -12,6 +12,9 @@ import { TablaLocal } from './tabla-local';
  *
  * <p>El icono dice el estado sin depender del color: dos flechas sin orden, una flecha para arriba
  * o para abajo con orden. El nombre accesible del boton es el texto de la columna.
+ *
+ * <p>`tabla` es cualquier {@link Ordenable}: una `tablaLocal` (lista completa, ordena en el
+ * cliente) o un `ordenDeServidor` (lista paginada, manda `sort` y recarga).
  */
 @Component({
   // eslint-disable-next-line @angular-eslint/component-selector
@@ -30,8 +33,7 @@ import { TablaLocal } from './tabla-local';
   `,
 })
 export class ColumnaOrdenable {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  readonly tabla = input.required<TablaLocal<any>>();
+  readonly tabla = input.required<Ordenable>();
   readonly columna = input.required<string>();
 
   private readonly direccion = computed(() => {

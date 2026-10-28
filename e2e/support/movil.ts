@@ -119,6 +119,36 @@ const JORNADA = {
     { medio: 'EFECTIVO', total: 1233567.5, afectaArqueo: true },
     { medio: 'TRANSFERENCIA', total: 98000, afectaArqueo: false },
   ],
+  // La tira de la jornada (DP-45), con importes de siete cifras para medir el ancho.
+  resumen: {
+    ingresos: 1331567.5,
+    egresos: 0,
+    efectivoIngresos: 1233567.5,
+    efectivoEgresos: 0,
+    otrosMediosIngresos: 98000,
+    otrosMediosEgresos: 0,
+    cantidadMovimientos: 2,
+  },
+};
+
+/** La tira del mes de egresos (DP-45). */
+const RESUMEN_DE_EGRESOS = {
+  consultorioId: CONSULTORIO_ID,
+  desde: '2026-10-01',
+  hasta: '2026-10-31',
+  porMoneda: [
+    {
+      moneda: 'ARS',
+      cantidad: 1,
+      registrado: 1500000.5,
+      pagado: 1000000.5,
+      pendiente: 500000,
+      cantidadBorrador: 1,
+      importeBorrador: 850000,
+      cantidadAnulados: 0,
+    },
+  ],
+  porCategoria: [],
 };
 
 const MOVIMIENTOS = [
@@ -410,6 +440,7 @@ export async function instalarApiMovil(
     if (camino === `${base}/caja/jornadas/${JORNADA.id}`) return json(JORNADA);
     if (camino === `${base}/caja/movimientos`) return json(MOVIMIENTOS);
     if (camino === `${base}/egresos`) return json(EGRESOS);
+    if (camino === `${base}/egresos/resumen`) return json(RESUMEN_DE_EGRESOS);
     if (camino === `${base}/presentaciones`) return json(PRESENTACIONES);
     if (camino === `${base}/reportes`) return json(CATALOGO_DE_REPORTES);
     if (camino === `${org}/memberships`) return json(pagina(MEMBERSHIPS));

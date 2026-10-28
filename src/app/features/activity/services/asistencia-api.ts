@@ -3,6 +3,7 @@ import { Observable, map } from 'rxjs';
 
 import { AgendaUnificadaService } from '../../../api/generated/api/agenda-unificada.service';
 import { AsistenciaDeClasesService } from '../../../api/generated/api/asistencia-de-clases.service';
+import { DetalleOperativoRequestParams } from '../../../api/generated/api/asistencia-de-clases.serviceInterface';
 import { AgendaUnificada } from '../../../api/generated/model/agenda-unificada';
 import { Clase } from '../../../api/generated/model/clase';
 import { DetalleOperativoDeClase } from '../../../api/generated/model/detalle-operativo-de-clase';
@@ -33,12 +34,19 @@ export class AsistenciaApi {
     );
   }
 
-  detalle(consultorioId: number, claseId: number, page = 0): Observable<DetalleOperativoDeClase> {
+  /** Una pagina de participantes. `sort` (DP-45) la ordena en el servidor. */
+  detalle(
+    consultorioId: number,
+    claseId: number,
+    page = 0,
+    sort?: DetalleOperativoRequestParams['sort'],
+  ): Observable<DetalleOperativoDeClase> {
     return this.asistencia.detalleOperativo({
       consultorioId,
       claseId,
       page,
       size: PARTICIPANTES_POR_PAGINA,
+      sort,
     });
   }
 

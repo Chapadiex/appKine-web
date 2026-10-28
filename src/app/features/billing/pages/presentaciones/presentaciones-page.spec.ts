@@ -68,12 +68,16 @@ describe('PresentacionesPage', () => {
 
     elegir(fixture, '#filtro-financiador', '10');
     elegir(fixture, '#filtro-estado', 'BORRADOR');
+    escribir(fixture, '#filtro-q', ' 0001-123 ');
     enviar(fixture, 0);
 
     const busqueda = httpMock.expectOne(
       (p) => p.url === `${BASE}/presentaciones` && p.params.get('financiadorId') === '10',
     );
     expect(busqueda.request.params.get('estado')).toBe('BORRADOR');
+    // El numero de factura o de lote va como `q` (DP-45), y no cuenta como filtro avanzado.
+    expect(busqueda.request.params.get('q')).toBe('0001-123');
+    expect(contenido(fixture)).toContain('2 activos');
     busqueda.flush([LOTE]);
     httpMock
       .expectOne(`${BASE}/financiadores/10/cuenta-corriente`)

@@ -23,9 +23,19 @@ const JORNADA = {
   saldoInicial: 1000,
   saldoTeorico: 1500.5,
   totalesPorMedio: [
-    { medio: 'EFECTIVO', total: 500.5, afectaArqueo: true },
-    { medio: 'TARJETA_DEBITO', total: 2000, afectaArqueo: false },
+    { medio: 'EFECTIVO', total: 500.5, afectaArqueo: true, ingresos: 700.5, egresos: 200 },
+    { medio: 'TARJETA_DEBITO', total: 2000, afectaArqueo: false, ingresos: 2000, egresos: 0 },
   ],
+  // DP-45: lo que entro y salio de la jornada, neto de reversiones, calculado por el servidor.
+  resumen: {
+    ingresos: 2700.5,
+    egresos: 200,
+    efectivoIngresos: 700.5,
+    efectivoEgresos: 200,
+    otrosMediosIngresos: 2000,
+    otrosMediosEgresos: 0,
+    cantidadMovimientos: 4,
+  },
 };
 
 const MANUAL = {
@@ -108,6 +118,12 @@ describe('CajaPage', () => {
     expect(contenido).toContain('Cobro N.º 14');
     // Solo el manual se revierte desde aca: el de un cobro se anula desde el cobro.
     expect(botones(fixture, 'Revertir')).toHaveLength(1);
+    // La tira de la jornada (DP-45): los totales del servidor, sin sumar nada aca.
+    const tira = contenido.replace(/\s+/g, '');
+    expect(tira).toContain('Ingresosdelajornada$2.700,50');
+    expect(tira).toContain('efectivo$700,50·otrosmedios$2.000,00');
+    expect(tira).toContain('Movimientos4');
+    expect(tira).toContain('entró$700,50·salió$200,00');
   });
 
   it('registra un movimiento manual con clave de idempotencia y relee la caja', async () => {

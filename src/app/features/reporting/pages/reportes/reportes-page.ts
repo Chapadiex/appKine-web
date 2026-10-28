@@ -10,7 +10,11 @@ import { TenantContextStore } from '../../../../core/services/tenant-context.sto
 import { ErrorReporte, errorSinContexto, traducirErrorReporte } from '../../models/reporte-errors';
 import {
   ADVERTENCIA_ACTIVIDAD_PROPIA,
+  CodigoDeReporte,
+  agrupacionDeSerie,
   celdaEnPalabras,
+  diaCorto,
+  valorDeSerie,
   esImporteEnCelda,
   MAXIMO_DIAS_DE_REPORTE,
   REPORTES,
@@ -26,11 +30,25 @@ import { ReportesApi } from '../../services/reportes-api';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { guardarComoArchivo, nombreDelEncabezado } from '../../../../shared/utils/descarga';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import {
+  BarraDeGrafico,
+  GraficoDeBarras,
+} from '../../../../shared/components/grafico-de-barras/grafico-de-barras';
+import { SerieDeReporte } from '../../../../api/generated/model/serie-de-reporte';
+import { SerieDeIndicadorDeReporte } from '../../../../api/generated/model/serie-de-indicador-de-reporte';
+import { Subscription } from 'rxjs';
 
 type EstadoReporte =
   | { readonly tipo: 'inicial' }
   | { readonly tipo: 'cargando' }
   | { readonly tipo: 'listo'; readonly reporte: ReporteResponse }
+  | { readonly tipo: 'error'; readonly error: ErrorReporte };
+
+/** La serie del grafico (DP-45). Se pide despues del reporte y su fallo no lo tapa. */
+type EstadoSerie =
+  | { readonly tipo: 'nada' }
+  | { readonly tipo: 'cargando' }
+  | { readonly tipo: 'lista'; readonly serie: SerieDeReporte }
   | { readonly tipo: 'error'; readonly error: ErrorReporte };
 
 /**
@@ -49,10 +67,15 @@ type EstadoReporte =
  *
  * <p>No hay totales ni graficos que crucen indicadores: la pantalla no suma nada que el backend no
  * haya sumado.
+ *
+ * <p><b>El grafico de evolucion</b> (DP-45) dibuja UN indicador por vez, abierto por dia o por
+ * semana segun el ancho del periodo: dos indicadores en un mismo grafico serian dos escalas, o la
+ * suma de una deuda y un cobro. El total que muestra es el `total` del servidor, que coincide con
+ * el indicador del reporte; aca solo se elige el maximo para el eje.
  */
 @Component({
   selector: 'app-reportes-page',
-  imports: [Ayuda, ReactiveFormsModule, RouterLink],
+  imports: [Ayuda, GraficoDeBarras, ReactiveFormsModule, RouterLink],
   templateUrl: './reportes-page.html',
   styleUrl: '../../reporting.css',
 })
@@ -130,6 +153,97 @@ export class ReportesPage {
   });
   protected readonly celda = celdaEnPalabras;
   protected readonly esImporte = esImporteEnCelda;
+  protected readonly valorDeSerie = valorDeSerie;
+
+  // --- Grafico de evolucion (DP-45) ---------------------------------------------------------
+
+  protected readonly estadoSerie = signal<EstadoSerie>({ tipo: 'nada' });
+  /** `seccion/clave` de la serie elegida; `null` es la primera. */
+  private readonly serieElegida = signal<string | null>(null);
+  private pedidoDeSerie: Subscription | null = null;
+
+  /** Las series con algo para dibujar, agrupadas por seccion para el selector. */
+  protected readonly gruposDeSeries = computed(() => {
+    const actual = this.estadoSerie();
+    if (actual.tipo !== 'lista') {
+      return [];
+    }
+    const grupos = new Map<string, SerieDeIndicadorDeReporte[]>();
+    for (const serie of actual.serie.series ?? []) {
+      if ((serie.puntos?.length ?? 0) === 0) {
+        continue;
+      }
+      const seccion = serie.seccion ?? '';
+      grupos.set(seccion, [...(grupos.get(seccion) ?? []), serie]);
+    }
+    return [...grupos.entries()].map(([seccion, series]) => ({
+      titulo: this.tituloDeSeccion(seccion),
+      series,
+    }));
+  });
+
+  protected readonly cantidadDeSeries = computed(() =>
+    this.gruposDeSeries().reduce((total, grupo) => total + grupo.series.length, 0),
+  );
+
+  protected readonly serieMostrada = computed(() => {
+    const todas = this.gruposDeSeries().flatMap((g) => g.series);
+    const elegida = this.serieElegida();
+    return todas.find((s) => claveDeSerie(s) === elegida) ?? todas[0] ?? null;
+  });
+
+  protected readonly errorDeSerie = computed(() => {
+    const actual = this.estadoSerie();
+    return actual.tipo === 'error' ? actual.error : null;
+  });
+
+  protected readonly porSemana = computed(() => {
+    const actual = this.estadoSerie();
+    return actual.tipo === 'lista' && actual.serie.agrupacion === 'SEMANA';
+  });
+
+  protected readonly barras = computed<readonly BarraDeGrafico[]>(() => {
+    const serie = this.serieMostrada();
+    const semanal = this.porSemana();
+    return (serie?.puntos ?? []).map((punto) => ({
+      etiqueta: diaCorto(punto.desde),
+      detalle: semanal
+        ? `Semana del ${fechaEnPalabras(punto.desde)} al ${fechaEnPalabras(punto.hasta)}`
+        : fechaEnPalabras(punto.desde),
+      valor: punto.valor ?? 0,
+      texto: valorDeSerie(punto.valor, serie ?? {}),
+    }));
+  });
+
+  /** Nombre accesible del grafico: que es, el periodo, el total del servidor y la barra mas alta. */
+  protected readonly descripcionDelGrafico = computed(() => {
+    const serie = this.serieMostrada();
+    const actual = this.estadoSerie();
+    if (serie === null || actual.tipo !== 'lista') {
+      return '';
+    }
+    const barras = this.barras();
+    const mayor = barras.reduce<BarraDeGrafico | null>(
+      (max, b) => (max === null || b.valor > max.valor ? b : max),
+      null,
+    );
+    const unidad = this.porSemana() ? 'semana' : 'día';
+    const partes = [
+      `Barras de ${serie.etiqueta ?? serie.clave} por ${unidad}, ` +
+        `del ${fechaEnPalabras(actual.serie.desde)} al ${fechaEnPalabras(actual.serie.hasta)}`,
+      `total ${valorDeSerie(serie.total, serie)}`,
+    ];
+    if (mayor !== null && mayor.valor > 0) {
+      partes.push(`la más alta, ${mayor.detalle}: ${mayor.texto}`);
+    }
+    return `${partes.join('; ')}.`;
+  });
+
+  protected claveDeSerie = claveDeSerie;
+
+  protected elegirSerie(clave: string): void {
+    this.serieElegida.set(clave);
+  }
 
   constructor() {
     // Fechas por defecto tomadas antes de conocer la zona de la sede: se corrigen al llegar.
@@ -149,6 +263,7 @@ export class ReportesPage {
         // Cambiar de sede no puede dejar en pantalla los numeros de la anterior.
         this.catalogo.set([]);
         this.estado.set({ tipo: 'inicial' });
+        this.descartarSerie();
         this.errorExport.set(null);
         this.cargarCatalogo();
       });
@@ -195,12 +310,44 @@ export class ReportesPage {
     }
 
     this.estado.set({ tipo: 'cargando' });
+    this.descartarSerie();
     this.errorExport.set(null);
     this.api.generar(consultorioId, reporte, desde, hasta).subscribe({
-      next: (resultado) => this.estado.set({ tipo: 'listo', reporte: resultado }),
+      next: (resultado) => {
+        this.estado.set({ tipo: 'listo', reporte: resultado });
+        this.cargarSerie(consultorioId, reporte, desde, hasta);
+      },
       error: (error: unknown) =>
         this.estado.set({ tipo: 'error', error: traducirErrorReporte(error) }),
     });
+  }
+
+  /**
+   * La serie va despues del reporte, con el mismo periodo: sin reporte en pantalla no hay grafico
+   * que mostrar, y un reporte sin series (los de F9 hoy) responde vacio y no dibuja nada.
+   */
+  private cargarSerie(
+    consultorioId: number,
+    reporte: CodigoDeReporte,
+    desde: string,
+    hasta: string,
+  ): void {
+    this.estadoSerie.set({ tipo: 'cargando' });
+    this.pedidoDeSerie = this.api
+      .serie(consultorioId, reporte, desde, hasta, agrupacionDeSerie(desde, hasta))
+      .subscribe({
+        next: (serie) => this.estadoSerie.set({ tipo: 'lista', serie }),
+        error: (error: unknown) =>
+          this.estadoSerie.set({ tipo: 'error', error: traducirErrorReporte(error) }),
+      });
+  }
+
+  /** Un grafico viejo, o una respuesta en vuelo, no puede quedar al lado de otro reporte. */
+  private descartarSerie(): void {
+    this.pedidoDeSerie?.unsubscribe();
+    this.pedidoDeSerie = null;
+    this.serieElegida.set(null);
+    this.estadoSerie.set({ tipo: 'nada' });
   }
 
   /** Descarga el CSV del reporte en pantalla, con los mismos filtros con que se genero. */
@@ -243,6 +390,11 @@ export class ReportesPage {
       error: () => this.catalogo.set([]),
     });
   }
+}
+
+/** Identifica una serie en el selector: la clave sola podria repetirse entre secciones. */
+function claveDeSerie(serie: SerieDeIndicadorDeReporte): string {
+  return `${serie.seccion ?? ''}/${serie.clave ?? ''}`;
 }
 
 /** El primero del mes de `hoy` (`YYYY-MM-DD`), que ya viene en la zona de la sede. */

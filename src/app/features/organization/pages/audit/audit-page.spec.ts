@@ -343,6 +343,39 @@ describe('AuditPage', () => {
     segunda.flush(VACIA);
   });
 
+  it('el texto refina el filtro elegido y ordenar una columna relee desde la primera página', async () => {
+    const fixture = montar();
+    marcar(fixture, '#auditoria-filtro-actor');
+    escribir(fixture, '#auditoria-actorAccountId', '18');
+    escribir(fixture, '#auditoria-q', ' membership ');
+    buscar(fixture);
+
+    const primera = httpMock.expectOne(esConsulta());
+    expect(primera.request.params.get('q')).toBe('membership');
+    expect(primera.request.params.has('sort')).toBe(false);
+    primera.flush({
+      content: [{ id: 1, occurredAt: '2026-09-01T10:00:00Z', eventType: 'MEMBERSHIP_CREATED' }],
+      page: 0,
+      size: 20,
+      totalElements: 30,
+      totalPages: 2,
+    });
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const hecho = [
+      ...(fixture.nativeElement as HTMLElement).querySelectorAll<HTMLElement>('th[appOrdenable]'),
+    ].find((th) => th.textContent?.includes('Hecho'))!;
+    hecho.querySelector('button')!.click();
+
+    const ordenada = httpMock.expectOne(esConsulta());
+    expect(decodeURIComponent(ordenada.request.params.get('sort')!)).toBe('tipoEvento,asc');
+    expect(ordenada.request.params.get('page')).toBe('0');
+    expect(ordenada.request.params.get('actorAccountId')).toBe('18');
+    expect(ordenada.request.params.get('q')).toBe('membership');
+    ordenada.flush(VACIA);
+  });
+
   it('sin contexto elegido, Buscar no gasta un rechazo del servidor', () => {
     // La pantalla es alcanzable sin contexto, y la consulta sin organizacion no existe.
     const fixture = TestBed.createComponent(AuditPage);

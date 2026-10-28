@@ -18,10 +18,10 @@ class SessionServiceFalsa {
   readonly estadoInterno = signal<EstadoSesion>('anonimo');
   readonly estado = this.estadoInterno.asReadonly();
   respuesta: Observable<void> = of(undefined);
-  llamadas: { email: string; password: string }[] = [];
+  llamadas: { email: string; password: string; recordarme: boolean }[] = [];
 
-  login(email: string, password: string): Observable<void> {
-    this.llamadas.push({ email, password });
+  login(email: string, password: string, recordarme: boolean): Observable<void> {
+    this.llamadas.push({ email, password, recordarme });
     return this.respuesta;
   }
 }
@@ -64,7 +64,9 @@ describe('LoginPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect(session.llamadas).toEqual([{ email: 'kine@ejemplo.test', password: 'clave-de-prueba' }]);
+    expect(session.llamadas).toEqual([
+      { email: 'kine@ejemplo.test', password: 'clave-de-prueba', recordarme: false },
+    ]);
     // Con el destino por defecto, porque este caso entra al login sin `volverA`.
     expect(navegar).toHaveBeenCalledWith('/seleccionar-contexto?volverA=%2Forganizacion');
   });
@@ -107,17 +109,19 @@ describe('LoginPage', () => {
     );
   });
 
-  it('con la sesión ya activa va al destino por defecto', async () => {
+  it('con la sesión ya activa va al destino por defecto, y manda "mantener la sesión"', async () => {
     const navegar = vi.spyOn(router, 'navigateByUrl').mockResolvedValue(true);
     session.estadoInterno.set('activa');
 
     const fixture = crear();
     escribir(fixture, '#login-email', 'kine@ejemplo.test');
     escribir(fixture, '#login-password', 'clave-de-prueba');
+    (fixture.nativeElement.querySelector('#login-recordarme') as HTMLInputElement).click();
     enviar(fixture);
     await fixture.whenStable();
     fixture.detectChanges();
 
+    expect(session.llamadas[0]?.recordarme).toBe(true);
     expect(navegar).toHaveBeenCalledWith('/organizacion');
   });
 

@@ -16,6 +16,7 @@ import { ActivateAccountRequest } from '../model/models';
 import { ProblemDetail } from '../model/models';
 import { RegisterAccountRequest } from '../model/models';
 import { ResendActivationRequest } from '../model/models';
+import { TermsResponse } from '../model/models';
 
 
 import { Configuration }                                     from '../configuration';
@@ -48,8 +49,15 @@ export interface RegistroYActivacionServiceInterface {
     activateAccount(requestParameters: ActivateAccountRequestParams, extraHttpRequestParams?: any): Observable<{}>;
 
     /**
+     * Version vigente de los terminos y condiciones
+     * Publico. Devuelve la version de los terminos que el alta self-service y la aceptacion de invitacion con cuenta nueva exigen aceptar, y el enlace donde se publica el texto. El texto legal no lo sirve el backend.  Con aceptacionObligatoria&#x3D;false (ninguna version configurada) el alta no exige nada y versionVigente viene null.
+     * @endpoint get /api/v1/terms
+*/
+    getCurrentTerms(extraHttpRequestParams?: any): Observable<TermsResponse>;
+
+    /**
      * Alta self-service de cuenta, organizacion y primer consultorio
-     * Crea en una sola transaccion la cuenta del fundador, la organizacion, su primer consultorio, la suscripcion y la membership de administrador, y encola el correo con el enlace de activacion.  RESPUESTA UNIFORME (ADR-0018): 202 Accepted con el mismo cuerpo tanto si el email estaba libre como si ya tenia cuenta. En el segundo caso no se crea ni se modifica nada y se encola un correo de \&quot;ya tenes cuenta\&quot;. No hay 409 email-already-registered y no va a haberlo: seria el oraculo de existencia que el 401 uniforme del login existe para cerrar.  La cuenta nace PENDIENTE_ACTIVACION. Hasta confirmar el enlace, el login responde 401 igual que con una contrasena incorrecta.  El header Idempotency-Key es obligatorio. Reintentar el alta con la misma clave devuelve el mismo desenlace sin crear una segunda cuenta ni mandar un segundo correo; el cliente debe generarlo una vez al abrir el formulario y reusarlo en cada reintento. Reusar la clave con OTRO contenido no es un reintento: responde 409 idempotency-key-conflict. La contrasena no entra en esa comparacion.  Los rechazos posibles no dicen nada sobre el email: 400 por contrasena que no cumple la politica o por campos ausentes, 404 por un planCode que no existe o ya no se contrata, y 409 por un organizationSlug ya tomado. Los tres se evaluan ANTES de mirar si el email tiene cuenta, justamente para que la respuesta sea la misma en los dos casos: validarlos despues convertiria el endpoint en un verificador de direcciones de correo.
+     * Crea en una sola transaccion la cuenta del fundador, la organizacion, su primer consultorio, la suscripcion y la membership de administrador, y encola el correo con el enlace de activacion.  RESPUESTA UNIFORME (ADR-0018): 202 Accepted con el mismo cuerpo tanto si el email estaba libre como si ya tenia cuenta. En el segundo caso no se crea ni se modifica nada y se encola un correo de \&quot;ya tenes cuenta\&quot;. No hay 409 email-already-registered y no va a haberlo: seria el oraculo de existencia que el 401 uniforme del login existe para cerrar.  La cuenta nace PENDIENTE_ACTIVACION. Hasta confirmar el enlace, el login responde 401 igual que con una contrasena incorrecta.  El header Idempotency-Key es obligatorio. Reintentar el alta con la misma clave devuelve el mismo desenlace sin crear una segunda cuenta ni mandar un segundo correo; el cliente debe generarlo una vez al abrir el formulario y reusarlo en cada reintento. Reusar la clave con OTRO contenido no es un reintento: responde 409 idempotency-key-conflict. La contrasena no entra en esa comparacion.  Los rechazos posibles no dicen nada sobre el email: 400 por contrasena que no cumple la politica o por campos ausentes, 404 por un planCode que no existe o ya no se contrata, y 409 por un organizationSlug ya tomado. Los tres se evaluan ANTES de mirar si el email tiene cuenta, justamente para que la respuesta sea la misma en los dos casos: validarlos despues convertiria el endpoint en un verificador de direcciones de correo.  TERMINOS (DP-45): si el despliegue tiene una version vigente de los terminos (GET /api/v1/terms, aceptacionObligatoria&#x3D;true), el alta exige aceptaTerminos&#x3D;true y versionTerminos igual a esa version; si no, 400 validation-error con el campo en errors. Tambien se evalua antes de mirar el email. La aceptacion queda registrada con la cuenta, con su version y su fecha. Sin version vigente, los dos campos se ignoran.
      * @endpoint post /api/v1/auth/register
 * @param requestParameters
      */

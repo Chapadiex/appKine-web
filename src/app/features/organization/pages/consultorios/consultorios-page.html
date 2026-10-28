@@ -42,10 +42,26 @@
   <h2 id="titulo-sedes">Sedes de la organización</h2>
 
   <!--
-    Regla de filtros (plan §3.4): el listado no tiene busqueda por texto en el backend, asi que
-    va solo el embudo; "Mostrar" es un filtro avanzado.
+    Regla de filtros (plan §3.4): la busqueda por nombre, en el servidor (DP-45), a la vista;
+    "Mostrar" es un filtro avanzado.
   -->
-  <app-filtros [soloAvanzados]="true" [activos]="filtrosAvanzadosActivos()">
+  <app-filtros [activos]="filtrosAvanzadosActivos()">
+    <div class="campo" filtro-principal>
+      <label class="visualmente-oculto" for="sedes-busqueda">Nombre de la sede</label>
+      <div class="campo-busqueda">
+        <app-icono class="campo-busqueda__icono" nombre="buscar" />
+        <input
+          id="sedes-busqueda"
+          name="sedes-busqueda"
+          type="search"
+          autocomplete="off"
+          placeholder="Buscar por nombre de la sede"
+          [value]="busqueda()"
+          (change)="buscar($any($event.target).value)"
+        />
+      </div>
+    </div>
+
     <div class="campo">
       <label for="filtro-estado">Mostrar</label>
       <select
@@ -91,7 +107,9 @@
 
       @case ('listo') {
         @if (sedesDeLaPagina().length === 0) {
-          @if (filtro() === 'INACTIVO') {
+          @if (busqueda().trim() !== '') {
+            <p class="estado estado--vacio">Ninguna sede coincide con la búsqueda.</p>
+          } @else if (filtro() === 'INACTIVO') {
             <p class="estado estado--vacio">No hay sedes dadas de baja.</p>
           } @else {
             <p class="estado estado--vacio">No hay sedes que mostrar con este filtro.</p>
@@ -104,7 +122,7 @@
               </caption>
               <thead>
                 <tr>
-                  <th scope="col">Sede</th>
+                  <th scope="col" appOrdenable [tabla]="orden" columna="nombre">Sede</th>
                   <th scope="col">Zona horaria</th>
                   <th scope="col">Agenda</th>
                   <th scope="col">Datos institucionales</th>

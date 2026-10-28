@@ -106,13 +106,12 @@ test.describe('Series de turnos contra el backend real', () => {
     await expect(page.getByRole('heading', { name: 'Serie reservada' })).toBeVisible();
     await expect(page.getByText(`Se reservaron ${OCURRENCIAS} turnos.`)).toBeVisible();
 
-    // La bandeja de la sede (E-8) la lista, filtrada por el paciente.
+    // La bandeja de la sede (E-8) la lista, buscada por el paciente en el servidor (DP-45, `q`).
     await navegar(page, '/agenda/series');
     await expect(page.getByRole('heading', { name: 'Series de turnos', level: 1 })).toBeVisible();
-    await page
-      .getByLabel('Paciente: documento, apellido, nombre o teléfono')
-      .fill(persona.apellido);
-    await page.getByRole('button', { name: `${persona.apellido}, ${persona.nombre}` }).click();
+    const busqueda = page.getByLabel('Paciente, documento, oferta o profesional');
+    await busqueda.fill(persona.apellido);
+    await busqueda.press('Enter');
     await expect(page.getByRole('heading', { name: '1 serie' })).toBeVisible();
     const fila = page.getByRole('region', { name: 'Series de turnos de la sede' }).getByRole('row');
     await expect(fila.filter({ hasText: oferta.nombre })).toContainText(

@@ -37,6 +37,12 @@ import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { Filtros } from '../../../../shared/components/filtros/filtros';
 import { Icono } from '../../../../shared/components/icono/icono';
+import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
+import {
+  CamposDeSort,
+  ordenDeServidor,
+} from '../../../../shared/components/tabla/orden-de-servidor';
+import { ListarAdjuntosDePersonaRequestParams } from '../../../../api/generated/api/adjuntos.serviceInterface';
 
 const TAMANO_DE_PAGINA = 20;
 
@@ -99,6 +105,7 @@ type TipoAccion = 'reclasificar' | 'baja';
   imports: [
     CabeceraDeFicha,
     Ayuda,
+    ColumnaOrdenable,
     Filtros,
     Icono,
     ReactiveFormsModule,
@@ -152,6 +159,14 @@ export class DocumentosDePersonaPage {
     () => Number(this.filtroCategoria() !== '') + Number(this.filtro() !== 'VIGENTES'),
   );
   protected readonly pagina = signal(0);
+
+  /** Orden de la tabla, pedido al servidor: cambiarlo vuelve a la primera pagina (DP-45). */
+  protected readonly orden = ordenDeServidor<
+    CamposDeSort<ListarAdjuntosDePersonaRequestParams['sort']>
+  >(() => {
+    this.pagina.set(0);
+    this.cargar();
+  });
 
   protected readonly panel = signal<{ readonly id: number; readonly tipo: TipoAccion } | null>(
     null,
@@ -271,6 +286,7 @@ export class DocumentosDePersonaPage {
         filtro: this.filtro(),
         pagina: this.pagina(),
         tamano: TAMANO_DE_PAGINA,
+        sort: this.orden.sort(),
       })
       .subscribe({
         next: (pagina) => this.estado.set({ tipo: 'listo', pagina }),
@@ -516,5 +532,6 @@ export class DocumentosDePersonaPage {
     this.filtroCategoria.set('');
     this.filtro.set('VIGENTES');
     this.pagina.set(0);
+    this.orden.reiniciar();
   }
 }

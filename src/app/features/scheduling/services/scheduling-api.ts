@@ -20,6 +20,7 @@ import { AgendaUnificadaService } from '../../../api/generated/api/agenda-unific
 import { EventoDeAgenda } from '../../../api/generated/model/evento-de-agenda';
 import { TurnoDelDia } from '../../../api/generated/model/turno-del-dia';
 import { TurnosService } from '../../../api/generated/api/turnos.service';
+import { TurnosDeSede } from '../../../api/generated/model/turnos-de-sede';
 
 /**
  * Unico punto de la feature `scheduling` que toca el cliente generado (M12/M13, AKINE-05.01 a E-4).
@@ -270,6 +271,19 @@ export class SchedulingApi {
    */
   turnosDelDia(consultorioId: number, fecha: string): Observable<AgendaDelDia> {
     return this.turnos.delDiaTurno({ consultorioId, fecha });
+  }
+
+  /**
+   * Los turnos reservados de la sede que empiezan en `[desde, hasta)`, para el calendario semanal
+   * (DP-45, contrato 0.148.0).
+   *
+   * <p>Las fechas son dias locales de la sede y `hasta` es <b>exclusivo</b>; el rango no puede
+   * pasar de 42 dias (400 `validation-error`). Los cancelados no vienen. Igual que
+   * {@link turnosDelDia}, la respuesta trae la zona de la sede y cada turno el nombre del
+   * profesional. Exige `turno:read`.
+   */
+  turnosDeSede(consultorioId: number, desde: string, hasta: string): Observable<TurnosDeSede> {
+    return this.turnos.listarTurnosDeSede({ consultorioId, desde, hasta });
   }
 
   /**

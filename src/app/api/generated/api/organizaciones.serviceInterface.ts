@@ -35,6 +35,8 @@ export interface ListOrganizationConsultoriosRequestParams {
     estado?: 'ACTIVO' | 'INACTIVO' | 'TODOS';
     page?: number;
     size?: number;
+    q?: string;
+    sort?: 'nombre,asc' | 'nombre,desc';
 }
 
 export interface UpdateOrganizationRequestParams {
@@ -65,7 +67,7 @@ export interface OrganizacionesServiceInterface {
 
     /**
      * Sedes de la organizacion
-     * Listado paginado de las sedes del tenant. Requiere ser miembro vigente de esa organizacion, y NO consultorio:manage: es la lectura que necesita el selector de contexto de trabajo, asi que restringirla dejaria a un profesional sin poder elegir sede. El parametro estado es opcional y su valor por defecto, ACTIVO, conserva el comportamiento historico del endpoint: un cliente que no lo manda ve exactamente lo mismo que antes. El tamano de pagina se acota a 100: pedir mas devuelve ese maximo, no un error.
+     * Listado paginado de las sedes del tenant. Requiere ser miembro vigente de esa organizacion, y NO consultorio:manage: es la lectura que necesita el selector de contexto de trabajo, asi que restringirla dejaria a un profesional sin poder elegir sede. El parametro estado es opcional y su valor por defecto, ACTIVO, conserva el comportamiento historico del endpoint: un cliente que no lo manda ve exactamente lo mismo que antes. El tamano de pagina se acota a 100: pedir mas devuelve ese maximo, no un error. DP-45: q busca \&quot;contiene\&quot; en el nombre de la sede, sin distinguir mayusculas ni acentos; sort ordena por nombre.
      * @endpoint get /api/v1/organizations/{orgId}/consultorios
 * @param requestParameters
      */

@@ -66,6 +66,8 @@ export interface GrupoDeSecciones {
  *   <li><b>Recepcion del dia</b> — `scheduling.routes.ts`: `permissionGuard(PERMISO_TURNO_READ)`.
  *       Entra a la barra por ser la pantalla mas usada del mostrador; sus hermanas (series,
  *       atencion sin turno) son pestanas de la agenda.</li>
+ *   <li><b>Calendario de turnos</b> — `scheduling.routes.ts`:
+ *       `permissionGuard(PERMISO_TURNO_READ)`, como la recepcion (DP-45).</li>
  *   <li><b>Pacientes</b> — `person.routes.ts`: `permissionGuard(PERMISO_PACIENTE_READ)` en todas
  *       las rutas (DP-22): la lectura de personas exige `paciente:read`, que el staff tiene y el
  *       paciente no. `paciente:manage` gobierna el alta, que es de la pantalla.</li>
@@ -97,6 +99,11 @@ export const GRUPOS: readonly GrupoDeSecciones[] = [
     icono: 'operacion',
     secciones: [
       { etiqueta: 'Agenda', ruta: '/agenda' },
+      {
+        etiqueta: 'Calendario de turnos',
+        ruta: '/agenda/calendario',
+        permisos: [PERMISO_TURNO_READ],
+      },
       { etiqueta: 'Recepción del día', ruta: '/agenda/recepcion', permisos: [PERMISO_TURNO_READ] },
       { etiqueta: 'Series de turnos', ruta: '/agenda/series', permisos: [PERMISO_TURNO_READ] },
       {

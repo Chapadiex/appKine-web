@@ -41,6 +41,7 @@ export interface ListPlatformOrganizationsRequestParams {
     status?: 'ACTIVA' | 'SUSPENDIDA' | 'CANCELADA';
     page?: number;
     size?: number;
+    sort?: 'nombre,asc' | 'nombre,desc' | 'slug,asc' | 'slug,desc' | 'creadaEn,asc' | 'creadaEn,desc';
 }
 
 export interface ListSupportAccessRequestParams {
@@ -87,7 +88,7 @@ export interface PlataformaServiceInterface {
 
     /**
      * Listado de centros, para la administracion de plataforma
-     * Listado paginado de las organizaciones vigentes con el estado y el plan de su suscripcion, ordenado por nombre. Es el insumo para elegir el centro cuya suscripcion se opera. Las dadas de baja no aparecen. No trae miembros, sedes, consumo de limites ni datos de pacientes. Reservado a la administracion de plataforma, igual que la lectura y el cambio del plan. El tamano de pagina se acota a 100: pedir mas devuelve ese maximo, no un error.
+     * Listado paginado de las organizaciones vigentes con el estado y el plan de su suscripcion, ordenado por nombre. Es el insumo para elegir el centro cuya suscripcion se opera. Las dadas de baja no aparecen. No trae miembros, sedes, consumo de limites ni datos de pacientes. Reservado a la administracion de plataforma, igual que la lectura y el cambio del plan. El tamano de pagina se acota a 100: pedir mas devuelve ese maximo, no un error. DP-45: sort ordena por nombre, slug o creadaEn; sin el, por nombre.
      * @endpoint get /api/v1/platform/organizations
 * @param requestParameters
      */

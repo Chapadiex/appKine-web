@@ -353,6 +353,37 @@ describe('ConsultoriosPage', () => {
     expect(texto(fixture)).toContain('No hay sedes dadas de baja');
   });
 
+  it('busca y ordena por nombre en el servidor, y una búsqueda sin resultados lo dice', async () => {
+    const fixture = await montar();
+    const host: HTMLElement = fixture.nativeElement;
+
+    escribir(fixture, '#sedes-busqueda', ' norte ');
+    host.querySelector('#sedes-busqueda')!.dispatchEvent(new Event('change'));
+    const buscado = httpMock.expectOne(esListado(1));
+    expect(buscado.request.params.get('q')).toBe('norte');
+    expect(buscado.request.params.get('page')).toBe('0');
+    buscado.flush({ content: [], page: 0, size: 20, totalElements: 0, totalPages: 0 });
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(texto(fixture)).toContain('Ninguna sede coincide con la búsqueda.');
+
+    escribir(fixture, '#sedes-busqueda', '');
+    host.querySelector('#sedes-busqueda')!.dispatchEvent(new Event('change'));
+    httpMock.expectOne(esListado(1)).flush(PAGINA);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    for (const sort of ['nombre,asc', 'nombre,desc']) {
+      host.querySelector<HTMLButtonElement>('th[appOrdenable] button')!.click();
+      const ordenado = httpMock.expectOne(esListado(1));
+      expect(decodeURIComponent(ordenado.request.params.get('sort')!)).toBe(sort);
+      ordenado.flush(PAGINA);
+      await fixture.whenStable();
+      fixture.detectChanges();
+    }
+    expect(host.querySelector('th[appOrdenable]')!.getAttribute('aria-sort')).toBe('descending');
+  });
+
   it('un email mal formado bloquea el PATCH en vez de gastar un rechazo del backend', async () => {
     // El envio tiene que quedar BLOQUEADO: si saliera, el backend responderia 400 y el usuario
     // veria un error generico en vez del campo marcado. Por eso se afirma que no hay peticion,

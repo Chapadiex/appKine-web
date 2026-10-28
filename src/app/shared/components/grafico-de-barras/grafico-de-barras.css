@@ -1,0 +1,168 @@
+/*
+ * Grafico de barras de una serie (skill `dataviz`): barras finas con el extremo de datos
+ * redondeado y la base recta, guias de un pixel y textos en tinta de texto. Cero colores
+ * literales: el de la serie es `--color-accion-fondo`, validado en claro y en oscuro.
+ */
+:host {
+  display: block;
+  --grafico-alto: 12rem;
+  --grafico-serie: var(--color-accion-fondo);
+}
+
+.grafico {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--esp-4);
+  padding-top: var(--esp-4);
+}
+
+/* Marcas del eje vertical: a la izquierda, fuera del marco que se desplaza. */
+.grafico__eje-y {
+  position: relative;
+  flex: none;
+  width: 3.5rem;
+  height: var(--grafico-alto);
+}
+
+.grafico__marca {
+  position: absolute;
+  right: 0;
+  transform: translateY(50%);
+  font-size: var(--tipo-2xs);
+  color: var(--color-texto-suave);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* Con muchas barras en pantalla angosta se desplaza el grafico, nunca la pagina. */
+.grafico__marco {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-x: auto;
+}
+
+/* El ancho minimo (4 px por barra) lo fija la plantilla: debajo de eso, el marco se desplaza. */
+.grafico__lienzo {
+  width: 100%;
+}
+
+.grafico__lienzo:focus-visible {
+  outline-offset: -2px;
+}
+
+.grafico__plano {
+  position: relative;
+  height: var(--grafico-alto);
+}
+
+/* Guias: un pixel, solidas, un paso fuera de la superficie. La base, un paso mas. */
+.grafico__guia {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-top: var(--borde-fino) solid var(--color-borde-sutil);
+}
+
+.grafico__guia--base {
+  border-top-color: var(--color-borde);
+}
+
+.grafico__columnas {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  align-items: end;
+}
+
+.grafico__columna {
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.grafico__columna--activa {
+  background: var(--color-superficie-sutil);
+}
+
+/* A lo sumo 24 px, con 2 px de aire entre barras vecinas; extremo de datos redondeado. */
+.grafico__barra {
+  width: min(1.5rem, calc(100% - 2px));
+  background: var(--grafico-serie);
+  border-radius: var(--esp-2) var(--esp-2) 0 0;
+}
+
+.grafico__barra--minima {
+  min-height: 2px;
+}
+
+.grafico__globo {
+  position: absolute;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-1);
+  padding: var(--esp-3) var(--esp-4);
+  border: var(--borde-fino) solid var(--color-borde);
+  border-radius: var(--radio-sm);
+  background: var(--color-superficie);
+  color: var(--color-texto);
+  font-size: var(--tipo-2xs);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.grafico__globo strong {
+  font-size: var(--tipo-sm);
+}
+
+.grafico__globo span {
+  color: var(--color-texto-suave);
+}
+
+.grafico__eje-x {
+  position: relative;
+  height: 1.5rem;
+}
+
+.grafico__rotulo {
+  position: absolute;
+  top: var(--esp-2);
+  transform: translateX(-50%);
+  font-size: var(--tipo-2xs);
+  color: var(--color-texto-suave);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.grafico__rotulo--inicio {
+  transform: none;
+}
+
+.grafico__rotulo--fin {
+  transform: translateX(-100%);
+}
+
+.grafico__datos {
+  margin-top: var(--esp-5);
+  font-size: var(--tipo-xs);
+}
+
+.grafico__datos summary {
+  cursor: pointer;
+  color: var(--color-enlace);
+}
+
+.grafico__valor {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* Colores forzados: la barra toma el color del texto del sistema para no desaparecer. */
+@media (forced-colors: active) {
+  .grafico__barra {
+    background: CanvasText;
+  }
+}
