@@ -1,6 +1,6 @@
 import { expect, ingresar, navegar, problemaDe, respuestaDe, test } from './support/agenda-real';
 import { abrirFiltros } from './support/filtros';
-import { nonce } from './support/akine';
+import { esperarFormularioEnlazado, nonce } from './support/akine';
 import {
   crearOferta,
   crearPersona,
@@ -33,6 +33,8 @@ test.describe('Espacios y boxes contra el backend real', () => {
     // --- Alta por pantalla ---
     await navegar(page, '/espacios');
     await page.getByRole('link', { name: 'Dar de alta un espacio' }).click();
+    // El alta la monta el router: ver `esperarFormularioEnlazado`.
+    await esperarFormularioEnlazado(page.getByLabel('Nombre del espacio'));
     await page.getByLabel('Nombre del espacio').fill(nombre);
     await page.getByLabel('Personas simultaneas que admite').fill('1');
     const alta = respuestaDe(page, 'POST', /\/espacios$/);
